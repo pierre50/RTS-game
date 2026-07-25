@@ -72,6 +72,16 @@ const PROJECTILE_MIN_SPEED_FACTOR = 0.18
 const PROJECTILE_MIN_DAMAGE_FACTOR = 0.35
 const PROJECTILE_COLLISION_SCALE = 0.35
 
+function getProjectileVisualOffset(instance: RuntimeEntity | null | undefined): number {
+  const mountedRiderY = instance?.getMountedRiderY?.()
+  return typeof mountedRiderY === 'number' && Number.isFinite(mountedRiderY) ? mountedRiderY : getReliefOffset(instance)
+}
+
+function getProjectileDestinationVisualDelta(projectile: { target?: RuntimeEntity; destination?: Point }): number {
+  if (!projectile.target || !projectile.destination) return 0
+  return getProjectileVisualOffset(projectile.target) - getReliefOffset(projectile.target)
+}
+
 function getDirectionalFrameIndex(projectile: RuntimeProjectile, direction: string) {
   if (Array.isArray(projectile.directionalFrameOrder)) {
     const frameIndex = projectile.directionalFrameOrder.indexOf(direction)
@@ -209,7 +219,7 @@ export class Projectile extends Container {
     this.x = this.spawnPoint?.x ?? this.owner.x + (this.spawnOffsetX ?? 0)
     this.y =
       this.spawnPoint?.y ??
-      this.owner.y + getReliefOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
+      this.owner.y + getProjectileVisualOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     this.z = this.owner.z ?? 0
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
@@ -218,7 +228,8 @@ export class Projectile extends Container {
     }
     // this.destination (when set) is a plain world point, never an instance with relief lift.
     let { x: targetX } = targetPoint
-    let targetY = targetPoint.y + (this.destination ? 0 : getReliefOffset(this.target))
+    let targetY =
+      targetPoint.y + (this.destination ? getProjectileDestinationVisualDelta(this) : getProjectileVisualOffset(this.target))
 
     playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
 
@@ -246,7 +257,7 @@ export class Projectile extends Container {
       () => {
         if (this.tracksTarget && this.target && !this.target.isDead && !this.target.isDestroyed) {
           targetX = this.target.x
-          targetY = this.target.y + getReliefOffset(this.target)
+          targetY = this.target.y + getProjectileVisualOffset(this.target)
           this.destinationPoint = this.getVisualDestinationPoint(targetX, targetY)
           this.totalDistance = Math.max(
             pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.destinationPoint.x, this.destinationPoint.y),
@@ -268,7 +279,7 @@ export class Projectile extends Container {
             this.target &&
             !this.target.isDead &&
             !this.target.isDestroyed &&
-            pointsDistance(targetX, targetY, this.target.x, this.target.y + getReliefOffset(this.target)) <=
+            pointsDistance(targetX, targetY, this.target.x, this.target.y + getProjectileVisualOffset(this.target)) <=
               average(this.target.width, this.target.height)
           ) {
             this.onHit(this.target)
@@ -592,7 +603,7 @@ export class Projectile extends Container {
         this.size,
         average(candidate.width || CELL_WIDTH, candidate.height || CELL_HEIGHT) * PROJECTILE_COLLISION_SCALE
       )
-      const distance = pointsDistance(this.x, this.y, candidate.x, candidate.y + getReliefOffset(candidate))
+      const distance = pointsDistance(this.x, this.y, candidate.x, candidate.y + getProjectileVisualOffset(candidate))
       if (distance > collisionRadius || distance >= closestDistance) continue
       closest = candidate
       closestDistance = distance

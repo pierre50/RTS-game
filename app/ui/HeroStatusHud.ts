@@ -9,7 +9,7 @@ export class HeroStatusHud {
   element: HTMLDivElement
   title: HTMLDivElement
   value: HTMLDivElement
-  fill: HTMLDivElement
+  healthBar: HTMLDivElement
   energyBar: HTMLDivElement
   energyValue: HTMLDivElement
   energyFill: HTMLDivElement
@@ -41,11 +41,8 @@ export class HeroStatusHud {
     this.value = document.createElement('div')
     this.value.className = 'hero-status-value'
 
-    const bar = document.createElement('div')
-    bar.className = 'hero-status-bar'
-
-    this.fill = document.createElement('div')
-    this.fill.className = 'hero-status-fill'
+    this.healthBar = document.createElement('div')
+    this.healthBar.className = 'hero-status-bar'
 
     const energyHeader = document.createElement('div')
     energyHeader.className = 'hero-status-header hero-status-energy-header'
@@ -75,14 +72,13 @@ export class HeroStatusHud {
 
     header.appendChild(this.title)
     header.appendChild(this.value)
-    bar.appendChild(this.fill)
     energyHeader.appendChild(energyTitle)
     energyHeader.appendChild(this.energyValue)
     this.energyBar.appendChild(this.energyFill)
     this.carry.appendChild(this.carryIcon)
     this.carry.appendChild(this.carryValue)
     frame.appendChild(header)
-    frame.appendChild(bar)
+    frame.appendChild(this.healthBar)
     frame.appendChild(energyHeader)
     frame.appendChild(this.energyBar)
     frame.appendChild(this.carry)
@@ -124,7 +120,8 @@ export class HeroStatusHud {
 
     this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
     this.value.textContent = `${current}/${max}`
-    this.fill.style.width = `${(ratio * 100).toFixed(2)}%`
+    const healthPercent = `${(ratio * 100).toFixed(2)}%`
+    this.healthBar.style.setProperty('--hero-health-percent', healthPercent)
 
     const rawEnergy = Math.max(0, hero.energy ?? hero.totalEnergy ?? 0)
     const rawTotalEnergy = Math.max(0, hero.totalEnergy ?? 0)

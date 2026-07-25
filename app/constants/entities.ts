@@ -34,6 +34,8 @@ export const UNIT_TYPES = {
   broadSwordsman: 'BroadSwordsman',
   longSwordsman: 'LongSwordsman',
   hoplite: 'Hoplite',
+  phalanx: 'Phalanx',
+  centurion: 'Centurion',
   bowman: 'Bowman',
   improvedBowman: 'ImprovedBowman',
   compositeBowman: 'CompositeBowman',

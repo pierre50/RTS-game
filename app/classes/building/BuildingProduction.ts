@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
@@ -24,6 +24,7 @@ type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | 
 type TrainingBuilding = Building & {
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
+  mountingTime?: number
 }
 
 function getTrainingBuilding(building: Building): TrainingBuilding {
@@ -49,6 +50,32 @@ function isExpectedTrainingUnit(unit: UnitEntity, type: string): boolean {
       !unit.loadedInTransport &&
       unit.controlMode !== 'hero'
   )
+}
+
+function isStableMountTraining(building: Building, trainee: UnitEntity | null | undefined, type: string): boolean {
+  return Boolean(building.type === BUILDING_TYPES.stable && trainee && trainee.type === type && !trainee.mountedOnHorse)
+}
+
+function getTrainingCost(building: Building, unit: { cost?: ResourceAmount }, trainee: UnitEntity, type: string): ResourceAmount {
+  return isStableMountTraining(building, trainee, type) ? {} : (unit.cost ?? {})
+}
+
+function getProductionTime(
+  building: TrainingBuilding,
+  unit: { trainingTime?: number },
+  trainee: UnitEntity | null | undefined,
+  type: string
+): number {
+  return isStableMountTraining(building, trainee, type) ? (building.mountingTime ?? unit.trainingTime ?? 0) : (unit.trainingTime ?? 0)
+}
+
+function getTrainingExtra(building: Building, trainee: UnitEntity, type: string): UnitCreationExtra | undefined {
+  if (!isStableMountTraining(building, trainee, type)) return undefined
+  return {
+    mountedOnHorse: true,
+    hitPoints: trainee.hitPoints,
+    experience: trainee.experience ? { ...trainee.experience } : undefined,
+  } as UnitCreationExtra
 }
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
@@ -267,10 +294,11 @@ export class BuildingProduction {
     if (building.loading !== null || building.queue.length || building.technology) return false
     if (!isExpectedTrainingUnit(villager, type) || !canUnitTrainInto(building, villager, type)) return false
     const unit = building.owner.config.units[type]
-    if (!canAfford(building.owner, unit.cost)) {
+    const cost = getTrainingCost(building, unit, villager, type)
+    if (!canAfford(building.owner, cost)) {
       if (building.owner.isPlayed) {
         building.context.menu.showMessage(
-          t('needMore', { resource: formatMissingResources(building.owner, unit.cost) }),
+          t('needMore', { resource: formatMissingResources(building.owner, cost) }),
           'warning'
         )
         building.context.menu.updateTopbar()
@@ -279,13 +307,13 @@ export class BuildingProduction {
       this.clearActiveTraining(villager)
       return false
     }
-    payCost(building.owner, unit.cost)
+    payCost(building.owner, cost)
     if (building.owner.isPlayed) building.context.menu.updateTopbar()
     building.trainingUnit = villager
     building.trainingType = type
     building.isUsedBy = villager
     this.removeTraineeForTraining(villager)
-    return Boolean(this.buyUnit(type, true, false, undefined, villager))
+    return Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, villager, type), villager))
   }
 
   requestVillagerTraining(type: string, extra?: UnitCreationExtra, villagerOverride?: UnitEntity | null): boolean {
@@ -419,7 +447,7 @@ export class BuildingProduction {
               }
             }
           },
-          unit.trainingTime ?? 0,
+          getProductionTime(building, unit, trainee, type),
           'building.production'
         )
       }
@@ -433,7 +461,7 @@ export class BuildingProduction {
     if (!unit) return false
     if (isTraineeTrainingType(building, type)) {
       if (building.loading !== null && building.queue[0] === type) {
-        return this.cancelActiveTraining(type)
+        return false
       }
       if (building.loading !== null || building.queue.length) return false
       return this.cancelPendingTraining(type)

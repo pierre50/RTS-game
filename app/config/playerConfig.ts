@@ -843,7 +843,20 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
     units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
   },
   Stable: {
-    units: [],
+    units: [
+      'Clubman',
+      'Axeman',
+      'ShortSwordsman',
+      'BroadSwordsman',
+      'LongSwordsman',
+      'Hoplite',
+      'Phalanx',
+      'Centurion',
+      'Bowman',
+      'ImprovedBowman',
+      'CompositeBowman',
+    ],
+    mountingTime: 20,
   },
   SiegeWorkshop: {
     units: ['StoneThrower', 'Catapult', 'Ballista'],

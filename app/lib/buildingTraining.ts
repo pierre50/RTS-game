@@ -17,12 +17,18 @@ export function isTraineeTrainingType(building: BuildingEntity, type: string | u
 
 export function canUnitTrainInto(building: BuildingEntity, unit: UnitEntity, type: string | undefined): boolean {
   if (!type || !building.units?.includes(type)) return false
+  if (building.type === BUILDING_TYPES.stable) {
+    return unit.type !== UNIT_TYPES.villager && !unit.mountedOnHorse && unit.type === type
+  }
   if (unit.type === UNIT_TYPES.villager) return isTraineeTrainingType(building, type)
   return canUpgradeUnitAtBuilding(building.type, unit.type, type)
 }
 
 export function getTrainingTargetForUnit(building: BuildingEntity, unit: UnitEntity): string | null {
   if (!building.owner || building.owner !== unit.owner || !building.isBuilt || building.isDead) return null
+  if (building.type === BUILDING_TYPES.stable) {
+    return canUnitTrainInto(building, unit, unit.type) ? unit.type : null
+  }
   if (unit.type !== UNIT_TYPES.villager) {
     const upgradeType = getUnitUpgradeTargetForBuilding(building.type, unit.type)
     return upgradeType && building.units?.includes(upgradeType) ? upgradeType : null

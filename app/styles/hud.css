@@ -105,11 +105,18 @@
 }
 
 .hero-status-bar {
+  --hero-health-percent: 100%;
   position: relative;
   height: 20px;
   overflow: hidden;
   border: 2px solid var(--status-health-border);
-  background: var(--status-health-background);
+  background: linear-gradient(
+    90deg,
+    var(--status-progress-bottom) 0%,
+    var(--status-progress-top) var(--hero-health-percent),
+    var(--status-health-bottom) var(--hero-health-percent),
+    var(--status-health-top) 100%
+  );
   box-shadow: var(--status-health-inset-shadow);
 }
 

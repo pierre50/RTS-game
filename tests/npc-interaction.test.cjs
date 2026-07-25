@@ -74,7 +74,7 @@ const constants = {
   },
 }
 
-function loadNpcInteraction(target) {
+function loadNpcInteraction(target, overrides = {}) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,
     './buildingTraining': {
@@ -97,6 +97,7 @@ function loadNpcInteraction(target) {
     './maths': {
       getInstanceDegree: () => 0,
     },
+    ...overrides,
   })
 }
 
@@ -235,6 +236,60 @@ test('"aller vers" sends a communicated villager into a temple to train a priest
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['train', constants.UNIT_TYPES.priest, undefined, npc]])
+})
+
+test('"aller vers" warns instead of moving a villager to an incompatible own building', () => {
+  const calls = []
+  const owner = {
+    config: {
+      units: {},
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Stable',
+    units: ['Clubman'],
+    x: 100,
+    y: 100,
+    requestVillagerTraining() {
+      throw new Error('villager must not enter incompatible stable training')
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
+    './buildingTraining': {
+      getTrainingTargetForUnit: () => null,
+    },
+    './lang': {
+      t: (key, vars) => (vars ? `${key}:${vars.unit}:${vars.building}` : key),
+    },
+  })
+  const npc = {
+    context: {
+      map: { grid: [] },
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+      },
+    },
+    i: 1,
+    j: 1,
+    owner,
+    sendTo() {
+      calls.push(['move'])
+    },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['message', 'unitCannotEnterBuilding:Villager:Stable', 'warning']])
 })
 
 test('"aller vers" sends upgradeable specialized units into a training building', () => {

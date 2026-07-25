@@ -73,8 +73,10 @@ function loadModule(relativePath, mocks) {
 
 const constants = {
   ACTION_TYPES: {
+    attack: 'attack',
     build: 'build',
     chopwood: 'chopwood',
+    heal: 'heal',
     delivery: 'delivery',
     farm: 'farm',
     fishing: 'fishing',
@@ -252,6 +254,30 @@ test('hero-controlled unit action range can satisfy destination checks before st
   }
 
   assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.fishing, fish), true)
+})
+
+test('ranged units must contact buildings before entering them', () => {
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      instanceContactInstance: () => false,
+      instancesDistance: () => 4,
+    },
+  })
+  const unit = {
+    type: 'Bowman',
+    range: 5,
+  }
+  const stable = {
+    family: constants.FAMILY_TYPES.building,
+    type: 'Stable',
+    i: 2,
+    j: 0,
+    isDestroyed: false,
+  }
+
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.build, stable), false)
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.attack, stable), true)
 })
 
 test('converted units stop old orders, switch owner, and refresh idle color', () => {

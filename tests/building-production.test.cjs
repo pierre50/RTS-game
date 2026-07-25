@@ -940,6 +940,134 @@ test('active military training cannot be cancelled after the unit entered the bu
   assert.equal(building.owner.food, 15)
 })
 
+test('stable training remounts the same unit type without charging unit cost or population', () => {
+  const calls = []
+  const spawnCell = { i: 2, j: 2, category: 'Land', solid: false }
+  const owner = {
+    food: 50,
+    population: 3,
+    populationMax: 10,
+    selectedUnits: [],
+    units: [],
+    config: {
+      units: {
+        Clubman: { category: 'Infantry', cost: { food: 50 }, trainingTime: 27 },
+      },
+    },
+    createUnit(options) {
+      calls.push(['created', options])
+      return { sendTo() {} }
+    },
+    isPlayed: false,
+  }
+  const map = {
+    instantMode: true,
+    grid: [[spawnCell]],
+    randomItem: items => items[0],
+    removeFromInstanceBucket(unit) {
+      calls.push(['bucketRemoved', unit.type])
+    },
+    removeChild(unit) {
+      calls.push(['removed', unit.type])
+    },
+  }
+  const cell = { i: 1, j: 1, category: 'Land', solid: true, has: null }
+  const clubman = {
+    type: 'Clubman',
+    hitPoints: 32,
+    experience: { combat: 12 },
+    trainingTargetType: 'Clubman',
+    owner,
+    context: { map },
+    currentCell: cell,
+    path: [],
+    stopInterval() {},
+    stopTimeout() {},
+    unselect() {},
+    destroy() {
+      calls.push(['destroyed', this.type])
+    },
+  }
+  cell.has = clubman
+  owner.units.push(clubman)
+  const building = {
+    type: 'Stable',
+    i: 0,
+    j: 0,
+    size: 1,
+    mountingTime: 20,
+    isBuilt: true,
+    isDead: false,
+    queue: [],
+    loading: null,
+    technology: null,
+    units: ['Clubman'],
+    context: { map, menu: {} },
+    owner,
+    startInterval(callback, delay) {
+      calls.push(['intervalDelay', delay])
+      callback()
+    },
+    stopInterval() {
+      calls.push(['stopInterval'])
+    },
+  }
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: (owner, cost = {}) => Object.entries(cost).every(([key, amount]) => owner[key] >= amount),
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeCellAroundPoint: () => spawnCell,
+      getTexture: () => null,
+      payCost: (targetOwner, cost = {}) => {
+        for (const [key, amount] of Object.entries(cost)) targetOwner[key] -= amount
+      },
+      refundCost: () => {},
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildingTraining': buildingTrainingMock,
+    '../../lib/unitUpgrades': {
+      canUpgradeUnitAtBuilding: () => true,
+    },
+  })
+
+  assert.equal(new BuildingProduction(building).startTrainingWithVillager(clubman), true)
+  assert.equal(owner.food, 50)
+  assert.equal(owner.population, 3)
+  assert.deepEqual(calls.find(call => call[0] === 'intervalDelay'), ['intervalDelay', 20])
+  assert.deepEqual(calls.find(call => call[0] === 'created'), [
+    'created',
+    {
+      i: 2,
+      j: 2,
+      type: 'Clubman',
+      mountedOnHorse: true,
+      hitPoints: 32,
+      experience: { combat: 12 },
+    },
+  ])
+})
+
 test('arrived military unit is consumed and upgraded unit reuses the same population slot', () => {
   const spawnCell = { i: 2, j: 2, category: 'Land', solid: false }
   const calls = []

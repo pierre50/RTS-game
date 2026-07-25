@@ -28,9 +28,29 @@ function loadProjectile() {
   }
   const mocks = {
     'pixi.js': {
-      AnimatedSprite: class {},
-      Assets: { cache: { get: () => null } },
+      AnimatedSprite: class {
+        constructor(textures = []) {
+          this.textures = textures
+          this.anchor = { x: 0, y: 0, set: (x, y = x) => ((this.anchor.x = x), (this.anchor.y = y)) }
+          this.scale = { x: 1, y: 1, set: (x, y = x) => ((this.scale.x = x), (this.scale.y = y)) }
+          this.currentFrame = 0
+          this.playing = false
+        }
+        play() {
+          this.playing = true
+        }
+        gotoAndStop(frame) {
+          this.currentFrame = frame
+          this.playing = false
+        }
+        gotoAndPlay(frame) {
+          this.currentFrame = frame
+          this.playing = true
+        }
+      },
+      Assets: { cache: { get: () => ({ textures: { '0.png': { defaultAnchor: { x: 0.5, y: 0.5 } } } }) } },
       Container: class {
+        addChild() {}
         destroy() {}
       },
     },
@@ -102,4 +122,62 @@ test('projectile collision candidates include enemy buildings', () => {
   const candidates = projectile.getCollisionCandidates()
 
   assert.deepEqual(candidates, [enemyBuilding, enemyUnit, gaiaAnimal])
+})
+
+test('mounted archers spawn arrows from the visual rider height', () => {
+  const Projectile = loadProjectile()
+  const owner = {
+    family: 'unit',
+    type: 'Bowman',
+    owner: {
+      label: 'player',
+      config: {
+        projectiles: {
+          Arrow: {
+            assets: 'projectiles/arrow',
+            size: 3,
+            speed: 14,
+            spawnOffsetY: 10,
+          },
+        },
+      },
+    },
+    x: 100,
+    y: 100,
+    z: 0,
+    width: 32,
+    height: 48,
+    range: 5,
+    sprite: { height: 48 },
+    getMountedRiderY: () => -20,
+  }
+  const target = {
+    family: 'unit',
+    type: 'Clubman',
+    owner: { label: 'enemy' },
+    x: 200,
+    y: 180,
+    z: 0,
+    width: 32,
+    height: 48,
+    hitPoints: 10,
+    getMountedRiderY: () => -16,
+  }
+  const projectile = new Projectile(
+    {
+      owner,
+      target,
+      type: 'Arrow',
+      destination: { x: target.x, y: target.y },
+    },
+    {
+      app: {},
+      players: [],
+      map: {},
+      scheduler: { add: () => null },
+    }
+  )
+
+  assert.equal(projectile.y, 66)
+  assert.equal(projectile.destinationPoint.y, 164)
 })

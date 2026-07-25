@@ -158,7 +158,6 @@
     "rateOfFire": 1.5,
     "trainingTime": 27,
     "icon": "002_50730",
-    "mountedOnHorse": true,
     "meleeAttack": 3,
     "meleeArmor": 0,
     "pierceArmor": 0,

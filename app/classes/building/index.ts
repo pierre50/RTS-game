@@ -42,6 +42,7 @@ import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { getTrainingTargetForUnit } from '../../lib/buildingTraining'
 import { canUseRtsEntityPointer } from '../../lib/unitControl'
+import { t } from '../../lib/lang'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -101,6 +102,7 @@ export class Building extends Instance implements BuildingEntity {
   totalQuantity?: number
   units?: string[]
   technologies?: string[]
+  mountingTime?: number
   interface!: EntityInterfaceLike
   assetType?: string
   accept?: string[]
@@ -287,6 +289,7 @@ export class Building extends Instance implements BuildingEntity {
               return
             }
           } else if (player.selectedUnits) {
+            const selectedUnitCount = player.selectedUnits.length
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               const accept =
@@ -322,6 +325,17 @@ export class Building extends Instance implements BuildingEntity {
               const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
               playSoundCue(voice)
               return
+            }
+            if (selectedUnitCount > 0 && this.owner.isPlayed) {
+              const firstUnit = player.selectedUnits[0]
+              const messageKey = selectedUnitCount === 1 ? 'unitCannotEnterBuilding' : 'unitsCannotEnterBuilding'
+              menu.showMessage(
+                t(messageKey, {
+                  unit: t(firstUnit?.type ?? ''),
+                  building: t(this.type),
+                }),
+                'warning'
+              )
             }
           }
           this.selectForPlayedOwner()

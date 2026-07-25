@@ -118,6 +118,7 @@ function loadControls() {
       setVirtualCursorPosition: () => {},
     },
     '../lib/unitControl': { hasRtsCommandableUnits: units => Boolean(units?.length) },
+    '../lib/lang': { t: (key, vars) => (vars ? `${key}:${vars.unit ?? ''}:${vars.building ?? ''}` : key) },
     '../constants': {
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },
       IS_MOBILE: false,
@@ -187,6 +188,10 @@ function createControls() {
       },
     },
     menu: {
+      messages: [],
+      showMessage(message, type) {
+        this.messages.push([message, type])
+      },
       updateActionTarget() {},
     },
   })
@@ -242,6 +247,37 @@ test('falls back to native pointer coordinates when no DOM target is available',
       }),
       false
     )
+  } finally {
+    restore()
+  }
+})
+
+test('shows a warning when selected units click an occupied own building cell', () => {
+  const { controls, restore } = createControls()
+  try {
+    const stable = {
+      family: 'building',
+      owner: { isPlayed: true },
+      type: 'Stable',
+    }
+    controls.context.player.selectedUnits = [{ type: 'Villager' }]
+    controls.context.map.grid = [
+      [
+        {
+          has: stable,
+          solid: true,
+          visible: true,
+        },
+      ],
+    ]
+
+    controls.onMouseUp({
+      pageX: 10,
+      pageY: 10,
+      target: new MockElement({ inGame: true }),
+    })
+
+    assert.deepEqual(controls.context.menu.messages, [['unitCannotEnterBuilding:Villager:Stable', 'warning']])
   } finally {
     restore()
   }

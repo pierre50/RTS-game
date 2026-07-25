@@ -205,7 +205,19 @@
     "cost": {
       "wood": 150
     },
-    "units": [],
+    "units": [
+      "Clubman",
+      "Axeman",
+      "ShortSwordsman",
+      "BroadSwordsman",
+      "LongSwordsman",
+      "Hoplite",
+      "Phalanx",
+      "Centurion",
+      "Bowman",
+      "ImprovedBowman",
+      "CompositeBowman"
+    ],
     "technologies": [],
     "sounds": {
       "create": "horse-4",
@@ -219,7 +231,8 @@
         "building-destroyed-2",
         "building-destroyed-3"
       ]
-    }
+    },
+    "mountingTime": 20
   },
   "Farm": {
     "size": 3,

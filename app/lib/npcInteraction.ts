@@ -4,6 +4,7 @@ import { createIsoSelectionMarker } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
+import { t } from './lang'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -420,6 +421,14 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
           npc.sendTo?.(cell)
           return
         }
+        npc.context?.menu?.showMessage(
+          t('unitCannotEnterBuilding', {
+            unit: t(npc.type),
+            building: t(building.type),
+          }),
+          'warning'
+        )
+        return
       }
     }
     if (target.family === FAMILY_TYPES.animal) {

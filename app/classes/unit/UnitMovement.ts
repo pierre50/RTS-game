@@ -487,10 +487,15 @@ export class UnitMovement {
     const unit = this.unit
     if (!action || !dest) return false
     if (isRuntimeEntity(dest) && isHeroActionInRange(unit, action, dest)) return true
+    const usesActionRange =
+      action === ACTION_TYPES.attack ||
+      action === ACTION_TYPES.convert ||
+      action === ACTION_TYPES.heal ||
+      (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt)
     const effectiveRange =
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
     if (
-      (unit.type !== UNIT_TYPES.villager || action === ACTION_TYPES.hunt) &&
+      usesActionRange &&
       effectiveRange &&
       instancesDistance(unit, dest) <= effectiveRange
     ) {
