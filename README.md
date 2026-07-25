@@ -1,6 +1,6 @@
 # Dawn of Empires
 
-Isometric RTS in PixiJS, with a web build via Webpack and desktop packaging via Electron.
+Isometric strategy adventure in PixiJS, with a web build via Webpack and desktop packaging via Electron.
 
 ## Requirements
 

@@ -26,6 +26,11 @@ function loadModule(relativePath, mocks) {
     './lang': {
       t: key => key,
     },
+    './buildingFeedback': {
+      showUnitCannotEnterBuildingMessage: (unit, building) => {
+        unit.context?.menu?.showMessage(`unitCannotEnterBuilding:${unit.type}:${building.type}`, 'warning')
+      },
+    },
     './unitUpgrades': {
       getUnitUpgradeTargetForBuilding: () => null,
     },
@@ -178,7 +183,7 @@ test('"aller vers" sends a communicated villager into a training building', () =
     units: ['Clubman'],
     x: 100,
     y: 100,
-    requestVillagerTraining(type, extra, villager) {
+    requestUnitTraining(type, extra, villager) {
       calls.push(['train', type, extra, villager])
       return true
     },
@@ -218,7 +223,7 @@ test('"aller vers" sends a communicated villager into a temple to train a priest
     units: [constants.UNIT_TYPES.priest],
     x: 100,
     y: 100,
-    requestVillagerTraining(type, extra, villager) {
+    requestUnitTraining(type, extra, villager) {
       calls.push(['train', type, extra, villager])
       return true
     },
@@ -257,7 +262,7 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     units: ['Clubman'],
     x: 100,
     y: 100,
-    requestVillagerTraining() {
+    requestUnitTraining() {
       throw new Error('villager must not enter incompatible stable training')
     },
   }
@@ -313,7 +318,7 @@ test('"aller vers" sends upgradeable specialized units into a training building'
     units: ['ShortSwordsman'],
     x: 100,
     y: 100,
-    requestVillagerTraining(type, extra, unit) {
+    requestUnitTraining(type, extra, unit) {
       calls.push(['train', type, extra, unit])
       return true
     },
@@ -363,7 +368,7 @@ test('"aller vers" moves specialized units when no building upgrade is available
     units: ['Clubman'],
     x: 100,
     y: 100,
-    requestVillagerTraining() {
+    requestUnitTraining() {
       throw new Error('non-upgradeable specialized units must not enter training')
     },
   }

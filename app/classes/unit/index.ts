@@ -1136,8 +1136,8 @@ export class Unit extends Instance implements UnitEntity {
 
   handleChangeDest() {
     const dest = this.dest
-    if (dest && 'cancelTrainingForVillager' in dest) {
-      dest.cancelTrainingForVillager?.(this)
+    if (dest && 'cancelTrainingForUnit' in dest) {
+      dest.cancelTrainingForUnit?.(this)
     }
     if (dest && 'isUsedBy' in dest && dest.isUsedBy === this) {
       dest.isUsedBy = null

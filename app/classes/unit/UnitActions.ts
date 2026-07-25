@@ -764,7 +764,7 @@ export class UnitActions {
           return
         }
         const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-        if (!dest?.startTrainingWithVillager?.(unit)) {
+        if (!dest?.startTrainingWithUnit?.(unit)) {
           const buildingBusy = Boolean(
             dest && (dest.loading !== null || dest.queue?.length || dest.technology || dest.trainingUnit)
           )

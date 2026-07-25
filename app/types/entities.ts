@@ -317,10 +317,10 @@ export interface BuildingEntity extends RuntimeEntityBase {
   displayPopulation?: boolean
   loading?: number | null
   buyUnit?: (type: string, alreadyPaid?: boolean, force?: boolean, extra?: UnitCreationExtra) => boolean | void
-  requestVillagerTraining?: (type: string, extra?: UnitCreationExtra, villager?: UnitEntity | null) => boolean
+  requestUnitTraining?: (type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null) => boolean
   cancelUnits?: (type: string) => void
-  startTrainingWithVillager?: (villager: UnitEntity) => boolean
-  cancelTrainingForVillager?: (villager: UnitEntity) => boolean
+  startTrainingWithUnit?: (trainee: UnitEntity) => boolean
+  cancelTrainingForUnit?: (trainee: UnitEntity) => boolean
   buyTechnology?: (type: string) => void
   cancelTechnology?: () => void
   upgrade?: (target: string) => void

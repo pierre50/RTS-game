@@ -4,7 +4,7 @@ import { createIsoSelectionMarker } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
-import { t } from './lang'
+import { showUnitCannotEnterBuildingMessage } from './buildingFeedback'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -394,8 +394,9 @@ export function resolveHoverTarget(
   )
 }
 
-// "Aller vers": dispatches a single npc to a clicked target — gather if it's a resource, help
-// build if it's an unfinished building, otherwise a plain move (mirrors normal RTS click-to-command).
+// "Aller vers": primary player command path for communicated NPCs. Dispatches a single NPC
+// to gather resources, help build, train/enter compatible buildings, attack valid targets,
+// or move to empty ground.
 function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): void {
   resetNpcDirectives(npc)
   if (target) {
@@ -414,20 +415,14 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
       if (building.owner === npc.owner && building.isBuilt) {
         const trainingType = getTrainingTargetForUnit(building, npc)
         if (trainingType) {
-          building.requestVillagerTraining?.(trainingType, undefined, npc)
+          building.requestUnitTraining?.(trainingType, undefined, npc)
           return
         }
         if (npc.type !== UNIT_TYPES.villager) {
           npc.sendTo?.(cell)
           return
         }
-        npc.context?.menu?.showMessage(
-          t('unitCannotEnterBuilding', {
-            unit: t(npc.type),
-            building: t(building.type),
-          }),
-          'warning'
-        )
+        showUnitCannotEnterBuildingMessage(npc, building)
         return
       }
     }

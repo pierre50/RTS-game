@@ -212,12 +212,12 @@ export class BuildingProduction {
     if (!trainee || building.isUsedBy === trainee) building.isUsedBy = null
   }
 
-  cancelTrainingForVillager(villager: UnitEntity): boolean {
+  cancelTrainingForUnit(trainee: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
-    const type = villager.trainingTargetType
-    if (!type || !canUnitTrainInto(building, villager, type)) return false
-    villager.trainingTargetType = null
-    if (building.trainingUnit === villager) this.clearActiveTraining(villager)
+    const type = trainee.trainingTargetType
+    if (!type || !canUnitTrainInto(building, trainee, type)) return false
+    trainee.trainingTargetType = null
+    if (building.trainingUnit === trainee) this.clearActiveTraining(trainee)
     if (building.owner.isPlayed) refreshOpenBuildingMenu(building)
     return true
   }
@@ -287,14 +287,14 @@ export class BuildingProduction {
     return true
   }
 
-  startTrainingWithVillager(villager: UnitEntity): boolean {
+  startTrainingWithUnit(trainee: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
-    const type = villager.trainingTargetType
+    const type = trainee.trainingTargetType
     if (!type || !isTraineeTrainingType(building, type)) return false
     if (building.loading !== null || building.queue.length || building.technology) return false
-    if (!isExpectedTrainingUnit(villager, type) || !canUnitTrainInto(building, villager, type)) return false
+    if (!isExpectedTrainingUnit(trainee, type) || !canUnitTrainInto(building, trainee, type)) return false
     const unit = building.owner.config.units[type]
-    const cost = getTrainingCost(building, unit, villager, type)
+    const cost = getTrainingCost(building, unit, trainee, type)
     if (!canAfford(building.owner, cost)) {
       if (building.owner.isPlayed) {
         building.context.menu.showMessage(
@@ -303,20 +303,20 @@ export class BuildingProduction {
         )
         building.context.menu.updateTopbar()
       }
-      villager.trainingTargetType = null
-      this.clearActiveTraining(villager)
+      trainee.trainingTargetType = null
+      this.clearActiveTraining(trainee)
       return false
     }
     payCost(building.owner, cost)
     if (building.owner.isPlayed) building.context.menu.updateTopbar()
-    building.trainingUnit = villager
+    building.trainingUnit = trainee
     building.trainingType = type
-    building.isUsedBy = villager
-    this.removeTraineeForTraining(villager)
-    return Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, villager, type), villager))
+    building.isUsedBy = trainee
+    this.removeTraineeForTraining(trainee)
+    return Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, trainee, type), trainee))
   }
 
-  requestVillagerTraining(type: string, extra?: UnitCreationExtra, villagerOverride?: UnitEntity | null): boolean {
+  requestUnitTraining(type: string, extra?: UnitCreationExtra, traineeOverride?: UnitEntity | null): boolean {
     const building = getTrainingBuilding(this.building)
     const {
       context: { menu },
@@ -329,22 +329,22 @@ export class BuildingProduction {
         menu.showMessage(t('buildingAlreadyTraining', { building: t(building.type) }), 'warning')
       return false
     }
-    const villager = villagerOverride || this.findTrainingUnit(type)
-    if (!villager) {
-      if (building.owner.isPlayed) menu.showMessage(t('noVillagerToTrain'), 'warning')
+    const trainee = traineeOverride || this.findTrainingUnit(type)
+    if (!trainee) {
+      if (building.owner.isPlayed) menu.showMessage(t('noTrainingUnitAvailable'), 'warning')
       return false
     }
-    if (!isAvailableTrainingUnit(villager) || !canUnitTrainInto(building, villager, type)) {
-      if (building.owner.isPlayed) menu.showMessage(t('onlyVillagersCanTrain'), 'warning')
+    if (!isAvailableTrainingUnit(trainee) || !canUnitTrainInto(building, trainee, type)) {
+      if (building.owner.isPlayed) menu.showMessage(t('onlyEligibleUnitsCanTrain'), 'warning')
       return false
     }
-    villager.trainingTargetType = type
+    trainee.trainingTargetType = type
     if (building.owner.isPlayed) {
       menu.updateButtonContent(type, '')
       menu.toggleQueuedActionCancel(type, true)
       refreshOpenBuildingMenu(building)
     }
-    villager.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
+    trainee.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
     return true
   }
 
@@ -361,9 +361,9 @@ export class BuildingProduction {
     } = building
     let success = false
     const unit = building.owner.config.units[type]
-    const villagerTraining = isTraineeTrainingType(building, type)
-    if (villagerTraining && !alreadyPaid && !force) {
-      return this.requestVillagerTraining(type, extra)
+    const traineeTraining = isTraineeTrainingType(building, type)
+    if (traineeTraining && !alreadyPaid && !force) {
+      return this.requestUnitTraining(type, extra)
     }
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
@@ -382,7 +382,7 @@ export class BuildingProduction {
           building.owner.isPlayed && menu.updateTopbar()
           success = true
         }
-      } else if (villagerTraining && trainee && !building.queue.length) {
+      } else if (traineeTraining && trainee && !building.queue.length) {
         building.queue.push(type)
         success = true
       }

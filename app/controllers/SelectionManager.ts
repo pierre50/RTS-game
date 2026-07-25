@@ -8,6 +8,8 @@ import type { CommandSound, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { InteractiveSprite } from '../types/pixi'
 
+// Legacy drag-select/click-to-move controller. Kept behind unitControl's RTS gates for
+// debug/editor-style flows while hero communication owns normal gameplay commands.
 export class SelectionManager {
   controls: ControlsLike
 
@@ -139,13 +141,13 @@ export class SelectionManager {
     const { minX, minY, maxX, maxY } = this.getSelectionGridBounds(commandableUnits)
     const centerX = minX + Math.round((maxX - minX) / 2)
     const centerY = minY + Math.round((maxY - minY) / 2)
-    let hasSentVillager = false
+    let hasSentWorker = false
     let hasSentSoldier = false
     for (let u = 0; u < commandableUnits.length; u++) {
       const unit = commandableUnits[u]
       const finalX = cell.i + (unit.i - centerX)
       const finalY = cell.j + (unit.j - centerY)
-      if (unit.type === UNIT_TYPES.villager) hasSentVillager = true
+      if (unit.type === UNIT_TYPES.villager) hasSentWorker = true
       else hasSentSoldier = true
       if (map.grid[finalX] && map.grid[finalX][finalY]) {
         unit.sendTo?.(map.grid[finalX][finalY])
@@ -160,7 +162,7 @@ export class SelectionManager {
     }
     if (hasSentSoldier) {
       playSoundCue(SOUND_CUES.unit.militaryCommand)
-    } else if (hasSentVillager) {
+    } else if (hasSentWorker) {
       playSoundCue(commandableUnits.find((unit: UnitEntity) => unit.type === UNIT_TYPES.villager)?.sounds?.command)
     }
   }

@@ -570,7 +570,7 @@ test('military training is first arrived first served', () => {
   assert.equal(villagerB.trainingTargetType, 'Axeman')
 
   building.startInterval = () => {}
-  assert.equal(production.startTrainingWithVillager(villagerB), true)
+  assert.equal(production.startTrainingWithUnit(villagerB), true)
   assert.equal(building.trainingUnit, villagerB)
   assert.equal(building.trainingType, 'Axeman')
   assert.equal(building.owner.food, 35)
@@ -786,7 +786,7 @@ test('trainee training updates loading even when the building is not classically
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(bowman), true)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), true)
   assert.deepEqual(calls, [
     ['loading', 0],
     ['loading', 1],
@@ -874,7 +874,7 @@ test('missing resources for a unit evolution list the exact resources', () => {
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(bowman), false)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), false)
   assert.deepEqual(calls[0], ['message', 'needMore:food, wood', 'warning'])
 })
 
@@ -1051,7 +1051,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(clubman), true)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(clubman), true)
   assert.equal(owner.food, 50)
   assert.equal(owner.population, 3)
   assert.deepEqual(calls.find(call => call[0] === 'intervalDelay'), ['intervalDelay', 20])
@@ -1179,7 +1179,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(bowman), true)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), true)
   assert.equal(owner.population, 1)
   assert.equal(owner.food, 20)
   assert.equal(owner.wood, 10)
@@ -1298,7 +1298,7 @@ test('failed trainee placement clears active military training state', () => {
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(villager), true)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)
   assert.equal(building.loading, null)
   assert.deepEqual(building.queue, [])
   assert.equal(building.trainingUnit, null)
@@ -1416,7 +1416,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
     },
   })
 
-  assert.equal(new BuildingProduction(building).startTrainingWithVillager(villager), true)
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)
   assert.equal(owner.population, 1)
   assert.equal(owner.food, 0)
   assert.equal(owner.units.length, 0)

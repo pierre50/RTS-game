@@ -1,6 +1,9 @@
 import type { ControlsLike } from '../types/context'
 import type { UnitControlMode, UnitEntity } from '../types/entities'
 
+// Legacy RTS input helpers. Hero communication is the primary player command path now,
+// but these gates keep old click/drag selection code inert unless explicitly re-enabled.
+
 export function setUnitControlMode(unit: UnitEntity, controlMode: UnitControlMode): void {
   unit.controlMode = controlMode
 }

@@ -22,6 +22,9 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
+    if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
+    if (request === './maths') return { getReliefOffset: () => 0 }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -255,6 +258,7 @@ test('attacker units show alert feedback when detection starts an attack', () =>
     },
     '../Projectile': { Projectile: class {} },
     '../../lib/combatFeedback': {
+      showAggressionFeedback: () => {},
       showAlertFeedback: unit => calls.push(['alert', unit.label]),
       showDamageFeedback: () => {},
     },

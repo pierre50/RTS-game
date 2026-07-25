@@ -42,7 +42,6 @@ import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { getTrainingTargetForUnit } from '../../lib/buildingTraining'
 import { canUseRtsEntityPointer } from '../../lib/unitControl'
-import { t } from '../../lib/lang'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -260,7 +259,7 @@ export class Building extends Instance implements BuildingEntity {
         if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
           return
         }
-        let hasSentVillager = false
+        let hasSentWorker = false
         let hasSentOther = false
         controls.mouse.prevent = true
         if (this.owner.isPlayed) {
@@ -269,7 +268,7 @@ export class Building extends Instance implements BuildingEntity {
               const unit = player.selectedUnits[i]
               if (unit.type === UNIT_TYPES.villager) {
                 if (getActionCondition(unit, this, ACTION_TYPES.build)) {
-                  hasSentVillager = true
+                  hasSentWorker = true
                   unit.sendToBuilding(this)
                 }
               } else {
@@ -277,19 +276,18 @@ export class Building extends Instance implements BuildingEntity {
                 hasSentOther = true
               }
             }
-            if (hasSentVillager) {
+            if (hasSentWorker) {
               drawInstanceBlinkingSelection(this)
             }
             if (hasSentOther) {
               playSoundCue(SOUND_CUES.unit.militaryCommand)
               return
-            } else if (hasSentVillager) {
+            } else if (hasSentWorker) {
               const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
               playSoundCue(voice)
               return
             }
           } else if (player.selectedUnits) {
-            const selectedUnitCount = player.selectedUnits.length
             for (let i = 0; i < player.selectedUnits.length; i++) {
               const unit = player.selectedUnits[i]
               const accept =
@@ -298,11 +296,11 @@ export class Building extends Instance implements BuildingEntity {
                   : this.type === BUILDING_TYPES.townCenter ||
                     (this.accept && this.accept.includes(unit.loadingType ?? ''))
               if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.build)) {
-                hasSentVillager = true
+                hasSentWorker = true
                 unit.previousDest = null
                 unit.sendToBuilding(this)
               } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.farm)) {
-                hasSentVillager = true
+                hasSentWorker = true
                 unit.sendToFarm(this)
               } else if (
                 accept &&
@@ -310,32 +308,21 @@ export class Building extends Instance implements BuildingEntity {
                   buildingTypes: [this.type],
                 })
               ) {
-                hasSentVillager = true
+                hasSentWorker = true
                 unit.previousDest = null
                 unit.sendTo(this, ACTION_TYPES.delivery)
               } else {
                 const trainingType = getTrainingTargetForUnit(this, unit)
-                if (trainingType && this.requestVillagerTraining(trainingType, undefined, unit)) {
-                  hasSentVillager = true
+                if (trainingType && this.requestUnitTraining(trainingType, undefined, unit)) {
+                  hasSentWorker = true
                 }
               }
             }
-            if (hasSentVillager) {
+            if (hasSentWorker) {
               drawInstanceBlinkingSelection(this)
               const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
               playSoundCue(voice)
               return
-            }
-            if (selectedUnitCount > 0 && this.owner.isPlayed) {
-              const firstUnit = player.selectedUnits[0]
-              const messageKey = selectedUnitCount === 1 ? 'unitCannotEnterBuilding' : 'unitsCannotEnterBuilding'
-              menu.showMessage(
-                t(messageKey, {
-                  unit: t(firstUnit?.type ?? ''),
-                  building: t(this.type),
-                }),
-                'warning'
-              )
             }
           }
           this.selectForPlayedOwner()
@@ -589,16 +576,16 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
   }
 
-  requestVillagerTraining(type: string, extra?: UnitCreationExtra, villager?: UnitEntity | null): boolean {
-    return this.buildingProduction.requestVillagerTraining(type, extra, villager)
+  requestUnitTraining(type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null): boolean {
+    return this.buildingProduction.requestUnitTraining(type, extra, trainee)
   }
 
-  startTrainingWithVillager(villager: UnitEntity): boolean {
-    return this.buildingProduction.startTrainingWithVillager(villager)
+  startTrainingWithUnit(trainee: UnitEntity): boolean {
+    return this.buildingProduction.startTrainingWithUnit(trainee)
   }
 
-  cancelTrainingForVillager(villager: UnitEntity): boolean {
-    return this.buildingProduction.cancelTrainingForVillager(villager)
+  cancelTrainingForUnit(trainee: UnitEntity): boolean {
+    return this.buildingProduction.cancelTrainingForUnit(trainee)
   }
 
   cancelUnits(type: string): boolean {

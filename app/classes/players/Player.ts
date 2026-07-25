@@ -184,14 +184,14 @@ export class Player implements PlayerLike {
   spawnBuilding(options: BuildingOptions) {
     const building = this.createBuilding(options)
     if (this.isPlayed) {
-      let hasSentVillager = false
+      let hasSentWorker = false
       let hasSentOther = false
 
       for (let i = 0; i < this.selectedUnits.length; i++) {
         const unit = this.selectedUnits[i]
         if (unit.type === UNIT_TYPES.villager) {
           if (getActionCondition(unit, building, ACTION_TYPES.build)) {
-            hasSentVillager = true
+            hasSentWorker = true
             unit.sendToBuilding(building)
           }
         } else {
@@ -199,13 +199,13 @@ export class Player implements PlayerLike {
           hasSentOther = true
         }
       }
-      if (hasSentVillager) {
+      if (hasSentWorker) {
         drawInstanceBlinkingSelection(building)
       }
       if (hasSentOther) {
         playSoundCue(SOUND_CUES.unit.militaryCommand)
         return
-      } else if (hasSentVillager) {
+      } else if (hasSentWorker) {
         const voice = this.config.units.Villager?.sounds?.buildCommand
         playSoundCue(voice)
         return

@@ -213,7 +213,7 @@ export class Animal extends Instance implements AnimalEntity {
       }
       controls.mouse.prevent = true
       let drawDestinationRectangle = false
-      let hasSentVillager = false
+      let hasSentWorker = false
       let hasSentOther = false
 
       if (player.selectedUnits.length) {
@@ -222,11 +222,11 @@ export class Animal extends Instance implements AnimalEntity {
           if (playerUnit.type === UNIT_TYPES.villager) {
             if (getActionCondition(playerUnit, this, ACTION_TYPES.hunt)) {
               playerUnit.sendToHunt(this)
-              hasSentVillager = true
+              hasSentWorker = true
               drawDestinationRectangle = true
             } else if (getActionCondition(playerUnit, this, ACTION_TYPES.takemeat)) {
               playerUnit.sendToTakeMeat(this)
-              hasSentVillager = true
+              hasSentWorker = true
               drawDestinationRectangle = true
             }
           } else if (getActionCondition(playerUnit, this, ACTION_TYPES.attack)) {
@@ -254,7 +254,7 @@ export class Animal extends Instance implements AnimalEntity {
 
       if (hasSentOther) {
         playSoundCue(SOUND_CUES.unit.militaryCommand)
-      } else if (hasSentVillager) {
+      } else if (hasSentWorker) {
         const voice = Assets.cache.get('config').units.Villager.sounds.huntCommand
         playSoundCue(voice)
       }

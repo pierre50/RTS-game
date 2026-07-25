@@ -9,7 +9,6 @@ import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { hasRtsCommandableUnits } from '../lib/unitControl'
-import { t } from '../lib/lang'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { HeroEquippedItem } from '../lib/heroTools'
 import type {
@@ -23,6 +22,8 @@ import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
 
+// Controls still hosts the legacy RTS selection manager for dev/debug compatibility.
+// Normal player orders flow through HeroController + npcInteraction.
 type PointerPoint = { x: number; y: number }
 type PointerPageEvent = ControlPointerEvent & {
   pageX: number
@@ -44,19 +45,6 @@ type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
 const CAMERA_ACTIONS = new Set<ControlBindingAction>(['cameraLeft', 'cameraRight', 'cameraDown', 'cameraUp'])
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
-
-function showCannotEnterBuildingMessage(context: GameContextLike, building: RuntimeEntity): void {
-  const selectedUnits = context.player?.selectedUnits ?? []
-  if (!selectedUnits.length || building.family !== FAMILY_TYPES.building || !building.owner?.isPlayed) return
-  const messageKey = selectedUnits.length === 1 ? 'unitCannotEnterBuilding' : 'unitsCannotEnterBuilding'
-  context.menu?.showMessage(
-    t(messageKey, {
-      unit: t(selectedUnits[0]?.type ?? ''),
-      building: t(building.type),
-    }),
-    'warning'
-  )
-}
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
@@ -750,10 +738,7 @@ export default class Controls extends Container implements ControlsLike {
         } else if (this.rallyPointController.active) {
           this.rallyPointController.handleMouseUp(cell)
         } else if (hasRtsCommandableUnits(player?.selectedUnits)) {
-          if ((cell.solid || cell.has) && cell.visible) {
-            if (cell.has) showCannotEnterBuildingMessage(this.context, cell.has)
-            return
-          }
+          if ((cell.solid || cell.has) && cell.visible) return
           this.selectionManager.handleClick(cell)
         }
       }
