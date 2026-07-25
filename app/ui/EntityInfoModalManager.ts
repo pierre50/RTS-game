@@ -28,6 +28,7 @@ export class EntityInfoModalManager {
   }
 
   open(entity: RuntimeEntity): boolean {
+    if (entity === this.menu.context.controls?.heroUnit) return false
     if (!entity.interface?.info || entity.isDestroyed || entity.isDead) return false
     if (this.modal && this.entity === entity) return true
     this.close()

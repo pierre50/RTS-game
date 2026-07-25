@@ -164,27 +164,6 @@ test('Boat wreck sheets stay non-directional and use sinking animations', () => 
   assert.equal(config.units.Trireme.sheetDirectionCounts.corpseSheet, 1)
 })
 
-test('Chariot uses its own dying and corpse sheets', () => {
-  const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
-    './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
-    '../lib/extra': { EAST_FIRST_EIGHT_DIRECTION_ORDER: [] },
-  })
-  const { config } = createPlayerData(
-    {
-      units: {
-        Chariot: {},
-      },
-      buildings: {},
-      projectiles: {},
-    },
-    {},
-    'Greek'
-  )
-
-  assert.equal(config.units.Chariot.assets.dyingSheet, 'units/chariot/dying')
-  assert.equal(config.units.Chariot.assets.corpseSheet, 'units/chariot/corpse')
-})
-
 test('Asset manifest preloads the sinking sheets used by boats', () => {
   const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.ts', {})
   assert.equal(ASSET_BUNDLES.graphics['boats/wrecks/small'], 'assets/graphics/boats/wrecks/small/texture.json')
@@ -198,10 +177,4 @@ test('Asset manifest preloads the sinking sheets used by boats', () => {
     ASSET_BUNDLES.graphics['boats/fishing-ship/fishing-overlay'],
     'assets/graphics/boats/fishing-ship/fishing-overlay/texture.json'
   )
-})
-
-test('Asset manifest preloads chariot death sheets', () => {
-  const { ASSET_BUNDLES } = loadModule('app/config/assetManifest.ts', {})
-  assert.equal(ASSET_BUNDLES.graphics['units/chariot/dying'], 'assets/graphics/units/chariot/dying/texture.json')
-  assert.equal(ASSET_BUNDLES.graphics['units/chariot/corpse'], 'assets/graphics/units/chariot/corpse/texture.json')
 })

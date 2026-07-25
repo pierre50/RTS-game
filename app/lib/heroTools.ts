@@ -385,23 +385,16 @@ function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
   return deliverToBuilding(hero, target) ? 'delivered' : 'blocked'
 }
 
-function canBeArrowTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (target === hero || target.isDead || target.isDestroyed || (target.hitPoints ?? 0) <= 0) return false
-  return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
-}
-
 function canBeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (target === hero || target.family !== FAMILY_TYPES.unit || target.isDead || target.isDestroyed) return false
+  if (
+    target === hero ||
+    ![FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') ||
+    target.isDead ||
+    target.isDestroyed
+  ) {
+    return false
+  }
   return getActionCondition(hero, target, ACTION_TYPES.attack)
-}
-
-function findArrowTargetInAim(hero: UnitEntity): RuntimeEntity | null {
-  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
-    hero,
-    target => canBeArrowTarget(hero, target),
-    CLICK_TARGET_SEARCH_RANGE
-  )
-  return getDirectionalTarget(hero, candidates)
 }
 
 function findEmptyHandMeleeTargetInAim(hero: UnitEntity): RuntimeEntity | null {
@@ -428,7 +421,11 @@ function getContextActionForTarget(contextAction: HeroContextAction, target: Run
 // interaction (aimed click or plain "e" press) may only fire once the hero is already in
 // place. hero contact tools get a small forgiveness band because the player positions the
 // hero by hand while resource sprites often extend beyond their grid cell.
-function isContextActionTargetReachable(hero: UnitEntity, contextAction: HeroContextAction, target: RuntimeEntity): boolean {
+function isContextActionTargetReachable(
+  hero: UnitEntity,
+  contextAction: HeroContextAction,
+  target: RuntimeEntity
+): boolean {
   const action = getContextActionForTarget(contextAction, target)
   if (!action) return false
   if (isHeroActionInRange(hero, action, target)) return true
@@ -552,9 +549,8 @@ export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolea
   if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
   const previousDirection = degreeToDirection(hero.degree ?? 0)
   hero.degree = getInstanceDegree(hero, destination.x, destination.y)
-  const target = findArrowTargetInAim(hero)
-  hero.heroBowChargeDestination = target ? { x: target.x, y: target.y } : destination
-  hero.heroBowChargeTarget = target
+  hero.heroBowChargeDestination = destination
+  hero.heroBowChargeTarget = null
   if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
     hero.setTextures?.(SHEET_TYPES.action)
     if (hero.heroBowChargeVisualLocked) freezeHeroBowChargeFrame(hero)
@@ -714,7 +710,11 @@ function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): bo
       if (target.selected || target.shouldKeepHealthBarVisible?.()) {
         target.drawHealthBar?.()
         const player = hero.context?.player
-        if (player?.selectedUnit === target || player?.selectedBuilding === target || player?.selectedOther === target) {
+        if (
+          player?.selectedUnit === target ||
+          player?.selectedBuilding === target ||
+          player?.selectedOther === target
+        ) {
           hero.context?.menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)
         }
       }
@@ -739,8 +739,7 @@ export function triggerEquippedItemActionAt(
   const deliveryResult = tryDeliverAt(hero)
   if (deliveryResult === 'delivered') return true
   if (tool === 'bow') {
-    const target = findArrowTargetInAim(hero)
-    return beginHeroBowChargeAt(hero, target ? { x: target.x, y: target.y } : destination, target)
+    return beginHeroBowChargeAt(hero, destination)
   }
   if (tool !== 'interact') return false
   if (deliveryResult === 'blocked') return false

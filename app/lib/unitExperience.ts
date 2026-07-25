@@ -145,7 +145,7 @@ export function grantUnitXp(unit: UnitEntity, category: string | null | undefine
   unit.experience[category] = getUnitXp(unit, category) + Math.round(amount)
   const levelAfter = getUnitLevel(unit, category)
   if (levelAfter > levelBefore) {
-    showLevelUpFeedback(unit, `★ ${t('levelShort')} ${levelAfter}`)
+    showLevelUpFeedback(unit, `${t('levelShort')} ${levelAfter}`)
   }
   syncExperienceInterface(unit, category, levelAfter > levelBefore)
 }

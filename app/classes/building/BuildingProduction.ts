@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
@@ -221,6 +221,45 @@ export class BuildingProduction {
     return true
   }
 
+  ejectTrainee(): void {
+    const building = this.building
+    const {
+      context: { map },
+    } = building
+    const spawnCell = getFreeCellAroundPoint(
+      building.i,
+      building.j,
+      building.size,
+      map.grid,
+      (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
+      (items: RuntimeCell[]) => map.randomItem(items)
+    )
+    if (!spawnCell) return
+    const unitExtra = building.owner.getUnitExtraOptions?.(UNIT_TYPES.villager) || {}
+    building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type: UNIT_TYPES.villager, ...unitExtra })
+  }
+
+  cancelActiveTraining(type: string): boolean {
+    const building = getTrainingBuilding(this.building)
+    if (building.loading === null || building.queue[0] !== type) return false
+    const unit = building.owner.config.units[type]
+    building.stopInterval()
+    building.loading = null
+    building.queue.shift()
+    refundCost(building.owner, unit.cost)
+    this.ejectTrainee()
+    this.clearActiveTraining()
+    if (building.owner.isPlayed) {
+      const { menu } = building.context
+      menu.updateTopbar()
+      menu.updateButtonContent(type, '')
+      menu.toggleQueuedActionCancel(type, false)
+      building.updateInterfaceLoading?.()
+      refreshOpenBuildingMenu(building)
+    }
+    return true
+  }
+
   startTrainingWithVillager(villager: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
     const type = villager.trainingTargetType
@@ -393,6 +432,9 @@ export class BuildingProduction {
     const unit = building.owner.config.units[type]
     if (!unit) return false
     if (isTraineeTrainingType(building, type)) {
+      if (building.loading !== null && building.queue[0] === type) {
+        return this.cancelActiveTraining(type)
+      }
       if (building.loading !== null || building.queue.length) return false
       return this.cancelPendingTraining(type)
     }
@@ -447,53 +489,30 @@ export class BuildingProduction {
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
   }
 
-  buyTechnology(type: string, alreadyPaid?: boolean, force?: boolean): boolean {
+  buyTechnology(type: string, alreadyPaid?: boolean, _force?: boolean): boolean {
     const building = this.building
     const {
-      context: { menu, map },
+      context: { menu },
     } = building
     let success = false
     const config = building.owner.techs[type]
+    const hadQueuedTechnology = building.technology?.type === type
     if (
-      !building.queue.length &&
       building.isBuilt &&
-      (force || building.loading === null) &&
       !building.isDead &&
+      !building.isDestroyed &&
+      !building.owner.technologies.includes(type) &&
       (alreadyPaid || canAfford(building.owner, config.cost))
     ) {
       !alreadyPaid && payCost(building.owner, config.cost)
       success = true
+      if (hadQueuedTechnology) building.loading = null
+      building.technology = null
+      building.owner.unlockTechnology?.(type)
       if (building.owner.isPlayed) {
         menu.updateTopbar()
+        refreshOpenBuildingMenu(building)
       }
-      building.loading = force ? building.loading : 0
-
-      building.technology = { config, type }
-      refreshOpenBuildingMenu(building)
-      building.startInterval(
-        () => {
-          const technology = building.technology
-          if (!technology) return
-          const { type } = technology
-          if ((building.loading ?? 0) >= 100 || map.instantMode) {
-            building.stopInterval()
-            building.loading = null
-            building.technology = null
-            building.owner.unlockTechnology?.(type)
-            if (building.owner.isPlayed) {
-              menu.updateTopbar()
-              refreshOpenBuildingMenu(building)
-            }
-          } else if ((building.loading ?? 0) < 100) {
-            building.loading = (building.loading ?? 0) + 1
-            if (building.owner.isPlayed) {
-              building.updateInterfaceLoading?.()
-            }
-          }
-        },
-        config.researchTime ?? 0,
-        'building.research'
-      )
     }
     return success
   }

@@ -46,7 +46,7 @@ export interface MenuLike {
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   toggleQueuedActionCancel(id: string, enabled: boolean): void
-  getActionUnitButton(type: string): MenuButtonSpec
+  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getHeroTechnologyButtons?(): MenuButtonSpec[]
   getActionRallyPointButton(): MenuButtonSpec

@@ -215,8 +215,8 @@ export default class Menu implements MenuLike {
   getMessage(cost: ResourceAmount): string {
     return this.actionSpecs.getMessage(cost)
   }
-  getActionUnitButton(type: string): MenuButtonSpec {
-    return this.actionSpecs.getActionUnitButton(type)
+  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec {
+    return this.actionSpecs.getActionUnitButton(type, building)
   }
   getActionRallyPointButton(): MenuButtonSpec {
     return this.actionSpecs.getActionRallyPointButton()

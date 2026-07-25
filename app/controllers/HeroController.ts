@@ -217,6 +217,7 @@ export class HeroController {
     if (!unit) return
     updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
     updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
+    unit.updateHealthBarDisplay?.(TARGET_FRAME_MS * frameScale)
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()

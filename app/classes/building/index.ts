@@ -24,6 +24,7 @@ import {
   getBuildingAsset,
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
+  instanceContactInstance,
   canUpdateMinimap,
   updateInstanceVisibility,
   playSoundCue,
@@ -179,7 +180,9 @@ export class Building extends Instance implements BuildingEntity {
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     this.sprite.position.y = this.reliefLift
     this.shadow = this.createShadow()
-    const units = context.editor ? [] : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key))
+    const units = context.editor
+      ? []
+      : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key, this))
     this.interface = {
       info: (element: HTMLElement) => {
         const displayType = this.assetType || (isTower(this) ? getTowerType(this.owner) : this.type)
@@ -240,14 +243,15 @@ export class Building extends Instance implements BuildingEntity {
           controls.mouse.prevent = true
           if (menu.openHeroBuildingMenu?.(this)) {
             this.selectForPlayedOwner()
-          } else {
-            menu.openEntityInfoModal?.(this)
           }
           return
         }
         if (controls.isHeroControlActive?.() && isSecondaryPointerButton(evt)) {
           controls.mouse.prevent = true
-          menu.openEntityInfoModal?.(this)
+          const hero = controls.heroUnit
+          if (hero && instanceContactInstance(hero, this)) {
+            menu.openEntityInfoModal?.(this)
+          }
           return
         }
         if (!canUseRtsEntityPointer(controls)) return

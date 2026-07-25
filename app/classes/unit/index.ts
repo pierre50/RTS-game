@@ -20,6 +20,7 @@ import {
   changeSpriteTexturesColorDirectly,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
+  instanceContactInstance,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
@@ -39,9 +40,11 @@ import {
   unloadTransport,
   getIconPath,
   getSpriteFrameSelection,
+  showAggressionFeedback,
   updateInstanceRenderVisibility,
 } from '../../lib'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
+import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
 import { UnitCommands } from './UnitCommands'
@@ -95,6 +98,15 @@ type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
 }
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
+const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
+const MOUNTED_HORSE_WALKING_SHEET = 'animals/horse/walking'
+const MOUNTED_RIDER_Y_OFFSET = -20
+const MOUNTED_HORSE_BOB: Record<string, number[]> = {
+  north: [0, 1, 2, 1, 0, -1],
+  west: [0, -1, 0, 1, 2, 0],
+  south: [0, 1, 2, 1, 0, -1],
+}
+const MOUNTED_HORSE_DIRECTIONS_IN_FRONT = new Set(['south', 'southwest', 'southeast'])
 const SHADOW_ALPHA = 0.42
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
@@ -189,6 +201,7 @@ export class Unit extends Instance implements UnitEntity {
 
   declare sprite: AnimatedSprite
   shadow: AnimatedSprite | null
+  horseSprite: AnimatedSprite | null
   appearanceLayerSprites: Map<number, AnimatedSprite>
   declare reliefLift: number
   sheetDirectionCounts?: Record<string, number>
@@ -221,7 +234,9 @@ export class Unit extends Instance implements UnitEntity {
   contextAction?: UnitEntity['contextAction']
   currentSheet!: NonNullable<UnitEntity['currentSheet']>
   currentFrame!: NonNullable<UnitEntity['currentFrame']>
+  mountedOnHorse?: UnitEntity['mountedOnHorse']
   actionSheet?: UnitEntity['actionSheet']
+  ridingSheet?: UnitEntity['ridingSheet']
   walkingSheet?: UnitEntity['walkingSheet']
   standingSheet?: UnitEntity['standingSheet']
   loop?: UnitEntity['loop']
@@ -275,6 +290,7 @@ export class Unit extends Instance implements UnitEntity {
     this.unitActions = new UnitActions(this)
     this.unitMovement = new UnitMovement(this)
     this.shadow = null
+    this.horseSprite = null
     this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
     this.reliefLift = 0
@@ -429,6 +445,7 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
     this.shadow = this.createShadow()
     this.addChild(this.shadow, this.sprite)
+    this.setupMountedHorseSprite()
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     if (this.isDead) {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
@@ -505,7 +522,10 @@ export class Unit extends Instance implements UnitEntity {
       if (controls.isHeroControlActive?.()) {
         if (!isSecondaryPointerButton(evt)) return
         controls.mouse.prevent = true
-        menu.openEntityInfoModal?.(this)
+        const hero = controls.heroUnit
+        if (hero && instanceContactInstance(hero, this)) {
+          menu.openEntityInfoModal?.(this)
+        }
         return
       }
       if (!canUseRtsEntityPointer(controls)) return
@@ -722,6 +742,99 @@ export class Unit extends Instance implements UnitEntity {
     }
   }
 
+  getMountedHorseBob(): number {
+    if (!this.mountedOnHorse || !this.horseSprite) return 0
+    const direction = degreeToDirection(this.degree) ?? 'south'
+    const bobDirection = direction.includes('north') ? 'north' : direction.includes('south') ? 'south' : 'west'
+    const bob = MOUNTED_HORSE_BOB[bobDirection]
+    return bob[this.horseSprite.currentFrame % bob.length] ?? 0
+  }
+
+  getMountedRiderY(): number {
+    return this.reliefLift + (this.mountedOnHorse ? MOUNTED_RIDER_Y_OFFSET + this.getMountedHorseBob() : 0)
+  }
+
+  setupMountedHorseSprite() {
+    if (!this.mountedOnHorse || this.horseSprite) return
+    const horseSheet = Assets.cache.get(MOUNTED_HORSE_STANDING_SHEET) as SpritesheetLike | undefined
+    if (!horseSheet?.textures) return
+
+    const { textures } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
+    this.horseSprite = new AnimatedSprite(textures as Texture[])
+    bindAnimatedSpriteToTicker(this.horseSprite, this.context.app)
+    this.horseSprite.label = `${LABEL_TYPES.sprite}-horse`
+    this.horseSprite.eventMode = 'none'
+    this.horseSprite.roundPixels = true
+    this.horseSprite.loop = true
+    this.horseSprite.updateAnchor = true
+    this.horseSprite.onFrameChange = () => this.syncMountedRiderPosition()
+    this.addChildAt(this.horseSprite, Math.max(0, this.getChildIndex(this.sprite)))
+    this.syncMountedHorseSprite()
+  }
+
+  syncMountedRiderPosition() {
+    if (!this.sprite) return
+    const riderY = this.getMountedRiderY()
+    this.sprite.position.y = riderY
+    for (const layerSprite of this.appearanceLayerSprites.values()) {
+      layerSprite.position.y = riderY
+    }
+    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
+    if (healthBar) healthBar.position.y = riderY
+    const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
+    if (powerBar) powerBar.position.y = riderY
+  }
+
+  syncMountedHorseSprite() {
+    if (!this.mountedOnHorse) {
+      this.removeMountedHorseSprite()
+      return
+    }
+    if (!this.horseSprite) this.setupMountedHorseSprite()
+    if (!this.horseSprite) return
+
+    const sheetId = this.currentSheet === SHEET_TYPES.walking ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
+    const horseSheet = Assets.cache.get(sheetId) as SpritesheetLike | undefined
+    if (!horseSheet?.textures) return
+
+    const frame = Math.min(this.horseSprite.currentFrame, Math.max(this.horseSprite.textures.length - 1, 0))
+    const { textures, mirrored } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
+    const spriteScale = this.spriteScale ?? 1
+    this.horseSprite.textures = textures as Texture[]
+    this.horseSprite.scale.x = mirrored ? -spriteScale : spriteScale
+    this.horseSprite.scale.y = spriteScale
+    this.horseSprite.animationSpeed = horseSheet.data?.animationSpeed ?? 0.2
+    this.horseSprite.position.y = this.reliefLift
+    const defaultAnchor = (this.horseSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
+      .defaultAnchor
+    if (defaultAnchor) {
+      this.horseSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+    }
+
+    const direction = degreeToDirection(this.degree) ?? 'south'
+    const horseInFront = MOUNTED_HORSE_DIRECTIONS_IN_FRONT.has(direction)
+    const spriteIndex = this.getChildIndex(this.sprite)
+    const horseIndex = this.getChildIndex(this.horseSprite)
+    if (horseInFront && horseIndex < spriteIndex) {
+      this.addChild(this.horseSprite)
+    } else if (!horseInFront && horseIndex > spriteIndex) {
+      this.addChildAt(this.horseSprite, Math.max(0, spriteIndex))
+    }
+
+    if (this.context.paused) {
+      this.horseSprite.gotoAndStop(Math.min(frame, this.horseSprite.textures.length - 1))
+    } else {
+      this.horseSprite.gotoAndPlay(Math.min(frame, this.horseSprite.textures.length - 1))
+    }
+  }
+
+  removeMountedHorseSprite() {
+    if (!this.horseSprite) return
+    this.horseSprite.parent?.removeChild(this.horseSprite)
+    this.horseSprite.destroy({ children: true, texture: false })
+    this.horseSprite = null
+  }
+
   syncVisualSettings(): void {
     if (this.shadow) {
       this.shadow.visible = getShadowsEnabled() && !this.loadedInTransport
@@ -736,20 +849,20 @@ export class Unit extends Instance implements UnitEntity {
   applyReliefLift(level: number, immediate = false): void {
     const target = -getReliefLiftPixels(level)
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
-    this.sprite.position.y = this.reliefLift
+    this.syncMountedRiderPosition()
+    if (this.horseSprite) this.horseSprite.position.y = this.reliefLift
     if (this.shadow) this.shadow.position.y = this.reliefLift
-    for (const layerSprite of this.appearanceLayerSprites.values()) {
-      layerSprite.position.y = this.reliefLift
-    }
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
-    if (healthBar) healthBar.position.y = this.reliefLift
+    if (healthBar) healthBar.position.y = this.getMountedRiderY()
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
-    if (powerBar) powerBar.position.y = this.reliefLift
+    if (powerBar) powerBar.position.y = this.getMountedRiderY()
   }
 
   syncAppearanceLayers(sheet: string) {
     const layers = this.appearance?.layers
     const hideEquipment = sheet === SHEET_TYPES.dying || sheet === SHEET_TYPES.corpse
+    const mountedRiderSheet =
+      this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
     if (!layers?.length || hideEquipment) {
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.parent?.removeChild(sprite)
@@ -766,22 +879,29 @@ export class Unit extends Instance implements UnitEntity {
       const isLayerEnabledForWork =
         !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
       const isLoading = (this.loading ?? 0) > 0
-      // The hero never wears the carried-resource overlay (meat/stone/gold) — carried
-      // resources show up in the hero HUD instead — and keeps its tool equipped while loading.
-      const isLayerHiddenByLoading = heroControlled
-        ? Boolean(layer.showWhenLoading)
-        : Boolean(layer.hideWhenLoading && isLoading) || Boolean(layer.showWhenLoading && !isLoading)
+      // Carried resources are hidden while the action animation plays, then restored
+      // automatically when the unit returns to standing/walking.
+      const isLayerHiddenByLoading = isAppearanceLayerHiddenByLoading({
+        layer,
+        isLoading,
+        sheet,
+        heroControlled,
+      })
       const isLayerHiddenByAction = Boolean(this.action && layer.hideForActions?.includes(this.action))
       const loadedSheetOverride =
-        this.loading && sheet === SHEET_TYPES.walking ? (layer.loadedSheet as string | undefined) : undefined
+        !this.mountedOnHorse && this.loading && sheet === SHEET_TYPES.walking
+          ? (layer.loadedSheet as string | undefined)
+          : undefined
       const actionWorkSheetOverride =
-        this.work && this.action ? layer.actionWorkSheetOverrides?.[`${this.work}:${this.action}`]?.[sheet] : undefined
-      const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[sheet] : undefined
+        this.work && this.action
+          ? layer.actionWorkSheetOverrides?.[`${this.work}:${this.action}`]?.[mountedRiderSheet]
+          : undefined
+      const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
       const baseSheetId =
         loadedSheetOverride ??
         actionWorkSheetOverride ??
         workSheetOverride ??
-        (layer[sheet as keyof RuntimeAppearanceLayer] as string | undefined)
+        (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
       const playerColorVariant = this.owner.color ? layer.playerColorVariants?.[this.owner.color] : undefined
       const appearanceVariant = layer.appearanceVariantKey
         ? this.appearanceVariants?.[layer.appearanceVariantKey]
@@ -813,9 +933,10 @@ export class Unit extends Instance implements UnitEntity {
         continue
       }
 
-      const directionCount = layer.sheetDirectionCounts?.[sheet] ?? this.sheetDirectionCounts?.[sheet] ?? null
-      const directionOrderOverride = (layer.sheetDirectionOrders?.[sheet] ??
-        this.sheetDirectionOrders?.[sheet] ??
+      const directionCount =
+        layer.sheetDirectionCounts?.[mountedRiderSheet] ?? this.sheetDirectionCounts?.[mountedRiderSheet] ?? null
+      const directionOrderOverride = (layer.sheetDirectionOrders?.[mountedRiderSheet] ??
+        this.sheetDirectionOrders?.[mountedRiderSheet] ??
         null) as string[] | null
       const { textures, mirrored } = getSpriteFrameSelection(
         spritesheet.textures,
@@ -825,14 +946,17 @@ export class Unit extends Instance implements UnitEntity {
       )
 
       let layerSprite = this.appearanceLayerSprites.get(spriteKey)
-      const frameIndex = Math.min(this.sprite.currentFrame, Math.max(textures.length - 1, 0))
+      const frameIndex =
+        this.mountedOnHorse && sheet !== SHEET_TYPES.action
+          ? 0
+          : Math.min(this.sprite.currentFrame, Math.max(textures.length - 1, 0))
 
       if (!layerSprite) {
         layerSprite = new AnimatedSprite(textures as Texture[])
         bindAnimatedSpriteToTicker(layerSprite, this.context.app)
         layerSprite.label = `${LABEL_TYPES.sprite}-layer-${spriteKey}`
         layerSprite.eventMode = 'none'
-        layerSprite.position.y = this.sprite.position.y
+        layerSprite.position.y = this.getMountedRiderY()
         layerSprite.roundPixels = true
         layerSprite.loop = this.loop ?? true
         layerSprite.updateAnchor = true
@@ -858,7 +982,9 @@ export class Unit extends Instance implements UnitEntity {
       }
       layerSprite.animationSpeed = spritesheet.data?.animationSpeed ?? 0.18
       layerSprite.currentFrame = frameIndex
-      if (this.sprite.playing) {
+      if (this.mountedOnHorse && sheet !== SHEET_TYPES.action) {
+        layerSprite.gotoAndStop(frameIndex)
+      } else if (this.sprite.playing) {
         layerSprite.gotoAndPlay(frameIndex)
       } else {
         layerSprite.gotoAndStop(frameIndex)
@@ -877,6 +1003,7 @@ export class Unit extends Instance implements UnitEntity {
     super.setTextures(sheet)
     this.applyOwnerColorToSprite()
     this.syncShadow()
+    this.syncMountedHorseSprite()
     this.syncAppearanceLayers(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
     this.syncFishingOverlaySprite()
@@ -902,6 +1029,7 @@ export class Unit extends Instance implements UnitEntity {
   override pause() {
     super.pause()
     this.shadow?.stop()
+    this.horseSprite?.stop()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.stop()
     }
@@ -911,6 +1039,7 @@ export class Unit extends Instance implements UnitEntity {
     if (this.currentSheet === SHEET_TYPES.standing) {
       this.sprite.gotoAndStop(this.sprite.currentFrame)
       this.shadow?.gotoAndStop(this.shadow.currentFrame)
+      this.horseSprite?.play()
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.gotoAndStop(sprite.currentFrame)
       }
@@ -918,6 +1047,7 @@ export class Unit extends Instance implements UnitEntity {
     }
     super.resume()
     this.shadow?.play()
+    this.horseSprite?.play()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.play()
     }
@@ -1109,6 +1239,7 @@ export class Unit extends Instance implements UnitEntity {
     }
     if (this.handleIsAttacked?.(instance, this)) return
     const currentDest = this.dest
+    showAggressionFeedback(this)
     if (this.type === UNIT_TYPES.villager) {
       if (instance.family === FAMILY_TYPES.animal) {
         this.sendToHunt(instance)
@@ -1287,6 +1418,7 @@ export class Unit extends Instance implements UnitEntity {
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
+    this.removeMountedHorseSprite()
     super.destroy(options)
   }
 }

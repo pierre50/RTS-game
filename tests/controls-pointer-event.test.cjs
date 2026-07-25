@@ -102,6 +102,7 @@ function loadControls() {
     '../lib': {
       isometricToCartesian: () => [0, 0],
       pointsDistance: () => 0,
+      instanceContactInstance: () => true,
     },
     '../lib/settings': {
       getCameraZoom: () => 1,
@@ -529,6 +530,7 @@ test('hero right click opens info modal for units', () => {
     const calls = []
     const unit = { family: 'unit' }
     controls.heroController.active = true
+    controls.heroController.heroUnit = { family: 'unit' }
     controls.context.map.grid[0][0] = { has: unit }
     controls.context.menu.openEntityInfoModal = target => {
       calls.push(['openEntityInfoModal', target])
@@ -544,6 +546,33 @@ test('hero right click opens info modal for units', () => {
     })
 
     assert.deepEqual(calls, ['preventDefault', ['openEntityInfoModal', unit]])
+  } finally {
+    restore()
+  }
+})
+
+test('hero right click on self does not open info modal', () => {
+  const { controls, restore } = createControls()
+  try {
+    const calls = []
+    const hero = { family: 'unit' }
+    controls.heroController.active = true
+    controls.heroController.heroUnit = hero
+    controls.context.map.grid[0][0] = { has: hero }
+    controls.context.menu.openEntityInfoModal = target => {
+      calls.push(['openEntityInfoModal', target])
+      return true
+    }
+
+    controls.onMouseDown({
+      pageX: 10,
+      pageY: 10,
+      button: 2,
+      target: new MockElement({ inGame: true }),
+      preventDefault: () => calls.push('preventDefault'),
+    })
+
+    assert.deepEqual(calls, ['preventDefault'])
   } finally {
     restore()
   }

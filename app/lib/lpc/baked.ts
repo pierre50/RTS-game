@@ -8,20 +8,7 @@ const BAKED_LPC_BASE_URL = 'assets/graphics/lpc-baked'
 const BAKED_LPC_ALIAS_PREFIX = 'lpc-baked'
 const BAKED_VARIANT_KEYS = ['01'] as const
 
-const VILLAGER_JOBS = [
-  'default',
-  'attacker',
-  'forager',
-  'woodcutter',
-  'stoneminer',
-  'goldminer',
-  'builder',
-  'farmer',
-  'hunter',
-  'fisher',
-] as const
-
-const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+const UNIT_SHEETS = ['walking', 'action', 'riding', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
 
@@ -38,7 +25,6 @@ type BakedUnitType =
   | 'hoplite'
   | 'phalanx'
   | 'priest'
-type VillagerJob = (typeof VILLAGER_JOBS)[number]
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   Villager: 'villager',
@@ -161,6 +147,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     standingSheet: 3,
     walkingSheet: 3,
     actionSheet: 3,
+    ridingSheet: 3,
     harvestSheet: 3,
     loadedSheet: 3,
     dyingSheet: 1,
@@ -175,6 +162,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       standingSheet: walking,
       walkingSheet: walking,
       actionSheet: bakedAlias(bakedUnit, variant, 'default', 'action'),
+      ridingSheet: bakedAlias(bakedUnit, variant, 'default', 'riding'),
       dyingSheet: bakedAlias(bakedUnit, variant, 'default', 'dying'),
       corpseSheet: bakedAlias(bakedUnit, variant, 'default', 'corpse'),
     }

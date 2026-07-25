@@ -1,4 +1,3 @@
-import { UNIT_TYPES } from '../constants'
 import type { AIEntityLike } from './types'
 
 export const INFANTRY_TECH_UPGRADES = [
@@ -33,8 +32,8 @@ function isArcherUnit(unit: AIEntityLike): boolean {
   return isAliveUnit(unit) && ARCHER_UNIT_TYPES.includes(unit.type)
 }
 
-function isCavalryUnit(unit: AIEntityLike): boolean {
-  return isAliveUnit(unit) && unit.type === UNIT_TYPES.scout
+function isCavalryUnit(_unit: AIEntityLike): boolean {
+  return false
 }
 
 function isHopliteUnit(unit: AIEntityLike): boolean {

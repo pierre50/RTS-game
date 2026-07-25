@@ -1,4 +1,5 @@
 import { STEP_TIME } from '../constants'
+import { showHealingFeedback } from './combatFeedback'
 import { isHeroControlled } from './unitControl'
 import type { UnitEntity } from '../types/entities'
 
@@ -43,5 +44,8 @@ export function updateUnitHealthRegen(unit: UnitEntity, elapsedMs = STEP_TIME): 
   if (now - damagedAt < (unit.healthRegenDelay ?? 0)) return
   const regenPerMs = ((unit.healthRegenRate ?? 0) * (unit.healthRegenMultiplier ?? 1)) / 1000
   unit.hitPoints = Math.min(totalHitPoints, currentHitPoints + regenPerMs * elapsedMs)
-  if (unit.hitPoints !== currentHitPoints) notifyHeroHealthChanged(unit)
+  if (unit.hitPoints !== currentHitPoints) {
+    showHealingFeedback(unit)
+    notifyHeroHealthChanged(unit)
+  }
 }

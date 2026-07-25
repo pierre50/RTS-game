@@ -12,17 +12,20 @@ function loadUnitHealth() {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
+  const healingFeedbackCalls = []
   const mocks = {
     '../constants': { STEP_TIME: 100 },
+    './combatFeedback': { showHealingFeedback: unit => healingFeedbackCalls.push(unit) },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  module.exports.__healingFeedbackCalls = healingFeedbackCalls
   return module.exports
 }
 
 test('hero health regen respects delay and refreshes the HUD progressively', () => {
-  const { markUnitHealthDamaged, updateUnitHealthRegen } = loadUnitHealth()
+  const { __healingFeedbackCalls, markUnitHealthDamaged, updateUnitHealthRegen } = loadUnitHealth()
   const calls = []
   const unit = {
     controlMode: 'hero',
@@ -45,11 +48,13 @@ test('hero health regen respects delay and refreshes the HUD progressively', () 
   updateUnitHealthRegen(unit, 1000)
   assert.equal(unit.hitPoints, 7)
   assert.deepEqual(calls, [7])
+  assert.deepEqual(__healingFeedbackCalls, [])
 
   unit.context.scheduler.elapsedMs = 1600
   updateUnitHealthRegen(unit, 100)
   assert.equal(unit.hitPoints, 7.2)
   assert.deepEqual(calls, [7, 7.2])
+  assert.deepEqual(__healingFeedbackCalls, [unit])
 })
 
 test('non hero units do not receive passive health regen by default', () => {

@@ -9,7 +9,7 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-import { showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
+import { showAggressionFeedback, showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
@@ -28,6 +28,7 @@ export class AnimalCombat {
     if (animal.strategy === 'runaway') {
       animal.runaway(instance)
     } else {
+      showAggressionFeedback(animal)
       animal.sendTo(instance, ACTION_TYPES.attack)
     }
   }

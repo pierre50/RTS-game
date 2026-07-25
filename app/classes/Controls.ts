@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { isometricToCartesian, pointsDistance } from '../lib'
+import { isometricToCartesian, pointsDistance, instanceContactInstance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { SelectionManager } from '../controllers/SelectionManager'
@@ -772,13 +772,21 @@ export default class Controls extends Container implements ControlsLike {
 
   openHeroEntityInteraction(target: RuntimeEntity | null = this.getCellUnderCursor()?.has ?? null): boolean {
     if (!this.isHeroControlActive() || !target) return false
-    if (target.family === FAMILY_TYPES.building && this.context.menu?.openHeroBuildingMenu?.(target as BuildingEntity)) {
-      const player = this.context.player
-      player?.unselectAll?.()
-      target.select?.()
-      player.selectedBuilding = target as BuildingEntity
-      return true
+    const hero = this.heroUnit
+    if (target === hero) return false
+    const player = this.context.player
+    if (target.family === FAMILY_TYPES.building) {
+      const building = target as BuildingEntity
+      if (this.context.menu?.openHeroBuildingMenu?.(building)) {
+        player?.unselectAll?.()
+        building.select?.()
+        player.selectedBuilding = building
+        return true
+      }
+      // Own building out of range: same rule as left-click actions — no fallback window, just require contact.
+      if (building.owner === player) return false
     }
+    if (!hero || !instanceContactInstance(hero, target)) return false
     return Boolean(this.context.menu?.openEntityInfoModal?.(target))
   }
 

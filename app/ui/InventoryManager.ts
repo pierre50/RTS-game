@@ -2,7 +2,6 @@ import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
-import { getIconPath } from '../lib'
 import type Menu from '../classes/Menu'
 import { HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
 import { getReservedGameplayHotkeys } from '../lib/settings'
@@ -160,9 +159,10 @@ export class InventoryManager {
 
   createTechnologyButton(selection: RuntimeEntity, button: MenuButtonSpec, hotkey: string | null): HTMLButtonElement {
     const element = document.createElement('button')
+    const disabled = button.disabled?.() ?? false
     element.type = 'button'
     element.className = 'technology-menu-button'
-    element.disabled = button.disabled?.() ?? false
+    element.setAttribute('aria-disabled', String(disabled))
     element.id = button.id ? `inventory-tech-${button.id}` : ''
 
     const icon = document.createElement('span')
@@ -184,15 +184,6 @@ export class InventoryManager {
     const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
     meta.textContent = tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
 
-    const progress = document.createElement('span')
-    progress.className = 'technology-menu-progress'
-    const progressFill = document.createElement('span')
-    progressFill.className = 'technology-menu-progress-fill'
-    const progressText = document.createElement('span')
-    progressText.className = 'technology-menu-progress-text'
-    progress.appendChild(progressFill)
-    progress.appendChild(progressText)
-
     if (hotkey) {
       const badge = document.createElement('span')
       badge.className = 'technology-menu-hotkey'
@@ -203,58 +194,15 @@ export class InventoryManager {
     element.appendChild(icon)
     element.appendChild(label)
     element.appendChild(meta)
-    element.appendChild(progress)
 
     if (button.tooltip) this.menu.menuTooltip.bind(element, button.tooltip)
     element.addEventListener('pointerup', evt => {
-      if (element.disabled) return
+      if (button.disabled?.()) return
       this.menu.playUiClick()
       button.onClick?.(selection, evt)
       this.renderTechnologies()
     })
     return element
-  }
-
-  renderResearchStatus(): void {
-    const { player } = this.menu.context
-    this.technologiesPanel.querySelectorAll<HTMLElement>('.technology-menu-button').forEach(element => {
-      const type = element.id.replace(/^inventory-tech-/, '')
-      const active = Boolean(type && player.researchTechnology?.type === type)
-      const progress = active ? Math.max(0, Math.min(100, Math.floor(player.researchLoading ?? 0))) : 0
-      const bar = element.querySelector<HTMLElement>('.technology-menu-progress')
-      const fill = element.querySelector<HTMLElement>('.technology-menu-progress-fill')
-      const text = element.querySelector<HTMLElement>('.technology-menu-progress-text')
-      element.classList.toggle('is-researching', active)
-      if (bar) bar.classList.toggle('is-visible', active)
-      if (fill) fill.style.width = `${progress}%`
-      if (text) text.textContent = active ? `${progress}%` : ''
-    })
-  }
-
-  renderCancelTechnology(): void {
-    const { player } = this.menu.context
-    if (!player.researchTechnology) return
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'technology-menu-button technology-menu-button--cancel'
-    const icon = document.createElement('span')
-    icon.className = 'technology-menu-icon'
-    icon.appendChild(this.menu.createActionIcon(getIconPath('003_50721')))
-    const label = document.createElement('span')
-    label.className = 'technology-menu-label'
-    label.textContent = t('cancel')
-    const meta = document.createElement('span')
-    meta.className = 'technology-menu-meta'
-    meta.textContent = t('cancelTechnologyDescription')
-    button.appendChild(icon)
-    button.appendChild(label)
-    button.appendChild(meta)
-    button.addEventListener('pointerup', () => {
-      this.menu.playUiClick()
-      player.cancelTechnology?.()
-      this.renderTechnologies()
-    })
-    this.technologiesPanel.appendChild(button)
   }
 
   renderTechnologies(): void {
@@ -263,7 +211,6 @@ export class InventoryManager {
     this.menu.clearActionHotkeys()
     if (!selection) return
 
-    this.renderCancelTechnology()
     const usedKeys = new Set<string>(getReservedGameplayHotkeys())
     this.getTechnologyButtons()
       .filter(button => !button.hide || !button.hide())
@@ -280,13 +227,9 @@ export class InventoryManager {
           })
         }
       })
-    this.renderResearchStatus()
   }
 
-  syncTechnologyProgress(): void {
-    if (!this.opened || this.activeTab !== 'technologies') return
-    this.renderResearchStatus()
-  }
+  syncTechnologyProgress(): void {}
 
   renderConstruction(): void {
     const selection = this.menu.context.controls.heroUnit || this.menu.selection

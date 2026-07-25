@@ -2,6 +2,7 @@ import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
 
 const BUILDING_UNIT_UPGRADE_CHAINS: Partial<Record<string, string[]>> = {
   [BUILDING_TYPES.barracks]: [
+    UNIT_TYPES.clubman,
     UNIT_TYPES.axeman,
     UNIT_TYPES.shortSwordsman,
     UNIT_TYPES.broadSwordsman,

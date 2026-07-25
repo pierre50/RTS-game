@@ -158,6 +158,7 @@
     "rateOfFire": 1.5,
     "trainingTime": 27,
     "icon": "002_50730",
+    "mountedOnHorse": true,
     "meleeAttack": 3,
     "meleeArmor": 0,
     "pierceArmor": 0,
@@ -196,43 +197,6 @@
         "human-unit-killed-8",
         "human-unit-killed-9",
         "human-unit-killed-10"
-      ]
-    }
-  },
-  "Scout": {
-    "category": "Cavalery",
-    "totalHitPoints": 60,
-    "sight": 14,
-    "speed": 2,
-    "rateOfFire": 0.9,
-    "trainingTime": 30,
-    "icon": "031_50730",
-    "meleeAttack": 3,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 100
-    },
-    "assets": {
-      "standingSheet": "units/scout/standing",
-      "walkingSheet": "units/scout/walking",
-      "actionSheet": "units/scout/action",
-      "dyingSheet": "units/scout/dying",
-      "corpseSheet": "units/scout/corpse"
-    },
-    "sounds": {
-      "command": [
-        "horse",
-        "horse-2",
-        "horse-3",
-        "horse-4"
-      ],
-      "die": "horse-unit-die",
-      "move": "horse-moving",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
       ]
     }
   },
@@ -699,53 +663,6 @@
         "human-unit-killed-4",
         "human-unit-killed-5"
       ]
-    }
-  },
-  "ChariotArcher": {
-    "category": "Archer",
-    "totalHitPoints": 70,
-    "sight": 18,
-    "speed": 2,
-    "rateOfFire": 1.5,
-    "trainingTime": 40,
-    "icon": "028_50730",
-    "pierceAttack": 4,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "range": 7,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 70,
-      "wood": 40
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "Wheel"
-      }
-    ],
-    "assets": {
-      "standingSheet": "units/chariot-archer/standing",
-      "walkingSheet": "units/chariot-archer/walking",
-      "actionSheet": "units/chariot-archer/action",
-      "dyingSheet": "units/chariot-archer/dying",
-      "corpseSheet": "units/chariot-archer/corpse"
-    },
-    "sounds": {
-      "command": [
-        "horse",
-        "horse-2",
-        "horse-3",
-        "horse-4"
-      ],
-      "move": "horse-moving",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": "horse-unit-die"
     }
   },
   "FishingBoat": {

@@ -14,6 +14,7 @@ import {
   getGroundReliefLevel,
   getReliefLiftPixels,
   instancesDistance,
+  instanceContactInstance,
   drawInstanceBlinkingSelection,
   playerCanSeeInstance,
   getActionCondition,
@@ -195,7 +196,10 @@ export class Animal extends Instance implements AnimalEntity {
       if (controls.isHeroControlActive?.()) {
         if (!isSecondaryPointerButton(evt)) return
         controls.mouse.prevent = true
-        menu.openEntityInfoModal?.(this)
+        const hero = controls.heroUnit
+        if (hero && instanceContactInstance(hero, this)) {
+          menu.openEntityInfoModal?.(this)
+        }
         return
       }
       if (!canUseRtsEntityPointer(controls)) return

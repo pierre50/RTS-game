@@ -867,6 +867,117 @@ test('hero direct movement slides along rounded building collision instead of is
   assert.equal(movement.directMoveBlocker, building)
 })
 
+test('hero direct movement collides softly with units and animals', () => {
+  const createGrid = blocker => {
+    const grid = Array.from({ length: 3 }, (_, i) =>
+      Array.from({ length: 3 }, (_, j) => ({
+        i,
+        j,
+        x: 0,
+        y: 0,
+        z: 0,
+        solid: false,
+        border: false,
+        category: 'Ground',
+        has: null,
+      }))
+    )
+    grid[1][0].solid = true
+    grid[1][0].has = blocker
+    return grid
+  }
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [
+      Math.max(0, Math.min(2, Math.floor(x / 8))),
+      Math.max(0, Math.min(2, Math.floor(Math.abs(y) / 8))),
+    ],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const createUnit = (grid, x = 0) => ({
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 2,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x,
+    y: 0,
+  })
+
+  for (const family of [constants.FAMILY_TYPES.unit, constants.FAMILY_TYPES.animal]) {
+    const blocker = {
+      family,
+      isDead: false,
+      isDestroyed: false,
+      label: `${family}-1`,
+      size: 1,
+      type: family,
+      x: 10,
+      y: 0,
+    }
+    const blockedGrid = createGrid(blocker)
+    const blockedUnit = createUnit(blockedGrid)
+
+    const blocked = new UnitMovement(blockedUnit).attemptMoveDirect(9, 0, 1)
+
+    assert.equal(blocked, false)
+    assert.equal(blockedUnit.x, 0)
+
+    const squeezeGrid = createGrid(blocker)
+    const squeezeUnit = createUnit(squeezeGrid, 4)
+
+    const squeezedAway = new UnitMovement(squeezeUnit).attemptMoveDirect(-1, 0, 1)
+
+    assert.equal(squeezedAway, true)
+    assert.equal(squeezeUnit.x, 3)
+
+    const slideGrid = createGrid(blocker)
+    const slideUnit = createUnit(slideGrid)
+    const movement = new UnitMovement(slideUnit)
+
+    const slid = movement.moveDirect(1, 0, 9)
+
+    assert.equal(slid, true)
+    assert.ok(slideUnit.x > 0)
+    assert.notEqual(slideUnit.y, 0)
+    assert.equal(movement.directMoveBlocker, blocker)
+  }
+})
+
 test('a blocked gather target sends the villager near it before retrying', () => {
   const target = { label: 'berries-1', i: 3, j: 3, isDestroyed: false }
   const approachCell = { i: 1, j: 3, solid: false, border: false, category: 'Grass' }

@@ -10,6 +10,7 @@ import {
   HEALTH_BAR_TRACK_GRADIENT_BOTTOM,
   HEALTH_BAR_FILL_GRADIENT_TOP,
   HEALTH_BAR_FILL_GRADIENT_BOTTOM,
+  STEP_TIME,
 } from '../constants'
 import { createIsoSelectionMarker, getActionCondition, setUnitTexture, uuidv4 } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -70,6 +71,7 @@ export class Instance extends Container {
   sprite?: Sprite | AnimatedSprite
   reliefLift?: number
   action?: string | null
+  displayedHealthBarHitPoints?: number
   die?(immediate?: boolean): void
   hasPath?(): boolean
   moveToPath?(): void
@@ -87,6 +89,7 @@ export class Instance extends Container {
   removeHealthBar(): void {
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) this.removeChild(healthBar)
+    this.displayedHealthBarHitPoints = undefined
   }
 
   removeHeroPowerBar(): void {
@@ -171,7 +174,13 @@ export class Instance extends Container {
     const innerY = y + borderWidth
     const innerWidth = barWidth - borderWidth * 2
     const innerHeight = barHeight - borderWidth * 2
-    const ratio = Math.max(0, Math.min(1, this.hitPoints / this.totalHitPoints))
+    const targetHitPoints = Math.max(0, Math.min(this.totalHitPoints, this.hitPoints))
+    if (this.displayedHealthBarHitPoints == null || targetHitPoints < this.displayedHealthBarHitPoints) {
+      this.displayedHealthBarHitPoints = targetHitPoints
+    } else {
+      this.displayedHealthBarHitPoints = Math.min(this.totalHitPoints, this.displayedHealthBarHitPoints)
+    }
+    const ratio = Math.max(0, Math.min(1, this.displayedHealthBarHitPoints / this.totalHitPoints))
     const bar = new Graphics()
     bar.label = LABEL_TYPES.healthBar
     bar.zIndex = 4
@@ -180,12 +189,34 @@ export class Instance extends Container {
     bar.rect(innerX, innerY, innerWidth, innerHeight)
     bar.fill(getHealthBarTrackGradient())
     if (ratio > 0) {
-      bar.rect(innerX, innerY, Math.round(innerWidth * ratio), innerHeight)
+      bar.rect(innerX, innerY, innerWidth * ratio, innerHeight)
       bar.fill(getHealthBarFillGradient())
     }
     // Tracks relief the same way the shadow does — see Unit.applyReliefLift.
     bar.position.y = this.reliefLift ?? 0
     this.addChild(bar)
+  }
+
+  updateHealthBarDisplay(elapsedMs = STEP_TIME): void {
+    const hasHealthBar = Boolean(this.getChildByLabel(LABEL_TYPES.healthBar))
+    if (!hasHealthBar && !this.selected && !this.shouldKeepHealthBarVisible()) return
+    if (!this.totalHitPoints || this.isDead || this.isDestroyed) return
+    const targetHitPoints = Math.max(0, Math.min(this.totalHitPoints, this.hitPoints))
+    const currentHitPoints = this.displayedHealthBarHitPoints ?? targetHitPoints
+
+    if (targetHitPoints <= currentHitPoints) {
+      if (this.displayedHealthBarHitPoints !== targetHitPoints) {
+        this.displayedHealthBarHitPoints = targetHitPoints
+        this.drawHealthBar()
+      }
+      return
+    }
+
+    const fillPerMs = this.totalHitPoints / 180
+    const nextHitPoints = Math.min(targetHitPoints, currentHitPoints + fillPerMs * elapsedMs)
+    if (nextHitPoints === currentHitPoints) return
+    this.displayedHealthBarHitPoints = nextHitPoints
+    this.drawHealthBar()
   }
 
   drawHeroPowerBar(ratio: number): void {
@@ -219,6 +250,7 @@ export class Instance extends Container {
   }
 
   step(): void {
+    this.updateHealthBarDisplay()
     if (this.hitPoints <= 0) {
       this.die?.()
     } else if (this.hasPath?.()) {

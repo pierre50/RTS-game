@@ -79,12 +79,8 @@
             "Hoplite",
             "Phalanx",
             "Centurion",
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider"
           ]
         }
@@ -128,12 +124,8 @@
             "Hoplite",
             "Phalanx",
             "Centurion",
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider"
           ]
         }
@@ -177,12 +169,8 @@
             "Hoplite",
             "Phalanx",
             "Centurion",
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider"
           ]
         }
@@ -412,11 +400,7 @@
           "type": [
             "Bowman",
             "ImprovedBowman",
-            "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher"
+            "CompositeBowman"
           ]
         }
       ]
@@ -452,11 +436,7 @@
           "type": [
             "Bowman",
             "ImprovedBowman",
-            "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher"
+            "CompositeBowman"
           ]
         }
       ]
@@ -492,11 +472,7 @@
           "type": [
             "Bowman",
             "ImprovedBowman",
-            "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher"
+            "CompositeBowman"
           ]
         }
       ]
@@ -524,14 +500,8 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
-            "WarElephant",
-            "ArmoredElephant",
             "Camel Rider"
           ]
         }
@@ -566,14 +536,8 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
-            "WarElephant",
-            "ArmoredElephant",
             "Camel Rider"
           ]
         }
@@ -608,14 +572,8 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
-            "WarElephant",
-            "ArmoredElephant",
             "Camel Rider"
           ]
         }
@@ -660,10 +618,6 @@
             "Bowman",
             "ImprovedBowman",
             "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher",
             "ScoutShip",
             "WarGalley",
             "Trireme",
@@ -1137,48 +1091,6 @@
       "target": "Centurion"
     }
   },
-  "HeavyHorseArcher": {
-    "icon": "055_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      }
-    ],
-    "researchTime": 125,
-    "cost": {
-      "food": 150,
-      "gold": 75
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "HorseArcher",
-      "target": "HeavyHorseArcher"
-    }
-  },
-  "ArmoredElephant": {
-    "icon": "057_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      }
-    ],
-    "researchTime": 125,
-    "cost": {
-      "food": 200,
-      "gold": 100
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "WarElephant",
-      "target": "ArmoredElephant"
-    }
-  },
   "Artisanship": {
     "icon": "077_50729",
     "key": "technologies",
@@ -1222,10 +1134,6 @@
             "Bowman",
             "ImprovedBowman",
             "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher",
             "ScoutShip",
             "WarGalley",
             "Trireme",
@@ -1281,10 +1189,6 @@
             "Bowman",
             "ImprovedBowman",
             "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher",
             "ScoutShip",
             "WarGalley",
             "Trireme",
@@ -1384,12 +1288,8 @@
           "op": "+",
           "value": "25",
           "type": [
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider"
           ]
         }
@@ -1419,12 +1319,8 @@
           "op": "+",
           "value": "0.25",
           "type": [
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider"
           ]
         }
@@ -1473,10 +1369,6 @@
             "Bowman",
             "ImprovedBowman",
             "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher",
             "StoneThrower",
             "Catapult",
             "Ballista",
@@ -1567,20 +1459,12 @@
             "Hoplite",
             "Phalanx",
             "Centurion",
-            "Scout",
-            "Chariot",
             "ScytheChariot",
-            "Cavalry",
             "HeavyCavalry",
-            "Cataphract",
             "CamelRider",
             "Bowman",
             "ImprovedBowman",
             "CompositeBowman",
-            "ChariotArcher",
-            "HorseArcher",
-            "HeavyHorseArcher",
-            "ElephantArcher",
             "Priest"
           ]
         }

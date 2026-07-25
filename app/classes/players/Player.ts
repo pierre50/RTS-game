@@ -231,8 +231,8 @@ export class Player implements PlayerLike {
     return (config.conditions || []).every((condition: Condition) => isValidCondition(condition, this))
   }
 
-  isTechnologyInProgress(type: string): boolean {
-    return this.researchTechnology?.type === type
+  isTechnologyInProgress(_type: string): boolean {
+    return false
   }
 
   startResearchInterval(config: TechnologyConfig): void {
@@ -276,19 +276,20 @@ export class Player implements PlayerLike {
     } = this
     const config = this.techs[type]
     if (!config) return false
-    if (this.researchTechnology && !force) return false
     if (this.technologies.includes(type)) return false
     if (!force && !this.canResearchAgeTechnology(type) && !this.isTechnologyEligible(type)) return false
     if (!alreadyPaid && !canAfford(this, config.cost)) return false
 
     if (!alreadyPaid) payCost(this, config.cost)
-    this.researchLoading = force ? (this.researchLoading ?? 0) : 0
-    this.researchTechnology = { config, type }
+    this.stopResearchInterval()
+    this.researchLoading = null
+    this.researchTechnology = null
+    this.unlockTechnology(type)
     if (this.isPlayed) {
       menu.updateTopbar()
+      menu.updateActionTarget()
       menu.syncTechnologyProgress?.()
     }
-    this.startResearchInterval(config)
     return true
   }
 

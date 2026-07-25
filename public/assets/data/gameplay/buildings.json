@@ -177,13 +177,11 @@
     "units": [
       "Bowman",
       "ImprovedBowman",
-      "CompositeBowman",
-      "ChariotArcher"
+      "CompositeBowman"
     ],
     "technologies": [
       "ImprovedBow",
-      "CompositeBow",
-      "HeavyHorseArcher"
+      "CompositeBow"
     ],
     "sounds": {
       "create": "archery-range-completed-selected",
@@ -207,12 +205,8 @@
     "cost": {
       "wood": 150
     },
-    "units": [
-      "Scout"
-    ],
-    "technologies": [
-      "ArmoredElephant"
-    ],
+    "units": [],
+    "technologies": [],
     "sounds": {
       "create": "horse-4",
       "burning": [

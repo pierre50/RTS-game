@@ -13,6 +13,7 @@ import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { LoadedGameConfig } from '../types/save'
+import type { Condition } from '../lib/combat'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
   return selection?.family === FAMILY_TYPES.building
@@ -22,6 +23,12 @@ function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolea
   return Boolean(
     selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
   )
+}
+
+const AGE_REQUIREMENT_KEYS: Record<number, string> = {
+  1: 'ToolAge',
+  2: 'BronzeAge',
+  3: 'IronAge',
 }
 
 export class ActionSpecFactory {
@@ -57,6 +64,45 @@ export class ActionSpecFactory {
       .join(', ')
   }
 
+  getConditionValueLabel(value: Condition['value']): string {
+    if (Array.isArray(value)) return value.map(item => this.getConditionValueLabel(item)).join(', ')
+    if (typeof value === 'string') return t(value)
+    return String(value)
+  }
+
+  getAgeRequirementLabel(value: Condition['value']): string {
+    const age = Number(value)
+    const key = AGE_REQUIREMENT_KEYS[age]
+    return key ? t(key) : String(value)
+  }
+
+  getTechnologyRequirementText(condition: Condition, player: PlayerLike): string | null {
+    try {
+      if (isValidCondition(condition, player)) return null
+    } catch {
+      // Unknown future condition keys should explain the lock instead of breaking the tooltip.
+    }
+
+    if (condition.key === 'age') {
+      return t('tooltipRequiresAge', { age: this.getAgeRequirementLabel(condition.value) })
+    }
+
+    if (condition.key === 'technologies') {
+      const technology = this.getConditionValueLabel(condition.value)
+      return condition.op === 'notincludes'
+        ? t('tooltipBlockedByTechnology', { technology })
+        : t('tooltipRequiresTechnology', { technology })
+    }
+
+    if (condition.key === 'hasBuilt' || condition.key === 'buildings') {
+      return t('tooltipRequiresBuilding', { building: this.getConditionValueLabel(condition.value) })
+    }
+
+    return t('tooltipRequiresCondition', {
+      condition: `${condition.key} ${condition.op} ${this.getConditionValueLabel(condition.value)}`,
+    })
+  }
+
   getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
     const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
     return {
@@ -70,13 +116,14 @@ export class ActionSpecFactory {
   }
 
   getTechnologyTooltip(type: string, config: TechnologyConfig): TooltipContent {
+    const { player } = this.menu.context
+    const unmetRequirements = (config.conditions || [])
+      .map(condition => this.getTechnologyRequirementText(condition, player))
+      .filter((requirement): requirement is string => Boolean(requirement))
     return {
       title: t(type),
       description: t(`${type}Description`),
-      meta: [
-        t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipResearchTime', { time: config.researchTime ?? 0 }),
-      ],
+      meta: [t('tooltipCost', { cost: this.formatCost(config.cost) }), ...unmetRequirements],
     }
   }
 
@@ -124,23 +171,28 @@ export class ActionSpecFactory {
     })
   }
 
-  getActionUnitButton(type: string): MenuButtonSpec {
+  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec {
     const { menu } = this
     const {
       context: { player },
     } = menu
     const unit = player.config.units[type]
+    const isTraineeBuildingOngoing = (): boolean => {
+      if (!building || !isTraineeTrainingType(building, type)) return false
+      return hasPendingTrainingUnit(building, type) || (building.loading !== null && building.queue?.[0] === type)
+    }
     return {
       id: type,
       icon: () => getIconPath(unit.icon),
       tooltip: () => this.getUnitTooltip(type, unit),
-      hide: () => (unit.conditions || []).some(condition => !isValidCondition(condition, player)),
+      hide: () => {
+        if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
+        return (unit.conditions || []).some(condition => !isValidCondition(condition, player))
+      },
       onClick: (selection: RuntimeEntity) => {
         if (!isBuildingEntity(selection)) return
-        if (isTraineeTrainingType(selection, type)) {
-          selection.buyUnit?.(type)
-          return
-        }
+        // Trainee units aren't bought directly: send a villager to the building instead.
+        if (isTraineeTrainingType(selection, type)) return
         if (canAfford(player, unit.cost)) {
           if (player.population >= player.populationMax) {
             menu.showMessage(t('needHouses'), 'warning')
@@ -160,8 +212,11 @@ export class ActionSpecFactory {
         const cancel = this.createActionIcon(getIconPath('003_50721'))
         cancel.id = `${type}-cancel`
         const hasReservedTraining = hasPendingTrainingUnit(unitSelection, type)
+        const hasActiveTraining = unitSelection.loading !== null && unitSelection.queue?.[0] === type
         const hasQueuedTraining = unitSelection.queue?.some(q => q === type)
-        const showCancel = isTraineeTrainingType(unitSelection, type) ? hasReservedTraining : hasQueuedTraining
+        const showCancel = isTraineeTrainingType(unitSelection, type)
+          ? hasReservedTraining || hasActiveTraining
+          : hasQueuedTraining
         if (!showCancel) {
           cancel.classList.add('hidden')
         }
@@ -170,23 +225,24 @@ export class ActionSpecFactory {
           unitSelection.cancelUnits?.(type)
         })
         const img = this.createActionIcon(getIconPath(unit.icon))
-        img.addEventListener('pointerup', () => {
-          this.playUiClick()
-          if (isTraineeTrainingType(unitSelection, type)) {
-            unitSelection.buyUnit?.(type)
-            return
-          }
-          if (canAfford(player, unit.cost)) {
-            if (player.population >= player.populationMax) {
-              menu.showMessage(t('needHouses'), 'warning')
-              return
+        const isTrainee = isTraineeTrainingType(unitSelection, type)
+        if (isTrainee) {
+          img.classList.add('is-passive')
+        } else {
+          img.addEventListener('pointerup', () => {
+            this.playUiClick()
+            if (canAfford(player, unit.cost)) {
+              if (player.population >= player.populationMax) {
+                menu.showMessage(t('needHouses'), 'warning')
+                return
+              }
+              menu.toggleQueuedActionCancel(type, true)
+              unitSelection.buyUnit?.(type)
+            } else {
+              menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
             }
-            menu.toggleQueuedActionCancel(type, true)
-            unitSelection.buyUnit?.(type)
-          } else {
-            menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
-          }
-        })
+          })
+        }
         const queue = unitSelection.queue?.filter(q => q === type).length ?? 0
         const counter = document.createElement('div')
         counter.classList.add('content')
@@ -263,14 +319,9 @@ export class ActionSpecFactory {
         player.technologies.includes(type) ||
         this.hasHiddenTechnologyPrerequisite(type),
       disabled: () =>
-        Boolean(player.researchTechnology) ||
         (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
         controls.removeMouseBuilding()
-        if (player.researchTechnology) {
-          menu.showMessage(t('technologyAlreadyResearching'), 'warning')
-          return
-        }
         if ((config.conditions || []).some(condition => !isValidCondition(condition, player))) {
           menu.showMessage(t('technologyUnavailable'), 'warning')
           return

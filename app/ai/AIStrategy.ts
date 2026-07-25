@@ -192,12 +192,8 @@ export class AIStrategy {
     return this.military.handleActions(options)
   }
 
-  isTechnologyInProgress(technologyType: string, buildingList: AIBuildingLike[] = []): boolean {
-    if (this.ai.researchTechnology?.type === technologyType) return true
-    return buildingList.some(
-      (building: AIBuildingLike) =>
-        building && !building.isDead && !building.isDestroyed && building.technology?.type === technologyType
-    )
+  isTechnologyInProgress(_technologyType: string, _buildingList: AIBuildingLike[] = []): boolean {
+    return false
   }
 
   getTrainingLoad(buildings: AIBuildingLike[] = []): number {
@@ -859,9 +855,6 @@ export class AIStrategy {
       maxArcher,
       archeryRanges,
       archerUnit,
-      cavalry,
-      maxCavalry,
-      stables,
       hoplites,
       maxHoplite,
       academies,
@@ -881,7 +874,6 @@ export class AIStrategy {
     )
     actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
-    actions += this.buyUnits(cavalry.length, maxCavalry, stables, 'Scout', undefined, reserve, debug)
     actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
     actions += this.handleNavalActions(snapshot, reserve, debug)
     return actions
@@ -1156,7 +1148,7 @@ export class AIStrategy {
 
   handleTechnologyActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
     const { ai } = this
-    const { maxVillagers, towncenters, barracks, archeryRanges, storagepits, markets, granarys } = snapshot
+    const { maxVillagers, barracks, archeryRanges, storagepits, markets, granarys } = snapshot
     let actions = 0
 
     const nextAgeKey = (ai.age + 1) as 1 | 2 | 3

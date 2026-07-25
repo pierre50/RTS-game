@@ -139,7 +139,7 @@ function loadHeroTools(overrides = {}) {
         if (unit.totalEnergy == null) unit.totalEnergy = 10
         if (unit.energy == null) unit.energy = unit.totalEnergy
       },
-      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroWhiff: 1 }[action] ?? 0),
+      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroWhiff: 1 })[action] ?? 0,
     },
     './combatFeedback': { showDamageFeedback: () => {} },
     './unitExperience': {
@@ -252,6 +252,41 @@ test('bow charge plays the action animation once while power keeps charging', ()
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 4)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('bow charge keeps the manually aimed destination instead of snapping to a nearby target', () => {
+  const enemy = {
+    family: 'unit',
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    x: 10,
+    y: 0,
+  }
+  const { aimHeroBowChargeAt, releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools({
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+  })
+  const { hero, projectiles } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 120, y: 0 }), true)
+    aimHeroBowChargeAt(hero, { x: 240, y: 0 })
+    now += 350
+    assert.equal(releaseHeroBowCharge(hero, now), true)
+    hero.sprite.currentFrame = 5
+    hero.sprite.onFrameChange?.(5)
+
+    assert.equal(projectiles.length, 1)
+    assert.deepEqual(projectiles[0].destination, { x: 240, y: 0 })
+    assert.equal(projectiles[0].target, undefined)
   } finally {
     global.performance = originalPerformance
   }
@@ -624,6 +659,52 @@ test('free-hand interact damages an aimed enemy unit on the slash impact frame',
   assert.deepEqual(xp, [['melee', 3]])
   assert.deepEqual(enemy.isAttackedCalls, ['hero'])
 })
+
+for (const family of ['building', 'animal']) {
+  test(`free-hand interact damages an aimed enemy ${family} on the slash impact frame`, () => {
+    const enemy = {
+      family,
+      hitPoints: 10,
+      i: 1,
+      isDead: false,
+      isDestroyed: false,
+      j: 0,
+      label: `enemy-${family}`,
+      totalHitPoints: 10,
+      x: 10,
+      y: 0,
+      isAttackedCalls: [],
+      isAttacked(attacker) {
+        this.isAttackedCalls.push(attacker.label)
+      },
+    }
+    const damageFeedback = []
+    const { triggerToolAttackAt } = loadHeroTools({
+      './combat': {
+        getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+        getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 2),
+      },
+      './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+      './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+    })
+    const { hero } = makeHero()
+    Object.assign(hero, {
+      energy: 10,
+      isUnitAtDest: () => true,
+      setDest: target => {
+        hero.dest = target
+      },
+    })
+
+    assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+    hero.sprite.currentFrame = 1
+    hero.sprite.onFrameChange(1)
+
+    assert.equal(enemy.hitPoints, 8)
+    assert.deepEqual(damageFeedback, [[`enemy-${family}`, 2]])
+    assert.deepEqual(enemy.isAttackedCalls, ['hero'])
+  })
+}
 
 test('free-hand interact does not whiff without energy', () => {
   const messages = []

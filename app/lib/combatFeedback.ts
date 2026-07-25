@@ -25,9 +25,14 @@ const FLOAT_STEPS = 14
 const FLOAT_RISE = 18
 const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_FEEDBACK_COOLDOWN_MS = 1200
+const EMOTE_FEEDBACK_COOLDOWN_MS = 1200
 const flashStates = new WeakMap<DamageSprite, FlashState>()
 const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const aggressionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const healingFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const confusionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const blockedFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
   return (
@@ -152,11 +157,26 @@ export function showResourceGainFeedback(target: RuntimeEntity, amount: number):
 
 export function showLevelUpFeedback(target: RuntimeEntity, text: string): void {
   showFloatingText(target, {
-    text,
+    text: `✨ ${text}`,
     fill: 0xffcc33,
     stroke: 0x5c3d00,
     taskLabel: 'experience.levelUpText',
+    fontSize: 16,
+    yOffset: 18,
   })
+}
+
+function showCooldownEmoteFeedback(
+  target: RuntimeEntity,
+  times: WeakMap<RuntimeEntity, number>,
+  options: FloatingTextOptions
+): void {
+  const scheduler = target.context?.scheduler
+  const now = scheduler?.elapsedMs ?? performance.now()
+  const previous = times.get(target) ?? -Infinity
+  if (now - previous < EMOTE_FEEDBACK_COOLDOWN_MS) return
+  times.set(target, now)
+  showFloatingText(target, options)
 }
 
 export function showFatigueFeedback(target: RuntimeEntity): void {
@@ -188,5 +208,49 @@ export function showAlertFeedback(target: RuntimeEntity): void {
     fontSize: 20,
     yOffset: 20,
     taskLabel: 'unit.alertText',
+  })
+}
+
+export function showAggressionFeedback(target: RuntimeEntity): void {
+  showCooldownEmoteFeedback(target, aggressionFeedbackTimes, {
+    text: '💢',
+    fill: 0xff8a66,
+    stroke: 0x651800,
+    fontSize: 18,
+    yOffset: 20,
+    taskLabel: 'unit.aggressionText',
+  })
+}
+
+export function showHealingFeedback(target: RuntimeEntity): void {
+  showCooldownEmoteFeedback(target, healingFeedbackTimes, {
+    text: '❤️',
+    fill: 0xffb3c5,
+    stroke: 0x6b1430,
+    fontSize: 17,
+    yOffset: 16,
+    taskLabel: 'unit.healingText',
+  })
+}
+
+export function showConfusionFeedback(target: RuntimeEntity): void {
+  showCooldownEmoteFeedback(target, confusionFeedbackTimes, {
+    text: '?',
+    fill: 0xd9ecff,
+    stroke: 0x24486b,
+    fontSize: 20,
+    yOffset: 20,
+    taskLabel: 'unit.confusionText',
+  })
+}
+
+export function showBlockedFeedback(target: RuntimeEntity): void {
+  showCooldownEmoteFeedback(target, blockedFeedbackTimes, {
+    text: '⛔',
+    fill: 0xffd1d1,
+    stroke: 0x661616,
+    fontSize: 17,
+    yOffset: 20,
+    taskLabel: 'unit.blockedText',
   })
 }

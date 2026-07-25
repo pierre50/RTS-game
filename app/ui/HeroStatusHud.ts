@@ -17,10 +17,14 @@ export class HeroStatusHud {
   carryIcon: HTMLImageElement
   carryValue: HTMLDivElement
   hero: UnitEntity | null
+  displayedHitPoints: number | null
+  lastHealthDisplayUpdateAt: number | null
 
   constructor(menu: Menu) {
     this.menu = menu
     this.hero = null
+    this.displayedHitPoints = null
+    this.lastHealthDisplayUpdateAt = null
 
     this.element = document.createElement('div')
     this.element.className = 'hero-status-hud hidden'
@@ -88,13 +92,19 @@ export class HeroStatusHud {
 
   setHero(hero: UnitEntity | null): void {
     this.hero = hero
+    this.displayedHitPoints = null
+    this.lastHealthDisplayUpdateAt = null
     this.update(hero)
   }
 
   update(hero: UnitEntity | null = this.hero): void {
+    const now = performance.now()
+    const elapsedMs = this.lastHealthDisplayUpdateAt == null ? 0 : Math.max(0, now - this.lastHealthDisplayUpdateAt)
+    this.lastHealthDisplayUpdateAt = now
     this.hero = hero
     if (!hero || hero.isDead || hero.isDestroyed) {
       this.element.classList.add('hidden')
+      this.displayedHitPoints = null
       return
     }
 
@@ -102,7 +112,15 @@ export class HeroStatusHud {
     const rawTotalHitPoints = Math.max(0, hero.totalHitPoints ?? 0)
     const max = Math.ceil(rawTotalHitPoints)
     const current = Math.min(max, Math.floor(rawHitPoints))
-    const ratio = rawTotalHitPoints > 0 ? Math.max(0, Math.min(1, rawHitPoints / rawTotalHitPoints)) : 0
+    const targetHitPoints = Math.min(rawTotalHitPoints, rawHitPoints)
+    if (this.displayedHitPoints == null || targetHitPoints < this.displayedHitPoints) {
+      this.displayedHitPoints = targetHitPoints
+    } else if (targetHitPoints > this.displayedHitPoints) {
+      const fillPerMs = rawTotalHitPoints / 180
+      this.displayedHitPoints = Math.min(targetHitPoints, this.displayedHitPoints + fillPerMs * elapsedMs)
+    }
+    const ratio =
+      rawTotalHitPoints > 0 ? Math.max(0, Math.min(1, (this.displayedHitPoints ?? targetHitPoints) / rawTotalHitPoints)) : 0
 
     this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
     this.value.textContent = `${current}/${max}`

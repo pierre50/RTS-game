@@ -72,6 +72,7 @@ export class PlayerSetupPanel {
     // Simplified lobby never exposes a count control - it always fills to the map's max.
     if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
     this._clampPlayers()
+    this._reassignAIColors()
 
     this.element = document.createElement('div')
     this.element.className = 'lobby-col'
@@ -127,6 +128,7 @@ export class PlayerSetupPanel {
     this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
     if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
     this._clampPlayers()
+    this._reassignAIColors()
     this._refresh()
     this._emitChange()
   }
@@ -144,6 +146,15 @@ export class PlayerSetupPanel {
     return new Set(this.players.map(player => player.color))
   }
 
+  _isKnownColor(color: string): boolean {
+    return PLAYER_COLORS.some(playerColor => playerColor.name === color)
+  }
+
+  _nextColor(currentColor: string): string {
+    const idx = PLAYER_COLORS.findIndex(color => color.name === currentColor)
+    return PLAYER_COLORS[((idx >= 0 ? idx : 0) + 1) % PLAYER_COLORS.length].name
+  }
+
   _nextAvailableColor(currentColor: string): string {
     const used = this._usedColors()
     const idx = PLAYER_COLORS.findIndex(color => color.name === currentColor)
@@ -158,6 +169,22 @@ export class PlayerSetupPanel {
     const used = this._usedColors()
     const found = PLAYER_COLORS.find(color => !used.has(color.name))
     return found ? found.name : PLAYER_COLORS[0].name
+  }
+
+  _reassignAIColors(): void {
+    const used = new Set(this.players.filter(player => player.isHuman).map(player => player.color))
+
+    this.players.forEach(player => {
+      if (player.isHuman) return
+      if (!used.has(player.color) && this._isKnownColor(player.color)) {
+        used.add(player.color)
+        return
+      }
+
+      const color = PLAYER_COLORS.find(candidate => !used.has(candidate.name))?.name ?? PLAYER_COLORS[0].name
+      player.color = color
+      used.add(color)
+    })
   }
 
   _randomCiv(): string {
@@ -215,7 +242,10 @@ export class PlayerSetupPanel {
   }
 
   _cycleColor(playerIndex: number): void {
-    this.players[playerIndex].color = this._nextAvailableColor(this.players[playerIndex].color)
+    const player = this.players[playerIndex]
+    if (!player) return
+    player.color = player.isHuman ? this._nextColor(player.color) : this._nextAvailableColor(player.color)
+    this._reassignAIColors()
     this._refresh()
     this._emitChange()
   }

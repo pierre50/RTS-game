@@ -208,7 +208,8 @@ export class Projectile extends Container {
     const ownerSpriteHeight = this.owner.sprite?.height ?? 0
     this.x = this.spawnPoint?.x ?? this.owner.x + (this.spawnOffsetX ?? 0)
     this.y =
-      this.spawnPoint?.y ?? this.owner.y + getReliefOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
+      this.spawnPoint?.y ??
+      this.owner.y + getReliefOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     this.z = this.owner.z ?? 0
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
@@ -563,13 +564,18 @@ export class Projectile extends Container {
     ) {
       return false
     }
-    return instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.animal
+    return (
+      instance.family === FAMILY_TYPES.building ||
+      instance.family === FAMILY_TYPES.unit ||
+      instance.family === FAMILY_TYPES.animal
+    )
   }
 
   getCollisionCandidates(): RuntimeEntity[] {
     const candidates = new Set<RuntimeEntity>()
     if (this.target) candidates.add(this.target)
     for (const player of this.context.players ?? []) {
+      for (const building of player.buildings ?? []) candidates.add(building)
       for (const unit of player.units ?? []) candidates.add(unit)
       for (const animal of player.animals ?? []) candidates.add(animal)
     }
@@ -599,7 +605,9 @@ export class Projectile extends Container {
   // Buildings (towers) fire projectiles too but never earn experience.
   getXpCategory(): string | null {
     if (this.owner.family !== FAMILY_TYPES.unit) return null
-    return this.owner.type === UNIT_TYPES.villager && this.type === 'Spear' ? XP_CATEGORIES.hunting : XP_CATEGORIES.ranged
+    return this.owner.type === UNIT_TYPES.villager && this.type === 'Spear'
+      ? XP_CATEGORIES.hunting
+      : XP_CATEGORIES.ranged
   }
 
   onHit(instance: RuntimeEntity) {
@@ -634,7 +642,11 @@ export class Projectile extends Container {
     if (xpCategory) grantUnitXp(this.owner as UnitEntity, xpCategory, damageDealt)
     if (instance.selected || instance.shouldKeepHealthBarVisible?.()) {
       instance.drawHealthBar?.()
-      if (player.selectedOther === instance) {
+      if (
+        player.selectedUnit === instance ||
+        player.selectedBuilding === instance ||
+        player.selectedOther === instance
+      ) {
         menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
       }
     }

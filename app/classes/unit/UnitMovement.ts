@@ -25,6 +25,8 @@ import {
   instancesDistance,
   isometricToCartesian,
   moveTowardPoint,
+  showBlockedFeedback,
+  showConfusionFeedback,
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
 } from '../../lib'
@@ -51,7 +53,16 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
+  if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) return !entity.isDead
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
+}
+
+function blocksHeroDirectMoveWithRoundedFootprint(entity: RuntimeEntity | null | undefined): boolean {
+  return Boolean(entity && (entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource))
+}
+
+function blocksHeroDirectMoveWithSoftBody(entity: RuntimeEntity | null | undefined): boolean {
+  return Boolean(entity && (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal))
 }
 
 function getRoundedIsoFootprintPoints(entity: RuntimeEntity): Array<{ x: number; y: number }> {
@@ -78,7 +89,25 @@ function isHeroInsideRoundedFootprint(entity: RuntimeEntity, x: number, y: numbe
 
 function blocksHeroDirectMoveAtPoint(entity: RuntimeEntity | null | undefined, x: number, y: number): boolean {
   if (!entity || !blocksHeroDirectMove(entity)) return false
+  if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
+    const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
+    const currentDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
+    return currentDistance < collisionRadius
+  }
   return isHeroInsideRoundedFootprint(entity, x, y)
+}
+
+function blocksHeroMobileDirectMoveAtPoint(
+  unit: UnitEntity,
+  entity: RuntimeEntity,
+  x: number,
+  y: number
+): boolean {
+  const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
+  const currentDistance = Math.hypot((entity.x ?? 0) - unit.x, (entity.y ?? 0) - unit.y)
+  const nextDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
+  if (nextDistance >= currentDistance) return false
+  return nextDistance < collisionRadius
 }
 
 function getNearbyHeroCollisionEntities(
@@ -94,7 +123,7 @@ function getNearbyHeroCollisionEntities(
     if (!row) continue
     for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
       const entity = row[j]?.has
-      if (entity?.family === FAMILY_TYPES.building || entity?.family === FAMILY_TYPES.resource) entities.add(entity)
+      if (entity && blocksHeroDirectMove(entity)) entities.add(entity)
     }
   }
 
@@ -111,6 +140,10 @@ function getHeroDirectMoveBlockerAtPoint(
   const map = unit.context?.map
   for (const entity of getNearbyHeroCollisionEntities(cell, map)) {
     if (entity === unit) continue
+    if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
+      if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) return entity
+      continue
+    }
     if (blocksHeroDirectMoveAtPoint(entity, x, y)) return entity
   }
   return null
@@ -396,6 +429,7 @@ export class UnitMovement {
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
           } else {
+            showBlockedFeedback(unit)
             unit.affectNewDest?.()
           }
           return
@@ -410,6 +444,7 @@ export class UnitMovement {
             this.approachBlockedGatherTarget(dest, action ?? '')
           )
             return
+          showBlockedFeedback(unit)
           action ? unit.affectNewDest?.() : unit.stop?.()
           return
         }
@@ -442,6 +477,7 @@ export class UnitMovement {
       if (action === ACTION_TYPES.delivery) {
         unit.stop?.()
       } else {
+        showBlockedFeedback(unit)
         unit.affectNewDest?.()
       }
     }
@@ -599,10 +635,17 @@ export class UnitMovement {
       return true
     }
     const blocker = this.directMoveBlocker as unknown as RuntimeEntity | null
-    if (blocker && this.attemptSlideAlongRoundedFootprint(blocker, dirX, dirY, distance)) {
+    if (
+      blocker &&
+      blocksHeroDirectMoveWithRoundedFootprint(blocker) &&
+      this.attemptSlideAlongRoundedFootprint(blocker, dirX, dirY, distance)
+    ) {
       return true
     }
-    if (blocker) return false
+    if (blocker && blocksHeroDirectMoveWithSoftBody(blocker) && this.attemptSlideAroundSoftBody(blocker, dirX, dirY, distance)) {
+      return true
+    }
+    if (blocker && !blocksHeroDirectMoveWithSoftBody(blocker)) return false
     // Blocked head-on — slide along the obstacle's contour instead of stopping dead:
     // probe directions fanning out from the input, nearest deflection first. Distance
     // is scaled by cos(deflection) so hugging a wall is slower than moving freely.
@@ -659,6 +702,35 @@ export class UnitMovement {
     if (!this.attemptMoveDirect(slideX, slideY, slideDistance, dirX, dirY)) return false
     this.slideBias = sign
     return true
+  }
+
+  attemptSlideAroundSoftBody(blocker: RuntimeEntity, dirX: number, dirY: number, distance: number): boolean {
+    const unit = this.unit
+    const awayX = unit.x - (blocker.x ?? unit.x)
+    const awayY = unit.y - (blocker.y ?? unit.y)
+    const awayLength = Math.hypot(awayX, awayY)
+    if (awayLength <= 0) return false
+
+    const tangentX = -awayY / awayLength
+    const tangentY = awayX / awayLength
+    const alignment = dirX * tangentX + dirY * tangentY
+    const firstSign = alignment >= 0 ? 1 : -1
+    const probeSigns = this.slideBias ? [this.slideBias, -this.slideBias] : [firstSign, -firstSign]
+
+    for (const sign of probeSigns) {
+      const slideX = tangentX * sign * 0.7 + dirX * 0.3
+      const slideY = tangentY * sign * 0.7 + dirY * 0.3
+      const slideLength = Math.hypot(slideX, slideY)
+      if (
+        slideLength > 0 &&
+        this.attemptMoveDirect(slideX / slideLength, slideY / slideLength, distance * 0.75, dirX, dirY)
+      ) {
+        this.slideBias = sign
+        return true
+      }
+    }
+
+    return false
   }
 
   attemptMoveDirect(
@@ -794,6 +866,7 @@ export class UnitMovement {
     // auto-continue into a new job or path there on its own, no matter which branch would
     // otherwise apply.
     if (isHeroControlled(unit)) {
+      showConfusionFeedback(unit)
       unit.previousDest = null
       unit.previousWork = null
       unit.stop?.()
@@ -924,6 +997,7 @@ export class UnitMovement {
       } else if (unit.loading && unit.work && !notDeliveryWork.includes(unit.work)) {
         unit.sendToDelivery?.()
       } else {
+        showConfusionFeedback(unit)
         unit.stop?.()
       }
     }

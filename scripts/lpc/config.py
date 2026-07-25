@@ -79,7 +79,7 @@ CIVS = {
 }
 
 PLAYER_SHORTS = {
-    "blue": "navy",
+    "blue": "blue",
     "red": "red",
     "yellow": "yellow",
     "green": "forest",

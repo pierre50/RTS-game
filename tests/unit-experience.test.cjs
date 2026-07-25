@@ -145,7 +145,7 @@ test('level-up shows gold feedback and refreshes the selected unit panel', () =>
   grantUnitXp(unit, 'mining', 1)
   assert.equal(feedbackCalls.length, 1)
   assert.equal(feedbackCalls[0].target, unit)
-  assert.equal(feedbackCalls[0].text, '★ levelShort 1')
+  assert.equal(feedbackCalls[0].text, 'levelShort 1')
   assert.deepEqual(editorPanelUpdates, [unit])
   assert.equal(infoUpdates.length, 1)
 })

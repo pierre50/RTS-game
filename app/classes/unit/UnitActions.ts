@@ -23,6 +23,7 @@ import {
   THRUST_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
   showDamageFeedback,
+  showHealingFeedback,
   showResourceGainFeedback,
 } from '../../lib'
 import { Projectile } from '../Projectile'
@@ -305,7 +306,7 @@ export class UnitActions {
       t.loading = null
       t.finalTexture?.()
       if (t.interface) {
-        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getActionUnitButton?.(key)) : []
+        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getActionUnitButton?.(key, t)) : []
         t.interface.menu = newOwner.isPlayed
           ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
               (item): item is NonNullable<typeof item> => Boolean(item)
@@ -814,7 +815,9 @@ export class UnitActions {
               beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit),
               dest.totalHitPoints ?? 0
             )
-            grantUnitXp(unit, XP_CATEGORIES.healing, (dest.hitPoints ?? 0) - beforeHitPoints)
+            const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
+            if (healedAmount > 0) showHealingFeedback(dest)
+            grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
             if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
               dest.drawHealthBar?.()
               if (player?.selectedUnit === dest) {

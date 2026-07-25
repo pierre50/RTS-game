@@ -62,6 +62,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   removeChild: Container['removeChild']
   updateTexture?: () => void
   drawHealthBar?: () => void
+  updateHealthBarDisplay?: (elapsedMs?: number) => void
   removeHealthBar?: () => void
   drawHeroPowerBar?: (ratio: number) => void
   removeHeroPowerBar?: () => void
@@ -164,6 +165,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   followingHero?: boolean
   currentSheet?: string
   currentFrame?: number
+  mountedOnHorse?: boolean
   heroBowChargeStart?: number | null
   heroBowChargeRatio?: number
   heroBowChargeDestination?: Point | null
@@ -176,6 +178,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
+  ridingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
   standingSheet?: SpritesheetLike | null
   corpseSheet?: SpritesheetLike | null

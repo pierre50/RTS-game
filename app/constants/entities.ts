@@ -37,7 +37,6 @@ export const UNIT_TYPES = {
   bowman: 'Bowman',
   improvedBowman: 'ImprovedBowman',
   compositeBowman: 'CompositeBowman',
-  chariotArcher: 'ChariotArcher',
   scout: 'Scout',
   fishingBoat: 'FishingBoat',
   lightTransport: 'LightTransport',

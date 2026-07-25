@@ -487,14 +487,9 @@
   touch-action: manipulation;
 }
 
-.technology-menu-button:disabled {
+.technology-menu-button[aria-disabled='true'] {
   cursor: default;
   opacity: 0.55;
-}
-
-.technology-menu-button.is-researching {
-  opacity: 1;
-  border-color: var(--main-accent-color);
 }
 
 .technology-menu-icon {
@@ -526,39 +521,6 @@
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.technology-menu-progress {
-  grid-column: 2;
-  position: relative;
-  display: none;
-  height: 12px;
-  overflow: hidden;
-  border: var(--border-slot);
-  background: var(--form-surface-color);
-  box-shadow: var(--ui-inset-shadow);
-}
-
-.technology-menu-progress.is-visible {
-  display: block;
-}
-
-.technology-menu-progress-fill {
-  display: block;
-  width: 0%;
-  height: 100%;
-  background: var(--status-progress-background);
-  box-shadow: var(--status-progress-inset-shadow);
-}
-
-.technology-menu-progress-text {
-  position: absolute;
-  inset: 0;
-  color: white;
-  font-size: var(--font-size-sm);
-  line-height: 12px;
-  text-align: center;
-  text-shadow: var(--text-shadow-none);
 }
 
 .technology-menu-hotkey {
@@ -680,6 +642,11 @@
   width: var(--ui-slot-size);
   height: var(--ui-slot-size);
   object-fit: none;
+}
+
+.hero-building-menu-icon .img.is-passive {
+  cursor: default;
+  opacity: 0.85;
 }
 
 .hero-building-menu-icon .content {
