@@ -62,7 +62,6 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   removeChild: Container['removeChild']
   updateTexture?: () => void
   drawHealthBar?: () => void
-  updateHealthBarDisplay?: (elapsedMs?: number) => void
   removeHealthBar?: () => void
   drawHeroPowerBar?: (ratio: number) => void
   removeHeroPowerBar?: () => void

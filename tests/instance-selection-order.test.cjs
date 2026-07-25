@@ -152,37 +152,3 @@ test('unselect removes the active hero world health bar in hero gameplay', () =>
   assert.equal(children.some(child => child.label === 'selection'), false)
   assert.equal(children.some(child => child.label === 'healthBar'), false)
 })
-
-test('health bar display eases upward and snaps downward', () => {
-  const { Instance } = loadInstance()
-  const instance = Object.create(Instance.prototype)
-  const children = []
-  instance.family = 'unit'
-  instance.owner = { isPlayed: true }
-  instance.selected = true
-  instance.isDead = false
-  instance.isDestroyed = false
-  instance.hitPoints = 5
-  instance.totalHitPoints = 10
-  instance.sprite = { height: 40, anchor: { y: 1 } }
-  instance.children = children
-  instance.getChildByLabel = label => children.find(child => child.label === label) || null
-  instance.removeChild = child => {
-    const index = children.indexOf(child)
-    if (index >= 0) children.splice(index, 1)
-  }
-  instance.addChild = child => children.push(child)
-
-  Instance.prototype.drawHealthBar.call(instance)
-  assert.equal(instance.displayedHealthBarHitPoints, 5)
-
-  instance.hitPoints = 10
-  Instance.prototype.updateHealthBarDisplay.call(instance, 18)
-  assert.equal(instance.displayedHealthBarHitPoints, 6)
-  assert.equal(children.find(child => child.label === 'healthBar').rects.at(-1).width, 12)
-
-  instance.hitPoints = 3
-  Instance.prototype.updateHealthBarDisplay.call(instance, 18)
-  assert.equal(instance.displayedHealthBarHitPoints, 3)
-  assert.equal(children.find(child => child.label === 'healthBar').rects.at(-1).width, 6)
-})
