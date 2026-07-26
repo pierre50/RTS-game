@@ -63,12 +63,10 @@ export class BuildingLifecycle {
         ? 'buildings/construction/dock'
         : getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
 
-    if (percentage >= 25 && percentage < 50) {
+    if (percentage >= 33 && percentage < 66) {
       building.sprite.texture = getTextureByFrame(buildSpritesheetId, 1, Assets)
-    } else if (percentage >= 50 && percentage < 75) {
+    } else if (percentage >= 66 && percentage < 99) {
       building.sprite.texture = getTextureByFrame(buildSpritesheetId, 2, Assets)
-    } else if (percentage >= 75 && percentage < 99) {
-      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 3, Assets)
     } else if (percentage >= 100) {
       const wasBuilt = building.isBuilt
       building.isBuilt = true
