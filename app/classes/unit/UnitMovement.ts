@@ -217,27 +217,6 @@ function debugBlockedDirectMove(
   const now = performance.now()
   if (now - lastDirectMoveDebugAt < DIRECT_MOVE_DEBUG_THROTTLE_MS) return
   lastDirectMoveDebugAt = now
-  console.debug('[hero direct blocked]', {
-    reason,
-    details,
-    dir: { x: Number(dirX.toFixed(3)), y: Number(dirY.toFixed(3)) },
-    unit: {
-      i: unit.i,
-      j: unit.j,
-      x: Math.round(unit.x),
-      y: Math.round(unit.y),
-      currentCell: {
-        i: unit.currentCell?.i,
-        j: unit.currentCell?.j,
-        solid: unit.currentCell?.solid,
-        border: unit.currentCell?.border,
-        category: unit.currentCell?.category,
-        has: unit.currentCell?.has
-          ? { type: unit.currentCell.has.type, family: unit.currentCell.has.family, label: unit.currentCell.has.label }
-          : null,
-      },
-    },
-  })
 }
 
 export class UnitMovement {

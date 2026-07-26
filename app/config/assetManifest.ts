@@ -89,6 +89,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'buildings/construction/size-1',
     'buildings/construction/size-2',
     'buildings/construction/size-3',
+    'buildings/construction/size-5',
     'boats/wrecks/small',
     'boats/wrecks/medium',
     'boats/wrecks/large',

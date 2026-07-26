@@ -1,4 +1,4 @@
-import { Graphics } from 'pixi.js'
+import { Assets, Graphics } from 'pixi.js'
 import {
   drawRoundedIsoShape,
   getInstanceDegree,
@@ -18,6 +18,7 @@ import {
   type HeroEquippedItem,
 } from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
+import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import {
   getCommRadiusForHold,
   isAnyNpcNear,
@@ -122,6 +123,15 @@ function debugHeroMove(message: string, unit: UnitEntity, details: Record<string
       },
     },
   })
+}
+
+// controlMode determines the baked look (see applyBakedLpcUnitAssets), and this
+// runs after the unit's initial spawn-time bake, so the sheet aliases must be
+// re-resolved into actual textures here too — same pattern as UnitActions.upgrade().
+function refreshBakedAppearance(unit: UnitEntity): void {
+  applyBakedLpcUnitAssets(unit)
+  Object.assign(unit, Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)])))
+  unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
 }
 
 export class HeroController {
@@ -453,9 +463,11 @@ export class HeroController {
 
     if (this.heroUnit && this.heroUnit !== player.units[0]) {
       setUnitControlMode(this.heroUnit, 'rts')
+      refreshBakedAppearance(this.heroUnit)
     }
     this.heroUnit = player.units[0]
     setUnitControlMode(this.heroUnit, 'hero')
+    refreshBakedAppearance(this.heroUnit)
     this.heroUnit.stop?.()
     this.heroUnit.removeHealthBar?.()
     player.unselectAll?.()

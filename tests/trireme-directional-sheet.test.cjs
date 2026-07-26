@@ -102,6 +102,72 @@ test('missing standing sheet idles on the first walking frame from the current d
   assert.deepEqual(sprite.textures, [{ id: 0 }])
 })
 
+test('mounted units use riding art only for idle and walking, not for attack actions', () => {
+  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './grid': { instanceIsInPlayerSight: () => false },
+    './maths': {
+      degreeToDirection: () => 'south',
+    },
+    './uiSound': {},
+    './lang': {},
+  })
+
+  const sprite = {
+    currentFrame: 0,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    playCalls: 0,
+    stopCalls: 0,
+    gotoAndPlay(frame) {
+      this.playCalls += 1
+      this.currentFrame = frame
+    },
+    play() {
+      this.playCalls += 1
+    },
+    stop() {
+      this.stopCalls += 1
+    },
+  }
+  const ridingSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': { id: 'ride' } } }
+  const actionSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': { id: 'hit' } } }
+
+  setUnitTexture('standingSheet', {
+    context: {},
+    degree: 180,
+    mountedOnHorse: true,
+    ridingSheet,
+    sprite,
+    standingSheet: { data: {}, textures: { '000.png': { id: 'stand' } } },
+  })
+
+  assert.deepEqual(sprite.textures, [{ id: 'ride' }])
+  assert.equal(sprite.stopCalls, 1)
+
+  setUnitTexture('actionSheet', {
+    context: {},
+    degree: 180,
+    mountedOnHorse: true,
+    ridingSheet,
+    sprite,
+    actionSheet,
+  })
+
+  assert.deepEqual(sprite.textures, [{ id: 'hit' }])
+  assert.equal(sprite.playCalls, 1)
+})
+
 test('Trireme declares its 9-direction sheets so it does not animate through headings while idle', () => {
   const { createPlayerData } = loadModule('app/config/playerConfig.ts', {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },

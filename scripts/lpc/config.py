@@ -34,6 +34,7 @@ PALETTES: dict[str, list[str]] = {
     "black":       ["#000000", "#1D1D21", "#222323", "#2D3136", "#434549", "#48474D"],
     "dark_brown":  ["#000000", "#1D1D21", "#372423", "#453125", "#633432", "#885041"],
     "brown_hair":  ["#000000", "#372423", "#583126", "#753B09", "#854F12", "#9E6520"],
+    "light_brown": ["#1A0E04", "#301B07", "#60350F", "#7D4513", "#AE682A", "#C88D58"],
 
     # ── Player colours ──────────────────────────────────────────────────────
     "navy":          ["#1D1D21", "#2E1026", "#26233D", "#28335D", "#5165AE", "#5274C5"],
@@ -56,7 +57,9 @@ PALETTES: dict[str, list[str]] = {
     "gold":   ["#2E1026", "#753B09", "#9E6520", "#D1AA39", "#EDD493", "#FFF3D6"],
 
     # ── Cloth ───────────────────────────────────────────────────────────────
-    "white":  ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
+    "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
+    "cloth_brown": ["#1D131E", "#411E05", "#4B2B13", "#62351C", "#744B30", "#996B4A"],
+    "cloth_blue":  ["#180716", "#281E41", "#322D6A", "#3C49AD", "#466AC9", "#61A0EF"],
 }
 
 SKIN_TONES = {
@@ -121,6 +124,19 @@ SASH_WHITE = DressItem("torso/waist/sash_narrow/male/{animation}/white.png")
 # the player palette instead of picking a hand-colored file.
 SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", team_colored=True)
 SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", team_colored=True)
+
+# Hero outfit pieces. Unlike SHORTS/APRON_BROWN (pre-colored files picked by name),
+# shortsleeve/pantaloons/shoes only ship one colorless template per animation
+# upstream, so they're pixel-recolored to a fixed palette instead. Suspenders and
+# the headband are the exception: suspenders only ships pre-colored per-animation
+# files (like APRON_BROWN's "brown"), and the headband is recolored like a
+# metal/hat piece (see HEADBAND above, just with a fixed "cloth_blue" instead of
+# the player's team color).
+SHORTSLEEVE_WHITE = DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", palette="white")
+PANTALOONS_BROWN = DressItem("legs/pantaloons/male/{animation}.png", palette="cloth_brown")
+SHOES_BLACK = DressItem("feet/shoes/basic/male/{animation}.png", palette="black")
+SUSPENDERS_BLACK = DressItem("torso/aprons/suspenders/male/{animation}/black.png")
+HEADBAND_BLUE = DressItem("hat/headband/tied", palette="cloth_blue")
 
 # Baked output/asset variant key. Every unit ships one deterministic look per
 # civilization, so this is a fixed constant rather than per-unit data.
@@ -244,6 +260,17 @@ UNIT_LOOKS: dict[str, UnitLook] = {
             DressItem("torso/armour/legion/male/{animation}.png", palette="silver"),
             BRACERS_SILVER,
         ),
+    ),
+    # The ARPG hero's own signature look, distinct from a plain "villager": light
+    # brown hair, a blue headband, and a white-shirt/brown-pantaloons/black-shoes
+    # outfit with black suspenders on top. Baked like "villager" (see
+    # hero_build_tasks() in build.py) for slash/thrust/shoot job-pose variety plus
+    # a mounted "riding" sheet, since the hero can swap tools/weapons and ride.
+    "hero": UnitLook(
+        hair="plain",
+        hair_palette="light_brown",
+        hat=HEADBAND_BLUE,
+        dress=(PANTALOONS_BROWN, SHOES_BLACK, SHORTSLEEVE_WHITE, SUSPENDERS_BLACK),
     ),
     "priest": UnitLook(
         hair="long",

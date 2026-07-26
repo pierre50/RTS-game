@@ -7,6 +7,10 @@ from jobs import UNIT_JOBS
 
 
 VILLAGER_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
+# The hero bakes the same multi-animation body as the villager (see
+# hero_build_tasks() in build.py) — its "riding" sheet reuses the "slash" frames
+# already covered here, so it needs no extra animation entry.
+MULTI_ANIMATION_BODY_UNITS = {"villager": VILLAGER_BODY_ANIMATIONS, "hero": VILLAGER_BODY_ANIMATIONS}
 
 
 def required_source_paths() -> list[str]:
@@ -15,9 +19,10 @@ def required_source_paths() -> list[str]:
         for unit in UNIT_LOOKS:
             look = unit_look_for_civ(unit, civ_key)
             player_colors = PLAYER_SHORTS.keys() if unit == "villager" else ("neutral",)
+            body_animations = MULTI_ANIMATION_BODY_UNITS.get(unit)
             for player_color in player_colors:
-                if unit == "villager":
-                    for animation in VILLAGER_BODY_ANIMATIONS:
+                if body_animations:
+                    for animation in body_animations:
                         for layer in layer_paths(look, animation, civ, player_color):
                             paths.add(layer.path)
                     continue

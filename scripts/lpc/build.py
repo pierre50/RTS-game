@@ -199,6 +199,16 @@ def villager_build_tasks() -> list[BuildTask]:
     ]
 
 
+# Same job-pose variety as the villager (the hero swaps tools/weapons the same
+# way), plus a mounted "riding" sheet built from the slash pose — riding needs no
+# extra source animation since it reuses the slash frames already baked above.
+def hero_build_tasks() -> list[BuildTask]:
+    return [
+        *villager_build_tasks(),
+        ("action/riding", SHEET_BY_ANIMATION["slash"], "slash"),
+    ]
+
+
 def build(
     source_root: Path,
     output_root: Path,
@@ -252,6 +262,8 @@ def build(
             variant_key = f"{civ_key}_{VARIANT_KEY}"
             if unit == "villager":
                 tasks = villager_build_tasks()
+            elif unit == "hero":
+                tasks = hero_build_tasks()
             else:
                 tasks = [
                     (f"default/{output_sheet}", source_sheet, animation)
