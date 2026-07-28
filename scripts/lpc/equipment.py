@@ -221,14 +221,14 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             background=(LayerSpec("weapon/sword/arming/universal/bg/walk/brass.png"),),
             foreground=(
                 LayerSpec("weapon/sword/arming/universal/fg/walk/brass.png"),
-                LayerSpec("shield/round/walk/gold.png", palette="brass", behind_rows=(SOUTH_ROW,)),
+                LayerSpec("shield/round/walk/brass.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
         "slash": Equipment(
             background=(LayerSpec("weapon/sword/arming/attack_slash/bg/brass.png"),),
             foreground=(
                 LayerSpec("weapon/sword/arming/attack_slash/fg/brass.png"),
-                LayerSpec("shield/round/slash/gold.png", palette="brass", behind_rows=(SOUTH_ROW,)),
+                LayerSpec("shield/round/slash/brass.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
         "hurt": Equipment(
@@ -281,14 +281,14 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                     "weapon/polearm/longspear/foreground/walk/dark.png",
                     direct_columns=True,
                 ),
-                LayerSpec("shield/round/walk/gold.png", palette="brass", behind_rows=(SOUTH_ROW,)),
+                LayerSpec("shield/round/walk/brass.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
         "thrust": Equipment(
             background=(LayerSpec("weapon/polearm/longspear/background/thrust/dark.png"),),
             foreground=(
                 LayerSpec("weapon/polearm/longspear/foreground/thrust/dark.png"),
-                LayerSpec("shield/round/thrust/gold.png", palette="brass", behind_rows=(SOUTH_ROW,)),
+                LayerSpec("shield/round/thrust/brass.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
     },

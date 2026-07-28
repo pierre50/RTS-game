@@ -8,7 +8,7 @@ __pycache__/
 tools/
 !tools/
 tools/*
-!tools/generate-rtsmaps.cjs
+!tools/generate-maps.cjs
 /scripts/lpc/spritesheets/
 /scripts/lpc/palette_definitions/
 /scripts/lpc/sheet_definitions/

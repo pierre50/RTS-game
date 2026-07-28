@@ -12,7 +12,7 @@ import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
 import type { ActionProps } from '../lib/combat'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
-export type UnitControlMode = 'rts' | 'hero' | 'ai'
+export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
 export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
@@ -129,6 +129,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   sounds?: UnitSounds
   work?: string | null
   autonomousJob?: VillagerAutonomyJob | null
+  assigningAutonomousJob?: boolean
   loading?: number | null
   loadingType?: string | null
   showTransportCapacity?: boolean
@@ -301,6 +302,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   handleSetDest?: (dest: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (instance: RuntimeEntity, unit: UnitEntity) => boolean
   clear?: () => void
+  explore?: () => boolean
   visibilityTimeout?: number | ReturnType<typeof setTimeout>
 }
 

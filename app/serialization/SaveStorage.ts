@@ -3,10 +3,10 @@ import { serializeGame } from './SaveSerializer'
 import type { GameContextLike } from '../types/context'
 import type { SaveIndexEntry, SaveRecord } from '../types/save'
 
-const INDEX_KEY = 'rts_saves_index'
+const INDEX_KEY = 'saves_index'
 const MAX_SAVES = 10
-const EXPORT_FORMAT = 'rts-save'
-export const EXPORT_EXT = '.rts'
+const EXPORT_FORMAT = 'save-v1'
+export const EXPORT_EXT = '.save'
 
 type ExportPayload = {
   data?: string
@@ -44,7 +44,7 @@ export function save(context: GameContextLike): { key: string; name: string } {
   }
   const data = serializeGame(context)
   const compressed = LZString.compressToBase64(JSON.stringify(data))
-  const key = `rts_save_${Date.now()}`
+  const key = `save_${Date.now()}`
   try {
     localStorage.setItem(key, compressed)
   } catch {
@@ -119,7 +119,7 @@ export function importSaveFile(file: File): Promise<{ key: string; name: string 
 
         const index = getIndex()
         if (index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
-        const key = `rts_save_${Date.now()}`
+        const key = `save_${Date.now()}`
         try {
           localStorage.setItem(key, parsed.data)
         } catch {

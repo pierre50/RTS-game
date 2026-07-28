@@ -1,7 +1,7 @@
 export const LPC_BASE_URL =
   'assets/graphics/lpc'
 
-export const LPC_PREVIEW_FLAG = 'rts-lpc-villager-preview'
+export const LPC_PREVIEW_FLAG = 'lpc-villager-preview'
 
 export const LPC_FRAME_ANCHOR = { x: 0.5, y: 0.86 }
 export const LPC_128_FRAME_ANCHOR = { x: 0.5, y: 0.68 }

@@ -44,7 +44,6 @@ function loadControls() {
         removeMouseBuilding() {}
       },
     },
-    '../controllers/SelectionManager': { SelectionManager: class {} },
     '../controllers/RallyPointController': {
       RallyPointController: class {
         constructor() {
@@ -117,7 +116,6 @@ function loadControls() {
       setVirtualCursorVisible: () => {},
       setVirtualCursorPosition: () => {},
     },
-    '../lib/unitControl': { hasRtsCommandableUnits: units => Boolean(units?.length) },
     '../constants': {
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },
       IS_MOBILE: false,

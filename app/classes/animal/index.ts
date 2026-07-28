@@ -1,28 +1,19 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
 import {
-  ACTION_TYPES,
   FAMILY_TYPES,
   RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
   LABEL_TYPES,
-  SOUND_CUES,
-  UNIT_TYPES,
 } from '../../constants'
 import {
   cartesianToIsometric,
   getInstanceZIndex,
   getGroundReliefLevel,
   getReliefLiftPixels,
-  instancesDistance,
   instanceContactInstance,
-  drawInstanceBlinkingSelection,
-  playerCanSeeInstance,
-  getActionCondition,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
-  playSoundCue,
-  playSelectionSound,
 } from '../../lib'
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
@@ -37,9 +28,7 @@ import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
-import type { SelectableInstance } from '../../lib'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import { canUseRtsEntityPointer } from '../../lib/unitControl'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
@@ -190,7 +179,7 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.on('pointerup', (evt: FederatedPointerEvent) => {
       const {
-        context: { controls, player, menu, editor },
+        context: { controls, menu, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
       if (controls.isHeroControlActive?.()) {
@@ -202,64 +191,9 @@ export class Animal extends Instance implements AnimalEntity {
         }
         return
       }
-      if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)
-        return
-      }
-      if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
-        return
-      }
-      controls.mouse.prevent = true
-      let drawDestinationRectangle = false
-      let hasSentWorker = false
-      let hasSentOther = false
-
-      if (player.selectedUnits.length) {
-        for (let i = 0; i < player.selectedUnits.length; i++) {
-          const playerUnit = player.selectedUnits[i]
-          if (playerUnit.type === UNIT_TYPES.villager) {
-            if (getActionCondition(playerUnit, this, ACTION_TYPES.hunt)) {
-              playerUnit.sendToHunt(this)
-              hasSentWorker = true
-              drawDestinationRectangle = true
-            } else if (getActionCondition(playerUnit, this, ACTION_TYPES.takemeat)) {
-              playerUnit.sendToTakeMeat(this)
-              hasSentWorker = true
-              drawDestinationRectangle = true
-            }
-          } else if (getActionCondition(playerUnit, this, ACTION_TYPES.attack)) {
-            playerUnit.sendTo(this, ACTION_TYPES.attack)
-            drawDestinationRectangle = true
-            hasSentOther = true
-          }
-        }
-      } else if (player.selectedBuilding && player.selectedBuilding.range) {
-        if (
-          getActionCondition(player.selectedBuilding, this, ACTION_TYPES.attack) &&
-          instancesDistance(player.selectedBuilding, this) <=
-            player.selectedBuilding.range
-        ) {
-          player.selectedBuilding.attackAction?.(this)
-          drawDestinationRectangle = true
-        }
-      } else if ((playerCanSeeInstance(this, player) || map.revealEverything) && this.quantity > 0) {
-        player.unselectAll()
-        this.select()
-        menu.setActionTarget(this)
-        player.selectedOther = this
-        playSelectionSound(this)
-      }
-
-      if (hasSentOther) {
-        playSoundCue(SOUND_CUES.unit.militaryCommand)
-      } else if (hasSentWorker) {
-        const voice = Assets.cache.get('config').units.Villager.sounds.huntCommand
-        playSoundCue(voice)
-      }
-      if (drawDestinationRectangle) {
-        drawInstanceBlinkingSelection(this as SelectableInstance)
       }
     })
 

@@ -113,9 +113,7 @@ export interface ControlsLike extends Container {
   context: GameContextLike
   camera: { x: number; y: number }
   mouse: { x: number; y: number; prevent?: boolean }
-  pointerStart?: { x: number; y: number } | null
   mouseBuilding?: (Container & { type?: string; isFree?: boolean }) | null
-  mouseRectangle?: SelectionRectangle | null
   entityPreview?: EntityPreviewLike | null
   rallyPointController?: RallyPointControllerLike
   screenToLocal(x: number, y: number): { x: number; y: number }
@@ -124,15 +122,11 @@ export interface ControlsLike extends Container {
   removeMouseBuilding(): void
   setMouseBuilding?(building: PlaceableBuildingConfig): void
   setCamera?(x: number, y: number, direct?: boolean): void
-  sendUnits?(cell: RuntimeCell): void
   updateVisibleCells?(): void
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean
   instanceIsAudible(instance: AudibleInstanceLike): boolean
   isMouseInApp(evt: ControlPointerEvent): boolean
   isInteractionBlocked(): boolean
-  doubleClicked?: boolean
-  consumeUnitDoubleClick?(unit: RuntimeEntity): boolean
-  registerUnitClick?(unit: RuntimeEntity): void
   getCellOnCamera?(callback: (cell: RuntimeCell) => void): void
   init?(): void
   heroUnit?: UnitEntity | null

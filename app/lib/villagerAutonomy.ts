@@ -1,5 +1,7 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import { getCellsAroundPoint, getInstancePath } from './grid'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
   return Boolean(entity && !entity.isDead && !entity.isDestroyed && (entity.hitPoints ?? 1) > 0)
@@ -24,6 +26,63 @@ function closest<T extends RuntimeEntity>(unit: UnitEntity, candidates: Iterable
     }
   }
   return best
+}
+
+function isFishResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
+  return Boolean(
+    entity &&
+      entity.family === FAMILY_TYPES.resource &&
+      (entity.category === 'Fish' || entity.type === RESOURCE_TYPES.salmon)
+  )
+}
+
+function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
+  if (!a || !b) return false
+  if (a === b) return true
+  return Boolean(a.label && b.label && a.label === b.label)
+}
+
+function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string, action: string): number {
+  const workers = unit.owner?.units ?? []
+  let load = 0
+  for (const worker of workers) {
+    if (worker === unit || worker.isDead || worker.isDestroyed) continue
+    if (worker.type !== UNIT_TYPES.villager || worker.work !== work || worker.action !== action) continue
+    if (sameTarget(worker.dest as RuntimeEntity | null | undefined, target)) load++
+  }
+  return load
+}
+
+function hasReachableFishShoreCell(unit: UnitEntity, fish: RuntimeEntity): boolean {
+  const map = unit.context?.map
+  if (!map) return true
+
+  const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, (cell: RuntimeCell) => {
+    return cell.category !== 'Water' && !cell.solid && !cell.border
+  })
+  shoreCells.sort(
+    (a: RuntimeCell, b: RuntimeCell) =>
+      Math.abs(unit.i - a.i) + Math.abs(unit.j - a.j) - (Math.abs(unit.i - b.i) + Math.abs(unit.j - b.j))
+  )
+
+  for (const cell of shoreCells) {
+    if (unit.i === cell.i && unit.j === cell.j) return true
+    if (getInstancePath(unit, cell.i, cell.j, map).length) return true
+  }
+  return false
+}
+
+function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {
+  if (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
+    return targetWorkerLoad(unit, target, WORK_TYPES.farmer, ACTION_TYPES.farm) < 1
+  }
+  if (isFishResource(target)) {
+    return (
+      targetWorkerLoad(unit, target, WORK_TYPES.fisher, ACTION_TYPES.fishing) < 1 &&
+      hasReachableFishShoreCell(unit, target)
+    )
+  }
+  return true
 }
 
 function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
@@ -73,13 +132,31 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
       (building.quantity ?? 1) > 0 &&
       unit.getActionCondition?.(building, ACTION_TYPES.farm)
   )
-  return [...berries.filter(isUsableResource), ...fish.filter(isUsableResource), ...farms]
+  return [...berries.filter(isUsableResource), ...fish.filter(isUsableResource), ...farms].filter(target =>
+    isFoodTargetAvailable(unit, target)
+  )
 }
 
 function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
   return (unit.owner?.buildings ?? []).filter(
-    building => isAliveEntity(building) && !building.isBuilt && unit.getActionCondition?.(building, ACTION_TYPES.build)
+    building =>
+      building.owner === unit.owner &&
+      isAliveEntity(building) &&
+      !building.isBuilt &&
+      unit.getActionCondition?.(building, ACTION_TYPES.build)
   )
+}
+
+export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
+  if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
+  if (job === 'construction') return knownConstructionTargets(unit).length > 0
+  if (job === 'food') return knownFoodTargets(unit).length > 0
+  const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction'>, string> = {
+    wood: RESOURCE_TYPES.tree,
+    stone: RESOURCE_TYPES.stone,
+    gold: RESOURCE_TYPES.gold,
+  }
+  return knownResources(unit, resourceTypeByJob[job]).length > 0
 }
 
 export function getAutonomyJobForWork(work: string | null | undefined): VillagerAutonomyJob | null {
@@ -112,36 +189,52 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
   setVillagerAutonomy(unit, job)
 
-  if (job === 'food') {
-    const target = closest(unit, knownFoodTargets(unit))
-    if (!target) return exploreForAutonomy(unit, job)
-    if (target.family === FAMILY_TYPES.building) unit.sendToFarm?.(target)
-    else if (target.category === 'Fish') unit.sendToFish?.(target)
-    else unit.sendToBerrybush?.(target)
-    return true
-  }
+  unit.assigningAutonomousJob = true
+  try {
+    if (job === 'food') {
+      const target = closest(unit, knownFoodTargets(unit))
+      if (!target) return exploreForAutonomy(unit, job)
+      if (target.family === FAMILY_TYPES.building) unit.sendToFarm?.(target)
+      else if (isFishResource(target)) unit.sendToFish?.(target)
+      else unit.sendToBerrybush?.(target)
+      return true
+    }
 
-  if (job === 'construction') {
-    const target = closest(unit, knownConstructionTargets(unit))
-    if (!target) return exploreForAutonomy(unit, job)
-    unit.sendToBuilding?.(target)
-    return true
-  }
+    if (job === 'construction') {
+      const target = closest(unit, knownConstructionTargets(unit))
+      if (!target) {
+        clearVillagerAutonomy(unit)
+        return false
+      }
+      unit.sendToBuilding?.(target)
+      return true
+    }
 
-  const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction'>, string> = {
-    wood: RESOURCE_TYPES.tree,
-    stone: RESOURCE_TYPES.stone,
-    gold: RESOURCE_TYPES.gold,
+    const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction'>, string> = {
+      wood: RESOURCE_TYPES.tree,
+      stone: RESOURCE_TYPES.stone,
+      gold: RESOURCE_TYPES.gold,
+    }
+    const target = closest(unit, knownResources(unit, resourceTypeByJob[job]))
+    if (!target) return exploreForAutonomy(unit, job)
+    if (job === 'wood') unit.sendToTree?.(target)
+    if (job === 'stone') unit.sendToStone?.(target)
+    if (job === 'gold') unit.sendToGold?.(target)
+    return true
+  } finally {
+    unit.assigningAutonomousJob = false
   }
-  const target = closest(unit, knownResources(unit, resourceTypeByJob[job]))
-  if (!target) return exploreForAutonomy(unit, job)
-  if (job === 'wood') unit.sendToTree?.(target)
-  if (job === 'stone') unit.sendToStone?.(target)
-  if (job === 'gold') unit.sendToGold?.(target)
-  return true
 }
 
 export function resumeVillagerAutonomy(unit: UnitEntity): boolean {
-  if (!unit.autonomousJob || unit.type !== UNIT_TYPES.villager || unit.lookingAtHero || unit.followingHero) return false
+  if (
+    !unit.autonomousJob ||
+    unit.type !== UNIT_TYPES.villager ||
+    unit.lookingAtHero ||
+    unit.followingHero ||
+    unit.assigningAutonomousJob
+  ) {
+    return false
+  }
   return assignVillagerAutonomy(unit, unit.autonomousJob)
 }

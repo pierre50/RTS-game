@@ -74,7 +74,7 @@ function isEditorUnitListEntity(entity: RuntimeEntity | null | undefined): entit
 }
 
 const DEFAULT_MAP_SIZE = 120
-const MAP_EXPORT_EXT = '.rtsmap'
+const MAP_EXPORT_EXT = '.map'
 const PLACEMENT_SELECTION_SUPPRESS_MS = 150
 const EDITOR_FLOOR_SPRITESHEETS: Record<string, string[]> = {
   Desert: ['environment/floor/desert-4', 'environment/floor/desert-5', 'environment/floor/desert-6', 'environment/floor/desert-7', 'environment/floor/desert-8', 'environment/floor/desert-9', 'environment/floor/desert-10', 'environment/floor/desert-11', 'environment/floor/desert-12'],
@@ -562,7 +562,7 @@ export default class MapEditor extends Container {
 
     const map = this._map
     const payload = {
-      format: 'rts-map',
+      format: 'map',
       version: 1,
       name: this.config.name || 'map',
       size: map.size,

@@ -111,7 +111,7 @@ export async function loadPregeneratedMapBlueprint({
     const mapParseStartedAt = performance.now()
     const payload = await response.json()
     timings.blueprintMapParse = performance.now() - mapParseStartedAt
-    if (payload.format !== 'rts-map-blueprint' || payload.version !== 1 || payload.size !== size) return null
+    if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.size !== size) return null
 
     const decodeStartedAt = performance.now()
     const terrainValues = decodeBase64Bytes(payload.terrain, Uint8Array)

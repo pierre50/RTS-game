@@ -17,7 +17,7 @@
     "dist": "pnpm build && electron-builder",
     "compile": "pnpm dist",
     "deploy": "pnpm build && gh-pages -d build",
-    "maps:generate": "node tools/generate-rtsmaps.cjs",
+    "maps:generate": "node tools/generate-maps.cjs",
     "assets:lpc:sync": "python3 scripts/lpc/sync.py",
     "assets:lpc:build": "python3 scripts/lpc/build.py && python3 scripts/lpc/build_equipment.py && python3 scripts/lpc/build_animals.py",
     "assets:lpc:build-equipment": "python3 scripts/lpc/build_equipment.py",

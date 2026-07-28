@@ -1,13 +1,9 @@
 import { AnimatedSprite, Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
-  ACTION_TYPES,
   BUILDING_TYPES,
   FAMILY_TYPES,
   LABEL_TYPES,
-  SOUND_CUES,
-  UNIT_TYPES,
-  WORK_TYPES,
 } from '../../constants'
 import {
   cartesianToIsometric,
@@ -19,8 +15,6 @@ import {
   getReliefLiftPixels,
   clearCellTerrainSet,
   drawInstanceBlinkingSelection,
-  playerCanSeeInstance,
-  getActionCondition,
   getBuildingAsset,
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
@@ -28,7 +22,6 @@ import {
   canUpdateMinimap,
   updateInstanceVisibility,
   playSoundCue,
-  playSelectionSound,
   bindAnimatedSpriteToTicker,
   getRallyPointFrames,
   RALLY_POINT_SHEET_ID,
@@ -41,8 +34,6 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import { getTrainingTargetForUnit } from '../../lib/buildingTraining'
-import { canUseRtsEntityPointer } from '../../lib/unitControl'
 import type { FederatedPointerEvent, Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -228,7 +219,7 @@ export class Building extends Instance implements BuildingEntity {
 
       this.sprite.on('pointertap', (evt: FederatedPointerEvent) => {
         const {
-          context: { controls, player, menu, editor },
+          context: { controls, menu, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
@@ -257,111 +248,6 @@ export class Building extends Instance implements BuildingEntity {
             menu.openEntityInfoModal?.(this)
           }
           return
-        }
-        if (!canUseRtsEntityPointer(controls)) return
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
-          return
-        }
-        let hasSentWorker = false
-        let hasSentOther = false
-        controls.mouse.prevent = true
-        if (this.owner.isPlayed) {
-          if (!this.isBuilt) {
-            for (let i = 0; i < player.selectedUnits.length; i++) {
-              const unit = player.selectedUnits[i]
-              if (unit.type === UNIT_TYPES.villager) {
-                if (getActionCondition(unit, this, ACTION_TYPES.build)) {
-                  hasSentWorker = true
-                  unit.sendToBuilding(this)
-                }
-              } else {
-                unit.sendTo(this)
-                hasSentOther = true
-              }
-            }
-            if (hasSentWorker) {
-              drawInstanceBlinkingSelection(this)
-            }
-            if (hasSentOther) {
-              playSoundCue(SOUND_CUES.unit.militaryCommand)
-              return
-            } else if (hasSentWorker) {
-              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
-              playSoundCue(voice)
-              return
-            }
-          } else if (player.selectedUnits) {
-            for (let i = 0; i < player.selectedUnits.length; i++) {
-              const unit = player.selectedUnits[i]
-              const accept =
-                unit.category === 'Boat'
-                  ? this.type === BUILDING_TYPES.dock
-                  : this.type === BUILDING_TYPES.townCenter ||
-                    (this.accept && this.accept.includes(unit.loadingType ?? ''))
-              if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.build)) {
-                hasSentWorker = true
-                unit.previousDest = null
-                unit.sendToBuilding(this)
-              } else if (unit.type === UNIT_TYPES.villager && getActionCondition(unit, this, ACTION_TYPES.farm)) {
-                hasSentWorker = true
-                unit.sendToFarm(this)
-              } else if (
-                accept &&
-                getActionCondition(unit, this, ACTION_TYPES.delivery, {
-                  buildingTypes: [this.type],
-                })
-              ) {
-                hasSentWorker = true
-                unit.previousDest = null
-                unit.sendTo(this, ACTION_TYPES.delivery)
-              } else {
-                const trainingType = getTrainingTargetForUnit(this, unit)
-                if (trainingType && this.requestUnitTraining(trainingType, undefined, unit)) {
-                  hasSentWorker = true
-                }
-              }
-            }
-            if (hasSentWorker) {
-              drawInstanceBlinkingSelection(this)
-              const voice = Assets.cache.get('config').units.Villager.sounds.buildCommand
-              playSoundCue(voice)
-              return
-            }
-          }
-          this.selectForPlayedOwner()
-        } else if (player.selectedUnits.length) {
-          let hasSentConverter = false
-          let hasSentAttacker = false
-          for (let i = 0; i < player.selectedUnits.length; i++) {
-            const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && getActionCondition(playerUnit, this, ACTION_TYPES.convert)) {
-              hasSentConverter = true
-              playerUnit.sendToConvert(this)
-              continue
-            }
-            if (!getActionCondition(playerUnit, this, ACTION_TYPES.attack)) continue
-            hasSentAttacker = true
-            if (playerUnit.type === UNIT_TYPES.villager) {
-              playerUnit.sendToAttack(this)
-            } else {
-              playerUnit.sendTo(this, ACTION_TYPES.attack)
-            }
-          }
-          if (hasSentConverter || hasSentAttacker) {
-            drawInstanceBlinkingSelection(this)
-          } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
-            player.unselectAll()
-            this.select()
-            menu.setActionTarget(this)
-            player.selectedOther = this
-            playSelectionSound(this)
-          }
-        } else if (playerCanSeeInstance(this, player) || map.revealEverything) {
-          player.unselectAll()
-          this.select()
-          menu.setActionTarget(this)
-          player.selectedOther = this
-          playSelectionSound(this)
         }
       })
 

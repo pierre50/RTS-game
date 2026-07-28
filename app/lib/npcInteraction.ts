@@ -116,7 +116,7 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity): void {
   playSelectionSound(target)
 }
 
-// Mirrors SelectionManager.sendUnits' bark logic: a cue shared by the whole group plays once,
+// A cue shared by the whole group plays once,
 // otherwise fall back to the villager/military default — never one bark per unit in the group.
 export function playNpcOrderSound(npcs: UnitEntity[]): void {
   if (!npcs.length) return
@@ -283,6 +283,21 @@ function resetNpcDirectives(target: UnitEntity): void {
 
 export function clearNpcCommunicationFocus(target: UnitEntity): void {
   resetNpcDirectives(target)
+}
+
+export function canKeepNpcHere(target: UnitEntity): boolean {
+  return Boolean(
+    target.followingHero ||
+      target.autonomousJob ||
+      target.pendingOrder ||
+      target.previousDest ||
+      target.dest ||
+      target.realDest ||
+      (target.path?.length ?? 0) > 0 ||
+      target.hasPath?.() ||
+      (target.action && target.action !== ACTION_TYPES.attack) ||
+      !target.inactif
+  )
 }
 
 export function sendNpcToStockpile(target: UnitEntity): void {

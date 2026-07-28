@@ -4,39 +4,31 @@ import {
   getGroundReliefLevel,
   getInstanceZIndex,
   getReliefLiftPixels,
-  playerCanSeeInstance,
   randomRange,
-  drawInstanceBlinkingSelection,
-  getActionCondition,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getDeterministicCellVariant,
   getTexture,
   getTextureSheet,
   getTextureByFrame,
-  playSoundCue,
-  playSelectionSound,
   textureRefToString,
 } from '../lib'
 import {
-  TYPE_ACTION,
   CELL_WIDTH,
   CELL_HEIGHT,
   FAMILY_TYPES,
   PLAYER_TYPES,
   LABEL_TYPES,
   RESOURCE_TYPES,
-  SOUND_CUES,
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
 import { getResourceWindAnimationEnabled, getShadowsEnabled, onVisualSettingsChange } from '../lib/settings'
-import { canUseRtsEntityPointer } from '../lib/unitControl'
-import type { FederatedPointerEvent, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
-import type { EntityInterfaceLike, ResourceEntity, UnitEntity, UnitSounds } from '../types/entities'
+import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { TextureRef } from '../lib'
 
@@ -60,7 +52,6 @@ type ResourceConfigCache = {
     }
   }
 }
-type UnitWithResourceCommands = UnitEntity & Record<string, ((target: RuntimeEntity) => void) | undefined>
 type PlayerWithResourceMemory = PlayerLike & Record<string, Set<RuntimeEntity> | undefined>
 type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
 type ResourceShadow = Sprite | AnimatedSprite
@@ -188,59 +179,10 @@ export class Resource extends Instance implements ResourceEntity {
       interactiveSprite.roundPixels = true
 
       this.sprite.on('pointertap', () => {
-        const {
-          context: { player, menu, controls, editor },
-        } = this
-        if (editor?.handleEntityInteraction(this) || controls.isInteractionBlocked() || !canUseRtsEntityPointer(controls)) return
-        if (!player.selectedUnits.length && (playerCanSeeInstance(this, player) || map.revealEverything)) {
-          player.unselectAll()
-          this.select()
-          menu.setActionTarget(this)
-          player.selectedOther = this
-          playSelectionSound(this)
-        }
+        this.context.editor?.handleEntityInteraction(this)
       })
-      this.sprite.on('pointerup', (evt: FederatedPointerEvent) => {
-        const {
-          context: { player, controls, editor },
-        } = this
-        if (editor?.handleEntityInteraction(this) || !canUseRtsEntityPointer(controls)) return
-        const action = (TYPE_ACTION as Record<string, string>)[this.category || this.type]
-        if (controls.rallyPointController?.active) {
-          controls.mouse.prevent = true
-          controls.rallyPointController.handleMouseUpOnEntity(this)
-          return
-        }
-        if (controls.mouseBuilding || controls.mouseRectangle || !controls.isMouseInApp(evt)) {
-          return
-        }
-        controls.mouse.prevent = true
-        let hasActionOrder = false
-        let hasFallbackOrder = false
-        let hasSilentCommandOrder = false
-        for (let i = 0; i < player.selectedUnits.length; i++) {
-          const unit = player.selectedUnits[i]
-          if (getActionCondition(unit, this, action)) {
-            hasActionOrder = true
-            if (this.category === 'Fish' && unit.silentWorkSounds?.includes('fishing')) {
-              hasSilentCommandOrder = true
-            }
-            const sendToFunc = `sendTo${this.category || this.type}`
-            const dynamicUnit = unit as UnitWithResourceCommands
-            typeof dynamicUnit[sendToFunc] === 'function' ? dynamicUnit[sendToFunc]?.(this) : unit.sendTo(this)
-          } else {
-            hasFallbackOrder = true
-            unit.sendTo(this)
-          }
-        }
-        if (hasActionOrder) {
-          drawInstanceBlinkingSelection(this)
-        }
-        if (hasFallbackOrder) {
-          playSoundCue(SOUND_CUES.unit.militaryCommand)
-        } else if (hasActionOrder && !hasSilentCommandOrder) {
-          playSoundCue(this.sounds?.command ?? getResourceConfig().units.Villager.sounds.command)
-        }
+      this.sprite.on('pointerup', () => {
+        this.context.editor?.handleEntityInteraction(this)
       })
 
       this.shadow = this.createShadow()

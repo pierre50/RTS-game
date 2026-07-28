@@ -60,7 +60,7 @@ test('hero health regen respects delay and refreshes the HUD progressively', () 
 test('non hero units do not receive passive health regen by default', () => {
   const { updateUnitHealthRegen } = loadUnitHealth()
   const unit = {
-    controlMode: 'rts',
+    controlMode: 'standard',
     hitPoints: 7,
     totalHitPoints: 10,
     context: { scheduler: { elapsedMs: 1000 } },

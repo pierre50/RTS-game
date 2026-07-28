@@ -368,10 +368,6 @@ test('unit control policy disables automatic reactions for the active hero-contr
   const {
     canAutoAcquireTarget,
     canAutoReactToAttack,
-    canUseRtsEntityPointer,
-    canUseRtsSelection,
-    getRtsCommandableUnits,
-    hasRtsCommandableUnits,
     isHeroControlled,
     setUnitControlMode,
   } = loadModule('app/lib/unitControl.ts', {})
@@ -389,22 +385,18 @@ test('unit control policy disables automatic reactions for the active hero-contr
   assert.equal(isHeroControlled(hero), true)
   assert.equal(canAutoAcquireTarget(hero), false)
   assert.equal(canAutoReactToAttack(hero), false)
-  assert.equal(canUseRtsEntityPointer({ isHeroControlActive: () => false }), false)
-  assert.equal(canUseRtsSelection({ isHeroControlActive: () => false }), false)
 
   const explicitHero = {}
   setUnitControlMode(explicitHero, 'hero')
   assert.equal(isHeroControlled(explicitHero), true)
   assert.equal(canAutoAcquireTarget(explicitHero), false)
-  assert.equal(hasRtsCommandableUnits([explicitHero]), false)
 
-  const explicitRtsUnit = {
+  const explicitStandardUnit = {
     context: unit.context,
   }
-  setUnitControlMode(explicitRtsUnit, 'rts')
-  assert.equal(isHeroControlled(explicitRtsUnit), false)
-  assert.equal(canAutoReactToAttack(explicitRtsUnit), true)
-  assert.deepEqual(getRtsCommandableUnits([explicitHero, explicitRtsUnit]), [explicitRtsUnit])
+  setUnitControlMode(explicitStandardUnit, 'standard')
+  assert.equal(isHeroControlled(explicitStandardUnit), false)
+  assert.equal(canAutoReactToAttack(explicitStandardUnit), true)
 })
 
 test('damage feedback can be cleared before its timer fires', () => {

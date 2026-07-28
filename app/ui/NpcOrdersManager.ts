@@ -1,10 +1,11 @@
-import { assignVillagerAutonomy, Modal } from '../lib'
+import { assignVillagerAutonomy, hasVillagerAutonomyTarget, Modal } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import {
   sendNpcToStockpile,
   keepNpcHere,
+  canKeepNpcHere,
   startFollowingHero,
   releaseIfStillLooking,
   playNpcOrderSound,
@@ -92,18 +93,27 @@ export class NpcOrdersManager {
     }
     this.npcs = npcs
     this.opened = true
-    const title = npcs.length > 1 ? t('npcOrdersTitleCount', { count: npcs.length }) : (npcs[0]?.name || t('npcOrdersTitle'))
+    const title =
+      npcs.length > 1 ? t('npcOrdersTitleCount', { count: npcs.length }) : npcs[0]?.name || t('npcOrdersTitle')
     const stockpileButton = this.buttons.get('stockpile')
     if (stockpileButton) {
       stockpileButton.disabled = !npcs.some(npc => (npc.loading ?? 0) > 0)
       stockpileButton.classList.toggle('disabled', stockpileButton.disabled)
+    }
+    const stayButton = this.buttons.get('stay')
+    if (stayButton) {
+      stayButton.disabled = !npcs.some(canKeepNpcHere)
+      stayButton.classList.toggle('disabled', stayButton.disabled)
     }
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
     for (const spec of NPC_ORDER_SPECS) {
       if (!spec.villagerJob) continue
       const button = this.buttons.get(spec.id)
       if (!button) continue
-      button.disabled = !hasVillager
+      const hasTarget =
+        spec.villagerJob !== 'construction' ||
+        npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, spec.villagerJob!))
+      button.disabled = !hasVillager || !hasTarget
       button.classList.toggle('disabled', button.disabled)
     }
     if (this.modal) {

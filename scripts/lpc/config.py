@@ -268,9 +268,8 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     # a mounted "riding" sheet, since the hero can swap tools/weapons and ride.
     "hero": UnitLook(
         hair="plain",
-        hair_palette="light_brown",
         hat=HEADBAND_BLUE,
-        dress=(PANTALOONS_BROWN, SHOES_BLACK, SHORTSLEEVE_WHITE, SUSPENDERS_BLACK),
+        dress=(SHORTS, SANDALS),
     ),
     "priest": UnitLook(
         hair="long",

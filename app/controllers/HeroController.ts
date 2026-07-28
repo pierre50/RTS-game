@@ -484,7 +484,7 @@ export class HeroController {
     if (!player?.units?.length) return false
 
     if (this.heroUnit && this.heroUnit !== player.units[0]) {
-      setUnitControlMode(this.heroUnit, 'rts')
+      setUnitControlMode(this.heroUnit, 'standard')
       refreshBakedAppearance(this.heroUnit)
     }
     this.heroUnit = player.units[0]

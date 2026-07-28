@@ -17,6 +17,7 @@ import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoade
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
+import { WeatherSystem } from '../services/WeatherSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
@@ -91,6 +92,7 @@ export default class Game extends Container {
   _onKeydown?: (evt: KeyboardEvent) => void
   _onResize?: () => void
   _onDocumentVisibilityChange?: () => void
+  _weather?: WeatherSystem | null
 
   constructor(
     app: Application,
@@ -102,6 +104,7 @@ export default class Game extends Container {
     this._pausedByVisibility = false
     this._pausedByOrientation = false
     this._restartSaveData = null
+    this._weather = null
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -325,12 +328,26 @@ export default class Game extends Container {
     const { map, controls } = this.context
     if (!map || !controls) return
     this.addChild(map as ContainerChild)
+    this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
+    ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = this._weather
+    this.addChild(this._weather.layer)
     this.addChild(controls)
     this.context.ambientBirds = new AmbientBirds(this.context, () => this._getMapWorldBounds())
     this.context.ambientBirds.zIndex = AMBIENT_BIRD_WORLD_ZINDEX
     map.addChild(this.context.ambientBirds)
     this.applyZoom()
     this._attachWindowListeners()
+  }
+
+  _getScreenRect(): { x: number; y: number; width: number; height: number } {
+    const scaleX = this.scale.x || 1
+    const scaleY = this.scale.y || 1
+    return {
+      x: -this.position.x / scaleX,
+      y: -this.position.y / scaleY,
+      width: this.context.app.screen.width / scaleX,
+      height: this.context.app.screen.height / scaleY,
+    }
   }
 
   _getMapWorldBounds(): { x: number; y: number; width: number; height: number } {
@@ -353,6 +370,9 @@ export default class Game extends Container {
     }
     this.context.scheduler?.clear?.()
     this.context.performance?.reset?.()
+    this._weather?.destroy()
+    this._weather = null
+    ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy?.()

@@ -2,7 +2,6 @@ import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import {
   STEP_TIME,
-  MAX_SELECT_UNITS,
   WORK_TYPES,
   ACTION_TYPES,
   FAMILY_TYPES,
@@ -18,8 +17,6 @@ import {
   getGroundReliefLevel,
   getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
-  drawInstanceBlinkingSelection,
-  playerCanSeeInstance,
   instanceContactInstance,
   throttle,
   canUpdateMinimap,
@@ -30,11 +27,7 @@ import {
   getAnimationFrames,
   getSailAnimationFrames,
   playSoundCue,
-  playSelectionSound,
   shouldFleeWhenAttacked,
-  sendUnitToTransport,
-  isTransportBoat,
-  canUnitEnterTransport,
   getTransportLoad,
   canUnloadTransport,
   unloadTransport,
@@ -57,12 +50,7 @@ import { applyToolAppearance } from '../../lib/heroTools'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import {
-  canAutoReactToAttack,
-  canSelectUnitWithRts,
-  canUseRtsEntityPointer,
-  isHeroControlled,
-} from '../../lib/unitControl'
+import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -186,10 +174,6 @@ function isDestroyedDestination(dest: RuntimeEntity | RuntimeCell | null | undef
   return isEntityDestination(dest) && Boolean(dest.isDestroyed)
 }
 
-function isUnitEntity(instance: RuntimeEntity | null | undefined): instance is UnitEntity {
-  return instance?.family === FAMILY_TYPES.unit
-}
-
 export class Unit extends Instance implements UnitEntity {
   unitInterface: UnitInterface
   unitCommands: UnitCommands
@@ -305,7 +289,7 @@ export class Unit extends Instance implements UnitEntity {
     this.degree = map.randomRange(1, 360)
     this.currentFrame = map.randomRange(0, 4)
     this.action = null
-    this.controlMode = 'rts'
+    this.controlMode = 'standard'
     this.actionLocked = false
     this.pendingOrder = null
     this.loading = 0
@@ -477,46 +461,9 @@ export class Unit extends Instance implements UnitEntity {
           this.sendToEvt(target, action)
         }
 
-    this.on('pointerdown', evt => {
-      const {
-        context: { controls, player, editor },
-      } = this
-      if (editor) return
-      if (!canUseRtsEntityPointer(controls)) return
-      if (
-        controls.rallyPointController?.active ||
-        controls.mouseBuilding ||
-        controls.mouseRectangle ||
-        !controls.isMouseInApp?.(evt)
-      ) {
-        return
-      }
-      if (controls.consumeUnitDoubleClick?.(this)) {
-        if (this.owner.isPlayed) {
-          const selectedUnits = new Set(player.selectedUnits)
-          controls.getCellOnCamera?.((cell: RuntimeCell) => {
-            const has = isUnitEntity(cell.has) ? cell.has : null
-            if (
-              player.selectedUnits.length < MAX_SELECT_UNITS &&
-              has &&
-              has.owner &&
-              has.owner.label === this.owner.label &&
-              has.type === this.type &&
-              !has.loadedInTransport &&
-              canSelectUnitWithRts(has) &&
-              !selectedUnits.has(has)
-            ) {
-              selectedUnits.add(has)
-              has.select?.()
-              player.selectedUnits.push(has)
-            }
-          })
-        }
-      }
-    })
     this.on('pointerup', evt => {
       const {
-        context: { controls, player, menu, editor },
+        context: { controls, menu, editor },
       } = this
       if (editor?.handleEntityInteraction?.(this)) return
       if (controls.isHeroControlActive?.()) {
@@ -528,87 +475,9 @@ export class Unit extends Instance implements UnitEntity {
         }
         return
       }
-      if (!canUseRtsEntityPointer(controls)) return
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)
-        return
-      }
-      if (
-        controls.doubleClicked ||
-        controls.mouseBuilding ||
-        controls.mouseRectangle ||
-        !controls.isMouseInApp?.(evt)
-      ) {
-        return
-      }
-
-      controls.mouse.prevent = true
-      controls.registerUnitClick?.(this)
-
-      if (this.owner.isPlayed) {
-        if (isTransportBoat(this) && player.selectedUnits.length) {
-          const hasTransportLoadCandidate = player.selectedUnits.some((playerUnit: UnitEntity) =>
-            canUnitEnterTransport(playerUnit, this)
-          )
-          let hasSentTransportLoad = false
-          for (const playerUnit of [...player.selectedUnits]) {
-            if (sendUnitToTransport(playerUnit, this)) hasSentTransportLoad = true
-          }
-          if (hasSentTransportLoad || hasTransportLoadCandidate) {
-            drawInstanceBlinkingSelection(this)
-            return
-          }
-        }
-        let hasSentHealer = false
-        if (player.selectedUnits.length) {
-          for (let i = 0; i < player.selectedUnits.length; i++) {
-            const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this, ACTION_TYPES.heal)) {
-              hasSentHealer = true
-              playerUnit.sendTo?.(this, ACTION_TYPES.heal)
-            }
-          }
-        }
-        if (hasSentHealer) {
-          drawInstanceBlinkingSelection(this)
-        } else if (player.selectedUnit !== this) {
-          this.owner.unselectAll()
-          this.select()
-          menu.setActionTarget(this)
-          player.selectedUnit = this
-          player.selectedUnits = [this]
-        }
-      } else {
-        let hasSentConverter = false
-        let hasSentAttacker = false
-        if (player.selectedUnits.length) {
-          for (let i = 0; i < player.selectedUnits.length; i++) {
-            const playerUnit = player.selectedUnits[i]
-            if (playerUnit.work === WORK_TYPES.healer && playerUnit.getActionCondition?.(this, ACTION_TYPES.convert)) {
-              hasSentConverter = true
-              playerUnit.sendToConvert?.(this)
-              continue
-            }
-            if (this.getActionCondition(playerUnit, ACTION_TYPES.attack))
-              if (playerUnit.type === UNIT_TYPES.villager) {
-                hasSentAttacker = true
-                playerUnit.sendToAttack?.(this)
-              } else if (playerUnit.work === WORK_TYPES.attacker) {
-                hasSentAttacker = true
-                playerUnit.sendTo?.(this, ACTION_TYPES.attack)
-              }
-          }
-        }
-        if (hasSentConverter || hasSentAttacker) {
-          drawInstanceBlinkingSelection(this)
-        } else if ((player.selectedOther !== this && playerCanSeeInstance(this, player)) || map.revealEverything) {
-          player.unselectAll()
-          this.select()
-          menu.setActionTarget(this)
-          player.selectedOther = this
-          playSelectionSound(this)
-        }
       }
     })
 

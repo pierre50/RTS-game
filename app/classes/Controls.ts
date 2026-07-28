@@ -2,28 +2,18 @@ import { Container, Graphics } from 'pixi.js'
 import { isometricToCartesian, pointsDistance, instanceContactInstance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
-import { SelectionManager } from '../controllers/SelectionManager'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
 import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
-import { hasRtsCommandableUnits } from '../lib/unitControl'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import type { HeroEquippedItem } from '../lib/heroTools'
-import type {
-  AudibleInstanceLike,
-  ControlPointerEvent,
-  ControlsLike,
-  GameContextLike,
-  SelectionRectangle,
-} from '../types/context'
+import type { AudibleInstanceLike, ControlPointerEvent, ControlsLike, GameContextLike } from '../types/context'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
 
-// Controls still hosts the legacy RTS selection manager for dev/debug compatibility.
-// Normal player orders flow through HeroController + npcInteraction.
 type PointerPoint = { x: number; y: number }
 type PointerPageEvent = ControlPointerEvent & {
   pageX: number
@@ -68,21 +58,15 @@ export default class Controls extends Container implements ControlsLike {
   heroController: HeroController
   gamepadInput: GamepadHeroInput
   mouseBuilding: ControlsLike['mouseBuilding']
-  mouseRectangle: SelectionRectangle | null | undefined
   mouseTouch: PointerPoint | null | undefined
   mouseDrag: boolean
   touchInteraction: TouchInteraction | null
   touchPanActive: boolean
   ignoreMouseEventsUntil: number
   suppressContextMenuUntil: number
-  lastClickedUnit: RuntimeEntity | null
-  unitClickTimeout: ReturnType<typeof setTimeout> | null
-  doubleClicked: boolean
   minimapRectangle: Graphics
   buildingPlacer: BuildingPlacer
   rallyPointController: RallyPointController
-  selectionManager: SelectionManager
-  pointerStart!: { x: number; y: number } | null
   _onDocMouseMove: (evt: MouseEvent) => void
   _onDocMouseOut: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
@@ -126,22 +110,17 @@ export default class Controls extends Container implements ControlsLike {
     this.heroController = new HeroController(this)
     this.gamepadInput = new GamepadHeroInput(this)
     this.eventMode = 'auto'
-    this.mouseRectangle = undefined
     this.mouseTouch = undefined
     this.mouseDrag = false
     this.touchInteraction = null
     this.touchPanActive = false
     this.ignoreMouseEventsUntil = 0
     this.suppressContextMenuUntil = 0
-    this.lastClickedUnit = null
-    this.unitClickTimeout = null
-    this.doubleClicked = false
     this.minimapRectangle = new Graphics()
     this.addChild(this.minimapRectangle)
 
     this.buildingPlacer = new BuildingPlacer(this)
     this.rallyPointController = new RallyPointController(this)
-    this.selectionManager = new SelectionManager(this)
 
     this._onDocMouseMove = (evt: MouseEvent) => this.moveCameraWithMouse(evt)
     this._onDocMouseOut = () => this.stopMouseCameraMove()
@@ -198,7 +177,6 @@ export default class Controls extends Container implements ControlsLike {
     document.removeEventListener('mouseup', this._onMouseUp)
     window.removeEventListener('blur', this._onWindowBlur)
     this.context.app.ticker.remove(this._onTick)
-    if (this.unitClickTimeout != null) clearTimeout(this.unitClickTimeout)
     this.cancelActiveInteraction()
     super.destroy(options ?? undefined)
   }
@@ -450,11 +428,6 @@ export default class Controls extends Container implements ControlsLike {
 
     const touch = evt.touches[0]
     if (evt.touches.length >= 2) {
-      if (this.mouseRectangle) {
-        this.selectionManager.handleMouseUp()
-      } else {
-        this.pointerStart = null
-      }
       this.touchInteraction = {
         mode: 'pan',
         startX: touch.pageX,
@@ -482,7 +455,6 @@ export default class Controls extends Container implements ControlsLike {
       }
 
       if (this.mouseBuilding || this.rallyPointController.active) {
-        this.pointerStart = null
         this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
         return
       }
@@ -491,7 +463,6 @@ export default class Controls extends Container implements ControlsLike {
         this.onMouseDown(touch)
         return
       }
-      this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
     }
   }
 
@@ -564,7 +535,6 @@ export default class Controls extends Container implements ControlsLike {
     this.ignoreMouseEventsUntil = performance.now() + COMPATIBILITY_MOUSE_EVENT_DELAY
     const touch = evt.changedTouches[0]
     if (this.touchPanActive || this.touchInteraction?.mode === 'pan') {
-      this.pointerStart = null
       this.mouseDrag = true
       if (evt.touches.length) {
         const remainingTouch = evt.touches[0]
@@ -603,8 +573,6 @@ export default class Controls extends Container implements ControlsLike {
         this.onMouseUp(touch)
       } else if (!moved) {
         this.onMouseUp(touch)
-      } else {
-        this.pointerStart = null
       }
     }
     this.touchInteraction = null
@@ -623,7 +591,6 @@ export default class Controls extends Container implements ControlsLike {
     if (!this.isMouseInApp(evt)) return
 
     if (this.mouseBuilding || this.rallyPointController.active) {
-      this.pointerStart = null
       this.mouse.prevent = false
       this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
       return
@@ -633,7 +600,6 @@ export default class Controls extends Container implements ControlsLike {
       evt.preventDefault?.()
       this.suppressContextMenuUntil = performance.now() + SECONDARY_CLICK_CONTEXT_MENU_SUPPRESS_MS
       this.openHeroEntityInteraction()
-      this.pointerStart = null
       this.mouse.prevent = true
       return
     }
@@ -641,12 +607,9 @@ export default class Controls extends Container implements ControlsLike {
     if (this.isHeroControlActive() && evt.button === 0) {
       evt.preventDefault?.()
       this.heroController.handlePrimaryPointerDown()
-      this.pointerStart = null
       this.mouse.prevent = true
       return
     }
-
-    this.pointerStart = { x: this.mouse.x, y: this.mouse.y }
   }
 
   onMouseMove(evt: PointerPageEvent): void {
@@ -661,7 +624,6 @@ export default class Controls extends Container implements ControlsLike {
       this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
       return
     }
-    this.selectionManager.handleMouseMove()
   }
 
   onWheel(evt: WheelEvent): void {
@@ -706,11 +668,9 @@ export default class Controls extends Container implements ControlsLike {
     this.mouse.x = evt.pageX
     this.mouse.y = evt.pageY
     setVirtualCursorVisible(false)
-    this.pointerStart = null
     clearTimeout(this.mouseHoldTimeout)
     if (!this.isMouseInApp(evt)) {
       this.mouse.prevent = false
-      this.cancelMouseRectangle()
       return
     }
     if (this.mouse.prevent || this.mouseDrag) {
@@ -719,11 +679,6 @@ export default class Controls extends Container implements ControlsLike {
     }
     if (!this.rallyPointController.active) {
       !this.isHeroControlActive() && player?.selectedBuilding && player.unselectAll()
-    }
-
-    if (this.mouseRectangle) {
-      this.selectionManager.handleMouseUp()
-      return
     }
 
     if (this.isMouseInApp(evt)) {
@@ -737,17 +692,9 @@ export default class Controls extends Container implements ControlsLike {
           this.buildingPlacer.handleMouseUp(cell)
         } else if (this.rallyPointController.active) {
           this.rallyPointController.handleMouseUp(cell)
-        } else if (hasRtsCommandableUnits(player?.selectedUnits)) {
-          if ((cell.solid || cell.has) && cell.visible) return
-          this.selectionManager.handleClick(cell)
         }
       }
     }
-  }
-
-  sendUnits(cell: RuntimeCell): void {
-    if (this.isInteractionBlocked()) return
-    return this.selectionManager.sendUnits(cell)
   }
 
   getWorldPointUnderCursor(): PointerPoint {
@@ -881,17 +828,9 @@ export default class Controls extends Container implements ControlsLike {
     this.heroController.beginGoToPicking(npcs)
   }
 
-  cancelMouseRectangle(): void {
-    if (!this.mouseRectangle) return
-    this.mouseRectangle.graph.destroy(true)
-    this.mouseRectangle = null
-  }
-
   cancelActiveInteraction(): void {
     this.stopKeyboardMove()
     this.stopMouseCameraMove()
-    this.cancelMouseRectangle()
-    this.pointerStart = null
     this.mouseTouch = null
     this.mouseDrag = false
     this.touchInteraction = null
@@ -899,27 +838,6 @@ export default class Controls extends Container implements ControlsLike {
     this.heroController.cancelActiveInteraction()
     this.mouse.prevent = false
     this.rallyPointController.cancel()
-  }
-
-  consumeUnitDoubleClick(unit: RuntimeEntity): boolean {
-    if (this.lastClickedUnit !== unit) return false
-    if (this.unitClickTimeout != null) clearTimeout(this.unitClickTimeout)
-    this.lastClickedUnit = null
-    this.doubleClicked = true
-    setTimeout(() => {
-      this.doubleClicked = false
-    })
-    return true
-  }
-
-  registerUnitClick(unit: RuntimeEntity): void {
-    if (this.unitClickTimeout != null) clearTimeout(this.unitClickTimeout)
-    this.lastClickedUnit = unit
-    this.unitClickTimeout = setTimeout(() => {
-      if (this.lastClickedUnit === unit) {
-        this.lastClickedUnit = null
-      }
-    }, 600)
   }
 
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean {

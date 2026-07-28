@@ -25,13 +25,13 @@ function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
 }
 
 test('pregenerated map blueprints persist deep water terrain', () => {
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'rts-map-blueprint-'))
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'map-blueprint-'))
 
   try {
     execFileSync(
       process.execPath,
       [
-        path.join(ROOT, 'tools/generate-rtsmaps.cjs'),
+        path.join(ROOT, 'tools/generate-maps.cjs'),
         '--size',
         '144',
         '--type',

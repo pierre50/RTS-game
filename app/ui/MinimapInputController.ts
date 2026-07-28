@@ -88,11 +88,12 @@ export class MinimapInputController {
     this.pointerSession = null
     ;(evt.currentTarget as Element | null)?.releasePointerCapture?.(evt.pointerId)
 
-    if (controls.mouseRectangle || wasDrag || this.longClick) {
+    if (wasDrag || this.longClick) {
       this.longClick = false
       return
     }
     this.longClick = false
+    if (!this.canMoveCamera(controls)) return
     const { x, y } = this.getMinimapPointer(evt)
 
     if (controls.mouseBuilding) {
@@ -119,8 +120,13 @@ export class MinimapInputController {
   }
 
   moveCameraFromMinimap(evt: PointerEvent, controls: ControlsLike): void {
+    if (!this.canMoveCamera(controls)) return
     const { x, y } = this.getMinimapPointer(evt)
     controls.setCamera?.(x, y)
+  }
+
+  canMoveCamera(controls: ControlsLike): boolean {
+    return Boolean(this.menu.editorPanelMap || controls.freeCameraActive)
   }
 
   destroy(): void {
