@@ -1,6 +1,13 @@
 import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import type { Texture } from 'pixi.js'
-import { bindAnimatedSpriteToTicker, pointsDistance, pointInRectangle, getAnimationFrames, playSoundCue } from '../lib'
+import {
+  bindAnimatedSpriteToTicker,
+  pointsDistance,
+  pointInRectangle,
+  getAnimationFrames,
+  playSoundCue,
+  getReliefOffset,
+} from '../lib'
 import { canSelectUnitWithRts, canUseRtsSelection, getRtsCommandableUnits } from '../lib/unitControl'
 import { COLOR_WHITE, COMMAND_POINTER_SHEET_ID, MAX_SELECT_UNITS, SOUND_CUES, UNIT_TYPES } from '../constants'
 import type { ControlsLike, SelectionRectangle } from '../types/context'
@@ -178,7 +185,10 @@ export class SelectionManager {
   }
 
   isUnitInsideSelection(unit: UnitEntity, rectangle: SelectionRectangle): boolean {
-    const screenPosition = this.controls.localToScreen(unit.x - this.controls.camera.x, unit.y - this.controls.camera.y)
+    const screenPosition = this.controls.localToScreen(
+      unit.x - this.controls.camera.x,
+      unit.y + getReliefOffset(unit) - this.controls.camera.y
+    )
     return pointInRectangle(
       screenPosition.x,
       screenPosition.y,

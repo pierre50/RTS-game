@@ -510,6 +510,7 @@ export class BuildingProduction {
       ;(building as DynamicBuildingState)[key] = value
     }
     const assets = getBuildingAsset(building.type, building.owner, Assets)
+    building.textureName = assets.images!.final as string
     building.sprite.texture = getTexture(assets.images!.final as string, Assets)
     building.sprite.anchor.set(building.sprite.texture.defaultAnchor!.x, building.sprite.texture.defaultAnchor!.y)
     const color = building.getChildByLabel(LABEL_TYPES.color)

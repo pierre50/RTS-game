@@ -23,6 +23,7 @@ import {
   getTexture,
   getTextureByFrame,
   getTextureSheet,
+  textureRefToString,
   updateInstanceVisibility,
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
@@ -64,8 +65,10 @@ export class BuildingLifecycle {
         : getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
 
     if (percentage >= 33 && percentage < 66) {
+      building.textureName = textureRefToString({ sheet: buildSpritesheetId, frame: 1 })
       building.sprite.texture = getTextureByFrame(buildSpritesheetId, 1, Assets)
     } else if (percentage >= 66 && percentage < 99) {
+      building.textureName = textureRefToString({ sheet: buildSpritesheetId, frame: 2 })
       building.sprite.texture = getTextureByFrame(buildSpritesheetId, 2, Assets)
     } else if (percentage >= 100) {
       const wasBuilt = building.isBuilt
@@ -99,6 +102,7 @@ export class BuildingLifecycle {
     const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
     const texture = getTexture(assets.images!.final as string, Assets) as BuildingTexture
+    building.textureName = assets.images!.final as string
     building.sprite.texture = texture
     building.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
@@ -287,6 +291,7 @@ export class BuildingLifecycle {
     } else if (building.type === BUILDING_TYPES.dock) {
       rubbleSheet = { sheet: 'buildings/rubble/dock', frame: 0 }
     }
+    building.textureName = textureRefToString(rubbleSheet!)
     building.sprite.texture = getTexture(rubbleSheet!, Assets)
     building.sprite.eventMode = 'none'
     const footprintRadius = getBuildingFootprintRadius(building.size)

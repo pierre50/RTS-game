@@ -15,7 +15,7 @@ import {
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../../lib/unitExperience'
-import { showAggressionFeedback, showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
+import { showAlertThenAggressionFeedback, showDamageFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -76,6 +76,24 @@ export class UnitCombat {
     }
   }
 
+  finishMeleeAttackAfterCurrentLoop() {
+    const unit = this.unit
+    const sprite = unit.sprite
+    if (!sprite) {
+      unit.affectNewDest?.()
+      return
+    }
+
+    unit.actionLocked = true
+    sprite.onFrameChange = undefined
+    sprite.onLoop = () => {
+      sprite.onLoop = undefined
+      unit.actionLocked = false
+      const hadPendingOrder = unit.flushPendingOrder?.()
+      if (!hadPendingOrder) unit.affectNewDest?.()
+    }
+  }
+
   performRangedAttackCycle(launchProjectile: () => void) {
     const unit = this.unit
 
@@ -109,9 +127,11 @@ export class UnitCombat {
       !unit.dest &&
       unit.getActionCondition?.(instance, ACTION_TYPES.attack)
     ) {
-      showAlertFeedback(unit)
-      showAggressionFeedback(unit)
-      unit.sendTo?.(instance, ACTION_TYPES.attack)
+      showAlertThenAggressionFeedback(unit, () => {
+        if (unit.context?.editor || !canAutoAcquireTarget(unit)) return
+        if (unit.path?.length || unit.dest || !unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
+        unit.sendTo?.(instance, ACTION_TYPES.attack)
+      })
     }
   }
 
@@ -230,7 +250,7 @@ export class UnitCombat {
           if (dest && (dest.hitPoints ?? 0) <= 0) {
             dest.die?.()
           }
-          unit.affectNewDest?.()
+          this.finishMeleeAttackAfterCurrentLoop()
           return
         }
         this.syncMovingTargetDirection()
@@ -262,7 +282,7 @@ export class UnitCombat {
           if ((dest.hitPoints ?? 0) <= 0) {
             grantUnitXp(unit, XP_CATEGORIES.melee, XP_KILL_BONUS)
             dest.die?.()
-            unit.affectNewDest?.()
+            this.finishMeleeAttackAfterCurrentLoop()
           }
         }
       })

@@ -679,6 +679,7 @@ for (const family of ['building', 'animal']) {
       },
     }
     const damageFeedback = []
+    const soundCues = []
     const { triggerToolAttackAt } = loadHeroTools({
       './combat': {
         getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
@@ -686,10 +687,12 @@ for (const family of ['building', 'animal']) {
       },
       './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
       './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+      './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
     })
     const { hero } = makeHero()
     Object.assign(hero, {
       energy: 10,
+      sounds: { hit: 'hero-hit' },
       isUnitAtDest: () => true,
       setDest: target => {
         hero.dest = target
@@ -697,10 +700,12 @@ for (const family of ['building', 'animal']) {
     })
 
     assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+    assert.deepEqual(soundCues, [])
     hero.sprite.currentFrame = 1
     hero.sprite.onFrameChange(1)
 
     assert.equal(enemy.hitPoints, 8)
+    assert.deepEqual(soundCues, ['hero-hit'])
     assert.deepEqual(damageFeedback, [[`enemy-${family}`, 2]])
     assert.deepEqual(enemy.isAttackedCalls, ['hero'])
   })

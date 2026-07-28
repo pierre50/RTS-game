@@ -13,6 +13,7 @@ import type { ActionProps } from '../lib/combat'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitControlMode = 'rts' | 'hero' | 'ai'
+export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
 export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
@@ -127,6 +128,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   inactif?: boolean
   sounds?: UnitSounds
   work?: string | null
+  autonomousJob?: VillagerAutonomyJob | null
   loading?: number | null
   loadingType?: string | null
   showTransportCapacity?: boolean
@@ -324,6 +326,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   cancelTechnology?: () => void
   upgrade?: (target: string) => void
   assetType?: string
+  textureName?: string
   finalTexture?: () => void
   increasePopulation?: number
   populationCapacityApplied?: boolean

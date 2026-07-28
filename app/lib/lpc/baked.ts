@@ -67,6 +67,14 @@ function bakedSrc(unit: BakedUnitType, variant: string, job: string, sheet: stri
   return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${job}/${sheet}/texture.json`
 }
 
+function bakedUnitAlias(unit: BakedUnitType, variant: string, sheet: string): string {
+  return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}/${sheet}`
+}
+
+function bakedUnitSrc(unit: BakedUnitType, variant: string, sheet: string): string {
+  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${sheet}/texture.json`
+}
+
 function villagerBodyAlias(variant: string, sheet: string): string {
   return bakedAlias('villager', variant, 'body', sheet)
 }
@@ -110,12 +118,10 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
     return
   }
 
-  const assets = (['default'] as const)
-    .flatMap(job => UNIT_SHEETS.map(sheet => ({ job, sheet })))
-    .map(({ job, sheet }) => ({
-      alias: bakedAlias(unit, variant, job, sheet),
-      src: bakedSrc(unit, variant, job, sheet),
-    }))
+  const assets = UNIT_SHEETS.map(sheet => ({
+    alias: bakedUnitAlias(unit, variant, sheet),
+    src: bakedUnitSrc(unit, variant, sheet),
+  }))
     .filter(asset => !Assets.cache.get(asset.alias))
 
   if (assets.length) {
@@ -164,7 +170,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
   const isVillagerLike = bakedUnit === 'villager' || bakedUnit === 'hero'
   const bodyAlias = bakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
-  const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedAlias(bakedUnit, variant, 'default', 'walking')
+  const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedUnitAlias(bakedUnit, variant, 'walking')
   if (!Assets.cache.get(walking)) return false
 
   unit.appearance = undefined
@@ -191,10 +197,10 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     unit.assets = {
       standingSheet: walking,
       walkingSheet: walking,
-      actionSheet: bakedAlias(bakedUnit, variant, 'default', 'action'),
-      ridingSheet: bakedAlias(bakedUnit, variant, 'default', 'riding'),
-      dyingSheet: bakedAlias(bakedUnit, variant, 'default', 'dying'),
-      corpseSheet: bakedAlias(bakedUnit, variant, 'default', 'corpse'),
+      actionSheet: bakedUnitAlias(bakedUnit, variant, 'action'),
+      ridingSheet: bakedUnitAlias(bakedUnit, variant, 'riding'),
+      dyingSheet: bakedUnitAlias(bakedUnit, variant, 'dying'),
+      corpseSheet: bakedUnitAlias(bakedUnit, variant, 'corpse'),
     }
     return true
   }

@@ -14,7 +14,8 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const defaultMocks = {
     './graphics/selection': {
-      createIsoSelectionMarker: options => ({ ...options, label: options.label }),
+      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawInstanceBlinkingSelection: () => {},
     },
     './sound': {
       playSelectionSound: () => {},
@@ -133,6 +134,54 @@ test('"aller vers" sends villagers to attack an enemy under the cursor', () => {
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['attack', target]])
+})
+
+test('"aller vers" blinks the target once when any communicated NPC has a targeted action', () => {
+  const enemyOwner = { label: 'enemy' }
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    i: 5,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner: enemyOwner,
+    x: 100,
+    y: 100,
+  }
+  const blinkCalls = []
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
+    './graphics/selection': {
+      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawInstanceBlinkingSelection: instance => blinkCalls.push(instance),
+    },
+  })
+  const calls = []
+  const owner = { isEnemy: owner => owner === enemyOwner }
+  const attacker = {
+    context: { map: { grid: [] } },
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.attack,
+    i: 1,
+    j: 1,
+    owner,
+    sendToAttack: orderTarget => calls.push(['attack', orderTarget]),
+  }
+  const mover = {
+    context: { map: { grid: [] } },
+    getActionCondition: () => false,
+    i: 2,
+    j: 2,
+    owner,
+    sendTo: orderCell => calls.push(['move', orderCell]),
+  }
+
+  sendNpcGroupToTarget([attacker, mover], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [
+    ['attack', target],
+    ['move', { i: 5, j: 5, has: target }],
+  ])
+  assert.deepEqual(blinkCalls, [target])
 })
 
 test('"aller vers" sends villagers to hunt a live animal under the cursor', () => {
@@ -603,6 +652,47 @@ test('holding past the precision zone nets every eligible ally in the charged ra
   const group = resolveCommGroup(hero, 7)
 
   assert.deepEqual(group, [facingAlly, sideAlly])
+})
+
+test('communication indicator cells use the same grid radius as group selection', () => {
+  const owner = { label: 'player' }
+  const grid = Array.from({ length: 5 }, (_, i) => Array.from({ length: 5 }, (_, j) => ({ i, j })))
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 2, j: 2, context: { map: { grid } } }
+  const inside = makeCommAlly({ owner, i: 4, j: 2, x: 64, y: 32 })
+  const diagonalOutside = makeCommAlly({ owner, i: 4, j: 4, x: 0, y: 64 })
+  const { findCommGroup, getCommCellsInRadius } = loadCommModule([inside, diagonalOutside], () => 0)
+
+  const group = findCommGroup(hero, 2)
+  const cells = getCommCellsInRadius(hero, 2).map(cell => `${cell.i}:${cell.j}`)
+
+  assert.deepEqual(group, [inside])
+  assert.ok(cells.includes('4:2'))
+  assert.equal(cells.includes('4:4'), false)
+})
+
+test('hidden communication release only takes the ally in front of the hero even with a charged radius', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const facingAlly = makeCommAlly({ owner, i: 1, j: 0, x: 10, y: 0 })
+  const sideAlly = makeCommAlly({ owner, i: 0, j: 1, x: 0, y: 10 })
+  const getInstanceDegree = (_instance, x) => (x === facingAlly.x ? 0 : 150)
+  const { resolveCommGroup } = loadCommModule([facingAlly, sideAlly], getInstanceDegree)
+
+  const group = resolveCommGroup(hero, 7, { precisionOnly: true })
+
+  assert.deepEqual(group, [facingAlly])
+})
+
+test('hidden communication release finds nothing when no ally is in front of the hero', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const sideAlly = makeCommAlly({ owner, i: 0, j: 1, x: 0, y: 10 })
+  const getInstanceDegree = () => 150
+  const { resolveCommGroup } = loadCommModule([sideAlly], getInstanceDegree)
+
+  const group = resolveCommGroup(hero, 7, { precisionOnly: true })
+
+  assert.deepEqual(group, [])
 })
 
 function loadNpcFollowModule(instances) {

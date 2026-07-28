@@ -9,7 +9,7 @@ import {
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-import { showAggressionFeedback, showAlertFeedback, showDamageFeedback } from '../../lib/combatFeedback'
+import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback, showDamageFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
@@ -48,8 +48,16 @@ export class AnimalCombat {
       // the animal's altitude mid-animation.
       !isAirborne(animal)
     ) {
-      showAlertFeedback(animal)
-      this.getReaction(instance)
+      if (animal.strategy === 'runaway') {
+        showAlertFeedback(animal)
+        animal.runaway(instance)
+      } else {
+        showAlertThenAggressionFeedback(animal, () => {
+          if (animal.isDead || animal.isDestroyed || animal.path.length || animal.dest) return
+          if (!animal.getActionCondition(instance, ACTION_TYPES.attack)) return
+          animal.sendTo(instance, ACTION_TYPES.attack)
+        })
+      }
     }
   }
 

@@ -266,7 +266,7 @@ def build(
                 tasks = hero_build_tasks()
             else:
                 tasks = [
-                    (f"default/{output_sheet}", source_sheet, animation)
+                    (output_sheet, source_sheet, animation)
                     for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
                 ]
             for relative_suffix, source_sheet, animation in tasks:

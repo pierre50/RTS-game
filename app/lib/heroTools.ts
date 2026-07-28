@@ -705,6 +705,9 @@ function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): bo
       const beforeHitPoints = target.hitPoints ?? 0
       target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
       const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
+      if (damageDealt > 0) {
+        playAudibleSoundCue(hero, hero.sounds?.hit)
+      }
       showDamageFeedback(target, damageDealt)
       grantUnitXp(hero, XP_CATEGORIES.melee, damageDealt)
       if (target.selected || target.shouldKeepHealthBarVisible?.()) {

@@ -1,10 +1,11 @@
 import { ACTION_TYPES, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
-import { createIsoSelectionMarker } from './graphics/selection'
+import { createIsoSelectionMarker, drawInstanceBlinkingSelection } from './graphics/selection'
 import { getInstanceDegree } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from './buildingFeedback'
+import type { SelectableInstance } from './graphics/selection'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
@@ -27,8 +28,9 @@ const NPC_MENU_KEEP_RANGE = 10
 // a quick tap talks precisely to the unit standing face-to-face with the hero.
 export const COMM_BASE_RANGE = 0
 export const COMM_MAX_RANGE = 7
-export const COMM_CHARGE_MS = 1200
-const COMM_CHARGE_EXPONENT: number = 2.4
+export const COMM_CHARGE_MS = 750
+export const COMM_INDICATOR_DELAY_MS = 250
+const COMM_CHARGE_EXPONENT: number = 1.4
 const COMM_PRECISION_RANGE = 2.5
 const COMM_FACING_HALF_ANGLE = 60
 
@@ -91,6 +93,7 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
   const factor = target.selectionFactor ?? target.size ?? 1
   const marker = createIsoSelectionMarker({ color: COLOR_WHITE, factor, label: LABEL_TYPES.commSelection, zIndex: -1 })
+  marker.position.y = target.reliefLift ?? 0
   const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
   target.addChildAt(marker, shadowIndex)
 }
@@ -136,6 +139,12 @@ function releaseNpc(target: UnitEntity): void {
   target.lookingAtHero = false
   setCommSelected(target, false)
   const dest = target.previousDest
+  if (target.autonomousJob) {
+    target.previousDest = null
+    target.action = null
+    target.affectNewDest?.()
+    return
+  }
   if (target.trainingTargetType && dest && isRuntimeEntityDest(dest)) {
     target.previousDest = null
     target.sendTo?.(dest, ACTION_TYPES.train)
@@ -188,7 +197,36 @@ export function isAnyNpcNear(hero: UnitEntity, npcs: UnitEntity[], range = NPC_M
 // All villagers eligible for the hold-to-charge "communication zone", within the given radius.
 export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
   const candidates = findInstancesInSight<UnitEntity, UnitEntity>(hero, target => isCommEligible(hero, target), radius)
-  return candidates.filter(target => cellDistance(hero, target) <= radius)
+  const radiusSq = radius * radius
+  return candidates.filter(target => {
+    const di = (target.i ?? 0) - (hero.i ?? 0)
+    const dj = (target.j ?? 0) - (hero.j ?? 0)
+    return di * di + dj * dj <= radiusSq
+  })
+}
+
+export function getCommCellsInRadius(hero: UnitEntity, radius: number): RuntimeCell[] {
+  const grid = hero.context?.map?.grid
+  if (!grid) return []
+  const centerI = hero.i ?? 0
+  const centerJ = hero.j ?? 0
+  const scanRadius = Math.ceil(Math.max(0, radius))
+  const radiusSq = radius * radius
+  const cells: RuntimeCell[] = []
+
+  for (let i = centerI - scanRadius; i <= centerI + scanRadius; i++) {
+    const row = grid[i]
+    if (!row) continue
+    for (let j = centerJ - scanRadius; j <= centerJ + scanRadius; j++) {
+      const cell = row[j]
+      if (!cell) continue
+      const di = i - centerI
+      const dj = j - centerJ
+      if (di * di + dj * dj <= radiusSq) cells.push(cell)
+    }
+  }
+
+  return cells
 }
 
 export function getCommRadiusForHold(elapsedMs: number): number {
@@ -216,15 +254,21 @@ function findFacingNpc(hero: UnitEntity, range: number): UnitEntity | null {
 }
 
 // Finalizes a hold-to-charge release: pauses+faces any newly-caught worker(s), returns the group.
-// Still inside the precision zone (a quick tap): resolve to the single ally facing the hero
-// face-to-face rather than an area sweep. Past that, the charged radius nets everyone in range.
-export function resolveCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
-  if (radius <= COMM_PRECISION_RANGE) {
+// Before the visible radius appears, or still inside the precision zone, resolve to the single
+// ally facing the hero face-to-face rather than an area sweep. Past that, the charged radius nets
+// everyone in range.
+export function resolveCommGroup(
+  hero: UnitEntity,
+  radius: number,
+  options: { precisionOnly?: boolean } = {}
+): UnitEntity[] {
+  if (options.precisionOnly || radius <= COMM_PRECISION_RANGE) {
     const npc = findFacingNpc(hero, COMM_PRECISION_RANGE)
     if (npc) {
       noticeNpc(npc, hero)
       return [npc]
     }
+    if (options.precisionOnly) return []
   }
   const group = findCommGroup(hero, radius)
   for (const npc of group) noticeNpc(npc, hero)
@@ -237,6 +281,10 @@ function resetNpcDirectives(target: UnitEntity): void {
   setCommSelected(target, false)
 }
 
+export function clearNpcCommunicationFocus(target: UnitEntity): void {
+  resetNpcDirectives(target)
+}
+
 export function sendNpcToStockpile(target: UnitEntity): void {
   resetNpcDirectives(target)
   target.sendToDelivery?.()
@@ -245,12 +293,14 @@ export function sendNpcToStockpile(target: UnitEntity): void {
 export function keepNpcHere(target: UnitEntity): void {
   resetNpcDirectives(target)
   target.previousDest = null
+  target.autonomousJob = null
   target.stop?.()
 }
 
 export function startFollowingHero(target: UnitEntity): void {
   resetNpcDirectives(target)
   target.previousDest = null
+  target.autonomousJob = null
   target.followingHero = true
   target.stop?.()
 }
@@ -397,52 +447,52 @@ export function resolveHoverTarget(
 // "Aller vers": primary player command path for communicated NPCs. Dispatches a single NPC
 // to gather resources, help build, train/enter compatible buildings, attack valid targets,
 // or move to empty ground.
-function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): void {
+function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): boolean {
   resetNpcDirectives(npc)
   if (target) {
     const kind = target.category || target.type
     const resourceSend = kind ? RESOURCE_SEND_TO[kind] : undefined
     if (resourceSend) {
       resourceSend(npc, target)
-      return
+      return true
     }
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
       npc.sendToBuilding?.(target as BuildingEntity)
-      return
+      return true
     }
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (building.owner === npc.owner && building.isBuilt) {
         const trainingType = getTrainingTargetForUnit(building, npc)
         if (trainingType) {
-          building.requestUnitTraining?.(trainingType, undefined, npc)
-          return
+          return Boolean(building.requestUnitTraining?.(trainingType, undefined, npc))
         }
         if (npc.type !== UNIT_TYPES.villager) {
           npc.sendTo?.(cell)
-          return
+          return false
         }
         showUnitCannotEnterBuildingMessage(npc, building)
-        return
+        return false
       }
     }
     if (target.family === FAMILY_TYPES.animal) {
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {
         npc.sendToHunt?.(target)
-        return
+        return true
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.takemeat)) {
         npc.sendToTakeMeat?.(target)
-        return
+        return true
       }
     }
     const attackableFamilies = [FAMILY_TYPES.unit, FAMILY_TYPES.building, FAMILY_TYPES.animal]
     if (attackableFamilies.includes(target.family) && npc.getActionCondition?.(target, ACTION_TYPES.attack)) {
       npc.sendToAttack?.(target)
-      return
+      return true
     }
   }
   npc.sendTo?.(cell)
+  return false
 }
 
 export function sendNpcGroupToTarget(npcs: UnitEntity[], cell: RuntimeCell, worldPoint: Point): void {
@@ -450,7 +500,11 @@ export function sendNpcGroupToTarget(npcs: UnitEntity[], cell: RuntimeCell, worl
   playNpcOrderSound(npcs)
   const target = resolveClickTarget(npcs[0], worldPoint, cell)
   if (target) {
-    for (const npc of npcs) sendNpcToCell(npc, cell, target)
+    let hasTargetAction = false
+    for (const npc of npcs) {
+      if (sendNpcToCell(npc, cell, target)) hasTargetAction = true
+    }
+    if (hasTargetAction) drawInstanceBlinkingSelection(target as SelectableInstance)
     return
   }
   const map = npcs[0].context?.map

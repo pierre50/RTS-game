@@ -32,6 +32,7 @@ import {
   bindAnimatedSpriteToTicker,
   getRallyPointFrames,
   RALLY_POINT_SHEET_ID,
+  textureRefToString,
 } from '../../lib'
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
@@ -104,6 +105,7 @@ export class Building extends Instance implements BuildingEntity {
   mountingTime?: number
   interface!: EntityInterfaceLike
   assetType?: string
+  textureName?: string
   accept?: string[]
   visibilityTimeout?: ReturnType<typeof setTimeout>
   sounds?: BuildingSounds
@@ -171,6 +173,7 @@ export class Building extends Instance implements BuildingEntity {
     if (this.type === BUILDING_TYPES.dock) {
       spriteSheet = { sheet: 'buildings/construction/dock', frame: 0 }
     }
+    this.textureName = textureRefToString(spriteSheet!)
     const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
     this.sprite = Sprite.from(texture)
     const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }

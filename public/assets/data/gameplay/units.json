@@ -172,11 +172,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/clubman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/clubman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/clubman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/clubman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/clubman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/clubman/greek_01/walking",
+      "walkingSheet": "lpc-baked/clubman/greek_01/walking",
+      "actionSheet": "lpc-baked/clubman/greek_01/action",
+      "dyingSheet": "lpc-baked/clubman/greek_01/dying",
+      "corpseSheet": "lpc-baked/clubman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -217,11 +217,11 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "lpc-baked/bowman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/bowman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/bowman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/bowman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/bowman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/bowman/greek_01/walking",
+      "walkingSheet": "lpc-baked/bowman/greek_01/walking",
+      "actionSheet": "lpc-baked/bowman/greek_01/action",
+      "dyingSheet": "lpc-baked/bowman/greek_01/dying",
+      "corpseSheet": "lpc-baked/bowman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -259,11 +259,11 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "lpc-baked/priest/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/priest/greek_01/default/walking",
-      "actionSheet": "lpc-baked/priest/greek_01/default/action",
-      "dyingSheet": "lpc-baked/priest/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/priest/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/priest/greek_01/walking",
+      "walkingSheet": "lpc-baked/priest/greek_01/walking",
+      "actionSheet": "lpc-baked/priest/greek_01/action",
+      "dyingSheet": "lpc-baked/priest/greek_01/dying",
+      "corpseSheet": "lpc-baked/priest/greek_01/corpse"
     },
     "sounds": {
       "create": "priest-completed",
@@ -320,11 +320,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/axeman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/axeman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/axeman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/axeman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/axeman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/axeman/greek_01/walking",
+      "walkingSheet": "lpc-baked/axeman/greek_01/walking",
+      "actionSheet": "lpc-baked/axeman/greek_01/action",
+      "dyingSheet": "lpc-baked/axeman/greek_01/dying",
+      "corpseSheet": "lpc-baked/axeman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -376,11 +376,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/shortswordman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/shortswordman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/shortswordman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/shortswordman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/shortswordman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/shortswordman/greek_01/walking",
+      "walkingSheet": "lpc-baked/shortswordman/greek_01/walking",
+      "actionSheet": "lpc-baked/shortswordman/greek_01/action",
+      "dyingSheet": "lpc-baked/shortswordman/greek_01/dying",
+      "corpseSheet": "lpc-baked/shortswordman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -432,11 +432,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/broadswordman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/broadswordman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/broadswordman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/broadswordman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/broadswordman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/broadswordman/greek_01/walking",
+      "walkingSheet": "lpc-baked/broadswordman/greek_01/walking",
+      "actionSheet": "lpc-baked/broadswordman/greek_01/action",
+      "dyingSheet": "lpc-baked/broadswordman/greek_01/dying",
+      "corpseSheet": "lpc-baked/broadswordman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -483,11 +483,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/longswordman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/longswordman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/longswordman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/longswordman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/longswordman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/longswordman/greek_01/walking",
+      "walkingSheet": "lpc-baked/longswordman/greek_01/walking",
+      "actionSheet": "lpc-baked/longswordman/greek_01/action",
+      "dyingSheet": "lpc-baked/longswordman/greek_01/dying",
+      "corpseSheet": "lpc-baked/longswordman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -541,11 +541,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/improvedbowman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/improvedbowman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/improvedbowman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/improvedbowman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/improvedbowman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/improvedbowman/greek_01/walking",
+      "walkingSheet": "lpc-baked/improvedbowman/greek_01/walking",
+      "actionSheet": "lpc-baked/improvedbowman/greek_01/action",
+      "dyingSheet": "lpc-baked/improvedbowman/greek_01/dying",
+      "corpseSheet": "lpc-baked/improvedbowman/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -584,11 +584,11 @@
       "gold": 40
     },
     "assets": {
-      "standingSheet": "lpc-baked/hoplite/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/hoplite/greek_01/default/walking",
-      "actionSheet": "lpc-baked/hoplite/greek_01/default/action",
-      "dyingSheet": "lpc-baked/hoplite/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/hoplite/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/hoplite/greek_01/walking",
+      "walkingSheet": "lpc-baked/hoplite/greek_01/walking",
+      "actionSheet": "lpc-baked/hoplite/greek_01/action",
+      "dyingSheet": "lpc-baked/hoplite/greek_01/dying",
+      "corpseSheet": "lpc-baked/hoplite/greek_01/corpse"
     },
     "sounds": {
       "command": [
@@ -637,11 +637,11 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/compositebowman/greek_01/default/walking",
-      "walkingSheet": "lpc-baked/compositebowman/greek_01/default/walking",
-      "actionSheet": "lpc-baked/compositebowman/greek_01/default/action",
-      "dyingSheet": "lpc-baked/compositebowman/greek_01/default/dying",
-      "corpseSheet": "lpc-baked/compositebowman/greek_01/default/corpse"
+      "standingSheet": "lpc-baked/compositebowman/greek_01/walking",
+      "walkingSheet": "lpc-baked/compositebowman/greek_01/walking",
+      "actionSheet": "lpc-baked/compositebowman/greek_01/action",
+      "dyingSheet": "lpc-baked/compositebowman/greek_01/dying",
+      "corpseSheet": "lpc-baked/compositebowman/greek_01/corpse"
     },
     "sounds": {
       "command": [

@@ -18,6 +18,7 @@ type FloatingTextOptions = {
   fontSize?: number
   yOffset?: number
 }
+type AlertAggressionCallback = () => void
 
 const FLASH_MS = 90
 const FLOAT_STEP_MS = 35
@@ -26,10 +27,12 @@ const FLOAT_RISE = 18
 const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_FEEDBACK_COOLDOWN_MS = 1200
 const EMOTE_FEEDBACK_COOLDOWN_MS = 1200
+const ALERT_TO_AGGRESSION_DELAY_MS = 350
 const flashStates = new WeakMap<DamageSprite, FlashState>()
 const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const aggressionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const sequencedAggressionTaskIds = new WeakMap<RuntimeEntity, SchedulerTaskId>()
 const healingFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const confusionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const blockedFeedbackTimes = new WeakMap<RuntimeEntity, number>()
@@ -195,11 +198,11 @@ export function showFatigueFeedback(target: RuntimeEntity): void {
   })
 }
 
-export function showAlertFeedback(target: RuntimeEntity): void {
+function showAlertFeedbackNow(target: RuntimeEntity): boolean {
   const scheduler = target.context?.scheduler
   const now = scheduler?.elapsedMs ?? performance.now()
   const previous = alertFeedbackTimes.get(target) ?? -Infinity
-  if (now - previous < ALERT_FEEDBACK_COOLDOWN_MS) return
+  if (now - previous < ALERT_FEEDBACK_COOLDOWN_MS) return false
   alertFeedbackTimes.set(target, now)
   showFloatingText(target, {
     text: '!',
@@ -209,9 +212,19 @@ export function showAlertFeedback(target: RuntimeEntity): void {
     yOffset: 20,
     taskLabel: 'unit.alertText',
   })
+  return true
+}
+
+export function showAlertFeedback(target: RuntimeEntity): void {
+  showAlertFeedbackNow(target)
 }
 
 export function showAggressionFeedback(target: RuntimeEntity): void {
+  const pendingTaskId = sequencedAggressionTaskIds.get(target)
+  if (pendingTaskId != null) {
+    target.context?.scheduler?.remove(pendingTaskId)
+    sequencedAggressionTaskIds.delete(target)
+  }
   showCooldownEmoteFeedback(target, aggressionFeedbackTimes, {
     text: '💢',
     fill: 0xff8a66,
@@ -220,6 +233,29 @@ export function showAggressionFeedback(target: RuntimeEntity): void {
     yOffset: 20,
     taskLabel: 'unit.aggressionText',
   })
+}
+
+export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggression?: AlertAggressionCallback): void {
+  const scheduler = target.context?.scheduler
+  const alertShown = showAlertFeedbackNow(target)
+  if (!alertShown || sequencedAggressionTaskIds.has(target)) return
+  if (!scheduler) {
+    showAggressionFeedback(target)
+    onAggression?.()
+    return
+  }
+
+  const taskId = scheduler.addOneShot(
+    () => {
+      sequencedAggressionTaskIds.delete(target)
+      if (target.isDestroyed || target.isDead) return
+      showAggressionFeedback(target)
+      onAggression?.()
+    },
+    ALERT_TO_AGGRESSION_DELAY_MS,
+    'unit.alertAggressionText'
+  )
+  sequencedAggressionTaskIds.set(target, taskId)
 }
 
 export function showHealingFeedback(target: RuntimeEntity): void {

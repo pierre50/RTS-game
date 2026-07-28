@@ -922,9 +922,6 @@ GRA00497 - <10>  Lion                    (Guarding sequence)
 GRA00498 - <01>  Log (NW/SE)
 GRA00499 -  <01>  Log (NE/SW)
 GRA00500 -  <01>  Market                  (Level 1 of 3 -  ALL)
-GRA00501 - <01>  Nuke missile            (Heading)
-[36 sets -  W (+10°) through 360°]
- 
 GRA00502 – <01>  Fruit tree (= image 253)
 GRA00503 - <01>  Tree – Oak        (01)
 GRA00504 - <01>  Tree – Oak
@@ -1056,16 +1053,6 @@ GRA00602 - <01>  /S/ Wall/Fort. (NE/SW)  (Level 1 of 3 -  ALL)
 <01>  /S/ Wall/Fort. (Corner) (Level 1 of 3 -  ALL)
  
 
-GRA00603 -  <10>  Nuke Trooper            (Moving sequence)
-[08 sets -  E (+45°) through 360°]
-GRA00604 -  <02>  Nuke Trooper            (Action sequence)
-[08 sets -  E (+45°) through 360°]
-GRA00605 - <01>  Nuke Trooper            (Decaying sequence)
-[08 sets -  E (+45°) through 360°]
-GRA00606 -  <09>  Nuke Trooper            (Dying sequence)
-[08 sets -  E (+45°) through 360°]
-GRA00607 - <01>  Nuke Trooper            (Guarding sequence)
-                  [08 sets -  E (+45°) through 360°]
 GRA00608 - <01>  Hunter Villager spear
 [32 sets -  E (+11.25°) through 360°]
 GRA00609 -  <01>  Stable                  (Level 1 of 2 -  ALL)
@@ -1242,8 +1229,6 @@ GRA00698 - <01>  White brick rubble pile (= image 529)
 GRA00699 - <01>  Terrain crack #?
 GRA00700 -  <01>  Fishing Boat net
 [05 sets -  S (+45°) through 180°]
-GRA00701 – <01>  Nuke missile warhead
-[180 sets - S (+2°) through 360°]
 GRA00702 -  <01>  Cliff waterfall
 GRA00704 - <15>  Jihad Villager          (Action sequence)
 [05 sets -  S (+45°) through 180°]  
@@ -1260,12 +1245,6 @@ GRA00710 - <01>  /S/ Arrow                     (Heading)
 GRA00711 - <03>  /S/ Catapult + Heavy Catapult + Catapult Trireme stone
 [08 sets -  S (+05°) through 180°]
 GRA00712 -  <08>  /S/ Small smoke sequence
-GRA00713 -  <04>  Winsett’s_Z             (Moving sequence)
-[09 sets -  S (+22.5°) through 180°]
-GRA00714 -  <01>  Winsett’s_Z missile
-[19 sets -  S (+10°) through 180°]
-GRA00715 -  <01>  Winsett’s_Z             (Guarding sequence)
-[09 sets -  S (+22.5°) through 180°]
  
 
 INTERFAC.DRS
@@ -1839,7 +1818,6 @@ SOU05217 -  ‘Sumaga’
 SOU05218 -  Water
 SOU05231 -  ‘Hmmm’
 SOU05239 -  Elephant + Alligator killed
-SOU05240 -  Winsett’s_Z
  
 
 TERRAIN.DRS

@@ -438,7 +438,7 @@ export class UnitActions {
       if (!singleCycle) this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
-      showResourceGainFeedback(dest, gain)
+      showResourceGainFeedback(unit, gain)
       if (dest.selected && (!checkOwner || unit.owner?.isPlayed)) {
         menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
       }
@@ -522,7 +522,7 @@ export class UnitActions {
         if (resourceKey && unit.owner) {
           unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + deliveredAmount
         }
-        if (unit.dest && 'family' in unit.dest) showResourceGainFeedback(unit.dest, deliveredAmount)
+        showResourceGainFeedback(unit, deliveredAmount)
         unit.owner?.isPlayed && menu?.updateTopbar()
         unit.loading = 0
         unit.loadingType = null
@@ -587,7 +587,7 @@ export class UnitActions {
           unit.updateInterfaceLoading?.()
           this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
           d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
-          showResourceGainFeedback(d, gain)
+          showResourceGainFeedback(unit, gain)
           if (d.selected) {
             menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
           }
@@ -663,7 +663,7 @@ export class UnitActions {
             grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
             unit.updateInterfaceLoading?.()
             dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
-            showResourceGainFeedback(dest, gain)
+            showResourceGainFeedback(unit, gain)
             if (dest.selected) {
               menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
             }

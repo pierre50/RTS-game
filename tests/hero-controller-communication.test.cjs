@@ -33,6 +33,9 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
         poly(points) {
           this.polys.push(points)
         }
+        fill(options) {
+          this.fillOptions = options
+        }
         moveTo(x, y) {
           this.paths.push({ type: 'moveTo', x, y })
         }
@@ -53,6 +56,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       STEP_TIME: 100,
     },
     '../lib': {
+      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
       drawRoundedIsoShape: (layer, points) => {
         points.forEach((point, index) => {
           if (index === 0) layer.moveTo(point.x, point.y)
@@ -62,15 +66,18 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       },
       getInstanceDegree,
       getReliefOffset: instance => instance?.reliefLift ?? 0,
-      getRoundedIsoShapePoints: ({ factor = 1 } = {}) => [
-        { x: -32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
-        { x: 32 * factor * 0.22, y: -16 * factor * (1 - 0.22) },
+      getRoundedIsoShapePoints: ({ x = 0, y = 0, factor = 1 } = {}) => [
+        { x: x - 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
+        { x: x + 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
       ],
       updateInstanceRenderVisibility: () => {},
     },
     '../lib/heroTools': heroTools,
     '../lib/heroCursor': {
       updateHeroCursor: () => {},
+    },
+    '../lib/lpc': {
+      applyBakedLpcUnitAssets: () => {},
     },
     '../lib/npcInteraction': npcInteraction,
     '../lib/unitEnergy': {
@@ -88,9 +95,33 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
   return module.exports.HeroController
 }
 
-function createController({ nearbyGroup = [], getInstanceDegree, heroToolsOverride = {} } = {}) {
+function createController({
+  nearbyGroup = [],
+  getInstanceDegree,
+  heroToolsOverride = {},
+  commIndicatorDelayMs,
+  resolveCommGroup,
+} = {}) {
   const calls = []
   const hero = {
+    context: {
+      map: {
+        grid: [
+          [
+            { i: 0, j: 0 },
+            { i: 0, j: 1 },
+          ],
+          [
+            { i: 1, j: 0 },
+            { i: 1, j: 1 },
+          ],
+        ],
+      },
+    },
+    i: 0,
+    j: 0,
+    x: 0,
+    y: 0,
     addChildAt: child => {
       child.parent = { removeChild: () => calls.push('removeIndicator') }
     },
@@ -103,11 +134,16 @@ function createController({ nearbyGroup = [], getInstanceDegree, heroToolsOverri
   }
   const npcInteraction = {
     COMM_BASE_RANGE: 2.5,
+    COMM_INDICATOR_DELAY_MS: commIndicatorDelayMs,
     findCommGroup: () => nearbyGroup,
+    getCommCellsInRadius: () => [
+      { i: 0, j: 0 },
+      { i: 1, j: 0 },
+    ],
     getCommRadiusForHold: () => 2.5,
     isAnyNpcNear: () => true,
     releaseIfStillLooking: () => {},
-    resolveCommGroup: () => nearbyGroup,
+    resolveCommGroup: resolveCommGroup || (() => nearbyGroup),
     resolveHoverTarget: () => null,
     sendNpcGroupToTarget: () => {},
     updateNpcFollow: () => {},
@@ -203,8 +239,11 @@ test('E shows communication radius even when no villagers are nearby', () => {
 
   controller.updateCommIndicator()
   assert.deepEqual(controller.commIndicator.paths, [
-    { type: 'moveTo', x: -17.6, y: -31.200000000000003 },
-    { type: 'lineTo', x: 17.6, y: -31.200000000000003 },
+    { type: 'moveTo', x: -7.04, y: -12.48 },
+    { type: 'lineTo', x: 7.04, y: -12.48 },
+    { type: 'closePath' },
+    { type: 'moveTo', x: 24.96, y: 3.5199999999999996 },
+    { type: 'lineTo', x: 39.04, y: 3.5199999999999996 },
     { type: 'closePath' },
   ])
   assert.deepEqual(controller.commIndicator.ellipses, [])
@@ -215,14 +254,47 @@ test('E shows communication radius even when no villagers are nearby', () => {
   assert.deepEqual(calls, ['removeIndicator'])
 })
 
-test('communication charge indicator is drawn as a rounded isometric footprint', () => {
+test('communication radius stays hidden until the configured delay has elapsed', () => {
+  const { controller } = createController({ commIndicatorDelayMs: 250 })
+
+  controller.handleKeyDown('heroInteract')
+  controller.updateCommIndicator()
+
+  assert.deepEqual(controller.commIndicator.paths, [])
+
+  controller.commChargeStart = performance.now() - 300
+  controller.updateCommIndicator()
+
+  assert.deepEqual(controller.commIndicator.paths[0], { type: 'moveTo', x: -7.04, y: -12.48 })
+})
+
+test('releasing communication before the radius is visible requests precision-only resolution', () => {
+  const group = [{ label: 'front-villager' }]
+  const optionsSeen = []
+  const { calls, controller } = createController({
+    nearbyGroup: group,
+    commIndicatorDelayMs: 250,
+    resolveCommGroup: (_hero, _radius, options) => {
+      optionsSeen.push(options)
+      return group
+    },
+  })
+
+  controller.handleKeyDown('heroInteract')
+  controller.handleKeyUp('heroInteract')
+
+  assert.deepEqual(optionsSeen, [{ precisionOnly: true }])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
+})
+
+test('communication charge indicator is drawn as synchronized ground cells', () => {
   const group = [{ label: 'villager' }]
   const { controller } = createController({ nearbyGroup: group })
 
   controller.handleKeyDown('heroInteract')
   controller.updateCommIndicator()
 
-  assert.deepEqual(controller.commIndicator.paths[0], { type: 'moveTo', x: -17.6, y: -31.200000000000003 })
+  assert.deepEqual(controller.commIndicator.paths[0], { type: 'moveTo', x: -7.04, y: -12.48 })
   assert.equal(controller.commIndicator.paths.at(-1).type, 'closePath')
   assert.deepEqual(controller.commIndicator.ellipses, [])
   assert.deepEqual(controller.commIndicator.circles, [])

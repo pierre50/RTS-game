@@ -1,5 +1,6 @@
 import { Assets, Graphics } from 'pixi.js'
 import {
+  cartesianToIsometric,
   drawRoundedIsoShape,
   getInstanceDegree,
   getReliefOffset,
@@ -20,6 +21,8 @@ import {
 import { updateHeroCursor } from '../lib/heroCursor'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import {
+  COMM_INDICATOR_DELAY_MS,
+  getCommCellsInRadius,
   getCommRadiusForHold,
   isAnyNpcNear,
   releaseIfStillLooking,
@@ -132,6 +135,24 @@ function refreshBakedAppearance(unit: UnitEntity): void {
   applyBakedLpcUnitAssets(unit)
   Object.assign(unit, Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)])))
   unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+}
+
+function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: number): void {
+  const cells = getCommCellsInRadius(hero, radius)
+  for (const cell of cells) {
+    const [cellX, cellY] = cartesianToIsometric(cell.i, cell.j)
+    drawRoundedIsoShape(
+      indicator,
+      getRoundedIsoShapePoints({
+        x: cellX - hero.x,
+        y: cellY - hero.y,
+        factor: 1,
+      })
+    )
+  }
+  if (!cells.length) return
+  indicator.fill({ color: COLOR_GOLD, alpha: 0.08 })
+  indicator.stroke({ color: COLOR_GOLD, width: 1, alpha: 0.65 })
 }
 
 export class HeroController {
@@ -383,13 +404,14 @@ export class HeroController {
 
   updateCommIndicator(): void {
     const indicator = this.commIndicator
-    if (!indicator) return
-    indicator.position.y = getReliefOffset(this.heroUnit)
+    const hero = this.heroUnit
+    if (!indicator || !hero) return
+    indicator.position.y = getReliefOffset(hero)
     const elapsed = performance.now() - this.commChargeStart
-    const radius = getCommRadiusForHold(elapsed)
     indicator.clear()
-    drawRoundedIsoShape(indicator, getRoundedIsoShapePoints({ factor: radius }))
-    indicator.stroke({ color: COLOR_GOLD, width: 2, alpha: 0.85 })
+    if (elapsed < COMM_INDICATOR_DELAY_MS) return
+    const radius = getCommRadiusForHold(elapsed)
+    drawCommIndicatorCells(indicator, hero, radius)
   }
 
   endCommCharge(): void {
@@ -398,7 +420,7 @@ export class HeroController {
     this.cancelCommCharge()
     if (!hero) return
     const radius = getCommRadiusForHold(elapsed)
-    const group = resolveCommGroup(hero, radius)
+    const group = resolveCommGroup(hero, radius, { precisionOnly: elapsed < COMM_INDICATOR_DELAY_MS })
     if (group.length) this.controls.context.menu?.openNpcOrders?.(group)
   }
 

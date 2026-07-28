@@ -852,6 +852,7 @@ export class Unit extends Instance implements UnitEntity {
     this.syncMountedRiderPosition()
     if (this.horseSprite) this.horseSprite.position.y = this.reliefLift
     if (this.shadow) this.shadow.position.y = this.reliefLift
+    this.syncSelectionMarkersToRelief()
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = this.getMountedRiderY()
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)

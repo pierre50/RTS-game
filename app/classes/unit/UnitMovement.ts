@@ -29,11 +29,18 @@ import {
   showConfusionFeedback,
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
+  clearVillagerAutonomy,
+  resumeVillagerAutonomy,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
+
+type HeroDirectMoveBlocker = Pick<
+  RuntimeEntity,
+  'family' | 'i' | 'isDead' | 'isDestroyed' | 'j' | 'label' | 'size' | 'type' | 'x' | 'y'
+>
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -57,15 +64,20 @@ function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 
-function blocksHeroDirectMoveWithRoundedFootprint(entity: RuntimeEntity | null | undefined): boolean {
-  return Boolean(entity && (entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource))
+function blocksHeroDirectMoveWithRoundedFootprint(entity: HeroDirectMoveBlocker | null | undefined): boolean {
+  return Boolean(
+    entity &&
+      (entity.family === FAMILY_TYPES.building ||
+        entity.family === FAMILY_TYPES.resource ||
+        entity.family === 'terrain')
+  )
 }
 
-function blocksHeroDirectMoveWithSoftBody(entity: RuntimeEntity | null | undefined): boolean {
+function blocksHeroDirectMoveWithSoftBody(entity: HeroDirectMoveBlocker | null | undefined): boolean {
   return Boolean(entity && (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal))
 }
 
-function getRoundedIsoFootprintPoints(entity: RuntimeEntity): Array<{ x: number; y: number }> {
+function getRoundedIsoFootprintPoints(entity: HeroDirectMoveBlocker): Array<{ x: number; y: number }> {
   return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: Math.max(1, entity.size ?? 1) })
 }
 
@@ -83,7 +95,7 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
-function isHeroInsideRoundedFootprint(entity: RuntimeEntity, x: number, y: number): boolean {
+function isHeroInsideRoundedFootprint(entity: HeroDirectMoveBlocker, x: number, y: number): boolean {
   return pointIsInsidePolygon(getRoundedIsoFootprintPoints(entity), x, y)
 }
 
@@ -97,12 +109,7 @@ function blocksHeroDirectMoveAtPoint(entity: RuntimeEntity | null | undefined, x
   return isHeroInsideRoundedFootprint(entity, x, y)
 }
 
-function blocksHeroMobileDirectMoveAtPoint(
-  unit: UnitEntity,
-  entity: RuntimeEntity,
-  x: number,
-  y: number
-): boolean {
+function blocksHeroMobileDirectMoveAtPoint(unit: UnitEntity, entity: RuntimeEntity, x: number, y: number): boolean {
   const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
   const currentDistance = Math.hypot((entity.x ?? 0) - unit.x, (entity.y ?? 0) - unit.y)
   const nextDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
@@ -147,6 +154,27 @@ function getHeroDirectMoveBlockerAtPoint(
     if (blocksHeroDirectMoveAtPoint(entity, x, y)) return entity
   }
   return null
+}
+
+function isHeroLandTerrainBlockedCell(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
+  return Boolean(
+    isHeroControlled(unit) && unit.category !== 'Boat' && cell && (cell.category === 'Water' || cell.waterBorder)
+  )
+}
+
+function createHeroTerrainMoveBlocker(cell: RuntimeCell): HeroDirectMoveBlocker {
+  const [x, y] = cartesianToIsometric(cell.i, cell.j)
+  return {
+    family: 'terrain',
+    i: cell.i,
+    isDestroyed: false,
+    j: cell.j,
+    label: `terrain-${cell.i}-${cell.j}`,
+    size: 1,
+    type: cell.waterBorder ? 'WaterBorder' : 'Water',
+    x,
+    y,
+  }
 }
 
 type TransportLoadTarget = RuntimeEntity & {
@@ -208,10 +236,10 @@ let lastDirectMoveDebugAt = 0
 
 function debugBlockedDirectMove(
   unit: UnitEntity,
-  reason: string,
-  details: Record<string, unknown>,
-  dirX: number,
-  dirY: number
+  _reason: string,
+  _details: Record<string, unknown>,
+  _dirX: number,
+  _dirY: number
 ): void {
   if (!isHeroControlled(unit)) return
   const now = performance.now()
@@ -225,7 +253,7 @@ export class UnitMovement {
   // slide lasts so the unit hugs one side of an obstacle instead of zigzagging when
   // both sides are free; cleared as soon as a direct move succeeds undeflected.
   slideBias: number
-  directMoveBlocker: RuntimeEntity | null
+  directMoveBlocker: HeroDirectMoveBlocker | null
   // Eased slope-slowdown factor for direct (hero) movement — a hard 1.0↔0.7 toggle when the
   // underfoot cell flips at a tile boundary reads as stutter at 60Hz.
   directMoveClimbFactor: number
@@ -380,6 +408,7 @@ export class UnitMovement {
     if (!action) {
       unit.previousDest = null
       unit.previousWork = null
+      clearVillagerAutonomy?.(unit)
     }
     if (
       unit.isUnitAtDest?.(action, dest) &&
@@ -473,11 +502,7 @@ export class UnitMovement {
       (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt)
     const effectiveRange =
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
-    if (
-      usesActionRange &&
-      effectiveRange &&
-      instancesDistance(unit, dest) <= effectiveRange
-    ) {
+    if (usesActionRange && effectiveRange && instancesDistance(unit, dest) <= effectiveRange) {
       return true
     }
     return instanceContactInstance(unit, dest)
@@ -618,7 +643,7 @@ export class UnitMovement {
       this.slideBias = 0
       return true
     }
-    const blocker = this.directMoveBlocker as unknown as RuntimeEntity | null
+    const blocker = this.directMoveBlocker
     if (
       blocker &&
       blocksHeroDirectMoveWithRoundedFootprint(blocker) &&
@@ -626,7 +651,11 @@ export class UnitMovement {
     ) {
       return true
     }
-    if (blocker && blocksHeroDirectMoveWithSoftBody(blocker) && this.attemptSlideAroundSoftBody(blocker, dirX, dirY, distance)) {
+    if (
+      blocker &&
+      blocksHeroDirectMoveWithSoftBody(blocker) &&
+      this.attemptSlideAroundSoftBody(blocker, dirX, dirY, distance)
+    ) {
       return true
     }
     if (blocker && !blocksHeroDirectMoveWithSoftBody(blocker)) return false
@@ -651,7 +680,12 @@ export class UnitMovement {
     return false
   }
 
-  attemptSlideAlongRoundedFootprint(blocker: RuntimeEntity, dirX: number, dirY: number, distance: number): boolean {
+  attemptSlideAlongRoundedFootprint(
+    blocker: HeroDirectMoveBlocker,
+    dirX: number,
+    dirY: number,
+    distance: number
+  ): boolean {
     const unit = this.unit
     const points = getRoundedIsoFootprintPoints(blocker)
     let tangentX = 0
@@ -688,7 +722,7 @@ export class UnitMovement {
     return true
   }
 
-  attemptSlideAroundSoftBody(blocker: RuntimeEntity, dirX: number, dirY: number, distance: number): boolean {
+  attemptSlideAroundSoftBody(blocker: HeroDirectMoveBlocker, dirX: number, dirY: number, distance: number): boolean {
     const unit = this.unit
     const awayX = unit.x - (blocker.x ?? unit.x)
     const awayY = unit.y - (blocker.y ?? unit.y)
@@ -759,12 +793,17 @@ export class UnitMovement {
         return false
       }
       const categoryAllowed =
-        unit.category === 'Boat' ? isBoatNavigationCell(targetCell) : targetCell.category !== 'Water'
+        unit.category === 'Boat'
+          ? isBoatNavigationCell(targetCell)
+          : targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
       if (!categoryAllowed) {
+        if (isHeroLandTerrainBlockedCell(unit, targetCell)) {
+          this.directMoveBlocker = createHeroTerrainMoveBlocker(targetCell)
+        }
         debugBlockedDirectMove(
           unit,
           'target-category',
-          { rawI, rawJ, newI, newJ, category: targetCell.category },
+          { rawI, rawJ, newI, newJ, category: targetCell.category, waterBorder: targetCell.waterBorder },
           dirX,
           dirY
         )
@@ -842,6 +881,7 @@ export class UnitMovement {
     const unit = this.unit
     unit.stopInterval?.()
     if (!unit.action) {
+      if (resumeVillagerAutonomy?.(unit)) return
       unit.stop?.()
       return
     }
@@ -980,6 +1020,8 @@ export class UnitMovement {
         unit.goBackToPrevious?.()
       } else if (unit.loading && unit.work && !notDeliveryWork.includes(unit.work)) {
         unit.sendToDelivery?.()
+      } else if (resumeVillagerAutonomy?.(unit)) {
+        return
       } else {
         showConfusionFeedback(unit)
         unit.stop?.()

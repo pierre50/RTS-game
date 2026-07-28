@@ -893,6 +893,86 @@ test('hero direct movement slides along rounded building collision instead of is
   assert.equal(movement.directMoveBlocker, building)
 })
 
+test('hero direct movement slides along water-border terrain like a rounded obstacle', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 2 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      waterBorder: false,
+      has: null,
+    }))
+  )
+  grid[1][0].waterBorder = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i, j],
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => {
+      if (x >= 0.5 && y < -0.05) return [1, 1]
+      if (x >= 0.5) return [1, 0]
+      return [0, 0]
+    },
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+  const movement = new UnitMovement(unit)
+
+  const moved = movement.moveDirect(1, 0, 1)
+
+  assert.equal(moved, true)
+  assert.equal(unit.i, 1)
+  assert.equal(unit.j, 1)
+  assert.equal(movement.directMoveBlocker.family, 'terrain')
+  assert.equal(movement.directMoveBlocker.type, 'WaterBorder')
+})
+
 test('hero direct movement collides softly with units and animals', () => {
   const createGrid = blocker => {
     const grid = Array.from({ length: 3 }, (_, i) =>
@@ -1822,7 +1902,7 @@ test('delivery orders bypass the human command throttle', () => {
   assert.equal(unit.previousDest, resource)
 })
 
-test('delivery shows a resource gain over the target building', () => {
+test('delivery shows a resource gain over the delivering unit', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -1859,6 +1939,7 @@ test('delivery shows a resource gain over the target building', () => {
   }
   const unit = {
     action: constants.ACTION_TYPES.delivery,
+    label: 'villager-1',
     context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
     dest: forum,
     loading: 7,
@@ -1877,7 +1958,7 @@ test('delivery shows a resource gain over the target building', () => {
   assert.equal(player.food, 17)
   assert.equal(unit.loading, 0)
   assert.deepEqual(calls, [
-    ['feedback', 'forum-1', 7],
+    ['feedback', 'villager-1', 7],
     ['topbar'],
     ['updateInterfaceLoading'],
     ['setTextures', 'standing'],

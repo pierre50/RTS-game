@@ -33,6 +33,7 @@ export type FogCellContext = {
 
 type FogInstance = RuntimeEntity & {
   assetType?: string
+  textureName?: string
   children?: Array<{ tint?: number }>
   owner?: RuntimeEntity['owner'] & { isPlayed?: boolean; color?: string }
   visible?: boolean
@@ -136,7 +137,7 @@ export class CellFog {
             ) as BuildingAssetWithFinalImage
             const localCell = map.grid?.[instance.i]?.[instance.j] as FogGridCell | undefined
             if (!localCell?.addFogBuilding) return
-            localCell.addFogBuilding(assets.images.final, instance.owner.color)
+            localCell.addFogBuilding(instance.textureName || assets.images.final, instance.owner.color)
           }
         }
         instance.visible = false

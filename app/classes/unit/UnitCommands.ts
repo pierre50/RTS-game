@@ -14,6 +14,8 @@ import {
   getInstanceDegree,
   getInstancePath,
   getWorkWithLoadingType,
+  getAutonomyJobForWork,
+  setVillagerAutonomy,
 } from '../../lib'
 import { t } from '../../lib/lang'
 import { isHeroControlled } from '../../lib/unitControl'
@@ -156,6 +158,7 @@ export class UnitCommands {
     }
 
     applyWorkForAction(unit, work, action)
+    setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(work) ?? null)
     unit.previousDest = keepPrevious ? unit.previousDest : null
 
     // AI job switches must bypass the public command throttle, otherwise the villager

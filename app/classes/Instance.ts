@@ -105,6 +105,14 @@ export class Instance extends Container {
     this.timeoutId = null
   }
 
+  syncSelectionMarkersToRelief(): void {
+    const y = this.reliefLift ?? 0
+    const selection = this.getChildByLabel(LABEL_TYPES.selection)
+    if (selection) selection.position.y = y
+    const commSelection = this.getChildByLabel(LABEL_TYPES.commSelection)
+    if (commSelection) commSelection.position.y = y
+  }
+
   startInterval(callback: () => void, time: number, immediate = true, name = `${this.family || 'instance'}.interval`): void {
     this.stopInterval()
     this.interval = this.context.scheduler.add(callback, time, name)
@@ -138,6 +146,7 @@ export class Instance extends Container {
     this.selected = true
     const f = this.selectionFactor ?? this.size
     const selection = createIsoSelectionMarker({ color: COLOR_WHITE, factor: f, zIndex: -1 })
+    selection.position.y = this.reliefLift ?? 0
     const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
     this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()

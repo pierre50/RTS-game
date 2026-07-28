@@ -57,6 +57,7 @@ function loadInstance() {
       LABEL_TYPES: {
         shadow: 'shadow',
         selection: 'selection',
+        commSelection: 'commSelection',
         healthBar: 'healthBar',
         powerBar: 'powerBar',
       },
@@ -68,7 +69,7 @@ function loadInstance() {
       STEP_TIME: 20,
     },
     '../lib': {
-      createIsoSelectionMarker: () => ({ label: 'selection' }),
+      createIsoSelectionMarker: () => ({ label: 'selection', position: { y: 0 } }),
       getActionCondition: () => false,
       setUnitTexture: () => {},
       uuidv4: () => 'instance-1',
@@ -95,6 +96,31 @@ test('selection is inserted above building shadows', () => {
   Instance.prototype.select.call(instance)
 
   assert.equal(inserted[0], 1)
+})
+
+test('selection marker tracks visual relief lift', () => {
+  const { Instance } = loadInstance()
+  const instance = Object.create(Instance.prototype)
+  const children = []
+  instance.selected = false
+  instance.size = 1
+  instance.reliefLift = -24
+  instance.children = children
+  instance.addChildAt = (child, index) => {
+    children.splice(index, 0, child)
+  }
+  instance.drawHealthBar = () => {}
+  instance.getChildByLabel = label => children.find(child => child.label === label) || null
+
+  Instance.prototype.select.call(instance)
+
+  const selection = instance.getChildByLabel('selection')
+  assert.equal(selection.position.y, -24)
+
+  instance.reliefLift = -12
+  Instance.prototype.syncSelectionMarkersToRelief.call(instance)
+
+  assert.equal(selection.position.y, -12)
 })
 
 test('unselect keeps played unit and building health bars visible in hero gameplay', () => {

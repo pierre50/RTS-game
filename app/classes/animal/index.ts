@@ -374,6 +374,7 @@ export class Animal extends Instance implements AnimalEntity {
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
     this.sprite.position.y = -this.altitude + this.reliefLift
     if (this.shadow) this.shadow.position.y = this.reliefLift
+    this.syncSelectionMarkersToRelief()
   }
 
   syncVisualSettings(): void {
