@@ -83,6 +83,7 @@ export default class Game extends Container {
   _pausedByVisibility: boolean
   _pausedByOrientation: boolean
   _restartSaveData: SerializedSave | null
+  _isRestarting: boolean
   config: GameConfig | null
   onQuit: (() => void) | null
   context: GameRuntimeContext
@@ -104,6 +105,7 @@ export default class Game extends Container {
     this._pausedByVisibility = false
     this._pausedByOrientation = false
     this._restartSaveData = null
+    this._isRestarting = false
     this._weather = null
     this.config = config
     this.onQuit = onQuit
@@ -477,6 +479,7 @@ export default class Game extends Container {
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
     map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
+    this.context.controls?.init?.()
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -495,6 +498,7 @@ export default class Game extends Container {
     this._applyMapConfig(map, saveConfig(json.config))
     this._createUiRuntime()
     map.generateFromJSON(savedRuntimeState(json))
+    this.context.controls?.init?.()
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
@@ -542,6 +546,8 @@ export default class Game extends Container {
   }
 
   async restart(): Promise<void> {
+    if (this._isRestarting || !this._restartSaveData) return
+    this._isRestarting = true
     this._destroyRuntime()
     const speed = getGameSpeed()
     this.context.app.ticker.speed = speed
@@ -554,6 +560,7 @@ export default class Game extends Container {
     } finally {
       this._loadingScreen?.destroy()
       this._loadingScreen = null
+      this._isRestarting = false
     }
   }
 

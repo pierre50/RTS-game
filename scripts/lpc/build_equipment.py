@@ -6,7 +6,7 @@ from pathlib import Path
 
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
 from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS, Sheet
-from dynamic_equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER
+from dynamic_equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
 from image_pipeline import compose_frame, open_layer, source_frames
 from retro_palette import find_hex_palette, load_hex_palette
 
@@ -26,8 +26,6 @@ def sheet_plan(action_animation: str) -> dict[str, tuple[str, object]]:
     return {
         "walking": ("walk", SHEET_BY_KEY["walking"]),
         "action": (action_animation, action_sheet),
-        "dying": ("hurt", SHEET_BY_KEY["dying"]),
-        "corpse": ("hurt", SHEET_BY_KEY["corpse"]),
     }
 
 
@@ -40,13 +38,14 @@ def build_equipment(source_root: Path, output_root: Path) -> None:
 
     built = 0
     for equipment in DYNAMIC_EQUIPMENT.values():
+        active_layers = active_layer_keys(equipment)
         for output_sheet, (animation, source_sheet) in sheet_plan(equipment.action_animation).items():
+            if not has_animation_content(equipment, animation):
+                continue
             layers_by_key = {layer.key: layer for layer in equipment.layers_by_animation.get(animation, ())}
-            # "Hurt" sheets (dying/corpse) are a single generic row with no per-direction
-            # variants, so row 0 there isn't "north" -- only apply the behind_body_rows
-            # swap below on sheets that actually have directional rows.
-            is_directional = source_sheet.rows > 1
             for layer_key, _z_index in EQUIPMENT_LAYER_ORDER:
+                if layer_key not in active_layers:
+                    continue
                 other_key = "front" if layer_key == "back" else "back"
                 own_layer = layers_by_key.get(layer_key)
                 other_layer = layers_by_key.get(other_key)
@@ -55,15 +54,15 @@ def build_equipment(source_root: Path, output_root: Path) -> None:
                 all_specs = (*own_specs, *other_specs)
                 frames = []
                 for frame_index in source_frames(source_sheet):
-                    source_row = frame_index // source_sheet.columns if is_directional else None
+                    source_row = frame_index // source_sheet.columns
                     # A spec flagged behind_body_rows belongs to the *other* named
                     # layer on those rows (see LayerSpec.behind_body_rows): a carried
                     # item held in front everywhere except when facing away, where it
                     # must paste behind the body instead. There's no body layer in
                     # this standalone equipment bake to swap paste order against, so
                     # the swap happens here, at the back/front sheet level.
-                    specs = [spec for spec in own_specs if not is_directional or source_row not in spec.behind_body_rows]
-                    specs += [spec for spec in other_specs if is_directional and source_row in spec.behind_body_rows]
+                    specs = [spec for spec in own_specs if source_row not in spec.behind_body_rows]
+                    specs += [spec for spec in other_specs if source_row in spec.behind_body_rows]
                     loaded_layers = [open_layer(source_root, spec) for spec in specs]
                     # The other layer's specs must still take part in fallback-group
                     # scans (see compose_frame): a weapon living in the other layer

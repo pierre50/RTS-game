@@ -55,6 +55,10 @@ def animation_speed_for(output_sheet: str) -> float:
     return 0 if output_sheet == "corpse" else LPC_ANIMATION_SPEED
 
 
+def is_riding_output(relative_suffix: str) -> bool:
+    return relative_suffix == "action/riding" or relative_suffix.startswith("action/riding/")
+
+
 def file_fingerprint(path: Path) -> dict[str, int | str]:
     stat = path.stat()
     return {"path": str(path), "mtime_ns": stat.st_mtime_ns, "size": stat.st_size}
@@ -200,12 +204,14 @@ def villager_build_tasks() -> list[BuildTask]:
 
 
 # Same job-pose variety as the villager (the hero swaps tools/weapons the same
-# way), plus a mounted "riding" sheet built from the slash pose — riding needs no
-# extra source animation since it reuses the slash frames already baked above.
+# way), plus mounted "riding" sheets for each action pose. The rider compositor
+# reuses the corresponding slash/thrust/shoot upper body and replaces the legs.
 def hero_build_tasks() -> list[BuildTask]:
     return [
         *villager_build_tasks(),
-        ("action/riding", SHEET_BY_ANIMATION["slash"], "slash"),
+        ("action/riding/slash", SHEET_BY_ANIMATION["slash"], "slash"),
+        ("action/riding/thrust", SHEET_BY_ANIMATION["thrust"], "thrust"),
+        ("action/riding/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
     ]
 
 
@@ -303,7 +309,7 @@ def build(
                     for frame_index in source_frames(source_sheet)
                 ]
                 anchor_override = None
-                if output_sheet == "riding":
+                if is_riding_output(relative_suffix):
                     base_frame_height = frames[0].height
                     frames = compose_rider_frames(frames, Image.open(RIDER_LEGS_PATH).convert("RGBA"))
                     anchor_override = {

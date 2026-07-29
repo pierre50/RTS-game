@@ -41,7 +41,6 @@ class Equipment:
 
 # LPC universal sheets always order directional rows north/west/south/east.
 NORTH_ROW = 0
-SOUTH_ROW = 2
 
 
 EQUIPMENT: dict[str, dict[str, Equipment]] = {
@@ -105,10 +104,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             background=(LayerSpec("weapon/polearm/scythe/universal_behind/walk/scythe.png"),),
             foreground=(LayerSpec("weapon/polearm/scythe/walk/scythe.png"),),
         ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/polearm/scythe/universal_behind/hurt/scythe.png"),),
-            foreground=(LayerSpec("weapon/polearm/scythe/hurt/scythe.png"),),
-        ),
         "slash": Equipment(
             background=(LayerSpec("weapon/polearm/scythe/attack_slash/behind/scythe.png"),),
             foreground=(LayerSpec("weapon/polearm/scythe/attack_slash/scythe.png"),),
@@ -136,10 +131,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                 LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
         ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/ranged/bow/normal/universal/background/hurt/dark.png"),),
-            foreground=(LayerSpec("weapon/ranged/bow/normal/universal/foreground/hurt/dark.png"),),
-        ),
     },
     "bow_great": {
         "walk": Equipment(
@@ -155,10 +146,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                 LayerSpec("weapon/ranged/bow/great/universal/foreground/shoot/dark.png"),
                 LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
-        ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/ranged/bow/great/universal/background/hurt/dark.png"),),
-            foreground=(LayerSpec("weapon/ranged/bow/great/universal/foreground/hurt/dark.png"),),
         ),
     },
     "bow_recurve": {
@@ -177,10 +164,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                 LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
         ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/ranged/bow/recurve/universal/background/hurt/dark.png"),),
-            foreground=(LayerSpec("weapon/ranged/bow/recurve/universal/foreground/hurt/dark.png"),),
-        ),
     },
     "spear": {
         "walk": Equipment(
@@ -190,10 +173,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
         "thrust": Equipment(
             background=(LayerSpec("weapon/polearm/spear/background/thrust/dark.png"),),
             foreground=(LayerSpec("weapon/polearm/spear/foreground/thrust/dark.png"),),
-        ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/polearm/spear/background/hurt/dark.png"),),
-            foreground=(LayerSpec("weapon/polearm/spear/foreground/hurt/dark.png"),),
         ),
     },
     "dagger": {
@@ -205,69 +184,35 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             background=(LayerSpec("weapon/sword/dagger/behind/slash/dagger.png"),),
             foreground=(LayerSpec("weapon/sword/dagger/slash/dagger.png"),),
         ),
-        "hurt": Equipment(foreground=(LayerSpec("weapon/sword/dagger/hurt/dagger.png"),)),
     },
-    # Arming sword + round shield, both recolored to brass. The shield has no "brass"
-    # source file, so it's pixel-recolored from the hand-colored "gold" variant instead.
-    # The shield has no hurt/dying frames, so it's dropped for that pose (like the axe).
-    # The shield is a single static layer with no per-direction bg/fg split (unlike the
-    # sword), so as a background layer it got inconsistently occluded by the body
-    # depending on facing (fully visible boss detail one way, mostly hidden the other).
-    # Foreground keeps it fully visible and consistent across all 4 directions, except
-    # facing south the sword must still read as held in front of the shield, so it's
-    # flagged behind_rows=SOUTH_ROW to swap paste order with the sword there.
+    # Arming sword only. The matching shield is generated as its own dynamic
+    # equipment below so runtime loadouts can toggle weapon and shield separately.
     "broadsword": {
         "walk": Equipment(
             background=(LayerSpec("weapon/sword/arming/universal/bg/walk/brass.png"),),
-            foreground=(
-                LayerSpec("weapon/sword/arming/universal/fg/walk/brass.png"),
-                LayerSpec("shield/round/walk/brass.png", behind_rows=(SOUTH_ROW,)),
-            ),
+            foreground=(LayerSpec("weapon/sword/arming/universal/fg/walk/brass.png"),),
         ),
         "slash": Equipment(
             background=(LayerSpec("weapon/sword/arming/attack_slash/bg/brass.png"),),
-            foreground=(
-                LayerSpec("weapon/sword/arming/attack_slash/fg/brass.png"),
-                LayerSpec("shield/round/slash/brass.png", behind_rows=(SOUTH_ROW,)),
-            ),
-        ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/sword/arming/universal/bg/hurt/brass.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/universal/fg/hurt/brass.png"),),
+            foreground=(LayerSpec("weapon/sword/arming/attack_slash/fg/brass.png"),),
         ),
     },
-    # Same arming sword + round shield as "broadsword", both parts ship pre-made
-    # "silver" textures, so no palette recolor is needed. Like "broadsword"'s shield,
-    # this one has no per-direction bg/fg split, so it must go in foreground (not
-    # background) or it gets inconsistently occluded by the body depending on facing,
-    # and it's flagged behind_rows=SOUTH_ROW so the sword still reads as in front of
-    # it on that one facing.
+    # Silver arming sword only. The matching shield is generated separately.
     "longsword": {
         "walk": Equipment(
             background=(LayerSpec("weapon/sword/arming/universal/bg/walk/silver.png"),),
-            foreground=(
-                LayerSpec("weapon/sword/arming/universal/fg/walk/silver.png"),
-                LayerSpec("shield/round/walk/silver.png", behind_rows=(SOUTH_ROW,)),
-            ),
+            foreground=(LayerSpec("weapon/sword/arming/universal/fg/walk/silver.png"),),
         ),
         "slash": Equipment(
             background=(LayerSpec("weapon/sword/arming/attack_slash/bg/silver.png"),),
-            foreground=(
-                LayerSpec("weapon/sword/arming/attack_slash/fg/silver.png"),
-                LayerSpec("shield/round/slash/silver.png", behind_rows=(SOUTH_ROW,)),
-            ),
-        ),
-        "hurt": Equipment(
-            background=(LayerSpec("weapon/sword/arming/universal/bg/hurt/silver.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/universal/fg/hurt/silver.png"),),
+            foreground=(LayerSpec("weapon/sword/arming/attack_slash/fg/silver.png"),),
         ),
     },
-    # Longspear + round shield, brass-recolored like "broadsword"'s shield (no
-    # pre-made "brass" round shield source, so it's pixel-recolored from "gold").
+    # Longspear only. The matching shield is generated separately.
     # The longspear's walk art ships on the same oversized held-item canvas as the
     # bow (direct_columns), and its thrust art on a 192px canvas
     # (like the scythe's slash). It has no hurt frames at all, so — like the axe —
-    # the weapon (and its shield) are dropped for that pose.
+    # the weapon is dropped for that pose.
     "longspear": {
         "walk": Equipment(
             background=(
@@ -281,15 +226,11 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                     "weapon/polearm/longspear/foreground/walk/dark.png",
                     direct_columns=True,
                 ),
-                LayerSpec("shield/round/walk/brass.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
         "thrust": Equipment(
             background=(LayerSpec("weapon/polearm/longspear/background/thrust/dark.png"),),
-            foreground=(
-                LayerSpec("weapon/polearm/longspear/foreground/thrust/dark.png"),
-                LayerSpec("shield/round/thrust/brass.png", behind_rows=(SOUTH_ROW,)),
-            ),
+            foreground=(LayerSpec("weapon/polearm/longspear/foreground/thrust/dark.png"),),
         ),
     },
     # Walking stick. Only ships walk/thrust art (no spellcast pose), so it's dropped
@@ -303,9 +244,8 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             foreground=(LayerSpec("tools/fishing/rod-fg.png"),),
         ),
     },
-    # Same longspear + round shield as "longspear", but both parts ship pre-made
-    # "silver" textures like "longsword" vs "broadsword", so no palette recolor is
-    # needed. Same south-facing occlusion fix as the other round-shield combos.
+    # Same longspear as "longspear", but silver. The matching shield is generated
+    # separately.
     "longspear_silver": {
         "walk": Equipment(
             background=(
@@ -319,16 +259,30 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
                     "weapon/polearm/longspear/foreground/walk/silver.png",
                     direct_columns=True,
                 ),
-                LayerSpec("shield/round/walk/silver.png", behind_rows=(SOUTH_ROW,)),
             ),
         ),
         "thrust": Equipment(
             background=(LayerSpec("weapon/polearm/longspear/background/thrust/silver.png"),),
-            foreground=(
-                LayerSpec("weapon/polearm/longspear/foreground/thrust/silver.png"),
-                LayerSpec("shield/round/thrust/silver.png", behind_rows=(SOUTH_ROW,)),
-            ),
+            foreground=(LayerSpec("weapon/polearm/longspear/foreground/thrust/silver.png"),),
         ),
+    },
+    # Round shields are standalone equipment. The brass sheet is pixel-recolored
+    # from the hand-colored gold source by the image pipeline.
+    "round_shield_brass_slash": {
+        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png"),)),
+        "slash": Equipment(foreground=(LayerSpec("shield/round/slash/brass.png"),)),
+    },
+    "round_shield_brass_thrust": {
+        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png"),)),
+        "thrust": Equipment(foreground=(LayerSpec("shield/round/thrust/brass.png"),)),
+    },
+    "round_shield_silver_slash": {
+        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/silver.png"),)),
+        "slash": Equipment(foreground=(LayerSpec("shield/round/slash/silver.png"),)),
+    },
+    "round_shield_silver_thrust": {
+        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/silver.png"),)),
+        "thrust": Equipment(foreground=(LayerSpec("shield/round/thrust/silver.png"),)),
     },
 }
 

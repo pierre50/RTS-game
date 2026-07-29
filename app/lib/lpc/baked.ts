@@ -84,8 +84,8 @@ function villagerActionAlias(variant: string, animation: string): string {
 }
 
 // The hero bakes the same "body" + "action" (slash/thrust/shoot) layout as the
-// villager (see hero_build_tasks() in scripts/lpc/build.py), plus a mounted
-// "riding" sheet under the same "action" folder.
+// villager (see hero_build_tasks() in scripts/lpc/build.py), plus mounted
+// "riding/<action>" sheets under the same "action" folder.
 function heroBodyAlias(variant: string, sheet: string): string {
   return bakedAlias('hero', variant, 'body', sheet)
 }
@@ -94,7 +94,8 @@ function heroActionAlias(variant: string, animation: string): string {
   return bakedAlias('hero', variant, 'action', animation)
 }
 
-const HERO_ACTION_SHEETS = [...VILLAGER_ACTION_SHEETS, 'riding'] as const
+const HERO_RIDING_ACTION_SHEETS = VILLAGER_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
+const HERO_ACTION_SHEETS = [...VILLAGER_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
 
 async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
   if (unit === 'villager' || unit === 'hero') {
@@ -210,18 +211,21 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     const bodyWalking = bodyAlias(variant, 'walking')
     const bodyDying = bodyAlias(variant, 'dying')
     const bodyCorpse = bodyAlias(variant, 'corpse')
-    return {
+    const sheets = {
       standingSheet: bodyWalking,
       walkingSheet: bodyWalking,
       actionSheet: actionAlias(variant, actionAnimation),
       dyingSheet: bodyDying,
       corpseSheet: bodyCorpse,
     }
+    return bakedUnit === 'hero' ? { ...sheets, ridingSheet: actionAlias(variant, `riding/${actionAnimation}`) } : sheets
   }
 
   unit.allAssets = {
     default: villagerSheets('slash'),
     attacker: villagerSheets('slash'),
+    heroSword: villagerSheets('slash'),
+    heroSpear: villagerSheets('thrust'),
     hunter: {
       ...villagerSheets('shoot'),
       harvestSheet: actionAlias(variant, 'slash'),
@@ -235,6 +239,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     woodcutter: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
     builder: villagerSheets('slash'),
   }
-  unit.assets = bakedUnit === 'hero' ? { ...unit.allAssets.default, ridingSheet: actionAlias(variant, 'riding') } : unit.allAssets.default
+  unit.assets = unit.allAssets.default
   return true
 }

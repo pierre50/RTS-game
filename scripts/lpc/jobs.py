@@ -79,7 +79,8 @@ LONGSWORDMAN_JOBS: tuple[Job, ...] = (
 )
 
 # The longspear has no hurt-pose art at all, so hurt_equipment is left unset (the
-# weapon and shield are simply dropped for that pose, like the axe).
+# weapon is simply dropped for that pose, like the axe). Its shield is a separate
+# runtime equipment overlay.
 HOPLITE_JOBS: tuple[Job, ...] = (
     Job(
         "default",
@@ -89,8 +90,8 @@ HOPLITE_JOBS: tuple[Job, ...] = (
     ),
 )
 
-# Same as HOPLITE_JOBS, but the silver longspear/shield bundle (see "phalanx" in
-# config.py and "longspear_silver" in equipment.py).
+# Same as HOPLITE_JOBS, but the silver longspear (see "phalanx" in config.py and
+# "longspear_silver" in equipment.py). Its shield is a separate runtime overlay.
 PHALANX_JOBS: tuple[Job, ...] = (
     Job(
         "default",

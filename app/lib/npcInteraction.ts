@@ -1,4 +1,4 @@
-import { ACTION_TYPES, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, CELL_WIDTH, COLOR_WHITE, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
 import { createIsoSelectionMarker, drawInstanceBlinkingSelection } from './graphics/selection'
 import { getInstanceDegree } from './maths'
@@ -28,10 +28,11 @@ const NPC_MENU_KEEP_RANGE = 10
 // a quick tap talks precisely to the unit standing face-to-face with the hero.
 export const COMM_BASE_RANGE = 0
 export const COMM_MAX_RANGE = 7
-export const COMM_CHARGE_MS = 750
+export const COMM_CHARGE_MS = 2200
 export const COMM_INDICATOR_DELAY_MS = 250
-const COMM_CHARGE_EXPONENT: number = 1.4
-const COMM_PRECISION_RANGE = 2.5
+const COMM_CHARGE_EXPONENT: number = 2.2
+const COMM_PRECISION_RANGE = Math.SQRT2 + 0.01
+const COMM_PRECISION_WORLD_RANGE = CELL_WIDTH + 0.01
 const COMM_FACING_HALF_ANGLE = 60
 
 const FOLLOW_SLACK = 2
@@ -52,6 +53,10 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
   return Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0))
+}
+
+function worldDistance(a: Partial<Point>, b: Partial<Point>): number {
+  return Math.hypot((a.x ?? 0) - (b.x ?? 0), (a.y ?? 0) - (b.y ?? 0))
 }
 
 function angleDelta(a: number, b: number): number {
@@ -245,6 +250,7 @@ function findFacingNpc(hero: UnitEntity, range: number): UnitEntity | null {
   let best: UnitEntity | null = null
   let bestAngle = COMM_FACING_HALF_ANGLE
   for (const candidate of candidates) {
+    if (worldDistance(hero, candidate) > COMM_PRECISION_WORLD_RANGE) continue
     const angle = angleDelta(getInstanceDegree(hero, candidate.x, candidate.y), hero.degree ?? 0)
     if (angle > bestAngle) continue
     best = candidate

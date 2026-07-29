@@ -52,6 +52,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
       LABEL_TYPES: { commRadius: 'commRadius' },
+      MOUNTED_HORSE_SPEED_BONUS: 0.4,
       SHEET_TYPES: { action: 'action', standing: 'standing', walking: 'walking' },
       STEP_TIME: 100,
     },
@@ -152,6 +153,7 @@ function createController({
     aimHeroBowChargeAt: () => false,
     applyToolAppearance: () => {},
     cancelHeroBowCharge: () => {},
+    HERO_TOOL_ORDER: ['interact', 'sword', 'spear', 'bow'],
     releaseHeroBowCharge: () => false,
     triggerToolAttackAt: (_hero, _tool, destination) => {
       calls.push(['attack', destination])
@@ -218,6 +220,23 @@ test('keyboard movement during bow charge restores aim without resetting action 
   assert.deepEqual(calls, [])
 })
 
+test('H mounts the hero once for debug without stacking speed', () => {
+  const { calls, controller, hero } = createController()
+  hero.speed = 1
+  hero.removeMountedHorseSprite = () => calls.push('removeHorse')
+  hero.syncMountedRiderPosition = () => calls.push('syncRider')
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(hero.speed, 1.4)
+  assert.deepEqual(calls, [['setTextures', 'standing']])
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, false)
+  assert.equal(hero.speed, 1)
+  assert.deepEqual(calls, [['setTextures', 'standing'], 'removeHorse', 'syncRider', ['setTextures', 'standing']])
+})
+
 test('E owns villager communication and opens orders on key release', () => {
   const group = [{ label: 'villager-1' }, { label: 'villager-2' }]
   const { calls, controller } = createController({ nearbyGroup: group })
@@ -270,11 +289,13 @@ test('communication radius stays hidden until the configured delay has elapsed',
 
 test('releasing communication before the radius is visible requests precision-only resolution', () => {
   const group = [{ label: 'front-villager' }]
+  const resolutions = []
   const optionsSeen = []
   const { calls, controller } = createController({
     nearbyGroup: group,
     commIndicatorDelayMs: 250,
-    resolveCommGroup: (_hero, _radius, options) => {
+    resolveCommGroup: (_hero, radius, options) => {
+      resolutions.push(radius)
       optionsSeen.push(options)
       return group
     },
@@ -283,6 +304,30 @@ test('releasing communication before the radius is visible requests precision-on
   controller.handleKeyDown('heroInteract')
   controller.handleKeyUp('heroInteract')
 
+  assert.deepEqual(resolutions, [0])
+  assert.deepEqual(optionsSeen, [{ precisionOnly: true }])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
+})
+
+test('releasing communication after the radius is visible still resolves only the adjacent precision target', () => {
+  const group = [{ label: 'front-villager' }]
+  const resolutions = []
+  const optionsSeen = []
+  const { calls, controller } = createController({
+    nearbyGroup: group,
+    commIndicatorDelayMs: 250,
+    resolveCommGroup: (_hero, radius, options) => {
+      resolutions.push(radius)
+      optionsSeen.push(options)
+      return group
+    },
+  })
+
+  controller.handleKeyDown('heroInteract')
+  controller.commChargeStart = performance.now() - 500
+  controller.handleKeyUp('heroInteract')
+
+  assert.deepEqual(resolutions, [0])
   assert.deepEqual(optionsSeen, [{ precisionOnly: true }])
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })

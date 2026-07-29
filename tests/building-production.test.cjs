@@ -974,7 +974,9 @@ test('stable training remounts the same unit type without charging unit cost or 
   const cell = { i: 1, j: 1, category: 'Land', solid: true, has: null }
   const clubman = {
     type: 'Clubman',
+    name: 'Alexios',
     hitPoints: 32,
+    speed: 1.2,
     experience: { combat: 12 },
     trainingTargetType: 'Clubman',
     owner,
@@ -1026,6 +1028,7 @@ test('stable training remounts the same unit type without charging unit cost or 
       },
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
+      MOUNTED_HORSE_SPEED_BONUS: 0.4,
       PLAYER_TYPES: { ai: 'AI' },
       POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
@@ -1061,8 +1064,10 @@ test('stable training remounts the same unit type without charging unit cost or 
       i: 2,
       j: 2,
       type: 'Clubman',
+      name: 'Alexios',
       mountedOnHorse: true,
       hitPoints: 32,
+      speed: 1.6,
       experience: { combat: 12 },
     },
   ])
@@ -1107,6 +1112,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   }
   const bowman = {
     type: 'Bowman',
+    name: 'Damon',
     trainingTargetType: 'ImprovedBowman',
     owner,
     context: { map },
@@ -1189,7 +1195,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    ['created', { i: 2, j: 2, type: 'ImprovedBowman' }]
+    ['created', { i: 2, j: 2, type: 'ImprovedBowman', name: 'Damon' }]
   )
 })
 
@@ -1225,6 +1231,7 @@ test('failed trainee placement clears active military training state', () => {
   }
   const villager = {
     type: 'Villager',
+    name: 'Damon',
     trainingTargetType: 'Axeman',
     owner,
     context: { map },
@@ -1345,6 +1352,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
   }
   const villager = {
     type: 'Villager',
+    name: 'Damon',
     trainingTargetType: 'Axeman',
     owner,
     context: { map },
@@ -1425,6 +1433,6 @@ test('arrived villager is consumed and trained unit reuses the same population s
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    ['created', { i: 2, j: 2, type: 'Axeman' }]
+    ['created', { i: 2, j: 2, type: 'Axeman', name: 'Damon' }]
   )
 })

@@ -63,6 +63,7 @@ const constants = {
     temple: 'Temple',
   },
   COLOR_WHITE: 0xffffff,
+  CELL_WIDTH: 64,
   LABEL_TYPES: {
     commSelection: 'commSelection',
     shadow: 'shadow',
@@ -619,6 +620,28 @@ test('a quick tap (radius 0) resolves to the ally the hero is facing, ignoring o
   assert.deepEqual(group, [facingAlly])
 })
 
+test('a quick tap does not resolve to a faced ally beyond one adjacent cell', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const farFacingAlly = makeCommAlly({ owner, i: 2, j: 0, x: 20, y: 0 })
+  const { resolveCommGroup } = loadCommModule([farFacingAlly], () => 0)
+
+  const group = resolveCommGroup(hero, 0)
+
+  assert.deepEqual(group, [])
+})
+
+test('a quick tap does not resolve to a visually distant faced ally even when grid cells are adjacent', () => {
+  const owner = { label: 'player' }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const distantFacingAlly = makeCommAlly({ owner, i: 1, j: 0, x: 96, y: 0 })
+  const { resolveCommGroup } = loadCommModule([distantFacingAlly], () => 0)
+
+  const group = resolveCommGroup(hero, 0)
+
+  assert.deepEqual(group, [])
+})
+
 test('a quick tap finds nothing when no ally is within the facing cone', () => {
   const owner = { label: 'player' }
   const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
@@ -636,6 +659,7 @@ test('communication radius grows exponentially while staying capped at max range
 
   assert.equal(getCommRadiusForHold(-100), 0)
   assert.equal(getCommRadiusForHold(0), 0)
+  assert.ok(getCommRadiusForHold(250) < 1)
   assert.ok(getCommRadiusForHold(COMM_CHARGE_MS / 2) < COMM_MAX_RANGE / 2)
   assert.equal(getCommRadiusForHold(COMM_CHARGE_MS), COMM_MAX_RANGE)
   assert.equal(getCommRadiusForHold(COMM_CHARGE_MS * 2), COMM_MAX_RANGE)

@@ -9,6 +9,7 @@ const ISO_FOOTPRINT_CURVE_STEPS = 6
 export type SelectableInstance = {
   addChildAt: (child: Graphics, index: number) => void
   removeChild: (child: Graphics) => void
+  reliefLift?: number
   selectionFactor?: number
   size?: number
 }
@@ -96,6 +97,7 @@ export function createIsoSelectionMarker({
 export function drawInstanceBlinkingSelection(instance: SelectableInstance): void {
   const selectionFactor = instance.selectionFactor ?? instance.size ?? 1
   const selection = createIsoSelectionMarker({ factor: selectionFactor })
+  selection.position.y = instance.reliefLift ?? 0
   instance.addChildAt(selection, 0)
 
   const blink = (alpha: number, duration: number): Promise<void> =>

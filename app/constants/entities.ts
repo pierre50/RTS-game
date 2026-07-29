@@ -45,6 +45,8 @@ export const UNIT_TYPES = {
   heavyTransport: 'HeavyTransport',
 }
 
+export const MOUNTED_HORSE_SPEED_BONUS = 0.4
+
 export const PLAYER_TYPES = {
   human: 'Human',
   ai: 'AI',

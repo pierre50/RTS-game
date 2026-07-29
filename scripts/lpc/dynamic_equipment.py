@@ -41,6 +41,10 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "longsword": "slash",
     "longspear": "thrust",
     "longspear_silver": "thrust",
+    "round_shield_brass_slash": "slash",
+    "round_shield_brass_thrust": "thrust",
+    "round_shield_silver_slash": "slash",
+    "round_shield_silver_thrust": "thrust",
     "cane": "spellcast",
     "fishing_rod": "tool_rod",
     "quiver": "shoot",
@@ -66,7 +70,6 @@ def equipment(key: str, action_animation: str) -> DynamicEquipment:
         {
             "walk": dynamic_layers_for(key, "walk"),
             action_animation: dynamic_layers_for(key, action_animation),
-            "hurt": dynamic_layers_for(key, "hurt"),
         },
     )
 
@@ -84,10 +87,6 @@ EXTRA_DYNAMIC_EQUIPMENT: dict[str, DynamicEquipment] = {
                 DynamicLayer("back", 8, (LayerSpec("quiver/shoot/quiver.png"),)),
                 DynamicLayer("front", 12, ()),
             ),
-            "hurt": (
-                DynamicLayer("back", 8, (LayerSpec("quiver/hurt/quiver.png"),)),
-                DynamicLayer("front", 12, ()),
-            ),
         },
     ),
 }
@@ -99,6 +98,31 @@ DYNAMIC_EQUIPMENT: dict[str, DynamicEquipment] = {
     if key in EQUIPMENT_ACTION_ANIMATIONS
 }
 DYNAMIC_EQUIPMENT.update(EXTRA_DYNAMIC_EQUIPMENT)
+
+
+def active_layer_keys(equipment: DynamicEquipment) -> tuple[str, ...]:
+    """Layer keys ("back"/"front") that carry pixels on at least one of this
+    equipment's sheets. A layer that's empty on every sheet (e.g. round
+    shields never have a "back" layer) would otherwise still get baked and
+    wired up at runtime as a fully transparent spritesheet."""
+    return tuple(
+        layer_key
+        for layer_key, _z_index in EQUIPMENT_LAYER_ORDER
+        if any(
+            layer.layers
+            for layers in equipment.layers_by_animation.values()
+            for layer in layers
+            if layer.key == layer_key
+        )
+    )
+
+
+def has_animation_content(equipment: DynamicEquipment, animation: str) -> bool:
+    """Whether any layer has pixels for this specific animation. Some equipment
+    only ships art for one of its two sheets (e.g. the cane has no spellcast
+    pose, the fishing rod has no walk pose), so the other sheet would
+    otherwise still get baked and wired up as fully transparent."""
+    return any(layer.layers for layer in equipment.layers_by_animation.get(animation, ()))
 
 
 def required_dynamic_equipment_source_paths() -> list[str]:

@@ -8,6 +8,7 @@ import {
   RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
   LABEL_TYPES,
+  MOUNTED_HORSE_SPEED_BONUS,
   SOUND_CUES,
   UNIT_TYPES,
 } from '../../constants'
@@ -213,6 +214,7 @@ export class Unit extends Instance implements UnitEntity {
   buildQueue!: NonNullable<UnitEntity['buildQueue']>
   currentCell!: NonNullable<UnitEntity['currentCell']>
   visibleCells!: NonNullable<UnitEntity['visibleCells']>
+  speed?: UnitEntity['speed']
 
   actionLocked!: boolean
   contextAction?: UnitEntity['contextAction']
@@ -300,6 +302,11 @@ export class Unit extends Instance implements UnitEntity {
     Object.assign(this, options)
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     Object.assign(this, unitConfig)
+    this.mountedOnHorse = options.mountedOnHorse ?? this.mountedOnHorse
+    this.hitPoints = options.hitPoints ?? this.hitPoints
+    this.speed = options.speed ?? this.speed
+    if (this.mountedOnHorse && options.speed == null) this.speed = (this.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
+    this.experience = options.experience ? { ...options.experience } : this.experience
     if (this.appearance) {
       this.appearance = { ...this.appearance, layers: this.appearance.layers.map(layer => ({ ...layer })) }
       this.appearanceVariants =

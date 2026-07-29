@@ -7,7 +7,15 @@ import {
   getRoundedIsoShapePoints,
   updateInstanceRenderVisibility,
 } from '../lib'
-import { ACTION_TYPES, COLOR_GOLD, HERO_ACTION_MOVE_SPEED_FACTOR, LABEL_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
+import {
+  ACTION_TYPES,
+  COLOR_GOLD,
+  HERO_ACTION_MOVE_SPEED_FACTOR,
+  LABEL_TYPES,
+  MOUNTED_HORSE_SPEED_BONUS,
+  SHEET_TYPES,
+  STEP_TIME,
+} from '../constants'
 import {
   aimHeroBowChargeAt,
   applyToolAppearance,
@@ -58,6 +66,8 @@ const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; d
 const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool1: 0,
   heroTool2: 1,
+  heroTool3: 2,
+  heroTool4: 3,
 }
 
 let lastHeroMoveDebugAt = 0
@@ -210,6 +220,11 @@ export class HeroController {
       return true
     }
 
+    if (action === 'heroMountHorse') {
+      this.toggleHeroHorse()
+      return true
+    }
+
     const toolIndex = HERO_TOOL_ACTIONS[action]
     if (toolIndex != null) {
       this.equipToolAt(toolIndex)
@@ -236,6 +251,23 @@ export class HeroController {
     const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.equippedItem ?? 'interact'))
     const nextIndex = (currentIndex + direction + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
     return this.equipToolAt(nextIndex)
+  }
+
+  toggleHeroHorse(): boolean {
+    const unit = this.heroUnit
+    if (!unit) return false
+    if (unit.mountedOnHorse) {
+      unit.mountedOnHorse = false
+      unit.speed = Math.max(0, Number(((unit.speed ?? 0) - MOUNTED_HORSE_SPEED_BONUS).toFixed(6)))
+      unit.removeMountedHorseSprite?.()
+      unit.syncMountedRiderPosition?.()
+      unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+      return true
+    }
+    unit.mountedOnHorse = true
+    unit.speed = (unit.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
+    unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+    return true
   }
 
   handleKeyUp(action: ControlBindingAction): void {
@@ -416,11 +448,9 @@ export class HeroController {
 
   endCommCharge(): void {
     const hero = this.heroUnit
-    const elapsed = performance.now() - this.commChargeStart
     this.cancelCommCharge()
     if (!hero) return
-    const radius = getCommRadiusForHold(elapsed)
-    const group = resolveCommGroup(hero, radius, { precisionOnly: elapsed < COMM_INDICATOR_DELAY_MS })
+    const group = resolveCommGroup(hero, 0, { precisionOnly: true })
     if (group.length) this.controls.context.menu?.openNpcOrders?.(group)
   }
 

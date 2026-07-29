@@ -1,5 +1,14 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  MOUNTED_HORSE_SPEED_BONUS,
+  PLAYER_TYPES,
+  POPULATION_MAX,
+  UNIT_TYPES,
+} from '../../constants'
 import {
   canAfford,
   changeSpriteColorDirectly,
@@ -70,12 +79,17 @@ function getProductionTime(
 }
 
 function getTrainingExtra(building: Building, trainee: UnitEntity, type: string): UnitCreationExtra | undefined {
-  if (!isStableMountTraining(building, trainee, type)) return undefined
+  const baseExtra: UnitCreationExtra = {}
+  if (trainee.name) baseExtra.name = trainee.name
+  if (!isStableMountTraining(building, trainee, type)) return Object.keys(baseExtra).length ? baseExtra : undefined
+  const traineeSpeed = Number(trainee.speed)
   return {
+    ...baseExtra,
     mountedOnHorse: true,
     hitPoints: trainee.hitPoints,
+    speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
     experience: trainee.experience ? { ...trainee.experience } : undefined,
-  } as UnitCreationExtra
+  }
 }
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {

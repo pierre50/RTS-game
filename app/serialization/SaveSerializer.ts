@@ -31,6 +31,10 @@ type SerializableEntity = RuntimeEntityBase & {
   energy?: number
   totalEnergy?: number
   lastEnergySpentAt?: number
+  healthRegenRate?: number
+  healthRegenDelay?: number
+  healthRegenMultiplier?: number
+  lastHealthDamagedAt?: number
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: { label?: string } | null
@@ -38,6 +42,7 @@ type SerializableEntity = RuntimeEntityBase & {
   loading?: number | null
   loadingType?: string | null
   loop?: boolean
+  mountedOnHorse?: boolean
   path?: GridPoint[]
   previousDest?: Destination | null
   previousWork?: string | null
@@ -184,6 +189,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'isDestroyed',
       'assetCiv',
       'assetAge',
+      'mountedOnHorse',
       'experience',
     ]),
     loadedInTransport: unit.loadedInTransport?.label,

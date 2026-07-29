@@ -15,8 +15,13 @@ export type CommandSound = string | number | (string | number)[] | null | undefi
 export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
 export type UnitCreationExtra = {
+  name?: string
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
+  mountedOnHorse?: boolean
+  hitPoints?: number
+  speed?: number
+  experience?: Record<string, number>
 }
 export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
 
@@ -169,6 +174,8 @@ export interface UnitEntity extends RuntimeEntityBase {
   currentSheet?: string
   currentFrame?: number
   mountedOnHorse?: boolean
+  removeMountedHorseSprite?: () => void
+  syncMountedRiderPosition?: () => void
   heroBowChargeStart?: number | null
   heroBowChargeRatio?: number
   heroBowChargeDestination?: Point | null

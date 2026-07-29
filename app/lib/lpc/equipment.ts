@@ -3,7 +3,7 @@ import type { UnitAppearanceLayerConfig } from '../../types/config'
 
 const EQUIPMENT_BASE_ALIAS = 'lpc-equipment'
 const EQUIPMENT_BASE_URL = 'assets/graphics/lpc-equipment'
-const EQUIPMENT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+const EQUIPMENT_SHEETS = ['walking', 'action'] as const
 
 type EquipmentSheet = (typeof EQUIPMENT_SHEETS)[number]
 type EquipmentLayer = 'back' | 'front'
@@ -24,6 +24,10 @@ type DynamicEquipmentKey =
   | 'longsword'
   | 'longspear'
   | 'longspear_silver'
+  | 'round_shield_brass_slash'
+  | 'round_shield_brass_thrust'
+  | 'round_shield_silver_slash'
+  | 'round_shield_silver_thrust'
   | 'cane'
   | 'fishing_rod'
   | 'quiver'
@@ -39,6 +43,29 @@ const EQUIPMENT_LAYER_Z_INDEX: Record<EquipmentLayer, number> = {
 }
 
 const EQUIPMENT_LAYERS = ['back', 'front'] as const satisfies readonly EquipmentLayer[]
+
+// Equipment whose art never populates one side of the back/front split (e.g. a shield
+// held in front has no "behind the body" counterpart) — baking/wiring that empty side
+// would just be a fully transparent spritesheet. Keep in sync with
+// dynamic_equipment.active_layer_keys() in the Python bake pipeline.
+const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly EquipmentLayer[]>> = {
+  meat: ['front'],
+  stone: ['front'],
+  gold: ['front'],
+  cane: ['front'],
+  quiver: ['back'],
+  round_shield_brass_slash: ['front'],
+  round_shield_brass_thrust: ['front'],
+  round_shield_silver_slash: ['front'],
+  round_shield_silver_thrust: ['front'],
+}
+
+const EQUIPMENT_SHEET_OVERRIDES: Partial<
+  Record<DynamicEquipmentKey, Partial<Record<EquipmentLayer, readonly EquipmentSheet[]>>>
+> = {
+  cane: { front: ['walking'] },
+  fishing_rod: { back: ['action'], front: ['action'] },
+}
 
 const DYNAMIC_EQUIPMENT_KEYS = [
   'axe',
@@ -57,6 +84,10 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'longsword',
   'longspear',
   'longspear_silver',
+  'round_shield_brass_slash',
+  'round_shield_brass_thrust',
+  'round_shield_silver_slash',
+  'round_shield_silver_thrust',
   'cane',
   'fishing_rod',
   'quiver',
@@ -67,14 +98,14 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly DynamicEquipmentKey[]>> = 
   [UNIT_TYPES.axeman]: ['axe'],
   [UNIT_TYPES.bowman]: ['quiver', 'bow'],
   [UNIT_TYPES.shortSwordsman]: ['dagger'],
-  [UNIT_TYPES.broadSwordsman]: ['broadsword'],
-  [UNIT_TYPES.longSwordsman]: ['longsword'],
+  [UNIT_TYPES.broadSwordsman]: ['round_shield_brass_slash', 'broadsword'],
+  [UNIT_TYPES.longSwordsman]: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.improvedBowman]: ['quiver', 'bow_great'],
   [UNIT_TYPES.compositeBowman]: ['quiver', 'bow_recurve'],
-  [UNIT_TYPES.hoplite]: ['longspear'],
-  Phalanx: ['longspear_silver'],
-  Centurion: ['longspear_silver'],
-  Legion: ['longsword'],
+  [UNIT_TYPES.hoplite]: ['round_shield_brass_thrust', 'longspear'],
+  Phalanx: ['round_shield_silver_thrust', 'longspear_silver'],
+  Centurion: ['round_shield_silver_thrust', 'longspear_silver'],
+  Legion: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.priest]: ['cane'],
 }
 
@@ -87,6 +118,8 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   { workType: WORK_TYPES.stoneminer, equipment: 'pickaxe', options: { hideWhenLoading: true } },
   { workType: WORK_TYPES.goldminer, equipment: 'pickaxe', options: { hideWhenLoading: true } },
   { workType: WORK_TYPES.builder, equipment: 'hammer' },
+  { workType: 'heroSword', equipment: 'longsword' },
+  { workType: 'heroSpear', equipment: 'longspear' },
   { workType: WORK_TYPES.farmer, equipment: 'scythe' },
   { workType: WORK_TYPES.fisher, equipment: 'fishing_rod' },
   {
@@ -112,25 +145,29 @@ function equipmentSrc(equipment: DynamicEquipmentKey, layer: EquipmentLayer, she
   return `${EQUIPMENT_BASE_URL}/${equipment}/${layer}/${sheet}/texture.json`
 }
 
+function equipmentSheets(equipment: DynamicEquipmentKey, layer: EquipmentLayer): readonly EquipmentSheet[] {
+  return EQUIPMENT_SHEET_OVERRIDES[equipment]?.[layer] ?? EQUIPMENT_SHEETS
+}
+
 function layerConfig(
   equipment: DynamicEquipmentKey,
   layer: EquipmentLayer,
   options: EquipmentOptions = {}
 ): UnitAppearanceLayerConfig {
+  const sheets = equipmentSheets(equipment, layer)
+  const walkingSheet = sheets.includes('walking') ? equipmentAlias(equipment, layer, 'walking') : undefined
+  const actionSheet = sheets.includes('action') ? equipmentAlias(equipment, layer, 'action') : undefined
+
   return {
     zIndex: EQUIPMENT_LAYER_Z_INDEX[layer],
     ...options,
-    standingSheet: equipmentAlias(equipment, layer, 'walking'),
-    walkingSheet: equipmentAlias(equipment, layer, 'walking'),
-    actionSheet: equipmentAlias(equipment, layer, 'action'),
-    dyingSheet: equipmentAlias(equipment, layer, 'dying'),
-    corpseSheet: equipmentAlias(equipment, layer, 'corpse'),
+    standingSheet: walkingSheet,
+    walkingSheet,
+    actionSheet,
     sheetDirectionCounts: {
       [SHEET_TYPES.standing]: 3,
       [SHEET_TYPES.walking]: 3,
       [SHEET_TYPES.action]: equipment === 'fishing_rod' ? 4 : 3,
-      [SHEET_TYPES.dying]: 1,
-      [SHEET_TYPES.corpse]: 1,
     },
   }
 }
@@ -139,13 +176,14 @@ function equipmentLayerConfigs(
   equipment: DynamicEquipmentKey,
   options: EquipmentOptions = {}
 ): UnitAppearanceLayerConfig[] {
-  return EQUIPMENT_LAYERS.map(layer => layerConfig(equipment, layer, options))
+  const layers = EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS
+  return layers.map(layer => layerConfig(equipment, layer, options))
 }
 
 export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
   return DYNAMIC_EQUIPMENT_KEYS.flatMap(equipment =>
-    EQUIPMENT_LAYERS.flatMap(layer =>
-      EQUIPMENT_SHEETS.map(sheet => ({
+    (EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS).flatMap(layer =>
+      equipmentSheets(equipment, layer).map(sheet => ({
         alias: equipmentAlias(equipment, layer, sheet),
         src: equipmentSrc(equipment, layer, sheet),
       }))

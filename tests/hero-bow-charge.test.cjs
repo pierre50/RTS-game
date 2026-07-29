@@ -44,7 +44,7 @@ function loadHeroTools(overrides = {}) {
         stone: 'stone',
         wood: 'wood',
       },
-      SHEET_TYPES: { action: 'actionSheet', standing: 'standingSheet', walking: 'walkingSheet' },
+      SHEET_TYPES: { action: 'actionSheet', harvest: 'harvestSheet', standing: 'standingSheet', walking: 'walkingSheet' },
       SOUND_CUES: { hero: { meleeWhiff: 'meleeWhiff' } },
       WORK_FOOD_TYPES: ['fisher', 'hunter', 'farmer', 'forager'],
       WORK_TYPES: {
@@ -545,6 +545,59 @@ test('context actions check energy from the action, not an equipped tool', () =>
     ['setDest', tree],
     ['getAction', 'chopwood'],
   ])
+})
+
+test('context build refreshes the action sheet before starting the locked action', () => {
+  const foundation = {
+    family: 'building',
+    hitPoints: 10,
+    i: 1,
+    isBuilt: false,
+    isDestroyed: false,
+    j: 0,
+    totalHitPoints: 100,
+    x: 10,
+    y: 0,
+  }
+  const { triggerToolAction } = loadHeroTools({
+    './combat': { getActionCondition: (_hero, target, action) => target === foundation && action === 'build' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [foundation].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
+    '../classes/unit/UnitCommands': {
+      applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
+    },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    action: 'build',
+    allAssets: {
+      builder: {
+        actionSheet: 'hero-builder-action',
+      },
+    },
+    i: 0,
+    j: 0,
+    work: 'builder',
+    isUnitAtDest: () => true,
+    getAction: action => {
+      hero.startedAction = action
+      hero.setTextures(hero.actionSheet ? 'actionSheet' : 'walkingSheet')
+      hero.actionLocked = true
+    },
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+  hero.actionSheet = undefined
+
+  assert.equal(triggerToolAction(hero, 'interact'), true)
+  assert.equal(hero.startedAction, 'build')
+  assert.deepEqual(hero.actionSheet, { id: 'hero-builder-action', textures: [], data: {} })
+  assert.equal(hero.currentSheet, 'actionSheet')
+  assert.equal(hero.actionLocked, true)
 })
 
 test('context actions are blocked when hero energy is too low', () => {

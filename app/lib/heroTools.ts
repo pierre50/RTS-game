@@ -38,10 +38,10 @@ import type { Point } from '../types/grid'
 
 export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer' | 'fishingRod'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'fish' | 'gather' | 'pickup' | 'interact'
-export type HeroEquippedItem = 'interact' | 'bow'
+export type HeroEquippedItem = 'interact' | 'sword' | 'spear' | 'bow'
 export type HeroTool = HeroEquippedItem
 
-export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'bow']
+export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'spear', 'bow']
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
 const TOOL_ACTION_RANGE = 3
@@ -73,6 +73,8 @@ export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
 
 const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   interact: WORK_TYPES.attacker,
+  sword: 'heroSword',
+  spear: 'heroSpear',
   bow: WORK_TYPES.hunter,
 }
 
@@ -109,12 +111,21 @@ function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string):
   hero.getAction?.(action)
 }
 
+function refreshHeroActionSheet(hero: UnitEntity, work: string, action: string): void {
+  const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
+  const asset = hero.allAssets?.[work]?.[actionSheet]
+  if (!asset) return
+  const sheet = Assets.cache.get(asset)
+  if (sheet) hero.actionSheet = sheet
+}
+
 // Same as runHeroAction, but also runs the work/texture/cargo bookkeeping commonSendTo would
 // have applied for a gather-type action (correct animation sheet, dropping mismatched cargo
 // when switching gather types) — reused from the shared unit command logic, not duplicated.
 function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: string, work: string): void {
   if (hero.actionLocked) return
   applyWorkForAction(hero, work, action)
+  refreshHeroActionSheet(hero, work, action)
   runHeroAction(hero, target, action)
 }
 
@@ -262,6 +273,7 @@ export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquipped
   const workAssets = hero.allAssets?.[work]
   if (workAssets) {
     if (workAssets[SHEET_TYPES.action]) hero.actionSheet = Assets.cache.get(workAssets[SHEET_TYPES.action])
+    if (workAssets[SHEET_TYPES.riding]) hero.ridingSheet = Assets.cache.get(workAssets[SHEET_TYPES.riding])
     if (!hero.loading) {
       if (workAssets[SHEET_TYPES.standing]) hero.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
       if (workAssets[SHEET_TYPES.walking]) hero.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
@@ -688,6 +700,12 @@ function playEmptyHandWhiff(hero: UnitEntity): boolean {
   return true
 }
 
+function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
+  if (!spendHeroEnergy(hero, 'heroWhiff')) return false
+  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), SLASH_IMPACT_FRAME)
+  return true
+}
+
 function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (!isHeroActionInRange(hero, ACTION_TYPES.attack, target) && !hero.isUnitAtDest?.(ACTION_TYPES.attack, target)) {
     return false
@@ -744,6 +762,11 @@ export function triggerEquippedItemActionAt(
   if (tool === 'bow') {
     return beginHeroBowChargeAt(hero, destination)
   }
+  if (tool === 'sword' || tool === 'spear') {
+    const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
+    if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
+    return playMeleeWeaponWhiff(hero)
+  }
   if (tool !== 'interact') return false
   if (deliveryResult === 'blocked') return false
   const actionResult = performContextActionAt(hero)
@@ -779,6 +802,11 @@ export function performContextAction(hero: UnitEntity): boolean {
 }
 
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
+  if (tool === 'sword' || tool === 'spear') {
+    const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
+    if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
+    return playMeleeWeaponWhiff(hero)
+  }
   if (tool === 'interact') {
     const actionResult = performNearestContextAction(hero)
     if (actionResult === 'triggered') return true
