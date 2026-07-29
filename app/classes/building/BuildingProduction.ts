@@ -20,6 +20,7 @@ import {
   refundCost,
 } from '../../lib'
 import { canUnitTrainInto, getMissingResourceNames, isTraineeTrainingType } from '../../lib/buildingTraining'
+import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { t } from '../../lib/lang'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ConfigValue } from '../../types/config'
@@ -65,7 +66,12 @@ function isStableMountTraining(building: Building, trainee: UnitEntity | null | 
   return Boolean(building.type === BUILDING_TYPES.stable && trainee && trainee.type === type && !trainee.mountedOnHorse)
 }
 
-function getTrainingCost(building: Building, unit: { cost?: ResourceAmount }, trainee: UnitEntity, type: string): ResourceAmount {
+function getTrainingCost(
+  building: Building,
+  unit: { cost?: ResourceAmount },
+  trainee: UnitEntity,
+  type: string
+): ResourceAmount {
   return isStableMountTraining(building, trainee, type) ? {} : (unit.cost ?? {})
 }
 
@@ -75,12 +81,19 @@ function getProductionTime(
   trainee: UnitEntity | null | undefined,
   type: string
 ): number {
-  return isStableMountTraining(building, trainee, type) ? (building.mountingTime ?? unit.trainingTime ?? 0) : (unit.trainingTime ?? 0)
+  return isStableMountTraining(building, trainee, type)
+    ? (building.mountingTime ?? unit.trainingTime ?? 0)
+    : (unit.trainingTime ?? 0)
 }
 
 function getTrainingExtra(building: Building, trainee: UnitEntity, type: string): UnitCreationExtra | undefined {
   const baseExtra: UnitCreationExtra = {}
   if (trainee.name) baseExtra.name = trainee.name
+  if (trainee.mountedOnHorse) {
+    baseExtra.mountedOnHorse = true
+    const traineeSpeed = Number(trainee.speed)
+    if (Number.isFinite(traineeSpeed)) baseExtra.speed = traineeSpeed
+  }
   if (!isStableMountTraining(building, trainee, type)) return Object.keys(baseExtra).length ? baseExtra : undefined
   const traineeSpeed = Number(trainee.speed)
   return {
@@ -125,6 +138,13 @@ function refreshOpenBuildingMenu(building: Building): void {
   if (menu.getHeroBuildingMenuTarget?.() === building) {
     menu.refreshHeroBuildingMenu?.()
   }
+}
+
+function isBlockedByMissingChief(building: Building, type: string): boolean {
+  if (!playerNeedsChiefForCommand(building.owner)) return false
+  if (type === UNIT_TYPES.villager) return !hasLivingChief(building.owner)
+  if (isTraineeTrainingType(building, type)) return !hasLivingChief(building.owner)
+  return false
 }
 
 export class BuildingProduction {
@@ -338,6 +358,10 @@ export class BuildingProduction {
     const unit = building.owner.config.units[type]
     if (!unit || !building.units?.includes(type)) return false
     if (!building.isBuilt || building.isDead) return false
+    if (isBlockedByMissingChief(building, type)) {
+      if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
+      return false
+    }
     if (building.loading !== null || building.queue.length || building.technology) {
       if (building.owner.isPlayed)
         menu.showMessage(t('buildingAlreadyTraining', { building: t(building.type) }), 'warning')
@@ -376,6 +400,10 @@ export class BuildingProduction {
     let success = false
     const unit = building.owner.config.units[type]
     const traineeTraining = isTraineeTrainingType(building, type)
+    if (isBlockedByMissingChief(building, type)) {
+      if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
+      return false
+    }
     if (traineeTraining && !alreadyPaid && !force) {
       return this.requestUnitTraining(type, extra)
     }
@@ -539,6 +567,10 @@ export class BuildingProduction {
     } = building
     let success = false
     const config = building.owner.techs[type]
+    if (playerNeedsChiefForCommand(building.owner) && !hasLivingChief(building.owner)) {
+      if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
+      return false
+    }
     const hadQueuedTechnology = building.technology?.type === type
     if (
       building.isBuilt &&

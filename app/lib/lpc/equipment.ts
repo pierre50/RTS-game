@@ -94,6 +94,7 @@ const DYNAMIC_EQUIPMENT_KEYS = [
 ] as const satisfies readonly DynamicEquipmentKey[]
 
 const UNIT_EQUIPMENT: Partial<Record<string, readonly DynamicEquipmentKey[]>> = {
+  [UNIT_TYPES.chief]: ['spear'],
   [UNIT_TYPES.clubman]: ['spear'],
   [UNIT_TYPES.axeman]: ['axe'],
   [UNIT_TYPES.bowman]: ['quiver', 'bow'],

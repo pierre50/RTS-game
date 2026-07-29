@@ -9,7 +9,11 @@ import {
 } from '../lib'
 import {
   ACTION_TYPES,
-  COLOR_GOLD,
+  COMM_INDICATOR_FILL_ALPHA,
+  COMM_INDICATOR_FILL_COLOR,
+  COMM_INDICATOR_STROKE_ALPHA,
+  COMM_INDICATOR_STROKE_COLOR,
+  COMM_INDICATOR_STROKE_WIDTH,
   HERO_ACTION_MOVE_SPEED_FACTOR,
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
@@ -28,6 +32,7 @@ import {
 } from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
+import { heroCanCommand } from '../lib/chief'
 import {
   COMM_INDICATOR_DELAY_MS,
   getCommCellsInRadius,
@@ -40,6 +45,7 @@ import {
   updateNpcFollow,
 } from '../lib/npcInteraction'
 import type { ControlBindingAction } from '../lib/settings'
+import { t } from '../lib/lang'
 import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
@@ -143,7 +149,10 @@ function debugHeroMove(message: string, unit: UnitEntity, details: Record<string
 // re-resolved into actual textures here too — same pattern as UnitActions.upgrade().
 function refreshBakedAppearance(unit: UnitEntity): void {
   applyBakedLpcUnitAssets(unit)
-  Object.assign(unit, Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)])))
+  Object.assign(
+    unit,
+    Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
+  )
   unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
 }
 
@@ -161,8 +170,12 @@ function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: n
     )
   }
   if (!cells.length) return
-  indicator.fill({ color: COLOR_GOLD, alpha: 0.08 })
-  indicator.stroke({ color: COLOR_GOLD, width: 1, alpha: 0.65 })
+  indicator.fill({ color: COMM_INDICATOR_FILL_COLOR, alpha: COMM_INDICATOR_FILL_ALPHA })
+  indicator.stroke({
+    color: COMM_INDICATOR_STROKE_COLOR,
+    width: COMM_INDICATOR_STROKE_WIDTH,
+    alpha: COMM_INDICATOR_STROKE_ALPHA,
+  })
 }
 
 export class HeroController {
@@ -215,6 +228,10 @@ export class HeroController {
     }
 
     if (action === 'heroInteract') {
+      if (!heroCanCommand(this.heroUnit)) {
+        this.controls.context.menu?.showMessage?.(t('requiresChief'), 'warning')
+        return true
+      }
       if (this.commCharging) return true
       this.beginCommCharge()
       return true
@@ -425,6 +442,7 @@ export class HeroController {
   beginCommCharge(): void {
     const hero = this.heroUnit
     if (!hero || this.commCharging) return
+    if (!heroCanCommand(hero)) return
     this.commCharging = true
     this.commChargeStart = performance.now()
     const indicator = new Graphics()
@@ -448,9 +466,12 @@ export class HeroController {
 
   endCommCharge(): void {
     const hero = this.heroUnit
+    const elapsed = performance.now() - this.commChargeStart
     this.cancelCommCharge()
     if (!hero) return
-    const group = resolveCommGroup(hero, 0, { precisionOnly: true })
+    const precisionOnly = elapsed < COMM_INDICATOR_DELAY_MS
+    const radius = precisionOnly ? 0 : getCommRadiusForHold(elapsed)
+    const group = resolveCommGroup(hero, radius, { precisionOnly })
     if (group.length) this.controls.context.menu?.openNpcOrders?.(group)
   }
 

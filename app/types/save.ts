@@ -36,6 +36,7 @@ export type SaveEntityState = {
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
+  isChief?: boolean
   isFleeing?: boolean
   isUsedBy?: string | null
   j: number

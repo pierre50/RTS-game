@@ -5,6 +5,7 @@ import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_C
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
+import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
@@ -111,6 +112,7 @@ export class ActionSpecFactory {
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
         t('tooltipBuildTime', { time: config.constructionTime ?? 0 }),
+        this.isChiefCommandBlocked() ? t('requiresChief') : null,
       ],
     }
   }
@@ -123,19 +125,35 @@ export class ActionSpecFactory {
     return {
       title: t(type),
       description: t(`${type}Description`),
-      meta: [t('tooltipCost', { cost: this.formatCost(config.cost) }), ...unmetRequirements],
+      meta: [
+        t('tooltipCost', { cost: this.formatCost(config.cost) }),
+        ...(this.isChiefCommandBlocked() ? [t('requiresChief')] : []),
+        ...unmetRequirements,
+      ],
     }
   }
 
-  getUnitTooltip(type: string, config: UnitConfig): TooltipContent {
+  getUnitTooltip(type: string, config: UnitConfig, building?: BuildingEntity): TooltipContent {
     return {
       title: t(type),
       description: t(`${type}Description`),
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
         t('tooltipTrainTime', { time: config.trainingTime ?? 0 }),
+        this.isChiefTrainingBlocked(type, building) ? t('requiresChief') : null,
       ],
     }
+  }
+
+  isChiefCommandBlocked(): boolean {
+    const { controls, player } = this.menu.context
+    if (!playerNeedsChiefForCommand(player)) return false
+    return !heroCanCommand(controls.heroUnit) || !hasLivingChief(player)
+  }
+
+  isChiefTrainingBlocked(type: string, building?: BuildingEntity): boolean {
+    if (!this.isChiefCommandBlocked()) return false
+    return type === 'Villager' || Boolean(building && isTraineeTrainingType(building, type))
   }
 
   preloadIcons(player: PlayerLike): void {
@@ -184,13 +202,18 @@ export class ActionSpecFactory {
     return {
       id: type,
       icon: () => getIconPath(unit.icon),
-      tooltip: () => this.getUnitTooltip(type, unit),
+      tooltip: () => this.getUnitTooltip(type, unit, building),
+      disabled: () => this.isChiefTrainingBlocked(type, building),
       hide: () => {
         if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
         return (unit.conditions || []).some(condition => !isValidCondition(condition, player))
       },
       onClick: (selection: RuntimeEntity) => {
         if (!isBuildingEntity(selection)) return
+        if (this.isChiefTrainingBlocked(type, selection)) {
+          menu.showMessage(t('requiresChief'), 'warning')
+          return
+        }
         // Trainee units aren't bought directly: send a villager to the building instead.
         if (isTraineeTrainingType(selection, type)) return
         if (canAfford(player, unit.cost)) {
@@ -226,11 +249,15 @@ export class ActionSpecFactory {
         })
         const img = this.createActionIcon(getIconPath(unit.icon))
         const isTrainee = isTraineeTrainingType(unitSelection, type)
-        if (isTrainee) {
+        if (isTrainee || this.isChiefTrainingBlocked(type, unitSelection)) {
           img.classList.add('is-passive')
         } else {
           img.addEventListener('pointerup', () => {
             this.playUiClick()
+            if (this.isChiefTrainingBlocked(type, unitSelection)) {
+              menu.showMessage(t('requiresChief'), 'warning')
+              return
+            }
             if (canAfford(player, unit.cost)) {
               if (player.population >= player.populationMax) {
                 menu.showMessage(t('needHouses'), 'warning')
@@ -290,10 +317,15 @@ export class ActionSpecFactory {
         )
       },
       hide: () => !owner.isBuildingEligible?.(type),
+      disabled: () => this.isChiefCommandBlocked(),
       onClick: () => {
         const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
         const assets = getBuildingAsset(displayType, owner, Assets)
         controls.removeMouseBuilding()
+        if (this.isChiefCommandBlocked()) {
+          menu.showMessage(t('requiresChief'), 'warning')
+          return
+        }
         if (canAfford(owner, config.cost)) {
           const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
           controls.setMouseBuilding?.(placeableBuilding)
@@ -319,9 +351,14 @@ export class ActionSpecFactory {
         player.technologies.includes(type) ||
         this.hasHiddenTechnologyPrerequisite(type),
       disabled: () =>
+        this.isChiefCommandBlocked() ||
         (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
         controls.removeMouseBuilding()
+        if (this.isChiefCommandBlocked()) {
+          menu.showMessage(t('requiresChief'), 'warning')
+          return
+        }
         if ((config.conditions || []).some(condition => !isValidCondition(condition, player))) {
           menu.showMessage(t('technologyUnavailable'), 'warning')
           return

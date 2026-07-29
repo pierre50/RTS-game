@@ -213,7 +213,7 @@ export class UnitCombat {
       unit.affectNewDest?.()
       return
     }
-    if (unit.range && unit.type !== UNIT_TYPES.villager) {
+    if (unit.range && unit.projectile && unit.type !== UNIT_TYPES.villager) {
       this.setStandingPose()
       const launchProjectile = () => {
         const dest = isRuntimeEntity(unit.dest) ? unit.dest : null

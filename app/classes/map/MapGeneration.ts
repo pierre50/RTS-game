@@ -243,7 +243,6 @@ function createSpawnSearchCell(i: number, j: number, terrainType: TerrainValue):
 // `player.type === PLAYER_TYPES.ai` guard) that we are dealing with an AI player.
 type GeneratedMapChild = ContainerChild & Partial<RuntimeEntity>
 
-
 function gameContext(context: MapGenerationContext): GameContextLike {
   if (!context.app || !context.gamebox || !context.map || !context.menu || !context.controls || !context.scheduler) {
     throw new Error('Map generation requires a complete game context')
@@ -400,9 +399,7 @@ export class MapGeneration {
 
     const profile = this.getAmbientAnimalProfile(type)
     const shouldGroup = this.map.random() < profile.groupChance
-    const targetSize = shouldGroup
-      ? this.map.randomRange(profile.groupSize[0], profile.groupSize[1])
-      : 1
+    const targetSize = shouldGroup ? this.map.randomRange(profile.groupSize[0], profile.groupSize[1]) : 1
     const candidates: GridPosition[] = [{ i, j }]
 
     for (let di = -profile.radius; di <= profile.radius; di++) {
@@ -478,10 +475,7 @@ export class MapGeneration {
           this.map.grid[i] = []
         }
         const cell = line[j]
-        const newCell = new Cell(
-          { i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] },
-          context
-        )
+        const newCell = new Cell({ i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] }, context)
         this.map.addChild(newCell)
         this.map.grid[i][j] = newCell
       }
@@ -857,7 +851,7 @@ export class MapGeneration {
       })
       if (!towncenter) continue
       for (let i = 0; i < this.map.startingUnits; i++) {
-        towncenter.placeUnit?.(UNIT_TYPES.villager)
+        towncenter.placeUnit?.(player.type === PLAYER_TYPES.ai && i === 0 ? UNIT_TYPES.chief : UNIT_TYPES.villager)
       }
     }
   }

@@ -77,6 +77,12 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
     '../lib/heroCursor': {
       updateHeroCursor: () => {},
     },
+    '../lib/chief': {
+      heroCanCommand: hero => Boolean(hero?.isChief),
+    },
+    '../lib/lang': {
+      t: key => key,
+    },
     '../lib/lpc': {
       applyBakedLpcUnitAssets: () => {},
     },
@@ -105,6 +111,7 @@ function createController({
 } = {}) {
   const calls = []
   const hero = {
+    isChief: true,
     context: {
       map: {
         grid: [
@@ -168,6 +175,7 @@ function createController({
     context: {
       menu: {
         openNpcOrders: npcs => calls.push(['openNpcOrders', npcs]),
+        showMessage: (message, tone) => calls.push(['showMessage', message, tone]),
       },
     },
     getCellUnderCursor: () => null,
@@ -250,6 +258,15 @@ test('E owns villager communication and opens orders on key release', () => {
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 
+test('E is blocked when the hero is not a chief', () => {
+  const { calls, controller, hero } = createController({ nearbyGroup: [{ label: 'villager' }] })
+  hero.isChief = false
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+  assert.equal(controller.commCharging, false)
+  assert.deepEqual(calls, [['showMessage', 'requiresChief', 'warning']])
+})
+
 test('E shows communication radius even when no villagers are nearby', () => {
   const { calls, controller } = createController({ nearbyGroup: [] })
 
@@ -309,7 +326,7 @@ test('releasing communication before the radius is visible requests precision-on
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 
-test('releasing communication after the radius is visible still resolves only the adjacent precision target', () => {
+test('releasing communication after the radius is visible resolves the charged radius', () => {
   const group = [{ label: 'front-villager' }]
   const resolutions = []
   const optionsSeen = []
@@ -327,8 +344,8 @@ test('releasing communication after the radius is visible still resolves only th
   controller.commChargeStart = performance.now() - 500
   controller.handleKeyUp('heroInteract')
 
-  assert.deepEqual(resolutions, [0])
-  assert.deepEqual(optionsSeen, [{ precisionOnly: true }])
+  assert.deepEqual(resolutions, [2.5])
+  assert.deepEqual(optionsSeen, [{ precisionOnly: false }])
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 

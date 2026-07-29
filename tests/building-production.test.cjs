@@ -14,6 +14,12 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../../lib/chief') {
+      return {
+        hasLivingChief: () => true,
+        playerNeedsChiefForCommand: () => false,
+      }
+    }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -1057,20 +1063,26 @@ test('stable training remounts the same unit type without charging unit cost or 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(clubman), true)
   assert.equal(owner.food, 50)
   assert.equal(owner.population, 3)
-  assert.deepEqual(calls.find(call => call[0] === 'intervalDelay'), ['intervalDelay', 20])
-  assert.deepEqual(calls.find(call => call[0] === 'created'), [
-    'created',
-    {
-      i: 2,
-      j: 2,
-      type: 'Clubman',
-      name: 'Alexios',
-      mountedOnHorse: true,
-      hitPoints: 32,
-      speed: 1.6,
-      experience: { combat: 12 },
-    },
-  ])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'intervalDelay'),
+    ['intervalDelay', 20]
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'created'),
+    [
+      'created',
+      {
+        i: 2,
+        j: 2,
+        type: 'Clubman',
+        name: 'Alexios',
+        mountedOnHorse: true,
+        hitPoints: 32,
+        speed: 1.6,
+        experience: { combat: 12 },
+      },
+    ]
+  )
 })
 
 test('arrived military unit is consumed and upgraded unit reuses the same population slot', () => {
@@ -1113,6 +1125,8 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   const bowman = {
     type: 'Bowman',
     name: 'Damon',
+    mountedOnHorse: true,
+    speed: 1.6,
     trainingTargetType: 'ImprovedBowman',
     owner,
     context: { map },
@@ -1195,7 +1209,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    ['created', { i: 2, j: 2, type: 'ImprovedBowman', name: 'Damon' }]
+    ['created', { i: 2, j: 2, type: 'ImprovedBowman', name: 'Damon', mountedOnHorse: true, speed: 1.6 }]
   )
 })
 

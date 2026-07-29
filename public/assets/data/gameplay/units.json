@@ -150,6 +150,54 @@
       }
     }
   },
+  "Chief": {
+    "category": "Civilian",
+    "isChief": true,
+    "totalHitPoints": 45,
+    "sight": 10,
+    "speed": 1.1,
+    "rateOfFire": 1.5,
+    "trainingTime": 30,
+    "icon": "001_50730",
+    "meleeAttack": 5,
+    "meleeArmor": 0,
+    "pierceArmor": 1,
+    "range": 1,
+    "cost": {
+      "food": 50,
+      "gold": 25
+    },
+    "showLoading": false,
+    "allAssets": {
+      "default": {
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+      },
+      "attacker": {
+        "actionSheet": "lpc-baked/villager/greek_01/action/thrust",
+        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+      }
+    },
+    "sounds": {
+      "create": "human-unit-completed",
+      "command": "olmars",
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
+      "die": [
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3"
+      ]
+    }
+  },
   "Clubman": {
     "category": "Infantry",
     "totalHitPoints": 40,

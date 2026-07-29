@@ -54,6 +54,13 @@ function loadPlayer() {
       }
     }
     if (request === '../../config/playerConfig') return { createPlayerData: () => ({ config: {}, techs: {} }) }
+    if (request === '../../config/name') return { getRandomUnitName: () => 'Unit' }
+    if (request === '../../lib/chief') {
+      return {
+        hasLivingChief: () => true,
+        playerNeedsChiefForCommand: () => false,
+      }
+    }
     if (request === '../../lib/uiSound') return { playUiSound: () => {} }
     if (request === '../../services/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {

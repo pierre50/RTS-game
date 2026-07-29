@@ -50,6 +50,7 @@ type SerializableEntity = RuntimeEntityBase & {
   rallyPoint?: SaveRallyPoint | null
   realDest?: Destination | null
   isFleeing?: boolean
+  isChief?: boolean
   sprite?: SpriteState | null
   technology?: SaveTechnologyState
   textureName?: string
@@ -187,6 +188,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'inactif',
       'isDead',
       'isDestroyed',
+      'isChief',
       'assetCiv',
       'assetAge',
       'mountedOnHorse',

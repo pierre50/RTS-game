@@ -9,10 +9,19 @@ import {
   findInstancesInSight,
   isPlayerEliminated,
 } from '../../lib'
-import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  PLAYER_TYPES,
+  UNIT_TYPES,
+  BUILDING_TYPES,
+  RESOURCE_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
+import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../lib/chief'
 import type {
   AIAge,
   AIBuildingLike,
@@ -53,6 +62,7 @@ type ThreatProfile = {
   isSeriousMilitaryThreat: boolean
   targetDistanceToHome: number
   isCriticalBuilding: boolean
+  isChief: boolean
   isBuilding: boolean
   shouldRecallAssaultUnits: boolean
   priority: number
@@ -116,6 +126,8 @@ export class AI extends Player {
   lastNavalOperationEndedAt!: number
   lastNavalOperationFailure: AIStrategyPlayerLike['lastNavalOperationFailure']
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
+  chiefLossDetectedAt!: number | null
+  chiefWanderReadyAt!: Map<string, number>
   nextAge!: AIStrategyPlayerLike['nextAge']
   maxVillagerPerAge!: AIStrategyPlayerLike['maxVillagerPerAge']
   villageTargetPercentageByAge!: AIStrategyPlayerLike['villageTargetPercentageByAge']
@@ -158,6 +170,8 @@ export class AI extends Player {
     this.navalOperation = null
     this.lastNavalOperationEndedAt = -Infinity
     this.lastNavalOperationFailure = null
+    this.chiefLossDetectedAt = null
+    this.chiefWanderReadyAt = new Map()
   }
 
   getNow() {
@@ -351,6 +365,7 @@ export class AI extends Player {
     const targetIsTownCenter = threat.target.type === BUILDING_TYPES.townCenter
     const targetIsBuilding = threat.target.family === FAMILY_TYPES.building
     const targetIsVillager = threat.target.type === UNIT_TYPES.villager
+    const targetIsChief = isChiefUnit(threat.target)
     const homeThreatRadius = this.difficultyConfig.homeThreatRadius || 15
     const villageCoreRadius = Math.min(homeThreatRadius, this.difficultyConfig.villageCoreRadius || 10)
     const isNearHome = targetDistanceToHome <= homeThreatRadius
@@ -364,6 +379,7 @@ export class AI extends Player {
 
     let priority = hostilePower + threat.hostiles.length * 2 + threat.count
     if (targetIsTownCenter) priority += 16
+    else if (targetIsChief) priority += 22
     else if (targetIsBuilding) priority += 9
     else if (targetIsVillager) priority += 2
 
@@ -375,6 +391,7 @@ export class AI extends Player {
     if (isRemoteVillagerIncident && hostileMilitary.length === 0) priority -= 6
 
     const shouldRecallAssaultUnits =
+      targetIsChief ||
       isDirectVillageAssault ||
       (isSeriousMilitaryThreat &&
         hostilePower >= (this.difficultyConfig.assaultRecallThreshold || 16) &&
@@ -393,6 +410,7 @@ export class AI extends Player {
       isSeriousMilitaryThreat,
       targetDistanceToHome,
       isCriticalBuilding: targetIsTownCenter,
+      isChief: targetIsChief,
       isBuilding: targetIsBuilding,
       shouldRecallAssaultUnits,
       priority,
@@ -405,6 +423,7 @@ export class AI extends Player {
     if (profile.hostileMilitary.length > 0) {
       const powerRatio = this.difficultyConfig.assaultRecallPowerRatio || 0.85
       const baseNeed = Math.max(6, profile.hostilePower * powerRatio)
+      if (profile.isChief) return baseNeed * 1.35
       if (profile.isDirectVillageAssault) return baseNeed * 1.15
       if (profile.isRemoteVillagerIncident) return baseNeed * 0.75
       return profile.isCriticalBuilding ? baseNeed * 1.15 : baseNeed
@@ -412,13 +431,17 @@ export class AI extends Player {
 
     if (profile.hostileVillagers.length > 0) {
       if (profile.isRemoteVillagerIncident) {
+        if (profile.isChief) return Math.max(5, profile.hostileVillagers.length * 3)
         return Math.max(2, profile.hostileVillagers.length * 1.5)
       }
-      return Math.max(3, profile.hostileVillagers.length * 2.5)
+      return profile.isChief
+        ? Math.max(6, profile.hostileVillagers.length * 3)
+        : Math.max(3, profile.hostileVillagers.length * 2.5)
     }
 
     if (profile.hostileAnimals.length > 0) {
       if (profile.isRemoteVillagerIncident) {
+        if (profile.isChief) return Math.min(5, Math.max(2, profile.hostileAnimals.length * 2))
         return Math.min(3, Math.max(1, profile.hostileAnimals.length))
       }
       return Math.min(5, Math.max(1.5, profile.hostileAnimals.length * 1.25))
@@ -541,7 +564,9 @@ export class AI extends Player {
       )
       let villagerDefenseCount = 0
 
-      if (!lethalThreat) {
+      if (profile.isChief) {
+        villagerDefenseCount = Math.min(nearbyVillagers.length, Math.max(4, threat.hostiles.length + 3))
+      } else if (!lethalThreat) {
         if (hostileAnimals.length > 0) {
           villagerDefenseCount =
             hostileAnimals.length === 1
@@ -797,6 +822,67 @@ export class AI extends Player {
     return this.units.filter(unit => unit.type === type && isAliveUnit(unit)) as AIEntityLike[]
   }
 
+  getLivingChiefs(): AIEntityLike[] {
+    return this.units.filter(unit => isLivingChief(unit)) as AIEntityLike[]
+  }
+
+  refreshChiefSuccession(villagers: AIEntityLike[]): number {
+    if (this.getLivingChiefs().length > 0) {
+      this.chiefLossDetectedAt = null
+      return 0
+    }
+
+    const now = this.getNow()
+    this.chiefLossDetectedAt ??= now
+    if (now - this.chiefLossDetectedAt < AI_CHIEF_SUCCESSION_DELAY_MS) return 0
+
+    const candidates = villagers.filter(villager => !villager.isDead && !villager.isDestroyed && !isChiefUnit(villager))
+    if (!candidates.length) return 0
+    const promoted = this.context.map.randomItem
+      ? this.context.map.randomItem(candidates)
+      : candidates[Math.floor(Math.random() * candidates.length)]
+    if (!promoted) return 0
+    promoted.isChief = true
+    promoted.work = WORK_TYPES.attacker
+    promoted.stop?.()
+    this.chiefLossDetectedAt = null
+    return 1
+  }
+
+  handleChiefGuard(towncenters: AIBuildingLike[]): number {
+    const anchor = towncenters.find(towncenter => towncenter.isBuilt && !towncenter.isDead && !towncenter.isDestroyed)
+    if (!anchor) return 0
+    let actions = 0
+    const now = this.getNow()
+    for (const chief of this.getLivingChiefs()) {
+      if (chief.controlMode === 'hero') continue
+      const hostiles = this.getVisibleHostilesNear(anchor, 12)
+      const target = hostiles[0]
+      if (target && chief.action !== ACTION_TYPES.attack) {
+        chief.sendTo?.(target, ACTION_TYPES.attack)
+        actions++
+        continue
+      }
+
+      const distanceToAnchor = Math.abs(chief.i - anchor.i) + Math.abs(chief.j - anchor.j)
+      if (distanceToAnchor > 8) {
+        chief.sendTo?.(anchor)
+        actions++
+        continue
+      }
+
+      if (chief.inactif && distanceToAnchor <= 8 && now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)) {
+        const guardCell = getPositionInGridAroundInstance(anchor, this.context.map.grid, [2, 6], 0)
+        this.chiefWanderReadyAt.set(chief.label, now + this.context.map.randomRange(6000, 12000))
+        if (guardCell) {
+          chief.sendTo?.(guardCell as RuntimeCell)
+          actions++
+        }
+      }
+    }
+    return actions
+  }
+
   step() {
     const { map, paused } = this.context
     if (paused) return 0
@@ -819,7 +905,9 @@ export class AI extends Player {
       )
     }
 
-    const villagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
+    const allVillagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
+    actions += this.refreshChiefSuccession(allVillagers)
+    const villagers = allVillagers.filter(villager => !isChiefUnit(villager))
     const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(this.units as AIEntityLike[])
     const military = [...infantry, ...archers, ...cavalry, ...hoplites]
     const militaryPower = this.strategy.military.getGroupCombatPower(military)
@@ -898,6 +986,7 @@ export class AI extends Player {
       assaultMilitary,
       debug: DEBUG,
     })
+    actions += this.handleChiefGuard(towncenters)
 
     // Re-filter from the already-small arrays rather than scanning all military again
     const refreshedInactifMilitary = inactifMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)

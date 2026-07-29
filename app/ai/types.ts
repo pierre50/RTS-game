@@ -37,6 +37,8 @@ export type AIEntityLike = {
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
+  isChief?: boolean
+  controlMode?: string
   inactif?: boolean
   action?: string | null
   work?: string | null

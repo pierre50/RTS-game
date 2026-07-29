@@ -16,6 +16,7 @@ export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
 export type UnitCreationExtra = {
   name?: string
+  isChief?: boolean
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
   mountedOnHorse?: boolean
@@ -242,6 +243,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   silentWorkSounds?: string[]
 
   // Identity
+  isChief?: boolean
   controlMode?: UnitControlMode
   assetCiv?: string
   assetAge?: number

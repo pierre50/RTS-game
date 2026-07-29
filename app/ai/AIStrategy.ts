@@ -7,6 +7,7 @@ import {
   WORK_TYPES,
 } from '../constants'
 import { canAfford, canPlaceBuildingAt, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { hasLivingChief } from '../lib/chief'
 import { AIMilitary } from './AIMilitary'
 import {
   AGE_UP_BUFFERS,
@@ -862,16 +863,19 @@ export class AIStrategy {
 
     let actions = 0
     const reserve = this.getEconomicDemand()
+    const chiefAlive = hasLivingChief(this.ai)
 
-    actions += this.buyUnits(
-      villagers.length,
-      maxVillagers,
-      towncenters,
-      UNIT_TYPES.villager,
-      undefined,
-      reserve,
-      debug
-    )
+    if (chiefAlive) {
+      actions += this.buyUnits(
+        villagers.length,
+        maxVillagers,
+        towncenters,
+        UNIT_TYPES.villager,
+        undefined,
+        reserve,
+        debug
+      )
+    }
     actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
     actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
@@ -1148,6 +1152,7 @@ export class AIStrategy {
 
   handleTechnologyActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
     const { ai } = this
+    if (!hasLivingChief(ai)) return 0
     const { maxVillagers, barracks, archeryRanges, storagepits, markets, granarys } = snapshot
     let actions = 0
 

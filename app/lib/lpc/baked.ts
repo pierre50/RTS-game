@@ -29,6 +29,7 @@ type BakedUnitType =
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   Villager: 'villager',
+  Chief: 'villager',
   Clubman: 'clubman',
   Axeman: 'axeman',
   Bowman: 'bowman',
@@ -122,8 +123,7 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
   const assets = UNIT_SHEETS.map(sheet => ({
     alias: bakedUnitAlias(unit, variant, sheet),
     src: bakedUnitSrc(unit, variant, sheet),
-  }))
-    .filter(asset => !Assets.cache.get(asset.alias))
+  })).filter(asset => !Assets.cache.get(asset.alias))
 
   if (assets.length) {
     await Assets.load(assets)
@@ -191,7 +191,10 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   // The hero keeps swapping tools (axe/pickaxe/bow/...) exactly like a villager
   // does — that's driven by unit.work, not by unit.type — so it reuses the same
   // work-keyed equipment layers instead of the fixed per-unit-type set.
-  const dynamicLayers = isVillagerLike ? dynamicEquipmentLayersForVillager() : dynamicEquipmentLayersForUnit(unit.type)
+  const dynamicLayers =
+    isVillagerLike && unit.type !== 'Chief'
+      ? dynamicEquipmentLayersForVillager()
+      : dynamicEquipmentLayersForUnit(unit.type)
   unit.appearance = dynamicLayers.length ? { layers: dynamicLayers } : undefined
 
   if (!isVillagerLike) {

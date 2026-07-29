@@ -201,6 +201,10 @@ export class HeroBuildingMenuManager {
     element.type = 'button'
     element.className = 'hero-building-menu-button'
     element.id = button.id ? `hero-${button.id}` : ''
+    const disabled = button.disabled?.() ?? false
+    element.disabled = disabled
+    element.classList.toggle('is-disabled', disabled)
+    element.setAttribute('aria-disabled', String(disabled))
 
     const icon = document.createElement('span')
     icon.className = 'hero-building-menu-icon'
@@ -245,6 +249,7 @@ export class HeroBuildingMenuManager {
 
     if (button.tooltip) this.menu.menuTooltip.bind(element, button.tooltip)
     element.addEventListener('click', evt => {
+      if (button.disabled?.()) return
       if (button.onCreate) {
         if (!nestedPointerHandled && button.onClick) {
           playUiSound(SOUND_CUES.ui.menuClick)

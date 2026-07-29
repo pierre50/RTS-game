@@ -31,6 +31,7 @@ import {
 import { createPlayerData } from '../../config/playerConfig'
 import { getRandomUnitName } from '../../config/name'
 import { playUiSound } from '../../lib/uiSound'
+import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
@@ -276,6 +277,7 @@ export class Player implements PlayerLike {
     } = this
     const config = this.techs[type]
     if (!config) return false
+    if (!force && playerNeedsChiefForCommand(this) && !hasLivingChief(this)) return false
     if (this.technologies.includes(type)) return false
     if (!force && !this.canResearchAgeTechnology(type) && !this.isTechnologyEligible(type)) return false
     if (!alreadyPaid && !canAfford(this, config.cost)) return false
@@ -521,7 +523,9 @@ export class Player implements PlayerLike {
     const { context } = this
     const isHeroUnit = this.isPlayed && !this.units.length
     const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, () => context.map.random()))
-    let unit = context.map.addChild(new Unit({ ...options, name, owner: this }, context))
+    let unit = context.map.addChild(
+      new Unit({ ...options, name, isChief: options.isChief ?? isHeroUnit, owner: this }, context)
+    )
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit
   }

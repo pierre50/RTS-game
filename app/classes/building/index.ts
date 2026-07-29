@@ -30,6 +30,7 @@ import {
 import { BuildingInterface } from '../../ui/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { BuildingProduction } from './BuildingProduction'
+import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
@@ -74,6 +75,7 @@ export class Building extends Instance implements BuildingEntity {
   buildingInterface: BuildingInterface
   buildingLifecycle: BuildingLifecycle
   buildingProduction: BuildingProduction
+  buildingTrainingPreview: BuildingTrainingPreview | null
   buildingCombat: BuildingCombat
   queue: string[]
   technology: QueuedTechnology | null
@@ -116,6 +118,7 @@ export class Building extends Instance implements BuildingEntity {
     this.buildingInterface = new BuildingInterface(this)
     this.buildingLifecycle = new BuildingLifecycle(this)
     this.buildingProduction = new BuildingProduction(this)
+    this.buildingTrainingPreview = null
     this.buildingCombat = new BuildingCombat(this)
     this.queue = []
     this.technology = null
@@ -252,6 +255,8 @@ export class Building extends Instance implements BuildingEntity {
       })
 
       this.addChild(this.shadow, this.sprite)
+      this.buildingTrainingPreview = new BuildingTrainingPreview(this)
+      this.buildingTrainingPreview.update()
       if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
     }
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
@@ -414,6 +419,8 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    this.buildingTrainingPreview?.destroy()
+    this.buildingTrainingPreview = null
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
     super.destroy(options)
@@ -495,6 +502,7 @@ export class Building extends Instance implements BuildingEntity {
 
   // BuildingInterface
   updateInterfaceLoading(): void {
+    this.buildingTrainingPreview?.update()
     this.buildingInterface.updateLoading()
   }
 

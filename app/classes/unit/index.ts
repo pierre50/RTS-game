@@ -52,6 +52,7 @@ import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
+import { heroCanCommand } from '../../lib/chief'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -256,6 +257,7 @@ export class Unit extends Instance implements UnitEntity {
   totalQuantity?: UnitEntity['totalQuantity']
   quantity!: number
   experience!: NonNullable<UnitEntity['experience']>
+  isChief?: UnitEntity['isChief']
 
   interface!: UnitEntity['interface']
   handleSetDest?: UnitEntity['handleSetDest']
@@ -388,7 +390,9 @@ export class Unit extends Instance implements UnitEntity {
                       tooltip: () => ({
                         title: t('buildMenu'),
                         description: t('buildMenuDescription'),
+                        meta: heroCanCommand(this.context.controls.heroUnit) ? [] : [t('requiresChief')],
                       }),
+                      disabled: () => !heroCanCommand(this.context.controls.heroUnit),
                       children: Object.keys(this.owner.config.buildings)
                         .map(key => menu.getActionBuildingButton?.(key, this.owner))
                         .filter((item): item is NonNullable<typeof item> => Boolean(item)),
@@ -669,7 +673,8 @@ export class Unit extends Instance implements UnitEntity {
     if (!this.horseSprite) this.setupMountedHorseSprite()
     if (!this.horseSprite) return
 
-    const sheetId = this.currentSheet === SHEET_TYPES.walking ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
+    const sheetId =
+      this.currentSheet === SHEET_TYPES.walking ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
     const horseSheet = Assets.cache.get(sheetId) as SpritesheetLike | undefined
     if (!horseSheet?.textures) return
 

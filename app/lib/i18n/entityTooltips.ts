@@ -11,6 +11,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     tooltipRequiresCondition: 'Condition requise : {condition}',
     buildMenu: 'Construire',
     buildMenuDescription: 'Ouvre le menu des bâtiments disponibles.',
+    requiresChief: 'Nécessite un chief',
     backMenuDescription: 'Revient au menu précédent.',
     cancelTechnologyDescription: 'Annule la technologie en cours de recherche.',
 
@@ -35,6 +36,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     GuardTowerDescription: 'Tour avancée, plus résistante et plus meurtrière.',
     BallistaTowerDescription: 'Tour ultime tirant de puissants carreaux à longue portée.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
+    ChiefDescription: 'Chef de village armé d’une lance, indispensable au commandement et au développement.',
     ClubmanDescription: "Première unité d'infanterie de mêlée, utile en début de partie.",
     BowmanDescription: 'Unité à distance efficace pour attaquer sans contact direct.',
     PriestDescription: 'Unité de soutien capable de soigner vos forces et convertir les ennemis.',
@@ -180,6 +182,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     tooltipRequiresCondition: 'Requires condition: {condition}',
     buildMenu: 'Build',
     buildMenuDescription: 'Opens the list of available buildings.',
+    requiresChief: 'Requires a chief',
     backMenuDescription: 'Returns to the previous menu.',
     cancelTechnologyDescription: 'Cancels the technology currently being researched.',
 
@@ -203,6 +206,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     GuardTowerDescription: 'Advanced tower with greater durability and damage.',
     BallistaTowerDescription: 'Ultimate tower firing powerful bolts over long range.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
+    ChiefDescription: 'Village leader armed with a spear, required for command and development.',
     ClubmanDescription: 'Basic melee infantry unit, useful for early attacks and defense.',
     BowmanDescription: 'Ranged unit effective at dealing damage from a safe distance.',
     PriestDescription: 'Support unit able to heal allies and convert enemy units.',
