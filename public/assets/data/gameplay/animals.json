@@ -10,7 +10,7 @@
     "ambientWalkRange": 2,
     "icon": "037_50730",
     "totalQuantity": 150,
-    "spriteScale": 0.8,
+    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/deer/standing",
       "walkingSheet": "animals/deer/walking",
@@ -41,7 +41,7 @@
     "ambientWalkRange": 3,
     "icon": "000_50733",
     "totalQuantity": 40,
-    "spriteScale": 0.8,
+    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
@@ -72,7 +72,7 @@
     "ambientWalkRange": 2,
     "icon": "039_50730",
     "totalQuantity": 30,
-    "spriteScale": 0.8,
+    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/black-grouse/standing",
       "walkingSheet": "animals/black-grouse/walking",
@@ -103,7 +103,7 @@
     "ambientWalkRange": 3,
     "icon": "040_50730",
     "totalQuantity": 50,
-    "spriteScale": 0.8,
+    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/fox/standing",
       "walkingSheet": "animals/fox/walking",
@@ -136,7 +136,7 @@
     "icon": "042_50730",
     "rateOfFire": 1,
     "totalQuantity": 80,
-    "spriteScale": 0.8,
+    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/boar/standing",
       "actionSheet": "animals/boar/action",

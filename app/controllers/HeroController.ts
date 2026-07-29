@@ -342,11 +342,15 @@ export class HeroController {
     dx += gamepadMove.dx
     dy += gamepadMove.dy
     const isMoving = dx !== 0 || dy !== 0
+    if (unit.isDirectMoving !== isMoving) {
+      unit.isDirectMoving = isMoving
+      unit.syncMountedHorseSprite?.()
+    }
 
     let moved = false
     if (isMoving) {
       const len = Math.hypot(dx, dy)
-      const speedFactor = attacking ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
+      const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       const bowChargeDegree = bowChargeAiming ? unit.degree : null

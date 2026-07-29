@@ -11,4 +11,4 @@ export const HERO_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
   d: { dx: 1, dy: 0 },
 }
 
-export const HERO_ACTION_MOVE_SPEED_FACTOR = 0.2
+export const HERO_ACTION_MOVE_SPEED_FACTOR = 0

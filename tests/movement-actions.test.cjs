@@ -280,6 +280,56 @@ test('ranged units must contact buildings before entering them', () => {
   assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.attack, stable), true)
 })
 
+for (const [mountedOnHorse, expectedSpeed] of [
+  [false, 1.6],
+  [true, 2],
+]) {
+  test(`${mountedOnHorse ? 'mounted' : 'foot'} loaded units use the expected path movement speed`, () => {
+    const speeds = []
+    const lib = {
+      canUpdateMinimap: () => false,
+      cartesianToIsometric: (i, j) => [i * 10, j * 10],
+      degreeToDirection: () => 'south',
+      getGroundReliefLevel: () => 0,
+      getInstanceDegree: () => 0,
+      getInstanceZIndex: () => 0,
+      instancesDistance: () => 10,
+      moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
+      updateInstanceVisibility: () => {},
+    }
+    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+      '../../constants': constants,
+      '../../lib': lib,
+    })
+    const unit = {
+      action: null,
+      context: {
+        map: {
+          grid: [
+            [{ has: null, i: 0, j: 0, solid: false, z: 0 }],
+            [{ has: null, i: 1, j: 0, solid: false, z: 0 }],
+          ],
+          updateInstanceBucket: () => {},
+        },
+      },
+      currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
+      currentSheet: constants.SHEET_TYPES.walking,
+      dest: { i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
+      i: 0,
+      j: 0,
+      loading: 1,
+      mountedOnHorse,
+      path: [{ i: 1, j: 0 }],
+      speed: 2,
+      sprite: { playing: true, play: () => {} },
+    }
+
+    new UnitMovement(unit)._moveToPath()
+
+    assert.deepEqual(speeds, [expectedSpeed])
+  })
+}
+
 test('converted units stop old orders, switch owner, and refresh idle color', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {

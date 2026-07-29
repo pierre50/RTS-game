@@ -243,6 +243,7 @@ export class UnitCombat {
       sprite.loop = true
       sprite.onComplete = undefined
       unit.setTextures?.(SHEET_TYPES.action)
+      unit.syncMountedHorseSprite?.()
       syncAnimationSpeedToRate(sprite, 1 / (unit.rateOfFire ?? 1))
       onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
         const dest = isRuntimeEntity(unit.dest) ? unit.dest : null

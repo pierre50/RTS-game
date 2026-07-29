@@ -102,7 +102,7 @@ test('missing standing sheet idles on the first walking frame from the current d
   assert.deepEqual(sprite.textures, [{ id: 0 }])
 })
 
-test('mounted units use riding art only for idle and walking, not for attack actions', () => {
+test('mounted units use riding art for idle, walking and animated attack actions', () => {
   const { setUnitTexture } = loadModule('app/lib/extra.ts', {
     '../constants': {
       SHEET_TYPES: {
@@ -140,7 +140,10 @@ test('mounted units use riding art only for idle and walking, not for attack act
       this.stopCalls += 1
     },
   }
-  const ridingSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': { id: 'ride' } } }
+  const ridingSheet = {
+    data: { animationSpeed: 0.2 },
+    textures: { '000.png': { id: 'ride-0' }, '001.png': { id: 'ride-1' } },
+  }
   const actionSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': { id: 'hit' } } }
 
   setUnitTexture('standingSheet', {
@@ -152,7 +155,7 @@ test('mounted units use riding art only for idle and walking, not for attack act
     standingSheet: { data: {}, textures: { '000.png': { id: 'stand' } } },
   })
 
-  assert.deepEqual(sprite.textures, [{ id: 'ride' }])
+  assert.deepEqual(sprite.textures, [{ id: 'ride-0' }])
   assert.equal(sprite.stopCalls, 1)
 
   setUnitTexture('actionSheet', {
@@ -164,7 +167,7 @@ test('mounted units use riding art only for idle and walking, not for attack act
     actionSheet,
   })
 
-  assert.deepEqual(sprite.textures, [{ id: 'hit' }])
+  assert.deepEqual(sprite.textures, [{ id: 'ride-0' }, { id: 'ride-1' }])
   assert.equal(sprite.playCalls, 1)
 })
 

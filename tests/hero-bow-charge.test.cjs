@@ -235,6 +235,9 @@ function makeHero() {
       this.sprite.play()
     },
     syncAppearanceLayers() {},
+    syncMountedHorseSprite() {
+      this.syncMountedHorseSpriteCalls = (this.syncMountedHorseSpriteCalls ?? 0) + 1
+    },
     syncShadow() {},
   }
   return { hero, projectiles }
@@ -672,6 +675,7 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
   assert.equal(hero.startedAction, undefined)
   assert.equal(hero.actionLocked, true)
   assert.equal(hero.currentSheet, 'actionSheet')
+  assert.equal(hero.syncMountedHorseSpriteCalls, 1)
 })
 
 test('free-hand interact damages an aimed enemy unit on the slash impact frame', () => {

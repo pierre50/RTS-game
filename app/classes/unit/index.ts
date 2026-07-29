@@ -214,6 +214,7 @@ export class Unit extends Instance implements UnitEntity {
   pendingOrder: UnitEntity['pendingOrder']
   blockedGatherApproach: UnitEntity['blockedGatherApproach']
   buildQueue!: NonNullable<UnitEntity['buildQueue']>
+  isDirectMoving?: UnitEntity['isDirectMoving']
   currentCell!: NonNullable<UnitEntity['currentCell']>
   visibleCells!: NonNullable<UnitEntity['visibleCells']>
   speed?: UnitEntity['speed']
@@ -675,8 +676,8 @@ export class Unit extends Instance implements UnitEntity {
     if (!this.horseSprite) this.setupMountedHorseSprite()
     if (!this.horseSprite) return
 
-    const sheetId =
-      this.currentSheet === SHEET_TYPES.walking ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
+    const horseShouldMove = this.currentSheet === SHEET_TYPES.walking || this.isDirectMoving
+    const sheetId = horseShouldMove ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
     const horseSheet = Assets.cache.get(sheetId) as SpritesheetLike | undefined
     if (!horseSheet?.textures) return
 

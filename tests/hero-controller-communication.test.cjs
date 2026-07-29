@@ -138,6 +138,9 @@ function createController({
     loading: 0,
     currentSheet: 'standing',
     setTextures: sheet => calls.push(['setTextures', sheet]),
+    syncMountedHorseSprite: () => {
+      hero.syncMountedHorseSpriteCalls = (hero.syncMountedHorseSpriteCalls ?? 0) + 1
+    },
     stop: () => calls.push('stop'),
   }
   const npcInteraction = {
@@ -217,6 +220,7 @@ test('keyboard movement during bow charge restores aim without resetting action 
   hero.speed = 1
   hero.degree = 40
   hero.moveDirect = () => {
+    hero.x += 1
     hero.degree = 270
     return true
   }
@@ -225,7 +229,15 @@ test('keyboard movement during bow charge restores aim without resetting action 
   controller.update(1)
 
   assert.equal(hero.degree, 40)
+  assert.equal(hero.isDirectMoving, true)
+  assert.equal(hero.syncMountedHorseSpriteCalls, 1)
   assert.deepEqual(calls, [])
+
+  controller.handleKeyUp('heroRight')
+  controller.update(1)
+
+  assert.equal(hero.isDirectMoving, false)
+  assert.equal(hero.syncMountedHorseSpriteCalls, 2)
 })
 
 test('H mounts the hero once for debug without stacking speed', () => {

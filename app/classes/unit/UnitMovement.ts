@@ -117,6 +117,10 @@ function blocksHeroMobileDirectMoveAtPoint(unit: UnitEntity, entity: RuntimeEnti
   return nextDistance < collisionRadius
 }
 
+function shouldApplyLoadingMovePenalty(unit: UnitEntity): boolean {
+  return Boolean(!unit.mountedOnHorse && (unit.loading ?? 0) > 0)
+}
+
 function getNearbyHeroCollisionEntities(
   cell: RuntimeCell | null | undefined,
   map: RuntimeMap | null | undefined
@@ -614,7 +618,7 @@ export class UnitMovement {
       const oldDeg = unit.degree
       const wasWalking = unit.currentSheet === SHEET_TYPES.walking
       let speed = unit.speed ?? 0
-      if ((unit.loading ?? 0) > 0) speed *= 0.8
+      if (shouldApplyLoadingMovePenalty(unit)) speed *= 0.8
       if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(unit, nextFlatX, nextFlatY, speed)
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)

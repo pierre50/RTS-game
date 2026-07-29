@@ -161,6 +161,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]
+  isDirectMoving?: boolean
   degree?: number
   speed?: number
   huntRange?: number
@@ -176,6 +177,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   currentFrame?: number
   mountedOnHorse?: boolean
   removeMountedHorseSprite?: () => void
+  syncMountedHorseSprite?: () => void
   syncMountedRiderPosition?: () => void
   heroBowChargeStart?: number | null
   heroBowChargeRatio?: number

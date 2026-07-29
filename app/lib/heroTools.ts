@@ -296,6 +296,7 @@ function playHeroToolAnimation(hero: UnitEntity, onImpact?: () => void, impactFr
   hero.actionLocked = true
   sprite.loop = false
   hero.setTextures?.(SHEET_TYPES.action)
+  hero.syncMountedHorseSprite?.()
   sprite.gotoAndPlay(0)
   hero.syncShadow?.()
 
