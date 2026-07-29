@@ -32,6 +32,8 @@ type DynamicEquipmentKey =
   | 'fishing_rod'
   | 'quiver'
 
+export type { DynamicEquipmentKey }
+
 type EquipmentOptions = Pick<
   UnitAppearanceLayerConfig,
   'workTypes' | 'hideWhenLoading' | 'showWhenLoading' | 'hideForActions'
@@ -200,4 +202,16 @@ export function dynamicEquipmentLayersForVillager(): UnitAppearanceLayerConfig[]
   return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, options }) =>
     equipmentLayerConfigs(equipment, { ...options, workTypes: [workType] })
   )
+}
+
+export function dynamicEquipmentForUnit(unitType: string): string[] {
+  return [...(UNIT_EQUIPMENT[unitType] ?? [])]
+}
+
+export function dynamicEquipmentForWork(workType: string | null | undefined): string[] {
+  if (!workType) return []
+  return VILLAGER_WORK_EQUIPMENT.filter(({ workType: equipmentWork, options }) => {
+    if (equipmentWork !== workType) return false
+    return !options?.showWhenLoading
+  }).map(({ equipment }) => equipment)
 }

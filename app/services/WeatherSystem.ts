@@ -39,7 +39,7 @@ const RAIN_DRIFT_PER_SECOND = -58
 
 const VEIL_TARGETS: Record<WeatherPhase, number> = {
   sunny: 0,
-  clouding: 0.025,
+  clouding: 0.01,
   stormBuildUp: 0.075,
   rainLight: 0.08,
   rainHeavy: 0.14,
@@ -57,13 +57,13 @@ const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
     blue: 0.96,
   },
   clouding: {
-    gamma: 0.98,
-    contrast: 0.95,
-    saturation: 0.68,
-    brightness: 0.84,
-    red: 0.92,
-    green: 0.95,
-    blue: 1.02,
+    gamma: 1,
+    contrast: 0.99,
+    saturation: 0.88,
+    brightness: 0.94,
+    red: 0.98,
+    green: 0.99,
+    blue: 1.01,
   },
   stormBuildUp: {
     gamma: 0.95,

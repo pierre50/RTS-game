@@ -294,6 +294,7 @@ export type AIFoodSources = {
   fish: AIEntityLike[]
   meatDrops: AIBuildingLike[]
   plantDrops: AIBuildingLike[]
+  workerPositions?: AIEntityLike[]
 }
 
 export type AIFoodTarget = {

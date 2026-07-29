@@ -321,12 +321,18 @@ export class AIEconomy {
     return Math.min(...dropSites.map(site => Math.abs(source.i - site.i) + Math.abs(source.j - site.j)))
   }
 
+  getNearestWorkerDistance(source: AIEntityLike, workers: AIEntityLike[] = []): number {
+    if (!source || !workers.length) return 0
+    return Math.min(...workers.map(worker => Math.abs(source.i - worker.i) + Math.abs(source.j - worker.j)))
+  }
+
   getFoodSourceScore(
     type: AIFoodSourceType,
     source: AIEntityLike,
     dropSites: AIBuildingLike[],
     slot: number = 0,
-    hunterCount: number = 1
+    hunterCount: number = 1,
+    workerPositions: AIEntityLike[] = []
   ): number {
     const rates = (this.ai.config?.units?.[UNIT_TYPES.villager]?.gatheringRate || {}) as Record<
       string,
@@ -350,11 +356,15 @@ export class AIEconomy {
     const quantity = Math.max(0, source.quantity ?? source.totalQuantity ?? 0)
     const quantityFactor = 0.55 + Math.min(quantity / 150, 1) * 0.45
     const distance = this.getNearestDropDistance(source, dropSites)
+    const workerDistance = this.getNearestWorkerDistance(source, workerPositions)
     const travelPenalty = 1 + distance / (type === 'farm' ? 20 : 14)
+    const workerTravelPenalty = 1 + workerDistance / (type === 'hunt' ? 12 : 18)
     const saturationPenalty = 1 + slot * (type === 'berry' || type === 'carcass' ? 0.25 : 0.12)
     const killPenalty = type === 'hunt' ? 1 + (source.hitPoints || 0) / Math.max(4 * hunterCount, 1) / 12 : 1
     const renewableBonus = type === 'farm' ? 1.08 : 1
-    return (rate * quantityFactor * renewableBonus) / (travelPenalty * saturationPenalty * killPenalty)
+    return (
+      (rate * quantityFactor * renewableBonus) / (travelPenalty * workerTravelPenalty * saturationPenalty * killPenalty)
+    )
   }
 
   getFoodWorkerTargets(
@@ -372,11 +382,13 @@ export class AIEconomy {
       hunterCount: number = 1
     ) => {
       for (let slot = 0; slot < count; slot++) {
-        const retentionBonus = retainedSlots[type] > 0 ? 1.08 : 1
+        const retentionBonus = retainedSlots[type] > 0 && type !== 'hunt' ? 1.08 : 1
         retainedSlots[type] = Math.max(0, (retainedSlots[type] || 0) - 1)
         opportunities.push({
           type,
-          score: this.getFoodSourceScore(type, source, dropSites, slot, hunterCount) * retentionBonus,
+          score:
+            this.getFoodSourceScore(type, source, dropSites, slot, hunterCount, sources.workerPositions) *
+            retentionBonus,
         })
       }
     }
@@ -527,6 +539,13 @@ export class AIEconomy {
       fish: this.getVillagerFishSources([...availableVillagers, ...villagersFishing]),
       meatDrops: this.getFoodDropSites('meat'),
       plantDrops: this.getFoodDropSites('berry'),
+      workerPositions: [
+        ...availableVillagers,
+        ...villagersForaging,
+        ...villagersHunting,
+        ...villagersFarming,
+        ...villagersFishing,
+      ],
     }
     const sourceTargets = this.getFoodWorkerTargets(maxVillagersOnFood, sources, {
       berry: villagersForaging.length,

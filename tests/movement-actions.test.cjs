@@ -1902,6 +1902,40 @@ test('delivery orders bypass the human command throttle', () => {
   assert.equal(unit.previousDest, resource)
 })
 
+test('exploration orders bypass the human command throttle', () => {
+  const calls = []
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+    }))
+  )
+  const targetCell = grid[1][0]
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getInstancePath: (_unit, i, j) => (i === targetCell.i && j === targetCell.j ? [targetCell] : []),
+    },
+  })
+  const unit = {
+    context: { map: { grid } },
+    i: 1,
+    j: 1,
+    owner: {
+      views: {
+        isViewed: (i, j) => i !== targetCell.i || j !== targetCell.j,
+      },
+    },
+    sendTo: () => calls.push(['sendTo']),
+    sendToEvt: (target, action, options) => calls.push(['sendToEvt', target, action, options]),
+    stop: () => calls.push(['stop']),
+  }
+
+  assert.equal(new UnitMovement(unit).explore(), true)
+  assert.deepEqual(calls, [['sendToEvt', targetCell, null, { forceRepath: true }]])
+})
+
 test('delivery shows a resource gain over the delivering unit', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {

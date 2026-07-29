@@ -1,4 +1,5 @@
 import { getCivilizationDefinition } from './civilizations'
+import { applyEquipmentStatsToUnitConfig } from '../lib/equipmentStats'
 import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { PlayerConfigLike } from '../types/player'
 
@@ -1066,7 +1067,8 @@ export function createPlayerData(
     }
   }
 
-  for (const unit of Object.values(config.units)) {
+  for (const [unitName, unit] of Object.entries(config.units)) {
+    applyEquipmentStatsToUnitConfig(unitName, unit)
     normalizeUnitSounds(unit)
   }
 

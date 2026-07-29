@@ -75,6 +75,24 @@ function loadHeroTools(overrides = {}) {
           wood: 'woodcutter',
         })[loadingType] ?? 'default',
     },
+    './equipmentStats': {
+      getEquipmentCombatStats: equipment => {
+        const stats = { meleeAttack: 0, pierceAttack: 0, meleeArmor: 0, pierceArmor: 0 }
+        for (const item of equipment) {
+          if (item === 'longsword') stats.meleeAttack += 11
+          if (item === 'longspear') stats.meleeAttack += 17
+          if (item === 'bow') stats.pierceAttack += 4
+        }
+        return stats
+      },
+      getUnitWorkEquipment: work =>
+        ({
+          heroSword: ['longsword'],
+          heroSpear: ['longspear'],
+          hunter: ['bow'],
+        })[work] ?? [],
+      refreshUnitEquipmentStats: () => {},
+    },
     './grid/cells': { getBuildingContactDistance: () => 1 },
     './grid/visibility': { findInstancesInSight: () => [] },
     './grid/queries': { getClosestInstanceWithPath: () => null },
@@ -763,6 +781,54 @@ for (const family of ['building', 'animal']) {
     assert.deepEqual(enemy.isAttackedCalls, ['hero'])
   })
 }
+
+test('sword uses fixed weapon damage even when the hero has no attack stat', () => {
+  const animal = {
+    family: 'animal',
+    hitPoints: 20,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy-animal',
+    owner: { label: 'gaia' },
+    totalHitPoints: 20,
+    x: 10,
+    y: 0,
+  }
+  const damageFeedback = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (source, target, action) =>
+        action === 'attack' &&
+        target === animal &&
+        (source.meleeAttack ?? 0) > 0 &&
+        source.owner?.isEnemy?.(target.owner) &&
+        target.hitPoints > 0 &&
+        !target.isDead,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    meleeAttack: 0,
+    owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
+    isUnitAtDest: () => true,
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+  hero.sprite.currentFrame = 1
+  hero.sprite.onFrameChange(1)
+
+  assert.equal(animal.hitPoints, 9)
+  assert.deepEqual(damageFeedback, [['enemy-animal', 11]])
+})
 
 test('free-hand interact does not whiff without energy', () => {
   const messages = []

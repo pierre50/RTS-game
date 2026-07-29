@@ -283,6 +283,23 @@ test('construction autonomy does not explore when there is no construction targe
   assert.equal(villager.autonomousJob, null)
 })
 
+test('resource autonomy explores when the requested resource is unknown', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const owner = createOwner({ foundedTrees: new Set() })
+  const villager = createVillager(owner, {
+    explored: false,
+    explore() {
+      this.explored = true
+      return true
+    },
+  })
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'wood'), false)
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+  assert.equal(villager.explored, true)
+  assert.equal(villager.autonomousJob, 'wood')
+})
+
 test('construction autonomy only targets own unfinished buildings', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const owner = createOwner()

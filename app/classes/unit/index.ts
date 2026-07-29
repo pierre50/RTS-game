@@ -48,6 +48,7 @@ import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { applyToolAppearance } from '../../lib/heroTools'
+import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
@@ -353,6 +354,7 @@ export class Unit extends Instance implements UnitEntity {
       default:
         this.work = WORK_TYPES.attacker
     }
+    refreshUnitEquipmentStats(this)
 
     if (this.assets) {
       for (const [key, value] of Object.entries(this.assets)) {

@@ -558,6 +558,7 @@ export class BuildingProduction {
     const color = building.getChildByLabel(LABEL_TYPES.color)
     color?.destroy()
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
+    building.updateShadow()
   }
 
   buyTechnology(type: string, alreadyPaid?: boolean, _force?: boolean): boolean {

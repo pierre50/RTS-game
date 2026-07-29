@@ -13,9 +13,10 @@ import {
   WORK_TYPES,
 } from '../constants'
 import { isHeroActionInRange } from './heroActionRange'
-import { getActionCondition, getHitPointsWithDamage } from './combat'
+import { getActionCondition, getHitPointsWithDamage, type CombatEntity } from './combat'
 import { showDamageFeedback } from './combatFeedback'
 import { getWorkWithLoadingType } from './extra'
+import { getEquipmentCombatStats, getUnitWorkEquipment, refreshUnitEquipmentStats } from './equipmentStats'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
@@ -268,8 +269,12 @@ function runContextAction(
 
 export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
   const work = EQUIPPED_ITEM_WORK[tool]
-  if (hero.work === work) return
+  if (hero.work === work) {
+    refreshUnitEquipmentStats(hero)
+    return
+  }
   hero.work = work
+  refreshUnitEquipmentStats(hero)
   const workAssets = hero.allAssets?.[work]
   if (workAssets) {
     if (workAssets[SHEET_TYPES.action]) hero.actionSheet = Assets.cache.get(workAssets[SHEET_TYPES.action])
@@ -397,7 +402,21 @@ function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
   return deliverToBuilding(hero, target) ? 'delivered' : 'blocked'
 }
 
-function canBeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
+function getHeroWeaponDamage(tool: HeroEquippedItem): number {
+  const stats = getEquipmentCombatStats(getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool]))
+  const damage = Math.max(stats.meleeAttack, stats.pierceAttack)
+  return damage || (tool === 'interact' ? 3 : 0)
+}
+
+function getHeroWeaponCombatSource(hero: UnitEntity, tool: HeroEquippedItem): CombatEntity {
+  return {
+    ...hero,
+    meleeAttack: getHeroWeaponDamage(tool),
+    pierceAttack: 0,
+  }
+}
+
+function canBeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): boolean {
   if (
     target === hero ||
     ![FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') ||
@@ -406,13 +425,13 @@ function canBeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boo
   ) {
     return false
   }
-  return getActionCondition(hero, target, ACTION_TYPES.attack)
+  return getActionCondition(getHeroWeaponCombatSource(hero, tool), target, ACTION_TYPES.attack)
 }
 
-function findEmptyHandMeleeTargetInAim(hero: UnitEntity): RuntimeEntity | null {
+function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): RuntimeEntity | null {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
-    target => canBeEmptyHandMeleeTarget(hero, target),
+    target => canBeHeroMeleeTarget(hero, target, tool),
     CLICK_TARGET_SEARCH_RANGE
   )
   return getDirectionalTarget(hero, candidates)
@@ -495,7 +514,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
           target: target ?? undefined,
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
-          damage: 4,
+          damage: getHeroWeaponDamage('bow'),
           maxDistance: HERO_ARROW_MAX_DISTANCE * rangePower,
         },
         hero.context!
@@ -634,7 +653,7 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
         target,
         destination,
         spawnPoint: getHeroArrowSpawnPoint(hero),
-        damage: 4,
+        damage: getHeroWeaponDamage('bow'),
         maxDistance: HERO_ARROW_MAX_DISTANCE * Math.max(HERO_BOW_MIN_POWER, Math.min(1, power)),
       },
       hero.context!
@@ -706,7 +725,7 @@ function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
   return true
 }
 
-function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
+function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): boolean {
   if (!isHeroActionInRange(hero, ACTION_TYPES.attack, target) && !hero.isUnitAtDest?.(ACTION_TYPES.attack, target)) {
     return false
   }
@@ -716,12 +735,18 @@ function strikeEmptyHandMeleeTarget(hero: UnitEntity, target: RuntimeEntity): bo
   playHeroToolAnimation(
     hero,
     () => {
-      if (!getActionCondition(hero, target, ACTION_TYPES.attack)) {
+      const combatSource = getHeroWeaponCombatSource(hero, tool)
+      if (!getActionCondition(combatSource, target, ACTION_TYPES.attack)) {
         if ((target.hitPoints ?? 0) <= 0) target.die?.()
         return
       }
       const beforeHitPoints = target.hitPoints ?? 0
-      target.hitPoints = getHitPointsWithDamage(hero, target, undefined, getCombatXpBonus(hero, XP_CATEGORIES.melee))
+      target.hitPoints = getHitPointsWithDamage(
+        combatSource,
+        target,
+        getHeroWeaponDamage(tool),
+        getCombatXpBonus(hero, XP_CATEGORIES.melee)
+      )
       const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
       if (damageDealt > 0) {
         playAudibleSoundCue(hero, hero.sounds?.hit)
@@ -763,16 +788,16 @@ export function triggerEquippedItemActionAt(
     return beginHeroBowChargeAt(hero, destination)
   }
   if (tool === 'sword' || tool === 'spear') {
-    const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
-    if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
+    const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
+    if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
     return playMeleeWeaponWhiff(hero)
   }
   if (tool !== 'interact') return false
   if (deliveryResult === 'blocked') return false
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
-  const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
-  if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
+  const meleeTarget = findHeroMeleeTargetInAim(hero, 'interact')
+  if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, 'interact')) return true
   if (actionResult === 'miss') {
     return playEmptyHandWhiff(hero)
   }
@@ -803,8 +828,8 @@ export function performContextAction(hero: UnitEntity): boolean {
 
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
   if (tool === 'sword' || tool === 'spear') {
-    const meleeTarget = findEmptyHandMeleeTargetInAim(hero)
-    if (meleeTarget && strikeEmptyHandMeleeTarget(hero, meleeTarget)) return true
+    const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
+    if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
     return playMeleeWeaponWhiff(hero)
   }
   if (tool === 'interact') {

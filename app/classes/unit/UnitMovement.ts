@@ -1066,7 +1066,7 @@ export class UnitMovement {
     for (const { cell } of candidates.slice(0, 12)) {
       const path = getInstancePath(unit, cell.i, cell.j, map)
       if (path.length) {
-        unit.sendTo?.(cell)
+        unit.sendToEvt?.(cell, null, { forceRepath: true })
         return true
       }
     }

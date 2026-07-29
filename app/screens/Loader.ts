@@ -38,6 +38,7 @@ export default class LoaderScreen extends Container {
       resources: unknown
       animals: unknown
       projectiles: unknown
+      equipment: unknown
       cells: unknown
     } = {
       buildings: Assets.cache.get('buildingsData'),
@@ -45,6 +46,7 @@ export default class LoaderScreen extends Container {
       resources: Assets.cache.get('resourcesData'),
       animals: Assets.cache.get('animalsData'),
       projectiles: Assets.cache.get('projectilesData'),
+      equipment: Assets.cache.get('equipmentData'),
       cells: Assets.cache.get('cellsData'),
     }
 

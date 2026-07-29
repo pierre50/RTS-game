@@ -10,105 +10,24 @@ type PlayerColor = (typeof colors)[number]
 // which remaps player_blue's shades to a different set of hex values (e.g.
 // #3C49AD and #466AC9 both collapse to #285CC4). These are that post-snap set,
 // verified against the actual lpc-baked and buildings/shared textures.
-const SOURCE_COLORS = [
-  0xbac7db,
-  0x8690b2,
-  0x6c82c4,
-  0x56506f,
-  0x1476c0,
-  0x03315f,
-  0x001b40,
-]
+const SOURCE_COLORS = [0xbac7db, 0x8690b2, 0x6c82c4, 0x56506f, 0x1476c0, 0x03315f, 0x001b40]
 
-const UNIT_SOURCE_COLORS = [
-  0x6dccff,
-  0x55b1f1,
-  0x4097ea,
-  0x5274c5,
-  0x5165ae,
-  0x3d5083,
-  0x2d3d72,
-  0x28335d,
-  0x262450,
-]
+const UNIT_SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450]
 
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
-  red: [
-    0xffdbff,
-    0xffbbc7,
-    0xff9ba8,
-    0xff7676,
-    0xe45c5f,
-    0xb63c35,
-    0x82211d,
-    0x5e0711,
-  ],
+  red: [0xff7676, 0xe45c5f, 0xb63c35, 0x9c3327, 0x82211d, 0x721c03, 0x5e0711],
 
-  yellow: [
-    0xfff64f,
-    0xe8d24b,
-    0xd1aa39,
-    0xba882e,
-    0x9e6520,
-    0x854f12,
-    0x753b09,
-    0x622a00,
-  ],
+  yellow: [0xffe949, 0xffcf05, 0xd1aa39, 0xba882e, 0x9e6520, 0x854f12, 0x753b09, 0x622a00],
 
-  brown: [
-    0xfbeaa3,
-    0xe8cb82,
-    0xcca96e,
-    0xb29062,
-    0x997951,
-    0x7e6144,
-    0x614a3c,
-    0x453125,
-  ],
+  brown: [0xe8cb82, 0xcca96e, 0xb29062, 0x997951, 0x7e6144, 0x614a3c, 0x453125, 0x372423],
 
-  orange: [
-    0xf7f4bf,
-    0xfff02b,
-    0xffcf05,
-    0xffb108,
-    0xe98627,
-    0xbf5a3e,
-    0x9c3327,
-    0x721c03,
-  ],
+  orange: [0xffbc4e, 0xffb108, 0xe98627, 0xcd5e46, 0xbf5a3e, 0x9c3327, 0x753b09, 0x721c03],
 
-  green: [
-    0xd0cc32,
-    0xb4aa33,
-    0x969a26,
-    0x7c831e,
-    0x617308,
-    0x495d00,
-    0x2f4f08,
-    0x202900,
-  ],
+  green: [0xa6cc34, 0x7da42d, 0x518822, 0x2f690c, 0x225918, 0x174a1b, 0x003221, 0x002219],
 
-  grey: [
-    0xebf0f6,
-    0xbac7db,
-    0xabaebe,
-    0x848795,
-    0x73737f,
-    0x5b5c69,
-    0x48474d,
-    0x2d3136,
-  ],
+  grey: [0xbac7db, 0xabaebe, 0x848795, 0x73737f, 0x5b5c69, 0x48474d, 0x2d3136, 0x222323],
 
-  cyan: [
-    0x00deda,
-    0x00bfa3,
-    0x00a087,
-    0x008279,
-    0x006b6d,
-    0x005162,
-    0x004051,
-    0x002e49,
-  ],
+  cyan: [0x74f5fd, 0x52d2ff, 0x41b2e3, 0x318eb8, 0x366b8a, 0x25466b, 0x23324d, 0x181f2f],
 }
 
 const HEX_COLOR_MAP: Record<PlayerColor, string> = {
@@ -158,17 +77,21 @@ function luminance(color: number): number {
   return 0.299 * r + 0.587 * g + 0.114 * b
 }
 
-// SOURCE_COLORS and a given team palette aren't guaranteed to be the same length
-// (SOURCE_COLORS has 9 real baked shades; palettes are hand-tuned 8-shade
-// gradients), so pair them by luminance rank instead of by index — same bucketing
+// Source palettes and a given team palette aren't guaranteed to be the same length,
+// so pair them by luminance rank instead of by index — same bucketing
 // approach as the non-source-palette branch of scripts/lpc/image_pipeline.py's
 // recolor(). Multiple source shades can land in the same target bucket. Ranked
 // light-to-dark to match COLOR_PALETTES' light-to-dark ordering.
 function buildReplacements(sourceColors: readonly number[], targetColors: readonly number[]): [number, number][] {
-  const rankedIndices = sourceColors.map((_, i) => i).sort((a, b) => luminance(sourceColors[b]) - luminance(sourceColors[a]))
+  const rankedIndices = sourceColors
+    .map((_, i) => i)
+    .sort((a, b) => luminance(sourceColors[b]) - luminance(sourceColors[a]))
 
   return rankedIndices.map((sourceIndex, rank) => {
-    const targetIndex = Math.min(Math.floor((rank * targetColors.length) / sourceColors.length), targetColors.length - 1)
+    const targetIndex =
+      sourceColors.length <= 1
+        ? 0
+        : Math.min(Math.round((rank * (targetColors.length - 1)) / (sourceColors.length - 1)), targetColors.length - 1)
     return [sourceColors[sourceIndex], targetColors[targetIndex]]
   })
 }

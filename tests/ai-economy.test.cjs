@@ -172,6 +172,28 @@ test('food scoring prefers a nearby carcass over a distant farm', () => {
   assert.deepEqual(targets, { berry: 0, carcass: 1, farm: 0, fish: 0, hunt: 0 })
 })
 
+test('food scoring moves live hunters to closer berries', () => {
+  const { AIEconomy } = loadAIEconomy()
+  const economy = new AIEconomy({ config: {} })
+  const worker = { i: 0, j: 0 }
+  const targets = economy.getFoodWorkerTargets(
+    1,
+    {
+      animals: [{ i: 40, j: 0, hitPoints: 1, quantity: 250, totalHitPoints: 4 }],
+      berries: [{ i: 2, j: 0, quantity: 250 }],
+      carcasses: [],
+      farms: [],
+      fish: [],
+      meatDrops: [],
+      plantDrops: [],
+      workerPositions: [worker],
+    },
+    { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 1 }
+  )
+
+  assert.deepEqual(targets, { berry: 1, carcass: 0, farm: 0, fish: 0, hunt: 0 })
+})
+
 function createGrid(size, waterCells = []) {
   const water = new Set(waterCells.map(([i, j]) => `${i}:${j}`))
   return Array.from({ length: size }, (_, i) =>

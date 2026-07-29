@@ -1,10 +1,11 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath, getTransportLoad } from '../lib'
+import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
 import { formatXpProgressText, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { UnitEntity } from '../types/entities'
-import type { UnitConfig } from '../types/config'
+import type { EquipmentStats, UnitConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
 export class UnitInterface {
@@ -73,21 +74,23 @@ export class UnitInterface {
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos: [keyof UnitConfig, string][] = [
+    const infos: [keyof EquipmentStats, string][] = [
       ['meleeAttack', '007_50731'],
       ['pierceAttack', '006_50731'],
       ['meleeArmor', '008_50731'],
       ['pierceArmor', '010_50731'],
     ]
+    const combatStats = getUnitEffectiveCombatStats(unit.type, data, unit.work)
 
     for (let i = 0; i < infos.length; i++) {
       const info = infos[i]
-      if (data[info[0]]) {
+      const value = combatStats[info[0]]
+      if (value) {
         const infoDiv = document.createElement('div')
         infoDiv.classList.add('info')
 
         infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
-        infoDiv.appendChild(createInfoText(String(info[0]), data[info[0]] as number))
+        infoDiv.appendChild(createInfoText(String(info[0]), value))
         infosDiv.appendChild(infoDiv)
       }
     }
