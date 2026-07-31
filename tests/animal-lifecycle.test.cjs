@@ -20,6 +20,7 @@ function loadModule(relativePath, mocks) {
 const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', {
   '../../constants': {
     CORPSE_TIME: 60,
+    FADE_DURATION_MS: 2000,
     MENU_INFO_IDS: { quantityText: 'quantityText' },
     SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
   },
@@ -30,6 +31,9 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
   },
   '../../lib/combatFeedback': {
     clearDamageFeedback: () => {},
+  },
+  '../../lib/entityFade': {
+    fadeOutThenClear: () => {},
   },
 })
 

@@ -13,8 +13,10 @@ function loadProjectile() {
   })
 
   const constants = {
+    ARROW_GROUND_TIME: 180,
     CELL_HEIGHT: 32,
     CELL_WIDTH: 64,
+    FADE_DURATION_MS: 2000,
     FAMILY_TYPES: {
       animal: 'animal',
       building: 'building',
@@ -69,7 +71,9 @@ function loadProjectile() {
       getMirroredHalfArcFrameIndex: () => ({ frameIndex: 0, mirrored: false }),
       getPointsDegree: () => 0,
       getReliefOffset: () => 0,
+      getTerrainSetZIndex: () => 0,
       isFriendlyTarget: (source, target) => source.owner?.label === target.owner?.label,
+      isometricToCartesian: () => [0, 0],
       moveTowardPoint: () => {},
       playAudibleSoundCue: () => {},
       pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
@@ -77,6 +81,7 @@ function loadProjectile() {
       uuidv4: () => 'projectile-1',
     },
     '../lib/combatFeedback': { showDamageFeedback: () => {} },
+    '../lib/entityFade': { fadeOutThenClear: () => {} },
     '../lib/settings': { getShadowsEnabled: () => false },
     '../lib/unitExperience': {
       getCombatXpBonus: () => 0,

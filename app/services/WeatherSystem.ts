@@ -1,5 +1,8 @@
 import { Container, Graphics, type Filter } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
+import { sound, type IMediaInstance } from '@pixi/sound'
+import { SOUND_CUES } from '../constants'
+import { playSoundCue } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 
@@ -36,6 +39,10 @@ const FIRST_SUNNY_MAX_SECONDS = 45
 const RAIN_BASE_SLANT_RATIO = -0.16
 const RAIN_WIND_SLANT_FACTOR = 0.01
 const RAIN_DRIFT_PER_SECOND = -58
+const WIND_LERP_PER_SECOND = 1
+const RAIN_LOOP_MAX_VOLUME = 0.55
+const WIND_LOOP_MAX_VOLUME = 0.4
+const AMBIENT_CROSSFADE_MID = 0.45
 
 const VEIL_TARGETS: Record<WeatherPhase, number> = {
   sunny: 0,
@@ -112,6 +119,15 @@ const RAIN_TARGETS: Record<WeatherPhase, number> = {
   clearing: 0.08,
 }
 
+const WIND_TARGETS: Record<WeatherPhase, number> = {
+  sunny: 0,
+  clouding: 0.08,
+  stormBuildUp: 0.55,
+  rainLight: 0.3,
+  rainHeavy: 0.85,
+  clearing: 0.15,
+}
+
 function randomBetween(min: number, max: number, random: RandomFn): number {
   return min + random() * (max - min)
 }
@@ -126,6 +142,19 @@ function lerp(current: number, target: number, amount: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+// Triangular crossfade: `low` peaks at `mid` then fades out, `high` ramps in from `mid` to 1.
+function crossfadeVolumes(intensity: number, mid: number): { high: number; low: number } {
+  const low = intensity <= mid ? intensity / mid : 1 - (intensity - mid) / (1 - mid)
+  const high = intensity <= mid ? 0 : (intensity - mid) / (1 - mid)
+  return { low: clamp(low, 0, 1), high: clamp(high, 0, 1) }
+}
+
+function startAmbientLoop(alias: string, onReady: (instance: IMediaInstance) => void): void {
+  const result = sound.play(alias, { loop: true, volume: 0 })
+  if (result instanceof Promise) result.then(onReady).catch(() => {})
+  else onReady(result)
 }
 
 function nextPhase(phase: WeatherPhase, random: RandomFn): WeatherPhase {
@@ -189,9 +218,14 @@ export class WeatherSystem {
   rainVeil: Graphics
   raindrops: Raindrop[]
   rainIntensity: number
+  rainLoopHeavy: IMediaInstance | null
+  rainLoopLight: IMediaInstance | null
   random: RandomFn
   screenRect: ScreenRect
   tintFilter: AdjustmentFilter
+  windIntensity: number
+  windLoopHeavy: IMediaInstance | null
+  windLoopLight: IMediaInstance | null
   windX: number
   windTargetX: number
   _onTick: (ticker: TickerLike) => void
@@ -211,6 +245,7 @@ export class WeatherSystem {
     this.phaseEndsAt = randomDuration(FIRST_SUNNY_MIN_SECONDS, FIRST_SUNNY_MAX_SECONDS, this.random)
     this.currentColor = { ...WEATHER_COLORS.sunny }
     this.rainIntensity = 0
+    this.windIntensity = 0
     this.windX = randomBetween(-5, 5, this.random)
     this.windTargetX = this.windX
     this.flashAlpha = 0
@@ -231,6 +266,15 @@ export class WeatherSystem {
     this.rain = new Graphics()
     this.flashOverlay = new Graphics()
     this.layer.addChild(this.rainVeil, this.rain, this.flashOverlay)
+
+    this.rainLoopLight = null
+    this.rainLoopHeavy = null
+    this.windLoopLight = null
+    this.windLoopHeavy = null
+    startAmbientLoop(SOUND_CUES.weather.rainLight, instance => (this.rainLoopLight = instance))
+    startAmbientLoop(SOUND_CUES.weather.rainHeavy, instance => (this.rainLoopHeavy = instance))
+    startAmbientLoop(SOUND_CUES.weather.windLight, instance => (this.windLoopLight = instance))
+    startAmbientLoop(SOUND_CUES.weather.windHeavy, instance => (this.windLoopHeavy = instance))
 
     this._onTick = ticker => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
     context.app.ticker.add(this._onTick)
@@ -280,12 +324,23 @@ export class WeatherSystem {
     this.windTargetX += Math.sin(this.elapsedMs * 0.00019) * 0.006
     this.windTargetX = Math.max(-12, Math.min(12, this.windTargetX))
     this.windX = lerp(this.windX, this.windTargetX, elapsedSeconds * 0.45)
+    this.windIntensity = lerp(this.windIntensity, WIND_TARGETS[this.phase], elapsedSeconds * WIND_LERP_PER_SECOND)
 
     this.updateColor(elapsedSeconds)
     this.drawRainVeil()
     this.updateLightning(safeElapsedMs)
     this.updateRain(elapsedSeconds)
+    this.updateAmbientSound()
     this.drawFlash()
+  }
+
+  updateAmbientSound(): void {
+    const rainVolumes = crossfadeVolumes(this.rainIntensity, AMBIENT_CROSSFADE_MID)
+    const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
+    if (this.rainLoopLight) this.rainLoopLight.volume = rainVolumes.low * RAIN_LOOP_MAX_VOLUME
+    if (this.rainLoopHeavy) this.rainLoopHeavy.volume = rainVolumes.high * RAIN_LOOP_MAX_VOLUME
+    if (this.windLoopLight) this.windLoopLight.volume = windVolumes.low * WIND_LOOP_MAX_VOLUME
+    if (this.windLoopHeavy) this.windLoopHeavy.volume = windVolumes.high * WIND_LOOP_MAX_VOLUME
   }
 
   updateColor(elapsedSeconds: number): void {
@@ -322,6 +377,7 @@ export class WeatherSystem {
         this.flashAlpha = Math.max(this.flashAlpha, randomBetween(0.28, 0.76, this.random))
         this.lightningBursts--
         this.lightningNextBurstMs = randomDuration(0.07, 0.22, this.random)
+        playSoundCue(SOUND_CUES.weather.thunder)
         this.log('lightning flash', { phase: this.phase, flashAlpha: Number(this.flashAlpha.toFixed(2)) })
       }
       return
@@ -414,6 +470,10 @@ export class WeatherSystem {
     this.context.app.ticker.remove(this._onTick)
     this.map.filters = this.mapFilters ? [...this.mapFilters] : null
     this.layer.destroy({ children: true })
+    this.rainLoopLight?.stop()
+    this.rainLoopHeavy?.stop()
+    this.windLoopLight?.stop()
+    this.windLoopHeavy?.stop()
     this.log('destroyed')
   }
 }

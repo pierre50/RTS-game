@@ -35,8 +35,9 @@ warnings.simplefilter("ignore", DeprecationWarning)
 # pixels to a same-hue-but-wrong-lightness color, causing a speckled look on outlines/edges.
 RETRO_LIGHTNESS_WEIGHT = 4.0
 
-# Directional lighting pass applied before the retro palette snap. Tuned to add
+# Directional lighting pass applied after the retro palette snap. Tuned to add
 # contrast without washing out the smaller LPC details too aggressively.
+APPLY_SPRITE_LIGHTING = False
 LIGHTING_TOP = 1.16
 LIGHTING_BOTTOM = 0.74
 LIGHTING_LEFT = 1.05
@@ -158,17 +159,18 @@ def sheet_outputs_exist(output_root: Path, relative_path: str) -> bool:
 
 def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_palette, anchor_override: dict[str, float] | None = None) -> None:
     write_sheet(output_dir, frames, animation_speed, anchor_override)
-    process_sprite_file(
-        output_dir / "texture.png",
-        output_dir / "texture.png",
-        output_dir / "texture.json",
-        top=LIGHTING_TOP,
-        bottom=LIGHTING_BOTTOM,
-        left=LIGHTING_LEFT,
-        right=LIGHTING_RIGHT,
-        contrast=LIGHTING_CONTRAST,
-    )
     bake_retro_style(output_dir / "texture.png", retro_palette, lightness_weight=RETRO_LIGHTNESS_WEIGHT)
+    if APPLY_SPRITE_LIGHTING:
+        process_sprite_file(
+            output_dir / "texture.png",
+            output_dir / "texture.png",
+            output_dir / "texture.json",
+            top=LIGHTING_TOP,
+            bottom=LIGHTING_BOTTOM,
+            left=LIGHTING_LEFT,
+            right=LIGHTING_RIGHT,
+            contrast=LIGHTING_CONTRAST,
+        )
     apply_outline_style_to_atlas(output_dir, OUTLINE_MODE)
     apply_simple_darken_border(output_dir / "texture.png")
 

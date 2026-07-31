@@ -1,4 +1,4 @@
-import { BOAT_CORPSE_TIME, CORPSE_TIME, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { BOAT_CORPSE_TIME, CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import {
   canUpdateMinimap,
   getTransportCargo,
@@ -7,6 +7,7 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
+import { fadeOutThenClear } from '../../lib/entityFade'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -30,7 +31,7 @@ export class UnitLifecycle {
     unit.syncShadow?.()
     const corpseTime = unit.category === BOAT_CATEGORY ? BOAT_CORPSE_TIME : CORPSE_TIME
     sprite.animationSpeed = sprite.textures.length / (corpseTime * 60)
-    sprite.onComplete = () => unit.clear?.()
+    sprite.onComplete = () => fadeOutThenClear(unit, FADE_DURATION_MS)
     if (map) {
       const cell = map.grid[unit.i][unit.j]
       if (cell.has === unit) {
@@ -105,7 +106,6 @@ export class UnitLifecycle {
       }
       unit.transportedUnits = []
     }
-    unit.eventMode = 'none'
     unit.isDead = true
     unit.removeHealthBar?.()
     unit.context?.map.removeFromInstanceBucket(unit)

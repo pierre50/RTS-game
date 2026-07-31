@@ -1,3 +1,4 @@
+import { Assets } from 'pixi.js'
 import { Player } from './Player'
 import type { PlayerOptions } from './Player'
 
@@ -16,12 +17,14 @@ import {
   UNIT_TYPES,
   BUILDING_TYPES,
   RESOURCE_TYPES,
+  SHEET_TYPES,
   WORK_TYPES,
 } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../lib/chief'
+import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import type {
   AIAge,
   AIBuildingLike,
@@ -845,6 +848,21 @@ export class AI extends Player {
     promoted.isChief = true
     promoted.work = WORK_TYPES.attacker
     promoted.stop?.()
+    // Same visual refresh as UnitActions.upgrade(): applyBakedLpcUnitAssets only
+    // resolves new asset aliases, the currently-bound sprite still needs the
+    // actual cached spritesheets re-read so the promotion shows up immediately
+    // instead of on the unit's next unrelated appearance change.
+    const promotedUnit = promoted as unknown as UnitEntity
+    applyBakedLpcUnitAssets(promotedUnit)
+    Object.assign(
+      promotedUnit,
+      Object.fromEntries(Object.entries(promotedUnit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
+    )
+    if (promotedUnit.action && !promotedUnit.path?.length) {
+      promotedUnit.getAction?.(promotedUnit.action)
+    } else {
+      promotedUnit.setTextures?.(promotedUnit.currentSheet ?? SHEET_TYPES.standing)
+    }
     this.chiefLossDetectedAt = null
     return 1
   }

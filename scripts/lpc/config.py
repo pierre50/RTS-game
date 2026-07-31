@@ -167,6 +167,9 @@ class UnitLook:
     # Ships as separate bg/fg halves, like a split hairstyle: bg drapes behind the
     # body/shoulders, fg drapes over the front, above the dress items.
     cape: DressItem | None = None
+    # A clasp/brooch drawn after the cape's front drape, at the collar (e.g. the
+    # chief's cape clip).
+    neck: DressItem | None = None
     dress: tuple[DressItem, ...] = ()
 
 
@@ -283,6 +286,19 @@ UNIT_LOOKS: dict[str, UnitLook] = {
             SANDALS,
             DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white"),
             DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True),
+        ),
+    ),
+    # Same base as "villager" (plain hair, sandals), with the shorts swapped for
+    # formal striped pants and a team-colored cape/clip added on top to mark it
+    # as the player's leader — worn by both the starting chief and any villager
+    # later promoted into one (see isChiefUnit() in app/lib/chief.ts).
+    "chief": UnitLook(
+        hair="plain",
+        cape=DressItem("cape/solid", team_colored=True),
+        neck=DressItem("neck/capeclip/male/{animation}/{color}.png"),
+        dress=(
+            DressItem("legs/formal_striped/male/{animation}.png", team_colored=True),
+            SANDALS,
         ),
     ),
 }

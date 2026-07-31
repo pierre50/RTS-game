@@ -28,4 +28,11 @@ export const SOUND_CUES = {
     burning: ['building-burning', 'building-burning-2', 'building-burning-3'],
     collapse: ['building-destroyed', 'building-destroyed-2', 'building-destroyed-3'],
   },
+  weather: {
+    rainLight: 'weather/light-rain',
+    rainHeavy: 'weather/heavy-rain',
+    windLight: 'weather/light-wind',
+    windHeavy: 'weather/heavy-wind',
+    thunder: ['weather/thunder-1', 'weather/thunder-2', 'weather/thunder-3'],
+  },
 }

@@ -1,6 +1,7 @@
-import { CORPSE_TIME, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
+import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
+import { fadeOutThenClear } from '../../lib/entityFade'
 import type { SchedulerTaskId } from '../../types/context'
 import type { Animal } from './index'
 
@@ -127,7 +128,7 @@ export class AnimalLifecycle {
       this.setCorpseFrame(3)
       animal.syncShadow()
       animal.timeoutId = animal.context.scheduler.addOneShot(
-        () => animal.clear(),
+        () => fadeOutThenClear(animal, FADE_DURATION_MS),
         CORPSE_TIME * 1000,
         'animal.clearCorpse'
       )

@@ -29,6 +29,12 @@ export const MINIMAP_DRAG_THRESHOLD = 8
 export const CORPSE_TIME = 120
 export const BOAT_CORPSE_TIME = 12
 export const RUBBLE_TIME = 120
+// Shared alpha fade-out duration for decaying map props (unit/animal corpses, spent ground
+// projectiles) — see app/lib/entityFade.ts. One constant so every fade reads at the same pace.
+export const FADE_DURATION_MS = 2000
+// Seconds a projectile that missed and stuck in the ground sticks around before it starts
+// fading away (purely decorative — see Projectile.landOnGround).
+export const ARROW_GROUND_TIME = 30
 export const MAX_SELECT_UNITS = 10
 export const POPULATION_MAX = 200
 

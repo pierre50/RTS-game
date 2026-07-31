@@ -34,6 +34,11 @@ CLUBMAN_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="spear", action_animation="thrust", action_equipment="spear", hurt_equipment="spear"),
 )
 
+# Same spear as "clubman" (see UNIT_EQUIPMENT[UNIT_TYPES.chief] in equipment.ts).
+CHIEF_JOBS: tuple[Job, ...] = (
+    Job("default", walking_equipment="spear", action_animation="thrust", action_equipment="spear", hurt_equipment="spear"),
+)
+
 AXEMAN_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="axe", action_animation="slash", action_equipment="axe"),
 )
@@ -120,4 +125,5 @@ UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "hoplite": HOPLITE_JOBS,
     "phalanx": PHALANX_JOBS,
     "priest": PRIEST_JOBS,
+    "chief": CHIEF_JOBS,
 }

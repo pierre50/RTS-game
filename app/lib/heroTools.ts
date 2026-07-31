@@ -53,6 +53,7 @@ const HERO_BOW_HOLD_FRAME = Math.max(0, SHOOT_RELEASE_FRAME - 1)
 const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
+const MOUNTED_ATTACK_HALF_ANGLE = 45
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
@@ -353,6 +354,14 @@ function getAimDelta(hero: UnitEntity, target: RuntimeEntity): number {
   return angleDelta(getInstanceDegree(hero, target.x, target.y), hero.degree ?? 0)
 }
 
+// A mounted hero can't snap-turn the horse to face an attack the way an unmounted hero can, so
+// any click outside a frontal cone around the horse's current heading is ignored (no turn, no
+// swing/shot) until the player physically re-orients the horse via movement.
+export function isMountedAttackAimBlocked(hero: UnitEntity, point: Point): boolean {
+  if (!hero.mountedOnHorse) return false
+  return angleDelta(getInstanceDegree(hero, point.x, point.y), hero.degree ?? 0) > MOUNTED_ATTACK_HALF_ANGLE
+}
+
 function getDirectionalTarget<T extends RuntimeEntity>(
   hero: UnitEntity,
   candidates: T[],
@@ -464,6 +473,15 @@ function isContextActionTargetReachable(
   return Boolean(hero.isUnitAtDest?.(action, target))
 }
 
+// The hero can't hold or swing a gather/combat tool while riding a horse. A reachable context
+// action target is treated the same as a whiffed swing (bare-hand animation + wind sound) rather
+// than silently failing, so the player gets clear feedback on why nothing happened.
+function blockContextActionWhileMounted(hero: UnitEntity): boolean {
+  if (!hero.mountedOnHorse) return false
+  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroCannotGatherMounted'), 'warning')
+  return true
+}
+
 function performContextActionAt(hero: UnitEntity): ToolActionResult {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
@@ -475,6 +493,7 @@ function performContextActionAt(hero: UnitEntity): ToolActionResult {
     const config = HERO_CONTEXT_ACTIONS.find(candidate => candidate.matches(target))
     if (!config) continue
     if (!isContextActionTargetReachable(hero, config.action, target)) continue
+    if (blockContextActionWhileMounted(hero)) return 'miss'
     const unitAction = getContextActionForTarget(config.action, target)
     if (!unitAction) continue
     const action = config.resolve(hero, target)

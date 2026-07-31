@@ -6,16 +6,6 @@ unit / civilization / job defined in `config.py`, `jobs.py` and `equipment.py`.
 Villager jobs only bake their job-specific movement/action/loaded sheets; death
 and corpse sheets are shared from the default villager job.
 
-## Fetch the sources
-
-Downloads the Universal LPC spritesheets needed into `scripts/lpc/spritesheets/`:
-
-```bash
-pnpm assets:lpc:sync
-# or directly:
-python3 scripts/lpc/sync.py
-```
-
 ## Generate the baked sprites
 
 ```bash

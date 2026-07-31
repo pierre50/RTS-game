@@ -4,7 +4,9 @@ import {
   getHitPointsWithDamage,
   getInstanceZIndex,
   getReliefOffset,
+  getTerrainSetZIndex,
   isFriendlyTarget,
+  isometricToCartesian,
   moveTowardPoint,
   pointsDistance,
   average,
@@ -21,8 +23,19 @@ import {
   playAudibleSoundCue,
 } from '../lib'
 import { showDamageFeedback } from '../lib/combatFeedback'
+import { fadeOutThenClear } from '../lib/entityFade'
 import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../lib/unitExperience'
-import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, LABEL_TYPES, MENU_INFO_IDS, STEP_TIME, UNIT_TYPES } from '../constants'
+import {
+  ARROW_GROUND_TIME,
+  CELL_HEIGHT,
+  CELL_WIDTH,
+  FADE_DURATION_MS,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  MENU_INFO_IDS,
+  STEP_TIME,
+  UNIT_TYPES,
+} from '../constants'
 import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -150,6 +163,8 @@ export class Projectile extends Container {
   context: GameContextLike
   family: string
   interval: SchedulerTaskId | null
+  timeoutId: SchedulerTaskId | null
+  isDestroyed: boolean
   sprite?: ProjectileSprite
   shadow?: ProjectileSprite
 
@@ -163,6 +178,9 @@ export class Projectile extends Container {
   damage?: number
   tracksTarget!: boolean
   isDead!: boolean
+  // Grid cell the projectile landed on — only set once it sticks in the ground, see landOnGround().
+  i!: number
+  j!: number
   z!: number
   destinationPoint!: Point
   groundOrigin!: Point
@@ -201,6 +219,8 @@ export class Projectile extends Container {
     this.label = uuidv4()
     this.family = FAMILY_TYPES.projectile
     this.interval = null
+    this.timeoutId = null
+    this.isDestroyed = false
 
     Object.assign(this, options)
     const player = this.owner.owner
@@ -268,7 +288,7 @@ export class Projectile extends Container {
         let currentSpeed = this.getCurrentSpeed()
         const traveledDistance = this.getTraveledDistance()
         if (this.maxDistance && traveledDistance >= this.maxDistance) {
-          this.die()
+          this.landOnGround()
           return
         }
         if (this.maxDistance) {
@@ -283,8 +303,10 @@ export class Projectile extends Container {
               average(this.target.width, this.target.height)
           ) {
             this.onHit(this.target)
+            this.die()
+          } else {
+            this.landOnGround()
           }
-          this.die()
           return
         }
         moveTowardPoint(this, targetX, targetY, currentSpeed)
@@ -674,6 +696,52 @@ export class Projectile extends Container {
     this.isDead = true
     if (this.interval != null) this.context.scheduler.remove(this.interval)
     this.interval = null
+    this.destroy({ children: true, texture: false })
+  }
+
+  // A shot that missed: instead of despawning immediately, stick around as a purely decorative
+  // ground prop (no damage, no collision — it never re-enters the movement/collision loop) for
+  // ARROW_GROUND_TIME, then fade away. Registered in cell.corpses so it also disappears instantly
+  // if a building goes up on top of it, the same way unit/animal corpses and rubble do.
+  landOnGround() {
+    this.createImpactEffect(this.x, this.y)
+    this.isDead = true
+    if (this.interval != null) this.context.scheduler.remove(this.interval)
+    this.interval = null
+    this.sprite?.stop()
+    if (this.shadow) this.shadow.visible = false
+
+    const [i, j] = isometricToCartesian(this.x, this.y)
+    this.i = i
+    this.j = j
+    const cell = this.context.map.grid[i]?.[j]
+    if (!cell) {
+      this.clear()
+      return
+    }
+    this.zIndex = getTerrainSetZIndex({ i, j })
+    cell.corpses.add(this as unknown as RuntimeEntity)
+    this.timeoutId = this.context.scheduler.addOneShot(
+      () => fadeOutThenClear(this, FADE_DURATION_MS),
+      ARROW_GROUND_TIME * 1000,
+      'projectile.groundFade'
+    )
+  }
+
+  stopTimeout() {
+    if (this.timeoutId != null) {
+      this.context.scheduler.remove(this.timeoutId)
+      this.timeoutId = null
+    }
+  }
+
+  clear() {
+    if (this.isDestroyed) return
+    this.isDestroyed = true
+    this.stopTimeout()
+    const cell = this.context.map.grid[this.i]?.[this.j]
+    cell?.corpses.delete(this as unknown as RuntimeEntity)
+    this.context.map.removeChild(this)
     this.destroy({ children: true, texture: false })
   }
 }

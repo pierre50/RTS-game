@@ -142,13 +142,17 @@ def layer_paths(
     equipment_spec = equipment_layers(equipment, animation)
     team_color = player_color if player_color in PLAYER_SHORTS else "blue"
 
-    paths: list[LayerSpec] = [
-        *equipment_spec.background,
-        LayerSpec(f"body/bodies/male/{animation}.png", civ["skin"], is_body=True),
-    ]
+    paths: list[LayerSpec] = [*equipment_spec.background]
+    # Drawn before the body (not after): on the facing/side rows this bg half is a
+    # near-full-torso shape, and it must sit behind the body so the body's own
+    # silhouette hides its middle — leaving only the edges peeking past the
+    # shoulders, like a cape actually worn on the back. The bg half is empty on
+    # the away-facing row, where the fg half (still drawn after hair, see below)
+    # is the one carrying the full cape shape instead.
     if look.cape:
         palette = resolve_palette(look.cape, team_color)
         paths.append(LayerSpec(f"{look.cape.path}/bg/{animation}.png", palette))
+    paths.append(LayerSpec(f"body/bodies/male/{animation}.png", civ["skin"], is_body=True))
     if look.hair and look.hair_split:
         paths.append(LayerSpec(f"hair/{look.hair}/adult/bg/{animation}.png", look.hair_palette or civ["hair"]))
     paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", civ["skin"]))
@@ -170,6 +174,10 @@ def layer_paths(
     if look.cape:
         palette = resolve_palette(look.cape, team_color)
         paths.append(LayerSpec(f"{look.cape.path}/fg/{animation}.png", palette))
+    if look.neck:
+        palette = resolve_palette(look.neck, team_color)
+        path = look.neck.path.format(animation=animation, color=lpc_color)
+        paths.append(LayerSpec(path, palette))
     if look.hat:
         palette = resolve_palette(look.hat, team_color)
         paths.append(LayerSpec(f"{look.hat.path}/adult/{animation}.png", palette))

@@ -24,6 +24,7 @@ import {
   aimHeroBowChargeAt,
   applyToolAppearance,
   cancelHeroBowCharge,
+  isMountedAttackAimBlocked,
   releaseHeroBowCharge,
   triggerToolAttackAt,
   updateHeroBowCharge,
@@ -397,6 +398,7 @@ export class HeroController {
     const hero = this.heroUnit
     if (!hero) return false
     if (hero.actionLocked) return false
+    if (isMountedAttackAimBlocked(hero, point)) return false
     this.facePoint(point)
     hero.stop?.()
     return triggerToolAttackAt(hero, this.equippedItem, point)

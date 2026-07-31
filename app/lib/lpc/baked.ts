@@ -1,6 +1,8 @@
 import { Assets } from 'pixi.js'
 import { hashLpcAppearanceSeed } from './appearance'
 import { dynamicEquipmentAssets, dynamicEquipmentLayersForUnit, dynamicEquipmentLayersForVillager } from './equipment'
+import { isChiefUnit } from '../chief'
+import { UNIT_TYPES } from '../../constants'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
@@ -25,11 +27,12 @@ type BakedUnitType =
   | 'hoplite'
   | 'phalanx'
   | 'priest'
+  | 'chief'
   | 'hero'
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   Villager: 'villager',
-  Chief: 'villager',
+  Chief: 'chief',
   Clubman: 'clubman',
   Axeman: 'axeman',
   Bowman: 'bowman',
@@ -164,8 +167,12 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   // The ARPG hero keeps unit.type === 'Villager' (same stats/economy jobs), only
   // its look is swapped — so it's selected by controlMode, not by unit.type like
-  // every other baked unit.
-  const bakedUnit: BakedUnitType | undefined = unit.controlMode === 'hero' ? 'hero' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
+  // every other baked unit. A unit promoted to chief at runtime (see
+  // refreshChiefSuccession in AIPlayer.ts) also keeps its original unit.type, so
+  // it's picked up by isChiefUnit() instead — that's what makes it visually
+  // transform into the chief look the moment it's granted.
+  const bakedUnit: BakedUnitType | undefined =
+    unit.controlMode === 'hero' ? 'hero' : isChiefUnit(unit) ? 'chief' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
   if (!bakedUnit || !unit.owner) return false
 
   const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
@@ -190,11 +197,12 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
 
   // The hero keeps swapping tools (axe/pickaxe/bow/...) exactly like a villager
   // does — that's driven by unit.work, not by unit.type — so it reuses the same
-  // work-keyed equipment layers instead of the fixed per-unit-type set.
-  const dynamicLayers =
-    isVillagerLike && unit.type !== 'Chief'
-      ? dynamicEquipmentLayersForVillager()
-      : dynamicEquipmentLayersForUnit(unit.type)
+  // work-keyed equipment layers instead of the fixed per-unit-type set. A
+  // promoted chief looks up equipment by 'Chief' rather than its original
+  // unit.type, since that's the only place it still carries its old type.
+  const dynamicLayers = isVillagerLike
+    ? dynamicEquipmentLayersForVillager()
+    : dynamicEquipmentLayersForUnit(bakedUnit === 'chief' ? UNIT_TYPES.chief : unit.type)
   unit.appearance = dynamicLayers.length ? { layers: dynamicLayers } : undefined
 
   if (!isVillagerLike) {
