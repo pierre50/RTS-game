@@ -47,7 +47,7 @@ type TerrainCell = MapTypes.RuntimeCell & {
   setWater?(): void
   setWaterBorder?(resourceName: string, frame: string): void
   setReliefBorder?(frame: string, elevation?: number): void
-  setDesertBorder?(direction: string): void
+  setDesertBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
   setDeepWaterBorder?(direction: string): void
   resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
 }
@@ -942,9 +942,13 @@ export class MapTerrain {
       )
     }
     measure('terrainReliefBorders', () => this.map.formatCellsRelief())
-    measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
     measure('terrainDeepWaterBorders', () => this.map.formatCellsDeepWaterBorder())
+    // Runs before the water-border overlay so a cell right next to a Desert/Dirt patch
+    // always gets that patch's own relief sheet — setDesertBorder's "already set" guard
+    // then makes the water overlay (which defaults to the desert sheet) a no-op there,
+    // instead of the reverse where the generic water overlay would win first.
     measure('terrainDesertBorders', () => this.map.formatCellsDesert())
+    measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
   }
 
   classifyDeepWater(): void {
@@ -1050,21 +1054,26 @@ export class MapTerrain {
     }
   }
 
+  // Also covers Dirt (the water-patch ground for Temperate/BlackForest/Jungle, see
+  // EnvironmentTerrainParams.patchwork) — passes the triggering cell's own type through so
+  // Desert patches get the desert relief sheet and Dirt patches get the dirt relief sheet,
+  // regardless of which environment/map they're on.
   formatCellsDesert(): void {
-    const typeToFormat = ['Grass', 'Jungle']
+    const typeToFormat = ['Grass', 'Jungle', 'DarkForest']
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (cell.type === 'Desert') {
+        if (cell.type === 'Desert' || cell.type === 'Dirt') {
+          const groundType = cell.type as 'Desert' | 'Dirt'
           const n = this.map.grid[i - 1]?.[j]
           const s = this.map.grid[i + 1]?.[j]
           const w = this.map.grid[i]?.[j - 1]
           const e = this.map.grid[i]?.[j + 1]
-          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder?.('east')
-          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder?.('west')
-          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder?.('south')
-          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder?.('north')
+          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder?.('east', groundType)
+          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder?.('west', groundType)
+          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder?.('south', groundType)
+          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder?.('north', groundType)
         }
       }
     }

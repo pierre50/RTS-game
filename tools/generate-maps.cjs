@@ -14,7 +14,11 @@ if (typeof globalThis.requestAnimationFrame !== 'function') {
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
-const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
+// Index must match MapGeneration#generateTerrain's raw output (0-5: Grass/Desert/Water/
+// Jungle/DarkForest/Dirt) for buildHeadlessMap's `TERRAIN[terrain[i][j]]` lookup to be
+// correct — DeepWater is never a raw generateTerrain value (only derived later from a
+// Water cell's coast distance), so it must come after, not collide with Dirt's slot.
+const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', 'DeepWater']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 // app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded
@@ -128,26 +132,31 @@ function getDeterministicCellVariant(items = [], i, j, seed = 0) {
 }
 
 function getCellsAroundPoint(i, j, grid, radius, predicate) {
-    const cells = []
-    for (let x = Math.max(0, i - radius); x <= Math.min(grid.length - 1, i + radius); x++) {
-      for (let y = Math.max(0, j - radius); y <= Math.min(grid.length - 1, j + radius); y++) {
-        const cell = grid[x]?.[y]
-        if (cell && predicate(cell)) cells.push(cell)
-      }
+  const cells = []
+  for (let x = Math.max(0, i - radius); x <= Math.min(grid.length - 1, i + radius); x++) {
+    for (let y = Math.max(0, j - radius); y <= Math.min(grid.length - 1, j + radius); y++) {
+      const cell = grid[x]?.[y]
+      if (cell && predicate(cell)) cells.push(cell)
     }
-    return cells
+  }
+  return cells
 }
 
 function getZoneInGridWithCondition(bounds, grid, radius, predicate) {
-  for (let i = bounds.minX; i <= bounds.maxX; i++) for (let j = bounds.minY; j <= bounds.maxY; j++) {
-    const cell = grid[i]?.[j]
-    if (!cell || !predicate(cell)) continue
-    let valid = true
-    for (let x = i - radius; x <= i + radius && valid; x++) for (let y = j - radius; y <= j + radius; y++) {
-      if (!grid[x]?.[y] || !predicate(grid[x][y])) { valid = false; break }
+  for (let i = bounds.minX; i <= bounds.maxX; i++)
+    for (let j = bounds.minY; j <= bounds.maxY; j++) {
+      const cell = grid[i]?.[j]
+      if (!cell || !predicate(cell)) continue
+      let valid = true
+      for (let x = i - radius; x <= i + radius && valid; x++)
+        for (let y = j - radius; y <= j + radius; y++) {
+          if (!grid[x]?.[y] || !predicate(grid[x][y])) {
+            valid = false
+            break
+          }
+        }
+      if (valid) return cell
     }
-    if (valid) return cell
-  }
   return null
 }
 
@@ -215,7 +224,9 @@ function loadRuntimeGenerators() {
   const originalLoad = Module._load
   const originalExtension = require.extensions['.ts']
   const isMapRuntime = filename =>
-    filename.endsWith('/MapGeneration.ts') || filename.endsWith('/MapTerrain.ts') || filename.endsWith('/MapResources.ts')
+    filename.endsWith('/MapGeneration.ts') ||
+    filename.endsWith('/MapTerrain.ts') ||
+    filename.endsWith('/MapResources.ts')
   const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: class {}, Container: class {} }
   class HeadlessResource {
     constructor(options, context) {
@@ -319,17 +330,26 @@ function coastDistances(map) {
   const n = map.size + 1
   const distances = new Int16Array(n * n).fill(9999)
   const queue = []
-  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
-    if (map.grid[i][j].category === 'Water') {
-      const index = i * n + j
-      distances[index] = 0
-      queue.push(index)
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++) {
+      if (map.grid[i][j].category === 'Water') {
+        const index = i * n + j
+        distances[index] = 0
+        queue.push(index)
+      }
     }
-  }
   for (let cursor = 0; cursor < queue.length; cursor++) {
-    const index = queue[cursor], i = Math.floor(index / n), j = index % n
-    for (const [di, dj] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      const ni = i + di, nj = j + dj
+    const index = queue[cursor],
+      i = Math.floor(index / n),
+      j = index % n
+    for (const [di, dj] of [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ]) {
+      const ni = i + di,
+        nj = j + dj
       if (ni < 0 || ni >= n || nj < 0 || nj >= n) continue
       const next = ni * n + nj
       if (distances[next] > distances[index] + 1) {
@@ -341,7 +361,14 @@ function coastDistances(map) {
   return distances
 }
 
-function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = playersPos.length, environment = DEFAULT_ENVIRONMENT_ID) {
+function buildHeadlessMap(
+  terrain,
+  size,
+  seed,
+  playersPos,
+  positionsCount = playersPos.length,
+  environment = DEFAULT_ENVIRONMENT_ID
+) {
   const map = {
     size,
     seed,
@@ -386,14 +413,17 @@ function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = play
   map.getReliefCoastDistances = () => map._coastDistances || (map._coastDistances = coastDistances(map))
   map.getMaxReliefLevelFromCoastDistance = distance => Math.max(0, distance - 3)
   map.getMinReliefLevelFromCoastDistance = distance => -map.getMaxReliefLevelFromCoastDistance(distance)
-  map.setCellReliefLevelDirect = (cell, level) => { cell.z = level }
+  map.setCellReliefLevelDirect = (cell, level) => {
+    cell.z = level
+  }
   map.clampReliefAroundWater = dist => {
-    for (let i = 0; i <= size; i++) for (let j = 0; j <= size; j++) {
-      const cell = map.grid[i][j]
-      if (cell.category === 'Water') continue
-      const max = map.getMaxReliefLevelFromCoastDistance(dist[i * (size + 1) + j])
-      cell.z = Math.max(-max, Math.min(max, cell.z))
-    }
+    for (let i = 0; i <= size; i++)
+      for (let j = 0; j <= size; j++) {
+        const cell = map.grid[i][j]
+        if (cell.category === 'Water') continue
+        const max = map.getMaxReliefLevelFromCoastDistance(dist[i * (size + 1) + j])
+        cell.z = Math.max(-max, Math.min(max, cell.z))
+      }
   }
   map.flattenPlayerStartZones = () => {
     for (const pos of playersPos) {
@@ -422,7 +452,9 @@ function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = play
   return map
 }
 
-function encode(array) { return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64') }
+function encode(array) {
+  return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64')
+}
 
 function normalizeShoreRelief(map) {
   const shoreCells = []
@@ -652,26 +684,48 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
 
 async function main() {
   let options
-  try { options = argumentsFrom(process.argv.slice(2)) } catch (error) { usage(error.message); process.exitCode = 1; return }
+  try {
+    options = argumentsFrom(process.argv.slice(2))
+  } catch (error) {
+    usage(error.message)
+    process.exitCode = 1
+    return
+  }
   if (options.help) return usage()
   const random = randomFrom(options.seed)
-  const manifest = { format: 'map-manifest', version: 1, generatedAt: new Date().toISOString(), batchSeed: options.seed, maps: [] }
+  const manifest = {
+    format: 'map-manifest',
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    batchSeed: options.seed,
+    maps: [],
+  }
   for (const size of options.sizes) {
     const directory = path.join(options.out, String(size))
     fs.mkdirSync(directory, { recursive: true })
     for (const environmentId of options.environments) {
       const envSlug = environmentId.toLowerCase()
-      let written = 0, attempts = 0
+      let written = 0,
+        attempts = 0
       while (written < options.count) {
-        if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
-        const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, seed, environmentId)
+        if (++attempts > options.count * 30)
+          throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
+        const seed = Math.floor(random() * 0x7fffffff),
+          map = await blueprint(size, seed, environmentId)
         if (!map) continue
         const id = options.explicitEnvironment
           ? `map-${size}-${envSlug}-${String(written + 1).padStart(3, '0')}`
           : `map-${size}-${String(written + 1).padStart(3, '0')}`
         const relativePath = `${size}/${id}.map`
         fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
-        manifest.maps.push({ id, size, environment: environmentId, path: relativePath, seed, spawns: map.spawns.length })
+        manifest.maps.push({
+          id,
+          size,
+          environment: environmentId,
+          path: relativePath,
+          seed,
+          spawns: map.spawns.length,
+        })
         written++
       }
       console.log(`Generated ${written} map(s): ${size} (${environmentId})`)

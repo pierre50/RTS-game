@@ -199,12 +199,15 @@ class Raindrop extends Particle {
   wobble = 0
 }
 
-// Drawn on a plain <canvas> (not a Pixi RenderTexture from renderer.generateTexture) so the
-// pixel data survives a WebGL context loss — Pixi re-uploads canvas/image-backed textures
-// automatically on context restore, but a one-off rendered RenderTexture has no CPU-side
-// backing to re-upload from and is left with a null GPU resource, crashing the next time the
-// rain ParticleContainer tries to bind it (this is what caused the "Cannot read properties of
-// null (reading '0')" crash in GlParticleContainerAdaptor).
+// Drawn on a plain <canvas> rather than a Pixi RenderTexture from renderer.generateTexture,
+// since a one-off rendered RenderTexture has no CPU-side backing to re-upload from after a
+// WebGL context loss. That alone wasn't enough, though: ImageSource (what Texture.from(canvas)
+// creates) defaults `autoGarbageCollect` to true, and Pixi's GCSystem unloads a texture's GPU
+// resource after ~60s if nothing "touches" it — the ParticleContainer render path never does,
+// so the rain texture was still getting unloaded out from under it, crashing the next render
+// with "Cannot read properties of null (reading '0')" in GlParticleContainerAdaptor. Disabling
+// autoGarbageCollect below opts this texture out of that eviction entirely, the same way
+// RenderTexture/TexturePool already do for their own temporary resources.
 function createRainTexture(): Texture {
   const canvas = document.createElement('canvas')
   canvas.width = RAIN_TEXTURE_WIDTH
@@ -216,7 +219,9 @@ function createRainTexture(): Texture {
   gradient.addColorStop(1, 'rgba(255,255,255,0.1)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, canvas.width, canvas.height)
-  return Texture.from(canvas)
+  const texture = Texture.from(canvas)
+  texture.source.autoGarbageCollect = false
+  return texture
 }
 
 export class WeatherSystem {

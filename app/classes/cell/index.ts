@@ -74,6 +74,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   _terrainRenderResourcesReleased?: boolean
   _terrainAppearance: {
     desertBorders: Set<string> | null
+    desertBorderGroundType?: 'Desert' | 'Dirt' | null
     deepWaterBorders: Set<string> | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
@@ -107,7 +108,13 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.type = options.type
     this.assets = []
     this.terrainTextureName = ''
-    this._terrainAppearance = { desertBorders: null, deepWaterBorders: null, relief: null, waterBorder: null }
+    this._terrainAppearance = {
+      desertBorders: null,
+      desertBorderGroundType: null,
+      deepWaterBorders: null,
+      relief: null,
+      waterBorder: null,
+    }
 
     Object.assign(this, options)
     const definition = Assets.cache.get('config').cells[this.type] as CellConfig
@@ -209,8 +216,8 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   }
 
   // Terrain delegates
-  setDesertBorder(direction: string): void {
-    return this.cellTerrain.setDesertBorder(direction)
+  setDesertBorder(direction: string, groundType?: 'Desert' | 'Dirt'): void {
+    return this.cellTerrain.setDesertBorder(direction, groundType)
   }
   setDeepWaterBorder(direction: string): void {
     return this.cellTerrain.setDeepWaterBorder(direction)

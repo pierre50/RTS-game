@@ -36,6 +36,7 @@ type CellDefinition = {
 
 type TerrainAppearance = {
   desertBorders: Set<string> | null
+  desertBorderGroundType?: 'Desert' | 'Dirt' | null
   deepWaterBorders: Set<string> | null
   relief: { index: number; elevation: number } | null
   waterBorder: { resourceName: string; index: number } | null
@@ -100,7 +101,13 @@ export class GenerationCell implements RuntimeCell {
     this.terrainSet = null
     this._hasFog = false
     this._fogChunks = null
-    this._terrainAppearance = { desertBorders: null, deepWaterBorders: null, relief: null, waterBorder: null }
+    this._terrainAppearance = {
+      desertBorders: null,
+      desertBorderGroundType: null,
+      deepWaterBorders: null,
+      relief: null,
+      waterBorder: null,
+    }
 
     const definition = options.definition || (Assets.cache.get('config').cells[this.type] as CellDefinition)
     this.category = definition.category
@@ -160,6 +167,7 @@ export class GenerationCell implements RuntimeCell {
       this.waterBorder = false
     }
     this._terrainAppearance.desertBorders = null
+    this._terrainAppearance.desertBorderGroundType = null
     this._terrainAppearance.deepWaterBorders = null
     this._terrainAppearance.relief = null
     if (!preserveWaterBorder) this._terrainAppearance.waterBorder = null
@@ -197,9 +205,10 @@ export class GenerationCell implements RuntimeCell {
     this.inclined = true
   }
 
-  setDesertBorder(direction: string): void {
+  setDesertBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
     if (!this._terrainAppearance.desertBorders) this._terrainAppearance.desertBorders = new Set()
     this._terrainAppearance.desertBorders.add(direction)
+    this._terrainAppearance.desertBorderGroundType = groundType
   }
 
   setFog(init: boolean): void {

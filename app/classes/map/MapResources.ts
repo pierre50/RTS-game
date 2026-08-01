@@ -132,6 +132,7 @@ export class MapResources {
               !grid[cellI][cellJ].solid &&
               grid[cellI][cellJ].category !== 'Water' &&
               grid[cellI][cellJ].type !== 'Border' &&
+              grid[cellI][cellJ].type !== 'Dirt' &&
               !grid[cellI][cellJ].inclined &&
               random() < density
             ) {
@@ -190,7 +191,8 @@ export class MapResources {
         soloJ >= gridHeight ||
         grid[soloI][soloJ].category === 'Water' ||
         grid[soloI][soloJ].solid ||
-        grid[soloI][soloJ].inclined
+        grid[soloI][soloJ].inclined ||
+        grid[soloI][soloJ].type === 'Dirt'
       )
 
       if (tries <= 50) {
@@ -391,7 +393,10 @@ export class MapResources {
             cell.category !== 'Water' &&
             !cell.has &&
             !cell.border &&
-            !cell.inclined
+            !cell.inclined &&
+            // Dirt water-patches are meant to read as bare ground; trees there would also
+            // fall back to the wrong sprite since resources.json has no Dirt tree variant.
+            (instance !== RESOURCE_TYPES.tree || cell.type !== 'Dirt')
           ) {
             cells.push({ i: newI, j: newJ })
           }

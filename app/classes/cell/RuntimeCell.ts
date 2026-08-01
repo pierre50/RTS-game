@@ -17,6 +17,10 @@ export type RuntimeCellContext = {
 
 type TerrainAppearance = {
   desertBorders?: Set<string> | null
+  // A cell's desert-relief borders (if any) always come from the same source — either an
+  // adjacent Desert/Dirt patch or the generic water-edge overlay — so one value per cell
+  // is enough; see CellTerrain#setDesertBorder.
+  desertBorderGroundType?: 'Desert' | 'Dirt' | null
   deepWaterBorders?: Set<string> | null
   relief?: { index: number; elevation: number } | null
   waterBorder?: { resourceName: string; index: number } | null

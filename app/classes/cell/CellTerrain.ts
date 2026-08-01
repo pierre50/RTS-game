@@ -27,6 +27,7 @@ const TERRAIN_SHEETS = {
 
 const BORDER_SHEETS = {
   desertRelief: 'relief-borders/desert',
+  dirtRelief: 'relief-borders/dirt',
   waterRelief: 'relief-borders/water',
 } as const
 
@@ -88,6 +89,7 @@ export type TerrainCellLike = {
   terrainTextureName?: string
   _terrainAppearance?: {
     desertBorders?: Set<string> | null
+    desertBorderGroundType?: 'Desert' | 'Dirt' | null
     deepWaterBorders?: Set<string> | null
     relief?: { index: number; elevation: number } | null
   }
@@ -109,9 +111,11 @@ function asTerrainParent(parent: Container | TerrainParentLike | null | undefine
   return null
 }
 
-// Desert relief borders expose dedicated slope variants. Some relief tiles intentionally reuse the same
-// silhouette (009/017, 010/018, 011/019, 012/020) but still have duplicated border frames in the atlas.
-const DESERT_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
+// Shared by every relief-border sheet (desert, dirt, water — all 68-frame atlases with the
+// same tile-index-to-frame layout, since dirt/water were built by copying desert's). Some
+// relief tiles intentionally reuse the same silhouette (009/017, 010/018, 011/019, 012/020)
+// but still have duplicated border frames in the atlas.
+const RELIEF_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
   0: [0, 1, 2, 3],
   1: [0, 1, 2, 3],
   2: [0, 1, 2, 3],
@@ -139,41 +143,8 @@ const DESERT_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
   24: [64, 65, 66, 67],
 }
 
-function getDesertBorderVariants(cellSpriteIndex: number): number[] {
-  return DESERT_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? DESERT_BORDER_VARIANTS_BY_TILE_INDEX[0]
-}
-
-// Water relief borders mirror desert relief borders: same 68-frame layout, same tile-index-to-frame mapping.
-const DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX: BorderVariantMap = {
-  0: [0, 1, 2, 3],
-  1: [0, 1, 2, 3],
-  2: [0, 1, 2, 3],
-  3: [0, 1, 2, 3],
-  4: [0, 1, 2, 3],
-  5: [0, 1, 2, 3],
-  6: [0, 1, 2, 3],
-  7: [0, 1, 2, 3],
-  8: [0, 1, 2, 3],
-  9: [4, 5, 6, 7],
-  10: [8, 9, 10, 11],
-  11: [12, 13, 14, 15],
-  12: [16, 17, 18, 19],
-  13: [20, 21, 22, 23],
-  14: [24, 25, 26, 27],
-  15: [28, 29, 30, 31],
-  16: [32, 33, 34, 35],
-  17: [36, 37, 38, 39],
-  18: [40, 41, 42, 43],
-  19: [44, 45, 46, 47],
-  20: [48, 49, 50, 51],
-  21: [52, 53, 54, 55],
-  22: [56, 57, 58, 59],
-  23: [60, 61, 62, 63],
-  24: [64, 65, 66, 67],
-}
-
-function getDeepWaterBorderVariants(cellSpriteIndex: number): number[] {
-  return DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? DEEP_WATER_BORDER_VARIANTS_BY_TILE_INDEX[0]
+function getReliefBorderVariants(cellSpriteIndex: number): number[] {
+  return RELIEF_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? RELIEF_BORDER_VARIANTS_BY_TILE_INDEX[0]
 }
 
 export class CellTerrain {
@@ -222,6 +193,7 @@ export class CellTerrain {
     cell.waterBorder = false
     if (cell._terrainAppearance) {
       cell._terrainAppearance.desertBorders = null
+      cell._terrainAppearance.desertBorderGroundType = null
       cell._terrainAppearance.deepWaterBorders = null
       cell._terrainAppearance.relief = null
     }
@@ -244,12 +216,17 @@ export class CellTerrain {
     this.resetTerrainAppearance()
   }
 
-  setDesertBorder(direction: string): void {
+  // Named for its original (only) use case, but now also handles the Dirt water-patch
+  // ground introduced for Temperate/BlackForest/Jungle. `groundType` picks the sheet
+  // explicitly — callers that react to a specific cell.type (formatCellsDesert) pass it
+  // through; callers that decorate water edges universally (formatCellsWaterBorderOverlays,
+  // and chunk/fog restore) omit it and get the desert sheet, matching every environment.
+  setDesertBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
     const { cell } = this
     if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
     if (alreadySet) return
-    const resourceName = BORDER_SHEETS.desertRelief
+    const resourceName = groundType === 'Dirt' ? BORDER_SHEETS.dirtRelief : BORDER_SHEETS.desertRelief
     const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
     // Relief formatting runs before biome borders. The base terrain reference is
@@ -259,14 +236,14 @@ export class CellTerrain {
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
-    const variants = getDesertBorderVariants(cellSpriteIndex)
+    const variants = getReliefBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
     const textureName = formatNumber(index) + '.png'
     const texture = getTextureByFrame(resourceName, index, Assets)
     if (!texture) {
       console.log(
-        `[desert-border] Missing texture "${textureName}" for tile ${cellSpriteTextureName} at [${cell.i},${cell.j}]`
+        `[ground-relief-border] Missing texture "${textureName}" for tile ${cellSpriteTextureName} at [${cell.i},${cell.j}]`
       )
       return
     }
@@ -279,6 +256,7 @@ export class CellTerrain {
     if (cell._terrainAppearance) {
       if (!cell._terrainAppearance.desertBorders) cell._terrainAppearance.desertBorders = new Set()
       cell._terrainAppearance.desertBorders.add(direction)
+      cell._terrainAppearance.desertBorderGroundType = groundType
     }
   }
 
@@ -294,7 +272,7 @@ export class CellTerrain {
     const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
       direction as Direction
     ]
-    const variants = getDeepWaterBorderVariants(cellSpriteIndex)
+    const variants = getReliefBorderVariants(cellSpriteIndex)
     const index = variants[dirIndex]
     if (index == null) return
     const texture = getTextureByFrame(resourceName, index, Assets)

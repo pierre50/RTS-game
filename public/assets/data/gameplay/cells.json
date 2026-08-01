@@ -167,6 +167,48 @@
       }
     ]
   },
+  "Dirt": {
+    "category": "Ground",
+    "color": "#7A5A3A",
+    "assets": [
+      {
+        "sheet": "terrain/dirt",
+        "frame": 0
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 1
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 2
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 3
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 4
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 5
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 6
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 7
+      },
+      {
+        "sheet": "terrain/dirt",
+        "frame": 8
+      }
+    ]
+  },
   "Water": {
     "category": "Water",
     "color": "#2C46A0",
