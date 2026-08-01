@@ -219,7 +219,6 @@ export default class MapEditor extends Container {
     if (map.mapType !== 'blank') {
       const blueprint = await loadPregeneratedMapBlueprint({
         size: map.size,
-        mapType: map.mapType,
         positionsCount: this.config.players?.length || undefined,
       })
 

@@ -34,12 +34,10 @@ test('pregenerated map blueprints persist deep water terrain', () => {
         path.join(ROOT, 'tools/generate-maps.cjs'),
         '--size',
         '144',
-        '--type',
-        'ilot',
         '--count',
         '1',
         '--seed',
-        '424242',
+        '98765',
         '--out',
         out,
       ],
@@ -47,7 +45,10 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     )
 
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
+    assert.equal(Object.hasOwn(manifest.maps[0], 'mapType'), false, 'manifest should not split maps by type')
+    assert.match(manifest.maps[0].path, /^144\/map-144-001\.map$/, 'blueprint path should be grouped by size only')
     const blueprint = JSON.parse(fs.readFileSync(path.join(out, manifest.maps[0].path), 'utf8'))
+    assert.equal(Object.hasOwn(blueprint, 'mapType'), false, 'blueprint payload should not store a map type')
     const terrain = Buffer.from(blueprint.terrain, 'base64')
     const relief = Buffer.from(blueprint.relief, 'base64')
     const width = blueprint.size + 1

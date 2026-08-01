@@ -151,7 +151,7 @@
 
 .bar {
   width: 100%;
-  background: var(--ui-bar-bg);
+  background: var(--main-primary-color);
 }
 
 .toggle {

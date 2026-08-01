@@ -48,7 +48,7 @@ function makeContext(mapOverrides = {}) {
     map: {
       seed: 42,
       size: 144,
-      mapType: 'plain',
+      mapType: 'continent',
       positionsCount: 2,
       pregeneratedBlueprintId: null,
       resources: new Set(),
@@ -67,7 +67,7 @@ test('seeded saves omit the full map grid', () => {
   assert.equal(save.version, 2)
   assert.equal(save.world.seed, 42)
   assert.equal(save.world.size, 144)
-  assert.equal(save.world.mapType, 'plain')
+  assert.equal(save.world.mapType, 'continent')
   assert.equal(Object.hasOwn(save, 'map'), false)
 })
 

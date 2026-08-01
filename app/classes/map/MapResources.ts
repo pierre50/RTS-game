@@ -95,7 +95,7 @@ export class MapResources {
     let forestCells: ResourceCenter[] = []
     const pathCells = new Set<string>()
 
-    const rangeFactor = this.map.mapType === 'lac' ? 0.55 : 0.4
+    const rangeFactor = 0.4
     const forestRange = Math.max(30, Math.floor(this.map.size * rangeFactor))
 
     function distSq(x1: number, y1: number, x2: number, y2: number): number {

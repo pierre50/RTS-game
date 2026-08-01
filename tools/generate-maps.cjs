@@ -19,33 +19,29 @@ const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 function mapSettingsFromRuntimeConfig() {
   const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
-  const typesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapTypes.ts'), 'utf8')
   const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*maxPlayers:\s*(\d+)(?:,\s*editorOnly:\s*true)?/g)]
     .map(([, size, maxPlayers]) => ({ size: Number(size), maxPlayers: Number(maxPlayers) }))
     .filter(({ size }) => size !== 16)
-  const types = [...typesSource.matchAll(/value:\s*'([^']+)'/g)].map(([, type]) => type)
-  if (!sizes.length || !types.length) throw new Error('Could not read map settings from app/config')
-  return { sizes, types }
+  if (!sizes.length) throw new Error('Could not read map sizes from app/config')
+  return { sizes }
 }
 
 const MAP_SETTINGS = mapSettingsFromRuntimeConfig()
-const TYPES = new Set(MAP_SETTINGS.types)
 const SIZES = new Set(MAP_SETTINGS.sizes.map(({ size }) => size))
 const maxPlayersForSize = size => MAP_SETTINGS.sizes.find(entry => entry.size === size)?.maxPlayers
 
 function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
-  console.log(`Usage: pnpm maps:generate -- --size 256 --type plain --count 100
+  console.log(`Usage: pnpm maps:generate -- --size 256 --count 100
 
   --size <n[,n]>        144, 256, 512 (default: 256)
-  --type <name[,name]>  plain, continent, lac, ilot (default: all)
-  --count <n>           maps per size/type (default: 10)
+  --count <n>           maps per size (default: 10)
   --seed <n>            reproducible batch seed (default: current time)
   --out <directory>     output directory (default: public/maps)`)
 }
 
 function argumentsFrom(argv) {
-  const options = { sizes: [256], types: [...TYPES], count: 10, seed: Date.now(), out: OUTPUT }
+  const options = { sizes: [256], count: 10, seed: Date.now(), out: OUTPUT }
   for (let index = 0; index < argv.length; index++) {
     const key = argv[index]
     if (key === '--') continue
@@ -53,14 +49,12 @@ function argumentsFrom(argv) {
     const value = argv[++index]
     if (!value) throw new Error(`Missing value for ${key}`)
     if (key === '--size') options.sizes = value.split(',').map(Number)
-    else if (key === '--type') options.types = value.split(',')
     else if (key === '--count') options.count = Number(value)
     else if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
     else throw new Error(`Unknown option: ${key}`)
   }
   if (!options.sizes.every(size => SIZES.has(size))) throw new Error('Unsupported --size')
-  if (!options.types.every(type => TYPES.has(type))) throw new Error('Unsupported --type')
   if (!Number.isInteger(options.count) || options.count < 1) throw new Error('--count must be positive')
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
   return options
@@ -278,7 +272,6 @@ const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefSte
 const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
 const runtimeFormatCellsRelief = MapTerrain.prototype.formatCellsRelief
 const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
-const runtimeIlotAnchors = MapGeneration.prototype.getIlotSpawnAnchors
 const runtimePlayerResources = MapResources.prototype.generateResourcesAroundPlayersAsync
 const runtimeNeutralResources = MapResources.prototype.generateNeutralResourceGroupsAsync
 const runtimeBiomeTrees = MapResources.prototype.generateBiomeTreesAsync
@@ -313,12 +306,12 @@ function coastDistances(map) {
   return distances
 }
 
-function buildHeadlessMap(terrain, size, seed, playersPos, mapType = 'plain', positionsCount = playersPos.length) {
+function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = playersPos.length) {
   const map = {
     size,
     seed,
     playersPos,
-    mapType,
+    mapType: 'continent',
     positionsCount,
     resourceDensity: 'moderate',
     grid: [],
@@ -558,14 +551,14 @@ function unsupportedReliefCells(map) {
   return cells
 }
 
-async function blueprint(size, mapType, seed) {
+async function blueprint(size, seed) {
   const playerCount = maxPlayersForSize(size)
   const context = { map: { seed, positionsCount: playerCount } }
-  const terrain = runtimeTerrain.call(context, size + 1, mapType, seed)
-  const spawnMap = buildHeadlessMap(terrain, size, seed, [], mapType, playerCount)
-  const spawns = runtimeSpawns.call({ map: spawnMap, getIlotSpawnAnchors: () => runtimeIlotAnchors.call({ map: spawnMap }) })
+  const terrain = runtimeTerrain.call(context, size + 1, seed)
+  const spawnMap = buildHeadlessMap(terrain, size, seed, [], playerCount)
+  const spawns = runtimeSpawns.call({ map: spawnMap })
   if (spawns.length !== playerCount) return null
-  const map = buildHeadlessMap(terrain, size, seed, spawns, mapType, playerCount)
+  const map = buildHeadlessMap(terrain, size, seed, spawns, playerCount)
   runtimeRelief.call({ map })
   runtimeClassifyDeepWater.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
@@ -582,7 +575,7 @@ async function blueprint(size, mapType, seed) {
   if (invalidReliefCells.length) {
     const [first] = invalidReliefCells
     console.warn(
-      `  ! ${size}/${mapType} seed ${seed}: ${invalidReliefCells.length} atlas-unsupported relief cell(s) remain (first at [${first.i},${first.j}])`
+      `  ! ${size} seed ${seed}: ${invalidReliefCells.length} atlas-unsupported relief cell(s) remain (first at [${first.i},${first.j}])`
     )
   }
   // Resources must never spawn on relief border/slope tiles (frame index > 8). Relief is
@@ -595,7 +588,7 @@ async function blueprint(size, mapType, seed) {
   const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
   if (resourcesOnReliefBorders.length) {
     console.warn(
-      `  ! ${size}/${mapType} seed ${seed}: ${resourcesOnReliefBorders.length} resource(s) landed on relief border tiles`
+      `  ! ${size} seed ${seed}: ${resourcesOnReliefBorders.length} resource(s) landed on relief border tiles`
     )
   }
   const flatTerrain = Uint8Array.from(map.grid.flat().map(cell => TERRAIN_INDEX.get(cell.type) ?? 0))
@@ -609,7 +602,6 @@ async function blueprint(size, mapType, seed) {
     format: 'map-blueprint',
     version: 1,
     size,
-    mapType,
     seed,
     encoding: 'base64',
     cellCount: flatTerrain.length,
@@ -626,20 +618,20 @@ async function main() {
   if (options.help) return usage()
   const random = randomFrom(options.seed)
   const manifest = { format: 'map-manifest', version: 1, generatedAt: new Date().toISOString(), batchSeed: options.seed, maps: [] }
-  for (const size of options.sizes) for (const mapType of options.types) {
-    const directory = path.join(options.out, String(size), mapType)
+  for (const size of options.sizes) {
+    const directory = path.join(options.out, String(size))
     fs.mkdirSync(directory, { recursive: true })
     let written = 0, attempts = 0
     while (written < options.count) {
-      if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size}/${mapType} maps`)
-      const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, mapType, seed)
+      if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size} maps`)
+      const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, seed)
       if (!map) continue
-      const id = `${mapType}-${size}-${String(written + 1).padStart(3, '0')}`, relativePath = `${size}/${mapType}/${id}.map`
+      const id = `map-${size}-${String(written + 1).padStart(3, '0')}`, relativePath = `${size}/${id}.map`
       fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
-      manifest.maps.push({ id, size, mapType, path: relativePath, seed, spawns: map.spawns.length })
+      manifest.maps.push({ id, size, path: relativePath, seed, spawns: map.spawns.length })
       written++
     }
-    console.log(`Generated ${written} map(s): ${size}/${mapType}`)
+    console.log(`Generated ${written} map(s): ${size}`)
   }
   fs.mkdirSync(options.out, { recursive: true })
   fs.writeFileSync(path.join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)

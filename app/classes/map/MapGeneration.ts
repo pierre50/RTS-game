@@ -107,7 +107,7 @@ export type MapGenerationMap = RuntimeMap & {
   resetRandom(stream?: number | string): void
   findPlayerPlaces(): GeneratedPosition[]
   generateCells(): void
-  generateTerrain(gridSize?: number, mapType?: string, seed?: number): TerrainGrid
+  generateTerrain(gridSize?: number, seed?: number): TerrainGrid
   fillWaterGaps(level?: number | null): Set<RuntimeCell>
   normalizeWaterTopology(
     level?: number | null,
@@ -305,9 +305,9 @@ export class MapGeneration {
     return new Promise(resolve => requestAnimationFrame(() => resolve()))
   }
 
-  generateTerrainInWorker(gridSize: number, mapType: string, seed: number): Promise<TerrainGrid> {
+  generateTerrainInWorker(gridSize: number, seed: number): Promise<TerrainGrid> {
     if (typeof Worker === 'undefined') {
-      return Promise.resolve(this.generateTerrain(gridSize, mapType, seed))
+      return Promise.resolve(this.generateTerrain(gridSize, seed))
     }
     const source = this.generateTerrain.toString()
     const functionSource = source.startsWith('function') ? `(${source})` : `(function ${source})`
@@ -316,7 +316,7 @@ export class MapGeneration {
       self.onmessage = ({ data }) => {
         try {
           const scope = { map: { seed: data.seed, positionsCount: data.positionsCount } };
-          const terrain = generateTerrain.call(scope, data.gridSize, data.mapType, data.seed);
+          const terrain = generateTerrain.call(scope, data.gridSize, data.seed);
           self.postMessage({ terrain, seed: scope.map.seed });
         } catch (error) {
           self.postMessage({ error: error?.stack || error?.message || String(error) });
@@ -345,7 +345,6 @@ export class MapGeneration {
       }
       worker.postMessage({
         gridSize,
-        mapType,
         seed,
         positionsCount: this.map.positionsCount,
       })
@@ -863,7 +862,6 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
     const terrain = this.map.generateTerrain(
       this.map.size ? this.map.size + 1 : 121,
-      this.map.mapType || 'plain',
       this.map.seed == null ? undefined : Number(this.map.seed)
     )
     this.map.size = terrain.length - 1
@@ -897,10 +895,10 @@ export class MapGeneration {
     const seed = this.map.seed == null ? Math.random() * 9999 : Number(this.map.seed)
     let terrain: TerrainGrid
     try {
-      terrain = await this.generateTerrainInWorker(gridSize, this.map.mapType || 'plain', seed)
+      terrain = await this.generateTerrainInWorker(gridSize, seed)
     } catch (error) {
       console.warn('Terrain worker unavailable, falling back to main thread', error)
-      terrain = this.map.generateTerrain(gridSize, this.map.mapType || 'plain', seed)
+      terrain = this.map.generateTerrain(gridSize, seed)
     }
     this.map.context.performance?.record('terrainData', performance.now() - terrainStartedAt)
     return terrain
@@ -957,7 +955,7 @@ export class MapGeneration {
     return this.mapBlueprintGeneration.generateEditableFromBlueprint(blueprintData)
   }
 
-  generateTerrain(gridSize: number = 120, mapType: string = 'plain', seed?: number): TerrainGrid {
+  generateTerrain(gridSize: number = 120, seed?: number): TerrainGrid {
     let resolvedSeed = seed
     if (resolvedSeed == null) resolvedSeed = Math.random() * 9999
     this.map.seed = resolvedSeed
@@ -1022,177 +1020,17 @@ export class MapGeneration {
       }
     }
 
-    type IslandProfile = {
-      center: { i: number; j: number }
-      stretchX: number
-      stretchY: number
-      angle: number
-      edgeNoise: number
-      baseRadius: number
-      lobeA: number
-      lobeB: number
-      lobeC: number
-      phaseA: number
-      phaseB: number
-      phaseC: number
-      coveDepth: number
-      coveScale: number
-    }
-
-    if (mapType === 'ilot') {
-      const terrainMap: TerrainGrid = []
-      const cornerOffset = Math.max(18, Math.floor(gridSize * 0.16))
-      const islandCenters = [
-        { i: cornerOffset, j: cornerOffset },
-        { i: cornerOffset, j: gridSize - 1 - cornerOffset },
-        { i: gridSize - 1 - cornerOffset, j: cornerOffset },
-        { i: gridSize - 1 - cornerOffset, j: gridSize - 1 - cornerOffset },
-      ]
-
-      if (this.map.positionsCount > 4) {
-        islandCenters.push({ i: Math.floor(gridSize / 2), j: Math.floor(gridSize / 2) })
-      }
-
-      const islandProfiles: IslandProfile[] = islandCenters.map((center, index) => {
-        const stretchX = 0.92 + hash(center.i + 17, center.j + 31) * 0.42
-        const stretchY = 0.92 + hash(center.i + 43, center.j + 59) * 0.42
-        const angle = hash(center.i + 71, center.j + 89) * Math.PI
-        const edgeNoise = 0.12 + hash(center.i + 97, center.j + 113) * 0.18
-        const baseRadius =
-          index === 4 ? Math.max(22, Math.floor(gridSize * 0.17)) : Math.max(28, Math.floor(gridSize * 0.24))
-        const lobeA = 2 + Math.floor(hash(center.i + 131, center.j + 149) * 3)
-        const lobeB = 5 + Math.floor(hash(center.i + 167, center.j + 181) * 4)
-        const lobeC = 8 + Math.floor(hash(center.i + 197, center.j + 211) * 5)
-        const phaseA = hash(center.i + 223, center.j + 227) * Math.PI * 2
-        const phaseB = hash(center.i + 229, center.j + 233) * Math.PI * 2
-        const phaseC = hash(center.i + 239, center.j + 241) * Math.PI * 2
-        const coveDepth = 0.12 + hash(center.i + 251, center.j + 257) * 0.16
-        const coveScale = 0.18 + hash(center.i + 263, center.j + 269) * 0.2
-
-        return {
-          center,
-          stretchX,
-          stretchY,
-          angle,
-          edgeNoise,
-          baseRadius,
-          lobeA,
-          lobeB,
-          lobeC,
-          phaseA,
-          phaseB,
-          phaseC,
-          coveDepth,
-          coveScale,
-        }
-      })
-
-      for (let i = 0; i < gridSize; i++) {
-        terrainMap[i] = []
-        for (let j = 0; j < gridSize; j++) {
-          let islandInfluence = 0
-
-          for (let c = 0; c < islandProfiles.length; c++) {
-            const {
-              center,
-              stretchX,
-              stretchY,
-              angle,
-              edgeNoise,
-              baseRadius,
-              lobeA,
-              lobeB,
-              lobeC,
-              phaseA,
-              phaseB,
-              phaseC,
-              coveDepth,
-              coveScale,
-            } = islandProfiles[c]
-            const dx = i - center.i
-            const dy = j - center.j
-            const rx = dx * Math.cos(angle) - dy * Math.sin(angle)
-            const ry = dx * Math.sin(angle) + dy * Math.cos(angle)
-            const theta = Math.atan2(ry, rx)
-            const radiusNoise =
-              Math.sin(theta * lobeA + phaseA) * 0.16 +
-              Math.sin(theta * lobeB + phaseB) * 0.1 +
-              Math.sin(theta * lobeC + phaseC) * 0.06
-            const coveNoise =
-              (height[i * gridSize + j] - 0.5) * edgeNoise +
-              (biome[i * gridSize + j] - 0.5) * coveScale +
-              (noise(i * scale * 2.4 + c * 13.7, j * scale * 2.4 + c * 17.3) - 0.5) * coveDepth
-            const radiusFactorX = Math.max(0.82, Math.min(1.24, 1 + radiusNoise))
-            const radiusFactorY = Math.max(0.84, Math.min(1.22, 1 + radiusNoise * 0.85))
-            const localRadiusX = baseRadius * stretchX * radiusFactorX
-            const localRadiusY = baseRadius * stretchY * radiusFactorY
-            const nx = rx / localRadiusX
-            const ny = ry / localRadiusY
-            const shapeDistance = Math.sqrt(nx * nx + ny * ny)
-            const shorelineCut = Math.max(0, -coveNoise * 0.9)
-            const shorelineBump = Math.max(0, coveNoise * 0.65)
-            const normalized = Math.max(0, 1 - shapeDistance - shorelineCut + shorelineBump)
-            const shaped = normalized * normalized * (3 - 2 * normalized)
-            islandInfluence = Math.max(islandInfluence, shaped)
-          }
-
-          const shorelineNoise =
-            (height[i * gridSize + j] - 0.5) * 0.18 +
-            (biome[i * gridSize + j] - 0.5) * 0.1 +
-            (noise(i * scale * 3.1 + 41, j * scale * 3.1 + 67) - 0.5) * 0.12
-          const landScore = islandInfluence + shorelineNoise - 0.13
-          terrainMap[i][j] = landScore > 0 ? 0 : 2
-        }
-      }
-
-      for (let pass = 0; pass < 2; pass++) {
-        for (let i = 1; i < gridSize - 1; i++) {
-          for (let j = 1; j < gridSize - 1; j++) {
-            const wn =
-              (terrainMap[i - 1][j] === 2 ? 1 : 0) +
-              (terrainMap[i + 1][j] === 2 ? 1 : 0) +
-              (terrainMap[i][j - 1] === 2 ? 1 : 0) +
-              (terrainMap[i][j + 1] === 2 ? 1 : 0)
-            if (terrainMap[i][j] !== 2 && wn >= 3) terrainMap[i][j] = 2
-            if (terrainMap[i][j] === 2 && wn <= 1 && islandInfluenceAt(i, j, islandProfiles) > 0.18)
-              terrainMap[i][j] = 0
-          }
-        }
-      }
-
-      const bt = { lo: 0.27, hi: 0.72 }
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          if (terrainMap[i][j] === 2) continue
-          const b = biome[i * gridSize + j]
-          if (b < bt.lo) terrainMap[i][j] = 1
-          else if (b > bt.hi) terrainMap[i][j] = 3
-          if (terrainMap[i][j] !== 1 && darkForestNoise[i * gridSize + j] > darkForestThreshold) {
-            terrainMap[i][j] = 4
-          }
-        }
-      }
-
-      return terrainMap
-    }
-
-    const thresholds: Record<string, number> = { plain: 0.3, continent: 0.28, lac: 0.42, ilot: 0.52 }
-    const waterThreshold = thresholds[mapType] ?? 0.3
+    const waterThreshold = 0.28
 
     const terrainMap: TerrainGrid = []
+    const borderWaterWidth = Math.max(4, Math.floor(gridSize * 0.04))
     for (let i = 0; i < gridSize; i++) {
       terrainMap[i] = []
       for (let j = 0; j < gridSize; j++) {
         let h = height[i * gridSize + j]
         const fo = radialFalloff(i, j)
 
-        if (mapType === 'continent') {
-          h += (fo - 0.5) * 0.75
-        } else if (mapType === 'lac') {
-          h -= (fo - 0.3) * 0.5
-        } else if (mapType === 'ilot') {
-          h += (fo - 0.5) * 0.2
-        }
+        h += (fo - 0.5) * 0.75
 
         terrainMap[i][j] = h < waterThreshold ? 2 : 0
       }
@@ -1212,20 +1050,27 @@ export class MapGeneration {
       }
     }
 
-    const biomeThresholds: Record<string, { lo: number; hi: number }> = {
-      plain: { lo: 0.38, hi: 0.75 },
-      continent: { lo: 0.33, hi: 0.76 },
-      lac: { lo: 0.32, hi: 0.77 },
-      ilot: { lo: 0.27, hi: 0.72 },
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        if (
+          i < borderWaterWidth ||
+          j < borderWaterWidth ||
+          i >= gridSize - borderWaterWidth ||
+          j >= gridSize - borderWaterWidth
+        ) {
+          terrainMap[i][j] = 2
+        }
+      }
     }
-    const bt = biomeThresholds[mapType] ?? biomeThresholds.plain
+
+    const biomeThresholds = { lo: 0.33, hi: 0.76 }
 
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         if (terrainMap[i][j] === 2) continue
         const b = biome[i * gridSize + j]
-        if (b < bt.lo) terrainMap[i][j] = 1
-        else if (b > bt.hi) terrainMap[i][j] = 3
+        if (b < biomeThresholds.lo) terrainMap[i][j] = 1
+        else if (b > biomeThresholds.hi) terrainMap[i][j] = 3
         if (terrainMap[i][j] !== 1 && darkForestNoise[i * gridSize + j] > darkForestThreshold) {
           terrainMap[i][j] = 4
         }
@@ -1233,71 +1078,6 @@ export class MapGeneration {
     }
 
     return terrainMap
-
-    function islandInfluenceAt(i: number, j: number, profiles: IslandProfile[]): number {
-      let influence = 0
-      for (let c = 0; c < profiles.length; c++) {
-        const {
-          center,
-          stretchX,
-          stretchY,
-          angle,
-          edgeNoise,
-          baseRadius,
-          lobeA,
-          lobeB,
-          lobeC,
-          phaseA,
-          phaseB,
-          phaseC,
-          coveDepth,
-          coveScale,
-        } = profiles[c]
-        const dx = i - center.i
-        const dy = j - center.j
-        const rx = dx * Math.cos(angle) - dy * Math.sin(angle)
-        const ry = dx * Math.sin(angle) + dy * Math.cos(angle)
-        const theta = Math.atan2(ry, rx)
-        const radiusNoise =
-          Math.sin(theta * lobeA + phaseA) * 0.16 +
-          Math.sin(theta * lobeB + phaseB) * 0.1 +
-          Math.sin(theta * lobeC + phaseC) * 0.06
-        const coveNoise =
-          (height[i * gridSize + j] - 0.5) * edgeNoise +
-          (biome[i * gridSize + j] - 0.5) * coveScale +
-          (noise(i * scale * 2.4 + c * 13.7, j * scale * 2.4 + c * 17.3) - 0.5) * coveDepth
-        const radiusFactorX = Math.max(0.82, Math.min(1.24, 1 + radiusNoise))
-        const radiusFactorY = Math.max(0.84, Math.min(1.22, 1 + radiusNoise * 0.85))
-        const localRadiusX = baseRadius * stretchX * radiusFactorX
-        const localRadiusY = baseRadius * stretchY * radiusFactorY
-        const nx = rx / localRadiusX
-        const ny = ry / localRadiusY
-        const shapeDistance = Math.sqrt(nx * nx + ny * ny)
-        const shorelineCut = Math.max(0, -coveNoise * 0.9)
-        const shorelineBump = Math.max(0, coveNoise * 0.65)
-        const normalized = Math.max(0, 1 - shapeDistance - shorelineCut + shorelineBump)
-        const shaped = normalized * normalized * (3 - 2 * normalized)
-        influence = Math.max(influence, shaped)
-      }
-      return influence
-    }
-  }
-
-  getIlotSpawnAnchors() {
-    const size = this.map.size
-    const offset = Math.max(18, Math.floor(size * 0.18))
-    const anchors = [
-      { i: offset, j: offset },
-      { i: offset, j: size - offset },
-      { i: size - offset, j: offset },
-      { i: size - offset, j: size - offset },
-    ]
-
-    if (this.map.positionsCount > 4) {
-      anchors.push({ i: Math.floor(size / 2), j: Math.floor(size / 2) })
-    }
-
-    return anchors
   }
 
   _hasSolidNeighbor(i: number, j: number): boolean {
@@ -1478,27 +1258,6 @@ export class MapGeneration {
   }
 
   findPlayerPlaces() {
-    if (this.map.mapType === 'ilot') {
-      const border = 12
-      const searchHalf = Math.max(10, Math.floor(this.map.size * 0.08))
-      return this.getIlotSpawnAnchors()
-        .slice(0, this.map.positionsCount)
-        .map(anchor =>
-          getZoneInGridWithCondition(
-            {
-              minX: Math.max(border, anchor.i - searchHalf),
-              maxX: Math.min(this.map.size - border, anchor.i + searchHalf),
-              minY: Math.max(border, anchor.j - searchHalf),
-              maxY: Math.min(this.map.size - border, anchor.j + searchHalf),
-            },
-            this.map.grid,
-            6,
-            cell => !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water'
-          )
-        )
-        .filter(Boolean)
-    }
-
     const results = []
     const N = this.map.positionsCount
     const center = this.map.size / 2

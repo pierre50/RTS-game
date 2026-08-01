@@ -2,7 +2,7 @@ const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Deep
 
 type BlueprintManifestEntry = {
   id?: string
-  mapType: string
+  mapType?: string
   path: string
   size: number
   spawns: number
@@ -25,7 +25,6 @@ type BlueprintTimings = Partial<
 >
 
 type LoadBlueprintOptions = {
-  mapType?: string
   positionsCount?: number
   random?: () => number
   size?: number
@@ -63,18 +62,14 @@ function toGrid<TValue extends Uint8Array | Int8Array, TResult>(
   return grid
 }
 
-function compatibleMaps(
-  manifest: BlueprintManifest | undefined,
-  { size, mapType, positionsCount }: LoadBlueprintOptions
-) {
+function compatibleMaps(manifest: BlueprintManifest | undefined, { size, positionsCount }: LoadBlueprintOptions) {
   return (manifest?.maps || []).filter(map => {
-    return map.size === size && map.mapType === mapType && (!positionsCount || map.spawns >= positionsCount)
+    return map.size === size && !map.mapType && (!positionsCount || map.spawns >= positionsCount)
   })
 }
 
 export async function loadPregeneratedMapBlueprint({
   size,
-  mapType,
   positionsCount,
   random = Math.random,
   id,
@@ -92,14 +87,14 @@ export async function loadPregeneratedMapBlueprint({
   } catch {
     return null
   }
-  if (size == null || mapType == null) return null
+  if (size == null) return null
 
   let selected: BlueprintManifestEntry | undefined
   if (id) {
-    selected = (manifest?.maps || []).find(map => map.id === id)
+    selected = (manifest?.maps || []).find(map => map.id === id && !map.mapType)
     if (!selected) return null
   } else {
-    const candidates = compatibleMaps(manifest, { size, mapType, positionsCount })
+    const candidates = compatibleMaps(manifest, { size, positionsCount })
     if (!candidates.length) return null
     selected = candidates[Math.floor(random() * candidates.length)]
   }
@@ -128,7 +123,7 @@ export async function loadPregeneratedMapBlueprint({
     return {
       id: payload.id || selected.id,
       size,
-      mapType: payload.mapType,
+      mapType: 'continent',
       seed: payload.seed,
       terrain,
       relief,

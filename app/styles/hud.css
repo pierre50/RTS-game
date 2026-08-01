@@ -8,14 +8,12 @@
   justify-content: center;
   width: 100%;
   font-weight: bold;
-  color: var(--ui-text-color);
-  text-shadow: var(--ui-plain-text-shadow);
-  border-bottom: var(--ui-bar-border);
+  color: var(--main-text-color);
+  text-shadow: var(--text-shadow-light-ui);
+  border-bottom: var(--panel-border);
   transition:
     background-color var(--ui-transition-panel),
-    color var(--ui-transition-panel),
-    border-color var(--ui-transition-panel),
-    text-shadow var(--ui-transition-panel);
+    border-color var(--ui-transition-panel);
 }
 
 .topbar-age {
@@ -65,8 +63,8 @@
   z-index: 420;
   width: min(360px, calc(100vw - 36px));
   pointer-events: none;
-  color: white;
-  text-shadow: var(--text-shadow-dark-ui);
+  color: var(--main-text-color);
+  text-shadow: var(--text-shadow-light-ui);
 }
 
 .hero-status-hud.hidden {
@@ -75,9 +73,9 @@
 
 .hero-status-frame {
   padding: 10px 12px 12px;
-  border: var(--ui-slot-border);
-  border-radius: var(--main-border-radius);
-  background: var(--surface-dark-solid);
+  border: var(--panel-border);
+  border-radius: var(--main-border-radius-lg);
+  background: var(--main-primary-color);
   box-shadow: var(--main-box-shadow);
 }
 

@@ -81,12 +81,10 @@ export class TopbarView {
     })
     const age = (player as ResourcePlayer | null)?.age || 0
     this.menu.age.textContent = t(AGE_LABEL_KEYS[Math.max(0, Math.min(age, 3))])
-    this.updateAgeTheme(age)
   }
 
-  updateAgeTheme(age = 0): void {
+  updateAgeTheme(): void {
     this.menu.gameHud.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
-    this.menu.gameHud.classList.add(`ui-age-${Math.max(0, Math.min(age, 3))}`)
   }
 
   destroy(): void {

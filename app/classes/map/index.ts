@@ -278,8 +278,8 @@ export default class Map extends Container {
     return this.mapGeneration.generateCellsAsync(options)
   }
 
-  generateTerrain(gridSize: number = 120, mapType: string = 'plain', seed?: number): TerrainGrid {
-    return this.mapGeneration.generateTerrain(gridSize, mapType, seed)
+  generateTerrain(gridSize: number = 120, seed?: number): TerrainGrid {
+    return this.mapGeneration.generateTerrain(gridSize, seed)
   }
 
   generateSets(): void {

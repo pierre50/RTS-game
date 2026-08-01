@@ -3,7 +3,7 @@ import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/formUtils'
 import { MAP_SIZES } from '../config/mapSizes'
-import { MAP_TYPES } from '../config/mapTypes'
+import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
 import type { ResourceAmount } from '../types/common'
 import type { GameConfig } from '../types/save'
@@ -36,7 +36,7 @@ export default class MapConfig {
 
     this.config = {
       size: 144,
-      mapType: 'plain',
+      mapType: DEFAULT_MAP_TYPE,
       startingAge: 0,
       allTechnologies: false,
       revealEverything: false,
@@ -91,12 +91,6 @@ export default class MapConfig {
         const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
         this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
         this.playerSetupPanel.setMaxPlayers(this.maxPlayers)
-      })
-    )
-
-    settingsForm.appendChild(
-      buildSelectRow(t('mapTypeLabel'), MAP_TYPES, 'plain', val => {
-        this.config.mapType = val
       })
     )
 

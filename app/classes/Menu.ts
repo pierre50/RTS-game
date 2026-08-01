@@ -127,8 +127,8 @@ export default class Menu implements MenuLike {
     this.topbarView.update()
   }
 
-  updateAgeTheme(age = 0): void {
-    this.topbarView.updateAgeTheme(age)
+  updateAgeTheme(): void {
+    this.topbarView.updateAgeTheme()
   }
 
   showMessage(message: string, type = 'error'): void {

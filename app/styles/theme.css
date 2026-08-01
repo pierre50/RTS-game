@@ -1,44 +1,13 @@
-.game-hud.ui-age-0 {
-  /* Stone Age: Granite, Bone, Slate */
-  --ui-bar-bg: #221e1c;
-  --ui-bar-border: 1px solid rgba(234, 221, 202, 0.25);
-  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
-  --ui-text-color: #eaddca;
-  --ui-map-shadow-dark: #12100e;
-  --ui-map-shadow-light: rgba(234, 221, 202, 0.08);
-}
-
-.game-hud.ui-age-1 {
-  /* Tool Age: Chiseled Grey Flint & Dark Wood */
-  --ui-bar-bg: #292624;
-  --ui-bar-border: 1px solid rgba(183, 173, 161, 0.3);
-  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
-  --ui-text-color: #f6ead8;
-  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.85);
-  --ui-plain-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.85);
-  --ui-map-shadow-dark: #141312;
-  --ui-map-shadow-light: rgba(183, 173, 161, 0.1);
-}
-
-.game-hud.ui-age-2 {
-  /* Bronze Age: Warm Copper Bronze & Patina Gold */
-  --ui-bar-bg: #35251c;
-  --ui-bar-border: 1px solid rgba(223, 177, 91, 0.45);
-  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.55);
-  --ui-text-color: #dfb15b;
-  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
-  --ui-map-shadow-dark: #1b100a;
-  --ui-map-shadow-light: rgba(223, 177, 91, 0.16);
-}
-
+.game-hud.ui-age-0,
+.game-hud.ui-age-1,
+.game-hud.ui-age-2,
 .game-hud.ui-age-3 {
-  /* Iron Age: Burnished Steel & Dark Charcoal */
-  --ui-bar-bg: #202022;
-  --ui-bar-border: 1px solid rgba(255, 255, 255, 0.22);
-  --ui-slot-border: 1px solid rgba(0, 0, 0, 0.6);
-  --ui-text-color: #e2e8f0;
-  --ui-text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.95);
-  --ui-map-shadow-dark: #0f0f10;
-  --ui-map-shadow-light: rgba(255, 255, 255, 0.12);
+  --ui-bar-bg: var(--main-primary-color);
+  --ui-bar-border: var(--panel-border);
+  --ui-slot-border: var(--border-slot);
+  --ui-text-color: var(--main-text-color);
+  --ui-text-shadow: var(--text-shadow-light-ui);
+  --ui-plain-text-shadow: var(--text-shadow-light-ui);
+  --ui-map-shadow-dark: #120e0c;
+  --ui-map-shadow-light: rgba(223, 177, 91, 0.15);
 }
-

@@ -138,7 +138,7 @@ export class MapBlueprintGeneration {
   applyBlueprintMetadata(blueprint: MapBlueprint): void {
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
-    this.map.mapType = blueprint.mapType
+    this.map.mapType = 'continent'
     this.map.playersPos = blueprint.spawns || []
     this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
     this.map.resetRandom()

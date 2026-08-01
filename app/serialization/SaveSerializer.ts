@@ -14,6 +14,7 @@ import type {
 } from '../types/save'
 
 type GridPoint = { i: number; j: number }
+const DEFAULT_SERIALIZED_MAP_TYPE = 'continent'
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
@@ -310,7 +311,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const world = {
     seed: context.map.seed,
     size: context.map.size,
-    mapType: context.map.mapType || 'plain',
+    mapType: DEFAULT_SERIALIZED_MAP_TYPE,
     positionsCount: context.map.positionsCount,
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
   }
@@ -324,7 +325,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     config: {
       seed: context.map.seed,
       size: context.map.size,
-      mapType: context.map.mapType || 'plain',
+      mapType: DEFAULT_SERIALIZED_MAP_TYPE,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
       startingAge: context.map.startingAge,

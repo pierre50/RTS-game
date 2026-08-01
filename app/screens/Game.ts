@@ -22,6 +22,7 @@ import { WeatherSystem } from '../services/WeatherSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
+import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../types/save'
@@ -302,7 +303,7 @@ export default class Game extends Container {
   _applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
     if (config.size) map.size = config.size
     if (Number.isFinite(config.seed)) map.seed = config.seed
-    if (config.mapType) map.mapType = config.mapType
+    map.mapType = DEFAULT_MAP_TYPE
     if (config.instantMode) map.instantMode = true
     if (config.startingAge != null) map.startingAge = Number(config.startingAge)
     if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
@@ -419,7 +420,6 @@ export default class Game extends Container {
     const mapGenerationStartedAt = performance.now()
     const blueprint = await loadPregeneratedMapBlueprint({
       size: map.size,
-      mapType: map.mapType || 'plain',
       positionsCount: posCount ?? undefined,
     })
     if (blueprint) {
@@ -473,7 +473,6 @@ export default class Game extends Container {
       ...savedConfig,
       seed: world.seed ?? savedConfig.seed,
       size: world.size ?? savedConfig.size,
-      mapType: world.mapType ?? savedConfig.mapType,
     }
     this._applyMapConfig(map, seedConfig)
     this._createUiRuntime()
@@ -486,7 +485,10 @@ export default class Game extends Container {
 
     const blueprintId = world.pregeneratedBlueprintId
     const blueprint = blueprintId
-      ? await loadPregeneratedMapBlueprint({ size: map.size, mapType: map.mapType || 'plain', id: String(blueprintId) })
+      ? await loadPregeneratedMapBlueprint({
+          size: map.size,
+          id: String(blueprintId),
+        })
       : null
     if (blueprint) {
       await map.generateFromBlueprint(blueprint, {
