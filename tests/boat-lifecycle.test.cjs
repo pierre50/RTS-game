@@ -62,6 +62,16 @@ test('boat death plays the wreck corpse animation directly with boat timing', ()
       playAudibleSoundCue: () => null,
       updateInstanceVisibility: () => {},
     },
+    '../../lib/combatFeedback': {
+      clearDamageFeedback: () => {},
+    },
+    '../../lib/deathFlash': {
+      startDeathFlash: () => () => {},
+      runAfterDeathFlash: (_sprite, onComplete) => onComplete,
+    },
+    '../../lib/entityFade': {
+      fadeOutThenClear: unit => unit.clear(),
+    },
   })
 
   const cell = {

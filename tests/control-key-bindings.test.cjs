@@ -68,6 +68,28 @@ test('H is the default debug mount key for the hero', () => {
   }
 })
 
+test('F is the default hero entity interaction key', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getKeyBindings().heroEntityInteraction, 'f')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyF', key: 'f' }), 'heroEntityInteraction')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyF', key: 'F' }), 'heroEntityInteraction')
+  } finally {
+    restore()
+  }
+})
+
+test('Space is the default hero defense key', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getKeyBindings().heroDefense, 'Space')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Space', key: ' ' }), 'heroDefense')
+    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDefense), 'Space')
+  } finally {
+    restore()
+  }
+})
+
 test('recording a digit-row binding stores the physical key code', () => {
   const { settings, restore } = loadSettings()
   try {

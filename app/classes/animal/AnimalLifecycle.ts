@@ -1,6 +1,7 @@
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
 import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
+import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import type { SchedulerTaskId } from '../../types/context'
 import type { Animal } from './index'
@@ -53,7 +54,9 @@ export class AnimalLifecycle {
     animal.zIndex--
     animal.sprite.loop = false
     animal.syncShadow()
-    animal.sprite.onComplete = () => animal.decompose()
+    animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
+      animal.decompose()
+    })
   }
 
   startDeathFall(): void {

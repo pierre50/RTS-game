@@ -32,6 +32,10 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
   '../../lib/combatFeedback': {
     clearDamageFeedback: () => {},
   },
+  '../../lib/deathFlash': {
+    startDeathFlash: () => () => {},
+    runAfterDeathFlash: (_sprite, onComplete) => onComplete,
+  },
   '../../lib/entityFade': {
     fadeOutThenClear: () => {},
   },

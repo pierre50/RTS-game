@@ -14,7 +14,7 @@ type ActionMenuTab = 'tools' | 'technologies' | 'minimap' | 'construction'
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
-  spear: 'heroToolSpear',
+  halberd: 'heroToolSpear',
   bow: 'heroToolBow',
 }
 

@@ -17,6 +17,8 @@ function loadGamepadHeroInput(getGamepad) {
       GAMEPAD_AXIS: { moveX: 0, moveY: 1, aimX: 2, aimY: 3 },
       GAMEPAD_BUTTON: {
         action: 5,
+        defense: 4,
+        inspect: 8,
         interact: 2,
         inventory: 3,
         toolPrev: 6,
@@ -51,7 +53,36 @@ function makeGamepad(pressed = []) {
   }
 }
 
-test('gamepad L1 opens the hero entity interaction once per press', () => {
+test('gamepad inspect button opens the hero entity interaction once per press', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: { app: { screen: { width: 100, height: 100 } } },
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      handleKeyDown: action => calls.push(['down', action]),
+      handleKeyUp: action => calls.push(['up', action]),
+      cycleTool: direction => calls.push(['cycle', direction]),
+      handlePrimaryPointerDown: () => calls.push('primaryDown'),
+      handlePointerUp: () => calls.push('primaryUp'),
+    },
+    openHeroEntityInteraction: () => calls.push('openInfo'),
+  })
+
+  input.update()
+  gamepad = makeGamepad([8])
+  input.update()
+  input.update()
+  gamepad = makeGamepad()
+  input.update()
+  gamepad = makeGamepad([8])
+  input.update()
+
+  assert.deepEqual(calls, ['openInfo', 'openInfo'])
+})
+
+test('gamepad L1 holds and releases hero defense', () => {
   let gamepad = makeGamepad()
   const calls = []
   const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
@@ -74,8 +105,9 @@ test('gamepad L1 opens the hero entity interaction once per press', () => {
   input.update()
   gamepad = makeGamepad()
   input.update()
-  gamepad = makeGamepad([4])
-  input.update()
 
-  assert.deepEqual(calls, ['openInfo', 'openInfo'])
+  assert.deepEqual(calls, [
+    ['down', 'heroDefense'],
+    ['up', 'heroDefense'],
+  ])
 })

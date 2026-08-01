@@ -18,7 +18,6 @@ import {
   getGroundReliefLevel,
   getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
-  instanceContactInstance,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
@@ -81,9 +80,6 @@ type UnitRestoreReferences = {
 }
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
-function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
-  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
-}
 
 type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
@@ -475,20 +471,11 @@ export class Unit extends Instance implements UnitEntity {
           this.sendToEvt(target, action)
         }
 
-    this.on('pointerup', evt => {
+    this.on('pointerup', () => {
       const {
-        context: { controls, menu, editor },
+        context: { controls, editor },
       } = this
       if (editor?.handleEntityInteraction?.(this)) return
-      if (controls.isHeroControlActive?.()) {
-        if (!isSecondaryPointerButton(evt)) return
-        controls.mouse.prevent = true
-        const hero = controls.heroUnit
-        if (hero && instanceContactInstance(hero, this)) {
-          menu.openEntityInfoModal?.(this)
-        }
-        return
-      }
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)

@@ -23,10 +23,14 @@ import {
 import {
   aimHeroBowChargeAt,
   applyToolAppearance,
+  beginHeroDefense,
   cancelHeroBowCharge,
+  cancelHeroDefense,
   isMountedAttackAimBlocked,
+  releaseHeroDefense,
   releaseHeroBowCharge,
   triggerToolAttackAt,
+  updateHeroDefense,
   updateHeroBowCharge,
   HERO_TOOL_ORDER,
   type HeroEquippedItem,
@@ -50,6 +54,7 @@ import { t } from '../lib/lang'
 import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
+import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
@@ -191,6 +196,7 @@ export class HeroController {
   commIndicator: Graphics | null
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
+  criticalHealthEffects: HeroCriticalHealthEffects
 
   constructor(controls: Controls) {
     this.controls = controls
@@ -204,6 +210,7 @@ export class HeroController {
     this.commIndicator = null
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
+    this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
   }
 
   facePoint(point: HeroAimPoint): void {
@@ -225,6 +232,11 @@ export class HeroController {
 
     if (action === 'inventory') {
       this.controls.context.menu?.toggleInventory?.()
+      return true
+    }
+
+    if (action === 'heroDefense') {
+      this.handleDefenseKeyDown()
       return true
     }
 
@@ -291,6 +303,7 @@ export class HeroController {
   handleKeyUp(action: ControlBindingAction): void {
     if (HERO_MOVE_DIRECTIONS[action]) this.keysPressed.delete(action)
     if (action === 'heroInteract' && this.commCharging) this.endCommCharge()
+    if (action === 'heroDefense' && this.heroUnit && releaseHeroDefense(this.heroUnit)) this.mouseHeld = false
   }
 
   update(frameScale: number): void {
@@ -298,12 +311,14 @@ export class HeroController {
     if (!unit) return
     updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
     updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
+    this.updateCriticalHealthEffects(TARGET_FRAME_MS * frameScale, !this.controls.context.paused)
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
     const bowChargeAimPoint = this.controls.getWorldPointUnderCursor()
     const bowChargeAiming = aimHeroBowChargeAt(unit, bowChargeAimPoint)
     updateHeroBowCharge(unit)
+    updateHeroDefense(unit)
     // Keep the hover-based cursor live even while picking a "go to" target — it already tells
     // the player what a click will do here (gather hand, move icon, combat icon, plain pointer).
     const hoverTarget = resolveHoverTarget(
@@ -319,15 +334,6 @@ export class HeroController {
     }
     if (menu?.isHeroBuildingMenuOpen?.()) {
       menu.closeHeroBuildingMenuIfInvalid?.()
-    }
-    if (
-      this.mouseHeld &&
-      !unit.actionLocked &&
-      unit.currentSheet !== SHEET_TYPES.action &&
-      !this.attackTowardCursor()
-    ) {
-      this.mouseHeld = false
-      this.primaryClickPoint = null
     }
     const attacking = Boolean(unit.actionLocked)
 
@@ -390,10 +396,6 @@ export class HeroController {
     }
   }
 
-  attackTowardCursor(): boolean {
-    return this.attackTowardPoint(this.controls.getWorldPointUnderCursor())
-  }
-
   attackTowardPoint(point: HeroAimPoint): boolean {
     const hero = this.heroUnit
     if (!hero) return false
@@ -418,8 +420,28 @@ export class HeroController {
     if (!this.mouseHeld) this.primaryClickPoint = null
   }
 
-  handlePointerUp(): void {
+  handleDefenseKeyDown(): void {
     const unit = this.heroUnit
+    if (!unit) return
+    this.facePoint(this.controls.getWorldPointUnderCursor())
+    if (beginHeroDefense(unit, this.equippedItem)) {
+      this.mouseHeld = true
+    }
+  }
+
+  handleSecondaryPointerDown(): void {
+    this.handleDefenseKeyDown()
+  }
+
+  handlePointerUp(button = 0): void {
+    const unit = this.heroUnit
+    if (button === 2) {
+      if (unit && releaseHeroDefense(unit)) {
+        this.mouseHeld = false
+      }
+      return
+    }
+    if (button !== 0) return
     if (unit && this.equippedItem === 'bow' && releaseHeroBowCharge(unit)) {
       this.mouseHeld = false
       this.primaryClickPoint = null
@@ -510,6 +532,7 @@ export class HeroController {
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {
+    if (this.heroUnit?.heroDefenseActive) cancelHeroDefense(this.heroUnit)
     this.equippedItem = item
     if (item && this.heroUnit) applyToolAppearance(this.heroUnit, item)
     this.controls.context.menu?.setEquippedItem?.(item)
@@ -529,8 +552,17 @@ export class HeroController {
     this.mouseHeld = false
     this.primaryClickPoint = null
     if (this.heroUnit) cancelHeroBowCharge(this.heroUnit)
+    if (this.heroUnit) cancelHeroDefense(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()
     if (this.pendingGoToNpcs) this.cancelGoToPicking()
+  }
+
+  updateCriticalHealthEffects(elapsedMs: number, active = true): void {
+    this.criticalHealthEffects.update(active ? this.heroUnit : null, elapsedMs, active)
+  }
+
+  destroy(): void {
+    this.criticalHealthEffects.destroy()
   }
 
   initFromPlayerStart(): boolean {
@@ -543,6 +575,7 @@ export class HeroController {
     if (this.heroUnit && this.heroUnit !== player.units[0]) {
       setUnitControlMode(this.heroUnit, 'standard')
       refreshBakedAppearance(this.heroUnit)
+      this.criticalHealthEffects.update(null, TARGET_FRAME_MS, false)
     }
     this.heroUnit = player.units[0]
     setUnitControlMode(this.heroUnit, 'hero')

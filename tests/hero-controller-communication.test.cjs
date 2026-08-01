@@ -163,7 +163,7 @@ function createController({
     aimHeroBowChargeAt: () => false,
     applyToolAppearance: () => {},
     cancelHeroBowCharge: () => {},
-    HERO_TOOL_ORDER: ['interact', 'sword', 'spear', 'bow'],
+    HERO_TOOL_ORDER: ['interact', 'sword', 'halberd', 'bow'],
     releaseHeroBowCharge: () => false,
     triggerToolAttackAt: (_hero, _tool, destination) => {
       calls.push(['attack', destination])

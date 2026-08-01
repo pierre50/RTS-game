@@ -206,7 +206,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     GuardTowerDescription: 'Advanced tower with greater durability and damage.',
     BallistaTowerDescription: 'Ultimate tower firing powerful bolts over long range.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
-    ChiefDescription: 'Village leader armed with a spear, required for command and development.',
+    ChiefDescription: 'Village leader armed with a halberd, required for command and development.',
     ClubmanDescription: 'Basic melee infantry unit, useful for early attacks and defense.',
     BowmanDescription: 'Ranged unit effective at dealing damage from a safe distance.',
     PriestDescription: 'Support unit able to heal allies and convert enemy units.',

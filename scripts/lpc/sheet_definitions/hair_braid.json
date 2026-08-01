@@ -1,0 +1,60 @@
+{
+  "name": "Braid",
+  "type_name": "hair",
+  "layer_1": {
+    "zPos": 120,
+    "male": "hair/braid/male/",
+    "muscular": "hair/braid/male/",
+    "female": "hair/braid/female/",
+    "pregnant": "hair/braid/female/",
+    "teen": "hair/braid/male/"
+  },
+  "variants": [
+    "blonde",
+    "ash",
+    "sandy",
+    "platinum",
+    "strawberry",
+    "redhead",
+    "ginger",
+    "carrot",
+    "chestnut",
+    "light brown",
+    "dark brown",
+    "black",
+    "raven",
+    "dark gray",
+    "gray",
+    "white",
+    "red",
+    "orange",
+    "gold",
+    "green",
+    "blue",
+    "navy",
+    "violet",
+    "purple",
+    "pink",
+    "rose"
+  ],
+  "credits": [
+    {
+      "file": "hair/braid",
+      "notes": "",
+      "authors": [
+        "Nila122",
+        "ElizaWy"
+      ],
+      "licenses": [
+        "OGA-BY 3.0",
+        "CC-BY-SA 3.0",
+        "GPL 3.0",
+        "GPL 2.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/3-hairs-for-lpc",
+        "https://opengameart.org/content/lpc-hair"
+      ]
+    }
+  ]
+}

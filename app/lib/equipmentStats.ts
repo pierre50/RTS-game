@@ -15,16 +15,12 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   bow: { pierceAttack: 4 },
   bow_great: { pierceAttack: 6 },
   bow_recurve: { pierceAttack: 8 },
-  spear: { meleeAttack: 5 },
+  halberd: { meleeAttack: 17 },
   dagger: { meleeAttack: 7 },
   broadsword: { meleeAttack: 9 },
   longsword: { meleeAttack: 11 },
-  longspear: { meleeAttack: 17 },
-  longspear_silver: { meleeAttack: 20 },
   round_shield_brass_slash: { meleeArmor: 1 },
-  round_shield_brass_thrust: { meleeArmor: 5 },
   round_shield_silver_slash: { meleeArmor: 2 },
-  round_shield_silver_thrust: { meleeArmor: 7 },
   cane: { meleeAttack: 1 },
 }
 

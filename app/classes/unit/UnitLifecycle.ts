@@ -7,6 +7,7 @@ import {
   updateInstanceVisibility,
 } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
+import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
@@ -64,7 +65,7 @@ export class UnitLifecycle {
     unit.zIndex = (unit.zIndex ?? 0) - 1
     sprite.loop = false
     unit.syncShadow?.()
-    sprite.onComplete = () => {
+    sprite.onComplete = runAfterDeathFlash(sprite, () => {
       updateInstanceVisibility(unit)
       const corpses = unit.owner?.corpses
       const index = corpses?.indexOf(unit) ?? -1
@@ -72,7 +73,7 @@ export class UnitLifecycle {
         corpses?.push(unit)
       }
       this.decompose()
-    }
+    })
   }
 
   die() {

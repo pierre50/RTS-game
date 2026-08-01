@@ -7,6 +7,7 @@ import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
 import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayedHeroDefeated } from '../lib'
+import { clearAllCombatFeedback } from '../lib/combatFeedback'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
@@ -26,6 +27,7 @@ import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../
 import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeMap } from '../types/map'
+import type { RuntimeEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -71,6 +73,29 @@ function hasSerializedGrid(save: SerializedSave): boolean {
 
 function savedRuntimeState(save: SerializedSave): SavedGameData {
   return save as SavedGameData
+}
+
+function addPausableInstance(instances: Set<RuntimeEntity>, instance: RuntimeEntity | null | undefined): void {
+  if (!instance || instance.isDestroyed) return
+  if (!instance.pause && !instance.resume) return
+  instances.add(instance)
+}
+
+function collectPausableInstances(map: RuntimeMapInstance, players: PlayerLike[]): Set<RuntimeEntity> {
+  const instances = new Set<RuntimeEntity>()
+  for (const animal of getGaiaAnimals(map.gaia)) addPausableInstance(instances, animal)
+  for (const player of players) {
+    for (const unit of player.units ?? []) addPausableInstance(instances, unit)
+    for (const animal of player.animals ?? []) addPausableInstance(instances, animal)
+    for (const building of player.buildings ?? []) addPausableInstance(instances, building)
+    for (const corpse of player.corpses ?? []) addPausableInstance(instances, corpse)
+  }
+  for (const row of map.grid ?? []) {
+    for (const cell of row ?? []) {
+      for (const corpse of cell.corpses ?? []) addPausableInstance(instances, corpse)
+    }
+  }
+  return instances
 }
 
 /**
@@ -591,6 +616,7 @@ export default class Game extends Container {
     if (hasLivingEnemies) return false
 
     this.context.victory = true
+    clearAllCombatFeedback()
     this.togglePause(true, { silent: true })
     const div = document.createElement('div')
     div.id = 'victory'
@@ -607,6 +633,7 @@ export default class Game extends Container {
     if (!isPlayedHeroDefeated(player, this.context.controls?.heroUnit)) return false
 
     this.context.defeat = true
+    clearAllCombatFeedback()
     this.togglePause(true, { silent: true })
     const div = document.createElement('div')
     div.id = 'defeat'
@@ -632,18 +659,8 @@ export default class Game extends Container {
     } else {
       document.getElementById('pause')?.remove()
     }
-    const gaiaUnits = getGaiaAnimals(map.gaia)
-    for (let i = 0; i < gaiaUnits.length; i++) {
-      pause ? gaiaUnits[i].pause?.() : gaiaUnits[i].resume?.()
-    }
-    for (let i = 0; i < players.length; i++) {
-      const player = players[i]
-      for (let j = 0; j < player.units.length; j++) {
-        pause ? player.units[j].pause?.() : player.units[j].resume?.()
-      }
-      for (let j = 0; j < player.buildings.length; j++) {
-        pause ? player.buildings[j].pause?.() : player.buildings[j].resume?.()
-      }
+    for (const instance of collectPausableInstances(map, players)) {
+      pause ? instance.pause?.() : instance.resume?.()
     }
     this.context.paused = pause
   }

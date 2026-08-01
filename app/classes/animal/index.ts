@@ -10,7 +10,6 @@ import {
   getInstanceZIndex,
   getGroundReliefLevel,
   getReliefLiftPixels,
-  instanceContactInstance,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
@@ -22,7 +21,7 @@ import type { AnimalEntity, UnitSounds } from '../../types/entities'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
-import type { FederatedPointerEvent, Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
@@ -45,10 +44,6 @@ const SHADOW_SCALE_Y = -0.42
 export const FLYING_ALTITUDE = 20
 const LANDING_STEPS = 8
 const LANDING_STEP_MS = 40
-
-function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
-  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
-}
 
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
@@ -177,20 +172,11 @@ export class Animal extends Instance implements AnimalEntity {
     this.sprite.currentFrame = this.currentFrame
     this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
 
-    this.on('pointerup', (evt: FederatedPointerEvent) => {
+    this.on('pointerup', () => {
       const {
-        context: { controls, menu, editor },
+        context: { controls, editor },
       } = this
       if (editor?.handleEntityInteraction(this)) return
-      if (controls.isHeroControlActive?.()) {
-        if (!isSecondaryPointerButton(evt)) return
-        controls.mouse.prevent = true
-        const hero = controls.heroUnit
-        if (hero && instanceContactInstance(hero, this)) {
-          menu.openEntityInfoModal?.(this)
-        }
-        return
-      }
       if (controls.rallyPointController?.active) {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)

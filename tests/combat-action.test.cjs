@@ -161,6 +161,58 @@ test('units cannot attack or damage allied-team units', () => {
   assert.equal(getHitPointsWithDamage(scoutShip, alliedTarget), 20)
 })
 
+test('hero defense blocks incoming damage and flashes', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const flashes = []
+  const attacker = {
+    hitPoints: 20,
+    isDead: false,
+    meleeAttack: 8,
+    owner,
+    type: 'Clubman',
+  }
+  const defendingHero = {
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 0,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, defendingHero), 20)
+  assert.deepEqual(flashes, ['flash'])
+})
+
+test('hero defense blocks animal attack damage too', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const flashes = []
+  const animal = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 20,
+    isDead: false,
+    meleeAttack: 6,
+    owner,
+    type: 'Lion',
+  }
+  const defendingHero = {
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+  }
+
+  assert.equal(getHitPointsWithDamage(animal, defendingHero), 20)
+  assert.deepEqual(flashes, ['flash'])
+})
+
 test('land ranged units can target enemy boats', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
@@ -213,6 +265,11 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
     '../../constants': constants,
     '../../lib': {
+      applyCombatHit: (_source, target) => {
+        target.hitPoints = 0
+        target.die?.()
+        return { damageDealt: 5, killed: true }
+      },
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getClosestInstanceWithPath: () => null,
@@ -248,6 +305,11 @@ test('attacker units show alert feedback when detection starts an attack', () =>
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
     '../../constants': constants,
     '../../lib': {
+      applyCombatHit: (_source, target) => {
+        target.hitPoints = 0
+        target.die?.()
+        return { damageDealt: 5, killed: true }
+      },
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getClosestInstanceWithPath: () => null,
@@ -296,6 +358,11 @@ test('melee attacks finish their current animation loop before resuming after a 
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
     '../../constants': constants,
     '../../lib': {
+      applyCombatHit: (_source, target) => {
+        target.hitPoints = 0
+        target.die?.()
+        return { damageDealt: 5, killed: true }
+      },
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getClosestInstanceWithPath: () => null,
@@ -365,12 +432,10 @@ test('melee attacks finish their current animation loop before resuming after a 
 
 test('unit control policy disables automatic reactions for the active hero-controlled unit', () => {
   const hero = {}
-  const {
-    canAutoAcquireTarget,
-    canAutoReactToAttack,
-    isHeroControlled,
-    setUnitControlMode,
-  } = loadModule('app/lib/unitControl.ts', {})
+  const { canAutoAcquireTarget, canAutoReactToAttack, isHeroControlled, setUnitControlMode } = loadModule(
+    'app/lib/unitControl.ts',
+    {}
+  )
 
   const unit = {
     context: {
@@ -449,6 +514,7 @@ test('damage feedback can be cleared before its timer fires', () => {
   clearDamageFeedback(target)
 
   assert.deepEqual(sprite.filters, originalFilters)
+  assert.equal(texts[0].destroyed, true)
   assert.equal(typeof scheduled, 'function')
   scheduled()
   assert.deepEqual(sprite.filters, originalFilters)
@@ -468,4 +534,11 @@ test('damage feedback can be cleared before its timer fires', () => {
 
   assert.equal(building.child.text, '-7')
   assert.deepEqual(buildingSprite.filters, originalFilters)
+
+  const previousTextCount = texts.length
+  showDamageFeedback(building, 0.000005)
+  assert.equal(texts.length, previousTextCount)
+
+  showDamageFeedback(building, 2.6)
+  assert.equal(building.child.text, '-3')
 })

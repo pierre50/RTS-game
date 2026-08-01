@@ -26,6 +26,8 @@ export type CombatEntity = {
   units?: string[]
   trainingType?: string | null
   trainingUnit?: CombatEntity | null
+  heroDefenseActive?: boolean
+  showHeroDefenseFlash?: () => void
 }
 
 export type Condition = {
@@ -85,6 +87,12 @@ function getDamage(source: CombatEntity, target: CombatEntity): number {
   return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor))
 }
 
+function applyHeroDefenseDamage(target: CombatEntity, damage: number): number {
+  if (!target.heroDefenseActive || damage <= 0) return damage
+  target.showHeroDefenseFlash?.()
+  return 0
+}
+
 export function getHitPointsWithDamage(
   source: CombatEntity,
   target: CombatEntity,
@@ -92,7 +100,8 @@ export function getHitPointsWithDamage(
   bonusDamage = 0
 ): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
-  const damage = (defaultDamage || getDamage(source, target)) + Math.max(0, bonusDamage)
+  const rawDamage = (defaultDamage || getDamage(source, target)) + Math.max(0, bonusDamage)
+  const damage = applyHeroDefenseDamage(target, rawDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
 

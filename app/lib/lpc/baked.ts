@@ -13,6 +13,7 @@ const BAKED_VARIANT_KEYS = ['01'] as const
 const UNIT_SHEETS = ['walking', 'action', 'riding', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
+const HERO_BASE_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
 
 type BakedUnitType =
   | 'villager'
@@ -87,9 +88,8 @@ function villagerActionAlias(variant: string, animation: string): string {
   return bakedAlias('villager', variant, 'action', animation)
 }
 
-// The hero bakes the same "body" + "action" (slash/thrust/shoot) layout as the
-// villager (see hero_build_tasks() in scripts/lpc/build.py), plus mounted
-// "riding/<action>" sheets under the same "action" folder.
+// The hero bakes the villager-style "body" layout, plus the action poses it can
+// still use directly. Thrust stays for fishing/tool work, not for thrust weapons.
 function heroBodyAlias(variant: string, sheet: string): string {
   return bakedAlias('hero', variant, 'body', sheet)
 }
@@ -98,8 +98,8 @@ function heroActionAlias(variant: string, animation: string): string {
   return bakedAlias('hero', variant, 'action', animation)
 }
 
-const HERO_RIDING_ACTION_SHEETS = VILLAGER_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
-const HERO_ACTION_SHEETS = [...VILLAGER_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
+const HERO_RIDING_ACTION_SHEETS = HERO_BASE_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
+const HERO_ACTION_SHEETS = [...HERO_BASE_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
 
 async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
   if (unit === 'villager' || unit === 'hero') {
@@ -236,7 +236,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     default: villagerSheets('slash'),
     attacker: villagerSheets('slash'),
     heroSword: villagerSheets('slash'),
-    heroSpear: villagerSheets('thrust'),
+    heroSpear: villagerSheets('slash'),
     hunter: {
       ...villagerSheets('shoot'),
       harvestSheet: actionAlias(variant, 'slash'),

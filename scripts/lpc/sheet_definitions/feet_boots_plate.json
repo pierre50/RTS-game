@@ -1,0 +1,39 @@
+{
+  "name": "Boots Metal Plating",
+  "type_name": "shoes_plate",
+  "layer_1": {
+    "zPos": 26,
+    "male": "feet/boots_plating/universal/male/",
+    "muscular": "feet/boots_plating/universal/male/",
+    "female": "feet/boots_plating/universal/female/",
+    "teen": "feet/boots_plating/universal/female/",
+    "pregnant": "feet/boots_plating/universal/female/"
+  },
+  "variants": [
+    "steel",
+    "iron",
+    "ceramic",
+    "brass",
+    "copper",
+    "bronze",
+    "silver",
+    "gold"
+  ],
+  "credits": [
+    {
+      "file": "feet/boots_plating",
+      "notes": "",
+      "authors": [
+        "JaidynReiman"
+      ],
+      "licenses": [
+        "OGA-BY 3.0+",
+        "CC-BY 3.0+",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-relm-outfit-pieces-2-kimonos-2-sleeves-2-boots-tabi-socks"
+      ]
+    }
+  ]
+}

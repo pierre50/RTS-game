@@ -30,6 +30,7 @@ import {
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
   clearVillagerAutonomy,
+  DEFAULT_HUNT_RANGE,
   resumeVillagerAutonomy,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
@@ -505,7 +506,9 @@ export class UnitMovement {
       action === ACTION_TYPES.heal ||
       (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt)
     const effectiveRange =
-      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt ? unit.huntRange || 4 : unit.range
+      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
+        ? unit.huntRange || DEFAULT_HUNT_RANGE
+        : unit.range
     if (usesActionRange && effectiveRange && instancesDistance(unit, dest) <= effectiveRange) {
       return true
     }

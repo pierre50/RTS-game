@@ -1,10 +1,12 @@
 import { AnimatedSprite, Assets, Container } from 'pixi.js'
 import {
+  DEFAULT_HUNT_RANGE,
   degreesToRadians,
-  getHitPointsWithDamage,
+  applyCombatHit,
   getInstanceZIndex,
   getReliefOffset,
   getTerrainSetZIndex,
+  HUNTING_SPEAR_PROJECTILE,
   isFriendlyTarget,
   isometricToCartesian,
   moveTowardPoint,
@@ -22,9 +24,8 @@ import {
   projectileTracksTarget,
   playAudibleSoundCue,
 } from '../lib'
-import { showDamageFeedback } from '../lib/combatFeedback'
 import { fadeOutThenClear } from '../lib/entityFade'
-import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../lib/unitExperience'
+import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
   CELL_HEIGHT,
@@ -32,7 +33,6 @@ import {
   FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
-  MENU_INFO_IDS,
   STEP_TIME,
   UNIT_TYPES,
 } from '../constants'
@@ -249,7 +249,8 @@ export class Projectile extends Container {
     // this.destination (when set) is a plain world point, never an instance with relief lift.
     let { x: targetX } = targetPoint
     let targetY =
-      targetPoint.y + (this.destination ? getProjectileDestinationVisualDelta(this) : getProjectileVisualOffset(this.target))
+      targetPoint.y +
+      (this.destination ? getProjectileDestinationVisualDelta(this) : getProjectileVisualOffset(this.target))
 
     playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
 
@@ -466,8 +467,8 @@ export class Projectile extends Container {
 
   getOwnerProjectileMaxDistance(): number | undefined {
     const ownerRange =
-      this.owner.type === UNIT_TYPES.villager && this.type === 'Spear'
-        ? (this.owner as { huntRange?: number }).huntRange || 4
+      this.owner.type === UNIT_TYPES.villager && this.type === HUNTING_SPEAR_PROJECTILE
+        ? (this.owner as { huntRange?: number }).huntRange || DEFAULT_HUNT_RANGE
         : (this.owner as { range?: number }).range
     return ownerRange ? ownerRange * PROJECTILE_CELL_DISTANCE : undefined
   }
@@ -638,7 +639,7 @@ export class Projectile extends Container {
   // Buildings (towers) fire projectiles too but never earn experience.
   getXpCategory(): string | null {
     if (this.owner.family !== FAMILY_TYPES.unit) return null
-    return this.owner.type === UNIT_TYPES.villager && this.type === 'Spear'
+    return this.owner.type === UNIT_TYPES.villager && this.type === HUNTING_SPEAR_PROJECTILE
       ? XP_CATEGORIES.hunting
       : XP_CATEGORIES.ranged
   }
@@ -668,27 +669,16 @@ export class Projectile extends Container {
               Math.round(((this.owner as { pierceAttack?: number }).pierceAttack ?? 0) * damageFactor)
             ),
           }
-    const beforeHitPoints = instance.hitPoints ?? 0
-    instance.hitPoints = getHitPointsWithDamage(source, instance, damage, xpBonusDamage)
-    const damageDealt = beforeHitPoints - (instance.hitPoints ?? 0)
-    showDamageFeedback(instance, damageDealt)
-    if (xpCategory) grantUnitXp(this.owner as UnitEntity, xpCategory, damageDealt)
-    if (instance.selected || instance.shouldKeepHealthBarVisible?.()) {
-      instance.drawHealthBar?.()
-      if (
-        player.selectedUnit === instance ||
-        player.selectedBuilding === instance ||
-        player.selectedOther === instance
-      ) {
-        menu.updateInfo(MENU_INFO_IDS.hitPoints, instance.hitPoints + '/' + instance.totalHitPoints)
-      }
-    }
-    if (instance.hitPoints <= 0) {
-      if (xpCategory) grantUnitXp(this.owner as UnitEntity, xpCategory, XP_KILL_BONUS)
-      instance.die?.()
-    } else {
-      typeof instance.isAttacked === 'function' && instance.isAttacked(this.owner)
-    }
+    applyCombatHit(source, instance, {
+      attacker: this.owner,
+      bonusDamage: xpBonusDamage,
+      defaultDamage: damage,
+      menu,
+      notifyTarget: 'survived',
+      player,
+      xpCategory,
+      xpUnit: xpCategory ? (this.owner as UnitEntity) : null,
+    })
   }
 
   die() {

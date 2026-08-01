@@ -9,7 +9,7 @@ export const CELL_DEPTH = 16
 // CELL_DEPTH-tall cliff face, not a gradual ramp), so the lift reads as "climbing that cliff"
 // instead of a faint nudge.
 export const RELIEF_SPRITE_LIFT_PER_STEP = CELL_DEPTH
-export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.6
+export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.8
 // Per-update easing toward the target lift (and the hero's slope slowdown). Path movement
 // feeds a continuous target (blended along the walk), so easing there only filters jitter.
 // The hero's target moves in half-steps as they cross cells — this rate is tuned slow enough

@@ -1,0 +1,43 @@
+{
+  "name": "Long straight",
+  "type_name": "hair",
+  "layer_1": {
+    "zPos": 120,
+    "male": "hair/long_straight/male/",
+    "muscular": "hair/long_straight/male/",
+    "female": "hair/long_straight/female/",
+    "pregnant": "hair/long_straight/female/",
+    "teen": "hair/long_straight/male/"
+  },
+  "variants": [
+    "ashblonde",
+    "ashplatinum",
+    "black",
+    "blonde",
+    "blue",
+    "brown",
+    "brown2",
+    "green",
+    "orange",
+    "pink",
+    "purple",
+    "red"
+  ],
+  "credits": [
+    {
+      "file": "hair/long_straight",
+      "notes": "",
+      "authors": [
+        "thecilekli",
+        "bluecarrot16"
+      ],
+      "licenses": [
+        "CC0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-long-straight-hair-with-12-colors",
+        "https://opengameart.org/content/lpc-hair"
+      ]
+    }
+  ]
+}

@@ -1,15 +1,15 @@
-import { ACTION_TYPES, FAMILY_TYPES, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import {
+  applyCombatHit,
   findInstancesInSight,
   getCellsAroundPoint,
   getClosestInstanceWithPath,
-  getHitPointsWithDamage,
   getInstanceDegree,
   instanceContactInstance,
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
-import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback, showDamageFeedback } from '../../lib/combatFeedback'
+import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
@@ -168,20 +168,8 @@ export class AnimalCombat {
               animal.context.controls.instanceIsAudible(animal) &&
               playAudibleSoundCue(animal, animal.sounds.hit)
             if ((target.hitPoints ?? 0) > 0) {
-              const beforeHitPoints = target.hitPoints ?? 0
-              target.hitPoints = getHitPointsWithDamage(animal, target)
-              showDamageFeedback(target, beforeHitPoints - (target.hitPoints ?? 0))
-              if (target.selected || target.shouldKeepHealthBarVisible?.()) {
-                target.drawHealthBar?.()
-                if (player && (player.selectedUnit === target || player.selectedBuilding === target)) {
-                  menu.updateInfo(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)
-                }
-              }
-              target.isAttacked?.(animal)
-            }
-            if ((target.hitPoints ?? 0) <= 0) {
-              target.die?.()
-              animal.affectNewDest()
+              const { killed } = applyCombatHit(animal, target, { menu, player })
+              if (killed) animal.affectNewDest()
             }
           },
           animal.rateOfFire * 1000,

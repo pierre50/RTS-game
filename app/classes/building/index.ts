@@ -15,7 +15,6 @@ import {
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
   getTextureSheet,
-  instanceContactInstance,
   canUpdateMinimap,
   updateInstanceVisibility,
   playSoundCue,
@@ -32,7 +31,6 @@ import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import type { FederatedPointerEvent } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
   BuildingEntity,
@@ -55,10 +53,6 @@ type QueuedTechnology = { type: string; config: TechnologyConfig }
 const SHADOW_ALPHA = 0.42
 const SHADOW_OFFSET_Y = 0
 const shadowTextureFrameCache = new Map<string, Texture>()
-
-function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
-  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
-}
 
 export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
@@ -217,9 +211,9 @@ export class Building extends Instance implements BuildingEntity {
       this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
-      this.sprite.on('pointertap', (evt: FederatedPointerEvent) => {
+      this.sprite.on('pointertap', () => {
         const {
-          context: { controls, menu, editor },
+          context: { controls, editor },
         } = this
         if (editor?.handleEntityInteraction(this)) return
         if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
@@ -231,22 +225,6 @@ export class Building extends Instance implements BuildingEntity {
         if (controls.rallyPointController?.active) {
           controls.mouse.prevent = true
           controls.rallyPointController.handleMouseUpOnEntity(this)
-          return
-        }
-        if (controls.isHeroControlActive?.() && this.owner.isPlayed) {
-          if (!isSecondaryPointerButton(evt)) return
-          controls.mouse.prevent = true
-          if (menu.openHeroBuildingMenu?.(this)) {
-            this.selectForPlayedOwner()
-          }
-          return
-        }
-        if (controls.isHeroControlActive?.() && isSecondaryPointerButton(evt)) {
-          controls.mouse.prevent = true
-          const hero = controls.heroUnit
-          if (hero && instanceContactInstance(hero, this)) {
-            menu.openEntityInfoModal?.(this)
-          }
           return
         }
       })

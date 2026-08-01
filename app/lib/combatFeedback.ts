@@ -19,6 +19,11 @@ type FloatingTextOptions = {
   yOffset?: number
 }
 type AlertAggressionCallback = () => void
+type FloatingTextRecord = {
+  text: Text
+  scheduler: NonNullable<RuntimeEntity['context']>['scheduler']
+  taskId: SchedulerTaskId | null
+}
 
 const FLASH_MS = 90
 const FLOAT_STEP_MS = 35
@@ -36,6 +41,15 @@ const sequencedAggressionTaskIds = new WeakMap<RuntimeEntity, SchedulerTaskId>()
 const healingFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const confusionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const blockedFeedbackTimes = new WeakMap<RuntimeEntity, number>()
+const floatingTexts = new WeakMap<RuntimeEntity, Set<FloatingTextRecord>>()
+const floatingTextTargets = new Set<RuntimeEntity>()
+
+function formatDamageFeedback(damage: number): string | null {
+  if (!Number.isFinite(damage)) return null
+  const rounded = Math.round(damage)
+  if (rounded <= 0) return null
+  return `-${rounded}`
+}
 
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
   return (
@@ -77,6 +91,17 @@ function flashWhite(target: RuntimeEntity): void {
 
 export function clearDamageFeedback(target: RuntimeEntity): void {
   const sprite = target.sprite
+  const records = floatingTexts.get(target)
+  if (records) {
+    for (const record of records) {
+      if (record.taskId != null) record.scheduler.remove(record.taskId)
+      if (!record.text.destroyed) record.text.destroy()
+    }
+    records.clear()
+    floatingTexts.delete(target)
+    floatingTextTargets.delete(target)
+  }
+
   if (!sprite) return
 
   const state = flashStates.get(sprite)
@@ -89,9 +114,15 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
   sprite.filters = null
 }
 
+export function clearAllCombatFeedback(): void {
+  for (const target of [...floatingTextTargets]) {
+    clearDamageFeedback(target)
+  }
+}
+
 function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): void {
   const scheduler = target.context?.scheduler
-  if (!scheduler || target.isDestroyed) return
+  if (!scheduler || target.context?.victory || target.context?.defeat || target.isDestroyed || target.isDead) return
 
   const spriteTop = (target.sprite ? -(target.sprite.height * target.sprite.anchor.y) : -40) + getReliefOffset(target)
   const text = new Text({
@@ -112,15 +143,24 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
   ;(target as unknown as Container).addChild(text)
 
   let step = 0
-  let taskId: SchedulerTaskId | null = null
+  const records = floatingTexts.get(target) ?? new Set<FloatingTextRecord>()
+  const record: FloatingTextRecord = { text, scheduler, taskId: null }
+  records.add(record)
+  floatingTexts.set(target, records)
+  floatingTextTargets.add(target)
   const stopFloatingText = () => {
-    if (taskId != null) {
-      scheduler.remove(taskId)
-      taskId = null
+    if (record.taskId != null) {
+      scheduler.remove(record.taskId)
+      record.taskId = null
+    }
+    records.delete(record)
+    if (!records.size) {
+      floatingTexts.delete(target)
+      floatingTextTargets.delete(target)
     }
     if (!text.destroyed) text.destroy()
   }
-  taskId = scheduler.add(
+  record.taskId = scheduler.add(
     () => {
       if (target.isDestroyed || text.destroyed) {
         stopFloatingText()
@@ -129,7 +169,7 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
       step += 1
       text.y = spriteTop - (options.yOffset ?? 12) - (FLOAT_RISE * step) / FLOAT_STEPS
       text.alpha = Math.max(0, 1 - step / FLOAT_STEPS)
-      if (step < FLOAT_STEPS || taskId == null) return
+      if (step < FLOAT_STEPS || record.taskId == null) return
       stopFloatingText()
     },
     FLOAT_STEP_MS,
@@ -138,10 +178,20 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
 }
 
 export function showDamageFeedback(target: RuntimeEntity, damage: number): void {
-  if (!canShowCombatFeedback(target) || damage <= 0) return
+  const text = formatDamageFeedback(damage)
+  if (
+    !text ||
+    !canShowCombatFeedback(target) ||
+    target.context?.victory ||
+    target.context?.defeat ||
+    target.isDestroyed ||
+    target.isDead
+  ) {
+    return
+  }
   if (canFlashDamage(target)) flashWhite(target)
   showFloatingText(target, {
-    text: `-${damage}`,
+    text,
     fill: 0xffffff,
     stroke: 0x6b0f0f,
     taskLabel: 'combat.damageText',
@@ -155,6 +205,18 @@ export function showResourceGainFeedback(target: RuntimeEntity, amount: number):
     fill: 0xb8ff7a,
     stroke: 0x22591f,
     taskLabel: 'resource.gainText',
+  })
+}
+
+export function showParryFeedback(target: RuntimeEntity, text: string): void {
+  if (!canShowCombatFeedback(target)) return
+  showFloatingText(target, {
+    text,
+    fill: 0xfff06a,
+    stroke: 0x5f3c00,
+    taskLabel: 'combat.parryText',
+    fontSize: 12,
+    yOffset: 20,
   })
 }
 

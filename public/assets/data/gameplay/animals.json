@@ -1,6 +1,6 @@
 {
   "Deer": {
-    "totalHitPoints": 8,
+    "totalHitPoints": 16,
     "sight": 8,
     "speed": 1.2,
     "strategy": "runaway",
@@ -31,7 +31,7 @@
     }
   },
   "Hare": {
-    "totalHitPoints": 3,
+    "totalHitPoints": 8,
     "sight": 6,
     "speed": 1.4,
     "strategy": "runaway",
@@ -41,7 +41,7 @@
     "ambientWalkRange": 3,
     "icon": "000_50733",
     "totalQuantity": 40,
-    "spriteScale": 0.7,
+    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
@@ -62,7 +62,7 @@
     }
   },
   "BlackGrouse": {
-    "totalHitPoints": 2,
+    "totalHitPoints": 6,
     "sight": 6,
     "speed": 1.3,
     "strategy": "runaway",
@@ -93,7 +93,7 @@
     }
   },
   "Fox": {
-    "totalHitPoints": 5,
+    "totalHitPoints": 12,
     "sight": 7,
     "speed": 1.3,
     "strategy": "runaway",
@@ -124,7 +124,7 @@
     }
   },
   "Boar": {
-    "totalHitPoints": 15,
+    "totalHitPoints": 30,
     "sight": 8,
     "speed": 0.9,
     "meleeAttack": 3,

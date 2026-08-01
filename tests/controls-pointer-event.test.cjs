@@ -59,6 +59,7 @@ function loadControls() {
           this.active = false
           this.lastUpdateFrameScale = null
           this.primaryPointerDowns = 0
+          this.secondaryPointerDowns = 0
           this.keyUps = []
           this.stopKeyboardMoveCalls = 0
         }
@@ -76,6 +77,9 @@ function loadControls() {
         }
         handlePrimaryPointerDown() {
           this.primaryPointerDowns++
+        }
+        handleSecondaryPointerDown() {
+          this.secondaryPointerDowns++
         }
         handlePointerUp() {}
         setEquippedTool() {}
@@ -107,6 +111,8 @@ function loadControls() {
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: evt => {
         if (evt.key === 'z') return 'heroUp'
+        if (evt.key === 'f') return 'heroEntityInteraction'
+        if (evt.key === ' ') return 'heroDefense'
         if (evt.key === 'ArrowLeft') return 'cameraLeft'
         return null
       },
@@ -405,7 +411,7 @@ test('hero left click attacks instead of opening a building modal', () => {
   }
 })
 
-test('hero right click opens building selection interaction', () => {
+test('hero right click no longer opens building selection interaction', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -428,15 +434,16 @@ test('hero right click opens building selection interaction', () => {
       preventDefault: () => calls.push('preventDefault'),
     })
 
-    assert.deepEqual(calls, ['preventDefault', ['openHeroBuildingMenu', building], 'select'])
-    assert.equal(controls.context.player.selectedBuilding, building)
+    assert.deepEqual(calls, ['preventDefault'])
+    assert.equal(controls.context.player.selectedBuilding, null)
     assert.equal(controls.heroController.primaryPointerDowns, 0)
+    assert.equal(controls.heroController.secondaryPointerDowns, 1)
   } finally {
     restore()
   }
 })
 
-test('hero control-click opens building selection interaction on macOS', () => {
+test('hero entity interaction key opens building selection interaction', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -451,12 +458,11 @@ test('hero control-click opens building selection interaction on macOS', () => {
       return true
     }
 
-    controls.onMouseDown({
-      pageX: 10,
-      pageY: 10,
-      button: 0,
-      ctrlKey: true,
-      target: new MockElement({ inGame: true }),
+    controls.mouse.x = 10
+    controls.mouse.y = 10
+    controls.onKeyDown({
+      key: 'f',
+      code: 'KeyF',
       preventDefault: () => calls.push('preventDefault'),
     })
 
@@ -489,7 +495,7 @@ test('hero context menu is suppressed inside the game', () => {
   }
 })
 
-test('hero control-click suppresses delayed context menu even after modal opens', () => {
+test('hero control-click uses the secondary hero defense action', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -504,25 +510,41 @@ test('hero control-click suppresses delayed context menu even after modal opens'
       button: 0,
       ctrlKey: true,
       target: new MockElement({ inGame: true }),
-      preventDefault: () => {},
-    })
-
-    controls.onContextMenu({
-      clientX: 10,
-      clientY: 10,
-      target: new MockElement({ inGame: false }),
       preventDefault: () => calls.push('preventDefault'),
-      stopPropagation: () => calls.push('stopPropagation'),
-      stopImmediatePropagation: () => calls.push('stopImmediatePropagation'),
     })
 
-    assert.deepEqual(calls, ['preventDefault', 'stopPropagation', 'stopImmediatePropagation'])
+    assert.deepEqual(calls, ['preventDefault'])
+    assert.equal(controls.heroController.primaryPointerDowns, 0)
+    assert.equal(controls.heroController.secondaryPointerDowns, 1)
   } finally {
     restore()
   }
 })
 
-test('hero right click opens info modal for units', () => {
+test('hero defense key is handled by hero controller', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+
+    controls.onKeyDown({
+      key: ' ',
+      code: 'Space',
+      preventDefault() {},
+      target: new MockElement(),
+    })
+    controls.onKeyUp({
+      key: ' ',
+      code: 'Space',
+      target: new MockElement(),
+    })
+
+    assert.deepEqual(controls.heroController.keyUps, ['heroDefense'])
+  } finally {
+    restore()
+  }
+})
+
+test('hero entity interaction key opens info modal for units', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -535,11 +557,11 @@ test('hero right click opens info modal for units', () => {
       return true
     }
 
-    controls.onMouseDown({
-      pageX: 10,
-      pageY: 10,
-      button: 2,
-      target: new MockElement({ inGame: true }),
+    controls.mouse.x = 10
+    controls.mouse.y = 10
+    controls.onKeyDown({
+      key: 'f',
+      code: 'KeyF',
       preventDefault: () => calls.push('preventDefault'),
     })
 
@@ -549,7 +571,7 @@ test('hero right click opens info modal for units', () => {
   }
 })
 
-test('hero right click on self does not open info modal', () => {
+test('hero entity interaction key on self does not open info modal', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -562,11 +584,11 @@ test('hero right click on self does not open info modal', () => {
       return true
     }
 
-    controls.onMouseDown({
-      pageX: 10,
-      pageY: 10,
-      button: 2,
-      target: new MockElement({ inGame: true }),
+    controls.mouse.x = 10
+    controls.mouse.y = 10
+    controls.onKeyDown({
+      key: 'f',
+      code: 'KeyF',
       preventDefault: () => calls.push('preventDefault'),
     })
 

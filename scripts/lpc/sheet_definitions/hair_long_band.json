@@ -1,0 +1,57 @@
+{
+  "name": "Long band",
+  "type_name": "hair",
+  "layer_1": {
+    "zPos": 120,
+    "male": "hair/long_band/male/",
+    "muscular": "hair/long_band/male/",
+    "female": "hair/long_band/female/",
+    "pregnant": "hair/long_band/female/",
+    "teen": "hair/long_band/male/"
+  },
+  "variants": [
+    "blonde",
+    "ash",
+    "sandy",
+    "platinum",
+    "strawberry",
+    "redhead",
+    "ginger",
+    "carrot",
+    "chestnut",
+    "light brown",
+    "dark brown",
+    "black",
+    "raven",
+    "dark gray",
+    "gray",
+    "white",
+    "red",
+    "orange",
+    "gold",
+    "green",
+    "blue",
+    "navy",
+    "violet",
+    "purple",
+    "pink",
+    "rose"
+  ],
+  "credits": [
+    {
+      "file": "hair/long_band",
+      "notes": "",
+      "authors": [
+        "Mandi Paugh",
+        "bluecarrot16"
+      ],
+      "licenses": [
+        "CC-BY-SA 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/fantasy-rpg-npcs",
+        "https://opengameart.org/content/lpc-hair"
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ export const SOUND_CUES = {
     ageAdvance: 'next-age-reached',
   },
   hero: {
+    heartbeat: 'heartbeat',
     meleeWhiff: 'attack-swipe',
   },
   unit: {

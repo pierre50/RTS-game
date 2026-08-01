@@ -1,0 +1,36 @@
+{
+  "name": "Zombie",
+  "type_name": "body",
+  "layer_1": {
+    "zPos": 10,
+    "male": "body/bodies/zombie/universal/",
+    "female": "body/bodies/zombie/universal/",
+    "teen": "body/bodies/zombie/universal/"
+  },
+  "variants": [
+    "zombie"
+  ],
+  "credits": [
+    {
+      "file": "body/bodies/zombie",
+      "notes": "",
+      "authors": [
+        "Stephen Challener (Redshrike)",
+        "Johannes Sj?lund (wulax)",
+        "Sander Frenken (castelonia)",
+        "Benjamin K. Smith (BenCreating)",
+        "bluecarrot16"
+      ],
+      "licenses": [
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles",
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites",
+        "https://opengameart.org/content/lpc-zombie",
+        "https://opengameart.org/content/lpc-character-bases"
+      ]
+    }
+  ]
+}

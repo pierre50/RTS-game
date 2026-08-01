@@ -165,14 +165,14 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             ),
         ),
     },
-    "spear": {
+    "halberd": {
         "walk": Equipment(
-            background=(LayerSpec("weapon/polearm/spear/background/walk/dark.png"),),
-            foreground=(LayerSpec("weapon/polearm/spear/foreground/walk/dark.png"),),
+            background=(LayerSpec("weapon/polearm/halberd/walk/behind/halberd.png"),),
+            foreground=(LayerSpec("weapon/polearm/halberd/walk/halberd.png"),),
         ),
-        "thrust": Equipment(
-            background=(LayerSpec("weapon/polearm/spear/background/thrust/dark.png"),),
-            foreground=(LayerSpec("weapon/polearm/spear/foreground/thrust/dark.png"),),
+        "slash": Equipment(
+            background=(LayerSpec("weapon/polearm/halberd/attack_slash/behind/halberd.png"),),
+            foreground=(LayerSpec("weapon/polearm/halberd/attack_slash/halberd.png"),),
         ),
     },
     "dagger": {
@@ -208,32 +208,7 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             foreground=(LayerSpec("weapon/sword/arming/attack_slash/fg/silver.png"),),
         ),
     },
-    # Longspear only. The matching shield is generated separately.
-    # The longspear's walk art ships on the same oversized held-item canvas as the
-    # bow (direct_columns), and its thrust art on a 192px canvas
-    # (like the scythe's slash). It has no hurt frames at all, so — like the axe —
-    # the weapon is dropped for that pose.
-    "longspear": {
-        "walk": Equipment(
-            background=(
-                LayerSpec(
-                    "weapon/polearm/longspear/background/walk/dark.png",
-                    direct_columns=True,
-                ),
-            ),
-            foreground=(
-                LayerSpec(
-                    "weapon/polearm/longspear/foreground/walk/dark.png",
-                    direct_columns=True,
-                ),
-            ),
-        ),
-        "thrust": Equipment(
-            background=(LayerSpec("weapon/polearm/longspear/background/thrust/dark.png"),),
-            foreground=(LayerSpec("weapon/polearm/longspear/foreground/thrust/dark.png"),),
-        ),
-    },
-    # Walking stick. Only ships walk/thrust art (no spellcast pose), so it's dropped
+    # Walking stick. Only ships walk art (no spellcast pose), so it's dropped
     # during the action animation rather than shown floating in the wrong hand position.
     "cane": {
         "walk": Equipment(foreground=(LayerSpec("weapon/polearm/cane/male/walk/cane.png"),)),
@@ -244,45 +219,15 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             foreground=(LayerSpec("tools/fishing/rod-fg.png"),),
         ),
     },
-    # Same longspear as "longspear", but silver. The matching shield is generated
-    # separately.
-    "longspear_silver": {
-        "walk": Equipment(
-            background=(
-                LayerSpec(
-                    "weapon/polearm/longspear/background/walk/silver.png",
-                    direct_columns=True,
-                ),
-            ),
-            foreground=(
-                LayerSpec(
-                    "weapon/polearm/longspear/foreground/walk/silver.png",
-                    direct_columns=True,
-                ),
-            ),
-        ),
-        "thrust": Equipment(
-            background=(LayerSpec("weapon/polearm/longspear/background/thrust/silver.png"),),
-            foreground=(LayerSpec("weapon/polearm/longspear/foreground/thrust/silver.png"),),
-        ),
-    },
     # Round shields are standalone equipment. The brass sheet is pixel-recolored
     # from the hand-colored gold source by the image pipeline.
     "round_shield_brass_slash": {
         "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png"),)),
         "slash": Equipment(foreground=(LayerSpec("shield/round/slash/brass.png"),)),
     },
-    "round_shield_brass_thrust": {
-        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png"),)),
-        "thrust": Equipment(foreground=(LayerSpec("shield/round/thrust/brass.png"),)),
-    },
     "round_shield_silver_slash": {
         "walk": Equipment(foreground=(LayerSpec("shield/round/walk/silver.png"),)),
         "slash": Equipment(foreground=(LayerSpec("shield/round/slash/silver.png"),)),
-    },
-    "round_shield_silver_thrust": {
-        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/silver.png"),)),
-        "thrust": Equipment(foreground=(LayerSpec("shield/round/thrust/silver.png"),)),
     },
 }
 

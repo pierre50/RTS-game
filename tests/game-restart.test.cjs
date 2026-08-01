@@ -39,10 +39,11 @@ function loadGame() {
       Modal: class Modal {},
       canPlayerStillAct: () => true,
       debounce: fn => fn,
-      getGaiaAnimals: () => [],
+      getGaiaAnimals: gaia => gaia?.units ?? [],
       isPlayedHeroDefeated: () => false,
     },
     '../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
+    '../lib/combatFeedback': { clearAllCombatFeedback() {} },
     '../lib/ActionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
@@ -160,4 +161,56 @@ test('restored saves initialize hero controls before mounting runtime', async ()
   })
 
   assert.deepEqual(calls, ['createRuntime', 'createUiRuntime', 'generateFromJSON', 'controls.init', 'mountRuntime'])
+})
+
+test('pause applies to live units, buildings, gaia animals and corpses once', () => {
+  const Game = loadGame()
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  const calls = []
+  const makePausable = label => ({
+    label,
+    pause: () => calls.push(['pause', label]),
+    resume: () => calls.push(['resume', label]),
+  })
+  const unit = makePausable('unit')
+  const building = makePausable('building')
+  const ownerCorpse = makePausable('owner-corpse')
+  const cellCorpse = makePausable('cell-corpse')
+  const sharedCorpse = makePausable('shared-corpse')
+  const gaiaAnimal = makePausable('gaia-animal')
+
+  game.context.map = {
+    gaia: { units: [gaiaAnimal] },
+    grid: [
+      [
+        {
+          corpses: new Set([cellCorpse, sharedCorpse]),
+        },
+      ],
+    ],
+  }
+  game.context.players = [
+    {
+      units: [unit],
+      buildings: [building],
+      corpses: [ownerCorpse, sharedCorpse],
+    },
+  ]
+  global.document = {
+    getElementById: () => null,
+    createElement: () => ({ id: '', className: '', innerText: '' }),
+    body: { appendChild() {} },
+  }
+
+  game.togglePause(true, { silent: true })
+
+  assert.deepEqual(calls, [
+    ['pause', 'gaia-animal'],
+    ['pause', 'unit'],
+    ['pause', 'building'],
+    ['pause', 'owner-corpse'],
+    ['pause', 'shared-corpse'],
+    ['pause', 'cell-corpse'],
+  ])
+  assert.equal(calls.filter(([, label]) => label === 'shared-corpse').length, 1)
 })

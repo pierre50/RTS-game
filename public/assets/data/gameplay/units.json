@@ -176,7 +176,7 @@
         "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/thrust",
+        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
         "standingSheet": "lpc-baked/villager/greek_01/body/walking",
         "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
         "dyingSheet": "lpc-baked/villager/greek_01/body/dying",

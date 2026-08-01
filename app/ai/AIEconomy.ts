@@ -24,6 +24,16 @@ type GatheringResource = {
   max: number
   cb: (villager: AIEntityLike, resource: AIEntityLike) => void
 }
+type FoodSourceContext = {
+  meatDropSites: AIBuildingLike[]
+  plantDropSites: AIBuildingLike[]
+  viableBerryBushes: Set<AIEntityLike>
+  hasKnownBerryFood: boolean
+}
+
+const MAX_BERRY_DROP_DIST = 14
+const MAX_BERRY_HOME_DIST = 30
+const MAX_HUNT_DROP_DIST_WHEN_BERRIES_KNOWN = 32
 
 export class AIEconomy {
   ai: AIStrategyPlayerLike
@@ -47,8 +57,6 @@ export class AIEconomy {
     const { ai } = this
     const effectiveDropSites = dropSites.length > 0 ? dropSites : this.getStorageDropSites()
     const homeAnchor = ai.getHomeAnchor()
-    const MAX_BERRY_DROP_DIST = 14
-    const MAX_BERRY_HOME_DIST = 30
 
     return new Set(
       [...ai.foundedBerrybushs].filter((bush: AIEntityLike) => {
@@ -265,6 +273,37 @@ export class AIEconomy {
       .filter((building: AIBuildingLike) => building && building.isBuilt && !building.isDead && !building.isDestroyed)
   }
 
+  getFoodSourceContext(): FoodSourceContext {
+    const berryDropSites = this.getStorageDropSites()
+    const meatDropSites = this.getFoodDropSites('meat')
+    const plantDropSites = this.getFoodDropSites('berry')
+    const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
+
+    return {
+      meatDropSites,
+      plantDropSites,
+      viableBerryBushes,
+      hasKnownBerryFood: viableBerryBushes.size > 0,
+    }
+  }
+
+  isViableLiveHunt(animal: AIEntityLike, hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): boolean {
+    if (!animal || animal.isDead || !this.isLocationSafe(animal)) return false
+    if (!hasKnownBerryFood) return true
+
+    const anchors = dropSites.length > 0 ? dropSites : this.ai.getHomeAnchor() ? [this.ai.getHomeAnchor()!] : []
+    if (!anchors.length) return true
+    return anchors.some(
+      anchor => Math.abs(animal.i - anchor.i) + Math.abs(animal.j - anchor.j) <= MAX_HUNT_DROP_DIST_WHEN_BERRIES_KNOWN
+    )
+  }
+
+  getViableHuntAnimals(hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): AIEntityLike[] {
+    return [...this.ai.foundedAnimals].filter((animal: AIEntityLike) =>
+      this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
+    )
+  }
+
   getReachableFishShoreCell(fish: AIEntityLike, villager: AIEntityLike): RuntimeCell | null {
     const map = this.ai.context?.map
     if (!map || !fish || !villager || (fish.quantity || 0) <= 0 || !this.isLocationSafe(fish)) return null
@@ -431,9 +470,13 @@ export class AIEconomy {
 
   // Group-aware hunting: large animals need several hunters on the same target.
   // Small animals get 1 hunter each. Returns count of new hunters assigned.
-  assignHunters(availableVillagers: AIEntityLike[], villagersHunting: AIEntityLike[], maxTotalHunters: number): number {
-    const { ai } = this
-    const safeAnimals = [...ai.foundedAnimals].filter((a: AIEntityLike) => !a.isDead && this.isLocationSafe(a))
+  assignHunters(
+    availableVillagers: AIEntityLike[],
+    villagersHunting: AIEntityLike[],
+    maxTotalHunters: number,
+    huntAnimals?: AIEntityLike[]
+  ): number {
+    const safeAnimals = huntAnimals || this.getViableHuntAnimals(false)
     if (!safeAnimals.length) return 0
 
     // Count hunters already chasing each animal
@@ -510,8 +553,7 @@ export class AIEconomy {
     } = workerSnapshot
     const { maxVillagersOnFood } = targets
     let actions = 0
-    const berryDropSites = this.getStorageDropSites()
-    const viableBerryBushes = this.getViableBerryBushes(berryDropSites)
+    const foodContext = this.getFoodSourceContext()
     const carcassHunters = villagersHunting.filter(
       (villager: AIEntityLike) =>
         villager.action === ACTION_TYPES.takemeat || (villager.dest as AIEntityLike | undefined)?.isDead
@@ -530,15 +572,15 @@ export class AIEconomy {
         ),
     ])
     const sources = {
-      animals: [...ai.foundedAnimals].filter((animal: AIEntityLike) => !animal.isDead && this.isLocationSafe(animal)),
-      berries: [...viableBerryBushes],
+      animals: this.getViableHuntAnimals(foodContext.hasKnownBerryFood, foodContext.meatDropSites),
+      berries: [...foodContext.viableBerryBushes],
       carcasses: [...ai.foundedDeadAnimals].filter(
         (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0 && this.isLocationSafe(animal)
       ),
       farms: [...farmCandidates],
       fish: this.getVillagerFishSources([...availableVillagers, ...villagersFishing]),
-      meatDrops: this.getFoodDropSites('meat'),
-      plantDrops: this.getFoodDropSites('berry'),
+      meatDrops: foodContext.meatDropSites,
+      plantDrops: foodContext.plantDropSites,
       workerPositions: [
         ...availableVillagers,
         ...villagersForaging,
@@ -583,12 +625,12 @@ export class AIEconomy {
     actions += this.assignVillagersToResource(
       availableVillagers,
       activeForagers,
-      viableBerryBushes,
+      foodContext.viableBerryBushes,
       sourceTargets.berry,
       (villager, bush) => villager.sendToBerrybush?.(bush)
     )
 
-    actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt)
+    actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt, sources.animals)
 
     if (sources.fish.length > 0) {
       const toAssign = Math.min(Math.max(0, sourceTargets.fish - activeFishers.length), availableVillagers.length)

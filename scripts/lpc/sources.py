@@ -7,10 +7,11 @@ from jobs import UNIT_JOBS
 
 
 VILLAGER_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
-# The hero bakes the same multi-animation body as the villager (see
-# hero_build_tasks() in build.py) — its "riding" sheet reuses the "slash" frames
-# already covered here, so it needs no extra animation entry.
-MULTI_ANIMATION_BODY_UNITS = {"villager": VILLAGER_BODY_ANIMATIONS, "hero": VILLAGER_BODY_ANIMATIONS}
+HERO_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
+# The hero bakes the action poses it still uses directly (see
+# hero_build_tasks() in build.py); its "riding" sheets reuse those frames, so
+# they need no extra animation entry.
+MULTI_ANIMATION_BODY_UNITS = {"villager": VILLAGER_BODY_ANIMATIONS, "hero": HERO_BODY_ANIMATIONS}
 
 
 def required_source_paths() -> list[str]:

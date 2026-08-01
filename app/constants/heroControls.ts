@@ -1,5 +1,5 @@
 export const HERO_MOVE_KEYS = ['z', 'q', 's', 'd'] as const
-export const HERO_ACTION_KEYS = ['e', 'i'] as const
+export const HERO_ACTION_KEYS = ['e', 'f', 'Space', 'i'] as const
 export const HERO_RESERVED_HOTKEYS = [...HERO_MOVE_KEYS, ...HERO_ACTION_KEYS]
 
 export const HERO_KEYS = new Set<string>(HERO_MOVE_KEYS)

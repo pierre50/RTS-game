@@ -1,10 +1,10 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, MENU_INFO_IDS, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
+  applyCombatHit,
   degreeToDirection,
   findInstancesInSight,
   getClosestInstanceWithPath,
-  getHitPointsWithDamage,
   getInstanceDegree,
   instanceContactInstance,
   onSpriteLoopAtFrame,
@@ -14,8 +14,8 @@ import {
   syncAnimationSpeedToRate,
 } from '../../lib'
 import { Projectile } from '../Projectile'
-import { getCombatXpBonus, grantUnitXp, XP_CATEGORIES, XP_KILL_BONUS } from '../../lib/unitExperience'
-import { showAlertThenAggressionFeedback, showDamageFeedback } from '../../lib/combatFeedback'
+import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
+import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -268,21 +268,14 @@ export class UnitCombat {
           playAudibleSoundCue(unit, unit.sounds.hit)
         }
         if (dest && (dest.hitPoints ?? 0) > 0) {
-          const beforeHitPoints = dest.hitPoints ?? 0
-          dest.hitPoints = getHitPointsWithDamage(unit, dest, undefined, getCombatXpBonus(unit, XP_CATEGORIES.melee))
-          const damageDealt = beforeHitPoints - (dest.hitPoints ?? 0)
-          showDamageFeedback(dest, damageDealt)
-          grantUnitXp(unit, XP_CATEGORIES.melee, damageDealt)
-          if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-            dest.drawHealthBar?.()
-            if (player?.selectedUnit === dest || player?.selectedBuilding === dest || player?.selectedOther === dest) {
-              menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
-            }
-          }
-          dest.isAttacked?.(unit)
-          if ((dest.hitPoints ?? 0) <= 0) {
-            grantUnitXp(unit, XP_CATEGORIES.melee, XP_KILL_BONUS)
-            dest.die?.()
+          const { killed } = applyCombatHit(unit, dest, {
+            bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),
+            menu,
+            player,
+            xpCategory: XP_CATEGORIES.melee,
+            xpUnit: unit,
+          })
+          if (killed) {
             this.finishMeleeAttackAfterCurrentLoop()
           }
         }

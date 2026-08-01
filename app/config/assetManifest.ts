@@ -516,6 +516,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'elephant-alligator-killed',
     ]),
     ...toOggSoundBundle([
+      'heartbeat',
       'weather/light-rain',
       'weather/heavy-rain',
       'weather/light-wind',

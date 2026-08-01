@@ -25,6 +25,8 @@ import {
   showDamageFeedback,
   showHealingFeedback,
   showResourceGainFeedback,
+  HUNTING_SPEAR_DAMAGE,
+  HUNTING_SPEAR_PROJECTILE,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import {
@@ -960,9 +962,9 @@ export class UnitActions {
               {
                 owner: unit,
                 target: dest,
-                type: 'Spear',
+                type: HUNTING_SPEAR_PROJECTILE,
                 destination: unit.realDest,
-                damage: 4,
+                damage: HUNTING_SPEAR_DAMAGE,
               },
               unit.context!
             )

@@ -5,6 +5,8 @@ export const GAMEPAD_CURSOR_SPEED = 18 // screen pixels per frame at full stick 
 // 8BitDo controllers and other Xbox-layout pads once the browser reports mapping: "standard".
 export const GAMEPAD_BUTTON = {
   action: 5, // R1 — attack/use tool
+  defense: 4, // L1 — hold hero defense
+  inspect: 8, // View / Select — inspect/select the hovered entity
   interact: 2, // X / Square
   inventory: 3, // Y / Triangle
   toolPrev: 6, // L2 — cycle tool backward

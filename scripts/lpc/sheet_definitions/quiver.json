@@ -1,0 +1,31 @@
+{
+  "name": "Quiver",
+  "type_name": "quiver",
+  "layer_1": {
+    "zPos": 8,
+    "male": "quiver/",
+    "muscular": "quiver/",
+    "female": "quiver/",
+    "pregnant": "quiver/",
+    "teen": "quiver/"
+  },
+  "variants": [
+    "quiver"
+  ],
+  "credits": [
+    {
+      "file": "quiver",
+      "notes": "",
+      "authors": [
+        "Johannes Sjölund (wulax)"
+      ],
+      "licenses": [
+        "CC-BY-SA 3.0",
+        "GPL 3.0"
+      ],
+      "urls": [
+        "https://opengameart.org/content/lpc-medieval-fantasy-character-sprites"
+      ]
+    }
+  ]
+}

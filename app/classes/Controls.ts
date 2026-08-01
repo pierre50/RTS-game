@@ -39,7 +39,6 @@ const KEYBOARD_CAMERA_ACCELERATION = 0.24
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
 const COMPATIBILITY_MOUSE_EVENT_DELAY = 800
-const SECONDARY_CLICK_CONTEXT_MENU_SUPPRESS_MS = 1000
 
 function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
   return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
@@ -178,6 +177,7 @@ export default class Controls extends Container implements ControlsLike {
     window.removeEventListener('blur', this._onWindowBlur)
     this.context.app.ticker.remove(this._onTick)
     this.cancelActiveInteraction()
+    this.heroController.destroy()
     super.destroy(options ?? undefined)
   }
 
@@ -330,6 +330,12 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
+    if (action === 'heroEntityInteraction' && this.isHeroControlActive()) {
+      evt.preventDefault()
+      this.openHeroEntityInteraction()
+      return
+    }
+
     if (action && this.heroController.handleKeyDown(action)) {
       if (evt.code) this.keyActionsByCode[evt.code] = action
       return
@@ -381,7 +387,9 @@ export default class Controls extends Container implements ControlsLike {
 
   onTick(ticker: TickerLike): void {
     setHeroGameCursorEnabled(this.isHeroControlActive() && !this.isInGameMenuOpen())
+    const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
     if (this.isInteractionBlocked()) {
+      this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
       this.cancelActiveInteraction()
       return
     }
@@ -390,7 +398,6 @@ export default class Controls extends Container implements ControlsLike {
       (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
       MAX_CAMERA_FRAME_SCALE
     )
-    const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
 
     if (this.isHeroControlActive()) {
       this.gamepadInput.update()
@@ -406,6 +413,7 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
+    this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
     this.cameraController.updateMouseMove(frameScale)
     this.panCameraWithArrowKeys(frameScale)
   }
@@ -598,8 +606,7 @@ export default class Controls extends Container implements ControlsLike {
 
     if (this.isHeroControlActive() && isSecondaryPointerButton(evt)) {
       evt.preventDefault?.()
-      this.suppressContextMenuUntil = performance.now() + SECONDARY_CLICK_CONTEXT_MENU_SUPPRESS_MS
-      this.openHeroEntityInteraction()
+      this.heroController.handleSecondaryPointerDown()
       this.mouse.prevent = true
       return
     }
@@ -656,7 +663,7 @@ export default class Controls extends Container implements ControlsLike {
 
   onMouseUp(evt: PointerPageEvent): void {
     if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
-    this.heroController.handlePointerUp()
+    this.heroController.handlePointerUp(isSecondaryPointerButton(evt) ? 2 : (evt.button ?? 0))
     if (this.isInteractionBlocked()) {
       this.cancelActiveInteraction()
       return

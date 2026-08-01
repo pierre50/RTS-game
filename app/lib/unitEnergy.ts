@@ -24,6 +24,7 @@ const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.heal]: 1.5,
   [ACTION_TYPES.convert]: 2,
   heroBowCharge: 2,
+  heroDefense: 2,
   heroWhiff: 0.75,
 }
 

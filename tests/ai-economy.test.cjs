@@ -194,6 +194,113 @@ test('food scoring moves live hunters to closer berries', () => {
   assert.deepEqual(targets, { berry: 1, carcass: 0, farm: 0, fish: 0, hunt: 0 })
 })
 
+test('villager economy stops distant live hunts when known berries are near home', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const assignments = []
+  const townCenter = {
+    i: 0,
+    j: 0,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    type: constants.BUILDING_TYPES.townCenter,
+  }
+  const berry = { i: 3, j: 0, quantity: 250 }
+  const animal = { i: 48, j: 0, hitPoints: 8, totalHitPoints: 8, isDead: false, type: 'Deer' }
+  const hunter = {
+    action: constants.ACTION_TYPES.hunt,
+    dest: animal,
+    hitPoints: 20,
+    i: 42,
+    inactif: false,
+    j: 0,
+    work: constants.WORK_TYPES.hunter,
+    sendToBerrybush: target => assignments.push(['berry', target]),
+    stop: () => {
+      hunter.action = null
+      hunter.dest = null
+      hunter.inactif = true
+    },
+  }
+  const ai = {
+    buildingsByTypes: types => (types.includes(constants.BUILDING_TYPES.townCenter) ? [townCenter] : []),
+    config: {},
+    foundedAnimals: new Set([animal]),
+    foundedBerrybushs: new Set([berry]),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    foundedFish: new Set(),
+    getHomeAnchor: () => townCenter,
+  }
+  const economy = new AIEconomy(ai)
+
+  economy.assignFoodSources(
+    [],
+    {
+      villagersForaging: [],
+      villagersFarming: [],
+      villagersFishing: [],
+      villagersHunting: [hunter],
+      villagersOnFood: [hunter],
+    },
+    { maxVillagersOnFood: 1 },
+    []
+  )
+
+  assert.equal(hunter.inactif, true)
+  assert.deepEqual(assignments, [['berry', berry]])
+})
+
+test('villager economy still permits distant hunting when no berries are known', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const assignments = []
+  const townCenter = {
+    i: 0,
+    j: 0,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    type: constants.BUILDING_TYPES.townCenter,
+  }
+  const animal = { i: 48, j: 0, hitPoints: 8, totalHitPoints: 8, isDead: false, quantity: 250, type: 'Deer' }
+  const villager = {
+    hitPoints: 20,
+    i: 0,
+    inactif: true,
+    j: 0,
+    sendToHunt: target => assignments.push(target),
+  }
+  const ai = {
+    buildingsByTypes: types => (types.includes(constants.BUILDING_TYPES.townCenter) ? [townCenter] : []),
+    config: {},
+    foundedAnimals: new Set([animal]),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    foundedFish: new Set(),
+    getHomeAnchor: () => townCenter,
+  }
+  const economy = new AIEconomy(ai)
+
+  const actions = economy.assignFoodSources(
+    [villager],
+    {
+      villagersForaging: [],
+      villagersFarming: [],
+      villagersFishing: [],
+      villagersHunting: [],
+      villagersOnFood: [],
+    },
+    { maxVillagersOnFood: 1 },
+    []
+  )
+
+  assert.equal(actions, 1)
+  assert.deepEqual(assignments, [animal])
+})
+
 function createGrid(size, waterCells = []) {
   const water = new Set(waterCells.map(([i, j]) => `${i}:${j}`))
   return Array.from({ length: size }, (_, i) =>

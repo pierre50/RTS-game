@@ -17,8 +17,37 @@ function loadHeroTools(overrides = {}) {
       Object.assign(this, options)
     }
   }
+  class Graphics {
+    constructor() {
+      this.alpha = 1
+      this.destroyed = false
+      this.parent = null
+      this.position = { set: (x, y) => Object.assign(this.position, { x, y }) }
+    }
+    moveTo() {
+      return this
+    }
+    lineTo() {
+      return this
+    }
+    circle() {
+      return this
+    }
+    stroke() {
+      return this
+    }
+    fill() {
+      return this
+    }
+    clear() {
+      return this
+    }
+    destroy() {
+      this.destroyed = true
+    }
+  }
   const mocks = {
-    'pixi.js': { Assets: { cache: { get: id => ({ id, textures: [], data: {} }) } } },
+    'pixi.js': { Assets: { cache: { get: id => ({ id, textures: [], data: {} }) } }, Graphics },
     '../constants': {
       ACTION_TYPES: {
         attack: 'attack',
@@ -44,7 +73,12 @@ function loadHeroTools(overrides = {}) {
         stone: 'stone',
         wood: 'wood',
       },
-      SHEET_TYPES: { action: 'actionSheet', harvest: 'harvestSheet', standing: 'standingSheet', walking: 'walkingSheet' },
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        harvest: 'harvestSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
       SOUND_CUES: { hero: { meleeWhiff: 'meleeWhiff' } },
       WORK_FOOD_TYPES: ['fisher', 'hunter', 'farmer', 'forager'],
       WORK_TYPES: {
@@ -80,7 +114,7 @@ function loadHeroTools(overrides = {}) {
         const stats = { meleeAttack: 0, pierceAttack: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
           if (item === 'longsword') stats.meleeAttack += 11
-          if (item === 'longspear') stats.meleeAttack += 17
+          if (item === 'halberd') stats.meleeAttack += 17
           if (item === 'bow') stats.pierceAttack += 4
         }
         return stats
@@ -88,7 +122,7 @@ function loadHeroTools(overrides = {}) {
       getUnitWorkEquipment: work =>
         ({
           heroSword: ['longsword'],
-          heroSpear: ['longspear'],
+          heroSpear: ['halberd'],
           hunter: ['bow'],
         })[work] ?? [],
       refreshUnitEquipmentStats: () => {},
@@ -111,7 +145,7 @@ function loadHeroTools(overrides = {}) {
       getReliefOffset: () => 0,
       instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
     },
-    './lang': { t: key => key },
+    './lang': { t: key => (key === 'heroDefenseMissed' ? 'Loupé !' : key) },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
     './unitEnergy': {
       hasEnergyForAction: (unit, action) => {
@@ -122,6 +156,7 @@ function loadHeroTools(overrides = {}) {
           fishing: 1,
           takemeat: 1,
           heroBowCharge: 2,
+          heroDefense: 2,
           heroWhiff: 1,
         }
         const cost = costs[action] ?? 0
@@ -137,6 +172,7 @@ function loadHeroTools(overrides = {}) {
           fishing: 1,
           takemeat: 1,
           heroBowCharge: 2,
+          heroDefense: 2,
           heroWhiff: 1,
         }
         const cost = costs[action] ?? 0
@@ -157,9 +193,9 @@ function loadHeroTools(overrides = {}) {
         if (unit.totalEnergy == null) unit.totalEnergy = 10
         if (unit.energy == null) unit.energy = unit.totalEnergy
       },
-      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroWhiff: 1 })[action] ?? 0,
+      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroDefense: 2, heroWhiff: 1 })[action] ?? 0,
     },
-    './combatFeedback': { showDamageFeedback: () => {} },
+    './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
     './unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
@@ -172,6 +208,40 @@ function loadHeroTools(overrides = {}) {
     },
   }
   Object.assign(mocks, overrides)
+  if (!mocks['./combatHit']) {
+    mocks['./combatHit'] = {
+      applyCombatHit: (source, target, options = {}) => {
+        const beforeHitPoints = target.hitPoints ?? 0
+        target.hitPoints = mocks['./combat'].getHitPointsWithDamage(
+          source,
+          target,
+          options.defaultDamage,
+          options.bonusDamage
+        )
+        const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
+        const killed = (target.hitPoints ?? 0) <= 0
+        mocks['./combatFeedback'].showDamageFeedback?.(target, damageDealt)
+        if (options.xpUnit && options.xpCategory) {
+          mocks['./unitExperience'].grantUnitXp?.(options.xpUnit, options.xpCategory, damageDealt)
+        }
+        const notifyTarget = options.notifyTarget ?? 'always'
+        if (notifyTarget === 'always' || (notifyTarget === 'survived' && !killed)) {
+          target.isAttacked?.(options.attacker ?? source)
+        }
+        if (killed) {
+          if (options.grantKillXp !== false && options.xpUnit && options.xpCategory) {
+            mocks['./unitExperience'].grantUnitXp?.(
+              options.xpUnit,
+              options.xpCategory,
+              mocks['./unitExperience'].XP_KILL_BONUS
+            )
+          }
+          target.die?.()
+        }
+        return { damageDealt, killed }
+      },
+    }
+  }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -276,6 +346,187 @@ test('bow charge plays the action animation once while power keeps charging', ()
   } finally {
     global.performance = originalPerformance
   }
+})
+
+test('hero defense holds melee tools on the third action frame', () => {
+  const { beginHeroDefense, updateHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(beginHeroDefense(hero, 'sword'), true)
+    assert.equal(hero.actionLocked, true)
+    assert.equal(hero.heroDefenseActive, true)
+    assert.equal(hero.currentSheet, 'actionSheet')
+    assert.equal(hero.sprite.currentFrame, 0)
+    assert.equal(hero.sprite.playing, true)
+
+    hero.sprite.currentFrame = 2
+    hero.sprite.onFrameChange(2)
+    assert.equal(hero.heroDefenseVisualLocked, true)
+    assert.equal(hero.sprite.currentFrame, 2)
+    assert.equal(hero.sprite.playing, false)
+
+    now += 350
+    updateHeroDefense(hero)
+    assert.equal(hero.sprite.currentFrame, 2)
+    assert.equal(hero.energy, 9)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('hero defense releases by reversing back to standing', () => {
+  const { beginHeroDefense, releaseHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  const scheduled = new Map()
+  let nextTaskId = 1
+  hero.context.scheduler = {
+    add(callback) {
+      const id = nextTaskId++
+      scheduled.set(id, callback)
+      return id
+    },
+    addOneShot(callback) {
+      const id = nextTaskId++
+      scheduled.set(id, callback)
+      return id
+    },
+    remove(id) {
+      scheduled.delete(id)
+    },
+  }
+
+  assert.equal(beginHeroDefense(hero, 'halberd'), true)
+  hero.sprite.currentFrame = 2
+  assert.equal(releaseHeroDefense(hero), true)
+  assert.equal(hero.heroDefenseActive, false)
+  assert.equal(hero.actionLocked, true)
+  assert.equal(scheduled.size, 2)
+
+  const reverseStep = [...scheduled.values()][1]
+  reverseStep()
+  assert.equal(hero.sprite.currentFrame, 1)
+  assert.equal(hero.actionLocked, true)
+  reverseStep()
+  assert.equal(hero.sprite.currentFrame, 0)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.equal(scheduled.size, 0)
+})
+
+test('hero defense release fallback clears a stuck reverse animation', () => {
+  const { beginHeroDefense, releaseHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  const scheduled = new Map()
+  let nextTaskId = 1
+  hero.context.scheduler = {
+    add(callback) {
+      const id = nextTaskId++
+      scheduled.set(id, callback)
+      return id
+    },
+    addOneShot(callback) {
+      const id = nextTaskId++
+      scheduled.set(id, callback)
+      return id
+    },
+    remove(id) {
+      scheduled.delete(id)
+    },
+  }
+
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
+  hero.sprite.currentFrame = 2
+  assert.equal(releaseHeroDefense(hero), true)
+  assert.equal(hero.actionLocked, true)
+
+  const fallbackStep = [...scheduled.values()][0]
+  fallbackStep()
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.equal(hero.heroDefenseReverseTaskId, null)
+  assert.equal(hero.heroDefenseReleaseFallbackTaskId, null)
+})
+
+test('hero defense only starts with point weapons', () => {
+  const { beginHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+
+  assert.equal(beginHeroDefense(hero, 'bow'), false)
+  assert.equal(hero.heroDefenseActive, undefined)
+  assert.equal(beginHeroDefense(hero, 'interact'), false)
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
+})
+
+test('hero defense flash targets weapon layers without flashing the body sprite', () => {
+  const parryFeedback = []
+  const { showHeroDefenseFlash } = loadHeroTools({
+    './combatFeedback': {
+      showDamageFeedback: () => {},
+      showParryFeedback: (target, text) => parryFeedback.push([target.label, text]),
+    },
+  })
+  const { hero } = makeHero()
+  const weaponLayer = { tint: 0x123456, alpha: 0.5, blendMode: 'normal', visible: true }
+  const hiddenLayer = { tint: 0x654321, alpha: 0.25, visible: false }
+  const scheduled = []
+  hero.appearanceLayerSprites = new Map([
+    [0, weaponLayer],
+    [1, hiddenLayer],
+  ])
+  hero.context.scheduler = {
+    addOneShot(callback) {
+      scheduled.push(callback)
+      return scheduled.length
+    },
+  }
+  hero.sprite.tint = 0x222222
+  hero.sprite.alpha = 0.75
+
+  showHeroDefenseFlash(hero)
+
+  assert.equal(weaponLayer.tint, 0xfff06a)
+  assert.equal(weaponLayer.alpha, 1)
+  assert.equal(weaponLayer.blendMode, 'add')
+  assert.equal(hiddenLayer.tint, 0x654321)
+  assert.equal(hiddenLayer.alpha, 0.25)
+  assert.equal(hero.sprite.tint, 0x222222)
+  assert.equal(hero.sprite.alpha, 0.75)
+  assert.deepEqual(parryFeedback, [['hero', 'Loupé !']])
+
+  scheduled[0]()
+  assert.equal(weaponLayer.tint, 0x123456)
+  assert.equal(weaponLayer.alpha, 0.5)
+  assert.equal(weaponLayer.blendMode, 'normal')
+})
+
+test('overlapping hero defense flashes restore the original weapon color', () => {
+  const { showHeroDefenseFlash } = loadHeroTools()
+  const { hero } = makeHero()
+  const weaponLayer = { tint: 0x123456, alpha: 0.5, blendMode: 'normal', visible: true }
+  const scheduled = []
+  hero.appearanceLayerSprites = new Map([[0, weaponLayer]])
+  hero.context.scheduler = {
+    addOneShot(callback) {
+      scheduled.push(callback)
+      return scheduled.length
+    },
+  }
+
+  showHeroDefenseFlash(hero)
+  assert.equal(weaponLayer.tint, 0xfff06a)
+  showHeroDefenseFlash(hero)
+  assert.equal(weaponLayer.tint, 0xfff06a)
+
+  scheduled[0]()
+  assert.equal(weaponLayer.tint, 0xfff06a)
+  scheduled[1]()
+  assert.equal(weaponLayer.tint, 0x123456)
+  assert.equal(weaponLayer.alpha, 0.5)
+  assert.equal(weaponLayer.blendMode, 'normal')
 })
 
 test('bow charge keeps the manually aimed destination instead of snapping to a nearby target', () => {

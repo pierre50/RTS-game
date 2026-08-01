@@ -18,16 +18,12 @@ type DynamicEquipmentKey =
   | 'bow'
   | 'bow_great'
   | 'bow_recurve'
-  | 'spear'
+  | 'halberd'
   | 'dagger'
   | 'broadsword'
   | 'longsword'
-  | 'longspear'
-  | 'longspear_silver'
   | 'round_shield_brass_slash'
-  | 'round_shield_brass_thrust'
   | 'round_shield_silver_slash'
-  | 'round_shield_silver_thrust'
   | 'cane'
   | 'fishing_rod'
   | 'quiver'
@@ -57,9 +53,7 @@ const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly Eq
   cane: ['front'],
   quiver: ['back'],
   round_shield_brass_slash: ['front'],
-  round_shield_brass_thrust: ['front'],
   round_shield_silver_slash: ['front'],
-  round_shield_silver_thrust: ['front'],
 }
 
 const EQUIPMENT_SHEET_OVERRIDES: Partial<
@@ -80,24 +74,20 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'bow',
   'bow_great',
   'bow_recurve',
-  'spear',
+  'halberd',
   'dagger',
   'broadsword',
   'longsword',
-  'longspear',
-  'longspear_silver',
   'round_shield_brass_slash',
-  'round_shield_brass_thrust',
   'round_shield_silver_slash',
-  'round_shield_silver_thrust',
   'cane',
   'fishing_rod',
   'quiver',
 ] as const satisfies readonly DynamicEquipmentKey[]
 
 const UNIT_EQUIPMENT: Partial<Record<string, readonly DynamicEquipmentKey[]>> = {
-  [UNIT_TYPES.chief]: ['spear'],
-  [UNIT_TYPES.clubman]: ['spear'],
+  [UNIT_TYPES.chief]: ['halberd'],
+  [UNIT_TYPES.clubman]: ['halberd'],
   [UNIT_TYPES.axeman]: ['axe'],
   [UNIT_TYPES.bowman]: ['quiver', 'bow'],
   [UNIT_TYPES.shortSwordsman]: ['dagger'],
@@ -105,9 +95,9 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly DynamicEquipmentKey[]>> = 
   [UNIT_TYPES.longSwordsman]: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.improvedBowman]: ['quiver', 'bow_great'],
   [UNIT_TYPES.compositeBowman]: ['quiver', 'bow_recurve'],
-  [UNIT_TYPES.hoplite]: ['round_shield_brass_thrust', 'longspear'],
-  Phalanx: ['round_shield_silver_thrust', 'longspear_silver'],
-  Centurion: ['round_shield_silver_thrust', 'longspear_silver'],
+  [UNIT_TYPES.hoplite]: ['halberd'],
+  Phalanx: ['halberd'],
+  Centurion: ['halberd'],
   Legion: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.priest]: ['cane'],
 }
@@ -122,7 +112,7 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   { workType: WORK_TYPES.goldminer, equipment: 'pickaxe', options: { hideWhenLoading: true } },
   { workType: WORK_TYPES.builder, equipment: 'hammer' },
   { workType: 'heroSword', equipment: 'longsword' },
-  { workType: 'heroSpear', equipment: 'longspear' },
+  { workType: 'heroSpear', equipment: 'halberd' },
   { workType: WORK_TYPES.farmer, equipment: 'scythe' },
   { workType: WORK_TYPES.fisher, equipment: 'fishing_rod' },
   {

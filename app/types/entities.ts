@@ -188,6 +188,13 @@ export interface UnitEntity extends RuntimeEntityBase {
   heroBowReleasePower?: number
   heroBowChargeVisualLocked?: boolean
   heroBowChargeLastEnergyAt?: number
+  heroDefenseStart?: number | null
+  heroDefenseLastEnergyAt?: number
+  heroDefenseActive?: boolean
+  heroDefenseVisualLocked?: boolean
+  heroDefenseReverseTaskId?: number | null
+  heroDefenseReleaseFallbackTaskId?: number | null
+  showHeroDefenseFlash?: () => void
   contextAction?: HeroContextAction | null
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
