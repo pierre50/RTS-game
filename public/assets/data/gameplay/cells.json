@@ -88,39 +88,39 @@
     "color": "#647B2F",
     "assets": [
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 0
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 1
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 2
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 3
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 4
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 5
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 6
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 7
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/jungle",
         "frame": 8
       }
     ]

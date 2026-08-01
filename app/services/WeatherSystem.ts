@@ -201,13 +201,12 @@ class Raindrop extends Particle {
 
 // Drawn on a plain <canvas> rather than a Pixi RenderTexture from renderer.generateTexture,
 // since a one-off rendered RenderTexture has no CPU-side backing to re-upload from after a
-// WebGL context loss. That alone wasn't enough, though: ImageSource (what Texture.from(canvas)
-// creates) defaults `autoGarbageCollect` to true, and Pixi's GCSystem unloads a texture's GPU
-// resource after ~60s if nothing "touches" it — the ParticleContainer render path never does,
-// so the rain texture was still getting unloaded out from under it, crashing the next render
-// with "Cannot read properties of null (reading '0')" in GlParticleContainerAdaptor. Disabling
-// autoGarbageCollect below opts this texture out of that eviction entirely, the same way
-// RenderTexture/TexturePool already do for their own temporary resources.
+// WebGL context loss. ImageSource (what Texture.from(canvas) creates) also defaults
+// `autoGarbageCollect` to true, so it's disabled below the same way RenderTexture/TexturePool
+// already do for their own temporary resources — belt-and-suspenders against Pixi's GCSystem
+// unloading it mid-game. The actual recurring "Cannot read properties of null (reading '0')"
+// crash in GlParticleContainerAdaptor was a separate, self-inflicted issue: see the comment
+// on destroy() below.
 function createRainTexture(): Texture {
   const canvas = document.createElement('canvas')
   canvas.width = RAIN_TEXTURE_WIDTH
@@ -508,7 +507,19 @@ export class WeatherSystem {
     this.context.app.ticker.remove(this._onTick)
     this.map.filters = this.mapFilters ? [...this.mapFilters] : null
     this.layer.destroy({ children: true })
-    this.rainTexture.destroy(true)
+    // Destroying the texture wrapper only, NOT its source (no `true` arg): the rain
+    // ParticleContainer never sets its own `.shader`, so it renders through
+    // ParticleContainerPipe's single `defaultShader`, shared by every ParticleContainer
+    // for the renderer's entire lifetime. That shader's BindGroup keeps whatever texture
+    // source was last bound as its uTexture resource. Destroying the source fires a
+    // "change" event with `destroyed: true`, which BindGroup.onResourceChange treats as
+    // permanent: it nulls out `this.resources` for good (see BindGroup.destroy in
+    // pixi.js/lib/rendering/renderers/gpu/shader/BindGroup.mjs). Every later map's
+    // WeatherSystem then crashes the instant it renders its own rain particles, in
+    // GlParticleContainerAdaptor, with "Cannot read properties of null (reading '0')" —
+    // this was the actual root cause, not just GC eviction timing. Leaving the source
+    // alive (undestroyed, just orphaned) is harmless: it's a tiny 3x32 canvas texture.
+    this.rainTexture.destroy()
     this.rainLoopLight?.stop()
     this.rainLoopHeavy?.stop()
     this.windLoopLight?.stop()
