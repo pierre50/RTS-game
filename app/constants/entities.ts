@@ -26,6 +26,7 @@ export const BUILDING_TYPES = {
 }
 
 export const UNIT_TYPES = {
+  hero: 'Hero',
   villager: 'Villager',
   chief: 'Chief',
   priest: 'Priest',

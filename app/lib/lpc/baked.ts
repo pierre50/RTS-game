@@ -32,6 +32,7 @@ type BakedUnitType =
   | 'hero'
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
+  Hero: 'hero',
   Villager: 'villager',
   Chief: 'chief',
   Clubman: 'clubman',
@@ -165,12 +166,8 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
 }
 
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
-  // The ARPG hero keeps unit.type === 'Villager' (same stats/economy jobs), only
-  // its look is swapped — so it's selected by controlMode, not by unit.type like
-  // every other baked unit. A unit promoted to chief at runtime (see
-  // refreshChiefSuccession in AIPlayer.ts) also keeps its original unit.type, so
-  // it's picked up by isChiefUnit() instead — that's what makes it visually
-  // transform into the chief look the moment it's granted.
+  // The player-controlled hero has its own config, but controlMode still wins here
+  // because a promoted chief and a controlled hero can both be isChief units.
   const bakedUnit: BakedUnitType | undefined =
     unit.controlMode === 'hero' ? 'hero' : isChiefUnit(unit) ? 'chief' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
   if (!bakedUnit || !unit.owner) return false

@@ -523,8 +523,19 @@ export class Player implements PlayerLike {
     const { context } = this
     const isHeroUnit = this.isPlayed && !this.units.length
     const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, () => context.map.random()))
+    const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = context.map.addChild(
-      new Unit({ ...options, name, isChief: options.isChief ?? isHeroUnit, owner: this }, context)
+      new Unit(
+        {
+          ...options,
+          type,
+          name,
+          controlMode: isHeroUnit ? 'hero' : options.controlMode,
+          isChief: options.isChief ?? isHeroUnit,
+          owner: this,
+        },
+        context
+      )
     )
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
     return unit

@@ -178,3 +178,24 @@ test('unselect removes the active hero world health bar in hero gameplay', () =>
   assert.equal(children.some(child => child.label === 'selection'), false)
   assert.equal(children.some(child => child.label === 'healthBar'), false)
 })
+
+test('pause and resume ignore static sprites but control animated sprites', () => {
+  const { Instance } = loadInstance()
+  const staticInstance = Object.create(Instance.prototype)
+  staticInstance.sprite = { texture: {} }
+
+  assert.doesNotThrow(() => Instance.prototype.pause.call(staticInstance))
+  assert.doesNotThrow(() => Instance.prototype.resume.call(staticInstance))
+
+  const calls = []
+  const animatedInstance = Object.create(Instance.prototype)
+  animatedInstance.sprite = {
+    stop: () => calls.push('stop'),
+    play: () => calls.push('play'),
+  }
+
+  Instance.prototype.pause.call(animatedInstance)
+  Instance.prototype.resume.call(animatedInstance)
+
+  assert.deepEqual(calls, ['stop', 'play'])
+})

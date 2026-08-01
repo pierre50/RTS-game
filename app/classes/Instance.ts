@@ -134,11 +134,15 @@ export class Instance extends Container {
   }
 
   pause(): void {
-    ;(this.sprite as AnimatedSprite | undefined)?.stop()
+    if (typeof (this.sprite as AnimatedSprite | undefined)?.stop === 'function') {
+      ;(this.sprite as AnimatedSprite).stop()
+    }
   }
 
   resume(): void {
-    ;(this.sprite as AnimatedSprite | undefined)?.play()
+    if (typeof (this.sprite as AnimatedSprite | undefined)?.play === 'function') {
+      ;(this.sprite as AnimatedSprite).play()
+    }
   }
 
   select(): void {

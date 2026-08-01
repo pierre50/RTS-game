@@ -79,6 +79,10 @@ function canLoadTransport(source?: CombatEntity | null, target?: CombatEntity | 
   )
 }
 
+function isVillagerOrHero(source?: CombatEntity | null): boolean {
+  return source?.type === UNIT_TYPES.villager || source?.type === UNIT_TYPES.hero
+}
+
 function getDamage(source: CombatEntity, target: CombatEntity): number {
   const meleeAttack = source.meleeAttack || 0
   const pierceAttack = source.pierceAttack || 0
@@ -166,7 +170,7 @@ export const getActionCondition = (
       ),
     takemeat: () =>
       Boolean(
-        source.type === UNIT_TYPES.villager &&
+        isVillagerOrHero(source) &&
           target.family === FAMILY_TYPES.animal &&
           (target.quantity ?? 0) > 0 &&
           target.isDead &&
@@ -178,18 +182,15 @@ export const getActionCondition = (
       (target.quantity ?? 0) > 0 &&
       !target.isDestroyed,
     hunt: () =>
-      source.type === UNIT_TYPES.villager &&
+      isVillagerOrHero(source) &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
       !target.isDead,
     chopwood: () =>
-      source.type === UNIT_TYPES.villager &&
-      target.type === RESOURCE_TYPES.tree &&
-      (target.quantity ?? 0) > 0 &&
-      !target.isDead,
+      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead,
     farm: () =>
-      source.type === UNIT_TYPES.villager &&
+      isVillagerOrHero(source) &&
       target.type === BUILDING_TYPES.farm &&
       (target.hitPoints ?? 0) > 0 &&
       target.owner?.label === source.owner?.label &&
@@ -197,22 +198,16 @@ export const getActionCondition = (
       (!target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
-      source.type === UNIT_TYPES.villager &&
+      isVillagerOrHero(source) &&
       target.type === RESOURCE_TYPES.berrybush &&
       (target.quantity ?? 0) > 0 &&
       !target.isDead,
     minestone: () =>
-      source.type === UNIT_TYPES.villager &&
-      target.type === RESOURCE_TYPES.stone &&
-      (target.quantity ?? 0) > 0 &&
-      !target.isDead,
+      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.stone && (target.quantity ?? 0) > 0 && !target.isDead,
     minegold: () =>
-      source.type === UNIT_TYPES.villager &&
-      target.type === RESOURCE_TYPES.gold &&
-      (target.quantity ?? 0) > 0 &&
-      !target.isDead,
+      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.gold && (target.quantity ?? 0) > 0 && !target.isDead,
     build: () =>
-      source.type === UNIT_TYPES.villager &&
+      isVillagerOrHero(source) &&
       target.owner?.label === source.owner?.label &&
       target.family === FAMILY_TYPES.building &&
       (target.hitPoints ?? 0) > 0 &&

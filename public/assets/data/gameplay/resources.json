@@ -169,19 +169,11 @@
     "habitat": "Water",
     "totalQuantity": 200,
     "icon": "034_50730",
-    "allowAction": [
-      "Villager",
-      "FishingBoat",
-      "FishingShip"
-    ],
+    "allowAction": ["Hero", "Villager", "FishingBoat", "FishingShip"],
     "isAnimated": true,
     "assets": "resources/fish/small",
     "sounds": {
-      "command": [
-        "fish",
-        "fish-2",
-        "fish-3"
-      ]
+      "command": ["fish", "fish-2", "fish-3"]
     }
   }
 }

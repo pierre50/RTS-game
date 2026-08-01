@@ -124,11 +124,7 @@
     },
     "sounds": {
       "create": "villager-completed",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -141,6 +137,124 @@
       "huntCommand": "isay",
       "work": {
         "gatherFood": "farming-3",
+        "chopWood": "wood-chopping",
+        "forageBerry": "berry-gathering",
+        "mineStone": "mining-2",
+        "mineGold": "mining-2",
+        "build": "building",
+        "throwSpear": "arrow-shot"
+      }
+    }
+  },
+  "Hero": {
+    "category": "Civilian",
+    "isChief": true,
+    "totalHitPoints": 45,
+    "sight": 10,
+    "speed": 1.1,
+    "rateOfFire": 1.5,
+    "icon": "001_50730",
+    "meleeAttack": 5,
+    "meleeArmor": 0,
+    "pierceArmor": 1,
+    "range": 1,
+    "showBuildings": true,
+    "showLoading": true,
+    "loadingMax": {
+      "wood": 10,
+      "berry": 10,
+      "stone": 10,
+      "gold": 10,
+      "meat": 10,
+      "fish": 10
+    },
+    "allAssets": {
+      "default": {
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+      },
+      "attacker": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+      },
+      "hunter": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/shoot",
+        "harvestSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "fisher": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/thrust",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "forager": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "stoneminer": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "goldminer": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "woodcutter": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+      },
+      "builder": {
+        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
+        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+      }
+    },
+    "gatherAmount": {
+      "forager": 1,
+      "hunter": 1,
+      "fisher": 1,
+      "woodcutter": 1,
+      "stoneminer": 1,
+      "goldminer": 1
+    },
+    "sounds": {
+      "create": "human-unit-completed",
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"],
+      "command": "olmars",
+      "buildCommand": "homis",
+      "huntCommand": "isay",
+      "work": {
         "chopWood": "wood-chopping",
         "forageBerry": "berry-gathering",
         "mineStone": "mining-2",
@@ -186,16 +300,8 @@
     "sounds": {
       "create": "human-unit-completed",
       "command": "olmars",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3"
-      ]
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"]
     }
   },
   "Clubman": {
@@ -227,17 +333,8 @@
       "corpseSheet": "lpc-baked/clubman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -272,17 +369,8 @@
       "corpseSheet": "lpc-baked/bowman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -315,23 +403,11 @@
     },
     "sounds": {
       "create": "priest-completed",
-      "command": [
-        "ayohoyohoyo",
-        "wololo",
-        "hayoyo"
-      ],
-      "move": [
-        "ayohoyohoyo",
-        "wololo",
-        "hayoyo"
-      ],
+      "command": ["ayohoyohoyo", "wololo", "hayoyo"],
+      "move": ["ayohoyohoyo", "wololo", "hayoyo"],
       "heal": "ayohoyohoyo",
       "convert": "wololo",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -375,18 +451,8 @@
       "corpseSheet": "lpc-baked/axeman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -431,18 +497,8 @@
       "corpseSheet": "lpc-baked/shortswordman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -487,18 +543,8 @@
       "corpseSheet": "lpc-baked/broadswordman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -538,18 +584,8 @@
       "corpseSheet": "lpc-baked/longswordman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -596,17 +632,8 @@
       "corpseSheet": "lpc-baked/improvedbowman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -639,18 +666,8 @@
       "corpseSheet": "lpc-baked/hoplite/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -692,17 +709,8 @@
       "corpseSheet": "lpc-baked/compositebowman/greek_01/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -731,9 +739,7 @@
     "gatheringRate": {
       "fisher": 0.4
     },
-    "silentWorkSounds": [
-      "fishing"
-    ],
+    "silentWorkSounds": ["fishing"],
     "sheetDirectionCounts": {
       "dyingSheet": 1,
       "corpseSheet": 1
@@ -750,17 +756,9 @@
       "create": "non-military-ship-completed",
       "command": "dock-completed-selected",
       "move": "dock-completed-selected",
-      "die": [
-        "ship-sunk",
-        "ship-sunk-2",
-        "ship-sunk-3"
-      ],
+      "die": ["ship-sunk", "ship-sunk-2", "ship-sunk-3"],
       "work": {
-        "fishing": [
-          "fish",
-          "fish-2",
-          "fish-3"
-        ]
+        "fishing": ["fish", "fish-2", "fish-3"]
       }
     }
   }

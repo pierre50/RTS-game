@@ -175,7 +175,11 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     assert.equal(waterBufferViolations, 0, 'blueprint relief should keep a three-cell water buffer at z=0')
     assert.equal(spawnPlateauViolations, 0, 'blueprint relief should keep Town Center spawn zones at z=0')
     assert.equal(reliefStepViolations, 0, 'blueprint relief should not contain unsupported height jumps')
-    assert.equal((blueprint.resources || []).some(resource => resource.type !== 'ShoreFish'), false)
+    assert.equal(
+      (blueprint.resources || []).some(resource => ['Salmon', 'Fish', 'RiverFish', 'Whale'].includes(resource.type)),
+      false,
+      'blueprint resources should not include removed fish resource types'
+    )
   } finally {
     fs.rmSync(out, { recursive: true, force: true })
   }
