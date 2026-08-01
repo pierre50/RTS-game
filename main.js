@@ -1,17 +1,96 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
+const fs = require('fs')
 const path = require('path')
+
+const devServerUrl = process.env.ELECTRON_START_URL
+
+function savesDir() {
+  const dir = path.join(app.getPath('userData'), 'saves')
+  fs.mkdirSync(dir, { recursive: true })
+  return dir
+}
+
+function isValidSaveKey(key) {
+  return typeof key === 'string' && /^save_\d+$/.test(key)
+}
+
+function saveFilePath(key) {
+  return path.join(savesDir(), `${key}.save`)
+}
+
+function indexFilePath() {
+  return path.join(savesDir(), 'index.json')
+}
+
+ipcMain.on('saves:getIndex', event => {
+  try {
+    event.returnValue = fs.readFileSync(indexFilePath(), 'utf-8')
+  } catch {
+    event.returnValue = null
+  }
+})
+
+ipcMain.on('saves:setIndex', (event, json) => {
+  fs.writeFileSync(indexFilePath(), json, 'utf-8')
+  event.returnValue = true
+})
+
+ipcMain.on('saves:getItem', (event, key) => {
+  if (!isValidSaveKey(key)) {
+    event.returnValue = null
+    return
+  }
+  try {
+    event.returnValue = fs.readFileSync(saveFilePath(key), 'utf-8')
+  } catch {
+    event.returnValue = null
+  }
+})
+
+ipcMain.on('saves:setItem', (event, key, value) => {
+  if (!isValidSaveKey(key)) {
+    event.returnValue = false
+    return
+  }
+  try {
+    fs.writeFileSync(saveFilePath(key), value, 'utf-8')
+    event.returnValue = true
+  } catch {
+    event.returnValue = false
+  }
+})
+
+ipcMain.on('saves:removeItem', (event, key) => {
+  if (isValidSaveKey(key)) {
+    try {
+      fs.unlinkSync(saveFilePath(key))
+    } catch {
+      // save already absent, nothing to remove
+    }
+  }
+  event.returnValue = true
+})
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js'),
     },
   })
 
-  win.loadFile(path.join(app.getAppPath(), 'build', 'index.html'))
+  win.once('ready-to-show', () => win.show())
+
+  if (devServerUrl) {
+    win.loadURL(devServerUrl)
+    win.webContents.openDevTools()
+  } else {
+    win.loadFile(path.join(app.getAppPath(), 'build', 'index.html'))
+  }
 }
 
 app.whenReady().then(createWindow)

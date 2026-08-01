@@ -1,4 +1,4 @@
-import { Container, Graphics, type Filter } from 'pixi.js'
+import { Container, Graphics, Particle, ParticleContainer, Texture, type Filter } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
 import { sound, type IMediaInstance } from '@pixi/sound'
 import { SOUND_CUES } from '../constants'
@@ -21,17 +21,10 @@ type WeatherColor = {
   saturation: number
 }
 
-type Raindrop = {
-  alpha: number
-  length: number
-  speed: number
-  wobble: number
-  x: number
-  y: number
-}
-
 const TARGET_FRAME_MS = 1000 / 60
 const MAX_RAIN_DROPS = 620
+const RAIN_TEXTURE_WIDTH = 3
+const RAIN_TEXTURE_HEIGHT = 32
 const COLOR_LERP_PER_SECOND = 1.7
 const RAIN_LERP_PER_SECOND = 1.4
 const FIRST_SUNNY_MIN_SECONDS = 18
@@ -199,6 +192,33 @@ function seconds(ms: number): number {
   return Math.round(ms / 1000)
 }
 
+class Raindrop extends Particle {
+  baseAlpha = 0
+  baseLength = 0
+  speed = 0
+  wobble = 0
+}
+
+// Drawn on a plain <canvas> (not a Pixi RenderTexture from renderer.generateTexture) so the
+// pixel data survives a WebGL context loss — Pixi re-uploads canvas/image-backed textures
+// automatically on context restore, but a one-off rendered RenderTexture has no CPU-side
+// backing to re-upload from and is left with a null GPU resource, crashing the next time the
+// rain ParticleContainer tries to bind it (this is what caused the "Cannot read properties of
+// null (reading '0')" crash in GlParticleContainerAdaptor).
+function createRainTexture(): Texture {
+  const canvas = document.createElement('canvas')
+  canvas.width = RAIN_TEXTURE_WIDTH
+  canvas.height = RAIN_TEXTURE_HEIGHT
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2D canvas context unavailable for rain texture')
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
+  gradient.addColorStop(0, 'rgba(255,255,255,1)')
+  gradient.addColorStop(1, 'rgba(255,255,255,0.1)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  return Texture.from(canvas)
+}
+
 export class WeatherSystem {
   context: GameContextLike
   currentColor: WeatherColor
@@ -214,7 +234,8 @@ export class WeatherSystem {
   mapFilters: readonly Filter[] | null
   phase: WeatherPhase
   phaseEndsAt: number
-  rain: Graphics
+  rain: ParticleContainer
+  rainTexture: Texture
   rainVeil: Graphics
   raindrops: Raindrop[]
   rainIntensity: number
@@ -253,6 +274,7 @@ export class WeatherSystem {
     this.lightningBursts = 0
     this.lightningNextBurstMs = 0
     this.screenRect = this.getScreenRect()
+    this.rainTexture = createRainTexture()
     this.raindrops = Array.from({ length: MAX_RAIN_DROPS }, () => this.createRaindrop(true))
 
     this.tintFilter = new AdjustmentFilter(this.currentColor)
@@ -263,7 +285,11 @@ export class WeatherSystem {
     this.layer.eventMode = 'none'
     this.layer.label = 'weather-layer'
     this.rainVeil = new Graphics()
-    this.rain = new Graphics()
+    this.rain = new ParticleContainer({
+      texture: this.rainTexture,
+      dynamicProperties: { position: true, rotation: true, vertex: true, color: true },
+    })
+    this.rain.addParticle(...this.raindrops)
     this.flashOverlay = new Graphics()
     this.layer.addChild(this.rainVeil, this.rain, this.flashOverlay)
 
@@ -282,15 +308,21 @@ export class WeatherSystem {
   }
 
   createRaindrop(anywhere = false): Raindrop {
+    const drop = new Raindrop({ texture: this.rainTexture, anchorX: 0.5, anchorY: 0, alpha: 0 })
+    this.resetRaindrop(drop, anywhere)
+    return drop
+  }
+
+  resetRaindrop(drop: Raindrop, anywhere = false): void {
     const margin = 160
-    return {
-      x: randomBetween(-margin, this.screenRect.width + margin, this.random),
-      y: anywhere ? randomBetween(-margin, this.screenRect.height + margin, this.random) : randomBetween(-margin, 0, this.random),
-      speed: randomBetween(720, 1320, this.random),
-      length: randomBetween(14, 34, this.random),
-      alpha: randomBetween(0.18, 0.62, this.random),
-      wobble: randomBetween(-1, 1, this.random),
-    }
+    drop.x = randomBetween(-margin, this.screenRect.width + margin, this.random)
+    drop.y = anywhere
+      ? randomBetween(-margin, this.screenRect.height + margin, this.random)
+      : randomBetween(-margin, 0, this.random)
+    drop.speed = randomBetween(720, 1320, this.random)
+    drop.baseLength = randomBetween(14, 34, this.random)
+    drop.baseAlpha = randomBetween(0.18, 0.62, this.random)
+    drop.wobble = randomBetween(-1, 1, this.random)
   }
 
   forcePhase(phase: WeatherPhase): void {
@@ -404,17 +436,22 @@ export class WeatherSystem {
     const noisyTarget =
       rainTarget > 0 ? Math.max(0, Math.min(1, rainTarget + Math.sin(this.elapsedMs * 0.0009) * 0.045)) : 0
     this.rainIntensity = lerp(this.rainIntensity, noisyTarget, elapsedSeconds * RAIN_LERP_PER_SECOND)
-    this.rain.clear()
-    if (this.rainIntensity < 0.015) return
 
-    const activeDrops = Math.round(MAX_RAIN_DROPS * this.rainIntensity)
+    const activeDrops = this.rainIntensity < 0.015 ? 0 : Math.round(MAX_RAIN_DROPS * this.rainIntensity)
     const rainColor = this.rainIntensity > 0.62 ? 0xf7fbff : 0xd9e8ff
     const slantRatio = clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08)
+    const rotation = Math.atan2(-slantRatio, 1)
+    const widthScale = this.rainIntensity > 0.7 ? 1.4 : 1
     const drift = RAIN_DRIFT_PER_SECOND + this.windX * 4
     const margin = 180
 
-    for (let i = 0; i < activeDrops; i++) {
+    for (let i = 0; i < MAX_RAIN_DROPS; i++) {
       const drop = this.raindrops[i]
+      if (i >= activeDrops) {
+        if (drop.alpha !== 0) drop.alpha = 0
+        continue
+      }
+
       drop.x += (drift + drop.wobble * 18) * elapsedSeconds
       drop.y += drop.speed * elapsedSeconds * (0.76 + this.rainIntensity * 0.4)
       if (
@@ -422,19 +459,15 @@ export class WeatherSystem {
         drop.x < -margin * 2 ||
         drop.x > this.screenRect.width + margin * 2
       ) {
-        this.raindrops[i] = this.createRaindrop(false)
-        continue
+        this.resetRaindrop(drop, false)
       }
 
-      const length = drop.length * (0.8 + this.rainIntensity * 0.55)
-      const slant = length * slantRatio
-      this.rain.moveTo(drop.x, drop.y)
-      this.rain.lineTo(drop.x + slant, drop.y + length)
-      this.rain.stroke({
-        alpha: drop.alpha * (0.42 + this.rainIntensity * 0.68),
-        color: rainColor,
-        width: this.rainIntensity > 0.7 ? 1.4 : 1,
-      })
+      const length = drop.baseLength * (0.8 + this.rainIntensity * 0.55)
+      drop.scaleY = length / RAIN_TEXTURE_HEIGHT
+      drop.scaleX = widthScale
+      drop.rotation = rotation
+      drop.tint = rainColor
+      drop.alpha = drop.baseAlpha * (0.42 + this.rainIntensity * 0.68)
     }
   }
 
@@ -470,6 +503,7 @@ export class WeatherSystem {
     this.context.app.ticker.remove(this._onTick)
     this.map.filters = this.mapFilters ? [...this.mapFilters] : null
     this.layer.destroy({ children: true })
+    this.rainTexture.destroy(true)
     this.rainLoopLight?.stop()
     this.rainLoopHeavy?.stop()
     this.windLoopLight?.stop()

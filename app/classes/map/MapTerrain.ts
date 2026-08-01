@@ -7,7 +7,7 @@ import {
   getTexture,
   textureRefToString,
 } from '../../lib'
-import { CELL_DEPTH } from '../../constants'
+import { CELL_DEPTH, getEnvironmentTerrainParams } from '../../constants'
 import {
   EIGHT_NEIGHBOR_OFFSETS,
   getCyclicGroups,
@@ -55,6 +55,7 @@ type TerrainCell = MapTypes.RuntimeCell & {
 type TerrainMap = Container & {
   size: number
   seed?: string | number
+  environment?: string
   grid: TerrainCell[][]
   playersPos: Array<GridPosition | null>
   terrainBackfill?: Container | null
@@ -184,6 +185,9 @@ export class MapTerrain {
       [0.99, 3],
       [1, 4],
     ].map(([ratio, level]) => [getQuantile(ratio), level])
+    // Desert reads as "peu de relief": flatten band levels toward 0 instead of
+    // changing the bands themselves, so coast-distance clamping still applies unchanged.
+    const { reliefAmplitude } = getEnvironmentTerrainParams(this.map.environment)
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -192,7 +196,7 @@ export class MapTerrain {
 
         const index = i * n + j
         const matchingBand = reliefBands.find(([threshold]) => reliefH[index] <= threshold)
-        const level = matchingBand?.[1] ?? 4
+        const level = Math.round((matchingBand?.[1] ?? 4) * reliefAmplitude)
         const minAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[index])
         const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[index])
         const targetLevel = Math.max(minAllowed, Math.min(maxAllowed, level))

@@ -1,5 +1,6 @@
 import { Container, type ContainerChild } from 'pixi.js'
 import { BUCKET_SIZE, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
+import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
   type GenerateMapOptions,
@@ -49,6 +50,7 @@ export default class Map extends Container {
   size: number
   seed?: string | number
   mapType?: string
+  environment?: string
   chanceOfSets: number
   ready: boolean
   grid: RuntimeCell[][]
@@ -278,8 +280,8 @@ export default class Map extends Container {
     return this.mapGeneration.generateCellsAsync(options)
   }
 
-  generateTerrain(gridSize: number = 120, seed?: number): TerrainGrid {
-    return this.mapGeneration.generateTerrain(gridSize, seed)
+  generateTerrain(gridSize: number = 120, seed?: number, params?: Partial<EnvironmentTerrainParams>): TerrainGrid {
+    return this.mapGeneration.generateTerrain(gridSize, seed, params)
   }
 
   generateSets(): void {

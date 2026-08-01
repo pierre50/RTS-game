@@ -1,10 +1,12 @@
 export const AMBIENT_BIRD_WORLD_ZINDEX = 5e8
 
-// Per-biome probability for each empty cell to receive a tree in generateBiomeTrees.
+// Per-cell-type probability for an empty cell to receive a tree in generateBiomeTrees.
 // Grass/Desert already receive trees via generateForestAroundPlayer + neutral groups.
+// DarkForest/Jungle have no entry here: every environment that can produce those cell
+// types always sets EnvironmentTerrainParams.forestCellTreeChance, which overrides this
+// table entirely (see MapResources#generateBiomeTreesAsync) — an environment-independent
+// default for them would never actually be read.
 export const BIOME_TREE_CHANCE = {
-  DarkForest: 0.92,
-  Jungle: 0.92,
   Grass: 0,
   Desert: 0,
 }

@@ -25,6 +25,14 @@ Available alias:
 pnpm dev
 ```
 
+This serves the browser build only. To iterate on the desktop (Electron) build with hot-reload, without rebuilding and reinstalling the packaged app every time:
+
+```bash
+pnpm electron:dev
+```
+
+This starts the webpack dev server and an Electron window pointed at it; changes to the renderer code reload live in the window.
+
 ## Web build
 
 ```bash

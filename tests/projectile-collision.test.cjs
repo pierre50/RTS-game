@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadProjectile() {
+function loadProjectile(libOverrides = {}) {
   const filename = path.join(__dirname, '../app/classes/Projectile.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -58,6 +58,7 @@ function loadProjectile() {
     },
     '../constants': constants,
     '../lib': {
+      applyCombatHit: () => ({ damageDealt: 0, killed: false }),
       average: (a, b) => (a + b) / 2,
       bindAnimatedSpriteToTicker: () => {},
       degreeToDirection: () => 'south',
@@ -79,6 +80,7 @@ function loadProjectile() {
       pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
       projectileTracksTarget: () => false,
       uuidv4: () => 'projectile-1',
+      ...libOverrides,
     },
     '../lib/combatFeedback': { showDamageFeedback: () => {} },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
@@ -185,4 +187,49 @@ test('mounted archers spawn arrows from the visual rider height', () => {
 
   assert.equal(projectile.y, 66)
   assert.equal(projectile.destinationPoint.y, 164)
+})
+
+test('onHit reports the spawn-to-target vector as the hit direction', () => {
+  let capturedOptions = null
+  const Projectile = loadProjectile({
+    applyCombatHit: (_source, _target, options) => {
+      capturedOptions = options
+      return { damageDealt: 5, killed: false }
+    },
+  })
+  const owner = {
+    family: 'unit',
+    type: 'Bowman',
+    owner: { label: 'player', config: { projectiles: { Arrow: { assets: 'projectiles/arrow', size: 3, speed: 14 } } } },
+    x: 0,
+    y: 0,
+    z: 0,
+    width: 32,
+    height: 48,
+    range: 5,
+    sprite: { height: 48 },
+  }
+  const target = {
+    family: 'animal',
+    owner: { label: 'gaia' },
+    x: 120,
+    y: 40,
+    z: 0,
+    width: 32,
+    height: 32,
+    hitPoints: 10,
+  }
+  const projectile = new Projectile(
+    { owner, target, type: 'Arrow', destination: { x: target.x, y: target.y }, damage: 5 },
+    { app: {}, players: [], map: {}, scheduler: { add: () => null }, player: owner.owner }
+  )
+
+  projectile.onHit(target)
+
+  assert.deepEqual(capturedOptions.hitDirection, {
+    x: projectile.destinationPoint.x - projectile.spawnOrigin.x,
+    y: projectile.destinationPoint.y - projectile.spawnOrigin.y,
+  })
+  // The shot flies rightward from spawn to target, so the hit direction should too.
+  assert.equal(capturedOptions.hitDirection.x > 0, true)
 })

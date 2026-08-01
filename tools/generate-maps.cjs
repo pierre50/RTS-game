@@ -17,6 +17,23 @@ const OUTPUT = path.join(ROOT, 'public', 'maps')
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
+// app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded
+// directly instead of duplicating its thresholds here like the mocks below have to.
+function loadPlainTsModule(relativePath) {
+  const filename = path.join(ROOT, relativePath)
+  const babel = require('@babel/core')
+  const { code } = babel.transformFileSync(filename, {
+    presets: [['@babel/preset-env', { targets: { node: 'current' } }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  new Function('module', 'exports', 'require', code)(module, module.exports, require)
+  return module.exports
+}
+
+const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = loadPlainTsModule(
+  'app/constants/environments.ts'
+)
+
 function mapSettingsFromRuntimeConfig() {
   const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
   const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*maxPlayers:\s*(\d+)(?:,\s*editorOnly:\s*true)?/g)]
@@ -34,14 +51,22 @@ function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
   console.log(`Usage: pnpm maps:generate -- --size 256 --count 100
 
-  --size <n[,n]>        144, 256, 512 (default: 256)
-  --count <n>           maps per size (default: 10)
-  --seed <n>            reproducible batch seed (default: current time)
-  --out <directory>     output directory (default: public/maps)`)
+  --size <n[,n]>          144, 256, 512 (default: 256)
+  --count <n>             maps per size, per environment (default: 10)
+  --seed <n>              reproducible batch seed (default: current time)
+  --out <directory>       output directory (default: public/maps)
+  --environment <e[,e]>   ${ENVIRONMENT_IDS.join(', ')} (default: ${DEFAULT_ENVIRONMENT_ID} only, untagged filenames)`)
 }
 
 function argumentsFrom(argv) {
-  const options = { sizes: [256], count: 10, seed: Date.now(), out: OUTPUT }
+  const options = {
+    sizes: [256],
+    count: 10,
+    seed: Date.now(),
+    out: OUTPUT,
+    environments: [DEFAULT_ENVIRONMENT_ID],
+    explicitEnvironment: false,
+  }
   for (let index = 0; index < argv.length; index++) {
     const key = argv[index]
     if (key === '--') continue
@@ -52,11 +77,17 @@ function argumentsFrom(argv) {
     else if (key === '--count') options.count = Number(value)
     else if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
-    else throw new Error(`Unknown option: ${key}`)
+    else if (key === '--environment') {
+      options.environments = value.split(',')
+      options.explicitEnvironment = true
+    } else throw new Error(`Unknown option: ${key}`)
   }
   if (!options.sizes.every(size => SIZES.has(size))) throw new Error('Unsupported --size')
   if (!Number.isInteger(options.count) || options.count < 1) throw new Error('--count must be positive')
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
+  if (!options.environments.every(env => Object.hasOwn(ENVIRONMENT_TERRAIN_PARAMS, env))) {
+    throw new Error(`Unsupported --environment (expected one of: ${ENVIRONMENT_IDS.join(', ')})`)
+  }
   return options
 }
 
@@ -207,13 +238,17 @@ function loadRuntimeGenerators() {
       gold: 'Gold',
       salmon: 'Salmon',
     },
+    // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since
+    // EnvironmentTerrainParams.forestCellTreeChance always overrides them.
     BIOME_TREE_CHANCE: {
-      DarkForest: 0.92,
-      Jungle: 0.92,
       Grass: 0,
       Desert: 0,
     },
     BIOME_TREE_PLAYER_SAFE_DIST: 22,
+    ENVIRONMENT_TERRAIN_PARAMS,
+    DEFAULT_ENVIRONMENT_ID,
+    getEnvironmentTerrainParams: environment =>
+      ENVIRONMENT_TERRAIN_PARAMS[environment] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID],
   }
   Module._load = function (request, parent, isMain) {
     if (parent && isMapRuntime(parent.filename)) {
@@ -306,12 +341,13 @@ function coastDistances(map) {
   return distances
 }
 
-function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = playersPos.length) {
+function buildHeadlessMap(terrain, size, seed, playersPos, positionsCount = playersPos.length, environment = DEFAULT_ENVIRONMENT_ID) {
   const map = {
     size,
     seed,
     playersPos,
     mapType: 'continent',
+    environment,
     positionsCount,
     resourceDensity: 'moderate',
     grid: [],
@@ -551,14 +587,15 @@ function unsupportedReliefCells(map) {
   return cells
 }
 
-async function blueprint(size, seed) {
+async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   const playerCount = maxPlayersForSize(size)
+  const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
   const context = { map: { seed, positionsCount: playerCount } }
-  const terrain = runtimeTerrain.call(context, size + 1, seed)
-  const spawnMap = buildHeadlessMap(terrain, size, seed, [], playerCount)
+  const terrain = runtimeTerrain.call(context, size + 1, seed, params)
+  const spawnMap = buildHeadlessMap(terrain, size, seed, [], playerCount, environmentId)
   const spawns = runtimeSpawns.call({ map: spawnMap })
   if (spawns.length !== playerCount) return null
-  const map = buildHeadlessMap(terrain, size, seed, spawns, playerCount)
+  const map = buildHeadlessMap(terrain, size, seed, spawns, playerCount, environmentId)
   runtimeRelief.call({ map })
   runtimeClassifyDeepWater.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
@@ -603,6 +640,7 @@ async function blueprint(size, seed) {
     version: 1,
     size,
     seed,
+    environment: environmentId,
     encoding: 'base64',
     cellCount: flatTerrain.length,
     terrain: encode(flatTerrain),
@@ -621,17 +659,23 @@ async function main() {
   for (const size of options.sizes) {
     const directory = path.join(options.out, String(size))
     fs.mkdirSync(directory, { recursive: true })
-    let written = 0, attempts = 0
-    while (written < options.count) {
-      if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size} maps`)
-      const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, seed)
-      if (!map) continue
-      const id = `map-${size}-${String(written + 1).padStart(3, '0')}`, relativePath = `${size}/${id}.map`
-      fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
-      manifest.maps.push({ id, size, path: relativePath, seed, spawns: map.spawns.length })
-      written++
+    for (const environmentId of options.environments) {
+      const envSlug = environmentId.toLowerCase()
+      let written = 0, attempts = 0
+      while (written < options.count) {
+        if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
+        const seed = Math.floor(random() * 0x7fffffff), map = await blueprint(size, seed, environmentId)
+        if (!map) continue
+        const id = options.explicitEnvironment
+          ? `map-${size}-${envSlug}-${String(written + 1).padStart(3, '0')}`
+          : `map-${size}-${String(written + 1).padStart(3, '0')}`
+        const relativePath = `${size}/${id}.map`
+        fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
+        manifest.maps.push({ id, size, environment: environmentId, path: relativePath, seed, spawns: map.spawns.length })
+        written++
+      }
+      console.log(`Generated ${written} map(s): ${size} (${environmentId})`)
     }
-    console.log(`Generated ${written} map(s): ${size}`)
   }
   fs.mkdirSync(options.out, { recursive: true })
   fs.writeFileSync(path.join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)

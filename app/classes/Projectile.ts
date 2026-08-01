@@ -673,6 +673,13 @@ export class Projectile extends Container {
       attacker: this.owner,
       bonusDamage: xpBonusDamage,
       defaultDamage: damage,
+      // Direction the shot was flying (spawn -> aim point), so a hit animal can bolt
+      // continuing along that line — away from the shooter — instead of just away
+      // from wherever the shooter happens to be standing at impact time.
+      hitDirection: {
+        x: this.destinationPoint.x - this.spawnOrigin.x,
+        y: this.destinationPoint.y - this.spawnOrigin.y,
+      },
       menu,
       notifyTarget: 'survived',
       player,

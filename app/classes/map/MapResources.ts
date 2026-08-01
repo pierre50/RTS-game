@@ -1,5 +1,10 @@
 import { Resource } from '../Resource'
-import { RESOURCE_TYPES, BIOME_TREE_CHANCE, BIOME_TREE_PLAYER_SAFE_DIST } from '../../constants'
+import {
+  RESOURCE_TYPES,
+  BIOME_TREE_CHANCE,
+  BIOME_TREE_PLAYER_SAFE_DIST,
+  getEnvironmentTerrainParams,
+} from '../../constants'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -15,6 +20,7 @@ type MapResourcesMap = {
   grid: RuntimeCell[][]
   size: number
   mapType?: string
+  environment?: string
   resourceDensity?: ResourceDensity
   resources: Set<ResourceEntity>
   random(): number
@@ -290,7 +296,8 @@ export class MapResources {
         this.map.placeResourceGroup(player, type, quantity, range)
         await yieldFrame()
       }
-      this.map.generateForestAroundPlayer(player, this.map.size * 4)
+      const { forestDensity } = getEnvironmentTerrainParams(this.map.environment)
+      this.map.generateForestAroundPlayer(player, Math.round(this.map.size * 4 * forestDensity))
       await yieldFrame()
     }
   }
@@ -298,13 +305,14 @@ export class MapResources {
   async generateNeutralResourceGroupsAsync(playersPos: GridPosition[]): Promise<void> {
     const profile =
       RESOURCE_DENSITY_PROFILES[this.map.resourceDensity as ResourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
+    const { forestDensity } = getEnvironmentTerrainParams(this.map.environment)
     const placedCenters: GridPosition[] = []
     const sizeScale = Math.max(1, Math.round((this.map.size / 120) ** 2))
     const groupEntries: ResourceGroupEntry[] = [
       [RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2],
       [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2],
       [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2],
-      [RESOURCE_TYPES.tree, profile.neutralGroups.tree, 14, 4],
+      [RESOURCE_TYPES.tree, Math.round(profile.neutralGroups.tree * forestDensity), 14, 4],
     ]
     let batch = 0
     for (const [type, baseCount, quantity, radius] of groupEntries) {
@@ -413,11 +421,20 @@ export class MapResources {
     const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     const { grid, size } = this.map
     const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
+    // Every environment's ground is single-type (see MapGeneration#generateTerrain), so its
+    // one non-Grass/non-Desert forest type (DarkForest, or Jungle — including Desert's oasis
+    // rings) always uses this environment-specific chance instead of BIOME_TREE_CHANCE's
+    // default, which was tuned for that type being a small patch on the old mixed-biome map
+    // and would leave almost no walkable gaps at full-environment coverage.
+    const { forestCellTreeChance } = getEnvironmentTerrainParams(this.map.environment)
     for (let i = 1; i < size; i++) {
       for (let j = 1; j < size; j++) {
         const cell = grid[i][j]
         if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
-        const chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
+        let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
+        if (forestCellTreeChance != null && (cell.type === 'DarkForest' || cell.type === 'Jungle')) {
+          chance = forestCellTreeChance
+        }
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {

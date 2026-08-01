@@ -12,6 +12,7 @@
     "clean": "rimraf build",
     "dev": "webpack serve --mode development",
     "start": "pnpm dev",
+    "electron:dev": "concurrently -k -n webpack,electron \"pnpm dev\" \"wait-on tcp:8080 && env -u ELECTRON_RUN_AS_NODE ELECTRON_START_URL=http://localhost:8080 electron .\"",
     "build": "pnpm clean && webpack --mode production",
     "build:dev": "pnpm clean && webpack --mode development",
     "dist": "pnpm build && electron-builder",
@@ -34,8 +35,13 @@
       "category": "your.app.category.type"
     },
     "asar": true,
+    "asarUnpack": [
+      "build/assets/**/*",
+      "build/maps/**/*"
+    ],
     "files": [
       "main.js",
+      "preload.js",
       {
         "from": "build",
         "to": "build",
@@ -58,6 +64,7 @@
     "@typescript-eslint/eslint-plugin": "8.62.1",
     "@typescript-eslint/parser": "^8.62.1",
     "babel-loader": "^10.1.1",
+    "concurrently": "^10.0.4",
     "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.4",
     "electron": "^42.4.0",
@@ -71,6 +78,7 @@
     "rimraf": "^6.1.3",
     "style-loader": "^4.0.0",
     "typescript": "^6.0.3",
+    "wait-on": "^9.1.0",
     "webpack": "^5.107.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.4"

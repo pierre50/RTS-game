@@ -51,8 +51,38 @@ export function isFriendlyTarget(source?: CombatEntity | null, target?: CombatEn
   return source.owner.isEnemy?.(target.owner) === false
 }
 
-export function shouldFleeWhenAttacked(source?: CombatEntity | null): boolean {
-  return source?.category === 'Boat' && !canAttack(source)
+const COMBATANT_FLEE_HEALTH_RATIO = 0.3
+const SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO = 0.4
+
+function getHealthRatio(entity?: CombatEntity | null): number {
+  const total = entity?.totalHitPoints ?? 0
+  if (total <= 0) return 1
+  return Math.max(0, Math.min(1, (entity?.hitPoints ?? total) / total))
+}
+
+// Heroes/chiefs are combat-capable Civilians (they lead from the front), so they
+// don't get the villager/priest "flee from anything that fights back" treatment.
+function isLeaderUnit(source: CombatEntity): boolean {
+  return source.type === UNIT_TYPES.hero || source.type === UNIT_TYPES.chief
+}
+
+// Badly hurt and the thing fighting it is still dangerous: retreat. But finishing off
+// an attacker that's nearly dead itself beats running from it (e.g. a villager mid-hunt
+// on an almost-dead animal, or a soldier one hit away from winning a duel).
+function isCriticallyOutmatched(source: CombatEntity, attacker?: CombatEntity | null): boolean {
+  return (
+    getHealthRatio(source) <= COMBATANT_FLEE_HEALTH_RATIO &&
+    getHealthRatio(attacker) > SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO
+  )
+}
+
+export function shouldFleeWhenAttacked(source?: CombatEntity | null, attacker?: CombatEntity | null): boolean {
+  if (!source) return false
+  if (source.category === 'Civilian' && !isLeaderUnit(source)) {
+    return attacker?.family !== FAMILY_TYPES.animal || isCriticallyOutmatched(source, attacker)
+  }
+  if (source.category === 'Boat' && !canAttack(source)) return true
+  return canAttack(source) && isCriticallyOutmatched(source, attacker)
 }
 
 function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {

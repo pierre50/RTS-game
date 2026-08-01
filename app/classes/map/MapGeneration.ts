@@ -28,7 +28,9 @@ import {
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
   FISH_SPAWN_CHANCE,
+  getEnvironmentTerrainParams,
 } from '../../constants'
+import type { EnvironmentTerrainParams } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import { MapBlueprintGeneration } from './MapBlueprintGeneration'
 import type { GridPosition } from '../../types/grid'
@@ -104,7 +106,7 @@ export type MapGenerationMap = RuntimeMap & {
   resetRandom(stream?: number | string): void
   findPlayerPlaces(): GeneratedPosition[]
   generateCells(): void
-  generateTerrain(gridSize?: number, seed?: number): TerrainGrid
+  generateTerrain(gridSize?: number, seed?: number, params?: Partial<EnvironmentTerrainParams>): TerrainGrid
   fillWaterGaps(level?: number | null): Set<RuntimeCell>
   normalizeWaterTopology(
     level?: number | null,
@@ -302,9 +304,13 @@ export class MapGeneration {
     return new Promise(resolve => requestAnimationFrame(() => resolve()))
   }
 
-  generateTerrainInWorker(gridSize: number, seed: number): Promise<TerrainGrid> {
+  generateTerrainInWorker(
+    gridSize: number,
+    seed: number,
+    params: Partial<EnvironmentTerrainParams> = {}
+  ): Promise<TerrainGrid> {
     if (typeof Worker === 'undefined') {
-      return Promise.resolve(this.generateTerrain(gridSize, seed))
+      return Promise.resolve(this.generateTerrain(gridSize, seed, params))
     }
     const source = this.generateTerrain.toString()
     const functionSource = source.startsWith('function') ? `(${source})` : `(function ${source})`
@@ -313,7 +319,7 @@ export class MapGeneration {
       self.onmessage = ({ data }) => {
         try {
           const scope = { map: { seed: data.seed, positionsCount: data.positionsCount } };
-          const terrain = generateTerrain.call(scope, data.gridSize, data.seed);
+          const terrain = generateTerrain.call(scope, data.gridSize, data.seed, data.params);
           self.postMessage({ terrain, seed: scope.map.seed });
         } catch (error) {
           self.postMessage({ error: error?.stack || error?.message || String(error) });
@@ -344,6 +350,7 @@ export class MapGeneration {
         gridSize,
         seed,
         positionsCount: this.map.positionsCount,
+        params,
       })
     })
   }
@@ -851,7 +858,8 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
     const terrain = this.map.generateTerrain(
       this.map.size ? this.map.size + 1 : 121,
-      this.map.seed == null ? undefined : Number(this.map.seed)
+      this.map.seed == null ? undefined : Number(this.map.seed),
+      getEnvironmentTerrainParams(this.map.environment)
     )
     this.map.size = terrain.length - 1
 
@@ -882,12 +890,13 @@ export class MapGeneration {
     const terrainStartedAt = performance.now()
     const gridSize = this.map.size ? this.map.size + 1 : 121
     const seed = this.map.seed == null ? Math.random() * 9999 : Number(this.map.seed)
+    const params = getEnvironmentTerrainParams(this.map.environment)
     let terrain: TerrainGrid
     try {
-      terrain = await this.generateTerrainInWorker(gridSize, seed)
+      terrain = await this.generateTerrainInWorker(gridSize, seed, params)
     } catch (error) {
       console.warn('Terrain worker unavailable, falling back to main thread', error)
-      terrain = this.map.generateTerrain(gridSize, seed)
+      terrain = this.map.generateTerrain(gridSize, seed, params)
     }
     this.map.context.performance?.record('terrainData', performance.now() - terrainStartedAt)
     return terrain
@@ -944,7 +953,11 @@ export class MapGeneration {
     return this.mapBlueprintGeneration.generateEditableFromBlueprint(blueprintData)
   }
 
-  generateTerrain(gridSize: number = 120, seed?: number): TerrainGrid {
+  generateTerrain(
+    gridSize: number = 120,
+    seed?: number,
+    params: Partial<EnvironmentTerrainParams> = {}
+  ): TerrainGrid {
     let resolvedSeed = seed
     if (resolvedSeed == null) resolvedSeed = Math.random() * 9999
     this.map.seed = resolvedSeed
@@ -986,17 +999,28 @@ export class MapGeneration {
     const scale = 4 / gridSize
     const half = gridSize / 2
 
+    // Plateau + narrow falloff: the inner 85% radius (~72% of the map's area) is fully
+    // land-biased and untouched by edge proximity, so the coastline forms from a thin band
+    // near the border instead of eating into the interior. There are no boats to reach
+    // stray islands, so the map should read as one big landmass, not a natural archipelago.
+    const falloffPlateau = 0.85
     function radialFalloff(i: number, j: number): number {
       const dx = (i - half) / half
       const dy = (j - half) / half
       const dist = Math.sqrt(dx * dx + dy * dy)
-      const t = Math.min(1, dist)
+      if (dist <= falloffPlateau) return 1
+      const t = Math.min(1, (dist - falloffPlateau) / (1 - falloffPlateau))
       return 1 - t * t * (3 - 2 * t)
     }
 
-    // Independent noise channel for DarkForest — uncorrelated with biome so patches
-    // can appear anywhere on non-desert ground, not always surrounded by Jungle.
-    const darkForestThreshold = 0.82
+    // One map = one environment: ground-type shares, water sparsity, and oasis carving all
+    // come from `params` (resolved per-environment by the caller), not fixed globals. The
+    // defaults below (used only if a caller omits `params` entirely) match Temperate — pure
+    // Grass, no Desert/Jungle/DarkForest bucket enabled.
+    const desertThreshold = params.desertThreshold ?? -1
+    const jungleThreshold = params.jungleThreshold ?? 2
+    const darkForestThreshold = params.darkForestThreshold ?? 2
+    const oasisRadius = params.oasisRadius ?? 0
     const biomePatchScale = 0.6 * Math.max(1, Math.sqrt(gridSize / 144))
     const height = new Float32Array(gridSize * gridSize)
     const biome = new Float32Array(gridSize * gridSize)
@@ -1009,7 +1033,7 @@ export class MapGeneration {
       }
     }
 
-    const waterThreshold = 0.28
+    const waterThreshold = params.waterThreshold ?? 0.28
 
     const terrainMap: TerrainGrid = []
     const borderWaterWidth = Math.max(4, Math.floor(gridSize * 0.04))
@@ -1052,16 +1076,84 @@ export class MapGeneration {
       }
     }
 
-    const biomeThresholds = { lo: 0.33, hi: 0.76 }
+    // There are no boats: drown every land component except the largest one so the map
+    // is a single reachable landmass instead of a mainland dotted with useless islets.
+    function removeDisconnectedLand(): void {
+      const visited = new Uint8Array(gridSize * gridSize)
+      let bestComponent: number[] | null = null
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          const start = i * gridSize + j
+          if (terrainMap[i][j] === 2 || visited[start]) continue
+          visited[start] = 1
+          const component = [start]
+          const stack = [start]
+          while (stack.length) {
+            const idx = stack.pop()!
+            const ci = Math.floor(idx / gridSize)
+            const cj = idx % gridSize
+            const neighbors: [number, number][] = [
+              [ci - 1, cj],
+              [ci + 1, cj],
+              [ci, cj - 1],
+              [ci, cj + 1],
+            ]
+            for (const [ni, nj] of neighbors) {
+              if (ni < 0 || nj < 0 || ni >= gridSize || nj >= gridSize) continue
+              const nIdx = ni * gridSize + nj
+              if (visited[nIdx] || terrainMap[ni][nj] === 2) continue
+              visited[nIdx] = 1
+              component.push(nIdx)
+              stack.push(nIdx)
+            }
+          }
+          if (!bestComponent || component.length > bestComponent.length) bestComponent = component
+        }
+      }
+      if (!bestComponent) return
+      const mainland = new Uint8Array(gridSize * gridSize)
+      for (const idx of bestComponent) mainland[idx] = 1
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          if (terrainMap[i][j] !== 2 && !mainland[i * gridSize + j]) terrainMap[i][j] = 2
+        }
+      }
+    }
+    removeDisconnectedLand()
 
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         if (terrainMap[i][j] === 2) continue
         const b = biome[i * gridSize + j]
-        if (b < biomeThresholds.lo) terrainMap[i][j] = 1
-        else if (b > biomeThresholds.hi) terrainMap[i][j] = 3
+        if (b < desertThreshold) terrainMap[i][j] = 1
+        else if (b > jungleThreshold) terrainMap[i][j] = 3
         if (terrainMap[i][j] !== 1 && darkForestNoise[i * gridSize + j] > darkForestThreshold) {
           terrainMap[i][j] = 4
+        }
+      }
+    }
+
+    // Desert oasis: ring interior ponds (never the forced map-edge water border) with
+    // Jungle-typed ground — same green ground texture as Grass, but its Tree resources
+    // render as palm trees (resources.json), matching a real oasis instead of a plain
+    // grass tree popping up in the middle of the desert.
+    if (oasisRadius > 0) {
+      const edgeGuard = borderWaterWidth + 2
+      for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+          if (terrainMap[i][j] !== 2) continue
+          if (i < edgeGuard || j < edgeGuard || i >= gridSize - edgeGuard || j >= gridSize - edgeGuard) continue
+          for (let di = -oasisRadius; di <= oasisRadius; di++) {
+            for (let dj = -oasisRadius; dj <= oasisRadius; dj++) {
+              const ni = i + di
+              const nj = j + dj
+              if (ni < 0 || nj < 0 || ni >= gridSize || nj >= gridSize) continue
+              if (terrainMap[ni][nj] !== 1) continue
+              const distance = Math.sqrt(di * di + dj * dj)
+              const edgeNoise = hash(ni * 0.7 + 19, nj * 0.7 + 31) * oasisRadius * 0.6
+              if (distance <= oasisRadius - edgeNoise) terrainMap[ni][nj] = 3
+            }
+          }
         }
       }
     }

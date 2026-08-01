@@ -23,7 +23,8 @@ import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '.
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
-import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX } from '../constants'
+import { getEnvironmentForCiv } from '../config/environments'
+import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX, PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../types/save'
 import type { PlayerLike } from '../types/player'
@@ -304,6 +305,8 @@ export default class Game extends Container {
     if (config.size) map.size = config.size
     if (Number.isFinite(config.seed)) map.seed = config.seed
     map.mapType = DEFAULT_MAP_TYPE
+    const humanCiv = config.players?.find(player => player.isHuman)?.civ ?? config.players?.[0]?.civ
+    map.environment = getEnvironmentForCiv(humanCiv)
     if (config.instantMode) map.instantMode = true
     if (config.startingAge != null) map.startingAge = Number(config.startingAge)
     if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
@@ -421,6 +424,7 @@ export default class Game extends Container {
     const blueprint = await loadPregeneratedMapBlueprint({
       size: map.size,
       positionsCount: posCount ?? undefined,
+      environment: map.environment,
     })
     if (blueprint) {
       await map.generateFromBlueprint(blueprint, {
@@ -469,15 +473,20 @@ export default class Game extends Container {
     const map = this._map()
     const world = saveConfig(json.world)
     const savedConfig = saveConfig(json.config)
+    const savedPlayers = Array.isArray(json.players) ? json.players : []
     const seedConfig = {
       ...savedConfig,
       seed: world.seed ?? savedConfig.seed,
       size: world.size ?? savedConfig.size,
+      // environment isn't itself persisted: it's re-derived from civ (see _applyMapConfig),
+      // and civ only survives in `players` (a runtime shape, unlike config.players).
+      players: savedPlayers.map(player => ({
+        civ: player.civ,
+        isHuman: player.isPlayed && player.type === PLAYER_TYPES.human,
+      })),
     }
     this._applyMapConfig(map, seedConfig)
     this._createUiRuntime()
-
-    const savedPlayers = Array.isArray(json.players) ? json.players : []
     const positionsCount =
       Number.isFinite(world.positionsCount) && Number(world.positionsCount) > 0
         ? Number(world.positionsCount)

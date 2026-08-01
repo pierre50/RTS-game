@@ -130,39 +130,39 @@
     "color": "#0F1F0A",
     "assets": [
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 0
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 1
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 2
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 3
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 4
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 5
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 6
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 7
       },
       {
-        "sheet": "terrain/grass",
+        "sheet": "terrain/dark-grass",
         "frame": 8
       }
     ]

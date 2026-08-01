@@ -75,7 +75,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   removeHeroPowerBar?: () => void
   shouldKeepHealthBarVisible?: () => boolean
   getMountedRiderY?: () => number
-  isAttacked?: (attacker: RuntimeEntity) => void
+  isAttacked?: (attacker: RuntimeEntity, hitDirection?: Point) => void
   stopAttackInterval?: () => void
   stopInterval?: () => void
   stopTimeout?: () => void

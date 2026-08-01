@@ -3,10 +3,40 @@ import { serializeGame } from './SaveSerializer'
 import type { GameContextLike } from '../types/context'
 import type { SaveIndexEntry, SaveRecord } from '../types/save'
 
+declare global {
+  interface Window {
+    electronSaves?: {
+      getIndex(): string | null
+      setIndex(json: string): void
+      getItem(key: string): string | null
+      setItem(key: string, value: string): boolean
+      removeItem(key: string): void
+    }
+  }
+}
+
 const INDEX_KEY = 'saves_index'
 const MAX_SAVES = 10
 const EXPORT_FORMAT = 'save-v1'
 export const EXPORT_EXT = '.save'
+
+const backend = window.electronSaves
+  ? {
+      getIndex: () => window.electronSaves!.getIndex(),
+      setIndex: (json: string) => window.electronSaves!.setIndex(json),
+      getItem: (key: string) => window.electronSaves!.getItem(key),
+      setItem: (key: string, value: string) => {
+        if (!window.electronSaves!.setItem(key, value)) throw new Error('STORAGE_FULL')
+      },
+      removeItem: (key: string) => window.electronSaves!.removeItem(key),
+    }
+  : {
+      getIndex: () => localStorage.getItem(INDEX_KEY),
+      setIndex: (json: string) => localStorage.setItem(INDEX_KEY, json),
+      getItem: (key: string) => localStorage.getItem(key),
+      setItem: (key: string, value: string) => localStorage.setItem(key, value),
+      removeItem: (key: string) => localStorage.removeItem(key),
+    }
 
 type ExportPayload = {
   data?: string
@@ -18,14 +48,14 @@ type ExportPayload = {
 
 function getIndex(): SaveIndexEntry[] {
   try {
-    return JSON.parse(localStorage.getItem(INDEX_KEY) || '[]')
+    return JSON.parse(backend.getIndex() || '[]')
   } catch {
     return []
   }
 }
 
 function setIndex(index: SaveIndexEntry[]): void {
-  localStorage.setItem(INDEX_KEY, JSON.stringify(index))
+  backend.setIndex(JSON.stringify(index))
 }
 
 function formatSaveName() {
@@ -46,7 +76,7 @@ export function save(context: GameContextLike): { key: string; name: string } {
   const compressed = LZString.compressToBase64(JSON.stringify(data))
   const key = `save_${Date.now()}`
   try {
-    localStorage.setItem(key, compressed)
+    backend.setItem(key, compressed)
   } catch {
     throw new Error('STORAGE_FULL')
   }
@@ -61,7 +91,7 @@ export function listSaves(): SaveIndexEntry[] {
 }
 
 export function loadSave(key: string): SaveRecord {
-  const compressed = localStorage.getItem(key)
+  const compressed = backend.getItem(key)
   if (!compressed) throw new Error('SAVE_NOT_FOUND')
   const raw = LZString.decompressFromBase64(compressed)
   if (!raw) throw new Error('SAVE_CORRUPT')
@@ -73,7 +103,7 @@ export function loadSave(key: string): SaveRecord {
 }
 
 export function deleteSave(key: string): void {
-  localStorage.removeItem(key)
+  backend.removeItem(key)
   setIndex(getIndex().filter(s => s.key !== key))
 }
 
@@ -81,7 +111,7 @@ export function exportSave(key: string): void {
   const index = getIndex()
   const entry = index.find(s => s.key === key)
   if (!entry) throw new Error('SAVE_NOT_FOUND')
-  const compressed = localStorage.getItem(key)
+  const compressed = backend.getItem(key)
   if (!compressed) throw new Error('SAVE_NOT_FOUND')
 
   const payload = JSON.stringify({ format: EXPORT_FORMAT, v: 1, name: entry.name, date: entry.date, data: compressed })
@@ -121,7 +151,7 @@ export function importSaveFile(file: File): Promise<{ key: string; name: string 
         if (index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
         const key = `save_${Date.now()}`
         try {
-          localStorage.setItem(key, parsed.data)
+          backend.setItem(key, parsed.data)
         } catch {
           throw new Error('STORAGE_FULL')
         }

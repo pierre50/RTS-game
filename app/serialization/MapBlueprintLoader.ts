@@ -1,8 +1,11 @@
+import { DEFAULT_ENVIRONMENT_ID } from '../constants'
+
 const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'DeepWater']
 
 type BlueprintManifestEntry = {
   id?: string
   mapType?: string
+  environment?: string
   path: string
   size: number
   spawns: number
@@ -29,6 +32,7 @@ type LoadBlueprintOptions = {
   random?: () => number
   size?: number
   id?: string
+  environment?: string
 }
 
 function decodeBase64Bytes(value: string, ArrayType: Uint8ArrayConstructor): Uint8Array
@@ -62,9 +66,18 @@ function toGrid<TValue extends Uint8Array | Int8Array, TResult>(
   return grid
 }
 
-function compatibleMaps(manifest: BlueprintManifest | undefined, { size, positionsCount }: LoadBlueprintOptions) {
+function compatibleMaps(
+  manifest: BlueprintManifest | undefined,
+  { size, positionsCount, environment }: LoadBlueprintOptions
+) {
+  const wantedEnvironment = environment ?? DEFAULT_ENVIRONMENT_ID
   return (manifest?.maps || []).filter(map => {
-    return map.size === size && !map.mapType && (!positionsCount || map.spawns >= positionsCount)
+    return (
+      map.size === size &&
+      !map.mapType &&
+      (map.environment ?? DEFAULT_ENVIRONMENT_ID) === wantedEnvironment &&
+      (!positionsCount || map.spawns >= positionsCount)
+    )
   })
 }
 
@@ -73,6 +86,7 @@ export async function loadPregeneratedMapBlueprint({
   positionsCount,
   random = Math.random,
   id,
+  environment,
 }: LoadBlueprintOptions = {}) {
   const timings: BlueprintTimings = {}
   let manifest: BlueprintManifest | undefined
@@ -94,7 +108,7 @@ export async function loadPregeneratedMapBlueprint({
     selected = (manifest?.maps || []).find(map => map.id === id && !map.mapType)
     if (!selected) return null
   } else {
-    const candidates = compatibleMaps(manifest, { size, positionsCount })
+    const candidates = compatibleMaps(manifest, { size, positionsCount, environment })
     if (!candidates.length) return null
     selected = candidates[Math.floor(random() * candidates.length)]
   }

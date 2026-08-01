@@ -6,11 +6,13 @@ import {
   getClosestInstanceWithPath,
   getInstanceDegree,
   instanceContactInstance,
+  isometricToCartesian,
   pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
 import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
+import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import { FLYING_ALTITUDE } from './index'
 import { isAirborne, resolveMovementSheet } from './locomotion'
@@ -23,10 +25,10 @@ export class AnimalCombat {
     this.animal = animal
   }
 
-  getReaction(instance: RuntimeEntity): void {
+  getReaction(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
     if (animal.strategy === 'runaway') {
-      animal.runaway(instance)
+      animal.runaway(instance, hitDirection)
     } else {
       showAggressionFeedback(animal)
       animal.sendTo(instance, ACTION_TYPES.attack)
@@ -61,11 +63,14 @@ export class AnimalCombat {
     }
   }
 
-  isAttacked(instance: RuntimeEntity): void {
+  isAttacked(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
     if (animal.context.editor) return
-    if (!instance || animal.dest || animal.isDead) return
-    this.getReaction(instance)
+    // Deliberately not gated on animal.dest: an ambient-walk destination shouldn't
+    // suppress a reaction to being shot. Already-fleeing is still gated so every
+    // arrow along the way doesn't re-route the escape mid-flight.
+    if (!instance || animal.isDead || animal.isFleeing) return
+    this.getReaction(instance, hitDirection)
   }
 
   affectNewDest(): void {
@@ -97,23 +102,53 @@ export class AnimalCombat {
     animal.stop()
   }
 
-  runaway(instance: RuntimeEntity): void {
+  // Converts the projectile's world-space travel vector into a grid-space direction and casts
+  // it outward from the animal, taking the farthest open cell within sight — so a hit animal
+  // bolts continuing the shot's line (away from the shooter) rather than away from wherever the
+  // shooter happens to be standing at the moment of impact (see UnitMovement.runaway for the
+  // instance-position equivalent of this raycast).
+  getFleeCellAlongDirection(hitDirection?: Point): RuntimeCell | null {
     const animal = this.animal
     const {
       context: { map },
     } = animal
-    let dest: RuntimeCell | null = null
-    getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, (cell: RuntimeCell) => {
-      if (
-        !cell.solid &&
-        (!dest ||
-          pointsDistance(cell.i, cell.j, instance.i, instance.j) >
-            pointsDistance(dest.i, dest.j, instance.i, instance.j))
-      ) {
-        dest = cell
-      }
-      return false
-    })
+    if (!hitDirection) return null
+    const worldLen = Math.hypot(hitDirection.x, hitDirection.y)
+    if (!worldLen) return null
+    // Scale to a large magnitude before converting so isometricToCartesian's internal
+    // rounding doesn't collapse a short-range shot's vector down to (0, 0).
+    const scale = 1000 / worldLen
+    const [di, dj] = isometricToCartesian(hitDirection.x * scale, hitDirection.y * scale)
+    const gridLen = Math.hypot(di, dj)
+    if (!gridLen) return null
+    for (let dist = animal.sight ?? 0; dist >= 1; dist--) {
+      const ti = Math.round(animal.i + (di / gridLen) * dist)
+      const tj = Math.round(animal.j + (dj / gridLen) * dist)
+      const cell = map.grid[ti]?.[tj]
+      if (cell && !cell.solid) return cell
+    }
+    return null
+  }
+
+  runaway(instance: RuntimeEntity, hitDirection?: Point): void {
+    const animal = this.animal
+    const {
+      context: { map },
+    } = animal
+    let dest: RuntimeCell | null = this.getFleeCellAlongDirection(hitDirection)
+    if (!dest) {
+      getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, (cell: RuntimeCell) => {
+        if (
+          !cell.solid &&
+          (!dest ||
+            pointsDistance(cell.i, cell.j, instance.i, instance.j) >
+              pointsDistance(dest.i, dest.j, instance.i, instance.j))
+        ) {
+          dest = cell
+        }
+        return false
+      })
+    }
     if (dest) {
       animal.isFleeing = true
       const flying = Boolean(animal.flyingSheet)

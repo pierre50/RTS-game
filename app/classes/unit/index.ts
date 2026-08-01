@@ -1099,7 +1099,7 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
     this.owner.reportThreat?.(this, instance)
-    if (shouldFleeWhenAttacked(this)) {
+    if (shouldFleeWhenAttacked(this, instance)) {
       this.runaway(instance)
       return
     }

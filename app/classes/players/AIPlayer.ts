@@ -779,33 +779,9 @@ export class AI extends Player {
         }
       },
     }
-    if (type === UNIT_TYPES.villager) {
-      options.handleIsAttacked = (attacker: RuntimeEntity, unit: UnitEntity) => {
-        const aiAttacker = attacker as AIEntityLike
-        const aiUnit = unit as AIEntityLike
-        const currentDest = aiUnit.dest
-
-        if (aiAttacker.family !== FAMILY_TYPES.animal) {
-          aiUnit.runaway?.(aiAttacker)
-          return true
-        }
-
-        if (aiAttacker.meleeAttack) {
-          const unitHpRatio = (aiUnit.hitPoints ?? 0) / (aiUnit.totalHitPoints ?? 1)
-          const attackerHpRatio = (aiAttacker.hitPoints ?? 0) / (aiAttacker.totalHitPoints ?? 1)
-          const shouldRunAway = unitHpRatio <= 0.3 && attackerHpRatio > 0.4
-
-          if (shouldRunAway) {
-            aiUnit.runaway?.(aiAttacker)
-          } else {
-            aiUnit.sendToHunt?.(aiAttacker)
-            aiUnit.previousDest = currentDest
-          }
-          return true
-        }
-        return false
-      }
-    }
+    // Villager flee-vs-fight-back reactions live in the shared shouldFleeWhenAttacked()
+    // (app/lib/combat.ts), which Unit.isAttacked() applies to every player alike — no
+    // AI-specific override needed here.
     return options
   }
 
@@ -856,7 +832,9 @@ export class AI extends Player {
     applyBakedLpcUnitAssets(promotedUnit)
     Object.assign(
       promotedUnit,
-      Object.fromEntries(Object.entries(promotedUnit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
+      Object.fromEntries(
+        Object.entries(promotedUnit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)])
+      )
     )
     if (promotedUnit.action && !promotedUnit.path?.length) {
       promotedUnit.getAction?.(promotedUnit.action)

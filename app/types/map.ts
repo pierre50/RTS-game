@@ -58,6 +58,7 @@ export interface RuntimeMap {
   y: number
   seed?: string | number
   mapType?: string
+  environment?: string
   ready?: boolean
   instantMode: boolean
   revealEverything: boolean

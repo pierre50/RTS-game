@@ -1,10 +1,5 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
-import {
-  FAMILY_TYPES,
-  RELIEF_LIFT_SMOOTHING,
-  SHEET_TYPES,
-  LABEL_TYPES,
-} from '../../constants'
+import { FAMILY_TYPES, RELIEF_LIFT_SMOOTHING, SHEET_TYPES, LABEL_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   getInstanceZIndex,
@@ -25,6 +20,7 @@ import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { RuntimeEntity } from '../../types/entities'
+import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
@@ -365,14 +361,14 @@ export class Animal extends Instance implements AnimalEntity {
   detect(instance: RuntimeEntity): void {
     return this.animalCombat.detect(instance)
   }
-  isAttacked(instance: RuntimeEntity): void {
-    return this.animalCombat.isAttacked(instance)
+  isAttacked(instance: RuntimeEntity, hitDirection?: Point): void {
+    return this.animalCombat.isAttacked(instance, hitDirection)
   }
   affectNewDest(): void {
     return this.animalCombat.affectNewDest()
   }
-  runaway(instance: RuntimeEntity): void {
-    return this.animalCombat.runaway(instance)
+  runaway(instance: RuntimeEntity, hitDirection?: Point): void {
+    return this.animalCombat.runaway(instance, hitDirection)
   }
   getAction(name: string): void {
     return this.animalCombat.getAction(name)

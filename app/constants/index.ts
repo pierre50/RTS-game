@@ -4,6 +4,7 @@ export * from './sounds'
 export * from './ui'
 export * from './ambient'
 export * from './heroControls'
+export * from './environments'
 
 export const SHEET_TYPES = {
   walking: 'walkingSheet',

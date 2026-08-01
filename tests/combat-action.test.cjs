@@ -43,6 +43,8 @@ const constants = {
   },
   RESOURCE_TYPES: {},
   UNIT_TYPES: {
+    chief: 'Chief',
+    hero: 'Hero',
     villager: 'Villager',
   },
   SHEET_TYPES: {
@@ -95,6 +97,63 @@ test('attacking boats do not use the unarmed flee behavior', () => {
   })
 
   assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'ScoutShip', pierceAttack: 5 }), false)
+})
+
+test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const villager = { category: 'Civilian', hitPoints: 25, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
+  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
+
+  assert.equal(shouldFleeWhenAttacked(villager, enemySoldier), true)
+})
+
+test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const villager = { category: 'Civilian', hitPoints: 25, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
+  const woundedDeer = { family: 'animal', hitPoints: 2, meleeAttack: 1, totalHitPoints: 20, type: 'Deer' }
+
+  assert.equal(shouldFleeWhenAttacked(villager, woundedDeer), false)
+})
+
+test('villagers retreat from a healthy animal once critically hurt themselves', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const woundedVillager = { category: 'Civilian', hitPoints: 5, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
+  const healthyBoar = { family: 'animal', hitPoints: 40, meleeAttack: 6, totalHitPoints: 40, type: 'Boar' }
+
+  assert.equal(shouldFleeWhenAttacked(woundedVillager, healthyBoar), true)
+})
+
+test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const healthyHero = { category: 'Civilian', hitPoints: 45, meleeAttack: 5, totalHitPoints: 45, type: 'Hero' }
+  const chief = { category: 'Civilian', hitPoints: 45, meleeAttack: 5, totalHitPoints: 45, type: 'Chief' }
+  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
+
+  assert.equal(shouldFleeWhenAttacked(healthyHero, enemySoldier), false)
+  assert.equal(shouldFleeWhenAttacked(chief, enemySoldier), false)
+})
+
+test('military units fight on until critically wounded, then retreat from a real threat', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const healthySoldier = { category: 'Infantry', hitPoints: 40, meleeAttack: 3, totalHitPoints: 40, type: 'Clubman' }
+  const criticalSoldier = { category: 'Infantry', hitPoints: 5, meleeAttack: 3, totalHitPoints: 40, type: 'Clubman' }
+  const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Axeman' }
+  const nearlyDeadEnemy = { family: 'unit', hitPoints: 2, totalHitPoints: 40, type: 'Axeman' }
+
+  assert.equal(shouldFleeWhenAttacked(healthySoldier, healthyEnemy), false)
+  assert.equal(shouldFleeWhenAttacked(criticalSoldier, healthyEnemy), true)
+  // Even critically wounded, finishing off a nearly-dead enemy beats running from it.
+  assert.equal(shouldFleeWhenAttacked(criticalSoldier, nearlyDeadEnemy), false)
 })
 
 test('units with attack stats can attack enemies', () => {

@@ -4,6 +4,7 @@ import { showDamageFeedback } from './combatFeedback'
 import { grantUnitXp, XP_KILL_BONUS } from './unitExperience'
 import type { MenuLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
+import type { Point } from '../types/grid'
 import type { PlayerLike } from '../types/player'
 
 export type CombatHitNotifyMode = 'always' | 'survived' | false
@@ -13,6 +14,7 @@ export type CombatHitOptions = {
   bonusDamage?: number
   defaultDamage?: number
   grantKillXp?: boolean
+  hitDirection?: Point
   menu?: MenuLike | null
   notifyTarget?: CombatHitNotifyMode
   player?: PlayerLike | null
@@ -41,6 +43,7 @@ export function applyCombatHit(
     bonusDamage = 0,
     defaultDamage,
     grantKillXp = true,
+    hitDirection,
     menu,
     notifyTarget = 'always',
     player,
@@ -57,7 +60,7 @@ export function applyCombatHit(
   if (xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, damageDealt)
   updateHitPointsDisplay(target, player, menu)
   if (notifyTarget === 'always' || (notifyTarget === 'survived' && !killed)) {
-    target.isAttacked?.(attacker)
+    target.isAttacked?.(attacker, hitDirection)
   }
   if (killed) {
     if (grantKillXp && xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, XP_KILL_BONUS)
