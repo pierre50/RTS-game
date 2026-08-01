@@ -164,66 +164,6 @@
       }
     ]
   },
-  "Salmon": {
-    "category": "Fish",
-    "habitat": "DeepWater",
-    "totalQuantity": 250,
-    "icon": "034_50730",
-    "allowAction": [
-      "Villager",
-      "FishingBoat",
-      "FishingShip"
-    ],
-    "isAnimated": true,
-    "assets": "resources/fish/salmon",
-    "sounds": {
-      "command": [
-        "fish",
-        "fish-2",
-        "fish-3"
-      ]
-    }
-  },
-  "Fish": {
-    "category": "Fish",
-    "habitat": "Water",
-    "totalQuantity": 200,
-    "icon": "034_50730",
-    "allowAction": [
-      "Villager",
-      "FishingBoat",
-      "FishingShip"
-    ],
-    "isAnimated": true,
-    "assets": "resources/fish/small",
-    "sounds": {
-      "command": [
-        "fish",
-        "fish-2",
-        "fish-3"
-      ]
-    }
-  },
-  "RiverFish": {
-    "category": "Fish",
-    "habitat": "Water",
-    "totalQuantity": 200,
-    "icon": "034_50730",
-    "allowAction": [
-      "Villager",
-      "FishingBoat",
-      "FishingShip"
-    ],
-    "isAnimated": true,
-    "assets": "resources/fish/small",
-    "sounds": {
-      "command": [
-        "fish",
-        "fish-2",
-        "fish-3"
-      ]
-    }
-  },
   "ShoreFish": {
     "category": "Fish",
     "habitat": "Water",
@@ -241,25 +181,6 @@
         "fish",
         "fish-2",
         "fish-3"
-      ]
-    }
-  },
-  "Whale": {
-    "category": "Fish",
-    "habitat": "DeepWater",
-    "totalQuantity": 300,
-    "icon": "034_50730",
-    "allowAction": [
-      "Villager",
-      "FishingBoat",
-      "FishingShip"
-    ],
-    "isAnimated": true,
-    "assets": "resources/fish/whale",
-    "sounds": {
-      "command": [
-        "whale",
-        "whale-2"
       ]
     }
   }

@@ -55,9 +55,7 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Stone: (npc, target) => npc.sendToStone?.(target),
   Gold: (npc, target) => npc.sendToGold?.(target),
   Berrybush: (npc, target) => npc.sendToBerrybush?.(target),
-  Fish: (npc, target) => npc.sendToFish?.(target),
   ShoreFish: (npc, target) => npc.sendToFish?.(target),
-  Salmon: (npc, target) => npc.sendToFish?.(target),
 }
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {

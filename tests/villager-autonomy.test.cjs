@@ -40,7 +40,7 @@ const constants = {
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
     gold: 'Gold',
-    salmon: 'Salmon',
+    shoreFish: 'ShoreFish',
     stone: 'Stone',
     tree: 'Tree',
   },

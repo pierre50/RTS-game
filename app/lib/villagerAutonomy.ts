@@ -29,11 +29,7 @@ function closest<T extends RuntimeEntity>(unit: UnitEntity, candidates: Iterable
 }
 
 function isFishResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
-  return Boolean(
-    entity &&
-      entity.family === FAMILY_TYPES.resource &&
-      (entity.category === 'Fish' || entity.type === RESOURCE_TYPES.salmon)
-  )
+  return Boolean(entity && entity.family === FAMILY_TYPES.resource && entity.category === 'Fish')
 }
 
 function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
@@ -122,7 +118,7 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
     ? [...foundedFish]
     : [...resources].filter(
         resource =>
-          isKnownToUnit(unit, resource) && (resource.category === 'Fish' || resource.type === RESOURCE_TYPES.salmon)
+          isKnownToUnit(unit, resource) && resource.category === 'Fish'
       )
   const farms = (unit.owner?.buildings ?? []).filter(
     building =>

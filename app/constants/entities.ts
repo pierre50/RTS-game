@@ -3,7 +3,7 @@ export const RESOURCE_TYPES = {
   berrybush: 'Berrybush',
   stone: 'Stone',
   gold: 'Gold',
-  salmon: 'Salmon',
+  shoreFish: 'ShoreFish',
 }
 
 export const BUILDING_TYPES = {

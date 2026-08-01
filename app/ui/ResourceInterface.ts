@@ -32,7 +32,6 @@ export class ResourceInterface {
         case RESOURCE_TYPES.tree:
           iconToUse = menu.infoIcons?.['wood']
           break
-        case RESOURCE_TYPES.salmon:
         case RESOURCE_TYPES.berrybush:
           iconToUse = menu.infoIcons?.['food']
           break

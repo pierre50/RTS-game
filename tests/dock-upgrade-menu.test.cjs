@@ -126,7 +126,10 @@ test('Dock only shows the current boat in each upgrade chain', () => {
 })
 
 test('upgraded fishing ships can still fish every fish resource', () => {
-  assert.equal(resources.Salmon.assets, 'resources/fish/salmon')
+  assert.deepEqual(Object.entries(resources).filter(([, resource]) => resource.category === 'Fish').map(([type]) => type), [
+    'ShoreFish',
+  ])
+  assert.equal(resources.ShoreFish.assets, 'resources/fish/small')
 
   for (const [type, resource] of Object.entries(resources)) {
     if (resource.category !== 'Fish') continue

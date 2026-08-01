@@ -58,9 +58,6 @@ type TerrainValue = 0 | 1 | 2 | 3 | 4
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
-const WHALE_RESOURCE_TYPE = 'Whale'
-const DEFAULT_FISH_SPAWN_WEIGHT = 9
-const WHALE_SPAWN_WEIGHT = 1
 export type MapGenerationContext = Omit<
   Partial<GameContextLike>,
   'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
@@ -419,17 +416,9 @@ export class MapGeneration {
     }
   }
 
-  pickFishResourceType(i: number, j: number): string {
-    const resources = gameConfig().resources
+  canSpawnShoreFishAt(i: number, j: number): boolean {
     const cell = this.map.grid[i]?.[j]
-    const habitat = cell?.type === 'DeepWater' ? 'DeepWater' : 'Water'
-    const available = Object.entries(resources)
-      .filter(([, definition]) => definition.category === 'Fish' && (definition.habitat ?? 'Water') === habitat)
-      .map(([type]) => type)
-    const weighted = (available.length ? available : [RESOURCE_TYPES.salmon]).flatMap(type =>
-      Array(type === WHALE_RESOURCE_TYPE ? WHALE_SPAWN_WEIGHT : DEFAULT_FISH_SPAWN_WEIGHT).fill(type)
-    )
-    return this.map.randomItem(weighted)
+    return Boolean(cell?.category === 'Water' && cell.type !== 'DeepWater' && this._hasLandNeighborInRange(i, j, 1))
   }
 
   generateFromJSON(data: SavedGameData): void {
@@ -1185,10 +1174,9 @@ export class MapGeneration {
           if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
-          if (cell.category === 'Water') {
+          if (this.canSpawnShoreFishAt(i, j)) {
             if (this.map.random() < FISH_SPAWN_CHANCE) {
-              const fishType = this.pickFishResourceType(i, j)
-              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
+              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.shoreFish }, context)))
             } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
               this._placeWaterSet(cell)
             }
@@ -1243,10 +1231,9 @@ export class MapGeneration {
         if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
-        if (cell.category === 'Water') {
+        if (this.canSpawnShoreFishAt(i, j)) {
           if (this.map.random() < FISH_SPAWN_CHANCE) {
-            const fishType = this.pickFishResourceType(i, j)
-            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: fishType }, context)))
+            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.shoreFish }, context)))
           } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
             this._placeWaterSet(cell)
           }

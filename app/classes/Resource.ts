@@ -388,7 +388,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   shouldShowShadow(): boolean {
-    return this.category !== 'Fish' && this.type !== RESOURCE_TYPES.salmon
+    return this.category !== 'Fish'
   }
 
   createShadow(): ResourceShadow | null {
