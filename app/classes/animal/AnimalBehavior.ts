@@ -1,4 +1,4 @@
-import { FAMILY_TYPES } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
 import { showAlertFeedback } from '../../lib/combatFeedback'
 import { isAirborne } from './locomotion'
@@ -82,6 +82,16 @@ export class AnimalBehavior {
     const threat = this.findNearbyThreat()
     if (threat && !animal.isFleeing && animal.strategy === 'runaway') {
       showAlertFeedback(animal)
+      animal.getReaction(threat)
+      return
+    }
+
+    // Backstop for non-runaway (e.g. attack) strategies: the one-shot vision-reveal
+    // trigger (FogOfWar -> Animal.detect) can be missed entirely if the animal is
+    // mid ambient-walk at the exact tick vision reaches it. Gated on the action
+    // (not path/dest) so it still interrupts an ambient walk, but doesn't re-fire
+    // every 250ms while already charging/engaged with a target.
+    if (threat && animal.strategy && animal.strategy !== 'runaway' && animal.action !== ACTION_TYPES.attack) {
       animal.getReaction(threat)
       return
     }

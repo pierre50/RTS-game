@@ -74,8 +74,8 @@ export class AnimalMovement {
     const {
       context: { map },
     } = animal
-    animal.stopInterval()
     if (!dest) {
+      animal.stopInterval()
       animal.stop()
       return
     }
@@ -89,8 +89,15 @@ export class AnimalMovement {
       animal.action === action &&
       (animal.path.length > 0 || this.isAnimalAtDest(action, dest))
     ) {
+      // Already heading to (or engaged with) this same dest/action: leave the
+      // in-flight step/attack interval untouched. Stopping it here (as used to
+      // happen unconditionally at the top of this method) would kill the
+      // animal's movement while leaving its path and current animation sheet
+      // in place, freezing it mid-run-animation on every redundant sendTo call
+      // (e.g. every hit landed while it's already charging the same attacker).
       return
     }
+    animal.stopInterval()
     if (
       this.isAnimalAtDest(action, dest) &&
       (!map.grid[animal.i][animal.j].solid ||
