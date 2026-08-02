@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, UNIT_TYPES } from '../../constants'
+import { FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
 import { showAlertFeedback } from '../../lib/combatFeedback'
 import { isAirborne } from './locomotion'
@@ -54,8 +54,8 @@ export class AnimalBehavior {
     this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(minDelay, maxDelay)
   }
 
-  // Runaway animals spook at villagers (about to be hunted) and at buildings
-  // (a camp encroaching on their territory), but not at military units.
+  // Runaway animals spook at any human-owned presence: units of any kind
+  // (villagers, hero, military) and buildings (a camp encroaching on their territory).
   findNearbyThreat(): AnimalThreat | null {
     const animal = this.animal
     const threats = findInstancesInSight<Animal, AnimalThreat>(
@@ -63,8 +63,7 @@ export class AnimalBehavior {
       (instance: AnimalThreat) =>
         !instance.isDead &&
         !instance.isDestroyed &&
-        ((instance.family === FAMILY_TYPES.unit && instance.type === UNIT_TYPES.villager) ||
-          instance.family === FAMILY_TYPES.building)
+        (instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.building)
     )
     return threats.reduce(
       (closest: AnimalThreat | null, threat: AnimalThreat) =>

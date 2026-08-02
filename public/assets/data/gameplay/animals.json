@@ -10,7 +10,7 @@
     "ambientWalkRange": 2,
     "icon": "037_50730",
     "totalQuantity": 150,
-    "spriteScale": 0.8,
+    "spriteScale": 0.9,
     "assets": {
       "standingSheet": "animals/deer/standing",
       "walkingSheet": "animals/deer/walking",
