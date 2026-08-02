@@ -43,9 +43,7 @@ export const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
 // Tant que AGE_UP_ENABLED est false, l'IA reste bloquée à l'âge 0 : les conditions "age >= N"
 // atteignables (N <= 1) sont considérées comme remplies pour elle (WatchTower/SmallWall, qui ont un
-// asset dans buildings/shared/ et restent affichables à l'âge 0). On s'arrête à 1 et pas plus haut :
-// Academy/GovernmentCenter (age >= 2) n'ont pas d'asset dans shared/, uniquement des sprites
-// civ-spécifiques à partir du bucket d'âge 2 des JSON de civilisation — les débloquer les ferait
-// apparaître avec un rendu qui ne correspond pas à un civ/âge 0. Les valeurs sentinelles
-// (ex: "age > 99", bâtiments non implémentés) restent bloquées quoi qu'il arrive.
+// asset dans buildings/age-0/ et restent affichables à l'âge 0). On s'arrête à 1 et pas plus haut :
+// le jeu ne compte que 2 âges (0 et 1) - SiegeWorkshop (age >= 2) n'a plus d'asset atteignable et
+// reste bloqué comme les valeurs sentinelles (ex: "age > 99", bâtiments non implémentés).
 export const AGE_GATE_MAX_UNLOCKABLE_VALUE = 1

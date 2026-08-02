@@ -460,6 +460,7 @@ export default class Game extends Container {
     })
     await this._updateLoading('finalizingWorld', 0.96)
     this.context.controls?.init?.()
+    ;(window as unknown as { __debugContext?: unknown }).__debugContext = this.context
 
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')

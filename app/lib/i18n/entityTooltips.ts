@@ -27,11 +27,9 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     SmallWallDescription: 'Barrière défensive qui bloque les déplacements ennemis.',
     MarketDescription: "Améliore l'économie, l'agriculture et les unités montées.",
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
-    GovernmentCenterDescription: 'Débloque des technologies avancées militaires et économiques.',
     TownCenterDescription:
       'Bâtiment principal : forme les villageois, reçoit les ressources et permet de changer d’âge.',
     SiegeWorkshopDescription: 'Construit les armes de siège.',
-    AcademyDescription: 'Forme et améliore les unités lourdes de type hoplite.',
     GuardTowerDescription: 'Tour avancée, plus résistante et plus meurtrière.',
     BallistaTowerDescription: 'Tour ultime tirant de puissants carreaux à longue portée.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
@@ -155,7 +153,6 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     CoinageDescription: "Accélère l'extraction d'or de 25 % et augmente la capacité de transport de 2.",
 
     Temple: 'Temple',
-    GovernmentCenter: 'Centre gouvernemental',
     SiegeWorkshop: 'Atelier de siège',
   },
   en: {
@@ -186,10 +183,8 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     SmallWallDescription: 'Defensive barrier that blocks enemy movement.',
     MarketDescription: 'Improves the economy, farming and mounted units.',
     TempleDescription: 'Trains priests who can heal and convert.',
-    GovernmentCenterDescription: 'Unlocks advanced military and economic technologies.',
     TownCenterDescription: 'Main building: trains villagers, receives resources and advances to new ages.',
     SiegeWorkshopDescription: 'Builds siege weapons.',
-    AcademyDescription: 'Trains and upgrades heavy hoplite-type units.',
     GuardTowerDescription: 'Advanced tower with greater durability and damage.',
     BallistaTowerDescription: 'Ultimate tower firing powerful bolts over long range.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
@@ -310,7 +305,6 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     MonotheismDescription: 'Allows priests to convert enemy buildings and priests.',
 
     Temple: 'Temple',
-    GovernmentCenter: 'Government Center',
     SiegeWorkshop: 'Siege Workshop',
   },
 }

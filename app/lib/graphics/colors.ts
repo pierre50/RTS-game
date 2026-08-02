@@ -9,7 +9,7 @@ type PlayerColor = (typeof colors)[number]
 // pixel to the nearest of 64 fixed colors in scripts/retro_palette/aap-64.hex,
 // which remaps player_blue's shades to a different set of hex values (e.g.
 // #3C49AD and #466AC9 both collapse to #285CC4). These are that post-snap set,
-// verified against the actual lpc-baked and buildings/shared textures.
+// verified against the actual lpc-baked and buildings/age-0 textures.
 const SOURCE_COLORS = [0xbac7db, 0x8690b2, 0x6c82c4, 0x56506f, 0x1476c0, 0x03315f, 0x001b40]
 
 const UNIT_SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450]

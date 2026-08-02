@@ -374,8 +374,8 @@
 }
 
 .inventory-panel {
-  width: min(620px, calc(100vw - 24px));
-  max-height: min(430px, calc(100vh - 170px));
+  width: min(760px, calc(100vw - 24px));
+  max-height: min(600px, calc(100vh - 140px));
   gap: 0;
 }
 
@@ -433,12 +433,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 188px;
+  min-height: 320px;
   overflow: hidden;
 }
 
 .action-menu-minimap-page .minimap-wrap {
-  width: min(360px, calc(100vw - 64px));
+  width: min(640px, calc(100vw - 96px));
   height: auto;
   aspect-ratio: 2 / 1;
   min-width: 180px;

@@ -18,13 +18,19 @@ type PlayerSetupConfigWithAge = PlayerSetupConfig & {
   name: string
   team: number | null
   age?: number
+  civilizationLevel?: number
 }
 
 const AGES = [
   { label: () => t('stoneAge'), value: 0 },
   { label: () => t('toolAge'), value: 1 },
-  { label: () => t('bronzeAge'), value: 2 },
-  { label: () => t('ironAge'), value: 3 },
+]
+
+const CIV_LEVELS = [
+  { label: () => t('civLevel0'), value: 0 },
+  { label: () => t('civLevel1'), value: 1 },
+  { label: () => t('civLevel2'), value: 2 },
+  { label: () => t('civLevel3'), value: 3 },
 ]
 
 const MAX_BOTS = 4
@@ -66,7 +72,7 @@ export class PlayerSetupPanel {
     )
     if (this.showAge) {
       this.players.forEach(player => {
-        player.age = Math.max(0, Math.min(Number(player.age) || 0, 3))
+        player.age = Math.max(0, Math.min(Number(player.age) || 0, 1))
       })
     }
     // Simplified lobby never exposes a count control - it always fills to the map's max.
@@ -112,7 +118,8 @@ export class PlayerSetupPanel {
       civ: player.civ || this._randomCiv(),
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
-      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 3)) } : {}),
+      ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 1)) } : {}),
+      civilizationLevel: Math.max(0, Math.min(Number(player.civilizationLevel) || 0, 3)),
     }
   }
 
@@ -216,6 +223,7 @@ export class PlayerSetupPanel {
       civ: this._randomCiv(),
       team: null,
       isHuman: false,
+      civilizationLevel: 0,
       ...(this.showAge ? { age: 0 } : {}),
     })
   }
@@ -409,6 +417,38 @@ export class PlayerSetupPanel {
     swatch.addEventListener('click', () => this._cycleColor(0))
     colorRow.appendChild(swatch)
     this.humanControlsEl.appendChild(colorRow)
+
+    const bots = this.players.filter(player => !player.isHuman)
+    if (bots.length) {
+      const heading = document.createElement('div')
+      heading.className = 'config-row-heading'
+      heading.textContent = t('civLevelLabel')
+      this.humanControlsEl.appendChild(heading)
+
+      bots.forEach(bot => {
+        const index = this.players.indexOf(bot)
+        const botRow = document.createElement('div')
+        botRow.className = 'config-row'
+        const botLabel = document.createElement('label')
+        botLabel.textContent = bot.name
+        botRow.appendChild(botLabel)
+        const levelSelect = document.createElement('select')
+        levelSelect.className = 'ui-select'
+        CIV_LEVELS.forEach(level => {
+          const opt = document.createElement('option')
+          opt.value = String(level.value)
+          opt.textContent = level.label()
+          if (level.value === bot.civilizationLevel) opt.selected = true
+          levelSelect.appendChild(opt)
+        })
+        levelSelect.onchange = (evt: Event) => {
+          this.players[index].civilizationLevel = Number((evt.target as HTMLSelectElement).value)
+          this._emitChange()
+        }
+        botRow.appendChild(levelSelect)
+        this.humanControlsEl.appendChild(botRow)
+      })
+    }
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

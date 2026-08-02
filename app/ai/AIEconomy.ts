@@ -670,7 +670,6 @@ export class AIEconomy {
       case BUILDING_TYPES.barracks:
       case BUILDING_TYPES.archeryRange:
       case BUILDING_TYPES.stable:
-      case BUILDING_TYPES.academy:
       case BUILDING_TYPES.townCenter:
         return 2
       default:

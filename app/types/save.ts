@@ -162,6 +162,7 @@ export type GameConfig = {
 
 export type PlayerSetupConfig = {
   civ?: string
+  civilizationLevel?: number
   color?: string
   isHuman?: boolean
   name?: string

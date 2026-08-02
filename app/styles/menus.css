@@ -191,6 +191,13 @@ div.menu-title {
   flex-shrink: 0;
 }
 
+.config-row-heading {
+  margin-top: var(--ui-gap-8);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: rgba(234, 221, 202, 0.7);
+}
+
 .settings-controls-group {
   display: flex;
   flex-direction: column;

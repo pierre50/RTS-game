@@ -394,48 +394,6 @@
       ]
     }
   },
-  "GovernmentCenter": {
-    "size": 3,
-    "sight": 10,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 175
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Market"
-      }
-    ],
-    "technologies": [
-      "Ballistics",
-      "Alchemy",
-      "Writing",
-      "Architecture",
-      "Nobility",
-      "Aristocracy"
-    ],
-    "sounds": {
-      "create": "government-center-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
   "TownCenter": {
     "size": 5,
     "sight": 14,
@@ -489,47 +447,6 @@
     ],
     "sounds": {
       "create": "siege-workshop-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
-  "Academy": {
-    "size": 3,
-    "sight": 10,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 200
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "Stable"
-      }
-    ],
-    "units": [
-      "Hoplite"
-    ],
-    "technologies": [
-      "Phalanx",
-      "Centurion"
-    ],
-    "sounds": {
-      "create": "academy-completed-selected",
       "burning": [
         "building-burning",
         "building-burning-2",

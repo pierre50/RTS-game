@@ -118,6 +118,7 @@ export interface PlayerLike {
   hasBuilt?: string[]
   autoTechnologyByAge?: boolean
   applyEligibleTechnologies?: () => string[]
+  civilizationLevel?: number
 }
 
 export type PlacementOwner = PlayerLike

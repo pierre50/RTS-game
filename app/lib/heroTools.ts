@@ -493,6 +493,18 @@ function getDirectionalTarget<T extends RuntimeEntity>(
   return getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null
 }
 
+// Whatever the hero is currently facing, within the same aim cone every other hands-on hero
+// action (gather/chop/mine/build/melee) already resolves against — used to make key-triggered
+// interactions (e.g. hero entity inspection) direction-based instead of mouse-position-based.
+export function findFacingEntity(
+  hero: UnitEntity,
+  matches: (target: RuntimeEntity) => boolean,
+  range = CLICK_TARGET_SEARCH_RANGE
+): RuntimeEntity | null {
+  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, matches, range)
+  return getDirectionalTarget(hero, candidates)
+}
+
 function getDirectionalTargets<T extends RuntimeEntity>(
   hero: UnitEntity,
   candidates: T[],

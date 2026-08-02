@@ -142,9 +142,9 @@ export function createDevCommands(): DevCommandRegistry {
 
   registry.register({
     name: 'age',
-    usage: 'age <0-3>',
+    usage: 'age <0-1>',
     describe: 'Set player age',
-    complete: () => ['0', '1', '2', '3'],
+    complete: () => ['0', '1'],
     run: ([value], context) => setAge(context, value),
   })
 

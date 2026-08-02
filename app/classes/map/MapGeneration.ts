@@ -7,8 +7,20 @@ import {
   updateInstanceVisibility,
   getGaiaAnimals,
   getTextureByFrame,
+  getPositionInGridAroundInstance,
+  canPlaceBuildingAt,
+  getBuildingFootprintRadius,
+  getPlainCellsAroundPoint,
 } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
+import {
+  MAX_BUILDING_BY_AGE,
+  MAX_INFANTRY_BY_AGE,
+  MAX_ARCHER_BY_AGE,
+  MAX_HOPLITE_BY_AGE,
+} from '../../ai/config'
+import { getBestUnitFromTechs, INFANTRY_TECH_UPGRADES, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
+import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import {
   BUILDING_TYPES,
   FAMILY_TYPES,
@@ -39,7 +51,7 @@ import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
 import type { ResourceOptions } from '../Resource'
 import type { AnimalOptions } from '../animal'
-import type { RuntimeEntity, ResourceEntity } from '../../types/entities'
+import type { RuntimeEntity, ResourceEntity, BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { MapEditorControlsLike } from '../../types/mapEditor'
 import type { AnimalConfig } from '../../types/config'
@@ -59,6 +71,25 @@ type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
+
+// Unowned, indestructible landmark: exactly one is placed per map, never tied to any player.
+const PORTAL_RESOURCE_TYPE = 'Portal'
+const PORTAL_FOOTPRINT_SIZE = 3
+
+// Outline (not filled) cells of a diamond at exactly `radius` tiles from the origin - used to lay a
+// one-tile-wide wall perimeter around a Town Center without a full path-finding/drafting system.
+function getDiamondRingOffsets(radius: number): Array<[number, number]> {
+  const offsets: Array<[number, number]> = []
+  for (let di = -radius; di <= radius; di++) {
+    const djAbs = radius - Math.abs(di)
+    if (djAbs === 0) {
+      offsets.push([di, 0])
+    } else {
+      offsets.push([di, djAbs], [di, -djAbs])
+    }
+  }
+  return offsets
+}
 export type MapGenerationContext = Omit<
   Partial<GameContextLike>,
   'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
@@ -689,6 +720,7 @@ export class MapGeneration {
       await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
       await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
     }
+    measure('portalPlacement', () => this.placePortal())
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
     for (const viewer of this.map.context.players || []) {
@@ -783,7 +815,7 @@ export class MapGeneration {
 
   applyStartingBonuses(player: PlayerLike, configuredAge: number | null = null): void {
     const age = configuredAge == null ? this.map.startingAge : configuredAge
-    const startingAge = Math.max(0, Math.min(Number(age) || 0, 3))
+    const startingAge = Math.max(0, Math.min(Number(age) || 0, 1))
     player.age = startingAge
 
     if (!this.map.allTechnologies) return
@@ -814,15 +846,20 @@ export class MapGeneration {
         const team = playersConfig?.[i]?.team ?? null
         const name = playersConfig?.[i]?.name
         const difficulty = this.map.difficulty
+        const civilizationLevel = Math.max(0, Math.min(Number(playersConfig?.[i]?.civilizationLevel) || 0, 3))
         if (!i) {
-          players.push(new Human({ i: posI, j: posJ, age: 0, civ, color, team, name, isPlayed: true }, context))
+          players.push(
+            new Human({ i: posI, j: posJ, age: 0, civ, color, team, name, isPlayed: true, civilizationLevel }, context)
+          )
         } else if (!this.map.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, name, difficulty }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, name, difficulty, civilizationLevel }, context))
         }
       }
     }
 
-    players.forEach((player, index) => this.applyStartingBonuses(player, playersConfig?.[index]?.age ?? null))
+    players.forEach((player, index) =>
+      this.applyStartingBonuses(player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
+    )
 
     return players
   }
@@ -843,6 +880,127 @@ export class MapGeneration {
       if (!towncenter) continue
       for (let i = 0; i < this.map.startingUnits; i++) {
         towncenter.placeUnit?.(player.type === PLAYER_TYPES.ai && i === 0 ? UNIT_TYPES.chief : UNIT_TYPES.villager)
+      }
+      if (player.civilizationLevel) {
+        this.applyCivilizationLevelStartingKit(player, player.civilizationLevel, towncenter)
+      }
+    }
+  }
+
+  // Spawns a player already at an advanced stage: extra economy/military buildings, a static wall
+  // perimeter, consistent technologies, a resource cushion and a few soldiers stationed near home.
+  // Building/unit counts are read straight from the AI's own long-term per-age targets
+  // (MAX_BUILDING_BY_AGE, MAX_*_BY_AGE) so no new tuning numbers are invented here.
+  applyCivilizationLevelStartingKit(player: PlayerLike, level: number, townCenter: BuildingEntity): void {
+    const { map } = this
+    player.hasBuilt = player.hasBuilt || []
+
+    const markBuilt = (type: string) => {
+      if (!player.hasBuilt!.includes(type)) player.hasBuilt!.push(type)
+    }
+
+    const placementSpaceFor = (type: string): [number, number] => {
+      if (type === BUILDING_TYPES.townCenter) return [14, 32]
+      if (type === BUILDING_TYPES.house) return [6, 12]
+      return [6, 22]
+    }
+    const placementSizeFor = (type: string): number => {
+      if (type === BUILDING_TYPES.townCenter || type === BUILDING_TYPES.farm) return 2
+      if (type === BUILDING_TYPES.house) return 0
+      return 1
+    }
+
+    // Buildings placed earlier by this method reduce free space for the ones that come after, so a
+    // single search attempt can spuriously fail once the base gets crowded - retry progressively
+    // further out before giving up, instead of undershooting the target (e.g. too few Houses).
+    const placeExtraBuilding = (type: string): boolean => {
+      const config = player.config.buildings[type]
+      if (!config) return false
+      // MAX_BUILDING_BY_AGE still lists buildings gated behind an age this player can never reach
+      // (e.g. SentryTower, sentinel-disabled) - skip those instead of crashing on a missing asset.
+      if (player.isBuildingEligible && !player.isBuildingEligible(type)) return false
+      const placementConfig = { ...config, type }
+      const [minSpace, maxSpace] = placementSpaceFor(type)
+      const size = placementSizeFor(type)
+      for (const spaceMultiplier of [1, 2, 3, 4]) {
+        const position = getPositionInGridAroundInstance(townCenter, map.grid, [minSpace, maxSpace * spaceMultiplier], size)
+        if (position && canPlaceBuildingAt(map.grid, position.i, position.j, placementConfig)) {
+          player.createBuilding({ i: position.i, j: position.j, type, isBuilt: true })
+          markBuilt(type)
+          return true
+        }
+      }
+      return false
+    }
+
+    // 1. Houses first, sized for the population this kit is about to reach - placed before the base
+    // gets crowded by everything else below so population capacity isn't left short by congestion.
+    const infantryType = getBestUnitFromTechs(player.technologies, INFANTRY_TECH_UPGRADES, UNIT_TYPES.clubman)
+    const archerType = getBestUnitFromTechs(player.technologies, ARCHER_TECH_UPGRADES, UNIT_TYPES.bowman)
+    const maxByAge = (table: Record<number, number>) => table[level] || 0
+    const unitTargets: Array<[string, number]> = [
+      [infantryType, maxByAge(MAX_INFANTRY_BY_AGE)],
+      [archerType, maxByAge(MAX_ARCHER_BY_AGE)],
+      [UNIT_TYPES.hoplite, player.config.units[UNIT_TYPES.hoplite] ? maxByAge(MAX_HOPLITE_BY_AGE) : 0],
+    ]
+
+    let populationTarget = player.population
+    for (const [, count] of unitTargets) populationTarget += count
+
+    const houseConfig = player.config.buildings[BUILDING_TYPES.house]
+    const houseCapacity = Number(houseConfig?.increasePopulation) || 0
+    if (houseCapacity > 0) {
+      let guard = 0
+      while (player.populationMax < populationTarget && guard++ < 20) {
+        if (!placeExtraBuilding(BUILDING_TYPES.house)) break
+      }
+    }
+
+    // 2. Economy/military buildings up to this level's own long-term targets.
+    const buildingTargets = (MAX_BUILDING_BY_AGE as Record<number, Record<string, number>>)[level] || {}
+    for (const [type, targetCount] of Object.entries(buildingTargets)) {
+      const existing = player.buildings.filter(building => building.type === type).length
+      for (let n = existing; n < targetCount; n++) {
+        if (!placeExtraBuilding(type)) break
+      }
+    }
+
+    // 3. Wall perimeter for established/imperial levels only - static, never repaired/extended by the AI.
+    if (level >= 2) {
+      const wallConfig = player.config.buildings[BUILDING_TYPES.smallWall]
+      if (wallConfig) {
+        for (const [di, dj] of getDiamondRingOffsets(22)) {
+          const i = townCenter.i + di
+          const j = townCenter.j + dj
+          const placementConfig = { ...wallConfig, type: BUILDING_TYPES.smallWall }
+          if (!canPlaceBuildingAt(map.grid, i, j, placementConfig)) continue
+          player.createBuilding({ i, j, type: BUILDING_TYPES.smallWall, isBuilt: true })
+          markBuilt(BUILDING_TYPES.smallWall)
+        }
+      }
+    }
+
+    // 4. Technologies consistent with the age/buildings just granted - also retextures the walls/towers
+    // above to the right tier via the 'refreshWalls'/'refreshTowers' actions already wired on unlock.
+    player.applyEligibleTechnologies?.()
+
+    // 5. Resource cushion.
+    const resourceBonus = CIVILIZATION_LEVEL_RESOURCE_BONUS[level]
+    if (resourceBonus) {
+      player.wood += resourceBonus.wood ?? 0
+      player.food += resourceBonus.food ?? 0
+      player.gold += resourceBonus.gold ?? 0
+      player.stone += resourceBonus.stone ?? 0
+    }
+
+    // 6. Military units, stationed near the Town Center (the game has no true garrison mechanic).
+    for (const [type, count] of unitTargets) {
+      if (!type || !count || !player.config.units[type]) continue
+      for (let n = 0; n < count; n++) {
+        const position = getPositionInGridAroundInstance(townCenter, map.grid, [2, 10], 0)
+        if (!position) continue
+        player.createUnit?.({ i: position.i, j: position.j, type, owner: player })
+        player.population = (player.population ?? 0) + 1
       }
     }
   }
@@ -1478,6 +1636,53 @@ export class MapGeneration {
       const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 8
       if (i % yieldEvery === 0) await this.yieldToBrowser()
     }
+  }
+
+  placePortal(): void {
+    const { map } = this
+    if ([...map.resources].some(resource => resource.type === PORTAL_RESOURCE_TYPE)) return
+
+    // Same footprint convention as a size-3 building (3x3), matching the structure's visual size.
+    const footprintRadius = getBuildingFootprintRadius(PORTAL_FOOTPRINT_SIZE)
+    const isValidFootprint = (i: number, j: number, radius: number): boolean => {
+      const centerZ = map.grid[i]?.[j]?.z
+      if (centerZ === undefined) return false
+      const cells = getPlainCellsAroundPoint(i, j, map.grid, radius)
+      if (cells.length !== (radius * 2 + 1) ** 2) return false
+      return cells.every(
+        cell => !cell.solid && !cell.has && cell.category !== 'Water' && !cell.border && !cell.inclined && cell.z === centerZ
+      )
+    }
+    const center = Math.round(map.size / 2)
+    const border = 10
+    const playerSafeDistanceSq = 15 ** 2
+    let position: GridPosition | null = null
+    // Prefer breathing room beyond the footprint so it's not immediately hugged by trees/resources,
+    // but relax that in dense biomes rather than fail outright — the footprint itself always stays clear.
+    for (const clearance of [3, 2, 1, 0]) {
+      for (let attempt = 0; attempt < 300; attempt++) {
+        const i = attempt === 0 ? center : map.randomRange(border, map.size - border)
+        const j = attempt === 0 ? center : map.randomRange(border, map.size - border)
+        if (!isValidFootprint(i, j, footprintRadius + clearance)) continue
+        const tooCloseToPlayer = map.playersPos.some(pos => pos && (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
+        if (tooCloseToPlayer) continue
+        position = { i, j }
+        break
+      }
+      if (position) break
+    }
+    if (!position) return
+
+    const context = runtimeContext(map.context)
+    const portal = map.addChild(
+      new Resource({ i: position.i, j: position.j, type: PORTAL_RESOURCE_TYPE, size: PORTAL_FOOTPRINT_SIZE }, context)
+    )
+    map.resources.add(portal)
+    getPlainCellsAroundPoint(position.i, position.j, map.grid, footprintRadius, cell => {
+      cell.solid = true
+      cell.has = portal
+      return true
+    })
   }
 
   findPlayerPlaces() {

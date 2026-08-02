@@ -154,7 +154,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
 
 export function setAge(context: DevConsoleContext, value: string): CommandResult {
   const age = Number(value)
-  if (!Number.isInteger(age) || age < 0 || age > 3) return { ok: false, message: 'Age must be between 0 and 3' }
+  if (!Number.isInteger(age) || age < 0 || age > 1) return { ok: false, message: 'Age must be between 0 and 1' }
   context.player.age = age
   const player = context.player as DevTechnologyPlayer
   player.age = age

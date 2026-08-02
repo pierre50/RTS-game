@@ -21,7 +21,6 @@ function loadAIEconomy() {
       takemeat: 'takemeat',
     },
     BUILDING_TYPES: {
-      academy: 'Academy',
       archeryRange: 'ArcheryRange',
       barracks: 'Barracks',
       granary: 'Granary',

@@ -196,8 +196,6 @@ export class AIStrategy {
       ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.archeryRange)
     const stables: AIBuildingLike[] =
       snapshot?.stables || ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.stable)
-    const academies: AIBuildingLike[] =
-      snapshot?.academies || ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.academy)
     const builtBarracks = barracks.filter(
       (building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed
     )
@@ -210,8 +208,6 @@ export class AIStrategy {
       archeryRanges.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
         .length +
       stables.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
-        .length +
-      academies.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
         .length
 
     let desired = ai.phase !== 'economy' ? 1 : 0
@@ -325,9 +321,6 @@ export class AIStrategy {
       maxArcher,
       archeryRanges,
       archerUnit,
-      hoplites,
-      maxHoplite,
-      academies,
     } = snapshot
 
     let actions = 0
@@ -347,7 +340,6 @@ export class AIStrategy {
     }
     actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
-    actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
     return actions
   }
 
@@ -446,10 +438,8 @@ export class AIStrategy {
       granarys,
       storagepits,
       markets,
-      governmentCenters,
       archeryRanges,
       stables,
-      academies,
       watchTowers,
       sentryTowers,
       notBuiltHouses,
@@ -466,10 +456,8 @@ export class AIStrategy {
       [BUILDING_TYPES.granary]: granarys,
       [BUILDING_TYPES.storagePit]: storagepits,
       [BUILDING_TYPES.market]: markets,
-      [BUILDING_TYPES.governmentCenter]: governmentCenters,
       [BUILDING_TYPES.archeryRange]: archeryRanges,
       [BUILDING_TYPES.stable]: stables,
-      [BUILDING_TYPES.academy]: academies,
       [BUILDING_TYPES.watchTower]: watchTowers,
       [BUILDING_TYPES.sentryTower]: sentryTowers,
     }
@@ -520,28 +508,6 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(
-        this.hasReachedAge(2) && markets.some((m: AIBuildingLike) => m.isBuilt),
-        BUILDING_TYPES.governmentCenter,
-        () => getPositionInGridAroundInstance(anchor, map.grid, [8, 22], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(
-        this.hasReachedAge(2) &&
-          towncenters.length < 2 &&
-          governmentCenters.some((gc: AIBuildingLike) => gc.isBuilt) &&
-          ai.populationMax >= 24 &&
-          ai.population >= 16,
-        BUILDING_TYPES.townCenter,
-        () => getPositionInGridAroundInstance(anchor, map.grid, [14, 30], 2, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
       buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
         getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
@@ -551,15 +517,6 @@ export class AIStrategy {
     if (
       buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
         getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(
-        stables.some((s: AIBuildingLike) => s.isBuilt),
-        BUILDING_TYPES.academy,
-        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
       )
     )
       actions++

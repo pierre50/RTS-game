@@ -10,29 +10,29 @@ import type { RecolorableSprite } from '../graphics/colors'
 
 const WALL_SHEETS = {
   1: {
-    default: 'buildings/shared/wall/level-1',
+    default: 'buildings/age-0/wall/level-1',
   },
   2: {
-    Egyptian: 'buildings/egyptian/wall/level-2',
-    Greek: 'buildings/greek/wall/level-2',
-    Roman: 'buildings/greek/wall/level-2',
-    Asian: 'buildings/asian/wall/level-2',
-    Babylonian: 'buildings/babylonian/wall/level-2',
-    Celtic: 'buildings/greek/wall/level-2',
-    Nubian: 'buildings/greek/wall/level-2',
+    Egyptian: 'buildings/age-0/wall/level-1',
+    Greek: 'buildings/age-0/wall/level-1',
+    Roman: 'buildings/age-0/wall/level-1',
+    Asian: 'buildings/age-0/wall/level-1',
+    Babylonian: 'buildings/age-0/wall/level-1',
+    Celtic: 'buildings/age-0/wall/level-1',
+    Nubian: 'buildings/age-0/wall/level-1',
   },
   3: {
-    Egyptian: 'buildings/egyptian/wall/level-3',
-    Greek: 'buildings/greek/wall/level-3',
-    Roman: 'buildings/greek/wall/level-3',
-    Asian: 'buildings/asian/wall/level-3',
-    Babylonian: 'buildings/babylonian/wall/level-3',
-    Celtic: 'buildings/greek/wall/level-3',
-    Nubian: 'buildings/greek/wall/level-3',
+    Egyptian: 'buildings/age-0/wall/level-1',
+    Greek: 'buildings/age-0/wall/level-1',
+    Roman: 'buildings/age-0/wall/level-1',
+    Asian: 'buildings/age-0/wall/level-1',
+    Babylonian: 'buildings/age-0/wall/level-1',
+    Celtic: 'buildings/age-0/wall/level-1',
+    Nubian: 'buildings/age-0/wall/level-1',
   },
 } as const
 
-export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/shared/wall/construction-flag'
+export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/age-0/wall/construction-flag'
 
 export type WallOwner = {
   age?: number

@@ -11,6 +11,15 @@ import type { MinimapHostLike } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 
+// Canvases default to the HTML intrinsic 300x150 raster; the world->pixel math below
+// (miniMapAlpha, the /234 reference in getMinimapFactor) is tuned to fill that box
+// edge-to-edge. MINIMAP_RESOLUTION_SCALE renders at a multiple of that same reference
+// size so the diamond still fills the canvas exactly, just at a crisper resolution
+// once CSS stretches it to the (now larger) on-screen minimap box.
+const MINIMAP_BASE_WIDTH = 300
+const MINIMAP_BASE_HEIGHT = 150
+const MINIMAP_RESOLUTION_SCALE = 4
+
 function terrainColor(value: string | number | undefined): string {
   return typeof value === 'string' ? value : ''
 }
@@ -34,7 +43,7 @@ export class MinimapManager {
 
   constructor(menu: MinimapHostLike) {
     this.menu = menu
-    this.miniMapAlpha = 1.284
+    this.miniMapAlpha = 1.284 * MINIMAP_RESOLUTION_SCALE
 
     this.updatePlayerMiniMap = throttleByKey(
       this.updatePlayerMiniMapEvt.bind(this),
@@ -62,6 +71,8 @@ export class MinimapManager {
     const { factor, translate } = this.getMinimapParams()
 
     for (const canvas of [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]) {
+      canvas.width = MINIMAP_BASE_WIDTH * MINIMAP_RESOLUTION_SCALE
+      canvas.height = MINIMAP_BASE_HEIGHT * MINIMAP_RESOLUTION_SCALE
       canvas.getContext('2d')!.translate(translate, 0)
     }
 
@@ -159,7 +170,7 @@ export class MinimapManager {
 
     const context = menu.resourcesMinimap.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
-    const squareSize = 4
+    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
     canvasDrawRectangle(
       context,
       resource.x / factor - squareSize / 2 + translate,
@@ -176,7 +187,7 @@ export class MinimapManager {
     const canvas = menu.resourcesMinimap
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
-    const squareSize = 4
+    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
     if (!map.showResources) return
@@ -219,7 +230,7 @@ export class MinimapManager {
 
     const { menu } = this
     const { map, player } = menu.context
-    const squareSize = 4
+    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
     const { factor, translate } = this.getMinimapParams()
     const color = owner.colorHex
     const id = `minimap-${owner.label}`
@@ -232,6 +243,8 @@ export class MinimapManager {
       context = existing.context
     } else {
       canvas = document.createElement('canvas')
+      canvas.width = MINIMAP_BASE_WIDTH * MINIMAP_RESOLUTION_SCALE
+      canvas.height = MINIMAP_BASE_HEIGHT * MINIMAP_RESOLUTION_SCALE
       context = canvas.getContext('2d')!
       context.translate(translate, 0)
       menu.playersMinimap.push({ id, canvas, context })
@@ -245,7 +258,7 @@ export class MinimapManager {
     owner.buildings.forEach(building => {
       if (!isVisible(building)) return
       const { x, y, size = 0, selected } = building
-      const finalSize = squareSize + size
+      const finalSize = squareSize + size * MINIMAP_RESOLUTION_SCALE
       canvasDrawRectangle(
         context,
         x / factor - finalSize / 2 + translate,

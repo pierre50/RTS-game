@@ -2,7 +2,7 @@ import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
 import type Menu from '../classes/Menu'
 
-const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
+const AGE_LABEL_KEYS = ['stoneAge', 'toolAge'] as const
 const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
 type ResourceName = (typeof RESOURCE_NAMES)[number]
 type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number }
@@ -80,7 +80,7 @@ export class TopbarView {
       this.resourceEls[prop].textContent = String(val)
     })
     const age = (player as ResourcePlayer | null)?.age || 0
-    this.menu.age.textContent = t(AGE_LABEL_KEYS[Math.max(0, Math.min(age, 3))])
+    this.menu.age.textContent = t(AGE_LABEL_KEYS[Math.max(0, Math.min(age, 1))])
   }
 
   updateAgeTheme(): void {

@@ -68,6 +68,8 @@ export interface MenuLike {
   getNpcOrdersTarget?(): UnitEntity[]
   openHeroBuildingMenu?(building: BuildingEntity): boolean
   openEntityInfoModal?(entity: RuntimeEntity): boolean
+  isEntityInfoModalOpen?(): boolean
+  closeEntityInfoModal?(): void
   isHeroBuildingMenuOpen?(): boolean
   closeHeroBuildingMenu?(): void
   getHeroBuildingMenuTarget?(): BuildingEntity | null

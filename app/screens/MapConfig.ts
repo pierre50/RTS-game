@@ -5,15 +5,8 @@ import { buildSelectRow } from '../ui/formUtils'
 import { MAP_SIZES } from '../config/mapSizes'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
-import type { ResourceAmount } from '../types/common'
+import { RESOURCES_MAP } from '../config/resourcePresets'
 import type { GameConfig } from '../types/save'
-
-const RESOURCES_MAP: Record<string, ResourceAmount> = {
-  low: { wood: 100, food: 150, stone: 50, gold: 0 },
-  standard: { wood: 200, food: 200, stone: 150, gold: 0 },
-  high: { wood: 500, food: 500, stone: 300, gold: 0 },
-  very_high: { wood: 1000, food: 1000, stone: 750, gold: 100 },
-}
 
 const DIFFICULTIES = [
   { label: () => t('diffEasy'), value: 'easy' },

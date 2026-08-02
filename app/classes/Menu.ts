@@ -311,6 +311,12 @@ export default class Menu implements MenuLike {
   openEntityInfoModal(entity: RuntimeEntity): boolean {
     return this.entityInfoModalManager.open(entity)
   }
+  isEntityInfoModalOpen(): boolean {
+    return this.entityInfoModalManager.isOpen()
+  }
+  closeEntityInfoModal(): void {
+    return this.entityInfoModalManager.close()
+  }
   isHeroBuildingMenuOpen(): boolean {
     return this.heroBuildingMenuManager.isOpen()
   }

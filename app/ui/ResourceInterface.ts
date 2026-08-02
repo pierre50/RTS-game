@@ -18,7 +18,9 @@ export class ResourceInterface {
     const menu = (resource.context as { menu: MenuLike }).menu
 
     element.appendChild(createInfoText(MENU_INFO_IDS.type, t(resource.type)))
-    element.appendChild(createInfoImage(MENU_INFO_IDS.icon, getIconPath(data.icon)))
+    if (data.icon) {
+      element.appendChild(createInfoImage(MENU_INFO_IDS.icon, getIconPath(data.icon)))
+    }
 
     if (resource.hitPoints) {
       element.appendChild(

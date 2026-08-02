@@ -175,5 +175,12 @@
     "sounds": {
       "command": ["fish", "fish-2", "fish-3"]
     }
+  },
+  "Portal": {
+    "color": "#8a4fd6",
+    "assets": {
+      "sheet": "buildings/portal",
+      "frame": 0
+    }
   }
 }

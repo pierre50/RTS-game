@@ -306,13 +306,11 @@ export type AIStrategySnapshot = {
   stables: AIBuildingLike[]
   hoplites: AIEntityLike[]
   maxHoplite: number
-  academies: AIBuildingLike[]
   houses: AIBuildingLike[]
   farms: AIBuildingLike[]
   granarys: AIBuildingLike[]
   storagepits: AIBuildingLike[]
   markets: AIBuildingLike[]
-  governmentCenters: AIBuildingLike[]
   watchTowers: AIBuildingLike[]
   sentryTowers: AIBuildingLike[]
   notBuiltHouses: AIBuildingLike[]

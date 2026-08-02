@@ -8,7 +8,7 @@ import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
-import type { HeroEquippedItem } from '../lib/heroTools'
+import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
 import type { AudibleInstanceLike, ControlPointerEvent, ControlsLike, GameContextLike } from '../types/context'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -728,14 +728,33 @@ export default class Controls extends Container implements ControlsLike {
     return map.grid[i]?.[j] || null
   }
 
-  openHeroEntityInteraction(target: RuntimeEntity | null = this.getCellUnderCursor()?.has ?? null): boolean {
-    if (!this.isHeroControlActive() || !target) return false
+  // Whatever the hero is currently facing, not whatever the mouse happens to be over — matches
+  // the direction-based resolution the "heroInteract" (E) key already uses.
+  getFacingEntityTarget(): RuntimeEntity | null {
+    const hero = this.heroUnit
+    if (!hero) return null
+    return findFacingEntity(hero, target => target !== hero && instanceContactInstance(hero, target))
+  }
+
+  openHeroEntityInteraction(target: RuntimeEntity | null = this.getFacingEntityTarget()): boolean {
+    if (!this.isHeroControlActive()) return false
+    const menu = this.context.menu
+    // Pressing the same key again closes whichever of the two panels it opened.
+    if (menu?.isHeroBuildingMenuOpen?.()) {
+      menu.closeHeroBuildingMenu?.()
+      return true
+    }
+    if (menu?.isEntityInfoModalOpen?.()) {
+      menu.closeEntityInfoModal?.()
+      return true
+    }
+    if (!target) return false
     const hero = this.heroUnit
     if (target === hero) return false
     const player = this.context.player
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
-      if (this.context.menu?.openHeroBuildingMenu?.(building)) {
+      if (menu?.openHeroBuildingMenu?.(building)) {
         player?.unselectAll?.()
         building.select?.()
         player.selectedBuilding = building
@@ -745,7 +764,7 @@ export default class Controls extends Container implements ControlsLike {
       if (building.owner === player) return false
     }
     if (!hero || !instanceContactInstance(hero, target)) return false
-    return Boolean(this.context.menu?.openEntityInfoModal?.(target))
+    return Boolean(menu?.openEntityInfoModal?.(target))
   }
 
   getGamepadMoveVector(): { dx: number; dy: number } {

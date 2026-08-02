@@ -5,7 +5,7 @@
         "icon": "033_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/town-center",
+            "sheet": "buildings/age-0/town-center",
             "frame": 0
           }
         }
@@ -14,7 +14,7 @@
         "icon": "003_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/barracks",
+            "sheet": "buildings/age-0/barracks",
             "frame": 0
           }
         }
@@ -23,7 +23,7 @@
         "icon": "015_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/house",
+            "sheet": "buildings/age-0/house",
             "frame": 0
           }
         }
@@ -32,7 +32,7 @@
         "icon": "011_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/granary",
+            "sheet": "buildings/age-0/granary",
             "frame": 0
           }
         }
@@ -41,7 +41,7 @@
         "icon": "028_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/storage-pit",
+            "sheet": "buildings/age-0/storage-pit",
             "frame": 0
           }
         }
@@ -50,7 +50,34 @@
         "icon": "031_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/temple",
+            "sheet": "buildings/age-0/temple",
+            "frame": 0
+          }
+        }
+      },
+      "Stable": {
+        "icon": "025_50707",
+        "images": {
+          "final": {
+            "sheet": "buildings/age-0/stable",
+            "frame": 0
+          }
+        }
+      },
+      "ArcheryRange": {
+        "icon": "001_50707",
+        "images": {
+          "final": {
+            "sheet": "buildings/age-0/archery-range",
+            "frame": 0
+          }
+        }
+      },
+      "Market": {
+        "icon": "021_50707",
+        "images": {
+          "final": {
+            "sheet": "buildings/age-0/market",
             "frame": 0
           }
         }
@@ -66,20 +93,11 @@
           }
         }
       },
-      "House": {
-        "icon": "016_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/house/multi-age",
-            "frame": 0
-          }
-        }
-      },
       "Farm": {
         "icon": "010_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/farm",
+            "sheet": "buildings/age-0/farm",
             "frame": 0
           }
         }
@@ -88,7 +106,7 @@
         "icon": "026_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/watch-tower",
+            "sheet": "buildings/age-1/watch-tower",
             "frame": 0
           }
         }
@@ -97,7 +115,7 @@
         "icon": "021_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/market",
+            "sheet": "buildings/age-1/market",
             "frame": 0
           }
         }
@@ -106,7 +124,7 @@
         "icon": "025_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/stable",
+            "sheet": "buildings/age-1/stable",
             "frame": 0
           }
         }
@@ -115,81 +133,52 @@
         "icon": "001_50707",
         "images": {
           "final": {
-            "sheet": "buildings/shared/archery-range",
+            "sheet": "buildings/age-1/archery-range",
             "frame": 0
           }
         }
-      }
-    },
-    "2": {
+      },
       "Barracks": {
-        "icon": "004_50707",
+        "icon": "003_50707",
         "images": {
           "final": {
-            "sheet": "buildings/asian/barracks/multi-age",
+            "sheet": "buildings/age-1/barracks",
             "frame": 0
           }
         }
       },
       "TownCenter": {
-        "icon": "036_50707",
+        "icon": "033_50707",
         "images": {
           "final": {
-            "sheet": "buildings/asian/town-center/multi-age",
+            "sheet": "buildings/age-1/town-center",
+            "frame": 0
+          }
+        }
+      },
+      "Granary": {
+        "icon": "011_50707",
+        "images": {
+          "final": {
+            "sheet": "buildings/age-1/granary",
             "frame": 0
           }
         }
       },
       "House": {
-        "icon": "017_50707",
+        "icon": "015_50707",
         "images": {
           "final": {
-            "sheet": "buildings/asian/house/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "Market": {
-        "icon": "022_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/market/multi-age",
+            "sheet": "buildings/age-1/house",
             "frame": 0
           }
         }
       },
       "StoragePit": {
-        "icon": "029_50707",
+        "icon": "028_50707",
         "images": {
           "final": {
-            "sheet": "buildings/asian/storage-pit/multi-age",
-            "frame": 0
-          }
-        }
-      },
-      "GovernmentCenter": {
-        "icon": "019_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/government-center/multi-age",
-            "frame": 0
-          }
-        }
-      },
-      "Academy": {
-        "icon": "000_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/academy/age-2",
-            "frame": 0
-          }
-        }
-      },
-      "SiegeWorkshop": {
-        "icon": "009_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/siege-workshop/age-2",
+            "sheet": "buildings/age-1/storage-pit",
             "frame": 0
           }
         }
@@ -198,127 +187,8 @@
         "icon": "031_50707",
         "images": {
           "final": {
-            "sheet": "buildings/asian/temple/multi-age",
+            "sheet": "buildings/age-1/temple",
             "frame": 0
-          }
-        }
-      },
-      "SentryTower": {
-        "icon": "014_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/shared/watch-tower",
-            "frame": 0
-          }
-        }
-      }
-    },
-    "3": {
-      "GuardTower": {
-        "icon": "049_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/guard-tower/age-3",
-            "frame": 0
-          }
-        }
-      },
-      "BallistaTower": {
-        "icon": "049_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/guard-tower/age-3",
-            "frame": 0
-          }
-        }
-      },
-      "Granary": {
-        "icon": "012_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/granary/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "Barracks": {
-        "icon": "005_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/barracks/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "TownCenter": {
-        "icon": "038_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/town-center/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "House": {
-        "icon": "018_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/house/multi-age",
-            "frame": 2
-          }
-        }
-      },
-      "Stable": {
-        "icon": "024_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/stable/multi-age",
-            "frame": 0
-          }
-        }
-      },
-      "ArcheryRange": {
-        "icon": "002_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/archery-range/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "Market": {
-        "icon": "023_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/market/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "StoragePit": {
-        "icon": "030_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/storage-pit/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "GovernmentCenter": {
-        "icon": "020_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/government-center/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "Temple": {
-        "icon": "032_50707",
-        "images": {
-          "final": {
-            "sheet": "buildings/asian/temple/multi-age",
-            "frame": 1
           }
         }
       }

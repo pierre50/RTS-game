@@ -250,6 +250,11 @@ export class HeroController {
         return true
       }
       if (this.commCharging) return true
+      // Pressing the key again closes the panel it opened, instead of re-charging.
+      if (this.controls.context.menu?.isNpcOrdersOpen?.()) {
+        this.controls.context.menu.closeNpcOrders?.()
+        return true
+      }
       this.beginCommCharge()
       return true
     }

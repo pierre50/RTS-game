@@ -75,4 +75,8 @@ export class EntityInfoModalManager {
       entity.unselect?.()
     }
   }
+
+  isOpen(): boolean {
+    return Boolean(this.modal)
+  }
 }

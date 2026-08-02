@@ -285,7 +285,7 @@ export default class MapEditor extends Container {
         name: config.name || `Player ${index + 1}`,
         i: anchor.i,
         j: anchor.j,
-        age: Math.max(0, Math.min(Number(config.age) || 0, 3)),
+        age: Math.max(0, Math.min(Number(config.age) || 0, 1)),
         civ: config.civ || 'Greek',
         color: config.color || 'blue',
         team: config.team ?? null,
@@ -553,7 +553,7 @@ export default class MapEditor extends Container {
         name: player.name,
         color: player.color,
         civ: player.civ,
-        age: Math.max(0, Math.min(Number((player as EditorPlayerConfig).age) || 0, 3)),
+        age: Math.max(0, Math.min(Number((player as EditorPlayerConfig).age) || 0, 1)),
         team: player.team ?? null,
         isHuman,
       }
