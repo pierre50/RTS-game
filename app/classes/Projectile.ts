@@ -789,21 +789,24 @@ export class Projectile extends Container {
   // ARROW_GROUND_TIME, then fade away. Registered in cell.corpses so it also disappears instantly
   // if a building goes up on top of it, the same way unit/animal corpses and rubble do.
   landOnGround() {
-    this.createImpactEffect(this.x, this.y)
     this.isDead = true
     if (this.interval != null) this.context.scheduler.remove(this.interval)
     this.interval = null
-    this.sprite?.stop()
-    if (this.shadow) this.shadow.visible = false
 
     const [i, j] = isometricToCartesian(this.x, this.y)
     this.i = i
     this.j = j
     const cell = this.context.map.grid[i]?.[j]
-    if (!cell) {
+    // A shot that falls in water has nothing to stick into: skip the decorative
+    // ground-prop path entirely and destroy it right away instead of fading over ARROW_GROUND_TIME.
+    if (!cell || cell.category === 'Water' || cell.waterBorder) {
       this.clear()
       return
     }
+
+    this.createImpactEffect(this.x, this.y)
+    this.sprite?.stop()
+    if (this.shadow) this.shadow.visible = false
     this.zIndex = getTerrainSetZIndex({ i, j })
     cell.corpses.add(this as unknown as RuntimeEntity)
     this.timeoutId = this.context.scheduler.addOneShot(
