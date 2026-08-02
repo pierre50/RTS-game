@@ -719,47 +719,5 @@
         "human-unit-killed-5"
       ]
     }
-  },
-  "FishingBoat": {
-    "category": "Boat",
-    "totalHitPoints": 45,
-    "sight": 12,
-    "speed": 1.45,
-    "trainingTime": 20,
-    "showLoading": true,
-    "icon": "018_50730",
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "cost": {
-      "wood": 50
-    },
-    "loadingMax": {
-      "fish": 10
-    },
-    "gatheringRate": {
-      "fisher": 0.4
-    },
-    "silentWorkSounds": ["fishing"],
-    "sheetDirectionCounts": {
-      "dyingSheet": 1,
-      "corpseSheet": 1
-    },
-    "assets": {
-      "standingSheet": "boats/fishing-boat",
-      "walkingSheet": "boats/fishing-boat",
-      "actionSheet": "boats/fishing-boat",
-      "fishingOverlaySheet": "boats/fishing-boat/fishing-overlay",
-      "dyingSheet": "boats/wrecks/small",
-      "corpseSheet": "boats/wrecks/small"
-    },
-    "sounds": {
-      "create": "non-military-ship-completed",
-      "command": "dock-completed-selected",
-      "move": "dock-completed-selected",
-      "die": ["ship-sunk", "ship-sunk-2", "ship-sunk-3"],
-      "work": {
-        "fishing": ["fish", "fish-2", "fish-3"]
-      }
-    }
   }
 }

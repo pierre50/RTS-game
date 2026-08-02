@@ -32,7 +32,6 @@ type SpriteSheetLike = {
 }
 
 type UnitPreviewConfig = {
-  category?: string
   allAssets?: {
     default?: {
       standingSheet?: string
@@ -50,7 +49,6 @@ export class EditorEntityPreview {
   _type: string | null
   _owner: PlacementOwner | null
   _buildingConfig: PlaceableBuildingConfig | null
-  _isBoat: boolean
 
   constructor(controls: EditorPreviewControls) {
     this.controls = controls
@@ -59,7 +57,6 @@ export class EditorEntityPreview {
     this._type = null
     this._owner = null
     this._buildingConfig = null
-    this._isBoat = false
   }
 
   set(selection: EditorPlacementSelection | null): void {
@@ -78,8 +75,6 @@ export class EditorEntityPreview {
     this._owner = owner
     const buildingConfig = kind === 'building' ? owner.config?.buildings?.[type] : null
     this._buildingConfig = buildingConfig ? { ...buildingConfig, type } : null
-    this._isBoat =
-      kind === 'unit' && (owner.config?.units?.[type] as UnitPreviewConfig | undefined)?.category === 'Boat'
     this.controls.addChild(container)
   }
 
@@ -92,7 +87,6 @@ export class EditorEntityPreview {
     this._type = null
     this._owner = null
     this._buildingConfig = null
-    this._isBoat = false
   }
 
   update(cell: RuntimeCell | null): void {
@@ -141,7 +135,6 @@ export class EditorEntityPreview {
     }
 
     if (cell.has || cell.solid || cell.border) return false
-    if (this._isBoat) return Boolean(cell.category === 'Water' || cell.waterBorder)
     return Boolean(cell.category !== 'Water' && !cell.waterBorder && !cell.inclined)
   }
 

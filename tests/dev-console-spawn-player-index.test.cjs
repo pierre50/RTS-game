@@ -24,7 +24,7 @@ function loadSpawnActions(sharedOverrides = {}) {
           const amount = Number(value ?? fallback)
           return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
         },
-        getSpawnCell: () => ({ i: 12, j: 34, category: 'Water', solid: false, has: null }),
+        getSpawnCell: () => ({ i: 12, j: 34, category: 'Grass', solid: false, has: null }),
         ...sharedOverrides,
       }
     }
@@ -44,7 +44,7 @@ test('spawn can target another player by index', () => {
     createUnit: unit => created.push({ owner: 'current', unit }),
   }
   const enemyPlayer = {
-    config: { units: { Boat: { category: 'Boat' } } },
+    config: { units: { Trebuchet: { category: 'Siege' } } },
     population: 0,
     createUnit: unit => created.push({ owner: 'enemy', unit }),
   }
@@ -57,14 +57,14 @@ test('spawn can target another player by index', () => {
     },
   }
 
-  const result = spawnUnits(context, 'Boat', 2, 1)
+  const result = spawnUnits(context, 'Trebuchet', 2, 1)
 
-  assert.deepEqual(result, { ok: true, message: 'Spawned 2 Boat for player 1' })
+  assert.deepEqual(result, { ok: true, message: 'Spawned 2 Trebuchet for player 1' })
   assert.equal(currentPlayer.population, 0)
   assert.equal(enemyPlayer.population, 2)
   assert.deepEqual(created, [
-    { owner: 'enemy', unit: { i: 12, j: 34, type: 'Boat' } },
-    { owner: 'enemy', unit: { i: 12, j: 34, type: 'Boat' } },
+    { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
+    { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
   ])
 })
 

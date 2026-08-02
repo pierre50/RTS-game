@@ -1,12 +1,11 @@
 import {
-  ACTION_TYPES,
   AGE_GATE_MAX_UNLOCKABLE_VALUE,
   AGE_UP_ENABLED,
   BUILDING_TYPES,
   UNIT_TYPES,
   WORK_TYPES,
 } from '../constants'
-import { canAfford, canPlaceBuildingAt, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { hasLivingChief } from '../lib/chief'
 import { AIMilitary } from './AIMilitary'
 import {
@@ -25,19 +24,13 @@ import {
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
 import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
-import type { RuntimeCell } from '../types/map'
 import type { UnitCreationExtra } from '../types/entities'
 import type {
   AIAge,
   AIBuildingLike,
   AIDifficultyConfig,
-  AIDockOpportunity,
-  AIEntityConfig,
   AIEntityLike,
-  AIEnemyPlayerLike,
   AIGridPosition,
-  AILandAccessDiagnostic,
-  AINavalOpportunity,
   AIResourceAmount,
   AIResourceName,
   AIStrategyPlayerLike,
@@ -68,16 +61,6 @@ function asResourceLedger(player: AIStrategyPlayerLike): ResourceLedger {
     stone: player.stone,
   }
 }
-
-const NAVAL_MIN_WATER_CLUSTER_CELLS = 36
-const NAVAL_STRONG_WATER_CLUSTER_CELLS = 64
-const NAVAL_WATER_CLUSTER_SCAN_CAP = 80
-const NAVAL_WATER_REACHABILITY_SCAN_CAP = NAVAL_WATER_CLUSTER_SCAN_CAP * 4
-const NAVAL_MIN_FISH_FOR_DOCK = 2
-const NAVAL_DOCK_SEARCH_RADIUS = 18
-const NAVAL_MAX_FISHING_BOATS = 6
-const NAVAL_DOCK_FISH_RADIUS = 28
-const NAVAL_TRANSPORT_MIN_ARMY = 4
 
 export class AIStrategy {
   ai: AIStrategyPlayerLike
@@ -283,9 +266,6 @@ export class AIStrategy {
     if (!ai.buildings.some((building: AIBuildingLike) => building.type === BUILDING_TYPES.market)) {
       demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
     }
-    if (this.shouldBuildDock(this.getNavalOpportunity())) {
-      demand.wood += ai.config.buildings[BUILDING_TYPES.dock]?.cost?.wood || 0
-    }
 
     return demand
   }
@@ -332,517 +312,6 @@ export class AIStrategy {
     return unitsBought
   }
 
-  isWaterCell(cell?: RuntimeCell | null): cell is RuntimeCell {
-    return !!cell && cell.category === 'Water' && !cell.border
-  }
-
-  isOpenWaterCell(cell?: RuntimeCell | null): cell is RuntimeCell {
-    return this.isWaterCell(cell) && !cell.solid
-  }
-
-  getWaterClusterSize(
-    startCell: RuntimeCell | undefined,
-    grid: RuntimeCell[][],
-    cap: number = NAVAL_WATER_CLUSTER_SCAN_CAP
-  ): number {
-    if (!this.isWaterCell(startCell)) return 0
-
-    const visited = new Set<string>()
-    const queue = [startCell]
-    visited.add(`${startCell.i}:${startCell.j}`)
-
-    for (let index = 0; index < queue.length && visited.size < cap; index++) {
-      const cell = queue[index]
-      const neighbors = [
-        grid[cell.i - 1]?.[cell.j],
-        grid[cell.i + 1]?.[cell.j],
-        grid[cell.i]?.[cell.j - 1],
-        grid[cell.i]?.[cell.j + 1],
-      ]
-
-      for (const neighbor of neighbors) {
-        if (!this.isWaterCell(neighbor)) continue
-        const key = `${neighbor.i}:${neighbor.j}`
-        if (visited.has(key)) continue
-        visited.add(key)
-        queue.push(neighbor)
-      }
-    }
-
-    return visited.size
-  }
-
-  getDockPlacementConfig(): AIEntityConfig & { type: string } {
-    return { ...this.ai.config.buildings[BUILDING_TYPES.dock], type: BUILDING_TYPES.dock }
-  }
-
-  getCoastalDockOpportunity(requireTransportRoute = false): AIDockOpportunity {
-    const { ai } = this
-    const map = ai.context.map
-    const anchor = typeof ai.getHomeAnchor === 'function' ? ai.getHomeAnchor() : null
-    if (!anchor || ai.age < 1) return { position: null, waterClusterSize: 0 }
-
-    const dockConfig = this.getDockPlacementConfig()
-    let best: AIDockOpportunity | null = null
-    let bestScore = Infinity
-
-    for (let distance = 1; distance <= map.size; distance++) {
-      let foundAtDistance = false
-      for (let di = -distance; di <= distance; di++) {
-        const i = anchor.i + di
-        const row = map.grid[i]
-        if (!row) continue
-        const djMax = distance - Math.abs(di)
-        for (const dj of djMax === 0 ? [0] : [-djMax, djMax]) {
-          const j = anchor.j + dj
-          if (!row[j] || !canPlaceBuildingAt(map.grid, i, j, dockConfig)) continue
-          const cell = row[j]
-          const waterClusterSize = this.getWaterClusterSize(cell, map.grid)
-          if (waterClusterSize < NAVAL_STRONG_WATER_CLUSTER_CELLS) continue
-          if (requireTransportRoute && !this.hasUsableTransportDock(cell)) continue
-          foundAtDistance = true
-          const score = distance - waterClusterSize * 0.05
-          if (score < bestScore) {
-            bestScore = score
-            best = { position: cell, waterClusterSize }
-          }
-        }
-      }
-      if (foundAtDistance) break
-    }
-
-    return best || { position: null, waterClusterSize: 0 }
-  }
-
-  isLandPassable(cell?: RuntimeCell | null): cell is RuntimeCell {
-    return !!cell && cell.category !== 'Water' && !cell.waterBorder && !cell.border
-  }
-
-  getLandAccessDiagnostic(a: AIGridPosition | null, b: AIGridPosition | null): AILandAccessDiagnostic {
-    const { map } = this.ai.context
-    if (!a || !b) {
-      return { reachable: true, reason: 'missing_target', distance: 0, visited: 0 }
-    }
-    const start = map.grid[Math.round(a.i)]?.[Math.round(a.j)]
-    const goal = map.grid[Math.round(b.i)]?.[Math.round(b.j)]
-    if (!this.isLandPassable(start) || !this.isLandPassable(goal)) {
-      return { reachable: false, reason: 'invalid_land_anchor', distance: Infinity, visited: 0 }
-    }
-
-    const queue = [{ cell: start, distance: 0 }]
-    const visited = new Set<string>([`${start.i}:${start.j}`])
-    const maxVisited = Math.min((map.size + 1) ** 2, 18000)
-
-    for (let index = 0; index < queue.length && visited.size < maxVisited; index++) {
-      const { cell, distance } = queue[index]
-      if (cell === goal) {
-        return { reachable: true, reason: 'land_path', distance, visited: visited.size }
-      }
-      const neighbors = [
-        map.grid[cell.i - 1]?.[cell.j],
-        map.grid[cell.i + 1]?.[cell.j],
-        map.grid[cell.i]?.[cell.j - 1],
-        map.grid[cell.i]?.[cell.j + 1],
-      ]
-      for (const neighbor of neighbors) {
-        if (!this.isLandPassable(neighbor)) continue
-        const key = `${neighbor.i}:${neighbor.j}`
-        if (visited.has(key)) continue
-        visited.add(key)
-        queue.push({ cell: neighbor, distance: distance + 1 })
-      }
-    }
-
-    return {
-      reachable: false,
-      reason: visited.size >= maxVisited ? 'land_search_cap' : 'no_land_path',
-      distance: Infinity,
-      visited: visited.size,
-    }
-  }
-
-  areLandConnected(a: AIGridPosition, b: AIGridPosition): boolean {
-    return this.getLandAccessDiagnostic(a, b).reachable
-  }
-
-  getPrimaryEnemyAnchor(): AIGridPosition | null {
-    const enemy = this.ai.enemyPlayers()[0]
-    if (!enemy) return null
-    return (
-      enemy.buildings.find(
-        (building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead
-      ) || enemy
-    )
-  }
-
-  needsNavalTransport(militaryCount: number = 0): boolean {
-    const { ai } = this
-    if (ai.age < 1 || militaryCount < NAVAL_TRANSPORT_MIN_ARMY) return false
-    const home = ai.getHomeAnchor()
-    if (!home) return false
-    return ai.enemyPlayers().some((enemy: AIEnemyPlayerLike) => {
-      const enemyAnchor =
-        enemy.buildings.find(
-          (building: AIBuildingLike) => building.type === BUILDING_TYPES.townCenter && !building.isDead
-        ) || enemy
-      const diagnostic = this.getLandAccessDiagnostic(home, enemyAnchor)
-      ai.lastNavalConnectivity = diagnostic
-      return enemyAnchor && !diagnostic.reachable
-    })
-  }
-
-  hasLandingRoomNear(target: AIGridPosition): boolean {
-    const { grid } = this.ai.context.map
-    const radius = 18
-    const minI = Math.max(0, target.i - radius)
-    const maxI = Math.min(this.ai.context.map.size - 1, target.i + radius)
-    const minJ = Math.max(0, target.j - radius)
-    const maxJ = Math.min(this.ai.context.map.size - 1, target.j + radius)
-
-    for (let i = minI; i <= maxI; i++) {
-      for (let j = minJ; j <= maxJ; j++) {
-        const cell = grid[i]?.[j]
-        if (!cell?.waterBorder || cell.solid || cell.border) continue
-        const landNeighbors = [grid[i - 1]?.[j], grid[i + 1]?.[j], grid[i]?.[j - 1], grid[i]?.[j + 1]]
-        if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) return true
-      }
-    }
-    return false
-  }
-
-  isTransportDockUsable(dock: AIGridPosition, target: AIGridPosition): boolean {
-    const start = this.ai.context.map.grid[dock.i]?.[dock.j]
-    if (!this.isOpenWaterCell(start) || !this.hasLandingRoomNear(target)) return false
-
-    const { grid } = this.ai.context.map
-    const radius = 18
-    const minI = Math.max(0, target.i - radius)
-    const maxI = Math.min(this.ai.context.map.size - 1, target.i + radius)
-    const minJ = Math.max(0, target.j - radius)
-    const maxJ = Math.min(this.ai.context.map.size - 1, target.j + radius)
-    const landingCells: AIGridPosition[] = []
-
-    for (let i = minI; i <= maxI; i++) {
-      for (let j = minJ; j <= maxJ; j++) {
-        const cell = grid[i]?.[j]
-        if (!cell?.waterBorder || cell.solid || cell.border) continue
-        const landNeighbors = [grid[i - 1]?.[j], grid[i + 1]?.[j], grid[i]?.[j - 1], grid[i]?.[j + 1]]
-        if (landNeighbors.some(neighbor => this.isLandPassable(neighbor))) landingCells.push(cell)
-      }
-    }
-
-    return landingCells.some(cell => this.isReachableWaterTarget(dock, cell))
-  }
-
-  getPrimaryTransportTarget(): AIGridPosition | null {
-    return this.getPrimaryEnemyAnchor()
-  }
-
-  hasUsableTransportDock(
-    dock: AIGridPosition,
-    target: AIGridPosition | null = this.getPrimaryTransportTarget()
-  ): boolean {
-    return !!target && this.isTransportDockUsable(dock, target)
-  }
-
-  getNavalDebugInfo(): {
-    land: AILandAccessDiagnostic
-    needsTransport: boolean
-    dock: AIGridPosition | null
-    docks: number
-    builtDocks: number
-    fish: number
-    scout: boolean
-    desiredFishingBoats: number
-    transports: number
-    operationStage: string
-    cargo: number
-    failure: string | null
-  } {
-    const opportunity = this.getNavalOpportunity()
-    const home = typeof this.ai.getHomeAnchor === 'function' ? this.ai.getHomeAnchor() : null
-    const enemyAnchor = this.getPrimaryEnemyAnchor()
-    const land = this.getLandAccessDiagnostic(home, enemyAnchor)
-    const docks = this.getHealthyDocks()
-    const builtDocks = docks.filter(dock => dock.isBuilt)
-    const transports: AIEntityLike[] =
-      typeof this.ai.getLivingUnitsByType === 'function' ? this.ai.getLivingUnitsByType(UNIT_TYPES.lightTransport) : []
-    const operation = this.ai.navalOperation
-    return {
-      land,
-      needsTransport: opportunity.needsTransport,
-      dock: opportunity.dockPosition,
-      docks: docks.length,
-      builtDocks: builtDocks.length,
-      fish: opportunity.fish.length,
-      scout: opportunity.shouldScoutCoast,
-      desiredFishingBoats: opportunity.desiredFishingBoats,
-      transports: transports.length,
-      operationStage: operation?.stage || 'none',
-      cargo: operation?.transportLabel
-        ? transports.find(transport => transport.label === operation.transportLabel)?.transportedUnits?.length || 0
-        : 0,
-      failure: this.ai.lastNavalOperationFailure || null,
-    }
-  }
-
-  getNavalOpportunity(): AINavalOpportunity {
-    const { ai } = this
-    const grid = ai.context.map.grid
-    const fish = [...ai.foundedFish]
-      .filter(
-        (node: AIEntityLike) =>
-          node && (node.quantity || 0) > 0 && !node.isDead && !node.isDestroyed && ai.economy.isLocationSafe(node)
-      )
-      .map((node: AIEntityLike) => ({
-        node,
-        waterClusterSize: this.getWaterClusterSize(grid[node.i]?.[node.j], grid),
-      }))
-      .filter(candidate => candidate.waterClusterSize >= NAVAL_MIN_WATER_CLUSTER_CELLS)
-
-    const maxWaterClusterSize = fish.reduce((max: number, candidate) => Math.max(max, candidate.waterClusterSize), 0)
-    const coastalOpportunity = this.getCoastalDockOpportunity()
-    const hasEnoughFish =
-      fish.length >= NAVAL_MIN_FISH_FOR_DOCK ||
-      (fish.length > 0 && maxWaterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS)
-    const militaryCount = (ai.units || []).filter(
-      (unit: AIEntityLike) =>
-        unit && unit.type !== UNIT_TYPES.villager && unit.category !== 'Boat' && (unit.hitPoints || 0) > 0
-    ).length
-    const transportNeeded = this.needsNavalTransport(militaryCount)
-    const hasUsableDock = this.getHealthyDocks().some(dock => this.hasUsableTransportDock(dock))
-    const transportDockOpportunity =
-      transportNeeded && !hasUsableDock ? this.getCoastalDockOpportunity(true) : coastalOpportunity
-    const needsTransport = transportNeeded
-    const shouldScoutCoast = !hasEnoughFish && coastalOpportunity.waterClusterSize >= NAVAL_STRONG_WATER_CLUSTER_CELLS
-    const desiredFishingBoats = hasEnoughFish
-      ? Math.min(
-          NAVAL_MAX_FISHING_BOATS,
-          Math.max(1, Math.ceil(fish.length * 0.75), Math.floor(maxWaterClusterSize / 40))
-        )
-      : shouldScoutCoast
-        ? 1
-        : 0
-
-    return {
-      fish: fish.map(candidate => candidate.node),
-      maxWaterClusterSize: Math.max(maxWaterClusterSize, coastalOpportunity.waterClusterSize),
-      dockPosition: transportDockOpportunity.position || coastalOpportunity.position,
-      shouldScoutCoast,
-      needsTransport,
-      desiredFishingBoats,
-    }
-  }
-
-  getHealthyDocks(): AIBuildingLike[] {
-    const docks = typeof this.ai.buildingsByTypes === 'function' ? this.ai.buildingsByTypes([BUILDING_TYPES.dock]) : []
-    return docks.filter((building: AIBuildingLike) => building && !building.isDead && !building.isDestroyed)
-  }
-
-  getNearestDockDistance(instance: AIGridPosition, docks: AIBuildingLike[] = this.getHealthyDocks()): number {
-    if (!instance || docks.length === 0) return Infinity
-    return Math.min(...docks.map(dock => Math.abs(instance.i - dock.i) + Math.abs(instance.j - dock.j)))
-  }
-
-  isReachableWaterTarget(
-    source: AIGridPosition,
-    target: AIGridPosition,
-    cap: number = NAVAL_WATER_REACHABILITY_SCAN_CAP
-  ): boolean {
-    const grid = this.ai.context.map.grid
-    const startCell = grid[source.i]?.[source.j]
-    const targetCell = grid[target.i]?.[target.j]
-    if (!this.isWaterCell(startCell) || !this.isWaterCell(targetCell)) return false
-    if (startCell === targetCell) return true
-
-    const targetKey = `${targetCell.i}:${targetCell.j}`
-    const visited = new Set<string>([`${startCell.i}:${startCell.j}`])
-    const queue = [startCell]
-
-    for (let index = 0; index < queue.length && visited.size < cap; index++) {
-      const cell = queue[index]
-      const neighbors = [
-        grid[cell.i - 1]?.[cell.j],
-        grid[cell.i + 1]?.[cell.j],
-        grid[cell.i]?.[cell.j - 1],
-        grid[cell.i]?.[cell.j + 1],
-      ]
-
-      for (const neighbor of neighbors) {
-        if (!this.isOpenWaterCell(neighbor) && neighbor !== targetCell) continue
-        const key = `${neighbor.i}:${neighbor.j}`
-        if (visited.has(key)) continue
-        if (key === targetKey) return true
-        visited.add(key)
-        queue.push(neighbor)
-      }
-    }
-
-    return false
-  }
-
-  getBestFishForBoat(
-    boat: AIEntityLike,
-    fishList: AIEntityLike[],
-    docks: AIBuildingLike[] = this.getHealthyDocks()
-  ): AIEntityLike | null {
-    const reachableFish = fishList.filter(fish => this.isReachableWaterTarget(boat, fish))
-    const candidates = reachableFish.length ? reachableFish : fishList
-    if (!candidates.length) return null
-
-    const localFish = candidates.filter(fish => this.getNearestDockDistance(fish, docks) <= NAVAL_DOCK_FISH_RADIUS)
-    const preferredFish = localFish.length ? localFish : candidates
-    let best: AIEntityLike | null = null
-    let bestScore = Infinity
-
-    for (const fish of preferredFish) {
-      const boatDistance = Math.abs(boat.i - fish.i) + Math.abs(boat.j - fish.j)
-      const dockDistance = this.getNearestDockDistance(fish, docks)
-      const dockPenalty = Number.isFinite(dockDistance) ? dockDistance * 0.65 : 0
-      const score = boatDistance + dockPenalty
-      if (score < bestScore) {
-        bestScore = score
-        best = fish
-      }
-    }
-
-    return best
-  }
-
-  shouldBuildDock(opportunity: AINavalOpportunity): boolean {
-    if (!opportunity?.desiredFishingBoats && !opportunity?.needsTransport) return false
-    if (this.getHealthyDocks().length === 0) return true
-    if (!opportunity.needsTransport) return false
-    if (this.getHealthyDocks().some(dock => this.hasUsableTransportDock(dock))) return false
-    return !!opportunity.dockPosition && this.hasUsableTransportDock(opportunity.dockPosition)
-  }
-
-  findDockPosition(snapshot: AIStrategySnapshot, opportunity: AINavalOpportunity): RuntimeCell | AIGridPosition | null {
-    const { ai } = this
-    const { map } = snapshot
-    if (!opportunity.fish.length && opportunity.dockPosition) {
-      return !opportunity.needsTransport || this.hasUsableTransportDock(opportunity.dockPosition)
-        ? opportunity.dockPosition
-        : null
-    }
-
-    if (
-      opportunity.needsTransport &&
-      opportunity.dockPosition &&
-      this.hasUsableTransportDock(opportunity.dockPosition)
-    ) {
-      return opportunity.dockPosition
-    }
-
-    const dockConfig = this.getDockPlacementConfig()
-    const anchor = snapshot.towncenters[0] || ai.getHomeAnchor()
-    const fishByDistance = [...opportunity.fish].sort((a: AIEntityLike, b: AIEntityLike) => {
-      if (!anchor) return 0
-      return instancesDistance(a, anchor) - instancesDistance(b, anchor)
-    })
-    let best: RuntimeCell | null = null
-    let bestScore = Infinity
-
-    for (const fish of fishByDistance) {
-      const minI = Math.max(0, fish.i - NAVAL_DOCK_SEARCH_RADIUS)
-      const maxI = Math.min(map.size - 1, fish.i + NAVAL_DOCK_SEARCH_RADIUS)
-      const minJ = Math.max(0, fish.j - NAVAL_DOCK_SEARCH_RADIUS)
-      const maxJ = Math.min(map.size - 1, fish.j + NAVAL_DOCK_SEARCH_RADIUS)
-
-      for (let i = minI; i <= maxI; i++) {
-        for (let j = minJ; j <= maxJ; j++) {
-          if (!canPlaceBuildingAt(map.grid, i, j, dockConfig)) continue
-          const cell = map.grid[i][j]
-          const fishDistance = Math.abs(cell.i - fish.i) + Math.abs(cell.j - fish.j)
-          const homeDistance = anchor ? Math.abs(cell.i - anchor.i) + Math.abs(cell.j - anchor.j) : 0
-          const score = fishDistance + homeDistance * 0.25
-          if (score < bestScore) {
-            bestScore = score
-            best = cell
-          }
-        }
-      }
-      if (best) break
-    }
-
-    return best
-  }
-
-  handleNavalActions(snapshot: AIStrategySnapshot, reserve: AIResourceAmount = {}, debug: boolean = false): number {
-    const { ai } = this
-    const opportunity = this.getNavalOpportunity()
-    if (!opportunity.desiredFishingBoats && !opportunity.needsTransport) return 0
-
-    let actions = 0
-    const docks = this.getHealthyDocks()
-    const builtDocks = docks.filter(dock => dock.isBuilt)
-
-    if (this.shouldBuildDock(opportunity)) {
-      const dockCost = ai.config.buildings[BUILDING_TYPES.dock]?.cost || {}
-      const dockReserve = this.getAgeUpReserve()
-      const position = this.findDockPosition(snapshot, opportunity)
-      if (
-        position &&
-        canAfford(asResourceLedger(ai), dockCost) &&
-        this.canSpendWithReserve(dockCost, dockReserve) &&
-        ai.buyBuilding(position.i, position.j, BUILDING_TYPES.dock)
-      ) {
-        actions++
-        if (debug) console.log('Buying Dock for fishing at position:', position)
-      }
-    }
-
-    const fishingBoats = ai.getLivingUnitsByType(UNIT_TYPES.fishingBoat)
-    const fishingBoatLoad = this.getTrainingLoad(builtDocks)
-    const maxFishingBoats = opportunity.fish.length
-      ? Math.min(opportunity.desiredFishingBoats, opportunity.fish.length * 2)
-      : opportunity.shouldScoutCoast
-        ? 1
-        : 0
-    actions += this.buyUnits(
-      fishingBoats.length + fishingBoatLoad,
-      maxFishingBoats,
-      builtDocks,
-      UNIT_TYPES.fishingBoat,
-      undefined,
-      reserve,
-      debug
-    )
-
-    const availableFish = opportunity.fish.filter(
-      (fish: AIEntityLike) => (fish.quantity || 0) > 0 && ai.economy.isLocationSafe(fish)
-    )
-    const idleBoats = fishingBoats.filter((boat: AIEntityLike) => boat.inactif && boat.action !== ACTION_TYPES.delivery)
-    for (const boat of idleBoats) {
-      const fish = this.getBestFishForBoat(boat, availableFish, builtDocks)
-      if (fish && boat.sendToFish?.(fish)) actions++
-      else if (!fish && opportunity.shouldScoutCoast && boat.explore?.()) actions++
-    }
-
-    if (opportunity.needsTransport) {
-      const transports = ai.getLivingUnitsByType(UNIT_TYPES.lightTransport)
-      const transportDocks = builtDocks.filter(dock => this.hasUsableTransportDock(dock))
-      const transportLoad = transportDocks.reduce((total: number, dock: AIBuildingLike) => {
-        const queued = (dock.queue || []).filter((type: string) => type === UNIT_TYPES.lightTransport).length
-        const loading = dock.loading != null && dock.queue?.[0] === UNIT_TYPES.lightTransport ? 1 : 0
-        return total + queued + loading
-      }, 0)
-      if (transportDocks.length > 0) {
-        actions += this.buyUnits(
-          transports.length + transportLoad,
-          1,
-          transportDocks,
-          UNIT_TYPES.lightTransport,
-          undefined,
-          reserve,
-          debug
-        )
-      }
-    }
-
-    return actions
-  }
-
   handleProductionActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
     const {
       villagers,
@@ -879,7 +348,6 @@ export class AIStrategy {
     actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
     actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
     actions += this.buyUnits(hoplites.length, maxHoplite, academies, 'Hoplite', undefined, reserve, debug)
-    actions += this.handleNavalActions(snapshot, reserve, debug)
     return actions
   }
 
@@ -1004,7 +472,6 @@ export class AIStrategy {
       [BUILDING_TYPES.academy]: academies,
       [BUILDING_TYPES.watchTower]: watchTowers,
       [BUILDING_TYPES.sentryTower]: sentryTowers,
-      [BUILDING_TYPES.dock]: ai.buildingsByTypes([BUILDING_TYPES.dock]),
     }
 
     const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>

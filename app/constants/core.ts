@@ -27,7 +27,6 @@ export const TOUCH_DRAG_THRESHOLD = 12
 export const MINIMAP_DRAG_THRESHOLD = 8
 
 export const CORPSE_TIME = 120
-export const BOAT_CORPSE_TIME = 12
 export const RUBBLE_TIME = 120
 // Shared alpha fade-out duration for decaying map props (unit/animal corpses, spent ground
 // projectiles) — see app/lib/entityFade.ts. One constant so every fade reads at the same pace.

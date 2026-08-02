@@ -8,7 +8,6 @@ export const RESOURCE_TYPES = {
 
 export const BUILDING_TYPES = {
   house: 'House',
-  dock: 'Dock',
   townCenter: 'TownCenter',
   farm: 'Farm',
   storagePit: 'StoragePit',
@@ -42,9 +41,6 @@ export const UNIT_TYPES = {
   improvedBowman: 'ImprovedBowman',
   compositeBowman: 'CompositeBowman',
   scout: 'Scout',
-  fishingBoat: 'FishingBoat',
-  lightTransport: 'LightTransport',
-  heavyTransport: 'HeavyTransport',
 }
 
 export const MOUNTED_HORSE_SPEED_BONUS = 0.4
@@ -94,7 +90,6 @@ export const ACTION_TYPES = {
   chopwood: 'chopwood',
   heal: 'heal',
   convert: 'convert',
-  loadTransport: 'loadTransport',
 }
 
 export const LOADING_TYPES = {

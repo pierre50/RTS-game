@@ -946,7 +946,7 @@ export default class MapEditor extends Container {
 
   _spawnUnitAt(cell: RuntimeCell, owner: PlayerLike, type: string, onSpawn: (() => void) | null = null): boolean {
     const unitConfig = owner.config?.units?.[type]
-    if (!unitConfig || !this._canSpawnMobileAt(cell, unitConfig.category === 'Boat')) return false
+    if (!unitConfig || !this._canSpawnMobileAt(cell)) return false
     owner.createUnit?.({ i: cell.i, j: cell.j, type })
     onSpawn?.()
     this.context.hud?.updateResourcesMiniMap()
@@ -954,7 +954,7 @@ export default class MapEditor extends Container {
   }
 
   _spawnAnimalAt(cell: RuntimeCell, type: string, onSpawn: (() => void) | null = null): boolean {
-    if (!this._canSpawnMobileAt(cell, false)) return false
+    if (!this._canSpawnMobileAt(cell)) return false
     const { gaia } = this._map
     if (gaia instanceof Gaia) {
       gaia.createAnimal({ i: cell.i, j: cell.j, type })
@@ -964,11 +964,8 @@ export default class MapEditor extends Container {
     return true
   }
 
-  _canSpawnMobileAt(cell: RuntimeCell | null | undefined, isBoat: boolean = false): boolean {
+  _canSpawnMobileAt(cell: RuntimeCell | null | undefined): boolean {
     if (!cell || cell.has || cell.solid || cell.border) return false
-    if (isBoat) {
-      return cell.category === 'Water' || Boolean(cell.waterBorder)
-    }
     return cell.category !== 'Water' && !cell.waterBorder && !cell.inclined
   }
 

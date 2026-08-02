@@ -424,8 +424,8 @@ export default class Map extends Container {
     return this.mapTerrain.rebuildTerrainAppearance(protectedReliefCells)
   }
 
-  formatCellsDesert(): void {
-    return this.mapTerrain.formatCellsDesert()
+  formatCellsPatchBorders(): void {
+    return this.mapTerrain.formatCellsPatchBorders()
   }
 
   classifyDeepWater(): void {

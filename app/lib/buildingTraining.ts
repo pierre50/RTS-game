@@ -5,7 +5,7 @@ import type { ResourceAmount } from '../types/common'
 import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 
-const DIRECT_TRAINING_CATEGORIES = new Set(['Civilian', 'Boat'])
+const DIRECT_TRAINING_CATEGORIES = new Set(['Civilian'])
 
 export function isTraineeTrainingType(building: BuildingEntity, type: string | undefined): boolean {
   if (!type) return false

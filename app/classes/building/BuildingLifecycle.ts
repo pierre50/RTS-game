@@ -59,10 +59,7 @@ export class BuildingLifecycle {
       context: { menu },
     } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
-    const buildSpritesheetId =
-      building.type === BUILDING_TYPES.dock
-        ? 'buildings/construction/dock'
-        : getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
+    const buildSpritesheetId = getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
 
     if (percentage >= 33 && percentage < 66) {
       building.textureName = textureRefToString({ sheet: buildSpritesheetId, frame: 1 })
@@ -288,8 +285,6 @@ export class BuildingLifecycle {
     let rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
     if (building.type === BUILDING_TYPES.farm) {
       rubbleSheet = { sheet: 'buildings/rubble/farm-depleted', frame: 0 }
-    } else if (building.type === BUILDING_TYPES.dock) {
-      rubbleSheet = { sheet: 'buildings/rubble/dock', frame: 0 }
     }
     building.textureName = textureRefToString(rubbleSheet!)
     building.sprite.texture = getTexture(rubbleSheet!, Assets)

@@ -10,6 +10,7 @@ import {
   isFriendlyTarget,
   isometricToCartesian,
   moveTowardPoint,
+  pointIsBetweenTwoPoint,
   pointsDistance,
   average,
   uuidv4,
@@ -23,23 +24,27 @@ import {
   getEffectiveProjectileType,
   projectileTracksTarget,
   playAudibleSoundCue,
+  randomRange,
 } from '../lib'
 import { fadeOutThenClear } from '../lib/entityFade'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
+  BUCKET_SIZE,
   CELL_HEIGHT,
   CELL_WIDTH,
   FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
+  RESOURCE_TYPES,
   STEP_TIME,
   UNIT_TYPES,
 } from '../constants'
 import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
-import type { CommandSound, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { CommandSound, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { RuntimeMap } from '../types/map'
 import type { Point } from '../types/grid'
 import type { AudibleInstance } from '../lib'
 
@@ -84,6 +89,41 @@ const PROJECTILE_SLOWDOWN_START = 0.65
 const PROJECTILE_MIN_SPEED_FACTOR = 0.18
 const PROJECTILE_MIN_DAMAGE_FACTOR = 0.35
 const PROJECTILE_COLLISION_SCALE = 0.35
+// Small fixed hitbox around a tree's anchor point — deliberately much smaller than the canopy
+// sprite, which visually overlaps neighboring tiles. Using the sprite's bounds instead would
+// block shots that only cross rendered foliage pixels while their real ground path passes beside
+// the tree.
+const TREE_TRUNK_RADIUS = 10
+// Shots flying higher above the ground than this (arced lobs, mostly) are treated as clearing the
+// canopy and never test against trees at all.
+const TREE_CANOPY_BLOCK_HEIGHT = 90
+// Cartesian-cell radius used to gather bucket candidates around the projectile's current cell —
+// comfortably larger than the trunk radius plus a tick's worth of travel, in cell units.
+const TREE_SEARCH_RADIUS = 1.5
+const TREE_STICK_JITTER = 5
+const TREE_STICK_HEIGHT = 10
+
+function findNearbyTrees(map: RuntimeMap, i: number, j: number): ResourceEntity[] {
+  const buckets = map.instanceBuckets
+  if (!buckets || !buckets.length) return []
+
+  const minBi = Math.max(Math.floor((i - TREE_SEARCH_RADIUS) / BUCKET_SIZE), 0)
+  const maxBi = Math.min(Math.floor((i + TREE_SEARCH_RADIUS) / BUCKET_SIZE), buckets.length - 1)
+  const minBj = Math.max(Math.floor((j - TREE_SEARCH_RADIUS) / BUCKET_SIZE), 0)
+  const maxBj = Math.min(Math.floor((j + TREE_SEARCH_RADIUS) / BUCKET_SIZE), (buckets[0]?.length ?? 1) - 1)
+
+  const trees: ResourceEntity[] = []
+  for (let bi = minBi; bi <= maxBi; bi++) {
+    for (let bj = minBj; bj <= maxBj; bj++) {
+      for (const instance of buckets[bi]?.[bj] ?? []) {
+        if (instance.family === FAMILY_TYPES.resource && (instance as ResourceEntity).type === RESOURCE_TYPES.tree) {
+          trees.push(instance as ResourceEntity)
+        }
+      }
+    }
+  }
+  return trees
+}
 
 function getProjectileVisualOffset(instance: RuntimeEntity | null | undefined): number {
   const mountedRiderY = instance?.getMountedRiderY?.()
@@ -191,6 +231,13 @@ export class Projectile extends Container {
   minSpeedFactor?: number
   minDamageFactor?: number
   trajectoryState: { kind: string; arcHeight: number } | null = null
+  // Current height (px) above the ground point directly below the projectile — kept in sync each
+  // tick by updateTrajectoryVisual() regardless of whether shadows are visually enabled, since
+  // tree-trunk collision needs it to tell an overhead arced shot from a trunk-level one.
+  currentAltitude: number = 0
+  // Set once the projectile embeds in a tree, see stickInTree() — used by clear() to know it must
+  // not touch cell.corpses (only ground-landed/grid-registered projectiles use that).
+  treeAnchor?: ResourceEntity | null
 
   size!: number
   speed!: number
@@ -310,14 +357,21 @@ export class Projectile extends Container {
           }
           return
         }
+        const previousX = this.x
+        const previousY = this.y
         moveTowardPoint(this, targetX, targetY, currentSpeed)
+        this.updateTrajectoryVisual()
         const collisionTarget = this.findCollisionTarget()
         if (collisionTarget) {
           this.onHit(collisionTarget)
           this.die()
           return
         }
-        this.updateTrajectoryVisual()
+        const treeCollision = this.findTreeCollision(previousX, previousY)
+        if (treeCollision) {
+          this.stickInTree(treeCollision)
+          return
+        }
         this.zIndex = this.getProjectileZIndex()
       },
       STEP_TIME,
@@ -525,6 +579,8 @@ export class Projectile extends Container {
     const traveledDistance = pointsDistance(spawnOrigin.x, spawnOrigin.y, this.x, this.y)
     const progress = Math.max(0, Math.min(1, traveledDistance / this.totalDistance))
     this.sprite.y = this.trajectoryState ? -getArcProgressOffset(progress, this.trajectoryState.arcHeight) : 0
+    const groundY = this.groundOrigin.y + (this.destinationPoint.y - this.groundOrigin.y) * progress
+    this.currentAltitude = Math.max(0, groundY - (this.y + this.sprite.y))
     this.updateShadowVisual(progress)
   }
 
@@ -535,9 +591,7 @@ export class Projectile extends Container {
 
     const groundX = this.groundOrigin.x + (this.destinationPoint.x - this.groundOrigin.x) * progress
     const groundY = this.groundOrigin.y + (this.destinationPoint.y - this.groundOrigin.y) * progress
-    const visualY = this.y + this.sprite.y
-    const altitude = Math.max(0, groundY - visualY)
-    const altitudeRatio = Math.max(0, Math.min(1, altitude / 180))
+    const altitudeRatio = Math.max(0, Math.min(1, this.currentAltitude / 180))
     const scaleBoost = 1 + altitudeRatio * PROJECTILE_SHADOW_MAX_ALTITUDE_SCALE
 
     this.shadow.x = groundX - this.x
@@ -634,6 +688,36 @@ export class Projectile extends Container {
     return closest
   }
 
+  // Swept-segment test (this tick's previous position -> new position) against nearby tree
+  // trunks, rather than a point-radius test at the new position alone — a fast shot could
+  // otherwise tunnel past a narrow trunk between two ticks. Skipped entirely once the shot is
+  // flying above TREE_CANOPY_BLOCK_HEIGHT, so arced/lobbed projectiles can clear the canopy.
+  findTreeCollision(previousX: number, previousY: number): ResourceEntity | null {
+    if (this.currentAltitude > TREE_CANOPY_BLOCK_HEIGHT) return null
+
+    const [i, j] = isometricToCartesian(this.x, this.y)
+    let closest: ResourceEntity | null = null
+    let closestDistance = Infinity
+    for (const tree of findNearbyTrees(this.context.map, i, j)) {
+      if (tree.isDead || tree.isDestroyed) continue
+      if (
+        !pointIsBetweenTwoPoint(
+          { x: previousX, y: previousY },
+          { x: this.x, y: this.y },
+          { x: tree.x, y: tree.y },
+          TREE_TRUNK_RADIUS
+        )
+      ) {
+        continue
+      }
+      const distance = pointsDistance(this.x, this.y, tree.x, tree.y)
+      if (distance >= closestDistance) continue
+      closest = tree
+      closestDistance = distance
+    }
+    return closest
+  }
+
   // Hunting spears train the hunting skill; every other unit-fired projectile
   // (archers, war boats, the hero-controlled unit's bow) trains the ranged-weapon skill.
   // Buildings (towers) fire projectiles too but never earn experience.
@@ -725,6 +809,38 @@ export class Projectile extends Container {
     )
   }
 
+  // A shot blocked by a tree trunk: freeze it and re-parent into the tree's own container (after
+  // shadow/sprite in its children, so it draws in front of the trunk, embedded like a stuck
+  // arrow) instead of the cell.corpses route landOnGround() uses. This makes it inherit the
+  // tree's depth for free and, if the tree is felled while the arrow is still stuck, ride along
+  // with the tree's own destroy({children: true}) cascade. That cascade bypasses our own clear(),
+  // so listen for Pixi's 'destroyed' event to keep isDestroyed/the fade timer in sync regardless
+  // of which path tears this down.
+  stickInTree(tree: ResourceEntity) {
+    this.createImpactEffect(this.x, this.y)
+    this.isDead = true
+    if (this.interval != null) this.context.scheduler.remove(this.interval)
+    this.interval = null
+    this.sprite?.stop()
+    if (this.shadow) this.shadow.visible = false
+
+    this.treeAnchor = tree
+    const jitterX = randomRange(-TREE_STICK_JITTER, TREE_STICK_JITTER)
+    this.parent?.removeChild(this)
+    this.position.set(this.x - tree.x + jitterX, this.y - tree.y + getReliefOffset(tree) - TREE_STICK_HEIGHT)
+    tree.addChild?.(this)
+    this.once('destroyed', () => {
+      this.isDestroyed = true
+      this.stopTimeout()
+    })
+
+    this.timeoutId = this.context.scheduler.addOneShot(
+      () => fadeOutThenClear(this, FADE_DURATION_MS),
+      ARROW_GROUND_TIME * 1000,
+      'projectile.treeFade'
+    )
+  }
+
   stopTimeout() {
     if (this.timeoutId != null) {
       this.context.scheduler.remove(this.timeoutId)
@@ -736,9 +852,13 @@ export class Projectile extends Container {
     if (this.isDestroyed) return
     this.isDestroyed = true
     this.stopTimeout()
-    const cell = this.context.map.grid[this.i]?.[this.j]
-    cell?.corpses.delete(this as unknown as RuntimeEntity)
-    this.context.map.removeChild(this)
+    if (this.treeAnchor) {
+      this.treeAnchor = null
+    } else {
+      const cell = this.context.map.grid[this.i]?.[this.j]
+      cell?.corpses.delete(this as unknown as RuntimeEntity)
+    }
+    this.parent?.removeChild(this)
     this.destroy({ children: true, texture: false })
   }
 }

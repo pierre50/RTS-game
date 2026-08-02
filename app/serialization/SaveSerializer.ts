@@ -39,7 +39,6 @@ type SerializableEntity = RuntimeEntityBase & {
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: { label?: string } | null
-  loadedInTransport?: { label?: string } | null
   loading?: number | null
   loadingType?: string | null
   loop?: boolean
@@ -195,7 +194,6 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'mountedOnHorse',
       'experience',
     ]),
-    loadedInTransport: unit.loadedInTransport?.label,
     currentFrame: unit.sprite?.currentFrame,
     loop: unit.sprite?.loop,
     dest: referenceData(unit.dest),

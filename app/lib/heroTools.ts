@@ -117,7 +117,6 @@ function resourceKind(target: RuntimeEntity): string | undefined {
 export function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
   if (target.family !== FAMILY_TYPES.building) return false
   const building = target as BuildingEntity
-  if (hero.category === 'Boat') return building.type === BUILDING_TYPES.dock
   return building.type === BUILDING_TYPES.townCenter || Boolean(building.accept?.includes(hero.loadingType ?? ''))
 }
 

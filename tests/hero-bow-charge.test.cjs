@@ -61,7 +61,7 @@ function loadHeroTools(overrides = {}) {
         minestone: 'minestone',
         takemeat: 'takemeat',
       },
-      BUILDING_TYPES: { dock: 'Dock', townCenter: 'TownCenter' },
+      BUILDING_TYPES: { townCenter: 'TownCenter' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },

@@ -1,5 +1,4 @@
 import type { GridInstanceLike } from '../types/grid'
-import type { TransportBoat, TransportCell } from '../lib'
 import type { Point } from '../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
@@ -43,8 +42,8 @@ export type AIEntityLike = {
   action?: string | null
   work?: string | null
   previousWork?: string | null
-  dest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
-  previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell | null
+  dest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
+  previousDest?: AIEntityLike | RuntimeEntity | RuntimeCell | null
   currentCell?: RuntimeCell | null
   context?: { map: RuntimeMap; player?: PlayerLike | null }
   parent?: { removeChild?: (unit: AIEntityLike) => void } | null
@@ -53,11 +52,6 @@ export type AIEntityLike = {
   totalQuantity?: number
   loading?: number | null
   isUsedBy?: AIEntityLike | RuntimeEntity | null
-  loadedInTransport?: AIEntityLike | RuntimeEntity | TransportBoat | string | null
-  transportedUnits?: AIEntityLike[]
-  transportCapacity?: number
-  transportLoadCoastCell?: RuntimeCell | TransportCell | null
-  transportLoadShoreCell?: RuntimeCell | TransportCell | null
   assault?: boolean
   realDest?: (GridInstanceLike & Partial<Point>) | RuntimeCell | RuntimeEntity | AIEntityLike | null
   eventMode?: string
@@ -73,12 +67,8 @@ export type AIEntityLike = {
   strategy?: string
   meleeArmor?: number
   pierceArmor?: number
-  sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell | TransportCell, action?: string): void
-  sendToWithCell?(
-    target: AIEntityLike | RuntimeEntity,
-    cell: RuntimeCell | TransportCell,
-    action?: string
-  ): boolean | void
+  sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell, action?: string): void
+  sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell, action?: string): boolean | void
   sendToFish?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToTree?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToStone?(target: AIEntityLike | RuntimeEntity): boolean | void
@@ -163,18 +153,6 @@ export type AILandAccessDiagnostic = {
   visited: number
 }
 
-type AINavalOperation = {
-  stage?: 'loading' | 'sailing' | 'assault' | string
-  targetLabel?: string
-  transportLabel?: string
-  startedAt?: number
-  updatedAt?: number
-  unitLabels?: string[]
-  landingCell?: AIGridPosition | null
-  loadShoreCell?: AIGridPosition | null
-  loadCoastCell?: AIGridPosition | null
-}
-
 type AIEconomyLike = {
   isLocationSafe(pos: AIGridPosition): boolean
 }
@@ -231,14 +209,9 @@ export type AIStrategyPlayerLike = {
   foundedAnimals: Set<RuntimeEntity>
   foundedDeadAnimals: Set<RuntimeEntity>
   foundedBerrybushs: Set<RuntimeEntity>
-  navalOperation?: AINavalOperation | null
-  lastNavalConnectivity?: AILandAccessDiagnostic
-  lastNavalOperationFailure?: string | null
-  lastNavalOperationEndedAt?: number
   lastAttackWaveAt?: number
   scout?: AIEntityLike | null
   strategy: {
-    needsNavalTransport(militaryCount?: number): boolean
     getEconomicDemand(): AIResourceAmount
   }
   enemyPlayers(): AIEnemyPlayerLike[]
@@ -313,20 +286,6 @@ export type AIVillagerActionOptions = {
 }
 
 export type AIGridPosition = GridInstanceLike
-
-export type AIDockOpportunity = {
-  position: RuntimeCell | null
-  waterClusterSize: number
-}
-
-export type AINavalOpportunity = {
-  fish: AIEntityLike[]
-  maxWaterClusterSize: number
-  dockPosition: RuntimeCell | null
-  shouldScoutCoast: boolean
-  needsTransport: boolean
-  desiredFishingBoats: number
-}
 
 export type AIStrategySnapshot = {
   map: RuntimeMap

@@ -86,7 +86,6 @@ const _openSet = new Set<PathCell>()
 const _closedSet = new Set<PathCell>()
 
 type PathInstance = {
-  category?: string
   i: number
   j: number
 }
@@ -137,8 +136,7 @@ export function findInstancePath<TCell extends PathCell>(
   function isCellReachable(cell?: PathCell): boolean {
     if (!cell) return false
     if (cell.solid) return false
-    const allowWaterCellCategory = instance.category === 'Boat'
-    return allowWaterCellCategory ? cell.category === 'Water' || Boolean(cell.waterBorder) : cell.category !== 'Water'
+    return cell.category !== 'Water'
   }
 
   const startCell = initCell(start)

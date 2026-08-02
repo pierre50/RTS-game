@@ -51,7 +51,6 @@ import {
   restorePlayerEntitiesFromSave,
   restorePlayerViewsAndFog,
   restoreSelection,
-  restoreTransportCargo,
   type SavedPlayer,
 } from './MapSaveRestore'
 import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
@@ -506,7 +505,6 @@ export class MapGeneration {
       restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
       rehydrateAIKnowledge(player, this.map)
       restoreAIState(player, savedPlayer, this.map)
-      restoreTransportCargo(player, savedPlayer?.units || [], this.map)
       player.units.forEach(unit => processUnit(unit, this.map))
       restoreSelection(player, savedPlayer, this.map)
     })
@@ -594,7 +592,6 @@ export class MapGeneration {
       restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
       rehydrateAIKnowledge(player, this.map)
       restoreAIState(player, savedPlayer, this.map)
-      restoreTransportCargo(player, savedPlayer?.units || [], this.map)
       player.units.forEach(unit => processUnit(unit, this.map))
       restoreSelection(player, savedPlayer, this.map)
     })
@@ -618,7 +615,6 @@ export class MapGeneration {
       200: 5,
       220: 5,
       384: 5,
-      512: 5,
     }
     this.map.positionsCount = positionsCountOverride ?? positionsBySize[this.map.size] ?? 2
 

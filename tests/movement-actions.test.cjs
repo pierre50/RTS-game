@@ -88,7 +88,6 @@ const constants = {
     takemeat: 'takemeat',
   },
   BUILDING_TYPES: {
-    dock: 'Dock',
     farm: 'Farm',
     granary: 'Granary',
     storagePit: 'StoragePit',
@@ -342,7 +341,6 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       degreeToDirection: () => 'south',
       getInstanceDegree: () => 0,
@@ -427,7 +425,6 @@ test('converted buildings keep their source civilization and age assets', () => 
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       changeSpriteColor: () => {},
       degreeToDirection: () => 'south',
@@ -1356,173 +1353,6 @@ test('manual move orders cancel previous villager work when the unit arrives', (
   assert.deepEqual(calls, [['stopInterval'], ['stop']])
 })
 
-test('boats flee to water cells when attacked', () => {
-  const grid = Array.from({ length: 10 }, (_, i) =>
-    Array.from({ length: 10 }, (_, j) => ({
-      i,
-      j,
-      border: false,
-      category: 'Grass',
-      solid: false,
-    }))
-  )
-  grid[8][5].category = 'Water'
-  const calls = []
-  const lib = {
-    canUpdateMinimap: () => false,
-    degreeToDirection: () => 'south',
-    findInstancesInSight: () => [],
-    getClosestInstanceWithPath: () => null,
-    getFreeCellAroundPoint: () => null,
-    getInstanceClosestFreeCellPath: () => [],
-    getInstanceDegree: () => 0,
-    getInstancePath: () => [],
-    getInstanceZIndex: () => 0,
-    instanceContactInstance: () => false,
-    instancesDistance: () => Infinity,
-    moveTowardPoint: () => {},
-    updateInstanceVisibility: () => {},
-  }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
-    '../../constants': constants,
-    '../../lib': lib,
-  })
-  const unit = {
-    category: 'Boat',
-    context: { map: { grid } },
-    i: 5,
-    j: 5,
-    sendTo: cell => calls.push(cell),
-    sight: 3,
-    stop: () => calls.push('stop'),
-  }
-  const attacker = { i: 4, j: 5 }
-
-  new UnitMovement(unit).runaway(attacker)
-
-  assert.deepEqual(calls, [grid[8][5]])
-})
-
-test('land attackers keep the attack order when targeting an enemy boat', () => {
-  const path = [{ i: 5, j: 4 }]
-  const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ solid: false, has: null })))
-  grid[5][5].solid = true
-  const lib = {
-    canUpdateMinimap: () => false,
-    degreeToDirection: () => 'south',
-    findInstancesInSight: () => [],
-    getClosestInstanceWithPath: () => null,
-    getFreeCellAroundPoint: () => null,
-    getInstanceClosestFreeCellPath: () => path,
-    getInstanceDegree: () => 0,
-    getInstancePath: () => [],
-    getInstanceZIndex: () => 0,
-    instanceContactInstance: () => false,
-    instancesDistance: () => Infinity,
-    moveTowardPoint: () => {},
-    updateInstanceVisibility: () => {},
-  }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
-    '../../constants': constants,
-    '../../lib': lib,
-  })
-  const dest = { label: 'enemy-boat', i: 5, j: 5, solid: true, isDestroyed: false }
-  const unit = {
-    action: null,
-    actionLocked: false,
-    category: 'Infantry',
-    context: {
-      map: { grid },
-      performance: { record: () => {} },
-    },
-    dest: null,
-    affectNewDest: () => {},
-    getActionCondition: () => true,
-    handleChangeDest: () => {},
-    i: 1,
-    isDead: false,
-    isUnitAtDest: () => false,
-    j: 1,
-    path: [],
-    previousDest: null,
-    previousWork: null,
-    queueOrder: () => false,
-    setDest: target => {
-      unit.dest = target
-    },
-    setPath: targetPath => {
-      unit.path = targetPath
-    },
-    stopInterval: () => {},
-  }
-
-  new UnitMovement(unit).sendToEvt(dest, 'attack')
-
-  assert.equal(unit.dest, dest)
-  assert.equal(unit.action, 'attack')
-  assert.deepEqual(unit.path, path)
-})
-
-test('boats keep the attack order when targeting an enemy land unit', () => {
-  const path = [{ i: 4, j: 5 }]
-  const grid = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => ({ solid: false, has: null })))
-  grid[5][5].solid = true
-  const lib = {
-    canUpdateMinimap: () => false,
-    degreeToDirection: () => 'south',
-    findInstancesInSight: () => [],
-    getClosestInstanceWithPath: () => null,
-    getFreeCellAroundPoint: () => null,
-    getInstanceClosestFreeCellPath: () => path,
-    getInstanceDegree: () => 0,
-    getInstancePath: () => [],
-    getInstanceZIndex: () => 0,
-    instanceContactInstance: () => false,
-    instancesDistance: () => Infinity,
-    moveTowardPoint: () => {},
-    updateInstanceVisibility: () => {},
-  }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
-    '../../constants': constants,
-    '../../lib': lib,
-  })
-  const dest = { label: 'enemy-archer', i: 5, j: 5, solid: true, isDestroyed: false }
-  const unit = {
-    action: null,
-    actionLocked: false,
-    category: 'Boat',
-    context: {
-      map: { grid },
-      performance: { record: () => {} },
-    },
-    dest: null,
-    affectNewDest: () => {},
-    getActionCondition: () => true,
-    handleChangeDest: () => {},
-    i: 1,
-    isDead: false,
-    isUnitAtDest: () => false,
-    j: 1,
-    path: [],
-    previousDest: null,
-    previousWork: null,
-    queueOrder: () => false,
-    setDest: target => {
-      unit.dest = target
-    },
-    setPath: targetPath => {
-      unit.path = targetPath
-    },
-    stopInterval: () => {},
-  }
-
-  new UnitMovement(unit).sendToEvt(dest, 'attack')
-
-  assert.equal(unit.dest, dest)
-  assert.equal(unit.action, 'attack')
-  assert.deepEqual(unit.path, path)
-})
-
 test('an idle builder picks a nearby unfinished building after completing its current site', () => {
   const completedBuilding = { label: 'house-1', family: constants.FAMILY_TYPES.building, isBuilt: true }
   const nearbyBuilding = { label: 'house-2', family: constants.FAMILY_TYPES.building, isBuilt: false }
@@ -1683,7 +1513,6 @@ test('chopping wood shows damage before wood is gathered', () => {
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       degreeToDirection: () => 'south',
       getInstanceDegree: () => 0,
@@ -1749,7 +1578,6 @@ test('hero building health bar refreshes while construction progresses', () => {
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       changeSpriteColor: () => {},
       degreeToDirection: () => 'south',
@@ -1817,7 +1645,6 @@ test('a farmer returns to the same farm after delivering food', () => {
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       changeSpriteColor: () => {},
       degreeToDirection: () => 'south',
@@ -1868,7 +1695,6 @@ test('resuming previous animal work does not remember the interrupted target aga
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       changeSpriteColor: () => {},
       degreeToDirection: () => 'south',
@@ -1999,7 +1825,6 @@ test('delivery shows a resource gain over the delivering unit', () => {
       TYPE_ACTION: {},
     },
     '../../lib': {
-      boardTransport: () => {},
       canUpdateMinimap: () => false,
       degreeToDirection: () => 'south',
       getInstanceDegree: () => 0,

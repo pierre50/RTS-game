@@ -35,8 +35,8 @@ type CellDefinition = {
 }
 
 type TerrainAppearance = {
-  desertBorders: Set<string> | null
-  desertBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorders: Set<string> | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | null
   deepWaterBorders: Set<string> | null
   relief: { index: number; elevation: number } | null
   waterBorder: { resourceName: string; index: number } | null
@@ -102,8 +102,8 @@ export class GenerationCell implements RuntimeCell {
     this._hasFog = false
     this._fogChunks = null
     this._terrainAppearance = {
-      desertBorders: null,
-      desertBorderGroundType: null,
+      patchBorders: null,
+      patchBorderGroundType: null,
       deepWaterBorders: null,
       relief: null,
       waterBorder: null,
@@ -166,8 +166,8 @@ export class GenerationCell implements RuntimeCell {
       this.border = false
       this.waterBorder = false
     }
-    this._terrainAppearance.desertBorders = null
-    this._terrainAppearance.desertBorderGroundType = null
+    this._terrainAppearance.patchBorders = null
+    this._terrainAppearance.patchBorderGroundType = null
     this._terrainAppearance.deepWaterBorders = null
     this._terrainAppearance.relief = null
     if (!preserveWaterBorder) this._terrainAppearance.waterBorder = null
@@ -205,10 +205,10 @@ export class GenerationCell implements RuntimeCell {
     this.inclined = true
   }
 
-  setDesertBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
-    if (!this._terrainAppearance.desertBorders) this._terrainAppearance.desertBorders = new Set()
-    this._terrainAppearance.desertBorders.add(direction)
-    this._terrainAppearance.desertBorderGroundType = groundType
+  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
+    if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Set()
+    this._terrainAppearance.patchBorders.add(direction)
+    this._terrainAppearance.patchBorderGroundType = groundType
   }
 
   setFog(init: boolean): void {

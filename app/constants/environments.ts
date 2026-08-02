@@ -12,6 +12,14 @@ export interface EnvironmentTerrainParams {
   // than noise thresholds; the small patchwork/lake shapes below introduce the only
   // alternate ground (Dirt or, for Desert, Jungle oasis rings).
   groundType: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest'
+  // Ambient tree chance on groundType itself, when groundType is a forest type covering
+  // the whole map (DarkForest for BlackForest, Jungle for Jungle) — null when groundType
+  // has no ambient forest chance of its own (Temperate's Grass, Desert's Desert ground;
+  // Desert's Jungle only ever comes from patchwork/lakes below, never from groundType).
+  // Overrides BIOME_TREE_CHANCE, whose 0.92 was tuned for that type being a small patch on
+  // the old mixed-biome map — at 100% environment coverage that density leaves virtually
+  // no walkable gaps, so this is kept well under the ~0.59 site-percolation threshold.
+  groundTreeChance: number | null
   // Ground patches use small predefined shapes, never broad biome blobs. Temperate,
   // BlackForest and Jungle use Dirt; Desert uses Jungle so the patch reads as grass and
   // can receive palm-tree resources.
@@ -20,15 +28,35 @@ export interface EnvironmentTerrainParams {
     minRadius: number
     maxRadius: number
     terrainType: 'Jungle' | 'Dirt'
+    // Ambient tree chance on patchwork cells specifically — only meaningful when
+    // terrainType is 'Jungle' (Desert's oasis patches); null wherever terrainType is
+    // 'Dirt', since Dirt never gets trees (no Dirt tree sprite in resources.json).
+    treeChance: number | null
   }
   // Lakes are carved from rounded-but-irregular predefined shapes. Desert lakes get a
-  // Jungle shore to create oasis rings; other environments get Dirt shores.
+  // Jungle shore to create oasis rings; other environments have no shore (null). 'Dirt'
+  // is deliberately not a valid shoreType (unlike patchwork.terrainType above, which does
+  // allow it): a shore cell sits directly on a lake's edge, and Dirt's border sheet
+  // doesn't compose with the water-edge border there — the same conflict the
+  // water-clearance check in generateTerrain's patchwork placement exists to avoid. Adding
+  // Dirt back here would need that border-composition conflict solved first, not just a
+  // type change.
   lakes: {
     count: number
     minRadius: number
     maxRadius: number
     shoreRadius: number
-    shoreType: 'Jungle' | 'Dirt' | null
+    shoreType: 'Jungle' | null
+    // Ambient tree chance on lake-shore cells specifically (Desert's oasis rings). A
+    // shore cell and a patchwork cell can share the same terrainType (both 'Jungle' for
+    // Desert) with no per-cell record of which one actually produced a given cell, so
+    // MapResources#generateBiomeTreesAsync resolves patchwork.treeChance first for any
+    // cell matching that terrainType — this value only takes effect where shoreType
+    // differs from patchwork.terrainType. Keep it equal to patchwork.treeChance for now
+    // (both environments that use it — only Desert today — want the same oasis density);
+    // if that's ever revisited, both patchwork and shore cells would need their own
+    // per-cell origin marker to be genuinely independent.
+    shoreTreeChance: number | null
   }
   // Multiplier on relief band levels — lower reads as flatter terrain (e.g. Desert dunes).
   reliefAmplitude: number
@@ -37,56 +65,47 @@ export interface EnvironmentTerrainParams {
   // environment is now single-type ground, these can no longer place a wrong-sprite tree —
   // this is purely a density knob (e.g. Desert's "peu de foret").
   forestDensity: number
-  // Ambient tree chance for this environment's one non-Grass/non-Desert forest cell type
-  // (DarkForest for BlackForest, Jungle for Jungle and for Desert's oasis rings) — null means
-  // "no such cell type exists here" (Temperate, plain Desert ground). A single field is
-  // enough because an environment's ground is always single-type: it never needs to tell
-  // DarkForest and Jungle apart. Overrides BIOME_TREE_CHANCE, whose 0.92 was tuned for that
-  // type being a small patch on the old mixed-biome map — at 100% environment coverage that
-  // density leaves virtually no walkable gaps, so this is kept well under the ~0.59
-  // site-percolation threshold.
-  forestCellTreeChance: number | null
 }
 
 export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrainParams> = {
   // Beaucoup d'herbe, des forets, quelques lacs et petites zones de terre.
   Temperate: {
     groundType: 'Grass',
-    patchwork: { count: 18, minRadius: 1.6, maxRadius: 3.4, terrainType: 'Dirt' },
-    lakes: { count: 2, minRadius: 3.8, maxRadius: 7.2, shoreRadius: 2.5, shoreType: null },
+    groundTreeChance: null,
+    patchwork: { count: 18, minRadius: 1.6, maxRadius: 3.4, terrainType: 'Dirt', treeChance: null },
+    lakes: { count: 2, minRadius: 3.8, maxRadius: 7.2, shoreRadius: 2.5, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.2,
-    forestCellTreeChance: null,
   },
   // Beaucoup de foret (noire), quelques lacs et petites zones de terre.
   BlackForest: {
     groundType: 'DarkForest',
-    patchwork: { count: 14, minRadius: 1.5, maxRadius: 3.0, terrainType: 'Dirt' },
-    lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null },
+    groundTreeChance: 0.1,
+    patchwork: { count: 14, minRadius: 1.5, maxRadius: 3.0, terrainType: 'Dirt', treeChance: null },
+    lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
-    forestCellTreeChance: 0.1,
   },
   // Beaucoup de foret palmier, quelques lacs et petites zones de terre.
   Jungle: {
     groundType: 'Jungle',
-    patchwork: { count: 14, minRadius: 1.5, maxRadius: 3.1, terrainType: 'Dirt' },
-    lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null },
+    groundTreeChance: 0.1,
+    patchwork: { count: 14, minRadius: 1.5, maxRadius: 3.1, terrainType: 'Dirt', treeChance: null },
+    lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
-    forestCellTreeChance: 0.1,
   },
   // Peu de foret, sol en desert, quelques points d'eau (oasis: herbe + arbres palmier autour),
   // peu de relief. Pure Desert + oasis Jungle rings — both the Desert and Jungle tree assets
   // are the palm sprite, so it never mixes with Grass/DarkForest either.
   Desert: {
     groundType: 'Desert',
-    patchwork: { count: 12, minRadius: 1.8, maxRadius: 3.6, terrainType: 'Jungle' },
-    lakes: { count: 2, minRadius: 4.2, maxRadius: 8.0, shoreRadius: 4.0, shoreType: 'Jungle' },
+    groundTreeChance: null,
+    // Applies to the oasis Jungle patches/rings — much sparser than a full Jungle environment.
+    patchwork: { count: 12, minRadius: 1.8, maxRadius: 3.6, terrainType: 'Jungle', treeChance: 0.12 },
+    lakes: { count: 2, minRadius: 4.2, maxRadius: 8.0, shoreRadius: 4.0, shoreType: 'Jungle', shoreTreeChance: 0.12 },
     reliefAmplitude: 0.3,
     forestDensity: 0.1,
-    // Applies to the oasis Jungle rings — much sparser than a full Jungle environment.
-    forestCellTreeChance: null,
   },
 }
 

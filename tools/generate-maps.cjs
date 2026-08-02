@@ -55,7 +55,7 @@ function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
   console.log(`Usage: pnpm maps:generate -- --size 256 --count 100
 
-  --size <n[,n]>          144, 256, 512 (default: 256)
+  --size <n[,n]>          144, 256 (default: 256)
   --count <n>             maps per size, per environment (default: 10)
   --seed <n>              reproducible batch seed (default: current time)
   --out <directory>       output directory (default: public/maps)
@@ -250,7 +250,8 @@ function loadRuntimeGenerators() {
       salmon: 'Salmon',
     },
     // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since
-    // EnvironmentTerrainParams.forestCellTreeChance always overrides them.
+    // EnvironmentTerrainParams.groundTreeChance/patchwork.treeChance/lakes.shoreTreeChance
+    // always override them.
     BIOME_TREE_CHANCE: {
       Grass: 0,
       Desert: 0,

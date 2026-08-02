@@ -46,15 +46,6 @@
           }
         }
       },
-      "Dock": {
-        "icon": "006_50705",
-        "images": {
-          "final": {
-            "sheet": "buildings/shared/dock",
-            "frame": 0
-          }
-        }
-      },
       "Temple": {
         "icon": "031_50705",
         "images": {
@@ -220,15 +211,6 @@
             "frame": 0
           }
         }
-      },
-      "Dock": {
-        "icon": "007_50705",
-        "images": {
-          "final": {
-            "sheet": "buildings/greek/dock/age-2",
-            "frame": 0
-          }
-        }
       }
     },
     "3": {
@@ -336,15 +318,6 @@
         "images": {
           "final": {
             "sheet": "buildings/greek/temple/multi-age",
-            "frame": 1
-          }
-        }
-      },
-      "Dock": {
-        "icon": "008_50705",
-        "images": {
-          "final": {
-            "sheet": "buildings/greek/dock/age-2",
             "frame": 1
           }
         }

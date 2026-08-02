@@ -1,18 +1,10 @@
-import { BOAT_CORPSE_TIME, CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import {
-  canUpdateMinimap,
-  getTransportCargo,
-  isTransportBoat,
-  playAudibleSoundCue,
-  updateInstanceVisibility,
-} from '../../lib'
+import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
+import { canUpdateMinimap, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
-
-const BOAT_CATEGORY = 'Boat'
 
 export class UnitLifecycle {
   unit: UnitEntity
@@ -30,8 +22,7 @@ export class UnitLifecycle {
     const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     unit.syncShadow?.()
-    const corpseTime = unit.category === BOAT_CATEGORY ? BOAT_CORPSE_TIME : CORPSE_TIME
-    sprite.animationSpeed = sprite.textures.length / (corpseTime * 60)
+    sprite.animationSpeed = sprite.textures.length / (CORPSE_TIME * 60)
     sprite.onComplete = () => fadeOutThenClear(unit, FADE_DURATION_MS)
     if (map) {
       const cell = map.grid[unit.i][unit.j]
@@ -50,15 +41,6 @@ export class UnitLifecycle {
     const sprite = unit.sprite as AnimatedSprite
     sprite.onFrameChange = undefined
     sprite.onLoop = undefined
-    if (unit.category === BOAT_CATEGORY) {
-      const corpses = unit.owner?.corpses
-      const index = corpses?.indexOf(unit) ?? -1
-      if (index < 0) {
-        corpses?.push(unit)
-      }
-      this.decompose()
-      return
-    }
 
     unit.setTextures?.(SHEET_TYPES.dying)
     if (unit.sailSprite) unit.sailSprite.visible = false
@@ -99,14 +81,6 @@ export class UnitLifecycle {
     unit.hitPoints = 0
     unit.path = []
     unit.action = null
-    if (isTransportBoat(unit)) {
-      const cargo = getTransportCargo(unit)
-      for (const cargoUnit of [...cargo]) {
-        cargoUnit.loadedInTransport = null
-        cargoUnit.die?.()
-      }
-      unit.transportedUnits = []
-    }
     unit.isDead = true
     unit.removeHealthBar?.()
     unit.context?.map.removeFromInstanceBucket(unit)

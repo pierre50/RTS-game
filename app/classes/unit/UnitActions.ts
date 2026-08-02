@@ -18,7 +18,6 @@ import {
   updateInstanceVisibility,
   playSoundCue,
   playerCanSeeInstance,
-  boardTransport,
   SHOOT_RELEASE_FRAME,
   THRUST_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
@@ -158,7 +157,6 @@ function holdSingleCycleGatherPose(unit: UnitEntity, frame: number): void {
       sprite.gotoAndStop(holdFrame)
     }
   }
-  unit.fishingOverlaySprite?.stop()
 }
 
 function removeFromOwnerList(
@@ -470,7 +468,6 @@ export class UnitActions {
           holdSingleCycleGatherPose(unit, SHORE_FISHING_HOLD_FRAME)
         }
       }
-      unit.fishingOverlaySprite?.gotoAndPlay(0)
       unit.startInterval?.(gatherTick, SHORE_FISHING_GATHER_INTERVAL_MS, false, 'unit.shoreFishing')
       return
     }
@@ -867,20 +864,6 @@ export class UnitActions {
           }
         }
         break
-      case ACTION_TYPES.loadTransport:
-        if (!unit.getActionCondition?.(unit.dest, ACTION_TYPES.loadTransport)) {
-          unit.affectNewDest?.()
-          return
-        }
-        {
-          const transport = isUnitEntity(unit.dest) ? unit.dest : null
-          if (!transport) return
-          boardTransport(unit, transport)
-          if (transport.owner?.isPlayed && transport.selected) {
-            menu?.setActionTarget(transport)
-          }
-        }
-        break
       case ACTION_TYPES.takemeat:
         this.startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat), {
           checkOwner: true,
@@ -892,11 +875,8 @@ export class UnitActions {
           checkOwner: true,
           dieOnEmpty: true,
           releaseFrame: THRUST_RELEASE_FRAME,
-          singleCycle: unit.category !== 'Boat',
-          onRelease:
-            unit.category !== 'Boat'
-              ? () => this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear))
-              : undefined,
+          singleCycle: true,
+          onRelease: () => this.playSound(this.getWorkSound('throwSpear', SOUND_CUES.villager.throwSpear)),
         })
         break
       case ACTION_TYPES.hunt: {

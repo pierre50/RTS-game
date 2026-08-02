@@ -125,9 +125,6 @@ export class AI extends Player {
   phase!: AIStrategyPlayerLike['phase']
   threatenedTargets!: Map<string, StoredThreat>
   lastAttackWaveAt!: number
-  navalOperation: AIStrategyPlayerLike['navalOperation']
-  lastNavalOperationEndedAt!: number
-  lastNavalOperationFailure: AIStrategyPlayerLike['lastNavalOperationFailure']
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
@@ -141,7 +138,6 @@ export class AI extends Player {
   maxHopliteByAge!: AIStrategyPlayerLike['maxHopliteByAge']
   techPriorityByBuilding!: AIStrategyPlayerLike['techPriorityByBuilding']
   _stepTaskId!: SchedulerTaskId | null
-  lastNavalConnectivity?: AIStrategyPlayerLike['lastNavalConnectivity']
 
   constructor({ ...props }: PlayerOptions, context: GameContextLike) {
     super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
@@ -170,9 +166,6 @@ export class AI extends Player {
     this.phase = 'economy' // economy | military_build | attack
     this.threatenedTargets = new Map()
     this.lastAttackWaveAt = -Infinity
-    this.navalOperation = null
-    this.lastNavalOperationEndedAt = -Infinity
-    this.lastNavalOperationFailure = null
     this.chiefLossDetectedAt = null
     this.chiefWanderReadyAt = new Map()
   }

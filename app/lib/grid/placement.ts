@@ -23,7 +23,6 @@ type TerrainCell = GridCell & {
 }
 
 type BuildingPlacement = {
-  buildOnWater?: boolean
   size?: number
   type?: string
 }
@@ -97,56 +96,11 @@ function getBuildingFootprintCells<TCell extends GridCell>(
   return { cells, expectedCells }
 }
 
-function isWaterPlacementCell(cell: GridCell): boolean {
-  return cell.category === 'Water' || !!cell.waterBorder
-}
-
-function hasDirectShoreContact<TCell extends GridCell>(grid: Grid<TCell>, i: number, j: number): boolean {
-  const offsets = [
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-  ]
-
-  return offsets.some(([di, dj]) => {
-    const neighbor = grid[i + di]?.[j + dj]
-    return !!neighbor && (!!neighbor.waterBorder || neighbor.category !== 'Water')
-  })
-}
-
 function hasRequiredVisibility<TCell extends GridCell>(
   cell: TCell,
   { requireVisible, requireExplored, isExplored }: PlacementVisibility<TCell>
 ): boolean {
   return (!requireVisible || !!cell.visible) && (!requireExplored || !!isExplored?.(cell))
-}
-
-function canPlaceWaterBuilding<TCell extends GridCell>(
-  grid: Grid<TCell>,
-  i: number,
-  j: number,
-  cells: TCell[],
-  building: BuildingPlacement,
-  visibility: PlacementVisibility<TCell>
-): boolean {
-  let waterBorderedCells = 0
-  let waterCells = 0
-
-  for (const cell of cells) {
-    if (cell.inclined || cell.solid || !hasRequiredVisibility(cell, visibility)) return false
-    if (!isWaterPlacementCell(cell)) return false
-    if (cell.waterBorder) waterBorderedCells++
-    else if (cell.category === 'Water') waterCells++
-  }
-
-  if (building.type === 'Dock') {
-    const anchorCell = grid[i]?.[j]
-    if (!anchorCell || anchorCell.category !== 'Water') return false
-    return waterBorderedCells > 0 && hasDirectShoreContact(grid, i, j)
-  }
-
-  return waterBorderedCells >= 2 || waterCells >= 4
 }
 
 function canPlaceGroundBuilding<TCell extends GridCell>(
@@ -195,7 +149,5 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
   if (cells.length !== expectedCells) return false
 
   const visibility: PlacementVisibility<TCell> = { requireVisible, requireExplored, isExplored }
-  return building.buildOnWater
-    ? canPlaceWaterBuilding(grid, i, j, cells, building, visibility)
-    : canPlaceGroundBuilding(cells, visibility)
+  return canPlaceGroundBuilding(cells, visibility)
 }

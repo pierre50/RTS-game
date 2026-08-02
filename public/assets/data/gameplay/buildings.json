@@ -140,32 +140,6 @@
       ]
     }
   },
-  "Dock": {
-    "size": 3,
-    "sight": 10,
-    "totalHitPoints": 350,
-    "constructionTime": 50,
-    "buildOnWater": true,
-    "units": [
-      "FishingBoat"
-    ],
-    "cost": {
-      "wood": 100
-    },
-    "sounds": {
-      "create": "dock-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
   "ArcheryRange": {
     "size": 5,
     "sight": 8,

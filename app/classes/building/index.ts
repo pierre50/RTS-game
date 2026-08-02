@@ -154,10 +154,7 @@ export class Building extends Instance implements BuildingEntity {
     }
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(anchorCell))
     this.visible = map.revealEverything && controls.instanceInCamera(this)
-    let spriteSheet = getBuildingTextureNameWithSize(this.size)
-    if (this.type === BUILDING_TYPES.dock) {
-      spriteSheet = { sheet: 'buildings/construction/dock', frame: 0 }
-    }
+    const spriteSheet = getBuildingTextureNameWithSize(this.size)
     this.textureName = textureRefToString(spriteSheet!)
     const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
     this.sprite = Sprite.from(texture)

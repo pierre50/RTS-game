@@ -56,8 +56,8 @@ function getFogCameraController(controls: FogMapContext['controls']): FogCameraC
 type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
   relief?: { index: number; elevation: number } | null
-  desertBorders?: Iterable<string> | null
-  desertBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorders?: Iterable<string> | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | null
   deepWaterBorders?: Iterable<string> | null
 }
 
@@ -83,7 +83,7 @@ type FogGridCell = MapTypes.RuntimeCell & {
   getTerrainDecorations?(): TerrainDecoration[]
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
-  setDesertBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
+  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
   setDeepWaterBorder?(direction: string): void
 }
 
@@ -362,8 +362,8 @@ export class MapFog {
       const appearance = source._terrainAppearance ?? {}
       if (appearance.waterBorder) cell.setWaterBorder(appearance.waterBorder.resourceName, appearance.waterBorder.index)
       if (appearance.relief) cell.setReliefBorder(appearance.relief.index, appearance.relief.elevation)
-      for (const direction of appearance.desertBorders ?? []) {
-        cell.setDesertBorder(direction, appearance.desertBorderGroundType ?? undefined)
+      for (const direction of appearance.patchBorders ?? []) {
+        cell.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
       }
       for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
     }

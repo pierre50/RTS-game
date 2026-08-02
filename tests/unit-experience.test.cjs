@@ -282,7 +282,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
 
   const fish = { quantity: 10, selected: false }
   const unit = {
-    category: 'Boat',
+    category: 'Villager',
     action: 'fishing',
     work: 'fisher',
     loading: 0,

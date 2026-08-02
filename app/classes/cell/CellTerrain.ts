@@ -88,8 +88,8 @@ export type TerrainCellLike = {
   assets?: TextureRef[]
   terrainTextureName?: string
   _terrainAppearance?: {
-    desertBorders?: Set<string> | null
-    desertBorderGroundType?: 'Desert' | 'Dirt' | null
+    patchBorders?: Set<string> | null
+    patchBorderGroundType?: 'Desert' | 'Dirt' | null
     deepWaterBorders?: Set<string> | null
     relief?: { index: number; elevation: number } | null
   }
@@ -192,8 +192,8 @@ export class CellTerrain {
     cell.border = false
     cell.waterBorder = false
     if (cell._terrainAppearance) {
-      cell._terrainAppearance.desertBorders = null
-      cell._terrainAppearance.desertBorderGroundType = null
+      cell._terrainAppearance.patchBorders = null
+      cell._terrainAppearance.patchBorderGroundType = null
       cell._terrainAppearance.deepWaterBorders = null
       cell._terrainAppearance.relief = null
     }
@@ -216,12 +216,12 @@ export class CellTerrain {
     this.resetTerrainAppearance()
   }
 
-  // Named for its original (only) use case, but now also handles the Dirt water-patch
-  // ground introduced for Temperate/BlackForest/Jungle. `groundType` picks the sheet
-  // explicitly — callers that react to a specific cell.type (formatCellsDesert) pass it
-  // through; callers that decorate water edges universally (formatCellsWaterBorderOverlays,
-  // and chunk/fog restore) omit it and get the desert sheet, matching every environment.
-  setDesertBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
+  // Shared by both patch ground types that get a border ring (Desert, and the Dirt
+  // patches on Temperate/BlackForest/Jungle). `groundType` picks the sheet explicitly —
+  // callers that react to a specific cell.type (formatCellsPatchBorders) pass it through;
+  // callers that decorate water edges universally (formatCellsWaterBorderOverlays, and
+  // chunk/fog restore) omit it and get the desert sheet, matching every environment.
+  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
     const { cell } = this
     if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
@@ -254,9 +254,9 @@ export class CellTerrain {
     sprite.zIndex = 10
     cell.addChild(sprite)
     if (cell._terrainAppearance) {
-      if (!cell._terrainAppearance.desertBorders) cell._terrainAppearance.desertBorders = new Set()
-      cell._terrainAppearance.desertBorders.add(direction)
-      cell._terrainAppearance.desertBorderGroundType = groundType
+      if (!cell._terrainAppearance.patchBorders) cell._terrainAppearance.patchBorders = new Set()
+      cell._terrainAppearance.patchBorders.add(direction)
+      cell._terrainAppearance.patchBorderGroundType = groundType
     }
   }
 

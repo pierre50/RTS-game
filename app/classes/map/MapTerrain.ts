@@ -47,7 +47,7 @@ type TerrainCell = MapTypes.RuntimeCell & {
   setWater?(): void
   setWaterBorder?(resourceName: string, frame: string): void
   setReliefBorder?(frame: string, elevation?: number): void
-  setDesertBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
+  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
   setDeepWaterBorder?(direction: string): void
   resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
 }
@@ -78,7 +78,7 @@ type TerrainMap = Container & {
   formatCellsRelief(): void
   formatCellsWaterBorderOverlays(): void
   formatCellsDeepWaterBorder(): void
-  formatCellsDesert(): void
+  formatCellsPatchBorders(): void
 }
 
 export type ReliefLevelBounds = {
@@ -892,8 +892,20 @@ export class MapTerrain {
         if (!cell.waterBorder) continue
 
         const overlay = (neighbor: TerrainCell | undefined, direction: string) => {
-          if (neighbor && !neighbor.waterBorder && neighbor.category !== 'Water' && neighbor.type !== 'Desert') {
-            neighbor.setDesertBorder?.(direction)
+          // Desert and Dirt both get their own border sheet from formatCellsPatchBorders
+          // (run earlier in the pipeline) — excluded here so this generic pass, which
+          // always defaults to the desert sheet, never overwrites a Dirt cell's correct
+          // border with the wrong texture if it ever ends up beside a waterBorder cell
+          // (e.g. via normalizeWaterTopology turning a nearby land cell into water after
+          // generation, outside patchwork's own water-clearance check).
+          if (
+            neighbor &&
+            !neighbor.waterBorder &&
+            neighbor.category !== 'Water' &&
+            neighbor.type !== 'Desert' &&
+            neighbor.type !== 'Dirt'
+          ) {
+            neighbor.setPatchBorder?.(direction)
           }
         }
 
@@ -944,10 +956,10 @@ export class MapTerrain {
     measure('terrainReliefBorders', () => this.map.formatCellsRelief())
     measure('terrainDeepWaterBorders', () => this.map.formatCellsDeepWaterBorder())
     // Runs before the water-border overlay so a cell right next to a Desert/Dirt patch
-    // always gets that patch's own relief sheet — setDesertBorder's "already set" guard
+    // always gets that patch's own relief sheet — setPatchBorder's "already set" guard
     // then makes the water overlay (which defaults to the desert sheet) a no-op there,
     // instead of the reverse where the generic water overlay would win first.
-    measure('terrainDesertBorders', () => this.map.formatCellsDesert())
+    measure('terrainPatchBorders', () => this.map.formatCellsPatchBorders())
     measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
   }
 
@@ -1058,7 +1070,7 @@ export class MapTerrain {
   // EnvironmentTerrainParams.patchwork) — passes the triggering cell's own type through so
   // Desert patches get the desert relief sheet and Dirt patches get the dirt relief sheet,
   // regardless of which environment/map they're on.
-  formatCellsDesert(): void {
+  formatCellsPatchBorders(): void {
     const typeToFormat = ['Grass', 'Jungle', 'DarkForest']
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -1070,10 +1082,10 @@ export class MapTerrain {
           const s = this.map.grid[i + 1]?.[j]
           const w = this.map.grid[i]?.[j - 1]
           const e = this.map.grid[i]?.[j + 1]
-          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setDesertBorder?.('east', groundType)
-          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setDesertBorder?.('west', groundType)
-          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setDesertBorder?.('south', groundType)
-          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setDesertBorder?.('north', groundType)
+          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setPatchBorder?.('east', groundType)
+          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setPatchBorder?.('west', groundType)
+          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setPatchBorder?.('south', groundType)
+          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setPatchBorder?.('north', groundType)
         }
       }
     }

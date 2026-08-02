@@ -51,10 +51,6 @@ function isDestroyedEntity(value: RuntimeEntity | RuntimeCell | null | undefined
   return isRuntimeEntity(value) && Boolean(value.isDestroyed)
 }
 
-function isBoatNavigationCell(cell: RuntimeCell | null | undefined) {
-  return cell?.category === 'Water' || cell?.waterBorder
-}
-
 function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity {
   return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
 }
@@ -162,9 +158,7 @@ function getHeroDirectMoveBlockerAtPoint(
 }
 
 function isHeroLandTerrainBlockedCell(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
-  return Boolean(
-    isHeroControlled(unit) && unit.category !== 'Boat' && cell && (cell.category === 'Water' || cell.waterBorder)
-  )
+  return Boolean(isHeroControlled(unit) && cell && (cell.category === 'Water' || cell.waterBorder))
 }
 
 function createHeroTerrainMoveBlocker(cell: RuntimeCell): HeroDirectMoveBlocker {
@@ -180,15 +174,6 @@ function createHeroTerrainMoveBlocker(cell: RuntimeCell): HeroDirectMoveBlocker 
     x,
     y,
   }
-}
-
-type TransportLoadTarget = RuntimeEntity & {
-  dest?: RuntimeEntity | RuntimeCell | null
-  path?: RuntimeCell[]
-}
-
-function isTransportLoadTarget(entity: UnitEntity['dest']): entity is TransportLoadTarget {
-  return Boolean(entity && 'family' in entity)
 }
 
 const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
@@ -308,7 +293,6 @@ export class UnitMovement {
     for (let distance = minDistance; distance <= maxDistance; distance++) {
       const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
         if (cell.solid || cell.border) return false
-        if (unit.category === 'Boat') return Boolean(cell.category === 'Water' || cell.waterBorder)
         return cell.category !== 'Water'
       })
       cells.sort(
@@ -396,7 +380,6 @@ export class UnitMovement {
       unit.action === action &&
       !(
         action === ACTION_TYPES.fishing &&
-        unit.category !== 'Boat' &&
         unit.currentSheet === SHEET_TYPES.action &&
         unit.sprite &&
         !unit.sprite.playing
@@ -427,7 +410,6 @@ export class UnitMovement {
       return
     }
     if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
-      const allowWaterCellCategory = unit.category === 'Boat'
       const destCell = map.grid[dest.i][dest.j]
       if (destCell.solid) {
         path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map)
@@ -447,7 +429,7 @@ export class UnitMovement {
           }
           return
         }
-      } else if (!allowWaterCellCategory && destCell.category === 'Water') {
+      } else if (destCell.category === 'Water') {
         const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
         if (!approach) {
           unit.action = action
@@ -596,9 +578,6 @@ export class UnitMovement {
       }
       map.updateInstanceBucket(unit, oldI, oldJ)
       updateInstanceVisibility(unit)
-      if (unit.transportCapacity && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-        unit.context?.menu.setActionTarget(unit)
-      }
       unit.path.pop()
       if (unit.destHasMoved?.()) {
         unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
@@ -799,10 +778,7 @@ export class UnitMovement {
       if (!isHeroControlled(unit) && targetCell.solid) {
         return false
       }
-      const categoryAllowed =
-        unit.category === 'Boat'
-          ? isBoatNavigationCell(targetCell)
-          : targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
+      const categoryAllowed = targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
       if (!categoryAllowed) {
         if (isHeroLandTerrainBlockedCell(unit, targetCell)) {
           this.directMoveBlocker = createHeroTerrainMoveBlocker(targetCell)
@@ -893,7 +869,7 @@ export class UnitMovement {
       return
     }
     // Checked before any of the AI-oriented branches below (build-queue continuation, post-build
-    // auto-gather, transport loading, auto-hunt/auto-attack acquisition) — the hero must never
+    // auto-gather, auto-hunt/auto-attack acquisition) — the hero must never
     // auto-continue into a new job or path there on its own, no matter which branch would
     // otherwise apply.
     if (isHeroControlled(unit)) {
@@ -949,46 +925,6 @@ export class UnitMovement {
 
       unit.stop?.()
       unit.work = null
-      return
-    }
-
-    if (unit.action === ACTION_TYPES.loadTransport) {
-      if (!dest || !unit.getActionCondition?.(dest, ACTION_TYPES.loadTransport)) {
-        unit.stop?.()
-        return
-      }
-      const expectedCoastCell = unit.transportLoadCoastCell
-      unit.setTextures?.(SHEET_TYPES.standing)
-      unit.startInterval?.(
-        () => {
-          const currentDest = isTransportLoadTarget(unit.dest) ? unit.dest : null
-          if (!currentDest || !unit.getActionCondition?.(currentDest, ACTION_TYPES.loadTransport)) {
-            unit.stop?.()
-            return
-          }
-          if (unit.isUnitAtDest?.(ACTION_TYPES.loadTransport, currentDest)) {
-            unit.getAction?.(ACTION_TYPES.loadTransport)
-            return
-          }
-          const innerDest = currentDest.dest
-          if (
-            expectedCoastCell &&
-            innerDest &&
-            (innerDest.i !== expectedCoastCell.i || innerDest.j !== expectedCoastCell.j)
-          ) {
-            unit.stop?.()
-            return
-          }
-          const transportAtExpectedCoast =
-            expectedCoastCell && currentDest.i === expectedCoastCell.i && currentDest.j === expectedCoastCell.j
-          if (expectedCoastCell && !transportAtExpectedCoast && !innerDest && !currentDest.path?.length) {
-            unit.stop?.()
-          }
-        },
-        250,
-        true,
-        'unit.waitTransport'
-      )
       return
     }
 
@@ -1094,7 +1030,7 @@ export class UnitMovement {
       const tj = Math.round(unit.j + (dj / len) * dist)
       if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
         const cell = map.grid[ti][tj]
-        const categoryAllowed = unit.category === 'Boat' ? isBoatNavigationCell(cell) : cell.category !== 'Water'
+        const categoryAllowed = cell.category !== 'Water'
         if (categoryAllowed && !cell.solid && !cell.border) {
           unit.sendTo?.(cell)
           return

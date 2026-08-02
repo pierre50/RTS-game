@@ -1,6 +1,5 @@
 import type { ContainerChild } from 'pixi.js'
 import { FAMILY_TYPES, PLAYER_TYPES } from '../../constants'
-import { boardTransport } from '../../lib'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -48,7 +47,6 @@ type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
   buildQueue?: Array<string | BuildingEntity>
   commonSendTo?: UnitEntity['commonSendTo']
   getAction?: (name: string) => void
-  loadedInTransport?: UnitEntity['loadedInTransport']
   path?: RuntimeCell[]
   previousDest?: RuntimeEntity | RuntimeCell | null
   sendTo?: UnitEntity['sendTo']
@@ -66,8 +64,8 @@ function isRuntimeDestination(value: RuntimeEntity | RuntimeCell | null): value 
 }
 // --- Saved-game restore helpers -------------------------------------------------
 // Shared by generateFromJSON and applySavedStateToGeneratedMap, which rebuild the
-// same runtime cross-references (unit destinations, transport cargo, building
-// assignments, AI memory) from a serialized save.
+// same runtime cross-references (unit destinations, building assignments, AI
+// memory) from a serialized save.
 
 // A saved reference is either a [i, j] grid coordinate, a [i, j, label] tuple (an
 // entity currently standing on a cell), or a bare label string (entity lookup).
@@ -87,14 +85,6 @@ function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeE
   return isRuntimeEntity(child) ? child : null
 }
 
-function isUnitEntity(entity: RuntimeEntity | null | undefined): entity is UnitEntity {
-  return entity?.family === FAMILY_TYPES.unit
-}
-
-function isBuildingEntity(entity: RuntimeEntity | null | undefined): entity is BuildingEntity {
-  return entity?.family === FAMILY_TYPES.building
-}
-
 // Saved references used for unit/building ownership links and AI memory always
 // encode an entity label, never a bare grid cell, so this narrows the lookup above.
 function getDestEntity(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): RuntimeEntity | null {
@@ -102,22 +92,8 @@ function getDestEntity(val: SaveReference | RuntimeEntity | RuntimeCell | null |
   return isRuntimeDestination(dest) ? dest : null
 }
 
-function getDestUnit(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): UnitEntity | null {
-  const dest = getDestEntity(val, map)
-  return isUnitEntity(dest) ? dest : null
-}
-
-function getDestBuilding(
-  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
-  map: MapGenerationMap
-): BuildingEntity | null {
-  const dest = getDestEntity(val, map)
-  return isBuildingEntity(dest) ? dest : null
-}
-
 export function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap): void {
   const restoringUnit = unit as RestoringMobileEntity
-  if (unit.loadedInTransport) return
   const savedPath: RuntimeCell[] = Array.isArray(unit.path) ? unit.path : []
   const savedAction = unit.action
   const savedBuildQueue = Array.isArray(restoringUnit.buildQueue) ? restoringUnit.buildQueue : []
@@ -155,16 +131,6 @@ export function processUnit(unit: RestoringMobileEntity, context: MapGenerationM
     const saved = restoringUnit.blockedGatherApproach
     const target = getDestEntity(saved.target, context)
     unit.blockedGatherApproach = target ? { target, action: saved.action } : null
-  }
-}
-
-export function restoreTransportCargo(player: PlayerLike, savedUnits: SaveEntityState[], context: MapGenerationMap): void {
-  for (let index = 0; index < player.units.length; index++) {
-    const unit = player.units[index]
-    const savedUnit = savedUnits[index]
-    if (!unit || !savedUnit?.loadedInTransport) continue
-    const transport = getDestEntity(savedUnit.loadedInTransport, context)
-    if (transport) boardTransport(unit, transport)
   }
 }
 

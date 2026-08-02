@@ -43,22 +43,13 @@ function getTrainingBuilding(building: Building): TrainingBuilding {
 
 function isAvailableTrainingUnit(unit: UnitEntity): boolean {
   return Boolean(
-    !unit.isDead &&
-      !unit.isDestroyed &&
-      !unit.loadedInTransport &&
-      !unit.actionLocked &&
-      unit.controlMode !== 'hero' &&
-      !unit.trainingTargetType
+    !unit.isDead && !unit.isDestroyed && !unit.actionLocked && unit.controlMode !== 'hero' && !unit.trainingTargetType
   )
 }
 
 function isExpectedTrainingUnit(unit: UnitEntity, type: string): boolean {
   return Boolean(
-    unit.trainingTargetType === type &&
-      !unit.isDead &&
-      !unit.isDestroyed &&
-      !unit.loadedInTransport &&
-      unit.controlMode !== 'hero'
+    unit.trainingTargetType === type && !unit.isDead && !unit.isDestroyed && unit.controlMode !== 'hero'
   )
 }
 
@@ -159,27 +150,14 @@ export class BuildingProduction {
     const {
       context: { map },
     } = building
-    let spawnCell
-    const config = building.owner.config.units[type]
-    if (config.category === 'Boat') {
-      spawnCell = getFreeCellAroundPoint(
-        building.i,
-        building.j,
-        building.size,
-        map.grid,
-        (cell: RuntimeCell) => cell.category === 'Water' && !cell.solid,
-        (items: RuntimeCell[]) => map.randomItem(items)
-      )
-    } else {
-      spawnCell = getFreeCellAroundPoint(
-        building.i,
-        building.j,
-        building.size,
-        map.grid,
-        (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
-        (items: RuntimeCell[]) => map.randomItem(items)
-      )
-    }
+    const spawnCell = getFreeCellAroundPoint(
+      building.i,
+      building.j,
+      building.size,
+      map.grid,
+      (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
+      (items: RuntimeCell[]) => map.randomItem(items)
+    )
     const consumePopulationSlot = options.consumePopulationSlot ?? true
     if (
       !spawnCell ||

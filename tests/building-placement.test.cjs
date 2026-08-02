@@ -77,34 +77,7 @@ function createGrid(size, factory) {
 }
 
 const { canPlaceBuildingAt } = loadPlacementModule()
-const dock = { type: 'Dock', size: 3, buildOnWater: true }
-const barracks = { type: 'Barracks', size: 3, buildOnWater: false }
-
-test('dock can only anchor on a coastal water cell', () => {
-  const grid = createGrid(5, (i, j) => {
-    if (i === 2 && j >= 1 && j <= 3) return createCell(i, j, { waterBorder: true })
-    if (i >= 3 && i <= 4 && j >= 1 && j <= 3) return createCell(i, j, { category: 'Water' })
-    return createCell(i, j)
-  })
-
-  assert.equal(canPlaceBuildingAt(grid, 3, 2, dock), true)
-})
-
-test('dock placement is rejected in open water even when the full footprint is water', () => {
-  const grid = createGrid(5, (i, j) => createCell(i, j, { category: 'Water' }))
-
-  assert.equal(canPlaceBuildingAt(grid, 2, 2, dock), false)
-})
-
-test('dock placement is rejected when the footprint includes normal land cells', () => {
-  const grid = createGrid(5, (i, j) => {
-    if (i === 2 && j === 2) return createCell(i, j, { category: 'Water' })
-    if (i === 1 && j === 2) return createCell(i, j, { waterBorder: true })
-    return createCell(i, j)
-  })
-
-  assert.equal(canPlaceBuildingAt(grid, 2, 2, dock), false)
-})
+const barracks = { type: 'Barracks', size: 3 }
 
 test('building placement is rejected when any footprint cell is unexplored', () => {
   const grid = createGrid(5, (i, j) => createCell(i, j))

@@ -38,7 +38,6 @@ type UnitRestoreReferences = {
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   realDest?: UnitEntity['realDest'] | SaveDestination | null
   path?: RuntimeCell[] | SaveGridPoint[]
-  loadedInTransport?: UnitEntity['loadedInTransport'] | string | null
   buildQueue?: BuildingEntity[] | string[]
   blockedGatherApproach?: UnitEntity['blockedGatherApproach'] | { target: SaveReference; action: string } | null
 }

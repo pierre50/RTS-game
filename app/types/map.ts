@@ -72,6 +72,9 @@ export interface RuntimeMap {
   pregeneratedBlueprintId?: string | number | null
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>
+  // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
+  // Populated by addToInstanceBucket() lazily on first use — null until then.
+  instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
   floatingItems?: Set<FloatingItemEntity>
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container

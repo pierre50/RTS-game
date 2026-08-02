@@ -426,19 +426,27 @@ export class MapResources {
     const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     const { grid, size } = this.map
     const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
-    // Every environment's ground is single-type (see MapGeneration#generateTerrain), so its
-    // one non-Grass/non-Desert forest type (DarkForest, or Jungle — including Desert's oasis
-    // rings) always uses this environment-specific chance instead of BIOME_TREE_CHANCE's
-    // default, which was tuned for that type being a small patch on the old mixed-biome map
-    // and would leave almost no walkable gaps at full-environment coverage.
-    const { forestCellTreeChance } = getEnvironmentTerrainParams(this.map.environment)
+    // Every environment's ground is single-type (see MapGeneration#generateTerrain). A cell's
+    // forest type (DarkForest/Jungle) can come from exactly one of three sources per
+    // environment — the dominant groundType (BlackForest/Jungle), a patchwork patch, or a
+    // lake shore (both only Desert today) — and each has its own tunable chance instead of
+    // BIOME_TREE_CHANCE's default, which was tuned for that type being a small patch on the
+    // old mixed-biome map and would leave almost no walkable gaps at full-environment coverage.
+    // Patchwork and lake-shore cells can share the same terrainType (both 'Jungle' for Desert)
+    // with no per-cell record of which one produced a given cell, so a matching cell resolves
+    // patchwork.treeChance first — see EnvironmentTerrainParams.lakes.shoreTreeChance's comment.
+    const params = getEnvironmentTerrainParams(this.map.environment)
     for (let i = 1; i < size; i++) {
       for (let j = 1; j < size; j++) {
         const cell = grid[i][j]
         if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
         let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
-        if (forestCellTreeChance != null && (cell.type === 'DarkForest' || cell.type === 'Jungle')) {
-          chance = forestCellTreeChance
+        if (cell.type === params.groundType && params.groundTreeChance != null) {
+          chance = params.groundTreeChance
+        } else if (cell.type === params.patchwork.terrainType && params.patchwork.treeChance != null) {
+          chance = params.patchwork.treeChance
+        } else if (cell.type === params.lakes.shoreType && params.lakes.shoreTreeChance != null) {
+          chance = params.lakes.shoreTreeChance
         }
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue

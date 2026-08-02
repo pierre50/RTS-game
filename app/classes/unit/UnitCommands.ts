@@ -113,7 +113,6 @@ export class UnitCommands {
     if (unit.work !== work || unit.action !== action) return false
     if (
       action === ACTION_TYPES.fishing &&
-      unit.category !== 'Boat' &&
       unit.currentSheet === SHEET_TYPES.action &&
       unit.sprite &&
       !unit.sprite.playing
@@ -202,21 +201,16 @@ export class UnitCommands {
   sendToDelivery() {
     const unit = this.unit
     const map = unit.context?.map
-    let buildingTypes: string[] = []
-    if (unit.category === 'Boat') {
-      buildingTypes = [BUILDING_TYPES.dock]
-    } else {
-      buildingTypes = [BUILDING_TYPES.townCenter]
-      const buildings = {
-        Granary: unit.owner?.config.buildings.Granary,
-        StoragePit: unit.owner?.config.buildings.StoragePit,
-      }
-      for (const [key, value] of Object.entries(buildings)) {
-        const accept = (value as { accept?: string[] } | undefined)?.accept
-        if (accept && accept.includes(unit.loadingType ?? '')) {
-          buildingTypes.push(key)
-          break
-        }
+    let buildingTypes: string[] = [BUILDING_TYPES.townCenter]
+    const buildings = {
+      Granary: unit.owner?.config.buildings.Granary,
+      StoragePit: unit.owner?.config.buildings.StoragePit,
+    }
+    for (const [key, value] of Object.entries(buildings)) {
+      const accept = (value as { accept?: string[] } | undefined)?.accept
+      if (accept && accept.includes(unit.loadingType ?? '')) {
+        buildingTypes.push(key)
+        break
       }
     }
 

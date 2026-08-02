@@ -5,7 +5,6 @@ import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
 import type { ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './config'
-import type { TransportBoat } from '../lib/transport'
 import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
 import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
@@ -131,7 +130,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   shadow?: AnimatedSprite | null
   syncShadow?: () => void
   syncAppearanceLayers?: (sheet: string) => void
-  loadedInTransport?: TransportBoat | null
   inactif?: boolean
   sounds?: UnitSounds
   work?: string | null
@@ -139,11 +137,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   assigningAutonomousJob?: boolean
   loading?: number | null
   loadingType?: string | null
-  showTransportCapacity?: boolean
-  transportCapacity?: number
-  transportedUnits?: UnitEntity[]
-  transportLoadShoreCell?: RuntimeCell | null
-  transportLoadCoastCell?: RuntimeCell | null
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
@@ -210,8 +203,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   sailSpritesheet?: SpritesheetLike
   sailSprite?: AnimatedSprite | null
   sailAnimationSpeed?: number
-  fishingOverlaySheet?: SpritesheetLike
-  fishingOverlaySprite?: AnimatedSprite | null
   showLoading?: boolean
   showBuildings?: boolean
 
@@ -369,6 +360,7 @@ export interface ResourceEntity extends RuntimeEntityBase {
   refreshTextureForTerrain?: () => void
   syncWithCell?: () => void
   isUsedBy?: RuntimeEntity | null
+  addChild?: Container['addChild']
 }
 
 export interface AnimalEntity extends RuntimeEntityBase {

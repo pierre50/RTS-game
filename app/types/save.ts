@@ -41,7 +41,6 @@ export type SaveEntityState = {
   isUsedBy?: string | null
   j: number
   label?: string
-  loadedInTransport?: string | null
   loading?: number | null
   loadingType?: string | null
   loop?: boolean

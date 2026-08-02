@@ -58,7 +58,6 @@ type AiDebugPlayer = DevPlayer & {
   strategy: {
     military: { getGroupCombatPower(units: DevEntity[]): number; getDesiredAttackPower(): number }
     getEconomicDemand(): Record<string, number>
-    getNavalDebugInfo(): NavalDebugInfo
   }
   economy: {
     getWorkerSnapshot(villagers: DevEntity[]): WorkerSnapshot
@@ -84,21 +83,6 @@ type WorkerTargets = {
   maxVillagersOnWood: number
   maxVillagersOnGold: number
   maxVillagersOnStone: number
-}
-
-type NavalDebugInfo = {
-  land: { reachable?: boolean; distance?: number; reason?: string }
-  needsTransport?: boolean
-  builtDocks?: number
-  docks?: number
-  dock?: { i: number; j: number } | null
-  fish?: number
-  desiredFishingBoats?: number
-  scout?: boolean
-  transports?: number
-  operationStage?: string
-  cargo?: number
-  failure?: string
 }
 
 function drawSolidDebug(context: DevConsoleContext): void {
@@ -419,7 +403,6 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const workerSnapshot = ai.economy.getWorkerSnapshot(villagers)
     const workerTargets = ai.economy.getResourceTargets(villagers.length)
     const demand = ai.strategy.getEconomicDemand()
-    const naval = ai.strategy.getNavalDebugInfo()
     const builders = villagers.filter(
       (v: DevEntity) => !v.isDead && (v.hitPoints ?? 0) > 0 && v.action === ACTION_TYPES.build
     ).length
@@ -446,12 +429,6 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     )
     lines.push(
       `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees?.size ?? 0} berries:${ai.foundedBerrybushs?.size ?? 0} hunt:${ai.foundedAnimals?.size ?? 0} fish:${ai.foundedFish?.size ?? 0} gold:${ai.foundedGolds?.size ?? 0} stone:${ai.foundedStones?.size ?? 0}`
-    )
-    lines.push(
-      `Naval land:${naval.land.reachable ? `yes ${naval.land.distance}` : naval.land.reason} | needTransport:${naval.needsTransport ? 'yes' : 'no'} | dock:${naval.builtDocks}/${naval.docks}${naval.dock ? ` candidate ${naval.dock.i},${naval.dock.j}` : ''}`
-    )
-    lines.push(
-      `Naval fish:${naval.fish} boats:${naval.desiredFishingBoats} scout:${naval.scout ? 'yes' : 'no'} | transports:${naval.transports} | op:${naval.operationStage} cargo:${naval.cargo}${naval.failure ? ` fail:${naval.failure}` : ''}`
     )
     lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map(t => t.target.type).join(', ')}` : ''}`)
     lines.push('')

@@ -1,6 +1,6 @@
 import type { Texture } from 'pixi.js'
 import { AnimatedSprite, Assets } from 'pixi.js'
-import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED } from '../constants'
+import { COLOR_GREEN, COLOR_RED } from '../constants'
 import { bindAnimatedSpriteToTicker, drawInstanceBlinkingSelection, getRallyPointFrames, RALLY_POINT_SHEET_ID } from '../lib'
 import type { ControlsLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity } from '../types/entities'
@@ -61,9 +61,6 @@ export class RallyPointController {
     if (!cell || !cell.visible) return false
     if (cell.has && !cell.has.isDestroyed && cell.has !== this.building) return true
     if (cell.solid || cell.inclined || cell.border) return false
-    if (this.building?.type === BUILDING_TYPES.dock) {
-      return cell.category === 'Water' && !cell.waterBorder
-    }
     return cell.category !== 'Water' && !cell.waterBorder
   }
 

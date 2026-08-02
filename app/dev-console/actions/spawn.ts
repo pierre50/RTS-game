@@ -4,13 +4,9 @@ import { findKey, getAmount, getSpawnCell } from './shared'
 import { FloatingItem } from '../../classes/FloatingItem'
 import { RESOURCE_TYPES } from '../../constants'
 
-type UnitSpawnConfig = {
-  category?: string
-}
-
-function canSpawnUnitOnCell(cell: DevCell, unitConfig: UnitSpawnConfig): boolean {
+function canSpawnUnitOnCell(cell: DevCell): boolean {
   if (!cell || cell.solid || cell.has) return false
-  return unitConfig.category === 'Boat' ? cell.category === 'Water' : cell.category !== 'Water' && !cell.waterBorder
+  return cell.category !== 'Water' && !cell.waterBorder
 }
 
 type ResolveOwnerResult =
@@ -54,19 +50,17 @@ export function spawnUnits(
     const suffix = playerIndex == null ? '' : ` for player ${ownerIndex}`
     return { ok: false, message: `Unknown unit${suffix}: ${typeName}` }
   }
-  const config = owner.config.units[type] as UnitSpawnConfig
 
   let spawned = 0
   for (let i = 0; i < getAmount(count); i++) {
-    const cell = getSpawnCell(context, { cellCondition: cell => canSpawnUnitOnCell(cell, config) })
+    const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
     if (!cell) break
     owner.createUnit?.({ i: cell.i, j: cell.j, type })
     owner.population = (owner.population ?? 0) + 1
     spawned++
   }
   if (!spawned) {
-    const message = config.category === 'Boat' ? 'No free water cell near cursor' : 'No free land cell near cursor'
-    return { ok: false, message }
+    return { ok: false, message: 'No free land cell near cursor' }
   }
   menu.updateTopbar()
   menu.updatePlayerMiniMapEvt?.(owner)

@@ -28,9 +28,6 @@ import {
   getSailAnimationFrames,
   playSoundCue,
   shouldFleeWhenAttacked,
-  getTransportLoad,
-  canUnloadTransport,
-  unloadTransport,
   getIconPath,
   getSpriteFrameSelection,
   showAggressionFeedback,
@@ -74,7 +71,6 @@ type UnitRestoreReferences = {
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   realDest?: UnitEntity['realDest'] | SaveDestination | null
   path?: RuntimeCell[] | SaveGridPoint[]
-  loadedInTransport?: UnitEntity['loadedInTransport'] | string | null
   buildQueue?: BuildingEntity[] | string[]
   blockedGatherApproach?: UnitEntity['blockedGatherApproach'] | { target: SaveReference; action: string } | null
 }
@@ -151,20 +147,6 @@ function getActionSheet(
   return AssetsRef.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
 }
 
-function getFishingOverlayFrames(spritesheet: SpritesheetLike, unit: UnitEntity) {
-  const direction = degreeToDirection(unit.degree ?? 0)
-  switch (direction) {
-    case 'southeast':
-      return { textures: getAnimationFrames(spritesheet.textures, 'southwest'), mirrored: true }
-    case 'northeast':
-      return { textures: getAnimationFrames(spritesheet.textures, 'northwest'), mirrored: true }
-    case 'east':
-      return { textures: getAnimationFrames(spritesheet.textures, 'west'), mirrored: true }
-    default:
-      return { textures: getAnimationFrames(spritesheet.textures, direction), mirrored: false }
-  }
-}
-
 function isEntityDestination(dest: RuntimeEntity | RuntimeCell | null | undefined): dest is RuntimeEntity {
   return Boolean(dest && 'label' in dest)
 }
@@ -190,17 +172,12 @@ export class Unit extends Instance implements UnitEntity {
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   spriteScale?: number
-  loadedInTransport: UnitEntity['loadedInTransport']
   controlMode!: NonNullable<UnitEntity['controlMode']>
   inactif!: boolean
   sounds?: UnitEntity['sounds']
   work: UnitEntity['work']
   loading!: UnitEntity['loading']
   loadingType: UnitEntity['loadingType']
-  transportCapacity?: UnitEntity['transportCapacity']
-  transportedUnits?: UnitEntity['transportedUnits']
-  transportLoadShoreCell?: UnitEntity['transportLoadShoreCell']
-  transportLoadCoastCell?: UnitEntity['transportLoadCoastCell']
 
   dest: UnitEntity['dest']
   realDest: UnitEntity['realDest']
@@ -230,8 +207,6 @@ export class Unit extends Instance implements UnitEntity {
   sailSpritesheet?: UnitEntity['sailSpritesheet']
   sailSprite?: UnitEntity['sailSprite']
   sailAnimationSpeed?: UnitEntity['sailAnimationSpeed']
-  fishingOverlaySheet?: UnitEntity['fishingOverlaySheet']
-  fishingOverlaySprite?: UnitEntity['fishingOverlaySprite']
   showLoading?: UnitEntity['showLoading']
   showBuildings?: UnitEntity['showBuildings']
   visualSettingsCleanup: (() => void) | null
@@ -329,7 +304,6 @@ export class Unit extends Instance implements UnitEntity {
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     ensureUnitEnergy(this)
     ensureUnitHealthRegen(this)
-    if (this.transportCapacity) this.transportedUnits = this.transportedUnits || []
 
     this.currentCell = map.grid[this.i][this.j]
     if (this.currentSheet === SHEET_TYPES.corpse) {
@@ -398,30 +372,6 @@ export class Unit extends Instance implements UnitEntity {
                     },
                   ]
                 : []),
-              ...(this.transportCapacity
-                ? [
-                    {
-                      id: 'unload',
-                      icon: getIconPath('001_50721'),
-                      hide: () => !getTransportLoad(this),
-                      tooltip: () => ({
-                        title: t('unloadTransport'),
-                        description: t('unloadTransportDescription'),
-                      }),
-                      onClick: (selection: RuntimeEntity) => {
-                        if (!canUnloadTransport(selection)) {
-                          menu.showMessage(t('transportUnloadNeedsCoast'), 'warning')
-                          return
-                        }
-                        const unloaded = unloadTransport(selection)
-                        if (unloaded && selection.owner?.isPlayed) {
-                          menu.setActionTarget(selection)
-                          menu.updatePlayerMiniMapEvt?.(selection.owner)
-                        }
-                      },
-                    },
-                  ]
-                : []),
             ]
           : [],
     }
@@ -456,7 +406,6 @@ export class Unit extends Instance implements UnitEntity {
     this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
     this.sprite.updateAnchor = true
     this.setupSailSprite()
-    this.syncFishingOverlaySprite()
     if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
 
     this.sendTo = this.owner.isPlayed
@@ -525,58 +474,6 @@ export class Unit extends Instance implements UnitEntity {
     goto && goto < this.sailSprite.textures.length ? this.sailSprite.gotoAndPlay(goto) : this.sailSprite.play()
   }
 
-  setupFishingOverlaySprite() {
-    if (!this.fishingOverlaySheet?.textures || this.fishingOverlaySprite) return
-
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
-    if (!textures.length) return
-
-    this.fishingOverlaySprite = new AnimatedSprite(textures as Texture[])
-    bindAnimatedSpriteToTicker(this.fishingOverlaySprite, this.context.app)
-    this.fishingOverlaySprite.label = LABEL_TYPES.fishingNet
-    this.fishingOverlaySprite.eventMode = 'none'
-    this.fishingOverlaySprite.roundPixels = true
-    this.fishingOverlaySprite.loop = false
-    this.fishingOverlaySprite.updateAnchor = true
-    this.fishingOverlaySprite.zIndex = 3
-    this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
-    this.fishingOverlaySprite.animationSpeed = this.fishingOverlaySheet.data?.animationSpeed ?? 0.3
-    this.fishingOverlaySprite.stop()
-    this.addChild(this.fishingOverlaySprite)
-  }
-
-  removeFishingOverlaySprite() {
-    if (!this.fishingOverlaySprite) return
-    this.fishingOverlaySprite.parent?.removeChild(this.fishingOverlaySprite)
-    this.fishingOverlaySprite.destroy({ children: true, texture: false })
-    this.fishingOverlaySprite = null
-  }
-
-  syncFishingOverlaySprite() {
-    const shouldShow =
-      !this.isDead &&
-      this.action === ACTION_TYPES.fishing &&
-      this.currentSheet === SHEET_TYPES.action &&
-      this.fishingOverlaySheet?.textures
-
-    if (!shouldShow) {
-      this.removeFishingOverlaySprite()
-      return
-    }
-
-    this.setupFishingOverlaySprite()
-    if (!this.fishingOverlaySprite || !this.fishingOverlaySheet) return
-
-    const { textures, mirrored } = getFishingOverlayFrames(this.fishingOverlaySheet, this)
-    if (!textures.length) {
-      this.removeFishingOverlaySprite()
-      return
-    }
-    this.fishingOverlaySprite.textures = textures as Texture[]
-    this.fishingOverlaySprite.scale.x = mirrored ? -1 : 1
-    this.fishingOverlaySprite.gotoAndStop(0)
-  }
-
   createShadow() {
     const shadow = new AnimatedSprite(this.sprite.textures as Texture[])
     bindAnimatedSpriteToTicker(shadow, this.context.app)
@@ -593,7 +490,7 @@ export class Unit extends Instance implements UnitEntity {
   syncShadow(shadow = this.shadow) {
     if (!shadow || !this.sprite) return
     const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
-    shadow.visible = getShadowsEnabled() && !this.loadedInTransport
+    shadow.visible = getShadowsEnabled()
     shadow.textures = this.sprite.textures
     shadow.animationSpeed = this.sprite.animationSpeed
     shadow.loop = this.sprite.loop
@@ -708,7 +605,7 @@ export class Unit extends Instance implements UnitEntity {
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled() && !this.loadedInTransport
+      this.shadow.visible = getShadowsEnabled()
     }
   }
 
@@ -878,7 +775,6 @@ export class Unit extends Instance implements UnitEntity {
     this.syncMountedHorseSprite()
     this.syncAppearanceLayers(sheet)
     this.syncSailSprite(this.sailSprite?.currentFrame)
-    this.syncFishingOverlaySprite()
   }
 
   applyOwnerColorToSprite() {
@@ -926,7 +822,6 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   override select() {
-    if (this.loadedInTransport) return
     if (this.selected) return
     super.select()
     const {
@@ -1138,8 +1033,6 @@ export class Unit extends Instance implements UnitEntity {
     this.action = null
     this.dest = null
     this.realDest = null
-    this.transportLoadShoreCell = null
-    this.transportLoadCoastCell = null
     this.sprite.loop = this.loop ?? true
     if (this.shadow) this.shadow.loop = this.sprite.loop
     for (const sprite of this.appearanceLayerSprites.values()) {

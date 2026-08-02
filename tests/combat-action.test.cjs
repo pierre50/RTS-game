@@ -71,32 +71,14 @@ test('units with no attack stats cannot attack enemies', () => {
     '../constants': constants,
   })
 
-  const fishingBoat = {
+  const villager = {
     hitPoints: 45,
     isDead: false,
     owner,
-    type: 'FishingBoat',
+    type: 'Villager',
   }
 
-  assert.equal(getActionCondition(fishingBoat, target, 'attack'), false)
-})
-
-test('non-attacking boats flee when attacked', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
-    '../constants': constants,
-  })
-
-  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'FishingBoat' }), true)
-  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'LightTransport', transportCapacity: 5 }), true)
-  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'HeavyTransport', transportCapacity: 10 }), true)
-})
-
-test('attacking boats do not use the unarmed flee behavior', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
-    '../constants': constants,
-  })
-
-  assert.equal(shouldFleeWhenAttacked({ category: 'Boat', type: 'ScoutShip', pierceAttack: 5 }), false)
+  assert.equal(getActionCondition(villager, target, 'attack'), false)
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
@@ -270,53 +252,6 @@ test('hero defense blocks animal attack damage too', () => {
 
   assert.equal(getHitPointsWithDamage(animal, defendingHero), 20)
   assert.deepEqual(flashes, ['flash'])
-})
-
-test('land ranged units can target enemy boats', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
-    '../constants': constants,
-  })
-
-  const archer = {
-    hitPoints: 35,
-    isDead: false,
-    owner,
-    pierceAttack: 3,
-    type: 'Bowman',
-  }
-  const enemyBoat = {
-    family: constants.FAMILY_TYPES.unit,
-    category: 'Boat',
-    hitPoints: 120,
-    isDead: false,
-    owner: { label: 'enemy' },
-  }
-
-  assert.equal(getActionCondition(archer, enemyBoat, 'attack'), true)
-})
-
-test('attacking boats can target enemy land units', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
-    '../constants': constants,
-  })
-
-  const scoutShip = {
-    category: 'Boat',
-    hitPoints: 120,
-    isDead: false,
-    owner,
-    pierceAttack: 5,
-    type: 'ScoutShip',
-  }
-  const enemyArcher = {
-    family: constants.FAMILY_TYPES.unit,
-    hitPoints: 35,
-    isDead: false,
-    owner: { label: 'enemy' },
-    type: 'Bowman',
-  }
-
-  assert.equal(getActionCondition(scoutShip, enemyArcher, 'attack'), true)
 })
 
 test('hero-controlled units do not use unit auto-detection attacks', () => {

@@ -19,7 +19,10 @@ export type RenderableInstance = VisibilityEntity &
         instanceInCamera: (instance: RenderableInstance, bounds?: Bounds) => boolean
       }
       map?: {
-        instanceBuckets?: RenderableInstance[][][]
+        // Real runtime shape is Set<RuntimeEntity>[][] (nullable until first populated) — typed
+        // generically here since this field is read through several different RuntimeEntity-ish
+        // instance types across call sites.
+        instanceBuckets?: Array<Array<Set<RenderableInstance>>> | null
         revealEverything?: boolean
         revealTerrain?: boolean
         showResources?: boolean
