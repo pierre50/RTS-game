@@ -31,6 +31,7 @@ import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
   BUCKET_SIZE,
+  CELL_DEPTH,
   CELL_HEIGHT,
   CELL_WIDTH,
   FADE_DURATION_MS,
@@ -47,8 +48,6 @@ import type { CommandSound, ResourceEntity, RuntimeEntity, UnitEntity } from '..
 import type { RuntimeMap } from '../types/map'
 import type { Point } from '../types/grid'
 import type { AudibleInstance } from '../lib'
-
-const PROJECTILE_Z_OFFSET = 1000000
 
 const DIRECTIONAL_FRAME_INDEX: Record<string, number> = {
   south: 0,
@@ -303,7 +302,6 @@ export class Projectile extends Container {
 
     const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
     this.direction = degreeToDirection(degree)
-    this.zIndex = this.getProjectileZIndex()
     const sprite = this.createSprite(degree)
     this.sprite = sprite
     this.spawnOrigin = { x: this.x, y: this.y }
@@ -320,6 +318,7 @@ export class Projectile extends Container {
     sprite.roundPixels = true
     this.addChild(this.shadow, sprite)
     this.updateTrajectoryVisual()
+    this.zIndex = this.getProjectileZIndex()
 
     this.interval = this.context.scheduler.add(
       () => {
@@ -635,11 +634,16 @@ export class Projectile extends Container {
     return this.projectileScale ?? 1
   }
 
+  // Same i+j depth key every other entity uses, nudged by how high the projectile currently
+  // flies above the ground (in the same px-per-level units as ground relief, see
+  // getGroundReliefLevel). A shot above canopy height outranks nearby trees and draws in front,
+  // exactly when findTreeCollision() has already decided it flies over them uncollided; a shot
+  // near ground level gets no meaningful nudge and sorts by position like anything else, so a
+  // tree standing between the camera and the shooter still correctly occludes it. Since altitude
+  // rises and falls over the flight, this naturally flips the sort order mid-flight instead of
+  // fixing it at launch.
   getProjectileZIndex(): number {
-    const zIndex = getInstanceZIndex(this)
-    // Firing north means the arrow travels away from the camera behind the shooter's
-    // back, so it must not win the depth sort over the unit it was just fired from.
-    return this.direction === 'north' ? zIndex : zIndex + PROJECTILE_Z_OFFSET
+    return getInstanceZIndex(this) + this.currentAltitude / CELL_DEPTH
   }
 
   canCollideWith(instance: RuntimeEntity): boolean {

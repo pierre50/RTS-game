@@ -39,11 +39,18 @@ export type RenderableInstance = VisibilityEntity &
     sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
   }
 
+export type BoundsSource = {
+  x: number
+  y: number
+  sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
+}
+
 // Buildings (and other sprite-based instances) are anchored on a single ground point but their
 // sprite typically extends well beyond it (upward especially, in this isometric projection), so
 // culling on the anchor point alone hides them while part of the sprite is still on screen. This
-// derives the instance's actual on-screen bounding box so camera culling can use it instead.
-function getInstanceScreenBounds(instance: RenderableInstance): Bounds | undefined {
+// derives the instance's actual on-screen bounding box so camera culling — and other overlap
+// tests, e.g. hero-occlusion fade — can use it instead.
+export function getInstanceScreenBounds(instance: BoundsSource): Bounds | undefined {
   const sprite = instance.sprite
   if (!sprite) return undefined
 

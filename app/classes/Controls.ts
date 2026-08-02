@@ -390,6 +390,7 @@ export default class Controls extends Container implements ControlsLike {
     const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
     if (this.isInteractionBlocked()) {
       this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
+      this.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
       this.cancelActiveInteraction()
       return
     }
@@ -414,6 +415,7 @@ export default class Controls extends Container implements ControlsLike {
     }
 
     this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
+    this.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
     this.cameraController.updateMouseMove(frameScale)
     this.panCameraWithArrowKeys(frameScale)
   }

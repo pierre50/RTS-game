@@ -57,7 +57,11 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
-  if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) return !entity.isDead
+  // Animal corpses stay solid (and thus keep blocking regular NPC pathing) until fully
+  // picked clean, so the hero must keep colliding with them too — same small soft-body
+  // circle as a live animal, just no longer gated on isDead.
+  if (entity.family === FAMILY_TYPES.animal) return true
+  if (entity.family === FAMILY_TYPES.unit) return !entity.isDead
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 

@@ -71,7 +71,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
   // Beaucoup d'herbe, des forets, quelques lacs et petites zones de terre.
   Temperate: {
     groundType: 'Grass',
-    groundTreeChance: null,
+    groundTreeChance: 0.1,
     patchwork: { count: 18, minRadius: 1.6, maxRadius: 3.4, terrainType: 'Dirt', treeChance: null },
     lakes: { count: 2, minRadius: 3.8, maxRadius: 7.2, shoreRadius: 2.5, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,

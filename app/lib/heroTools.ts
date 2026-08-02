@@ -900,6 +900,17 @@ export function updateHeroDefense(hero: UnitEntity, now = performance.now()): vo
   continueHeroDefenseAnimation(hero)
 }
 
+export function aimHeroDefenseAt(hero: UnitEntity, destination: Point): boolean {
+  if (!hero.heroDefenseActive) return false
+  const previousDirection = degreeToDirection(hero.degree ?? 0)
+  hero.degree = getInstanceDegree(hero, destination.x, destination.y)
+  if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
+    hero.setTextures?.(SHEET_TYPES.action)
+    continueHeroDefenseAnimation(hero)
+  }
+  return true
+}
+
 export function releaseHeroDefense(hero: UnitEntity): boolean {
   if (
     !hero.heroDefenseActive &&

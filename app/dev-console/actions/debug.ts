@@ -5,6 +5,7 @@ import {
   canPlayerStillAct,
   drawRoundedIsoShape,
   getGaiaAnimals,
+  getReliefOffset,
   getRoundedIsoShapePoints,
   isPlayerEliminated,
   parseTextureRef,
@@ -239,9 +240,11 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
 
   for (const info of infos) {
     const color = info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff
-    drawRoundedIsoShape(layer, info.points)
+    const lift = getReliefOffset(info.entity)
+    const points = lift ? info.points.map(point => ({ x: point.x, y: point.y + lift })) : info.points
+    drawRoundedIsoShape(layer, points)
     layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
-    layer.circle(info.entity.x, info.entity.y, 3)
+    layer.circle(info.entity.x, info.entity.y + lift, 3)
     layer.fill({ color, alpha: 0.85 })
   }
 
@@ -249,9 +252,10 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
   if (cell) {
     drawCellStroke(layer, cell, 0xffffff, 0.9, 2)
   }
-  layer.circle(hero.x, hero.y, 7)
+  const heroLift = getReliefOffset(hero)
+  layer.circle(hero.x, hero.y + heroLift, 7)
   layer.fill({ color: infos[0]?.inside ? 0xff3050 : 0x54ff7a, alpha: 0.95 })
-  layer.circle(hero.x, hero.y, 11)
+  layer.circle(hero.x, hero.y + heroLift, 11)
   layer.stroke({ color: 0xffffff, alpha: 0.95, width: 2 })
 
   const nearest = infos[0]

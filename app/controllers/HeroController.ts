@@ -22,6 +22,7 @@ import {
 } from '../constants'
 import {
   aimHeroBowChargeAt,
+  aimHeroDefenseAt,
   applyToolAppearance,
   beginHeroDefense,
   cancelHeroBowCharge,
@@ -55,6 +56,7 @@ import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
+import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type Controls from '../classes/Controls'
 import type { UnitEntity } from '../types/entities'
 
@@ -197,6 +199,7 @@ export class HeroController {
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
   criticalHealthEffects: HeroCriticalHealthEffects
+  occlusionFade: HeroOcclusionFade
 
   constructor(controls: Controls) {
     this.controls = controls
@@ -211,6 +214,7 @@ export class HeroController {
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
+    this.occlusionFade = new HeroOcclusionFade()
   }
 
   facePoint(point: HeroAimPoint): void {
@@ -312,11 +316,13 @@ export class HeroController {
     updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
     updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
     this.updateCriticalHealthEffects(TARGET_FRAME_MS * frameScale, !this.controls.context.paused)
+    this.updateOcclusionFade(TARGET_FRAME_MS * frameScale, !this.controls.context.paused)
     this.controls.context.menu?.updateHeroStatus?.(unit)
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
-    const bowChargeAimPoint = this.controls.getWorldPointUnderCursor()
-    const bowChargeAiming = aimHeroBowChargeAt(unit, bowChargeAimPoint)
+    const aimPoint = this.controls.getWorldPointUnderCursor()
+    const bowChargeAiming = aimHeroBowChargeAt(unit, aimPoint)
+    const defenseAiming = aimHeroDefenseAt(unit, aimPoint)
     updateHeroBowCharge(unit)
     updateHeroDefense(unit)
     // Keep the hover-based cursor live even while picking a "go to" target — it already tells
@@ -360,10 +366,10 @@ export class HeroController {
       const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
-      const bowChargeDegree = bowChargeAiming ? unit.degree : null
+      const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
       moved = unit.moveDirect?.(dx / len, dy / len, distance) ?? false
-      if (bowChargeDegree != null && unit.degree !== bowChargeDegree) {
-        unit.degree = bowChargeDegree
+      if (aimedDegree != null && unit.degree !== aimedDegree) {
+        unit.degree = aimedDegree
       }
       if (moved && menu?.isHeroBuildingMenuOpen?.()) menu.closeHeroBuildingMenu?.()
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
@@ -561,8 +567,13 @@ export class HeroController {
     this.criticalHealthEffects.update(active ? this.heroUnit : null, elapsedMs, active)
   }
 
+  updateOcclusionFade(elapsedMs: number, active = true): void {
+    this.occlusionFade.update(active ? this.heroUnit : null, elapsedMs)
+  }
+
   destroy(): void {
     this.criticalHealthEffects.destroy()
+    this.occlusionFade.destroy()
   }
 
   initFromPlayerStart(): boolean {
