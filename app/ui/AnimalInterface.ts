@@ -1,4 +1,3 @@
-import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
 import type { AnimalEntity } from '../types/entities'
@@ -12,11 +11,11 @@ export class AnimalInterface {
     this.animal = animal
   }
 
-  setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
+  setDefaultInterface(element: HTMLElement, _data: AnimalConfig): void {
     const animal = this.animal
     const menu = (animal.context as { menu: MenuLike }).menu
 
-    appendBaseEntityInfo(element, '', t(animal.type), getIconPath(data.icon), animal.hitPoints, animal.totalHitPoints)
+    appendBaseEntityInfo(element, '', t(animal.type), animal.hitPoints, animal.totalHitPoints)
 
     appendQuantityInfo(element, menu.icons!['food'], animal.quantity!)
   }

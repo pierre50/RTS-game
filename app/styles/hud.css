@@ -72,11 +72,35 @@
 }
 
 .hero-status-frame {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-gap-10);
   padding: 10px 12px 12px;
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
   background: var(--main-primary-color);
   box-shadow: var(--main-box-shadow);
+}
+
+.unit-avatar-frame {
+  flex: none;
+  width: 120px;
+  height: 120px;
+  overflow: hidden;
+  border: var(--panel-border);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.unit-avatar-frame canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.hero-status-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .hero-status-header {
@@ -321,7 +345,8 @@
 .action-menu-box .img {
   width: var(--ui-slot-size);
   height: var(--ui-slot-size);
-  object-fit: none;
+  object-fit: contain;
+  image-rendering: pixelated;
   border: var(--ui-slot-border);
   border-radius: var(--main-border-radius);
   background: var(--surface-dark-solid);
@@ -574,6 +599,18 @@
   width: min(360px, calc(100vw - 24px));
 }
 
+.entity-info-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-gap-10);
+  width: 100%;
+}
+
+.entity-info-wrapper .entity-info-modal {
+  flex: 1;
+  min-width: 0;
+}
+
 .entity-info-modal {
   min-height: 96px;
   width: 100%;
@@ -586,6 +623,19 @@
 
 .hero-building-menu-nav:not(.is-visible) {
   display: none;
+}
+
+.hero-building-menu-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-gap-10);
+  margin-bottom: var(--ui-gap-10);
+}
+
+.hero-building-menu-header .hero-building-menu-info {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
 }
 
 .hero-building-menu-info {
@@ -644,9 +694,12 @@
 }
 
 .hero-building-menu-icon .img {
-  width: var(--ui-slot-size);
-  height: var(--ui-slot-size);
-  object-fit: none;
+  /* Fixed, not --ui-slot-size: this is a compact list-row icon, not a grid
+     tile, and the button's grid column (52px) doesn't grow with that token. */
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .hero-building-menu-icon .img.is-passive {

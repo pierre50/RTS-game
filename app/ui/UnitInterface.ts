@@ -57,14 +57,7 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    appendBaseEntityInfo(
-      element,
-      t(unit.owner!.civ!),
-      typeText,
-      getIconPath(data.icon),
-      unit.hitPoints,
-      unit.totalHitPoints
-    )
+    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints)
     if (unit.name) {
       const nameElement = createInfoText(MENU_INFO_IDS.name, unit.name)
       const typeElement = element.querySelector(`.${MENU_INFO_IDS.type}`)

@@ -1,4 +1,5 @@
 import { LOADING_FOOD_TYPES } from '../constants'
+import { renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
 import type Menu from '../classes/Menu'
@@ -7,6 +8,7 @@ import type { UnitEntity } from '../types/entities'
 export class HeroStatusHud {
   menu: Menu
   element: HTMLDivElement
+  avatarCanvas: HTMLCanvasElement
   title: HTMLDivElement
   value: HTMLDivElement
   healthBar: HTMLDivElement
@@ -31,6 +33,16 @@ export class HeroStatusHud {
 
     const frame = document.createElement('div')
     frame.className = 'hero-status-frame'
+
+    const avatarWrap = document.createElement('div')
+    avatarWrap.className = 'unit-avatar-frame'
+    this.avatarCanvas = document.createElement('canvas')
+    this.avatarCanvas.width = 120
+    this.avatarCanvas.height = 120
+    avatarWrap.appendChild(this.avatarCanvas)
+
+    const content = document.createElement('div')
+    content.className = 'hero-status-content'
 
     const header = document.createElement('div')
     header.className = 'hero-status-header'
@@ -77,11 +89,13 @@ export class HeroStatusHud {
     this.energyBar.appendChild(this.energyFill)
     this.carry.appendChild(this.carryIcon)
     this.carry.appendChild(this.carryValue)
-    frame.appendChild(header)
-    frame.appendChild(this.healthBar)
-    frame.appendChild(energyHeader)
-    frame.appendChild(this.energyBar)
-    frame.appendChild(this.carry)
+    content.appendChild(header)
+    content.appendChild(this.healthBar)
+    content.appendChild(energyHeader)
+    content.appendChild(this.energyBar)
+    content.appendChild(this.carry)
+    frame.appendChild(avatarWrap)
+    frame.appendChild(content)
     this.element.appendChild(frame)
     menu.gameHud.appendChild(this.element)
   }
@@ -90,6 +104,9 @@ export class HeroStatusHud {
     this.hero = hero
     this.displayedHitPoints = null
     this.lastHealthDisplayUpdateAt = null
+    if (hero) {
+      renderUnitHeadAvatar(this.menu.context.app, hero, this.avatarCanvas)
+    }
     this.update(hero)
   }
 

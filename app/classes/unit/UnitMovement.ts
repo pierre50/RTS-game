@@ -842,12 +842,19 @@ export class UnitMovement {
       }
       unit.currentCell = targetCell
       if (isHeroControlled(unit) && targetCell.solid && !targetCell.has) {
+        // Stale flag left over from elsewhere — the placement below keeps solid/has in sync
+        // for the hero same as any other unit, this only guards a cell that never got cleared.
         targetCell.solid = false
       }
-      if (!isHeroControlled(unit) && (targetCell.has === null || targetCell.has?.isDestroyed)) {
+      // The hero marks its own cell solid too, same as any other unit: this is what makes
+      // followers and attackers path around a busy hero instead of all converging onto its
+      // exact tile (see getInstanceClosestFreeCellPath / AIMilitary's surround assignment,
+      // both already gated on the destination cell being solid).
+      if (targetCell.has === null || targetCell.has?.isDestroyed) {
         targetCell.place(unit)
         targetCell.solid = true
-      } else if (isHeroControlled(unit)) {
+      }
+      if (isHeroControlled(unit)) {
         updateInstanceRenderVisibility(unit)
         unit.visible = true
       }

@@ -1,4 +1,5 @@
 import { Modal } from '../lib'
+import { renderBuildingAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
@@ -239,6 +240,7 @@ export class InventoryManager {
     this.menu.clearActionHotkeys()
     if (!selection) return
 
+    const { app, player } = this.menu.context
     const usedKeys = new Set<string>(getReservedGameplayHotkeys())
     this.getConstructionButtons()
       .filter(button => !button.hide || !button.hide())
@@ -253,7 +255,20 @@ export class InventoryManager {
             if (this.menu.context.controls.mouseBuilding) this.close()
           },
         }
+        // createMenuButton skips its own click wiring when `onCreate` is set (it
+        // assumes a custom onCreate handles interactivity itself), so the avatar
+        // is swapped in afterward on the default icon <img> instead of replacing
+        // icon creation — that keeps the normal click/tooltip/hotkey wiring intact.
         const element = this.menu.createActionMenuButton(selection, actionButton, index, hotkey, () => {})
+        if (button.id) {
+          const icon = element.querySelector<HTMLImageElement>('.img')
+          const canvas = document.createElement('canvas')
+          canvas.width = 120
+          canvas.height = 120
+          if (icon && renderBuildingAvatar(app, button.id, player, canvas)) {
+            icon.src = canvas.toDataURL()
+          }
+        }
         this.constructionPanel.appendChild(element)
         if (hotkey && typeof button.onClick === 'function') {
           this.menu.setActionHotkey(hotkey, () => {

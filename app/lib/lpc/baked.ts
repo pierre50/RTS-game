@@ -99,6 +99,22 @@ function heroActionAlias(variant: string, animation: string): string {
   return bakedAlias('hero', variant, 'action', animation)
 }
 
+// Resolves the baked walking/standing sheet alias for a unit TYPE (not a live
+// instance) — used for previews (e.g. training-button portraits) where there's
+// no UnitEntity yet to read appearance off of.
+export function getBakedUnitStandingSheetAlias(type: string, owner: Pick<PlayerLike, 'civ' | 'label'>): string | null {
+  const bakedUnit = UNIT_TYPE_TO_BAKED_UNIT[type]
+  if (!bakedUnit) return null
+
+  const variant = bakedVariantKey(owner, type)
+  const isVillagerLike = bakedUnit === 'villager' || bakedUnit === 'hero'
+  if (isVillagerLike) {
+    const bodyAlias = bakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
+    return bodyAlias(variant, 'walking')
+  }
+  return bakedUnitAlias(bakedUnit, variant, 'walking')
+}
+
 const HERO_RIDING_ACTION_SHEETS = HERO_BASE_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
 const HERO_ACTION_SHEETS = [...HERO_BASE_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
 

@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
 import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../lib'
+import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
@@ -248,6 +249,12 @@ export class ActionSpecFactory {
           unitSelection.cancelUnits?.(type)
         })
         const img = this.createActionIcon(getIconPath(unit.icon))
+        const avatarCanvas = document.createElement('canvas')
+        avatarCanvas.width = 92
+        avatarCanvas.height = 92
+        if (renderUnitTypeAvatar(menu.context.app, type, unitSelection.owner ?? player, avatarCanvas)) {
+          img.src = avatarCanvas.toDataURL()
+        }
         const isTrainee = isTraineeTrainingType(unitSelection, type)
         if (isTrainee || this.isChiefTrainingBlocked(type, unitSelection)) {
           img.classList.add('is-passive')

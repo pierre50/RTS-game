@@ -92,13 +92,11 @@ export function appendBaseEntityInfo(
   element: HTMLElement,
   civText: string,
   typeText: string,
-  iconSrc: string,
   hitPoints?: string | number,
   totalHitPoints?: string | number
 ): void {
   element.appendChild(createInfoText(MENU_INFO_IDS.civ, civText))
   element.appendChild(createInfoText(MENU_INFO_IDS.type, typeText))
-  element.appendChild(createInfoImage(MENU_INFO_IDS.icon, iconSrc))
 
   if (hitPoints !== undefined)
     element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, hitPoints, totalHitPoints ?? 0))

@@ -10,13 +10,13 @@ import {
 } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
 import { createIsoSelectionMarker, drawInstanceBlinkingSelection } from './graphics/selection'
-import { getInstanceDegree } from './maths'
+import { getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from './buildingFeedback'
 import type { SelectableInstance } from './graphics/selection'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Point } from '../types/grid'
 
 // A resource/building's clickable art often extends past its own grid cell (a tall mine or tree
@@ -396,9 +396,45 @@ function isEscortFighting(unit: UnitEntity): boolean {
   return isRuntimeEntityDest(unit.dest) && !unit.dest?.isDead && !unit.dest?.isDestroyed
 }
 
+// Pixel distance between adjacent formation rows/columns — roughly one grid cell apart.
+const FORMATION_SLOT_SPACING = 40
+
+// Rows fill left-to-right, each one step further back than the last, in a block sized to the
+// group so it stays roughly as wide as it is deep instead of a long thin line (2 followers →
+// one row of 2; 10 → a 4-wide block, 4/4/2) — width recomputed from the live count each call,
+// not a fixed constant. Each row centers on its OWN count rather than the block's full width,
+// so a partial trailing row stays balanced instead of hugging one side.
+function getFormationSlotOffset(slotIndex: number, totalCount: number): { back: number; side: number } {
+  const width = Math.max(1, Math.ceil(Math.sqrt(totalCount)))
+  const row = Math.floor(slotIndex / width)
+  const col = slotIndex % width
+  const rowCount = Math.min(width, totalCount - row * width)
+  return { back: row + 1, side: col - (rowCount - 1) / 2 }
+}
+
+function getFormationSlotCell(
+  hero: UnitEntity,
+  slotIndex: number,
+  totalCount: number,
+  map: RuntimeMap
+): RuntimeCell | null {
+  const { back, side } = getFormationSlotOffset(slotIndex, totalCount)
+  // hero.degree follows getPointsDegree's `atan2(...) + 180` convention, so the forward unit
+  // vector is that angle rotated back by 180°.
+  const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
+  const forwardX = Math.cos(rad)
+  const forwardY = Math.sin(rad)
+  const rightX = -forwardY
+  const rightY = forwardX
+  const targetX = hero.x - forwardX * back * FORMATION_SLOT_SPACING + rightX * side * FORMATION_SLOT_SPACING
+  const targetY = hero.y - forwardY * back * FORMATION_SLOT_SPACING + rightY * side * FORMATION_SLOT_SPACING
+  const [ti, tj] = isometricToCartesian(targetX, targetY)
+  return map.grid[ti]?.[tj] ?? null
+}
+
 // Escort update for every unit following the hero: engage threats near the hero, break off a
-// fight that drags past the leash radius, otherwise trail the hero's cell (move orders
-// throttled by distance so it doesn't spam pathfinding every tick).
+// fight that drags past the leash radius, otherwise hold a wedge formation behind the hero
+// (move orders throttled by distance so it doesn't spam pathfinding every tick).
 export function updateNpcFollow(hero: UnitEntity): void {
   const units = hero.owner?.units
   const map = hero.context?.map
@@ -406,6 +442,7 @@ export function updateNpcFollow(hero: UnitEntity): void {
   const heroCell = map.grid[hero.i]?.[hero.j]
   if (!heroCell) return
   let threats: RuntimeEntity[] | null = null
+  const formationUnits: UnitEntity[] = []
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
     if (unit.lookingAtHero) continue
@@ -419,10 +456,21 @@ export function updateNpcFollow(hero: UnitEntity): void {
       unit.sendToAttack?.(target)
       continue
     }
-    if (cellDistance(hero, unit) <= FOLLOW_SLACK) continue
-    if (unit.dest === heroCell) continue
-    unit.sendTo?.(heroCell)
+    formationUnits.push(unit)
   }
+  if (!formationUnits.length) return
+
+  // Sorted by label rather than left in owner.units order: a stable key keeps each follower on
+  // the same slot frame to frame, so only the following SET changing (join/leave/peel off to
+  // fight) reshuffles slots — not incidental reordering of the owner's unit list.
+  formationUnits.sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : 0))
+
+  formationUnits.forEach((unit, index) => {
+    const slotCell = getFormationSlotCell(hero, index, formationUnits.length, map) ?? heroCell
+    if (cellDistance(unit, slotCell) <= FOLLOW_SLACK) return
+    if (unit.dest === slotCell) return
+    unit.sendTo?.(slotCell)
+  })
 }
 
 function findNearestInteractable(

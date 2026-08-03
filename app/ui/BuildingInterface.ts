@@ -1,7 +1,6 @@
-import { MENU_INFO_IDS, POPULATION_MAX, BUILDING_TYPES } from '../constants'
+import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import { getWallIcon } from '../lib/buildings/walls'
 import { getTowerType, isTower } from '../lib/buildings/towers'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { BuildingEntity } from '../types/entities'
@@ -59,21 +58,13 @@ export class BuildingInterface {
     return loadingDiv
   }
 
-  setDefaultInterface(element: HTMLElement, data: BuildingConfig): void {
+  setDefaultInterface(element: HTMLElement, _data: BuildingConfig): void {
     const building = this.building
     const menu = (building.context as { menu: MenuLike }).menu
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
     const displayType = (isTower(building) ? getTowerType(building.owner!) : building.type) || building.type
-    const icon = building.type === BUILDING_TYPES.smallWall ? getWallIcon(building.owner!, data.icon) : data.icon || ''
-    appendBaseEntityInfo(
-      element,
-      t(building.owner!.civ || ''),
-      t(displayType),
-      getIconPath(icon),
-      hitPoints,
-      building.totalHitPoints
-    )
+    appendBaseEntityInfo(element, t(building.owner!.civ || ''), t(displayType), hitPoints, building.totalHitPoints)
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons!['food'], building.quantity)

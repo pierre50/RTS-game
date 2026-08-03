@@ -1,5 +1,6 @@
 import { FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { Modal, instanceContactInstance } from '../lib'
+import { renderBuildingAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import type Menu from '../classes/Menu'
@@ -30,6 +31,9 @@ function getPendingTrainingCount(building: BuildingEntity, type: string): number
 export class HeroBuildingMenuManager {
   menu: Menu
   panel: HTMLDivElement
+  header: HTMLDivElement
+  infoAvatarWrap: HTMLDivElement
+  infoAvatarCanvas: HTMLCanvasElement
   info: HTMLDivElement
   body: HTMLDivElement
   backButton: HTMLButtonElement
@@ -58,11 +62,23 @@ export class HeroBuildingMenuManager {
     this.body = document.createElement('div')
     this.body.className = 'hero-building-menu-body'
 
+    this.infoAvatarWrap = document.createElement('div')
+    this.infoAvatarWrap.className = 'unit-avatar-frame'
+    this.infoAvatarCanvas = document.createElement('canvas')
+    this.infoAvatarCanvas.width = 120
+    this.infoAvatarCanvas.height = 120
+    this.infoAvatarWrap.appendChild(this.infoAvatarCanvas)
+
     this.info = document.createElement('div')
     this.info.className = 'hero-building-menu-info selection-info active'
 
+    this.header = document.createElement('div')
+    this.header.className = 'hero-building-menu-header'
+    this.header.appendChild(this.infoAvatarWrap)
+    this.header.appendChild(this.info)
+
     this.panel.appendChild(this.backButton)
-    this.panel.appendChild(this.info)
+    this.panel.appendChild(this.header)
     this.panel.appendChild(this.body)
   }
 
@@ -177,6 +193,12 @@ export class HeroBuildingMenuManager {
   render(): void {
     const building = this.building
     if (!building) return
+    // Only re-extracted on open/refresh (structure changes), not on every
+    // syncLiveState() tick — renderInfo() alone runs far more often (e.g. on
+    // every training-progress update) and re-cropping the avatar each time
+    // would be wasteful.
+    const rendered = renderBuildingAvatar(this.menu.context.app, building.type, building.owner ?? this.menu.context.player, this.infoAvatarCanvas)
+    this.infoAvatarWrap.classList.toggle('hidden', !rendered)
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
     this.body.textContent = ''

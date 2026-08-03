@@ -10,9 +10,9 @@ type PlayerColor = (typeof colors)[number]
 // which remaps player_blue's shades to a different set of hex values (e.g.
 // #3C49AD and #466AC9 both collapse to #285CC4). These are that post-snap set,
 // verified against the actual lpc-baked and buildings/age-0 textures.
-const SOURCE_COLORS = [0xbac7db, 0x8690b2, 0x6c82c4, 0x56506f, 0x1476c0, 0x03315f, 0x001b40]
+export const SOURCE_COLORS = [0xbac7db, 0x8690b2, 0x6c82c4, 0x56506f, 0x1476c0, 0x03315f, 0x001b40]
 
-const UNIT_SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450]
+export const UNIT_SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450]
 
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
   red: [0xff7676, 0xe45c5f, 0xb63c35, 0x9c3327, 0x82211d, 0x721c03, 0x5e0711],
@@ -116,6 +116,41 @@ function getTextureColorKey(texture: RecolorableTexture): string {
   return [source, frame.x, frame.y, frame.width, frame.height].join('_')
 }
 
+// Remaps `canvas`'s pixels from the neutral "blue" template to the given
+// player color, in place. Pure Canvas2D — no Texture/GPU involved, so it's
+// safe to use right after drawing into a canvas that was never rendered
+// through Pixi (e.g. an extract() readback), unlike recolorTextureDirectly's
+// Texture.from(canvas) output, which needs a real render pass before another
+// extract() can read it back.
+export function recolorCanvasPixels(
+  canvas: HTMLCanvasElement,
+  color: string,
+  sourceColors: readonly number[] = SOURCE_COLORS
+): void {
+  if (!isPlayerColor(color) || color === 'blue') return
+  const targetColors = COLOR_PALETTES[color]
+  if (!targetColors) return
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = imageData.data
+  const sourceColorMap = new Map(getReplacements(color, sourceColors, targetColors))
+
+  for (let i = 0; i < data.length; i += 4) {
+    const rgb = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
+    const targetColor = sourceColorMap.get(rgb)
+    if (targetColor !== undefined) {
+      data[i] = (targetColor >> 16) & 0xff
+      data[i + 1] = (targetColor >> 8) & 0xff
+      data[i + 2] = targetColor & 0xff
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+}
+
 function recolorTextureDirectly(
   texture: RecolorableTexture,
   color: PlayerColor,
@@ -123,8 +158,7 @@ function recolorTextureDirectly(
 ): Texture {
   if (color === 'blue') return texture
 
-  const targetColors = COLOR_PALETTES[color]
-  if (!targetColors) throw new Error('Invalid color selected.')
+  if (!COLOR_PALETTES[color]) throw new Error('Invalid color selected.')
 
   const frame = texture.frame
   const cacheKey = `${getTextureColorKey(texture)}_${color}_${sourceColors.join('-')}`
@@ -142,22 +176,7 @@ function recolorTextureDirectly(
   if (!baseTexture || !ctx) return texture
 
   ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)
-
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const data = imageData.data
-  const sourceColorMap = new Map(getReplacements(color, sourceColors, targetColors))
-
-  for (let i = 0; i < data.length; i += 4) {
-    const rgb = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
-    const targetColor = sourceColorMap.get(rgb)
-    if (targetColor !== undefined) {
-      data[i] = (targetColor >> 16) & 0xff
-      data[i + 1] = (targetColor >> 8) & 0xff
-      data[i + 2] = targetColor & 0xff
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0)
+  recolorCanvasPixels(canvas, color, sourceColors)
 
   const newTexture = Texture.from(canvas)
   recoloredTextureCache.set(cacheKey, newTexture)

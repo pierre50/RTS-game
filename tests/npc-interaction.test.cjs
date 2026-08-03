@@ -730,6 +730,7 @@ function loadNpcFollowModule(instances) {
     },
     './maths': {
       getInstanceDegree: () => 0,
+      isometricToCartesian: () => [0, 0],
     },
   })
 }

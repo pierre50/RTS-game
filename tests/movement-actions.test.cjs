@@ -696,6 +696,9 @@ test('hero direct movement rounds building footprint corners', () => {
       border: false,
       category: 'Ground',
       has: null,
+      place(entity) {
+        this.has = entity
+      },
     }))
   )
   const building = {
@@ -871,6 +874,9 @@ test('hero direct movement slides along rounded building collision instead of is
       border: false,
       category: 'Ground',
       has: null,
+      place(entity) {
+        this.has = entity
+      },
     }))
   )
   const building = {
@@ -953,6 +959,9 @@ test('hero direct movement slides along water-border terrain like a rounded obst
       category: 'Ground',
       waterBorder: false,
       has: null,
+      place(entity) {
+        this.has = entity
+      },
     }))
   )
   grid[1][0].waterBorder = true

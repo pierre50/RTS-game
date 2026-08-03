@@ -1,8 +1,10 @@
 import { FAMILY_TYPES } from '../constants'
 import { Modal } from '../lib'
+import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
+import type { Application } from 'pixi.js'
 import type Menu from '../classes/Menu'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 
 function getEntityTitle(entity: RuntimeEntity): string {
   const assetType = (entity as { assetType?: string }).assetType
@@ -15,6 +17,34 @@ function isBuildingEntity(entity: RuntimeEntity): entity is BuildingEntity {
 
 function isUnitEntity(entity: RuntimeEntity): entity is UnitEntity {
   return entity.family === FAMILY_TYPES.unit
+}
+
+function isAnimalEntity(entity: RuntimeEntity): entity is AnimalEntity {
+  return entity.family === FAMILY_TYPES.animal
+}
+
+function isResourceEntity(entity: RuntimeEntity): entity is ResourceEntity {
+  return entity.family === FAMILY_TYPES.resource
+}
+
+function createEntityAvatar(app: Application, entity: RuntimeEntity): HTMLDivElement | null {
+  const canvas = document.createElement('canvas')
+  canvas.width = 120
+  canvas.height = 120
+
+  const rendered = isUnitEntity(entity)
+    ? renderUnitHeadAvatar(app, entity, canvas)
+    : isAnimalEntity(entity)
+      ? renderAnimalAvatar(app, entity, canvas)
+      : isResourceEntity(entity)
+        ? renderResourceAvatar(app, entity, canvas)
+        : false
+  if (!rendered) return null
+
+  const wrap = document.createElement('div')
+  wrap.className = 'unit-avatar-frame'
+  wrap.appendChild(canvas)
+  return wrap
 }
 
 export class EntityInfoModalManager {
@@ -49,10 +79,19 @@ export class EntityInfoModalManager {
     content.className = 'entity-info-modal selection-info active'
     entity.interface.info(content)
 
+    const avatar = createEntityAvatar(this.menu.context.app, entity)
+    let modalContent: HTMLElement = content
+    if (avatar) {
+      modalContent = document.createElement('div')
+      modalContent.className = 'entity-info-wrapper'
+      modalContent.appendChild(avatar)
+      modalContent.appendChild(content)
+    }
+
     this.entity = entity
     this.modal = new Modal({
       title: getEntityTitle(entity),
-      content,
+      content: modalContent,
       onClose: () => this.close(),
     })
     this.modal._panel?.classList.add('entity-info-modal-panel')

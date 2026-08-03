@@ -367,6 +367,8 @@ export interface AnimalEntity extends RuntimeEntityBase {
   dest?: RuntimeCell | RuntimeEntity | null
   action?: string | null
   isFleeing?: boolean
+  standingSheet?: SpritesheetLike | null
+  walkingSheet?: SpritesheetLike | null
 }
 
 export type RuntimeEntity = UnitEntity | BuildingEntity | ResourceEntity | AnimalEntity
