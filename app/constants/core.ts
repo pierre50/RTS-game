@@ -33,8 +33,7 @@ export const RUBBLE_TIME = 120
 export const FADE_DURATION_MS = 2000
 // Seconds a projectile that missed and stuck in the ground sticks around before it starts
 // fading away (purely decorative — see Projectile.landOnGround).
-export const ARROW_GROUND_TIME = 30
-export const MAX_SELECT_UNITS = 10
+export const ARROW_GROUND_TIME = 3
 export const POPULATION_MAX = 200
 
 // Kill-switch temporaire : passage à l'âge suivant désactivé (joueur + IA)

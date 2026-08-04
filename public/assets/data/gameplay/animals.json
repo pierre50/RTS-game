@@ -9,7 +9,6 @@
     "ambientWalkDelayMax": 14000,
     "ambientWalkRange": 2,
     "totalQuantity": 150,
-    "spriteScale": 0.9,
     "assets": {
       "standingSheet": "animals/deer/standing",
       "walkingSheet": "animals/deer/walking",
@@ -39,7 +38,6 @@
     "ambientWalkDelayMax": 6500,
     "ambientWalkRange": 3,
     "totalQuantity": 40,
-    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
@@ -69,7 +67,6 @@
     "ambientWalkDelayMax": 12000,
     "ambientWalkRange": 2,
     "totalQuantity": 30,
-    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/black-grouse/standing",
       "walkingSheet": "animals/black-grouse/walking",
@@ -99,7 +96,6 @@
     "ambientWalkDelayMax": 10000,
     "ambientWalkRange": 3,
     "totalQuantity": 50,
-    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/fox/standing",
       "walkingSheet": "animals/fox/walking",
@@ -130,7 +126,6 @@
     "ambientWalkDelayMax": 18000,
     "ambientWalkRange": 1,
     "totalQuantity": 80,
-    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/boar/standing",
       "actionSheet": "animals/boar/action",
@@ -163,7 +158,6 @@
     "ambientWalkDelayMax": 14000,
     "ambientWalkRange": 2,
     "totalQuantity": 60,
-    "spriteScale": 0.7,
     "assets": {
       "standingSheet": "animals/wolf/standing",
       "actionSheet": "animals/wolf/action",

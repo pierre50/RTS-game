@@ -96,10 +96,7 @@ export const SPEED_PRESETS = [
 ]
 export const CAMERA_ZOOM_PRESETS = [
   { key: 'zoomVeryClose', value: 2 },
-  { key: 'zoomClose', value: 1.5 },
   { key: 'zoomStandard', value: 1 },
-  { key: 'zoomFar', value: 0.85 },
-  { key: 'zoomVeryFar', value: 0.7 },
 ]
 const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]
 export const SPEED_VALUES = DEV_SPEED_PRESETS.map(({ value }) => String(value))
@@ -264,6 +261,7 @@ export function getReservedGameplayHotkeys(): string[] {
     'heroLeft',
     'heroRight',
     'heroInteract',
+    'heroEntityInteraction',
     'heroDefense',
     'heroTool1',
     'heroTool2',

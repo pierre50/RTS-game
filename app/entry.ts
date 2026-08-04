@@ -1,8 +1,10 @@
-import { Application, type Filter } from 'pixi.js'
+import { Application, TextureStyle, type Filter } from 'pixi.js'
 import { PixelateFilter } from 'pixi-filters'
 import './styles.css'
 import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
+
+TextureStyle.defaultOptions.scaleMode = 'nearest'
 
 const DEFAULT_TEST_PIXELATE_SIZE = 0
 
