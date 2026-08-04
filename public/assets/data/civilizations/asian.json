@@ -2,7 +2,6 @@
   "buildings": {
     "0": {
       "TownCenter": {
-        "icon": "033_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/town-center",
@@ -11,7 +10,6 @@
         }
       },
       "Barracks": {
-        "icon": "003_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/barracks",
@@ -20,7 +18,6 @@
         }
       },
       "House": {
-        "icon": "015_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/house",
@@ -29,7 +26,6 @@
         }
       },
       "Granary": {
-        "icon": "011_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/granary",
@@ -38,7 +34,6 @@
         }
       },
       "StoragePit": {
-        "icon": "028_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/storage-pit",
@@ -47,7 +42,6 @@
         }
       },
       "Temple": {
-        "icon": "031_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/temple",
@@ -56,7 +50,6 @@
         }
       },
       "Stable": {
-        "icon": "025_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/stable",
@@ -65,7 +58,6 @@
         }
       },
       "ArcheryRange": {
-        "icon": "001_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/archery-range",
@@ -74,7 +66,6 @@
         }
       },
       "Market": {
-        "icon": "021_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/market",
@@ -85,7 +76,6 @@
     },
     "1": {
       "SmallWall": {
-        "icon": "042_50707",
         "images": {
           "final": {
             "sheet": "environment/ground/stone-set-2",
@@ -94,7 +84,6 @@
         }
       },
       "Farm": {
-        "icon": "010_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-0/farm",
@@ -103,7 +92,6 @@
         }
       },
       "WatchTower": {
-        "icon": "026_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/watch-tower",
@@ -112,7 +100,6 @@
         }
       },
       "Market": {
-        "icon": "021_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/market",
@@ -121,7 +108,6 @@
         }
       },
       "Stable": {
-        "icon": "025_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/stable",
@@ -130,7 +116,6 @@
         }
       },
       "ArcheryRange": {
-        "icon": "001_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/archery-range",
@@ -139,7 +124,6 @@
         }
       },
       "Barracks": {
-        "icon": "003_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/barracks",
@@ -148,7 +132,6 @@
         }
       },
       "TownCenter": {
-        "icon": "033_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/town-center",
@@ -157,7 +140,6 @@
         }
       },
       "Granary": {
-        "icon": "011_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/granary",
@@ -166,7 +148,6 @@
         }
       },
       "House": {
-        "icon": "015_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/house",
@@ -175,7 +156,6 @@
         }
       },
       "StoragePit": {
-        "icon": "028_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/storage-pit",
@@ -184,7 +164,6 @@
         }
       },
       "Temple": {
-        "icon": "031_50707",
         "images": {
           "final": {
             "sheet": "buildings/age-1/temple",

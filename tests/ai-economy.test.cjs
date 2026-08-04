@@ -16,7 +16,6 @@ function loadAIEconomy() {
       attack: 'attack',
       build: 'build',
       delivery: 'delivery',
-      fishing: 'fishing',
       hunt: 'hunt',
       takemeat: 'takemeat',
     },
@@ -33,7 +32,6 @@ function loadAIEconomy() {
     WORK_TYPES: {
       builder: 'builder',
       farmer: 'farmer',
-      fisher: 'fisher',
       forager: 'forager',
       goldminer: 'goldminer',
       hunter: 'hunter',
@@ -81,7 +79,6 @@ test('moves excess live hunters to berries when hunting occupies every food slot
     foundedDeadAnimals: new Set(),
     foundedEnemyBuildings: new Set(),
     foundedEnemyUnits: new Set(),
-    foundedFish: new Set(),
     getHomeAnchor: () => null,
   }
   const hunters = Array.from({ length: 4 }, (_, index) => {
@@ -109,7 +106,6 @@ test('moves excess live hunters to berries when hunting occupies every food slot
     {
       villagersForaging: [],
       villagersFarming: [],
-      villagersFishing: [],
       villagersHunting: hunters,
       villagersOnFood: hunters,
     },
@@ -121,12 +117,11 @@ test('moves excess live hunters to berries when hunting occupies every food slot
   assert.ok(assignments.length > 0)
 })
 
-test('worker snapshots always expose farmer and fisher collections', () => {
+test('worker snapshots always expose a farmer collection', () => {
   const { AIEconomy } = loadAIEconomy()
   const snapshot = new AIEconomy({}).getWorkerSnapshot([])
 
   assert.deepEqual(snapshot.villagersFarming, [])
-  assert.deepEqual(snapshot.villagersFishing, [])
 })
 
 test('food scoring prefers a nearby full farm over distant depleted berries', () => {
@@ -140,14 +135,13 @@ test('food scoring prefers a nearby full farm over distant depleted berries', ()
       berries: [{ i: 25, j: 25, quantity: 10 }],
       carcasses: [],
       farms: [{ i: 2, j: 2, quantity: 250 }],
-      fish: [],
       meatDrops: [drop],
       plantDrops: [drop],
     },
     {}
   )
 
-  assert.deepEqual(targets, { berry: 0, carcass: 0, farm: 1, fish: 0, hunt: 0 })
+  assert.deepEqual(targets, { berry: 0, carcass: 0, farm: 1, hunt: 0 })
 })
 
 test('food scoring prefers a nearby carcass over a distant farm', () => {
@@ -161,14 +155,13 @@ test('food scoring prefers a nearby carcass over a distant farm', () => {
       berries: [],
       carcasses: [{ i: 1, j: 1, quantity: 150 }],
       farms: [{ i: 25, j: 25, quantity: 250 }],
-      fish: [],
       meatDrops: [drop],
       plantDrops: [drop],
     },
     {}
   )
 
-  assert.deepEqual(targets, { berry: 0, carcass: 1, farm: 0, fish: 0, hunt: 0 })
+  assert.deepEqual(targets, { berry: 0, carcass: 1, farm: 0, hunt: 0 })
 })
 
 test('food scoring moves live hunters to closer berries', () => {
@@ -182,15 +175,14 @@ test('food scoring moves live hunters to closer berries', () => {
       berries: [{ i: 2, j: 0, quantity: 250 }],
       carcasses: [],
       farms: [],
-      fish: [],
       meatDrops: [],
       plantDrops: [],
       workerPositions: [worker],
     },
-    { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 1 }
+    { berry: 0, carcass: 0, farm: 0, hunt: 1 }
   )
 
-  assert.deepEqual(targets, { berry: 1, carcass: 0, farm: 0, fish: 0, hunt: 0 })
+  assert.deepEqual(targets, { berry: 1, carcass: 0, farm: 0, hunt: 0 })
 })
 
 test('villager economy stops distant live hunts when known berries are near home', () => {
@@ -229,7 +221,6 @@ test('villager economy stops distant live hunts when known berries are near home
     foundedDeadAnimals: new Set(),
     foundedEnemyBuildings: new Set(),
     foundedEnemyUnits: new Set(),
-    foundedFish: new Set(),
     getHomeAnchor: () => townCenter,
   }
   const economy = new AIEconomy(ai)
@@ -239,7 +230,6 @@ test('villager economy stops distant live hunts when known berries are near home
     {
       villagersForaging: [],
       villagersFarming: [],
-      villagersFishing: [],
       villagersHunting: [hunter],
       villagersOnFood: [hunter],
     },
@@ -278,7 +268,6 @@ test('villager economy still permits distant hunting when no berries are known',
     foundedDeadAnimals: new Set(),
     foundedEnemyBuildings: new Set(),
     foundedEnemyUnits: new Set(),
-    foundedFish: new Set(),
     getHomeAnchor: () => townCenter,
   }
   const economy = new AIEconomy(ai)
@@ -288,7 +277,6 @@ test('villager economy still permits distant hunting when no berries are known',
     {
       villagersForaging: [],
       villagersFarming: [],
-      villagersFishing: [],
       villagersHunting: [],
       villagersOnFood: [],
     },
@@ -300,119 +288,3 @@ test('villager economy still permits distant hunting when no berries are known',
   assert.deepEqual(assignments, [animal])
 })
 
-function createGrid(size, waterCells = []) {
-  const water = new Set(waterCells.map(([i, j]) => `${i}:${j}`))
-  return Array.from({ length: size }, (_, i) =>
-    Array.from({ length: size }, (_, j) => ({
-      border: false,
-      category: water.has(`${i}:${j}`) ? 'Water' : 'Grass',
-      i,
-      inclined: false,
-      j,
-      solid: false,
-    }))
-  )
-}
-
-test('villager economy rejects fish with no reachable shore cell', () => {
-  const { AIEconomy } = loadAIEconomy()
-  const assignments = []
-  const villager = {
-    hitPoints: 20,
-    i: 0,
-    inactif: true,
-    j: 0,
-    reachableCells: new Set(),
-    sendToFish: target => assignments.push(target),
-  }
-  const ai = {
-    buildingsByTypes: () => [],
-    config: {},
-    context: {
-      map: {
-        grid: createGrid(5, [
-          [1, 1],
-          [1, 2],
-          [1, 3],
-          [2, 1],
-          [2, 2],
-          [2, 3],
-          [3, 1],
-          [3, 2],
-          [3, 3],
-        ]),
-      },
-    },
-    foundedAnimals: new Set(),
-    foundedBerrybushs: new Set(),
-    foundedDeadAnimals: new Set(),
-    foundedEnemyBuildings: new Set(),
-    foundedEnemyUnits: new Set(),
-    foundedFish: new Set([{ i: 2, j: 2, quantity: 250 }]),
-    getHomeAnchor: () => null,
-  }
-  const economy = new AIEconomy(ai)
-
-  const actions = economy.assignFoodSources(
-    [villager],
-    {
-      villagersForaging: [],
-      villagersFarming: [],
-      villagersFishing: [],
-      villagersHunting: [],
-      villagersOnFood: [],
-    },
-    { maxVillagersOnFood: 1 },
-    []
-  )
-
-  assert.equal(actions, 0)
-  assert.deepEqual(assignments, [])
-})
-
-test('villager economy assigns reachable shore fish with the validated shore cell', () => {
-  const { AIEconomy } = loadAIEconomy()
-  const assignments = []
-  const fish = { i: 2, j: 2, quantity: 250 }
-  const villager = {
-    hitPoints: 20,
-    i: 0,
-    inactif: true,
-    j: 0,
-    reachableCells: new Set(['1:2']),
-    sendToFish: target => assignments.push(target),
-  }
-  const ai = {
-    buildingsByTypes: () => [],
-    config: {},
-    context: {
-      map: {
-        grid: createGrid(5, [[2, 2]]),
-      },
-    },
-    foundedAnimals: new Set(),
-    foundedBerrybushs: new Set(),
-    foundedDeadAnimals: new Set(),
-    foundedEnemyBuildings: new Set(),
-    foundedEnemyUnits: new Set(),
-    foundedFish: new Set([fish]),
-    getHomeAnchor: () => null,
-  }
-  const economy = new AIEconomy(ai)
-
-  const actions = economy.assignFoodSources(
-    [villager],
-    {
-      villagersForaging: [],
-      villagersFarming: [],
-      villagersFishing: [],
-      villagersHunting: [],
-      villagersOnFood: [],
-    },
-    { maxVillagersOnFood: 1 },
-    []
-  )
-
-  assert.equal(actions, 1)
-  assert.equal(assignments[0], fish)
-})

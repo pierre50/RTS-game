@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound'
+import { pickRandomItem } from './random'
 import type { AudibleInstanceLike } from '../types/context'
 
 type SoundCue = string | number
@@ -17,13 +18,9 @@ export type AudibleInstance = {
   }
 } & AudibleInstanceLike
 
-function pickRandom<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)]
-}
-
 function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
   if (cue == null) return null
-  if (Array.isArray(cue)) return cue.length ? pickRandom(cue) : null
+  if (Array.isArray(cue)) return cue.length ? pickRandomItem(cue) : null
   return cue
 }
 

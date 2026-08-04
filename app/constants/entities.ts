@@ -3,7 +3,6 @@ export const RESOURCE_TYPES = {
   berrybush: 'Berrybush',
   stone: 'Stone',
   gold: 'Gold',
-  shoreFish: 'ShoreFish',
 }
 
 export const BUILDING_TYPES = {
@@ -61,7 +60,6 @@ export const FAMILY_TYPES = {
 }
 
 export const WORK_TYPES = {
-  fisher: 'fisher',
   hunter: 'hunter',
   farmer: 'farmer',
   forager: 'forager',
@@ -79,7 +77,6 @@ export const ACTION_TYPES = {
   hunt: 'hunt',
   attack: 'attack',
   train: 'train',
-  fishing: 'fishing',
   build: 'build',
   farm: 'farm',
   forageberry: 'forageberry',
@@ -94,19 +91,17 @@ export const LOADING_TYPES = {
   meat: 'meat',
   wheat: 'wheat',
   berry: 'berry',
-  fish: 'fish',
   stone: 'stone',
   gold: 'gold',
   wood: 'wood',
 }
 
-export const WORK_FOOD_TYPES = [WORK_TYPES.fisher, WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.forager]
-export const LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOADING_TYPES.berry, LOADING_TYPES.fish]
+export const WORK_FOOD_TYPES = [WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.forager]
+export const LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOADING_TYPES.berry]
 
 export const TYPE_ACTION = {
   Stone: ACTION_TYPES.minestone,
   Gold: ACTION_TYPES.minegold,
   Berrybush: ACTION_TYPES.forageberry,
   Tree: ACTION_TYPES.chopwood,
-  Fish: ACTION_TYPES.fishing,
 }

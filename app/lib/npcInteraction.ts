@@ -10,7 +10,7 @@ import {
 } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
 import { createIsoSelectionMarker, drawInstanceBlinkingSelection } from './graphics/selection'
-import { getInstanceDegree, isometricToCartesian } from './maths'
+import { angleDelta, getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from './buildingFeedback'
@@ -55,7 +55,6 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Stone: (npc, target) => npc.sendToStone?.(target),
   Gold: (npc, target) => npc.sendToGold?.(target),
   Berrybush: (npc, target) => npc.sendToBerrybush?.(target),
-  ShoreFish: (npc, target) => npc.sendToFish?.(target),
 }
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -64,11 +63,6 @@ function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 
 
 function worldDistance(a: Partial<Point>, b: Partial<Point>): number {
   return Math.hypot((a.x ?? 0) - (b.x ?? 0), (a.y ?? 0) - (b.y ?? 0))
-}
-
-function angleDelta(a: number, b: number): number {
-  const diff = Math.abs(a - b) % 360
-  return diff > 180 ? 360 - diff : diff
 }
 
 function isRuntimeEntityDest(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
@@ -91,6 +85,14 @@ function isFriendlyAvailable(hero: UnitEntity, target: UnitEntity): boolean {
 function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
   if (target.lookingAtHero) return true
   return isFriendlyAvailable(hero, target)
+}
+
+// Any living unit on the hero's own side, regardless of what it's currently doing (fighting,
+// working...) — the bar for a flavor chatter line is much lower than for a giveable order.
+export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (target === hero || target.family !== FAMILY_TYPES.unit) return false
+  const unit = target as UnitEntity
+  return !unit.isDead && !unit.isDestroyed && unit.owner === hero.owner
 }
 
 // Marks a frozen comm target with the same selection lozenge as a regular unit selection, kept

@@ -1,16 +1,17 @@
 import { Modal } from '../lib'
-import { renderBuildingAvatar } from '../lib/avatar'
+import { renderBuildingAvatar, renderEquipmentAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import type Menu from '../classes/Menu'
-import { HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
+import { createEntityInfoContent } from './EntityInfoModalManager'
+import { EQUIPPED_ITEM_WEAPON, HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
 import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 
-type ActionMenuTab = 'tools' | 'technologies' | 'minimap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'construction'
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -23,11 +24,14 @@ export class InventoryManager {
   menu: Menu
   panel: HTMLDivElement
   modalTabs: ModalTabs<ActionMenuTab>
+  infoPanel: HTMLDivElement
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   technologiesPanel: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLDivElement>
+  toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
+  toolIconsRendered: boolean
   modal?: Modal
   activeTab: ActionMenuTab
   opened: boolean
@@ -39,10 +43,14 @@ export class InventoryManager {
     this.pausedByMenu = false
     this.activeTab = 'tools'
     this.slots = new Map()
+    this.toolIcons = new Map()
+    this.toolIconsRendered = false
 
     this.panel = document.createElement('div')
     this.panel.className = 'inventory-content action-menu'
 
+    this.infoPanel = document.createElement('div')
+    this.infoPanel.className = 'action-menu-page action-menu-info-page'
     this.toolsPanel = document.createElement('div')
     this.toolsPanel.className = 'action-menu-page inventory-tools-page'
     this.minimapPanel = document.createElement('div')
@@ -54,6 +62,7 @@ export class InventoryManager {
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
+        { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
         { id: 'technologies', label: t('inventoryTabTechnologies'), page: this.technologiesPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
@@ -69,10 +78,24 @@ export class InventoryManager {
     for (const tool of HERO_TOOL_ORDER) {
       const slot = document.createElement('div')
       slot.className = 'inventory-slot'
-      slot.textContent = t(TOOL_LABEL_KEYS[tool])
       slot.setAttribute('role', 'button')
       slot.tabIndex = 0
       slot.addEventListener('pointerup', () => this.selectTool(tool))
+
+      if (EQUIPPED_ITEM_WEAPON[tool]) {
+        const icon = document.createElement('canvas')
+        icon.className = 'unit-avatar-frame inventory-slot-icon'
+        icon.width = 64
+        icon.height = 64
+        slot.appendChild(icon)
+        this.toolIcons.set(tool, icon)
+      }
+
+      const label = document.createElement('div')
+      label.className = 'inventory-slot-label'
+      label.textContent = t(TOOL_LABEL_KEYS[tool])
+      slot.appendChild(label)
+
       this.slots.set(tool, slot)
       this.toolsPanel.appendChild(slot)
     }
@@ -143,7 +166,33 @@ export class InventoryManager {
     } else if (tab === 'construction') {
       this.renderConstruction()
     } else {
+      if (tab === 'tools') this.renderToolIcons()
+      else if (tab === 'info') this.renderInfo()
       this.menu.clearActionHotkeys()
+    }
+  }
+
+  // Reuses the same stats+avatar block as EntityInfoModalManager/NpcOrdersManager so the
+  // hero's own level/XP/equipment stats don't need a second implementation — the hero can't
+  // open its own entity-info modal (EntityInfoModalManager rejects that target), so this tab
+  // is the only place to see them.
+  renderInfo(): void {
+    this.infoPanel.replaceChildren()
+    const entity = this.menu.context.controls.heroUnit || this.menu.selection
+    if (!entity?.interface?.info) return
+    this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity, { showAllXp: true }))
+  }
+
+  // Equipment art is global (no civ/player variation, unlike unit/building
+  // avatars), so unlike renderTechnologies()/renderConstruction() this only
+  // needs to run once — not rebuilt every time the tab is shown.
+  renderToolIcons(): void {
+    if (this.toolIconsRendered) return
+    this.toolIconsRendered = true
+    const { app } = this.menu.context
+    for (const [tool, canvas] of this.toolIcons) {
+      const equipment = EQUIPPED_ITEM_WEAPON[tool]
+      if (equipment) renderEquipmentAvatar(app, equipment, canvas)
     }
   }
 

@@ -27,7 +27,7 @@ function loadWalls() {
   return module.exports
 }
 
-const { getWallFrameAt, getWallIcon, getWallLevel, getWallSheet } = loadWalls()
+const { getWallFrameAt, getWallLevel, getWallSheet } = loadWalls()
 
 test('wall technology levels progress independently from player age', () => {
   const owner = { age: 3, civ: 'Greek', technologies: [] }
@@ -48,15 +48,6 @@ test('each architecture uses its own upgraded wall sheets', () => {
   assert.equal(getWallSheet({ civ: 'Egyptian', technologies }), 'buildings/walls/level-2/egyptian')
   assert.equal(getWallSheet({ civ: 'Asian', technologies }), 'buildings/walls/level-2/asian')
   assert.equal(getWallSheet({ civ: 'Babylonian', technologies }), 'buildings/walls/level-2/babylonian')
-})
-
-test('wall construction icons follow the researched wall level', () => {
-  const owner = { technologies: [] }
-  assert.equal(getWallIcon(owner, '042_50704'), '042_50704')
-  owner.technologies.push('UpgradeMediumWall')
-  assert.equal(getWallIcon(owner, '042_50704'), '045_50704')
-  owner.technologies.push('UpgradeFortification')
-  assert.equal(getWallIcon(owner, '042_50704'), '048_50704')
 })
 
 test('isolated walls and wall endpoints use the tower block frame', () => {

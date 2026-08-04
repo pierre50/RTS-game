@@ -12,7 +12,7 @@ export type DevMapLike = {
   grid: RuntimeCell[][]
   resources: Set<DevEntity>
   floatingItems?: Set<DevEntity>
-  gaia?: { units: DevEntity[] } | null
+  gaia?: { units: DevEntity[]; createAnimal?(options: { i: number; j: number; type: string }): unknown } | null
   instantMode?: boolean
   revealEverything?: boolean
   showResources?: boolean

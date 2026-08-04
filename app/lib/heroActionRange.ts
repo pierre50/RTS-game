@@ -12,7 +12,7 @@ export function isHeroControlledUnit(unit: UnitEntity): boolean {
 
 export function getHeroActionDistance(action: string | null | undefined, target: RuntimeEntity): number | null {
   if (!action) return null
-  if (action !== ACTION_TYPES.takemeat && action !== ACTION_TYPES.fishing) return null
+  if (action !== ACTION_TYPES.takemeat) return null
 
   return getBuildingContactDistance(target.size ?? 1) + HERO_FOOD_CONTACT_EXTRA_RANGE
 }

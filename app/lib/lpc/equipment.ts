@@ -25,7 +25,6 @@ type DynamicEquipmentKey =
   | 'round_shield_brass_slash'
   | 'round_shield_silver_slash'
   | 'cane'
-  | 'fishing_rod'
   | 'quiver'
 
 export type { DynamicEquipmentKey }
@@ -60,7 +59,6 @@ const EQUIPMENT_SHEET_OVERRIDES: Partial<
   Record<DynamicEquipmentKey, Partial<Record<EquipmentLayer, readonly EquipmentSheet[]>>>
 > = {
   cane: { front: ['walking'] },
-  fishing_rod: { back: ['action'], front: ['action'] },
 }
 
 const DYNAMIC_EQUIPMENT_KEYS = [
@@ -81,7 +79,6 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'round_shield_brass_slash',
   'round_shield_silver_slash',
   'cane',
-  'fishing_rod',
   'quiver',
 ] as const satisfies readonly DynamicEquipmentKey[]
 
@@ -114,7 +111,6 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   { workType: 'heroSword', equipment: 'longsword' },
   { workType: 'heroSpear', equipment: 'halberd' },
   { workType: WORK_TYPES.farmer, equipment: 'scythe' },
-  { workType: WORK_TYPES.fisher, equipment: 'fishing_rod' },
   {
     workType: WORK_TYPES.hunter,
     equipment: 'quiver',
@@ -160,7 +156,7 @@ function layerConfig(
     sheetDirectionCounts: {
       [SHEET_TYPES.standing]: 3,
       [SHEET_TYPES.walking]: 3,
-      [SHEET_TYPES.action]: equipment === 'fishing_rod' ? 4 : 3,
+      [SHEET_TYPES.action]: 3,
     },
   }
 }

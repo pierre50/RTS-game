@@ -9,6 +9,8 @@ import type { Bounds } from './geometry'
 
 export type SchedulerTaskId = number
 
+export type NpcOrdersOpenOptions = { chatterLine?: string; ordersEnabled?: boolean }
+
 export interface SchedulerLike {
   elapsedMs: number
   timeScale?: number
@@ -62,7 +64,7 @@ export interface MenuLike {
   setHeroStatusTarget?(hero: UnitEntity | null): void
   updateHeroStatus?(hero?: UnitEntity | null): void
   toggleNpcOrders?(npcs: UnitEntity[]): void
-  openNpcOrders?(npcs: UnitEntity[]): void
+  openNpcOrders?(npcs: UnitEntity[], options?: NpcOrdersOpenOptions): void
   isNpcOrdersOpen?(): boolean
   closeNpcOrders?(): void
   getNpcOrdersTarget?(): UnitEntity[]

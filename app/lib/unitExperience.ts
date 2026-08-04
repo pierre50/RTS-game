@@ -11,10 +11,10 @@ export const XP_CATEGORIES = {
   mining: 'mining',
   farming: 'farming',
   woodcutting: 'woodcutting',
-  fishing: 'fishing',
   hunting: 'hunting',
   building: 'building',
   healing: 'healing',
+  defense: 'defense',
 }
 
 export const XP_MAX_LEVEL = 10
@@ -22,6 +22,7 @@ export const XP_KILL_BONUS = 15
 export const XP_CONVERT_SUCCESS = 30
 export const XP_BUILD_TICK = 2
 export const XP_FELL_TREE_TICK = 1
+export const XP_PARRY_SUCCESS = 5
 
 // Cumulative XP required to reach a level: 25·L·(L+1) → 50, 150, 300, 500…
 const XP_LEVEL_FACTOR = 25
@@ -29,6 +30,7 @@ const GATHER_BONUS_LEVEL_STEP = 3 // +1 resource per swing every 3 levels
 const COMBAT_BONUS_LEVEL_STEP = 2 // +1 damage per hit every 2 levels
 const HEAL_BONUS_LEVEL_STEP = 2 // +1 hit point healed per chant every 2 levels
 const BUILD_RATE_BONUS_PER_LEVEL = 0.05
+const PARRY_CHANCE_PER_LEVEL = 0.035 // +3.5% automatic parry chance per defense level
 
 export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.farmer]: XP_CATEGORIES.farming,
@@ -36,7 +38,6 @@ export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.woodcutter]: XP_CATEGORIES.woodcutting,
   [WORK_TYPES.stoneminer]: XP_CATEGORIES.mining,
   [WORK_TYPES.goldminer]: XP_CATEGORIES.mining,
-  [WORK_TYPES.fisher]: XP_CATEGORIES.fishing,
   [WORK_TYPES.hunter]: XP_CATEGORIES.hunting,
   [WORK_TYPES.builder]: XP_CATEGORIES.building,
   [WORK_TYPES.attacker]: XP_CATEGORIES.melee,
@@ -49,7 +50,6 @@ export const LOADING_XP_CATEGORY: Record<string, string> = {
   [LOADING_TYPES.wood]: XP_CATEGORIES.woodcutting,
   [LOADING_TYPES.stone]: XP_CATEGORIES.mining,
   [LOADING_TYPES.gold]: XP_CATEGORIES.mining,
-  [LOADING_TYPES.fish]: XP_CATEGORIES.fishing,
   [LOADING_TYPES.meat]: XP_CATEGORIES.hunting,
 }
 
@@ -75,6 +75,12 @@ export function getUnitLevel(unit: UnitEntity, category: string): number {
   return level
 }
 
+// A single overall sense of progress for space-constrained UI (the persistent hero HUD) that
+// can't list all 9 per-skill levels — the best one earned so far, not an arbitrarily chosen skill.
+export function getHighestUnitLevel(unit: UnitEntity): number {
+  return Object.values(XP_CATEGORIES).reduce((max, category) => Math.max(max, getUnitLevel(unit, category)), 0)
+}
+
 export function getXpProgress(unit: UnitEntity, category: string): XpProgress {
   const xp = getUnitXp(unit, category)
   const level = getUnitLevel(unit, category)
@@ -85,8 +91,14 @@ export function getXpProgress(unit: UnitEntity, category: string): XpProgress {
   }
 }
 
-export function getUnitExperienceEntries(unit: UnitEntity): (XpProgress & { category: string })[] {
+export function getUnitExperienceEntries(
+  unit: UnitEntity,
+  options?: { includeZero?: boolean }
+): (XpProgress & { category: string })[] {
   const experience = unit.experience
+  if (options?.includeZero) {
+    return Object.values(XP_CATEGORIES).map(category => ({ category, ...getXpProgress(unit, category) }))
+  }
   if (!experience) return []
   return Object.keys(experience)
     .filter(category => (experience[category] ?? 0) > 0)
@@ -112,6 +124,10 @@ export function getHealingXpBonus(unit: UnitEntity): number {
 
 export function getBuildRateXpMultiplier(unit: UnitEntity): number {
   return 1 + getUnitLevel(unit, XP_CATEGORIES.building) * BUILD_RATE_BONUS_PER_LEVEL
+}
+
+export function getParryChanceBonus(unit: UnitEntity): number {
+  return getUnitLevel(unit, XP_CATEGORIES.defense) * PARRY_CHANCE_PER_LEVEL
 }
 
 export function getXpInfoId(category: string): string {

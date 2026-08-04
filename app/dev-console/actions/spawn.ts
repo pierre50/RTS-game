@@ -1,3 +1,4 @@
+import { Assets } from 'pixi.js'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
 import { findKey, getAmount, getSpawnCell } from './shared'
@@ -65,6 +66,25 @@ export function spawnUnits(
   menu.updateTopbar()
   menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, spawned, ownerIndex, playerIndex != null) }
+}
+
+export function spawnAnimal(context: DevConsoleContext, typeName: string, count: string | number = 1): CommandResult {
+  const { menu, map } = context
+  const animals = (Assets.cache.get('config') as { animals?: Record<string, unknown> } | undefined)?.animals ?? {}
+  const type = findKey(animals, typeName)
+  if (!type) return { ok: false, message: `Unknown animal: ${typeName}` }
+  if (!map.gaia?.createAnimal) return { ok: false, message: 'No Gaia player on this map' }
+
+  let spawned = 0
+  for (let i = 0; i < getAmount(count); i++) {
+    const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
+    if (!cell) break
+    map.gaia.createAnimal({ i: cell.i, j: cell.j, type })
+    spawned++
+  }
+  if (!spawned) return { ok: false, message: 'No free land cell near cursor' }
+  menu.updateTopbar()
+  return { ok: true, message: formatSpawnMessage(type, spawned, 0, false) }
 }
 
 export function spawnBuilding(

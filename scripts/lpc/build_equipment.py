@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
-from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS, Sheet
+from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS
 from dynamic_equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
 from image_pipeline import compose_frame, open_layer, source_frames
 from retro_palette import find_hex_palette, load_hex_palette
@@ -13,19 +13,13 @@ from retro_palette import find_hex_palette, load_hex_palette
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
-CUSTOM_SHEETS = {
-    "tool_rod": Sheet("tool_rod", "tool_rod", 13, 4, keep_every_other_frame=False),
-}
 OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "lpc-equipment"
 
 
 def sheet_plan(action_animation: str) -> dict[str, tuple[str, object]]:
-    action_sheet = SHEET_BY_ANIMATION.get(action_animation)
-    if action_sheet is None:
-        action_sheet = CUSTOM_SHEETS[action_animation]
     return {
         "walking": ("walk", SHEET_BY_KEY["walking"]),
-        "action": (action_animation, action_sheet),
+        "action": (action_animation, SHEET_BY_ANIMATION[action_animation]),
     }
 
 

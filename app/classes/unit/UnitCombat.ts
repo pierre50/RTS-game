@@ -11,7 +11,6 @@ import {
   playAudibleSoundCue,
   SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
-  syncAnimationSpeedToRate,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
@@ -32,51 +31,39 @@ export class UnitCombat {
     this.unit = unit
   }
 
-  setStandingPose() {
+  // Loops the current action sheet indefinitely (like the Hero's own swings, which just play at
+  // their fixed baked speed) and fires once per pass at releaseFrame — attack cadence is however
+  // fast that animation naturally runs, not a separate rateOfFire-driven timer. Shared by melee
+  // and ranged; onFire receives the current target so each caller only supplies its own effect
+  // (apply a hit, launch a projectile).
+  runAttackLoop(releaseFrame: number, onFire: (dest: RuntimeEntity | null) => void) {
     const unit = this.unit
     const sprite = unit.sprite
     if (!sprite) return
     sprite.loop = true
     sprite.onComplete = undefined
-    unit.setTextures?.(SHEET_TYPES.standing)
-  }
-
-  playSingleAttackAnimation(onFire: () => void, releaseFrame: number | null = null) {
-    const unit = this.unit
-    const sprite = unit.sprite
-    if (!sprite) return
-
-    unit.actionLocked = true
-    sprite.loop = false
-    unit.syncShadow?.()
-    sprite.onComplete = () => {
-      sprite.onComplete = undefined
-      unit.actionLocked = false
-      const hadPendingOrder = unit.flushPendingOrder?.()
-      if (hadPendingOrder) {
-        sprite.loop = true
-        unit.syncShadow?.()
+    unit.setTextures?.(SHEET_TYPES.action)
+    unit.syncMountedHorseSprite?.()
+    onSpriteLoopAtFrame(sprite, releaseFrame, () => {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if (dest && (dest.hitPoints ?? 0) <= 0) {
+          dest.die?.()
+        }
+        this.finishAttackAfterCurrentLoop()
         return
       }
-      if (!unit.isDead && unit.action === ACTION_TYPES.attack) {
-        this.setStandingPose()
-      } else {
-        sprite.loop = true
-        unit.syncShadow?.()
+      this.syncMovingTargetDirection()
+      if (!unit.isUnitAtDest?.(unit.action, dest)) {
+        unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
+        return
       }
-    }
-    unit.setTextures?.(SHEET_TYPES.action)
-    if (releaseFrame == null) {
-      sprite.onFrameChange = undefined
-      onFire()
-    } else {
-      sprite.onFrameChange = currentFrame => {
-        if (currentFrame === releaseFrame) onFire()
-      }
-    }
+      if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
+      onFire(dest)
+    })
   }
 
-  finishMeleeAttackAfterCurrentLoop() {
+  finishAttackAfterCurrentLoop() {
     const unit = this.unit
     const sprite = unit.sprite
     if (!sprite) {
@@ -92,27 +79,6 @@ export class UnitCombat {
       const hadPendingOrder = unit.flushPendingOrder?.()
       if (!hadPendingOrder) unit.affectNewDest?.()
     }
-  }
-
-  performRangedAttackCycle(launchProjectile: () => void) {
-    const unit = this.unit
-
-    if (!unit.getActionCondition?.(unit.dest)) {
-      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-      if (dest && (dest.hitPoints ?? 0) <= 0) {
-        dest.die?.()
-      }
-      unit.affectNewDest?.()
-      return
-    }
-    this.syncMovingTargetDirection()
-    if (!unit.isUnitAtDest?.(unit.action, unit.dest)) {
-      unit.sendToEvt?.(unit.dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
-      return
-    }
-    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-    if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
-    this.playSingleAttackAnimation(() => launchProjectile(), SHOOT_RELEASE_FRAME)
   }
 
   detect(instance: RuntimeEntity | null) {
@@ -214,10 +180,8 @@ export class UnitCombat {
       return
     }
     if (unit.range && unit.projectile && unit.type !== UNIT_TYPES.villager) {
-      this.setStandingPose()
-      const launchProjectile = () => {
-        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-        if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
+      this.runAttackLoop(SHOOT_RELEASE_FRAME, dest => {
+        if (!dest || !unit.realDest || !map) return
         playAudibleSoundCue(unit, unit.sounds?.attack)
         const projectile = new Projectile(
           {
@@ -229,55 +193,22 @@ export class UnitCombat {
           unit.context!
         )
         map.addChild(projectile)
-      }
-      this.performRangedAttackCycle(launchProjectile)
-      unit.startInterval?.(
-        () => this.performRangedAttackCycle(launchProjectile),
-        (unit.rateOfFire ?? 1) * 1000,
-        false,
-        'unit.rangedAttack'
-      )
+      })
     } else {
-      const sprite = unit.sprite
-      if (!sprite) return
-      sprite.loop = true
-      sprite.onComplete = undefined
-      unit.setTextures?.(SHEET_TYPES.action)
-      unit.syncMountedHorseSprite?.()
-      syncAnimationSpeedToRate(sprite, 1 / (unit.rateOfFire ?? 1))
-      onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
-        const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-        if (!unit.getActionCondition?.(dest)) {
-          if (dest && (dest.hitPoints ?? 0) <= 0) {
-            dest.die?.()
-          }
-          this.finishMeleeAttackAfterCurrentLoop()
-          return
-        }
-        this.syncMovingTargetDirection()
-        // syncMovingTargetDirection may have re-run setTextures(action) on a
-        // direction change, which resets animationSpeed to the sheet's static
-        // default — reassert the rate-synced speed every tick.
-        syncAnimationSpeedToRate(sprite, 1 / (unit.rateOfFire ?? 1))
-        if (!unit.isUnitAtDest?.(unit.action, dest)) {
-          unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
-          return
-        }
-        if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
-        if (unit.sounds && unit.sounds.hit) {
+      this.runAttackLoop(SLASH_IMPACT_FRAME, dest => {
+        if (unit.sounds?.hit) {
           playAudibleSoundCue(unit, unit.sounds.hit)
         }
         if (dest && (dest.hitPoints ?? 0) > 0) {
           const { killed } = applyCombatHit(unit, dest, {
             bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),
+            isMelee: true,
             menu,
             player,
             xpCategory: XP_CATEGORIES.melee,
             xpUnit: unit,
           })
-          if (killed) {
-            this.finishMeleeAttackAfterCurrentLoop()
-          }
+          if (killed) this.finishAttackAfterCurrentLoop()
         }
       })
     }

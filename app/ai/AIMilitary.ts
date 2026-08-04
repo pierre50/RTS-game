@@ -105,7 +105,6 @@ export class AIMilitary {
     const meleeAttack = instance.meleeAttack ?? config.meleeAttack ?? 0
     const pierceAttack = instance.pierceAttack ?? config.pierceAttack ?? 0
     const range = instance.range ?? config.range ?? 0
-    const rateOfFire = instance.rateOfFire ?? config.rateOfFire ?? 1.5
     const speed = instance.speed ?? config.speed ?? 0
     const meleeArmor = instance.meleeArmor ?? config.meleeArmor ?? 0
     const pierceArmor = instance.pierceArmor ?? config.pierceArmor ?? 0
@@ -115,7 +114,6 @@ export class AIMilitary {
     power += (meleeAttack + pierceAttack * 1.2) * (1 + Math.min(range, 8) * 0.08)
     power *= 1 + (meleeArmor + pierceArmor) * 0.04
     power *= 1 + Math.min(speed, 1.6) * 0.12
-    power *= 1 + Math.max(0, 1.4 - rateOfFire) * 0.35
 
     if (range > 1) power *= 1.08
     if (instance.type === UNIT_TYPES.villager) power *= 0.35

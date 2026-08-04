@@ -9,6 +9,8 @@ import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAct
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
+import { isTalkableNpc } from '../lib/npcInteraction'
+import { pickNpcChatterLine } from '../lib/npcChatter'
 import type { AudibleInstanceLike, ControlPointerEvent, ControlsLike, GameContextLike } from '../types/context'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -245,7 +247,16 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   isInteractionBlocked(): boolean {
-    return Boolean(this.context.devConsoleOpen || this.context.paused || this.context.victory || this.context.defeat)
+    return Boolean(
+      this.context.devConsoleOpen ||
+        this.context.paused ||
+        this.context.victory ||
+        this.context.defeat ||
+        // The NPC communication panel no longer pauses the game (the rest of the world — other
+        // units, AI, resources — keeps running while chatting), so the hero's own input still
+        // needs to be blocked explicitly here instead of relying on the global pause flag.
+        this.context.menu?.isNpcOrdersOpen?.()
+    )
   }
 
   isInGameMenuOpen(): boolean {
@@ -293,14 +304,8 @@ export default class Controls extends Container implements ControlsLike {
       this.context.menu.closeInventory?.()
       return true
     }
-    if (this.isHeroControlActive() && this.context.menu?.isNpcOrdersOpen?.()) {
+    if (this.isHeroControlActive() && this.closeAnyHeroPanel()) {
       evt.preventDefault()
-      this.context.menu.closeNpcOrders?.()
-      return true
-    }
-    if (this.isHeroControlActive() && this.context.menu?.isHeroBuildingMenuOpen?.()) {
-      evt.preventDefault()
-      this.context.menu.closeHeroBuildingMenu?.()
       return true
     }
     return false
@@ -327,12 +332,6 @@ export default class Controls extends Container implements ControlsLike {
           this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
         }
       }
-      return
-    }
-
-    if (action === 'heroEntityInteraction' && this.isHeroControlActive()) {
-      evt.preventDefault()
-      this.openHeroEntityInteraction()
       return
     }
 
@@ -736,10 +735,16 @@ export default class Controls extends Container implements ControlsLike {
     return findFacingEntity(hero, target => target !== hero && instanceContactInstance(hero, target))
   }
 
-  openHeroEntityInteraction(target: RuntimeEntity | null = this.getFacingEntityTarget()): boolean {
-    if (!this.isHeroControlActive()) return false
+  // Closes whichever hero panel (npc orders / building menu / entity info) is currently open.
+  // Shared by the Escape handler, the merged interact key, and the gamepad's dedicated inspect
+  // button (which calls openHeroEntityInteraction directly, bypassing HeroController) so the
+  // three entry points can't drift out of sync on which panels they know to close.
+  closeAnyHeroPanel(): boolean {
     const menu = this.context.menu
-    // Pressing the same key again closes whichever of the two panels it opened.
+    if (menu?.isNpcOrdersOpen?.()) {
+      menu.closeNpcOrders?.()
+      return true
+    }
     if (menu?.isHeroBuildingMenuOpen?.()) {
       menu.closeHeroBuildingMenu?.()
       return true
@@ -748,6 +753,14 @@ export default class Controls extends Container implements ControlsLike {
       menu.closeEntityInfoModal?.()
       return true
     }
+    return false
+  }
+
+  openHeroEntityInteraction(target: RuntimeEntity | null = this.getFacingEntityTarget()): boolean {
+    if (!this.isHeroControlActive()) return false
+    const menu = this.context.menu
+    // Pressing the same key/button again closes whichever panel it opened.
+    if (this.closeAnyHeroPanel()) return true
     if (!target) return false
     const hero = this.heroUnit
     if (target === hero) return false
@@ -764,6 +777,12 @@ export default class Controls extends Container implements ControlsLike {
       if (building.owner === player) return false
     }
     if (!hero || !instanceContactInstance(hero, target)) return false
+    if (isTalkableNpc(hero, target)) {
+      // No order is possible here (non-chief hero, or the ally isn't commandable right now) —
+      // same orders panel as a single-target order, just with a chatter line and no buttons.
+      menu?.openNpcOrders?.([target as UnitEntity], { chatterLine: pickNpcChatterLine(), ordersEnabled: false })
+      return true
+    }
     return Boolean(menu?.openEntityInfoModal?.(target))
   }
 

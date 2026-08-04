@@ -2,6 +2,7 @@ import { LOADING_FOOD_TYPES } from '../constants'
 import { renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
+import { getHighestUnitLevel } from '../lib/unitExperience'
 import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
 
@@ -10,6 +11,7 @@ export class HeroStatusHud {
   element: HTMLDivElement
   avatarCanvas: HTMLCanvasElement
   title: HTMLDivElement
+  level: HTMLDivElement
   value: HTMLDivElement
   healthBar: HTMLDivElement
   energyBar: HTMLDivElement
@@ -50,6 +52,9 @@ export class HeroStatusHud {
     this.title = document.createElement('div')
     this.title.className = 'hero-status-title'
 
+    this.level = document.createElement('div')
+    this.level.className = 'hero-status-level'
+
     this.value = document.createElement('div')
     this.value.className = 'hero-status-value'
 
@@ -83,6 +88,7 @@ export class HeroStatusHud {
     this.carryValue.className = 'hero-status-carry-value'
 
     header.appendChild(this.title)
+    header.appendChild(this.level)
     header.appendChild(this.value)
     energyHeader.appendChild(energyTitle)
     energyHeader.appendChild(this.energyValue)
@@ -136,6 +142,7 @@ export class HeroStatusHud {
       rawTotalHitPoints > 0 ? Math.max(0, Math.min(1, (this.displayedHitPoints ?? targetHitPoints) / rawTotalHitPoints)) : 0
 
     this.title.textContent = hero.name || t(hero.type || 'heroStatusTitle')
+    this.level.textContent = `${t('levelShort')} ${getHighestUnitLevel(hero)}`
     this.value.textContent = `${current}/${max}`
     const healthPercent = `${(ratio * 100).toFixed(2)}%`
     this.healthBar.style.setProperty('--hero-health-percent', healthPercent)

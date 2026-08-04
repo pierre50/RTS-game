@@ -1,6 +1,8 @@
 import { MENU_INFO_IDS } from '../constants'
 import { getHitPointsWithDamage, type CombatEntity } from './combat'
-import { showDamageFeedback } from './combatFeedback'
+import { showDamageFeedback, showParryFeedback } from './combatFeedback'
+import { t } from './lang'
+import { attemptAutomaticParry } from './parry'
 import { grantUnitXp, XP_KILL_BONUS } from './unitExperience'
 import type { MenuLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -15,6 +17,7 @@ export type CombatHitOptions = {
   defaultDamage?: number
   grantKillXp?: boolean
   hitDirection?: Point
+  isMelee?: boolean
   menu?: MenuLike | null
   notifyTarget?: CombatHitNotifyMode
   player?: PlayerLike | null
@@ -44,6 +47,7 @@ export function applyCombatHit(
     defaultDamage,
     grantKillXp = true,
     hitDirection,
+    isMelee = false,
     menu,
     notifyTarget = 'always',
     player,
@@ -52,12 +56,17 @@ export function applyCombatHit(
   }: CombatHitOptions = {}
 ): CombatHitResult {
   const beforeHitPoints = target.hitPoints ?? 0
-  target.hitPoints = getHitPointsWithDamage(source, target, defaultDamage, bonusDamage)
+  const parried = isMelee && attemptAutomaticParry(target)
+  target.hitPoints = parried ? beforeHitPoints : getHitPointsWithDamage(source, target, defaultDamage, bonusDamage)
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
   const killed = (target.hitPoints ?? 0) <= 0
 
-  showDamageFeedback(target, damageDealt)
-  if (xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, damageDealt)
+  if (parried) {
+    showParryFeedback(target, t('heroDefenseMissed'))
+  } else {
+    showDamageFeedback(target, damageDealt)
+    if (xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, damageDealt)
+  }
   updateHitPointsDisplay(target, player, menu)
   if (notifyTarget === 'always' || (notifyTarget === 'survived' && !killed)) {
     target.isAttacked?.(attacker, hitDirection)

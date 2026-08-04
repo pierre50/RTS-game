@@ -112,7 +112,6 @@ export class AI extends Player {
   foundedStones!: Set<RuntimeEntity>
   foundedAnimals!: Set<RuntimeEntity>
   foundedDeadAnimals!: Set<RuntimeEntity>
-  foundedFish!: Set<RuntimeEntity>
   foundedEnemyBuildings!: Set<RuntimeEntity>
   foundedEnemyUnits!: Set<RuntimeEntity>
   enemyUnitMemory!: Map<string, EnemyMemory>
@@ -147,7 +146,6 @@ export class AI extends Player {
     this.foundedStones = new Set()
     this.foundedAnimals = new Set()
     this.foundedDeadAnimals = new Set()
-    this.foundedFish = new Set()
     this.foundedEnemyBuildings = new Set()
     this.foundedEnemyUnits = new Set()
     this.enemyUnitMemory = new Map()
@@ -722,9 +720,6 @@ export class AI extends Player {
     }
     for (const a of this.foundedDeadAnimals) {
       if (a.isDestroyed || (a.quantity ?? 0) <= 0) this.foundedDeadAnimals.delete(a)
-    }
-    for (const r of this.foundedFish) {
-      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedFish.delete(r)
     }
     for (const b of this.foundedEnemyBuildings) {
       if (b.isDead || b.isDestroyed || !this.isEnemy(b.owner)) this.foundedEnemyBuildings.delete(b)

@@ -26,7 +26,6 @@ import {
   FAMILY_TYPES,
   LABEL_TYPES,
   PLAYER_TYPES,
-  RESOURCE_TYPES,
   UNIT_TYPES,
   FLOOR_SETS_GRASS,
   FLOOR_SETS_DESERT,
@@ -39,7 +38,6 @@ import {
   WATER_SET_DEEP_LAND_MIN_DIST,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
-  FISH_SPAWN_CHANCE,
   getEnvironmentTerrainParams,
 } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
@@ -219,15 +217,16 @@ const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
   BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
   Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
   Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
+  Wolf: { weight: 0.6, groupChance: 0.4, groupSize: [1, 3], radius: 3 },
 }
 // Multipliers applied on top of the base weight above, per terrain biome (cell.type).
 // Biome patches can be smaller than a camp's ambient-spawn radius, so multipliers are kept
 // close to 1 (never below ~0.45) - a lean per biome, never a hard species cutoff at the border.
 const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
-  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75 },
-  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4 },
-  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15 },
-  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45 },
+  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Wolf: 0.7 },
+  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Wolf: 1.4 },
+  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Wolf: 1.1 },
+  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Wolf: 0.4 },
 }
 function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {
   const total = entries.reduce((sum, [, weight]) => sum + Math.max(weight, 0), 0)
@@ -392,7 +391,7 @@ export class MapGeneration {
 
   pickAmbientAnimalType(i: number, j: number): string {
     const animals = gameConfig().animals
-    const dangerousAnimalTypes = new Set(['Boar'])
+    const dangerousAnimalTypes = new Set(['Boar', 'Wolf'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
@@ -453,7 +452,7 @@ export class MapGeneration {
     }
   }
 
-  canSpawnShoreFishAt(i: number, j: number): boolean {
+  isShoreWaterCell(i: number, j: number): boolean {
     const cell = this.map.grid[i]?.[j]
     return Boolean(cell?.category === 'Water' && cell.type !== 'DeepWater' && this._hasLandNeighborInRange(i, j, 1))
   }
@@ -1516,7 +1515,6 @@ export class MapGeneration {
   }
 
   generateSets() {
-    const context = runtimeContext(this.map.context)
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -1568,12 +1566,13 @@ export class MapGeneration {
           if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
-          if (this.canSpawnShoreFishAt(i, j)) {
-            if (this.map.random() < FISH_SPAWN_CHANCE) {
-              this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.shoreFish }, context)))
-            } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
-              this._placeWaterSet(cell)
-            }
+          if (
+            this.isShoreWaterCell(i, j) &&
+            !cell.has &&
+            cell.type !== 'DeepWater' &&
+            this.map.random() < WATER_SET_CHANCE
+          ) {
+            this._placeWaterSet(cell)
           }
         }
       }
@@ -1581,7 +1580,6 @@ export class MapGeneration {
   }
 
   async generateSetsAsync() {
-    const context = runtimeContext(this.map.context)
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
@@ -1625,12 +1623,13 @@ export class MapGeneration {
         if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
-        if (this.canSpawnShoreFishAt(i, j)) {
-          if (this.map.random() < FISH_SPAWN_CHANCE) {
-            this.map.resources.add(this.map.addChild(new Resource({ i, j, type: RESOURCE_TYPES.shoreFish }, context)))
-          } else if (!cell.has && cell.type !== 'DeepWater' && this.map.random() < WATER_SET_CHANCE) {
-            this._placeWaterSet(cell)
-          }
+        if (
+          this.isShoreWaterCell(i, j) &&
+          !cell.has &&
+          cell.type !== 'DeepWater' &&
+          this.map.random() < WATER_SET_CHANCE
+        ) {
+          this._placeWaterSet(cell)
         }
       }
       const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 8

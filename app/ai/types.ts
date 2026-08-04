@@ -62,14 +62,12 @@ export type AIEntityLike = {
   meleeAttack?: number
   pierceAttack?: number
   range?: number
-  rateOfFire?: number
   speed?: number
   strategy?: string
   meleeArmor?: number
   pierceArmor?: number
   sendTo?(target: AIEntityLike | RuntimeEntity | RuntimeCell, action?: string): void
   sendToWithCell?(target: AIEntityLike | RuntimeEntity, cell: RuntimeCell, action?: string): boolean | void
-  sendToFish?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToTree?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToStone?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToGold?(target: AIEntityLike | RuntimeEntity): boolean | void
@@ -113,7 +111,6 @@ export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | und
   meleeAttack?: number
   pierceAttack?: number
   range?: number
-  rateOfFire?: number
   speed?: number
   meleeArmor?: number
   pierceArmor?: number
@@ -205,7 +202,6 @@ export type AIStrategyPlayerLike = {
   foundedStones: Set<RuntimeEntity>
   foundedEnemyBuildings: Set<RuntimeEntity>
   foundedEnemyUnits: Set<RuntimeEntity>
-  foundedFish: Set<RuntimeEntity>
   foundedAnimals: Set<RuntimeEntity>
   foundedDeadAnimals: Set<RuntimeEntity>
   foundedBerrybushs: Set<RuntimeEntity>
@@ -255,7 +251,7 @@ export type AIMilitaryActionOptions = {
   debug?: boolean
 }
 
-export type AIFoodSourceType = 'berry' | 'carcass' | 'farm' | 'fish' | 'hunt'
+export type AIFoodSourceType = 'berry' | 'carcass' | 'farm' | 'hunt'
 
 export type AIFoodWorkerCounts = Record<AIFoodSourceType, number>
 
@@ -264,15 +260,9 @@ export type AIFoodSources = {
   berries: AIEntityLike[]
   carcasses: AIEntityLike[]
   farms: AIEntityLike[]
-  fish: AIEntityLike[]
   meatDrops: AIBuildingLike[]
   plantDrops: AIBuildingLike[]
   workerPositions?: AIEntityLike[]
-}
-
-export type AIFoodTarget = {
-  fish: AIEntityLike
-  shoreCell: RuntimeCell
 }
 
 export type AIVillagerActionOptions = {
@@ -328,7 +318,6 @@ export type AIWorkerSnapshot = {
   villagersForaging: AIEntityLike[]
   villagersHunting: AIEntityLike[]
   villagersFarming: AIEntityLike[]
-  villagersFishing: AIEntityLike[]
   villagersOnFood: AIEntityLike[]
   villagersOnWood: AIEntityLike[]
   villagersOnGold: AIEntityLike[]

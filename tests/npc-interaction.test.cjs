@@ -81,6 +81,11 @@ const constants = {
   },
 }
 
+function angleDelta(a, b) {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
+}
+
 function loadNpcInteraction(target, overrides = {}) {
   return loadModule('app/lib/npcInteraction.ts', {
     '../constants': constants,
@@ -102,6 +107,7 @@ function loadNpcInteraction(target, overrides = {}) {
       findInstancesInSight: () => (target ? [target] : []),
     },
     './maths': {
+      angleDelta,
       getInstanceDegree: () => 0,
     },
     ...overrides,
@@ -589,6 +595,7 @@ function loadCommModule(instances, getInstanceDegree) {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
     './maths': {
+      angleDelta,
       getInstanceDegree,
     },
   })
@@ -729,6 +736,7 @@ function loadNpcFollowModule(instances) {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
     './maths': {
+      angleDelta,
       getInstanceDegree: () => 0,
       isometricToCartesian: () => [0, 0],
     },

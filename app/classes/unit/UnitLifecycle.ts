@@ -18,7 +18,6 @@ export class UnitLifecycle {
     const map = unit.context?.map
     clearDamageFeedback(unit)
     unit.setTextures?.(SHEET_TYPES.corpse)
-    if (unit.sailSprite) unit.sailSprite.visible = false
     const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     unit.syncShadow?.()
@@ -43,7 +42,6 @@ export class UnitLifecycle {
     sprite.onLoop = undefined
 
     unit.setTextures?.(SHEET_TYPES.dying)
-    if (unit.sailSprite) unit.sailSprite.visible = false
     unit.zIndex = (unit.zIndex ?? 0) - 1
     sprite.loop = false
     unit.syncShadow?.()

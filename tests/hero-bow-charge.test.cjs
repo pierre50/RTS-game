@@ -54,7 +54,6 @@ function loadHeroTools(overrides = {}) {
         build: 'build',
         chopwood: 'chopwood',
         delivery: 'delivery',
-        fishing: 'fishing',
         forageberry: 'forageberry',
         hunt: 'hunt',
         minegold: 'minegold',
@@ -67,7 +66,6 @@ function loadHeroTools(overrides = {}) {
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
       LOADING_TYPES: {
         berry: 'berry',
-        fish: 'fish',
         gold: 'gold',
         meat: 'meat',
         stone: 'stone',
@@ -80,11 +78,10 @@ function loadHeroTools(overrides = {}) {
         walking: 'walkingSheet',
       },
       SOUND_CUES: { hero: { meleeWhiff: 'meleeWhiff' } },
-      WORK_FOOD_TYPES: ['fisher', 'hunter', 'farmer', 'forager'],
+      WORK_FOOD_TYPES: ['hunter', 'farmer', 'forager'],
       WORK_TYPES: {
         attacker: 'attacker',
         builder: 'builder',
-        fisher: 'fisher',
         hunter: 'hunter',
         goldminer: 'goldminer',
         stoneminer: 'stoneminer',
@@ -93,7 +90,7 @@ function loadHeroTools(overrides = {}) {
     },
     './heroActionRange': {
       isHeroActionInRange: (_hero, action, target) => {
-        if (action !== 'fishing' && action !== 'takemeat') return false
+        if (action !== 'takemeat') return false
         return Math.hypot(target.i, target.j) <= 2.5
       },
     },
@@ -102,7 +99,6 @@ function loadHeroTools(overrides = {}) {
       getWorkWithLoadingType: loadingType =>
         ({
           berry: 'forager',
-          fish: 'fisher',
           gold: 'goldminer',
           meat: 'hunter',
           stone: 'stoneminer',
@@ -140,6 +136,10 @@ function loadHeroTools(overrides = {}) {
       },
     },
     './maths': {
+      angleDelta: (a, b) => {
+        const diff = Math.abs(a - b) % 360
+        return diff > 180 ? 360 - diff : diff
+      },
       degreeToDirection: degree => (degree < 180 ? 'north' : 'south'),
       getInstanceDegree: (_hero, x) => x,
       getReliefOffset: () => 0,
@@ -153,7 +153,6 @@ function loadHeroTools(overrides = {}) {
           attack: 2,
           chopwood: 1,
           minestone: 1,
-          fishing: 1,
           takemeat: 1,
           heroBowCharge: 2,
           heroDefense: 2,
@@ -169,7 +168,6 @@ function loadHeroTools(overrides = {}) {
           attack: 2,
           chopwood: 1,
           minestone: 1,
-          fishing: 1,
           takemeat: 1,
           heroBowCharge: 2,
           heroDefense: 2,
@@ -640,10 +638,10 @@ test('bow release drains energy up to the mouse-up instant', () => {
 })
 
 test('hero resource tools get a small hero contact forgiveness band', () => {
-  const fish = {
-    category: 'Fish',
-    family: 'resource',
+  const carcass = {
+    family: 'animal',
     i: 2.4,
+    isDead: true,
     isDestroyed: false,
     j: 0,
     quantity: 100,
@@ -653,7 +651,7 @@ test('hero resource tools get a small hero contact forgiveness band', () => {
   const calls = []
   const { triggerToolAction } = loadHeroTools({
     './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [fish].filter(predicate) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
     './grid/queries': {
       getClosestInstanceWithPath: (_hero, candidates) =>
         candidates.length ? { instance: candidates[0], path: [] } : null,
@@ -670,16 +668,16 @@ test('hero resource tools get a small hero contact forgiveness band', () => {
 
   assert.equal(triggerToolAction(hero, 'interact'), true)
   assert.deepEqual(calls, [
-    ['setDest', fish],
-    ['getAction', 'fishing'],
+    ['setDest', carcass],
+    ['getAction', 'takemeat'],
   ])
 })
 
-test('full hero inventory blocks fishing without playing a whiff animation', () => {
-  const fish = {
-    category: 'Fish',
-    family: 'resource',
+test('full hero inventory blocks gathering without playing a whiff animation', () => {
+  const carcass = {
+    family: 'animal',
     i: 1,
+    isDead: true,
     isDestroyed: false,
     j: 0,
     quantity: 100,
@@ -689,7 +687,7 @@ test('full hero inventory blocks fishing without playing a whiff animation', () 
   const messages = []
   const { triggerToolAttackAt } = loadHeroTools({
     './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [fish].filter(predicate) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -700,8 +698,8 @@ test('full hero inventory blocks fishing without playing a whiff animation', () 
     i: 0,
     j: 0,
     loading: 10,
-    loadingMax: { fish: 10 },
-    loadingType: 'fish',
+    loadingMax: { meat: 10 },
+    loadingType: 'meat',
     isUnitAtDest: () => true,
     getAction: action => {
       hero.startedAction = action
@@ -740,7 +738,7 @@ test('free-hand interact does not whiff when aiming at a delivery building out o
     i: 0,
     j: 0,
     loading: 10,
-    loadingType: 'fish',
+    loadingType: 'berry',
     isUnitAtDest: () => false,
     getAction: action => {
       hero.startedAction = action
@@ -775,7 +773,6 @@ test('civil tools are no longer equipped combat weapons', () => {
 
   assert.equal(triggerToolAttackAt(hero, 'pickaxe', { x: 10, y: 0 }), false)
   assert.equal(triggerToolAttackAt(hero, 'hammer', { x: 10, y: 0 }), false)
-  assert.equal(triggerToolAttackAt(hero, 'fishingRod', { x: 10, y: 0 }), false)
   assert.equal(enemy.hitPoints, 10)
   assert.equal(hero.actionLocked, false)
 })

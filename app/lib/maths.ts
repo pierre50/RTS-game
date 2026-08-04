@@ -316,6 +316,11 @@ export function cellIsDiag(src: GridPosition, target: GridPosition): boolean {
   return Math.abs(target.i - src.i) === Math.abs(target.j - src.j)
 }
 
+export function angleDelta(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
+}
+
 export function degreeToDirection(degree: number): Direction | undefined {
   if (degree > 67.5 && degree < 112.5) {
     return 'north'

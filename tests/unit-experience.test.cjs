@@ -27,7 +27,6 @@ const constants = {
   },
   LOADING_TYPES: {
     berry: 'berry',
-    fish: 'fish',
     gold: 'gold',
     meat: 'meat',
     stone: 'stone',
@@ -38,7 +37,6 @@ const constants = {
     attacker: 'attacker',
     builder: 'builder',
     farmer: 'farmer',
-    fisher: 'fisher',
     forager: 'forager',
     goldminer: 'goldminer',
     healer: 'healer',
@@ -199,7 +197,6 @@ test('loading types and works map to the expected xp categories', () => {
 
   assert.deepEqual(LOADING_XP_CATEGORY, {
     berry: XP_CATEGORIES.farming,
-    fish: XP_CATEGORIES.fishing,
     gold: XP_CATEGORIES.mining,
     meat: XP_CATEGORIES.hunting,
     stone: XP_CATEGORIES.mining,
@@ -235,11 +232,11 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       Assets: { cache: { get: () => ({}) } },
     },
     '../../constants': {
-      ACTION_TYPES: { fishing: 'fishing' },
+      ACTION_TYPES: { forageberry: 'forageberry' },
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
-      LOADING_FOOD_TYPES: ['fish'],
-      LOADING_TYPES: { fish: 'fish' },
+      LOADING_FOOD_TYPES: ['berry'],
+      LOADING_TYPES: { berry: 'berry' },
       MENU_INFO_IDS: { quantityText: 'quantityText' },
       SHEET_TYPES: { action: 'actionSheet' },
       SOUND_CUES: { villager: {} },
@@ -253,12 +250,11 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       playSoundCue: () => {},
       playerCanSeeInstance: () => false,
       showResourceGainFeedback: () => {},
-      THRUST_RELEASE_FRAME: 9,
       SLASH_IMPACT_FRAME: 3,
       SHOOT_RELEASE_FRAME: 5,
     },
     '../../lib/unitExperience': {
-      LOADING_XP_CATEGORY: { fish: 'fishing' },
+      LOADING_XP_CATEGORY: { berry: 'farming' },
       XP_BUILD_TICK: 2,
       XP_CATEGORIES: {},
       XP_CONVERT_SUCCESS: 30,
@@ -272,6 +268,8 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       isHeroControlled: () => false,
       isManualHeroActionReleased: () => false,
     },
+    '../../lib/lang': { t: key => key },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
     '../../lib/buildings/towers': {
@@ -280,17 +278,16 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     },
   })
 
-  const fish = { quantity: 10, selected: false }
+  const berryBush = { quantity: 10, selected: false }
   const unit = {
     category: 'Villager',
-    action: 'fishing',
-    work: 'fisher',
+    action: 'forageberry',
+    work: 'forager',
     loading: 0,
     loadingType: null,
-    loadingMax: { fish: 10 },
-    gatherAmount: { fisher: 1 },
-    silentWorkSounds: ['fishing'],
-    dest: fish,
+    loadingMax: { berry: 10 },
+    gatherAmount: { forager: 1 },
+    dest: berryBush,
     sprite: {},
     context: { controls: { instanceIsAudible: () => false }, menu: { updateInfo: () => {} }, player: {}, map: {} },
     getActionCondition: () => true,
@@ -300,10 +297,10 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     sendToDelivery: () => {},
   }
 
-  new UnitActions(unit).getAction('fishing')
+  new UnitActions(unit).getAction('forageberry')
 
-  // base gatherAmount 1 + xp bonus 2 = 3 fish per swing, all granted as xp
+  // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
   assert.equal(unit.loading, 3)
-  assert.equal(fish.quantity, 7)
-  assert.deepEqual(xpCalls, [{ category: 'fishing', amount: 3 }])
+  assert.equal(berryBush.quantity, 7)
+  assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
 })

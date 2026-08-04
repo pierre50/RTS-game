@@ -41,10 +41,6 @@ export class ResourceInterface {
           break
       }
 
-      if (resource.category === 'Fish') {
-        iconToUse = menu.infoIcons?.['food']
-      }
-
       appendQuantityInfo(element, iconToUse!, resource.quantity)
     }
   }

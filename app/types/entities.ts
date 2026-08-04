@@ -25,8 +25,14 @@ export type UnitCreationExtra = {
 }
 export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
 
+export type EntityInfoRenderOptions = {
+  // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
+  // at level 0; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
+  showAllXp?: boolean
+}
+
 export interface EntityInterfaceLike {
-  info?: (element: HTMLElement) => void
+  info?: (element: HTMLElement, options?: EntityInfoRenderOptions) => void
   menu?: MenuButtonSpec[]
 }
 
@@ -188,6 +194,8 @@ export interface UnitEntity extends RuntimeEntityBase {
   heroDefenseReverseTaskId?: number | null
   heroDefenseReleaseFallbackTaskId?: number | null
   showHeroDefenseFlash?: () => void
+  lastParrySuccessAt?: number
+  parryStreak?: number
   contextAction?: HeroContextAction | null
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
@@ -199,10 +207,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   dyingSheet?: SpritesheetLike | null
   loop?: boolean
   eventMode?: string
-  sailSheet?: string
-  sailSpritesheet?: SpritesheetLike
-  sailSprite?: AnimatedSprite | null
-  sailAnimationSpeed?: number
   showLoading?: boolean
   showBuildings?: boolean
 
@@ -212,7 +216,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   meleeArmor?: number
   pierceArmor?: number
   range?: number
-  rateOfFire?: number
   projectile?: string
   healing?: number
   healthRegenRate?: number
@@ -241,7 +244,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   toolLevels?: Partial<Record<HeroCivilTool, number>>
   assets?: Record<string, string>
   allAssets?: Record<string, Record<string, string>>
-  silentWorkSounds?: string[]
 
   // Identity
   isChief?: boolean
@@ -257,7 +259,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   // Delegate methods called across the 5 composition classes
   unitCombat?: {
     handleAttackAction: () => void
-    playSingleAttackAnimation: (onFire: () => void, releaseFrame?: number | null) => void
   }
   stop?: () => void
   setDest?: (dest: RuntimeEntity | RuntimeCell | null) => void
@@ -280,7 +281,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
   sendToDelivery?: () => void
-  sendToFish?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToAttack(target: RuntimeEntity): void
   sendToConvert(target: RuntimeEntity): void
   sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void

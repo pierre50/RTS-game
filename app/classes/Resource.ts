@@ -387,12 +387,7 @@ export class Resource extends Instance implements ResourceEntity {
     }
   }
 
-  shouldShowShadow(): boolean {
-    return this.category !== 'Fish'
-  }
-
   createShadow(): ResourceShadow | null {
-    if (!this.shouldShowShadow()) return null
     const shadow =
       this.sprite instanceof AnimatedSprite
         ? new AnimatedSprite(this.sprite.textures as Texture[])
@@ -411,7 +406,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   syncShadow(shadow = this.shadow): void {
-    if (!shadow || !this.sprite || !this.shouldShowShadow()) return
+    if (!shadow || !this.sprite) return
     shadow.visible = getShadowsEnabled()
     if (this.sprite instanceof AnimatedSprite && shadow instanceof AnimatedSprite) {
       const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
@@ -436,7 +431,7 @@ export class Resource extends Instance implements ResourceEntity {
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled() && this.shouldShowShadow()
+      this.shadow.visible = getShadowsEnabled()
     }
     if (getResourceWindAnimationEnabled()) {
       this.startWindMotion()

@@ -28,7 +28,6 @@ const constants = {
     minegold: 'minegold',
     build: 'build',
     farm: 'farm',
-    fishing: 'fishing',
   },
   BUILDING_TYPES: {
     farm: 'Farm',
@@ -40,7 +39,6 @@ const constants = {
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
     gold: 'Gold',
-    shoreFish: 'ShoreFish',
     stone: 'Stone',
     tree: 'Tree',
   },
@@ -50,7 +48,6 @@ const constants = {
   WORK_TYPES: {
     builder: 'builder',
     farmer: 'farmer',
-    fisher: 'fisher',
     forager: 'forager',
     goldminer: 'goldminer',
     stoneminer: 'stoneminer',
@@ -59,37 +56,9 @@ const constants = {
   },
 }
 
-function createGrid(size, waterCells = []) {
-  const water = new Set(waterCells.map(([i, j]) => `${i}:${j}`))
-  return Array.from({ length: size }, (_, i) =>
-    Array.from({ length: size }, (_, j) => ({
-      border: false,
-      category: water.has(`${i}:${j}`) ? 'Water' : 'Grass',
-      i,
-      j,
-      solid: false,
-    }))
-  )
-}
-
-function loadVillagerAutonomy(pathExists = true) {
+function loadVillagerAutonomy() {
   return loadModule('app/lib/villagerAutonomy.ts', {
     '../constants': constants,
-    './grid': {
-      getCellsAroundPoint: (i, j, grid, distance, callback) => {
-        const result = []
-        for (let x = i - distance; x <= i + distance; x++) {
-          for (let y = j - distance; y <= j + distance; y++) {
-            const cell = grid[x]?.[y]
-            if (cell && Math.abs(i - x) + Math.abs(j - y) <= distance && (!callback || callback(cell))) {
-              result.push(cell)
-            }
-          }
-        }
-        return result
-      },
-      getInstancePath: (_unit, i, j) => (pathExists && i === 1 && j === 2 ? [{ i, j }] : []),
-    },
   })
 }
 
@@ -97,7 +66,6 @@ function createOwner(extra = {}) {
   return {
     buildings: [],
     foundedBerrybushs: new Set(),
-    foundedFish: new Set(),
     units: [],
     views: { isViewed: () => true },
     ...extra,
@@ -107,7 +75,6 @@ function createOwner(extra = {}) {
 function createVillager(owner, extra = {}) {
   const villager = {
     autonomousJob: null,
-    context: { map: { grid: createGrid(5, [[2, 2]]) } },
     dest: null,
     i: 0,
     isDead: false,
@@ -126,11 +93,6 @@ function createVillager(owner, extra = {}) {
       this.work = constants.WORK_TYPES.farmer
       this.action = constants.ACTION_TYPES.farm
     },
-    sendToFish(target) {
-      this.dest = target
-      this.work = constants.WORK_TYPES.fisher
-      this.action = constants.ACTION_TYPES.fishing
-    },
     sendToBuilding(target) {
       this.dest = target
       this.work = constants.WORK_TYPES.builder
@@ -141,66 +103,6 @@ function createVillager(owner, extra = {}) {
   owner.units.push(villager)
   return villager
 }
-
-test('food autonomy sends only one villager to a shore fish', () => {
-  const { assignVillagerAutonomy } = loadVillagerAutonomy()
-  const fish = {
-    category: 'Fish',
-    family: constants.FAMILY_TYPES.resource,
-    i: 2,
-    isDestroyed: false,
-    j: 2,
-    label: 'fish-1',
-    quantity: 250,
-    type: 'Fish',
-  }
-  const berry = {
-    family: constants.FAMILY_TYPES.resource,
-    i: 4,
-    isDestroyed: false,
-    j: 4,
-    label: 'berry-1',
-    quantity: 250,
-    type: constants.RESOURCE_TYPES.berrybush,
-  }
-  const owner = createOwner({ foundedBerrybushs: new Set([berry]), foundedFish: new Set([fish]) })
-  const first = createVillager(owner)
-  const second = createVillager(owner)
-
-  assert.equal(assignVillagerAutonomy(first, 'food'), true)
-  assert.equal(assignVillagerAutonomy(second, 'food'), true)
-
-  assert.equal(first.dest, fish)
-  assert.equal(second.dest, berry)
-})
-
-test('food autonomy ignores fish with no reachable shore cell', () => {
-  const { assignVillagerAutonomy } = loadVillagerAutonomy(false)
-  const fish = {
-    category: 'Fish',
-    family: constants.FAMILY_TYPES.resource,
-    i: 2,
-    isDestroyed: false,
-    j: 2,
-    label: 'fish-1',
-    quantity: 250,
-    type: 'Fish',
-  }
-  const berry = {
-    family: constants.FAMILY_TYPES.resource,
-    i: 4,
-    isDestroyed: false,
-    j: 4,
-    label: 'berry-1',
-    quantity: 250,
-    type: constants.RESOURCE_TYPES.berrybush,
-  }
-  const owner = createOwner({ foundedBerrybushs: new Set([berry]), foundedFish: new Set([fish]) })
-  const villager = createVillager(owner)
-
-  assert.equal(assignVillagerAutonomy(villager, 'food'), true)
-  assert.equal(villager.dest, berry)
-})
 
 test('food autonomy treats a farm with an incoming farmer as occupied', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()

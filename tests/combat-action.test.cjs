@@ -254,6 +254,112 @@ test('hero defense blocks animal attack damage too', () => {
   assert.deepEqual(flashes, ['flash'])
 })
 
+function realAngleDelta(a, b) {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
+}
+
+function realGetPointsDegree(x1, y1, x2, y2) {
+  const tX = x2 - x1
+  const tY = y2 - y1
+  return Math.round((Math.atan2(tY, tX) * 180) / Math.PI + 180)
+}
+
+const mathsMock = { angleDelta: realAngleDelta, getPointsDegree: realGetPointsDegree }
+
+test('hero defense still blocks a hit landing in front of the hero', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './maths': mathsMock,
+  })
+  const flashes = []
+  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: 10, y: 0 }
+  const defendingHero = {
+    degree: 180,
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 0,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+    x: 0,
+    y: 0,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, defendingHero), 20)
+  assert.deepEqual(flashes, ['flash'])
+})
+
+test('hero defense still blocks a hit landing exactly at the edge of the frontal arc (side hit)', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './maths': mathsMock,
+  })
+  const flashes = []
+  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: 0, y: 10 }
+  const defendingHero = {
+    degree: 180,
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 0,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+    x: 0,
+    y: 0,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, defendingHero), 20)
+  assert.deepEqual(flashes, ['flash'])
+})
+
+test('hero defense does not block a hit landing behind the hero, even while active', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './maths': mathsMock,
+  })
+  const flashes = []
+  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: -10, y: 0 }
+  const defendingHero = {
+    degree: 180,
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 0,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+    x: 0,
+    y: 0,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, defendingHero), 12)
+  assert.deepEqual(flashes, [])
+})
+
+test('hero defense with no position data on either side fails open (still blocks)', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './maths': mathsMock,
+  })
+  const flashes = []
+  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman' }
+  const defendingHero = {
+    family: constants.FAMILY_TYPES.unit,
+    heroDefenseActive: true,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 0,
+    owner: { label: 'enemy' },
+    showHeroDefenseFlash: () => flashes.push('flash'),
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, defendingHero), 20)
+  assert.deepEqual(flashes, ['flash'])
+})
+
 test('hero-controlled units do not use unit auto-detection attacks', () => {
   const calls = []
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {

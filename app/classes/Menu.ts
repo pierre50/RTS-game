@@ -14,7 +14,7 @@ import { ActionSpecFactory } from '../ui/ActionSpecFactory'
 import { resetHeroCursor } from '../lib/heroCursor'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
-import type { GameContextLike, MenuLike } from '../types/context'
+import type { GameContextLike, MenuLike, NpcOrdersOpenOptions } from '../types/context'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MinimapPlayerCanvas, MenuButtonSpec } from '../types/ui'
@@ -291,8 +291,8 @@ export default class Menu implements MenuLike {
   toggleNpcOrders(npcs: UnitEntity[]): void {
     return this.npcOrdersManager.toggle(npcs)
   }
-  openNpcOrders(npcs: UnitEntity[]): void {
-    return this.npcOrdersManager.open(npcs)
+  openNpcOrders(npcs: UnitEntity[], options?: NpcOrdersOpenOptions): void {
+    return this.npcOrdersManager.open(npcs, options)
   }
   isNpcOrdersOpen(): boolean {
     return this.npcOrdersManager.isOpen()

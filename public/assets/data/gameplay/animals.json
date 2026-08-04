@@ -8,7 +8,6 @@
     "ambientWalkDelayMin": 7000,
     "ambientWalkDelayMax": 14000,
     "ambientWalkRange": 2,
-    "icon": "037_50730",
     "totalQuantity": 150,
     "spriteScale": 0.9,
     "assets": {
@@ -39,7 +38,6 @@
     "ambientWalkDelayMin": 2500,
     "ambientWalkDelayMax": 6500,
     "ambientWalkRange": 3,
-    "icon": "000_50733",
     "totalQuantity": 40,
     "spriteScale": 0.8,
     "assets": {
@@ -70,7 +68,6 @@
     "ambientWalkDelayMin": 5000,
     "ambientWalkDelayMax": 12000,
     "ambientWalkRange": 2,
-    "icon": "039_50730",
     "totalQuantity": 30,
     "spriteScale": 0.8,
     "assets": {
@@ -101,7 +98,6 @@
     "ambientWalkDelayMin": 5000,
     "ambientWalkDelayMax": 10000,
     "ambientWalkRange": 3,
-    "icon": "040_50730",
     "totalQuantity": 50,
     "spriteScale": 0.8,
     "assets": {
@@ -133,8 +129,6 @@
     "ambientWalkDelayMin": 9000,
     "ambientWalkDelayMax": 18000,
     "ambientWalkRange": 1,
-    "icon": "042_50730",
-    "rateOfFire": 1,
     "totalQuantity": 80,
     "spriteScale": 0.8,
     "assets": {
@@ -150,6 +144,37 @@
       "actionSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
+      "dyingSheet": 1,
+      "corpseSheet": 1
+    },
+    "sounds": {
+      "fall": "elephant-alligator-killed",
+      "hit": "target-hit-2"
+    }
+  },
+  "Wolf": {
+    "totalHitPoints": 24,
+    "sight": 9,
+    "speed": 1.25,
+    "meleeAttack": 4,
+    "strategy": "attack",
+    "ambientMovement": true,
+    "ambientWalkDelayMin": 6000,
+    "ambientWalkDelayMax": 14000,
+    "ambientWalkRange": 2,
+    "totalQuantity": 60,
+    "spriteScale": 0.7,
+    "assets": {
+      "standingSheet": "animals/wolf/standing",
+      "actionSheet": "animals/wolf/action",
+      "walkingSheet": "animals/wolf/walking",
+      "dyingSheet": "animals/wolf/dying",
+      "corpseSheet": "animals/wolf/corpse"
+    },
+    "sheetDirectionCounts": {
+      "standingSheet": 3,
+      "actionSheet": 3,
+      "walkingSheet": 3,
       "dyingSheet": 1,
       "corpseSheet": 1
     },

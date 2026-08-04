@@ -1,5 +1,13 @@
 type SeedValue = string | number
 
+export function pickRandomItem<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]
+}
+
+export function chance(probability: number): boolean {
+  return Math.random() < probability
+}
+
 function hashSeed(value: SeedValue): number {
   const text = String(value)
   let hash = 2166136261

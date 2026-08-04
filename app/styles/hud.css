@@ -112,10 +112,18 @@
 }
 
 .hero-status-title {
+  flex: 1 1 auto;
   overflow: hidden;
   color: var(--main-text-color);
   font-weight: 700;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-status-level {
+  flex: none;
+  color: var(--main-accent-color);
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -207,14 +215,13 @@
   background: var(--surface-black-solid);
 }
 
-.selection-info .icon {
-  width: var(--ui-slot-size);
-  height: var(--ui-slot-size);
-  object-fit: none;
-}
-
 .selection-info .name {
   color: var(--main-accent-color);
+  font-weight: bold;
+}
+
+.selection-info .unit-level {
+  color: var(--main-accent-hover);
   font-weight: bold;
 }
 
@@ -462,6 +469,41 @@
   overflow: hidden;
 }
 
+.action-menu-info-page {
+  display: flex;
+  justify-content: center;
+}
+
+.action-menu-info-page .entity-info-wrapper {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* The character-sheet view always lists all 9 XP categories (see EntityInfoRenderOptions.showAllXp),
+   so unlike the compact side-HUD/modal/NPC-orders views it can't fit that list into the absolute-positioned
+   corner reserved for a couple of earned-only rows — lay both blocks out in normal flow instead. */
+.action-menu-info-page .infos,
+.action-menu-info-page .unit-xp {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+.action-menu-info-page .infos {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-10);
+  margin-top: var(--ui-gap-8);
+}
+
+.action-menu-info-page .unit-xp {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px var(--ui-gap-10);
+  margin-top: var(--ui-gap-8);
+  font-size: var(--font-size-sm);
+}
+
 .action-menu-minimap-page .minimap-wrap {
   width: min(640px, calc(100vw - 96px));
   height: auto;
@@ -472,8 +514,10 @@
 
 .inventory-slot {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: var(--ui-gap-5);
   min-width: 64px;
   min-height: var(--ui-slot-size);
   padding: 4px 10px;
@@ -486,6 +530,15 @@
   transition:
     border-color var(--ui-transition-panel),
     background-color var(--ui-transition-panel);
+}
+
+.inventory-slot-icon {
+  width: 64px;
+  height: 64px;
+}
+
+.inventory-slot-label {
+  white-space: nowrap;
 }
 
 .inventory-slot:focus-visible {
@@ -567,6 +620,56 @@
   padding: 16px;
 }
 
+.npc-orders-panel-with-info {
+  width: min(360px, calc(100vw - 24px));
+}
+
+.npc-orders-panel-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.npc-orders-info:not(:empty) {
+  margin-bottom: var(--ui-gap-10);
+}
+
+/* Same always-show-all-categories view as the hero's Infos tab (see .action-menu-info-page),
+   but the npc-orders panel is narrower (360px vs 480px) so the XP list stays single-column
+   instead of two. */
+.npc-orders-info .infos,
+.npc-orders-info .unit-xp {
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+.npc-orders-info .infos {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-10);
+  margin-top: var(--ui-gap-8);
+}
+
+.npc-orders-info .unit-xp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--ui-gap-8);
+  font-size: var(--font-size-sm);
+}
+
+.npc-orders-chatter:not(:empty) {
+  margin-bottom: var(--ui-gap-10);
+}
+
+.npc-orders-chatter-line {
+  margin: 0;
+  color: var(--main-text-color);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .npc-orders-options {
   display: flex;
   flex-direction: column;
@@ -574,7 +677,6 @@
 }
 
 .npc-orders-option {
-  min-height: var(--ui-slot-size);
   width: 100%;
 }
 

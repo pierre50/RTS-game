@@ -432,7 +432,7 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
       `Power ${militaryPower}/${desiredPower} | Attack ${cooldownLeft > 0 ? `${cooldownLeft}s` : 'ready'} | Threshold ${ai.difficultyConfig.attackThreshold}`
     )
     lines.push(
-      `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees?.size ?? 0} berries:${ai.foundedBerrybushs?.size ?? 0} hunt:${ai.foundedAnimals?.size ?? 0} fish:${ai.foundedFish?.size ?? 0} gold:${ai.foundedGolds?.size ?? 0} stone:${ai.foundedStones?.size ?? 0}`
+      `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees?.size ?? 0} berries:${ai.foundedBerrybushs?.size ?? 0} hunt:${ai.foundedAnimals?.size ?? 0} gold:${ai.foundedGolds?.size ?? 0} stone:${ai.foundedStones?.size ?? 0}`
     )
     lines.push(`Threats ${threats.length}${threats.length ? ` | ${threats.map(t => t.target.type).join(', ')}` : ''}`)
     lines.push('')

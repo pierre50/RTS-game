@@ -200,23 +200,19 @@ def villager_build_tasks() -> list[BuildTask]:
         ("body/dying", SHEET_BY_KEY["dying"], "hurt"),
         ("body/corpse", SHEET_BY_KEY["corpse"], "hurt"),
         ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
-        ("action/thrust", SHEET_BY_ANIMATION["thrust"], "thrust"),
         ("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
     ]
 
 
-# Same body-pose layout as the villager, plus the action poses the hero can
-# still use. Thrust stays for fishing/tool work, not for thrust weapons.
+# Same body-pose layout as the villager, plus the action poses the hero can still use.
 def hero_build_tasks() -> list[BuildTask]:
     return [
         ("body/walking", SHEET_BY_KEY["walking"], "walk"),
         ("body/dying", SHEET_BY_KEY["dying"], "hurt"),
         ("body/corpse", SHEET_BY_KEY["corpse"], "hurt"),
         ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
-        ("action/thrust", SHEET_BY_ANIMATION["thrust"], "thrust"),
         ("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
         ("action/riding/slash", SHEET_BY_ANIMATION["slash"], "slash"),
-        ("action/riding/thrust", SHEET_BY_ANIMATION["thrust"], "thrust"),
         ("action/riding/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
     ]
 

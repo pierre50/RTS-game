@@ -9,13 +9,10 @@ export const MENU_INFO_IDS = {
   name: 'name',
   type: 'type',
   civ: 'civ',
-  icon: 'icon',
 }
 
 export const LABEL_TYPES = {
   sprite: 'sprite',
-  sail: 'sail',
-  fishingNet: 'fishingNet',
   color: 'color',
   shadow: 'shadow',
   deco: 'deco',

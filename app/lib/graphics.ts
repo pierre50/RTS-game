@@ -37,19 +37,4 @@ export function onSpriteLoopAtFrame(sprite: FrameChangeSprite, frame: number, cb
 // connects/releases, found by inspecting the source equipment-overlay
 // spritesheets frame-by-frame for when the weapon/arrow is at full extension.
 export const SLASH_IMPACT_FRAME = 1
-export const THRUST_RELEASE_FRAME = 3
 export const SHOOT_RELEASE_FRAME = 5
-
-type RateSyncedSprite = {
-  textures: unknown[]
-  animationSpeed: number
-}
-
-// Sets the sprite's playback speed so its current (already direction-sliced)
-// animation loop takes exactly `1 / ratePerSecond` seconds — i.e. the visual
-// swing/draw/gather cycle IS the gameplay tick, instead of a second timer
-// running alongside an animation with an unrelated, fixed playback speed.
-export function syncAnimationSpeedToRate(sprite: RateSyncedSprite, ratePerSecond: number): void {
-  const framesPerLoop = sprite.textures.length || 1
-  sprite.animationSpeed = (framesPerLoop * Math.max(ratePerSecond, 0.001)) / 60
-}

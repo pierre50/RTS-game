@@ -6,6 +6,7 @@ import { recolorCanvasPixels, SOURCE_COLORS, UNIT_SOURCE_COLORS } from './graphi
 import { getTexture } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import type { Application, Sprite } from 'pixi.js'
+import type { DynamicEquipmentKey } from './lpc/equipment'
 import type { AnimalEntity, RuntimeEntityBase, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { SpritesheetLike } from '../types/pixi'
@@ -226,4 +227,72 @@ export function renderResourceAvatar(app: Application, resource: ResourcePortrai
 
   const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, texture.height)
   return extractSquareAvatar(app, texture, scanRect, canvas, '', [])
+}
+
+// Equipment is baked as two standalone overlay layers (back/front, composited
+// on either side of the body silhouette) rather than a single sprite — a bow
+// held at rest, for instance, is fully transparent on both layers, only
+// appearing once "action" (its draw/shoot pose) is played. So each sheet is
+// tried in turn and the first with enough opaque pixels wins, rather than
+// assuming 'walking' always has visible art the way unit/building sheets do.
+const EQUIPMENT_LAYERS = ['back', 'front'] as const
+const EQUIPMENT_SHEETS = ['walking', 'action'] as const
+const MIN_EQUIPMENT_OPAQUE_PIXELS = 30
+
+function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
+  const sheetData = Assets.cache.get(`lpc-equipment/${equipment}/${layer}/${sheet}`) as SpritesheetLike | undefined
+  if (!sheetData?.textures) return null
+
+  const frames = getAnimationFrames(sheetData.textures, 'south', 3, null) as Texture[]
+  return frames[0] ?? null
+}
+
+function countOpaquePixels(pixels: Uint8ClampedArray): number {
+  let count = 0
+  for (let i = 3; i < pixels.length; i += 4) {
+    if (pixels[i] > ALPHA_THRESHOLD) count++
+  }
+  return count
+}
+
+// Renders the weapon/tool an inventory slot equips into `canvas` — composites
+// its back+front layers (both drawn at once; some equipment splits its shape
+// across both, e.g. a halberd's shaft going behind the arm), then crops
+// tightly to whatever's actually drawn.
+export function renderEquipmentAvatar(app: Application, equipment: DynamicEquipmentKey, canvas: HTMLCanvasElement): boolean {
+  for (const sheet of EQUIPMENT_SHEETS) {
+    const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(equipment, layer, sheet)).filter(
+      (texture): texture is Texture => Boolean(texture)
+    )
+    if (!layerTextures.length) continue
+
+    const size = layerTextures[0]
+    const composed = document.createElement('canvas')
+    composed.width = size.width
+    composed.height = size.height
+    const ctx = composed.getContext('2d')
+    if (!ctx) continue
+    ctx.imageSmoothingEnabled = false
+    for (const texture of layerTextures) {
+      ctx.drawImage(app.renderer.extract.canvas(texture) as unknown as CanvasImageSource, 0, 0)
+    }
+
+    const imageData = ctx.getImageData(0, 0, composed.width, composed.height)
+    if (countOpaquePixels(imageData.data) < MIN_EQUIPMENT_OPAQUE_PIXELS) continue
+
+    const square = findOpaqueSquare(imageData.data, composed.width, composed.height)
+    if (!square) continue
+    square.width = Math.min(square.width, composed.width, composed.height)
+    square.height = square.width
+    square.x = Math.max(0, Math.min(square.x, composed.width - square.width))
+    square.y = Math.max(0, Math.min(square.y, composed.height - square.height))
+
+    const outCtx = canvas.getContext('2d')
+    if (!outCtx) return false
+    outCtx.imageSmoothingEnabled = false
+    outCtx.clearRect(0, 0, canvas.width, canvas.height)
+    outCtx.drawImage(composed, square.x, square.y, square.width, square.height, 0, 0, canvas.width, canvas.height)
+    return true
+  }
+  return false
 }

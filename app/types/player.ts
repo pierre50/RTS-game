@@ -108,7 +108,6 @@ export interface PlayerLike {
   foundedBerrybushs?: Set<RuntimeEntity>
   foundedStones?: Set<RuntimeEntity>
   foundedGolds?: Set<RuntimeEntity>
-  foundedFish?: Set<RuntimeEntity>
   foundedAnimals?: Set<RuntimeEntity>
   foundedDeadAnimals?: Set<RuntimeEntity>
   foundedEnemyBuildings?: Set<RuntimeEntity>

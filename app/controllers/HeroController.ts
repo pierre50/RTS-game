@@ -8,7 +8,6 @@ import {
   updateInstanceRenderVisibility,
 } from '../lib'
 import {
-  ACTION_TYPES,
   COMM_INDICATOR_FILL_ALPHA,
   COMM_INDICATOR_FILL_COLOR,
   COMM_INDICATOR_STROKE_ALPHA,
@@ -51,7 +50,6 @@ import {
   updateNpcFollow,
 } from '../lib/npcInteraction'
 import type { ControlBindingAction } from '../lib/settings'
-import { t } from '../lib/lang'
 import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
@@ -63,14 +61,6 @@ import type { UnitEntity } from '../types/entities'
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
 type HeroAimPoint = { x: number; y: number }
-type AnimationLayer = {
-  loop: boolean
-  onComplete?: () => void
-  onFrameChange?: (frame: number) => void
-  onLoop?: () => void
-  play: () => void
-  stop: () => void
-}
 const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; dy: number }>> = {
   heroUp: { dx: 0, dy: -1 },
   heroDown: { dx: 0, dy: 1 },
@@ -85,39 +75,6 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
 }
 
 let lastHeroMoveDebugAt = 0
-
-function getAnimationLayers(unit: UnitEntity): Iterable<AnimationLayer> {
-  return (
-    (unit as UnitEntity & { appearanceLayerSprites?: Map<number, AnimationLayer> }).appearanceLayerSprites?.values() ??
-    []
-  )
-}
-
-function finishHeldFishingAnimation(unit: UnitEntity): void {
-  const sprite = unit.sprite
-  if (!sprite) {
-    unit.previousDest = null
-    unit.stop?.()
-    return
-  }
-  ;(unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing = true
-  unit.stopInterval?.()
-  sprite.onLoop = undefined
-  sprite.loop = false
-  unit.shadow && (unit.shadow.loop = false)
-  for (const layer of getAnimationLayers(unit)) {
-    layer.loop = false
-    layer.play()
-  }
-  sprite.onComplete = () => {
-    sprite.onComplete = undefined
-    ;(unit as UnitEntity & { shoreFishingFinishing?: boolean }).shoreFishingFinishing = false
-    unit.previousDest = null
-    unit.stop?.()
-  }
-  if (unit.shadow) unit.shadow.play()
-  sprite.play()
-}
 
 function debugHeroMove(message: string, unit: UnitEntity, details: Record<string, unknown>): void {
   const now = performance.now()
@@ -245,14 +202,14 @@ export class HeroController {
     }
 
     if (action === 'heroInteract') {
-      if (!heroCanCommand(this.heroUnit)) {
-        this.controls.context.menu?.showMessage?.(t('requiresChief'), 'warning')
-        return true
-      }
+      // Pressing the key again closes whichever panel it can open, instead of starting a new
+      // charge or re-resolving a target.
+      if (this.controls.closeAnyHeroPanel()) return true
       if (this.commCharging) return true
-      // Pressing the key again closes the panel it opened, instead of re-charging.
-      if (this.controls.context.menu?.isNpcOrdersOpen?.()) {
-        this.controls.context.menu.closeNpcOrders?.()
+      // Only a chief can charge up to give orders — everyone else just resolves the tap
+      // immediately as an inspect/chatter interaction, same as a non-chief always could via F.
+      if (!heroCanCommand(this.heroUnit)) {
+        this.controls.openHeroEntityInteraction()
         return true
       }
       this.beginCommCharge()
@@ -460,10 +417,6 @@ export class HeroController {
     }
     this.mouseHeld = false
     this.primaryClickPoint = null
-    if (unit?.action === ACTION_TYPES.fishing && unit.currentSheet === SHEET_TYPES.action) {
-      finishHeldFishingAnimation(unit)
-      return
-    }
     if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
     const sprite = unit.sprite
     if (!sprite) {
@@ -511,7 +464,14 @@ export class HeroController {
     const precisionOnly = elapsed < COMM_INDICATOR_DELAY_MS
     const radius = precisionOnly ? 0 : getCommRadiusForHold(elapsed)
     const group = resolveCommGroup(hero, radius, { precisionOnly })
-    if (group.length) this.controls.context.menu?.openNpcOrders?.(group)
+    if (group.length) {
+      this.controls.context.menu?.openNpcOrders?.(group)
+      return
+    }
+    // A quick tap that caught no commandable ally falls back to the same inspect/chatter
+    // resolution a non-chief hero always gets — a genuine hold gesture that nets nobody
+    // stays a silent no-op instead.
+    if (precisionOnly) this.controls.openHeroEntityInteraction()
   }
 
   cancelCommCharge(): void {

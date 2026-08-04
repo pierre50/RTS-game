@@ -111,14 +111,6 @@ export class UnitCommands {
     const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (!target || dest?.label !== target.label) return false
     if (unit.work !== work || unit.action !== action) return false
-    if (
-      action === ACTION_TYPES.fishing &&
-      unit.currentSheet === SHEET_TYPES.action &&
-      unit.sprite &&
-      !unit.sprite.playing
-    ) {
-      return false
-    }
     return (unit.path?.length ?? 0) > 0 || Boolean(unit.isUnitAtDest?.(action, target))
   }
 
@@ -228,10 +220,6 @@ export class UnitCommands {
       unit.previousDest = map.grid[unit.i][unit.j]
     }
     unit.sendToEvt?.(target, ACTION_TYPES.delivery)
-  }
-
-  sendToFish(target: RuntimeEntity, immediate = false) {
-    return this.commonSendTo(target, WORK_TYPES.fisher, ACTION_TYPES.fishing, false, immediate)
   }
 
   sendToAttack(target: RuntimeEntity) {

@@ -1,4 +1,5 @@
 import { BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { angleDelta, getPointsDegree } from './maths'
 import { canUpgradeUnitAtBuilding } from './unitUpgrades'
 import type { ConfigValue } from '../types/config'
 import type { PlayerLike } from '../types/player'
@@ -6,6 +7,7 @@ import type { PlayerLike } from '../types/player'
 export type CombatEntity = {
   allowAction?: string[]
   category?: string
+  degree?: number
   family?: string
   hitPoints?: number
   isBuilt?: boolean
@@ -26,6 +28,8 @@ export type CombatEntity = {
   trainingUnit?: CombatEntity | null
   heroDefenseActive?: boolean
   showHeroDefenseFlash?: () => void
+  x?: number
+  y?: number
 }
 
 export type Condition = {
@@ -101,8 +105,20 @@ function getDamage(source: CombatEntity, target: CombatEntity): number {
   return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor))
 }
 
-function applyHeroDefenseDamage(target: CombatEntity, damage: number): number {
-  if (!target.heroDefenseActive || damage <= 0) return damage
+// Hero defense only blocks what it's actually facing — a hit landing outside this frontal
+// arc (e.g. from behind) goes through untouched even while heroDefenseActive is true.
+const HERO_DEFENSE_FRONTAL_HALF_ANGLE = 90
+
+function isOutsideHeroDefenseArc(source: CombatEntity, target: CombatEntity): boolean {
+  const { x: sx, y: sy } = source
+  const { x: tx, y: ty, degree } = target
+  if (sx == null || sy == null || tx == null || ty == null) return false
+  const attackAngle = getPointsDegree(tx, ty, sx, sy)
+  return angleDelta(attackAngle, degree ?? 0) > HERO_DEFENSE_FRONTAL_HALF_ANGLE
+}
+
+function applyHeroDefenseDamage(source: CombatEntity, target: CombatEntity, damage: number): number {
+  if (!target.heroDefenseActive || damage <= 0 || isOutsideHeroDefenseArc(source, target)) return damage
   target.showHeroDefenseFlash?.()
   return 0
 }
@@ -115,7 +131,7 @@ export function getHitPointsWithDamage(
 ): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
   const rawDamage = (defaultDamage || getDamage(source, target)) + Math.max(0, bonusDamage)
-  const damage = applyHeroDefenseDamage(target, rawDamage)
+  const damage = applyHeroDefenseDamage(source, target, rawDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
 
@@ -186,11 +202,6 @@ export const getActionCondition = (
           target.isDead &&
           !target.isDestroyed
       ),
-    fishing: () =>
-      target.category === 'Fish' &&
-      !!target.allowAction?.includes(source.type ?? '') &&
-      (target.quantity ?? 0) > 0 &&
-      !target.isDestroyed,
     hunt: () =>
       isVillagerOrHero(source) &&
       target.family === FAMILY_TYPES.animal &&

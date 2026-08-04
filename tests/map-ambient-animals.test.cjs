@@ -54,7 +54,7 @@ function loadMapGeneration() {
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
       LABEL_TYPES: {},
-      RESOURCE_TYPES: { shoreFish: 'ShoreFish' },
+      RESOURCE_TYPES: {},
       UNIT_TYPES: {},
       FLOOR_SETS_GRASS: [],
       FLOOR_SETS_DESERT: [],

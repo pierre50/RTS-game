@@ -1,7 +1,6 @@
 {
   "Berrybush": {
     "totalQuantity": 200,
-    "icon": "036_50730",
     "color": "#7B9051",
     "assets": [
       {
@@ -13,7 +12,6 @@
   "Tree": {
     "totalQuantity": 300,
     "totalHitPoints": 25,
-    "icon": "035_50730",
     "color": "#274F1F",
     "assets": {
       "Grass": [
@@ -96,7 +94,6 @@
   },
   "Gold": {
     "totalQuantity": 400,
-    "icon": "039_50730",
     "color": "#DECF10",
     "assets": [
       {
@@ -131,7 +128,6 @@
   },
   "Stone": {
     "totalQuantity": 250,
-    "icon": "038_50730",
     "color": "#B3B3B3",
     "assets": [
       {
@@ -163,18 +159,6 @@
         "frame": 6
       }
     ]
-  },
-  "ShoreFish": {
-    "category": "Fish",
-    "habitat": "Water",
-    "totalQuantity": 200,
-    "icon": "034_50730",
-    "allowAction": ["Hero", "Villager"],
-    "isAnimated": true,
-    "assets": "resources/fish/small",
-    "sounds": {
-      "command": ["fish", "fish-2", "fish-3"]
-    }
   },
   "Portal": {
     "color": "#8a4fd6",

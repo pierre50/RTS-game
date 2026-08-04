@@ -3,7 +3,6 @@ import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../l
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { getWallIcon, type WallOwner } from '../lib/buildings/walls'
 import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
@@ -14,7 +13,6 @@ import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
-import type { LoadedGameConfig } from '../types/save'
 import type { Condition } from '../lib/combat'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
@@ -169,24 +167,8 @@ export class ActionSpecFactory {
     ;['006_50731', '007_50731', '008_50731', '010_50731', '004_50731', '009_50731'].forEach(icon =>
       preload(getIconPath(icon))
     )
-    Object.values(player.config.units).forEach(unit => {
-      if (unit.icon) preload(getIconPath(unit.icon))
-    })
     Object.values(player.techs).forEach(config => {
       if (config.icon) preload(getIconPath(config.icon))
-    })
-    Object.keys(player.config.buildings).forEach(type => {
-      try {
-        const asset = getBuildingAsset(type, player, Assets)
-        if (asset?.icon) preload(getIconPath(asset.icon as string))
-      } catch {}
-    })
-    const gameConfig = Assets.cache.get('config') as LoadedGameConfig
-    Object.values((gameConfig.resources || {}) as Record<string, { icon?: string }>).forEach(res => {
-      if (res.icon) preload(getIconPath(res.icon))
-    })
-    Object.values((gameConfig.animals || {}) as Record<string, { icon?: string }>).forEach(animal => {
-      if (animal.icon) preload(getIconPath(animal.icon))
     })
   }
 
@@ -202,7 +184,6 @@ export class ActionSpecFactory {
     }
     return {
       id: type,
-      icon: () => getIconPath(unit.icon),
       tooltip: () => this.getUnitTooltip(type, unit, building),
       disabled: () => this.isChiefTrainingBlocked(type, building),
       hide: () => {
@@ -248,7 +229,9 @@ export class ActionSpecFactory {
           this.playUiClick()
           unitSelection.cancelUnits?.(type)
         })
-        const img = this.createActionIcon(getIconPath(unit.icon))
+        const img = document.createElement('img')
+        img.className = 'img'
+        img.alt = ''
         const avatarCanvas = document.createElement('canvas')
         avatarCanvas.width = 92
         avatarCanvas.height = 92
@@ -314,15 +297,6 @@ export class ActionSpecFactory {
     return {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
-      icon: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
-        const assets = getBuildingAsset(displayType, owner, Assets)
-        return getIconPath(
-          type === BUILDING_TYPES.smallWall
-            ? getWallIcon(owner as WallOwner, assets.icon as string)
-            : (assets.icon as string)
-        )
-      },
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () => this.isChiefCommandBlocked(),
       onClick: () => {
@@ -350,7 +324,7 @@ export class ActionSpecFactory {
     } = menu
     const config = player.techs[type]
     return {
-      icon: getIconPath(config.icon),
+      icon: getIconPath(config.icon ?? ''),
       id: type,
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>

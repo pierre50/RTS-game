@@ -172,46 +172,47 @@ export class AnimalCombat {
       context: { menu, player },
     } = animal
     switch (name) {
-      case ACTION_TYPES.attack:
+      case ACTION_TYPES.attack: {
         if (!animal.getActionCondition(animal.dest)) {
           animal.affectNewDest()
           return
         }
+        // Loops the action sheet at its own baked speed (no separate rateOfFire timer) and bites
+        // once per loop pass, same model as UnitCombat.runAttackLoop.
+        const sprite = animal.sprite
+        sprite.loop = true
+        sprite.onComplete = undefined
         animal.setTextures(SHEET_TYPES.action)
-        animal.startInterval(
-          () => {
-            if (!animal.getActionCondition(animal.dest)) {
-              const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
-              if (target && (target.hitPoints ?? 0) <= 0) {
-                target.die?.()
-              }
-              animal.affectNewDest()
-              return
-            }
+        sprite.onLoop = () => {
+          if (!animal.getActionCondition(animal.dest)) {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
-            if (!target) return
-            if (animal.destHasMoved()) {
-              animal.degree = getInstanceDegree(animal, target.x, target.y)
-              animal.setTextures(SHEET_TYPES.action)
+            if (target && (target.hitPoints ?? 0) <= 0) {
+              target.die?.()
             }
-            if (!instanceContactInstance(animal, target)) {
-              animal.sendTo(target, ACTION_TYPES.attack, { forceRepath: true })
-              return
-            }
-            animal.sounds &&
-              animal.sounds.hit &&
-              animal.context.controls.instanceIsAudible(animal) &&
-              playAudibleSoundCue(animal, animal.sounds.hit)
-            if ((target.hitPoints ?? 0) > 0) {
-              const { killed } = applyCombatHit(animal, target, { menu, player })
-              if (killed) animal.affectNewDest()
-            }
-          },
-          animal.rateOfFire * 1000,
-          false,
-          'animal.attack'
-        )
+            animal.affectNewDest()
+            return
+          }
+          const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
+          if (!target) return
+          if (animal.destHasMoved()) {
+            animal.degree = getInstanceDegree(animal, target.x, target.y)
+            animal.setTextures(SHEET_TYPES.action)
+          }
+          if (!instanceContactInstance(animal, target)) {
+            animal.sendTo(target, ACTION_TYPES.attack, { forceRepath: true })
+            return
+          }
+          animal.sounds &&
+            animal.sounds.hit &&
+            animal.context.controls.instanceIsAudible(animal) &&
+            playAudibleSoundCue(animal, animal.sounds.hit)
+          if ((target.hitPoints ?? 0) > 0) {
+            const { killed } = applyCombatHit(animal, target, { isMelee: true, menu, player })
+            if (killed) animal.affectNewDest()
+          }
+        }
         break
+      }
       default:
         animal.stop()
     }

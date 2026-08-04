@@ -26,16 +26,10 @@ export type AssetOwner = {
 }
 
 const INTERFACE_ICON_SHEETS: Record<string, string> = {
-  '50704': 'building-icons/egyptian',
-  '50705': 'building-icons/greek',
-  '50706': 'building-icons/babylonian',
-  '50707': 'building-icons/asian',
   '50721': 'command-icons',
   '50729': 'technology-icons',
-  '50730': 'unit-icons',
   '50731': 'attribute-icons',
   '50732': 'commodity-icons',
-  '50733': 'animal-icons',
   '51000': 'pointers/main',
 }
 

@@ -11,7 +11,10 @@ import {
   playNpcOrderSound,
   clearNpcCommunicationFocus,
 } from '../lib/npcInteraction'
+import { createEntityInfoContent } from './EntityInfoModalManager'
+import { pickNpcGreetingLine } from '../lib/npcChatter'
 import type Menu from '../classes/Menu'
+import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 
 type NpcOrderId = 'stockpile' | 'stay' | 'follow' | 'goto' | VillagerAutonomyJob
@@ -37,21 +40,34 @@ const NPC_ORDER_SPECS: {
 export class NpcOrdersManager {
   menu: Menu
   panel: HTMLDivElement
+  infoContainer: HTMLDivElement
+  chatterContainer: HTMLDivElement
+  buttonsContainer: HTMLDivElement
   modal?: Modal
   buttons: Map<NpcOrderId, HTMLButtonElement>
   opened: boolean
-  shouldResumeOnClose: boolean
   npcs: UnitEntity[]
 
   constructor(menu: Menu) {
     this.menu = menu
     this.opened = false
-    this.shouldResumeOnClose = false
     this.npcs = []
     this.buttons = new Map()
 
     this.panel = document.createElement('div')
-    this.panel.className = 'npc-orders-options'
+    this.panel.className = 'npc-orders-panel-content'
+
+    this.infoContainer = document.createElement('div')
+    this.infoContainer.className = 'npc-orders-info'
+    this.panel.appendChild(this.infoContainer)
+
+    this.chatterContainer = document.createElement('div')
+    this.chatterContainer.className = 'npc-orders-chatter'
+    this.panel.appendChild(this.chatterContainer)
+
+    this.buttonsContainer = document.createElement('div')
+    this.buttonsContainer.className = 'npc-orders-options'
+    this.panel.appendChild(this.buttonsContainer)
 
     for (const spec of NPC_ORDER_SPECS) {
       const button = document.createElement('button')
@@ -68,6 +84,7 @@ export class NpcOrdersManager {
           this.menu.context.controls.beginNpcGoTo?.(npcs)
           return
         }
+        this.close(true)
         if (spec.villagerJob) {
           for (const npc of npcs) {
             if (npc.type !== UNIT_TYPES.villager) continue
@@ -79,22 +96,46 @@ export class NpcOrdersManager {
           for (const npc of npcs) spec.run?.(npc)
         }
         playNpcOrderSound(npcs)
-        this.close()
       })
       this.buttons.set(spec.id, button)
-      this.panel.appendChild(button)
+      this.buttonsContainer.appendChild(button)
     }
   }
 
-  open(npcs: UnitEntity[]): void {
-    if (!this.opened) {
-      this.shouldResumeOnClose = !this.menu.context.paused
-      if (this.shouldResumeOnClose) this.menu.context.pause?.()
-    }
+  open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     this.npcs = npcs
     this.opened = true
     const title =
       npcs.length > 1 ? t('npcOrdersTitleCount', { count: npcs.length }) : npcs[0]?.name || t('npcOrdersTitle')
+
+    // A single target gets its stats/avatar shown above the order buttons, in the same panel —
+    // a group order doesn't have one set of stats to show, so it stays buttons-only.
+    this.infoContainer.replaceChildren()
+    const soloTarget = npcs.length === 1 ? npcs[0] : null
+    const hasInfo = Boolean(soloTarget?.interface?.info)
+    if (soloTarget && hasInfo) {
+      this.infoContainer.appendChild(createEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true }))
+    }
+
+    // Just chatting (no order possible right now — non-chief hero, or the ally isn't
+    // commandable) shows the same panel with the buttons hidden rather than a whole
+    // separate window.
+    const ordersEnabled = options.ordersEnabled ?? true
+    this.buttonsContainer.hidden = !ordersEnabled
+
+    // A commandable single target gets a short in-character greeting addressed to the player
+    // instead of idle chatter — callers can still override with an explicit chatterLine.
+    this.chatterContainer.replaceChildren()
+    const chatterLine =
+      options.chatterLine ??
+      (soloTarget && ordersEnabled ? pickNpcGreetingLine(this.menu.context.player?.name ?? '') : null)
+    if (chatterLine) {
+      const line = document.createElement('p')
+      line.className = 'npc-orders-chatter-line'
+      line.textContent = chatterLine
+      this.chatterContainer.appendChild(line)
+    }
+
     const stockpileButton = this.buttons.get('stockpile')
     if (stockpileButton) {
       stockpileButton.disabled = !npcs.some(npc => (npc.loading ?? 0) > 0)
@@ -118,6 +159,7 @@ export class NpcOrdersManager {
     }
     if (this.modal) {
       this.modal._panel!.querySelector('.modal-title')!.textContent = title
+      this.modal._panel!.classList.toggle('npc-orders-panel-with-info', hasInfo)
       return
     }
     this.modal = new Modal({
@@ -126,19 +168,18 @@ export class NpcOrdersManager {
       onClose: () => this.close(),
     })
     this.modal._panel?.classList.add('npc-orders-panel')
+    this.modal._panel?.classList.toggle('npc-orders-panel-with-info', hasInfo)
   }
 
   close(keepFrozen = false): void {
     if (!this.opened && !this.modal) return
-    const shouldResume = this.shouldResumeOnClose
     const modal = this.modal
     this.modal = undefined
-    if (!keepFrozen) releaseIfStillLooking(this.npcs)
     this.opened = false
-    this.shouldResumeOnClose = false
+    const npcs = this.npcs
     this.npcs = []
+    if (!keepFrozen) releaseIfStillLooking(npcs)
     modal?.close()
-    if (shouldResume) this.menu.context.resume?.()
   }
 
   toggle(npcs: UnitEntity[]): void {

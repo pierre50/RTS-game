@@ -25,7 +25,6 @@ import {
   updateInstanceVisibility,
   degreeToDirection,
   getAnimationFrames,
-  getSailAnimationFrames,
   playSoundCue,
   shouldFleeWhenAttacked,
   getIconPath,
@@ -52,6 +51,7 @@ import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
 import { heroCanCommand } from '../../lib/chief'
 import type {
   BuildingEntity,
+  EntityInfoRenderOptions,
   RuntimeEntity,
   UnitCommandOptions,
   UnitCreationExtra,
@@ -203,10 +203,6 @@ export class Unit extends Instance implements UnitEntity {
   standingSheet?: UnitEntity['standingSheet']
   loop?: UnitEntity['loop']
   visibilityTimeout?: UnitEntity['visibilityTimeout']
-  sailSheet?: UnitEntity['sailSheet']
-  sailSpritesheet?: UnitEntity['sailSpritesheet']
-  sailSprite?: UnitEntity['sailSprite']
-  sailAnimationSpeed?: UnitEntity['sailAnimationSpeed']
   showLoading?: UnitEntity['showLoading']
   showBuildings?: UnitEntity['showBuildings']
   visualSettingsCleanup: (() => void) | null
@@ -336,18 +332,14 @@ export class Unit extends Instance implements UnitEntity {
         Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
       }
     }
-    if (this.sailSheet) {
-      this.sailSpritesheet = Assets.cache.get(this.sailSheet)
-    }
-
     if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible?.(this)) {
       playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
     }
 
     this.interface = {
-      info: (element: HTMLElement) => {
+      info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
         const data = this.owner.config.units[this.type]
-        this.setDefaultInterface(element, data)
+        this.setDefaultInterface(element, data, options)
         if (this.showLoading && this.owner.isPlayed) {
           element.appendChild(this.getLoadingElement())
         }
@@ -405,7 +397,6 @@ export class Unit extends Instance implements UnitEntity {
     this.syncAppearanceLayers(this.currentSheet)
     this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
     this.sprite.updateAnchor = true
-    this.setupSailSprite()
     if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
 
     this.sendTo = this.owner.isPlayed
@@ -434,44 +425,6 @@ export class Unit extends Instance implements UnitEntity {
     this.visibilityTimeout = setTimeout(() => {
       if (!this.isDestroyed) updateInstanceVisibility(this)
     })
-  }
-
-  setupSailSprite() {
-    if (!this.sailSpritesheet?.textures) return
-
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
-    if (!textures.length) return
-
-    this.sailSprite = new AnimatedSprite(textures as Texture[])
-    bindAnimatedSpriteToTicker(this.sailSprite, this.context.app)
-    this.sailSprite.label = LABEL_TYPES.sail
-    this.sailSprite.eventMode = 'none'
-    this.sailSprite.roundPixels = true
-    this.sailSprite.loop = true
-    this.sailSprite.updateAnchor = true
-    this.sailSprite.animationSpeed = this.sailSpritesheet.data?.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
-    this.sailSprite.scale.x = mirrored ? -1 : 1
-    this.sailSprite.play()
-    this.addChild(this.sailSprite)
-  }
-
-  syncSailSprite(goto: number | null = null) {
-    if (!this.sailSprite || this.isDead || !this.sailSpritesheet?.textures) {
-      if (this.sailSprite) this.sailSprite.visible = false
-      return
-    }
-
-    const { textures, mirrored } = getSailAnimationFrames(this.sailSpritesheet.textures, this)
-    if (!textures.length) {
-      this.sailSprite.visible = false
-      return
-    }
-
-    this.sailSprite.visible = true
-    this.sailSprite.textures = textures as Texture[]
-    this.sailSprite.scale.x = mirrored ? -1 : 1
-    this.sailSprite.animationSpeed = this.sailSpritesheet.data?.animationSpeed ?? this.sailAnimationSpeed ?? 0.18
-    goto && goto < this.sailSprite.textures.length ? this.sailSprite.gotoAndPlay(goto) : this.sailSprite.play()
   }
 
   createShadow() {
@@ -774,7 +727,6 @@ export class Unit extends Instance implements UnitEntity {
     this.syncShadow()
     this.syncMountedHorseSprite()
     this.syncAppearanceLayers(sheet)
-    this.syncSailSprite(this.sailSprite?.currentFrame)
   }
 
   applyOwnerColorToSprite() {
@@ -1124,10 +1076,6 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToDelivery()
   }
 
-  sendToFish(target: RuntimeEntity, immediate = false) {
-    return this.unitCommands.sendToFish(target, immediate)
-  }
-
   sendToAttack(target: RuntimeEntity) {
     return this.unitCommands.sendToAttack(target)
   }
@@ -1176,8 +1124,8 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToGold(target, immediate)
   }
 
-  setDefaultInterface(element: HTMLElement, data: UnitConfig) {
-    this.unitInterface.setDefaultInterface(element, data)
+  setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions) {
+    this.unitInterface.setDefaultInterface(element, data, options)
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {

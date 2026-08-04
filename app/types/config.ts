@@ -39,7 +39,9 @@ export interface UnitAppearanceConfig {
 }
 
 interface EntityConfig {
-  icon: string
+  // Optional: still used by technologies, no longer read for units/buildings/
+  // animals/resources now that those show a cropped sprite avatar instead.
+  icon?: string
   cost?: ResourceAmount
   conditions?: Condition[]
   [key: string]:

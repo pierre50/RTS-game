@@ -42,7 +42,6 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "round_shield_brass_slash": "slash",
     "round_shield_silver_slash": "slash",
     "cane": "spellcast",
-    "fishing_rod": "tool_rod",
     "quiver": "shoot",
 }
 
@@ -115,9 +114,9 @@ def active_layer_keys(equipment: DynamicEquipment) -> tuple[str, ...]:
 
 def has_animation_content(equipment: DynamicEquipment, animation: str) -> bool:
     """Whether any layer has pixels for this specific animation. Some equipment
-    only ships art for one of its two sheets (e.g. the cane has no spellcast
-    pose, the fishing rod has no walk pose), so the other sheet would
-    otherwise still get baked and wired up as fully transparent."""
+    only ships art for one of its two sheets (e.g. the cane has no action
+    pose), so the other sheet would otherwise still get baked and wired up as
+    fully transparent."""
     return any(layer.layers for layer in equipment.layers_by_animation.get(animation, ()))
 
 

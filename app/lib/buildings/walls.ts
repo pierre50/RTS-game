@@ -101,12 +101,6 @@ export function getWallTexture(owner: WallOwner | null, frame: number, assets = 
   return getTexture({ sheet: getWallSheet(owner), frame }, assets)
 }
 
-export function getWallIcon(owner: WallOwner | null, baseIcon: string): string {
-  const [index, sheet] = baseIcon.split('_')
-  const levelOffset = (getWallLevel(owner) - 1) * 3
-  return `${String(Number(index) + levelOffset).padStart(3, '0')}_${sheet}`
-}
-
 export function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): number {
   const north = grid[i - 1]?.[j]?.has
   const south = grid[i + 1]?.[j]?.has

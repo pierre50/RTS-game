@@ -7,6 +7,12 @@ import type { UnitEntity } from '../types/entities'
 const COMBAT_STAT_KEYS = ['meleeAttack', 'pierceAttack', 'meleeArmor', 'pierceArmor'] as const
 type CombatStatKey = (typeof COMBAT_STAT_KEYS)[number]
 
+// Real weapons that can parry an incoming blow. 'axe' is the Axeman's actual weapon
+// (see UNIT_EQUIPMENT in lpc/equipment.ts) as well as a villager work tool — villagers
+// are excluded by type below rather than by dropping 'axe' from this set, so the Axeman
+// still qualifies.
+const MELEE_WEAPON_EQUIPMENT_KEYS = new Set(['axe', 'dagger', 'broadsword', 'longsword', 'halberd', 'cane'])
+
 const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   axe: { meleeAttack: 5 },
   pickaxe: { meleeAttack: 2 },
@@ -82,6 +88,13 @@ export function applyEquipmentStatsToUnitConfig(unitType: string, config: UnitCo
   for (const stat of COMBAT_STAT_KEYS) {
     config[stat] = stats[stat]
   }
+}
+
+export function isUnitMeleeWeaponEquipped(unit: UnitEntity): boolean {
+  if (unit.projectile || unit.type === UNIT_TYPES.villager) return false
+  const config = unit.owner?.config.units[unit.type]
+  const equipment = getUnitEquipment(unit.type, config)
+  return equipment.some(key => MELEE_WEAPON_EQUIPMENT_KEYS.has(key))
 }
 
 export function refreshUnitEquipmentStats(unit: UnitEntity): void {

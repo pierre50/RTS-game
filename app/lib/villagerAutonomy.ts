@@ -1,7 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getCellsAroundPoint, getInstancePath } from './grid'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
   return Boolean(entity && !entity.isDead && !entity.isDestroyed && (entity.hitPoints ?? 1) > 0)
@@ -28,10 +26,6 @@ function closest<T extends RuntimeEntity>(unit: UnitEntity, candidates: Iterable
   return best
 }
 
-function isFishResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
-  return Boolean(entity && entity.family === FAMILY_TYPES.resource && entity.category === 'Fish')
-}
-
 function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
   if (!a || !b) return false
   if (a === b) return true
@@ -49,34 +43,9 @@ function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string,
   return load
 }
 
-function hasReachableFishShoreCell(unit: UnitEntity, fish: RuntimeEntity): boolean {
-  const map = unit.context?.map
-  if (!map) return true
-
-  const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, (cell: RuntimeCell) => {
-    return cell.category !== 'Water' && !cell.solid && !cell.border
-  })
-  shoreCells.sort(
-    (a: RuntimeCell, b: RuntimeCell) =>
-      Math.abs(unit.i - a.i) + Math.abs(unit.j - a.j) - (Math.abs(unit.i - b.i) + Math.abs(unit.j - b.j))
-  )
-
-  for (const cell of shoreCells) {
-    if (unit.i === cell.i && unit.j === cell.j) return true
-    if (getInstancePath(unit, cell.i, cell.j, map).length) return true
-  }
-  return false
-}
-
 function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {
   if (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
     return targetWorkerLoad(unit, target, WORK_TYPES.farmer, ACTION_TYPES.farm) < 1
-  }
-  if (isFishResource(target)) {
-    return (
-      targetWorkerLoad(unit, target, WORK_TYPES.fisher, ACTION_TYPES.fishing) < 1 &&
-      hasReachableFishShoreCell(unit, target)
-    )
   }
   return true
 }
@@ -113,13 +82,6 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
   const berries = foundedBerries?.size
     ? [...foundedBerries]
     : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.berrybush)
-  const foundedFish = unit.owner?.foundedFish
-  const fish = foundedFish?.size
-    ? [...foundedFish]
-    : [...resources].filter(
-        resource =>
-          isKnownToUnit(unit, resource) && resource.category === 'Fish'
-      )
   const farms = (unit.owner?.buildings ?? []).filter(
     building =>
       building.type === BUILDING_TYPES.farm &&
@@ -128,9 +90,7 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
       (building.quantity ?? 1) > 0 &&
       unit.getActionCondition?.(building, ACTION_TYPES.farm)
   )
-  return [...berries.filter(isUsableResource), ...fish.filter(isUsableResource), ...farms].filter(target =>
-    isFoodTargetAvailable(unit, target)
-  )
+  return [...berries.filter(isUsableResource), ...farms].filter(target => isFoodTargetAvailable(unit, target))
 }
 
 function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
@@ -160,12 +120,7 @@ export function getAutonomyJobForWork(work: string | null | undefined): Villager
   if (work === WORK_TYPES.stoneminer) return 'stone'
   if (work === WORK_TYPES.goldminer) return 'gold'
   if (work === WORK_TYPES.builder) return 'construction'
-  if (
-    work === WORK_TYPES.forager ||
-    work === WORK_TYPES.farmer ||
-    work === WORK_TYPES.fisher ||
-    work === WORK_TYPES.hunter
-  ) {
+  if (work === WORK_TYPES.forager || work === WORK_TYPES.farmer || work === WORK_TYPES.hunter) {
     return 'food'
   }
   return null
@@ -191,7 +146,6 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
       const target = closest(unit, knownFoodTargets(unit))
       if (!target) return exploreForAutonomy(unit, job)
       if (target.family === FAMILY_TYPES.building) unit.sendToFarm?.(target)
-      else if (isFishResource(target)) unit.sendToFish?.(target)
       else unit.sendToBerrybush?.(target)
       return true
     }

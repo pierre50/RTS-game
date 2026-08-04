@@ -1,3 +1,4 @@
+import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
 import { POPULATION_MAX } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
@@ -16,6 +17,7 @@ import {
   setPopMax,
   setAge,
   setCiv,
+  spawnAnimal,
   spawnBuilding,
   spawnFloatingItem,
   spawnUnits,
@@ -88,6 +90,17 @@ export function createDevCommands(): DevCommandRegistry {
     run: ([type, count, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: spawn <unit> [count] [playerIndex]' }
       return spawnUnits(context, type, count, playerIndex)
+    },
+  })
+
+  registry.register({
+    name: 'animal',
+    usage: 'animal <type> [count]',
+    describe: 'Spawn wild animals near cursor',
+    complete: () => Object.keys((Assets.cache.get('config') as { animals?: Record<string, unknown> })?.animals || {}),
+    run: ([type, count], context) => {
+      if (!type) return { ok: false, message: 'Usage: animal <type> [count]' }
+      return spawnAnimal(context, type, count)
     },
   })
 

@@ -4,7 +4,14 @@ import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '
 import { t } from '../lib/lang'
 import type { Application } from 'pixi.js'
 import type Menu from '../classes/Menu'
-import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type {
+  AnimalEntity,
+  BuildingEntity,
+  EntityInfoRenderOptions,
+  ResourceEntity,
+  RuntimeEntity,
+  UnitEntity,
+} from '../types/entities'
 
 function getEntityTitle(entity: RuntimeEntity): string {
   const assetType = (entity as { assetType?: string }).assetType
@@ -47,6 +54,27 @@ function createEntityAvatar(app: Application, entity: RuntimeEntity): HTMLDivEle
   return wrap
 }
 
+// Shared with NpcOrdersManager, which embeds this same stats+avatar block above its order
+// buttons when the order panel targets a single unit.
+export function createEntityInfoContent(
+  app: Application,
+  entity: RuntimeEntity,
+  options?: EntityInfoRenderOptions
+): HTMLElement {
+  const content = document.createElement('div')
+  content.className = 'entity-info-modal selection-info active'
+  entity.interface?.info?.(content, options)
+
+  const avatar = createEntityAvatar(app, entity)
+  if (!avatar) return content
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'entity-info-wrapper'
+  wrapper.appendChild(avatar)
+  wrapper.appendChild(content)
+  return wrapper
+}
+
 export class EntityInfoModalManager {
   menu: Menu
   modal?: Modal
@@ -75,18 +103,7 @@ export class EntityInfoModalManager {
       player.selectedOther = entity
     }
 
-    const content = document.createElement('div')
-    content.className = 'entity-info-modal selection-info active'
-    entity.interface.info(content)
-
-    const avatar = createEntityAvatar(this.menu.context.app, entity)
-    let modalContent: HTMLElement = content
-    if (avatar) {
-      modalContent = document.createElement('div')
-      modalContent.className = 'entity-info-wrapper'
-      modalContent.appendChild(avatar)
-      modalContent.appendChild(content)
-    }
+    const modalContent = createEntityInfoContent(this.menu.context.app, entity)
 
     this.entity = entity
     this.modal = new Modal({

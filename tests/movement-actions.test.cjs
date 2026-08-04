@@ -79,7 +79,6 @@ const constants = {
     heal: 'heal',
     delivery: 'delivery',
     farm: 'farm',
-    fishing: 'fishing',
     forageberry: 'forageberry',
     hunt: 'hunt',
     convert: 'convert',
@@ -118,7 +117,6 @@ const constants = {
     attacker: 'attacker',
     builder: 'builder',
     farmer: 'farmer',
-    fisher: 'fisher',
     forager: 'forager',
     goldminer: 'goldminer',
     healer: 'healer',
@@ -237,22 +235,22 @@ test('hero-controlled unit action range can satisfy destination checks before st
     },
     '../../lib/heroActionRange': {
       isHeroActionInRange: (_unit, action, dest) =>
-        action === constants.ACTION_TYPES.fishing && dest.category === 'Fish',
+        action === constants.ACTION_TYPES.takemeat && dest.family === constants.FAMILY_TYPES.animal,
     },
   })
   const unit = {
-    action: constants.ACTION_TYPES.fishing,
+    action: constants.ACTION_TYPES.takemeat,
     controlMode: 'hero',
     type: constants.UNIT_TYPES.villager,
   }
-  const fish = {
-    category: 'Fish',
+  const carcass = {
+    family: constants.FAMILY_TYPES.animal,
     i: 2,
     isDestroyed: false,
     j: 0,
   }
 
-  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.fishing, fish), true)
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.takemeat, carcass), true)
 })
 
 test('ranged units must contact buildings before entering them', () => {
@@ -1214,77 +1212,6 @@ test('a blocked gather target sends the villager near it before retrying', () =>
   assert.deepEqual(unit.path, approachPath)
 })
 
-test('a villager fishing a water resource keeps the fish target and paths to reachable shore', () => {
-  const fish = { label: 'fish-1', i: 2, j: 2, x: 20, y: 20, category: 'Fish', isDestroyed: false }
-  const shoreCell = { i: 1, j: 2, solid: false, border: false, category: 'Grass' }
-  const shorePath = [{ i: 1, j: 2 }]
-  const grid = Array.from({ length: 5 }, (_, i) =>
-    Array.from({ length: 5 }, (_, j) => ({
-      i,
-      j,
-      solid: false,
-      border: false,
-      category: i === fish.i && j === fish.j ? 'Water' : 'Grass',
-      has: null,
-    }))
-  )
-  const lib = {
-    canUpdateMinimap: () => false,
-    degreeToDirection: () => 'south',
-    findInstancesInSight: () => [],
-    getCellsAroundPoint: (_i, _j, _grid, distance, condition) =>
-      distance === 1 && condition(shoreCell) ? [shoreCell] : [],
-    getClosestInstanceWithPath: () => null,
-    getInstanceClosestFreeCellPath: () => [],
-    getInstanceDegree: () => 0,
-    getInstancePath: (_unit, i, j) => (i === shoreCell.i && j === shoreCell.j ? shorePath : []),
-    getInstanceZIndex: () => 0,
-    instanceContactInstance: () => false,
-    instancesDistance: () => Infinity,
-    moveTowardPoint: () => {},
-    updateInstanceVisibility: () => {},
-  }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
-    '../../constants': constants,
-    '../../lib': lib,
-  })
-  const unit = {
-    action: null,
-    actionLocked: false,
-    category: 'Unit',
-    context: {
-      map: { grid },
-      performance: { record: () => {} },
-    },
-    dest: null,
-    getActionCondition: (candidate, action) => candidate === fish && action === constants.ACTION_TYPES.fishing,
-    handleChangeDest: () => {},
-    i: 0,
-    isDead: false,
-    isUnitAtDest: () => false,
-    j: 0,
-    path: [],
-    previousDest: null,
-    previousWork: null,
-    queueOrder: () => false,
-    setDest: nextTarget => {
-      unit.dest = nextTarget
-    },
-    setPath: path => {
-      unit.path = path
-    },
-    stopInterval: () => {},
-    type: constants.UNIT_TYPES.villager,
-    work: constants.WORK_TYPES.fisher,
-  }
-
-  new UnitMovement(unit).sendToEvt(fish, constants.ACTION_TYPES.fishing)
-
-  assert.equal(unit.dest, fish)
-  assert.equal(unit.action, constants.ACTION_TYPES.fishing)
-  assert.deepEqual(unit.path, shorePath)
-})
-
 test('a villager retries the original gather order after approaching a blocked target', () => {
   const target = { label: 'berries-1', isDestroyed: false }
   const calls = []
@@ -1827,7 +1754,7 @@ test('delivery shows a resource gain over the delivering unit', () => {
     'pixi.js': { Assets: { cache: { get: () => null } } },
     '../../constants': {
       ...constants,
-      LOADING_FOOD_TYPES: ['fish'],
+      LOADING_FOOD_TYPES: ['berry'],
       LOADING_TYPES: {},
       SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
       SOUND_CUES: { villager: {} },
@@ -1861,7 +1788,7 @@ test('delivery shows a resource gain over the delivering unit', () => {
     context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
     dest: forum,
     loading: 7,
-    loadingType: 'fish',
+    loadingType: 'berry',
     owner: player,
     previousDest: null,
     sprite: {},

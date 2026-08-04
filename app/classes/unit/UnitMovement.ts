@@ -191,14 +191,12 @@ const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
     ACTION_TYPES.farm,
     ACTION_TYPES.hunt,
     ACTION_TYPES.takemeat,
-    ACTION_TYPES.fishing,
   ],
 }
 
 const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: RuntimeEntity) => boolean> = {
   [ACTION_TYPES.chopwood]: (unit, target) => (unit.sendToTree ? (unit.sendToTree(target, true), true) : false),
   [ACTION_TYPES.farm]: (unit, target) => (unit.sendToFarm(target, true), true),
-  [ACTION_TYPES.fishing]: (unit, target) => (unit.sendToFish ? (unit.sendToFish(target, true), true) : false),
   [ACTION_TYPES.forageberry]: (unit, target) =>
     unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
   [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
@@ -210,7 +208,6 @@ const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: Runtim
 const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
   ACTION_TYPES.chopwood,
   ACTION_TYPES.farm,
-  ACTION_TYPES.fishing,
   ACTION_TYPES.forageberry,
   ACTION_TYPES.hunt,
   ACTION_TYPES.minegold,
@@ -382,12 +379,6 @@ export class UnitMovement {
       isRuntimeEntity(dest) &&
       currentDest.label === dest.label &&
       unit.action === action &&
-      !(
-        action === ACTION_TYPES.fishing &&
-        unit.currentSheet === SHEET_TYPES.action &&
-        unit.sprite &&
-        !unit.sprite.playing
-      ) &&
       ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
     ) {
       return

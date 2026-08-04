@@ -21,7 +21,6 @@ function loadUnitEnergy() {
         chopwood: 'chopwood',
         convert: 'convert',
         farm: 'farm',
-        fishing: 'fishing',
         forageberry: 'forageberry',
         heal: 'heal',
         hunt: 'hunt',
@@ -73,7 +72,6 @@ test('work energy costs reflect action effort', () => {
   assert.equal(getActionEnergyCost(unit, 'minestone'), 3)
   assert.equal(getActionEnergyCost(unit, 'chopwood'), 2)
   assert.equal(getActionEnergyCost(unit, 'build'), 2)
-  assert.equal(getActionEnergyCost(unit, 'fishing'), 1)
   assert.equal(getActionEnergyCost(unit, 'forageberry'), 0.75)
   assert.equal(getActionEnergyCost(unit, 'takemeat'), 0.5)
 

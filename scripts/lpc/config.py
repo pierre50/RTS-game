@@ -267,9 +267,8 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     # The ARPG hero's own signature look, distinct from a plain "villager": light
     # brown hair, a blue headband, and a white-shirt/brown-pantaloons/black-shoes
     # outfit with black suspenders on top. Baked like "villager" (see
-    # hero_build_tasks() in build.py) for slash/thrust/shoot job-pose variety
-    # plus a mounted "riding" sheet, since the hero can swap tools/weapons and
-    # ride.
+    # hero_build_tasks() in build.py) for slash/shoot job-pose variety plus a
+    # mounted "riding" sheet, since the hero can swap tools/weapons and ride.
     "hero": UnitLook(
         hair="plain",
         hat=HEADBAND_BLUE,
@@ -412,7 +411,6 @@ SHEETS: tuple[Sheet, ...] = (
         4,
         frame_indices=(0, 2, 3, 5, 7, 9, 10, 12, 13, 15, 16, 18, 20, 22, 23, 25, 26, 28, 29, 31, 33, 35, 36, 38),
     ),
-    Sheet("thrust", "thrust", 8, 3, keep_every_other_frame=False),
     Sheet("spellcast", "spellcast", 7, 3, keep_every_other_frame=False),
     Sheet("dying", "hurt", 6, 1, keep_every_other_frame=False),
     Sheet("corpse", "hurt", 6, 1, False, (5,)),

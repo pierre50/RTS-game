@@ -6,8 +6,8 @@ from image_pipeline import layer_paths
 from jobs import UNIT_JOBS
 
 
-VILLAGER_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
-HERO_BODY_ANIMATIONS = ("walk", "hurt", "slash", "thrust", "shoot")
+VILLAGER_BODY_ANIMATIONS = ("walk", "hurt", "slash", "shoot")
+HERO_BODY_ANIMATIONS = ("walk", "hurt", "slash", "shoot")
 # The hero bakes the action poses it still uses directly (see
 # hero_build_tasks() in build.py); its "riding" sheets reuse those frames, so
 # they need no extra animation entry.

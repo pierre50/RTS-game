@@ -12,8 +12,8 @@ const BAKED_VARIANT_KEYS = ['01'] as const
 
 const UNIT_SHEETS = ['walking', 'action', 'riding', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
-const VILLAGER_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
-const HERO_BASE_ACTION_SHEETS = ['slash', 'thrust', 'shoot'] as const
+const VILLAGER_ACTION_SHEETS = ['slash', 'shoot'] as const
+const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
 
 type BakedUnitType =
   | 'villager'
@@ -89,8 +89,7 @@ function villagerActionAlias(variant: string, animation: string): string {
   return bakedAlias('villager', variant, 'action', animation)
 }
 
-// The hero bakes the villager-style "body" layout, plus the action poses it can
-// still use directly. Thrust stays for fishing/tool work, not for thrust weapons.
+// The hero bakes the villager-style "body" layout, plus the action poses it can still use directly.
 function heroBodyAlias(variant: string, sheet: string): string {
   return bakedAlias('hero', variant, 'body', sheet)
 }
@@ -231,7 +230,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   }
 
   const actionAlias = bakedUnit === 'hero' ? heroActionAlias : villagerActionAlias
-  const villagerSheets = (actionAnimation: 'slash' | 'thrust' | 'shoot') => {
+  const villagerSheets = (actionAnimation: 'slash' | 'shoot') => {
     const bodyWalking = bodyAlias(variant, 'walking')
     const bodyDying = bodyAlias(variant, 'dying')
     const bodyCorpse = bodyAlias(variant, 'corpse')
@@ -255,7 +254,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       harvestSheet: actionAlias(variant, 'slash'),
       loadedSheet: bodyAlias(variant, 'walking'),
     },
-    fisher: { ...villagerSheets('thrust'), loadedSheet: bodyAlias(variant, 'walking') },
     farmer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
     forager: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
     stoneminer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },

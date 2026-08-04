@@ -21,7 +21,7 @@ import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
 import { t } from './lang'
-import { degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
+import { angleDelta, degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
 import {
@@ -36,9 +36,10 @@ import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
+import type { DynamicEquipmentKey } from './lpc/equipment'
 
-export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer' | 'fishingRod'
-export type HeroContextAction = 'chop' | 'mine' | 'build' | 'fish' | 'gather' | 'pickup' | 'interact'
+export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
+export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
 export type HeroEquippedItem = 'interact' | 'sword' | 'halberd' | 'bow'
 export type HeroTool = HeroEquippedItem
 
@@ -73,14 +74,12 @@ export const contextualToolByAction: Partial<Record<HeroContextAction, HeroCivil
   chop: 'axe',
   mine: 'pickaxe',
   build: 'hammer',
-  fish: 'fishingRod',
 }
 
 export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
   axe: 1,
   pickaxe: 1,
   hammer: 1,
-  fishingRod: 1,
 }
 
 const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
@@ -88,6 +87,16 @@ const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   sword: 'heroSword',
   halberd: 'heroSpear',
   bow: WORK_TYPES.hunter,
+}
+
+// Mirrors the equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
+// in lpc/equipment.ts: heroSword→longsword, heroSpear→halberd, hunter→bow) — used
+// to render an icon of the actual weapon for the inventory tool slots. No entry
+// for 'interact': bare hands, nothing to draw.
+export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquipmentKey>> = {
+  sword: 'longsword',
+  halberd: 'halberd',
+  bow: 'bow',
 }
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
@@ -169,8 +178,6 @@ function getLoadingTypeForAction(action: string): string | null {
       return LOADING_TYPES.stone
     case ACTION_TYPES.takemeat:
       return LOADING_TYPES.meat
-    case ACTION_TYPES.fishing:
-      return LOADING_TYPES.fish
     default:
       return null
   }
@@ -244,21 +251,6 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
       getActionCondition(hero, target, ACTION_TYPES.build)
         ? () => runHeroGatherAction(hero, target, ACTION_TYPES.build, WORK_TYPES.builder)
         : null,
-  },
-  {
-    action: 'fish',
-    matches: target => target.category === 'Fish',
-    resolve: (hero, target) => {
-      const action = resolveHeroGatherAction(hero, target, ACTION_TYPES.fishing, WORK_TYPES.fisher)
-      if (!action) return null
-      return () => {
-        playAudibleSoundCue(
-          hero,
-          (target as { sounds?: { command?: string | number | (string | number)[] | null } }).sounds?.command
-        )
-        action()
-      }
-    },
   },
 ]
 
@@ -468,11 +460,6 @@ function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): bool
   return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
 }
 
-function angleDelta(a: number, b: number): number {
-  const diff = Math.abs(a - b) % 360
-  return diff > 180 ? 360 - diff : diff
-}
-
 function getAimDelta(hero: UnitEntity, target: RuntimeEntity): number {
   return angleDelta(getInstanceDegree(hero, target.x, target.y), hero.degree ?? 0)
 }
@@ -589,7 +576,6 @@ function getContextActionForTarget(contextAction: HeroContextAction, target: Run
   if (contextAction === 'mine' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
   if (contextAction === 'mine' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
   if (contextAction === 'build' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
-  if (contextAction === 'fish' && target.category === 'Fish') return ACTION_TYPES.fishing
   return null
 }
 
@@ -1128,6 +1114,7 @@ function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: He
         attacker: hero,
         bonusDamage: getCombatXpBonus(hero, XP_CATEGORIES.melee),
         defaultDamage: getHeroWeaponDamage(tool),
+        isMelee: true,
         menu: hero.context?.menu,
         player: hero.context?.player,
         xpCategory: XP_CATEGORIES.melee,

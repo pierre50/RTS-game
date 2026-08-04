@@ -1,10 +1,10 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
-import { formatXpProgressText, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
+import { formatXpProgressText, getHighestUnitLevel, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
-import type { UnitEntity } from '../types/entities'
+import type { EntityInfoRenderOptions, UnitEntity } from '../types/entities'
 import type { EquipmentStats, UnitConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
@@ -54,7 +54,7 @@ export class UnitInterface {
     return loadingDiv
   }
 
-  setDefaultInterface(element: HTMLElement, data: UnitConfig): void {
+  setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
     appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints)
@@ -63,6 +63,11 @@ export class UnitInterface {
       const typeElement = element.querySelector(`.${MENU_INFO_IDS.type}`)
       element.insertBefore(nameElement, typeElement)
     }
+
+    // A single glanceable level (the best of the 9 per-skill levels below), always shown —
+    // the per-category rows only list categories with XP (or all of them with showAllXp), so
+    // neither view alone gives an immediate answer to "what level is this unit."
+    element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getHighestUnitLevel(unit)}`))
 
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
@@ -90,7 +95,7 @@ export class UnitInterface {
 
     element.appendChild(infosDiv)
 
-    const xpEntries = getUnitExperienceEntries(unit)
+    const xpEntries = getUnitExperienceEntries(unit, { includeZero: options?.showAllXp })
     if (xpEntries.length) {
       const xpDiv = document.createElement('div')
       xpDiv.classList.add('unit-xp')

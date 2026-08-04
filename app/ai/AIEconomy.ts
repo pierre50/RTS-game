@@ -1,12 +1,11 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getCellsAroundPoint, getClosestInstance, getGaiaAnimals, getInstancePath, instancesDistance } from '../lib'
-import type { RuntimeCell, RuntimeMap } from '../types/map'
+import { getClosestInstance, getGaiaAnimals, instancesDistance } from '../lib'
+import type { RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
   AIEntityLike,
   AIFoodSources,
   AIFoodSourceType,
-  AIFoodTarget,
   AIFoodWorkerCounts,
   AIStrategyPlayerLike,
   AIVillagerActionOptions,
@@ -80,8 +79,7 @@ export class AIEconomy {
     const villagersForaging = byWork([WORK_TYPES.forager])
     const villagersHunting = byWork([WORK_TYPES.hunter])
     const villagersFarming = byWork([WORK_TYPES.farmer])
-    const villagersFishing = byWork([WORK_TYPES.fisher])
-    const villagersOnFood = [...villagersForaging, ...villagersHunting, ...villagersFarming, ...villagersFishing]
+    const villagersOnFood = [...villagersForaging, ...villagersHunting, ...villagersFarming]
     const villagersOnWood = byWork([WORK_TYPES.woodcutter])
     const villagersOnGold = byWork([WORK_TYPES.goldminer])
     const villagersOnStone = byWork([WORK_TYPES.stoneminer])
@@ -91,7 +89,6 @@ export class AIEconomy {
       villagersForaging,
       villagersHunting,
       villagersFarming,
-      villagersFishing,
       villagersOnFood,
       villagersOnWood,
       villagersOnGold,
@@ -183,10 +180,7 @@ export class AIEconomy {
 
     const deficit =
       Math.max(0, targets.maxVillagersOnWood - ai.foundedTrees.size * 2) +
-      Math.max(
-        0,
-        targets.maxVillagersOnFood * 0.6 - (ai.foundedBerrybushs.size * 2 + aliveAnimals * 3 + ai.foundedFish.size * 2)
-      ) +
+      Math.max(0, targets.maxVillagersOnFood * 0.6 - (ai.foundedBerrybushs.size * 2 + aliveAnimals * 3)) +
       Math.max(0, targets.maxVillagersOnGold - ai.foundedGolds.size * 3) +
       Math.max(0, targets.maxVillagersOnStone - ai.foundedStones.size * 3)
 
@@ -304,57 +298,6 @@ export class AIEconomy {
     )
   }
 
-  getReachableFishShoreCell(fish: AIEntityLike, villager: AIEntityLike): RuntimeCell | null {
-    const map = this.ai.context?.map
-    if (!map || !fish || !villager || (fish.quantity || 0) <= 0 || !this.isLocationSafe(fish)) return null
-
-    const shoreCells = getCellsAroundPoint(fish.i, fish.j, map.grid, 1, (cell: RuntimeCell) => {
-      return cell.category !== 'Water'
-    })
-    shoreCells.sort(
-      (a: RuntimeCell, b: RuntimeCell) =>
-        Math.abs(villager.i - a.i) +
-        Math.abs(villager.j - a.j) -
-        (Math.abs(villager.i - b.i) + Math.abs(villager.j - b.j))
-    )
-
-    let best: { cell: RuntimeCell; pathLength: number } | null = null
-    for (const cell of shoreCells) {
-      if (villager.i === cell.i && villager.j === cell.j) return cell
-      if (cell.solid) continue
-      const path = getInstancePath(villager, cell.i, cell.j, map)
-      if (path.length && (!best || path.length < best.pathLength)) {
-        best = { cell, pathLength: path.length }
-      }
-    }
-
-    return best?.cell || null
-  }
-
-  getVillagerFishSources(villagers: AIEntityLike[] = []): AIEntityLike[] {
-    if (!villagers.length) return []
-    return [...this.ai.foundedFish].filter((fish: AIEntityLike) =>
-      villagers.some(villager => this.getReachableFishShoreCell(fish, villager))
-    )
-  }
-
-  getBestVillagerFishTarget(villager: AIEntityLike, fishList: AIEntityLike[]): AIFoodTarget | null {
-    let best: AIFoodTarget | null = null
-    let bestScore = Infinity
-
-    for (const fish of fishList) {
-      const shoreCell = this.getReachableFishShoreCell(fish, villager)
-      if (!shoreCell) continue
-      const score = Math.abs(villager.i - shoreCell.i) + Math.abs(villager.j - shoreCell.j)
-      if (score < bestScore) {
-        bestScore = score
-        best = { fish, shoreCell }
-      }
-    }
-
-    return best
-  }
-
   getNearestDropDistance(source: AIEntityLike, dropSites: AIBuildingLike[]): number {
     if (!source || !dropSites.length) return 0
     return Math.min(...dropSites.map(site => Math.abs(source.i - site.i) + Math.abs(source.j - site.j)))
@@ -380,14 +323,12 @@ export class AIEconomy {
     const workByType: Record<AIFoodSourceType, string> = {
       berry: WORK_TYPES.forager,
       carcass: WORK_TYPES.hunter,
-      fish: WORK_TYPES.fisher,
       farm: WORK_TYPES.farmer,
       hunt: WORK_TYPES.hunter,
     }
     const fallbackRates: Record<AIFoodSourceType, number> = {
       berry: 0.45,
       carcass: 0.4725,
-      fish: 0.6,
       farm: 0.45,
       hunt: 0.4725,
     }
@@ -437,7 +378,6 @@ export class AIEconomy {
     }
     for (const bush of sources.berries) addSlots('berry', bush, 2, sources.plantDrops)
     for (const farm of sources.farms) addSlots('farm', farm, 1, sources.plantDrops)
-    for (const fish of sources.fish) addSlots('fish', fish, 1, sources.meatDrops)
     for (const animal of sources.animals) {
       const hunters =
         (animal.totalHitPoints || 0) >= 20 ? Math.min(4, Math.max(1, Math.ceil((animal.hitPoints || 0) / 4))) : 1
@@ -445,7 +385,7 @@ export class AIEconomy {
     }
 
     opportunities.sort((a, b) => b.score - a.score)
-    const targets: AIFoodWorkerCounts = { berry: 0, carcass: 0, farm: 0, fish: 0, hunt: 0 }
+    const targets: AIFoodWorkerCounts = { berry: 0, carcass: 0, farm: 0, hunt: 0 }
     for (const opportunity of opportunities.slice(0, maxWorkers)) targets[opportunity.type]++
     return targets
   }
@@ -545,12 +485,7 @@ export class AIEconomy {
     emptyFarms: AIBuildingLike[]
   ): number {
     const { ai } = this
-    const {
-      villagersForaging = [],
-      villagersHunting = [],
-      villagersFarming = [],
-      villagersFishing = [],
-    } = workerSnapshot
+    const { villagersForaging = [], villagersHunting = [], villagersFarming = [] } = workerSnapshot
     const { maxVillagersOnFood } = targets
     let actions = 0
     const foodContext = this.getFoodSourceContext()
@@ -578,35 +513,25 @@ export class AIEconomy {
         (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0 && this.isLocationSafe(animal)
       ),
       farms: [...farmCandidates],
-      fish: this.getVillagerFishSources([...availableVillagers, ...villagersFishing]),
       meatDrops: foodContext.meatDropSites,
       plantDrops: foodContext.plantDropSites,
-      workerPositions: [
-        ...availableVillagers,
-        ...villagersForaging,
-        ...villagersHunting,
-        ...villagersFarming,
-        ...villagersFishing,
-      ],
+      workerPositions: [...availableVillagers, ...villagersForaging, ...villagersHunting, ...villagersFarming],
     }
     const sourceTargets = this.getFoodWorkerTargets(maxVillagersOnFood, sources, {
       berry: villagersForaging.length,
       carcass: carcassHunters.length,
       farm: villagersFarming.length,
-      fish: villagersFishing.length,
       hunt: liveHunters.length,
     })
 
     this.releaseExcessFoodWorkers(villagersForaging, sourceTargets.berry, availableVillagers)
     this.releaseExcessFoodWorkers(carcassHunters, sourceTargets.carcass, availableVillagers)
     this.releaseExcessFoodWorkers(liveHunters, sourceTargets.hunt, availableVillagers)
-    this.releaseExcessFoodWorkers(villagersFishing, sourceTargets.fish, availableVillagers)
     this.releaseExcessFoodWorkers(villagersFarming, sourceTargets.farm, availableVillagers)
 
     const activeForagers = villagersForaging.filter((villager: AIEntityLike) => !villager.inactif)
     const activeCarcassHunters = carcassHunters.filter((villager: AIEntityLike) => !villager.inactif)
     const activeLiveHunters = liveHunters.filter((villager: AIEntityLike) => !villager.inactif)
-    const activeFishers = villagersFishing.filter((villager: AIEntityLike) => !villager.inactif)
     const activeFarmers = villagersFarming.filter((villager: AIEntityLike) => !villager.inactif)
 
     if (sources.carcasses.length > 0) {
@@ -631,17 +556,6 @@ export class AIEconomy {
     )
 
     actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt, sources.animals)
-
-    if (sources.fish.length > 0) {
-      const toAssign = Math.min(Math.max(0, sourceTargets.fish - activeFishers.length), availableVillagers.length)
-      for (let i = 0; i < toAssign; i++) {
-        const villager = availableVillagers[0]
-        const target = this.getBestVillagerFishTarget(villager, sources.fish)
-        if (!target) break
-        availableVillagers.shift()?.sendToFish?.(target.fish)
-        actions++
-      }
-    }
 
     const availableFarms = emptyFarms
       .filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0 && !farm.isUsedBy)

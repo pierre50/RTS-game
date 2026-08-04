@@ -214,69 +214,6 @@ function getSortedTextureNames<TTexture>(textures: TextureMap<TTexture>): string
   })
 }
 
-export function getSailAnimationFrames<TTexture>(
-  textures: TextureMap<TTexture> | null | undefined,
-  instance:
-    | {
-        degree: number
-        sailDirectionCount?: number
-        sailDirectionOrder?: DirectionOrder | null
-      }
-    | null
-    | undefined
-): { textures: TTexture[]; mirrored: boolean } {
-  if (!textures || !instance) {
-    return { textures: [], mirrored: false }
-  }
-
-  const names = getSortedTextureNames(textures)
-  const directionCount = instance.sailDirectionCount ?? 5
-  const framesPerDirection = Math.max(1, Math.floor(names.length / directionCount))
-
-  if (directionCount === 9) {
-    const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(instance.degree, directionCount)
-    const start = frameIndex * framesPerDirection
-    return {
-      textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
-      mirrored,
-    }
-  }
-
-  const direction = (degreeToDirection(instance.degree) ?? 'south') as Direction
-  const directionOrder = getSheetDirectionOrder(textures, directionCount, instance.sailDirectionOrder)
-  const directionIndex = directionOrder?.indexOf(direction) ?? -1
-
-  if (directionOrder?.length === 8 && directionIndex >= 0) {
-    const start = directionIndex * framesPerDirection
-    return {
-      textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
-      mirrored: false,
-    }
-  }
-
-  let sailDirection = direction
-  let mirrored = false
-  if (direction === 'southeast') {
-    sailDirection = 'southwest'
-    mirrored = true
-  } else if (direction === 'northeast') {
-    sailDirection = 'northwest'
-    mirrored = true
-  } else if (direction === 'east') {
-    sailDirection = 'west'
-    mirrored = true
-  }
-
-  const fallbackOrder = directionOrder ?? FIVE_DIRECTION_ORDER
-  const fallbackIndex = Math.max(0, fallbackOrder.indexOf(sailDirection))
-  const start = fallbackIndex * framesPerDirection
-
-  return {
-    textures: names.slice(start, start + framesPerDirection).map(name => textures[name]),
-    mirrored,
-  }
-}
-
 type AnimatedSpriteLike<TTexture = AnimatedSprite['textures'][number]> = {
   _usesAppTicker?: boolean
   anchor: { set: (x: number, y: number) => void }
@@ -743,7 +680,6 @@ export function getWorkWithLoadingType(loadingType: string): string {
     stone: WORK_TYPES.stoneminer,
     gold: WORK_TYPES.goldminer,
     meat: WORK_TYPES.hunter,
-    fish: WORK_TYPES.fisher,
   }
   return workMapping[loadingType] || 'default'
 }

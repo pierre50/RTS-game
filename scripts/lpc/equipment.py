@@ -213,12 +213,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "cane": {
         "walk": Equipment(foreground=(LayerSpec("weapon/polearm/cane/male/walk/cane.png"),)),
     },
-    "fishing_rod": {
-        "tool_rod": Equipment(
-            background=(LayerSpec("tools/fishing/rod-bg.png"),),
-            foreground=(LayerSpec("tools/fishing/rod-fg.png"),),
-        ),
-    },
     # Round shields are standalone equipment. The brass sheet is pixel-recolored
     # from the hand-colored gold source by the image pipeline.
     "round_shield_brass_slash": {

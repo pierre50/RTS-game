@@ -17,7 +17,6 @@ const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.minestone]: 3,
   [ACTION_TYPES.minegold]: 3,
   [ACTION_TYPES.build]: 2,
-  [ACTION_TYPES.fishing]: 1,
   [ACTION_TYPES.forageberry]: 0.75,
   [ACTION_TYPES.farm]: 1,
   [ACTION_TYPES.takemeat]: 0.5,

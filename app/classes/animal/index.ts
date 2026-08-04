@@ -86,7 +86,6 @@ export class Animal extends Instance implements AnimalEntity {
   ambientWalkDelayMin?: number
   ambientWalkDelayMax?: number
   ambientWalkRange?: number
-  rateOfFire!: number
   sounds?: UnitSounds
 
   constructor(options: AnimalOptions, context: GameContextLike) {

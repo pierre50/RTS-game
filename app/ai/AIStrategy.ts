@@ -380,7 +380,7 @@ export class AIStrategy {
       (villager: AIEntityLike) =>
         !villager.isDead &&
         !villager.inactif &&
-        [WORK_TYPES.forager, WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.fisher].includes(villager.work || '')
+        [WORK_TYPES.forager, WORK_TYPES.hunter, WORK_TYPES.farmer].includes(villager.work || '')
     ).length
 
     if (villagers.length < 8) return false
@@ -391,8 +391,7 @@ export class AIStrategy {
     const deadAnimals = [...ai.foundedDeadAnimals].filter(
       (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0
     ).length
-    const naturalFoodCapacity =
-      this.getViableBerryBushCount() * 2 + aliveAnimals * 2 + deadAnimals + Math.min(ai.foundedFish.size, 3) * 2
+    const naturalFoodCapacity = this.getViableBerryBushCount() * 2 + aliveAnimals * 2 + deadAnimals
     const naturalFoodUnderPressure =
       villagersOnFood > naturalFoodCapacity || naturalFoodCapacity < Math.max(4, Math.ceil(villagers.length * 0.35))
     const foodDemand = (this.getEconomicDemand().food || 0) > 0 || ai.food < 80
