@@ -61,7 +61,7 @@ export default class MainMenu {
     const logo = document.createElement('img')
     logo.className = 'menu-title'
     logo.src = 'assets/logo.png'
-    logo.alt = 'Dawn of Empires'
+    logo.alt = 'Kaelor'
     logo.decoding = 'async'
     logo.fetchPriority = 'high'
     logoShell.appendChild(logo)
@@ -88,7 +88,7 @@ export default class MainMenu {
 
     const copyright = document.createElement('div')
     copyright.className = 'menu-copyright'
-    copyright.textContent = '© 2026 Dawn of Empires'
+    copyright.textContent = '© 2026 Kaelor'
 
     this.el.appendChild(panel)
     this.el.appendChild(copyright)

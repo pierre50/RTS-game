@@ -26,7 +26,7 @@
   padding: var(--menu-page-padding);
   overflow-y: var(--menu-page-overflow);
   background:
-    url('../../public/assets/graphics/ui/menu-bg.png') no-repeat center center;
+    url('../../public/assets/graphics/ui/menu-bg.jpg') no-repeat center center;
   background-size: cover;
 }
 
@@ -65,7 +65,6 @@ img.menu-title {
   width: var(--menu-logo-width);
   max-height: var(--menu-logo-max-height);
   margin: var(--menu-logo-margin);
-  aspect-ratio: 1672 / 941;
 }
 
 .menu-panel--home img.menu-title {

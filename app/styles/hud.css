@@ -967,6 +967,7 @@ body.hero-cursor-hidden {
 .resource {
   display: flex;
   align-items: center;
+  gap: 5px;
 }
 
 .resource > div {

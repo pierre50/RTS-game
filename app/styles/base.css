@@ -1,6 +1,11 @@
 @font-face {
-  font-family: 'VT323';
-  src: url('../../public/assets/fonts/VT323-Regular.ttf') format('truetype');
+  font-family: 'cobblestone';
+  src: url('../../public/assets/fonts/Cobblestone.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'm6x11';
+  src: url('../../public/assets/fonts/PixelOperator.ttf') format('truetype');
   font-display: swap;
 }
 
@@ -12,9 +17,6 @@ select,
 button {
   font-size: var(--font-size-base);
   font-family: var(--font-family-ui);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-smoothing: antialiased;
 }
 
 body {
