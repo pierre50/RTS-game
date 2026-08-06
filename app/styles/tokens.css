@@ -1,37 +1,85 @@
 :root {
-  /* Ancient Stone & Metal Theme Variables */
-  --main-primary-color: #1a1512; /* Deep Obsidian Stone */
-  --form-surface-color: #26201b; /* Carved Slate */
-  --main-border-radius: 0px;     /* Pixel-sharp corners */
+  /* =========================================================
+     KAELOR — RETRO COLORFUL DARK THEME
+     ========================================================= */
+
+  --main-primary-color: #02070d;
+  --form-surface-color: #071727;
+
+  --main-border-radius: 0px;
   --main-border-radius-lg: 0px;
-  --main-text-color: #eaddca;    /* Warm Bone / Ivory */
-  --main-accent-color: #dfb15b;  /* Polished Gold / Bronze */
-  --main-accent-hover: #ffdf7a;  /* Glowing Gold */
 
-  --border-light-color: #dfb15b; /* Solid gold outline (crisp bevel) */
-  --border-btn: 2px outset var(--border-light-color);
-  --border-slot: 2px inset var(--border-light-color);
-  --panel-border: 4px double var(--border-light-color); /* Double gold/bronze frame */
-  --main-box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  --main-text-color: #d7d3c7;
+  --main-accent-color: #d88135;
+  --main-accent-hover: #f0a24c;
 
-  --dev-console-ok-color: #ffe9a8;
-  --dev-console-error-color: #ff9a8f;
-  --dev-console-log-color: #f2dfbb;
+  /* Palette issue du décor */
+  --color-black-deep: #020102;
+  --color-black-blue: #030b14;
 
-  --msg-color: #ff6b6b;
-  --msg-bg: rgba(26, 10, 10, 0.95);
-  --msg-border: rgba(186, 45, 45, 0.65);
-  --msg-success-color: #62de8a;
-  --msg-success-bg: rgba(10, 26, 15, 0.95);
-  --msg-success-border: rgba(26, 110, 60, 0.65);
-  --msg-warning-color: #ffca60;
-  --msg-warning-bg: rgba(26, 20, 10, 0.95);
-  --msg-warning-border: rgba(138, 90, 10, 0.65);
+  --color-blue-deep: #021d3e;
+  --color-blue-mid: #04325d;
+  --color-blue-bright: #13619c;
+  --color-cyan: #317ec1;
+
+  --color-orange-dark: #543125;
+  --color-orange: #98502f;
+  --color-orange-bright: #d88135;
+
+  --color-magenta: #9b3558;
+  --color-stone-muted: #605047;
+
+  /* Bordures très contrastées */
+  --border-light-color: #29426e;
+  --border-top-color: #d88135;
+  --border-side-color: #13619c;
+  --border-bottom-color: #04325d;
+  --border-dark-color: #010407;
+
+  --border-btn: 2px solid var(--border-light-color);
+  --border-slot: 2px solid #04325d;
+  --panel-border: 2px solid #04325d;
+
+  --main-box-shadow:
+    4px 4px 0 #010204;
+
+  /* =========================================================
+     CONSOLE
+     ========================================================= */
+
+  --dev-console-ok-color: #89b78c;
+  --dev-console-error-color: #e06a58;
+  --dev-console-log-color: #b8c7cc;
+
+  /* =========================================================
+     MESSAGES
+     ========================================================= */
+
+  --msg-color: #f06c5e;
+  --msg-bg: rgba(32, 5, 8, 0.96);
+  --msg-border: rgba(152, 45, 48, 0.75);
+
+  --msg-success-color: #73cf8d;
+  --msg-success-bg: rgba(5, 28, 20, 0.96);
+  --msg-success-border: rgba(35, 126, 73, 0.75);
+
+  --msg-warning-color: #e6a14a;
+  --msg-warning-bg: rgba(35, 20, 5, 0.96);
+  --msg-warning-border: rgba(152, 80, 47, 0.8);
+
   --msg-padding: 8px 20px;
   --msg-font-size: var(--font-size-base);
   --msg-border-radius: var(--main-border-radius);
-  --msg-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 45%);
-  --msg-inset-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05), inset -1px -1px 0 rgba(0, 0, 0, 0.5);
+
+  --msg-sheen: none;
+
+  --msg-inset-shadow:
+    inset 0 1px 0 rgba(216, 129, 53, 0.55),
+    inset 0 -1px 0 rgba(19, 97, 156, 0.55);
+
+  /* =========================================================
+     TYPOGRAPHIE
+     ========================================================= */
 
   --font-size-sm: 14px;
   --font-size-base: 16px;
@@ -41,64 +89,134 @@
   --font-size-hero: 54px;
   --font-size-home-button: 20px;
   --font-size-section-title: 16px;
-  --font-family-ui: 'm6x11', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-display: 'cobblestone', var(--font-family-ui);
 
-  --text-color-inverse: #f5ead2; /* Light text for dark widget surfaces (slots, tooltips, tabs) */
+  --font-family-ui:
+    'm6x11',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+
+  --font-family-display:
+    'cobblestone',
+    var(--font-family-ui);
+
+  --text-color-inverse: #e1ddd0;
   --text-color-white: #ffffff;
-  --text-color-danger: #e74c3c;
-  --text-shadow-light-ui: 1px 1px 0 rgba(0, 0, 0, 0.85);
-  --text-shadow-dark-ui: 1px 1px 0 rgba(0, 0, 0, 0.95);
+  --text-color-danger: #e85d4f;
+
+  --text-shadow-light-ui:
+    2px 2px 0 #000000;
+
+  --text-shadow-dark-ui:
+    2px 2px 0 #000000;
+
   --text-shadow-none: none;
   --checkbox-check-shadow: none;
 
-  --surface-dark-weak: rgba(0, 0, 0, 0.35);
-  --surface-dark-soft: rgba(0, 0, 0, 0.55);
-  --surface-dark-medium: rgba(0, 0, 0, 0.65);
-  --surface-dark-strong: rgba(0, 0, 0, 0.75);
-  --surface-dark-heavy: rgba(0, 0, 0, 0.88);
-  --surface-dark-solid: #0d0a08;
-  --surface-black-soft: rgba(0, 0, 0, 0.5);
-  --surface-black-solid: #080605;
-  --surface-black-light: rgba(0, 0, 0, 0.65);
-  --surface-white-faint: rgba(255, 255, 255, 0.04);
-  --surface-row-subtle: rgba(223, 177, 91, 0.03);
-  --surface-row-dark: rgba(0, 0, 0, 0.3);
-  --border-row-subtle: rgba(223, 177, 91, 0.15);
-  --border-divider-subtle: rgba(223, 177, 91, 0.12);
+  /* =========================================================
+     SURFACES
+     ========================================================= */
 
-  --menu-backdrop-start: rgba(18, 14, 11, 0.85);
-  --menu-backdrop-end: rgba(10, 8, 7, 0.96);
-  --menu-backdrop-glow: rgba(223, 177, 91, 0.08);
-  --menu-backdrop: radial-gradient(circle at center, var(--menu-backdrop-glow), transparent 60%),
-    linear-gradient(180deg, var(--menu-backdrop-start) 0%, var(--menu-backdrop-end) 100%);
-  --menu-title-shadow: rgba(0, 0, 0, 0.6);
-  --home-button-bg: rgba(26, 20, 17, 0.75);
-  --home-button-focus-color: #ffdf7a;
+  --surface-dark-weak: rgba(0, 5, 12, 0.42);
+  --surface-dark-soft: rgba(0, 4, 10, 0.62);
+  --surface-dark-medium: rgba(0, 3, 8, 0.72);
+  --surface-dark-strong: rgba(0, 2, 6, 0.82);
+  --surface-dark-heavy: rgba(0, 1, 4, 0.92);
+
+  --surface-dark-solid: #03090f;
+
+  --surface-black-soft: rgba(0, 0, 0, 0.58);
+  --surface-black-solid: #010204;
+  --surface-black-light: rgba(0, 0, 0, 0.72);
+
+  --surface-white-faint: rgba(120, 190, 220, 0.035);
+
+  --surface-row-subtle: rgba(19, 97, 156, 0.07);
+  --surface-row-dark: rgba(0, 0, 0, 0.42);
+
+  --border-row-subtle: rgba(49, 126, 193, 0.22);
+  --border-divider-subtle: rgba(19, 97, 156, 0.16);
+
+  /* =========================================================
+     MENU
+     ========================================================= */
+
+  --menu-backdrop-start: rgba(2, 20, 39, 0.82);
+  --menu-backdrop-end: rgba(1, 3, 7, 0.97);
+  --menu-backdrop-glow: rgba(19, 97, 156, 0.14);
+
+  --menu-backdrop:
+    radial-gradient(
+      circle at 50% 25%,
+      rgba(49, 126, 193, 0.11),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 50% 90%,
+      rgba(216, 129, 53, 0.08),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      var(--menu-backdrop-start) 0%,
+      var(--menu-backdrop-end) 100%
+    );
+
+  --menu-title-shadow: rgba(0, 0, 0, 0.92);
+
+  --home-button-bg: #061522;
+  --home-button-focus-color: #e4903d;
   --home-button-focus-scale: 1;
 
-  --orientation-guard-glow: rgba(223, 177, 91, 0.06);
-  --orientation-guard-backdrop: rgba(8, 6, 5, 0.96);
+  /* =========================================================
+     ORIENTATION
+     ========================================================= */
 
-  --status-health-border: #1f0c09;
-  --status-health-top: #9c2e1b;
-  --status-health-bottom: #701d12;
-  --status-health-highlight: rgba(255, 200, 190, 0.2);
-  --status-health-shadow: rgba(0, 0, 0, 0.5);
-  --status-progress-top: #52c44f;
-  --status-progress-bottom: #24822b;
-  --status-progress-highlight: rgba(200, 255, 190, 0.2);
-  --status-progress-shadow: rgba(0, 0, 0, 0.4);
-  --status-health-background: linear-gradient(180deg, var(--status-health-top) 0%, var(--status-health-bottom) 100%);
-  --status-progress-background: linear-gradient(
-    180deg,
-    var(--status-progress-top) 0%,
-    var(--status-progress-bottom) 100%
-  );
+  --orientation-guard-glow: rgba(19, 97, 156, 0.1);
+  --orientation-guard-backdrop: rgba(1, 4, 8, 0.97);
+
+  /* =========================================================
+     STATUS
+     ========================================================= */
+
+  --status-health-border: #160204;
+  --status-health-top: #b6422e;
+  --status-health-bottom: #641810;
+  --status-health-highlight: rgba(255, 139, 104, 0.22);
+  --status-health-shadow: rgba(0, 0, 0, 0.68);
+
+  --status-progress-top: #31926a;
+  --status-progress-bottom: #15553e;
+  --status-progress-highlight: rgba(153, 255, 212, 0.18);
+  --status-progress-shadow: rgba(0, 0, 0, 0.62);
+
+  --status-health-background:
+    linear-gradient(
+      180deg,
+      var(--status-health-top) 0%,
+      var(--status-health-bottom) 100%
+    );
+
+  --status-progress-background:
+    linear-gradient(
+      180deg,
+      var(--status-progress-top) 0%,
+      var(--status-progress-bottom) 100%
+    );
+
   --status-health-inset-shadow:
-    inset 1px 1px 0 var(--status-health-highlight), inset -1px -1px 0 var(--status-health-shadow);
+    inset 1px 1px 0 var(--status-health-highlight),
+    inset -1px -1px 0 var(--status-health-shadow);
+
   --status-progress-inset-shadow:
-    inset 1px 1px 0 var(--status-progress-highlight), inset -1px -1px 0 var(--status-progress-shadow);
+    inset 1px 1px 0 var(--status-progress-highlight),
+    inset -1px -1px 0 var(--status-progress-shadow);
+
+  /* =========================================================
+     ESPACEMENTS — INCHANGÉS
+     ========================================================= */
 
   --ui-gap-1: 1px;
   --ui-gap-5: 5px;
@@ -111,48 +229,118 @@
   --ui-gap-24: 24px;
   --ui-gap-40: 40px;
 
+  /* =========================================================
+     DIMENSIONS — INCHANGÉES
+     ========================================================= */
+
   --ui-slot-size: 120px;
+
   --ui-resource-icon-width: 22px;
   --ui-resource-icon-height: 13px;
+
   --ui-button-width: 260px;
   --ui-button-width-home: 340px;
+
   --ui-button-height: 52px;
   --ui-button-height-home: 64px;
+
   --ui-control-height: 46px;
   --ui-control-height-compact: 38px;
   --ui-control-padding-x: 12px;
   --ui-control-font-size: var(--font-size-sm);
+
   --ui-range-thumb-size: 24px;
   --ui-range-track-height: 10px;
   --ui-select-arrow-size: 6px;
   --ui-checkbox-size: 24px;
 
+  /* =========================================================
+     TRANSITIONS — INCHANGÉES
+     ========================================================= */
+
   --ui-transition-fast: 100ms steps(2, end);
   --ui-transition-panel: 140ms steps(3, end);
   --ui-transition-progress: 180ms steps(6, end);
-  --ui-hover-brightness: 1.1;
+
+  --ui-hover-brightness: 1.16;
   --ui-press-offset: 2px;
   --ui-hover-scale: 1;
-  --ui-control-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 50%);
-  --ui-panel-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%);
-  --ui-button-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 40%);
-  --ui-inset-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.55), inset -1px -1px 0 rgba(255, 255, 255, 0.08);
-  --ui-outset-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.2), inset -2px -2px 0 rgba(0, 0, 0, 0.5);
-  --ui-button-shadow-raised: inset 1px 1px 0 rgba(255, 255, 255, 0.18), inset -2px -2px 0 rgba(0, 0, 0, 0.45);
-  --ui-button-shadow-pressed: inset 2px 2px 0 rgba(0, 0, 0, 0.5), inset -1px -1px 0 rgba(255, 255, 255, 0.08);
-  --ui-scrollbar-active-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.7), inset -1px -1px 0 rgba(255, 255, 255, 0.15);
 
-  --ui-bar-bg: #2a221d; /* Chiseled stone dark bar */
-  --ui-bar-border: 2px outset var(--border-light-color);
-  --ui-slot-border: 2px inset var(--border-light-color);
-  --ui-text-color: #eaddca;
-  --ui-text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
-  --ui-plain-text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
-  --ui-map-shadow-dark: #120e0c;
-  --ui-map-shadow-light: rgba(223, 177, 91, 0.15);
-  --focus-outline-color: rgba(223, 177, 91, 0.8);
+  /* =========================================================
+     RENDU UI
+     ========================================================= */
 
-  --debug-overlay-bg: rgba(13, 10, 8, 0.95);
-  --debug-overlay-border: rgba(223, 177, 91, 0.2);
-  --debug-overlay-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  --ui-control-sheen: none;
+  --ui-panel-sheen: none;
+  --ui-button-sheen: none;
+
+  --ui-inset-shadow:
+    inset 0 2px 0 #010204,
+    inset 2px 0 0 #01060c,
+    inset -2px 0 0 #061b2b,
+    inset 0 -2px 0 #04325d;
+
+  /*
+   * Orange en haut, noir sur les côtés, bleu vif en bas.
+   * Le contraste est volontairement dur.
+   */
+  --ui-outset-shadow:
+    inset 0 2px 0 #98502f,
+    inset 2px 0 0 #03090f,
+    inset -2px 0 0 #021d3e,
+    inset 0 -2px 0 #13619c;
+
+  --ui-button-shadow-raised:
+    inset 0 2px 0 #d88135,
+    inset 2px 0 0 #03090f,
+    inset -2px 0 0 #021d3e,
+    inset 0 -2px 0 #13619c,
+    4px 4px 0 #010102;
+
+  --ui-button-shadow-pressed:
+    inset 0 2px 0 #000000,
+    inset 2px 0 0 #000000,
+    inset -2px 0 0 #031226,
+    inset 0 -2px 0 #98502f;
+
+  --ui-scrollbar-active-shadow:
+    inset 0 2px 0 #000000,
+    inset 2px 0 0 #000000,
+    inset -1px 0 0 #021d3e,
+    inset 0 -1px 0 #13619c;
+
+  /* =========================================================
+     BARS / SLOTS
+     ========================================================= */
+
+  --ui-bar-bg: #061421;
+
+  --ui-bar-border:
+    2px solid #04325d;
+
+  --ui-slot-border:
+    2px solid #021d3e;
+
+  --ui-text-color: #d7d3c7;
+
+  --ui-text-shadow:
+    2px 2px 0 #000000;
+
+  --ui-plain-text-shadow:
+    2px 2px 0 #000000;
+
+  --ui-map-shadow-dark: #000204;
+  --ui-map-shadow-light: rgba(49, 126, 193, 0.22);
+
+  --focus-outline-color: rgba(216, 129, 53, 0.95);
+
+  /* =========================================================
+     DEBUG
+     ========================================================= */
+
+  --debug-overlay-bg: rgba(2, 8, 14, 0.97);
+  --debug-overlay-border: rgba(19, 97, 156, 0.3);
+
+  --debug-overlay-shadow:
+    4px 4px 0 #000000;
 }

@@ -170,7 +170,7 @@ export class MinimapManager {
 
     const context = menu.resourcesMinimap.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
-    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
+    const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
     canvasDrawRectangle(
       context,
       resource.x / factor - squareSize / 2 + translate,
@@ -187,7 +187,7 @@ export class MinimapManager {
     const canvas = menu.resourcesMinimap
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
-    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
+    const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
     if (!map.showResources) return
@@ -230,7 +230,7 @@ export class MinimapManager {
 
     const { menu } = this
     const { map, player } = menu.context
-    const squareSize = 4 * MINIMAP_RESOLUTION_SCALE
+    const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
     const { factor, translate } = this.getMinimapParams()
     const color = owner.colorHex
     const id = `minimap-${owner.label}`

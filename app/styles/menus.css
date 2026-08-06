@@ -127,7 +127,7 @@ div.menu-title {
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  color: rgba(234, 221, 202, 0.5);
+  color: white;
   font-size: 13px;
   letter-spacing: 0.08em;
   text-shadow: var(--text-shadow-dark-ui);
