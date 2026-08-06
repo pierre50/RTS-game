@@ -81,6 +81,11 @@ type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
 }
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
+// Equipment layers sit at zIndex 8 (back) / 12 (front, see EQUIPMENT_LAYER_Z_INDEX in lpc/equipment.ts).
+// "Behind" keeps the horse under the back layer; "front" clears the front layer too, so the horse
+// covers the rider's whole stack (body + weapon) for south-facing directions.
+const MOUNTED_HORSE_BEHIND_Z_INDEX = 0
+const MOUNTED_HORSE_FRONT_Z_INDEX = 13
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
 const MOUNTED_HORSE_WALKING_SHEET = 'animals/horse/walking'
 const MOUNTED_RIDER_Y_OFFSET = -20
@@ -167,6 +172,7 @@ export class Unit extends Instance implements UnitEntity {
   declare sprite: AnimatedSprite
   shadow: AnimatedSprite | null
   horseSprite: AnimatedSprite | null
+  horseShadow: AnimatedSprite | null
   appearanceLayerSprites: Map<number, AnimatedSprite>
   declare reliefLift: number
   sheetDirectionCounts?: Record<string, number>
@@ -248,6 +254,7 @@ export class Unit extends Instance implements UnitEntity {
     this.unitMovement = new UnitMovement(this)
     this.shadow = null
     this.horseSprite = null
+    this.horseShadow = null
     this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
     this.reliefLift = 0
@@ -427,35 +434,35 @@ export class Unit extends Instance implements UnitEntity {
     })
   }
 
-  createShadow() {
-    const shadow = new AnimatedSprite(this.sprite.textures as Texture[])
+  createShadow(source: AnimatedSprite = this.sprite, label: string = LABEL_TYPES.shadow) {
+    const shadow = new AnimatedSprite(source.textures as Texture[])
     bindAnimatedSpriteToTicker(shadow, this.context.app)
-    shadow.label = LABEL_TYPES.shadow
+    shadow.label = label
     shadow.eventMode = 'none'
     shadow.roundPixels = true
     shadow.tint = 0x000000
     shadow.alpha = SHADOW_ALPHA
     shadow.zIndex = -2
-    this.syncShadow(shadow)
+    this.syncShadow(shadow, source)
     return shadow
   }
 
-  syncShadow(shadow = this.shadow) {
-    if (!shadow || !this.sprite) return
-    const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
+  syncShadow(shadow = this.shadow, source: AnimatedSprite | null = this.sprite) {
+    if (!shadow || !source) return
+    const frame = Math.min(source.currentFrame, Math.max(source.textures.length - 1, 0))
     shadow.visible = getShadowsEnabled()
-    shadow.textures = this.sprite.textures
-    shadow.animationSpeed = this.sprite.animationSpeed
-    shadow.loop = this.sprite.loop
-    shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
+    shadow.textures = source.textures
+    shadow.animationSpeed = source.animationSpeed
+    shadow.loop = source.loop
+    shadow.anchor.set(source.anchor.x, source.anchor.y)
     shadow.alpha = SHADOW_ALPHA
     shadow.rotation = 0
-    shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X
-    shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y
+    shadow.scale.x = source.scale.x * SHADOW_SCALE_X
+    shadow.scale.y = Math.abs(source.scale.y) * SHADOW_SCALE_Y
     // The shadow rises/sinks with the sprite on relief (both stand on the same raised
     // ground) — unlike a flying animal's shadow, which stays pinned to the ground.
     shadow.position.set(0, this.reliefLift)
-    if (this.sprite.playing) {
+    if (source.playing) {
       shadow.gotoAndPlay(frame)
     } else {
       shadow.gotoAndStop(frame)
@@ -488,7 +495,9 @@ export class Unit extends Instance implements UnitEntity {
     this.horseSprite.loop = true
     this.horseSprite.updateAnchor = true
     this.horseSprite.onFrameChange = () => this.syncMountedRiderPosition()
-    this.addChildAt(this.horseSprite, Math.max(0, this.getChildIndex(this.sprite)))
+    this.addChild(this.horseSprite)
+    this.horseShadow = this.createShadow(this.horseSprite, `${LABEL_TYPES.shadow}-horse`)
+    this.addChild(this.horseShadow)
     this.syncMountedHorseSprite()
   }
 
@@ -532,24 +541,28 @@ export class Unit extends Instance implements UnitEntity {
       this.horseSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
     }
 
+    // This container has sortableChildren enabled (any child's zIndex assignment turns it on, and
+    // the health/power bars already do), so Pixi re-sorts children by zIndex on every render —
+    // addChild/addChildAt insertion order gets silently discarded. The horse must therefore be
+    // ordered via its own zIndex, not by moving it around in the children array.
     const direction = degreeToDirection(this.degree) ?? 'south'
     const horseInFront = MOUNTED_HORSE_DIRECTIONS_IN_FRONT.has(direction)
-    const spriteIndex = this.getChildIndex(this.sprite)
-    const horseIndex = this.getChildIndex(this.horseSprite)
-    if (horseInFront && horseIndex < spriteIndex) {
-      this.addChild(this.horseSprite)
-    } else if (!horseInFront && horseIndex > spriteIndex) {
-      this.addChildAt(this.horseSprite, Math.max(0, spriteIndex))
-    }
+    this.horseSprite.zIndex = horseInFront ? MOUNTED_HORSE_FRONT_Z_INDEX : MOUNTED_HORSE_BEHIND_Z_INDEX
 
     if (this.context.paused) {
       this.horseSprite.gotoAndStop(Math.min(frame, this.horseSprite.textures.length - 1))
     } else {
       this.horseSprite.gotoAndPlay(Math.min(frame, this.horseSprite.textures.length - 1))
     }
+    this.syncShadow(this.horseShadow, this.horseSprite)
   }
 
   removeMountedHorseSprite() {
+    if (this.horseShadow) {
+      this.horseShadow.parent?.removeChild(this.horseShadow)
+      this.horseShadow.destroy({ children: true, texture: false })
+      this.horseShadow = null
+    }
     if (!this.horseSprite) return
     this.horseSprite.parent?.removeChild(this.horseSprite)
     this.horseSprite.destroy({ children: true, texture: false })
@@ -559,6 +572,9 @@ export class Unit extends Instance implements UnitEntity {
   syncVisualSettings(): void {
     if (this.shadow) {
       this.shadow.visible = getShadowsEnabled()
+    }
+    if (this.horseShadow) {
+      this.horseShadow.visible = getShadowsEnabled()
     }
   }
 
@@ -573,6 +589,7 @@ export class Unit extends Instance implements UnitEntity {
     this.syncMountedRiderPosition()
     if (this.horseSprite) this.horseSprite.position.y = this.reliefLift
     if (this.shadow) this.shadow.position.y = this.reliefLift
+    if (this.horseShadow) this.horseShadow.position.y = this.reliefLift
     this.syncSelectionMarkersToRelief()
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = this.getMountedRiderY()
@@ -750,6 +767,7 @@ export class Unit extends Instance implements UnitEntity {
     super.pause()
     this.shadow?.stop()
     this.horseSprite?.stop()
+    this.horseShadow?.stop()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.stop()
     }
@@ -760,6 +778,7 @@ export class Unit extends Instance implements UnitEntity {
       this.sprite.gotoAndStop(this.sprite.currentFrame)
       this.shadow?.gotoAndStop(this.shadow.currentFrame)
       this.horseSprite?.play()
+      this.horseShadow?.gotoAndStop(this.horseShadow.currentFrame)
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.gotoAndStop(sprite.currentFrame)
       }
@@ -768,6 +787,7 @@ export class Unit extends Instance implements UnitEntity {
     super.resume()
     this.shadow?.play()
     this.horseSprite?.play()
+    this.horseShadow?.play()
     for (const sprite of this.appearanceLayerSprites.values()) {
       sprite.play()
     }
