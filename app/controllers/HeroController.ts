@@ -505,7 +505,15 @@ export class HeroController {
   setEquippedItem(item: HeroEquippedItem | null): void {
     if (this.heroUnit?.heroDefenseActive) cancelHeroDefense(this.heroUnit)
     this.equippedItem = item
-    if (item && this.heroUnit) applyToolAppearance(this.heroUnit, item)
+    if (this.heroUnit?.actionLocked) {
+      // Mid-action (e.g. chopping wood) the sprite is looping on the action sheet;
+      // reconcile via stop() first so it resets actionLocked/sprite.loop and clears
+      // the loop callback, instead of applyToolAppearance swapping to the walking
+      // sheet mid-loop and leaving actionLocked stuck true forever.
+      this.heroUnit.stop?.()
+    } else if (item && this.heroUnit) {
+      applyToolAppearance(this.heroUnit, item)
+    }
     this.controls.context.menu?.setEquippedItem?.(item)
     this.controls.context.menu?.setEquippedTool?.(item)
   }
