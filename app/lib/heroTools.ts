@@ -11,7 +11,7 @@ import {
   WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
-import { isHeroActionInRange, isHeroInteractionTargetReachable } from './heroActionRange'
+import { getHeroInteractionTargetPoint, isHeroActionInRange, isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
@@ -460,7 +460,7 @@ function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): bool
   return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
 }
 
-function getAimDelta(hero: UnitEntity, target: RuntimeEntity): number {
+function getAimDelta(hero: UnitEntity, target: Point): number {
   return angleDelta(getInstanceDegree(hero, target.x, target.y), hero.degree ?? 0)
 }
 
@@ -498,11 +498,14 @@ function getDirectionalTargets<T extends RuntimeEntity>(
   halfAngle = CLICK_DIRECTION_HALF_ANGLE
 ): T[] {
   return candidates
-    .map(target => ({
-      target,
-      angle: getAimDelta(hero, target),
-      dist: Math.hypot(target.x - hero.x, target.y - hero.y),
-    }))
+    .map(target => {
+      const aimPoint = getHeroInteractionTargetPoint(hero, target)
+      return {
+        target,
+        angle: getAimDelta(hero, aimPoint),
+        dist: Math.hypot(aimPoint.x - hero.x, aimPoint.y - hero.y),
+      }
+    })
     .filter(candidate => candidate.angle <= halfAngle)
     .sort((a, b) => a.angle - b.angle || a.dist - b.dist)
     .map(candidate => candidate.target)

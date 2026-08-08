@@ -116,6 +116,8 @@ function createPortalColorOptions(menu: Menu, portal: ResourceEntity): HTMLDivEl
         sibling.classList.toggle('is-selected', sibling === button)
       }
       menu.playUiClick()
+      menu.closeEntityInfoModal?.()
+      menu.context.travelThroughPortal?.(portal, color)
     })
     group.appendChild(button)
   }

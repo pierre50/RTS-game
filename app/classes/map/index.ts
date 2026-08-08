@@ -57,6 +57,7 @@ export default class Map extends Container {
   allTechnologies: boolean
   startingAge: number
   noAI: boolean
+  humanStartsWithoutBase: boolean
   instantMode: boolean
   difficulty: string
   startingResources: ResourceAmount
@@ -101,6 +102,7 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.startingAge = 0
     this.noAI = false
+    this.humanStartsWithoutBase = false
 
     this.instantMode = false
     this.difficulty = 'medium'

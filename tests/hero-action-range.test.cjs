@@ -60,6 +60,42 @@ test('hero interaction range accepts the long side of an isometric building foot
   assert.equal(isHeroInteractionTargetReachable(hero, null, building), true)
 })
 
+test('hero interaction aim uses the closest footprint edge for large resources', () => {
+  const { getHeroInteractionTargetPoint } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -70 }
+  const portal = {
+    family: 'resource',
+    i: 0,
+    isDestroyed: false,
+    j: 0,
+    size: 3,
+    type: 'Portal',
+    x: 0,
+    y: 0,
+  }
+
+  assert.deepEqual(getHeroInteractionTargetPoint(hero, portal), { x: 0, y: -48 })
+})
+
+test('hero resource interaction footprint can be widened independently from pathing size', () => {
+  const { getHeroInteractionTargetPoint, isHeroInteractionTargetReachable } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -64 }
+  const tree = {
+    family: 'resource',
+    i: 0,
+    isDestroyed: false,
+    j: 0,
+    selectionFactor: 2,
+    size: 1,
+    type: 'Tree',
+    x: 0,
+    y: 0,
+  }
+
+  assert.deepEqual(getHeroInteractionTargetPoint(hero, tree), { x: 0, y: -32 })
+  assert.equal(isHeroInteractionTargetReachable(hero, 'chopwood', tree), true)
+})
+
 test('hero interaction range still falls back to strict contact for regular targets', () => {
   const { isHeroInteractionTargetReachable } = loadHeroActionRange({ contact: () => true })
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: 0 }

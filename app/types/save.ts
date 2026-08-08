@@ -37,6 +37,7 @@ export type SaveEntityState = {
   isDead?: boolean
   isDestroyed?: boolean
   isChief?: boolean
+  followingHero?: boolean
   isFleeing?: boolean
   isUsedBy?: string | null
   j: number
@@ -141,10 +142,56 @@ export type SaveWorldState = {
   pregeneratedBlueprintId?: string | number | null
 }
 
+export type WorldColor = 'blue' | 'yellow' | 'red' | 'neutral'
+
+export type HeroPartySave = {
+  playerLabel?: string
+  followerLabels: string[]
+}
+
+export type WorldGraphNode = {
+  id: string
+  name: string
+  color: WorldColor
+  parentId?: string | null
+  children: string[]
+  discoveredAt: number
+  visitedAt: number
+  canTeleport?: boolean
+}
+
+export type WorldGraphSave = {
+  rootWorldId: string
+  nodes: Record<string, WorldGraphNode>
+}
+
+export type CampaignWorldSave = {
+  id: string
+  name: string
+  color: WorldColor
+  parentWorldId?: string | null
+  entryPortalId?: string | null
+  returnPortalId?: string | null
+  discoveredAt: number
+  visitedAt: number
+  state: SerializedSave
+}
+
+export type CampaignSave = {
+  format: 'campaign-v1'
+  version: number
+  currentWorldId: string
+  heroParty: HeroPartySave
+  sharedResources?: ResourceAmount
+  worlds: Record<string, CampaignWorldSave>
+  worldGraph: WorldGraphSave
+}
+
 export type GameConfig = {
   allTechnologies?: boolean
   bots?: number
   difficulty?: string
+  humanStartsWithoutBase?: boolean
   instantMode?: boolean
   mapType?: string
   name?: string
@@ -189,7 +236,7 @@ export type SerializedSave = {
   world?: SaveWorldState
 }
 
-export type SaveRecord = SerializedSave
+export type SaveRecord = SerializedSave | CampaignSave
 
 export type SaveIndexEntry = {
   date: number

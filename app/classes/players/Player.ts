@@ -520,9 +520,9 @@ export class Player implements PlayerLike {
     return false
   }
 
-  createUnit(options: UnitSpawnOptions) {
+  createUnit(options: UnitSpawnOptions, creationOptions: { preserveType?: boolean } = {}) {
     const { context } = this
-    const isHeroUnit = this.isPlayed && !this.units.length
+    const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
     const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = context.map.addChild(

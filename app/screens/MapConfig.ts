@@ -18,7 +18,6 @@ export default class MapConfig {
   onPlay: (config: GameConfig) => void
   _onKeyDown: (evt: KeyboardEvent) => void
   config: GameConfig
-  maxPlayers: number
   _modal: Modal
   playerSetupPanel!: PlayerSetupPanel
   _destroyed?: boolean
@@ -39,8 +38,6 @@ export default class MapConfig {
       resourceDensity: 'moderate',
       difficulty: 'medium',
     }
-
-    this.maxPlayers = 2
 
     this._modal = new Modal({
       title: t('newGame'),
@@ -69,7 +66,7 @@ export default class MapConfig {
     const leftCol = document.createElement('div')
     leftCol.className = 'lobby-col'
 
-    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: this.maxPlayers, simplified: true })
+    this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: 1, simplified: true })
     leftCol.appendChild(this.playerSetupPanel.element)
 
     const rightCol = document.createElement('div')
@@ -81,9 +78,6 @@ export default class MapConfig {
     settingsForm.appendChild(
       buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 144, val => {
         this.config.size = parseInt(val)
-        const sizeEntry = MAP_SIZES.find(s => s.value === parseInt(val))
-        this.maxPlayers = sizeEntry ? sizeEntry.maxPlayers : 2
-        this.playerSetupPanel.setMaxPlayers(this.maxPlayers)
       })
     )
 

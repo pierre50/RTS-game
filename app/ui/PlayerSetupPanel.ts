@@ -28,13 +28,6 @@ const AGES = [
   { label: () => t('toolAge'), value: 1 },
 ]
 
-const CIV_LEVELS = [
-  { label: () => t('civLevel0'), value: 0 },
-  { label: () => t('civLevel1'), value: 1 },
-  { label: () => t('civLevel2'), value: 2 },
-  { label: () => t('civLevel3'), value: 3 },
-]
-
 const GENDERS = [
   { label: () => t('genderMale'), value: 'male' },
   { label: () => t('genderFemale'), value: 'female' },
@@ -82,8 +75,8 @@ export class PlayerSetupPanel {
         player.age = Math.max(0, Math.min(Number(player.age) || 0, 1))
       })
     }
-    // Simplified lobby never exposes a count control - it always fills to the map's max.
-    if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
+    // Simplified lobby is the adventure start: the played hero arrives alone.
+    if (this.simplified) this._keepOnlyHumanPlayer()
     this._clampPlayers()
     this._reassignAIColors()
 
@@ -154,7 +147,7 @@ export class PlayerSetupPanel {
 
   setMaxPlayers(maxPlayers: number): void {
     this.maxPlayers = Math.max(MIN_PLAYERS, Math.min(maxPlayers || 2, MAX_PLAYERS))
-    if (this.simplified) this._growOrShrinkTo(this.maxPlayers)
+    if (this.simplified) this._keepOnlyHumanPlayer()
     this._clampPlayers()
     this._reassignAIColors()
     this._refresh()
@@ -287,6 +280,12 @@ export class PlayerSetupPanel {
       if (lastBotIndex === -1) break
       this.players.splice(lastBotIndex, 1)
     }
+  }
+
+  _keepOnlyHumanPlayer(): void {
+    const human = this.players.find(player => player.isHuman) || this.players[0] || this._createDefaultPlayers()[0]
+    human.isHuman = true
+    this.players = [human]
   }
 
   _setPlayerCount(count: string | number): void {
@@ -422,8 +421,7 @@ export class PlayerSetupPanel {
     })
   }
 
-  // Simplified lobby: only the human's civ/color are editable, so bots can stay in the
-  // background and the whole thing works from a gamepad with two selects instead of a table.
+  // Simplified lobby: only the human's setup is editable because the opening map starts solo.
   _refreshHumanControls(): void {
     this.humanControlsEl.innerHTML = ''
     const human = this.players[0]
@@ -502,37 +500,6 @@ export class PlayerSetupPanel {
     colorRow.appendChild(swatch)
     this.humanControlsEl.appendChild(colorRow)
 
-    const bots = this.players.filter(player => !player.isHuman)
-    if (bots.length) {
-      const heading = document.createElement('div')
-      heading.className = 'config-row-heading'
-      heading.textContent = t('civLevelLabel')
-      this.humanControlsEl.appendChild(heading)
-
-      bots.forEach(bot => {
-        const index = this.players.indexOf(bot)
-        const botRow = document.createElement('div')
-        botRow.className = 'config-row'
-        const botLabel = document.createElement('label')
-        botLabel.textContent = bot.name
-        botRow.appendChild(botLabel)
-        const levelSelect = document.createElement('select')
-        levelSelect.className = 'ui-select'
-        CIV_LEVELS.forEach(level => {
-          const opt = document.createElement('option')
-          opt.value = String(level.value)
-          opt.textContent = level.label()
-          if (level.value === bot.civilizationLevel) opt.selected = true
-          levelSelect.appendChild(opt)
-        })
-        levelSelect.onchange = (evt: Event) => {
-          this.players[index].civilizationLevel = Number((evt.target as HTMLSelectElement).value)
-          this._emitChange()
-        }
-        botRow.appendChild(levelSelect)
-        this.humanControlsEl.appendChild(botRow)
-      })
-    }
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

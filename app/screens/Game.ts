@@ -6,14 +6,30 @@ import Map from '../classes/map'
 import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
-import { Modal, canPlayerStillAct, debounce, getGaiaAnimals, isPlayedHeroDefeated } from '../lib'
+import {
+  Modal,
+  canPlayerStillAct,
+  debounce,
+  getFreeCellAroundPoint,
+  getGaiaAnimals,
+  isPlayedHeroDefeated,
+} from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
-import { save as saveToStorage } from '../serialization/SaveStorage'
+import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { serializeGame } from '../serialization/SaveSerializer'
+import {
+  addChildWorldToCampaign,
+  createInitialCampaignSave,
+  enterCampaignWorld,
+  getCurrentWorldState,
+  isCampaignSave,
+  returnToParentWorld,
+  updateCurrentWorldState,
+} from '../serialization/CampaignSave'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
@@ -23,13 +39,22 @@ import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '.
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { AmbientBirds } from '../services/AmbientBirds'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
+import { CIVILIZATIONS } from '../config/civilizations'
 import { getEnvironmentForCiv } from '../config/environments'
+import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from '../lib/maths'
 import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX, PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
-import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../types/save'
+import type {
+  CampaignSave,
+  GameConfig,
+  PlayerSetupConfig,
+  SaveEntityState,
+  SaveRecord,
+  SerializedSave,
+} from '../types/save'
 import type { PlayerLike } from '../types/player'
-import type { RuntimeMap } from '../types/map'
-import type { RuntimeEntity } from '../types/entities'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
+import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -77,6 +102,13 @@ function savedRuntimeState(save: SerializedSave): SavedGameData {
   return save as SavedGameData
 }
 
+type PortalPartyState = {
+  followers: SaveEntityState[]
+  hero: SaveEntityState | null
+}
+
+const PORTAL_RESOURCE_TYPE = 'Portal'
+
 function addPausableInstance(instances: Set<RuntimeEntity>, instance: RuntimeEntity | null | undefined): void {
   if (!instance || instance.isDestroyed) return
   if (!instance.pause && !instance.resume) return
@@ -109,7 +141,8 @@ function collectPausableInstances(map: RuntimeMapInstance, players: PlayerLike[]
 export default class Game extends Container {
   _pausedByVisibility: boolean
   _pausedByOrientation: boolean
-  _restartSaveData: SerializedSave | null
+  _restartSaveData: SaveRecord | null
+  _campaignSave: CampaignSave | null
   _isRestarting: boolean
   config: GameConfig | null
   onQuit: (() => void) | null
@@ -132,6 +165,7 @@ export default class Game extends Container {
     this._pausedByVisibility = false
     this._pausedByOrientation = false
     this._restartSaveData = null
+    this._campaignSave = null
     this._isRestarting = false
     this._weather = null
     this.config = config
@@ -153,7 +187,7 @@ export default class Game extends Container {
       scheduler: null,
       performance: null,
       save: () => this.save(),
-      load: (evt: object) => this.load(evt as SerializedSave),
+      load: (evt: object) => this.load(evt as SaveRecord),
       pause: () => this.togglePause(true),
       resume: () => {
         if (!this.context.victory && !this.context.defeat) this.togglePause(false)
@@ -163,6 +197,13 @@ export default class Game extends Container {
       checkVictory: () => this.checkVictory(),
       checkDefeat: () => this.checkDefeat(),
       applyZoom: () => this.applyZoom(),
+      getWorldGraph: () => this._campaignSave?.worldGraph ?? null,
+      travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
+        this.travelThroughPortal(portal, color).catch(error => {
+          console.error('Unable to travel through portal', error)
+          this.context.menu?.showMessage(t('corruptSave'))
+        })
+      },
     }
     this.context.performance = new PerformanceMonitor(app)
     this.context.scheduler = new ActionScheduler(
@@ -311,6 +352,7 @@ export default class Game extends Container {
     const humanCiv = config.players?.find(player => player.isHuman)?.civ ?? config.players?.[0]?.civ
     map.environment = getEnvironmentForCiv(humanCiv)
     if (config.instantMode) map.instantMode = true
+    map.humanStartsWithoutBase = Boolean(config.humanStartsWithoutBase)
     if (config.startingAge != null) map.startingAge = Number(config.startingAge)
     if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
     if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
@@ -422,11 +464,9 @@ export default class Game extends Container {
     this._applyMapConfig(map, config)
     this._createUiRuntime()
 
-    const posCount = config.players ? config.players.length : config.bots != null ? Number(config.bots) + 1 : null
     const mapGenerationStartedAt = performance.now()
     const blueprint = await loadPregeneratedMapBlueprint({
       size: map.size,
-      positionsCount: posCount ?? undefined,
       environment: map.environment,
     })
     if (blueprint) {
@@ -436,7 +476,7 @@ export default class Game extends Container {
       map.pregeneratedBlueprintId = blueprint.id
       console.info(`[maps] Loaded pregenerated blueprint: ${blueprint.id}`)
     } else {
-      await map.generateMapAsync(posCount, 0, {
+      await map.generateMapAsync(null, 0, {
         onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
       })
       map.pregeneratedBlueprintId = null
@@ -468,7 +508,9 @@ export default class Game extends Container {
     this._mountRuntime()
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
-    this._restartSaveData = structuredClone(serializeGame(this._gameContext()))
+    this._campaignSave = createInitialCampaignSave(serializeGame(this._gameContext()))
+    this._restartSaveData = structuredClone(this._campaignSave)
+    this._autosaveCampaign()
   }
 
   async _bootFromSeedSave(json: SerializedSave): Promise<void> {
@@ -546,14 +588,266 @@ export default class Game extends Container {
   }
 
   save(): { key: string; name: string } {
-    return saveToStorage(this._gameContext())
+    const record = buildSaveRecord(this._gameContext(), this._campaignSave)
+    this._campaignSave = isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
+    this._restartSaveData = structuredClone(this._campaignSave)
+    return saveRecordToStorage(this._campaignSave)
   }
 
-  async load(json: SerializedSave): Promise<void> {
+  _autosaveCampaign(): void {
+    if (!this._campaignSave) return
+    autosaveRecord(this._campaignSave, t('autosave'))
+  }
+
+  _portalWorldId(portal: ResourceEntity, color: string): string {
+    const currentWorldId = this._campaignSave?.currentWorldId || 'world'
+    const portalId = portal.label || `${portal.i}-${portal.j}`
+    return `${currentWorldId}-${portalId}-${color}`.replace(/[^a-zA-Z0-9_-]/g, '-')
+  }
+
+  _configForPortalWorld(color: 'blue' | 'yellow' | 'red'): GameConfig {
+    const { player, map } = this._gameContext()
+    return {
+      size: map.size,
+      mapType: DEFAULT_MAP_TYPE,
+      seed: Math.random() * 9999,
+      startingAge: map.startingAge,
+      allTechnologies: map.allTechnologies,
+      revealEverything: map.revealEverything,
+      revealTerrain: map.revealTerrain,
+      instantMode: map.instantMode,
+      humanStartsWithoutBase: true,
+      startingResources: map.startingResources,
+      resourceDensity: map.resourceDensity,
+      difficulty: map.difficulty,
+      players: [
+        {
+          civ: player.civ,
+          color: player.color || color,
+          gender: player.gender,
+          isHuman: true,
+          name: player.name,
+          team: player.team ?? null,
+        },
+        {
+          civ: this._randomAICiv(),
+          color: color === 'red' ? 'yellow' : 'red',
+          gender: 'male',
+          isHuman: false,
+          name: 'IA locale',
+          team: null,
+        },
+      ],
+    }
+  }
+
+  _randomAICiv(): string {
+    return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
+  }
+
+  _extractPortalParty(state: SerializedSave): PortalPartyState {
+    const played = state.players.find(player => player.isPlayed)
+    const hero = played?.units?.[0] ?? null
+    return {
+      hero,
+      followers: (played?.units || []).filter(unit => unit !== hero && unit.followingHero === true),
+    }
+  }
+
+  _applyPortableUnitState(target: Partial<SaveEntityState>, source: SaveEntityState): void {
+    Object.assign(target, {
+      assetAge: source.assetAge,
+      assetCiv: source.assetCiv,
+      energy: source.energy,
+      experience: source.experience,
+      followingHero: source.followingHero,
+      gender: (source as { gender?: unknown }).gender,
+      healthRegenDelay: source.healthRegenDelay,
+      healthRegenMultiplier: source.healthRegenMultiplier,
+      healthRegenRate: source.healthRegenRate,
+      hitPoints: source.hitPoints,
+      isChief: source.isChief,
+      loading: source.loading,
+      loadingType: source.loadingType,
+      mountedOnHorse: source.mountedOnHorse,
+      name: source.name,
+      totalEnergy: source.totalEnergy,
+      totalHitPoints: source.totalHitPoints,
+    })
+  }
+
+  _removeExistingTravelFollowers(): void {
+    const { map, player, controls } = this._gameContext()
+    const hero = controls.heroUnit || player.units[0]
+    const followers = player.units.filter(unit => unit !== hero && unit.followingHero)
+    for (const follower of followers) {
+      follower.path = []
+      follower.action = null
+      follower.isDestroyed = true
+      const currentCell = follower.currentCell || map.grid[follower.i]?.[follower.j]
+      if (currentCell?.has === follower) {
+        currentCell.has = null
+        currentCell.solid = false
+      }
+      map.removeFromInstanceBucket(follower)
+      map.removeChild(follower)
+      follower.destroy?.({ children: true, texture: false, textureSource: false })
+    }
+    player.units = player.units.filter(unit => !followers.includes(unit))
+  }
+
+  _findPortalArrivalCell(): RuntimeCell | null {
+    const { map } = this._gameContext()
+    const portal = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
+    if (!portal) return null
+
+    const startDistance = Math.max(2, Math.ceil(portal.size || 1))
+    return getFreeCellAroundPoint(
+      portal.i,
+      portal.j,
+      startDistance,
+      map.grid,
+      cell => !cell.solid && cell.category !== 'Water' && !cell.border,
+      cells => cells[Math.floor(map.random() * cells.length)]
+    )
+  }
+
+  _teleportRuntimeUnitToCell(unit: UnitEntity, cell: RuntimeCell): void {
+    const { map } = this._gameContext()
+    const currentCell = unit.currentCell || map.grid[unit.i]?.[unit.j]
+    if (currentCell?.has === unit) {
+      currentCell.has = null
+      currentCell.solid = false
+    }
+    map.removeFromInstanceBucket(unit)
+
+    const [x, y] = cartesianToIsometric(cell.i, cell.j)
+    unit.i = cell.i
+    unit.j = cell.j
+    unit.x = x
+    unit.y = y
+    unit.z = cell.z
+    unit.zIndex = getInstanceZIndex(unit)
+    unit.currentCell = cell
+    unit.path = []
+    unit.action = null
+    cell.place(unit)
+    cell.solid = true
+    map.addToInstanceBucket(unit)
+    unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
+  }
+
+  _applyPortalPartyToRuntime(party: PortalPartyState, arrivalCell: RuntimeCell | null = null): void {
+    const { map, player, controls } = this._gameContext()
+    const hero = controls.heroUnit || player.units[0]
+    if (!hero) return
+
+    if (party.hero) this._applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero)
+    if (arrivalCell) this._teleportRuntimeUnitToCell(hero, arrivalCell)
+    this._removeExistingTravelFollowers()
+
+    for (const followerState of party.followers) {
+      const cell =
+        getFreeCellAroundPoint(
+          hero.i,
+          hero.j,
+          1,
+          map.grid,
+          candidate => !candidate.solid && candidate.category !== 'Water'
+        ) || map.grid[hero.i]?.[hero.j]
+      if (!cell) continue
+      const follower = player.createUnit?.({
+        i: cell.i,
+        j: cell.j,
+        name: followerState.name,
+        type: followerState.type,
+      })
+      if (!follower) continue
+      this._applyPortableUnitState(follower as Partial<SaveEntityState>, followerState)
+      follower.followingHero = true
+    }
+
+    controls.init?.()
+  }
+
+  async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {
+    if (this._isRestarting) return
+    this._isRestarting = true
+    const now = Date.now()
+    const currentWorldState = serializeGame(this._gameContext())
+    const party = this._extractPortalParty(currentWorldState)
+    const campaign = this._campaignSave
+      ? updateCurrentWorldState(this._campaignSave, currentWorldState, now)
+      : createInitialCampaignSave(currentWorldState, { now })
+    const currentCampaignWorld = campaign.worlds[campaign.currentWorldId]
+    const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
+    const targetWorldId = this._portalWorldId(portal, color)
+    const existingTarget = campaign.worlds[targetWorldId]
+    this._loadingScreen = new GameLoadingScreen()
+    this._loadingScreen.update('generatingWorld', 0.02)
+    await this._yieldToBrowser()
+
+    try {
+      if (shouldReturnToParent) {
+        const nextCampaign = returnToParentWorld(campaign, now)
+        const parentState = getCurrentWorldState(nextCampaign)
+        this._campaignSave = structuredClone(nextCampaign)
+        this._restartSaveData = structuredClone(nextCampaign)
+        this._destroyRuntime()
+        await this._bootFromSave(structuredClone(parentState))
+        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
+        const targetState = serializeGame(this._gameContext())
+        const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
+        this._campaignSave = structuredClone(committedCampaign)
+        this._restartSaveData = structuredClone(committedCampaign)
+        this._autosaveCampaign()
+      } else if (existingTarget) {
+        const nextCampaign = enterCampaignWorld(campaign, targetWorldId, now)
+        this._campaignSave = structuredClone(nextCampaign)
+        this._restartSaveData = structuredClone(nextCampaign)
+        this._destroyRuntime()
+        await this._bootFromSave(structuredClone(existingTarget.state))
+        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
+        const targetState = serializeGame(this._gameContext())
+        const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
+        this._campaignSave = structuredClone(committedCampaign)
+        this._restartSaveData = structuredClone(committedCampaign)
+        this._autosaveCampaign()
+      } else {
+        const parentWorldId = campaign.currentWorldId
+        const nextConfig = this._configForPortalWorld(color)
+        this._destroyRuntime()
+        await this._bootFromConfig(nextConfig)
+        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
+        const childState = serializeGame(this._gameContext())
+        const nextCampaign = addChildWorldToCampaign(campaign, childState, {
+          color,
+          entryPortalId: portal.label || `${portal.i},${portal.j}`,
+          name: `Monde ${color}`,
+          now,
+          parentWorldId,
+          worldId: targetWorldId,
+        })
+        this._campaignSave = structuredClone(nextCampaign)
+        this._restartSaveData = structuredClone(nextCampaign)
+        this._autosaveCampaign()
+      }
+      this.context.menu?.show?.()
+    } finally {
+      this._loadingScreen?.destroy()
+      this._loadingScreen = null
+      this._isRestarting = false
+    }
+  }
+
+  async load(json: SaveRecord): Promise<void> {
     let booted = false
     try {
-      validateSaveData(json)
-      this._restartSaveData = structuredClone(json)
+      const saveData = validateSaveData(json)
+      this._campaignSave = isCampaignSave(saveData)
+        ? structuredClone(saveData)
+        : createInitialCampaignSave(structuredClone(saveData))
+      this._restartSaveData = structuredClone(this._campaignSave)
       this._destroyRuntime()
       const speed = getGameSpeed()
       this.context.app.ticker.speed = speed
@@ -561,7 +855,7 @@ export default class Game extends Container {
       this._loadingScreen = new GameLoadingScreen()
       this._loadingScreen.update('generatingTerrain', 0.02)
       await this._yieldToBrowser()
-      await this._bootFromSave(structuredClone(this._restartSaveData))
+      await this._bootFromSave(structuredClone(getCurrentWorldState(this._restartSaveData)))
       booted = true
     } catch (error) {
       const message = error instanceof Error ? error.message : t('corruptSave')
@@ -601,7 +895,7 @@ export default class Game extends Container {
     await this._yieldToBrowser()
     let booted = false
     try {
-      await this._bootFromSave(structuredClone(this._restartSaveData!))
+      await this._bootFromSave(structuredClone(getCurrentWorldState(this._restartSaveData!)))
       booted = true
     } finally {
       this._loadingScreen?.destroy()

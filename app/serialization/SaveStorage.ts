@@ -1,32 +1,52 @@
 import LZString from 'lz-string'
 import { serializeGame } from './SaveSerializer'
+import { createInitialCampaignSave, updateCurrentWorldState } from './CampaignSave'
 import type { GameContextLike } from '../types/context'
-import type { SaveIndexEntry, SaveRecord } from '../types/save'
+import type { CampaignSave, SaveIndexEntry, SaveRecord } from '../types/save'
 
 declare global {
   interface Window {
     electronSaves?: {
       getIndex(): string | null
-      setIndex(json: string): void
+      setIndex(json: string): SaveWriteResult
       getItem(key: string): string | null
-      setItem(key: string, value: string): boolean
+      setItem(key: string, value: string): boolean | SaveWriteResult
       removeItem(key: string): void
     }
   }
 }
 
+type SaveWriteResult = boolean | { ok?: boolean; error?: string; path?: string }
+
 const INDEX_KEY = 'saves_index'
+// Keep the autosave key compatible with older Electron main-process validators
+// that only accepted /^save_\d+$/; dev hot reload does not restart main.js.
+const AUTOSAVE_KEY = 'save_0'
 const MAX_SAVES = 10
 const EXPORT_FORMAT = 'save-v1'
 export const EXPORT_EXT = '.save'
 
+function assertSaveWrite(result: SaveWriteResult, fallbackMessage = 'STORAGE_FULL'): void {
+  if (result === true) return
+  if (result && typeof result === 'object' && result.ok) return
+
+  const details =
+    result && typeof result === 'object'
+      ? [result.error, result.path ? `path=${result.path}` : null].filter(Boolean).join(' ')
+      : ''
+  throw new Error(details ? `${fallbackMessage}: ${details}` : fallbackMessage)
+}
+
+const saveBackendName = window.electronSaves ? 'electron-file' : 'browser-localStorage'
+console.info(`[save] Using ${saveBackendName} backend`)
+
 const backend = window.electronSaves
   ? {
       getIndex: () => window.electronSaves!.getIndex(),
-      setIndex: (json: string) => window.electronSaves!.setIndex(json),
+      setIndex: (json: string) => assertSaveWrite(window.electronSaves!.setIndex(json), 'SAVE_INDEX_WRITE_FAILED'),
       getItem: (key: string) => window.electronSaves!.getItem(key),
       setItem: (key: string, value: string) => {
-        if (!window.electronSaves!.setItem(key, value)) throw new Error('STORAGE_FULL')
+        assertSaveWrite(window.electronSaves!.setItem(key, value))
       },
       removeItem: (key: string) => window.electronSaves!.removeItem(key),
     }
@@ -67,23 +87,48 @@ function formatSaveName() {
   return `${day}/${month} ${hours}:${minutes}`
 }
 
-export function save(context: GameContextLike): { key: string; name: string } {
+type SaveRecordOptions = {
+  key?: string
+  name?: string
+}
+
+export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): { key: string; name: string } {
   const index = getIndex()
-  if (index.length >= MAX_SAVES) {
+  const replacing = Boolean(options.key && index.some(entry => entry.key === options.key))
+  const isAutosave = options.key === AUTOSAVE_KEY
+  if (!replacing && !isAutosave && index.length >= MAX_SAVES) {
     throw new Error('MAX_SAVES_REACHED')
   }
-  const data = serializeGame(context)
   const compressed = LZString.compressToBase64(JSON.stringify(data))
-  const key = `save_${Date.now()}`
+  const key = options.key ?? `save_${Date.now()}`
   try {
     backend.setItem(key, compressed)
-  } catch {
-    throw new Error('STORAGE_FULL')
+  } catch (error) {
+    const message = error instanceof Error && error.message ? error.message : 'STORAGE_FULL'
+    throw new Error(message.startsWith('STORAGE_FULL') ? message : `STORAGE_FULL: ${message}`)
   }
-  const name = formatSaveName()
-  index.push({ key, name, date: Date.now() })
-  setIndex(index)
+  const name = options.name ?? formatSaveName()
+  const date = Date.now()
+  setIndex([...index.filter(entry => entry.key !== key), { key, name, date }])
   return { key, name }
+}
+
+export function buildSaveRecord(context: GameContextLike, campaign: CampaignSave | null = null): SaveRecord {
+  const worldState = serializeGame(context)
+  return campaign ? updateCurrentWorldState(campaign, worldState) : createInitialCampaignSave(worldState)
+}
+
+export function save(context: GameContextLike, campaign: CampaignSave | null = null): { key: string; name: string } {
+  return saveRecord(buildSaveRecord(context, campaign))
+}
+
+export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: string; name: string } | null {
+  try {
+    return saveRecord(data, { key: AUTOSAVE_KEY, name })
+  } catch (error) {
+    console.warn('[save] Autosave failed', error)
+    return null
+  }
 }
 
 export function listSaves(): SaveIndexEntry[] {

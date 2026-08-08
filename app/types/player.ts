@@ -43,7 +43,7 @@ type UnitRestoreReferences = {
 }
 
 export type PlayerUnitCreationOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
-  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
+  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
 
 export interface PlayerLike {
   label: string
@@ -92,7 +92,7 @@ export interface PlayerLike {
       skipBuiltEffects?: boolean
     }
   ) => BuildingEntity
-  createUnit?: (options: PlayerUnitCreationOptions) => UnitEntity
+  createUnit?: (options: PlayerUnitCreationOptions, creationOptions?: { preserveType?: boolean }) => UnitEntity
   createAnimal?: (options: { i: number; j: number; type: string }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void

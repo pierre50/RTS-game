@@ -36,6 +36,7 @@ type SerializableEntity = RuntimeEntityBase & {
   healthRegenDelay?: number
   healthRegenMultiplier?: number
   lastHealthDamagedAt?: number
+  followingHero?: boolean
   inactif?: boolean
   isBuilt?: boolean
   isUsedBy?: { label?: string } | null
@@ -189,6 +190,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'isDead',
       'isDestroyed',
       'isChief',
+      'followingHero',
       'assetCiv',
       'assetAge',
       'mountedOnHorse',
@@ -327,6 +329,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       mapType: DEFAULT_SERIALIZED_MAP_TYPE,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
+      humanStartsWithoutBase: context.map.humanStartsWithoutBase,
       startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,

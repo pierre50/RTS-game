@@ -11,7 +11,7 @@ function savesDir() {
 }
 
 function isValidSaveKey(key) {
-  return typeof key === 'string' && /^save_\d+$/.test(key)
+  return typeof key === 'string' && (key === 'save_autosave' || /^save_\d+$/.test(key))
 }
 
 function saveFilePath(key) {
@@ -31,8 +31,16 @@ ipcMain.on('saves:getIndex', event => {
 })
 
 ipcMain.on('saves:setIndex', (event, json) => {
-  fs.writeFileSync(indexFilePath(), json, 'utf-8')
-  event.returnValue = true
+  try {
+    fs.writeFileSync(indexFilePath(), json, 'utf-8')
+    event.returnValue = { ok: true, path: indexFilePath() }
+  } catch (error) {
+    event.returnValue = {
+      ok: false,
+      error: error && typeof error.message === 'string' ? error.message : String(error),
+      path: indexFilePath(),
+    }
+  }
 })
 
 ipcMain.on('saves:getItem', (event, key) => {
@@ -49,14 +57,18 @@ ipcMain.on('saves:getItem', (event, key) => {
 
 ipcMain.on('saves:setItem', (event, key, value) => {
   if (!isValidSaveKey(key)) {
-    event.returnValue = false
+    event.returnValue = { ok: false, error: 'INVALID_SAVE_KEY' }
     return
   }
   try {
     fs.writeFileSync(saveFilePath(key), value, 'utf-8')
-    event.returnValue = true
-  } catch {
-    event.returnValue = false
+    event.returnValue = { ok: true, path: saveFilePath(key) }
+  } catch (error) {
+    event.returnValue = {
+      ok: false,
+      error: error && typeof error.message === 'string' ? error.message : String(error),
+      path: saveFilePath(key),
+    }
   }
 })
 

@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
 import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
+import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 
 const MAX_MAP_EDGE = 513
@@ -300,6 +301,22 @@ function validateCamera(camera: unknown): void {
 export function validateSaveData(data: unknown): SaveRecord {
   if (!isObject(data)) {
     fail('Invalid save file: expected an object.')
+  }
+
+  if (isCampaignSave(data)) {
+    if (data.version !== 1) fail('Invalid save file: campaign version is unsupported.')
+    if (data.format !== CAMPAIGN_SAVE_FORMAT) fail('Invalid save file: campaign format is invalid.')
+    if (!isObject(data.worlds)) fail('Invalid save file: campaign worlds are invalid.')
+    if (!isObject(data.worldGraph)) fail('Invalid save file: campaign world graph is invalid.')
+    if (!isObject(data.heroParty)) fail('Invalid save file: campaign hero party is invalid.')
+    if (!Array.isArray(data.heroParty.followerLabels)) {
+      fail('Invalid save file: campaign hero party followers are invalid.')
+    }
+    const world = data.worlds[data.currentWorldId]
+    if (!isObject(world)) fail('Invalid save file: current campaign world is missing.')
+    if (world.id !== data.currentWorldId) fail('Invalid save file: current campaign world id is invalid.')
+    validateSaveData(getCurrentWorldState(data))
+    return data
   }
 
   const config = getLoadedConfig()

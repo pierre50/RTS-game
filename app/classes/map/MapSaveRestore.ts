@@ -138,10 +138,10 @@ export function restorePlayerEntitiesFromSave(player: PlayerLike, savedPlayer: S
   const { buildings, units, corpses } = savedPlayer
   player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
   player.units = (units || [])
-    .map(unit => player.createUnit?.(unit))
+    .map(unit => player.createUnit?.({ ...unit, suppressCreateSound: true }, { preserveType: true }))
     .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
   player.corpses = (corpses || [])
-    .map(unit => player.createUnit?.(unit))
+    .map(unit => player.createUnit?.({ ...unit, suppressCreateSound: true }, { preserveType: true }))
     .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
 }
 

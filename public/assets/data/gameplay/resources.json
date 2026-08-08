@@ -10,6 +10,7 @@
     ]
   },
   "Tree": {
+    "selectionFactor": 2,
     "totalQuantity": 300,
     "totalHitPoints": 25,
     "color": "#274F1F",
@@ -93,6 +94,7 @@
     }
   },
   "Gold": {
+    "selectionFactor": 1.5,
     "totalQuantity": 400,
     "color": "#DECF10",
     "assets": [
@@ -127,6 +129,7 @@
     ]
   },
   "Stone": {
+    "selectionFactor": 1.5,
     "totalQuantity": 250,
     "color": "#B3B3B3",
     "assets": [
@@ -161,6 +164,8 @@
     ]
   },
   "Portal": {
+    "size": 3,
+    "selectionFactor": 3,
     "color": "#8a4fd6",
     "assets": {
       "sheet": "buildings/portal",

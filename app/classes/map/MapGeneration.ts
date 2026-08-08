@@ -13,13 +13,10 @@ import {
   getPlainCellsAroundPoint,
 } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
-import {
-  MAX_BUILDING_BY_AGE,
-  MAX_INFANTRY_BY_AGE,
-  MAX_ARCHER_BY_AGE,
-} from '../../ai/config'
+import { MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE, MAX_ARCHER_BY_AGE } from '../../ai/config'
 import { getBestUnitFromTechs, INFANTRY_TECH_UPGRADES, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
+import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
 import {
   BUILDING_TYPES,
   FAMILY_TYPES,
@@ -107,6 +104,7 @@ export type MapGenerationMap = RuntimeMap & {
   playersPos: GeneratedPosition[]
   positionsCount: number
   noAI?: boolean
+  humanStartsWithoutBase?: boolean
   startingUnits: number
   generationTimings?: Record<string, number>
   difficulty: string
@@ -639,15 +637,11 @@ export class MapGeneration {
   ): Promise<void> {
     this.destroyGeneratedChildren()
     if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
-    const positionsBySize: Record<number, number> = {
-      120: 2,
-      144: 3,
-      168: 4,
-      200: 5,
-      220: 5,
-      384: 5,
-    }
-    this.map.positionsCount = positionsCountOverride ?? positionsBySize[this.map.size] ?? 2
+    this.map.resetRandom('ideal-spawns')
+    const [minIdealSpawns, maxIdealSpawns] = getIdealSpawnRangeForMapSize(this.map.size)
+    this.map.positionsCount =
+      positionsCountOverride ??
+      this.map.randomRange(Math.min(minIdealSpawns, maxIdealSpawns), Math.max(minIdealSpawns, maxIdealSpawns))
 
     const terrain = await this.generateTerrainDataAsync()
     this.map.size = terrain.length - 1
@@ -837,7 +831,8 @@ export class MapGeneration {
       randoms.splice(randoms.indexOf(pos), 1)
     }
 
-    for (let i = 0; i < this.map.positionsCount; i++) {
+    const playerCount = Math.min(playersConfig?.length || 1, this.map.playersPos.length)
+    for (let i = 0; i < playerCount; i++) {
       const posI = this.map.playersPos[poses[i]]?.i
       const posJ = this.map.playersPos[poses[i]]?.j
       if (posI != null && posJ != null) {
@@ -850,16 +845,24 @@ export class MapGeneration {
         const civilizationLevel = Math.max(0, Math.min(Number(playersConfig?.[i]?.civilizationLevel) || 0, 3))
         if (!i) {
           players.push(
-            new Human({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, isPlayed: true, civilizationLevel }, context)
+            new Human(
+              { i: posI, j: posJ, age: 0, civ, color, gender, team, name, isPlayed: true, civilizationLevel },
+              context
+            )
           )
         } else if (!this.map.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, difficulty, civilizationLevel }, context))
+          players.push(
+            new AI({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, difficulty, civilizationLevel }, context)
+          )
         }
       }
     }
 
     players.forEach((player, index) =>
-      this.applyStartingBonuses(player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
+      this.applyStartingBonuses(
+        player,
+        playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null
+      )
     )
 
     return players
@@ -872,6 +875,10 @@ export class MapGeneration {
 
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
+      if (player.isPlayed && this.map.humanStartsWithoutBase) {
+        player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero })
+        continue
+      }
       const towncenter = player.spawnBuilding?.({
         i: player.i,
         j: player.j,
@@ -924,7 +931,12 @@ export class MapGeneration {
       const [minSpace, maxSpace] = placementSpaceFor(type)
       const size = placementSizeFor(type)
       for (const spaceMultiplier of [1, 2, 3, 4]) {
-        const position = getPositionInGridAroundInstance(townCenter, map.grid, [minSpace, maxSpace * spaceMultiplier], size)
+        const position = getPositionInGridAroundInstance(
+          townCenter,
+          map.grid,
+          [minSpace, maxSpace * spaceMultiplier],
+          size
+        )
         if (position && canPlaceBuildingAt(map.grid, position.i, position.j, placementConfig)) {
           player.createBuilding({ i: position.i, j: position.j, type, isBuilt: true })
           markBuilt(type)
@@ -1650,7 +1662,8 @@ export class MapGeneration {
       const cells = getPlainCellsAroundPoint(i, j, map.grid, radius)
       if (cells.length !== (radius * 2 + 1) ** 2) return false
       return cells.every(
-        cell => !cell.solid && !cell.has && cell.category !== 'Water' && !cell.border && !cell.inclined && cell.z === centerZ
+        cell =>
+          !cell.solid && !cell.has && cell.category !== 'Water' && !cell.border && !cell.inclined && cell.z === centerZ
       )
     }
     const center = Math.round(map.size / 2)
@@ -1664,7 +1677,9 @@ export class MapGeneration {
         const i = attempt === 0 ? center : map.randomRange(border, map.size - border)
         const j = attempt === 0 ? center : map.randomRange(border, map.size - border)
         if (!isValidFootprint(i, j, footprintRadius + clearance)) continue
-        const tooCloseToPlayer = map.playersPos.some(pos => pos && (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
+        const tooCloseToPlayer = map.playersPos.some(
+          pos => pos && (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq
+        )
         if (tooCloseToPlayer) continue
         position = { i, j }
         break
@@ -1686,34 +1701,55 @@ export class MapGeneration {
   }
 
   findPlayerPlaces() {
-    const results = []
+    const results: GridPosition[] = []
     const N = this.map.positionsCount
-    const center = this.map.size / 2
-    const startAngle = this.map.random() * 2 * Math.PI
-    const searchHalf = Math.max(8, Math.floor(this.map.size * 0.07))
-    const border = 12
-    const radiiFactors = [0.38, 0.3, 0.44, 0.22, 0.46, 0.15]
+    const searchHalf = Math.max(6, Math.floor(this.map.size * 0.06))
+    const zoneRadius = this.map.size < 64 ? 2 : 5
+    const border = Math.min(12, Math.max(2, Math.floor(this.map.size * 0.08)))
+    let minDistance = Math.max(16, Math.floor((this.map.size / Math.max(N, 2)) * 0.55))
 
-    for (let i = 0; i < N; i++) {
-      const angle = startAngle + ((2 * Math.PI) / N) * i
+    const farEnoughFromOtherSpawns = (position: GridPosition) =>
+      results.every(
+        existing => !existing || (existing.i - position.i) ** 2 + (existing.j - position.j) ** 2 >= minDistance ** 2
+      )
+
+    const canUseCell = (cell: RuntimeCell) => !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water'
+
+    for (let index = 0; index < N; index++) {
       let found = null
 
-      for (const frac of radiiFactors) {
-        if (found) break
-        const r = Math.floor(this.map.size * frac)
-        const ci = Math.round(center + Math.cos(angle) * r)
-        const cj = Math.round(center + Math.sin(angle) * r)
+      for (let relaxation = 0; relaxation < 3 && !found; relaxation++) {
+        const attempts = 80
+        for (let attempt = 0; attempt < attempts && !found; attempt++) {
+          const ci = this.map.randomRange(border, this.map.size - border)
+          const cj = this.map.randomRange(border, this.map.size - border)
+          const candidate = getZoneInGridWithCondition(
+            {
+              minX: Math.max(border, ci - searchHalf),
+              maxX: Math.min(this.map.size - border, ci + searchHalf),
+              minY: Math.max(border, cj - searchHalf),
+              maxY: Math.min(this.map.size - border, cj + searchHalf),
+            },
+            this.map.grid,
+            zoneRadius,
+            canUseCell
+          )
+          if (candidate && farEnoughFromOtherSpawns(candidate)) found = candidate
+        }
+        minDistance = Math.max(10, Math.floor(minDistance * 0.75))
+      }
 
+      if (!found) {
         found = getZoneInGridWithCondition(
           {
-            minX: Math.max(border, ci - searchHalf),
-            maxX: Math.min(this.map.size - border, ci + searchHalf),
-            minY: Math.max(border, cj - searchHalf),
-            maxY: Math.min(this.map.size - border, cj + searchHalf),
+            minX: border,
+            maxX: this.map.size - border,
+            minY: border,
+            maxY: this.map.size - border,
           },
           this.map.grid,
-          5,
-          cell => !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water'
+          zoneRadius,
+          canUseCell
         )
       }
 

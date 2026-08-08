@@ -137,7 +137,7 @@ function applyAppearanceVariantsToAssets(
 }
 
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
-  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike }
+  UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
 
 function getActionSheet(
   work: string | null | undefined,
@@ -339,7 +339,12 @@ export class Unit extends Instance implements UnitEntity {
         Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
       }
     }
-    if (this.owner.isPlayed && map.ready && this.context.controls.instanceIsAudible?.(this)) {
+    if (
+      !options.suppressCreateSound &&
+      this.owner.isPlayed &&
+      map.ready &&
+      this.context.controls.instanceIsAudible?.(this)
+    ) {
       playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
     }
 

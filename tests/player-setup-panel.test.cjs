@@ -100,3 +100,16 @@ test('custom human name is preserved when civilization changes', () => {
   assert.equal(panel.players[0].civ, 'Roman')
   assert.equal(panel.players[0].name, 'Pierre')
 })
+
+test('simplified setup keeps only the human player', () => {
+  const panel = setupPanel([
+    { name: 'You', color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },
+    { name: 'Computer 1', color: 'red', civ: 'Roman', gender: 'male', team: null, isHuman: false },
+  ])
+
+  panel._keepOnlyHumanPlayer()
+
+  assert.equal(panel.players.length, 1)
+  assert.equal(panel.players[0].isHuman, true)
+  assert.equal(panel.players[0].name, 'You')
+})

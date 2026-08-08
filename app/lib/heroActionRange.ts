@@ -57,10 +57,46 @@ function distanceToPolygon(points: Point[], point: Point): number {
   return closest
 }
 
+function closestPointOnSegment(point: Point, a: Point, b: Point): Point {
+  const segmentX = b.x - a.x
+  const segmentY = b.y - a.y
+  const segmentLengthSq = segmentX * segmentX + segmentY * segmentY
+  if (segmentLengthSq <= 0) return a
+  const t = Math.max(0, Math.min(1, ((point.x - a.x) * segmentX + (point.y - a.y) * segmentY) / segmentLengthSq))
+  return {
+    x: a.x + segmentX * t,
+    y: a.y + segmentY * t,
+  }
+}
+
+function getTargetFootprintPoints(target: RuntimeEntity): Point[] | null {
+  if (![FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')) return null
+  const factor = target.selectionFactor ?? target.size ?? 1
+  return getRoundedIsoShapePoints({ x: target.x, y: target.y, factor: Math.max(1, factor) })
+}
+
 function isHeroNearTargetFootprint(unit: UnitEntity, target: RuntimeEntity): boolean {
-  if (![FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')) return false
-  const points = getRoundedIsoShapePoints({ x: target.x, y: target.y, factor: Math.max(1, target.size ?? 1) })
+  const points = getTargetFootprintPoints(target)
+  if (!points) return false
   return distanceToPolygon(points, unit) <= HERO_FOOTPRINT_INTERACTION_MARGIN
+}
+
+export function getHeroInteractionTargetPoint(unit: UnitEntity, target: RuntimeEntity): Point {
+  const points = getTargetFootprintPoints(target)
+  if (!points?.length) return target
+  if (pointIsInsidePolygon(points, unit)) return target
+
+  let closestPoint = points[0]
+  let closestDistance = Infinity
+  for (let index = 0; index < points.length; index++) {
+    const point = closestPointOnSegment(unit, points[index], points[(index + 1) % points.length])
+    const distance = Math.hypot(unit.x - point.x, unit.y - point.y)
+    if (distance < closestDistance) {
+      closestPoint = point
+      closestDistance = distance
+    }
+  }
+  return closestPoint
 }
 
 export function isHeroActionInRange(

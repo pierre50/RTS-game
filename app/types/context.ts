@@ -1,10 +1,11 @@
 import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity } from './entities'
+import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity, ResourceEntity } from './entities'
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroEquippedItem } from '../lib/heroTools'
+import type { WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
 export type SchedulerTaskId = number
@@ -192,6 +193,8 @@ export interface GameContextLike {
   restart: () => void
   quit: () => void
   applyZoom: () => void
+  getWorldGraph?: () => WorldGraphSave | null
+  travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
 }
 
 export type AudibleInstanceLike = {

@@ -34,6 +34,26 @@ function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
   return element
 }
 
+function getMinimapDrawPosition(instance: RuntimeEntity): { x: number; y: number } | null {
+  const pixiInstance = instance as RuntimeEntity & {
+    destroyed?: boolean
+    position?: { x?: number; y?: number } | null
+  }
+  if (instance.isDead || instance.isDestroyed || pixiInstance.destroyed || !pixiInstance.position) return null
+
+  let x: number | undefined
+  let y: number | undefined
+  try {
+    x = pixiInstance.position.x
+    y = pixiInstance.position.y
+  } catch {
+    return null
+  }
+
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x: x as number, y: y as number }
+}
+
 export class MinimapManager {
   menu: MinimapHostLike
   miniMapAlpha: number
@@ -171,10 +191,13 @@ export class MinimapManager {
     const context = menu.resourcesMinimap.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
+    const position = getMinimapDrawPosition(resource)
+    if (!position) return
+
     canvasDrawRectangle(
       context,
-      resource.x / factor - squareSize / 2 + translate,
-      resource.y / factor - squareSize / 2,
+      position.x / factor - squareSize / 2 + translate,
+      position.y / factor - squareSize / 2,
       squareSize,
       squareSize,
       resource.color ?? ''
@@ -194,10 +217,13 @@ export class MinimapManager {
 
     map.resources.forEach(resource => {
       if (resource.color && (player?.views?.isViewed(resource.i, resource.j) || map.revealEverything)) {
+        const position = getMinimapDrawPosition(resource)
+        if (!position) return
+
         canvasDrawRectangle(
           context,
-          resource.x / factor - squareSize / 2 + translate,
-          resource.y / factor - squareSize / 2,
+          position.x / factor - squareSize / 2 + translate,
+          position.y / factor - squareSize / 2,
           squareSize,
           squareSize,
           resource.color
@@ -257,12 +283,14 @@ export class MinimapManager {
 
     owner.buildings.forEach(building => {
       if (!isVisible(building)) return
-      const { x, y, size = 0, selected } = building
+      const position = getMinimapDrawPosition(building)
+      if (!position) return
+      const { size = 0, selected } = building
       const finalSize = squareSize + size * MINIMAP_RESOLUTION_SCALE
       canvasDrawRectangle(
         context,
-        x / factor - finalSize / 2 + translate,
-        y / factor - finalSize / 2,
+        position.x / factor - finalSize / 2 + translate,
+        position.y / factor - finalSize / 2,
         finalSize,
         finalSize,
         selected ? 'white' : color
@@ -270,11 +298,13 @@ export class MinimapManager {
     })
     owner.units.forEach(unit => {
       if (!isVisible(unit)) return
-      const { x, y, selected } = unit
+      const position = getMinimapDrawPosition(unit)
+      if (!position) return
+      const { selected } = unit
       canvasDrawRectangle(
         context,
-        x / factor - squareSize / 2 + translate,
-        y / factor - squareSize / 2,
+        position.x / factor - squareSize / 2 + translate,
+        position.y / factor - squareSize / 2,
         squareSize,
         squareSize,
         selected ? 'white' : color

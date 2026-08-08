@@ -61,6 +61,7 @@ export interface RuntimeMap {
   environment?: string
   ready?: boolean
   instantMode: boolean
+  humanStartsWithoutBase?: boolean
   revealEverything: boolean
   revealTerrain: boolean
   showResources?: boolean

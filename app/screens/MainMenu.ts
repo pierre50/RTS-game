@@ -2,6 +2,7 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from '../ui/settingsPanel'
 import { openSaveListModal } from '../ui/saveListModal'
+import { listSaves, loadSave } from '../serialization/SaveStorage'
 import type { SaveRecord } from '../types/save'
 
 export default class MainMenu {
@@ -81,6 +82,9 @@ export default class MainMenu {
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
+    if (listSaves().length) {
+      buttons.appendChild(this._btn(t('continueGame'), () => this._continueLatestSave()))
+    }
     buttons.appendChild(this._btn(t('newGame'), this.onStart))
     buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList()))
     buttons.appendChild(this._btn(t('settings'), () => this._openSettings()))
@@ -151,6 +155,18 @@ export default class MainMenu {
     openSaveListModal({
       onLoad: saveData => this.onLoad(saveData),
     })
+  }
+
+  _continueLatestSave(): void {
+    const latestSave = listSaves()[0]
+    if (!latestSave) return
+
+    try {
+      this.onLoad(loadSave(latestSave.key))
+    } catch (error) {
+      console.warn('[save] Unable to continue latest save', error)
+      this._openSaveList()
+    }
   }
 
   destroy(): void {

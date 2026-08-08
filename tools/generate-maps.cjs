@@ -37,11 +37,16 @@ function loadPlainTsModule(relativePath) {
 const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = loadPlainTsModule(
   'app/constants/environments.ts'
 )
+const { createSeededRandom } = loadPlainTsModule('app/lib/random.ts')
 
 function mapSettingsFromRuntimeConfig() {
   const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
-  const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*maxPlayers:\s*(\d+)(?:,\s*editorOnly:\s*true)?/g)]
-    .map(([, size, maxPlayers]) => ({ size: Number(size), maxPlayers: Number(maxPlayers) }))
+  const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*idealSpawnRange:\s*\[(\d+),\s*(\d+)\](?:,\s*editorOnly:\s*true)?/g)]
+    .map(([, size, minSpawns, maxSpawns]) => ({
+      size: Number(size),
+      minSpawns: Number(minSpawns),
+      maxSpawns: Number(maxSpawns),
+    }))
     .filter(({ size }) => size !== 16)
   if (!sizes.length) throw new Error('Could not read map sizes from app/config')
   return { sizes }
@@ -49,7 +54,8 @@ function mapSettingsFromRuntimeConfig() {
 
 const MAP_SETTINGS = mapSettingsFromRuntimeConfig()
 const SIZES = new Set(MAP_SETTINGS.sizes.map(({ size }) => size))
-const maxPlayersForSize = size => MAP_SETTINGS.sizes.find(entry => entry.size === size)?.maxPlayers
+const idealSpawnRangeForSize = size =>
+  MAP_SETTINGS.sizes.find(entry => entry.size === size) || { minSpawns: 1, maxSpawns: 3 }
 
 function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
@@ -621,14 +627,15 @@ function unsupportedReliefCells(map) {
 }
 
 async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
-  const playerCount = maxPlayersForSize(size)
+  const { minSpawns, maxSpawns } = idealSpawnRangeForSize(size)
+  const spawnCount = Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
   const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
-  const context = { map: { seed, positionsCount: playerCount } }
+  const context = { map: { seed, positionsCount: spawnCount } }
   const terrain = runtimeTerrain.call(context, size + 1, seed, params)
-  const spawnMap = buildHeadlessMap(terrain, size, seed, [], playerCount, environmentId)
+  const spawnMap = buildHeadlessMap(terrain, size, seed, [], spawnCount, environmentId)
   const spawns = runtimeSpawns.call({ map: spawnMap })
-  if (spawns.length !== playerCount) return null
-  const map = buildHeadlessMap(terrain, size, seed, spawns, playerCount, environmentId)
+  if (spawns.length !== spawnCount) return null
+  const map = buildHeadlessMap(terrain, size, seed, spawns, spawnCount, environmentId)
   runtimeRelief.call({ map })
   runtimeClassifyDeepWater.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
