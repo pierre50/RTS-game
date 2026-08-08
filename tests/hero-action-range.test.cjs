@@ -1,0 +1,76 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+const babel = require('@babel/core')
+
+function loadHeroActionRange({ contact = () => false, heroControlled = () => true } = {}) {
+  const filename = path.join(__dirname, '../app/lib/heroActionRange.ts')
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  const mocks = {
+    '../constants': {
+      CELL_HEIGHT: 32,
+      ACTION_TYPES: { takemeat: 'takemeat' },
+      FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource' },
+    },
+    './grid/cells': {
+      getBuildingContactDistance: size => Math.floor(((size ?? 1) - 1) / 2) + 1,
+    },
+    './grid/movement': {
+      instanceContactInstance: contact,
+    },
+    './graphics/selection': {
+      getRoundedIsoShapePoints: ({ x = 0, y = 0, factor = 1 } = {}) => [
+        { x, y: y - 16 * factor },
+        { x: x + 32 * factor, y },
+        { x, y: y + 16 * factor },
+        { x: x - 32 * factor, y },
+      ],
+    },
+    './maths': {
+      instancesDistance: (a, b) => Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0)),
+    },
+    './unitControl': {
+      isHeroControlled: heroControlled,
+    },
+  }
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports
+}
+
+test('hero interaction range accepts the long side of an isometric building footprint', () => {
+  const { isHeroInteractionTargetReachable } = loadHeroActionRange()
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 16, y: -36 }
+  const building = {
+    family: 'building',
+    i: 0,
+    isDestroyed: false,
+    j: 0,
+    size: 1,
+    x: 0,
+    y: 0,
+  }
+
+  assert.equal(isHeroInteractionTargetReachable(hero, null, building), true)
+})
+
+test('hero interaction range still falls back to strict contact for regular targets', () => {
+  const { isHeroInteractionTargetReachable } = loadHeroActionRange({ contact: () => true })
+  const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: 0 }
+  const unit = {
+    family: 'unit',
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    x: 48,
+    y: 0,
+  }
+
+  assert.equal(isHeroInteractionTargetReachable(hero, null, unit), true)
+})

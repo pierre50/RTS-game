@@ -3,6 +3,7 @@ import { sound } from '@pixi/sound'
 const VOLUME_KEY = 'sfx_volume'
 const SPEED_KEY = 'game_speed'
 const CAMERA_ZOOM_KEY = 'camera_zoom'
+const SCREEN_BRIGHTNESS_KEY = 'screen_brightness'
 const SHADOWS_KEY = 'graphics_shadows'
 const RESOURCE_WIND_KEY = 'graphics_resource_wind'
 const KEY_BINDINGS_KEY = 'controls_key_bindings'
@@ -11,6 +12,8 @@ const GAMEPAD_ENABLED_KEY = 'controls_gamepad_enabled'
 const DEFAULT_VOLUME = 0.6
 const DEFAULT_SPEED = 1.5
 const DEFAULT_CAMERA_ZOOM = 1
+const DEFAULT_SCREEN_BRIGHTNESS = 1
+export const DISPLAY_SCALE = 1.5
 const DEFAULT_SHADOWS_ENABLED = true
 const DEFAULT_RESOURCE_WIND_ENABLED = true
 const DEFAULT_GAMEPAD_ENABLED = true
@@ -34,6 +37,7 @@ export type ControlBindingAction =
   | 'heroLeft'
   | 'heroRight'
   | 'heroInteract'
+  | 'heroEntityInteraction'
   | 'heroDefense'
   | 'heroTool1'
   | 'heroTool2'
@@ -55,6 +59,7 @@ export const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroLeft: 'q',
   heroRight: 'd',
   heroInteract: 'e',
+  heroEntityInteraction: 'f',
   heroDefense: 'Space',
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
@@ -75,6 +80,7 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroLeft',
       'heroRight',
       'heroInteract',
+      'heroEntityInteraction',
       'heroDefense',
       'heroTool1',
       'heroTool2',
@@ -128,6 +134,11 @@ let _cameraZoom = (() => {
   return isVisibleCameraZoomPreset(stored) ? stored : DEFAULT_CAMERA_ZOOM
 })()
 
+let _screenBrightness = (() => {
+  const stored = parseFloat(localStorage.getItem(SCREEN_BRIGHTNESS_KEY) ?? '')
+  return isFinite(stored) ? clamp(stored, 0.5, 1.5) : DEFAULT_SCREEN_BRIGHTNESS
+})()
+
 let _shadowsEnabled = getStoredBoolean(SHADOWS_KEY, DEFAULT_SHADOWS_ENABLED)
 let _resourceWindEnabled = getStoredBoolean(RESOURCE_WIND_KEY, DEFAULT_RESOURCE_WIND_ENABLED)
 let _gamepadEnabled = getStoredBoolean(GAMEPAD_ENABLED_KEY, DEFAULT_GAMEPAD_ENABLED)
@@ -171,6 +182,16 @@ export function setCameraZoom(v: number | string): boolean {
   _cameraZoom = zoom
   localStorage.setItem(CAMERA_ZOOM_KEY, String(zoom))
   return true
+}
+
+export function getScreenBrightness(): number {
+  return _screenBrightness
+}
+
+export function setScreenBrightness(v: number): void {
+  _screenBrightness = clamp(v, 0.5, 1.5)
+  localStorage.setItem(SCREEN_BRIGHTNESS_KEY, String(_screenBrightness))
+  notifySettingsChanged()
 }
 
 export function getShadowsEnabled(): boolean {

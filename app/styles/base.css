@@ -42,11 +42,9 @@ img {
   user-select: text;
 }
 
-.modal-title,
 div.menu-title,
 .game-overlay,
 .orientation-guard-title,
-.game-loading__title,
 .map-editor-titlebar {
   font-family: var(--font-family-display);
 }

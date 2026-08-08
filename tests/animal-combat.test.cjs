@@ -110,6 +110,33 @@ test('isAttacked is ignored once the animal is already fleeing', () => {
   assert.deepEqual(calls, [])
 })
 
+test('an aggressive animal charges attack targets with the running sheet when available', () => {
+  const target = { i: 7, j: 5, label: 'villager' }
+  const { combat, calls } = createAnimalCombat({
+    animalOverrides: {
+      strategy: 'attack',
+      runningSheet: {},
+    },
+  })
+
+  combat.getReaction(target)
+
+  assert.deepEqual(calls, [['sendTo', target, 'attack', { movementSheet: 'running' }]])
+})
+
+test('an aggressive animal falls back to walking when it has no running sheet', () => {
+  const target = { i: 7, j: 5, label: 'villager' }
+  const { combat, calls } = createAnimalCombat({
+    animalOverrides: {
+      strategy: 'attack',
+    },
+  })
+
+  combat.getReaction(target)
+
+  assert.deepEqual(calls, [['sendTo', target, 'attack', { movementSheet: 'walking' }]])
+})
+
 test('runaway flees along the projectile direction instead of away from the shooter position', () => {
   // Pretend the shot travelled purely along the grid i-axis (towards higher i).
   const { combat, animal, calls, getCellsAroundPointCalls } = createAnimalCombat({

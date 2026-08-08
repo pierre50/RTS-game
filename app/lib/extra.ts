@@ -120,6 +120,13 @@ export function getSpriteFrameSelection<TTexture>(
   const names = getSortedTextureNames(textures)
   const direction = (degreeToDirection(degree) ?? 'south') as Direction
 
+  if (directionCount === 1) {
+    return {
+      textures: getAnimationFrames(textures, 'south', directionCount, directionOrderOverride),
+      mirrored: false,
+    }
+  }
+
   if (directionCount === 9) {
     const { frameIndex, mirrored } = getMirroredHalfArcFrameIndex(degree, directionCount)
     const framesPerDirection = Math.max(1, Math.floor(names.length / directionCount))
@@ -279,6 +286,7 @@ export type UnitTextureInstance = {
   spriteScale?: number
   sprite: AnimatedSpriteLike
   walkingSheet?: SheetLike
+  dyingSheet?: SheetLike
   ridingSheet?: SheetLike
   mountedOnHorse?: boolean
 }
@@ -318,6 +326,31 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   if (!sheets[sheet]) {
     const fallbackSpriteScale = instance.spriteScale ?? 1
     let mirrored = false
+    if (sheet === SHEET_TYPES.corpse && instance.dyingSheet) {
+      const directionCount = instance.sheetDirectionCounts?.[SHEET_TYPES.dying] ?? null
+      const directionOrderOverride = instance.sheetDirectionOrders?.[SHEET_TYPES.dying] ?? null
+      const fallback = getSpriteFrameSelection(
+        instance.dyingSheet.textures,
+        instance.degree,
+        directionCount,
+        directionOrderOverride
+      )
+      const corpseTexture = fallback.textures[fallback.textures.length - 1]
+      if (corpseTexture) {
+        instance.currentSheet = sheet
+        instance.sprite.textures = [corpseTexture]
+        instance.sprite.currentFrame = 0
+        instance.sprite.animationSpeed = 0
+        instance.sprite.stop()
+        instance.sprite.scale.x = fallback.mirrored ? -fallbackSpriteScale : fallbackSpriteScale
+        instance.sprite.scale.y = fallbackSpriteScale
+        const defaultAnchor = getDefaultAnchor(corpseTexture)
+        if (defaultAnchor) {
+          instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+        }
+        return
+      }
+    }
     if (instance.walkingSheet) {
       const fallback = getWalkingFallbackTexture(instance)
       if (fallback) {

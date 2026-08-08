@@ -188,11 +188,14 @@ export default class Game extends Container {
     this._loadingScreen = new GameLoadingScreen()
     this._loadingScreen.update('generatingWorld', 0.02)
     await this._yieldToBrowser()
+    let booted = false
     try {
       await this._bootFromConfig(this.config!)
+      booted = true
     } finally {
       this._loadingScreen?.destroy()
       this._loadingScreen = null
+      if (booted) this.context.menu?.show?.()
     }
   }
 
@@ -483,6 +486,7 @@ export default class Game extends Container {
       // and civ only survives in `players` (a runtime shape, unlike config.players).
       players: savedPlayers.map(player => ({
         civ: player.civ,
+        gender: player.gender,
         isHuman: player.isPlayed && player.type === PLAYER_TYPES.human,
       })),
     }
@@ -546,6 +550,7 @@ export default class Game extends Container {
   }
 
   async load(json: SerializedSave): Promise<void> {
+    let booted = false
     try {
       validateSaveData(json)
       this._restartSaveData = structuredClone(json)
@@ -557,6 +562,7 @@ export default class Game extends Container {
       this._loadingScreen.update('generatingTerrain', 0.02)
       await this._yieldToBrowser()
       await this._bootFromSave(structuredClone(this._restartSaveData))
+      booted = true
     } catch (error) {
       const message = error instanceof Error ? error.message : t('corruptSave')
       this.quit()
@@ -570,6 +576,7 @@ export default class Game extends Container {
     } finally {
       this._loadingScreen?.destroy()
       this._loadingScreen = null
+      if (booted) this.context.menu?.show?.()
     }
   }
 
@@ -592,11 +599,14 @@ export default class Game extends Container {
     this._loadingScreen = new GameLoadingScreen()
     this._loadingScreen.update('generatingTerrain', 0.02)
     await this._yieldToBrowser()
+    let booted = false
     try {
       await this._bootFromSave(structuredClone(this._restartSaveData!))
+      booted = true
     } finally {
       this._loadingScreen?.destroy()
       this._loadingScreen = null
+      if (booted) this.context.menu?.show?.()
       this._isRestarting = false
     }
   }

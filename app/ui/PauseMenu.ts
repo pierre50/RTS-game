@@ -18,7 +18,10 @@ export class PauseMenu {
     button.className = 'topbar-options-menu ui-btn'
     button.innerText = t('menuBtn')
     button.addEventListener('pointerdown', playClickSound)
-    button.addEventListener('click', () => this.open())
+    button.addEventListener('click', () => {
+      button.blur()
+      this.open()
+    })
     return button
   }
 

@@ -42,8 +42,7 @@
       "BattleAxe",
       "ShortSword",
       "BroadSword",
-      "LongSword",
-      "Legion"
+      "LongSword"
     ],
     "sounds": {
       "create": "barracks-completed-selected",
@@ -184,9 +183,6 @@
       "ShortSwordsman",
       "BroadSwordsman",
       "LongSwordsman",
-      "Hoplite",
-      "Phalanx",
-      "Centurion",
       "Bowman",
       "ImprovedBowman",
       "CompositeBowman"

@@ -13,15 +13,13 @@
       "standingSheet": "animals/deer/standing",
       "walkingSheet": "animals/deer/walking",
       "runningSheet": "animals/deer/running",
-      "dyingSheet": "animals/deer/dying",
-      "corpseSheet": "animals/deer/corpse"
+      "dyingSheet": "animals/deer/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "deer-lion-killed",
@@ -42,15 +40,13 @@
       "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
       "runningSheet": "animals/hare/running",
-      "dyingSheet": "animals/hare/dying",
-      "corpseSheet": "animals/hare/corpse"
+      "dyingSheet": "animals/hare/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "deer-lion-killed",
@@ -71,15 +67,13 @@
       "standingSheet": "animals/black-grouse/standing",
       "walkingSheet": "animals/black-grouse/walking",
       "flyingSheet": "animals/black-grouse/flying",
-      "dyingSheet": "animals/black-grouse/dying",
-      "corpseSheet": "animals/black-grouse/corpse"
+      "dyingSheet": "animals/black-grouse/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "walkingSheet": 3,
       "flyingSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "deer-lion-killed",
@@ -100,15 +94,13 @@
       "standingSheet": "animals/fox/standing",
       "walkingSheet": "animals/fox/walking",
       "runningSheet": "animals/fox/running",
-      "dyingSheet": "animals/fox/dying",
-      "corpseSheet": "animals/fox/corpse"
+      "dyingSheet": "animals/fox/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "deer-lion-killed",
@@ -131,16 +123,14 @@
       "actionSheet": "animals/boar/action",
       "walkingSheet": "animals/boar/walking",
       "runningSheet": "animals/boar/running",
-      "dyingSheet": "animals/boar/dying",
-      "corpseSheet": "animals/boar/corpse"
+      "dyingSheet": "animals/boar/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "actionSheet": 3,
       "walkingSheet": 3,
       "runningSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "elephant-alligator-killed",
@@ -162,19 +152,42 @@
       "standingSheet": "animals/wolf/standing",
       "actionSheet": "animals/wolf/action",
       "walkingSheet": "animals/wolf/walking",
-      "dyingSheet": "animals/wolf/dying",
-      "corpseSheet": "animals/wolf/corpse"
+      "dyingSheet": "animals/wolf/dying"
     },
     "sheetDirectionCounts": {
       "standingSheet": 3,
       "actionSheet": 3,
       "walkingSheet": 3,
-      "dyingSheet": 1,
-      "corpseSheet": 1
+      "dyingSheet": 1
     },
     "sounds": {
       "fall": "elephant-alligator-killed",
       "hit": "target-hit-2"
+    }
+  },
+  "Horse": {
+    "totalHitPoints": 28,
+    "sight": 8,
+    "speed": 1.35,
+    "strategy": "runaway",
+    "ambientMovement": true,
+    "ambientWalkDelayMin": 7000,
+    "ambientWalkDelayMax": 15000,
+    "ambientWalkRange": 3,
+    "totalQuantity": 120,
+    "assets": {
+      "standingSheet": "animals/horse/standing",
+      "walkingSheet": "animals/horse/walking",
+      "dyingSheet": "animals/horse/dying"
+    },
+    "sheetDirectionCounts": {
+      "standingSheet": 3,
+      "walkingSheet": 3,
+      "dyingSheet": 1
+    },
+    "sounds": {
+      "fall": "deer-lion-killed",
+      "hit": "target-hit"
     }
   }
 }

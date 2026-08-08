@@ -52,6 +52,7 @@ export interface PlayerLike {
   type: string
   civ?: string
   color?: string
+  gender?: 'male' | 'female'
   colorHex: string
   name?: string
   team?: number | null

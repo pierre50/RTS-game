@@ -35,6 +35,7 @@ const constants = {
   ACTION_TYPES: {
     attack: 'attack',
   },
+  BUCKET_SIZE: 8,
   BUILDING_TYPES: {},
   FAMILY_TYPES: {
     animal: 'animal',
@@ -136,6 +137,139 @@ test('military units fight on until critically wounded, then retreat from a real
   assert.equal(shouldFleeWhenAttacked(criticalSoldier, healthyEnemy), true)
   // Even critically wounded, finishing off a nearly-dead enemy beats running from it.
   assert.equal(shouldFleeWhenAttacked(criticalSoldier, nearlyDeadEnemy), false)
+})
+
+function makeMoraleMap(entities, { escape = true } = {}) {
+  const size = 10
+  const grid = Array.from({ length: size }, (_, i) =>
+    Array.from({ length: size }, (_, j) => ({
+      i,
+      j,
+      border: false,
+      category: 'Land',
+      solid: !escape,
+    }))
+  )
+  if (escape) grid[5][4].solid = false
+  const bucket = new Set(entities)
+  const instanceBuckets = [[bucket]]
+  const context = { map: { grid, instanceBuckets } }
+  for (const entity of entities) entity.context = context
+  return context
+}
+
+function makeMoraleUnit(extra = {}) {
+  return {
+    category: 'Infantry',
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 40,
+    i: 4,
+    isDead: false,
+    j: 4,
+    meleeAttack: 3,
+    owner,
+    totalHitPoints: 40,
+    type: 'Clubman',
+    ...extra,
+  }
+}
+
+test('a trapped, badly wounded villager surrenders when local enemy force is overwhelming', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const villager = makeMoraleUnit({
+    category: 'Civilian',
+    hitPoints: 5,
+    meleeAttack: 3,
+    totalHitPoints: 25,
+    type: constants.UNIT_TYPES.villager,
+  })
+  const enemies = [0, 1, 2].map(offset =>
+    makeMoraleUnit({
+      hitPoints: 40,
+      i: 3 + offset,
+      j: 4,
+      owner: { label: 'enemy' },
+      type: 'Axeman',
+    })
+  )
+  makeMoraleMap([villager, ...enemies], { escape: false })
+
+  assert.equal(evaluateCombatMorale(villager, enemies[0]), 'surrender')
+})
+
+test('a badly wounded villager with an escape route flees instead of surrendering', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const villager = makeMoraleUnit({
+    category: 'Civilian',
+    hitPoints: 5,
+    meleeAttack: 3,
+    totalHitPoints: 25,
+    type: constants.UNIT_TYPES.villager,
+  })
+  const enemy = makeMoraleUnit({ i: 3, owner: { label: 'enemy' }, type: 'Axeman' })
+  makeMoraleMap([villager, enemy], { escape: true })
+
+  assert.equal(evaluateCombatMorale(villager, enemy), 'flee')
+})
+
+test('a supported soldier does not surrender just because enemies are nearby', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const soldier = makeMoraleUnit({ hitPoints: 25 })
+  const ally = makeMoraleUnit({ hitPoints: 50, i: 4, j: 5, meleeAttack: 8 })
+  const enemies = [0, 1].map(offset =>
+    makeMoraleUnit({
+      hitPoints: 35,
+      i: 3 + offset,
+      j: 4,
+      owner: { label: 'enemy' },
+      type: 'Axeman',
+    })
+  )
+  makeMoraleMap([soldier, ally, ...enemies], { escape: false })
+
+  assert.equal(evaluateCombatMorale(soldier, enemies[0]), 'fight')
+})
+
+test('a trapped, critically wounded soldier can surrender to an overwhelming enemy group', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const soldier = makeMoraleUnit({ hitPoints: 5 })
+  const enemies = [0, 1, 2].map(offset =>
+    makeMoraleUnit({
+      hitPoints: 45,
+      i: 3 + offset,
+      j: 4,
+      meleeAttack: 7,
+      owner: { label: 'enemy' },
+      type: 'Axeman',
+    })
+  )
+  makeMoraleMap([soldier, ...enemies], { escape: false })
+
+  assert.equal(evaluateCombatMorale(soldier, enemies[0]), 'surrender')
+})
+
+test('heroes and chiefs never auto-surrender from morale checks', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const hero = makeMoraleUnit({
+    category: 'Civilian',
+    hitPoints: 4,
+    totalHitPoints: 45,
+    type: constants.UNIT_TYPES.hero,
+  })
+  const enemy = makeMoraleUnit({ owner: { label: 'enemy' }, type: 'Axeman' })
+  makeMoraleMap([hero, enemy], { escape: false })
+
+  assert.notEqual(evaluateCombatMorale(hero, enemy), 'surrender')
 })
 
 test('units with attack stats can attack enemies', () => {

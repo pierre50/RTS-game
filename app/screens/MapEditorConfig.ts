@@ -23,8 +23,8 @@ export default class MapEditorConfig {
       size: MAP_EDITOR_SIZES[0].value,
       mapType: 'blank',
       players: [
-        { name: t('you'), color: 'blue', civ: 'Greek', team: null, isHuman: true },
-        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', team: null, isHuman: false },
+        { name: t('you'), color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },
+        { name: t('computer') + ' 1', color: 'red', civ: 'Egyptian', gender: 'male', team: null, isHuman: false },
       ],
     }
 

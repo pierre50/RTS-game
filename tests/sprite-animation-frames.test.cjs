@@ -102,6 +102,113 @@ test('missing standing sheet idles on the first walking frame from the current d
   assert.deepEqual(sprite.textures, [{ id: 0 }])
 })
 
+test('missing animal corpse sheet freezes on the last dying frame', () => {
+  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './grid': { instanceIsInPlayerSight: () => false },
+    './maths': {
+      degreeToDirection: () => 'south',
+    },
+    './uiSound': {},
+    './lang': {},
+  })
+
+  const sprite = {
+    currentFrame: 2,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    stopCalls: 0,
+    stop() {
+      this.stopCalls += 1
+    },
+  }
+
+  setUnitTexture('corpseSheet', {
+    context: {},
+    degree: 180,
+    sheetDirectionCounts: { dyingSheet: 1 },
+    sprite,
+    dyingSheet: {
+      data: { animationSpeed: 0.2 },
+      textures: {
+        '000.png': { id: 'fall-0' },
+        '001.png': { id: 'fall-1' },
+        '002.png': { id: 'corpse' },
+      },
+    },
+    walkingSheet: {
+      data: {},
+      textures: { '000.png': { id: 'walk' } },
+    },
+  })
+
+  assert.equal(sprite.currentFrame, 0)
+  assert.equal(sprite.animationSpeed, 0)
+  assert.equal(sprite.stopCalls, 1)
+  assert.deepEqual(sprite.textures, [{ id: 'corpse' }])
+})
+
+test('single-direction dying sheets always use south-facing frames', () => {
+  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './grid': { instanceIsInPlayerSight: () => false },
+    './maths': {
+      degreeToDirection: () => 'north',
+    },
+    './uiSound': {},
+    './lang': {},
+  })
+
+  const sprite = {
+    currentFrame: 0,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    playCalls: 0,
+    play() {
+      this.playCalls += 1
+    },
+  }
+
+  setUnitTexture('dyingSheet', {
+    context: {},
+    degree: 90,
+    sheetDirectionCounts: { dyingSheet: 1 },
+    sprite,
+    dyingSheet: {
+      data: { animationSpeed: 0.2 },
+      textures: {
+        '000.png': { id: 'south-fall-0' },
+        '001.png': { id: 'south-fall-1' },
+        '002.png': { id: 'south-fall-2' },
+      },
+    },
+  })
+
+  assert.deepEqual(sprite.textures, [{ id: 'south-fall-0' }, { id: 'south-fall-1' }, { id: 'south-fall-2' }])
+  assert.equal(sprite.scale.x, 1)
+  assert.equal(sprite.playCalls, 1)
+})
+
 test('mounted units use riding art for idle, walking and animated attack actions', () => {
   const { setUnitTexture } = loadModule('app/lib/extra.ts', {
     '../constants': {

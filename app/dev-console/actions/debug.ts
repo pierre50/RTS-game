@@ -51,7 +51,6 @@ type AiDebugPlayer = DevPlayer & {
   maxInfantryByAge: Record<number, number>
   maxArcherByAge: Record<number, number>
   maxCavalryByAge: Record<number, number>
-  maxHopliteByAge: Record<number, number>
   difficultyConfig: { popCapMultiplier: number; attackCooldownMs: number; attackThreshold: number }
   lastAttackWaveAt: number
   enemyUnitMemory: { size: number }
@@ -388,8 +387,8 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const idx = aiPlayers.indexOf(ai)
     const villagers = ai.getLivingUnitsByType(UNIT_TYPES.villager)
     const aliveUnits = ai.units.filter(isAliveUnit)
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(aliveUnits)
-    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
+    const { infantry, archers, cavalry } = classifyMilitaryUnits(aliveUnits)
+    const military = [...infantry, ...archers, ...cavalry]
     const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
     const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
     const threats = ai.getActiveThreats()
@@ -399,7 +398,6 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const maxInf = ai.maxInfantryByAge[ai.age]
     const maxArc = ai.maxArcherByAge[ai.age]
     const maxCav = ai.maxCavalryByAge[ai.age]
-    const maxHop = ai.maxHopliteByAge[ai.age]
     const cooldownLeft = Math.max(
       0,
       Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000)
@@ -426,7 +424,7 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
       `Jobs idle ${workerSnapshot.inactifVillagers.length} | builders ${builders} | hunters ${workerSnapshot.villagersHunting.length} | scout ${scoutLabel} (${scoutStatus})`
     )
     lines.push(
-      `Army inf ${infantry.length}/${maxInf} | arc ${archers.length}/${maxArc} | cav ${cavalry.length}/${maxCav} | hop ${hoplites.length}/${maxHop}`
+      `Army inf ${infantry.length}/${maxInf} | arc ${archers.length}/${maxArc} | cav ${cavalry.length}/${maxCav}`
     )
     lines.push(
       `Power ${militaryPower}/${desiredPower} | Attack ${cooldownLeft > 0 ? `${cooldownLeft}s` : 'ready'} | Threshold ${ai.difficultyConfig.attackThreshold}`

@@ -27,7 +27,7 @@ function loadMapGeneration() {
           get: key =>
             key === 'config'
               ? {
-                  animals: { Deer: {}, Hare: {}, BlackGrouse: {}, Fox: {}, Boar: {} },
+                  animals: { Deer: {}, Hare: {}, BlackGrouse: {}, Fox: {}, Boar: {}, Wolf: {}, Horse: {} },
                   resources: {},
                   cells: {},
                 }
@@ -50,6 +50,19 @@ function loadMapGeneration() {
       getTextureByFrame: () => null,
     },
     '../../services/FogOfWar': { rehydrateAIKnowledge: () => {} },
+    '../../ai/config': {
+      MAX_BUILDING_BY_AGE: {},
+      MAX_INFANTRY_BY_AGE: {},
+      MAX_ARCHER_BY_AGE: {},
+    },
+    '../../ai/unitGroups': {
+      getBestUnitFromTechs: () => null,
+      INFANTRY_TECH_UPGRADES: {},
+      ARCHER_TECH_UPGRADES: {},
+    },
+    '../../config/resourcePresets': {
+      CIVILIZATION_LEVEL_RESOURCE_BONUS: {},
+    },
     '../../constants': {
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
@@ -66,6 +79,8 @@ function loadMapGeneration() {
       WATER_SET_CHANCE: 0,
       WATER_SET_DEEP_LAND_MIN_DIST: 3,
       ANIMAL_PLAYER_SAFE_DIST: 14,
+      AMBIENT_ANIMAL_CHANCE: 0.0015,
+      getEnvironmentTerrainParams: () => ({}),
     },
     '../cell': {
       Cell: class {},
@@ -142,4 +157,10 @@ test('ambient foxes usually spawn isolated', () => {
   generation.placeAmbientAnimalGroup(10, 10, 'Fox')
 
   assert.deepEqual(placed, [{ i: 10, j: 10, type: 'Fox' }])
+})
+
+test('ambient selection excludes wolves and can pick horses', () => {
+  const { generation } = createGenerator({ random: () => 0.999 })
+
+  assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
 })

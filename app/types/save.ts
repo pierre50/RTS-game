@@ -164,6 +164,7 @@ export type PlayerSetupConfig = {
   civ?: string
   civilizationLevel?: number
   color?: string
+  gender?: 'male' | 'female'
   isHuman?: boolean
   name?: string
   team?: number | null

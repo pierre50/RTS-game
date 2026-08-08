@@ -61,13 +61,6 @@ export class HeroStatusHud {
     this.healthBar = document.createElement('div')
     this.healthBar.className = 'hero-status-bar'
 
-    const energyHeader = document.createElement('div')
-    energyHeader.className = 'hero-status-header hero-status-energy-header'
-
-    const energyTitle = document.createElement('div')
-    energyTitle.className = 'hero-status-title'
-    energyTitle.textContent = t('heroEnergyTitle')
-
     this.energyValue = document.createElement('div')
     this.energyValue.className = 'hero-status-value'
 
@@ -89,15 +82,13 @@ export class HeroStatusHud {
 
     header.appendChild(this.title)
     header.appendChild(this.level)
-    header.appendChild(this.value)
-    energyHeader.appendChild(energyTitle)
-    energyHeader.appendChild(this.energyValue)
+    this.healthBar.appendChild(this.value)
     this.energyBar.appendChild(this.energyFill)
+    this.energyBar.appendChild(this.energyValue)
     this.carry.appendChild(this.carryIcon)
     this.carry.appendChild(this.carryValue)
     content.appendChild(header)
     content.appendChild(this.healthBar)
-    content.appendChild(energyHeader)
     content.appendChild(this.energyBar)
     content.appendChild(this.carry)
     frame.appendChild(avatarWrap)

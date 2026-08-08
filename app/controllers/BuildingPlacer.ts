@@ -50,11 +50,7 @@ export class BuildingPlacer {
       context: { map },
     } = controls
     const pointer = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
-    const { visibleHeight } = controls.getViewportMetrics()
-    const [i, j] = isometricToCartesian(
-      pointer.x - map.x,
-      pointer.y >= visibleHeight ? visibleHeight - map.y : pointer.y - map.y
-    )
+    const [i, j] = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
     return map.grid[Math.min(Math.max(i, 0), map.size)]?.[Math.min(Math.max(j, 0), map.size)] || null
   }
 
@@ -128,17 +124,16 @@ export class BuildingPlacer {
         : getTexture(building.images?.final ?? '', Assets)
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
+    if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
     sprite.visible = building.type !== BUILDING_TYPES.smallWall
     controls.mouseBuilding.addChild(sprite)
     Object.keys(building).forEach(prop => {
       ;(controls.mouseBuilding as MouseBuilding)[prop] = building[prop]
     })
-    const pointer = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
-    controls.mouseBuilding.x = pointer.x
-    controls.mouseBuilding.y = pointer.y
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
     changeSpriteColor(sprite as RecolorableSprite, player.color ?? '')
     controls.addChild(controls.mouseBuilding)
+    this.handleMouseMove()
   }
 
   removeMouseBuilding(): void {

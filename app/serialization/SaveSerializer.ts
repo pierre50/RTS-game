@@ -249,6 +249,7 @@ function playerData(player: SerializablePlayer) {
       'stone',
       'gold',
       'civ',
+      'gender',
       'name',
       'color',
       'team',

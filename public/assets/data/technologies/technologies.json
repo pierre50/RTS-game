@@ -75,10 +75,6 @@
             "ShortSwordsman",
             "BroadSwordsman",
             "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion",
             "ScytheChariot",
             "HeavyCavalry",
             "CamelRider"
@@ -120,10 +116,6 @@
             "ShortSwordsman",
             "BroadSwordsman",
             "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion",
             "ScytheChariot",
             "HeavyCavalry",
             "CamelRider"
@@ -165,10 +157,6 @@
             "ShortSwordsman",
             "BroadSwordsman",
             "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion",
             "ScytheChariot",
             "HeavyCavalry",
             "CamelRider"
@@ -204,11 +192,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -246,11 +230,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -282,11 +262,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -324,11 +300,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -366,11 +338,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -1015,79 +983,6 @@
       "target": "CompositeBowman"
     }
   },
-  "Legion": {
-    "icon": "050_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "LongSword"
-      }
-    ],
-    "researchTime": 150,
-    "cost": {
-      "food": 200,
-      "gold": 100
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "LongSwordsman",
-      "target": "Legion"
-    }
-  },
-  "Phalanx": {
-    "icon": "053_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      }
-    ],
-    "researchTime": 75,
-    "cost": {
-      "food": 120,
-      "gold": 50
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "Hoplite",
-      "target": "Phalanx"
-    }
-  },
-  "Centurion": {
-    "icon": "054_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "Phalanx"
-      }
-    ],
-    "researchTime": 150,
-    "cost": {
-      "food": 200,
-      "gold": 100
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "Phalanx",
-      "target": "Centurion"
-    }
-  },
   "Artisanship": {
     "icon": "077_50729",
     "key": "technologies",
@@ -1404,11 +1299,7 @@
             "Axeman",
             "ShortSwordsman",
             "BroadSwordsman",
-            "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion"
+            "LongSwordsman"
           ]
         }
       ]
@@ -1443,10 +1334,6 @@
             "ShortSwordsman",
             "BroadSwordsman",
             "LongSwordsman",
-            "Legion",
-            "Hoplite",
-            "Phalanx",
-            "Centurion",
             "ScytheChariot",
             "HeavyCavalry",
             "CamelRider",

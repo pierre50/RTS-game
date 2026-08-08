@@ -24,73 +24,73 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/shoot",
-        "harvestSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/shoot",
+        "harvestSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "farmer": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "forager": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek_01/body/walking"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
       },
       "builder": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
       }
     },
     "gatheringRate": {
@@ -111,7 +111,11 @@
     },
     "sounds": {
       "create": "villager-completed",
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -154,65 +158,65 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/shoot",
-        "harvestSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+        "actionSheet": "lpc-baked/hero/greek/male/action/shoot",
+        "harvestSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
       },
       "forager": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek_01/body/walking"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
+        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
       },
       "builder": {
-        "actionSheet": "lpc-baked/hero/greek_01/action/slash",
-        "standingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek_01/body/corpse"
+        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
+        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
       }
     },
     "gatherAmount": {
@@ -224,8 +228,16 @@
     },
     "sounds": {
       "create": "human-unit-completed",
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
+      "die": [
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3"
+      ],
       "command": "olmars",
       "buildCommand": "homis",
       "huntCommand": "isay",
@@ -257,24 +269,32 @@
     "showLoading": false,
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek_01/action/slash",
-        "standingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek_01/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek_01/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek_01/body/corpse"
+        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
+        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
+        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
+        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
       }
     },
     "sounds": {
       "create": "human-unit-completed",
       "command": "olmars",
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"]
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
+      "die": [
+        "human-unit-killed",
+        "human-unit-killed-2",
+        "human-unit-killed-3"
+      ]
     }
   },
   "Clubman": {
@@ -297,15 +317,24 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/clubman/greek_01/walking",
-      "walkingSheet": "lpc-baked/clubman/greek_01/walking",
-      "actionSheet": "lpc-baked/clubman/greek_01/action",
-      "dyingSheet": "lpc-baked/clubman/greek_01/dying",
-      "corpseSheet": "lpc-baked/clubman/greek_01/corpse"
+      "standingSheet": "lpc-baked/clubman/greek/male/walking",
+      "walkingSheet": "lpc-baked/clubman/greek/male/walking",
+      "actionSheet": "lpc-baked/clubman/greek/male/action",
+      "dyingSheet": "lpc-baked/clubman/greek/male/dying",
+      "corpseSheet": "lpc-baked/clubman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -331,15 +360,24 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "lpc-baked/bowman/greek_01/walking",
-      "walkingSheet": "lpc-baked/bowman/greek_01/walking",
-      "actionSheet": "lpc-baked/bowman/greek_01/action",
-      "dyingSheet": "lpc-baked/bowman/greek_01/dying",
-      "corpseSheet": "lpc-baked/bowman/greek_01/corpse"
+      "standingSheet": "lpc-baked/bowman/greek/male/walking",
+      "walkingSheet": "lpc-baked/bowman/greek/male/walking",
+      "actionSheet": "lpc-baked/bowman/greek/male/action",
+      "dyingSheet": "lpc-baked/bowman/greek/male/dying",
+      "corpseSheet": "lpc-baked/bowman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -363,19 +401,31 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "lpc-baked/priest/greek_01/walking",
-      "walkingSheet": "lpc-baked/priest/greek_01/walking",
-      "actionSheet": "lpc-baked/priest/greek_01/action",
-      "dyingSheet": "lpc-baked/priest/greek_01/dying",
-      "corpseSheet": "lpc-baked/priest/greek_01/corpse"
+      "standingSheet": "lpc-baked/priest/greek/male/walking",
+      "walkingSheet": "lpc-baked/priest/greek/male/walking",
+      "actionSheet": "lpc-baked/priest/greek/male/action",
+      "dyingSheet": "lpc-baked/priest/greek/male/dying",
+      "corpseSheet": "lpc-baked/priest/greek/male/corpse"
     },
     "sounds": {
       "create": "priest-completed",
-      "command": ["ayohoyohoyo", "wololo", "hayoyo"],
-      "move": ["ayohoyohoyo", "wololo", "hayoyo"],
+      "command": [
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
+      ],
+      "move": [
+        "ayohoyohoyo",
+        "wololo",
+        "hayoyo"
+      ],
       "heal": "ayohoyohoyo",
       "convert": "wololo",
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -410,15 +460,25 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/axeman/greek_01/walking",
-      "walkingSheet": "lpc-baked/axeman/greek_01/walking",
-      "actionSheet": "lpc-baked/axeman/greek_01/action",
-      "dyingSheet": "lpc-baked/axeman/greek_01/dying",
-      "corpseSheet": "lpc-baked/axeman/greek_01/corpse"
+      "standingSheet": "lpc-baked/axeman/greek/male/walking",
+      "walkingSheet": "lpc-baked/axeman/greek/male/walking",
+      "actionSheet": "lpc-baked/axeman/greek/male/action",
+      "dyingSheet": "lpc-baked/axeman/greek/male/dying",
+      "corpseSheet": "lpc-baked/axeman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
+      ],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -454,15 +514,25 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/shortswordman/greek_01/walking",
-      "walkingSheet": "lpc-baked/shortswordman/greek_01/walking",
-      "actionSheet": "lpc-baked/shortswordman/greek_01/action",
-      "dyingSheet": "lpc-baked/shortswordman/greek_01/dying",
-      "corpseSheet": "lpc-baked/shortswordman/greek_01/corpse"
+      "standingSheet": "lpc-baked/shortswordman/greek/male/walking",
+      "walkingSheet": "lpc-baked/shortswordman/greek/male/walking",
+      "actionSheet": "lpc-baked/shortswordman/greek/male/action",
+      "dyingSheet": "lpc-baked/shortswordman/greek/male/dying",
+      "corpseSheet": "lpc-baked/shortswordman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
+      ],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -498,15 +568,25 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/broadswordman/greek_01/walking",
-      "walkingSheet": "lpc-baked/broadswordman/greek_01/walking",
-      "actionSheet": "lpc-baked/broadswordman/greek_01/action",
-      "dyingSheet": "lpc-baked/broadswordman/greek_01/dying",
-      "corpseSheet": "lpc-baked/broadswordman/greek_01/corpse"
+      "standingSheet": "lpc-baked/broadswordman/greek/male/walking",
+      "walkingSheet": "lpc-baked/broadswordman/greek/male/walking",
+      "actionSheet": "lpc-baked/broadswordman/greek/male/action",
+      "dyingSheet": "lpc-baked/broadswordman/greek/male/dying",
+      "corpseSheet": "lpc-baked/broadswordman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
+      ],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -537,15 +617,25 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/longswordman/greek_01/walking",
-      "walkingSheet": "lpc-baked/longswordman/greek_01/walking",
-      "actionSheet": "lpc-baked/longswordman/greek_01/action",
-      "dyingSheet": "lpc-baked/longswordman/greek_01/dying",
-      "corpseSheet": "lpc-baked/longswordman/greek_01/corpse"
+      "standingSheet": "lpc-baked/longswordman/greek/male/walking",
+      "walkingSheet": "lpc-baked/longswordman/greek/male/walking",
+      "actionSheet": "lpc-baked/longswordman/greek/male/action",
+      "dyingSheet": "lpc-baked/longswordman/greek/male/dying",
+      "corpseSheet": "lpc-baked/longswordman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
+      ],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -583,53 +673,30 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/improvedbowman/greek_01/walking",
-      "walkingSheet": "lpc-baked/improvedbowman/greek_01/walking",
-      "actionSheet": "lpc-baked/improvedbowman/greek_01/action",
-      "dyingSheet": "lpc-baked/improvedbowman/greek_01/dying",
-      "corpseSheet": "lpc-baked/improvedbowman/greek_01/corpse"
+      "standingSheet": "lpc-baked/improvedbowman/greek/male/walking",
+      "walkingSheet": "lpc-baked/improvedbowman/greek/male/walking",
+      "actionSheet": "lpc-baked/improvedbowman/greek/male/action",
+      "dyingSheet": "lpc-baked/improvedbowman/greek/male/dying",
+      "corpseSheet": "lpc-baked/improvedbowman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
         "human-unit-killed-3",
         "human-unit-killed-4",
         "human-unit-killed-5"
-      ]
-    }
-  },
-  "Hoplite": {
-    "category": "Infantry",
-    "totalHitPoints": 120,
-    "sight": 8,
-    "speed": 0.9,
-    "trainingTime": 36,
-    "meleeAttack": 17,
-    "meleeArmor": 5,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 60,
-      "gold": 40
-    },
-    "assets": {
-      "standingSheet": "lpc-baked/hoplite/greek_01/walking",
-      "walkingSheet": "lpc-baked/hoplite/greek_01/walking",
-      "actionSheet": "lpc-baked/hoplite/greek_01/action",
-      "dyingSheet": "lpc-baked/hoplite/greek_01/dying",
-      "corpseSheet": "lpc-baked/hoplite/greek_01/corpse"
-    },
-    "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
       ]
     }
   },
@@ -656,15 +723,24 @@
       }
     ],
     "assets": {
-      "standingSheet": "lpc-baked/compositebowman/greek_01/walking",
-      "walkingSheet": "lpc-baked/compositebowman/greek_01/walking",
-      "actionSheet": "lpc-baked/compositebowman/greek_01/action",
-      "dyingSheet": "lpc-baked/compositebowman/greek_01/dying",
-      "corpseSheet": "lpc-baked/compositebowman/greek_01/corpse"
+      "standingSheet": "lpc-baked/compositebowman/greek/male/walking",
+      "walkingSheet": "lpc-baked/compositebowman/greek/male/walking",
+      "actionSheet": "lpc-baked/compositebowman/greek/male/action",
+      "dyingSheet": "lpc-baked/compositebowman/greek/male/dying",
+      "corpseSheet": "lpc-baked/compositebowman/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "command": [
+        "eventide",
+        "arectus",
+        "conan",
+        "werebus"
+      ],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2",
+        "attack-class-2-3"
+      ],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",

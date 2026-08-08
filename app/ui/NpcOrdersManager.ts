@@ -1,4 +1,4 @@
-import { assignVillagerAutonomy, hasVillagerAutonomyTarget, Modal } from '../lib'
+import { assignVillagerAutonomy, hasVillagerAutonomyTarget } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
@@ -11,9 +11,11 @@ import {
   playNpcOrderSound,
   clearNpcCommunicationFocus,
 } from '../lib/npcInteraction'
-import { createEntityInfoContent } from './EntityInfoModalManager'
+import { createTitledEntityInfoContent } from './EntityInfoModalManager'
+import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
 import { pickNpcGreetingLine } from '../lib/npcChatter'
 import type Menu from '../classes/Menu'
+import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 
@@ -114,7 +116,7 @@ export class NpcOrdersManager {
     const soloTarget = npcs.length === 1 ? npcs[0] : null
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
-      this.infoContainer.appendChild(createEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true }))
+      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true }))
     }
 
     // Just chatting (no order possible right now — non-chief hero, or the ally isn't
@@ -158,17 +160,17 @@ export class NpcOrdersManager {
       button.classList.toggle('disabled', button.disabled)
     }
     if (this.modal) {
-      this.modal._panel!.querySelector('.modal-title')!.textContent = title
-      this.modal._panel!.classList.toggle('npc-orders-panel-with-info', hasInfo)
+      setModalTitle(this.modal, title)
+      setInspectionMode(this.modal, hasInfo)
       return
     }
-    this.modal = new Modal({
+    this.modal = createInspectionModal({
       title,
       content: this.panel,
+      panelClass: 'npc-orders-panel',
+      inspection: hasInfo,
       onClose: () => this.close(),
     })
-    this.modal._panel?.classList.add('npc-orders-panel')
-    this.modal._panel?.classList.toggle('npc-orders-panel-with-info', hasInfo)
   }
 
   close(keepFrozen = false): void {

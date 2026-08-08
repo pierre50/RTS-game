@@ -36,6 +36,7 @@ export interface MenuLike {
   icons?: Record<string, string>
   infoIcons?: Record<string, string>
   handleHotkey?(key: string): void
+  playUiClick?(): void
   showMessage(message: string, type?: string): void
   setActionTarget(selection?: RuntimeEntity | null): void
   updateTopbar(): void
@@ -77,7 +78,6 @@ export interface MenuLike {
   getHeroBuildingMenuTarget?(): BuildingEntity | null
   refreshHeroBuildingMenu?(): void
   syncHeroBuildingMenu?(): void
-  closeHeroBuildingMenuIfInvalid?(): void
 }
 
 interface EntityPreviewLike {

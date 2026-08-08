@@ -18,6 +18,7 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  ACTION_TYPES: { attack: 'attack' },
   FAMILY_TYPES: { unit: 'unit' },
   UNIT_TYPES: { villager: 'Villager' },
 }
@@ -124,14 +125,14 @@ test('ambient walk timing and range can vary by animal species', () => {
   assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 9000)
 })
 
-test('an aggressive animal does not flee through ambient behavior', () => {
+test('an aggressive animal attacks instead of fleeing through ambient behavior', () => {
   const villager = { label: 'villager-1', family: 'unit', type: 'Villager', distance: 2 }
   const { behavior, calls } = createBehavior({ nearby: [villager], strategy: 'attack', elapsedMs: 10000 })
   behavior.nextAmbientWalkAt = 5000
 
   behavior.update()
 
-  assert.deepEqual(calls, [])
+  assert.deepEqual(calls, [['reaction', 'villager-1']])
 })
 
 test('an animal still in the air does not start an ambient walk', () => {

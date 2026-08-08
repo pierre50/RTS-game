@@ -10,6 +10,8 @@ import {
   setGameSpeed,
   getCameraZoom,
   setCameraZoom,
+  getScreenBrightness,
+  setScreenBrightness,
   getShadowsEnabled,
   setShadowsEnabled,
   getResourceWindAnimationEnabled,
@@ -109,6 +111,14 @@ function createSettingsTabs({
         setCameraZoom(v)
         if (onZoomChange) onZoomChange(v)
       }
+    )
+  )
+
+  graphicsPanel.appendChild(
+    buildRangeRow(
+      t('screenBrightness'),
+      { min: 0.5, max: 1.5, step: 0.05, value: getScreenBrightness() },
+      setScreenBrightness
     )
   )
 

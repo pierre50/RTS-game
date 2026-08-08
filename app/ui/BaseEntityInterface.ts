@@ -53,6 +53,7 @@ export function syncHitPointsInfo(
   if (fill) {
     fill.style.width = `${Math.round(ratio * 100)}%`
   }
+  element.closest<HTMLElement>('.hit-points-display')?.style.setProperty('--entity-hit-points-percent', `${ratio * 100}%`)
 }
 
 export function createHitPointsInfo(
@@ -74,8 +75,8 @@ export function createHitPointsInfo(
   text._hitPointsFill = fill
   syncHitPointsInfo(text, hitPoints, totalHitPoints)
 
+  bar.appendChild(text)
   wrapper.appendChild(bar)
-  wrapper.appendChild(text)
   return wrapper
 }
 
@@ -93,10 +94,21 @@ export function appendBaseEntityInfo(
   civText: string,
   typeText: string,
   hitPoints?: string | number,
-  totalHitPoints?: string | number
+  totalHitPoints?: string | number,
+  options: { hideType?: boolean } = {}
 ): void {
-  element.appendChild(createInfoText(MENU_INFO_IDS.civ, civText))
-  element.appendChild(createInfoText(MENU_INFO_IDS.type, typeText))
+  const header = document.createElement('div')
+  header.className = 'entity-info-header'
+
+  if (civText) {
+    header.appendChild(createInfoText(MENU_INFO_IDS.civ, civText))
+  }
+  if (!options.hideType) {
+    header.appendChild(createInfoText(MENU_INFO_IDS.type, typeText))
+  }
+  if (header.childElementCount > 0) {
+    element.appendChild(header)
+  }
 
   if (hitPoints !== undefined)
     element.appendChild(createHitPointsInfo(MENU_INFO_IDS.hitPoints, hitPoints, totalHitPoints ?? 0))

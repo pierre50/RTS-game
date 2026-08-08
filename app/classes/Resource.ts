@@ -28,7 +28,7 @@ import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
-import type { EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
+import type { EntityInfoRenderOptions, EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { TextureRef } from '../lib'
 
@@ -137,9 +137,9 @@ export class Resource extends Instance implements ResourceEntity {
     this.eventMode = 'auto'
 
     this.interface = {
-      info: (element: HTMLElement) => {
+      info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
         const data = config.resources[this.type]
-        this.setDefaultInterface(element, data)
+        this.setDefaultInterface(element, data, options)
       },
     }
     if (this.isAnimated) {
@@ -284,8 +284,8 @@ export class Resource extends Instance implements ResourceEntity {
     this.destroy({ children: true, texture: false })
   }
 
-  setDefaultInterface(element: HTMLElement, data: ResourceConfig) {
-    return this.resourceInterface.setDefaultInterface(element, data)
+  setDefaultInterface(element: HTMLElement, data: ResourceConfig, options?: EntityInfoRenderOptions) {
+    return this.resourceInterface.setDefaultInterface(element, data, options)
   }
 
   refreshTextureForTerrain() {

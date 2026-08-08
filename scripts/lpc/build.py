@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from config import ANCHOR, CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, VARIANT_KEY, unit_look_for_civ
+from config import ANCHOR, CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, UNIT_VARIANTS, variant_look_for_civ
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
 
@@ -266,61 +266,62 @@ def build(
     rebuilt = 0
     for civ_key, civ in selected_civs.items():
         for unit in selected_units:
-            look = unit_look_for_civ(unit, civ_key)
-            variant_key = f"{civ_key}_{VARIANT_KEY}"
-            if unit == "villager":
-                tasks = villager_build_tasks()
-            elif unit == "hero":
-                tasks = hero_build_tasks()
-            else:
-                tasks = [
-                    (output_sheet, source_sheet, animation)
-                    for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
-                ]
-            for relative_suffix, source_sheet, animation in tasks:
-                # "neutral" isn't a real player color, so this always resolves to the
-                # "blue" team-color convention (image_pipeline.layer_paths) — every
-                # recolorable piece, whether pixel-recolored or picked by filename, is
-                # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
-                # matches at runtime, so one bake per civ covers every player color.
-                paths = layer_paths(look, animation, civ, "neutral")
-                relative_path = f"{unit}/{variant_key}/{relative_suffix}"
-                output_sheet = relative_suffix.rsplit("/", 1)[-1]
-                animation_speed = animation_speed_for(output_sheet)
-                signature = sheet_signature(
-                    source_root=source_root,
-                    relative_path=relative_path,
-                    source_sheet=source_sheet,
-                    animation=animation,
-                    equipment=None,
-                    paths=paths,
-                    animation_speed=animation_speed,
-                    dependencies=dependencies,
-                )
-                if relative_path not in generated_set:
-                    generated.append(relative_path)
-                    generated_set.add(relative_path)
-                next_cache[relative_path] = signature
-                if previous_cache.get(relative_path) == signature and sheet_outputs_exist(output_root, relative_path):
-                    skipped += 1
-                    continue
+            for variant in UNIT_VARIANTS:
+                look = variant_look_for_civ(unit, civ_key, variant)
+                variant_key = f"{civ_key}/{variant.key}"
+                if unit == "villager":
+                    tasks = villager_build_tasks()
+                elif unit == "hero":
+                    tasks = hero_build_tasks()
+                else:
+                    tasks = [
+                        (output_sheet, source_sheet, animation)
+                        for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
+                    ]
+                for relative_suffix, source_sheet, animation in tasks:
+                    # "neutral" isn't a real player color, so this always resolves to the
+                    # "blue" team-color convention (image_pipeline.layer_paths) — every
+                    # recolorable piece, whether pixel-recolored or picked by filename, is
+                    # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
+                    # matches at runtime, so one bake per civ covers every player color.
+                    paths = layer_paths(look, animation, civ, "neutral")
+                    relative_path = f"{unit}/{civ_key}/{variant.key}/{relative_suffix}"
+                    output_sheet = relative_suffix.rsplit("/", 1)[-1]
+                    animation_speed = animation_speed_for(output_sheet)
+                    signature = sheet_signature(
+                        source_root=source_root,
+                        relative_path=relative_path,
+                        source_sheet=source_sheet,
+                        animation=animation,
+                        equipment=None,
+                        paths=paths,
+                        animation_speed=animation_speed,
+                        dependencies=dependencies,
+                    )
+                    if relative_path not in generated_set:
+                        generated.append(relative_path)
+                        generated_set.add(relative_path)
+                    next_cache[relative_path] = signature
+                    if previous_cache.get(relative_path) == signature and sheet_outputs_exist(output_root, relative_path):
+                        skipped += 1
+                        continue
 
-                layers = [open_layer(source_root, layer) for layer in paths]
-                frames = [
-                    compose_frame(layers, frame_index, source_sheet.columns)
-                    for frame_index in source_frames(source_sheet)
-                ]
-                anchor_override = None
-                if is_riding_output(relative_suffix):
-                    base_frame_height = frames[0].height
-                    frames = compose_rider_frames(frames, Image.open(RIDER_LEGS_PATH).convert("RGBA"))
-                    anchor_override = {
-                        "x": ANCHOR["x"],
-                        "y": ANCHOR["y"] * base_frame_height / frames[0].height,
-                    }
-                bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette, anchor_override)
-                rebuilt += 1
-            print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
+                    layers = [open_layer(source_root, layer) for layer in paths]
+                    frames = [
+                        compose_frame(layers, frame_index, source_sheet.columns)
+                        for frame_index in source_frames(source_sheet)
+                    ]
+                    anchor_override = None
+                    if is_riding_output(relative_suffix):
+                        base_frame_height = frames[0].height
+                        frames = compose_rider_frames(frames, Image.open(RIDER_LEGS_PATH).convert("RGBA"))
+                        anchor_override = {
+                            "x": ANCHOR["x"],
+                            "y": ANCHOR["y"] * base_frame_height / frames[0].height,
+                        }
+                    bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette, anchor_override)
+                    rebuilt += 1
+                print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")
 
     with (output_root / "manifest.json").open("w", encoding="utf8") as file:

@@ -5,6 +5,7 @@
 
 #game canvas {
   touch-action: none;
+  image-rendering: pixelated;
 }
 
 .hidden {
@@ -43,9 +44,6 @@
 }
 
 .game-loading__title.modal-title {
-  color: var(--main-accent-color);
-  font-size: var(--font-size-title);
-  letter-spacing: 0.04em;
   text-align: center;
 }
 
@@ -134,10 +132,13 @@
 }
 
 .modal-title {
-  font-size: var(--font-size-title);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-lg);
   font-weight: bold;
   text-transform: uppercase;
-  color: var(--main-accent-color);
+  letter-spacing: 1px;
+  color: var(--main-accent-hover);
+  text-shadow: var(--text-shadow-dark-ui);
 }
 
 .modal-close {

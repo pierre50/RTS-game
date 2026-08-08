@@ -11,7 +11,7 @@ import {
   WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
-import { isHeroActionInRange } from './heroActionRange'
+import { isHeroActionInRange, isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
@@ -590,8 +590,7 @@ function isContextActionTargetReachable(
 ): boolean {
   const action = getContextActionForTarget(contextAction, target)
   if (!action) return false
-  if (isHeroActionInRange(hero, action, target)) return true
-  return Boolean(hero.isUnitAtDest?.(action, target))
+  return isHeroInteractionTargetReachable(hero, action, target) || Boolean(hero.isUnitAtDest?.(action, target))
 }
 
 // The hero can't hold or swing a gather/combat tool while riding a horse. A reachable context

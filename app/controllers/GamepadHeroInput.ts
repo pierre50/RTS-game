@@ -89,7 +89,9 @@ export class GamepadHeroInput {
   private updateVirtualCursor(): void {
     if (!this.aimVector) return
     const { mouse, context } = this.controls
-    const { width, height } = context.app.screen
+    const rect = context.gamebox.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height
     if (!this.cursorActive) {
       mouse.x = width / 2
       mouse.y = height / 2

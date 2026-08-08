@@ -140,6 +140,11 @@ button,
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
+  line-height: 1.15;
+  color: var(--ui-text-color);
+  text-shadow: var(--ui-text-shadow);
+  background: var(--ui-button-sheen), var(--ui-bar-bg);
+  border: var(--ui-bar-border);
   box-shadow: var(--ui-button-shadow-raised);
   border-radius: var(--main-border-radius);
   transition:
@@ -154,25 +159,14 @@ button,
 .home-btn {
   min-height: var(--ui-control-height);
   padding: 10px 24px;
-  color: var(--main-accent-color);
   font-size: var(--font-size-home-button);
-  line-height: 1.15;
-  text-shadow: var(--text-shadow-dark-ui);
-  background: linear-gradient(180deg, rgba(26, 20, 17, 0.9) 0%, rgba(13, 10, 8, 0.95) 100%);
-  border: 2px outset var(--main-accent-color);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
 }
 
 .ui-btn {
   width: fit-content;
   min-height: var(--ui-control-height-compact);
   padding: 8px 16px;
-  color: var(--ui-text-color);
   font-size: var(--font-size-base);
-  line-height: 1.15;
-  text-shadow: var(--ui-text-shadow);
-  background: var(--ui-button-sheen), var(--ui-bar-bg);
-  border: var(--ui-bar-border);
 }
 
 .ui-btn.is-active {
@@ -182,12 +176,7 @@ button,
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .home-btn:hover {
-    filter: brightness(var(--ui-hover-brightness));
-    color: var(--main-accent-hover);
-    border-color: var(--main-accent-hover);
-  }
-
+  .home-btn:hover,
   .ui-btn:hover {
     filter: brightness(var(--ui-hover-brightness));
     border-color: var(--main-accent-color);

@@ -1,4 +1,4 @@
-import { AnimatedSprite, Assets, Container } from 'pixi.js'
+import { AnimatedSprite, Assets, Container, Graphics } from 'pixi.js'
 import {
   DEFAULT_HUNT_RANGE,
   degreesToRadians,
@@ -78,6 +78,7 @@ type RuntimeProjectile = ProjectileOptions & {
 }
 type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
 type ProjectileSprite = AnimatedSprite
+type EmbeddedMaskKind = 'ground' | 'tree'
 
 const PROJECTILE_SHADOW_ALPHA = 0.42
 const PROJECTILE_SHADOW_MAX_ALTITUDE_FADE = 0.28
@@ -101,6 +102,45 @@ const TREE_CANOPY_BLOCK_HEIGHT = 90
 const TREE_SEARCH_RADIUS = 1.5
 const TREE_STICK_JITTER = 5
 const TREE_STICK_HEIGHT = 10
+const EMBEDDED_MASK_PROJECTILE_TYPES = new Set(['Arrow', 'FireArrow', 'Spear', 'Bolt', 'FireBolt'])
+const EMBEDDED_MASK_SIZE = 256
+const GROUND_EMBED_DEPTH = 5
+const TREE_EMBED_DEPTH = 4
+const EMBED_DEPTH_JITTER = 3
+const EMBEDDED_TIP_DEPTH = 9
+const EMBEDDED_PARALLEL_CUT_THRESHOLD = 0.35
+
+type HalfPlane = {
+  normalX: number
+  normalY: number
+  limit: number
+}
+
+function halfPlaneValue(point: Point, plane: HalfPlane): number {
+  return point.x * plane.normalX + point.y * plane.normalY
+}
+
+function clipPolygonWithHalfPlane(polygon: Point[], plane: HalfPlane): Point[] {
+  const clipped: Point[] = []
+  for (let index = 0; index < polygon.length; index++) {
+    const current = polygon[index]
+    const previous = polygon[(index + polygon.length - 1) % polygon.length]
+    const currentValue = halfPlaneValue(current, plane)
+    const previousValue = halfPlaneValue(previous, plane)
+    const currentInside = currentValue <= plane.limit
+    const previousInside = previousValue <= plane.limit
+
+    if (currentInside !== previousInside) {
+      const progress = (plane.limit - previousValue) / (currentValue - previousValue)
+      clipped.push({
+        x: previous.x + (current.x - previous.x) * progress,
+        y: previous.y + (current.y - previous.y) * progress,
+      })
+    }
+    if (currentInside) clipped.push(current)
+  }
+  return clipped
+}
 
 function findNearbyTrees(map: RuntimeMap, i: number, j: number): ResourceEntity[] {
   const buckets = map.instanceBuckets
@@ -237,6 +277,7 @@ export class Projectile extends Container {
   // Set once the projectile embeds in a tree, see stickInTree() — used by clear() to know it must
   // not touch cell.corpses (only ground-landed/grid-registered projectiles use that).
   treeAnchor?: ResourceEntity | null
+  embeddedMask?: Graphics | null
 
   size!: number
   speed!: number
@@ -634,6 +675,91 @@ export class Projectile extends Container {
     return this.projectileScale ?? 1
   }
 
+  canUseEmbeddedMask(): boolean {
+    return EMBEDDED_MASK_PROJECTILE_TYPES.has(this.type)
+  }
+
+  getEmbeddedMaskJitter(): number {
+    const seed = Math.abs(Math.round(this.x * 13 + this.y * 17 + (this.degree ?? 0) * 7))
+    return (seed % (EMBED_DEPTH_JITTER * 2 + 1)) - EMBED_DEPTH_JITTER
+  }
+
+  applyEmbeddedMask(kind: EmbeddedMaskKind) {
+    if (!this.sprite || !this.canUseEmbeddedMask()) return
+
+    if (this.embeddedMask) {
+      this.sprite.mask = null
+      this.embeddedMask.destroy()
+      this.embeddedMask = null
+    }
+
+    const mask = new Graphics()
+    mask.label = `${kind}-embedded-mask`
+    mask.eventMode = 'none'
+
+    const maxScale = Math.max(1, Math.abs(this.sprite.scale.x), Math.abs(this.sprite.scale.y))
+    const size = EMBEDDED_MASK_SIZE * maxScale
+    const half = size / 2
+    const travelX = this.destinationPoint.x - this.spawnOrigin.x
+    const travelY = this.destinationPoint.y - this.spawnOrigin.y
+    const travelLength = Math.max(1, Math.hypot(travelX, travelY))
+    const unitX = travelX / travelLength
+    const unitY = travelY / travelLength
+    const spriteLength = Math.max(this.sprite.texture.width, this.sprite.texture.height) * maxScale
+    const tipX = unitX * (spriteLength / 2)
+    const tipY = this.sprite.y + unitY * (spriteLength / 2)
+    const depth = (kind === 'ground' ? GROUND_EMBED_DEPTH : TREE_EMBED_DEPTH) + this.getEmbeddedMaskJitter()
+    let polygon: Point[] = [
+      { x: -half, y: -half },
+      { x: half, y: -half },
+      { x: half, y: half },
+      { x: -half, y: half },
+    ]
+
+    if (kind === 'ground') {
+      const direction = travelY >= 0 ? 1 : -1
+      const cutY = tipY - direction * depth
+      polygon = clipPolygonWithHalfPlane(polygon, {
+        normalX: 0,
+        normalY: direction,
+        limit: direction * cutY,
+      })
+      if (Math.abs(unitY) < EMBEDDED_PARALLEL_CUT_THRESHOLD) {
+        polygon = clipPolygonWithHalfPlane(polygon, {
+          normalX: unitX,
+          normalY: unitY,
+          limit: tipX * unitX + tipY * unitY - EMBEDDED_TIP_DEPTH,
+        })
+      }
+    } else {
+      const direction = travelX >= 0 ? 1 : -1
+      const cutX = tipX - direction * depth
+      polygon = clipPolygonWithHalfPlane(polygon, {
+        normalX: direction,
+        normalY: 0,
+        limit: direction * cutX,
+      })
+      if (Math.abs(unitX) < EMBEDDED_PARALLEL_CUT_THRESHOLD) {
+        polygon = clipPolygonWithHalfPlane(polygon, {
+          normalX: unitX,
+          normalY: unitY,
+          limit: tipX * unitX + tipY * unitY - EMBEDDED_TIP_DEPTH,
+        })
+      }
+    }
+
+    if (polygon.length < 3) {
+      mask.destroy()
+      return
+    }
+
+    mask.poly(polygon.flatMap(point => [point.x, point.y]))
+    mask.fill({ color: 0xffffff })
+    this.addChild(mask)
+    this.sprite.mask = mask
+    this.embeddedMask = mask
+  }
+
   // Same i+j depth key every other entity uses, nudged by how high the projectile currently
   // flies above the ground (in the same px-per-level units as ground relief, see
   // getGroundReliefLevel). A shot above canopy height outranks nearby trees and draws in front,
@@ -807,6 +933,7 @@ export class Projectile extends Container {
     this.createImpactEffect(this.x, this.y)
     this.sprite?.stop()
     if (this.shadow) this.shadow.visible = false
+    this.applyEmbeddedMask('ground')
     this.zIndex = getTerrainSetZIndex({ i, j })
     cell.corpses.add(this as unknown as RuntimeEntity)
     this.timeoutId = this.context.scheduler.addOneShot(
@@ -830,6 +957,7 @@ export class Projectile extends Container {
     this.interval = null
     this.sprite?.stop()
     if (this.shadow) this.shadow.visible = false
+    this.applyEmbeddedMask('tree')
 
     this.treeAnchor = tree
     const jitterX = randomRange(-TREE_STICK_JITTER, TREE_STICK_JITTER)

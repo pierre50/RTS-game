@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { CIVILIZATIONS } from '../config/civilizations'
+import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../config/playerNames'
 import type { PlayerSetupConfig } from '../types/save'
 
 type PlayerSetupPanelOptions = {
@@ -14,6 +15,7 @@ type PlayerSetupPanelOptions = {
 type PlayerSetupConfigWithAge = PlayerSetupConfig & {
   civ: string
   color: string
+  gender: 'male' | 'female'
   isHuman: boolean
   name: string
   team: number | null
@@ -32,6 +34,11 @@ const CIV_LEVELS = [
   { label: () => t('civLevel2'), value: 2 },
   { label: () => t('civLevel3'), value: 3 },
 ]
+
+const GENDERS = [
+  { label: () => t('genderMale'), value: 'male' },
+  { label: () => t('genderFemale'), value: 'female' },
+] as const
 
 const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
@@ -99,12 +106,22 @@ export class PlayerSetupPanel {
   }
 
   _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
+    const humanCiv = this._randomCiv()
+    const humanGender = 'male'
     return [
-      { name: t('you'), color: 'blue', civ: this._randomCiv(), team: null, isHuman: true },
+      {
+        name: randomPlayerNameForCivilization(humanCiv, humanGender),
+        color: 'blue',
+        civ: humanCiv,
+        gender: humanGender,
+        team: null,
+        isHuman: true,
+      },
       {
         name: t('computer') + ' 1',
         color: 'red',
         civ: this._randomCiv(),
+        gender: 'male',
         team: null,
         isHuman: false,
       },
@@ -112,10 +129,14 @@ export class PlayerSetupPanel {
   }
 
   _normalizePlayer(player: PlayerSetupConfig): PlayerSetupConfigWithAge {
+    const civ = player.civ || this._randomCiv()
+    const gender = player.gender === 'female' ? 'female' : 'male'
+    const shouldGenerateHumanName = player.isHuman === true && (!player.name || player.name === t('you'))
     return {
-      name: player.name || t('computer'),
+      name: shouldGenerateHumanName ? randomPlayerNameForCivilization(civ, gender) : player.name || t('computer'),
       color: player.color || PLAYER_COLORS[0].name,
-      civ: player.civ || this._randomCiv(),
+      civ,
+      gender,
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
       ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 1)) } : {}),
@@ -198,6 +219,33 @@ export class PlayerSetupPanel {
     return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
   }
 
+  _shouldRegeneratePlayerName(player: PlayerSetupConfigWithAge): boolean {
+    return player.isHuman && (player.name === t('you') || isGeneratedPlayerName(player.name))
+  }
+
+  _refreshGeneratedPlayerName(player: PlayerSetupConfigWithAge): void {
+    if (!this._shouldRegeneratePlayerName(player)) return
+    player.name = randomPlayerNameForCivilization(player.civ, player.gender)
+  }
+
+  _setPlayerCiv(playerIndex: number, civ: string): void {
+    const player = this.players[playerIndex]
+    if (!player) return
+    player.civ = civ
+    this._refreshGeneratedPlayerName(player)
+    this._refresh()
+    this._emitChange()
+  }
+
+  _setPlayerGender(playerIndex: number, gender: string): void {
+    const player = this.players[playerIndex]
+    if (!player) return
+    player.gender = gender === 'female' ? 'female' : 'male'
+    this._refreshGeneratedPlayerName(player)
+    this._refresh()
+    this._emitChange()
+  }
+
   _clampPlayers(): void {
     while (this.players.length > this.maxPlayers) {
       this.players.pop()
@@ -221,6 +269,7 @@ export class PlayerSetupPanel {
       name: t('computer') + ' ' + botNum,
       color,
       civ: this._randomCiv(),
+      gender: 'male',
       team: null,
       isHuman: false,
       civilizationLevel: 0,
@@ -270,7 +319,7 @@ export class PlayerSetupPanel {
 
     const header = document.createElement('div')
     header.className = 'player-table-header'
-    const headers = [t('colName'), t('colCiv')]
+    const headers = [t('colName'), t('colCiv'), t('genderLabel')]
     if (this.showAge) headers.push(t('colAge'))
     headers.push(t('colTeam'), t('colColor'))
     headers.forEach(text => {
@@ -301,11 +350,27 @@ export class PlayerSetupPanel {
         civSelect.appendChild(opt)
       })
       civSelect.onchange = (evt: Event) => {
-        this.players[index].civ = (evt.target as HTMLSelectElement).value
-        this._emitChange()
+        this._setPlayerCiv(index, (evt.target as HTMLSelectElement).value)
       }
       civCell.appendChild(civSelect)
       row.appendChild(civCell)
+
+      const genderCell = document.createElement('div')
+      genderCell.className = 'player-gender'
+      const genderSelect = document.createElement('select')
+      genderSelect.className = 'ui-select'
+      GENDERS.forEach(gender => {
+        const opt = document.createElement('option')
+        opt.value = gender.value
+        opt.textContent = gender.label()
+        if (gender.value === player.gender) opt.selected = true
+        genderSelect.appendChild(opt)
+      })
+      genderSelect.onchange = (evt: Event) => {
+        this._setPlayerGender(index, (evt.target as HTMLSelectElement).value)
+      }
+      genderCell.appendChild(genderSelect)
+      row.appendChild(genderCell)
 
       if (this.showAge) {
         const ageCell = document.createElement('div')
@@ -395,11 +460,30 @@ export class PlayerSetupPanel {
       civSelect.appendChild(opt)
     })
     civSelect.onchange = (evt: Event) => {
-      human.civ = (evt.target as HTMLSelectElement).value
-      this._emitChange()
+      this._setPlayerCiv(0, (evt.target as HTMLSelectElement).value)
     }
     civRow.appendChild(civSelect)
     this.humanControlsEl.appendChild(civRow)
+
+    const genderRow = document.createElement('div')
+    genderRow.className = 'config-row'
+    const genderLabel = document.createElement('label')
+    genderLabel.textContent = t('genderLabel')
+    genderRow.appendChild(genderLabel)
+    const genderSelect = document.createElement('select')
+    genderSelect.className = 'ui-select'
+    GENDERS.forEach(gender => {
+      const opt = document.createElement('option')
+      opt.value = gender.value
+      opt.textContent = gender.label()
+      if (gender.value === human.gender) opt.selected = true
+      genderSelect.appendChild(opt)
+    })
+    genderSelect.onchange = (evt: Event) => {
+      this._setPlayerGender(0, (evt.target as HTMLSelectElement).value)
+    }
+    genderRow.appendChild(genderSelect)
+    this.humanControlsEl.appendChild(genderRow)
 
     const colorRow = document.createElement('div')
     colorRow.className = 'config-row'

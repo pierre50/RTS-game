@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { isometricToCartesian, pointsDistance, instanceContactInstance } from '../lib'
+import { isometricToCartesian, pointsDistance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
@@ -7,6 +7,7 @@ import { HeroController } from '../controllers/HeroController'
 import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
+import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
 import { isTalkableNpc } from '../lib/npcInteraction'
@@ -55,6 +56,7 @@ export default class Controls extends Container implements ControlsLike {
   keyActionsByCode: Partial<Record<string, ControlBindingAction>>
   keyPressedCount: number
   keySpeed: number
+  shiftKeyActive: boolean
   freeCameraActive: boolean
   heroController: HeroController
   gamepadInput: GamepadHeroInput
@@ -107,6 +109,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keyActionsByCode = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.shiftKeyActive = false
     this.freeCameraActive = false
     this.heroController = new HeroController(this)
     this.gamepadInput = new GamepadHeroInput(this)
@@ -232,17 +235,25 @@ export default class Controls extends Container implements ControlsLike {
 
   screenToLocal(x: number, y: number): { x: number; y: number } {
     const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    const rect = this.context.gamebox.getBoundingClientRect()
+    const scaleX = this.context.app.screen.width / rect.width
+    const scaleY = this.context.app.screen.height / rect.height
+    const rendererX = (x - rect.left) * scaleX
+    const rendererY = (y - rect.top) * scaleY
     return {
-      x: (x - offsetX) / zoom,
-      y: (y - offsetY) / zoom,
+      x: (rendererX - offsetX) / zoom,
+      y: (rendererY - offsetY) / zoom,
     }
   }
 
   localToScreen(x: number, y: number): { x: number; y: number } {
     const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    const rect = this.context.gamebox.getBoundingClientRect()
+    const scaleX = this.context.app.screen.width / rect.width
+    const scaleY = this.context.app.screen.height / rect.height
     return {
-      x: offsetX + x * zoom,
-      y: offsetY + y * zoom,
+      x: rect.left + (offsetX + x * zoom) / scaleX,
+      y: rect.top + (offsetY + y * zoom) / scaleY,
     }
   }
 
@@ -251,11 +262,7 @@ export default class Controls extends Container implements ControlsLike {
       this.context.devConsoleOpen ||
         this.context.paused ||
         this.context.victory ||
-        this.context.defeat ||
-        // The NPC communication panel no longer pauses the game (the rest of the world — other
-        // units, AI, resources — keeps running while chatting), so the hero's own input still
-        // needs to be blocked explicitly here instead of relying on the global pause flag.
-        this.context.menu?.isNpcOrdersOpen?.()
+        this.context.defeat
     )
   }
 
@@ -313,6 +320,7 @@ export default class Controls extends Container implements ControlsLike {
 
   onKeyDown(evt: KeyboardEvent): void {
     if (this.isEditableTarget(evt.target)) return
+    this.shiftKeyActive = evt.shiftKey
     if (evt.key === 'Alt' || evt.altKey) {
       this.stopKeyboardMove()
       return
@@ -358,6 +366,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   onKeyUp(evt: KeyboardEvent): void {
+    this.shiftKeyActive = evt.key === 'Shift' ? false : evt.shiftKey
     if (this.isInteractionBlocked()) {
       this.stopKeyboardMove()
       return
@@ -732,7 +741,7 @@ export default class Controls extends Container implements ControlsLike {
   getFacingEntityTarget(): RuntimeEntity | null {
     const hero = this.heroUnit
     if (!hero) return null
-    return findFacingEntity(hero, target => target !== hero && instanceContactInstance(hero, target))
+    return findFacingEntity(hero, target => isHeroInteractionTargetReachable(hero, null, target))
   }
 
   // Closes whichever hero panel (npc orders / building menu / entity info) is currently open.
@@ -776,7 +785,7 @@ export default class Controls extends Container implements ControlsLike {
       // Own building out of range: same rule as left-click actions — no fallback window, just require contact.
       if (building.owner === player) return false
     }
-    if (!hero || !instanceContactInstance(hero, target)) return false
+    if (!hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
     if (isTalkableNpc(hero, target)) {
       // No order is possible here (non-chief hero, or the ally isn't commandable right now) —
       // same orders panel as a single-target order, just with a chatter line and no buttons.
@@ -846,6 +855,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keyActionsByCode = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.shiftKeyActive = false
     this.heroController.stopKeyboardMove()
   }
 

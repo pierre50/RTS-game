@@ -1,9 +1,11 @@
 import { FAMILY_TYPES } from '../constants'
-import { Modal } from '../lib'
+import { changeSpriteColor } from '../lib'
 import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
+import { createInspectionModal } from './InspectionPanel'
 import type { Application } from 'pixi.js'
 import type Menu from '../classes/Menu'
+import type { Modal } from '../lib'
 import type {
   AnimalEntity,
   BuildingEntity,
@@ -12,8 +14,19 @@ import type {
   RuntimeEntity,
   UnitEntity,
 } from '../types/entities'
+import type { RecolorableSprite } from '../lib'
+
+const PORTAL_RESOURCE_TYPE = 'Portal'
+const PORTAL_COLOR_CHOICES = ['blue', 'yellow', 'red'] as const
+const PORTAL_COLOR_LABEL_KEYS: Record<(typeof PORTAL_COLOR_CHOICES)[number], string> = {
+  blue: 'portalColorBlue',
+  yellow: 'portalColorYellow',
+  red: 'portalColorRed',
+}
 
 function getEntityTitle(entity: RuntimeEntity): string {
+  if (isResourceEntity(entity)) return t(entity.type)
+  if (entity.name) return entity.name
   const assetType = (entity as { assetType?: string }).assetType
   return t(assetType || entity.type)
 }
@@ -54,6 +67,8 @@ function createEntityAvatar(app: Application, entity: RuntimeEntity): HTMLDivEle
   return wrap
 }
 
+export const TITLED_ENTITY_INFO_OPTIONS: EntityInfoRenderOptions = { hideIdentity: true }
+
 // Shared with NpcOrdersManager, which embeds this same stats+avatar block above its order
 // buttons when the order panel targets a single unit.
 export function createEntityInfoContent(
@@ -73,6 +88,59 @@ export function createEntityInfoContent(
   wrapper.appendChild(avatar)
   wrapper.appendChild(content)
   return wrapper
+}
+
+export function createTitledEntityInfoContent(
+  app: Application,
+  entity: RuntimeEntity,
+  options?: EntityInfoRenderOptions
+): HTMLElement {
+  return createEntityInfoContent(app, entity, { ...options, ...TITLED_ENTITY_INFO_OPTIONS })
+}
+
+function createPortalColorOptions(menu: Menu, portal: ResourceEntity): HTMLDivElement {
+  const currentColor = portal.color || 'blue'
+  const group = document.createElement('div')
+  group.className = 'portal-color-options npc-orders-options'
+
+  for (const color of PORTAL_COLOR_CHOICES) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'portal-color-option npc-orders-option ui-btn'
+    button.textContent = t(PORTAL_COLOR_LABEL_KEYS[color])
+    button.classList.toggle('is-selected', currentColor === color)
+    button.addEventListener('click', () => {
+      portal.color = color
+      if (portal.sprite) changeSpriteColor(portal.sprite as RecolorableSprite, color)
+      for (const sibling of group.querySelectorAll('.portal-color-option')) {
+        sibling.classList.toggle('is-selected', sibling === button)
+      }
+      menu.playUiClick()
+    })
+    group.appendChild(button)
+  }
+
+  return group
+}
+
+function createPortalInfoModalContent(menu: Menu, portal: ResourceEntity): HTMLElement {
+  const content = document.createElement('div')
+  content.className = 'portal-info-modal-content'
+  const infoContent = createTitledEntityInfoContent(menu.context.app, portal)
+  const description = document.createElement('p')
+  description.className = 'portal-description'
+  description.textContent = t('portalDescriptionMysterious')
+  const infoPanel =
+    infoContent.classList.contains('selection-info') ? infoContent : infoContent.querySelector<HTMLElement>('.selection-info')
+  if (infoPanel) {
+    infoPanel.appendChild(description)
+  } else {
+    content.appendChild(description)
+  }
+  content.appendChild(infoContent)
+
+  content.appendChild(createPortalColorOptions(menu, portal))
+  return content
 }
 
 export class EntityInfoModalManager {
@@ -103,15 +171,17 @@ export class EntityInfoModalManager {
       player.selectedOther = entity
     }
 
-    const modalContent = createEntityInfoContent(this.menu.context.app, entity)
+    const modalContent =
+      isResourceEntity(entity) && entity.type === PORTAL_RESOURCE_TYPE
+        ? createPortalInfoModalContent(this.menu, entity)
+        : createTitledEntityInfoContent(this.menu.context.app, entity)
 
     this.entity = entity
-    this.modal = new Modal({
+    this.modal = createInspectionModal({
       title: getEntityTitle(entity),
       content: modalContent,
       onClose: () => this.close(),
     })
-    this.modal._panel?.classList.add('entity-info-modal-panel')
     return true
   }
 

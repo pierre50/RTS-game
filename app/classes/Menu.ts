@@ -66,7 +66,7 @@ export default class Menu implements MenuLike {
   constructor(context: GameContextLike) {
     this.context = context
     this.gameHud = document.createElement('div')
-    this.gameHud.className = 'game-hud'
+    this.gameHud.className = 'game-hud hidden'
     this.minimapView = new MinimapView(this)
     this.minimapWrap = this.minimapView.wrap
     this.minimapMap = this.minimapView.element
@@ -121,6 +121,10 @@ export default class Menu implements MenuLike {
     this.minimapManager.initMiniMap()
     this.updateTopbar()
     this.actionSpecs.preloadIcons(this.context.player)
+  }
+
+  show(): void {
+    this.gameHud.classList.remove('hidden')
   }
 
   updateTopbar(): void {
@@ -330,9 +334,6 @@ export default class Menu implements MenuLike {
     return this.heroBuildingMenuManager.refresh()
   }
   syncHeroBuildingMenu(): void {
-    return this.heroBuildingMenuManager.syncLiveState()
-  }
-  closeHeroBuildingMenuIfInvalid(): void {
     return this.heroBuildingMenuManager.syncLiveState()
   }
 }

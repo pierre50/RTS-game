@@ -48,7 +48,17 @@ function loadModule(relativePath, mocks) {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/lang') return { t: value => value }
-    if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
+    if (request === '../../lib/unitEnergy') {
+      return {
+        getEnergyMoveSpeedMultiplier: unit => {
+          if (unit.mountedOnHorse) return 1
+          if (!unit.totalEnergy || unit.energy == null) return 1
+          const ratio = Math.max(0, Math.min(1, unit.energy / unit.totalEnergy))
+          return ratio >= 0.5 ? 1 : 0.55 + 0.45 * (ratio / 0.5)
+        },
+        spendOrWaitForEnergy: () => true,
+      }
+    }
     if (request === '../../lib/heroActionRange') {
       return {
         isHeroActionInRange: () => false,
@@ -302,10 +312,7 @@ for (const [mountedOnHorse, expectedSpeed] of [
       action: null,
       context: {
         map: {
-          grid: [
-            [{ has: null, i: 0, j: 0, solid: false, z: 0 }],
-            [{ has: null, i: 1, j: 0, solid: false, z: 0 }],
-          ],
+          grid: [[{ has: null, i: 0, j: 0, solid: false, z: 0 }], [{ has: null, i: 1, j: 0, solid: false, z: 0 }]],
           updateInstanceBucket: () => {},
         },
       },
@@ -323,7 +330,58 @@ for (const [mountedOnHorse, expectedSpeed] of [
 
     new UnitMovement(unit)._moveToPath()
 
-    assert.deepEqual(speeds, [expectedSpeed])
+    assert.equal(speeds.length, 1)
+    assert.ok(Math.abs(speeds[0] - expectedSpeed) < 1e-9)
+  })
+}
+
+for (const [mountedOnHorse, expectedSpeed] of [
+  [false, 1.46],
+  [true, 2],
+]) {
+  test(`${mountedOnHorse ? 'mounted' : 'foot'} low-energy units use the expected path movement speed`, () => {
+    const speeds = []
+    const lib = {
+      canUpdateMinimap: () => false,
+      cartesianToIsometric: (i, j) => [i * 10, j * 10],
+      degreeToDirection: () => 'south',
+      getGroundReliefLevel: () => 0,
+      getInstanceDegree: () => 0,
+      getInstanceZIndex: () => 0,
+      instancesDistance: () => 10,
+      moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
+      updateInstanceVisibility: () => {},
+    }
+    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+      '../../constants': constants,
+      '../../lib': lib,
+    })
+    const unit = {
+      action: null,
+      context: {
+        map: {
+          grid: [[{ has: null, i: 0, j: 0, solid: false, z: 0 }], [{ has: null, i: 1, j: 0, solid: false, z: 0 }]],
+          updateInstanceBucket: () => {},
+        },
+      },
+      currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
+      currentSheet: constants.SHEET_TYPES.walking,
+      dest: { i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
+      energy: 2,
+      i: 0,
+      j: 0,
+      loading: 0,
+      mountedOnHorse,
+      path: [{ i: 1, j: 0 }],
+      speed: 2,
+      sprite: { playing: true, play: () => {} },
+      totalEnergy: 10,
+    }
+
+    new UnitMovement(unit)._moveToPath()
+
+    assert.equal(speeds.length, 1)
+    assert.ok(Math.abs(speeds[0] - expectedSpeed) < 1e-9)
   })
 }
 
@@ -680,6 +738,61 @@ test('a direct move blocked head-on slides along the obstacle contour', () => {
 
   assert.equal(movedFree, true)
   assert.equal(movement.slideBias, 0)
+})
+
+test('direct move can keep facing separate from movement direction', () => {
+  const grid = [[{ i: 0, j: 0, x: 0, y: 0, z: 0, solid: false, border: false, category: 'Ground', has: null }]]
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: degree => (degree === 90 ? 'east' : 'south'),
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: (_unit, x, y) => (x > y ? 90 : 180),
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: () => [0, 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Infantry',
+    context: {
+      map: {
+        grid,
+        size: 0,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+
+  const moved = new UnitMovement(unit).moveDirect(0, 1, 1, { facingDirX: 1, facingDirY: 0 })
+
+  assert.equal(moved, true)
+  assert.equal(unit.x, 0)
+  assert.equal(unit.y, 1)
+  assert.equal(unit.degree, 90)
 })
 
 test('hero direct movement rounds building footprint corners', () => {

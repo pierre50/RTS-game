@@ -101,7 +101,9 @@ export class WallPlacementController {
       const hasEastWest = [previous, next].some(neighbour => neighbour && neighbour.j !== cell.j)
       const isEndpoint = index === 0 || index === draft.path.length - 1
       const wallFrame = getWallFrame(hasNorthSouth, hasEastWest, isEndpoint)
-      const sprite = Sprite.from(getWallTexture(draft.owner, wallFrame))
+      const texture = getWallTexture(draft.owner, wallFrame)
+      const sprite = Sprite.from(texture)
+      if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
       const position = this.getPreviewPosition(cell)
       sprite.x = position.x
       sprite.y = position.y

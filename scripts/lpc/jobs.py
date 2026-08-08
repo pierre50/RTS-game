@@ -83,27 +83,6 @@ LONGSWORDMAN_JOBS: tuple[Job, ...] = (
     ),
 )
 
-# Its shield is a separate runtime equipment overlay.
-HOPLITE_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        walking_equipment="halberd",
-        action_animation="slash",
-        action_equipment="halberd",
-    ),
-)
-
-# Same halberd as HOPLITE_JOBS (see UNIT_EQUIPMENT[UNIT_TYPES.hoplite]/Phalanx in
-# equipment.ts). Its shield is a separate runtime overlay.
-PHALANX_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        walking_equipment="halberd",
-        action_animation="slash",
-        action_equipment="halberd",
-    ),
-)
-
 # The cane has no spellcast-pose art, so action_equipment is left unset — the
 # priest's hands perform the cast gesture unarmed; the cane only shows while walking.
 PRIEST_JOBS: tuple[Job, ...] = (
@@ -120,8 +99,6 @@ UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "compositebowman": COMPOSITEBOWMAN_JOBS,
     "broadswordman": BROADSWORDMAN_JOBS,
     "longswordman": LONGSWORDMAN_JOBS,
-    "hoplite": HOPLITE_JOBS,
-    "phalanx": PHALANX_JOBS,
     "priest": PRIEST_JOBS,
     "chief": CHIEF_JOBS,
 }

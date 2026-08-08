@@ -152,14 +152,18 @@ def layer_paths(
     if look.cape:
         palette = resolve_palette(look.cape, team_color)
         paths.append(LayerSpec(f"{look.cape.path}/bg/{animation}.png", palette))
-    paths.append(LayerSpec(f"body/bodies/male/{animation}.png", civ["skin"], is_body=True))
+    paths.append(LayerSpec(f"body/bodies/{look.body}/{animation}.png", civ["skin"], is_body=True))
     if look.hair and look.hair_split:
-        paths.append(LayerSpec(f"hair/{look.hair}/adult/bg/{animation}.png", look.hair_palette or civ["hair"]))
+        paths.append(LayerSpec(f"hair/{look.hair}/{look.hair_body_type}/bg/{animation}.png", look.hair_palette or civ["hair"]))
     paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", civ["skin"]))
     if look.eyebrows:
         paths.append(LayerSpec(f"eyes/eyebrows/thick/adult/{animation}.png", civ["hair"]))
     if look.hair:
-        hair_path = f"hair/{look.hair}/adult/fg/{animation}.png" if look.hair_split else f"hair/{look.hair}/adult/{animation}.png"
+        hair_path = (
+            f"hair/{look.hair}/{look.hair_body_type}/fg/{animation}.png"
+            if look.hair_split
+            else f"hair/{look.hair}/{look.hair_body_type}/{animation}.png"
+        )
         paths.append(LayerSpec(hair_path, look.hair_palette or civ["hair"]))
     if look.hair_extension:
         palette = resolve_palette(look.hair_extension, team_color, default=civ["hair"])

@@ -158,3 +158,13 @@ test('hero energy changes refresh the hero HUD immediately', () => {
   assert.equal(unit.energy, 9.7)
   assert.deepEqual(calls, [9.5, 9.7])
 })
+
+test('low energy progressively slows movement except while mounted', () => {
+  const { getEnergyMoveSpeedMultiplier } = loadUnitEnergy()
+
+  assert.equal(getEnergyMoveSpeedMultiplier({ energy: 10, totalEnergy: 10 }), 1)
+  assert.equal(getEnergyMoveSpeedMultiplier({ energy: 5, totalEnergy: 10 }), 1)
+  assert.equal(getEnergyMoveSpeedMultiplier({ energy: 0, totalEnergy: 10 }), 0.55)
+  assert.equal(getEnergyMoveSpeedMultiplier({ energy: 2, totalEnergy: 10 }), 0.73)
+  assert.equal(getEnergyMoveSpeedMultiplier({ energy: 0, mountedOnHorse: true, totalEnergy: 10 }), 1)
+})

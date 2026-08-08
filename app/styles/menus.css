@@ -30,7 +30,34 @@
   background-size: cover;
 }
 
+#main-menu::before,
+#main-menu::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+}
+
+#main-menu::before {
+  background:
+    radial-gradient(circle at 52% 43%, rgba(154, 167, 217, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 50%, transparent 42%, rgba(5, 7, 18, 0.58) 100%),
+    linear-gradient(180deg, rgba(17, 23, 53, 0.18), rgba(5, 7, 18, 0.34));
+}
+
+#main-menu::after {
+  opacity: 0.14;
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.16) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(5, 7, 18, 0.22) 25%, transparent 25%);
+  background-position: 0 0, 1px 0;
+  background-size: 2px 2px;
+  mix-blend-mode: overlay;
+}
+
 .menu-panel {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,10 +66,17 @@
   max-width: var(--menu-panel-max-width);
   min-height: var(--menu-panel-min-height);
   padding: var(--menu-panel-padding);
-  background: linear-gradient(135deg, rgba(26, 21, 18, 0.96) 0%, rgba(15, 12, 10, 0.98) 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 32%),
+    linear-gradient(135deg, rgba(32, 42, 85, 0.96) 0%, rgba(12, 16, 40, 0.98) 100%);
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
-  box-shadow: var(--main-box-shadow);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 2px 0 0 rgba(141, 155, 224, 0.5),
+    inset -2px 0 0 rgba(49, 56, 95, 0.72),
+    inset 0 -2px 0 rgba(5, 7, 18, 0.88),
+    var(--main-box-shadow);
 }
 
 .menu-panel--home {
@@ -71,7 +105,9 @@ img.menu-title {
   width: 100%;
   opacity: 0;
   transform: translateY(6px);
-  filter: drop-shadow(4px 4px 0 rgba(0, 0, 0, 0.7));
+  filter:
+    drop-shadow(3px 3px 0 rgba(5, 7, 18, 0.85))
+    drop-shadow(0 0 10px rgba(154, 167, 217, 0.16));
   transition:
     opacity 200ms steps(4, end),
     transform 200ms steps(4, end);
@@ -123,11 +159,12 @@ div.menu-title {
 }
 
 .menu-copyright {
+  z-index: 1;
   position: absolute;
   bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  color: white;
+  color: rgba(245, 241, 220, 0.86);
   font-size: 13px;
   letter-spacing: 0.08em;
   text-shadow: var(--text-shadow-dark-ui);
@@ -147,7 +184,9 @@ div.menu-title {
   padding: 16px 14px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  background: var(--main-primary-color);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 32%),
+    var(--main-primary-color);
 }
 
 .settings-page.hidden {
@@ -298,7 +337,7 @@ div.menu-title {
 .player-table-header {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) 120px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 100px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
   padding: 8px 12px;
@@ -313,7 +352,7 @@ div.menu-title {
 .player-row {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) 120px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 100px 48px 48px;
   gap: var(--ui-gap-8);
   width: 100%;
   padding: 8px 12px;
@@ -324,7 +363,7 @@ div.menu-title {
 
 .player-table--with-age .player-table-header,
 .player-table--with-age .player-row {
-  grid-template-columns: minmax(96px, 1fr) 120px 120px 48px 48px;
+  grid-template-columns: minmax(96px, 1fr) 120px 100px 120px 48px 48px;
 }
 
 .player-row--odd {
@@ -576,14 +615,14 @@ div.menu-title {
 
   .player-table-header,
   .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) 56px 56px;
-    min-width: 360px;
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(96px, 1fr) 56px 56px;
+    min-width: 460px;
   }
 
   .player-table--with-age .player-table-header,
   .player-table--with-age .player-row {
-    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(132px, 1fr) 56px 56px;
-    min-width: 480px;
+    grid-template-columns: minmax(84px, 1fr) minmax(112px, 1fr) minmax(96px, 1fr) minmax(132px, 1fr) 56px 56px;
+    min-width: 580px;
   }
 
   .button-group,

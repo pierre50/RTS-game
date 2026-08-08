@@ -7,106 +7,9 @@ function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
 }
 
-const MELEE_SOUNDS = {
-  hit: ['sword-attack', 'swing-sword-attack', 'tinkle-sword-attack', 'sword-attack-2'],
-  die: ['human-unit-killed-6', 'human-unit-killed-7', 'human-unit-killed-8', 'human-unit-killed-9', 'human-unit-killed-10'],
-}
-
 const STONE_START_SOUND = null
 
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
-  Legion: {
-    category: 'Infantry',
-    totalHitPoints: 160,
-    sight: 4,
-    speed: 1.2,
-    trainingTime: 27,
-    meleeAttack: 13,
-    meleeArmor: 2,
-    pierceArmor: 0,
-    cost: {
-      food: 35,
-      gold: 15,
-    },
-    conditions: [
-      {
-        key: 'technologies',
-        op: 'includes',
-        value: 'Legion',
-      },
-    ],
-    assets: {
-      standingSheet: 'lpc-baked/longswordman/greek_01/walking',
-      walkingSheet: 'lpc-baked/longswordman/greek_01/walking',
-      actionSheet: 'lpc-baked/longswordman/greek_01/action',
-      dyingSheet: 'lpc-baked/longswordman/greek_01/dying',
-      corpseSheet: 'lpc-baked/longswordman/greek_01/corpse',
-    },
-    sounds: MELEE_SOUNDS,
-  },
-  Phalanx: {
-    category: 'Infantry',
-    totalHitPoints: 120,
-    sight: 4,
-    speed: 0.9,
-    trainingTime: 36,
-    meleeAttack: 20,
-    meleeArmor: 7,
-    pierceArmor: 0,
-    cost: {
-      food: 60,
-      gold: 40,
-    },
-    conditions: [
-      {
-        key: 'technologies',
-        op: 'notincludes',
-        value: 'Centurion',
-      },
-      {
-        key: 'technologies',
-        op: 'includes',
-        value: 'Phalanx',
-      },
-    ],
-    assets: {
-      standingSheet: 'lpc-baked/phalanx/greek_01/walking',
-      walkingSheet: 'lpc-baked/phalanx/greek_01/walking',
-      actionSheet: 'lpc-baked/phalanx/greek_01/action',
-      dyingSheet: 'lpc-baked/phalanx/greek_01/dying',
-      corpseSheet: 'lpc-baked/phalanx/greek_01/corpse',
-    },
-    sounds: MELEE_SOUNDS,
-  },
-  Centurion: {
-    category: 'Infantry',
-    totalHitPoints: 160,
-    sight: 4,
-    speed: 0.9,
-    trainingTime: 36,
-    meleeAttack: 30,
-    meleeArmor: 8,
-    pierceArmor: 0,
-    cost: {
-      food: 60,
-      gold: 40,
-    },
-    conditions: [
-      {
-        key: 'technologies',
-        op: 'includes',
-        value: 'Centurion',
-      },
-    ],
-    assets: {
-      standingSheet: 'lpc-baked/phalanx/greek_01/walking',
-      walkingSheet: 'lpc-baked/phalanx/greek_01/walking',
-      actionSheet: 'lpc-baked/phalanx/greek_01/action',
-      dyingSheet: 'lpc-baked/phalanx/greek_01/dying',
-      corpseSheet: 'lpc-baked/phalanx/greek_01/corpse',
-    },
-    sounds: MELEE_SOUNDS,
-  },
   StoneThrower: {
     category: 'Siege',
     selectionFactor: 2,
@@ -227,22 +130,8 @@ const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {
     conditions: [
       {
         key: 'technologies',
-        op: 'notincludes',
-        value: 'Legion',
-      },
-      {
-        key: 'technologies',
         op: 'includes',
         value: 'LongSword',
-      },
-    ],
-  },
-  Hoplite: {
-    conditions: [
-      {
-        key: 'technologies',
-        op: 'notincludes',
-        value: 'Phalanx',
       },
     ],
   },
@@ -259,9 +148,6 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
       'ShortSwordsman',
       'BroadSwordsman',
       'LongSwordsman',
-      'Hoplite',
-      'Phalanx',
-      'Centurion',
       'Bowman',
       'ImprovedBowman',
       'CompositeBowman',

@@ -107,6 +107,7 @@ export class Player implements PlayerLike {
   isPlayed?: boolean
   color?: string
   civ?: string
+  gender?: 'male' | 'female'
   name?: string
   autoTechnologyByAge?: boolean
 

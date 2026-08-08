@@ -8,7 +8,7 @@ import type { PlayerLike } from '../../types/player'
 
 const BAKED_LPC_BASE_URL = 'assets/graphics/lpc-baked'
 const BAKED_LPC_ALIAS_PREFIX = 'lpc-baked'
-const BAKED_VARIANT_KEYS = ['01'] as const
+const BAKED_GENDERS = ['male', 'female'] as const
 
 const UNIT_SHEETS = ['walking', 'action', 'riding', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
@@ -25,8 +25,6 @@ type BakedUnitType =
   | 'compositebowman'
   | 'broadswordman'
   | 'longswordman'
-  | 'hoplite'
-  | 'phalanx'
   | 'priest'
   | 'chief'
   | 'hero'
@@ -43,10 +41,6 @@ const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   CompositeBowman: 'compositebowman',
   BroadSwordsman: 'broadswordman',
   LongSwordsman: 'longswordman',
-  Legion: 'longswordman',
-  Hoplite: 'hoplite',
-  Phalanx: 'phalanx',
-  Centurion: 'phalanx',
   Priest: 'priest',
 }
 
@@ -54,15 +48,20 @@ function civKey(civilization: string | null | undefined): string {
   return (civilization || 'Greek').toLowerCase()
 }
 
-function variantIndex(seed: string): string {
-  return BAKED_VARIANT_KEYS[Math.abs(hashLpcAppearanceSeed(seed)) % BAKED_VARIANT_KEYS.length]
+function genderKey(seed: string, preferredGender?: string | null): string {
+  if (preferredGender === 'male' || preferredGender === 'female') return preferredGender
+  return BAKED_GENDERS[Math.abs(hashLpcAppearanceSeed(seed)) % BAKED_GENDERS.length]
 }
 
 // Every recolorable piece is baked in the same "blue" team-color convention (see
 // scripts/lpc/build.py) and repainted at runtime by changeSpriteColor, so the baked
 // variant only depends on civ, never on the player's color.
-function bakedVariantKey(owner: Pick<PlayerLike, 'civ' | 'label'>, seed: string): string {
-  return `${civKey(owner.civ)}_${variantIndex(seed)}`
+function bakedVariantKey(
+  owner: Pick<PlayerLike, 'civ' | 'gender' | 'label'>,
+  seed: string,
+  preferredGender?: string | null
+): string {
+  return `${civKey(owner.civ)}/${genderKey(seed, preferredGender)}`
 }
 
 function bakedAlias(unit: BakedUnitType, variant: string, job: string, sheet: string): string {
@@ -101,7 +100,10 @@ function heroActionAlias(variant: string, animation: string): string {
 // Resolves the baked walking/standing sheet alias for a unit TYPE (not a live
 // instance) — used for previews (e.g. training-button portraits) where there's
 // no UnitEntity yet to read appearance off of.
-export function getBakedUnitStandingSheetAlias(type: string, owner: Pick<PlayerLike, 'civ' | 'label'>): string | null {
+export function getBakedUnitStandingSheetAlias(
+  type: string,
+  owner: Pick<PlayerLike, 'civ' | 'gender' | 'label'>
+): string | null {
   const bakedUnit = UNIT_TYPE_TO_BAKED_UNIT[type]
   if (!bakedUnit) return null
 
@@ -156,11 +158,11 @@ const BAKED_UNITS: readonly BakedUnitType[] = [
   'hero',
 ] as BakedUnitType[]
 
-export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'label'>[]): Promise<void> {
+export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'gender' | 'label'>[]): Promise<void> {
   const variants = new Set<string>()
   for (const player of players) {
-    for (const variantKey of BAKED_VARIANT_KEYS) {
-      const variant = `${civKey(player.civ)}_${variantKey}`
+    for (const gender of BAKED_GENDERS) {
+      const variant = `${civKey(player.civ)}/${gender}`
       for (const bakedUnit of BAKED_UNITS) {
         variants.add(`${bakedUnit}:${variant}`)
       }
@@ -169,7 +171,9 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
 
   await Promise.all(
     [...variants].map(entry => {
-      const [unit, variant] = entry.split(':') as [BakedUnitType, string]
+      const separator = entry.indexOf(':')
+      const unit = entry.slice(0, separator) as BakedUnitType
+      const variant = entry.slice(separator + 1)
       return loadBakedUnitVariant(unit, variant)
     })
   )
@@ -187,14 +191,16 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     unit.controlMode === 'hero' ? 'hero' : isChiefUnit(unit) ? 'chief' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
   if (!bakedUnit || !unit.owner) return false
 
-  const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`)
+  // Player setup gender only drives the controlled hero/avatar. Regular units
+  // keep a spawn-time mix so a batch like "spawn villager 10" is visually varied.
+  const preferredGender = bakedUnit === 'hero' ? unit.owner.gender : null
+  const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`, preferredGender)
   const isVillagerLike = bakedUnit === 'villager' || bakedUnit === 'hero'
   const bodyAlias = bakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
   const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedUnitAlias(bakedUnit, variant, 'walking')
   if (!Assets.cache.get(walking)) return false
 
   unit.appearance = undefined
-  unit.spriteScale = 1
   unit.appearanceVariants = undefined
   unit.sheetDirectionCounts = {
     standingSheet: 3,

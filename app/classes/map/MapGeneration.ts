@@ -17,7 +17,6 @@ import {
   MAX_BUILDING_BY_AGE,
   MAX_INFANTRY_BY_AGE,
   MAX_ARCHER_BY_AGE,
-  MAX_HOPLITE_BY_AGE,
 } from '../../ai/config'
 import { getBestUnitFromTechs, INFANTRY_TECH_UPGRADES, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
@@ -217,16 +216,16 @@ const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
   BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
   Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
   Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
-  Wolf: { weight: 0.6, groupChance: 0.4, groupSize: [1, 3], radius: 3 },
+  Horse: { weight: 1.4, groupChance: 0.65, groupSize: [2, 4], radius: 3 },
 }
 // Multipliers applied on top of the base weight above, per terrain biome (cell.type).
 // Biome patches can be smaller than a camp's ambient-spawn radius, so multipliers are kept
 // close to 1 (never below ~0.45) - a lean per biome, never a hard species cutoff at the border.
 const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
-  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Wolf: 0.7 },
-  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Wolf: 1.4 },
-  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Wolf: 1.1 },
-  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Wolf: 0.4 },
+  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Horse: 1.25 },
+  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Horse: 0.75 },
+  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Horse: 0.65 },
+  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Horse: 0.9 },
 }
 function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {
   const total = entries.reduce((sum, [, weight]) => sum + Math.max(weight, 0), 0)
@@ -391,9 +390,11 @@ export class MapGeneration {
 
   pickAmbientAnimalType(i: number, j: number): string {
     const animals = gameConfig().animals
-    const dangerousAnimalTypes = new Set(['Boar', 'Wolf'])
+    const excludedGeneratedAnimalTypes = new Set(['Wolf'])
+    const dangerousAnimalTypes = new Set(['Boar'])
     const safeZoneRadius = 20
     const availableTypes = Object.keys(animals).filter(type => {
+      if (excludedGeneratedAnimalTypes.has(type)) return false
       return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
     })
     const types = availableTypes.length ? availableTypes : Object.keys(animals)
@@ -842,16 +843,17 @@ export class MapGeneration {
       if (posI != null && posJ != null) {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
+        const gender = playersConfig?.[i]?.gender
         const team = playersConfig?.[i]?.team ?? null
         const name = playersConfig?.[i]?.name
         const difficulty = this.map.difficulty
         const civilizationLevel = Math.max(0, Math.min(Number(playersConfig?.[i]?.civilizationLevel) || 0, 3))
         if (!i) {
           players.push(
-            new Human({ i: posI, j: posJ, age: 0, civ, color, team, name, isPlayed: true, civilizationLevel }, context)
+            new Human({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, isPlayed: true, civilizationLevel }, context)
           )
         } else if (!this.map.noAI) {
-          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, team, name, difficulty, civilizationLevel }, context))
+          players.push(new AI({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, difficulty, civilizationLevel }, context))
         }
       }
     }
@@ -940,7 +942,6 @@ export class MapGeneration {
     const unitTargets: Array<[string, number]> = [
       [infantryType, maxByAge(MAX_INFANTRY_BY_AGE)],
       [archerType, maxByAge(MAX_ARCHER_BY_AGE)],
-      [UNIT_TYPES.hoplite, player.config.units[UNIT_TYPES.hoplite] ? maxByAge(MAX_HOPLITE_BY_AGE) : 0],
     ]
 
     let populationTarget = player.population

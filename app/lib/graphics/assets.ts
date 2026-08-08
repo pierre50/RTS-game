@@ -52,7 +52,7 @@ export function getIconPath(name: string): string {
 export function getBuildingTextureNameWithSize(size: number): TextureRef | undefined {
   switch (size) {
     case 1:
-      return { sheet: 'buildings/construction/size-1', frame: 0 }
+      return { sheet: 'buildings/construction/size-2', frame: 0 }
     case 2:
       return { sheet: 'buildings/construction/size-2', frame: 0 }
     case 3:

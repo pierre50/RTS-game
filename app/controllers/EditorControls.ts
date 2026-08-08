@@ -172,17 +172,25 @@ export class EditorControls extends Container {
 
   screenToLocal(x: number, y: number): { x: number; y: number } {
     const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    const rect = this.context.gamebox.getBoundingClientRect()
+    const scaleX = this.context.app.screen.width / rect.width
+    const scaleY = this.context.app.screen.height / rect.height
+    const rendererX = (x - rect.left) * scaleX
+    const rendererY = (y - rect.top) * scaleY
     return {
-      x: (x - offsetX) / zoom,
-      y: (y - offsetY) / zoom,
+      x: (rendererX - offsetX) / zoom,
+      y: (rendererY - offsetY) / zoom,
     }
   }
 
   localToScreen(x: number, y: number): { x: number; y: number } {
     const { zoom, offsetX, offsetY } = this.getViewportMetrics()
+    const rect = this.context.gamebox.getBoundingClientRect()
+    const scaleX = this.context.app.screen.width / rect.width
+    const scaleY = this.context.app.screen.height / rect.height
     return {
-      x: x * zoom + offsetX,
-      y: y * zoom + offsetY,
+      x: rect.left + (x * zoom + offsetX) / scaleX,
+      y: rect.top + (y * zoom + offsetY) / scaleY,
     }
   }
 

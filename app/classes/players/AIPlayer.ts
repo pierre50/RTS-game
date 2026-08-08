@@ -97,8 +97,6 @@ type StrategySnapshotState = {
   archerUnit: AIStrategySnapshot['archerUnit']
   cavalry: AIStrategySnapshot['cavalry']
   maxCavalry: AIStrategySnapshot['maxCavalry']
-  hoplites: AIStrategySnapshot['hoplites']
-  maxHoplite: AIStrategySnapshot['maxHoplite']
   notBuiltHouses: AIStrategySnapshot['notBuiltHouses']
 }
 
@@ -134,7 +132,6 @@ export class AI extends Player {
   maxInfantryByAge!: AIStrategyPlayerLike['maxInfantryByAge']
   maxArcherByAge!: AIStrategyPlayerLike['maxArcherByAge']
   maxCavalryByAge!: AIStrategyPlayerLike['maxCavalryByAge']
-  maxHopliteByAge!: AIStrategyPlayerLike['maxHopliteByAge']
   techPriorityByBuilding!: AIStrategyPlayerLike['techPriorityByBuilding']
   _stepTaskId!: SchedulerTaskId | null
 
@@ -688,8 +685,6 @@ export class AI extends Player {
       cavalry: state.cavalry,
       maxCavalry: state.maxCavalry,
       stables: this.buildingsByTypes([BUILDING_TYPES.stable]),
-      hoplites: state.hoplites,
-      maxHoplite: state.maxHoplite,
       houses: this.buildingsByTypes([BUILDING_TYPES.house]),
       farms: this.buildingsByTypes([BUILDING_TYPES.farm]),
       granarys: this.buildingsByTypes([BUILDING_TYPES.granary]),
@@ -875,7 +870,6 @@ export class AI extends Player {
     const maxInfantry = this.maxInfantryByAge[this.age as AIAge]
     const maxArcher = this.maxArcherByAge[this.age as AIAge]
     const maxCavalry = this.maxCavalryByAge[this.age as AIAge]
-    const maxHoplite = this.maxHopliteByAge[this.age as AIAge]
     const infantryUnit = this.getBestInfantryUnit()
     const archerUnit = this.getBestArcherUnit()
     const howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold
@@ -890,13 +884,13 @@ export class AI extends Player {
     const allVillagers = this.getLivingUnitsByType(UNIT_TYPES.villager)
     actions += this.refreshChiefSuccession(allVillagers)
     const villagers = allVillagers.filter(villager => !isChiefUnit(villager))
-    const { infantry, archers, cavalry, hoplites } = classifyMilitaryUnits(this.units as AIEntityLike[])
-    const military = [...infantry, ...archers, ...cavalry, ...hoplites]
+    const { infantry, archers, cavalry } = classifyMilitaryUnits(this.units as AIEntityLike[])
+    const military = [...infantry, ...archers, ...cavalry]
     const militaryPower = this.strategy.military.getGroupCombatPower(military)
 
     if (DEBUG)
       console.log(
-        `Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Hoplites: ${hoplites.length}/${maxHoplite}, Power: ${Math.round(militaryPower)}`
+        `Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Power: ${Math.round(militaryPower)}`
       )
 
     const previousPhase = this.phase
@@ -1003,8 +997,6 @@ export class AI extends Player {
       archerUnit,
       cavalry,
       maxCavalry,
-      hoplites,
-      maxHoplite,
       notBuiltHouses,
     })
 

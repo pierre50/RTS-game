@@ -180,7 +180,6 @@ export type AIStrategyPlayerLike = {
   maxInfantryByAge: Record<AIAge, number>
   maxArcherByAge: Record<AIAge, number>
   maxCavalryByAge: Record<AIAge, number>
-  maxHopliteByAge: Record<AIAge, number>
   techPriorityByBuilding: Record<string, string[]>
   config: {
     units: Record<string, AIEntityConfig>
@@ -294,8 +293,6 @@ export type AIStrategySnapshot = {
   cavalry: AIEntityLike[]
   maxCavalry: number
   stables: AIBuildingLike[]
-  hoplites: AIEntityLike[]
-  maxHoplite: number
   houses: AIBuildingLike[]
   farms: AIBuildingLike[]
   granarys: AIBuildingLike[]

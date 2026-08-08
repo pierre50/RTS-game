@@ -3,7 +3,7 @@ import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
 import { getTowerType, isTower } from '../lib/buildings/towers'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
-import type { BuildingEntity } from '../types/entities'
+import type { BuildingEntity, EntityInfoRenderOptions } from '../types/entities'
 import type { BuildingConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
@@ -14,9 +14,9 @@ export class BuildingInterface {
     this.building = building
   }
 
-  renderInfo(element: HTMLElement, data: BuildingConfig): void {
+  renderInfo(element: HTMLElement, data: BuildingConfig, options?: EntityInfoRenderOptions): void {
     const building = this.building
-    this.setDefaultInterface(element, data)
+    this.setDefaultInterface(element, data, options)
     if (building.displayPopulation && building.owner?.isPlayed && building.isBuilt) {
       element.appendChild(this.getPopulationElement())
     }
@@ -58,13 +58,15 @@ export class BuildingInterface {
     return loadingDiv
   }
 
-  setDefaultInterface(element: HTMLElement, _data: BuildingConfig): void {
+  setDefaultInterface(element: HTMLElement, _data: BuildingConfig, options?: EntityInfoRenderOptions): void {
     const building = this.building
     const menu = (building.context as { menu: MenuLike }).menu
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
     const displayType = (isTower(building) ? getTowerType(building.owner!) : building.type) || building.type
-    appendBaseEntityInfo(element, t(building.owner!.civ || ''), t(displayType), hitPoints, building.totalHitPoints)
+    appendBaseEntityInfo(element, t(building.owner!.civ || ''), t(displayType), hitPoints, building.totalHitPoints, {
+      hideType: options?.hideIdentity,
+    })
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons!['food'], building.quantity)

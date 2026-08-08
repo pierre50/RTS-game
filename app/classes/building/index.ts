@@ -35,6 +35,7 @@ import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
   BuildingEntity,
   CommandSound,
+  EntityInfoRenderOptions,
   EntityInterfaceLike,
   RuntimeEntity,
   UnitCreationExtra,
@@ -170,10 +171,10 @@ export class Building extends Instance implements BuildingEntity {
       ? []
       : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key, this))
     this.interface = {
-      info: (element: HTMLElement) => {
+      info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
         const displayType = this.assetType || (isTower(this) ? getTowerType(this.owner) : this.type)
         const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this), Assets)
-        this.buildingInterface.renderInfo(element, assets as BuildingConfig)
+        this.buildingInterface.renderInfo(element, assets as BuildingConfig, options)
       },
       menu:
         this.owner.isPlayed || map.instantMode
@@ -532,7 +533,7 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingInterface.getLoadingElement()
   }
 
-  setDefaultInterface(element: HTMLElement, data: BuildingConfig): void {
-    this.buildingInterface.setDefaultInterface(element, data)
+  setDefaultInterface(element: HTMLElement, data: BuildingConfig, options?: EntityInfoRenderOptions): void {
+    this.buildingInterface.setDefaultInterface(element, data, options)
   }
 }

@@ -29,6 +29,9 @@ export type EntityInfoRenderOptions = {
   // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
   // at level 0; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
   showAllXp?: boolean
+  // Modal windows already carry the entity identity in their title; hide duplicate identity labels
+  // inside the stat panel while keeping useful metadata such as civ/level/hit points.
+  hideIdentity?: boolean
 }
 
 export interface EntityInterfaceLike {
@@ -156,7 +159,12 @@ export interface UnitEntity extends RuntimeEntityBase {
   previousWork?: string | null
   path?: RuntimeCell[]
   hasPath?: () => boolean
-  moveDirect?: (dirX: number, dirY: number, distance: number) => boolean
+  moveDirect?: (
+    dirX: number,
+    dirY: number,
+    distance: number,
+    options?: { facingDirX?: number; facingDirY?: number }
+  ) => boolean
   applyReliefLift?: (level: number, immediate?: boolean) => void
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null

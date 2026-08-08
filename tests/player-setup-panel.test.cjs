@@ -20,7 +20,14 @@ const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/PlayerSe
   '../lib/uiSound': { playClickSound: () => {} },
   '../lib/lang': { t: key => key },
   '../config/civilizations': {
-    CIVILIZATIONS: [{ labelKey: 'greek', value: 'Greek' }],
+    CIVILIZATIONS: [
+      { labelKey: 'greek', value: 'Greek' },
+      { labelKey: 'roman', value: 'Roman' },
+    ],
+  },
+  '../config/playerNames': {
+    randomPlayerNameForCivilization: (civ, gender) => `${civ}-${gender === 'female' ? 'female' : 'male'}-name`,
+    isGeneratedPlayerName: name => /^.+-(male|female)-name$/.test(name),
   },
 })
 
@@ -59,4 +66,37 @@ test('AI colors are reassigned to free colors when the human color conflicts', (
 
   assert.equal(panel.players[0].color, 'green')
   assert.equal(new Set(panel.players.map(player => player.color)).size, panel.players.length)
+})
+
+test('generated human name changes when civilization changes', () => {
+  const panel = setupPanel([
+    { name: 'Greek-male-name', color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },
+  ])
+
+  panel._setPlayerCiv(0, 'Roman')
+
+  assert.equal(panel.players[0].civ, 'Roman')
+  assert.equal(panel.players[0].name, 'Roman-male-name')
+})
+
+test('generated human name follows female gender selection', () => {
+  const panel = setupPanel([
+    { name: 'Greek-male-name', color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },
+  ])
+
+  panel._setPlayerGender(0, 'female')
+
+  assert.equal(panel.players[0].gender, 'female')
+  assert.equal(panel.players[0].name, 'Greek-female-name')
+})
+
+test('custom human name is preserved when civilization changes', () => {
+  const panel = setupPanel([
+    { name: 'Pierre', color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },
+  ])
+
+  panel._setPlayerCiv(0, 'Roman')
+
+  assert.equal(panel.players[0].civ, 'Roman')
+  assert.equal(panel.players[0].name, 'Pierre')
 })

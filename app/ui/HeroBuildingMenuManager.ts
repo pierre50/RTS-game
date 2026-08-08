@@ -1,9 +1,12 @@
 import { FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { Modal, instanceContactInstance } from '../lib'
 import { renderBuildingAvatar } from '../lib/avatar'
+import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
+import { createInspectionModal } from './InspectionPanel'
+import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
 import type Menu from '../classes/Menu'
+import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 
@@ -70,10 +73,10 @@ export class HeroBuildingMenuManager {
     this.infoAvatarWrap.appendChild(this.infoAvatarCanvas)
 
     this.info = document.createElement('div')
-    this.info.className = 'hero-building-menu-info selection-info active'
+    this.info.className = 'entity-info-modal selection-info active'
 
     this.header = document.createElement('div')
-    this.header.className = 'hero-building-menu-header'
+    this.header.className = 'entity-info-wrapper'
     this.header.appendChild(this.infoAvatarWrap)
     this.header.appendChild(this.info)
 
@@ -87,10 +90,7 @@ export class HeroBuildingMenuManager {
     const player = this.menu.context.player
     if (!hero || !building || building.isDestroyed || building.isDead || !building.isBuilt) return false
     if (building.owner !== player || !building.owner?.isPlayed) return false
-    // Same contact check the hero's own interactions gate on (isUnitAtDest → instanceContactInstance
-    // for non-hunt actions) — using a different, more lenient distance here let the menu open
-    // while the deposit button stayed hidden because the hero wasn't quite close enough yet.
-    return instanceContactInstance(hero, building)
+    return isHeroInteractionTargetReachable(hero, null, building)
   }
 
   open(building: BuildingEntity): boolean {
@@ -105,12 +105,11 @@ export class HeroBuildingMenuManager {
     this.stack = [items]
     this.opened = true
     this.structureSignature = this.getStructureSignature()
-    this.modal = new Modal({
+    this.modal = createInspectionModal({
       title: t(building.assetType || building.type),
       content: this.panel,
       onClose: () => this.close(),
     })
-    this.modal._panel?.classList.add('hero-building-menu-panel')
     this.render()
     return true
   }
@@ -146,7 +145,7 @@ export class HeroBuildingMenuManager {
 
   refresh(): void {
     if (!this.opened || !this.building) return
-    if (!this.canOpenFor(this.building)) {
+    if (!this.building || this.building.isDestroyed || this.building.isDead) {
       this.close()
       return
     }
@@ -155,13 +154,9 @@ export class HeroBuildingMenuManager {
     this.render()
   }
 
-  closeIfInvalid(): void {
-    if (this.opened && !this.canOpenFor(this.building)) this.close()
-  }
-
   syncLiveState(): void {
     if (!this.opened || !this.building) return
-    if (!this.canOpenFor(this.building)) {
+    if (this.building.isDestroyed || this.building.isDead) {
       this.close()
       return
     }
@@ -197,7 +192,12 @@ export class HeroBuildingMenuManager {
     // syncLiveState() tick — renderInfo() alone runs far more often (e.g. on
     // every training-progress update) and re-cropping the avatar each time
     // would be wasteful.
-    const rendered = renderBuildingAvatar(this.menu.context.app, building.type, building.owner ?? this.menu.context.player, this.infoAvatarCanvas)
+    const rendered = renderBuildingAvatar(
+      this.menu.context.app,
+      building.type,
+      building.owner ?? this.menu.context.player,
+      this.infoAvatarCanvas
+    )
     this.infoAvatarWrap.classList.toggle('hidden', !rendered)
     const items = this.stack[this.stack.length - 1] || []
     this.renderInfo()
@@ -214,7 +214,7 @@ export class HeroBuildingMenuManager {
     const building = this.building
     this.info.textContent = ''
     if (typeof building?.interface?.info === 'function') {
-      building.interface.info(this.info)
+      building.interface.info(this.info, TITLED_ENTITY_INFO_OPTIONS)
     }
   }
 

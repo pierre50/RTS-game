@@ -96,6 +96,17 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
     '../lib/unitControl': {
       setUnitControlMode: () => {},
     },
+    '../services/HeroCriticalHealthEffects': {
+      HeroCriticalHealthEffects: class {
+        update() {}
+        destroy() {}
+      },
+    },
+    '../services/HeroOcclusionFade': {
+      HeroOcclusionFade: class {
+        update() {}
+      },
+    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -161,15 +172,21 @@ function createController({
   }
   const heroTools = {
     aimHeroBowChargeAt: () => false,
+    aimHeroDefenseAt: () => false,
     applyToolAppearance: () => {},
+    beginHeroDefense: () => false,
     cancelHeroBowCharge: () => {},
+    cancelHeroDefense: () => {},
     HERO_TOOL_ORDER: ['interact', 'sword', 'halberd', 'bow'],
+    isMountedAttackAimBlocked: () => false,
+    releaseHeroDefense: () => false,
     releaseHeroBowCharge: () => false,
     triggerToolAttackAt: (_hero, _tool, destination) => {
       calls.push(['attack', destination])
       return true
     },
     updateHeroBowCharge: () => {},
+    updateHeroDefense: () => {},
     ...heroToolsOverride,
   }
   const HeroController = loadHeroController({ npcInteraction, heroTools, getInstanceDegree })
@@ -184,6 +201,9 @@ function createController({
     getCellUnderCursor: () => null,
     getWorldPointUnderCursor: () => cursorPoint,
     getGamepadMoveVector: () => ({ dx: 0, dy: 0 }),
+    closeAnyHeroPanel: () => false,
+    openHeroEntityInteraction: () => false,
+    shiftKeyActive: false,
   })
   controller.heroUnit = hero
   return {
@@ -238,6 +258,62 @@ test('keyboard movement during bow charge restores aim without resetting action 
 
   assert.equal(hero.isDirectMoving, false)
   assert.equal(hero.syncMountedHorseSpriteCalls, 2)
+})
+
+test('shift keyboard movement on foot keeps absolute movement and locks current facing', () => {
+  const { calls, controller, hero, setCursorPoint } = createController({
+    getInstanceDegree: (unit, x) => (x > unit.x ? 180 : 0),
+  })
+  const moveCalls = []
+  hero.degree = 180
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.controls.shiftKeyActive = true
+  setCursorPoint({ x: -10, y: 0 })
+
+  assert.equal(controller.handleKeyDown('heroUp'), true)
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
+  assert.ok(moveCalls[0][2] > 0)
+  assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
+
+  controller.handlePrimaryPointerDown()
+
+  const attackCall = calls.find(call => Array.isArray(call) && call[0] === 'attack')
+  assert.ok(attackCall)
+  assert.ok(attackCall[1].x > hero.x)
+})
+
+test('shift keyboard movement does not lock facing while mounted', () => {
+  const { controller, hero, setCursorPoint } = createController()
+  const moveCalls = []
+  hero.speed = 100 / 6
+  hero.mountedOnHorse = true
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.controls.shiftKeyActive = true
+  setCursorPoint({ x: 10, y: 0 })
+
+  assert.equal(controller.handleKeyDown('heroDown'), true)
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][1] - 1) < 1e-9)
+  assert.equal(moveCalls[0][3], undefined)
 })
 
 test('H mounts the hero once for debug without stacking speed', () => {

@@ -35,6 +35,7 @@ import {
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
+import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
@@ -120,6 +121,13 @@ function blocksHeroMobileDirectMoveAtPoint(unit: UnitEntity, entity: RuntimeEnti
 
 function shouldApplyLoadingMovePenalty(unit: UnitEntity): boolean {
   return Boolean(!unit.mountedOnHorse && (unit.loading ?? 0) > 0)
+}
+
+function getPathMoveSpeed(unit: UnitEntity, nextCell: RuntimeCell): number {
+  let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit)
+  if (shouldApplyLoadingMovePenalty(unit)) speed *= 0.8
+  if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
+  return speed
 }
 
 function getNearbyHeroCollisionEntities(
@@ -223,6 +231,7 @@ const DIRECT_MOVE_DEBUG_THROTTLE_MS = 250
 const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
 let lastDirectMoveDebugAt = 0
 
 function debugBlockedDirectMove(
@@ -554,7 +563,8 @@ export class UnitMovement {
     if (!sprite.playing) {
       sprite.play()
     }
-    if (instancesDistance(unit, nextFlatPoint, false) <= (unit.speed ?? 0)) {
+    const moveSpeed = getPathMoveSpeed(unit, nextCell)
+    if (instancesDistance(unit, nextFlatPoint, false) <= moveSpeed) {
       const oldI = unit.i,
         oldJ = unit.j
       unit.z = nextCell.z
@@ -594,10 +604,7 @@ export class UnitMovement {
       const player = unit.owner
       const oldDeg = unit.degree
       const wasWalking = unit.currentSheet === SHEET_TYPES.walking
-      let speed = unit.speed ?? 0
-      if (shouldApplyLoadingMovePenalty(unit)) speed *= 0.8
-      if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-      moveTowardPoint(unit, nextFlatX, nextFlatY, speed)
+      moveTowardPoint(unit, nextFlatX, nextFlatY, moveSpeed)
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
       if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)
@@ -605,7 +612,7 @@ export class UnitMovement {
     }
   }
 
-  moveDirect(dirX: number, dirY: number, distance: number): boolean {
+  moveDirect(dirX: number, dirY: number, distance: number, options: DirectMoveOptions = {}): boolean {
     const unit = this.unit
     const map = unit.context?.map
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) {
@@ -620,7 +627,9 @@ export class UnitMovement {
     }
 
     this.directMoveBlocker = null
-    if (this.attemptMoveDirect(dirX, dirY, distance)) {
+    const facingDirX = options.facingDirX ?? dirX
+    const facingDirY = options.facingDirY ?? dirY
+    if (this.attemptMoveDirect(dirX, dirY, distance, facingDirX, facingDirY)) {
       this.slideBias = 0
       return true
     }
@@ -628,14 +637,14 @@ export class UnitMovement {
     if (
       blocker &&
       blocksHeroDirectMoveWithRoundedFootprint(blocker) &&
-      this.attemptSlideAlongRoundedFootprint(blocker, dirX, dirY, distance)
+      this.attemptSlideAlongRoundedFootprint(blocker, dirX, dirY, distance, facingDirX, facingDirY)
     ) {
       return true
     }
     if (
       blocker &&
       blocksHeroDirectMoveWithSoftBody(blocker) &&
-      this.attemptSlideAroundSoftBody(blocker, dirX, dirY, distance)
+      this.attemptSlideAroundSoftBody(blocker, dirX, dirY, distance, facingDirX, facingDirY)
     ) {
       return true
     }
@@ -652,7 +661,7 @@ export class UnitMovement {
       const slideDistance = distance * Math.cos(step)
       for (const sign of probeSigns) {
         const angle = baseAngle + sign * step
-        if (this.attemptMoveDirect(Math.cos(angle), Math.sin(angle), slideDistance, dirX, dirY)) {
+        if (this.attemptMoveDirect(Math.cos(angle), Math.sin(angle), slideDistance, facingDirX, facingDirY)) {
           this.slideBias = sign
           return true
         }
@@ -665,7 +674,9 @@ export class UnitMovement {
     blocker: HeroDirectMoveBlocker,
     dirX: number,
     dirY: number,
-    distance: number
+    distance: number,
+    facingDirX: number = dirX,
+    facingDirY: number = dirY
   ): boolean {
     const unit = this.unit
     const points = getRoundedIsoFootprintPoints(blocker)
@@ -698,12 +709,19 @@ export class UnitMovement {
     const slideX = tangentX * sign
     const slideY = tangentY * sign
     const slideDistance = distance * Math.max(0.2, Math.abs(alignment))
-    if (!this.attemptMoveDirect(slideX, slideY, slideDistance, dirX, dirY)) return false
+    if (!this.attemptMoveDirect(slideX, slideY, slideDistance, facingDirX, facingDirY)) return false
     this.slideBias = sign
     return true
   }
 
-  attemptSlideAroundSoftBody(blocker: HeroDirectMoveBlocker, dirX: number, dirY: number, distance: number): boolean {
+  attemptSlideAroundSoftBody(
+    blocker: HeroDirectMoveBlocker,
+    dirX: number,
+    dirY: number,
+    distance: number,
+    facingDirX: number = dirX,
+    facingDirY: number = dirY
+  ): boolean {
     const unit = this.unit
     const awayX = unit.x - (blocker.x ?? unit.x)
     const awayY = unit.y - (blocker.y ?? unit.y)
@@ -722,7 +740,7 @@ export class UnitMovement {
       const slideLength = Math.hypot(slideX, slideY)
       if (
         slideLength > 0 &&
-        this.attemptMoveDirect(slideX / slideLength, slideY / slideLength, distance * 0.75, dirX, dirY)
+        this.attemptMoveDirect(slideX / slideLength, slideY / slideLength, distance * 0.75, facingDirX, facingDirY)
       ) {
         this.slideBias = sign
         return true
@@ -747,7 +765,7 @@ export class UnitMovement {
     // the relief-border tile IS the slope, so slowing down while on it covers the whole climb.
     const targetClimbFactor = unit.currentCell?.inclined ? RELIEF_CLIMB_SPEED_MULTIPLIER : 1
     this.directMoveClimbFactor += (targetClimbFactor - this.directMoveClimbFactor) * RELIEF_LIFT_SMOOTHING
-    const effectiveDistance = distance * this.directMoveClimbFactor
+    const effectiveDistance = distance * this.directMoveClimbFactor * getEnergyMoveSpeedMultiplier(unit)
 
     const candidateX = unit.x + dirX * effectiveDistance
     const candidateY = unit.y + dirY * effectiveDistance

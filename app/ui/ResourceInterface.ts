@@ -1,7 +1,7 @@
-import { MENU_INFO_IDS, RESOURCE_TYPES } from '../constants'
+import { RESOURCE_TYPES } from '../constants'
 import { t } from '../lib/lang'
-import { appendQuantityInfo, createHitPointsInfo, createInfoText } from './BaseEntityInterface'
-import type { ResourceEntity } from '../types/entities'
+import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
+import type { EntityInfoRenderOptions, ResourceEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
@@ -12,17 +12,13 @@ export class ResourceInterface {
     this.resource = resource
   }
 
-  setDefaultInterface(element: HTMLElement, _data: ResourceConfig): void {
+  setDefaultInterface(element: HTMLElement, _data: ResourceConfig, options?: EntityInfoRenderOptions): void {
     const resource = this.resource
     const menu = (resource.context as { menu: MenuLike }).menu
 
-    element.appendChild(createInfoText(MENU_INFO_IDS.type, t(resource.type)))
-
-    if (resource.hitPoints) {
-      element.appendChild(
-        createHitPointsInfo(MENU_INFO_IDS.hitPoints, resource.hitPoints, resource.totalHitPoints ?? 0)
-      )
-    }
+    appendBaseEntityInfo(element, '', t(resource.type), resource.hitPoints, resource.totalHitPoints ?? 0, {
+      hideType: options?.hideIdentity,
+    })
 
     if (resource.quantity) {
       let iconToUse: string | undefined

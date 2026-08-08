@@ -26,7 +26,7 @@ import {
   degreeToDirection,
   getAnimationFrames,
   playSoundCue,
-  shouldFleeWhenAttacked,
+  evaluateCombatMorale,
   getIconPath,
   getSpriteFrameSelection,
   showAggressionFeedback,
@@ -950,8 +950,13 @@ export class Unit extends Instance implements UnitEntity {
     super.step()
   }
 
-  moveDirect(dirX: number, dirY: number, distance: number): boolean {
-    return this.unitMovement.moveDirect(dirX, dirY, distance)
+  moveDirect(
+    dirX: number,
+    dirY: number,
+    distance: number,
+    options?: { facingDirX?: number; facingDirY?: number }
+  ): boolean {
+    return this.unitMovement.moveDirect(dirX, dirY, distance, options)
   }
 
   isAttacked(instance: RuntimeEntity | null) {
@@ -966,7 +971,17 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
     this.owner.reportThreat?.(this, instance)
-    if (shouldFleeWhenAttacked(this, instance)) {
+    const moraleDecision = evaluateCombatMorale(this, instance)
+    if (moraleDecision === 'surrender') {
+      if (instance.family === FAMILY_TYPES.unit) {
+        showAggressionFeedback(this)
+        if (new UnitActions(instance as UnitEntity).convertTarget(this, { grantXp: false, stopConverter: false }))
+          return
+      }
+      this.runaway(instance)
+      return
+    }
+    if (moraleDecision === 'flee') {
       this.runaway(instance)
       return
     }

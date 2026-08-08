@@ -57,11 +57,13 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
-    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints)
-    if (unit.name) {
+    appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints, {
+      hideType: Boolean(options?.hideIdentity && !unit.name),
+    })
+    if (unit.name && !options?.hideIdentity) {
       const nameElement = createInfoText(MENU_INFO_IDS.name, unit.name)
-      const typeElement = element.querySelector(`.${MENU_INFO_IDS.type}`)
-      element.insertBefore(nameElement, typeElement)
+      const header = element.querySelector('.entity-info-header')
+      header?.prepend(nameElement)
     }
 
     // A single glanceable level (the best of the 9 per-skill levels below), always shown —

@@ -36,15 +36,10 @@ function isCavalryUnit(_unit: AIEntityLike): boolean {
   return false
 }
 
-function isHopliteUnit(unit: AIEntityLike): boolean {
-  return isAliveUnit(unit) && unit.type === 'Hoplite'
-}
-
 export function classifyMilitaryUnits<TUnit extends AIEntityLike>(units: TUnit[]) {
   return {
     infantry: units.filter(isInfantryUnit),
     archers: units.filter(isArcherUnit),
     cavalry: units.filter(isCavalryUnit),
-    hoplites: units.filter(isHopliteUnit),
   }
 }

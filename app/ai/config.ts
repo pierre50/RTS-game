@@ -148,7 +148,6 @@ export const MAX_BUILDING_BY_AGE_FROZEN = {
 export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 8, 2: 10, 3: 12 }
 export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 4, 2: 6, 3: 8 }
 export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 3, 2: 4, 3: 5 }
-export const MAX_HOPLITE_BY_AGE = { 0: 0, 1: 0, 2: 2, 3: 4 }
 
 export const TECH_PRIORITY_BY_BUILDING = {
   [BUILDING_TYPES.barracks]: ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword'],

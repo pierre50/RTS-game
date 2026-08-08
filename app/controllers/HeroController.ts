@@ -42,7 +42,6 @@ import {
   COMM_INDICATOR_DELAY_MS,
   getCommCellsInRadius,
   getCommRadiusForHold,
-  isAnyNpcNear,
   releaseIfStillLooking,
   resolveCommGroup,
   resolveHoverTarget,
@@ -73,6 +72,7 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool3: 2,
   heroTool4: 3,
 }
+type MoveVector = { dx: number; dy: number }
 
 let lastHeroMoveDebugAt = 0
 
@@ -107,6 +107,31 @@ function debugHeroMove(message: string, unit: UnitEntity, details: Record<string
       },
     },
   })
+}
+
+function getKeyboardMoveVector(keysPressed: Set<ControlBindingAction>): MoveVector {
+  let dx = 0
+  let dy = 0
+  for (const action of keysPressed) {
+    const dir = HERO_MOVE_DIRECTIONS[action]
+    if (!dir) continue
+    dx += dir.dx
+    dy += dir.dy
+  }
+  return { dx, dy }
+}
+
+function getVectorFromDegree(degree: number): MoveVector {
+  const radians = ((degree - 180) * Math.PI) / 180
+  return { dx: Math.cos(radians), dy: Math.sin(radians) }
+}
+
+function getPointInDirection(unit: UnitEntity, degree: number, distance = 100): HeroAimPoint {
+  const vector = getVectorFromDegree(degree)
+  return {
+    x: unit.x + vector.dx * distance,
+    y: unit.y + vector.dy * distance,
+  }
 }
 
 // controlMode determines the baked look (see applyBakedLpcUnitAssets), and this
@@ -155,6 +180,7 @@ export class HeroController {
   commIndicator: Graphics | null
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
+  shiftMoveLockedDegree: number | null
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -170,6 +196,7 @@ export class HeroController {
     this.commIndicator = null
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
+    this.shiftMoveLockedDegree = null
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
   }
@@ -182,6 +209,12 @@ export class HeroController {
       unit.degree = aimDegree
       unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
     }
+  }
+
+  getShiftMoveLockedAimPoint(): HeroAimPoint | null {
+    const unit = this.heroUnit
+    if (!unit || unit.mountedOnHorse || this.shiftMoveLockedDegree == null) return null
+    return getPointInDirection(unit, this.shiftMoveLockedDegree)
   }
 
   isActive(): boolean {
@@ -295,24 +328,18 @@ export class HeroController {
       this.controls.getCellUnderCursor()
     )
     updateHeroCursor(this.equippedItem, hoverTarget, Boolean(this.pendingGoToNpcs))
-    const menu = this.controls.context.menu
-    if (menu?.isNpcOrdersOpen?.()) {
-      const targets = menu.getNpcOrdersTarget?.() ?? []
-      if (!isAnyNpcNear(unit, targets)) menu.closeNpcOrders?.()
-    }
-    if (menu?.isHeroBuildingMenuOpen?.()) {
-      menu.closeHeroBuildingMenuIfInvalid?.()
-    }
     const attacking = Boolean(unit.actionLocked)
 
-    let dx = 0
-    let dy = 0
-    for (const action of this.keysPressed) {
-      const dir = HERO_MOVE_DIRECTIONS[action]
-      if (!dir) continue
-      dx += dir.dx
-      dy += dir.dy
+    const keyboardMove = getKeyboardMoveVector(this.keysPressed)
+    const keyboardMoving = keyboardMove.dx !== 0 || keyboardMove.dy !== 0
+    const lockedKeyboardMove = Boolean(this.controls.shiftKeyActive && keyboardMoving && !unit.mountedOnHorse)
+    if (lockedKeyboardMove && this.shiftMoveLockedDegree == null) {
+      this.shiftMoveLockedDegree = unit.degree ?? 0
+    } else if (!lockedKeyboardMove) {
+      this.shiftMoveLockedDegree = null
     }
+    const lockedDegree = this.shiftMoveLockedDegree
+    let { dx, dy } = keyboardMove
     const gamepadMove = this.controls.getGamepadMoveVector()
     dx += gamepadMove.dx
     dy += gamepadMove.dy
@@ -329,11 +356,13 @@ export class HeroController {
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
-      moved = unit.moveDirect?.(dx / len, dy / len, distance) ?? false
+      const facingVector =
+        lockedKeyboardMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
+      const moveOptions = facingVector ? { facingDirX: facingVector.dx, facingDirY: facingVector.dy } : undefined
+      moved = unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false
       if (aimedDegree != null && unit.degree !== aimedDegree) {
         unit.degree = aimedDegree
       }
-      if (moved && menu?.isHeroBuildingMenuOpen?.()) menu.closeHeroBuildingMenu?.()
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
       if (!moved || delta < 0.01) {
         debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {
@@ -379,7 +408,7 @@ export class HeroController {
       this.resolveGoTo()
       return
     }
-    this.primaryClickPoint = this.controls.getWorldPointUnderCursor()
+    this.primaryClickPoint = this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor()
     const beforeLoad = this.heroUnit?.loading ?? 0
     const triggered = this.attackTowardPoint(this.primaryClickPoint)
     const unit = this.heroUnit
@@ -391,7 +420,7 @@ export class HeroController {
   handleDefenseKeyDown(): void {
     const unit = this.heroUnit
     if (!unit) return
-    this.facePoint(this.controls.getWorldPointUnderCursor())
+    this.facePoint(this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor())
     if (beginHeroDefense(unit, this.equippedItem)) {
       this.mouseHeld = true
     }
@@ -524,6 +553,7 @@ export class HeroController {
 
   stopKeyboardMove(): void {
     this.keysPressed.clear()
+    this.shiftMoveLockedDegree = null
   }
 
   cancelActiveInteraction(): void {

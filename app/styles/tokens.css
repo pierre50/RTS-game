@@ -1,71 +1,76 @@
 :root {
   /* =========================================================
-     KAELOR — RETRO COLORFUL DARK THEME
+     KAELOR — CLASSIC JRPG WINDOW THEME
      ========================================================= */
 
-  --main-primary-color: #02070d;
-  --form-surface-color: #071727;
+  --main-primary-color: #111735;
+  --form-surface-color: #202a55;
 
   --main-border-radius: 0px;
   --main-border-radius-lg: 0px;
 
-  --main-text-color: #d7d3c7;
-  --main-accent-color: #d88135;
-  --main-accent-hover: #f0a24c;
+  --main-text-color: #f5f1dc;
+  --main-accent-color: #e7c66a;
+  --main-accent-hover: #fff0a8;
 
   /* Palette issue du décor */
-  --color-black-deep: #020102;
-  --color-black-blue: #030b14;
+  --color-black-deep: #050716;
+  --color-black-blue: #0c1028;
 
-  --color-blue-deep: #021d3e;
-  --color-blue-mid: #04325d;
-  --color-blue-bright: #13619c;
-  --color-cyan: #317ec1;
+  --color-blue-deep: #111735;
+  --color-blue-mid: #202a55;
+  --color-blue-bright: #5366a8;
+  --color-cyan: #9aa7d9;
 
-  --color-orange-dark: #543125;
-  --color-orange: #98502f;
-  --color-orange-bright: #d88135;
+  --color-orange-dark: #806039;
+  --color-orange: #b89048;
+  --color-orange-bright: #e7c66a;
 
-  --color-magenta: #9b3558;
-  --color-stone-muted: #605047;
+  --color-magenta: #8f5ba8;
+  --color-stone-muted: #6d7190;
+  --color-moss-dark: #253858;
+  --color-moss: #4f7d79;
+  --color-parchment: #f5f1dc;
+  --color-bronze: #b89048;
+  --color-gold-aged: #e7c66a;
 
   /* Bordures très contrastées */
-  --border-light-color: #29426e;
-  --border-top-color: #d88135;
-  --border-side-color: #13619c;
-  --border-bottom-color: #04325d;
-  --border-dark-color: #010407;
+  --border-light-color: #cfd8ff;
+  --border-top-color: #ffffff;
+  --border-side-color: #8d9be0;
+  --border-bottom-color: #31385f;
+  --border-dark-color: #050716;
 
   --border-btn: 2px solid var(--border-light-color);
-  --border-slot: 2px solid #04325d;
-  --panel-border: 2px solid #04325d;
+  --border-slot: 2px solid #31385f;
+  --panel-border: 2px solid #cfd8ff;
 
   --main-box-shadow:
-    4px 4px 0 #010204;
+    4px 4px 0 #050716;
 
   /* =========================================================
      CONSOLE
      ========================================================= */
 
-  --dev-console-ok-color: #89b78c;
-  --dev-console-error-color: #e06a58;
-  --dev-console-log-color: #b8c7cc;
+  --dev-console-ok-color: #9bdca8;
+  --dev-console-error-color: #ff8a72;
+  --dev-console-log-color: #d8def8;
 
   /* =========================================================
      MESSAGES
      ========================================================= */
 
-  --msg-color: #f06c5e;
-  --msg-bg: rgba(32, 5, 8, 0.96);
-  --msg-border: rgba(152, 45, 48, 0.75);
+  --msg-color: #ff9b84;
+  --msg-bg: rgba(24, 8, 18, 0.96);
+  --msg-border: rgba(205, 90, 96, 0.78);
 
-  --msg-success-color: #73cf8d;
-  --msg-success-bg: rgba(5, 28, 20, 0.96);
-  --msg-success-border: rgba(35, 126, 73, 0.75);
+  --msg-success-color: #a7e8b2;
+  --msg-success-bg: rgba(8, 28, 31, 0.96);
+  --msg-success-border: rgba(80, 165, 137, 0.75);
 
-  --msg-warning-color: #e6a14a;
-  --msg-warning-bg: rgba(35, 20, 5, 0.96);
-  --msg-warning-border: rgba(152, 80, 47, 0.8);
+  --msg-warning-color: #ffe08a;
+  --msg-warning-bg: rgba(40, 28, 8, 0.96);
+  --msg-warning-border: rgba(214, 169, 74, 0.8);
 
   --msg-padding: 8px 20px;
   --msg-font-size: var(--font-size-base);
@@ -74,21 +79,21 @@
   --msg-sheen: none;
 
   --msg-inset-shadow:
-    inset 0 1px 0 rgba(216, 129, 53, 0.55),
-    inset 0 -1px 0 rgba(19, 97, 156, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(49, 56, 95, 0.9);
 
   /* =========================================================
      TYPOGRAPHIE
      ========================================================= */
 
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 20px;
-  --font-size-title: 30px;
-  --font-size-display: 38px;
-  --font-size-hero: 54px;
-  --font-size-home-button: 20px;
-  --font-size-section-title: 16px;
+  --font-size-sm: 15px;
+  --font-size-base: 17px;
+  --font-size-lg: 21px;
+  --font-size-title: 28px;
+  --font-size-display: 36px;
+  --font-size-hero: 50px;
+  --font-size-home-button: var(--font-size-lg);
+  --font-size-section-title: var(--font-size-base);
 
   --font-family-ui:
     'm6x11',
@@ -102,9 +107,9 @@
     'cobblestone',
     var(--font-family-ui);
 
-  --text-color-inverse: #e1ddd0;
+  --text-color-inverse: #f5f1dc;
   --text-color-white: #ffffff;
-  --text-color-danger: #e85d4f;
+  --text-color-danger: #ff8a72;
 
   --text-shadow-light-ui:
     2px 2px 0 #000000;
@@ -119,43 +124,43 @@
      SURFACES
      ========================================================= */
 
-  --surface-dark-weak: rgba(0, 5, 12, 0.42);
-  --surface-dark-soft: rgba(0, 4, 10, 0.62);
-  --surface-dark-medium: rgba(0, 3, 8, 0.72);
-  --surface-dark-strong: rgba(0, 2, 6, 0.82);
-  --surface-dark-heavy: rgba(0, 1, 4, 0.92);
+  --surface-dark-weak: rgba(17, 23, 53, 0.42);
+  --surface-dark-soft: rgba(12, 16, 40, 0.66);
+  --surface-dark-medium: rgba(9, 12, 31, 0.76);
+  --surface-dark-strong: rgba(7, 10, 24, 0.86);
+  --surface-dark-heavy: rgba(5, 7, 18, 0.94);
 
-  --surface-dark-solid: #03090f;
+  --surface-dark-solid: #111735;
 
-  --surface-black-soft: rgba(0, 0, 0, 0.58);
-  --surface-black-solid: #010204;
-  --surface-black-light: rgba(0, 0, 0, 0.72);
+  --surface-black-soft: rgba(5, 7, 18, 0.62);
+  --surface-black-solid: #050716;
+  --surface-black-light: rgba(5, 7, 18, 0.76);
 
-  --surface-white-faint: rgba(120, 190, 220, 0.035);
+  --surface-white-faint: rgba(255, 255, 255, 0.055);
 
-  --surface-row-subtle: rgba(19, 97, 156, 0.07);
-  --surface-row-dark: rgba(0, 0, 0, 0.42);
+  --surface-row-subtle: rgba(154, 167, 217, 0.1);
+  --surface-row-dark: rgba(5, 7, 18, 0.46);
 
-  --border-row-subtle: rgba(49, 126, 193, 0.22);
-  --border-divider-subtle: rgba(19, 97, 156, 0.16);
+  --border-row-subtle: rgba(207, 216, 255, 0.2);
+  --border-divider-subtle: rgba(207, 216, 255, 0.16);
 
   /* =========================================================
      MENU
      ========================================================= */
 
-  --menu-backdrop-start: rgba(2, 20, 39, 0.82);
-  --menu-backdrop-end: rgba(1, 3, 7, 0.97);
-  --menu-backdrop-glow: rgba(19, 97, 156, 0.14);
+  --menu-backdrop-start: rgba(17, 23, 53, 0.82);
+  --menu-backdrop-end: rgba(5, 7, 18, 0.98);
+  --menu-backdrop-glow: rgba(154, 167, 217, 0.16);
 
   --menu-backdrop:
     radial-gradient(
       circle at 50% 25%,
-      rgba(49, 126, 193, 0.11),
+      rgba(154, 167, 217, 0.12),
       transparent 45%
     ),
     radial-gradient(
       circle at 50% 90%,
-      rgba(216, 129, 53, 0.08),
+      rgba(231, 198, 106, 0.08),
       transparent 40%
     ),
     linear-gradient(
@@ -166,30 +171,30 @@
 
   --menu-title-shadow: rgba(0, 0, 0, 0.92);
 
-  --home-button-bg: #061522;
-  --home-button-focus-color: #e4903d;
+  --home-button-bg: #202a55;
+  --home-button-focus-color: #fff0a8;
   --home-button-focus-scale: 1;
 
   /* =========================================================
      ORIENTATION
      ========================================================= */
 
-  --orientation-guard-glow: rgba(19, 97, 156, 0.1);
-  --orientation-guard-backdrop: rgba(1, 4, 8, 0.97);
+  --orientation-guard-glow: rgba(154, 167, 217, 0.1);
+  --orientation-guard-backdrop: rgba(5, 7, 18, 0.97);
 
   /* =========================================================
      STATUS
      ========================================================= */
 
-  --status-health-border: #160204;
-  --status-health-top: #b6422e;
-  --status-health-bottom: #641810;
-  --status-health-highlight: rgba(255, 139, 104, 0.22);
+  --status-health-border: #190712;
+  --status-health-top: #d85e62;
+  --status-health-bottom: #84263e;
+  --status-health-highlight: rgba(255, 180, 168, 0.22);
   --status-health-shadow: rgba(0, 0, 0, 0.68);
 
-  --status-progress-top: #31926a;
-  --status-progress-bottom: #15553e;
-  --status-progress-highlight: rgba(153, 255, 212, 0.18);
+  --status-progress-top: #68b891;
+  --status-progress-bottom: #286b63;
+  --status-progress-highlight: rgba(178, 255, 229, 0.18);
   --status-progress-shadow: rgba(0, 0, 0, 0.62);
 
   --status-health-background:
@@ -275,53 +280,53 @@
   --ui-button-sheen: none;
 
   --ui-inset-shadow:
-    inset 0 2px 0 #010204,
-    inset 2px 0 0 #01060c,
-    inset -2px 0 0 #061b2b,
-    inset 0 -2px 0 #04325d;
+    inset 0 2px 0 #050716,
+    inset 2px 0 0 #0c1028,
+    inset -2px 0 0 #31385f,
+    inset 0 -2px 0 #5366a8;
 
   /*
-   * Orange en haut, noir sur les côtés, bleu vif en bas.
+   * Liseré clair façon fenêtre JRPG, sombre en bas pour le relief.
    * Le contraste est volontairement dur.
    */
   --ui-outset-shadow:
-    inset 0 2px 0 #98502f,
-    inset 2px 0 0 #03090f,
-    inset -2px 0 0 #021d3e,
-    inset 0 -2px 0 #13619c;
+    inset 0 2px 0 #ffffff,
+    inset 2px 0 0 #8d9be0,
+    inset -2px 0 0 #31385f,
+    inset 0 -2px 0 #050716;
 
   --ui-button-shadow-raised:
-    inset 0 2px 0 #d88135,
-    inset 2px 0 0 #03090f,
-    inset -2px 0 0 #021d3e,
-    inset 0 -2px 0 #13619c,
-    4px 4px 0 #010102;
+    inset 0 2px 0 #ffffff,
+    inset 2px 0 0 #8d9be0,
+    inset -2px 0 0 #31385f,
+    inset 0 -2px 0 #050716,
+    4px 4px 0 #050716;
 
   --ui-button-shadow-pressed:
-    inset 0 2px 0 #000000,
-    inset 2px 0 0 #000000,
-    inset -2px 0 0 #031226,
-    inset 0 -2px 0 #98502f;
+    inset 0 2px 0 #050716,
+    inset 2px 0 0 #050716,
+    inset -2px 0 0 #31385f,
+    inset 0 -2px 0 #cfd8ff;
 
   --ui-scrollbar-active-shadow:
-    inset 0 2px 0 #000000,
-    inset 2px 0 0 #000000,
-    inset -1px 0 0 #021d3e,
-    inset 0 -1px 0 #13619c;
+    inset 0 2px 0 #050716,
+    inset 2px 0 0 #050716,
+    inset -1px 0 0 #31385f,
+    inset 0 -1px 0 #cfd8ff;
 
   /* =========================================================
      BARS / SLOTS
      ========================================================= */
 
-  --ui-bar-bg: #061421;
+  --ui-bar-bg: #202a55;
 
   --ui-bar-border:
-    2px solid #04325d;
+    2px solid #cfd8ff;
 
   --ui-slot-border:
-    2px solid #021d3e;
+    2px solid #31385f;
 
-  --ui-text-color: #d7d3c7;
+  --ui-text-color: #f5f1dc;
 
   --ui-text-shadow:
     2px 2px 0 #000000;
@@ -329,17 +334,17 @@
   --ui-plain-text-shadow:
     2px 2px 0 #000000;
 
-  --ui-map-shadow-dark: #000204;
-  --ui-map-shadow-light: rgba(49, 126, 193, 0.22);
+  --ui-map-shadow-dark: #050716;
+  --ui-map-shadow-light: rgba(207, 216, 255, 0.18);
 
-  --focus-outline-color: rgba(216, 129, 53, 0.95);
+  --focus-outline-color: rgba(255, 240, 168, 0.95);
 
   /* =========================================================
      DEBUG
      ========================================================= */
 
-  --debug-overlay-bg: rgba(2, 8, 14, 0.97);
-  --debug-overlay-border: rgba(19, 97, 156, 0.3);
+  --debug-overlay-bg: rgba(5, 7, 18, 0.97);
+  --debug-overlay-border: rgba(207, 216, 255, 0.28);
 
   --debug-overlay-shadow:
     4px 4px 0 #000000;

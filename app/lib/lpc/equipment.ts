@@ -92,10 +92,6 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly DynamicEquipmentKey[]>> = 
   [UNIT_TYPES.longSwordsman]: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.improvedBowman]: ['quiver', 'bow_great'],
   [UNIT_TYPES.compositeBowman]: ['quiver', 'bow_recurve'],
-  [UNIT_TYPES.hoplite]: ['halberd'],
-  Phalanx: ['halberd'],
-  Centurion: ['halberd'],
-  Legion: ['round_shield_silver_slash', 'longsword'],
   [UNIT_TYPES.priest]: ['cane'],
 }
 

@@ -108,6 +108,7 @@ function loadControls() {
       instanceContactInstance: () => true,
     },
     '../lib/settings': {
+      DISPLAY_SCALE: 1,
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: evt => {
         if (evt.key === 'z') return 'heroUp'
@@ -121,6 +122,18 @@ function loadControls() {
       setHeroGameCursorEnabled: () => {},
       setVirtualCursorVisible: () => {},
       setVirtualCursorPosition: () => {},
+    },
+    '../lib/heroActionRange': {
+      isHeroInteractionTargetReachable: () => true,
+    },
+    '../lib/heroTools': {
+      findFacingEntity: () => null,
+    },
+    '../lib/npcInteraction': {
+      isTalkableNpc: () => false,
+    },
+    '../lib/npcChatter': {
+      pickNpcChatterLine: () => '',
     },
     '../constants': {
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },

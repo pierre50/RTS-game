@@ -12,7 +12,7 @@ import {
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
-import type { AnimalEntity, UnitSounds } from '../../types/entities'
+import type { AnimalEntity, EntityInfoRenderOptions, UnitSounds } from '../../types/entities'
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
@@ -145,9 +145,9 @@ export class Animal extends Instance implements AnimalEntity {
     }
 
     this.interface = {
-      info: (element: HTMLElement) => {
+      info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
         const data = this.owner.config.animals?.[this.type]
-        if (data) this.setDefaultInterface(element, data)
+        if (data) this.setDefaultInterface(element, data, options)
       },
     }
 
@@ -230,8 +230,8 @@ export class Animal extends Instance implements AnimalEntity {
     )
   }
 
-  setDefaultInterface(element: HTMLElement, data: AnimalConfig): void {
-    return this.animalInterface.setDefaultInterface(element, data)
+  setDefaultInterface(element: HTMLElement, data: AnimalConfig, options?: EntityInfoRenderOptions): void {
+    return this.animalInterface.setDefaultInterface(element, data, options)
   }
 
   createShadow(): AnimalShadow {

@@ -49,8 +49,8 @@ class AnimalSheet:
 # Source rows are 0=front(south/toward-camera), 1=back(north/away), 2=left,
 # 3=right. Output order must be north/west/south (see THREE_DIRECTION_ORDER in
 # app/lib/extra.ts), so row_order is (1, 2, 0). Row 3 (right) is dropped since
-# the runtime mirrors the left frames for east-facing sprites. Dying/corpse
-# keep only the front-facing row.
+# the runtime mirrors the left frames for east-facing sprites. Dying keeps only
+# the front-facing row; corpse sprites reuse its last frame at runtime.
 #
 # row_y_shift exists for source art whose feet baseline isn't consistent across
 # rows (some rows sitting a few pixels higher within the frame than others,
@@ -62,7 +62,6 @@ DEER_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Deer_Walk-2x.png", "walking", 6, (1, 2, 0)),
     AnimalSheet("Deer_Run-2x.png", "running", 6, (1, 2, 0)),
     AnimalSheet("Deer_Death-2x.png", "dying", 5, (0,)),
-    AnimalSheet("Deer_Death-2x.png", "corpse", 5, (0,), frame_indices=(4,), animation_speed=0),
 )
 
 
@@ -72,7 +71,6 @@ HARE_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Hare_Walk-2x.png", "walking", 5, (1, 2, 0)),
     AnimalSheet("Hare_Run-2x.png", "running", 6, (1, 2, 0)),
     AnimalSheet("Hare_Death-2x.png", "dying", 4, (0,)),
-    AnimalSheet("Hare_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
@@ -86,7 +84,6 @@ BOAR_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Boar_Run-2x.png", "running", 5, (1, 2, 0)),
     AnimalSheet("Boar_Attack-2x.png", "action", 5, (1, 2, 0)),
     AnimalSheet("Boar_Death-2x.png", "dying", 4, (0,)),
-    AnimalSheet("Boar_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
@@ -99,7 +96,6 @@ BLACK_GROUSE_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Black_grouse_Walk-2x.png", "walking", 6, (1, 2, 0)),
     AnimalSheet("Black_grouse_Flight-2x.png", "flying", 6, (1, 2, 0)),
     AnimalSheet("Black_grouse_Death-2x.png", "dying", 4, (0,)),
-    AnimalSheet("Black_grouse_Death-2x.png", "corpse", 4, (0,), frame_indices=(3,), animation_speed=0),
 )
 
 
@@ -111,14 +107,6 @@ FOX_SHEETS: tuple[AnimalSheet, ...] = (
     AnimalSheet("Fox_walk.png", "walking", 6, (1, 2, 0)),
     AnimalSheet("Fox_Run.png", "running", 6, (1, 3, 0)),
     AnimalSheet("Fox_Death.png", "dying", 4, (0,)),
-    AnimalSheet(
-        "Fox_Death.png",
-        "corpse",
-        4,
-        (0,),
-        frame_indices=(3,),
-        animation_speed=0,
-    ),
 )
 
 HORSE_SHEETS: tuple[AnimalSheet, ...] = (

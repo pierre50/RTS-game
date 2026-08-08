@@ -214,8 +214,10 @@ export class UnitActions {
       : { minChants: BASE_CONVERSION_MIN_CHANTS, chance: BASE_CONVERSION_CHANCE }
   }
 
-  convertTarget(target: RuntimeEntity): boolean {
+  convertTarget(target: RuntimeEntity, options: { grantXp?: boolean; stopConverter?: boolean } = {}): boolean {
     const unit = this.unit
+    const grantXpOnSuccess = options.grantXp ?? true
+    const stopConverter = options.stopConverter ?? true
     const menu = unit.context?.menu
     const player = unit.owner
     if (!isConvertibleEntity(target)) return false
@@ -287,8 +289,8 @@ export class UnitActions {
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
     if (newOwner.isPlayed) menu?.updateTopbar()
-    grantUnitXp(unit, XP_CATEGORIES.healing, XP_CONVERT_SUCCESS)
-    unit.stop?.()
+    if (grantXpOnSuccess) grantUnitXp(unit, XP_CATEGORIES.healing, XP_CONVERT_SUCCESS)
+    if (stopConverter) unit.stop?.()
     return true
   }
 

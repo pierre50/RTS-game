@@ -42,6 +42,10 @@ type UnitPreviewConfig = {
   }
 }
 
+function applyTextureAnchor(sprite: Sprite, texture: Texture): void {
+  if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
+}
+
 export class EditorEntityPreview {
   controls: EditorPreviewControls
   container: Container | null
@@ -152,8 +156,10 @@ export class EditorEntityPreview {
   _buildBuildingContainer(owner: PlacementOwner, type: string): Container {
     if (type === BUILDING_TYPES.smallWall) {
       const container = new Container()
-      const sprite = Sprite.from(getWallTexture(owner, 2))
+      const texture = getWallTexture(owner, 2)
+      const sprite = Sprite.from(texture)
       sprite.label = LABEL_TYPES.sprite
+      applyTextureAnchor(sprite, texture)
       container.addChild(sprite)
       return container
     }
@@ -164,6 +170,7 @@ export class EditorEntityPreview {
 
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
+    applyTextureAnchor(sprite, texture)
     container.addChild(sprite)
 
     changeSpriteColor(sprite as RecolorableSprite, owner.color ?? '')
@@ -181,6 +188,7 @@ export class EditorEntityPreview {
     const container = new Container()
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
+    applyTextureAnchor(sprite, texture)
     changeSpriteColor(sprite as RecolorableSprite, owner.color ?? '')
     container.addChild(sprite)
     return container
@@ -200,6 +208,7 @@ export class EditorEntityPreview {
     const container = new Container()
     const sprite = Sprite.from(texture)
     sprite.label = LABEL_TYPES.sprite
+    applyTextureAnchor(sprite, texture)
     container.addChild(sprite)
     return container
   }

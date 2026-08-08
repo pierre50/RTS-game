@@ -25,13 +25,17 @@ export class AnimalCombat {
     this.animal = animal
   }
 
+  getAttackMovementSheet(): string {
+    return this.animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking
+  }
+
   getReaction(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
     if (animal.strategy === 'runaway') {
       animal.runaway(instance, hitDirection)
     } else {
       showAggressionFeedback(animal)
-      animal.sendTo(instance, ACTION_TYPES.attack)
+      animal.sendTo(instance, ACTION_TYPES.attack, { movementSheet: this.getAttackMovementSheet() })
     }
   }
 
@@ -57,7 +61,7 @@ export class AnimalCombat {
         showAlertThenAggressionFeedback(animal, () => {
           if (animal.isDead || animal.isDestroyed || animal.path.length || animal.dest) return
           if (!animal.getActionCondition(instance, ACTION_TYPES.attack)) return
-          animal.sendTo(instance, ACTION_TYPES.attack)
+          animal.sendTo(instance, ACTION_TYPES.attack, { movementSheet: this.getAttackMovementSheet() })
         })
       }
     }
@@ -199,7 +203,10 @@ export class AnimalCombat {
             animal.setTextures(SHEET_TYPES.action)
           }
           if (!instanceContactInstance(animal, target)) {
-            animal.sendTo(target, ACTION_TYPES.attack, { forceRepath: true })
+            animal.sendTo(target, ACTION_TYPES.attack, {
+              forceRepath: true,
+              movementSheet: this.getAttackMovementSheet(),
+            })
             return
           }
           animal.sounds &&

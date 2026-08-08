@@ -36,20 +36,20 @@ test('Stable trains only unmounted matching military units into mounted units', 
   const owner = {}
   const stable = {
     type: 'Stable',
-    units: ['Clubman', 'Phalanx'],
+    units: ['Clubman', 'Bowman'],
     owner,
     isBuilt: true,
     isDead: false,
   }
   const clubman = { type: 'Clubman', owner }
-  const phalanx = { type: 'Phalanx', owner }
+  const bowman = { type: 'Bowman', owner }
   const mountedClubman = { type: 'Clubman', mountedOnHorse: true, owner }
   const villager = { type: 'Villager', owner }
 
   assert.equal(canUnitTrainInto(stable, clubman, 'Clubman'), true)
   assert.equal(getTrainingTargetForUnit(stable, clubman), 'Clubman')
-  assert.equal(canUnitTrainInto(stable, phalanx, 'Phalanx'), true)
-  assert.equal(getTrainingTargetForUnit(stable, phalanx), 'Phalanx')
+  assert.equal(canUnitTrainInto(stable, bowman, 'Bowman'), true)
+  assert.equal(getTrainingTargetForUnit(stable, bowman), 'Bowman')
   assert.equal(canUnitTrainInto(stable, mountedClubman, 'Clubman'), false)
   assert.equal(getTrainingTargetForUnit(stable, mountedClubman), null)
   assert.equal(canUnitTrainInto(stable, villager, 'Clubman'), false)

@@ -16,7 +16,6 @@ import {
   MAX_BUILDING_BY_AGE,
   MAX_BUILDING_BY_AGE_FROZEN,
   MAX_CAVALRY_BY_AGE,
-  MAX_HOPLITE_BY_AGE,
   MAX_INFANTRY_BY_AGE,
   MAX_VILLAGER_PER_AGE,
   NEXT_AGE,
@@ -73,7 +72,6 @@ export class AIStrategy {
   maxInfantryByAge: AgeMap<number>
   maxArcherByAge: AgeMap<number>
   maxCavalryByAge: AgeMap<number>
-  maxHopliteByAge: AgeMap<number>
   techPriorityByBuilding: Record<string, string[]>
   military: AIMilitary
 
@@ -89,7 +87,6 @@ export class AIStrategy {
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
     this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
-    this.maxHopliteByAge = MAX_HOPLITE_BY_AGE
     this.techPriorityByBuilding = TECH_PRIORITY_BY_BUILDING
     this.military = new AIMilitary(ai, this)
   }
@@ -103,7 +100,6 @@ export class AIStrategy {
     target.maxInfantryByAge = this.maxInfantryByAge
     target.maxArcherByAge = this.maxArcherByAge
     target.maxCavalryByAge = this.maxCavalryByAge
-    target.maxHopliteByAge = this.maxHopliteByAge
     target.techPriorityByBuilding = this.techPriorityByBuilding
   }
 
@@ -200,10 +196,7 @@ export class AIStrategy {
       (building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed
     )
     const totalMilitary =
-      (snapshot?.infantry?.length || 0) +
-      (snapshot?.archers?.length || 0) +
-      (snapshot?.cavalry?.length || 0) +
-      (snapshot?.hoplites?.length || 0)
+      (snapshot?.infantry?.length || 0) + (snapshot?.archers?.length || 0) + (snapshot?.cavalry?.length || 0)
     const militaryProductionBuildings =
       archeryRanges.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
         .length +

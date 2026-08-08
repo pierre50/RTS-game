@@ -9,6 +9,8 @@ export const DEFAULT_UNIT_TOTAL_ENERGY = 10
 export const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
 export const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650
 export const NPC_ATTACK_RETREAT_DISTANCE = 96
+export const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
+export const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
 
 const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.attack]: 2,
@@ -104,6 +106,16 @@ export function updateUnitEnergy(unit: UnitEntity, elapsedMs = STEP_TIME): void 
 export function isUnitEnergyFull(unit: UnitEntity): boolean {
   ensureUnitEnergy(unit)
   return (unit.energy ?? 0) >= (unit.totalEnergy ?? 0)
+}
+
+export function getEnergyMoveSpeedMultiplier(unit: UnitEntity): number {
+  if (unit.mountedOnHorse) return 1
+  const totalEnergy = unit.totalEnergy ?? 0
+  if (totalEnergy <= 0 || unit.energy == null) return 1
+  const energyRatio = Math.max(0, Math.min(1, unit.energy / totalEnergy))
+  if (energyRatio >= LOW_ENERGY_MOVE_PENALTY_THRESHOLD) return 1
+  const fatigueRatio = energyRatio / LOW_ENERGY_MOVE_PENALTY_THRESHOLD
+  return LOW_ENERGY_MOVE_MIN_MULTIPLIER + (1 - LOW_ENERGY_MOVE_MIN_MULTIPLIER) * fatigueRatio
 }
 
 function getEnergyWaitAction(unit: UnitEntity): string | null {

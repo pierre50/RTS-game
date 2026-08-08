@@ -52,7 +52,6 @@ function loadAIStrategy() {
         MAX_ARCHER_BY_AGE: {},
         MAX_BUILDING_BY_AGE: {},
         MAX_CAVALRY_BY_AGE: {},
-        MAX_HOPLITE_BY_AGE: {},
         MAX_INFANTRY_BY_AGE: {},
         MAX_VILLAGER_PER_AGE: {},
         NEXT_AGE: {},
@@ -100,8 +99,6 @@ test('ai production does not train villagers without a living chief', () => {
     maxArcher: 0,
     archeryRanges: [],
     archerUnit: 'Bowman',
-    hoplites: [],
-    maxHoplite: 0,
     academies: [],
   })
 
@@ -136,8 +133,6 @@ test('ai production trains villagers again when a chief is alive', () => {
     maxArcher: 0,
     archeryRanges: [],
     archerUnit: 'Bowman',
-    hoplites: [],
-    maxHoplite: 0,
     academies: [],
   })
 

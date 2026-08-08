@@ -107,6 +107,7 @@ function createMovement(animalOverrides = {}) {
     ...animalOverrides,
   }
   const lib = {
+    cartesianToIsometric: (i, j) => [i * 10, j * 10],
     degreeToDirection: () => 'south',
     getInstanceClosestFreeCellPath: () => [grid[6][6]],
     getInstanceDegree: () => 0,
