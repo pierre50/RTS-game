@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_buildings_age-0_wall_level-1.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.7073170731707317
       }
     },
-    "001.png": {
+    "001_graphics_buildings_age-0_wall_level-1.png": {
       "frame": {
         "x": 48,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.7619047619047619
       }
     },
-    "002.png": {
+    "002_graphics_buildings_age-0_wall_level-1.png": {
       "frame": {
         "x": 95,
         "y": 0,

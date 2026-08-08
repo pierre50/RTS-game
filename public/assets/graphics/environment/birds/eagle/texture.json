@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.4666666666666667
       }
     },
-    "001.png": {
+    "001_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 49,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.4666666666666667
       }
     },
-    "002.png": {
+    "002_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 97,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.55
       }
     },
-    "003.png": {
+    "003_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 137,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6086956521739131
       }
     },
-    "004.png": {
+    "004_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 170,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.6666666666666666
       }
     },
-    "005.png": {
+    "005_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 197,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.6666666666666666
       }
     },
-    "006.png": {
+    "006_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 230,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.6956521739130435
       }
     },
-    "007.png": {
+    "007_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 270,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.6842105263157895
       }
     },
-    "008.png": {
+    "008_graphics_environment_birds_eagle.png": {
       "frame": {
         "x": 315,
         "y": 0,

@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.5365853658536586
       }
     },
-    "001.png": {
+    "001_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 110,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.5316455696202531
       }
     },
-    "002.png": {
+    "002_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 220,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.5324675324675324
       }
     },
-    "003.png": {
+    "003_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 325,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.4936708860759494
       }
     },
-    "004.png": {
+    "004_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 462,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.4868421052631579
       }
     },
-    "005.png": {
+    "005_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 596,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.4864864864864865
       }
     },
-    "006.png": {
+    "006_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 729,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.5797101449275363
       }
     },
-    "007.png": {
+    "007_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 862,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.5909090909090909
       }
     },
-    "008.png": {
+    "008_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 992,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.5873015873015873
       }
     },
-    "009.png": {
+    "009_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1121,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.5308641975308642
       }
     },
-    "010.png": {
+    "010_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1255,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.5316455696202531
       }
     },
-    "011.png": {
+    "011_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1386,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.5068493150684932
       }
     },
-    "012.png": {
+    "012_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1515,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.5915492957746479
       }
     },
-    "013.png": {
+    "013_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1625,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.6029411764705882
       }
     },
-    "014.png": {
+    "014_graphics_units_catapult_corpse.png": {
       "frame": {
         "x": 1731,
         "y": 0,

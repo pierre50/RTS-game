@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6052631578947368
       }
     },
-    "001.png": {
+    "001_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 53,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.6052631578947368
       }
     },
-    "002.png": {
+    "002_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 106,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.6052631578947368
       }
     },
-    "003.png": {
+    "003_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 159,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6052631578947368
       }
     },
-    "004.png": {
+    "004_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 212,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.6285714285714286
       }
     },
-    "005.png": {
+    "005_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 259,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.6285714285714286
       }
     },
-    "006.png": {
+    "006_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 307,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.6285714285714286
       }
     },
-    "007.png": {
+    "007_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 355,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.6285714285714286
       }
     },
-    "008.png": {
+    "008_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 403,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.6666666666666666
       }
     },
-    "009.png": {
+    "009_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 455,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.6666666666666666
       }
     },
-    "010.png": {
+    "010_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 507,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.6666666666666666
       }
     },
-    "011.png": {
+    "011_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 559,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.6666666666666666
       }
     },
-    "012.png": {
+    "012_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 611,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.6578947368421053
       }
     },
-    "013.png": {
+    "013_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 658,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.6578947368421053
       }
     },
-    "014.png": {
+    "014_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 706,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.6578947368421053
       }
     },
-    "015.png": {
+    "015_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 754,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.6578947368421053
       }
     },
-    "016.png": {
+    "016_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 802,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.6666666666666666
       }
     },
-    "017.png": {
+    "017_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 856,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0.6666666666666666
       }
     },
-    "018.png": {
+    "018_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 910,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0.6666666666666666
       }
     },
-    "019.png": {
+    "019_graphics_units_ballista_walking.png": {
       "frame": {
         "x": 964,
         "y": 0,

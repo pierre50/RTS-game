@@ -8,7 +8,17 @@ from typing import Iterable
 
 from PIL import Image
 
-from config import ANCHORS_BY_OUTPUT_SIZE, ANCHOR, DressItem, FRAME_SIZE, OUTPUT_SCALE, PALETTES, PLAYER_SHORTS, Sheet, UnitLook
+from config import (
+    ANCHORS_BY_OUTPUT_SIZE,
+    ANCHOR,
+    DressItem,
+    FRAME_SIZE,
+    OUTPUT_SCALE,
+    PALETTES,
+    PLAYER_SHORTS,
+    Sheet,
+    UnitLook,
+)
 from equipment import LayerSpec, equipment_layers
 
 
@@ -315,7 +325,7 @@ def write_sheet(
     for index, frame in enumerate(frames):
         x = index * frame_width
         atlas.alpha_composite(frame, (x, 0))
-        name = f"{index:03}.png"
+        name = frame_texture_name(output_dir, index)
         anchor = anchor_override or ANCHORS_BY_OUTPUT_SIZE.get(frame_height, ANCHOR)
         json_frames[name] = {
             "frame": {"x": x, "y": 0, "w": frame_width, "h": frame_height},
@@ -339,3 +349,15 @@ def write_sheet(
             data["animationSpeed"] = animation_speed
         json.dump(data, file, indent=2)
         file.write("\n")
+
+
+def frame_texture_name(output_dir: Path, index: int) -> str:
+    parts = output_dir.parts
+    relative_parts = parts[-1:]
+    for part_index in range(len(parts) - 1):
+        if parts[part_index] == "public" and parts[part_index + 1] == "assets":
+            relative_parts = parts[part_index + 2 :]
+            break
+    suffix = "_".join(relative_parts)
+    suffix = "".join(char if char.isalnum() or char in "-_" else "-" for char in suffix)
+    return f"{index:03}_{suffix}.png" if suffix else f"{index:03}.png"

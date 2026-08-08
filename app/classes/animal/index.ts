@@ -41,6 +41,10 @@ export const FLYING_ALTITUDE = 20
 const LANDING_STEPS = 8
 const LANDING_STEP_MS = 40
 
+function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
+  return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
+}
+
 function numberCoordinate(value: unknown): number | undefined {
   return typeof value === 'number' ? value : undefined
 }
@@ -117,9 +121,9 @@ export class Animal extends Instance implements AnimalEntity {
     this.altitude = 0
     this.reliefLift = 0
 
-    Object.assign(this, options)
+    this.assignProperties(options)
     const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
-    Object.assign(this, animalConfig)
+    this.assignProperties(animalConfig)
     this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 
     this.size = 1
@@ -141,7 +145,7 @@ export class Animal extends Instance implements AnimalEntity {
     map.addToInstanceBucket(this)
 
     for (const [key, value] of Object.entries(this.assets)) {
-      Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
+      Object.assign(this, { [key]: getCachedSpritesheet(value) })
     }
 
     this.interface = {

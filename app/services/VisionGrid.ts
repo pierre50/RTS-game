@@ -101,6 +101,27 @@ export class VisionGrid {
     return true
   }
 
+  removeViewerEverywhere(instance: VisionViewer): number[] {
+    const changed: number[] = []
+    for (const [index, viewers] of this.visibleBy) {
+      if (!viewers.delete(instance)) continue
+      this.visibleCount[index] = viewers.size
+      if (!viewers.size) this.visibleBy.delete(index)
+      changed.push(index)
+    }
+    return changed
+  }
+
+  clearVisibility(): void {
+    this.visibleBy.clear()
+    this.visibleCount.fill(0)
+  }
+
+  clearExploration(): void {
+    this.explored.fill(0)
+    this.knownOccupants.clear()
+  }
+
   hasViewer(i: number, j: number, instance: VisionViewer): boolean {
     return this.inBounds(i, j) && (this.visibleBy.get(this.index(i, j))?.has(instance) ?? false)
   }

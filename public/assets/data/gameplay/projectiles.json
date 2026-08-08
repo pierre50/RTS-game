@@ -8,7 +8,7 @@
   },
   "Arrow": {
     "size": 3,
-    "speed": 14,
+    "speed": 18,
     "sounds": {
       "launch": [
         "archer-attack",

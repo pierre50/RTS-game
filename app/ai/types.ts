@@ -59,8 +59,7 @@ export type AIEntityLike = {
   visible?: boolean
   z?: number | null
   zIndex?: number
-  meleeAttack?: number
-  pierceAttack?: number
+  equipment?: string[]
   range?: number
   speed?: number
   strategy?: string
@@ -108,8 +107,7 @@ export type AIBuildingLike = AIEntityLike & {
 export type AIEntityConfig = Record<string, ConfigValue | AIResourceAmount | undefined> & {
   cost?: AIResourceAmount
   totalHitPoints?: number
-  meleeAttack?: number
-  pierceAttack?: number
+  equipment?: string[]
   range?: number
   speed?: number
   meleeArmor?: number
@@ -184,6 +182,7 @@ export type AIStrategyPlayerLike = {
   config: {
     units: Record<string, AIEntityConfig>
     buildings: Record<string, AIEntityConfig>
+    equipment?: Record<string, AIEntityConfig>
   }
   techs: Record<string, AITechConfig>
   units: AIEntityLike[]

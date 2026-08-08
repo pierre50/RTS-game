@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.98
       }
     },
-    "001.png": {
+    "001_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 25,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.98
       }
     },
-    "002.png": {
+    "002_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 50,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.98
       }
     },
-    "003.png": {
+    "003_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 75,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.98
       }
     },
-    "004.png": {
+    "004_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 100,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.98
       }
     },
-    "005.png": {
+    "005_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 125,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.98
       }
     },
-    "006.png": {
+    "006_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 150,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.9795918367346939
       }
     },
-    "007.png": {
+    "007_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 176,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.96
       }
     },
-    "008.png": {
+    "008_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 203,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.9795918367346939
       }
     },
-    "009.png": {
+    "009_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 230,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.9795918367346939
       }
     },
-    "010.png": {
+    "010_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 256,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.9795918367346939
       }
     },
-    "011.png": {
+    "011_graphics_ui_rally-point-flag.png": {
       "frame": {
         "x": 282,
         "y": 0,

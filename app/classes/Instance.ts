@@ -105,6 +105,22 @@ export class Instance extends Container {
     this.timeoutId = null
   }
 
+  protected assignProperties(source: object | null | undefined): void {
+    if (!source) return
+    for (const [key, value] of Object.entries(source)) {
+      if (key === 'name') {
+        Object.defineProperty(this, key, {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value,
+        })
+      } else {
+        ;(this as Record<string, unknown>)[key] = value
+      }
+    }
+  }
+
   syncSelectionMarkersToRelief(): void {
     const y = this.reliefLift ?? 0
     const selection = this.getChildByLabel(LABEL_TYPES.selection)

@@ -229,7 +229,7 @@
     "constructionTime": 80,
     "range": 6,
     "projectile": "Arrow",
-    "pierceAttack": 3,
+    "equipment": ["watch_tower_arrow"],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -267,7 +267,7 @@
     "constructionTime": 80,
     "range": 7,
     "projectile": "Arrow",
-    "pierceAttack": 4,
+    "equipment": ["sentry_tower_arrow"],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -461,7 +461,7 @@
     "constructionTime": 80,
     "range": 8,
     "projectile": "Arrow",
-    "pierceAttack": 6,
+    "equipment": ["guard_tower_arrow"],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -494,7 +494,7 @@
     "constructionTime": 80,
     "range": 8,
     "projectile": "Bolt",
-    "pierceAttack": 20,
+    "equipment": ["ballista_tower_bolt"],
     "rateOfFire": 3,
     "cost": {
       "stone": 150

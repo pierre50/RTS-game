@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_buildings_age-0_wall_dithered.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6666666666666666
       }
     },
-    "001.png": {
+    "001_graphics_buildings_age-0_wall_dithered.png": {
       "frame": {
         "x": 49,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.7105263157894737
       }
     },
-    "002.png": {
+    "002_graphics_buildings_age-0_wall_dithered.png": {
       "frame": {
         "x": 97,
         "y": 0,

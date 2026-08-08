@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6753246753246753
       }
     },
-    "001.png": {
+    "001_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 58,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.6753246753246753
       }
     },
-    "002.png": {
+    "002_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 116,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.6753246753246753
       }
     },
-    "003.png": {
+    "003_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 174,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6753246753246753
       }
     },
-    "004.png": {
+    "004_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 232,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.676056338028169
       }
     },
-    "005.png": {
+    "005_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 327,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.676056338028169
       }
     },
-    "006.png": {
+    "006_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 422,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.676056338028169
       }
     },
-    "007.png": {
+    "007_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 517,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.676056338028169
       }
     },
-    "008.png": {
+    "008_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 612,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.7454545454545455
       }
     },
-    "009.png": {
+    "009_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 707,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.7454545454545455
       }
     },
-    "010.png": {
+    "010_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 802,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.7454545454545455
       }
     },
-    "011.png": {
+    "011_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 897,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.7454545454545455
       }
     },
-    "012.png": {
+    "012_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 992,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.6818181818181818
       }
     },
-    "013.png": {
+    "013_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1087,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.6818181818181818
       }
     },
-    "014.png": {
+    "014_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1182,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.6818181818181818
       }
     },
-    "015.png": {
+    "015_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1277,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.6818181818181818
       }
     },
-    "016.png": {
+    "016_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1372,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.6865671641791045
       }
     },
-    "017.png": {
+    "017_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1431,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0.6865671641791045
       }
     },
-    "018.png": {
+    "018_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1490,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0.6865671641791045
       }
     },
-    "019.png": {
+    "019_graphics_units_catapult_walking.png": {
       "frame": {
         "x": 1549,
         "y": 0,

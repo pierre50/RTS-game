@@ -31,6 +31,7 @@ import {
   toggleResourcesVisibility,
   toggleSolidDebug,
   toggleTerrainFrameDebug,
+  teleportHeroToPortal,
   toggleVisionDebug,
 } from './DevCommandActions'
 import { toggleHeroCollisionDebug } from './actions/debug'
@@ -219,6 +220,14 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Toggle map resources visibility',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleResourcesVisibility(context, value),
+  })
+
+  registry.register({
+    name: 'portal',
+    aliases: ['tpportal'],
+    usage: 'portal',
+    describe: 'Teleport the hero next to the current world portal',
+    run: (_args, context) => teleportHeroToPortal(context),
   })
 
   registry.register({

@@ -106,12 +106,13 @@ function loadHeroTools(overrides = {}) {
         })[loadingType] ?? 'default',
     },
     './equipmentStats': {
+      UNARMED_UNIT_WEAPON_POWER: 0.5,
       getEquipmentCombatStats: equipment => {
-        const stats = { meleeAttack: 0, pierceAttack: 0, meleeArmor: 0, pierceArmor: 0 }
+        const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
-          if (item === 'longsword') stats.meleeAttack += 11
-          if (item === 'halberd') stats.meleeAttack += 17
-          if (item === 'bow') stats.pierceAttack += 4
+          if (item === 'longsword') stats.weaponPower += 11
+          if (item === 'halberd') stats.weaponPower += 17
+          if (item === 'bow') stats.weaponPower += 4
         }
         return stats
       },
@@ -1034,7 +1035,7 @@ for (const family of ['building', 'animal']) {
   })
 }
 
-test('sword uses fixed weapon damage even when the hero has no attack stat', () => {
+test('sword uses fixed weapon damage even when the hero has no damage stat', () => {
   const animal = {
     family: 'animal',
     hitPoints: 20,
@@ -1054,7 +1055,7 @@ test('sword uses fixed weapon damage even when the hero has no attack stat', () 
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
         target === animal &&
-        (source.meleeAttack ?? 0) > 0 &&
+        (source.equipment?.length ?? 0) > 0 &&
         source.owner?.isEnemy?.(target.owner) &&
         target.hitPoints > 0 &&
         !target.isDead,
@@ -1066,7 +1067,7 @@ test('sword uses fixed weapon damage even when the hero has no attack stat', () 
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
-    meleeAttack: 0,
+    equipment: [],
     owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
     isUnitAtDest: () => true,
     setDest: target => {

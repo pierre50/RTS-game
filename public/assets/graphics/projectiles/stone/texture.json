@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_projectiles_stone.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.36363636363636365
       }
     },
-    "001.png": {
+    "001_graphics_projectiles_stone.png": {
       "frame": {
         "x": 12,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.36363636363636365
       }
     },
-    "002.png": {
+    "002_graphics_projectiles_stone.png": {
       "frame": {
         "x": 24,
         "y": 0,

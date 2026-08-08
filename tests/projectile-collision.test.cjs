@@ -84,6 +84,7 @@ function loadProjectile(libOverrides = {}) {
     },
     '../lib/combatFeedback': { showDamageFeedback: () => {} },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
+    '../lib/equipmentStats': { getEntityWeaponPower: () => 0 },
     '../lib/settings': { getShadowsEnabled: () => false },
     '../lib/unitExperience': {
       getCombatXpBonus: () => 0,
@@ -220,7 +221,7 @@ test('onHit reports the spawn-to-target vector as the hit direction', () => {
     hitPoints: 10,
   }
   const projectile = new Projectile(
-    { owner, target, type: 'Arrow', destination: { x: target.x, y: target.y }, damage: 5 },
+    { owner, target, type: 'Arrow', destination: { x: target.x, y: target.y }, weaponPower: 5 },
     { app: {}, players: [], map: {}, scheduler: { add: () => null }, player: owner.owner }
   )
 

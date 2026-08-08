@@ -287,4 +287,3 @@ test('villager economy still permits distant hunting when no berries are known',
   assert.equal(actions, 1)
   assert.deepEqual(assignments, [animal])
 })
-

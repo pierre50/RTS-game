@@ -32,6 +32,10 @@ function createWorldId(world: SerializedSave, now: number): string {
   return `world-${String(seed).replace(/[^a-zA-Z0-9_-]/g, '-')}`
 }
 
+function worldEnvironment(world: SerializedSave): string | null {
+  return world.world?.environment ?? world.config?.environment ?? null
+}
+
 export function isCampaignSave(save: SaveRecord | unknown): save is CampaignSave {
   return Boolean(
     save &&
@@ -75,6 +79,7 @@ export function createInitialCampaignSave(
           id,
           name: worldName,
           color,
+          environment: worldEnvironment(worldState),
           parentId: null,
           children: [],
           discoveredAt: now,
@@ -121,6 +126,7 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
           ? {
               [campaign.currentWorldId]: {
                 ...node,
+                environment: worldEnvironment(state) ?? node.environment ?? null,
                 visitedAt: now,
               },
             }
@@ -190,6 +196,7 @@ export function addChildWorldToCampaign(
           id,
           name: existingNode?.name ?? worldName,
           color: existingNode?.color ?? color,
+          environment: worldEnvironment(childState) ?? existingNode?.environment ?? null,
           parentId: parentWorldId,
           children: existingNode?.children ?? [],
           discoveredAt: existingNode?.discoveredAt ?? now,

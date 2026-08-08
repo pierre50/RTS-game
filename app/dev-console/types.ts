@@ -74,11 +74,13 @@ type DevControlsLike = {
   updateVisibleCells?(): void
   cameraController?: {
     getViewportRect(): { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
+    set?(x: number, y: number, direct?: boolean): void
     visibleCells?: Set<RuntimeCell>
   }
   stopKeyboardMove?(): void
   isHeroControlActive?(): boolean
   freeCameraActive?: boolean
+  setCamera?(x: number, y: number, direct?: boolean): void
   setFreeCamera?(enabled: boolean): void
 }
 
@@ -150,6 +152,7 @@ export type DevEntity = RuntimeEntity & {
   name?: string
   totalHitPoints?: number
   path?: RuntimeCell[]
+  applyReliefLift?: (level: number, immediate?: boolean) => void
   die?: (immediate?: boolean) => void
 }
 

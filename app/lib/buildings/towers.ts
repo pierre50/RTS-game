@@ -23,7 +23,7 @@ export type TowerBuilding = {
   isBuilt?: boolean
   isDestroyed?: boolean
   owner: TowerOwner
-  pierceAttack?: number
+  equipment?: string[]
   projectile?: string
   range?: number
   rateOfFire?: number
@@ -64,7 +64,7 @@ function refreshTower(tower?: TowerBuilding | null): void {
   tower.sight = data.sight
   tower.range = data.range
   tower.projectile = data.projectile
-  tower.pierceAttack = data.pierceAttack
+  tower.equipment = data.equipment ? [...data.equipment] : undefined
   tower.rateOfFire = data.rateOfFire
   tower.totalHitPoints = data.totalHitPoints
   tower.hitPoints = Math.min(Math.round(ratio * data.totalHitPoints), data.totalHitPoints)

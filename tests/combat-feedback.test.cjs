@@ -85,3 +85,45 @@ test('alert-then-aggression feedback sequences emotes instead of stacking them',
   assert.deepEqual(addedTexts, ['!', '💢'])
   assert.equal(aggressionCallbacks, 1)
 })
+
+test('clearAllCombatFeedback removes active hit flashes without waiting for scheduler callbacks', () => {
+  const scheduler = {
+    elapsedMs: 0,
+    add: () => 1,
+    remove: () => {},
+    addOneShot: () => 1,
+  }
+  const originalFilters = [{ name: 'base' }]
+  const sprite = {
+    anchor: { y: 1 },
+    destroyed: false,
+    filters: originalFilters,
+    height: 40,
+  }
+  const target = {
+    family: 'unit',
+    context: { scheduler },
+    isDead: false,
+    isDestroyed: false,
+    sprite,
+    addChild: () => {},
+  }
+
+  const { clearAllCombatFeedback, showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+    'pixi.js': {
+      ColorMatrixFilter: class {},
+      Text: MockText,
+    },
+    '../constants': {
+      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
+    },
+    './maths': { getReliefOffset: () => 0 },
+  })
+
+  showDamageFeedback(target, 3)
+  assert.equal(sprite.filters.length, 2)
+
+  clearAllCombatFeedback()
+
+  assert.deepEqual(sprite.filters, originalFilters)
+})

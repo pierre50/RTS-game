@@ -115,9 +115,9 @@ export class Resource extends Instance implements ResourceEntity {
     this.windPhase = 0
     this.visualSettingsCleanup = null
 
-    Object.assign(this, options)
+    this.assignProperties(options)
     const config = getResourceConfig()
-    Object.assign(this, config.resources[this.type])
+    this.assignProperties(config.resources[this.type])
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints

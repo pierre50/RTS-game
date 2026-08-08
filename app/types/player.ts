@@ -13,6 +13,9 @@ export interface VisionGridLike {
   coordinates(index: number): [number, number]
   addViewer(i: number, j: number, viewer: VisionViewer): void
   removeViewer(i: number, j: number, viewer: VisionViewer): void
+  removeViewerEverywhere(viewer: VisionViewer): number[]
+  clearVisibility(): void
+  clearExploration(): void
   getViewers(i: number, j: number): ReadonlySet<VisionViewerRef>
   hasViewer(i: number, j: number, viewer: VisionViewer): boolean
   isViewed(i: number, j: number): boolean

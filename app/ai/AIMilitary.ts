@@ -1,5 +1,6 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint, getBuildingContactDistance } from '../lib'
+import { getEquipmentCombatStats, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipmentStats'
 import { BASE_TARGET_VALUE_BY_TYPE } from './config'
 import type { RuntimeCell } from '../types/map'
 import type {
@@ -102,8 +103,14 @@ export class AIMilitary {
     const totalHitPoints = instance.totalHitPoints || config.totalHitPoints || instance.hitPoints || 1
     const hitPoints = Math.max(0, instance.hitPoints || totalHitPoints)
     const hpRatio = hitPoints / Math.max(1, totalHitPoints)
-    const meleeAttack = instance.meleeAttack ?? config.meleeAttack ?? 0
-    const pierceAttack = instance.pierceAttack ?? config.pierceAttack ?? 0
+    const equipment = instance.equipment ?? (Array.isArray(config.equipment) ? config.equipment : [])
+    const configuredWeaponPower = getEquipmentCombatStats(equipment, this.ai.config.equipment).weaponPower
+    const weaponPower =
+      configuredWeaponPower > 0
+        ? configuredWeaponPower
+        : instance.family === FAMILY_TYPES.unit
+          ? UNARMED_UNIT_WEAPON_POWER
+          : 0
     const range = instance.range ?? config.range ?? 0
     const speed = instance.speed ?? config.speed ?? 0
     const meleeArmor = instance.meleeArmor ?? config.meleeArmor ?? 0
@@ -111,7 +118,7 @@ export class AIMilitary {
 
     let power = 0
     power += totalHitPoints / 18
-    power += (meleeAttack + pierceAttack * 1.2) * (1 + Math.min(range, 8) * 0.08)
+    power += weaponPower * (1 + Math.min(range, 8) * 0.08)
     power *= 1 + (meleeArmor + pierceArmor) * 0.04
     power *= 1 + Math.min(speed, 1.6) * 0.12
 

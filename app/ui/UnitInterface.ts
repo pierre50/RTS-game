@@ -1,11 +1,12 @@
 import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
+import type { EquipmentCombatStats } from '../lib/equipmentStats'
 import { formatXpProgressText, getHighestUnitLevel, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../types/entities'
-import type { EquipmentStats, UnitConfig } from '../types/config'
+import type { UnitConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
 
 export class UnitInterface {
@@ -74,9 +75,8 @@ export class UnitInterface {
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos: [keyof EquipmentStats, string][] = [
-      ['meleeAttack', '007_50731'],
-      ['pierceAttack', '006_50731'],
+    const infos: [keyof EquipmentCombatStats, string][] = [
+      ['weaponPower', '007_50731'],
       ['meleeArmor', '008_50731'],
       ['pierceArmor', '010_50731'],
     ]

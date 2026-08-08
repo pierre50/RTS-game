@@ -1,28 +1,76 @@
 {
   "frames": {
-    "000.png": {
-      "frame": { "x": 0, "y": 0, "w": 161, "h": 101 },
+    "000_graphics_buildings_construction_size-3.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
       "rotated": false,
       "trimmed": false,
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 161, "h": 101 },
-      "sourceSize": { "w": 161, "h": 101 },
-      "anchor": { "x": 0.409938, "y": 0.554455 }
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 101
+      },
+      "anchor": {
+        "x": 0.409938,
+        "y": 0.554455
+      }
     },
-    "001.png": {
-      "frame": { "x": 162, "y": 0, "w": 161, "h": 101 },
+    "001_graphics_buildings_construction_size-3.png": {
+      "frame": {
+        "x": 162,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
       "rotated": false,
       "trimmed": false,
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 161, "h": 101 },
-      "sourceSize": { "w": 161, "h": 101 },
-      "anchor": { "x": 0.409938, "y": 0.554455 }
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 101
+      },
+      "anchor": {
+        "x": 0.409938,
+        "y": 0.554455
+      }
     },
-    "002.png": {
-      "frame": { "x": 324, "y": 0, "w": 161, "h": 101 },
+    "002_graphics_buildings_construction_size-3.png": {
+      "frame": {
+        "x": 324,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
       "rotated": false,
       "trimmed": false,
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 161, "h": 101 },
-      "sourceSize": { "w": 161, "h": 101 },
-      "anchor": { "x": 0.409938, "y": 0.554455 }
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 161,
+        "h": 101
+      },
+      "sourceSize": {
+        "w": 161,
+        "h": 101
+      },
+      "anchor": {
+        "x": 0.409938,
+        "y": 0.554455
+      }
     }
   },
   "meta": {
@@ -30,7 +78,10 @@
     "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
-    "size": { "w": 485, "h": 101 },
+    "size": {
+      "w": 485,
+      "h": 101
+    },
     "scale": 1
   }
 }

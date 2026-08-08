@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": -715827809.6666666
       }
     },
-    "001.png": {
+    "001_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 4,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": -715827809.6666666
       }
     },
-    "002.png": {
+    "002_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 8,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": -715827809.6666666
       }
     },
-    "003.png": {
+    "003_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 12,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": -715827809.6666666
       }
     },
-    "004.png": {
+    "004_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 16,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": -715827809.6666666
       }
     },
-    "005.png": {
+    "005_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 20,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": -715827809.6666666
       }
     },
-    "006.png": {
+    "006_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 24,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": -715827809.6666666
       }
     },
-    "007.png": {
+    "007_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 28,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": -715827809.6666666
       }
     },
-    "008.png": {
+    "008_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 32,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": -715827809.6666666
       }
     },
-    "009.png": {
+    "009_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 36,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": -715827809.6666666
       }
     },
-    "010.png": {
+    "010_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 40,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": -715827809.6666666
       }
     },
-    "011.png": {
+    "011_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 44,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": -715827809.6666666
       }
     },
-    "012.png": {
+    "012_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 48,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.9655172413793104
       }
     },
-    "013.png": {
+    "013_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 68,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.9655172413793104
       }
     },
-    "014.png": {
+    "014_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 88,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.9655172413793104
       }
     },
-    "015.png": {
+    "015_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 108,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.9655172413793104
       }
     },
-    "016.png": {
+    "016_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 128,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.9655172413793104
       }
     },
-    "017.png": {
+    "017_graphics_buildings_age-0_wall_construction-flag.png": {
       "frame": {
         "x": 148,
         "y": 0,

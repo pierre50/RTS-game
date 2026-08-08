@@ -219,8 +219,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   showBuildings?: boolean
 
   // Combat
-  meleeAttack?: number
-  pierceAttack?: number
+  equipment?: string[]
   meleeArmor?: number
   pierceArmor?: number
   range?: number

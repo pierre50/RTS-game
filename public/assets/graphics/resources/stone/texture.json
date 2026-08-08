@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_resources_stone.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.5192307692
       }
     },
-    "001.png": {
+    "001_graphics_resources_stone.png": {
       "frame": {
         "x": 70,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.7115384616
       }
     },
-    "002.png": {
+    "002_graphics_resources_stone.png": {
       "frame": {
         "x": 140,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.6346153846
       }
     },
-    "003.png": {
+    "003_graphics_resources_stone.png": {
       "frame": {
         "x": 210,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6538461539
       }
     },
-    "004.png": {
+    "004_graphics_resources_stone.png": {
       "frame": {
         "x": 280,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.7115384616
       }
     },
-    "005.png": {
+    "005_graphics_resources_stone.png": {
       "frame": {
         "x": 350,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.5961538462
       }
     },
-    "006.png": {
+    "006_graphics_resources_stone.png": {
       "frame": {
         "x": 420,
         "y": 0,

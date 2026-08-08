@@ -475,6 +475,8 @@ export class Player implements PlayerLike {
           this.config.buildings[type] && updateObject(this.config.buildings[type], operation)
         } else if (Object.keys(this.config.units).includes(type)) {
           this.config.units[type] && updateObject(this.config.units[type], operation)
+        } else if (this.config.equipment && Object.keys(this.config.equipment).includes(type)) {
+          this.config.equipment[type] && updateObject(this.config.equipment[type], operation)
         }
       }
     }

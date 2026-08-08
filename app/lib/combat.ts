@@ -1,4 +1,5 @@
 import { BUCKET_SIZE, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from './equipmentStats'
 import { angleDelta, getPointsDegree } from './maths'
 import { canUpgradeUnitAtBuilding } from './unitUpgrades'
 import type { ConfigValue } from '../types/config'
@@ -15,11 +16,10 @@ export type CombatEntity = {
   isDestroyed?: boolean
   isUsedBy?: CombatEntity | null
   loading?: number | null
+  equipment?: string[]
   meleeArmor?: number
-  meleeAttack?: number
   owner?: PlayerLike | null
   pierceArmor?: number
-  pierceAttack?: number
   quantity?: number
   totalHitPoints?: number
   type?: string
@@ -52,7 +52,7 @@ export type ActionProps = {
 }
 
 function canAttack(source?: CombatEntity | null): boolean {
-  return Boolean(source && ((source.meleeAttack || 0) > 0 || (source.pierceAttack || 0) > 0))
+  return getEntityWeaponPower(source) > 0
 }
 
 export function isFriendlyTarget(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
@@ -110,10 +110,10 @@ function isSurrenderEligible(source: CombatEntity, attacker?: CombatEntity | nul
 
 function combatWeight(entity: CombatEntity): number {
   const hp = Math.max(0, entity.hitPoints ?? entity.totalHitPoints ?? 0)
-  const attack = Math.max(0, entity.meleeAttack ?? 0) + Math.max(0, entity.pierceAttack ?? 0)
+  const weaponPower = Math.max(0, getEntityWeaponPower(entity))
   const armor = Math.max(0, entity.meleeArmor ?? 0) + Math.max(0, entity.pierceArmor ?? 0)
   const buildingBias = entity.family === FAMILY_TYPES.building ? 1.35 : 1
-  return (hp + attack * 8 + armor * 4) * buildingBias
+  return (hp + weaponPower * 8 + armor * 4) * buildingBias
 }
 
 function belongsToSameSide(source: CombatEntity, target: CombatEntity): boolean {
@@ -237,11 +237,10 @@ function isVillagerOrHero(source?: CombatEntity | null): boolean {
 }
 
 function getDamage(source: CombatEntity, target: CombatEntity): number {
-  const meleeAttack = source.meleeAttack || 0
-  const pierceAttack = source.pierceAttack || 0
-  const meleeArmor = target.meleeArmor || 0
-  const pierceArmor = target.pierceArmor || 0
-  return Math.max(1, Math.max(0, meleeAttack - meleeArmor) + Math.max(0, pierceAttack - pierceArmor))
+  const weaponPower = getEntityWeaponPower(source)
+  const armor = Math.max(target.meleeArmor || 0, target.pierceArmor || 0)
+  const minimumDamage = weaponPower <= UNARMED_UNIT_WEAPON_POWER ? UNARMED_UNIT_WEAPON_POWER : 1
+  return Math.max(minimumDamage, weaponPower - armor)
 }
 
 // Hero defense only blocks what it's actually facing — a hit landing outside this frontal

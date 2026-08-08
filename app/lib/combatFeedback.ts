@@ -34,6 +34,7 @@ const ALERT_FEEDBACK_COOLDOWN_MS = 1200
 const EMOTE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_TO_AGGRESSION_DELAY_MS = 350
 const flashStates = new WeakMap<DamageSprite, FlashState>()
+const flashSprites = new Set<DamageSprite>()
 const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const aggressionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
@@ -76,6 +77,7 @@ function flashWhite(target: RuntimeEntity): void {
   flash.matrix = [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0]
 
   flashStates.set(sprite, { filters: originalFilters, token })
+  flashSprites.add(sprite)
   sprite.filters = [...(originalFilters ?? []), flash]
   scheduler.addOneShot(
     () => {
@@ -83,6 +85,7 @@ function flashWhite(target: RuntimeEntity): void {
       if (flashStates.get(sprite)?.token !== token) return
       sprite.filters = originalFilters ? [...originalFilters] : null
       flashStates.delete(sprite)
+      flashSprites.delete(sprite)
     },
     FLASH_MS,
     'combat.flash'
@@ -108,6 +111,7 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
   if (state) {
     sprite.filters = state.filters ? [...state.filters] : null
     flashStates.delete(sprite)
+    flashSprites.delete(sprite)
     return
   }
 
@@ -117,6 +121,18 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
 export function clearAllCombatFeedback(): void {
   for (const target of [...floatingTextTargets]) {
     clearDamageFeedback(target)
+  }
+
+  for (const sprite of [...flashSprites]) {
+    if (sprite.destroyed) {
+      flashStates.delete(sprite)
+      flashSprites.delete(sprite)
+      continue
+    }
+    const state = flashStates.get(sprite)
+    sprite.filters = state?.filters ? [...state.filters] : null
+    flashStates.delete(sprite)
+    flashSprites.delete(sprite)
   }
 }
 

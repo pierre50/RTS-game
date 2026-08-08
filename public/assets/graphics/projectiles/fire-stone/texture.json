@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.5
       }
     },
-    "001.png": {
+    "001_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 14,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.5
       }
     },
-    "002.png": {
+    "002_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 29,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.5
       }
     },
-    "003.png": {
+    "003_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 44,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.5
       }
     },
-    "004.png": {
+    "004_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 59,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.46153846153846156
       }
     },
-    "005.png": {
+    "005_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 74,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.5
       }
     },
-    "006.png": {
+    "006_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 89,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.5
       }
     },
-    "007.png": {
+    "007_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 102,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.5
       }
     },
-    "008.png": {
+    "008_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 115,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.5
       }
     },
-    "009.png": {
+    "009_graphics_projectiles_fire-stone.png": {
       "frame": {
         "x": 129,
         "y": 0,

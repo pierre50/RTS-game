@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_terrain_grass.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0
       }
     },
-    "001.png": {
+    "001_terrain_grass.png": {
       "frame": {
         "x": 66,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0
       }
     },
-    "002.png": {
+    "002_terrain_grass.png": {
       "frame": {
         "x": 132,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0
       }
     },
-    "003.png": {
+    "003_terrain_grass.png": {
       "frame": {
         "x": 198,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0
       }
     },
-    "004.png": {
+    "004_terrain_grass.png": {
       "frame": {
         "x": 264,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0
       }
     },
-    "005.png": {
+    "005_terrain_grass.png": {
       "frame": {
         "x": 330,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0
       }
     },
-    "006.png": {
+    "006_terrain_grass.png": {
       "frame": {
         "x": 396,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0
       }
     },
-    "007.png": {
+    "007_terrain_grass.png": {
       "frame": {
         "x": 462,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0
       }
     },
-    "008.png": {
+    "008_terrain_grass.png": {
       "frame": {
         "x": 528,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0
       }
     },
-    "009.png": {
+    "009_terrain_grass.png": {
       "frame": {
         "x": 594,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0
       }
     },
-    "010.png": {
+    "010_terrain_grass.png": {
       "frame": {
         "x": 660,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0
       }
     },
-    "011.png": {
+    "011_terrain_grass.png": {
       "frame": {
         "x": 726,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0
       }
     },
-    "012.png": {
+    "012_terrain_grass.png": {
       "frame": {
         "x": 790,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0
       }
     },
-    "013.png": {
+    "013_terrain_grass.png": {
       "frame": {
         "x": 856,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0
       }
     },
-    "014.png": {
+    "014_terrain_grass.png": {
       "frame": {
         "x": 922,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0
       }
     },
-    "015.png": {
+    "015_terrain_grass.png": {
       "frame": {
         "x": 988,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0
       }
     },
-    "016.png": {
+    "016_terrain_grass.png": {
       "frame": {
         "x": 1054,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0
       }
     },
-    "017.png": {
+    "017_terrain_grass.png": {
       "frame": {
         "x": 1120,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0
       }
     },
-    "018.png": {
+    "018_terrain_grass.png": {
       "frame": {
         "x": 1186,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0
       }
     },
-    "019.png": {
+    "019_terrain_grass.png": {
       "frame": {
         "x": 1252,
         "y": 0,
@@ -480,7 +480,7 @@
         "y": 0
       }
     },
-    "020.png": {
+    "020_terrain_grass.png": {
       "frame": {
         "x": 1316,
         "y": 0,
@@ -504,7 +504,7 @@
         "y": 0
       }
     },
-    "021.png": {
+    "021_terrain_grass.png": {
       "frame": {
         "x": 1382,
         "y": 0,
@@ -528,7 +528,7 @@
         "y": 0
       }
     },
-    "022.png": {
+    "022_terrain_grass.png": {
       "frame": {
         "x": 1448,
         "y": 0,
@@ -552,7 +552,7 @@
         "y": 0
       }
     },
-    "023.png": {
+    "023_terrain_grass.png": {
       "frame": {
         "x": 1514,
         "y": 0,
@@ -576,7 +576,7 @@
         "y": 0
       }
     },
-    "024.png": {
+    "024_terrain_grass.png": {
       "frame": {
         "x": 1580,
         "y": 0,

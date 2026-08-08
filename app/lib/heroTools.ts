@@ -16,7 +16,12 @@ import { getActionCondition, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
 import { getWorkWithLoadingType } from './extra'
-import { getEquipmentCombatStats, getUnitWorkEquipment, refreshUnitEquipmentStats } from './equipmentStats'
+import {
+  getEquipmentCombatStats,
+  getUnitWorkEquipment,
+  refreshUnitEquipmentStats,
+  UNARMED_UNIT_WEAPON_POWER,
+} from './equipmentStats'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
@@ -539,15 +544,13 @@ function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
 
 function getHeroWeaponDamage(tool: HeroEquippedItem): number {
   const stats = getEquipmentCombatStats(getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool]))
-  const damage = Math.max(stats.meleeAttack, stats.pierceAttack)
-  return damage || (tool === 'interact' ? 3 : 0)
+  return stats.weaponPower || (tool === 'interact' ? UNARMED_UNIT_WEAPON_POWER : 0)
 }
 
 function getHeroWeaponCombatSource(hero: UnitEntity, tool: HeroEquippedItem): CombatEntity {
   return {
     ...hero,
-    meleeAttack: getHeroWeaponDamage(tool),
-    pierceAttack: 0,
+    equipment: getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool]),
   }
 }
 
@@ -657,7 +660,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
           target: target ?? undefined,
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
-          damage: getHeroWeaponDamage('bow'),
+          weaponPower: getHeroWeaponDamage('bow'),
           maxDistance: HERO_ARROW_MAX_DISTANCE * rangePower,
         },
         hero.context!
@@ -1025,7 +1028,7 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
         target,
         destination,
         spawnPoint: getHeroArrowSpawnPoint(hero),
-        damage: getHeroWeaponDamage('bow'),
+        weaponPower: getHeroWeaponDamage('bow'),
         maxDistance: HERO_ARROW_MAX_DISTANCE * Math.max(HERO_BOW_MIN_POWER, Math.min(1, power)),
       },
       hero.context!

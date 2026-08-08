@@ -73,6 +73,162 @@
   text-align: right;
 }
 
+.portal-travel {
+  --portal-travel-color: #8fc7ff;
+  --portal-travel-progress: 0%;
+
+  position: fixed;
+  inset: 0;
+  z-index: 5200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #ffffff;
+  background: #ffffff;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 520ms ease-out;
+}
+
+.portal-travel.is-open {
+  opacity: 1;
+}
+
+.portal-travel.is-arriving {
+  opacity: 0;
+  transition: opacity 520ms ease-out;
+}
+
+.portal-travel--blue {
+  --portal-travel-color: #66b7ff;
+}
+
+.portal-travel--yellow {
+  --portal-travel-color: #ffd45a;
+}
+
+.portal-travel--red {
+  --portal-travel-color: #ff6f6a;
+}
+
+.portal-travel::before {
+  position: absolute;
+  inset: -18vmax;
+  content: '';
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 1) 0 20%, rgba(255, 255, 255, 0.88) 34%, rgba(255, 255, 255, 0.2) 62%),
+    conic-gradient(from 0deg, transparent 0deg 28deg, color-mix(in srgb, var(--portal-travel-color) 42%, transparent) 30deg 36deg, transparent 38deg 72deg);
+  filter: blur(0.5px);
+  animation: portal-travel-spin 1.8s linear infinite;
+}
+
+.portal-travel.is-arriving::before {
+  animation-duration: 0.8s;
+}
+
+.portal-travel__core {
+  position: relative;
+  width: min(44vmin, 340px);
+  height: min(44vmin, 340px);
+  opacity: 0.9;
+  transform: scale(0.82);
+  animation: portal-travel-pulse 1.3s ease-in-out infinite alternate;
+}
+
+.portal-travel__ring,
+.portal-travel__shard {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.portal-travel__ring {
+  inset: 8%;
+  border: 2px solid color-mix(in srgb, var(--portal-travel-color) 62%, #ffffff);
+  border-radius: 50%;
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--portal-travel-color) 38%, transparent),
+    inset 0 0 20px rgba(255, 255, 255, 0.68);
+  opacity: 0.54;
+}
+
+.portal-travel__ring--1 {
+  animation: portal-travel-spin 1.05s linear infinite;
+}
+
+.portal-travel__ring--2 {
+  inset: 22%;
+  border-style: dashed;
+  animation: portal-travel-spin 1.45s linear infinite reverse;
+}
+
+.portal-travel__ring--3 {
+  inset: 36%;
+  border-width: 3px;
+  opacity: 0.68;
+  animation: portal-travel-spin 0.82s linear infinite;
+}
+
+.portal-travel__shard {
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 42%;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--portal-travel-color) 58%, #ffffff), transparent);
+  opacity: 0.28;
+  transform: rotate(calc(var(--portal-shard-index) * 36deg)) translateY(-48%);
+  transform-origin: 0 0;
+  animation: portal-travel-shard 0.95s ease-in-out infinite alternate;
+  animation-delay: calc(var(--portal-shard-index) * -90ms);
+}
+
+.portal-travel__status {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 32px;
+  color: rgba(42, 45, 54, 0.58);
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-align: center;
+  text-shadow: none;
+}
+
+.portal-travel__progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(to right, var(--portal-travel-color) var(--portal-travel-progress), transparent var(--portal-travel-progress));
+  opacity: 0.55;
+}
+
+@keyframes portal-travel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes portal-travel-pulse {
+  from {
+    transform: scale(0.82);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
+
+@keyframes portal-travel-shard {
+  from {
+    opacity: 0.14;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+
 @media (max-width: 900px) {
   .modal.game-loading {
     align-items: center;

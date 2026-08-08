@@ -43,6 +43,7 @@ export interface MenuLike {
   updateTopbar(): void
   updateActionTarget(): void
   updateTerrainMiniMap?(i: number, j: number): void
+  rebuildTerrainMiniMapFromViews?(): void
   updateResourcesMiniMap(): void
   updateCameraMiniMap?(): void
   updatePlayerMiniMap?(player: PlayerLike): void
@@ -194,6 +195,7 @@ export interface GameContextLike {
   quit: () => void
   applyZoom: () => void
   getWorldGraph?: () => WorldGraphSave | null
+  getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
 }
 

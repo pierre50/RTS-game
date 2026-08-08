@@ -119,6 +119,10 @@ export function getBakedUnitStandingSheetAlias(
 const HERO_RIDING_ACTION_SHEETS = HERO_BASE_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
 const HERO_ACTION_SHEETS = [...HERO_BASE_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
 
+function isAssetCached(alias: string): boolean {
+  return Assets.cache.has(alias)
+}
+
 async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
   if (unit === 'villager' || unit === 'hero') {
     const bodyAlias = unit === 'hero' ? heroBodyAlias : villagerBodyAlias
@@ -133,7 +137,7 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
         alias: actionAlias(variant, sheet),
         src: bakedSrc(unit, variant, 'action', sheet),
       })),
-    ].filter(asset => !Assets.cache.get(asset.alias))
+    ].filter(asset => !isAssetCached(asset.alias))
 
     if (assets.length) {
       await Assets.load(assets)
@@ -144,7 +148,7 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
   const assets = UNIT_SHEETS.map(sheet => ({
     alias: bakedUnitAlias(unit, variant, sheet),
     src: bakedUnitSrc(unit, variant, sheet),
-  })).filter(asset => !Assets.cache.get(asset.alias))
+  })).filter(asset => !isAssetCached(asset.alias))
 
   if (assets.length) {
     await Assets.load(assets)
@@ -178,7 +182,7 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
     })
   )
 
-  const equipmentAssets = dynamicEquipmentAssets().filter(asset => !Assets.cache.get(asset.alias))
+  const equipmentAssets = dynamicEquipmentAssets().filter(asset => !isAssetCached(asset.alias))
   if (equipmentAssets.length) {
     await Assets.load(equipmentAssets)
   }
@@ -198,7 +202,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   const isVillagerLike = bakedUnit === 'villager' || bakedUnit === 'hero'
   const bodyAlias = bakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
   const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedUnitAlias(bakedUnit, variant, 'walking')
-  if (!Assets.cache.get(walking)) return false
+  if (!isAssetCached(walking)) return false
 
   unit.appearance = undefined
   unit.appearanceVariants = undefined

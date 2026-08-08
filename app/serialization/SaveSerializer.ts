@@ -2,7 +2,7 @@ import { filterObject, getGaiaAnimals } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'
-import type { RuntimeEntityBase } from '../types/entities'
+import type { RuntimeEntityBase, UnitControlMode } from '../types/entities'
 import type {
   SavedAIState,
   SaveEntityState,
@@ -24,6 +24,7 @@ type SerializableEntity = RuntimeEntityBase & {
   assetType?: string
   blockedGatherApproach?: { target: { label?: string; i: number; j: number }; action: string } | null
   buildQueue?: { label?: string }[] | null
+  controlMode?: UnitControlMode
   currentSheet?: string
   degree?: number
   dest?: Destination | null
@@ -39,7 +40,7 @@ type SerializableEntity = RuntimeEntityBase & {
   followingHero?: boolean
   inactif?: boolean
   isBuilt?: boolean
-  isUsedBy?: { label?: string } | null
+  isUsedBy?: string | { label?: string } | null
   loading?: number | null
   loadingType?: string | null
   loop?: boolean
@@ -168,6 +169,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'y',
       'z',
       'hitPoints',
+      'totalHitPoints',
       'healthRegenRate',
       'healthRegenDelay',
       'healthRegenMultiplier',
@@ -185,6 +187,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'loadingType',
       'direction',
       'currentSheet',
+      'controlMode',
       'size',
       'inactif',
       'isDead',
@@ -236,7 +239,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'assetAge',
       'assetType',
     ]),
-    isUsedBy: building.isUsedBy?.label,
+    isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
   }
 }
 
@@ -313,6 +316,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     seed: context.map.seed,
     size: context.map.size,
     mapType: DEFAULT_SERIALIZED_MAP_TYPE,
+    environment: context.map.environment,
     positionsCount: context.map.positionsCount,
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
   }
@@ -327,6 +331,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       seed: context.map.seed,
       size: context.map.size,
       mapType: DEFAULT_SERIALIZED_MAP_TYPE,
+      environment: context.map.environment,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
       humanStartsWithoutBase: context.map.humanStartsWithoutBase,

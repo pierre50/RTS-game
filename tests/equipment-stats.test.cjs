@@ -5,10 +5,18 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 const constants = {
+  FAMILY_TYPES: {
+    animal: 'animal',
+    building: 'building',
+    unit: 'unit',
+  },
   UNIT_TYPES: {
     villager: 'Villager',
     axeman: 'Axeman',
     broadSwordsman: 'BroadSwordsman',
+  },
+  WORK_TYPES: {
+    attacker: 'attacker',
   },
 }
 
@@ -59,4 +67,12 @@ test('a real weapon (broadsword) qualifies; the same unit carrying a bow never d
   })
   assert.equal(isUnitMeleeWeaponEquipped({ type: 'BroadSwordsman' }), true)
   assert.equal(isUnitMeleeWeaponEquipped({ type: 'BroadSwordsman', projectile: 'Arrow' }), false)
+})
+
+test('unit entities without weapon equipment use the unarmed fallback power', () => {
+  const { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } = loadEquipmentStats()
+
+  assert.equal(getEntityWeaponPower({ family: 'unit', type: 'Villager' }), UNARMED_UNIT_WEAPON_POWER)
+  assert.equal(getEntityWeaponPower({ family: 'animal', type: 'Deer' }), 0)
+  assert.equal(getEntityWeaponPower({ family: 'building', type: 'House' }), 0)
 })

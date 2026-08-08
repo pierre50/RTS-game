@@ -214,7 +214,7 @@ export class EditorEntityPreview {
   }
 
   _getFirstSheetFrame(sheetId: string): Texture | null {
-    const sheet = Assets.cache.get(sheetId) as SpriteSheetLike | undefined
+    const sheet = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpriteSheetLike | undefined) : undefined
     if (!sheet?.textures) return null
     const firstName = Object.keys(sheet.textures).sort((a, b) => parseInt(a) - parseInt(b))[0]
     return firstName ? sheet.textures[firstName] : null

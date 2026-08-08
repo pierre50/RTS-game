@@ -123,11 +123,11 @@ export class Building extends Instance implements BuildingEntity {
     this.shadow = null
     this.visualSettingsCleanup = null
 
-    Object.assign(this, options)
-    Object.assign(this, this.owner.config.buildings[this.type])
+    this.assignProperties(options)
+    this.assignProperties(this.owner.config.buildings[this.type])
     if (isTower(this)) {
       const effectiveType = getTowerType(this.owner)
-      if (effectiveType !== this.type) Object.assign(this, this.owner.config.buildings[effectiveType])
+      if (effectiveType !== this.type) this.assignProperties(this.owner.config.buildings[effectiveType])
     }
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
@@ -363,7 +363,8 @@ export class Building extends Instance implements BuildingEntity {
   getShadowTexture(): Texture | null {
     if (!this.textureName) return null
     const sheet = getTextureSheet(this.textureName)
-    const shadowAtlas = (Assets.cache.get(`${sheet}/shadow`) as Texture | undefined) ?? null
+    const shadowAtlasId = `${sheet}/shadow`
+    const shadowAtlas = Assets.cache.has(shadowAtlasId) ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null) : null
     if (!shadowAtlas || !this.sprite?.texture) return null
 
     const { frame, rotate } = this.sprite.texture

@@ -3,6 +3,7 @@ import type { AnimalConfig, BuildingConfig, ResourceConfig, TechnologyConfig, Un
 import type { FogSpriteMemory } from './map'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
+import type { UnitControlMode } from './entities'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
@@ -19,6 +20,7 @@ export type SaveEntityState = {
   buildQueue?: string[]
   currentFrame?: number
   currentSheet?: string
+  controlMode?: UnitControlMode
   degree?: number
   dest?: SaveReference | SaveDestination | null
   direction?: number
@@ -135,6 +137,7 @@ export type SaveRuntimeState = {
 }
 
 export type SaveWorldState = {
+  environment?: string
   seed?: string | number
   size?: number
   mapType?: string
@@ -153,6 +156,7 @@ export type WorldGraphNode = {
   id: string
   name: string
   color: WorldColor
+  environment?: string | null
   parentId?: string | null
   children: string[]
   discoveredAt: number
@@ -191,6 +195,7 @@ export type GameConfig = {
   allTechnologies?: boolean
   bots?: number
   difficulty?: string
+  environment?: string
   humanStartsWithoutBase?: boolean
   instantMode?: boolean
   mapType?: string

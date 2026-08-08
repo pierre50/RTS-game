@@ -23,7 +23,7 @@ import {
   showDamageFeedback,
   showHealingFeedback,
   showResourceGainFeedback,
-  HUNTING_SPEAR_DAMAGE,
+  HUNTING_SPEAR_POWER,
   HUNTING_SPEAR_PROJECTILE,
 } from '../../lib'
 import { Projectile } from '../Projectile'
@@ -882,7 +882,7 @@ export class UnitActions {
                 target: dest,
                 type: HUNTING_SPEAR_PROJECTILE,
                 destination: unit.realDest,
-                damage: HUNTING_SPEAR_DAMAGE,
+                weaponPower: HUNTING_SPEAR_POWER,
               },
               unit.context!
             )

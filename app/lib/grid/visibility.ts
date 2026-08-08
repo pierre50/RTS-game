@@ -42,7 +42,18 @@ export type RenderableInstance = VisibilityEntity &
 export type BoundsSource = {
   x: number
   y: number
+  destroyed?: boolean
+  isDestroyed?: boolean
+  position?: { x?: number; y?: number } | null
   sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
+}
+
+function getRenderablePosition(instance: BoundsSource): Point | null {
+  if (instance.isDestroyed || instance.destroyed || instance.position === null) return null
+  const x = instance.position?.x ?? instance.x
+  const y = instance.position?.y ?? instance.y
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x: x as number, y: y as number }
 }
 
 // Buildings (and other sprite-based instances) are anchored on a single ground point but their
@@ -53,13 +64,15 @@ export type BoundsSource = {
 export function getInstanceScreenBounds(instance: BoundsSource): Bounds | undefined {
   const sprite = instance.sprite
   if (!sprite) return undefined
+  const position = getRenderablePosition(instance)
+  if (!position) return undefined
 
   const anchorX = sprite.anchor?.x ?? 0.5
   const anchorY = sprite.anchor?.y ?? 1
 
   return {
-    minX: instance.x - sprite.width * anchorX,
-    minY: instance.y - sprite.height * anchorY,
+    minX: position.x - sprite.width * anchorX,
+    minY: position.y - sprite.height * anchorY,
     width: sprite.width,
     height: sprite.height,
   }
@@ -105,6 +118,7 @@ export function updateInstanceVisibility(instance: RenderableInstance): void {
 export function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   const { map, player, controls } = instance?.context || {}
   if (!map || !controls || !instance || instance.isDestroyed) return false
+  if (!getRenderablePosition(instance)) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
   if (!controls.instanceInCamera(instance, getInstanceScreenBounds(instance))) return false
 

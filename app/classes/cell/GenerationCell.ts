@@ -125,7 +125,10 @@ export class GenerationCell implements RuntimeCell {
   }
 
   _updateChild(instance: RuntimeEntity): void {
-    updateInstanceRenderVisibility(instance)
+    if (!updateInstanceRenderVisibility(instance) && instance.isDestroyed && this.has === instance) {
+      this.has = null
+      this.solid = false
+    }
   }
 
   updateVisible(): void {

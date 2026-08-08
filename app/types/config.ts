@@ -57,8 +57,6 @@ interface EntityConfig {
 export interface UnitConfig extends EntityConfig {
   trainingTime?: number
   equipment?: string[]
-  meleeAttack?: number
-  pierceAttack?: number
   meleeArmor?: number
   pierceArmor?: number
   sounds?: UnitSounds
@@ -67,8 +65,9 @@ export interface UnitConfig extends EntityConfig {
 }
 
 export type EquipmentStats = {
-  meleeAttack?: number
-  pierceAttack?: number
+  weapon?: {
+    power?: number
+  }
   meleeArmor?: number
   pierceArmor?: number
 }

@@ -27,6 +27,7 @@ import {
   randomRange,
 } from '../lib'
 import { fadeOutThenClear } from '../lib/entityFade'
+import { getEntityWeaponPower } from '../lib/equipmentStats'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
@@ -67,7 +68,7 @@ type ProjectileOptions = {
   destination?: Point
   spawnPoint?: Point
   degree?: number
-  damage?: number
+  weaponPower?: number
   maxDistance?: number
 }
 
@@ -254,7 +255,7 @@ export class Projectile extends Container {
   spawnPoint?: Point
   degree?: number
   direction?: string
-  damage?: number
+  weaponPower?: number
   tracksTarget!: boolean
   isDead!: boolean
   // Grid cell the projectile landed on — only set once it sticks in the ground, see landOnGround().
@@ -868,22 +869,9 @@ export class Projectile extends Container {
     const xpCategory = this.getXpCategory()
     const xpBonusDamage = xpCategory ? getCombatXpBonus(this.owner as UnitEntity, xpCategory) : 0
     const damageFactor = this.getDamageFactor()
-    const damage = this.damage == null ? undefined : Math.max(1, Math.round(this.damage * damageFactor))
-    const source =
-      damageFactor >= 1
-        ? this.owner
-        : {
-            ...this.owner,
-            meleeAttack: Math.max(
-              0,
-              Math.round(((this.owner as { meleeAttack?: number }).meleeAttack ?? 0) * damageFactor)
-            ),
-            pierceAttack: Math.max(
-              0,
-              Math.round(((this.owner as { pierceAttack?: number }).pierceAttack ?? 0) * damageFactor)
-            ),
-          }
-    applyCombatHit(source, instance, {
+    const baseDamage = this.weaponPower ?? getEntityWeaponPower(this.owner)
+    const damage = baseDamage > 0 ? Math.max(1, Math.round(baseDamage * damageFactor)) : undefined
+    applyCombatHit(this.owner, instance, {
       attacker: this.owner,
       bonusDamage: xpBonusDamage,
       defaultDamage: damage,

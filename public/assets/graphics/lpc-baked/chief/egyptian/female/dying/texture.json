@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.86
       }
     },
-    "001.png": {
+    "001_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 64,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.86
       }
     },
-    "002.png": {
+    "002_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 128,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.86
       }
     },
-    "003.png": {
+    "003_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 192,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.86
       }
     },
-    "004.png": {
+    "004_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 256,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.86
       }
     },
-    "005.png": {
+    "005_graphics_lpc-baked_chief_egyptian_female_dying.png": {
       "frame": {
         "x": 320,
         "y": 0,

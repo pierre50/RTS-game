@@ -290,7 +290,16 @@ function gameConfig(): GameConfig {
 }
 
 function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
-  return map.addChild(new Resource(resource, runtimeContext(map.context)))
+  const instance = map.addChild(new Resource(resource, runtimeContext(map.context)))
+  if (instance.type === PORTAL_RESOURCE_TYPE) {
+    const footprintRadius = getBuildingFootprintRadius(instance.size || PORTAL_FOOTPRINT_SIZE)
+    getPlainCellsAroundPoint(instance.i, instance.j, map.grid, footprintRadius, cell => {
+      cell.solid = true
+      cell.has = instance
+      return true
+    })
+  }
+  return instance
 }
 
 export class MapGeneration {

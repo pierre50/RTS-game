@@ -1,12 +1,28 @@
 {
   "frames": {
-    "000.png": {
-      "frame": { "x": 0, "y": 0, "w": 177, "h": 129 },
+    "000_graphics_buildings_portal.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 177,
+        "h": 129
+      },
       "rotated": false,
       "trimmed": false,
-      "spriteSourceSize": { "x": 0, "y": 0, "w": 177, "h": 129 },
-      "sourceSize": { "w": 177, "h": 129 },
-      "anchor": { "x": 0.5, "y": 0.83 }
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 177,
+        "h": 129
+      },
+      "sourceSize": {
+        "w": 177,
+        "h": 129
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
     }
   },
   "meta": {
@@ -14,8 +30,10 @@
     "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",
-    "size": { "w": 177, "h": 129 },
+    "size": {
+      "w": 177,
+      "h": 129
+    },
     "scale": 1
   }
 }
- 

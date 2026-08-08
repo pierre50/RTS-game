@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_catapult_standing.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6753246753246753
       }
     },
-    "001.png": {
+    "001_graphics_units_catapult_standing.png": {
       "frame": {
         "x": 58,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.676056338028169
       }
     },
-    "002.png": {
+    "002_graphics_units_catapult_standing.png": {
       "frame": {
         "x": 153,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.7454545454545455
       }
     },
-    "003.png": {
+    "003_graphics_units_catapult_standing.png": {
       "frame": {
         "x": 248,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6818181818181818
       }
     },
-    "004.png": {
+    "004_graphics_units_catapult_standing.png": {
       "frame": {
         "x": 343,
         "y": 0,

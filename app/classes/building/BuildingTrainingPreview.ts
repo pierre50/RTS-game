@@ -145,7 +145,7 @@ export class BuildingTrainingPreview {
   }
 
   createSprite(sheetId: string, directionCount: number | null, zIndex: number, scale: number): PreviewLayer | null {
-    const sheet = Assets.cache.get(sheetId) as SpritesheetLike | undefined
+    const sheet = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
     const app = this.building.context?.app
     if (!sheet?.textures || !app) return null
 

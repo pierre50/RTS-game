@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.7142857142857143
       }
     },
-    "001.png": {
+    "001_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 29,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.625
       }
     },
-    "002.png": {
+    "002_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 56,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.5454545454545454
       }
     },
-    "003.png": {
+    "003_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 77,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6153846153846154
       }
     },
-    "004.png": {
+    "004_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 94,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.625
       }
     },
-    "005.png": {
+    "005_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 106,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.6666666666666666
       }
     },
-    "006.png": {
+    "006_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 123,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.6923076923076923
       }
     },
-    "007.png": {
+    "007_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 145,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.7777777777777778
       }
     },
-    "008.png": {
+    "008_graphics_environment_birds_hawk.png": {
       "frame": {
         "x": 173,
         "y": 0,

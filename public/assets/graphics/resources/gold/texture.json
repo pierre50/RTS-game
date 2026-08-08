@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_resources_gold.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6071428571
       }
     },
-    "001.png": {
+    "001_graphics_resources_gold.png": {
       "frame": {
         "x": 69,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.7321428571
       }
     },
-    "002.png": {
+    "002_graphics_resources_gold.png": {
       "frame": {
         "x": 138,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.6607142857
       }
     },
-    "003.png": {
+    "003_graphics_resources_gold.png": {
       "frame": {
         "x": 207,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.6964285714
       }
     },
-    "004.png": {
+    "004_graphics_resources_gold.png": {
       "frame": {
         "x": 276,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.7321428571
       }
     },
-    "005.png": {
+    "005_graphics_resources_gold.png": {
       "frame": {
         "x": 345,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.6071428571
       }
     },
-    "006.png": {
+    "006_graphics_resources_gold.png": {
       "frame": {
         "x": 414,
         "y": 0,

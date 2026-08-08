@@ -9,9 +9,10 @@ import { EQUIPPED_ITEM_WEAPON, HERO_TOOL_ORDER, type HeroEquippedItem } from '..
 import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
+import type { WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
 import type { MenuButtonSpec } from '../types/ui'
 
-type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -27,6 +28,7 @@ export class InventoryManager {
   infoPanel: HTMLDivElement
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
+  worldMapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   technologiesPanel: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLDivElement>
@@ -55,6 +57,8 @@ export class InventoryManager {
     this.toolsPanel.className = 'action-menu-page inventory-tools-page'
     this.minimapPanel = document.createElement('div')
     this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
+    this.worldMapPanel = document.createElement('div')
+    this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
     this.technologiesPanel = document.createElement('div')
     this.technologiesPanel.className = 'action-menu-page action-menu-technologies-page'
     this.constructionPanel = document.createElement('div')
@@ -66,6 +70,7 @@ export class InventoryManager {
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
         { id: 'technologies', label: t('inventoryTabTechnologies'), page: this.technologiesPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
+        { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
         { id: 'construction', label: t('inventoryTabConstruction'), page: this.constructionPanel },
       ],
       this.activeTab,
@@ -165,6 +170,8 @@ export class InventoryManager {
       this.renderTechnologies()
     } else if (tab === 'construction') {
       this.renderConstruction()
+    } else if (tab === 'worldmap') {
+      this.renderWorldMap()
     } else {
       if (tab === 'tools') this.renderToolIcons()
       else if (tab === 'info') this.renderInfo()
@@ -181,6 +188,101 @@ export class InventoryManager {
     const entity = this.menu.context.controls.heroUnit || this.menu.selection
     if (!entity?.interface?.info) return
     this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity, { showAllXp: true }))
+  }
+
+  getWorldColorLabel(color: WorldColor): string {
+    switch (color) {
+      case 'blue':
+        return t('worldMapBluePortal')
+      case 'yellow':
+        return t('worldMapYellowPortal')
+      case 'red':
+        return t('worldMapRedPortal')
+      default:
+        return t('worldMapRoot')
+    }
+  }
+
+  getWorldEnvironmentLabel(environment?: string | null): string | null {
+    switch (environment) {
+      case 'Temperate':
+        return t('worldMapEnvironmentTemperate')
+      case 'BlackForest':
+        return t('worldMapEnvironmentBlackForest')
+      case 'Jungle':
+        return t('worldMapEnvironmentJungle')
+      case 'Desert':
+        return t('worldMapEnvironmentDesert')
+      default:
+        return null
+    }
+  }
+
+  renderWorldMapNode(graph: WorldGraphSave, node: WorldGraphNode, currentWorldId: string | null, depth = 0): HTMLLIElement {
+    const item = document.createElement('li')
+    item.className = 'worldmap-node'
+    item.style.setProperty('--worldmap-depth', String(depth))
+    item.classList.toggle('current', node.id === currentWorldId)
+    item.classList.add(`worldmap-node-${node.color}`)
+
+    const row = document.createElement('div')
+    row.className = 'worldmap-node-row'
+
+    const marker = document.createElement('span')
+    marker.className = 'worldmap-node-marker'
+    marker.setAttribute('aria-hidden', 'true')
+
+    const body = document.createElement('span')
+    body.className = 'worldmap-node-body'
+
+    const name = document.createElement('span')
+    name.className = 'worldmap-node-name'
+    name.textContent = node.name
+
+    const meta = document.createElement('span')
+    meta.className = 'worldmap-node-meta'
+    const parts = [this.getWorldColorLabel(node.color)]
+    const environmentLabel = this.getWorldEnvironmentLabel(node.environment)
+    if (environmentLabel) parts.push(environmentLabel)
+    if (node.id === currentWorldId) parts.push(t('worldMapCurrentWorld'))
+    if (node.canTeleport) parts.push(t('worldMapTeleportAvailable'))
+    meta.textContent = parts.join(' | ')
+
+    body.appendChild(name)
+    body.appendChild(meta)
+    row.appendChild(marker)
+    row.appendChild(body)
+    item.appendChild(row)
+
+    const children = node.children.map(id => graph.nodes[id]).filter(Boolean)
+    if (children.length) {
+      const list = document.createElement('ul')
+      list.className = 'worldmap-children'
+      children.forEach(child => list.appendChild(this.renderWorldMapNode(graph, child, currentWorldId, depth + 1)))
+      item.appendChild(list)
+    }
+
+    return item
+  }
+
+  renderWorldMap(): void {
+    this.worldMapPanel.replaceChildren()
+    this.menu.clearActionHotkeys()
+
+    const graph = this.menu.context.getWorldGraph?.()
+    const root = graph ? graph.nodes[graph.rootWorldId] : null
+    if (!graph || !root) {
+      const empty = document.createElement('div')
+      empty.className = 'worldmap-empty'
+      empty.textContent = t('worldMapEmpty')
+      this.worldMapPanel.appendChild(empty)
+      return
+    }
+
+    const tree = document.createElement('ul')
+    tree.className = 'worldmap-tree'
+    tree.appendChild(this.renderWorldMapNode(graph, root, this.menu.context.getCurrentWorldId?.() ?? null))
+    this.worldMapPanel.appendChild(tree)
   }
 
   // Equipment art is global (no civ/player variation, unlike unit/building

@@ -163,7 +163,7 @@ export function getUnitTypePortraitTexture(type: string, owner: Pick<PlayerLike,
   const alias = getBakedUnitStandingSheetAlias(type, owner)
   if (!alias) return null
 
-  const sheet = Assets.cache.get(alias) as SpritesheetLike | undefined
+  const sheet = Assets.cache.has(alias) ? (Assets.cache.get(alias) as SpritesheetLike | undefined) : undefined
   if (!sheet?.textures) return null
 
   const frames = getAnimationFrames(sheet.textures, 'south', 3, null) as Texture[]
@@ -240,7 +240,8 @@ const EQUIPMENT_SHEETS = ['walking', 'action'] as const
 const MIN_EQUIPMENT_OPAQUE_PIXELS = 30
 
 function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
-  const sheetData = Assets.cache.get(`lpc-equipment/${equipment}/${layer}/${sheet}`) as SpritesheetLike | undefined
+  const sheetId = `lpc-equipment/${equipment}/${layer}/${sheet}`
+  const sheetData = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
   if (!sheetData?.textures) return null
 
   const frames = getAnimationFrames(sheetData.textures, 'south', 3, null) as Texture[]

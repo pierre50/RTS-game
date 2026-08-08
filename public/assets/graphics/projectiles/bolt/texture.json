@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.42857142857142855
       }
     },
-    "001.png": {
+    "001_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 45,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.4444444444444444
       }
     },
-    "002.png": {
+    "002_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 81,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.43478260869565216
       }
     },
-    "003.png": {
+    "003_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 92,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.4444444444444444
       }
     },
-    "004.png": {
+    "004_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 127,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.375
       }
     },
-    "005.png": {
+    "005_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 172,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.4444444444444444
       }
     },
-    "006.png": {
+    "006_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 208,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.4782608695652174
       }
     },
-    "007.png": {
+    "007_graphics_projectiles_bolt.png": {
       "frame": {
         "x": 218,
         "y": 0,

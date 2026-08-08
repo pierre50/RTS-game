@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.675
       }
     },
-    "001.png": {
+    "001_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 55,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.5531914893617021
       }
     },
-    "002.png": {
+    "002_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 115,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.5
       }
     },
-    "003.png": {
+    "003_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 178,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.5
       }
     },
-    "004.png": {
+    "004_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 241,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.6944444444444444
       }
     },
-    "005.png": {
+    "005_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 289,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.5348837209302325
       }
     },
-    "006.png": {
+    "006_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 348,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.48936170212765956
       }
     },
-    "007.png": {
+    "007_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 412,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.48936170212765956
       }
     },
-    "008.png": {
+    "008_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 476,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.7297297297297297
       }
     },
-    "009.png": {
+    "009_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 528,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.5853658536585366
       }
     },
-    "010.png": {
+    "010_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 594,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.5277777777777778
       }
     },
-    "011.png": {
+    "011_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 669,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.5277777777777778
       }
     },
-    "012.png": {
+    "012_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 743,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.717948717948718
       }
     },
-    "013.png": {
+    "013_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 790,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.6341463414634146
       }
     },
-    "014.png": {
+    "014_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 854,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.5428571428571428
       }
     },
-    "015.png": {
+    "015_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 927,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.5428571428571428
       }
     },
-    "016.png": {
+    "016_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 1000,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.7209302325581395
       }
     },
-    "017.png": {
+    "017_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 1054,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0.6756756756756757
       }
     },
-    "018.png": {
+    "018_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 1112,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0.6923076923076923
       }
     },
-    "019.png": {
+    "019_graphics_units_ballista_dying.png": {
       "frame": {
         "x": 1172,
         "y": 0,

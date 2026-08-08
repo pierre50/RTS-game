@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.6376811594202898
       }
     },
-    "001.png": {
+    "001_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 49,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.5641025641025641
       }
     },
-    "002.png": {
+    "002_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 120,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.5211267605633803
       }
     },
-    "003.png": {
+    "003_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 195,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.45161290322580644
       }
     },
-    "004.png": {
+    "004_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 294,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.6060606060606061
       }
     },
-    "005.png": {
+    "005_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 374,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.5405405405405406
       }
     },
-    "006.png": {
+    "006_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 461,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.45161290322580644
       }
     },
-    "007.png": {
+    "007_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 559,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.45161290322580644
       }
     },
-    "008.png": {
+    "008_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 677,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.6538461538461539
       }
     },
-    "009.png": {
+    "009_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 757,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.53125
       }
     },
-    "010.png": {
+    "010_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 863,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.515625
       }
     },
-    "011.png": {
+    "011_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 969,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.47761194029850745
       }
     },
-    "012.png": {
+    "012_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1077,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.609375
       }
     },
-    "013.png": {
+    "013_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1155,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.582089552238806
       }
     },
-    "014.png": {
+    "014_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1255,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.5277777777777778
       }
     },
-    "015.png": {
+    "015_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1355,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.5
       }
     },
-    "016.png": {
+    "016_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1455,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.625
       }
     },
-    "017.png": {
+    "017_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1504,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0.5633802816901409
       }
     },
-    "018.png": {
+    "018_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1572,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0.5633802816901409
       }
     },
-    "019.png": {
+    "019_graphics_units_stone-thrower_dying.png": {
       "frame": {
         "x": 1648,
         "y": 0,

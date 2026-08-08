@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.9
       }
     },
-    "001.png": {
+    "001_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 15,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.92
       }
     },
-    "002.png": {
+    "002_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 30,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.9047619047619048
       }
     },
-    "003.png": {
+    "003_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 44,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.92
       }
     },
-    "004.png": {
+    "004_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 57,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.9375
       }
     },
-    "005.png": {
+    "005_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 72,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.9534883720930233
       }
     },
-    "006.png": {
+    "006_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 87,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.92
       }
     },
-    "007.png": {
+    "007_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 100,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.9166666666666666
       }
     },
-    "008.png": {
+    "008_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 116,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.875
       }
     },
-    "009.png": {
+    "009_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 133,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.8928571428571429
       }
     },
-    "010.png": {
+    "010_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 152,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.9142857142857143
       }
     },
-    "011.png": {
+    "011_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 170,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.8333333333333334
       }
     },
-    "012.png": {
+    "012_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 184,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.8571428571428571
       }
     },
-    "013.png": {
+    "013_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 197,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.8695652173913043
       }
     },
-    "014.png": {
+    "014_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 209,
         "y": 0,
@@ -360,7 +360,7 @@
         "y": 0.8888888888888888
       }
     },
-    "015.png": {
+    "015_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 227,
         "y": 0,
@@ -384,7 +384,7 @@
         "y": 0.9047619047619048
       }
     },
-    "016.png": {
+    "016_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 240,
         "y": 0,
@@ -408,7 +408,7 @@
         "y": 0.8461538461538461
       }
     },
-    "017.png": {
+    "017_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 254,
         "y": 0,
@@ -432,7 +432,7 @@
         "y": 0.8666666666666667
       }
     },
-    "018.png": {
+    "018_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 268,
         "y": 0,
@@ -456,7 +456,7 @@
         "y": 0.8947368421052632
       }
     },
-    "019.png": {
+    "019_graphics_effects_fire_medium.png": {
       "frame": {
         "x": 283,
         "y": 0,

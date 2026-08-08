@@ -163,6 +163,10 @@ function validateSeedWorld(data: ObjectRecord, legacyMapSize: number | null = nu
   if (mapType != null && (typeof mapType !== 'string' || !mapType)) {
     fail('Invalid save file: map type is invalid.')
   }
+  const environment = world.environment ?? config.environment
+  if (environment != null && (typeof environment !== 'string' || !environment)) {
+    fail('Invalid save file: map environment is invalid.')
+  }
   return rawSize + 1
 }
 

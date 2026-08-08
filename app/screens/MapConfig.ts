@@ -2,7 +2,6 @@ import { playClickSound } from '../lib/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/formUtils'
-import { MAP_SIZES } from '../config/mapSizes'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
 import { RESOURCES_MAP } from '../config/resourcePresets'
@@ -74,12 +73,6 @@ export default class MapConfig {
 
     const settingsForm = document.createElement('div')
     settingsForm.className = 'config-form lobby-settings-form'
-
-    settingsForm.appendChild(
-      buildSelectRow(t('mapSizeLabel'), MAP_SIZES, 144, val => {
-        this.config.size = parseInt(val)
-      })
-    )
 
     settingsForm.appendChild(
       buildSelectRow(t('colDifficulty'), DIFFICULTIES, 'medium', val => {

@@ -6,7 +6,7 @@ import { playSoundCue } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 
-type WeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'clearing'
+type WeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'clearing' | 'night'
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type RandomFn = () => number
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
@@ -36,6 +36,7 @@ const WIND_LERP_PER_SECOND = 1
 const RAIN_LOOP_MAX_VOLUME = 0.55
 const WIND_LOOP_MAX_VOLUME = 0.4
 const AMBIENT_CROSSFADE_MID = 0.45
+const DARKNESS_BRIGHTNESS_THRESHOLD = 0.86
 
 const VEIL_TARGETS: Record<WeatherPhase, number> = {
   sunny: 0,
@@ -44,6 +45,7 @@ const VEIL_TARGETS: Record<WeatherPhase, number> = {
   rainLight: 0.08,
   rainHeavy: 0.14,
   clearing: 0.035,
+  night: 0,
 }
 
 const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
@@ -101,6 +103,15 @@ const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
     green: 0.98,
     blue: 1,
   },
+  night: {
+    gamma: 0.98,
+    contrast: 1,
+    saturation: 0.72,
+    brightness: 0.98,
+    red: 0.86,
+    green: 0.9,
+    blue: 1.06,
+  },
 }
 
 const RAIN_TARGETS: Record<WeatherPhase, number> = {
@@ -110,6 +121,7 @@ const RAIN_TARGETS: Record<WeatherPhase, number> = {
   rainLight: 0.34,
   rainHeavy: 1,
   clearing: 0.08,
+  night: 0,
 }
 
 const WIND_TARGETS: Record<WeatherPhase, number> = {
@@ -119,6 +131,7 @@ const WIND_TARGETS: Record<WeatherPhase, number> = {
   rainLight: 0.3,
   rainHeavy: 0.85,
   clearing: 0.15,
+  night: 0.1,
 }
 
 function randomBetween(min: number, max: number, random: RandomFn): number {
@@ -152,6 +165,7 @@ function startAmbientLoop(alias: string, onReady: (instance: IMediaInstance) => 
 
 function nextPhase(phase: WeatherPhase, random: RandomFn): WeatherPhase {
   const roll = random()
+  if (phase === 'night') return 'night'
   if (phase === 'sunny') return roll < 0.62 ? 'clouding' : 'sunny'
   if (phase === 'clouding') {
     if (roll < 0.42) return 'clearing'
@@ -185,6 +199,7 @@ function phaseDuration(phase: WeatherPhase, random: RandomFn): number {
   if (phase === 'stormBuildUp') return randomDuration(25, 70, random)
   if (phase === 'rainLight') return randomDuration(90, 260, random)
   if (phase === 'rainHeavy') return randomDuration(45, 180, random)
+  if (phase === 'night') return randomDuration(1800, 1800, random)
   return randomDuration(60, 150, random)
 }
 
@@ -435,6 +450,11 @@ export class WeatherSystem {
     this.rainVeil.fill({ alpha: veilAlpha, color: 0x9fb2c4 })
   }
 
+  getDarknessLevel(): number {
+    if (this.phase === 'night') return 1
+    return clamp((DARKNESS_BRIGHTNESS_THRESHOLD - this.currentColor.brightness) / DARKNESS_BRIGHTNESS_THRESHOLD, 0, 1)
+  }
+
   updateRain(elapsedSeconds: number): void {
     const rainTarget = RAIN_TARGETS[this.phase]
     const noisyTarget =
@@ -488,6 +508,7 @@ export class WeatherSystem {
       nextPhaseInSeconds: Math.max(0, seconds(this.phaseEndsAt - this.elapsedMs)),
       phase: this.phase,
       rainIntensity: Number(this.rainIntensity.toFixed(2)),
+      darknessLevel: Number(this.getDarknessLevel().toFixed(2)),
       rainSlantRatio: Number(clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08).toFixed(2)),
       screen: {
         height: Math.round(this.screenRect.height),

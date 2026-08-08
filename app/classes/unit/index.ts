@@ -99,6 +99,10 @@ const SHADOW_ALPHA = 0.42
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
 
+function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
+  return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
+}
+
 function applyAppearanceVariantsToAssetMap(
   allAssets: UnitEntity['allAssets'],
   variants: Record<string, string> | undefined
@@ -111,7 +115,7 @@ function applyAppearanceVariantsToAssetMap(
       Object.fromEntries(
         Object.entries(sheets).map(([sheet, asset]) => [
           sheet,
-          /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.get(`${asset}/${variants.skin}`)
+          /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
             ? `${asset}/${variants.skin}`
             : asset,
         ])
@@ -129,7 +133,7 @@ function applyAppearanceVariantsToAssets(
   return Object.fromEntries(
     Object.entries(assets).map(([sheet, asset]) => [
       sheet,
-      /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.get(`${asset}/${variants.skin}`)
+      /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
         ? `${asset}/${variants.skin}`
         : asset,
     ])
@@ -277,9 +281,9 @@ export class Unit extends Instance implements UnitEntity {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.experience = {}
-    Object.assign(this, options)
+    this.assignProperties(options)
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
-    Object.assign(this, unitConfig)
+    this.assignProperties(unitConfig)
     this.mountedOnHorse = options.mountedOnHorse ?? this.mountedOnHorse
     this.hitPoints = options.hitPoints ?? this.hitPoints
     this.speed = options.speed ?? this.speed
@@ -332,11 +336,11 @@ export class Unit extends Instance implements UnitEntity {
 
     if (this.assets) {
       for (const [key, value] of Object.entries(this.assets)) {
-        Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
+        Object.assign(this, { [key]: getCachedSpritesheet(value) })
       }
     } else if (this.allAssets) {
       for (const [key, value] of Object.entries(this.allAssets.default)) {
-        Object.assign(this, { [key]: Assets.cache.get(value) as SpritesheetLike | undefined })
+        Object.assign(this, { [key]: getCachedSpritesheet(value) })
       }
     }
     if (
@@ -399,8 +403,10 @@ export class Unit extends Instance implements UnitEntity {
       this.currentSheet === SHEET_TYPES.corpse ? this.decompose() : this.death()
     } else if ((this.loading ?? 0) > 0) {
       const loadingWork = getWorkWithLoadingType(this.loadingType ?? '')
-      this.walkingSheet = this.allAssets?.[loadingWork] && Assets.cache.get(this.allAssets[loadingWork].loadedSheet)
-      this.standingSheet = this.allAssets?.[loadingWork] && Assets.cache.get(this.allAssets[loadingWork].standingSheet)
+      const loadedSheetId = this.allAssets?.[loadingWork]?.loadedSheet
+      const standingSheetId = this.allAssets?.[loadingWork]?.standingSheet
+      this.walkingSheet = loadedSheetId ? getCachedSpritesheet(loadedSheetId) : undefined
+      this.standingSheet = standingSheetId ? getCachedSpritesheet(standingSheetId) : undefined
     }
     this.setTextures(this.currentSheet)
 
@@ -488,7 +494,7 @@ export class Unit extends Instance implements UnitEntity {
 
   setupMountedHorseSprite() {
     if (!this.mountedOnHorse || this.horseSprite) return
-    const horseSheet = Assets.cache.get(MOUNTED_HORSE_STANDING_SHEET) as SpritesheetLike | undefined
+    const horseSheet = getCachedSpritesheet(MOUNTED_HORSE_STANDING_SHEET)
     if (!horseSheet?.textures) return
 
     const { textures } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
@@ -529,7 +535,7 @@ export class Unit extends Instance implements UnitEntity {
 
     const horseShouldMove = this.currentSheet === SHEET_TYPES.walking || this.isDirectMoving
     const sheetId = horseShouldMove ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
-    const horseSheet = Assets.cache.get(sheetId) as SpritesheetLike | undefined
+    const horseSheet = getCachedSpritesheet(sheetId)
     if (!horseSheet?.textures) return
 
     const frame = Math.min(this.horseSprite.currentFrame, Math.max(this.horseSprite.textures.length - 1, 0))
@@ -656,8 +662,8 @@ export class Unit extends Instance implements UnitEntity {
           : null
       const basePlayerColorSheetId =
         baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
-      const sheetId = variantSheetId && Assets.cache.get(variantSheetId) ? variantSheetId : basePlayerColorSheetId
-      const spritesheet = sheetId ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
+      const sheetId = variantSheetId && Assets.cache.has(variantSheetId) ? variantSheetId : basePlayerColorSheetId
+      const spritesheet = sheetId ? getCachedSpritesheet(sheetId) : undefined
       const spriteKey = i
       liveLayers.add(spriteKey)
 

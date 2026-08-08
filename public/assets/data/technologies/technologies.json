@@ -66,18 +66,15 @@
       "type": "improve",
       "operations": [
         {
-          "key": "meleeAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "2",
+          "value": 2,
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman",
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider"
+            "axe",
+            "dagger",
+            "broadsword",
+            "longsword",
+            "halberd"
           ]
         }
       ]
@@ -107,18 +104,15 @@
       "type": "improve",
       "operations": [
         {
-          "key": "meleeAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "2",
+          "value": 2,
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman",
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider"
+            "axe",
+            "dagger",
+            "broadsword",
+            "longsword",
+            "halberd"
           ]
         }
       ]
@@ -148,18 +142,15 @@
       "type": "improve",
       "operations": [
         {
-          "key": "meleeAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "3",
+          "value": 3,
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman",
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider"
+            "axe",
+            "dagger",
+            "broadsword",
+            "longsword",
+            "halberd"
           ]
         }
       ]
@@ -579,17 +570,17 @@
           "type": "Villager"
         },
         {
-          "key": "pierceAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "2",
+          "value": 2,
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
-            "WatchTower",
-            "SentryTower",
-            "GuardTower",
-            "BallistaTower"
+            "bow",
+            "bow_great",
+            "bow_recurve",
+            "watch_tower_arrow",
+            "sentry_tower_arrow",
+            "guard_tower_arrow",
+            "ballista_tower_bolt"
           ]
         }
       ]
@@ -1019,17 +1010,17 @@
           "type": "Villager"
         },
         {
-          "key": "pierceAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "2",
+          "value": 2,
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
-            "WatchTower",
-            "SentryTower",
-            "GuardTower",
-            "BallistaTower"
+            "bow",
+            "bow_great",
+            "bow_recurve",
+            "watch_tower_arrow",
+            "sentry_tower_arrow",
+            "guard_tower_arrow",
+            "ballista_tower_bolt"
           ]
         }
       ]
@@ -1071,17 +1062,17 @@
           "type": "Villager"
         },
         {
-          "key": "pierceAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "2",
+          "value": 2,
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
-            "WatchTower",
-            "SentryTower",
-            "GuardTower",
-            "BallistaTower"
+            "bow",
+            "bow_great",
+            "bow_recurve",
+            "watch_tower_arrow",
+            "sentry_tower_arrow",
+            "guard_tower_arrow",
+            "ballista_tower_bolt"
           ]
         }
       ]
@@ -1248,20 +1239,20 @@
       "type": "improve",
       "operations": [
         {
-          "key": "pierceAttack",
+          "key": "weapon.power",
           "op": "+",
-          "value": "1",
+          "value": 1,
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
-            "StoneThrower",
-            "Catapult",
-            "Ballista",
-            "WatchTower",
-            "SentryTower",
-            "GuardTower",
-            "BallistaTower"
+            "bow",
+            "bow_great",
+            "bow_recurve",
+            "stone_thrower_stone",
+            "catapult_stone",
+            "ballista_bolt",
+            "watch_tower_arrow",
+            "sentry_tower_arrow",
+            "guard_tower_arrow",
+            "ballista_tower_bolt"
           ]
         }
       ]

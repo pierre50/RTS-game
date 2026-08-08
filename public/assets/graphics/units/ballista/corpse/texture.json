@@ -1,6 +1,6 @@
 {
   "frames": {
-    "000.png": {
+    "000_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -24,7 +24,7 @@
         "y": 0.34328358208955223
       }
     },
-    "001.png": {
+    "001_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 345,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.2786885245901639
       }
     },
-    "002.png": {
+    "002_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 688,
         "y": 0,
@@ -72,7 +72,7 @@
         "y": 0.21428571428571427
       }
     },
-    "003.png": {
+    "003_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1030,
         "y": 0,
@@ -96,7 +96,7 @@
         "y": 0.425531914893617
       }
     },
-    "004.png": {
+    "004_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1094,
         "y": 0,
@@ -120,7 +120,7 @@
         "y": 0.41304347826086957
       }
     },
-    "005.png": {
+    "005_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1155,
         "y": 0,
@@ -144,7 +144,7 @@
         "y": 0.5
       }
     },
-    "006.png": {
+    "006_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1207,
         "y": 0,
@@ -168,7 +168,7 @@
         "y": 0.4444444444444444
       }
     },
-    "007.png": {
+    "007_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1281,
         "y": 0,
@@ -192,7 +192,7 @@
         "y": 0.39285714285714285
       }
     },
-    "008.png": {
+    "008_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1351,
         "y": 0,
@@ -216,7 +216,7 @@
         "y": 0.36
       }
     },
-    "009.png": {
+    "009_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1406,
         "y": 0,
@@ -240,7 +240,7 @@
         "y": 0.45714285714285713
       }
     },
-    "010.png": {
+    "010_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1479,
         "y": 0,
@@ -264,7 +264,7 @@
         "y": 0.4827586206896552
       }
     },
-    "011.png": {
+    "011_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1544,
         "y": 0,
@@ -288,7 +288,7 @@
         "y": 0.6842105263157895
       }
     },
-    "012.png": {
+    "012_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1598,
         "y": 0,
@@ -312,7 +312,7 @@
         "y": 0.6153846153846154
       }
     },
-    "013.png": {
+    "013_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1658,
         "y": 0,
@@ -336,7 +336,7 @@
         "y": 0.6875
       }
     },
-    "014.png": {
+    "014_graphics_units_ballista_corpse.png": {
       "frame": {
         "x": 1702,
         "y": 0,

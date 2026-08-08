@@ -1,33 +1,53 @@
 {
   "axe": {
-    "meleeAttack": 5
+    "weapon": {
+      "power": 5
+    }
   },
   "pickaxe": {
-    "meleeAttack": 2
+    "weapon": {
+      "power": 2
+    }
   },
   "hammer": {
-    "meleeAttack": 2
+    "weapon": {
+      "power": 2
+    }
   },
   "scythe": {
-    "meleeAttack": 3
+    "weapon": {
+      "power": 3
+    }
   },
   "bow": {
-    "pierceAttack": 4
+    "weapon": {
+      "power": 4
+    }
   },
   "bow_great": {
-    "pierceAttack": 6
+    "weapon": {
+      "power": 6
+    }
   },
   "bow_recurve": {
-    "pierceAttack": 8
+    "weapon": {
+      "power": 8
+    }
   },
   "dagger": {
-    "meleeAttack": 7
+    "weapon": {
+      "power": 7
+    }
   },
   "broadsword": {
-    "meleeAttack": 9
+    "weapon": {
+      "power": 9
+    }
   },
   "longsword": {
-    "meleeAttack": 11
+    "weapon": {
+      "power": 11
+    }
   },
   "round_shield_brass_slash": {
     "meleeArmor": 1
@@ -36,9 +56,58 @@
     "meleeArmor": 2
   },
   "cane": {
-    "meleeAttack": 1
+    "weapon": {
+      "power": 1
+    }
   },
   "halberd": {
-    "meleeAttack": 17
+    "weapon": {
+      "power": 17
+    }
+  },
+  "boar_tusks": {
+    "weapon": {
+      "power": 3
+    }
+  },
+  "wolf_bite": {
+    "weapon": {
+      "power": 4
+    }
+  },
+  "watch_tower_arrow": {
+    "weapon": {
+      "power": 3
+    }
+  },
+  "sentry_tower_arrow": {
+    "weapon": {
+      "power": 4
+    }
+  },
+  "guard_tower_arrow": {
+    "weapon": {
+      "power": 6
+    }
+  },
+  "ballista_tower_bolt": {
+    "weapon": {
+      "power": 20
+    }
+  },
+  "stone_thrower_stone": {
+    "weapon": {
+      "power": 50
+    }
+  },
+  "catapult_stone": {
+    "weapon": {
+      "power": 50
+    }
+  },
+  "ballista_bolt": {
+    "weapon": {
+      "power": 40
+    }
   }
 }

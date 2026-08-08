@@ -22,6 +22,7 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === './equipmentStats') return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
     if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === './maths') return { getReliefOffset: () => 0 }
@@ -67,26 +68,30 @@ const target = {
   owner: { label: 'enemy' },
 }
 
-test('units with no attack stats cannot attack enemies', () => {
+test('units with no weapon config can attack enemies with unarmed power', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
   const villager = {
+    family: constants.FAMILY_TYPES.unit,
     hitPoints: 45,
     isDead: false,
     owner,
     type: 'Villager',
+    weaponPower: 0.5,
   }
 
-  assert.equal(getActionCondition(villager, target, 'attack'), false)
+  assert.equal(getActionCondition(villager, target, 'attack'), true)
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
   const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const villager = { category: 'Civilian', hitPoints: 25, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
+  const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
 
   assert.equal(shouldFleeWhenAttacked(villager, enemySoldier), true)
@@ -95,9 +100,10 @@ test('villagers flee from anything that fights back, human or AI-controlled alik
 test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
   const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const villager = { category: 'Civilian', hitPoints: 25, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
-  const woundedDeer = { family: 'animal', hitPoints: 2, meleeAttack: 1, totalHitPoints: 20, type: 'Deer' }
+  const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
+  const woundedDeer = { family: 'animal', hitPoints: 2, weaponPower: 1, totalHitPoints: 20, type: 'Deer' }
 
   assert.equal(shouldFleeWhenAttacked(villager, woundedDeer), false)
 })
@@ -105,9 +111,10 @@ test('villagers keep hunting a nearly-dead animal instead of fleeing full health
 test('villagers retreat from a healthy animal once critically hurt themselves', () => {
   const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const woundedVillager = { category: 'Civilian', hitPoints: 5, meleeAttack: 3, totalHitPoints: 25, type: 'Villager' }
-  const healthyBoar = { family: 'animal', hitPoints: 40, meleeAttack: 6, totalHitPoints: 40, type: 'Boar' }
+  const woundedVillager = { category: 'Civilian', hitPoints: 5, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
+  const healthyBoar = { family: 'animal', hitPoints: 40, weaponPower: 6, totalHitPoints: 40, type: 'Boar' }
 
   assert.equal(shouldFleeWhenAttacked(woundedVillager, healthyBoar), true)
 })
@@ -115,9 +122,10 @@ test('villagers retreat from a healthy animal once critically hurt themselves', 
 test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
   const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const healthyHero = { category: 'Civilian', hitPoints: 45, meleeAttack: 5, totalHitPoints: 45, type: 'Hero' }
-  const chief = { category: 'Civilian', hitPoints: 45, meleeAttack: 5, totalHitPoints: 45, type: 'Chief' }
+  const healthyHero = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Hero' }
+  const chief = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Chief' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
 
   assert.equal(shouldFleeWhenAttacked(healthyHero, enemySoldier), false)
@@ -127,9 +135,10 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
 test('military units fight on until critically wounded, then retreat from a real threat', () => {
   const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const healthySoldier = { category: 'Infantry', hitPoints: 40, meleeAttack: 3, totalHitPoints: 40, type: 'Clubman' }
-  const criticalSoldier = { category: 'Infantry', hitPoints: 5, meleeAttack: 3, totalHitPoints: 40, type: 'Clubman' }
+  const healthySoldier = { category: 'Infantry', hitPoints: 40, weaponPower: 3, totalHitPoints: 40, type: 'Clubman' }
+  const criticalSoldier = { category: 'Infantry', hitPoints: 5, weaponPower: 3, totalHitPoints: 40, type: 'Clubman' }
   const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Axeman' }
   const nearlyDeadEnemy = { family: 'unit', hitPoints: 2, totalHitPoints: 40, type: 'Axeman' }
 
@@ -166,7 +175,7 @@ function makeMoraleUnit(extra = {}) {
     i: 4,
     isDead: false,
     j: 4,
-    meleeAttack: 3,
+    weaponPower: 3,
     owner,
     totalHitPoints: 40,
     type: 'Clubman',
@@ -181,7 +190,7 @@ test('a trapped, badly wounded villager surrenders when local enemy force is ove
   const villager = makeMoraleUnit({
     category: 'Civilian',
     hitPoints: 5,
-    meleeAttack: 3,
+    weaponPower: 3,
     totalHitPoints: 25,
     type: constants.UNIT_TYPES.villager,
   })
@@ -206,7 +215,7 @@ test('a badly wounded villager with an escape route flees instead of surrenderin
   const villager = makeMoraleUnit({
     category: 'Civilian',
     hitPoints: 5,
-    meleeAttack: 3,
+    weaponPower: 3,
     totalHitPoints: 25,
     type: constants.UNIT_TYPES.villager,
   })
@@ -221,7 +230,7 @@ test('a supported soldier does not surrender just because enemies are nearby', (
     '../constants': constants,
   })
   const soldier = makeMoraleUnit({ hitPoints: 25 })
-  const ally = makeMoraleUnit({ hitPoints: 50, i: 4, j: 5, meleeAttack: 8 })
+  const ally = makeMoraleUnit({ hitPoints: 50, i: 4, j: 5, weaponPower: 8 })
   const enemies = [0, 1].map(offset =>
     makeMoraleUnit({
       hitPoints: 35,
@@ -246,7 +255,7 @@ test('a trapped, critically wounded soldier can surrender to an overwhelming ene
       hitPoints: 45,
       i: 3 + offset,
       j: 4,
-      meleeAttack: 7,
+      weaponPower: 7,
       owner: { label: 'enemy' },
       type: 'Axeman',
     })
@@ -272,7 +281,7 @@ test('heroes and chiefs never auto-surrender from morale checks', () => {
   assert.notEqual(evaluateCombatMorale(hero, enemy), 'surrender')
 })
 
-test('units with attack stats can attack enemies', () => {
+test('units with weapon config can attack enemies', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
   })
@@ -281,7 +290,7 @@ test('units with attack stats can attack enemies', () => {
     hitPoints: 120,
     isDead: false,
     owner,
-    pierceAttack: 5,
+    weaponPower: 5,
     type: 'ScoutShip',
   }
 
@@ -297,7 +306,7 @@ test('units cannot attack or damage friendly units', () => {
     hitPoints: 120,
     isDead: false,
     owner: { label: 'player', isEnemy: targetOwner => targetOwner?.label === 'enemy' },
-    pierceAttack: 5,
+    weaponPower: 5,
     type: 'ScoutShip',
   }
   const friendlyTarget = {
@@ -321,7 +330,7 @@ test('units cannot attack or damage allied-team units', () => {
     hitPoints: 120,
     isDead: false,
     owner: { label: 'player', team: 1, isEnemy: targetOwner => targetOwner?.team !== 1 },
-    pierceAttack: 5,
+    weaponPower: 5,
     type: 'ScoutShip',
   }
   const alliedTarget = {
@@ -336,6 +345,28 @@ test('units cannot attack or damage allied-team units', () => {
   assert.equal(getHitPointsWithDamage(scoutShip, alliedTarget), 20)
 })
 
+test('unarmed units deal half a point of damage', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const attacker = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner,
+    type: 'Villager',
+    weaponPower: 0.5,
+  }
+  const enemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: { label: 'enemy' },
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, enemy), 19.5)
+})
+
 test('hero defense blocks incoming damage and flashes', () => {
   const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
@@ -344,7 +375,7 @@ test('hero defense blocks incoming damage and flashes', () => {
   const attacker = {
     hitPoints: 20,
     isDead: false,
-    meleeAttack: 8,
+    weaponPower: 8,
     owner,
     type: 'Clubman',
   }
@@ -371,7 +402,7 @@ test('hero defense blocks animal attack damage too', () => {
     family: constants.FAMILY_TYPES.animal,
     hitPoints: 20,
     isDead: false,
-    meleeAttack: 6,
+    weaponPower: 6,
     owner,
     type: 'Lion',
   }
@@ -407,7 +438,7 @@ test('hero defense still blocks a hit landing in front of the hero', () => {
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: 10, y: 0 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: 10, y: 0 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -431,7 +462,7 @@ test('hero defense still blocks a hit landing exactly at the edge of the frontal
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: 0, y: 10 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: 0, y: 10 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -455,7 +486,7 @@ test('hero defense does not block a hit landing behind the hero, even while acti
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman', x: -10, y: 0 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: -10, y: 0 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -479,7 +510,7 @@ test('hero defense with no position data on either side fails open (still blocks
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, meleeAttack: 8, owner, type: 'Clubman' }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman' }
   const defendingHero = {
     family: constants.FAMILY_TYPES.unit,
     heroDefenseActive: true,

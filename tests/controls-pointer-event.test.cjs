@@ -113,6 +113,7 @@ function loadControls() {
       getControlActionForKeyboardEvent: evt => {
         if (evt.key === 'z') return 'heroUp'
         if (evt.key === 'f') return 'heroEntityInteraction'
+        if (evt.key === 'i') return 'inventory'
         if (evt.key === ' ') return 'heroDefense'
         if (evt.key === 'ArrowLeft') return 'cameraLeft'
         return null
@@ -360,6 +361,32 @@ test('Escape closes hero menus even while the game is paused', () => {
 
     controls.onKeyDown({
       key: 'Escape',
+      target: new MockElement(),
+      preventDefault: () => calls.push('preventDefault'),
+    })
+
+    assert.deepEqual(calls, ['preventDefault', 'closeInventory'])
+  } finally {
+    restore()
+  }
+})
+
+test('inventory key closes inventory even while the game is paused', () => {
+  const { controls, restore } = createControls()
+  try {
+    const calls = []
+    controls.context.paused = true
+    controls.heroController.active = true
+    controls.context.menu = {
+      isInventoryOpen: () => true,
+      closeInventory: () => calls.push('closeInventory'),
+      isNpcOrdersOpen: () => false,
+      isHeroBuildingMenuOpen: () => false,
+    }
+
+    controls.onKeyDown({
+      key: 'i',
+      code: 'KeyI',
       target: new MockElement(),
       preventDefault: () => calls.push('preventDefault'),
     })

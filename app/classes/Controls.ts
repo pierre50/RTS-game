@@ -326,8 +326,17 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
     if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
-    if (this.isInteractionBlocked()) return
     const action = getControlActionForKeyboardEvent(evt)
+    if (
+      action === 'inventory' &&
+      this.isHeroControlActive() &&
+      this.context.menu?.isInventoryOpen?.()
+    ) {
+      evt.preventDefault()
+      this.context.menu.closeInventory?.()
+      return
+    }
+    if (this.isInteractionBlocked()) return
     const isCameraAction = Boolean(action && CAMERA_ACTIONS.has(action))
     if (evt.repeat && !isCameraAction) return
 
