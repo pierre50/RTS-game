@@ -1014,6 +1014,8 @@ export default class Game extends Container {
     this._refreshPortalPartyFog(travelUnits)
     controls.init?.()
     controls.context?.menu?.updateHeroStatus?.(hero)
+    controls.context?.menu?.updatePlayerMiniMapEvt?.(player)
+    controls.context?.menu?.updateCameraMiniMap?.()
   }
 
   async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {

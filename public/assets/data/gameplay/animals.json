@@ -36,6 +36,7 @@
     "ambientWalkDelayMax": 6500,
     "ambientWalkRange": 3,
     "totalQuantity": 40,
+    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/hare/standing",
       "walkingSheet": "animals/hare/walking",
@@ -63,6 +64,7 @@
     "ambientWalkDelayMax": 12000,
     "ambientWalkRange": 2,
     "totalQuantity": 30,
+    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/black-grouse/standing",
       "walkingSheet": "animals/black-grouse/walking",
@@ -90,6 +92,7 @@
     "ambientWalkDelayMax": 10000,
     "ambientWalkRange": 3,
     "totalQuantity": 50,
+    "spriteScale": 0.8,
     "assets": {
       "standingSheet": "animals/fox/standing",
       "walkingSheet": "animals/fox/walking",
