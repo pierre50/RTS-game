@@ -52,7 +52,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
       LABEL_TYPES: { commRadius: 'commRadius' },
-      MOUNTED_HORSE_SPEED_BONUS: 0.4,
+      MOUNTED_HORSE_SPEED_BONUS: 0.45,
       SHEET_TYPES: { action: 'action', standing: 'standing', walking: 'walking' },
       STEP_TIME: 100,
     },
@@ -324,7 +324,7 @@ test('H mounts the hero once for debug without stacking speed', () => {
 
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)
   assert.equal(hero.mountedOnHorse, true)
-  assert.equal(hero.speed, 1.4)
+  assert.equal(hero.speed, 1.45)
   assert.deepEqual(calls, [['setTextures', 'standing']])
 
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)

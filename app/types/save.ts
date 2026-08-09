@@ -29,6 +29,7 @@ export type SaveEntityState = {
   totalEnergy?: number
   lastEnergySpentAt?: number
   hitPoints?: number
+  horseColor?: string
   healthRegenRate?: number
   healthRegenDelay?: number
   healthRegenMultiplier?: number

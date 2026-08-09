@@ -1034,7 +1034,7 @@ test('stable training remounts the same unit type without charging unit cost or 
       },
       LABEL_TYPES: {},
       MENU_INFO_IDS: { populationText: 'populationText' },
-      MOUNTED_HORSE_SPEED_BONUS: 0.4,
+      MOUNTED_HORSE_SPEED_BONUS: 0.45,
       PLAYER_TYPES: { ai: 'AI' },
       POPULATION_MAX: 200,
       UNIT_TYPES: { villager: 'Villager' },
@@ -1078,7 +1078,7 @@ test('stable training remounts the same unit type without charging unit cost or 
         name: 'Alexios',
         mountedOnHorse: true,
         hitPoints: 32,
-        speed: 1.6,
+        speed: 1.65,
         experience: { combat: 12 },
       },
     ]

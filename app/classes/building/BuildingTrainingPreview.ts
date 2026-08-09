@@ -22,6 +22,7 @@ import {
   mountedRiderLegOffset,
   mountedRiderXOffset,
 } from '../../lib/mountedRider'
+import { getHorseColorFromSeed, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
 import type { Texture } from 'pixi.js'
 import type { SchedulerTaskId } from '../../types/context'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
@@ -70,6 +71,10 @@ function getLayerActionSheetId(layer: UnitAppearanceLayerConfig, work: string, m
   if (layer.hideForActions?.includes(ACTION_TYPES.attack)) return null
   if (mounted && layer.mountedSheet) return layer.mountedSheet
   return layer.actionWorkSheetOverrides?.[`${work}:${ACTION_TYPES.attack}`]?.[SHEET_TYPES.action] ?? layer.actionSheet ?? null
+}
+
+function isHorseSheet(sheetId: string): boolean {
+  return sheetId === MOUNTED_HORSE_STANDING_SHEET
 }
 
 function isLayerUnlockedForPreview(layer: UnitAppearanceLayerConfig, unit: PreviewUnit): boolean {
@@ -165,16 +170,24 @@ export class BuildingTrainingPreview {
     const trainee = this.building.trainingType === type ? this.building.trainingUnit : null
     if (trainee?.appearanceVariants) unit.appearanceVariants = { ...trainee.appearanceVariants }
     if (trainee?.experience) unit.experience = { ...trainee.experience }
+    if (trainee?.horseColor) unit.horseColor = trainee.horseColor
     applyBakedLpcUnitAssets(unit as UnitEntity)
     return unit
   }
 
-  createSprite(sheetId: string, directionCount: number | null, zIndex: number, scale: number): PreviewLayer | null {
+  createSprite(
+    sheetId: string,
+    directionCount: number | null,
+    zIndex: number,
+    scale: number,
+    horseColor?: HorseColor
+  ): PreviewLayer | null {
     const sheet = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
     const app = this.building.context?.app
     if (!sheet?.textures || !app) return null
 
-    const sprite = new AnimatedSprite(getAnimationFrames(sheet.textures, 'south', directionCount) as Texture[])
+    const frames = getAnimationFrames(sheet.textures, 'south', directionCount) as Texture[]
+    const sprite = new AnimatedSprite(isHorseSheet(sheetId) ? recolorHorseTextures(frames, horseColor) : frames)
     bindAnimatedSpriteToTicker(sprite, app)
     sprite.label = LABEL_TYPES.sprite
     sprite.eventMode = 'none'
@@ -223,7 +236,10 @@ export class BuildingTrainingPreview {
 
   createMountedLayers(unit: PreviewUnit, scale: number, directionCount: number | null): PreviewLayer[] {
     const layers: PreviewLayer[] = []
-    const horse = this.createSprite(MOUNTED_HORSE_STANDING_SHEET, 3, MAIN_PREVIEW_Z_INDEX + 20, scale)
+    const horseColor =
+      (unit.horseColor as HorseColor | undefined) ??
+      getHorseColorFromSeed(`${this.building.label}:${unit.type}:${this.building.i}:${this.building.j}`)
+    const horse = this.createSprite(MOUNTED_HORSE_STANDING_SHEET, 3, MAIN_PREVIEW_Z_INDEX + 20, scale, horseColor)
     const legs = this.createSprite(MOUNTED_RIDER_LEGS_SHEET, 3, MAIN_PREVIEW_Z_INDEX - 1, scale)
     const riderSheetId = getActionSheetId(unit)
     const rider = riderSheetId ? this.createSprite(riderSheetId, directionCount, MAIN_PREVIEW_Z_INDEX, scale) : null

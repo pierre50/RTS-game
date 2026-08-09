@@ -102,7 +102,7 @@ export interface PlayerLike {
     }
   ) => BuildingEntity
   createUnit?: (options: PlayerUnitCreationOptions, creationOptions?: { preserveType?: boolean }) => UnitEntity
-  createAnimal?: (options: { i: number; j: number; type: string }) => RuntimeEntity
+  createAnimal?: (options: { i: number; j: number; type: string; horseColor?: string }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void
   buyTechnology?: (type: string, alreadyPaid?: boolean, force?: boolean) => boolean

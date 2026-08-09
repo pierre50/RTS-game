@@ -35,7 +35,7 @@ export const UNIT_TYPES = {
   scout: 'Scout',
 }
 
-export const MOUNTED_HORSE_SPEED_BONUS = 0.4
+export const MOUNTED_HORSE_SPEED_BONUS = 0.45
 
 export const PLAYER_TYPES = {
   human: 'Human',

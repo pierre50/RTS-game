@@ -83,18 +83,21 @@ function getTrainingExtra(building: Building, trainee: UnitEntity, type: string)
   if (trainee.appearanceVariants) baseExtra.appearanceVariants = { ...trainee.appearanceVariants }
   if (trainee.mountedOnHorse) {
     baseExtra.mountedOnHorse = true
+    if (trainee.horseColor) baseExtra.horseColor = trainee.horseColor
     const traineeSpeed = Number(trainee.speed)
     if (Number.isFinite(traineeSpeed)) baseExtra.speed = traineeSpeed
   }
   if (!isStableMountTraining(building, trainee, type)) return { ...baseExtra, experience: {} }
   const traineeSpeed = Number(trainee.speed)
-  return {
+  const mountedExtra: UnitCreationExtra = {
     ...baseExtra,
     mountedOnHorse: true,
     hitPoints: trainee.hitPoints,
     speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
     experience: trainee.experience ? { ...trainee.experience } : undefined,
   }
+  if (trainee.horseColor) mountedExtra.horseColor = trainee.horseColor
+  return mountedExtra
 }
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {

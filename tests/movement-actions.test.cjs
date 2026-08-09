@@ -188,6 +188,49 @@ test('direct texture recoloring bakes and caches animation frames', () => {
   }
 })
 
+test('arbitrary texture recoloring preserves anchors and caches frames', () => {
+  const previousDocument = global.document
+  const imageData = { data: new Uint8ClampedArray([0xad, 0x6e, 0x51, 255, 0x12, 0x34, 0x56, 255]) }
+  let bakedData = null
+  let fromCalls = 0
+  global.document = {
+    createElement: () => ({
+      width: 0,
+      height: 0,
+      getContext: () => ({
+        drawImage: () => {},
+        getImageData: () => imageData,
+        putImageData: data => {
+          bakedData = new Uint8ClampedArray(data.data)
+        },
+      }),
+    }),
+  }
+
+  try {
+    const { recolorTextureByMap } = loadModule('app/lib/graphics/colors.ts', {
+      'pixi.js': { Texture: { from: () => ({ recolored: ++fromCalls }) } },
+      'pixi-filters': { MultiColorReplaceFilter: class {} },
+    })
+    const sourceTexture = {
+      defaultAnchor: { x: 0.5, y: 0.86 },
+      frame: { x: 0, y: 0, width: 2, height: 1 },
+      source: { resource: {}, uid: 'horse-sheet' },
+    }
+
+    const first = recolorTextureByMap(sourceTexture, [[0xad6e51, 0x848795]], 'horse-dark')
+    const second = recolorTextureByMap(sourceTexture, [[0xad6e51, 0x848795]], 'horse-dark')
+
+    assert.equal(fromCalls, 1)
+    assert.equal(second, first)
+    assert.deepEqual(first.defaultAnchor, sourceTexture.defaultAnchor)
+    assert.deepEqual(Array.from(bakedData.slice(0, 3)), [0x84, 0x87, 0x95])
+    assert.deepEqual(Array.from(bakedData.slice(4, 7)), [0x12, 0x34, 0x56])
+  } finally {
+    global.document = previousDocument
+  }
+})
+
 test('sets an automatically selected destination before starting its action', () => {
   const oldTarget = { label: 'empty-tree', family: 'resource' }
   const newTarget = { label: 'tree-2', family: 'resource', x: 10, y: 12 }

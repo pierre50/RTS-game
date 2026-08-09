@@ -24,6 +24,7 @@ import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
@@ -91,6 +92,7 @@ export class Animal extends Instance implements AnimalEntity {
   ambientWalkDelayMax?: number
   ambientWalkRange?: number
   sounds?: UnitSounds
+  horseColor?: HorseColor
 
   constructor(options: AnimalOptions, context: GameContextLike) {
     super(context)
@@ -124,6 +126,13 @@ export class Animal extends Instance implements AnimalEntity {
     this.assignProperties(options)
     const animalConfig = (this.owner.config.animals?.[this.type] ?? {}) as Partial<AnimalConfig> & PositionedConfig
     this.assignProperties(animalConfig)
+    if (this.type === 'Horse') {
+      this.horseColor = isHorseColor(options.horseColor)
+        ? options.horseColor
+        : isHorseColor(this.horseColor)
+          ? this.horseColor
+          : getHorseColorFromSeed(`${this.type}:${this.i}:${this.j}:${this.label}`)
+    }
     this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 
     this.size = 1
@@ -304,6 +313,9 @@ export class Animal extends Instance implements AnimalEntity {
 
   override setTextures(sheet: string): void {
     super.setTextures(sheet)
+    if (this.type === 'Horse' && this.horseColor) {
+      this.sprite.textures = recolorHorseTextures(this.sprite.textures as Texture[], this.horseColor)
+    }
     this.syncShadow()
   }
 

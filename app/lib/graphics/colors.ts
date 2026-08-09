@@ -116,6 +116,30 @@ function getTextureColorKey(texture: RecolorableTexture): string {
   return [source, frame.x, frame.y, frame.width, frame.height].join('_')
 }
 
+function normalizeColorMapKey(colorMap: readonly [number, number][]): string {
+  return colorMap.map(([source, target]) => `${source.toString(16)}-${target.toString(16)}`).join('_')
+}
+
+function applyColorMapToCanvas(canvas: HTMLCanvasElement, colorMap: readonly [number, number][]): void {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = imageData.data
+  const replacements = new Map(colorMap)
+
+  for (let i = 0; i < data.length; i += 4) {
+    const rgb = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2]
+    const targetColor = replacements.get(rgb)
+    if (targetColor === undefined) continue
+    data[i] = (targetColor >> 16) & 0xff
+    data[i + 1] = (targetColor >> 8) & 0xff
+    data[i + 2] = targetColor & 0xff
+  }
+
+  ctx.putImageData(imageData, 0, 0)
+}
+
 // Remaps `canvas`'s pixels from the neutral "blue" template to the given
 // player color, in place. Pure Canvas2D — no Texture/GPU involved, so it's
 // safe to use right after drawing into a canvas that was never rendered
@@ -179,6 +203,41 @@ function recolorTextureDirectly(
   recolorCanvasPixels(canvas, color, sourceColors)
 
   const newTexture = Texture.from(canvas)
+  ;(newTexture as Texture & { defaultAnchor?: unknown }).defaultAnchor = (
+    texture as Texture & { defaultAnchor?: unknown }
+  ).defaultAnchor
+  ;(newTexture as Texture & { hitArea?: unknown }).hitArea = (texture as Texture & { hitArea?: unknown }).hitArea
+  recoloredTextureCache.set(cacheKey, newTexture)
+  return newTexture
+}
+
+export function recolorTextureByMap<TTexture extends RecolorableTexture>(
+  texture: TTexture,
+  colorMap: readonly [number, number][],
+  cacheNamespace: string
+): Texture {
+  if (!colorMap.length) return texture
+
+  const frame = texture.frame
+  const cacheKey = `${cacheNamespace}_${getTextureColorKey(texture)}_${normalizeColorMapKey(colorMap)}`
+  if (recoloredTextureCache.has(cacheKey)) return recoloredTextureCache.get(cacheKey)!
+
+  const baseTexture = texture.source.resource
+  const canvas = document.createElement('canvas')
+  canvas.width = frame.width
+  canvas.height = frame.height
+
+  const ctx = canvas.getContext('2d')
+  if (!baseTexture || !ctx) return texture
+
+  ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)
+  applyColorMapToCanvas(canvas, colorMap)
+
+  const newTexture = Texture.from(canvas)
+  ;(newTexture as Texture & { defaultAnchor?: unknown }).defaultAnchor = (
+    texture as Texture & { defaultAnchor?: unknown }
+  ).defaultAnchor
+  ;(newTexture as Texture & { hitArea?: unknown }).hitArea = (texture as Texture & { hitArea?: unknown }).hitArea
   recoloredTextureCache.set(cacheKey, newTexture)
   return newTexture
 }

@@ -49,6 +49,7 @@ import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
 import { heroCanCommand } from '../../lib/chief'
 import {
@@ -229,6 +230,7 @@ export class Unit extends Instance implements UnitEntity {
   currentSheet!: NonNullable<UnitEntity['currentSheet']>
   currentFrame!: NonNullable<UnitEntity['currentFrame']>
   mountedOnHorse?: UnitEntity['mountedOnHorse']
+  horseColor?: HorseColor
   actionSheet?: UnitEntity['actionSheet']
   walkingSheet?: UnitEntity['walkingSheet']
   standingSheet?: UnitEntity['standingSheet']
@@ -308,6 +310,13 @@ export class Unit extends Instance implements UnitEntity {
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     this.assignProperties(unitConfig)
     this.mountedOnHorse = options.mountedOnHorse ?? this.mountedOnHorse
+    if (this.mountedOnHorse) {
+      this.horseColor = isHorseColor(options.horseColor)
+        ? options.horseColor
+        : isHorseColor(this.horseColor)
+          ? this.horseColor
+          : getHorseColorFromSeed(`${this.owner?.label}:${this.type}:${this.i}:${this.j}:${this.label}`)
+    }
     this.hitPoints = options.hitPoints ?? this.hitPoints
     this.speed = options.speed ?? this.speed
     if (this.mountedOnHorse && options.speed == null) this.speed = (this.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
@@ -528,7 +537,7 @@ export class Unit extends Instance implements UnitEntity {
     if (!horseSheet?.textures) return
 
     const { textures } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
-    this.horseSprite = new AnimatedSprite(textures as Texture[])
+    this.horseSprite = new AnimatedSprite(recolorHorseTextures(textures as Texture[], this.horseColor))
     bindAnimatedSpriteToTicker(this.horseSprite, this.context.app)
     this.horseSprite.label = `${LABEL_TYPES.sprite}-horse`
     this.horseSprite.eventMode = 'none'
@@ -688,7 +697,7 @@ export class Unit extends Instance implements UnitEntity {
     const frame = Math.min(this.horseSprite.currentFrame, Math.max(this.horseSprite.textures.length - 1, 0))
     const { textures, mirrored } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
     const spriteScale = this.spriteScale ?? 1
-    this.horseSprite.textures = textures as Texture[]
+    this.horseSprite.textures = recolorHorseTextures(textures as Texture[], this.horseColor)
     this.horseSprite.scale.x = mirrored ? -spriteScale : spriteScale
     this.horseSprite.scale.y = spriteScale
     this.horseSprite.animationSpeed = horseSheet.data?.animationSpeed ?? 0.2

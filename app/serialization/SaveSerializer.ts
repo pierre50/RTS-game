@@ -38,6 +38,7 @@ type SerializableEntity = RuntimeEntityBase & {
   healthRegenDelay?: number
   healthRegenMultiplier?: number
   lastHealthDamagedAt?: number
+  horseColor?: string
   followingHero?: boolean
   inactif?: boolean
   isBuilt?: boolean
@@ -134,6 +135,7 @@ function animalData(animal: SerializableEntity): SaveEntityState {
       'y',
       'z',
       'hitPoints',
+      'horseColor',
       'path',
       'work',
       'realDest',
@@ -198,6 +200,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'assetCiv',
       'assetAge',
       'mountedOnHorse',
+      'horseColor',
       'experience',
     ]),
     currentFrame: unit.sprite?.currentFrame,

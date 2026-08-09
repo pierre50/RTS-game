@@ -19,6 +19,7 @@ export type UnitCreationExtra = {
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
   mountedOnHorse?: boolean
+  horseColor?: string
   hitPoints?: number
   speed?: number
   experience?: Record<string, number>
@@ -186,6 +187,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   currentSheet?: string
   currentFrame?: number
   mountedOnHorse?: boolean
+  horseColor?: string
   removeMountedHorseSprite?: () => void
   syncMountedHorseSprite?: () => void
   syncMountedRiderPosition?: () => void
@@ -378,6 +380,7 @@ export interface AnimalEntity extends RuntimeEntityBase {
   dest?: RuntimeCell | RuntimeEntity | null
   action?: string | null
   isFleeing?: boolean
+  horseColor?: string
   standingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
 }

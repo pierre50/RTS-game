@@ -117,6 +117,7 @@ export interface AnimalConfig extends EntityConfig {
   ambientWalkDelayMin?: number
   ambientWalkDelayMax?: number
   ambientWalkRange?: number
+  horseColor?: string
 }
 
 interface ProjectileTrajectory {
