@@ -48,6 +48,8 @@ type UnitRestoreReferences = {
 export type PlayerUnitCreationOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
 
+export type PlayerDiplomacy = 'neutral'
+
 export interface PlayerLike {
   label: string
   i: number
@@ -58,13 +60,17 @@ export interface PlayerLike {
   gender?: 'male' | 'female'
   colorHex: string
   name?: string
+  factionId?: string | null
   team?: number | null
+  diplomacy?: PlayerDiplomacy | null
   age: number
   cellViewed: number
   wood: number
   food: number
   stone: number
   gold: number
+  copper: number
+  iron: number
   population: number
   populationMax: number
   isPlayed?: boolean
@@ -112,6 +118,9 @@ export interface PlayerLike {
   foundedBerrybushs?: Set<RuntimeEntity>
   foundedStones?: Set<RuntimeEntity>
   foundedGolds?: Set<RuntimeEntity>
+  foundedCoppers?: Set<RuntimeEntity>
+  foundedIrons?: Set<RuntimeEntity>
+  foundedResources?: Record<string, Set<RuntimeEntity>>
   foundedAnimals?: Set<RuntimeEntity>
   foundedDeadAnimals?: Set<RuntimeEntity>
   foundedEnemyBuildings?: Set<RuntimeEntity>

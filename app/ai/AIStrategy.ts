@@ -12,6 +12,7 @@ import {
   AGE_UP_BUFFERS,
   AGE_UP_COSTS,
   AI_DIFFICULTIES,
+  CHIEF_TECH_PRIORITY,
   MAX_ARCHER_BY_AGE,
   MAX_BUILDING_BY_AGE,
   MAX_BUILDING_BY_AGE_FROZEN,
@@ -22,7 +23,7 @@ import {
   TECH_PRIORITY_BY_BUILDING,
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
-import { ARCHER_TECH_UPGRADES, INFANTRY_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
+import { ARCHER_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
 import type { UnitCreationExtra } from '../types/entities'
 import type {
   AIAge,
@@ -72,6 +73,7 @@ export class AIStrategy {
   maxInfantryByAge: AgeMap<number>
   maxArcherByAge: AgeMap<number>
   maxCavalryByAge: AgeMap<number>
+  chiefTechPriority: string[]
   techPriorityByBuilding: Record<string, string[]>
   military: AIMilitary
 
@@ -87,6 +89,7 @@ export class AIStrategy {
     this.maxInfantryByAge = MAX_INFANTRY_BY_AGE
     this.maxArcherByAge = MAX_ARCHER_BY_AGE
     this.maxCavalryByAge = MAX_CAVALRY_BY_AGE
+    this.chiefTechPriority = CHIEF_TECH_PRIORITY
     this.techPriorityByBuilding = TECH_PRIORITY_BY_BUILDING
     this.military = new AIMilitary(ai, this)
   }
@@ -131,7 +134,7 @@ export class AIStrategy {
   }
 
   getBestInfantryUnit(): string {
-    return getBestUnitFromTechs(this.ai.technologies, INFANTRY_TECH_UPGRADES, 'Clubman')
+    return 'Fantassin'
   }
 
   getBestArcherUnit(): string {
@@ -583,14 +586,21 @@ export class AIStrategy {
       }
     }
 
-    const buildingListByType = {
+    const ageUpReserve = this.getAgeUpReserve()
+    for (const tech of this.chiefTechPriority) {
+      if (ai.technologies.includes(tech)) continue
+      if (!this.canResearchTech(tech)) continue
+      if (this.isTechnologyInProgress(tech)) continue
+      actions += this.buyTechnology([], tech, ageUpReserve, debug)
+    }
+
+    const buildingListByType: BuildingListByType = {
       [BUILDING_TYPES.barracks]: barracks,
       [BUILDING_TYPES.archeryRange]: archeryRanges,
       [BUILDING_TYPES.storagePit]: storagepits,
       [BUILDING_TYPES.market]: markets,
       [BUILDING_TYPES.granary]: granarys,
     }
-    const ageUpReserve = this.getAgeUpReserve()
     for (const [buildingType, techList] of Object.entries(ai.techPriorityByBuilding) as [string, string[]][]) {
       const buildings = buildingListByType[buildingType]
       for (const tech of techList) {

@@ -85,7 +85,7 @@ function getTrainingExtra(building: Building, trainee: UnitEntity, type: string)
     const traineeSpeed = Number(trainee.speed)
     if (Number.isFinite(traineeSpeed)) baseExtra.speed = traineeSpeed
   }
-  if (!isStableMountTraining(building, trainee, type)) return Object.keys(baseExtra).length ? baseExtra : undefined
+  if (!isStableMountTraining(building, trainee, type)) return { ...baseExtra, experience: {} }
   const traineeSpeed = Number(trainee.speed)
   return {
     ...baseExtra,
@@ -166,7 +166,7 @@ export class BuildingProduction {
       return false
     if (consumePopulationSlot) building.owner.population++
 
-    const unitExtra = extra || building.owner.getUnitExtraOptions?.(type) || {}
+    const unitExtra = { ...(building.owner.getUnitExtraOptions?.(type) || {}), ...(extra || {}) }
     const unit = building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
     if (!unit) return false
     const rallyPoint = building.rallyPoint

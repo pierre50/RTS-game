@@ -1,5 +1,6 @@
-import { POPULATION_MAX } from '../../constants'
+import { POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { capitalizeFirstLetter, isValidCondition } from '../../lib'
+import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/settings'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
@@ -31,6 +32,14 @@ type DevTechnologyPlayer = DevPlayer & {
   onAgeChange?: () => void
   populationMax?: number
   updateConfig?: (operations: Array<ConfigOperation & { value: number }>) => void
+}
+
+function refreshPlayerUnitEquipmentVisuals(player: DevPlayer): void {
+  for (const unit of player.units ?? []) {
+    if (unit.isDead || unit.isDestroyed) continue
+    refreshUnitEquipmentStats(unit)
+    unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+  }
 }
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
@@ -154,7 +163,7 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
 
 export function setAge(context: DevConsoleContext, value: string): CommandResult {
   const age = Number(value)
-  if (!Number.isInteger(age) || age < 0 || age > 1) return { ok: false, message: 'Age must be between 0 and 1' }
+  if (!Number.isInteger(age) || age < 0 || age > 3) return { ok: false, message: 'Age must be between 0 and 3' }
   context.player.age = age
   const player = context.player as DevTechnologyPlayer
   player.age = age
@@ -162,6 +171,7 @@ export function setAge(context: DevConsoleContext, value: string): CommandResult
   if (player.autoTechnologyByAge) {
     applyEligibleTechnologies(context)
   }
+  refreshPlayerUnitEquipmentVisuals(player)
   context.menu.updateActionTarget?.()
   context.menu.updateTopbar()
   return { ok: true, message: `Age set to ${age}` }

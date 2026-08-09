@@ -36,8 +36,6 @@ const WIND_LERP_PER_SECOND = 1
 const RAIN_LOOP_MAX_VOLUME = 0.55
 const WIND_LOOP_MAX_VOLUME = 0.4
 const AMBIENT_CROSSFADE_MID = 0.45
-const DARKNESS_BRIGHTNESS_THRESHOLD = 0.86
-
 const VEIL_TARGETS: Record<WeatherPhase, number> = {
   sunny: 0,
   clouding: 0.01,
@@ -451,8 +449,7 @@ export class WeatherSystem {
   }
 
   getDarknessLevel(): number {
-    if (this.phase === 'night') return 1
-    return clamp((DARKNESS_BRIGHTNESS_THRESHOLD - this.currentColor.brightness) / DARKNESS_BRIGHTNESS_THRESHOLD, 0, 1)
+    return this.phase === 'night' ? 1 : 0
   }
 
   updateRain(elapsedSeconds: number): void {

@@ -3,7 +3,11 @@ export const RESOURCE_TYPES = {
   berrybush: 'Berrybush',
   stone: 'Stone',
   gold: 'Gold',
+  copper: 'Copper',
+  iron: 'Iron',
 }
+
+export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
 
 export const BUILDING_TYPES = {
   house: 'House',
@@ -26,14 +30,8 @@ export const UNIT_TYPES = {
   villager: 'Villager',
   chief: 'Chief',
   priest: 'Priest',
-  clubman: 'Clubman',
-  axeman: 'Axeman',
-  shortSwordsman: 'ShortSwordsman',
-  broadSwordsman: 'BroadSwordsman',
-  longSwordsman: 'LongSwordsman',
+  infantry: 'Fantassin',
   bowman: 'Bowman',
-  improvedBowman: 'ImprovedBowman',
-  compositeBowman: 'CompositeBowman',
   scout: 'Scout',
 }
 
@@ -79,6 +77,8 @@ export const ACTION_TYPES = {
   forageberry: 'forageberry',
   minegold: 'minegold',
   minestone: 'minestone',
+  minecopper: 'minecopper',
+  mineiron: 'mineiron',
   chopwood: 'chopwood',
   heal: 'heal',
   convert: 'convert',
@@ -90,6 +90,8 @@ export const LOADING_TYPES = {
   berry: 'berry',
   stone: 'stone',
   gold: 'gold',
+  copper: 'copper',
+  iron: 'iron',
   wood: 'wood',
 }
 
@@ -99,6 +101,67 @@ export const LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOAD
 export const TYPE_ACTION = {
   Stone: ACTION_TYPES.minestone,
   Gold: ACTION_TYPES.minegold,
+  Copper: ACTION_TYPES.minecopper,
+  Iron: ACTION_TYPES.mineiron,
   Berrybush: ACTION_TYPES.forageberry,
   Tree: ACTION_TYPES.chopwood,
 }
+
+export const RESOURCE_STOCKPILE_TYPES = {
+  [RESOURCE_TYPES.tree]: 'wood',
+  [RESOURCE_TYPES.berrybush]: 'food',
+  [RESOURCE_TYPES.stone]: 'stone',
+  [RESOURCE_TYPES.gold]: 'gold',
+  [RESOURCE_TYPES.copper]: 'copper',
+  [RESOURCE_TYPES.iron]: 'iron',
+} as const
+
+export const RESOURCE_ICON_IDS = {
+  wood: { commodity: '000_50732', attribute: '000_50731' },
+  food: { commodity: '002_50732', attribute: '002_50731' },
+  stone: { commodity: '001_50732', attribute: '001_50731' },
+  gold: { commodity: '003_50732', attribute: '003_50731' },
+  copper: { commodity: '003_50732', attribute: '003_50731' },
+  iron: { commodity: '001_50732', attribute: '001_50731' },
+} as const
+
+export const MINING_RESOURCE_CONFIG = {
+  [RESOURCE_TYPES.stone]: {
+    action: ACTION_TYPES.minestone,
+    loadingType: LOADING_TYPES.stone,
+    work: WORK_TYPES.stoneminer,
+    sound: 'mineStone',
+    gatherEvery: 1,
+    dieOnEmpty: true,
+  },
+  [RESOURCE_TYPES.gold]: {
+    action: ACTION_TYPES.minegold,
+    loadingType: LOADING_TYPES.gold,
+    work: WORK_TYPES.goldminer,
+    sound: 'mineGold',
+    gatherEvery: 4,
+  },
+  [RESOURCE_TYPES.copper]: {
+    action: ACTION_TYPES.minecopper,
+    loadingType: LOADING_TYPES.copper,
+    work: WORK_TYPES.goldminer,
+    sound: 'mineGold',
+    gatherEvery: 2,
+  },
+  [RESOURCE_TYPES.iron]: {
+    action: ACTION_TYPES.mineiron,
+    loadingType: LOADING_TYPES.iron,
+    work: WORK_TYPES.goldminer,
+    sound: 'mineGold',
+    gatherEvery: 3,
+  },
+} as const
+
+export const MINING_RESOURCE_TYPES = Object.keys(MINING_RESOURCE_CONFIG)
+export const SPACED_RESOURCE_TYPES = [
+  RESOURCE_TYPES.berrybush,
+  RESOURCE_TYPES.gold,
+  RESOURCE_TYPES.stone,
+  RESOURCE_TYPES.copper,
+  RESOURCE_TYPES.iron,
+] as const

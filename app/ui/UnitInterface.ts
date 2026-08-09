@@ -2,12 +2,41 @@ import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
 import type { EquipmentCombatStats } from '../lib/equipmentStats'
-import { formatXpProgressText, getHighestUnitLevel, getUnitExperienceEntries, getXpInfoId } from '../lib/unitExperience'
+import {
+  formatXpProgressText,
+  getUnitEquipmentLevel,
+  getUnitExperienceEntries,
+  getUnitOverallLevel,
+  getXpInfoId,
+  XP_CATEGORIES,
+} from '../lib/unitExperience'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../types/entities'
 import type { UnitConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
+
+const ARCHER_XP_CATEGORIES = [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]
+const INFANTRY_XP_CATEGORIES = [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
+const PRIEST_XP_CATEGORIES = [XP_CATEGORIES.healing]
+const VILLAGER_HIDDEN_XP_CATEGORIES = new Set([
+  XP_CATEGORIES.ranged,
+  XP_CATEGORIES.melee,
+  XP_CATEGORIES.defense,
+  XP_CATEGORIES.healing,
+])
+
+function getFocusedXpCategories(unit: UnitEntity, data: UnitConfig): string[] | null {
+  if (unit.type === UNIT_TYPES.priest) return PRIEST_XP_CATEGORIES
+  if (data.category === 'Archer') return ARCHER_XP_CATEGORIES
+  if (data.category === 'Fantassin') return INFANTRY_XP_CATEGORIES
+  return null
+}
+
+function shouldShowGenericXpCategory(unit: UnitEntity, category: string): boolean {
+  if (category === XP_CATEGORIES.healing && unit.type !== UNIT_TYPES.priest) return false
+  return unit.type !== UNIT_TYPES.villager || !VILLAGER_HIDDEN_XP_CATEGORIES.has(category)
+}
 
 export class UnitInterface {
   unit: UnitEntity
@@ -67,37 +96,50 @@ export class UnitInterface {
       header?.prepend(nameElement)
     }
 
-    // A single glanceable level (the best of the 9 per-skill levels below), always shown —
-    // the per-category rows only list categories with XP (or all of them with showAllXp), so
-    // neither view alone gives an immediate answer to "what level is this unit."
-    element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getHighestUnitLevel(unit)}`))
+    // A single glanceable global level, always shown. Per-category rows below still expose
+    // the skills that explain where that level came from.
+    element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getUnitOverallLevel(unit)}`))
 
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos: [keyof EquipmentCombatStats, string][] = [
-      ['weaponPower', '007_50731'],
-      ['meleeArmor', '008_50731'],
-      ['pierceArmor', '010_50731'],
+    const infos: [keyof EquipmentCombatStats, string, string][] = [
+      ['weaponPower', '007_50731', 'combatAttackStat'],
+      ['meleeArmor', '008_50731', 'combatMeleeArmorStat'],
+      ['pierceArmor', '010_50731', 'combatPierceArmorStat'],
     ]
-    const combatStats = getUnitEffectiveCombatStats(unit.type, data, unit.work)
+    const combatStats = getUnitEffectiveCombatStats(
+      unit.type,
+      data,
+      unit.work,
+      unit.owner?.age,
+      getUnitEquipmentLevel(unit, data.category)
+    )
 
     for (let i = 0; i < infos.length; i++) {
       const info = infos[i]
       const value = combatStats[info[0]]
-      if (value) {
-        const infoDiv = document.createElement('div')
-        infoDiv.classList.add('info')
+      if (!value) continue
+      const infoDiv = document.createElement('div')
+      infoDiv.classList.add('info')
+      infoDiv.title = t(info[2])
 
-        infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
-        infoDiv.appendChild(createInfoText(String(info[0]), value))
-        infosDiv.appendChild(infoDiv)
-      }
+      infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
+      infoDiv.appendChild(createInfoText(String(info[0]), value))
+      infosDiv.appendChild(infoDiv)
     }
 
     element.appendChild(infosDiv)
 
-    const xpEntries = getUnitExperienceEntries(unit, { includeZero: options?.showAllXp })
+    const focusedXpCategories = getFocusedXpCategories(unit, data)
+    const xpEntries = focusedXpCategories
+      ? focusedXpCategories.map(category => ({
+          category,
+          ...getUnitExperienceEntries(unit, { includeZero: true }).find(entry => entry.category === category),
+        }))
+      : getUnitExperienceEntries(unit, { includeZero: options?.showAllXp }).filter(
+          entry => shouldShowGenericXpCategory(unit, entry.category)
+        )
     if (xpEntries.length) {
       const xpDiv = document.createElement('div')
       xpDiv.classList.add('unit-xp')

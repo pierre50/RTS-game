@@ -1,6 +1,6 @@
 import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
-import { POPULATION_MAX } from '../constants'
+import { POPULATION_MAX, RESOURCE_NAMES as PLAYER_RESOURCE_NAMES } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
@@ -37,7 +37,7 @@ import {
 import { toggleHeroCollisionDebug } from './actions/debug'
 import type { DevEntity, DevPlayer } from './types'
 
-const RESOURCE_NAMES = ['all', 'wood', 'food', 'stone', 'gold']
+const RESOURCE_NAMES = ['all', ...PLAYER_RESOURCE_NAMES]
 
 export function createDevCommands(): DevCommandRegistry {
   const registry = new DevCommandRegistry()
@@ -129,7 +129,7 @@ export function createDevCommands(): DevCommandRegistry {
   registry.register({
     name: 'resources',
     aliases: ['res'],
-    usage: 'resources [wood|food|stone|gold|all] [amount]',
+    usage: `resources [${RESOURCE_NAMES.join('|')}] [amount]`,
     describe: 'Add resources to player',
     complete: () => RESOURCE_NAMES,
     run: ([resource = 'all', amount = 1000], context) => {
@@ -156,9 +156,9 @@ export function createDevCommands(): DevCommandRegistry {
 
   registry.register({
     name: 'age',
-    usage: 'age <0-1>',
+    usage: 'age <0-3>',
     describe: 'Set player age',
-    complete: () => ['0', '1'],
+    complete: () => ['0', '1', '2', '3'],
     run: ([value], context) => setAge(context, value),
   })
 

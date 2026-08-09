@@ -2,7 +2,8 @@ import { Assets } from 'pixi.js'
 import { hashLpcAppearanceSeed } from './appearance'
 import { dynamicEquipmentAssets, dynamicEquipmentLayersForUnit, dynamicEquipmentLayersForVillager } from './equipment'
 import { isChiefUnit } from '../chief'
-import { UNIT_TYPES } from '../../constants'
+import { getUnitEquipmentLevel } from '../unitExperience'
+import { SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
@@ -17,30 +18,20 @@ const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
 
 type BakedUnitType =
   | 'villager'
-  | 'clubman'
-  | 'axeman'
-  | 'bowman'
-  | 'shortswordman'
-  | 'improvedbowman'
-  | 'compositebowman'
-  | 'broadswordman'
-  | 'longswordman'
+  | 'infantry'
+  | 'infantry_nohair'
   | 'priest'
   | 'chief'
   | 'hero'
+
+const INFANTRY_HELMET_MIN_LEVEL = 6
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
   Hero: 'hero',
   Villager: 'villager',
   Chief: 'chief',
-  Clubman: 'clubman',
-  Axeman: 'axeman',
-  Bowman: 'bowman',
-  ShortSwordsman: 'shortswordman',
-  ImprovedBowman: 'improvedbowman',
-  CompositeBowman: 'compositebowman',
-  BroadSwordsman: 'broadswordman',
-  LongSwordsman: 'longswordman',
+  Fantassin: 'infantry',
+  Bowman: 'infantry',
   Priest: 'priest',
 }
 
@@ -159,8 +150,22 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
 // applyBakedLpcUnitAssets), so it's added here explicitly to still get preloaded.
 const BAKED_UNITS: readonly BakedUnitType[] = [
   ...new Set(Object.values(UNIT_TYPE_TO_BAKED_UNIT)),
+  'infantry_nohair',
   'hero',
 ] as BakedUnitType[]
+
+function resolveBakedUnitForRuntime(unit: UnitEntity): BakedUnitType | undefined {
+  const bakedUnit: BakedUnitType | undefined =
+    unit.controlMode === 'hero' ? 'hero' : isChiefUnit(unit) ? 'chief' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
+  if (bakedUnit !== 'infantry' || ![UNIT_TYPES.infantry, UNIT_TYPES.bowman].includes(unit.type)) return bakedUnit
+  return getUnitEquipmentLevel(unit) >= INFANTRY_HELMET_MIN_LEVEL ? 'infantry_nohair' : 'infantry'
+}
+
+function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType): string | null {
+  if (!unit.owner) return null
+  const preferredGender = bakedUnit === 'hero' ? unit.owner.gender : null
+  return bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`, preferredGender)
+}
 
 export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, 'civ' | 'gender' | 'label'>[]): Promise<void> {
   const variants = new Set<string>()
@@ -191,21 +196,20 @@ export async function preloadBakedLpcUnitsForPlayers(players: Pick<PlayerLike, '
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   // The player-controlled hero has its own config, but controlMode still wins here
   // because a promoted chief and a controlled hero can both be isChief units.
-  const bakedUnit: BakedUnitType | undefined =
-    unit.controlMode === 'hero' ? 'hero' : isChiefUnit(unit) ? 'chief' : UNIT_TYPE_TO_BAKED_UNIT[unit.type]
-  if (!bakedUnit || !unit.owner) return false
+  const resolvedBakedUnit = resolveBakedUnitForRuntime(unit)
+  const variant = resolvedBakedUnit ? resolveBakedRuntimeVariant(unit, resolvedBakedUnit) : null
+  if (!resolvedBakedUnit || !variant) return false
 
   // Player setup gender only drives the controlled hero/avatar. Regular units
   // keep a spawn-time mix so a batch like "spawn villager 10" is visually varied.
-  const preferredGender = bakedUnit === 'hero' ? unit.owner.gender : null
-  const variant = bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`, preferredGender)
-  const isVillagerLike = bakedUnit === 'villager' || bakedUnit === 'hero'
-  const bodyAlias = bakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
-  const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedUnitAlias(bakedUnit, variant, 'walking')
+  const gender = variant.endsWith('/female') ? 'female' : 'male'
+  const isVillagerLike = resolvedBakedUnit === 'villager' || resolvedBakedUnit === 'hero'
+  const bodyAlias = resolvedBakedUnit === 'hero' ? heroBodyAlias : villagerBodyAlias
+  const walking = isVillagerLike ? bodyAlias(variant, 'walking') : bakedUnitAlias(resolvedBakedUnit, variant, 'walking')
   if (!isAssetCached(walking)) return false
 
   unit.appearance = undefined
-  unit.appearanceVariants = undefined
+  unit.appearanceVariants = { gender }
   unit.sheetDirectionCounts = {
     standingSheet: 3,
     walkingSheet: 3,
@@ -224,22 +228,22 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   // unit.type, since that's the only place it still carries its old type.
   const dynamicLayers = isVillagerLike
     ? dynamicEquipmentLayersForVillager()
-    : dynamicEquipmentLayersForUnit(bakedUnit === 'chief' ? UNIT_TYPES.chief : unit.type)
+    : dynamicEquipmentLayersForUnit(resolvedBakedUnit === 'chief' ? UNIT_TYPES.chief : unit.type)
   unit.appearance = dynamicLayers.length ? { layers: dynamicLayers } : undefined
 
   if (!isVillagerLike) {
     unit.assets = {
       standingSheet: walking,
       walkingSheet: walking,
-      actionSheet: bakedUnitAlias(bakedUnit, variant, 'action'),
-      ridingSheet: bakedUnitAlias(bakedUnit, variant, 'riding'),
-      dyingSheet: bakedUnitAlias(bakedUnit, variant, 'dying'),
-      corpseSheet: bakedUnitAlias(bakedUnit, variant, 'corpse'),
+      actionSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'action'),
+      ridingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'riding'),
+      dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),
+      corpseSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'corpse'),
     }
     return true
   }
 
-  const actionAlias = bakedUnit === 'hero' ? heroActionAlias : villagerActionAlias
+  const actionAlias = resolvedBakedUnit === 'hero' ? heroActionAlias : villagerActionAlias
   const villagerSheets = (actionAnimation: 'slash' | 'shoot') => {
     const bodyWalking = bodyAlias(variant, 'walking')
     const bodyDying = bodyAlias(variant, 'dying')
@@ -251,14 +255,13 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       dyingSheet: bodyDying,
       corpseSheet: bodyCorpse,
     }
-    return bakedUnit === 'hero' ? { ...sheets, ridingSheet: actionAlias(variant, `riding/${actionAnimation}`) } : sheets
+    return resolvedBakedUnit === 'hero' ? { ...sheets, ridingSheet: actionAlias(variant, `riding/${actionAnimation}`) } : sheets
   }
 
   unit.allAssets = {
     default: villagerSheets('slash'),
     attacker: villagerSheets('slash'),
     heroSword: villagerSheets('slash'),
-    heroSpear: villagerSheets('slash'),
     hunter: {
       ...villagerSheets('shoot'),
       harvestSheet: actionAlias(variant, 'slash'),
@@ -273,4 +276,22 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   }
   unit.assets = unit.allAssets.default
   return true
+}
+
+export function refreshBakedLpcUnitAssets(unit: UnitEntity): boolean {
+  if (!applyBakedLpcUnitAssets(unit)) return false
+  Object.assign(
+    unit,
+    Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
+  )
+  unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
+  return true
+}
+
+export async function ensureAndRefreshBakedLpcUnitAssets(unit: UnitEntity): Promise<boolean> {
+  const resolvedBakedUnit = resolveBakedUnitForRuntime(unit)
+  const variant = resolvedBakedUnit ? resolveBakedRuntimeVariant(unit, resolvedBakedUnit) : null
+  if (!resolvedBakedUnit || !variant) return false
+  await loadBakedUnitVariant(resolvedBakedUnit, variant)
+  return refreshBakedLpcUnitAssets(unit)
 }

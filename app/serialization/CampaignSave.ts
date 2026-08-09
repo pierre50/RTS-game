@@ -1,6 +1,7 @@
 import type {
   CampaignSave,
   CampaignWorldSave,
+  FactionSave,
   SaveRecord,
   SerializedSave,
   WorldColor,
@@ -18,6 +19,8 @@ type InitialCampaignOptions = {
 
 type ChildWorldOptions = InitialCampaignOptions & {
   entryPortalId?: string | null
+  factionIds?: string[]
+  factions?: Record<string, FactionSave>
   parentWorldId?: string
   returnPortalId?: string | null
 }
@@ -71,6 +74,7 @@ export function createInitialCampaignSave(
       playerLabel: worldState.players.find(player => player.isPlayed)?.label,
       followerLabels: [],
     },
+    factions: {},
     worlds: { [id]: world },
     worldGraph: {
       rootWorldId: id,
@@ -80,6 +84,7 @@ export function createInitialCampaignSave(
           name: worldName,
           color,
           environment: worldEnvironment(worldState),
+          factionIds: [],
           parentId: null,
           children: [],
           discoveredAt: now,
@@ -142,6 +147,8 @@ export function addChildWorldToCampaign(
   {
     color = 'neutral',
     entryPortalId = null,
+    factionIds = [],
+    factions = {},
     name,
     now = Date.now(),
     parentWorldId = campaign.currentWorldId,
@@ -158,9 +165,14 @@ export function addChildWorldToCampaign(
   const parentNode = campaign.worldGraph.nodes[parentWorldId]
   const existingNode = campaign.worldGraph.nodes[id]
   const nextParentChildren = parentNode?.children.includes(id) ? parentNode.children : [...(parentNode?.children ?? []), id]
+  const nextFactionIds = [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
 
   return {
     ...campaign,
+    factions: {
+      ...(campaign.factions ?? {}),
+      ...factions,
+    },
     currentWorldId: id,
     heroParty: {
       ...campaign.heroParty,
@@ -197,6 +209,7 @@ export function addChildWorldToCampaign(
           name: existingNode?.name ?? worldName,
           color: existingNode?.color ?? color,
           environment: worldEnvironment(childState) ?? existingNode?.environment ?? null,
+          factionIds: nextFactionIds,
           parentId: parentWorldId,
           children: existingNode?.children ?? [],
           discoveredAt: existingNode?.discoveredAt ?? now,

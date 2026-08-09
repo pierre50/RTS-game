@@ -36,22 +36,63 @@ test('Stable trains only unmounted matching military units into mounted units', 
   const owner = {}
   const stable = {
     type: 'Stable',
-    units: ['Clubman', 'Bowman'],
+    units: ['Fantassin', 'Bowman'],
     owner,
     isBuilt: true,
     isDead: false,
   }
-  const clubman = { type: 'Clubman', owner }
+  const clubman = { type: 'Fantassin', owner }
   const bowman = { type: 'Bowman', owner }
-  const mountedClubman = { type: 'Clubman', mountedOnHorse: true, owner }
+  const mountedInfantry = { type: 'Fantassin', mountedOnHorse: true, owner }
   const villager = { type: 'Villager', owner }
 
-  assert.equal(canUnitTrainInto(stable, clubman, 'Clubman'), true)
-  assert.equal(getTrainingTargetForUnit(stable, clubman), 'Clubman')
+  assert.equal(canUnitTrainInto(stable, clubman, 'Fantassin'), true)
+  assert.equal(getTrainingTargetForUnit(stable, clubman), 'Fantassin')
   assert.equal(canUnitTrainInto(stable, bowman, 'Bowman'), true)
   assert.equal(getTrainingTargetForUnit(stable, bowman), 'Bowman')
-  assert.equal(canUnitTrainInto(stable, mountedClubman, 'Clubman'), false)
-  assert.equal(getTrainingTargetForUnit(stable, mountedClubman), null)
-  assert.equal(canUnitTrainInto(stable, villager, 'Clubman'), false)
+  assert.equal(canUnitTrainInto(stable, mountedInfantry, 'Fantassin'), false)
+  assert.equal(getTrainingTargetForUnit(stable, mountedInfantry), null)
+  assert.equal(canUnitTrainInto(stable, villager, 'Fantassin'), false)
   assert.equal(getTrainingTargetForUnit(stable, villager), null)
+})
+
+test('Barracks and archery range no longer upgrade trained soldiers', () => {
+  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildingTraining.ts', {
+    '../constants': {
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
+    },
+    './combat': { isValidCondition: () => true },
+    './unitUpgrades': loadModule('app/lib/unitUpgrades.ts', {
+      '../constants': {
+        BUILDING_TYPES: { stable: 'Stable', barracks: 'Barracks', archeryRange: 'ArcheryRange' },
+        UNIT_TYPES: {
+          clubman: 'Fantassin',
+          axeman: 'Fantassin',
+          shortSwordsman: 'Fantassin',
+          broadSwordsman: 'Fantassin',
+          longSwordsman: 'Fantassin',
+          bowman: 'Bowman',
+        },
+      },
+    }),
+  })
+
+  const owner = {
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin' },
+        Bowman: { category: 'Archer' },
+      },
+    },
+  }
+  const barracks = { type: 'Barracks', units: ['Fantassin'], owner, isBuilt: true, isDead: false }
+  const archeryRange = { type: 'ArcheryRange', units: ['Bowman'], owner, isBuilt: true, isDead: false }
+  const clubman = { type: 'Fantassin', owner }
+  const bowman = { type: 'Bowman', owner }
+
+  assert.equal(canUnitTrainInto(barracks, clubman, 'Fantassin'), false)
+  assert.equal(getTrainingTargetForUnit(barracks, clubman), null)
+  assert.equal(canUnitTrainInto(archeryRange, bowman, 'Bowman'), false)
+  assert.equal(getTrainingTargetForUnit(archeryRange, bowman), null)
 })

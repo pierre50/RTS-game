@@ -1,6 +1,7 @@
 import { Resource } from '../Resource'
 import {
   RESOURCE_TYPES,
+  SPACED_RESOURCE_TYPES,
   BIOME_TREE_CHANCE,
   BIOME_TREE_PLAYER_SAFE_DIST,
   getEnvironmentTerrainParams,
@@ -13,7 +14,16 @@ import type { ResourceEntity } from '../../types/entities'
 export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
 type ResourceType = string
 type ResourceRange = [min: number, max: number]
-type ResourceGroupEntry = [type: ResourceType, baseCount: number, quantity: number, clusterRadius: number]
+type ResourceGroupEntry = {
+  type: ResourceType
+  quantity: number
+  clusterRadius: number
+  playerSafeDistance: number
+  minNeutralDistance: number
+}
+type NeutralResourceGroup = ResourceGroupEntry & {
+  profileKey: keyof (typeof RESOURCE_DENSITY_PROFILES)['moderate']['neutralGroups']
+}
 type ResourceCenter = GridPosition
 type MapResourcesMap = {
   context: object
@@ -38,7 +48,56 @@ type MapResourcesMap = {
   ): GridPosition | null
 }
 
-const SPACED_RESOURCE_TYPES = new Set([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.gold, RESOURCE_TYPES.stone])
+const SPACED_RESOURCE_TYPE_SET = new Set<string>(SPACED_RESOURCE_TYPES)
+
+const PLAYER_RESOURCE_GROUPS: Array<[type: ResourceType, quantity: number, range: ResourceRange]> = [
+  [RESOURCE_TYPES.berrybush, 8, [7, 14]],
+  [RESOURCE_TYPES.berrybush, 8, [14, 22]],
+  [RESOURCE_TYPES.berrybush, 8, [22, 29]],
+]
+
+const NEUTRAL_RESOURCE_GROUPS: NeutralResourceGroup[] = [
+  {
+    type: RESOURCE_TYPES.berrybush,
+    profileKey: 'berrybush',
+    quantity: 8,
+    clusterRadius: 2,
+    playerSafeDistance: 26,
+    minNeutralDistance: 20,
+  },
+  {
+    type: RESOURCE_TYPES.stone,
+    profileKey: 'stone',
+    quantity: 8,
+    clusterRadius: 3,
+    playerSafeDistance: 14,
+    minNeutralDistance: 15,
+  },
+  {
+    type: RESOURCE_TYPES.copper,
+    profileKey: 'copper',
+    quantity: 7,
+    clusterRadius: 3,
+    playerSafeDistance: 20,
+    minNeutralDistance: 18,
+  },
+  {
+    type: RESOURCE_TYPES.iron,
+    profileKey: 'iron',
+    quantity: 6,
+    clusterRadius: 2,
+    playerSafeDistance: 26,
+    minNeutralDistance: 22,
+  },
+  {
+    type: RESOURCE_TYPES.gold,
+    profileKey: 'gold',
+    quantity: 5,
+    clusterRadius: 2,
+    playerSafeDistance: 32,
+    minNeutralDistance: 26,
+  },
+]
 
 function hasSpacedResourceAround(grid: RuntimeCell[][], i: number, j: number, radius: number = 3): boolean {
   const minI = Math.max(0, i - radius)
@@ -49,7 +108,7 @@ function hasSpacedResourceAround(grid: RuntimeCell[][], i: number, j: number, ra
     const minJ = Math.max(0, j - radius)
     const maxJ = Math.min(row.length - 1, j + radius)
     for (let nj = minJ; nj <= maxJ; nj++) {
-      if (SPACED_RESOURCE_TYPES.has(row[nj]?.has?.type ?? '')) return true
+      if (SPACED_RESOURCE_TYPE_SET.has(row[nj]?.has?.type ?? '')) return true
     }
   }
   return false
@@ -61,20 +120,31 @@ function createResource(map: MapResourcesMap, i: number, j: number, type: Resour
 
 const RESOURCE_DENSITY_PROFILES = {
   low: {
-    neutralGroups: { berrybush: 2, stone: 2, gold: 2, tree: 4 },
+    neutralGroups: { berrybush: 2, stone: 5, copper: 3, iron: 2, gold: 1, tree: 4 },
     minNeutralDistance: 28,
     playerSafeDistance: 34,
   },
   moderate: {
-    neutralGroups: { berrybush: 4, stone: 4, gold: 4, tree: 7 },
+    neutralGroups: { berrybush: 4, stone: 9, copper: 6, iron: 4, gold: 3, tree: 7 },
     minNeutralDistance: 24,
     playerSafeDistance: 30,
   },
   high: {
-    neutralGroups: { berrybush: 7, stone: 6, gold: 6, tree: 11 },
+    neutralGroups: { berrybush: 7, stone: 14, copper: 10, iron: 7, gold: 5, tree: 11 },
     minNeutralDistance: 20,
     playerSafeDistance: 26,
   },
+}
+
+function shuffled<T>(items: T[], random: () => number): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1))
+    const item = result[i]
+    result[i] = result[j]
+    result[j] = item
+  }
+  return result
 }
 
 export class MapResources {
@@ -283,24 +353,10 @@ export class MapResources {
   async generateResourcesAroundPlayersAsync(playersPos: GridPosition[]): Promise<void> {
     const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
     for (const player of playersPos) {
-      const groups: Array<[type: ResourceType, quantity: number, range: ResourceRange]> = [
-        [RESOURCE_TYPES.berrybush, 8, [7, 14]],
-        [RESOURCE_TYPES.berrybush, 8, [14, 22]],
-        [RESOURCE_TYPES.berrybush, 8, [22, 29]],
-        [RESOURCE_TYPES.stone, 7, [7, 14]],
-        [RESOURCE_TYPES.stone, 7, [14, 22]],
-        [RESOURCE_TYPES.stone, 7, [22, 29]],
-        [RESOURCE_TYPES.gold, 7, [7, 14]],
-        [RESOURCE_TYPES.gold, 7, [14, 22]],
-        [RESOURCE_TYPES.gold, 7, [22, 29]],
-      ]
-      for (const [type, quantity, range] of groups) {
+      for (const [type, quantity, range] of PLAYER_RESOURCE_GROUPS) {
         this.map.placeResourceGroup(player, type, quantity, range)
         await yieldFrame()
       }
-      const { forestDensity } = getEnvironmentTerrainParams(this.map.environment)
-      this.map.generateForestAroundPlayer(player, Math.round(this.map.size * 4 * forestDensity))
-      await yieldFrame()
     }
   }
 
@@ -310,26 +366,33 @@ export class MapResources {
     const { forestDensity } = getEnvironmentTerrainParams(this.map.environment)
     const placedCenters: GridPosition[] = []
     const sizeScale = Math.max(1, Math.round((this.map.size / 120) ** 2))
-    const groupEntries: ResourceGroupEntry[] = [
-      [RESOURCE_TYPES.berrybush, profile.neutralGroups.berrybush, 8, 2],
-      [RESOURCE_TYPES.stone, profile.neutralGroups.stone, 7, 2],
-      [RESOURCE_TYPES.gold, profile.neutralGroups.gold, 7, 2],
-      [RESOURCE_TYPES.tree, Math.round(profile.neutralGroups.tree * forestDensity), 14, 4],
-    ]
+    const groupEntries: ResourceGroupEntry[] = []
+    for (const group of NEUTRAL_RESOURCE_GROUPS) {
+      const count = profile.neutralGroups[group.profileKey] * sizeScale
+      for (let i = 0; i < count; i++) groupEntries.push(group)
+    }
+    for (let i = 0; i < Math.round(profile.neutralGroups.tree * forestDensity) * sizeScale; i++) {
+      groupEntries.push({
+        type: RESOURCE_TYPES.tree,
+        quantity: 14,
+        clusterRadius: 4,
+        playerSafeDistance: profile.playerSafeDistance,
+        minNeutralDistance: profile.minNeutralDistance,
+      })
+    }
     let batch = 0
-    for (const [type, baseCount, quantity, radius] of groupEntries) {
-      for (let i = 0; i < baseCount * sizeScale; i++) {
-        const center = this.map.findNeutralResourceCenter(
-          playersPos,
-          placedCenters,
-          profile.playerSafeDistance,
-          profile.minNeutralDistance
-        )
-        if (!center) break
-        if (this.map.placeResourceGroupAt(center, type, quantity, radius)) placedCenters.push(center)
-        if (++batch % 4 === 0) {
-          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-        }
+    for (const group of shuffled(groupEntries, () => this.map.random())) {
+      const center = this.map.findNeutralResourceCenter(
+        playersPos,
+        placedCenters,
+        group.playerSafeDistance,
+        group.minNeutralDistance
+      )
+      if (center && this.map.placeResourceGroupAt(center, group.type, group.quantity, group.clusterRadius)) {
+        placedCenters.push(center)
+      }
+      if (++batch % 4 === 0) {
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
       }
     }
   }

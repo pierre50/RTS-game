@@ -75,7 +75,7 @@ function loadAIStrategy() {
 test('ai production does not train villagers without a living chief', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
-    config: { units: { Villager: { cost: {} }, Clubman: { cost: {} } } },
+    config: { units: { Villager: { cost: {} }, Fantassin: { cost: {} } } },
     technologies: [],
     units: [{ type: 'Villager' }],
   }
@@ -94,7 +94,7 @@ test('ai production does not train villagers without a living chief', () => {
     infantry: [],
     maxInfantry: 1,
     barracks: [{}],
-    infantryUnit: 'Clubman',
+    infantryUnit: 'Fantassin',
     archers: [],
     maxArcher: 0,
     archeryRanges: [],
@@ -103,13 +103,13 @@ test('ai production does not train villagers without a living chief', () => {
   })
 
   assert.equal(requested.includes('Villager'), false)
-  assert.equal(requested.includes('Clubman'), true)
+  assert.equal(requested.includes('Fantassin'), true)
 })
 
 test('ai production trains villagers again when a chief is alive', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
-    config: { units: { Villager: { cost: {} }, Clubman: { cost: {} } } },
+    config: { units: { Villager: { cost: {} }, Fantassin: { cost: {} } } },
     technologies: [],
     units: [{ type: 'Chief', hitPoints: 10 }],
   }
@@ -128,7 +128,7 @@ test('ai production trains villagers again when a chief is alive', () => {
     infantry: [],
     maxInfantry: 1,
     barracks: [{}],
-    infantryUnit: 'Clubman',
+    infantryUnit: 'Fantassin',
     archers: [],
     maxArcher: 0,
     archeryRanges: [],

@@ -4,7 +4,7 @@ import { canPlaceBuildingAt } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
 
-export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
+export { RESOURCE_NAMES } from '../../constants'
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
 export const DEBUG_PATH_LAYER = 'debugPathLayer'
 export const DEBUG_VISION_LAYER = 'debugVisionLayer'

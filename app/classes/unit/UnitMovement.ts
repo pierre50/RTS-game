@@ -2,6 +2,7 @@ import {
   ACTION_TYPES,
   BUILDING_TYPES,
   FAMILY_TYPES,
+  MINING_RESOURCE_CONFIG,
   RELIEF_CLIMB_SPEED_MULTIPLIER,
   RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
@@ -43,6 +44,14 @@ type HeroDirectMoveBlocker = Pick<
   RuntimeEntity,
   'family' | 'i' | 'isDead' | 'isDestroyed' | 'j' | 'label' | 'size' | 'type' | 'x' | 'y'
 >
+
+function getMiningActions(): string[] {
+  const configured = Object.values(MINING_RESOURCE_CONFIG ?? {})
+    .map(config => config.action)
+    .filter((action): action is string => Boolean(action))
+  if (configured.length) return configured
+  return [ACTION_TYPES.minestone, ACTION_TYPES.minegold].filter((action): action is string => Boolean(action))
+}
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -190,12 +199,11 @@ function createHeroTerrainMoveBlocker(cell: RuntimeCell): HeroDirectMoveBlocker 
 
 const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
-  [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ACTION_TYPES.minestone, ACTION_TYPES.minegold],
+  [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ...getMiningActions()],
   [BUILDING_TYPES.townCenter]: [
     ACTION_TYPES.chopwood,
     ACTION_TYPES.forageberry,
-    ACTION_TYPES.minestone,
-    ACTION_TYPES.minegold,
+    ...getMiningActions(),
     ACTION_TYPES.farm,
     ACTION_TYPES.hunt,
     ACTION_TYPES.takemeat,
@@ -208,8 +216,13 @@ const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: Runtim
   [ACTION_TYPES.forageberry]: (unit, target) =>
     unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
   [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
-  [ACTION_TYPES.minegold]: (unit, target) => (unit.sendToGold ? (unit.sendToGold(target, true), true) : false),
-  [ACTION_TYPES.minestone]: (unit, target) => (unit.sendToStone ? (unit.sendToStone(target, true), true) : false),
+  ...Object.fromEntries(
+    getMiningActions().map(action => [
+      action,
+      (unit: UnitEntity, target: RuntimeEntity) =>
+        unit.sendToMineResource ? (unit.sendToMineResource(target, true), true) : false,
+    ])
+  ),
   [ACTION_TYPES.takemeat]: (unit, target) => (unit.sendToTakeMeat(target, true), true),
 }
 
@@ -218,8 +231,7 @@ const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
   ACTION_TYPES.farm,
   ACTION_TYPES.forageberry,
   ACTION_TYPES.hunt,
-  ACTION_TYPES.minegold,
-  ACTION_TYPES.minestone,
+  ...getMiningActions(),
   ACTION_TYPES.takemeat,
 ])
 

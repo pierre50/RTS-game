@@ -8,6 +8,29 @@ function deepClone<T>(value: T): T {
 }
 
 const STONE_START_SOUND = null
+const ARROW_LAUNCH_SOUNDS = ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4']
+
+function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConfig> = {}): ProjectileConfig {
+  return {
+    size: 3,
+    speed: 14,
+    assets,
+    isAnimated: true,
+    rotateSprite: true,
+    spriteBaseAngle: 180,
+    spawnOffsetY: 10,
+    trajectory: {
+      kind: 'arc',
+      minArcHeight: 4,
+      arcHeightFactor: 0.06,
+      maxArcHeight: 16,
+    },
+    sounds: {
+      launch: ARROW_LAUNCH_SOUNDS,
+    },
+    ...overrides,
+  }
+}
 
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   StoneThrower: {
@@ -125,33 +148,14 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   },
 }
 
-const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {
-  LongSwordsman: {
-    conditions: [
-      {
-        key: 'technologies',
-        op: 'includes',
-        value: 'LongSword',
-      },
-    ],
-  },
-}
+const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {}
 
 const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   ArcheryRange: {
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
   },
   Stable: {
-    units: [
-      'Clubman',
-      'Axeman',
-      'ShortSwordsman',
-      'BroadSwordsman',
-      'LongSwordsman',
-      'Bowman',
-      'ImprovedBowman',
-      'CompositeBowman',
-    ],
+    units: ['Fantassin', 'Bowman'],
     mountingTime: 20,
   },
   SiegeWorkshop: {
@@ -194,43 +198,14 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
       impact: 'target-hit-2',
     },
   },
-  Arrow: {
-    size: 3,
-    speed: 14,
-    assets: 'projectiles/arrow',
-    isAnimated: true,
-    rotateSprite: true,
-    spriteBaseAngle: 180,
-    spawnOffsetY: 10,
-    trajectory: {
-      kind: 'arc',
-      minArcHeight: 4,
-      arcHeightFactor: 0.06,
-      maxArcHeight: 16,
-    },
-    sounds: {
-      launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
-    },
-  },
-  FireArrow: {
-    size: 3,
-    speed: 14,
-    assets: 'projectiles/fire-arrow',
-    isAnimated: true,
-    rotateSprite: true,
+  Arrow: arrowProjectileConfig('projectiles/arrow_ceramic'),
+  ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic'),
+  ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper'),
+  ArrowBronze: arrowProjectileConfig('projectiles/arrow_bronze'),
+  ArrowIron: arrowProjectileConfig('projectiles/arrow_iron'),
+  FireArrow: arrowProjectileConfig('projectiles/fire-arrow', {
     staticFrame: 1,
-    spriteBaseAngle: 180,
-    spawnOffsetY: 10,
-    trajectory: {
-      kind: 'arc',
-      minArcHeight: 4,
-      arcHeightFactor: 0.06,
-      maxArcHeight: 16,
-    },
-    sounds: {
-      launch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
-    },
-  },
+  }),
   Bolt: {
     size: 12,
     speed: 12,

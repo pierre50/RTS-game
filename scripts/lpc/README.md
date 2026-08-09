@@ -45,7 +45,7 @@ it and re-run `pnpm assets:lpc:build` to compare.
 To test on a single already-baked sheet without rerunning the full build:
 
 ```bash
-python3 scripts/lpc/outline_style.py public/assets/graphics/lpc-baked/bowman/asian/male/walking/texture.png --mode remove
+python3 scripts/lpc/outline_style.py public/assets/graphics/lpc-baked/infantry/asian/male/walking/texture.png --mode remove
 ```
 
 Options:

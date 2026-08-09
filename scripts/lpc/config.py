@@ -48,13 +48,31 @@ PALETTES: dict[str, list[str]] = {
     "player_brown":  ["#222323", "#453125", "#583126", "#733D3B", "#885041", "#AD6E51"],
 
     # ── Metal tones ─────────────────────────────────────────────────────────
-    "brass":  ["#1D1D21", "#453125", "#614A3C", "#BA882E", "#FFCE7F", "#FFF3D6"],
-    "copper": ["#1D1D21", "#492129", "#583126", "#753B09", "#9E6520", "#F99B4E"],
-    "bronze": ["#1D1D21", "#721C03", "#9C3327", "#B63C35", "#E98627", "#FBAA84"],
-    "iron":   ["#000000", "#222323", "#3B303C", "#5A3C45", "#75686E", "#917A7B"],
+    # ULPC metal palettes from scripts/lpc/palettes/ulpc-metal-palettes.json.
+    "brass":  ["#1A1213", "#2E2533", "#61482C", "#836332", "#AF8A35", "#FDD082", "#FDF5CC"],
+    "ceramic": ["#181009", "#2B1C1D", "#32251A", "#594435", "#7D604D", "#BA9069", "#FBE3B0"],
+    "copper": ["#691503", "#4F2313", "#7B2008", "#973C23", "#9D5427", "#EC855C", "#FFC95A"],
+    "bronze": ["#4F2313", "#573726", "#6D4A00", "#966600", "#BF8200", "#E7A820", "#FBE3B0"],
+    "iron":   ["#000000", "#1D131E", "#1B192B", "#29253A", "#343043", "#484152", "#726B7E"],
     "steel":  ["#181F2F", "#48474D", "#73737F", "#917A7B", "#A6AEBA", "#EADBC9"],
     "silver": ["#181F2F", "#554769", "#73737F", "#A6AEBA", "#CDD2DA", "#EBF0F6"],
     "gold":   ["#2E1026", "#753B09", "#9E6520", "#D1AA39", "#EDD493", "#FFF3D6"],
+    # Tool sheets mix wooden handles with metal heads, so this source palette
+    # targets only the common ULPC metal pixels and leaves handle colors alone.
+    "tool_metal_source": [
+        "#1D131E",
+        "#2E2533",
+        "#31313E",
+        "#4D4A5D",
+        "#726B7E",
+        "#867E7F",
+        "#C4B59F",
+        "#FFFFFF",
+        "#4A5057",
+        "#818B8B",
+        "#8AAAAB",
+        "#A9C9CA",
+    ],
 
     # ── Cloth ───────────────────────────────────────────────────────────────
     "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
@@ -111,7 +129,8 @@ class DressItem:
 
 
 SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png")
-SANDALS = DressItem("feet/sandals/male/{animation}.png")
+SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/{color}.png")
+SANDALS = DressItem("feet/sandals/male/{animation}.png", palette="cloth_brown")
 BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
 BRACERS_PATH = "arms/bracers/male/{animation}.png"
 BRACERS_BRASS = DressItem(BRACERS_PATH, palette="brass")
@@ -139,6 +158,7 @@ SUSPENDERS_BLACK = DressItem("torso/aprons/suspenders/male/{animation}/black.png
 HEADBAND_BLUE = DressItem("hat/headband/tied", palette="cloth_blue")
 HIJAB_TEAM = DressItem("hat/cloth/hijab/thin", team_colored=True)
 FEMALE_TANKTOP = DressItem("torso/clothes/sleeveless/tanktop/female/{animation}/{color}.png")
+FEMALE_SLEEVELESS_VNECK = DressItem("torso/clothes/sleeveless/sleeveless2_vneck/female/{animation}/{color}.png")
 
 @dataclass(frozen=True)
 class UnitVariant:
@@ -158,7 +178,7 @@ UNIT_VARIANTS: tuple[UnitVariant, ...] = (
 class UnitLook:
     """The single source of truth for one unit type's appearance: body/face shape
     are the only things shared across units by default; hair, beard, hat and dress
-    are what actually distinguish a villager from a clubman from an axeman, etc."""
+    are what actually distinguish a villager from an infantryman, priest, chief, etc."""
 
     hair: str | None = None
     # Some hairstyles (e.g. ponytails) ship as separate bg/fg halves: bg tucks behind
@@ -189,72 +209,9 @@ class UnitLook:
 
 
 UNIT_LOOKS: dict[str, UnitLook] = {
-    "villager": UnitLook(hair="plain", dress=(SHORTS, SANDALS)),
-    "clubman": UnitLook(hair="long", hat=HEADBAND, dress=(SHORTS, SANDALS)),
-    "axeman": UnitLook(
-        hair="long",
-        hat=HEADBAND,
-        dress=(
-            SHORTS,
-            SANDALS,
-            DressItem("torso/jacket/tabard/male/{animation}/{color}.png"),
-            BELT,
-            DressItem(BRACERS_PATH, palette="copper"),
-        ),
-    ),
-    "bowman": UnitLook(
-        hair="high_ponytail",
-        hair_split=True,
-        dress=(SHORTS, SANDALS),
-    ),
-    "shortswordman": UnitLook(
-        hat=DressItem("hat/helmet/pointed", palette="brass"),
-        dress=(
-            SKIRT_LEGION_TEAM,
-            SANDALS,
-            APRON_BROWN,
-            BELT,
-            BRACERS_BRASS,
-        ),
-    ),
-    "improvedbowman": UnitLook(
-        hair="high_ponytail",
-        hair_split=True,
-        dress=(SKIRT_PLAIN, SANDALS, APRON_BROWN, CUFFS_WHITE),
-    ),
-    "compositebowman": UnitLook(
-        hair="high_ponytail",
-        hair_split=True,
-        dress=(
-            SKIRT_PLAIN,
-            SANDALS,
-            DressItem("torso/clothes/sleeveless/sleeveless/male/{animation}/{color}.png"),
-            SASH_WHITE,
-            CUFFS_WHITE,
-        ),
-    ),
-    "broadswordman": UnitLook(
-        hat=DressItem("hat/helmet/pointed", palette="brass"),
-        hat_accessory=DressItem("hat/accessory/plumage_legion", team_colored=True),
-        dress=(
-            SKIRT_LEGION_TEAM,
-            SANDALS,
-            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
-            DressItem("torso/armour/legion/male/{animation}.png", palette="brass"),
-            BRACERS_BRASS,
-        ),
-    ),
-    "longswordman": UnitLook(
-        hat=DressItem("hat/helmet/pointed", palette="silver"),
-        hat_accessory=DressItem("hat/accessory/plumage_legion", team_colored=True),
-        dress=(
-            SKIRT_LEGION_TEAM,
-            SANDALS,
-            DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", team_colored=True),
-            DressItem("torso/armour/legion/male/{animation}.png", palette="silver"),
-            BRACERS_SILVER,
-        ),
-    ),
+    "villager": UnitLook(hair="plain", dress=(SANDALS, SLIT_SKIRT)),
+    "infantry": UnitLook(hair="long", hat=HEADBAND, dress=(SHORTS, SANDALS)),
+    "infantry_nohair": UnitLook(dress=(SHORTS, SANDALS)),
     # The ARPG hero's own signature look, distinct from a plain "villager": light
     # brown hair, a blue headband, and a white-shirt/brown-pantaloons/black-shoes
     # outfit with black suspenders on top. Baked like "villager" (see
@@ -297,67 +254,33 @@ UNIT_LOOKS: dict[str, UnitLook] = {
 CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "greek": {
         "villager": {"hair": "page2", "beard": "beard/medium"},
-        "clubman": {"hair": "long_messy", "beard": "beard/winter/male"},
-        "axeman": {"hair": "long_messy", "beard": "beard/winter/male"},
-        "bowman": {"hair": "curtains_long", "hair_split": False, "hair_extension": None, "beard": "beard/medium"},
-        "improvedbowman": {"hair": "curtains_long", "hair_split": False, "beard": "beard/medium"},
-        "compositebowman": {"hair": "curtains_long", "hair_split": False, "beard": "beard/medium"},
+        "infantry": {"hair": "long_messy", "beard": "beard/winter/male"},
     },
     "roman": {
         "villager": {"hair": "plain"},
-        "clubman": {"hair": "buzzcut"},
-        "axeman": {"hair": "buzzcut"},
-        "bowman": {"hair": "buzzcut", "hair_split": False, "hair_extension": None},
-        "improvedbowman": {"hair": "buzzcut", "hair_split": False},
-        "compositebowman": {"hair": "buzzcut", "hair_split": False},
+        "infantry": {"hair": "buzzcut"},
     },
     "babylonian": {
         "villager": {"hair": "jewfro", "beard": "beard/winter/male"},
-        "bowman": {"hair": "long_center_part", "hair_split": True, "hair_extension": None, "beard": "beard/winter/male"},
-        "clubman": {"hair": "curly_short", "beard": "beard/winter/male"},
-        "axeman": {"hair": "curly_short", "beard": "beard/winter/male"},
-        "shortswordman": {"beard": "beard/winter/male"},
-        "improvedbowman": {"hair": "long_center_part", "hair_split": True, "beard": "beard/winter/male"},
-        "compositebowman": {"hair": "long_center_part", "hair_split": True, "beard": "beard/winter/male"},
-        "broadswordman": {"beard": "beard/winter/male"},
-        "longswordman": {"beard": "beard/winter/male"},
+        "infantry": {"hair": "curly_short", "beard": "beard/winter/male"},
     },
     "asian": {
         "villager": {"hair": "ponytail", "hair_split": True},
-        "clubman": {"hair": "ponytail2", "hair_split": True},
-        "axeman": {"hair": "ponytail2", "hair_split": True},
-        "bowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
-        "improvedbowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
-        "compositebowman": {"hair": "high_ponytail", "hair_split": True, "hair_extension": None},
+        "infantry": {"hair": "ponytail2", "hair_split": True},
     },
     "celtic": {
         "villager": {"hair": "swoop", "beard": "beard/basic"},
-        "bowman": {"hair": "loose", "hair_split": False, "hair_extension": None, "beard": "beard/basic"},
-        "clubman": {"hair": "bangslong", "beard": "beard/basic"},
-        "axeman": {"hair": "bangslong", "beard": "beard/basic"},
-        "shortswordman": {"beard": "beard/basic"},
-        "improvedbowman": {"hair": "loose", "hair_split": False, "beard": "beard/basic"},
-        "compositebowman": {"hair": "loose", "hair_split": False, "beard": "beard/basic"},
-        "broadswordman": {"beard": "beard/basic"},
-        "longswordman": {"beard": "beard/basic"},
+        "infantry": {"hair": "bangslong", "beard": "beard/basic"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "egyptian": {
         "villager": {"hair": "bob"},
-        "bowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
-        "clubman": {"hair": "buzzcut"},
-        "axeman": {"hair": "buzzcut"},
-        "improvedbowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
-        "compositebowman": {"hair": None, "hair_split": False, "hair_extension": DressItem("hair/extensions/ponytails/topknot_short")},
+        "infantry": {"hair": "buzzcut"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nubian": {
         "villager": {"hair": "cornrows"},
-        "bowman": {"hair": "dreadlocks_long", "hair_split": False, "hair_extension": None},
-        "clubman": {"hair": "dreadlocks_short"},
-        "axeman": {"hair": "dreadlocks_short"},
-        "improvedbowman": {"hair": "dreadlocks_long", "hair_split": False},
-        "compositebowman": {"hair": "dreadlocks_long", "hair_split": False},
+        "infantry": {"hair": "dreadlocks_short"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
 }
@@ -375,77 +298,49 @@ FEMALE_BASE_LOOK_OVERRIDES = {
 FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "babylonian": {
         "villager": {"hair": None, "hat": HIJAB_TEAM},
-        "clubman": {"hair": "long_tied", "hair_body_type": "female", "hat": None},
-        "axeman": {"hair": "braid", "hair_body_type": "female", "hat": None},
-        "bowman": {"hair": "high_ponytail", "hair_body_type": "female", "hat": None},
-        "improvedbowman": {"hair": "high_ponytail", "hair_body_type": "female", "hat": None},
-        "compositebowman": {"hair": "long_center_part", "hair_body_type": "female", "hat": None},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female", "hat": None},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "chief": {"hair": None, "hat": HIJAB_TEAM},
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
     "egyptian": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female"},
-        "clubman": {"hair": "long_tied", "hair_body_type": "female"},
-        "axeman": {"hair": "braid", "hair_body_type": "female"},
-        "bowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "compositebowman": {"hair": "high_ponytail", "hair_body_type": "female"},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "chief": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": None, "hair_palette": None},
     },
     "greek": {
         "villager": {"hair": "braid", "hair_body_type": "female"},
-        "clubman": {"hair": "long_tied", "hair_body_type": "female"},
-        "axeman": {"hair": "wavy", "hair_body_type": "female"},
-        "bowman": {"hair": "half_up", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "half_up", "hair_body_type": "female"},
-        "compositebowman": {"hair": "half_up", "hair_body_type": "female"},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
         "hero": {"hair": "braid", "hair_body_type": "female"},
         "chief": {"hair": "braid", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "roman": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female"},
-        "clubman": {"hair": "long_tied", "hair_body_type": "female"},
-        "axeman": {"hair": "braid", "hair_body_type": "female"},
-        "bowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "compositebowman": {"hair": "high_ponytail", "hair_body_type": "female"},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "chief": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": "long_tied", "hair_body_type": "female", "hair_palette": "white"},
     },
     "asian": {
         "villager": {"hair": "long_tied", "hair_body_type": "female"},
-        "clubman": {"hair": "ponytail", "hair_body_type": "female"},
-        "axeman": {"hair": "braid", "hair_body_type": "female"},
-        "bowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "high_ponytail", "hair_body_type": "female"},
-        "compositebowman": {"hair": "high_ponytail", "hair_body_type": "female"},
+        "infantry": {"hair": "ponytail", "hair_body_type": "female"},
         "hero": {"hair": "long_tied", "hair_body_type": "female"},
         "chief": {"hair": "long_tied", "hair_body_type": "female"},
         "priest": {"hair": "single", "hair_body_type": "female", "hair_palette": "white"},
     },
     "celtic": {
         "villager": {"hair": "wavy", "hair_body_type": "female"},
-        "clubman": {"hair": "bangslong2", "hair_body_type": "female"},
-        "axeman": {"hair": "unkempt", "hair_body_type": "female"},
-        "bowman": {"hair": "braid2", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "braid2", "hair_body_type": "female"},
-        "compositebowman": {"hair": "braid2", "hair_body_type": "female"},
+        "infantry": {"hair": "bangslong2", "hair_body_type": "female"},
         "hero": {"hair": "wavy", "hair_body_type": "female"},
         "chief": {"hair": "braid2", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nubian": {
         "villager": {"hair": "xlong", "hair_body_type": "female"},
-        "clubman": {"hair": "dreadlocks_long", "hair_body_type": "female"},
-        "axeman": {"hair": "dreadlocks_long", "hair_body_type": "female"},
-        "bowman": {"hair": "braid2", "hair_body_type": "female"},
-        "improvedbowman": {"hair": "braid2", "hair_body_type": "female"},
-        "compositebowman": {"hair": "braid2", "hair_body_type": "female"},
+        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female"},
         "hero": {"hair": "xlong", "hair_body_type": "female"},
         "chief": {"hair": "dreadlocks_long", "hair_body_type": "female"},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
@@ -467,7 +362,8 @@ def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitL
     look = replace(look, **FEMALE_BASE_LOOK_OVERRIDES)
     overrides = FEMALE_CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(unit)
     look = replace(look, **overrides) if overrides else look
-    return replace(look, dress=(FEMALE_TANKTOP, *look.dress))
+    female_top = FEMALE_SLEEVELESS_VNECK if unit == "villager" else FEMALE_TANKTOP
+    return replace(look, dress=(female_top, *look.dress))
 
 
 @dataclass(frozen=True)

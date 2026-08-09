@@ -92,7 +92,7 @@ test('villagers flee from anything that fights back, human or AI-controlled alik
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
-  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
+  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
   assert.equal(shouldFleeWhenAttacked(villager, enemySoldier), true)
 })
@@ -126,10 +126,72 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
   })
   const healthyHero = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Hero' }
   const chief = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Chief' }
-  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Clubman' }
+  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
   assert.equal(shouldFleeWhenAttacked(healthyHero, enemySoldier), false)
   assert.equal(shouldFleeWhenAttacked(chief, enemySoldier), false)
+})
+
+test('early resource actions require their unlocking technologies', () => {
+  const actionConstants = {
+    ...constants,
+    ACTION_TYPES: {
+      farm: 'farm',
+      hunt: 'hunt',
+      minegold: 'minegold',
+      minestone: 'minestone',
+      takemeat: 'takemeat',
+    },
+    BUILDING_TYPES: { farm: 'Farm' },
+    RESOURCE_TYPES: { gold: 'Gold', stone: 'Stone' },
+  }
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': actionConstants,
+  })
+  const source = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 25,
+    isDead: false,
+    owner: { label: 'player', technologies: [] },
+    type: constants.UNIT_TYPES.villager,
+  }
+  const deer = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 10,
+    isDead: false,
+    quantity: 20,
+  }
+  const carcass = { ...deer, hitPoints: 0, isDead: true }
+  const stone = {
+    family: 'resource',
+    isDead: false,
+    quantity: 100,
+    type: 'Stone',
+  }
+  const gold = { ...stone, type: 'Gold' }
+  const farm = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 50,
+    isDead: false,
+    isUsedBy: null,
+    owner: source.owner,
+    quantity: 250,
+    type: 'Farm',
+  }
+
+  assert.equal(getActionCondition(source, deer, 'hunt'), false)
+  assert.equal(getActionCondition(source, carcass, 'takemeat'), false)
+  assert.equal(getActionCondition(source, stone, 'minestone'), false)
+  assert.equal(getActionCondition(source, gold, 'minegold'), false)
+  assert.equal(getActionCondition(source, farm, 'farm'), false)
+
+  source.owner.technologies.push('Bow', 'Pickaxe', 'Farming')
+
+  assert.equal(getActionCondition(source, deer, 'hunt'), true)
+  assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
+  assert.equal(getActionCondition(source, stone, 'minestone'), true)
+  assert.equal(getActionCondition(source, gold, 'minegold'), true)
+  assert.equal(getActionCondition(source, farm, 'farm'), true)
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {
@@ -137,10 +199,10 @@ test('military units fight on until critically wounded, then retreat from a real
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
-  const healthySoldier = { category: 'Infantry', hitPoints: 40, weaponPower: 3, totalHitPoints: 40, type: 'Clubman' }
-  const criticalSoldier = { category: 'Infantry', hitPoints: 5, weaponPower: 3, totalHitPoints: 40, type: 'Clubman' }
-  const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Axeman' }
-  const nearlyDeadEnemy = { family: 'unit', hitPoints: 2, totalHitPoints: 40, type: 'Axeman' }
+  const healthySoldier = { category: 'Fantassin', hitPoints: 40, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
+  const criticalSoldier = { category: 'Fantassin', hitPoints: 5, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
+  const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
+  const nearlyDeadEnemy = { family: 'unit', hitPoints: 2, totalHitPoints: 40, type: 'Fantassin' }
 
   assert.equal(shouldFleeWhenAttacked(healthySoldier, healthyEnemy), false)
   assert.equal(shouldFleeWhenAttacked(criticalSoldier, healthyEnemy), true)
@@ -169,7 +231,7 @@ function makeMoraleMap(entities, { escape = true } = {}) {
 
 function makeMoraleUnit(extra = {}) {
   return {
-    category: 'Infantry',
+    category: 'Fantassin',
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 40,
     i: 4,
@@ -178,7 +240,7 @@ function makeMoraleUnit(extra = {}) {
     weaponPower: 3,
     owner,
     totalHitPoints: 40,
-    type: 'Clubman',
+    type: 'Fantassin',
     ...extra,
   }
 }
@@ -200,7 +262,7 @@ test('a trapped, badly wounded villager surrenders when local enemy force is ove
       i: 3 + offset,
       j: 4,
       owner: { label: 'enemy' },
-      type: 'Axeman',
+      type: 'Fantassin',
     })
   )
   makeMoraleMap([villager, ...enemies], { escape: false })
@@ -219,7 +281,7 @@ test('a badly wounded villager with an escape route flees instead of surrenderin
     totalHitPoints: 25,
     type: constants.UNIT_TYPES.villager,
   })
-  const enemy = makeMoraleUnit({ i: 3, owner: { label: 'enemy' }, type: 'Axeman' })
+  const enemy = makeMoraleUnit({ i: 3, owner: { label: 'enemy' }, type: 'Fantassin' })
   makeMoraleMap([villager, enemy], { escape: true })
 
   assert.equal(evaluateCombatMorale(villager, enemy), 'flee')
@@ -237,7 +299,7 @@ test('a supported soldier does not surrender just because enemies are nearby', (
       i: 3 + offset,
       j: 4,
       owner: { label: 'enemy' },
-      type: 'Axeman',
+      type: 'Fantassin',
     })
   )
   makeMoraleMap([soldier, ally, ...enemies], { escape: false })
@@ -257,7 +319,7 @@ test('a trapped, critically wounded soldier can surrender to an overwhelming ene
       j: 4,
       weaponPower: 7,
       owner: { label: 'enemy' },
-      type: 'Axeman',
+      type: 'Fantassin',
     })
   )
   makeMoraleMap([soldier, ...enemies], { escape: false })
@@ -275,7 +337,7 @@ test('heroes and chiefs never auto-surrender from morale checks', () => {
     totalHitPoints: 45,
     type: constants.UNIT_TYPES.hero,
   })
-  const enemy = makeMoraleUnit({ owner: { label: 'enemy' }, type: 'Axeman' })
+  const enemy = makeMoraleUnit({ owner: { label: 'enemy' }, type: 'Fantassin' })
   makeMoraleMap([hero, enemy], { escape: false })
 
   assert.notEqual(evaluateCombatMorale(hero, enemy), 'surrender')
@@ -367,6 +429,55 @@ test('unarmed units deal half a point of damage', () => {
   assert.equal(getHitPointsWithDamage(attacker, enemy), 19.5)
 })
 
+test('melee damage uses melee armor instead of the best armor value', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const attacker = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner,
+    type: 'Fantassin',
+    weaponPower: 10,
+  }
+  const enemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 2,
+    owner: { label: 'enemy' },
+    pierceArmor: 8,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, enemy), 12)
+})
+
+test('pierce damage uses pierce armor and still applies armor to default damage', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const attacker = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner,
+    type: 'Bowman',
+    weaponPower: 10,
+  }
+  const enemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    meleeArmor: 8,
+    owner: { label: 'enemy' },
+    pierceArmor: 2,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, enemy, undefined, 0, 'pierce'), 12)
+  assert.equal(getHitPointsWithDamage(attacker, enemy, 6, 0, 'pierce'), 16)
+})
+
 test('hero defense blocks incoming damage and flashes', () => {
   const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
@@ -377,7 +488,7 @@ test('hero defense blocks incoming damage and flashes', () => {
     isDead: false,
     weaponPower: 8,
     owner,
-    type: 'Clubman',
+    type: 'Fantassin',
   }
   const defendingHero = {
     family: constants.FAMILY_TYPES.unit,
@@ -438,7 +549,7 @@ test('hero defense still blocks a hit landing in front of the hero', () => {
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: 10, y: 0 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Fantassin', x: 10, y: 0 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -462,7 +573,7 @@ test('hero defense still blocks a hit landing exactly at the edge of the frontal
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: 0, y: 10 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Fantassin', x: 0, y: 10 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -486,7 +597,7 @@ test('hero defense does not block a hit landing behind the hero, even while acti
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman', x: -10, y: 0 }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Fantassin', x: -10, y: 0 }
   const defendingHero = {
     degree: 180,
     family: constants.FAMILY_TYPES.unit,
@@ -510,7 +621,7 @@ test('hero defense with no position data on either side fails open (still blocks
     './maths': mathsMock,
   })
   const flashes = []
-  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Clubman' }
+  const attacker = { hitPoints: 20, isDead: false, weaponPower: 8, owner, type: 'Fantassin' }
   const defendingHero = {
     family: constants.FAMILY_TYPES.unit,
     heroDefenseActive: true,

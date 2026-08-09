@@ -1,4 +1,12 @@
-import { BUCKET_SIZE, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import {
+  ACTION_TYPES,
+  BUCKET_SIZE,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  MINING_RESOURCE_CONFIG,
+  RESOURCE_TYPES,
+  UNIT_TYPES,
+} from '../constants'
 import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from './equipmentStats'
 import { angleDelta, getPointsDegree } from './maths'
 import { canUpgradeUnitAtBuilding } from './unitUpgrades'
@@ -40,6 +48,8 @@ export type CombatEntity = {
   j?: number
 }
 
+export type CombatDamageType = 'melee' | 'pierce'
+
 export type Condition = {
   key: string
   op: '=' | '!=' | '<' | '<=' | '>=' | '>' | 'includes' | 'notincludes'
@@ -49,6 +59,20 @@ export type Condition = {
 export type ActionProps = {
   buildingTypes?: string[]
   trainingType?: string
+}
+
+type MiningActionConfig = {
+  action: string
+}
+
+function getMiningActionEntries(): Array<[string, MiningActionConfig]> {
+  const config = MINING_RESOURCE_CONFIG ?? {
+    [RESOURCE_TYPES.stone]: { action: ACTION_TYPES.minestone },
+    [RESOURCE_TYPES.gold]: { action: ACTION_TYPES.minegold },
+  }
+  return Object.entries(config)
+    .filter(([resourceType, entry]) => Boolean(resourceType && entry?.action))
+    .map(([resourceType, entry]) => [resourceType, { action: entry.action }])
 }
 
 function canAttack(source?: CombatEntity | null): boolean {
@@ -236,9 +260,22 @@ function isVillagerOrHero(source?: CombatEntity | null): boolean {
   return source?.type === UNIT_TYPES.villager || source?.type === UNIT_TYPES.hero
 }
 
-function getDamage(source: CombatEntity, target: CombatEntity): number {
-  const weaponPower = getEntityWeaponPower(source)
-  const armor = Math.max(target.meleeArmor || 0, target.pierceArmor || 0)
+function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
+  return Boolean(source.owner?.technologies?.includes(technology))
+}
+
+function getArmorForDamageType(target: CombatEntity, damageType: CombatDamageType): number {
+  return damageType === 'pierce' ? (target.pierceArmor ?? 0) : (target.meleeArmor ?? 0)
+}
+
+function getDamage(
+  source: CombatEntity,
+  target: CombatEntity,
+  damageType: CombatDamageType,
+  baseDamage = getEntityWeaponPower(source)
+): number {
+  const weaponPower = baseDamage
+  const armor = Math.max(0, getArmorForDamageType(target, damageType))
   const minimumDamage = weaponPower <= UNARMED_UNIT_WEAPON_POWER ? UNARMED_UNIT_WEAPON_POWER : 1
   return Math.max(minimumDamage, weaponPower - armor)
 }
@@ -265,10 +302,11 @@ export function getHitPointsWithDamage(
   source: CombatEntity,
   target: CombatEntity,
   defaultDamage?: number,
-  bonusDamage = 0
+  bonusDamage = 0,
+  damageType: CombatDamageType = 'melee'
 ): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
-  const rawDamage = (defaultDamage || getDamage(source, target)) + Math.max(0, bonusDamage)
+  const rawDamage = getDamage(source, target, damageType, defaultDamage) + Math.max(0, bonusDamage)
   const damage = applyHeroDefenseDamage(source, target, rawDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
@@ -335,6 +373,7 @@ export const getActionCondition = (
     takemeat: () =>
       Boolean(
         isVillagerOrHero(source) &&
+          ownerHasTechnology(source, 'Bow') &&
           target.family === FAMILY_TYPES.animal &&
           (target.quantity ?? 0) > 0 &&
           target.isDead &&
@@ -342,6 +381,7 @@ export const getActionCondition = (
       ),
     hunt: () =>
       isVillagerOrHero(source) &&
+      ownerHasTechnology(source, 'Bow') &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
@@ -350,6 +390,7 @@ export const getActionCondition = (
       isVillagerOrHero(source) && target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead,
     farm: () =>
       isVillagerOrHero(source) &&
+      ownerHasTechnology(source, 'Farming') &&
       target.type === BUILDING_TYPES.farm &&
       (target.hitPoints ?? 0) > 0 &&
       target.owner?.label === source.owner?.label &&
@@ -361,10 +402,17 @@ export const getActionCondition = (
       target.type === RESOURCE_TYPES.berrybush &&
       (target.quantity ?? 0) > 0 &&
       !target.isDead,
-    minestone: () =>
-      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.stone && (target.quantity ?? 0) > 0 && !target.isDead,
-    minegold: () =>
-      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.gold && (target.quantity ?? 0) > 0 && !target.isDead,
+    ...Object.fromEntries(
+      getMiningActionEntries().map(([resourceType, config]) => [
+        config.action,
+        () =>
+          isVillagerOrHero(source) &&
+          ownerHasTechnology(source, 'Pickaxe') &&
+          target.type === resourceType &&
+          (target.quantity ?? 0) > 0 &&
+          !target.isDead,
+      ])
+    ),
     build: () =>
       isVillagerOrHero(source) &&
       target.owner?.label === source.owner?.label &&

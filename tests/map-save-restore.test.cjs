@@ -42,12 +42,12 @@ test('restoring player entities preserves saved unit types instead of applying n
   restorePlayerEntitiesFromSave(player, {
     buildings: [{ i: 1, j: 2, type: 'House' }],
     units: [{ i: 3, j: 4, type: 'Villager' }],
-    corpses: [{ i: 5, j: 6, type: 'Clubman', currentSheet: 'corpse' }],
+    corpses: [{ i: 5, j: 6, type: 'Fantassin', currentSheet: 'corpse' }],
   })
 
   assert.deepEqual(player.buildings, [{ i: 1, j: 2, type: 'House', skipBuiltEffects: true }])
   assert.equal(player.units[0].type, 'Villager')
-  assert.equal(player.corpses[0].type, 'Clubman')
+  assert.equal(player.corpses[0].type, 'Fantassin')
   assert.equal(createUnitCalls[0].options.suppressCreateSound, true)
   assert.equal(createUnitCalls[1].options.suppressCreateSound, true)
   assert.deepEqual(createUnitCalls.map(call => call.creationOptions), [{ preserveType: true }, { preserveType: true }])

@@ -5,7 +5,7 @@ import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity
 import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroEquippedItem } from '../lib/heroTools'
-import type { WorldGraphSave } from './save'
+import type { FactionSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
 export type SchedulerTaskId = number
@@ -195,6 +195,8 @@ export interface GameContextLike {
   quit: () => void
   applyZoom: () => void
   getWorldGraph?: () => WorldGraphSave | null
+  getCampaignFactions?: () => Record<string, FactionSave> | null
+  changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
   getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
 }

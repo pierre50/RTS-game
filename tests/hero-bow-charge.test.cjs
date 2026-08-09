@@ -110,16 +110,15 @@ function loadHeroTools(overrides = {}) {
       getEquipmentCombatStats: equipment => {
         const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
-          if (item === 'longsword') stats.weaponPower += 11
-          if (item === 'halberd') stats.weaponPower += 17
+          if (item === 'sword_ceramic') stats.weaponPower += 4
+          if (item === 'sword_copper') stats.weaponPower += 6
           if (item === 'bow') stats.weaponPower += 4
         }
         return stats
       },
       getUnitWorkEquipment: work =>
         ({
-          heroSword: ['longsword'],
-          heroSpear: ['halberd'],
+          heroSword: ['sword_ceramic'],
           hunter: ['bow'],
         })[work] ?? [],
       refreshUnitEquipmentStats: () => {},
@@ -398,7 +397,7 @@ test('hero defense releases by reversing back to standing', () => {
     },
   }
 
-  assert.equal(beginHeroDefense(hero, 'halberd'), true)
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
   hero.sprite.currentFrame = 2
   assert.equal(releaseHeroDefense(hero), true)
   assert.equal(hero.heroDefenseActive, false)

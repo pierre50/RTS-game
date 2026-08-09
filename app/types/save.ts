@@ -110,8 +110,10 @@ export type SavePlayerState = PlayerSetupConfig & {
   cellViewed?: number
   colorHex?: string
   corpses?: SaveEntityState[]
+  copper?: number
   food?: number
   gold?: number
+  iron?: number
   hasBuilt?: string[]
   isPlayed?: boolean
   label?: string
@@ -152,11 +154,26 @@ export type HeroPartySave = {
   followerLabels: string[]
 }
 
+export type FactionRelationState = 'hostile' | 'wary' | 'neutral' | 'friendly' | 'allied'
+
+export type FactionSave = {
+  id: string
+  civilization?: string
+  name: string
+  relationScore: number
+  relationState: FactionRelationState
+  homeWorldId: string
+  knownWorldIds: string[]
+  discoveredAt: number
+  updatedAt: number
+}
+
 export type WorldGraphNode = {
   id: string
   name: string
   color: WorldColor
   environment?: string | null
+  factionIds?: string[]
   parentId?: string | null
   children: string[]
   discoveredAt: number
@@ -185,6 +202,7 @@ export type CampaignSave = {
   format: 'campaign-v1'
   version: number
   currentWorldId: string
+  factions?: Record<string, FactionSave>
   heroParty: HeroPartySave
   sharedResources?: ResourceAmount
   worlds: Record<string, CampaignWorldSave>
@@ -216,6 +234,8 @@ export type PlayerSetupConfig = {
   civ?: string
   civilizationLevel?: number
   color?: string
+  diplomacy?: 'neutral' | null
+  factionId?: string | null
   gender?: 'male' | 'female'
   isHuman?: boolean
   name?: string

@@ -91,6 +91,68 @@ test('levels derive from accumulated xp with a hard cap', () => {
   assert.equal(getUnitLevel(unit, 'mining'), XP_MAX_LEVEL)
 })
 
+test('overall level derives from total xp instead of the highest skill', () => {
+  const { getUnitLevel, getUnitOverallLevel, getXpForLevel } = loadExperience()
+  const unit = makeUnit({
+    experience: {
+      mining: getXpForLevel(3),
+      farming: getXpForLevel(3),
+    },
+  })
+
+  assert.equal(getUnitLevel(unit, 'mining'), 3)
+  assert.equal(getUnitLevel(unit, 'farming'), 3)
+  assert.equal(getUnitOverallLevel(unit), 4)
+})
+
+test('equipment level follows role skills instead of unrelated expertise', () => {
+  const { getUnitEquipmentLevel, getXpForLevel } = loadExperience()
+  const infantry = makeUnit({
+    type: 'Fantassin',
+    category: 'Fantassin',
+    experience: {
+      woodcutting: getXpForLevel(12),
+      melee: getXpForLevel(4),
+      defense: getXpForLevel(4),
+    },
+  })
+  const archer = makeUnit({
+    type: 'Bowman',
+    category: 'Archer',
+    experience: {
+      melee: getXpForLevel(10),
+      ranged: getXpForLevel(3),
+      defense: getXpForLevel(3),
+    },
+  })
+
+  assert.equal(getUnitEquipmentLevel(infantry), 5)
+  assert.equal(getUnitEquipmentLevel(archer), 4)
+})
+
+test('debug level setter writes exact melee xp and clamps to the max level', () => {
+  const { getUnitLevel, setUnitDebugLevel, XP_CATEGORIES, XP_MAX_LEVEL, getXpForLevel } = loadExperience()
+  const unit = makeUnit()
+
+  assert.equal(setUnitDebugLevel(unit, 4), 4)
+  assert.equal(unit.experience[XP_CATEGORIES.melee], getXpForLevel(4))
+  assert.equal(getUnitLevel(unit, XP_CATEGORIES.melee), 4)
+
+  assert.equal(setUnitDebugLevel(unit, 999), XP_MAX_LEVEL)
+  assert.equal(getUnitLevel(unit, XP_CATEGORIES.melee), XP_MAX_LEVEL)
+})
+
+test('debug level setter writes role skills for equipment progression', () => {
+  const { getUnitEquipmentLevel, getUnitLevel, setUnitDebugLevel, XP_CATEGORIES, getXpForLevel } = loadExperience()
+  const infantry = makeUnit({ type: 'Fantassin', category: 'Fantassin' })
+
+  setUnitDebugLevel(infantry, 4)
+
+  assert.equal(infantry.experience[XP_CATEGORIES.melee] + infantry.experience[XP_CATEGORIES.defense], getXpForLevel(4))
+  assert.equal(getUnitLevel(infantry, XP_CATEGORIES.defense), 2)
+  assert.equal(getUnitEquipmentLevel(infantry), 4)
+})
+
 test('grantUnitXp accumulates per category and ignores invalid grants', () => {
   const { grantUnitXp } = loadExperience()
   const unit = makeUnit()
@@ -209,7 +271,7 @@ test('loading types and works map to the expected xp categories', () => {
 })
 
 test('experience entries are sorted by xp and formatted with progress', () => {
-  const { formatXpProgressText, getUnitExperienceEntries, getXpForLevel } = loadExperience()
+  const { formatXpProgressText, getUnitExperienceEntries, getXpForLevel, XP_MAX_LEVEL } = loadExperience()
   const unit = makeUnit()
   unit.experience = { melee: 50, mining: 300, farming: 0 }
 
@@ -221,8 +283,8 @@ test('experience entries are sorted by xp and formatted with progress', () => {
   assert.equal(entries[0].level, 3)
   assert.equal(formatXpProgressText(unit, 'mining'), '3 (0/200)')
 
-  unit.experience.mining = getXpForLevel(10)
-  assert.equal(formatXpProgressText(unit, 'mining'), '10 (max)')
+  unit.experience.mining = getXpForLevel(XP_MAX_LEVEL)
+  assert.equal(formatXpProgressText(unit, 'mining'), `${XP_MAX_LEVEL} (max)`)
 })
 
 test('gathering grants xp for the loading type and applies the gather bonus', () => {
@@ -271,7 +333,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     '../../lib/lang': { t: key => key },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
     '../../lib/buildings/towers': {
       getTowerType: () => null,
       isTower: () => false,

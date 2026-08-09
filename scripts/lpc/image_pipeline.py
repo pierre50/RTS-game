@@ -51,7 +51,11 @@ def recolor(image: Image.Image, palette_name: str, source_palette_name: str | No
 
     if source_palette_name:
         source_palette = sorted((rgb(color) for color in PALETTES[source_palette_name]), key=luminance)
-        replacements = dict(zip(source_palette, target_palette))
+        bucket_count = len(target_palette)
+        replacements = {
+            color: target_palette[min(index * bucket_count // len(source_palette), bucket_count - 1)]
+            for index, color in enumerate(source_palette)
+        }
         data = []
         for r, g, b, a in pixels.getdata():
             replacement = replacements.get((r, g, b))

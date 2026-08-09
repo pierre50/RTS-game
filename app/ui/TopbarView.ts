@@ -1,9 +1,9 @@
-import { getIconPath } from '../lib'
+import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
+import { createResourceIconMaps } from './resourceIcons'
 import type Menu from '../classes/Menu'
 
-const AGE_LABEL_KEYS = ['stoneAge', 'toolAge'] as const
-const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold'] as const
+const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
 type ResourceName = (typeof RESOURCE_NAMES)[number]
 type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number }
 
@@ -21,18 +21,9 @@ export class TopbarView {
     menu.topbar = document.createElement('div')
     menu.topbar.id = 'topbar'
     menu.topbar.className = 'topbar bar'
-    menu.icons = {
-      wood: getIconPath('000_50732'),
-      food: getIconPath('002_50732'),
-      stone: getIconPath('001_50732'),
-      gold: getIconPath('003_50732'),
-    }
-    menu.infoIcons = {
-      wood: getIconPath('000_50731'),
-      stone: getIconPath('001_50731'),
-      food: getIconPath('002_50731'),
-      gold: getIconPath('003_50731'),
-    }
+    const resourceIcons = createResourceIconMaps()
+    menu.icons = resourceIcons.icons
+    menu.infoIcons = resourceIcons.infoIcons
 
     menu.resources = document.createElement('div')
     menu.resources.className = 'topbar-resources'
@@ -79,12 +70,24 @@ export class TopbarView {
       const val = Math.min(resourcePlayer?.[prop] || 0, 99999)
       this.resourceEls[prop].textContent = String(val)
     })
-    const age = (player as ResourcePlayer | null)?.age || 0
-    this.menu.age.textContent = t(AGE_LABEL_KEYS[Math.max(0, Math.min(age, 1))])
+    const age = this.getClampedAge()
+    this.menu.age.textContent = t(AGE_LABEL_KEYS[age])
+    this.updateAgeTheme()
   }
 
   updateAgeTheme(): void {
     this.menu.gameHud.classList.remove('ui-age-0', 'ui-age-1', 'ui-age-2', 'ui-age-3')
+    this.menu.gameHud.classList.add(`ui-age-${this.getClampedAge()}`)
+  }
+
+  private getClampedAge(): number {
+    const {
+      menu: {
+        context: { player },
+      },
+    } = this
+    const age = Math.floor((player as ResourcePlayer | null)?.age ?? 0)
+    return Math.max(0, Math.min(age, AGE_LABEL_KEYS.length - 1))
   }
 
   destroy(): void {

@@ -758,6 +758,40 @@
   font-size: var(--font-size-sm);
 }
 
+.worldmap-node-factions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.worldmap-faction {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 2px 6px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--main-border-radius);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.worldmap-faction-hostile {
+  border-color: rgba(217, 83, 79, 0.5);
+}
+
+.worldmap-faction-friendly,
+.worldmap-faction-allied {
+  border-color: rgba(116, 201, 125, 0.52);
+}
+
+.worldmap-faction-wary {
+  border-color: rgba(242, 201, 76, 0.5);
+}
+
 .worldmap-empty {
   padding: 12px;
   text-align: center;
@@ -824,6 +858,12 @@
 .technology-menu-button[aria-disabled='true'] {
   cursor: default;
   opacity: 0.55;
+}
+
+.technology-menu-button.is-acquired {
+  color: var(--msg-success-color);
+  border-color: var(--msg-success-border);
+  background: var(--msg-success-bg);
 }
 
 .technology-menu-icon {

@@ -65,20 +65,14 @@ function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean
 function knownResources(unit: UnitEntity, type: string): RuntimeEntity[] {
   const owner = unit.owner
   const resources = unit.context?.map?.resources ?? new Set<ResourceEntity>()
-  const foundedByType: Record<string, Set<RuntimeEntity> | undefined> = {
-    [RESOURCE_TYPES.tree]: owner?.foundedTrees,
-    [RESOURCE_TYPES.berrybush]: owner?.foundedBerrybushs,
-    [RESOURCE_TYPES.stone]: owner?.foundedStones,
-    [RESOURCE_TYPES.gold]: owner?.foundedGolds,
-  }
-  const founded = foundedByType[type]
+  const founded = owner?.foundedResources?.[type]
   const source = founded?.size ? [...founded] : [...resources].filter(resource => isKnownToUnit(unit, resource))
   return source.filter(resource => resource.type === type && isUsableResource(resource))
 }
 
 function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
   const resources = unit.context?.map?.resources ?? new Set<ResourceEntity>()
-  const foundedBerries = unit.owner?.foundedBerrybushs
+  const foundedBerries = unit.owner?.foundedResources?.[RESOURCE_TYPES.berrybush] ?? unit.owner?.foundedBerrybushs
   const berries = foundedBerries?.size
     ? [...foundedBerries]
     : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.berrybush)

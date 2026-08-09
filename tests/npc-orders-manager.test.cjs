@@ -108,8 +108,27 @@ function buildMocks(calls, context) {
     '../lib/lang': { t: key => key },
     '../lib/uiSound': { playUiSound: () => {} },
     '../constants': {
+      SHEET_TYPES: { standing: 'standing' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
       UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../lib/unitExperience': {
+      getUnitEquipmentLevel: npc => npc.debugLevel ?? 0,
+      setUnitDebugLevel: (npc, level) => {
+        npc.debugLevel = level
+        calls.push(['setUnitDebugLevel', level, `paused=${context.paused}`])
+        return level
+      },
+      XP_MAX_LEVEL: 20,
+    },
+    '../lib/equipmentStats': {
+      refreshUnitEquipmentStats: npc => calls.push(['refreshUnitEquipmentStats', npc.label]),
+    },
+    '../lib/lpc': {
+      ensureAndRefreshBakedLpcUnitAssets: async npc => {
+        calls.push(['ensureAndRefreshBakedLpcUnitAssets', npc.label])
+        return true
+      },
     },
     '../lib/npcInteraction': {
       sendNpcToStockpile: () => calls.push(['sendNpcToStockpile', `paused=${context.paused}`]),
@@ -120,7 +139,16 @@ function buildMocks(calls, context) {
       playNpcOrderSound: () => {},
       clearNpcCommunicationFocus: () => {},
     },
-    './EntityInfoModalManager': { createEntityInfoContent: () => makeFakeElement() },
+    './EntityInfoModalManager': { createTitledEntityInfoContent: () => makeFakeElement() },
+    './InspectionPanel': {
+      createInspectionModal: options => new FakeModal(options),
+      setInspectionMode: (modal, inspection) => {
+        modal.inspection = inspection
+      },
+      setModalTitle: (modal, title) => {
+        modal.title = title
+      },
+    },
     '../lib/npcChatter': { pickNpcGreetingLine: () => 'hi' },
   }
 }
@@ -128,9 +156,17 @@ function buildMocks(calls, context) {
 function withFakeDocument(fn) {
   global.document = { createElement: () => makeFakeElement() }
   try {
-    fn()
-  } finally {
+    const result = fn()
+    if (result && typeof result.then === 'function') {
+      return result.finally(() => {
+        delete global.document
+      })
+    }
     delete global.document
+    return result
+  } catch (error) {
+    delete global.document
+    throw error
   }
 }
 
@@ -184,5 +220,59 @@ test('picking a villager-job order assigns it without pausing or resuming the ga
     foodButton.click()
 
     assert.deepEqual(calls, [['assignVillagerAutonomy', 'food', 'paused=false']])
+  })
+})
+
+test('debug level button cycles a solo unit level without closing communication', async () => {
+  await withFakeDocument(async () => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context, updateHeroStatus: npc => calls.push(['updateHeroStatus', npc.label]) }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Fantassin',
+      label: 'infantry-1',
+      interface: { info: () => {} },
+      setTextures: sheet => calls.push(['setTextures', sheet]),
+    }
+
+    manager.open([npc])
+    manager.debugLevelButton.click()
+    await Promise.resolve()
+
+    assert.equal(manager.opened, true)
+    assert.equal(npc.debugLevel, 1)
+    assert.deepEqual(calls, [
+      ['setUnitDebugLevel', 1, 'paused=false'],
+      ['refreshUnitEquipmentStats', 'infantry-1'],
+      ['ensureAndRefreshBakedLpcUnitAssets', 'infantry-1'],
+      ['updateHeroStatus', 'infantry-1'],
+    ])
+  })
+})
+
+test('debug level button stops at the max level instead of resetting', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context, updateHeroStatus: npc => calls.push(['updateHeroStatus', npc.label]) }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const npc = {
+      type: 'Fantassin',
+      label: 'infantry-1',
+      debugLevel: 20,
+      interface: { info: () => {} },
+      setTextures: sheet => calls.push(['setTextures', sheet]),
+    }
+
+    const manager = new NpcOrdersManager(menu)
+    manager.open([npc])
+    manager.debugLevelButton.click()
+
+    assert.equal(manager.debugLevelButton.disabled, true)
+    assert.equal(manager.debugLevelButton.textContent, 'Debug niveau max')
+    assert.equal(npc.debugLevel, 20)
+    assert.deepEqual(calls, [])
   })
 })

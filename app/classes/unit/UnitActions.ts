@@ -6,6 +6,8 @@ import {
   LOADING_FOOD_TYPES,
   LOADING_TYPES,
   MENU_INFO_IDS,
+  MINING_RESOURCE_CONFIG,
+  RESOURCE_STOCKPILE_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
   TYPE_ACTION,
@@ -39,7 +41,7 @@ import {
   XP_FELL_TREE_TICK,
 } from '../../lib/unitExperience'
 import { getTowerType, isTower } from '../../lib/buildings/towers'
-import { applyBakedLpcUnitAssets } from '../../lib/lpc'
+import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
@@ -52,13 +54,15 @@ const ASTROLOGY_CONVERSION_CHANCE = 0.39
 
 const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
   Stone: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
-  Gold: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
+  Gold: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
+  Copper: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
+  Iron: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
   Berrybush: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
   Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
 }
 
 type OwnerListKey = 'units' | 'buildings'
-type PlayerResourceKey = 'food' | 'wood' | 'stone' | 'gold'
+type PlayerResourceKey = (typeof RESOURCE_STOCKPILE_TYPES)[keyof typeof RESOURCE_STOCKPILE_TYPES]
 type ConvertibleEntity = (UnitEntity | BuildingEntity) & Partial<UnitEntity & BuildingEntity>
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
@@ -85,10 +89,7 @@ const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): Run
 function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
   if (!loadingType) return null
   if (LOADING_FOOD_TYPES.includes(loadingType)) return 'food'
-  if (loadingType === LOADING_TYPES.wood) return 'wood'
-  if (loadingType === LOADING_TYPES.stone) return 'stone'
-  if (loadingType === LOADING_TYPES.gold) return 'gold'
-  return null
+  return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
 }
 
 function stopManualHeroAction(unit: UnitEntity): void {
@@ -205,6 +206,16 @@ export class UnitActions {
 
   getWorkSound(key: string, fallback: CommandSound = null): CommandSound {
     return this.unit.sounds?.work?.[key] ?? fallback
+  }
+
+  startMiningResource(action: string | null | undefined): void {
+    const config = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(entry => entry.action === action)
+    if (!config) return
+    this.startGathering(
+      config.loadingType,
+      this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre),
+      { dieOnEmpty: Boolean(config.dieOnEmpty), gatherEvery: config.gatherEvery }
+    )
   }
 
   getConversionRules() {
@@ -351,12 +362,14 @@ export class UnitActions {
       checkOwner = false,
       updateTexture = false,
       releaseFrame = SLASH_IMPACT_FRAME,
+      gatherEvery = 1,
       onRelease,
     }: {
       dieOnEmpty?: boolean
       checkOwner?: boolean
       updateTexture?: boolean
       releaseFrame?: number
+      gatherEvery?: number
       onRelease?: () => void
     } = {}
   ) {
@@ -369,6 +382,7 @@ export class UnitActions {
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
     lockManualHeroAction(unit)
+    let gatherProgress = 0
     const gatherTick = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
@@ -394,6 +408,13 @@ export class UnitActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
+      gatherProgress++
+      if (gatherProgress < Math.max(1, gatherEvery)) {
+        this.playSound(soundId)
+        if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+        return
+      }
+      gatherProgress = 0
       unit.loading = (unit.loading ?? 0) + gain
       unit.loadingType = loadingType
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
@@ -412,8 +433,12 @@ export class UnitActions {
       if (wasEmpty) {
         const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
         if (workAssets) {
-          unit.walkingSheet = Assets.cache.get(workAssets.loadedSheet)
-          unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
+          unit.walkingSheet = Assets.cache.has(workAssets.loadedSheet)
+            ? Assets.cache.get(workAssets.loadedSheet)
+            : unit.walkingSheet
+          unit.standingSheet = Assets.cache.has(workAssets.standingSheet)
+            ? Assets.cache.get(workAssets.standingSheet)
+            : unit.standingSheet
         }
       }
       if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
@@ -432,11 +457,7 @@ export class UnitActions {
     unit.type = type
     unit.hitPoints = (data.totalHitPoints as number) - ((unit.totalHitPoints ?? 0) - (unit.hitPoints ?? 0))
     Object.assign(unit, data)
-    applyBakedLpcUnitAssets(unit)
-    Object.assign(
-      unit,
-      Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
-    )
+    refreshBakedLpcUnitAssets(unit)
     if (unit.action && !unit.path?.length) {
       unit.getAction?.(unit.action)
     } else {
@@ -635,12 +656,10 @@ export class UnitActions {
         })
         break
       case ACTION_TYPES.minestone:
-        this.startGathering(LOADING_TYPES.stone, this.getWorkSound('mineStone', SOUND_CUES.villager.mineOre), {
-          dieOnEmpty: true,
-        })
-        break
       case ACTION_TYPES.minegold:
-        this.startGathering(LOADING_TYPES.gold, this.getWorkSound('mineGold', SOUND_CUES.villager.mineOre))
+      case ACTION_TYPES.minecopper:
+      case ACTION_TYPES.mineiron:
+        this.startMiningResource(unit.action)
         break
       case ACTION_TYPES.build: {
         if (!unit.getActionCondition?.(unit.dest)) {

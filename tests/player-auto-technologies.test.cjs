@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadPlayer() {
+function loadPlayer(overrides = {}) {
   const filename = path.join(__dirname, '../app/classes/players/Player.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -42,7 +42,15 @@ function loadPlayer() {
       }
     }
     if (request === '../building') return { Building: class {} }
-    if (request === '../unit') return { Unit: class {} }
+    if (request === '../unit') {
+      return {
+        Unit: class {
+          constructor(options) {
+            Object.assign(this, options)
+          }
+        },
+      }
+    }
     if (request === '../../constants') {
       return {
         ACTION_TYPES: {},
@@ -54,7 +62,7 @@ function loadPlayer() {
       }
     }
     if (request === '../../config/playerConfig') return { createPlayerData: () => ({ config: {}, techs: {} }) }
-    if (request === '../../config/name') return { getRandomUnitName: () => 'Unit' }
+    if (request === '../../config/name') return { getRandomUnitName: overrides.getRandomUnitName ?? (() => 'Unit') }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,
@@ -78,6 +86,38 @@ function loadPlayer() {
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.Player
 }
+
+test('unit creation passes unit gender to random civilization names', () => {
+  const calls = []
+  const Player = loadPlayer({
+    getRandomUnitName: (civ, gender, random) => {
+      calls.push({ civ, gender, sample: random() })
+      return `${civ}-${gender}-unit`
+    },
+  })
+  const player = {
+    civ: 'Roman',
+    gender: 'male',
+    isPlayed: false,
+    units: [],
+    context: {
+      map: {
+        random: () => 0.25,
+        addChild: unit => unit,
+      },
+      menu: {
+        updatePlayerMiniMapEvt: () => {},
+      },
+      player: null,
+    },
+  }
+  Object.setPrototypeOf(player, Player.prototype)
+
+  const unit = player.createUnit({ type: 'Villager', gender: 'female' })
+
+  assert.equal(unit.name, 'Roman-female-unit')
+  assert.deepEqual(calls, [{ civ: 'Roman', gender: 'female', sample: 0.25 }])
+})
 
 test('age-based auto technologies stop before age 3 wall upgrades', () => {
   const Player = loadPlayer()

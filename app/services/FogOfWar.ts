@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../constants'
+import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
 import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -71,10 +71,7 @@ function updateAIKnowledge(globalCell: RuntimeCell, viewer: PlayerLike, { static
     const { has } = globalCell
 
     if ((has.quantity ?? 0) > 0) {
-      if (has.type === RESOURCE_TYPES.tree) owner.foundedTrees?.add(has)
-      if (has.type === RESOURCE_TYPES.berrybush) owner.foundedBerrybushs?.add(has)
-      if (has.type === RESOURCE_TYPES.stone) owner.foundedStones?.add(has)
-      if (has.type === RESOURCE_TYPES.gold) owner.foundedGolds?.add(has)
+      owner.foundedResources?.[has.type]?.add(has)
     }
 
     if (!staticOnly && has.family === FAMILY_TYPES.animal && !has.isDead && owner.foundedAnimals) {

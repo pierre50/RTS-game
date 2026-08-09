@@ -1,19 +1,11 @@
 import type { AIEntityLike } from './types'
 
-export const INFANTRY_TECH_UPGRADES = [
-  ['LongSword', 'LongSwordsman'],
-  ['BroadSword', 'BroadSwordsman'],
-  ['ShortSword', 'ShortSwordsman'],
-  ['BattleAxe', 'Axeman'],
-]
+export const INFANTRY_TECH_UPGRADES: string[][] = []
 
-export const ARCHER_TECH_UPGRADES = [
-  ['CompositeBow', 'CompositeBowman'],
-  ['ImprovedBow', 'ImprovedBowman'],
-]
+export const ARCHER_TECH_UPGRADES: string[][] = []
 
-const INFANTRY_UNIT_TYPES = ['Clubman', 'Axeman', 'ShortSwordsman', 'BroadSwordsman', 'LongSwordsman']
-const ARCHER_UNIT_TYPES = ['Bowman', 'ImprovedBowman', 'CompositeBowman']
+const INFANTRY_UNIT_TYPES = ['Fantassin']
+const ARCHER_UNIT_TYPES = ['Bowman']
 
 export function getBestUnitFromTechs(technologies: string[], upgrades: string[][], fallback: string): string {
   const found = upgrades.find(([tech]) => technologies.includes(tech))

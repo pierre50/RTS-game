@@ -323,15 +323,17 @@ export class ActionSpecFactory {
       context: { controls, player },
     } = menu
     const config = player.techs[type]
+    const isAcquired = () => player.technologies.includes(type)
     return {
       icon: getIconPath(config.icon ?? ''),
       id: type,
+      acquired: isAcquired,
       tooltip: () => this.getTechnologyTooltip(type, config),
       hide: () =>
         (!AGE_UP_ENABLED && AGE_TECHNOLOGIES.has(type)) ||
-        player.technologies.includes(type) ||
-        this.hasHiddenTechnologyPrerequisite(type),
+        (!isAcquired() && this.hasHiddenTechnologyPrerequisite(type)),
       disabled: () =>
+        isAcquired() ||
         this.isChiefCommandBlocked() ||
         (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {

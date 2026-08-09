@@ -130,7 +130,7 @@
   },
   "Stone": {
     "selectionFactor": 1.5,
-    "totalQuantity": 250,
+    "totalQuantity": 220,
     "color": "#B3B3B3",
     "assets": [
       {
@@ -159,6 +159,76 @@
       },
       {
         "sheet": "resources/stone",
+        "frame": 6
+      }
+    ]
+  },
+  "Copper": {
+    "selectionFactor": 1.5,
+    "totalQuantity": 260,
+    "color": "#B87333",
+    "assets": [
+      {
+        "sheet": "resources/copper",
+        "frame": 0
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 1
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 2
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 3
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 4
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 5
+      },
+      {
+        "sheet": "resources/copper",
+        "frame": 6
+      }
+    ]
+  },
+  "Iron": {
+    "selectionFactor": 1.5,
+    "totalQuantity": 320,
+    "color": "#6F7378",
+    "assets": [
+      {
+        "sheet": "resources/iron",
+        "frame": 0
+      },
+      {
+        "sheet": "resources/iron",
+        "frame": 1
+      },
+      {
+        "sheet": "resources/iron",
+        "frame": 2
+      },
+      {
+        "sheet": "resources/iron",
+        "frame": 3
+      },
+      {
+        "sheet": "resources/iron",
+        "frame": 4
+      },
+      {
+        "sheet": "resources/iron",
+        "frame": 5
+      },
+      {
+        "sheet": "resources/iron",
         "frame": 6
       }
     ]

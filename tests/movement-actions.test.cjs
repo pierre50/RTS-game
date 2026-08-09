@@ -410,7 +410,7 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = { color: 'red', label: 'enemy', population: 1, units: [] }
   const newOwner = { color: 'blue', isPlayed: true, label: 'player', population: 0, units: [], technologies: [] }
@@ -495,7 +495,7 @@ test('converted buildings keep their source civilization and age assets', () => 
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = {
     age: 1,
@@ -629,7 +629,7 @@ test('direct movement advances even when subpixel steps would be ignored by path
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -699,7 +699,7 @@ test('a direct move blocked head-on slides along the obstacle contour', () => {
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -766,7 +766,7 @@ test('direct move can keep facing separate from movement direction', () => {
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -849,7 +849,7 @@ test('hero direct movement rounds building footprint corners', () => {
   })
   const createUnit = () => ({
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -943,7 +943,7 @@ test('hero direct movement stops at the map edge without leaking world position'
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -1027,7 +1027,7 @@ test('hero direct movement slides along rounded building collision instead of is
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -1109,7 +1109,7 @@ test('hero direct movement slides along water-border terrain like a rounded obst
   })
   const unit = {
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -1190,7 +1190,7 @@ test('hero direct movement collides softly with units and animals', () => {
   })
   const createUnit = (grid, x = 0) => ({
     actionLocked: false,
-    category: 'Infantry',
+    category: 'Fantassin',
     context: {
       map: {
         grid,
@@ -1578,7 +1578,7 @@ test('chopping wood shows damage before wood is gathered', () => {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const tree = {
     family: constants.FAMILY_TYPES.resource,
@@ -1643,7 +1643,7 @@ test('hero building health bar refreshes while construction progresses', () => {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const building = {
     family: constants.FAMILY_TYPES.building,
@@ -1708,7 +1708,7 @@ test('a farmer returns to the same farm after delivering food', () => {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const unit = {
     context: { map: { grid: [] } },
@@ -1758,7 +1758,7 @@ test('resuming previous animal work does not remember the interrupted target aga
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const unit = {
     dest: interruptedTarget,
@@ -1818,6 +1818,55 @@ test('delivery orders bypass the human command throttle', () => {
       },
     },
     sendTo: () => calls.push(['sendTo']),
+    sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
+  }
+
+  new UnitCommands(unit).sendToDelivery()
+
+  assert.deepEqual(calls, [['sendToEvt', 'granary-1', constants.ACTION_TYPES.delivery]])
+  assert.equal(unit.previousDest, resource)
+})
+
+test('hunters deliver meat to granaries instead of storage pits', () => {
+  const resource = { label: 'deer-1' }
+  const storagePit = {
+    label: 'storage-pit-1',
+    type: constants.BUILDING_TYPES.storagePit,
+  }
+  const granary = {
+    label: 'granary-1',
+    type: constants.BUILDING_TYPES.granary,
+  }
+  const calls = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition: (_unit, target, action, props) =>
+        action === constants.ACTION_TYPES.delivery && props?.buildingTypes?.includes(target.type),
+      getClosestInstance: (_unit, targets) => targets[0],
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    category: 'Unit',
+    context: { map: { grid: [[{ label: 'current-cell' }]] } },
+    dest: resource,
+    i: 0,
+    j: 0,
+    loadingType: 'meat',
+    owner: {
+      buildings: [storagePit, granary],
+      config: {
+        buildings: {
+          Granary: { accept: ['berry', 'wheat', 'meat'] },
+          StoragePit: { accept: ['wood', 'stone', 'gold'] },
+        },
+      },
+    },
     sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
   }
 
@@ -1888,7 +1937,7 @@ test('delivery shows a resource gain over the delivering unit', () => {
       getTowerType: () => constants.BUILDING_TYPES.watchTower,
       isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
     },
-    '../../lib/lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
   const player = {

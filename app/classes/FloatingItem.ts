@@ -17,6 +17,8 @@ import type { TextureRef } from '../lib'
 
 const FLOATING_ITEM_TEXTURES: Record<string, TextureRef> = {
   [RESOURCE_TYPES.gold]: { sheet: 'resources/gold', frame: 0 },
+  [RESOURCE_TYPES.copper]: { sheet: 'resources/copper', frame: 0 },
+  [RESOURCE_TYPES.iron]: { sheet: 'resources/iron', frame: 0 },
 }
 
 const SHADOW_ALPHA = 0.26

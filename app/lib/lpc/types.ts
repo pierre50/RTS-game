@@ -32,6 +32,9 @@ export type LpcSheetRuntime = LpcSheetSource & {
 export type LpcAppearanceLayer = {
   zIndex: number
   workTypes?: string[]
+  minLevel?: number
+  maxLevel?: number
+  ageSheetOverrides?: Record<string, Partial<Record<LpcSpriteSheetKey, string>>>
   workSheetOverrides?: Record<string, Partial<Record<LpcSpriteSheetKey, string>>>
   actionWorkSheetOverrides?: Record<string, Partial<Record<LpcSpriteSheetKey, string>>>
   playerColorVariants?: Record<string, string>

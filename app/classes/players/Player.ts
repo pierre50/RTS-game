@@ -25,6 +25,7 @@ import {
   FAMILY_TYPES,
   PLAYER_TYPES,
   POPULATION_MAX,
+  RESOURCE_NAMES,
   SOUND_CUES,
   UNIT_TYPES,
 } from '../../constants'
@@ -45,6 +46,7 @@ import type { SerializedVisionGrid } from '../../types/vision'
 import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
+const DEBUG_STARTING_TECHNOLOGIES = ['Bow', 'Pickaxe', 'Farming', 'HorseTaming']
 
 type NumericConfigOperation = ConfigOperation & {
   key: string
@@ -78,10 +80,12 @@ export class Player implements PlayerLike {
   i!: number
   j!: number
   type!: string
-  wood: number
-  food: number
-  stone: number
-  gold: number
+  wood!: number
+  food!: number
+  stone!: number
+  gold!: number
+  copper!: number
+  iron!: number
   corpses: UnitEntity[]
   units: UnitEntity[]
   selectedUnits!: UnitEntity[]
@@ -98,6 +102,8 @@ export class Player implements PlayerLike {
   age: number
   lastUnderAttackAlertAt: number
   team!: number | null
+  diplomacy!: PlayerLike['diplomacy']
+  factionId!: string | null
   populationMax!: number
   colorHex: string
   config: PlayerConfigLike
@@ -120,10 +126,9 @@ export class Player implements PlayerLike {
     this.parent = map
 
     const res = map.startingResources
-    this.wood = res.wood ?? 0
-    this.food = res.food ?? 0
-    this.stone = res.stone ?? 0
-    this.gold = res.gold ?? 0
+    for (const resource of RESOURCE_NAMES) {
+      this[resource] = res[resource] ?? 0
+    }
     this.corpses = []
     this.units = []
     this.buildings = []
@@ -139,6 +144,8 @@ export class Player implements PlayerLike {
     const rawTeam = options.team
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
+    this.diplomacy = options.diplomacy === 'neutral' ? 'neutral' : null
+    this.factionId = typeof options.factionId === 'string' ? options.factionId : null
 
     this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
 
@@ -150,6 +157,11 @@ export class Player implements PlayerLike {
     )
     this.config = config
     this.techs = techs
+    for (const technology of DEBUG_STARTING_TECHNOLOGIES) {
+      if (this.techs[technology] && !this.technologies.includes(technology)) {
+        this.technologies.push(technology)
+      }
+    }
     const restoredResearch = options.researchTechnology
     if (restoredResearch?.type) {
       this.researchLoading = options.researchLoading ?? 0
@@ -428,8 +440,21 @@ export class Player implements PlayerLike {
     return !!player && player.label !== this.label && this.team !== null && this.team === player.team
   }
 
+  isNeutralWith(player: PlayerLike | null | undefined) {
+    return !!player && player.label !== this.label && (this.diplomacy === 'neutral' || player.diplomacy === 'neutral')
+  }
+
   isEnemy(player: PlayerLike | null | undefined) {
-    return !!player && player.label !== this.label && !this.isAlliedWith(player)
+    if (!player || player.label === this.label) return false
+
+    const factions = this.context.getCampaignFactions?.()
+    const ownFaction = this.factionId ? factions?.[this.factionId] : null
+    const otherFaction = player.factionId ? factions?.[player.factionId] : null
+    if (this.factionId && player.factionId && this.factionId === player.factionId) return false
+    if (ownFaction) return ownFaction.relationState === 'hostile'
+    if (otherFaction) return otherFaction.relationState === 'hostile'
+
+    return !this.isAlliedWith(player) && !this.isNeutralWith(player)
   }
 
   enemyPlayers() {
@@ -525,7 +550,8 @@ export class Player implements PlayerLike {
   createUnit(options: UnitSpawnOptions, creationOptions: { preserveType?: boolean } = {}) {
     const { context } = this
     const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
-    const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, () => context.map.random()))
+    const unitGender = options.gender ?? this.gender
+    const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = context.map.addChild(
       new Unit(

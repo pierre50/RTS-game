@@ -9,6 +9,7 @@ import Controls from '../classes/Controls'
 import {
   Modal,
   canPlayerStillAct,
+  colors,
   debounce,
   getFreeCellAroundPoint,
   getGaiaAnimals,
@@ -17,6 +18,7 @@ import {
   updateInstanceVisibility,
 } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
+import { adjustFactionRelation, createFactionSave, FACTION_SCORE } from '../lib/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { stopAllUiSounds } from '../lib/uiSound'
@@ -50,6 +52,7 @@ import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX, ENVIRONMENT_IDS, PL
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
   CampaignSave,
+  FactionSave,
   GameConfig,
   PlayerSetupConfig,
   SaveEntityState,
@@ -118,6 +121,14 @@ function withFogEnabledState(state: SerializedSave): SerializedSave {
 type PortalPartyState = {
   followers: SaveEntityState[]
   hero: SaveEntityState | null
+}
+
+type PortalEncounterRelation = 'hostile' | 'neutral' | 'ally'
+
+type PortalWorldConfig = {
+  config: GameConfig
+  faction: FactionSave
+  factionId: string
 }
 
 function assignDefined(target: Record<string, unknown>, values: Record<string, unknown>): void {
@@ -219,6 +230,8 @@ export default class Game extends Container {
       checkDefeat: () => this.checkDefeat(),
       applyZoom: () => this.applyZoom(),
       getWorldGraph: () => this._campaignSave?.worldGraph ?? null,
+      getCampaignFactions: () => this._campaignSave?.factions ?? null,
+      changeFactionRelation: (factionId: string, delta: number) => this._changeFactionRelation(factionId, delta),
       getCurrentWorldId: () => this._campaignSave?.currentWorldId ?? null,
       travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
         this.travelThroughPortal(portal, color).catch(error => {
@@ -629,46 +642,82 @@ export default class Game extends Container {
     autosaveRecord(this._campaignSave, t('autosave'))
   }
 
+  _changeFactionRelation(factionId: string, delta: number): void {
+    const campaign = this._campaignSave
+    const faction = campaign?.factions?.[factionId]
+    if (!campaign || !faction) return
+    this._campaignSave = {
+      ...campaign,
+      factions: {
+        ...(campaign.factions ?? {}),
+        [factionId]: adjustFactionRelation(faction, delta, Date.now()),
+      },
+    }
+    this._restartSaveData = structuredClone(this._campaignSave)
+  }
+
   _portalWorldId(portal: ResourceEntity, color: string): string {
     const currentWorldId = this._campaignSave?.currentWorldId || 'world'
     const portalId = portal.label || `${portal.i}-${portal.j}`
     return `${currentWorldId}-${portalId}-${color}`.replace(/[^a-zA-Z0-9_-]/g, '-')
   }
 
-  _configForPortalWorld(color: 'blue' | 'yellow' | 'red'): GameConfig {
+  _configForPortalWorld(color: 'blue' | 'yellow' | 'red', worldId: string, now: number): PortalWorldConfig {
     const { player, map } = this._gameContext()
+    const relation = this._randomPortalEncounterRelation()
+    const playerTeam = relation === 'ally' ? player.team ?? 1 : player.team ?? null
+    const aiTeam = relation === 'ally' ? playerTeam : null
+    const playerColor = player.color || color
+    const aiColor = this._randomPlayerColorExcept(playerColor)
+    const aiCiv = this._randomAICiv()
+    const factionId = `${worldId}-tribe`
+    const faction = createFactionSave({
+      civilization: aiCiv,
+      homeWorldId: worldId,
+      id: factionId,
+      initialScore:
+        relation === 'ally' ? FACTION_SCORE.allied : relation === 'neutral' ? FACTION_SCORE.neutral : FACTION_SCORE.hostile,
+      now,
+    })
     return {
-      size: map.size,
-      mapType: DEFAULT_MAP_TYPE,
-      environment: this._randomPortalEnvironment(map.environment),
-      seed: Math.random() * 9999,
-      startingAge: map.startingAge,
-      allTechnologies: map.allTechnologies,
-      revealEverything: false,
-      revealTerrain: map.revealTerrain,
-      instantMode: map.instantMode,
-      humanStartsWithoutBase: true,
-      startingResources: map.startingResources,
-      resourceDensity: map.resourceDensity,
-      difficulty: map.difficulty,
-      players: [
-        {
-          civ: player.civ,
-          color: player.color || color,
-          gender: player.gender,
-          isHuman: true,
-          name: player.name,
-          team: player.team ?? null,
-        },
-        {
-          civ: this._randomAICiv(),
-          color: color === 'red' ? 'yellow' : 'red',
-          gender: 'male',
-          isHuman: false,
-          name: 'IA locale',
-          team: null,
-        },
-      ],
+      config: {
+        size: map.size,
+        mapType: DEFAULT_MAP_TYPE,
+        environment: this._randomPortalEnvironment(map.environment),
+        seed: Math.random() * 9999,
+        startingAge: map.startingAge,
+        allTechnologies: map.allTechnologies,
+        revealEverything: false,
+        revealTerrain: map.revealTerrain,
+        instantMode: map.instantMode,
+        humanStartsWithoutBase: true,
+        startingResources: map.startingResources,
+        resourceDensity: map.resourceDensity,
+        difficulty: map.difficulty,
+        players: [
+          {
+            civ: player.civ,
+            color: playerColor,
+            factionId: player.factionId ?? null,
+            gender: player.gender,
+            isHuman: true,
+            name: player.name,
+            team: playerTeam,
+          },
+          {
+            civ: aiCiv,
+            color: aiColor,
+            diplomacy: relation === 'neutral' ? 'neutral' : null,
+            factionId,
+            gender: 'male',
+            isHuman: false,
+            name: faction.name,
+            team: aiTeam,
+          },
+        ],
+      },
+      faction,
+      factionId,
     }
   }
 
@@ -676,10 +725,20 @@ export default class Game extends Container {
     return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
   }
 
+  _randomPlayerColorExcept(excludedColor?: string | null): string {
+    const pool = colors.filter(playerColor => playerColor !== excludedColor)
+    return pool[Math.floor(Math.random() * pool.length)] || 'red'
+  }
+
   _randomPortalEnvironment(currentEnvironment?: string | null): EnvironmentId {
     const choices = ENVIRONMENT_IDS.filter(environment => environment !== currentEnvironment)
     const pool = choices.length ? choices : ENVIRONMENT_IDS
     return pool[Math.floor(Math.random() * pool.length)] || 'Temperate'
+  }
+
+  _randomPortalEncounterRelation(): PortalEncounterRelation {
+    const relations: PortalEncounterRelation[] = ['hostile', 'neutral', 'ally']
+    return relations[Math.floor(Math.random() * relations.length)] || 'hostile'
   }
 
   _extractPortalParty(state: SerializedSave): PortalPartyState {
@@ -1005,15 +1064,17 @@ export default class Game extends Container {
         this._autosaveCampaign()
       } else {
         const parentWorldId = campaign.currentWorldId
-        const nextConfig = this._configForPortalWorld(color)
+        const portalWorld = this._configForPortalWorld(color, targetWorldId, now)
         this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromConfig(nextConfig)
+        await this._bootFromConfig(portalWorld.config)
         this._map().revealEverything = false
         this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell(), { freshWorld: true })
         const childState = withFogEnabledState(serializeGame(this._gameContext()))
         const nextCampaign = addChildWorldToCampaign(campaign, childState, {
           color,
           entryPortalId: portal.label || `${portal.i},${portal.j}`,
+          factionIds: [portalWorld.factionId],
+          factions: { [portalWorld.factionId]: portalWorld.faction },
           name: `Monde ${color}`,
           now,
           parentWorldId,

@@ -6,6 +6,7 @@ import {
   CELL_WIDTH,
   FAMILY_TYPES,
   LOADING_TYPES,
+  MINING_RESOURCE_CONFIG,
   SHEET_TYPES,
   SOUND_CUES,
   WORK_FOOD_TYPES,
@@ -45,10 +46,10 @@ import type { DynamicEquipmentKey } from './lpc/equipment'
 
 export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
-export type HeroEquippedItem = 'interact' | 'sword' | 'halberd' | 'bow'
+export type HeroEquippedItem = 'interact' | 'sword' | 'bow'
 export type HeroTool = HeroEquippedItem
 
-export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'halberd', 'bow']
+export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow']
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
 const TOOL_ACTION_RANGE = 3
@@ -90,18 +91,20 @@ export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
 const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   interact: WORK_TYPES.attacker,
   sword: 'heroSword',
-  halberd: 'heroSpear',
   bow: WORK_TYPES.hunter,
 }
 
-// Mirrors the equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
-// in lpc/equipment.ts: heroSword→longsword, heroSpear→halberd, hunter→bow) — used
-// to render an icon of the actual weapon for the inventory tool slots. No entry
-// for 'interact': bare hands, nothing to draw.
+// Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
+// in lpc/equipment.ts: heroSword→age-scaled sword, hunter→bow) — used to render
+// an icon for the inventory tool slots. No entry for 'interact': bare hands.
 export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquipmentKey>> = {
-  sword: 'longsword',
-  halberd: 'halberd',
+  sword: 'sword_ceramic',
   bow: 'bow',
+}
+
+export function getEquippedItemWeapon(tool: HeroEquippedItem, age = 0): DynamicEquipmentKey | undefined {
+  if (tool === 'sword') return age >= 1 ? 'sword_copper' : 'sword_ceramic'
+  return EQUIPPED_ITEM_WEAPON[tool]
 }
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
@@ -139,6 +142,24 @@ type HeroContextActionConfig = {
   matches: (target: RuntimeEntity) => boolean
   resolve: (hero: UnitEntity, target: RuntimeEntity) => (() => void) | null
 }
+type MiningHeroConfig = {
+  action: string
+  loadingType: string
+  work: string
+}
+
+function getMiningResourceConfigMap(): Record<string, MiningHeroConfig> {
+  const configured = MINING_RESOURCE_CONFIG ?? {}
+  if (Object.keys(configured).length) return configured
+  return {
+    Stone: { action: ACTION_TYPES.minestone, loadingType: LOADING_TYPES.stone, work: WORK_TYPES.stoneminer },
+    Gold: { action: ACTION_TYPES.minegold, loadingType: LOADING_TYPES.gold, work: WORK_TYPES.goldminer },
+  }
+}
+
+function getMiningResourceConfig(target: RuntimeEntity): MiningHeroConfig | undefined {
+  return getMiningResourceConfigMap()[resourceKind(target) ?? '']
+}
 
 // The hero is fully player-controlled and must never path or move on its own — every entry
 // point below (aimed click, plain "e" press, the building deposit button) only ever calls
@@ -172,15 +193,13 @@ function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: st
 }
 
 function getLoadingTypeForAction(action: string): string | null {
+  const miningConfig = Object.values(getMiningResourceConfigMap()).find(config => config.action === action)
+  if (miningConfig) return miningConfig.loadingType
   switch (action) {
     case ACTION_TYPES.chopwood:
       return LOADING_TYPES.wood
     case ACTION_TYPES.forageberry:
       return LOADING_TYPES.berry
-    case ACTION_TYPES.minegold:
-      return LOADING_TYPES.gold
-    case ACTION_TYPES.minestone:
-      return LOADING_TYPES.stone
     case ACTION_TYPES.takemeat:
       return LOADING_TYPES.meat
     default:
@@ -237,12 +256,10 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   },
   {
     action: 'mine',
-    matches: target => resourceKind(target) === 'Stone' || resourceKind(target) === 'Gold',
+    matches: target => Boolean(getMiningResourceConfig(target)),
     resolve: (hero, target) => {
-      const isStone = resourceKind(target) === 'Stone'
-      const action = isStone ? ACTION_TYPES.minestone : ACTION_TYPES.minegold
-      const work = isStone ? WORK_TYPES.stoneminer : WORK_TYPES.goldminer
-      return resolveHeroGatherAction(hero, target, action, work)
+      const config = getMiningResourceConfig(target)
+      return config ? resolveHeroGatherAction(hero, target, config.action, config.work) : null
     },
   },
   {
@@ -542,15 +559,15 @@ function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
   return deliverToBuilding(hero, target) ? 'delivered' : 'blocked'
 }
 
-function getHeroWeaponDamage(tool: HeroEquippedItem): number {
-  const stats = getEquipmentCombatStats(getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool]))
+function getHeroWeaponDamage(hero: UnitEntity, tool: HeroEquippedItem): number {
+  const stats = getEquipmentCombatStats(getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age))
   return stats.weaponPower || (tool === 'interact' ? UNARMED_UNIT_WEAPON_POWER : 0)
 }
 
 function getHeroWeaponCombatSource(hero: UnitEntity, tool: HeroEquippedItem): CombatEntity {
   return {
     ...hero,
-    equipment: getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool]),
+    equipment: getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age),
   }
 }
 
@@ -579,8 +596,9 @@ function getContextActionForTarget(contextAction: HeroContextAction, target: Run
   if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
   if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (contextAction === 'chop' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
-  if (contextAction === 'mine' && resourceKind(target) === 'Stone') return ACTION_TYPES.minestone
-  if (contextAction === 'mine' && resourceKind(target) === 'Gold') return ACTION_TYPES.minegold
+  if (contextAction === 'mine') {
+    return getMiningResourceConfig(target)?.action ?? null
+  }
   if (contextAction === 'build' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
   return null
 }
@@ -660,7 +678,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
           target: target ?? undefined,
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
-          weaponPower: getHeroWeaponDamage('bow'),
+          weaponPower: getHeroWeaponDamage(hero, 'bow'),
           maxDistance: HERO_ARROW_MAX_DISTANCE * rangePower,
         },
         hero.context!
@@ -720,7 +738,7 @@ function continueHeroBowChargeAnimation(hero: UnitEntity): void {
 }
 
 export function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
-  return tool === 'sword' || tool === 'halberd'
+  return tool === 'sword'
 }
 
 function hasEnergyToStartDefense(hero: UnitEntity): boolean {
@@ -1028,7 +1046,7 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
         target,
         destination,
         spawnPoint: getHeroArrowSpawnPoint(hero),
-        weaponPower: getHeroWeaponDamage('bow'),
+        weaponPower: getHeroWeaponDamage(hero, 'bow'),
         maxDistance: HERO_ARROW_MAX_DISTANCE * Math.max(HERO_BOW_MIN_POWER, Math.min(1, power)),
       },
       hero.context!
@@ -1118,7 +1136,7 @@ function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: He
       const { damageDealt } = applyCombatHit(combatSource, target, {
         attacker: hero,
         bonusDamage: getCombatXpBonus(hero, XP_CATEGORIES.melee),
-        defaultDamage: getHeroWeaponDamage(tool),
+        defaultDamage: getHeroWeaponDamage(hero, tool),
         isMelee: true,
         menu: hero.context?.menu,
         player: hero.context?.player,
@@ -1146,7 +1164,7 @@ export function triggerEquippedItemActionAt(
   if (tool === 'bow') {
     return beginHeroBowChargeAt(hero, destination)
   }
-  if (tool === 'sword' || tool === 'halberd') {
+  if (tool === 'sword') {
     const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
     if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
     return playMeleeWeaponWhiff(hero)
@@ -1186,7 +1204,7 @@ export function performContextAction(hero: UnitEntity): boolean {
 }
 
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
-  if (tool === 'sword' || tool === 'halberd') {
+  if (tool === 'sword') {
     const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
     if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
     return playMeleeWeaponWhiff(hero)

@@ -14,7 +14,7 @@ function loadPlayerActions() {
 
   const module = { exports: {} }
   const localRequire = request => {
-    if (request === '../../constants') return { POPULATION_MAX: 200 }
+    if (request === '../../constants') return { POPULATION_MAX: 200, SHEET_TYPES: { standing: 'standing' } }
     if (request === '../../lib') {
       return {
         capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
@@ -41,6 +41,12 @@ function loadPlayerActions() {
     }
     if (request === '../../lib/buildings/towers') {
       return { refreshOwnerTowers: () => {} }
+    }
+    if (request === '../../lib/equipmentStats') {
+      return { refreshUnitEquipmentStats: unit => unit.calls.push(['refreshUnitEquipmentStats']) }
+    }
+    if (request === '../../lib/lpc') {
+      return { preloadBakedLpcUnitsForPlayers: () => Promise.resolve() }
     }
     if (request === './shared') {
       return {
@@ -146,4 +152,39 @@ test('tech all auto-unlocks the next age tier when age increases', () => {
   assert.deepEqual(result, { ok: true, message: 'Age set to 2' })
   assert.equal(player.age, 2)
   assert.deepEqual(player.technologies, ['Wheel', 'Writing', 'Metalworking', 'Architecture'])
+})
+
+test('setAge refreshes existing unit equipment visuals', () => {
+  const { setAge } = loadPlayerActions()
+  const calls = []
+  const player = {
+    age: 0,
+    technologies: [],
+    units: [
+      {
+        calls,
+        currentSheet: 'walking',
+        setTextures: sheet => calls.push(['setTextures', sheet]),
+      },
+      {
+        calls,
+        isDead: true,
+        setTextures: sheet => calls.push(['deadSetTextures', sheet]),
+      },
+    ],
+    buildings: [],
+    techs: {},
+  }
+  const context = {
+    player,
+    menu: {
+      updateActionTarget: () => calls.push(['updateActionTarget']),
+      updateTopbar: () => calls.push(['updateTopbar']),
+    },
+  }
+
+  const result = setAge(context, 1)
+
+  assert.deepEqual(result, { ok: true, message: 'Age set to 1' })
+  assert.deepEqual(calls, [['refreshUnitEquipmentStats'], ['setTextures', 'walking'], ['updateActionTarget'], ['updateTopbar']])
 })

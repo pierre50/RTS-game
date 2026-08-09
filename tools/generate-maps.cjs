@@ -253,6 +253,8 @@ function loadRuntimeGenerators() {
       berrybush: 'Berrybush',
       stone: 'Stone',
       gold: 'Gold',
+      copper: 'Copper',
+      iron: 'Iron',
       salmon: 'Salmon',
     },
     // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since

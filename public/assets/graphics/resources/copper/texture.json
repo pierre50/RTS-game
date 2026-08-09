@@ -1,0 +1,183 @@
+{
+  "frames": {
+    "000_graphics_resources_copper.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "001_graphics_resources_copper.png": {
+      "frame": {
+        "x": 69,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7321428571
+      }
+    },
+    "002_graphics_resources_copper.png": {
+      "frame": {
+        "x": 138,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6607142857
+      }
+    },
+    "003_graphics_resources_copper.png": {
+      "frame": {
+        "x": 207,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6964285714
+      }
+    },
+    "004_graphics_resources_copper.png": {
+      "frame": {
+        "x": 276,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7321428571
+      }
+    },
+    "005_graphics_resources_copper.png": {
+      "frame": {
+        "x": 345,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "006_graphics_resources_copper.png": {
+      "frame": {
+        "x": 414,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7142857142
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 483,
+      "h": 56
+    },
+    "scale": 1
+  }
+}

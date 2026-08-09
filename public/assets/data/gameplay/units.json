@@ -19,6 +19,8 @@
       "berry": 10,
       "stone": 10,
       "gold": 10,
+      "copper": 10,
+      "iron": 10,
       "meat": 10
     },
     "allAssets": {
@@ -152,6 +154,8 @@
       "berry": 10,
       "stone": 10,
       "gold": 10,
+      "copper": 10,
+      "iron": 10,
       "meat": 10
     },
     "allAssets": {
@@ -294,8 +298,8 @@
       ]
     }
   },
-  "Clubman": {
-    "category": "Infantry",
+  "Fantassin": {
+    "category": "Fantassin",
     "totalHitPoints": 40,
     "sight": 8,
     "speed": 1.3,
@@ -305,19 +309,12 @@
     "cost": {
       "food": 50
     },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "BattleAxe"
-      }
-    ],
     "assets": {
-      "standingSheet": "lpc-baked/clubman/greek/male/walking",
-      "walkingSheet": "lpc-baked/clubman/greek/male/walking",
-      "actionSheet": "lpc-baked/clubman/greek/male/action",
-      "dyingSheet": "lpc-baked/clubman/greek/male/dying",
-      "corpseSheet": "lpc-baked/clubman/greek/male/corpse"
+      "standingSheet": "lpc-baked/infantry/greek/male/walking",
+      "walkingSheet": "lpc-baked/infantry/greek/male/walking",
+      "actionSheet": "lpc-baked/infantry/greek/male/action",
+      "dyingSheet": "lpc-baked/infantry/greek/male/dying",
+      "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
       "command": [
@@ -327,9 +324,10 @@
         "werebus"
       ],
       "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ],
       "die": [
         "human-unit-killed-6",
@@ -355,11 +353,11 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "lpc-baked/bowman/greek/male/walking",
-      "walkingSheet": "lpc-baked/bowman/greek/male/walking",
-      "actionSheet": "lpc-baked/bowman/greek/male/action",
-      "dyingSheet": "lpc-baked/bowman/greek/male/dying",
-      "corpseSheet": "lpc-baked/bowman/greek/male/corpse"
+      "standingSheet": "lpc-baked/infantry/greek/male/walking",
+      "walkingSheet": "lpc-baked/infantry/greek/male/walking",
+      "actionSheet": "lpc-baked/infantry/greek/male/action",
+      "dyingSheet": "lpc-baked/infantry/greek/male/dying",
+      "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
       "command": [
@@ -416,315 +414,6 @@
       ],
       "heal": "ayohoyohoyo",
       "convert": "wololo",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3",
-        "human-unit-killed-4",
-        "human-unit-killed-5"
-      ]
-    }
-  },
-  "Axeman": {
-    "category": "Infantry",
-    "totalHitPoints": 50,
-    "sight": 8,
-    "speed": 1.3,
-    "trainingTime": 27,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 50
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "ShortSword"
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BattleAxe"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/axeman/greek/male/walking",
-      "walkingSheet": "lpc-baked/axeman/greek/male/walking",
-      "actionSheet": "lpc-baked/axeman/greek/male/action",
-      "dyingSheet": "lpc-baked/axeman/greek/male/dying",
-      "corpseSheet": "lpc-baked/axeman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
-      ]
-    }
-  },
-  "ShortSwordsman": {
-    "category": "Infantry",
-    "totalHitPoints": 60,
-    "sight": 8,
-    "speed": 1.3,
-    "trainingTime": 27,
-    "meleeArmor": 1,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 35,
-      "gold": 15
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "BroadSword"
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ShortSword"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/shortswordman/greek/male/walking",
-      "walkingSheet": "lpc-baked/shortswordman/greek/male/walking",
-      "actionSheet": "lpc-baked/shortswordman/greek/male/action",
-      "dyingSheet": "lpc-baked/shortswordman/greek/male/dying",
-      "corpseSheet": "lpc-baked/shortswordman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
-      ]
-    }
-  },
-  "BroadSwordsman": {
-    "category": "Infantry",
-    "totalHitPoints": 70,
-    "sight": 8,
-    "speed": 1.3,
-    "trainingTime": 27,
-    "meleeArmor": 1,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 35,
-      "gold": 15
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "LongSword"
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BroadSword"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/broadswordman/greek/male/walking",
-      "walkingSheet": "lpc-baked/broadswordman/greek/male/walking",
-      "actionSheet": "lpc-baked/broadswordman/greek/male/action",
-      "dyingSheet": "lpc-baked/broadswordman/greek/male/dying",
-      "corpseSheet": "lpc-baked/broadswordman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
-      ]
-    }
-  },
-  "LongSwordsman": {
-    "category": "Infantry",
-    "totalHitPoints": 80,
-    "sight": 8,
-    "speed": 1.3,
-    "trainingTime": 27,
-    "meleeArmor": 2,
-    "pierceArmor": 0,
-    "cost": {
-      "food": 35,
-      "gold": 15
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "LongSword"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/longswordman/greek/male/walking",
-      "walkingSheet": "lpc-baked/longswordman/greek/male/walking",
-      "actionSheet": "lpc-baked/longswordman/greek/male/action",
-      "dyingSheet": "lpc-baked/longswordman/greek/male/dying",
-      "corpseSheet": "lpc-baked/longswordman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
-      ]
-    }
-  },
-  "ImprovedBowman": {
-    "category": "Archer",
-    "totalHitPoints": 40,
-    "sight": 16,
-    "speed": 1.3,
-    "trainingTime": 30,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "range": 6,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 40,
-      "gold": 20
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "notincludes",
-        "value": "CompositeBow"
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ImprovedBow"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/improvedbowman/greek/male/walking",
-      "walkingSheet": "lpc-baked/improvedbowman/greek/male/walking",
-      "actionSheet": "lpc-baked/improvedbowman/greek/male/action",
-      "dyingSheet": "lpc-baked/improvedbowman/greek/male/dying",
-      "corpseSheet": "lpc-baked/improvedbowman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3",
-        "human-unit-killed-4",
-        "human-unit-killed-5"
-      ]
-    }
-  },
-  "CompositeBowman": {
-    "category": "Archer",
-    "totalHitPoints": 45,
-    "sight": 18,
-    "speed": 1.3,
-    "trainingTime": 30,
-    "meleeArmor": 0,
-    "pierceArmor": 0,
-    "range": 7,
-    "projectile": "Arrow",
-    "cost": {
-      "food": 40,
-      "gold": 20
-    },
-    "conditions": [
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "CompositeBow"
-      }
-    ],
-    "assets": {
-      "standingSheet": "lpc-baked/compositebowman/greek/male/walking",
-      "walkingSheet": "lpc-baked/compositebowman/greek/male/walking",
-      "actionSheet": "lpc-baked/compositebowman/greek/male/action",
-      "dyingSheet": "lpc-baked/compositebowman/greek/male/dying",
-      "corpseSheet": "lpc-baked/compositebowman/greek/male/corpse"
-    },
-    "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
       "hit": [
         "attack-class-2",
         "attack-class-2-2",

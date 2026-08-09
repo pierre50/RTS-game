@@ -3,6 +3,7 @@ import {
   ACTION_TYPES,
   BUILDING_TYPES,
   MENU_INFO_IDS,
+  MINING_RESOURCE_CONFIG,
   SHEET_TYPES,
   UNIT_TYPES,
   WORK_FOOD_TYPES,
@@ -283,10 +284,24 @@ export class UnitCommands {
   }
 
   sendToStone(target: RuntimeEntity, immediate = false) {
-    return this.commonSendTo(target, WORK_TYPES.stoneminer, ACTION_TYPES.minestone, false, immediate)
+    return this.sendToMineResource(target, immediate)
   }
 
   sendToGold(target: RuntimeEntity, immediate = false) {
-    return this.commonSendTo(target, WORK_TYPES.goldminer, ACTION_TYPES.minegold, false, immediate)
+    return this.sendToMineResource(target, immediate)
+  }
+
+  sendToCopper(target: RuntimeEntity, immediate = false) {
+    return this.sendToMineResource(target, immediate)
+  }
+
+  sendToIron(target: RuntimeEntity, immediate = false) {
+    return this.sendToMineResource(target, immediate)
+  }
+
+  sendToMineResource(target: RuntimeEntity, immediate = false) {
+    const config = MINING_RESOURCE_CONFIG?.[target.type as keyof typeof MINING_RESOURCE_CONFIG]
+    if (!config) return false
+    return this.commonSendTo(target, config.work, config.action, false, immediate)
   }
 }

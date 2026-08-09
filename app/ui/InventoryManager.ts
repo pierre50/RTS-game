@@ -5,11 +5,11 @@ import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import type Menu from '../classes/Menu'
 import { createEntityInfoContent } from './EntityInfoModalManager'
-import { EQUIPPED_ITEM_WEAPON, HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
+import { EQUIPPED_ITEM_WEAPON, getEquippedItemWeapon, HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
 import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
-import type { WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
+import type { FactionRelationState, FactionSave, WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
 import type { MenuButtonSpec } from '../types/ui'
 
 type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
@@ -17,7 +17,6 @@ type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
-  halberd: 'heroToolSpear',
   bow: 'heroToolBow',
 }
 
@@ -218,6 +217,40 @@ export class InventoryManager {
     }
   }
 
+  getFactionRelationIcon(state: FactionRelationState): string {
+    switch (state) {
+      case 'hostile':
+        return '⚔'
+      case 'wary':
+        return '!'
+      case 'friendly':
+        return '♥'
+      case 'allied':
+        return '♥♥'
+      default:
+        return '○'
+    }
+  }
+
+  getFactionRelationText(state: FactionRelationState): string {
+    switch (state) {
+      case 'hostile':
+        return t('worldMapRelationHostile')
+      case 'wary':
+        return t('worldMapRelationWary')
+      case 'friendly':
+        return t('worldMapRelationFriendly')
+      case 'allied':
+        return t('worldMapRelationAllied')
+      default:
+        return t('worldMapRelationNeutral')
+    }
+  }
+
+  getFactionRelationLabel(faction: FactionSave): string {
+    return `${this.getFactionRelationIcon(faction.relationState)} ${this.getFactionRelationText(faction.relationState)} ${faction.relationScore}`
+  }
+
   renderWorldMapNode(graph: WorldGraphSave, node: WorldGraphNode, currentWorldId: string | null, depth = 0): HTMLLIElement {
     const item = document.createElement('li')
     item.className = 'worldmap-node'
@@ -250,6 +283,23 @@ export class InventoryManager {
 
     body.appendChild(name)
     body.appendChild(meta)
+
+    const factions = (node.factionIds ?? [])
+      .map(id => this.menu.context.getCampaignFactions?.()?.[id])
+      .filter(Boolean) as FactionSave[]
+    if (factions.length) {
+      const factionList = document.createElement('span')
+      factionList.className = 'worldmap-node-factions'
+      for (const faction of factions) {
+        const badge = document.createElement('span')
+        badge.className = `worldmap-faction worldmap-faction-${faction.relationState}`
+        const civ = faction.civilization ? ` | ${faction.civilization}` : ''
+        badge.textContent = `${this.getFactionRelationLabel(faction)} | ${faction.name}${civ}`
+        factionList.appendChild(badge)
+      }
+      body.appendChild(factionList)
+    }
+
     row.appendChild(marker)
     row.appendChild(body)
     item.appendChild(row)
@@ -293,7 +343,7 @@ export class InventoryManager {
     this.toolIconsRendered = true
     const { app } = this.menu.context
     for (const [tool, canvas] of this.toolIcons) {
-      const equipment = EQUIPPED_ITEM_WEAPON[tool]
+      const equipment = getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0)
       if (equipment) renderEquipmentAvatar(app, equipment, canvas)
     }
   }
@@ -314,9 +364,12 @@ export class InventoryManager {
   createTechnologyButton(selection: RuntimeEntity, button: MenuButtonSpec, hotkey: string | null): HTMLButtonElement {
     const element = document.createElement('button')
     const disabled = button.disabled?.() ?? false
+    const acquired = button.acquired?.() ?? false
     element.type = 'button'
     element.className = 'technology-menu-button'
+    element.classList.toggle('is-acquired', acquired)
     element.setAttribute('aria-disabled', String(disabled))
+    element.setAttribute('aria-pressed', String(acquired))
     element.id = button.id ? `inventory-tech-${button.id}` : ''
 
     const icon = document.createElement('span')

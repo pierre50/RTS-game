@@ -141,7 +141,7 @@ test('military unit purchase reserves and sends an existing villager instead of 
     queue: [],
     loading: null,
     technology: null,
-    units: ['Axeman'],
+    units: ['Fantassin'],
     context: {
       map: { instantMode: false },
       menu: {
@@ -170,7 +170,7 @@ test('military unit purchase reserves and sends an existing villager instead of 
       units: [villager],
       config: {
         units: {
-          Axeman: { category: 'Infantry', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
         },
       },
       createUnit(options) {
@@ -219,11 +219,11 @@ test('military unit purchase reserves and sends an existing villager instead of 
     },
   })
 
-  assert.equal(new BuildingProduction(building).buyUnit('Axeman'), true)
+  assert.equal(new BuildingProduction(building).buyUnit('Fantassin'), true)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(building.isUsedBy, undefined)
-  assert.equal(villager.trainingTargetType, 'Axeman')
+  assert.equal(villager.trainingTargetType, 'Fantassin')
   assert.equal(building.owner.food, 50)
   assert.deepEqual(
     calls.filter(call => call[0] === 'created'),
@@ -235,7 +235,7 @@ test('military unit purchase reserves and sends an existing villager instead of 
   )
 })
 
-test('military unit purchase can reserve a compatible unit upgrade', () => {
+test('military unit purchase can reserve compatible trainee training', () => {
   const calls = []
   const bowman = {
     type: 'Bowman',
@@ -247,7 +247,7 @@ test('military unit purchase can reserve a compatible unit upgrade', () => {
     },
   }
   const building = {
-    type: 'ArcheryRange',
+    type: 'Stable',
     i: 0,
     j: 0,
     size: 1,
@@ -256,7 +256,7 @@ test('military unit purchase can reserve a compatible unit upgrade', () => {
     queue: [],
     loading: null,
     technology: null,
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
     context: {
       map: { instantMode: false },
       menu: {
@@ -286,7 +286,7 @@ test('military unit purchase can reserve a compatible unit upgrade', () => {
       units: [bowman],
       config: {
         units: {
-          ImprovedBowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
         },
       },
       createUnit(options) {
@@ -332,15 +332,15 @@ test('military unit purchase can reserve a compatible unit upgrade', () => {
     '../../lib/buildingTraining': buildingTrainingMock,
     '../../lib/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'ArcheryRange' && unitType === 'Bowman' && targetType === 'ImprovedBowman',
+        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
   })
 
-  assert.equal(new BuildingProduction(building).buyUnit('ImprovedBowman'), true)
+  assert.equal(new BuildingProduction(building).buyUnit('Bowman'), true)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(building.isUsedBy, undefined)
-  assert.equal(bowman.trainingTargetType, 'ImprovedBowman')
+  assert.equal(bowman.trainingTargetType, 'Bowman')
   assert.equal(building.owner.food, 60)
   assert.equal(building.owner.wood, 30)
   assert.deepEqual(
@@ -349,7 +349,7 @@ test('military unit purchase can reserve a compatible unit upgrade', () => {
   )
   assert.deepEqual(
     calls.find(call => call[0] === 'sendToEvt'),
-    ['sendToEvt', 'ArcheryRange', 'train']
+    ['sendToEvt', 'Stable', 'train']
   )
 })
 
@@ -499,7 +499,7 @@ test('military training is first arrived first served', () => {
     queue: [],
     loading: null,
     technology: null,
-    units: ['Axeman'],
+    units: ['Fantassin'],
     context: {
       map: { instantMode: false },
       menu: {
@@ -520,7 +520,7 @@ test('military training is first arrived first served', () => {
       units: [villagerA, villagerB],
       config: {
         units: {
-          Axeman: { category: 'Infantry', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
         },
       },
       isPlayed: true,
@@ -568,19 +568,19 @@ test('military training is first arrived first served', () => {
   })
 
   const production = new BuildingProduction(building)
-  assert.equal(production.buyUnit('Axeman'), true)
+  assert.equal(production.buyUnit('Fantassin'), true)
   building.owner.selectedUnits = [villagerB]
-  assert.equal(production.buyUnit('Axeman'), true)
+  assert.equal(production.buyUnit('Fantassin'), true)
   assert.equal(building.trainingUnit, undefined)
-  assert.equal(villagerA.trainingTargetType, 'Axeman')
-  assert.equal(villagerB.trainingTargetType, 'Axeman')
+  assert.equal(villagerA.trainingTargetType, 'Fantassin')
+  assert.equal(villagerB.trainingTargetType, 'Fantassin')
 
   building.startInterval = () => {}
   assert.equal(production.startTrainingWithUnit(villagerB), true)
   assert.equal(building.trainingUnit, villagerB)
-  assert.equal(building.trainingType, 'Axeman')
+  assert.equal(building.trainingType, 'Fantassin')
   assert.equal(building.owner.food, 35)
-  assert.equal(villagerA.trainingTargetType, 'Axeman')
+  assert.equal(villagerA.trainingTargetType, 'Fantassin')
 })
 
 test('military training reservation can be cancelled before the unit enters the building', () => {
@@ -588,13 +588,13 @@ test('military training reservation can be cancelled before the unit enters the 
   const bowman = {
     type: 'Bowman',
     inactif: true,
-    trainingTargetType: 'ImprovedBowman',
+    trainingTargetType: 'Bowman',
     affectNewDest() {
       calls.push(['affectNewDest'])
     },
   }
   const building = {
-    type: 'ArcheryRange',
+    type: 'Stable',
     i: 0,
     j: 0,
     size: 1,
@@ -603,7 +603,7 @@ test('military training reservation can be cancelled before the unit enters the 
     queue: [],
     loading: null,
     technology: null,
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
     context: {
       map: { instantMode: false },
       menu: {
@@ -627,7 +627,7 @@ test('military training reservation can be cancelled before the unit enters the 
       units: [bowman],
       config: {
         units: {
-          ImprovedBowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
         },
       },
       isPlayed: true,
@@ -671,11 +671,11 @@ test('military training reservation can be cancelled before the unit enters the 
     '../../lib/buildingTraining': buildingTrainingMock,
     '../../lib/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'ArcheryRange' && unitType === 'Bowman' && targetType === 'ImprovedBowman',
+        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
   })
 
-  assert.equal(new BuildingProduction(building).cancelUnits('ImprovedBowman'), true)
+  assert.equal(new BuildingProduction(building).cancelUnits('Bowman'), true)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(bowman.trainingTargetType, null)
@@ -687,7 +687,7 @@ test('military training reservation can be cancelled before the unit enters the 
   )
   assert.deepEqual(
     calls.find(call => call[0] === 'toggleCancel'),
-    ['toggleCancel', 'ImprovedBowman', false]
+    ['toggleCancel', 'Bowman', false]
   )
 })
 
@@ -702,14 +702,14 @@ test('trainee training updates loading even when the building is not classically
     units: [],
     config: {
       units: {
-        ImprovedBowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
       },
     },
     isPlayed: true,
   }
   const bowman = {
     type: 'Bowman',
-    trainingTargetType: 'ImprovedBowman',
+    trainingTargetType: 'Bowman',
     owner,
     context: { map: { removeFromInstanceBucket() {}, removeChild() {} } },
     path: [],
@@ -720,7 +720,7 @@ test('trainee training updates loading even when the building is not classically
   }
   owner.units.push(bowman)
   const building = {
-    type: 'ArcheryRange',
+    type: 'Stable',
     i: 0,
     j: 0,
     size: 1,
@@ -730,7 +730,7 @@ test('trainee training updates loading even when the building is not classically
     queue: [],
     loading: null,
     technology: null,
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
     context: {
       map: { instantMode: false },
       menu: {
@@ -788,7 +788,7 @@ test('trainee training updates loading even when the building is not classically
     },
     '../../lib/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'ArcheryRange' && unitType === 'Bowman' && targetType === 'ImprovedBowman',
+        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
   })
 
@@ -799,7 +799,7 @@ test('trainee training updates loading even when the building is not classically
   ])
 })
 
-test('missing resources for a unit evolution list the exact resources', () => {
+test('missing resources for trainee training list the exact resources', () => {
   const calls = []
   const owner = {
     food: 10,
@@ -810,23 +810,23 @@ test('missing resources for a unit evolution list the exact resources', () => {
     units: [],
     config: {
       units: {
-        ImprovedBowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
       },
     },
     isPlayed: true,
   }
   const bowman = {
     type: 'Bowman',
-    trainingTargetType: 'ImprovedBowman',
+    trainingTargetType: 'Bowman',
     owner,
   }
   owner.units.push(bowman)
   const building = {
-    type: 'ArcheryRange',
+    type: 'Stable',
     queue: [],
     loading: null,
     technology: null,
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
     context: {
       menu: {
         showMessage(message, level) {
@@ -887,14 +887,14 @@ test('missing resources for a unit evolution list the exact resources', () => {
 test('active military training cannot be cancelled after the unit entered the building', () => {
   const building = {
     type: 'Barracks',
-    queue: ['Axeman'],
+    queue: ['Fantassin'],
     loading: 12,
-    units: ['Axeman'],
+    units: ['Fantassin'],
     owner: {
       food: 15,
       config: {
         units: {
-          Axeman: { category: 'Infantry', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
         },
       },
       isPlayed: false,
@@ -940,8 +940,8 @@ test('active military training cannot be cancelled after the unit entered the bu
     },
   })
 
-  assert.equal(new BuildingProduction(building).cancelUnits('Axeman'), false)
-  assert.deepEqual(building.queue, ['Axeman'])
+  assert.equal(new BuildingProduction(building).cancelUnits('Fantassin'), false)
+  assert.deepEqual(building.queue, ['Fantassin'])
   assert.equal(building.loading, 12)
   assert.equal(building.owner.food, 15)
 })
@@ -957,7 +957,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     units: [],
     config: {
       units: {
-        Clubman: { category: 'Infantry', cost: { food: 50 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingTime: 27 },
       },
     },
     createUnit(options) {
@@ -979,12 +979,12 @@ test('stable training remounts the same unit type without charging unit cost or 
   }
   const cell = { i: 1, j: 1, category: 'Land', solid: true, has: null }
   const clubman = {
-    type: 'Clubman',
+    type: 'Fantassin',
     name: 'Alexios',
     hitPoints: 32,
     speed: 1.2,
     experience: { combat: 12 },
-    trainingTargetType: 'Clubman',
+    trainingTargetType: 'Fantassin',
     owner,
     context: { map },
     currentCell: cell,
@@ -1009,7 +1009,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     queue: [],
     loading: null,
     technology: null,
-    units: ['Clubman'],
+    units: ['Fantassin'],
     context: { map, menu: {} },
     owner,
     startInterval(callback, delay) {
@@ -1074,7 +1074,7 @@ test('stable training remounts the same unit type without charging unit cost or 
       {
         i: 2,
         j: 2,
-        type: 'Clubman',
+        type: 'Fantassin',
         name: 'Alexios',
         mountedOnHorse: true,
         hitPoints: 32,
@@ -1085,7 +1085,7 @@ test('stable training remounts the same unit type without charging unit cost or 
   )
 })
 
-test('arrived military unit is consumed and upgraded unit reuses the same population slot', () => {
+test('arrived trainee unit is consumed and trained unit reuses the same population slot', () => {
   const spawnCell = { i: 2, j: 2, category: 'Land', solid: false }
   const calls = []
   const owner = {
@@ -1097,7 +1097,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
     units: [],
     config: {
       units: {
-        ImprovedBowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
       },
     },
     createUnit(options) {
@@ -1127,7 +1127,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
     name: 'Damon',
     mountedOnHorse: true,
     speed: 1.6,
-    trainingTargetType: 'ImprovedBowman',
+    trainingTargetType: 'Bowman',
     owner,
     context: { map },
     currentCell: bowmanCell,
@@ -1142,7 +1142,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   bowmanCell.has = bowman
   owner.units.push(bowman)
   const building = {
-    type: 'ArcheryRange',
+    type: 'Stable',
     i: 0,
     j: 0,
     size: 1,
@@ -1151,7 +1151,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
     queue: [],
     loading: null,
     technology: null,
-    units: ['Bowman', 'ImprovedBowman', 'CompositeBowman'],
+    units: ['Bowman'],
     context: { map, menu: {} },
     owner,
     startInterval(callback) {
@@ -1195,7 +1195,7 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
     '../../lib/buildingTraining': buildingTrainingMock,
     '../../lib/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'ArcheryRange' && unitType === 'Bowman' && targetType === 'ImprovedBowman',
+        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
   })
 
@@ -1209,7 +1209,10 @@ test('arrived military unit is consumed and upgraded unit reuses the same popula
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    ['created', { i: 2, j: 2, type: 'ImprovedBowman', name: 'Damon', mountedOnHorse: true, speed: 1.6 }]
+    [
+      'created',
+      { i: 2, j: 2, type: 'Bowman', name: 'Damon', mountedOnHorse: true, speed: 1.6, experience: {} },
+    ]
   )
 })
 
@@ -1223,7 +1226,7 @@ test('failed trainee placement clears active military training state', () => {
     units: [],
     config: {
       units: {
-        Axeman: { category: 'Infantry', cost: { food: 35 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
       },
     },
     createUnit() {
@@ -1246,7 +1249,7 @@ test('failed trainee placement clears active military training state', () => {
   const villager = {
     type: 'Villager',
     name: 'Damon',
-    trainingTargetType: 'Axeman',
+    trainingTargetType: 'Fantassin',
     owner,
     context: { map },
     currentCell: villagerCell,
@@ -1270,7 +1273,7 @@ test('failed trainee placement clears active military training state', () => {
     queue: [],
     loading: null,
     technology: null,
-    units: ['Axeman'],
+    units: ['Fantassin'],
     context: { map, menu: {} },
     owner,
     startInterval(callback) {
@@ -1339,7 +1342,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
     units: [],
     config: {
       units: {
-        Axeman: { category: 'Infantry', cost: { food: 35 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
       },
     },
     createUnit(options) {
@@ -1367,7 +1370,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
   const villager = {
     type: 'Villager',
     name: 'Damon',
-    trainingTargetType: 'Axeman',
+    trainingTargetType: 'Fantassin',
     owner,
     context: { map },
     currentCell: villagerCell,
@@ -1391,7 +1394,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
     queue: [],
     loading: null,
     technology: null,
-    units: ['Axeman'],
+    units: ['Fantassin'],
     context: { map, menu: {} },
     owner,
     startInterval(callback) {
@@ -1447,6 +1450,6 @@ test('arrived villager is consumed and trained unit reuses the same population s
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    ['created', { i: 2, j: 2, type: 'Axeman', name: 'Damon' }]
+    ['created', { i: 2, j: 2, type: 'Fantassin', name: 'Damon', experience: {} }]
   )
 })

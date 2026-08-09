@@ -315,7 +315,7 @@ export class Projectile extends Container {
     if (!player) throw new Error('Projectile owner must belong to a player')
     this.type = getEffectiveProjectileType(this.type, player)
     this.tracksTarget = projectileTracksTarget(this.type, player)
-    const projectileDefinition = player.config.projectiles?.[this.type]
+    const projectileDefinition = player.config.projectiles?.[this.type] ?? player.config.projectiles?.[options.type]
     if (projectileDefinition) {
       const { scale, ...projectileConfig } = projectileDefinition
       Object.assign(this, projectileConfig)
@@ -874,6 +874,7 @@ export class Projectile extends Container {
     applyCombatHit(this.owner, instance, {
       attacker: this.owner,
       bonusDamage: xpBonusDamage,
+      damageType: 'pierce',
       defaultDamage: damage,
       // Direction the shot was flying (spawn -> aim point), so a hit animal can bolt
       // continuing along that line — away from the shooter — instead of just away

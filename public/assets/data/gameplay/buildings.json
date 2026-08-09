@@ -32,17 +32,7 @@
       "wood": 125
     },
     "units": [
-      "Clubman",
-      "Axeman",
-      "ShortSwordsman",
-      "BroadSwordsman",
-      "LongSwordsman"
-    ],
-    "technologies": [
-      "BattleAxe",
-      "ShortSword",
-      "BroadSword",
-      "LongSword"
+      "Fantassin"
     ],
     "sounds": {
       "create": "barracks-completed-selected",
@@ -68,7 +58,8 @@
     },
     "accept": [
       "berry",
-      "wheat"
+      "wheat",
+      "meat"
     ],
     "technologies": [
       "ResearchWatchTower",
@@ -105,7 +96,8 @@
       "wood",
       "stone",
       "gold",
-      "meat"
+      "copper",
+      "iron"
     ],
     "technologies": [
       "Toolworking",
@@ -146,15 +138,17 @@
     "cost": {
       "wood": 150
     },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Bow"
+      }
+    ],
     "units": [
-      "Bowman",
-      "ImprovedBowman",
-      "CompositeBowman"
+      "Bowman"
     ],
-    "technologies": [
-      "ImprovedBow",
-      "CompositeBow"
-    ],
+    "technologies": [],
     "sounds": {
       "create": "archery-range-completed-selected",
       "burning": [
@@ -177,15 +171,16 @@
     "cost": {
       "wood": 150
     },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "HorseTaming"
+      }
+    ],
     "units": [
-      "Clubman",
-      "Axeman",
-      "ShortSwordsman",
-      "BroadSwordsman",
-      "LongSwordsman",
-      "Bowman",
-      "ImprovedBowman",
-      "CompositeBowman"
+      "Fantassin",
+      "Bowman"
     ],
     "technologies": [],
     "sounds": {
@@ -212,6 +207,13 @@
     "cost": {
       "wood": 75
     },
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Farming"
+      }
+    ],
     "sounds": {
       "create": "farm-completed-selected",
       "burning": [
@@ -229,7 +231,9 @@
     "constructionTime": 80,
     "range": 6,
     "projectile": "Arrow",
-    "equipment": ["watch_tower_arrow"],
+    "equipment": [
+      "watch_tower_arrow"
+    ],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -267,7 +271,9 @@
     "constructionTime": 80,
     "range": 7,
     "projectile": "Arrow",
-    "equipment": ["sentry_tower_arrow"],
+    "equipment": [
+      "sentry_tower_arrow"
+    ],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -461,7 +467,9 @@
     "constructionTime": 80,
     "range": 8,
     "projectile": "Arrow",
-    "equipment": ["guard_tower_arrow"],
+    "equipment": [
+      "guard_tower_arrow"
+    ],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -494,7 +502,9 @@
     "constructionTime": 80,
     "range": 8,
     "projectile": "Bolt",
-    "equipment": ["ballista_tower_bolt"],
+    "equipment": [
+      "ballista_tower_bolt"
+    ],
     "rateOfFire": 3,
     "cost": {
       "stone": 150

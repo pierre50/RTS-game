@@ -161,7 +161,7 @@ test('mounted archers spawn arrows from the visual rider height', () => {
   }
   const target = {
     family: 'unit',
-    type: 'Clubman',
+    type: 'Fantassin',
     owner: { label: 'enemy' },
     x: 200,
     y: 180,

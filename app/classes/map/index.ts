@@ -106,7 +106,7 @@ export default class Map extends Container {
 
     this.instantMode = false
     this.difficulty = 'medium'
-    this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0 }
+    this.startingResources = { wood: 200, food: 200, stone: 150, gold: 0, copper: 0, iron: 0 }
     this.resourceDensity = 'moderate'
     this.revealEverything = false
     this.revealTerrain = false

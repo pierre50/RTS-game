@@ -1,6 +1,9 @@
 import { assignVillagerAutonomy, hasVillagerAutonomyTarget } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
+import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/unitExperience'
+import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
+import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import {
   sendNpcToStockpile,
@@ -44,6 +47,8 @@ export class NpcOrdersManager {
   panel: HTMLDivElement
   infoContainer: HTMLDivElement
   chatterContainer: HTMLDivElement
+  debugContainer: HTMLDivElement
+  debugLevelButton: HTMLButtonElement
   buttonsContainer: HTMLDivElement
   modal?: Modal
   buttons: Map<NpcOrderId, HTMLButtonElement>
@@ -66,6 +71,21 @@ export class NpcOrdersManager {
     this.chatterContainer = document.createElement('div')
     this.chatterContainer.className = 'npc-orders-chatter'
     this.panel.appendChild(this.chatterContainer)
+
+    this.debugContainer = document.createElement('div')
+    this.debugContainer.className = 'npc-orders-debug'
+    this.panel.appendChild(this.debugContainer)
+
+    this.debugLevelButton = document.createElement('button')
+    this.debugLevelButton.type = 'button'
+    this.debugLevelButton.className = 'npc-orders-option npc-orders-debug-level ui-btn'
+    this.debugLevelButton.addEventListener('click', () => {
+      const target = this.npcs.length === 1 ? this.npcs[0] : null
+      if (!target || this.debugLevelButton.disabled) return
+      playUiSound(SOUND_CUES.ui.menuClick)
+      void this.cycleDebugLevel(target)
+    })
+    this.debugContainer.appendChild(this.debugLevelButton)
 
     this.buttonsContainer = document.createElement('div')
     this.buttonsContainer.className = 'npc-orders-options'
@@ -116,7 +136,9 @@ export class NpcOrdersManager {
     const soloTarget = npcs.length === 1 ? npcs[0] : null
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
-      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true }))
+      this.infoContainer.appendChild(
+        createTitledEntityInfoContent(this.menu.context.app, soloTarget, { showAllXp: true })
+      )
     }
 
     // Just chatting (no order possible right now — non-chief hero, or the ally isn't
@@ -137,6 +159,8 @@ export class NpcOrdersManager {
       line.textContent = chatterLine
       this.chatterContainer.appendChild(line)
     }
+
+    this.updateDebugControls(soloTarget)
 
     const stockpileButton = this.buttons.get('stockpile')
     if (stockpileButton) {
@@ -171,6 +195,32 @@ export class NpcOrdersManager {
       inspection: hasInfo,
       onClose: () => this.close(),
     })
+  }
+
+  private async cycleDebugLevel(target: UnitEntity): Promise<void> {
+    const currentLevel = getUnitEquipmentLevel(target)
+    const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)
+    setUnitDebugLevel(target, nextLevel)
+    refreshUnitEquipmentStats(target)
+    await ensureAndRefreshBakedLpcUnitAssets(target)
+    this.infoContainer.replaceChildren()
+    if (target.interface?.info) {
+      this.infoContainer.appendChild(createTitledEntityInfoContent(this.menu.context.app, target, { showAllXp: true }))
+    }
+    this.updateDebugControls(target)
+    this.menu.updateHeroStatus?.(target)
+  }
+
+  private updateDebugControls(target: UnitEntity | null): void {
+    const showDebug = Boolean(target)
+    this.debugContainer.hidden = !showDebug
+    if (!target) return
+    const currentLevel = getUnitEquipmentLevel(target)
+    const isMaxLevel = currentLevel >= XP_MAX_LEVEL
+    const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)
+    this.debugLevelButton.disabled = isMaxLevel
+    this.debugLevelButton.classList.toggle('disabled', isMaxLevel)
+    this.debugLevelButton.textContent = isMaxLevel ? 'Debug niveau max' : `Debug niveau ${nextLevel}`
   }
 
   close(keepFrozen = false): void {

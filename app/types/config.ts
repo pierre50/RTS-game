@@ -17,6 +17,9 @@ export type UnitAppearanceLayerConfig = {
   showWhenLoading?: boolean
   hideForActions?: string[]
   workTypes?: string[]
+  minLevel?: number
+  maxLevel?: number
+  ageSheetOverrides?: Record<string, Partial<Record<string, string>>>
   workSheetOverrides?: Record<string, Partial<Record<string, string>>>
   actionWorkSheetOverrides?: Record<string, Partial<Record<string, string>>>
   playerColorVariants?: Record<string, string>
@@ -42,6 +45,7 @@ interface EntityConfig {
   // Optional: still used by technologies, no longer read for units/buildings/
   // animals/resources now that those show a cropped sprite avatar instead.
   icon?: string
+  category?: string
   cost?: ResourceAmount
   conditions?: Condition[]
   [key: string]:
@@ -67,6 +71,10 @@ export interface UnitConfig extends EntityConfig {
 export type EquipmentStats = {
   weapon?: {
     power?: number
+  }
+  armor?: {
+    melee?: number
+    pierce?: number
   }
   meleeArmor?: number
   pierceArmor?: number

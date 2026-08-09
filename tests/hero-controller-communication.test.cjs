@@ -177,7 +177,7 @@ function createController({
     beginHeroDefense: () => false,
     cancelHeroBowCharge: () => {},
     cancelHeroDefense: () => {},
-    HERO_TOOL_ORDER: ['interact', 'sword', 'halberd', 'bow'],
+    HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
     releaseHeroBowCharge: () => false,

@@ -124,6 +124,21 @@ test('worker snapshots always expose a farmer collection', () => {
   assert.deepEqual(snapshot.villagersFarming, [])
 })
 
+test('AI treats granaries as meat drop sites', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const townCenter = { type: constants.BUILDING_TYPES.townCenter, isBuilt: true }
+  const granary = { type: constants.BUILDING_TYPES.granary, isBuilt: true }
+  const storagePit = { type: constants.BUILDING_TYPES.storagePit, isBuilt: true }
+  const ai = {
+    buildingsByTypes: types => [townCenter, granary, storagePit].filter(building => types.includes(building.type)),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+  }
+  const economy = new AIEconomy(ai)
+
+  assert.deepEqual(economy.getFoodDropSites('meat'), [townCenter, granary])
+})
+
 test('food scoring prefers a nearby full farm over distant depleted berries', () => {
   const { AIEconomy } = loadAIEconomy()
   const drop = { i: 0, j: 0 }

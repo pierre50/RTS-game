@@ -1,4 +1,4 @@
-import { RESOURCE_TYPES } from '../constants'
+import { RESOURCE_STOCKPILE_TYPES } from '../constants'
 import { t } from '../lib/lang'
 import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, ResourceEntity } from '../types/entities'
@@ -21,23 +21,9 @@ export class ResourceInterface {
     })
 
     if (resource.quantity) {
-      let iconToUse: string | undefined
-      switch (resource.type) {
-        case RESOURCE_TYPES.tree:
-          iconToUse = menu.infoIcons?.['wood']
-          break
-        case RESOURCE_TYPES.berrybush:
-          iconToUse = menu.infoIcons?.['food']
-          break
-        case RESOURCE_TYPES.stone:
-          iconToUse = menu.infoIcons?.['stone']
-          break
-        case RESOURCE_TYPES.gold:
-          iconToUse = menu.infoIcons?.['gold']
-          break
-      }
-
-      appendQuantityInfo(element, iconToUse!, resource.quantity)
+      const stockpileType = RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES]
+      const iconToUse = stockpileType ? menu.infoIcons?.[stockpileType] : undefined
+      appendQuantityInfo(element, iconToUse ?? menu.infoIcons?.['gold'] ?? '', resource.quantity)
     }
   }
 }

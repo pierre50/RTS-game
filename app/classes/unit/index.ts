@@ -18,6 +18,7 @@ import {
   getGroundReliefLevel,
   getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
+  changeSpriteColor,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
@@ -34,6 +35,7 @@ import {
 } from '../../lib'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
+import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
 import { UnitCommands } from './UnitCommands'
@@ -115,7 +117,7 @@ function applyAppearanceVariantsToAssetMap(
       Object.fromEntries(
         Object.entries(sheets).map(([sheet, asset]) => [
           sheet,
-          /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
+          /^lpc\/(?:villager|infantry)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
             ? `${asset}/${variants.skin}`
             : asset,
         ])
@@ -133,11 +135,26 @@ function applyAppearanceVariantsToAssets(
   return Object.fromEntries(
     Object.entries(assets).map(([sheet, asset]) => [
       sheet,
-      /^lpc\/(?:villager|clubman)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
+      /^lpc\/(?:villager|infantry)\/body\//.test(asset) && Assets.cache.has(`${asset}/${variants.skin}`)
         ? `${asset}/${variants.skin}`
         : asset,
     ])
   )
+}
+
+function getLevelSheetOverride(
+  overrides: RuntimeAppearanceLayer['ageSheetOverrides'] | undefined,
+  ownerAge: number,
+  sheet: string
+): string | undefined {
+  if (!overrides) return undefined
+  const exact = overrides[String(ownerAge)]?.[sheet]
+  if (exact) return exact
+  const fallbackAge = Object.keys(overrides)
+    .map(Number)
+    .filter(age => age <= ownerAge)
+    .sort((a, b) => b - a)[0]
+  return fallbackAge == null ? undefined : overrides[String(fallbackAge)]?.[sheet]
 }
 
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
@@ -626,8 +643,13 @@ export class Unit extends Instance implements UnitEntity {
     const liveLayers = new Set<number>()
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i] as RuntimeAppearanceLayer
+      const actionWorkKey = this.work && this.action ? `${this.work}:${this.action}` : undefined
+      const hasActionWorkSheetOverride = Boolean(actionWorkKey && layer.actionWorkSheetOverrides?.[actionWorkKey])
       const isLayerEnabledForWork =
-        !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false)
+        !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false) || hasActionWorkSheetOverride
+      const unitLevel = getUnitEquipmentLevel(this)
+      const isLayerEnabledForLevel =
+        unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
       const isLoading = (this.loading ?? 0) > 0
       // Carried resources are hidden while the action animation plays, then restored
       // automatically when the unit returns to standing/walking.
@@ -643,14 +665,15 @@ export class Unit extends Instance implements UnitEntity {
           ? (layer.loadedSheet as string | undefined)
           : undefined
       const actionWorkSheetOverride =
-        this.work && this.action
-          ? layer.actionWorkSheetOverrides?.[`${this.work}:${this.action}`]?.[mountedRiderSheet]
-          : undefined
+        actionWorkKey ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet] : undefined
       const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
+      const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
+      const ageSheetOverride = getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
       const baseSheetId =
         loadedSheetOverride ??
         actionWorkSheetOverride ??
         workSheetOverride ??
+        ageSheetOverride ??
         (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
       const playerColorVariant = this.owner.color ? layer.playerColorVariants?.[this.owner.color] : undefined
       const appearanceVariant = layer.appearanceVariantKey
@@ -669,6 +692,7 @@ export class Unit extends Instance implements UnitEntity {
 
       if (
         !isLayerEnabledForWork ||
+        !isLayerEnabledForLevel ||
         isLayerHiddenByLoading ||
         isLayerHiddenByAction ||
         !sheetId ||
@@ -722,6 +746,11 @@ export class Unit extends Instance implements UnitEntity {
       layerSprite.visible = true
       layerSprite.zIndex = layer.zIndex
       layerSprite.textures = textures as Texture[]
+      if (layer.palette === 'player') {
+        changeSpriteColor(layerSprite, this.owner.color ?? '')
+      } else {
+        layerSprite.filters = null
+      }
       const spriteScale = this.spriteScale ?? 1
       layerSprite.scale.x = mirrored ? -spriteScale : spriteScale
       layerSprite.scale.y = spriteScale

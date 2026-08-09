@@ -149,9 +149,11 @@ export const MAX_INFANTRY_BY_AGE = { 0: 8, 1: 8, 2: 10, 3: 12 }
 export const MAX_ARCHER_BY_AGE = { 0: 0, 1: 4, 2: 6, 3: 8 }
 export const MAX_CAVALRY_BY_AGE = { 0: 0, 1: 3, 2: 4, 3: 5 }
 
+export const CHIEF_TECH_PRIORITY = ['Bow', 'Pickaxe', 'Farming', 'HorseTaming']
+
 export const TECH_PRIORITY_BY_BUILDING = {
-  [BUILDING_TYPES.barracks]: ['BattleAxe', 'ShortSword', 'BroadSword', 'LongSword'],
-  [BUILDING_TYPES.archeryRange]: ['ImprovedBow', 'CompositeBow'],
+  [BUILDING_TYPES.barracks]: [],
+  [BUILDING_TYPES.archeryRange]: [],
   [BUILDING_TYPES.storagePit]: [
     'Toolworking',
     'LeatherArmorInfantry',

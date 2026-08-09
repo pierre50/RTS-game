@@ -163,6 +163,8 @@ export type AIStrategyPlayerLike = {
   food: number
   gold: number
   stone: number
+  copper: number
+  iron: number
   age: AIAge
   phase: AIPhase
   population: number
@@ -198,11 +200,14 @@ export type AIStrategyPlayerLike = {
   foundedTrees: Set<RuntimeEntity>
   foundedGolds: Set<RuntimeEntity>
   foundedStones: Set<RuntimeEntity>
+  foundedCoppers: Set<RuntimeEntity>
+  foundedIrons: Set<RuntimeEntity>
   foundedEnemyBuildings: Set<RuntimeEntity>
   foundedEnemyUnits: Set<RuntimeEntity>
   foundedAnimals: Set<RuntimeEntity>
   foundedDeadAnimals: Set<RuntimeEntity>
   foundedBerrybushs: Set<RuntimeEntity>
+  foundedResources: Record<string, Set<RuntimeEntity>>
   lastAttackWaveAt?: number
   scout?: AIEntityLike | null
   strategy: {

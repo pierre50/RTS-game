@@ -14,7 +14,7 @@ import {
 } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
 import { MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE, MAX_ARCHER_BY_AGE } from '../../ai/config'
-import { getBestUnitFromTechs, INFANTRY_TECH_UPGRADES, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
+import { getBestUnitFromTechs, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
 import {
@@ -847,21 +847,52 @@ export class MapGeneration {
       if (posI != null && posJ != null) {
         const color = playersConfig?.[i]?.color ?? colors[i]
         const civ = playersConfig?.[i]?.civ ?? 'Greek'
+        const factionId = playersConfig?.[i]?.factionId ?? null
         const gender = playersConfig?.[i]?.gender
         const team = playersConfig?.[i]?.team ?? null
+        const diplomacy = playersConfig?.[i]?.diplomacy ?? null
         const name = playersConfig?.[i]?.name
         const difficulty = this.map.difficulty
         const civilizationLevel = Math.max(0, Math.min(Number(playersConfig?.[i]?.civilizationLevel) || 0, 3))
         if (!i) {
           players.push(
             new Human(
-              { i: posI, j: posJ, age: 0, civ, color, gender, team, name, isPlayed: true, civilizationLevel },
+              {
+                i: posI,
+                j: posJ,
+                age: 0,
+                civ,
+                color,
+                diplomacy,
+                factionId,
+                gender,
+                team,
+                name,
+                isPlayed: true,
+                civilizationLevel,
+              },
               context
             )
           )
         } else if (!this.map.noAI) {
           players.push(
-            new AI({ i: posI, j: posJ, age: 0, civ, color, gender, team, name, difficulty, civilizationLevel }, context)
+            new AI(
+              {
+                i: posI,
+                j: posJ,
+                age: 0,
+                civ,
+                color,
+                diplomacy,
+                factionId,
+                gender,
+                team,
+                name,
+                difficulty,
+                civilizationLevel,
+              },
+              context
+            )
           )
         }
       }
@@ -957,7 +988,7 @@ export class MapGeneration {
 
     // 1. Houses first, sized for the population this kit is about to reach - placed before the base
     // gets crowded by everything else below so population capacity isn't left short by congestion.
-    const infantryType = getBestUnitFromTechs(player.technologies, INFANTRY_TECH_UPGRADES, UNIT_TYPES.clubman)
+    const infantryType = UNIT_TYPES.infantry
     const archerType = getBestUnitFromTechs(player.technologies, ARCHER_TECH_UPGRADES, UNIT_TYPES.bowman)
     const maxByAge = (table: Record<number, number>) => table[level] || 0
     const unitTargets: Array<[string, number]> = [
@@ -1012,6 +1043,8 @@ export class MapGeneration {
       player.food += resourceBonus.food ?? 0
       player.gold += resourceBonus.gold ?? 0
       player.stone += resourceBonus.stone ?? 0
+      player.copper += resourceBonus.copper ?? 0
+      player.iron += resourceBonus.iron ?? 0
     }
 
     // 6. Military units, stationed near the Town Center (the game has no true garrison mechanic).

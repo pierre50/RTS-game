@@ -21,7 +21,7 @@ import type { SpritesheetLike } from '../../types/pixi'
 
 const TRAINING_PREVIEW_X = 41
 const TRAINING_PREVIEW_Y = 110
-const TRAINING_PREVIEW_SCALE = 0.8
+const TRAINING_PREVIEW_SCALE = 1
 const TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR = 0.45
 const MAIN_PREVIEW_Z_INDEX = 10
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'

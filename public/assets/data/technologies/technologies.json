@@ -70,9 +70,8 @@
           "op": "+",
           "value": 2,
           "type": [
-            "axe",
-            "dagger",
-            "broadsword",
+            "axe_ceramic",
+            "axe_copper",
             "longsword",
             "halberd"
           ]
@@ -108,9 +107,8 @@
           "op": "+",
           "value": 2,
           "type": [
-            "axe",
-            "dagger",
-            "broadsword",
+            "axe_ceramic",
+            "axe_copper",
             "longsword",
             "halberd"
           ]
@@ -146,9 +144,8 @@
           "op": "+",
           "value": 3,
           "type": [
-            "axe",
-            "dagger",
-            "broadsword",
+            "axe_ceramic",
+            "axe_copper",
             "longsword",
             "halberd"
           ]
@@ -179,11 +176,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -217,11 +210,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -249,11 +238,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -287,11 +272,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -325,11 +306,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -357,9 +334,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman"
+            "Bowman"
           ]
         }
       ]
@@ -393,9 +368,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman"
+            "Bowman"
           ]
         }
       ]
@@ -429,9 +402,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman"
+            "Bowman"
           ]
         }
       ]
@@ -538,6 +509,30 @@
         }
       ]
     }
+  },
+  "Bow": {
+    "icon": "076_50729",
+    "key": "technologies",
+    "researchTime": 0,
+    "cost": {}
+  },
+  "Pickaxe": {
+    "icon": "017_50729",
+    "key": "technologies",
+    "researchTime": 0,
+    "cost": {}
+  },
+  "Farming": {
+    "icon": "090_50729",
+    "key": "technologies",
+    "researchTime": 0,
+    "cost": {}
+  },
+  "HorseTaming": {
+    "icon": "068_50729",
+    "key": "technologies",
+    "researchTime": 0,
+    "cost": {}
   },
   "Woodworking": {
     "icon": "076_50729",
@@ -827,151 +822,6 @@
     },
     "action": {
       "type": "refreshTowers"
-    }
-  },
-  "BattleAxe": {
-    "icon": "045_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 1
-      }
-    ],
-    "researchTime": 40,
-    "cost": {
-      "food": 100
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "Clubman",
-      "target": "Axeman"
-    }
-  },
-  "ShortSword": {
-    "icon": "046_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BattleAxe"
-      }
-    ],
-    "researchTime": 50,
-    "cost": {
-      "food": 120,
-      "gold": 50
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "Axeman",
-      "target": "ShortSwordsman"
-    }
-  },
-  "BroadSword": {
-    "icon": "047_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ShortSword"
-      }
-    ],
-    "researchTime": 90,
-    "cost": {
-      "food": 140,
-      "gold": 50
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "ShortSwordsman",
-      "target": "BroadSwordsman"
-    }
-  },
-  "LongSword": {
-    "icon": "048_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "BroadSword"
-      }
-    ],
-    "researchTime": 150,
-    "cost": {
-      "food": 160,
-      "gold": 50
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "BroadSwordsman",
-      "target": "LongSwordsman"
-    }
-  },
-  "ImprovedBow": {
-    "icon": "051_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      }
-    ],
-    "researchTime": 60,
-    "cost": {
-      "food": 140,
-      "wood": 80
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "Bowman",
-      "target": "ImprovedBowman"
-    }
-  },
-  "CompositeBow": {
-    "icon": "052_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ImprovedBow"
-      }
-    ],
-    "researchTime": 75,
-    "cost": {
-      "food": 180,
-      "wood": 100
-    },
-    "action": {
-      "type": "upgradeUnit",
-      "source": "ImprovedBowman",
-      "target": "CompositeBowman"
     }
   },
   "Artisanship": {
@@ -1286,11 +1136,7 @@
           "op": "+",
           "value": "2",
           "type": [
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman"
+            "Fantassin"
           ]
         }
       ]
@@ -1320,17 +1166,11 @@
           "value": "2",
           "type": [
             "Villager",
-            "Clubman",
-            "Axeman",
-            "ShortSwordsman",
-            "BroadSwordsman",
-            "LongSwordsman",
+            "Fantassin",
             "ScytheChariot",
             "HeavyCavalry",
             "CamelRider",
             "Bowman",
-            "ImprovedBowman",
-            "CompositeBowman",
             "Priest"
           ]
         }

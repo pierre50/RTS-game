@@ -91,7 +91,6 @@ function loadNpcInteraction(target, overrides = {}) {
     '../constants': constants,
     './buildingTraining': {
       getTrainingTargetForUnit: (building, unit) => {
-        if (building.type === 'Barracks' && unit.type === 'Axeman') return 'ShortSwordsman'
         if (building.type === constants.BUILDING_TYPES.temple && unit.type === constants.UNIT_TYPES.villager) {
           return constants.UNIT_TYPES.priest
         }
@@ -100,8 +99,7 @@ function loadNpcInteraction(target, overrides = {}) {
       },
     },
     './unitUpgrades': {
-      getUnitUpgradeTargetForBuilding: (buildingType, unitType) =>
-        buildingType === 'Barracks' && unitType === 'Axeman' ? 'ShortSwordsman' : null,
+      getUnitUpgradeTargetForBuilding: () => null,
     },
     './grid/visibility': {
       findInstancesInSight: () => (target ? [target] : []),
@@ -223,7 +221,7 @@ test('"aller vers" sends a communicated villager into a training building', () =
   const owner = {
     config: {
       units: {
-        Clubman: { category: 'Infantry' },
+        Fantassin: { category: 'Fantassin' },
       },
     },
   }
@@ -236,7 +234,7 @@ test('"aller vers" sends a communicated villager into a training building', () =
     j: 5,
     owner,
     type: 'Barracks',
-    units: ['Clubman'],
+    units: ['Fantassin'],
     x: 100,
     y: 100,
     requestUnitTraining(type, extra, villager) {
@@ -256,7 +254,7 @@ test('"aller vers" sends a communicated villager into a training building', () =
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['train', 'Clubman', undefined, npc]])
+  assert.deepEqual(calls, [['train', 'Fantassin', undefined, npc]])
 })
 
 test('"aller vers" sends a communicated villager into a temple to train a priest', () => {
@@ -315,7 +313,7 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     j: 5,
     owner,
     type: 'Stable',
-    units: ['Clubman'],
+    units: ['Fantassin'],
     x: 100,
     y: 100,
     requestUnitTraining() {
@@ -342,8 +340,8 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     i: 1,
     j: 1,
     owner,
-    sendTo() {
-      calls.push(['move'])
+    sendTo(cell) {
+      calls.push(['move', cell.i, cell.j])
     },
     type: constants.UNIT_TYPES.villager,
   }
@@ -353,12 +351,12 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
   assert.deepEqual(calls, [['message', 'unitCannotEnterBuilding:Villager:Stable', 'warning']])
 })
 
-test('"aller vers" sends upgradeable specialized units into a training building', () => {
+test('"aller vers" moves specialized infantry when no barracks upgrade is available', () => {
   const calls = []
   const owner = {
     config: {
       units: {
-        ShortSwordsman: { category: 'Infantry' },
+        Fantassin: { category: 'Fantassin' },
       },
     },
   }
@@ -371,61 +369,11 @@ test('"aller vers" sends upgradeable specialized units into a training building'
     j: 5,
     owner,
     type: 'Barracks',
-    units: ['ShortSwordsman'],
+    units: ['Fantassin'],
     x: 100,
     y: 100,
     requestUnitTraining(type, extra, unit) {
-      calls.push(['train', type, extra, unit])
-      return true
-    },
-  }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
-  const npc = {
-    context: {
-      map: { grid: [] },
-      menu: {
-        showMessage(message, type) {
-          calls.push(['message', message, type])
-        },
-      },
-    },
-    i: 1,
-    j: 1,
-    owner,
-    sendTo() {
-      calls.push(['move'])
-    },
-    type: 'Axeman',
-  }
-
-  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
-
-  assert.deepEqual(calls, [['train', 'ShortSwordsman', undefined, npc]])
-})
-
-test('"aller vers" moves specialized units when no building upgrade is available', () => {
-  const calls = []
-  const owner = {
-    config: {
-      units: {
-        Clubman: { category: 'Infantry' },
-      },
-    },
-  }
-  const target = {
-    family: constants.FAMILY_TYPES.building,
-    i: 5,
-    isBuilt: true,
-    isDead: false,
-    isDestroyed: false,
-    j: 5,
-    owner,
-    type: 'Barracks',
-    units: ['Clubman'],
-    x: 100,
-    y: 100,
-    requestUnitTraining() {
-      throw new Error('non-upgradeable specialized units must not enter training')
+      throw new Error('infantry must not enter barracks training as an upgrade')
     },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target)
@@ -444,7 +392,7 @@ test('"aller vers" moves specialized units when no building upgrade is available
     sendTo(cell) {
       calls.push(['move', cell.i, cell.j])
     },
-    type: 'Clubman',
+    type: 'Fantassin',
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
@@ -462,7 +410,7 @@ test('closing communication resumes a pending training order', () => {
   const npc = {
     lookingAtHero: true,
     previousDest: barracks,
-    trainingTargetType: 'Axeman',
+    trainingTargetType: 'Fantassin',
     getChildByLabel: () => null,
     sendTo(dest, action) {
       calls.push(['sendTo', dest, action])
@@ -474,7 +422,7 @@ test('closing communication resumes a pending training order', () => {
 
   assert.equal(npc.lookingAtHero, false)
   assert.equal(npc.previousDest, null)
-  assert.equal(npc.trainingTargetType, 'Axeman')
+  assert.equal(npc.trainingTargetType, 'Fantassin')
   assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 

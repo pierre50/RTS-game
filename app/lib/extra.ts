@@ -1,4 +1,4 @@
-import { SHEET_TYPES, WORK_TYPES } from '../constants'
+import { MINING_RESOURCE_CONFIG, SHEET_TYPES, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 import { degreeToDirection, uuidv4 } from './maths'
 import { playClickSound } from './uiSound'
@@ -706,12 +706,12 @@ export const debounce = <TArgs extends TimerArg[]>(
 }
 
 export function getWorkWithLoadingType(loadingType: string): string {
+  const miningConfig = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(config => config.loadingType === loadingType)
+  if (miningConfig) return miningConfig.work
   const workMapping: Record<string, string> = {
     wheat: WORK_TYPES.farmer,
     wood: WORK_TYPES.woodcutter,
     berry: WORK_TYPES.forager,
-    stone: WORK_TYPES.stoneminer,
-    gold: WORK_TYPES.goldminer,
     meat: WORK_TYPES.hunter,
   }
   return workMapping[loadingType] || 'default'

@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, LOADING_TYPES, WORK_TYPES } from '../constants'
+import { FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, WORK_TYPES } from '../constants'
 import { showLevelUpFeedback } from './combatFeedback'
 import { t } from './lang'
 import type { UnitEntity } from '../types/entities'
@@ -17,12 +17,20 @@ export const XP_CATEGORIES = {
   defense: 'defense',
 }
 
-export const XP_MAX_LEVEL = 10
+export const XP_MAX_LEVEL = 20
 export const XP_KILL_BONUS = 15
 export const XP_CONVERT_SUCCESS = 30
 export const XP_BUILD_TICK = 2
 export const XP_FELL_TREE_TICK = 1
 export const XP_PARRY_SUCCESS = 5
+
+function getMiningLoadingTypes(): string[] {
+  const configured = Object.values(MINING_RESOURCE_CONFIG ?? {})
+    .map(config => config.loadingType)
+    .filter((loadingType): loadingType is string => Boolean(loadingType))
+  if (configured.length) return configured
+  return [LOADING_TYPES.stone, LOADING_TYPES.gold].filter((loadingType): loadingType is string => Boolean(loadingType))
+}
 
 // Cumulative XP required to reach a level: 25·L·(L+1) → 50, 150, 300, 500…
 const XP_LEVEL_FACTOR = 25
@@ -48,8 +56,7 @@ export const LOADING_XP_CATEGORY: Record<string, string> = {
   [LOADING_TYPES.wheat]: XP_CATEGORIES.farming,
   [LOADING_TYPES.berry]: XP_CATEGORIES.farming,
   [LOADING_TYPES.wood]: XP_CATEGORIES.woodcutting,
-  [LOADING_TYPES.stone]: XP_CATEGORIES.mining,
-  [LOADING_TYPES.gold]: XP_CATEGORIES.mining,
+  ...Object.fromEntries(getMiningLoadingTypes().map(loadingType => [loadingType, XP_CATEGORIES.mining])),
   [LOADING_TYPES.meat]: XP_CATEGORIES.hunting,
 }
 
@@ -68,17 +75,61 @@ export function getUnitXp(unit: UnitEntity, category: string): number {
   return Math.max(0, Math.floor(unit.experience?.[category] ?? 0))
 }
 
-export function getUnitLevel(unit: UnitEntity, category: string): number {
-  const xp = getUnitXp(unit, category)
+export function getLevelForXp(xp: number): number {
+  const safeXp = Math.max(0, Math.floor(xp))
   let level = 0
-  while (level < XP_MAX_LEVEL && xp >= getXpForLevel(level + 1)) level++
+  while (level < XP_MAX_LEVEL && safeXp >= getXpForLevel(level + 1)) level++
   return level
 }
 
-// A single overall sense of progress for space-constrained UI (the persistent hero HUD) that
-// can't list all 9 per-skill levels — the best one earned so far, not an arbitrarily chosen skill.
+export function getUnitLevel(unit: UnitEntity, category: string): number {
+  return getLevelForXp(getUnitXp(unit, category))
+}
+
+export function getUnitOverallLevel(unit: UnitEntity): number {
+  const totalXp = Object.values(unit.experience ?? {}).reduce((sum, xp) => sum + Math.max(0, Math.floor(xp ?? 0)), 0)
+  return getLevelForXp(totalXp)
+}
+
+function getCombinedUnitLevel(unit: UnitEntity, categories: readonly string[]): number {
+  const totalXp = categories.reduce((sum, category) => sum + getUnitXp(unit, category), 0)
+  return getLevelForXp(totalXp)
+}
+
+export function getUnitEquipmentLevel(unit: UnitEntity, category = unit.category || unit.type): number {
+  if (category === 'Fantassin') return getCombinedUnitLevel(unit, [XP_CATEGORIES.melee, XP_CATEGORIES.defense])
+  if (category === 'Archer') return getCombinedUnitLevel(unit, [XP_CATEGORIES.ranged, XP_CATEGORIES.defense])
+  if (unit.type === 'Priest' || category === 'Priest') return getUnitLevel(unit, XP_CATEGORIES.healing)
+  const workCategory = unit.work ? WORK_XP_CATEGORY[unit.work] : null
+  if (workCategory) return getUnitLevel(unit, workCategory)
+  return getUnitOverallLevel(unit)
+}
+
+// Kept for legacy/debug summaries only. Gameplay unlocks should use getUnitEquipmentLevel,
+// and user-facing "unit level" should use getUnitOverallLevel.
 export function getHighestUnitLevel(unit: UnitEntity): number {
   return Object.values(XP_CATEGORIES).reduce((max, category) => Math.max(max, getUnitLevel(unit, category)), 0)
+}
+
+function getDebugLevelCategories(unit: UnitEntity, category = unit.category || unit.type): string[] {
+  if (category === 'Fantassin') return [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
+  if (category === 'Archer') return [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]
+  if (unit.type === 'Priest' || category === 'Priest') return [XP_CATEGORIES.healing]
+  const workCategory = unit.work ? WORK_XP_CATEGORY[unit.work] : null
+  return [workCategory ?? XP_CATEGORIES.melee]
+}
+
+export function setUnitDebugLevel(unit: UnitEntity, level: number, category = unit.category || unit.type): number {
+  const clampedLevel = Math.max(0, Math.min(XP_MAX_LEVEL, Math.floor(level)))
+  unit.experience = unit.experience ?? {}
+  const categories = getDebugLevelCategories(unit, category)
+  const totalXp = getXpForLevel(clampedLevel)
+  const baseXp = Math.floor(totalXp / categories.length)
+  const remainder = totalXp - baseXp * categories.length
+  for (let i = 0; i < categories.length; i++) {
+    unit.experience[categories[i]] = baseXp + (i < remainder ? 1 : 0)
+  }
+  return clampedLevel
 }
 
 export function getXpProgress(unit: UnitEntity, category: string): XpProgress {
@@ -136,9 +187,7 @@ export function getXpInfoId(category: string): string {
 
 export function formatXpProgressText(unit: UnitEntity, category: string): string {
   const progress = getXpProgress(unit, category)
-  return progress.next == null
-    ? `${progress.level} (max)`
-    : `${progress.level} (${progress.current}/${progress.next})`
+  return progress.next == null ? `${progress.level} (max)` : `${progress.level} (${progress.current}/${progress.next})`
 }
 
 function syncExperienceInterface(unit: UnitEntity, category: string, leveledUp: boolean): void {

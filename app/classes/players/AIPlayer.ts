@@ -1,4 +1,3 @@
-import { Assets } from 'pixi.js'
 import { Player } from './Player'
 import type { PlayerOptions } from './Player'
 
@@ -17,14 +16,13 @@ import {
   UNIT_TYPES,
   BUILDING_TYPES,
   RESOURCE_TYPES,
-  SHEET_TYPES,
   WORK_TYPES,
 } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../lib/chief'
-import { applyBakedLpcUnitAssets } from '../../lib/lpc'
+import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import type {
   AIAge,
   AIBuildingLike,
@@ -108,6 +106,9 @@ export class AI extends Player {
   foundedBerrybushs!: Set<RuntimeEntity>
   foundedGolds!: Set<RuntimeEntity>
   foundedStones!: Set<RuntimeEntity>
+  foundedCoppers!: Set<RuntimeEntity>
+  foundedIrons!: Set<RuntimeEntity>
+  foundedResources!: Record<string, Set<RuntimeEntity>>
   foundedAnimals!: Set<RuntimeEntity>
   foundedDeadAnimals!: Set<RuntimeEntity>
   foundedEnemyBuildings!: Set<RuntimeEntity>
@@ -141,6 +142,16 @@ export class AI extends Player {
     this.foundedBerrybushs = new Set()
     this.foundedGolds = new Set()
     this.foundedStones = new Set()
+    this.foundedCoppers = new Set()
+    this.foundedIrons = new Set()
+    this.foundedResources = {
+      [RESOURCE_TYPES.tree]: this.foundedTrees,
+      [RESOURCE_TYPES.berrybush]: this.foundedBerrybushs,
+      [RESOURCE_TYPES.stone]: this.foundedStones,
+      [RESOURCE_TYPES.gold]: this.foundedGolds,
+      [RESOURCE_TYPES.copper]: this.foundedCoppers,
+      [RESOURCE_TYPES.iron]: this.foundedIrons,
+    }
     this.foundedAnimals = new Set()
     this.foundedDeadAnimals = new Set()
     this.foundedEnemyBuildings = new Set()
@@ -698,17 +709,10 @@ export class AI extends Player {
 
   // Remove depleted resources and destroyed buildings from tracked Sets
   cleanupSets() {
-    for (const r of this.foundedTrees) {
-      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedTrees.delete(r)
-    }
-    for (const r of this.foundedBerrybushs) {
-      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedBerrybushs.delete(r)
-    }
-    for (const r of this.foundedStones) {
-      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedStones.delete(r)
-    }
-    for (const r of this.foundedGolds) {
-      if ((r.quantity ?? 0) <= 0 || r.isDead) this.foundedGolds.delete(r)
+    for (const resources of Object.values(this.foundedResources)) {
+      for (const resource of resources) {
+        if ((resource.quantity ?? 0) <= 0 || resource.isDead) resources.delete(resource)
+      }
     }
     for (const a of this.foundedAnimals) {
       if (a.isDead || a.isDestroyed || (a.hitPoints ?? 0) <= 0) this.foundedAnimals.delete(a)
@@ -735,7 +739,9 @@ export class AI extends Player {
         const { map } = this.context
         if (type === UNIT_TYPES.villager && aiTarget.family === FAMILY_TYPES.resource) {
           const buildingType =
-            aiTarget.type === RESOURCE_TYPES.berrybush ? BUILDING_TYPES.granary : BUILDING_TYPES.storagePit
+            aiTarget.type === RESOURCE_TYPES.berrybush || aiTarget.isDead
+              ? BUILDING_TYPES.granary
+              : BUILDING_TYPES.storagePit
           const buildings = this.buildingsByTypes([buildingType])
           const reserve = this.strategy.getAgeUpReserve()
           if (
@@ -805,22 +811,10 @@ export class AI extends Player {
     promoted.isChief = true
     promoted.work = WORK_TYPES.attacker
     promoted.stop?.()
-    // Same visual refresh as UnitActions.upgrade(): applyBakedLpcUnitAssets only
-    // resolves new asset aliases, the currently-bound sprite still needs the
-    // actual cached spritesheets re-read so the promotion shows up immediately
-    // instead of on the unit's next unrelated appearance change.
     const promotedUnit = promoted as unknown as UnitEntity
-    applyBakedLpcUnitAssets(promotedUnit)
-    Object.assign(
-      promotedUnit,
-      Object.fromEntries(
-        Object.entries(promotedUnit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)])
-      )
-    )
+    refreshBakedLpcUnitAssets(promotedUnit)
     if (promotedUnit.action && !promotedUnit.path?.length) {
       promotedUnit.getAction?.(promotedUnit.action)
-    } else {
-      promotedUnit.setTextures?.(promotedUnit.currentSheet ?? SHEET_TYPES.standing)
     }
     this.chiefLossDetectedAt = null
     return 1
@@ -890,7 +884,7 @@ export class AI extends Player {
 
     if (DEBUG)
       console.log(
-        `Villagers: ${villagers.length}/${maxVillagers}, Infantry: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Power: ${Math.round(militaryPower)}`
+        `Villagers: ${villagers.length}/${maxVillagers}, Fantassin: ${infantry.length}/${maxInfantry} (${infantryUnit}), Archers: ${archers.length}/${maxArcher} (${archerUnit}), Cavalry: ${cavalry.length}/${maxCavalry}, Power: ${Math.round(militaryPower)}`
       )
 
     const previousPhase = this.phase

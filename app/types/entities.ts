@@ -141,6 +141,7 @@ export interface UnitEntity extends RuntimeEntityBase {
   syncAppearanceLayers?: (sheet: string) => void
   inactif?: boolean
   sounds?: UnitSounds
+  gender?: 'male' | 'female'
   work?: string | null
   autonomousJob?: VillagerAutonomyJob | null
   assigningAutonomousJob?: boolean
@@ -297,6 +298,9 @@ export interface UnitEntity extends RuntimeEntityBase {
   sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToStone?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToGold?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToCopper?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToIron?: (target: RuntimeEntity, immediate?: boolean) => void
+  sendToMineResource?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   affectNewDest?: () => void
   isUnitAtDest?: (action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) => boolean
   destHasMoved?: () => boolean

@@ -259,7 +259,7 @@ export class AIEconomy {
   getFoodDropSites(loadingType: string): AIBuildingLike[] {
     const { ai } = this
     const types =
-      loadingType === 'berry' || loadingType === 'wheat'
+      loadingType === 'berry' || loadingType === 'wheat' || loadingType === 'meat'
         ? [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary]
         : [BUILDING_TYPES.townCenter, BUILDING_TYPES.storagePit]
     return ai

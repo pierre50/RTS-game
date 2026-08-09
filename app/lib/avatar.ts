@@ -5,8 +5,10 @@ import { getBuildingAsset, type AssetOwner } from './graphics/assets'
 import { recolorCanvasPixels, SOURCE_COLORS, UNIT_SOURCE_COLORS } from './graphics/colors'
 import { getTexture } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
+import { getUnitEquipmentLevel } from './unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { DynamicEquipmentKey } from './lpc/equipment'
+import type { UnitAppearanceLayerConfig } from '../types/config'
 import type { AnimalEntity, RuntimeEntityBase, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { SpritesheetLike } from '../types/pixi'
@@ -17,10 +19,21 @@ import type { SpritesheetLike } from '../types/pixi'
 const HEAD_SCAN_HEIGHT_RATIO = 34 / 64
 const BBOX_PADDING_RATIO = 0.12
 const ALPHA_THRESHOLD = 16
+const MAIN_SPRITE_LAYER_Z_INDEX = 10
 
 type PortraitSource = Pick<
   UnitEntity,
-  'standingSheet' | 'walkingSheet' | 'sheetDirectionCounts' | 'sheetDirectionOrders' | 'owner'
+  | 'standingSheet'
+  | 'walkingSheet'
+  | 'sheetDirectionCounts'
+  | 'sheetDirectionOrders'
+  | 'owner'
+  | 'appearance'
+  | 'appearanceVariants'
+  | 'category'
+  | 'type'
+  | 'experience'
+  | 'work'
 >
 
 export function getUnitFacePortraitTexture(unit: PortraitSource): Texture | null {
@@ -123,12 +136,126 @@ function extractSquareAvatar(
   return true
 }
 
+function extractSquareCanvasAvatar(
+  source: HTMLCanvasElement,
+  scanHeight: number,
+  canvas: HTMLCanvasElement,
+  color: string,
+  sourceColors: readonly number[]
+): boolean {
+  const sourceCtx = source.getContext('2d')
+  if (!sourceCtx) return false
+
+  const scanWidth = source.width
+  const clampedScanHeight = Math.max(1, Math.min(source.height, scanHeight))
+  const imageData = sourceCtx.getImageData(0, 0, scanWidth, clampedScanHeight)
+  const square = findOpaqueSquare(imageData.data, scanWidth, clampedScanHeight) ?? new Rectangle(0, 0, scanWidth, clampedScanHeight)
+  square.width = Math.min(square.width, source.width, source.height)
+  square.height = square.width
+  square.x = Math.max(0, Math.min(square.x, source.width - square.width))
+  square.y = Math.max(0, Math.min(square.y, source.height - square.height))
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return false
+  ctx.imageSmoothingEnabled = false
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(source, square.x, square.y, square.width, square.height, 0, 0, canvas.width, canvas.height)
+  recolorCanvasPixels(canvas, color, sourceColors)
+  return true
+}
+
+function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
+  return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
+}
+
+function getAgeSheetOverride(
+  overrides: UnitAppearanceLayerConfig['ageSheetOverrides'] | undefined,
+  ownerAge: number,
+  sheet: string
+): string | undefined {
+  if (!overrides) return undefined
+  const exact = overrides[String(ownerAge)]?.[sheet]
+  if (exact) return exact
+  const fallbackAge = Object.keys(overrides)
+    .map(Number)
+    .filter(age => age <= ownerAge)
+    .sort((a, b) => b - a)[0]
+  return fallbackAge == null ? undefined : overrides[String(fallbackAge)]?.[sheet]
+}
+
+function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLayerConfig): Texture | null {
+  const level = getUnitEquipmentLevel(unit as UnitEntity)
+  if (level < (layer.minLevel ?? 0) || level > (layer.maxLevel ?? Number.POSITIVE_INFINITY)) return null
+  if (layer.workTypes?.length && (!unit.work || !layer.workTypes.includes(unit.work))) return null
+
+  const sheetKey = SHEET_TYPES.walking
+  const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
+  const baseSheetId =
+    getAgeSheetOverride(layer.ageSheetOverrides, ownerAge, sheetKey) ??
+    (layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined)
+  if (!baseSheetId) return null
+
+  const playerColorVariant = unit.owner?.color ? layer.playerColorVariants?.[unit.owner.color] : undefined
+  const appearanceVariant = layer.appearanceVariantKey ? unit.appearanceVariants?.[layer.appearanceVariantKey] : undefined
+  const variantSheetId =
+    appearanceVariant && `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
+  const basePlayerColorSheetId = playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
+  const sheetId = variantSheetId && Assets.cache.has(variantSheetId) ? variantSheetId : basePlayerColorSheetId
+  const sheet = getCachedSpritesheet(sheetId)
+  if (!sheet?.textures) return null
+
+  const directionCount = layer.sheetDirectionCounts?.[sheetKey] ?? 3
+  const directionOrder = layer.sheetDirectionOrders?.[sheetKey] ?? null
+  const frames = getAnimationFrames(sheet.textures, 'south', directionCount, directionOrder) as Texture[]
+  return frames[0] ?? null
+}
+
+function renderLayeredUnitHeadAvatar(
+  app: Application,
+  unit: PortraitSource,
+  baseTexture: Texture,
+  canvas: HTMLCanvasElement
+): boolean {
+  const layers = unit.appearance?.layers
+    ?.map((layer, index) => ({ layer, index, texture: getPortraitLayerTexture(unit, layer) }))
+    .filter((entry): entry is { layer: UnitAppearanceLayerConfig; index: number; texture: Texture } => Boolean(entry.texture))
+    .sort((a, b) => a.layer.zIndex - b.layer.zIndex || a.index - b.index)
+
+  if (!layers?.length) return false
+
+  const composed = document.createElement('canvas')
+  composed.width = baseTexture.width
+  composed.height = baseTexture.height
+  const ctx = composed.getContext('2d')
+  if (!ctx) return false
+  ctx.imageSmoothingEnabled = false
+
+  const drawTexture = (texture: Texture) => {
+    ctx.drawImage(app.renderer.extract.canvas(texture) as unknown as CanvasImageSource, 0, 0)
+  }
+
+  for (const { layer, texture } of layers) {
+    if (layer.zIndex >= MAIN_SPRITE_LAYER_Z_INDEX) continue
+    drawTexture(texture)
+  }
+  drawTexture(baseTexture)
+  for (const { layer, texture } of layers) {
+    if (layer.zIndex < MAIN_SPRITE_LAYER_Z_INDEX) continue
+    drawTexture(texture)
+  }
+
+  const scanHeight = Math.min(composed.height, Math.round(composed.height * HEAD_SCAN_HEIGHT_RATIO))
+  return extractSquareCanvasAvatar(composed, scanHeight, canvas, unit.owner?.color ?? '', UNIT_SOURCE_COLORS)
+}
+
 // Renders the unit's face into `canvas`, tightly cropped and scaled to fill
 // it, from its idle south-facing frame (the same frame the game already
 // shows when a unit stands still).
 export function renderUnitHeadAvatar(app: Application, unit: PortraitSource, canvas: HTMLCanvasElement): boolean {
   const texture = getUnitFacePortraitTexture(unit)
   if (!texture?.width || !texture.height) return false
+
+  if (renderLayeredUnitHeadAvatar(app, unit, texture, canvas)) return true
 
   const scanHeight = Math.min(texture.height, Math.round(texture.height * HEAD_SCAN_HEIGHT_RATIO))
   const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, scanHeight)

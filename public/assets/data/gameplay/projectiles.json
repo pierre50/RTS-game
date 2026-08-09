@@ -18,6 +18,58 @@
       ]
     }
   },
+  "ArrowCeramic": {
+    "size": 3,
+    "speed": 18,
+    "assets": "projectiles/arrow_ceramic",
+    "sounds": {
+      "launch": [
+        "archer-attack",
+        "archer-attack-2",
+        "archer-attack-3",
+        "archer-attack-4"
+      ]
+    }
+  },
+  "ArrowCopper": {
+    "size": 3,
+    "speed": 18,
+    "assets": "projectiles/arrow_copper",
+    "sounds": {
+      "launch": [
+        "archer-attack",
+        "archer-attack-2",
+        "archer-attack-3",
+        "archer-attack-4"
+      ]
+    }
+  },
+  "ArrowBronze": {
+    "size": 3,
+    "speed": 18,
+    "assets": "projectiles/arrow_bronze",
+    "sounds": {
+      "launch": [
+        "archer-attack",
+        "archer-attack-2",
+        "archer-attack-3",
+        "archer-attack-4"
+      ]
+    }
+  },
+  "ArrowIron": {
+    "size": 3,
+    "speed": 18,
+    "assets": "projectiles/arrow_iron",
+    "sounds": {
+      "launch": [
+        "archer-attack",
+        "archer-attack-2",
+        "archer-attack-3",
+        "archer-attack-4"
+      ]
+    }
+  },
   "Bolt": {
     "size": 12,
     "speed": 12,

@@ -1,4 +1,4 @@
-import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
+import { ACTION_TYPES, MINING_RESOURCE_CONFIG, SHEET_TYPES, STEP_TIME } from '../constants'
 import { showFatigueFeedback } from './combatFeedback'
 import { t } from './lang'
 import { isHeroControlled } from './unitControl'
@@ -12,12 +12,19 @@ export const NPC_ATTACK_RETREAT_DISTANCE = 96
 export const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
 export const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
 
+function getMiningActions(): string[] {
+  const configured = Object.values(MINING_RESOURCE_CONFIG ?? {})
+    .map(config => config.action)
+    .filter((action): action is string => Boolean(action))
+  if (configured.length) return configured
+  return [ACTION_TYPES.minestone, ACTION_TYPES.minegold].filter((action): action is string => Boolean(action))
+}
+
 const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.attack]: 2,
   [ACTION_TYPES.hunt]: 2,
   [ACTION_TYPES.chopwood]: 2,
-  [ACTION_TYPES.minestone]: 3,
-  [ACTION_TYPES.minegold]: 3,
+  ...Object.fromEntries(getMiningActions().map(action => [action, 3])),
   [ACTION_TYPES.build]: 2,
   [ACTION_TYPES.forageberry]: 0.75,
   [ACTION_TYPES.farm]: 1,

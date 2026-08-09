@@ -17,6 +17,7 @@ class DynamicEquipment:
     key: str
     action_animation: str
     layers_by_animation: dict[str, tuple[DynamicLayer, ...]]
+    variants: tuple[str, ...] = ()
 
 
 EQUIPMENT_LAYER_ORDER: tuple[tuple[str, int], ...] = (
@@ -25,22 +26,71 @@ EQUIPMENT_LAYER_ORDER: tuple[tuple[str, int], ...] = (
 )
 
 EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
-    "axe": "slash",
-    "pickaxe": "slash",
-    "hammer": "slash",
+    "axe_ceramic": "slash",
+    "axe_copper": "slash",
+    "axe_bronze": "slash",
+    "axe_iron": "slash",
+    "pickaxe_ceramic": "slash",
+    "pickaxe_copper": "slash",
+    "pickaxe_bronze": "slash",
+    "pickaxe_iron": "slash",
+    "hammer_ceramic": "slash",
+    "hammer_copper": "slash",
+    "hammer_bronze": "slash",
+    "hammer_iron": "slash",
     "meat": "walk",
     "stone": "walk",
     "gold": "walk",
-    "scythe": "slash",
+    "scythe_ceramic": "slash",
+    "scythe_copper": "slash",
+    "scythe_bronze": "slash",
+    "scythe_iron": "slash",
     "bow": "shoot",
     "bow_great": "shoot",
     "bow_recurve": "shoot",
     "halberd": "slash",
-    "dagger": "slash",
-    "broadsword": "slash",
+    "sword_ceramic": "slash",
+    "sword_copper": "slash",
+    "sword_bronze": "slash",
+    "sword_iron": "slash",
+    "armor_leather": "slash",
+    "armor_mail_ceramic": "slash",
+    "armor_mail_copper": "slash",
+    "armor_mail_bronze": "slash",
+    "armor_mail_iron": "slash",
+    "armor_legion_ceramic": "slash",
+    "armor_legion_copper": "slash",
+    "armor_legion_bronze": "slash",
+    "armor_legion_iron": "slash",
+    "helmet_pointed_ceramic": "slash",
+    "helmet_pointed_copper": "slash",
+    "helmet_pointed_bronze": "slash",
+    "helmet_pointed_iron": "slash",
+    "helmet_barbuta_ceramic": "slash",
+    "helmet_barbuta_copper": "slash",
+    "helmet_barbuta_bronze": "slash",
+    "helmet_barbuta_iron": "slash",
+    "shoulder_legion_ceramic": "slash",
+    "shoulder_legion_copper": "slash",
+    "shoulder_legion_bronze": "slash",
+    "shoulder_legion_iron": "slash",
+    "bracers_ceramic": "slash",
+    "bracers_copper": "slash",
+    "bracers_bronze": "slash",
+    "bracers_iron": "slash",
+    "leg_armor_ceramic": "slash",
+    "leg_armor_copper": "slash",
+    "leg_armor_bronze": "slash",
+    "leg_armor_iron": "slash",
+    "cape_solid": "slash",
+    "crest": "slash",
+    "centurion_crest": "slash",
+    "centurion_plumage": "slash",
     "longsword": "slash",
-    "round_shield_brass_slash": "slash",
-    "round_shield_silver_slash": "slash",
+    "round_shield_ceramic_slash": "slash",
+    "round_shield_copper_slash": "slash",
+    "round_shield_bronze_slash": "slash",
+    "round_shield_iron_slash": "slash",
     "cane": "spellcast",
     "quiver": "shoot",
 }
@@ -59,6 +109,7 @@ def dynamic_layers_for(key: str, animation: str) -> tuple[DynamicLayer, ...]:
 
 
 def equipment(key: str, action_animation: str) -> DynamicEquipment:
+    variants = ("male", "female") if "{variant}" in repr(EQUIPMENT[key]) else ()
     return DynamicEquipment(
         key,
         action_animation,
@@ -66,6 +117,7 @@ def equipment(key: str, action_animation: str) -> DynamicEquipment:
             "walk": dynamic_layers_for(key, "walk"),
             action_animation: dynamic_layers_for(key, action_animation),
         },
+        variants,
     )
 
 
@@ -126,5 +178,8 @@ def required_dynamic_equipment_source_paths() -> list[str]:
         for layers in equipment.layers_by_animation.values():
             for layer in layers:
                 for spec in layer.layers:
-                    paths.add(spec.path)
+                    if equipment.variants:
+                        paths.update(spec.path.format(variant=variant) for variant in equipment.variants)
+                    else:
+                        paths.add(spec.path)
     return sorted(paths)

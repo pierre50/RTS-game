@@ -41,30 +41,120 @@ class Equipment:
 
 # LPC universal sheets always order directional rows north/west/south/east.
 NORTH_ROW = 0
+TOOL_METAL_SOURCE = "tool_metal_source"
+
+
+def tool_layer(path: str, palette: str | None = None, **kwargs) -> LayerSpec:
+    return LayerSpec(path, palette, source_palette=TOOL_METAL_SOURCE if palette else None, **kwargs)
+
+
+def smash_tool_equipment(tool: str, palette: str | None = None) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(tool_layer(f"tools/smash/universal/male/walk/{tool}.png", palette),)),
+        "slash": Equipment(
+            background=(tool_layer(f"tools/smash/background/{tool}.png", palette, fallback_group=f"{tool}_slash"),),
+            foreground=(tool_layer(f"tools/smash/foreground/{tool}.png", palette, fallback_group=f"{tool}_slash"),),
+        ),
+    }
+
+
+def scythe_equipment(palette: str | None = None) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(
+            background=(tool_layer("weapon/polearm/scythe/universal_behind/walk/scythe.png", palette),),
+            foreground=(tool_layer("weapon/polearm/scythe/walk/scythe.png", palette),),
+        ),
+        "slash": Equipment(
+            background=(tool_layer("weapon/polearm/scythe/attack_slash/behind/scythe.png", palette),),
+            foreground=(tool_layer("weapon/polearm/scythe/attack_slash/scythe.png", palette),),
+        ),
+    }
+
+
+def arming_sword_equipment(palette: str | None = None) -> dict[str, Equipment]:
+    def sword_layer(path: str) -> LayerSpec:
+        return LayerSpec(path, palette, source_palette="brass" if palette else None)
+
+    return {
+        "walk": Equipment(
+            background=(sword_layer("weapon/sword/arming/universal/bg/walk/brass.png"),),
+            foreground=(sword_layer("weapon/sword/arming/universal/fg/walk/brass.png"),),
+        ),
+        "slash": Equipment(
+            background=(sword_layer("weapon/sword/arming/attack_slash/bg/brass.png"),),
+            foreground=(sword_layer("weapon/sword/arming/attack_slash/fg/brass.png"),),
+        ),
+    }
+
+
+def torso_armor_equipment(path: str, color: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/walk/{color}.png"),)),
+        "slash": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/slash/{color}.png"),)),
+    }
+
+
+def recolored_torso_armor_equipment(path: str, source_color: str, color: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/walk/{source_color}.png", color),)),
+        "slash": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/slash/{source_color}.png", color),)),
+    }
+
+
+def helmet_equipment(path: str, color: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk/{color}.png"),)),
+        "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash/{color}.png"),)),
+    }
+
+
+def bracers_equipment(color: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec("arms/bracers/male/walk.png", color),)),
+        "slash": Equipment(foreground=(LayerSpec("arms/bracers/male/slash.png", color),)),
+    }
+
+
+def cape_solid_equipment() -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(
+            background=(LayerSpec("cape/solid/bg/walk.png", "player_blue"),),
+            foreground=(LayerSpec("cape/solid/fg/walk.png", "player_blue"),),
+        ),
+        "slash": Equipment(
+            background=(LayerSpec("cape/solid/bg/slash.png", "player_blue"),),
+            foreground=(LayerSpec("cape/solid/fg/slash.png", "player_blue"),),
+        ),
+    }
+
+
+def hat_accessory_equipment(path: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk.png", "player_blue"),)),
+        "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash.png", "player_blue"),)),
+    }
+
+
+def recolored_shield_equipment(color: str) -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png", color, source_palette="brass"),)),
+        "slash": Equipment(foreground=(LayerSpec("shield/round/slash/brass.png", color, source_palette="brass"),)),
+    }
 
 
 EQUIPMENT: dict[str, dict[str, Equipment]] = {
-    "axe": {
-        "walk": Equipment(foreground=(LayerSpec("tools/smash/universal/male/walk/axe.png"),)),
-        "slash": Equipment(
-            background=(LayerSpec("tools/smash/background/axe.png", fallback_group="axe_slash"),),
-            foreground=(LayerSpec("tools/smash/foreground/axe.png", fallback_group="axe_slash"),),
-        ),
-    },
-    "pickaxe": {
-        "walk": Equipment(foreground=(LayerSpec("tools/smash/universal/male/walk/pickaxe.png"),)),
-        "slash": Equipment(
-            background=(LayerSpec("tools/smash/background/pickaxe.png", fallback_group="pickaxe_slash"),),
-            foreground=(LayerSpec("tools/smash/foreground/pickaxe.png", fallback_group="pickaxe_slash"),),
-        ),
-    },
-    "hammer": {
-        "walk": Equipment(foreground=(LayerSpec("tools/smash/universal/male/walk/hammer.png"),)),
-        "slash": Equipment(
-            background=(LayerSpec("tools/smash/background/hammer.png", fallback_group="hammer_slash"),),
-            foreground=(LayerSpec("tools/smash/foreground/hammer.png", fallback_group="hammer_slash"),),
-        ),
-    },
+    "axe_ceramic": smash_tool_equipment("axe", "ceramic"),
+    "axe_copper": smash_tool_equipment("axe", "copper"),
+    "axe_bronze": smash_tool_equipment("axe", "bronze"),
+    "axe_iron": smash_tool_equipment("axe", "iron"),
+    "pickaxe_ceramic": smash_tool_equipment("pickaxe", "ceramic"),
+    "pickaxe_copper": smash_tool_equipment("pickaxe", "copper"),
+    "pickaxe_bronze": smash_tool_equipment("pickaxe", "bronze"),
+    "pickaxe_iron": smash_tool_equipment("pickaxe", "iron"),
+    "hammer_ceramic": smash_tool_equipment("hammer", "ceramic"),
+    "hammer_copper": smash_tool_equipment("hammer", "copper"),
+    "hammer_bronze": smash_tool_equipment("hammer", "bronze"),
+    "hammer_iron": smash_tool_equipment("hammer", "iron"),
     # Carried in hand for the "loaded" walk (bringing a gathered resource home), not
     # equipped during any combat pose, so each only defines "walk". Held in front on
     # west/south, but hidden behind the body when facing north (away from camera),
@@ -99,16 +189,10 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             )
         ),
     },
-    "scythe": {
-        "walk": Equipment(
-            background=(LayerSpec("weapon/polearm/scythe/universal_behind/walk/scythe.png"),),
-            foreground=(LayerSpec("weapon/polearm/scythe/walk/scythe.png"),),
-        ),
-        "slash": Equipment(
-            background=(LayerSpec("weapon/polearm/scythe/attack_slash/behind/scythe.png"),),
-            foreground=(LayerSpec("weapon/polearm/scythe/attack_slash/scythe.png"),),
-        ),
-    },
+    "scythe_ceramic": scythe_equipment("ceramic"),
+    "scythe_copper": scythe_equipment("copper"),
+    "scythe_bronze": scythe_equipment("bronze"),
+    "scythe_iron": scythe_equipment("iron"),
     "bow": {
         "walk": Equipment(
             background=(
@@ -175,28 +259,43 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             foreground=(LayerSpec("weapon/polearm/halberd/attack_slash/halberd.png"),),
         ),
     },
-    "dagger": {
-        "walk": Equipment(
-            background=(LayerSpec("weapon/sword/dagger/behind/walk/dagger.png"),),
-            foreground=(LayerSpec("weapon/sword/dagger/walk/dagger.png"),),
-        ),
-        "slash": Equipment(
-            background=(LayerSpec("weapon/sword/dagger/behind/slash/dagger.png"),),
-            foreground=(LayerSpec("weapon/sword/dagger/slash/dagger.png"),),
-        ),
-    },
-    # Arming sword only. The matching shield is generated as its own dynamic
-    # equipment below so runtime loadouts can toggle weapon and shield separately.
-    "broadsword": {
-        "walk": Equipment(
-            background=(LayerSpec("weapon/sword/arming/universal/bg/walk/brass.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/universal/fg/walk/brass.png"),),
-        ),
-        "slash": Equipment(
-            background=(LayerSpec("weapon/sword/arming/attack_slash/bg/brass.png"),),
-            foreground=(LayerSpec("weapon/sword/arming/attack_slash/fg/brass.png"),),
-        ),
-    },
+    "sword_ceramic": arming_sword_equipment("ceramic"),
+    "sword_copper": arming_sword_equipment("copper"),
+    "sword_bronze": arming_sword_equipment("bronze"),
+    "sword_iron": arming_sword_equipment("iron"),
+    "armor_leather": torso_armor_equipment("torso/armour/leather", "leather"),
+    "armor_mail_ceramic": recolored_torso_armor_equipment("torso/chainmail", "gray", "ceramic"),
+    "armor_mail_copper": recolored_torso_armor_equipment("torso/chainmail", "gray", "copper"),
+    "armor_mail_bronze": recolored_torso_armor_equipment("torso/chainmail", "gray", "bronze"),
+    "armor_mail_iron": recolored_torso_armor_equipment("torso/chainmail", "gray", "iron"),
+    "armor_legion_ceramic": torso_armor_equipment("torso/armour/legion", "ceramic"),
+    "armor_legion_copper": torso_armor_equipment("torso/armour/legion", "copper"),
+    "armor_legion_bronze": torso_armor_equipment("torso/armour/legion", "bronze"),
+    "armor_legion_iron": torso_armor_equipment("torso/armour/legion", "iron"),
+    "helmet_pointed_ceramic": helmet_equipment("hat/helmet/pointed", "ceramic"),
+    "helmet_pointed_copper": helmet_equipment("hat/helmet/pointed", "copper"),
+    "helmet_pointed_bronze": helmet_equipment("hat/helmet/pointed", "bronze"),
+    "helmet_pointed_iron": helmet_equipment("hat/helmet/pointed", "iron"),
+    "helmet_barbuta_ceramic": helmet_equipment("hat/helmet/barbuta_simple", "ceramic"),
+    "helmet_barbuta_copper": helmet_equipment("hat/helmet/barbuta_simple", "copper"),
+    "helmet_barbuta_bronze": helmet_equipment("hat/helmet/barbuta_simple", "bronze"),
+    "helmet_barbuta_iron": helmet_equipment("hat/helmet/barbuta_simple", "iron"),
+    "shoulder_legion_ceramic": torso_armor_equipment("shoulders/legion", "ceramic"),
+    "shoulder_legion_copper": torso_armor_equipment("shoulders/legion", "copper"),
+    "shoulder_legion_bronze": torso_armor_equipment("shoulders/legion", "bronze"),
+    "shoulder_legion_iron": torso_armor_equipment("shoulders/legion", "iron"),
+    "bracers_ceramic": bracers_equipment("ceramic"),
+    "bracers_copper": bracers_equipment("copper"),
+    "bracers_bronze": bracers_equipment("bronze"),
+    "bracers_iron": bracers_equipment("iron"),
+    "leg_armor_ceramic": torso_armor_equipment("legs/armour/plate", "ceramic"),
+    "leg_armor_copper": torso_armor_equipment("legs/armour/plate", "copper"),
+    "leg_armor_bronze": torso_armor_equipment("legs/armour/plate", "bronze"),
+    "leg_armor_iron": torso_armor_equipment("legs/armour/plate", "iron"),
+    "cape_solid": cape_solid_equipment(),
+    "crest": hat_accessory_equipment("hat/accessory/crest"),
+    "centurion_crest": hat_accessory_equipment("hat/accessory/crest_centurion"),
+    "centurion_plumage": hat_accessory_equipment("hat/accessory/plumage_centurion"),
     # Silver arming sword only. The matching shield is generated separately.
     "longsword": {
         "walk": Equipment(
@@ -213,16 +312,10 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "cane": {
         "walk": Equipment(foreground=(LayerSpec("weapon/polearm/cane/male/walk/cane.png"),)),
     },
-    # Round shields are standalone equipment. The brass sheet is pixel-recolored
-    # from the hand-colored gold source by the image pipeline.
-    "round_shield_brass_slash": {
-        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/brass.png"),)),
-        "slash": Equipment(foreground=(LayerSpec("shield/round/slash/brass.png"),)),
-    },
-    "round_shield_silver_slash": {
-        "walk": Equipment(foreground=(LayerSpec("shield/round/walk/silver.png"),)),
-        "slash": Equipment(foreground=(LayerSpec("shield/round/slash/silver.png"),)),
-    },
+    "round_shield_ceramic_slash": recolored_shield_equipment("ceramic"),
+    "round_shield_copper_slash": recolored_shield_equipment("copper"),
+    "round_shield_bronze_slash": recolored_shield_equipment("bronze"),
+    "round_shield_iron_slash": recolored_shield_equipment("iron"),
 }
 
 

@@ -15,6 +15,7 @@ import type {
 
 type GridPoint = { i: number; j: number }
 const DEFAULT_SERIALIZED_MAP_TYPE = 'continent'
+const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
@@ -249,15 +250,14 @@ function playerData(player: SerializablePlayer) {
       'label',
       'age',
       'type',
-      'wood',
-      'food',
-      'stone',
-      'gold',
+      ...SERIALIZED_RESOURCE_NAMES,
       'civ',
       'gender',
       'name',
+      'factionId',
       'color',
       'team',
+      'diplomacy',
       'population',
       'populationMax',
       'technologies',

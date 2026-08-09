@@ -12,6 +12,7 @@ export interface MenuButtonSpec {
   id?: string
   icon?: string | (() => string)
   tooltip?: TooltipSource
+  acquired?: () => boolean
   hide?: () => boolean
   disabled?: () => boolean
   onClick?: (selection: RuntimeEntity, evt?: Event | null) => void

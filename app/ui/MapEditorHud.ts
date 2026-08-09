@@ -1,6 +1,7 @@
 import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { getIconPath } from '../lib'
+import { createResourceIconMaps } from './resourceIcons'
 import { MinimapManager } from './MinimapManager'
 import { MinimapInputController } from './MinimapInputController'
 import { MapEditorMenu } from './MapEditorMenu'
@@ -100,18 +101,9 @@ export class MapEditorHud {
 
     this.resources = document.createElement('div')
     this.resources.className = 'topbar-resources map-editor-titlebar'
-    this.icons = {
-      wood: getIconPath('000_50732'),
-      food: getIconPath('002_50732'),
-      stone: getIconPath('001_50732'),
-      gold: getIconPath('003_50732'),
-    }
-    this.infoIcons = {
-      wood: getIconPath('000_50731'),
-      stone: getIconPath('001_50731'),
-      food: getIconPath('002_50731'),
-      gold: getIconPath('003_50731'),
-    }
+    const resourceIcons = createResourceIconMaps()
+    this.icons = resourceIcons.icons
+    this.infoIcons = resourceIcons.infoIcons
 
     this.age = document.createElement('div')
     this.age.className = 'topbar-age map-editor-status'

@@ -20,11 +20,11 @@ VILLAGER_JOBS: tuple[Job, ...] = (
     Job("default"),
     Job("attacker"),
     Job("forager"),
-    Job("woodcutter", walking_equipment="axe", action_equipment="axe"),
-    Job("stoneminer", walking_equipment="pickaxe", action_equipment="pickaxe", loaded_equipment="stone"),
-    Job("goldminer", walking_equipment="pickaxe", action_equipment="pickaxe", loaded_equipment="gold"),
-    Job("builder", walking_equipment="hammer", action_equipment="hammer"),
-    Job("farmer", walking_equipment="scythe", action_equipment="scythe"),
+    Job("woodcutter", walking_equipment="axe_ceramic", action_equipment="axe_ceramic"),
+    Job("stoneminer", walking_equipment="pickaxe_ceramic", action_equipment="pickaxe_ceramic", loaded_equipment="stone"),
+    Job("goldminer", walking_equipment="pickaxe_ceramic", action_equipment="pickaxe_ceramic", loaded_equipment="gold"),
+    Job("builder", walking_equipment="hammer_ceramic", action_equipment="hammer_ceramic"),
+    Job("farmer", walking_equipment="scythe_ceramic", action_equipment="scythe_ceramic"),
     Job(
         "hunter",
         action_animation="shoot",
@@ -32,55 +32,12 @@ VILLAGER_JOBS: tuple[Job, ...] = (
     ),
 )
 
-CLUBMAN_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="halberd", action_animation="slash", action_equipment="halberd"),
+INFANTRY_JOBS: tuple[Job, ...] = (
+    Job("default", walking_equipment="sword_ceramic", action_animation="slash", action_equipment="sword_ceramic"),
 )
 
-# Same halberd as "clubman" (see UNIT_EQUIPMENT[UNIT_TYPES.chief] in equipment.ts).
 CHIEF_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="halberd", action_animation="slash", action_equipment="halberd"),
-)
-
-AXEMAN_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="axe", action_animation="slash", action_equipment="axe"),
-)
-
-BOWMAN_JOBS: tuple[Job, ...] = (Job("default", action_animation="shoot"),)
-
-SHORTSWORDMAN_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="dagger", action_animation="slash", action_equipment="dagger"),
-)
-
-IMPROVEDBOWMAN_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        action_animation="shoot",
-    ),
-)
-
-COMPOSITEBOWMAN_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        action_animation="shoot",
-    ),
-)
-
-BROADSWORDMAN_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        walking_equipment="broadsword",
-        action_animation="slash",
-        action_equipment="broadsword",
-    ),
-)
-
-LONGSWORDMAN_JOBS: tuple[Job, ...] = (
-    Job(
-        "default",
-        walking_equipment="longsword",
-        action_animation="slash",
-        action_equipment="longsword",
-    ),
 )
 
 # The cane has no spellcast-pose art, so action_equipment is left unset — the
@@ -91,14 +48,8 @@ PRIEST_JOBS: tuple[Job, ...] = (
 
 UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "villager": VILLAGER_JOBS,
-    "clubman": CLUBMAN_JOBS,
-    "axeman": AXEMAN_JOBS,
-    "bowman": BOWMAN_JOBS,
-    "shortswordman": SHORTSWORDMAN_JOBS,
-    "improvedbowman": IMPROVEDBOWMAN_JOBS,
-    "compositebowman": COMPOSITEBOWMAN_JOBS,
-    "broadswordman": BROADSWORDMAN_JOBS,
-    "longswordman": LONGSWORDMAN_JOBS,
+    "infantry": INFANTRY_JOBS,
+    "infantry_nohair": INFANTRY_JOBS,
     "priest": PRIEST_JOBS,
     "chief": CHIEF_JOBS,
 }
