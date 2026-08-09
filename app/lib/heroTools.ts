@@ -416,7 +416,6 @@ export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquipped
   const workAssets = hero.allAssets?.[work]
   if (workAssets) {
     if (workAssets[SHEET_TYPES.action]) hero.actionSheet = Assets.cache.get(workAssets[SHEET_TYPES.action])
-    if (workAssets[SHEET_TYPES.riding]) hero.ridingSheet = Assets.cache.get(workAssets[SHEET_TYPES.riding])
     if (!hero.loading) {
       if (workAssets[SHEET_TYPES.standing]) hero.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
       if (workAssets[SHEET_TYPES.walking]) hero.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])

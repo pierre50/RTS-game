@@ -22,6 +22,7 @@ export type UnitCreationExtra = {
   hitPoints?: number
   speed?: number
   experience?: Record<string, number>
+  appearanceVariants?: Record<string, string>
 }
 export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
 
@@ -209,7 +210,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
-  ridingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
   standingSheet?: SpritesheetLike | null
   corpseSheet?: SpritesheetLike | null

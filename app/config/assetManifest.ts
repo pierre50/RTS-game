@@ -119,6 +119,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'environment/floor/desert-11',
       'environment/floor/desert-12',
       'units/ballista/dying',
+      'units/rider-legs',
       'animals/deer/dying',
       'animals/hare/dying',
       'animals/black-grouse/dying',

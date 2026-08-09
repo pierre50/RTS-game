@@ -209,7 +209,7 @@ test('single-direction dying sheets always use south-facing frames', () => {
   assert.equal(sprite.playCalls, 1)
 })
 
-test('mounted units use riding art for idle, walking and animated attack actions', () => {
+test('mounted units use action art for idle, walking and animated attack actions', () => {
   const { setUnitTexture } = loadModule('app/lib/extra.ts', {
     '../constants': {
       SHEET_TYPES: {
@@ -247,33 +247,31 @@ test('mounted units use riding art for idle, walking and animated attack actions
       this.stopCalls += 1
     },
   }
-  const ridingSheet = {
+  const actionSheet = {
     data: { animationSpeed: 0.2 },
-    textures: { '000.png': { id: 'ride-0' }, '001.png': { id: 'ride-1' } },
+    textures: { '000.png': { id: 'hit-0' }, '001.png': { id: 'hit-1' } },
   }
-  const actionSheet = { data: { animationSpeed: 0.2 }, textures: { '000.png': { id: 'hit' } } }
 
   setUnitTexture('standingSheet', {
     context: {},
     degree: 180,
     mountedOnHorse: true,
-    ridingSheet,
     sprite,
+    actionSheet,
     standingSheet: { data: {}, textures: { '000.png': { id: 'stand' } } },
   })
 
-  assert.deepEqual(sprite.textures, [{ id: 'ride-0' }])
+  assert.deepEqual(sprite.textures, [{ id: 'hit-0' }])
   assert.equal(sprite.stopCalls, 1)
 
   setUnitTexture('actionSheet', {
     context: {},
     degree: 180,
     mountedOnHorse: true,
-    ridingSheet,
     sprite,
     actionSheet,
   })
 
-  assert.deepEqual(sprite.textures, [{ id: 'ride-0' }, { id: 'ride-1' }])
+  assert.deepEqual(sprite.textures, [{ id: 'hit-0' }, { id: 'hit-1' }])
   assert.equal(sprite.playCalls, 1)
 })

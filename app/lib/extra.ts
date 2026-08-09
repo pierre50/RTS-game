@@ -286,8 +286,8 @@ export type UnitTextureInstance = {
   spriteScale?: number
   sprite: AnimatedSpriteLike
   walkingSheet?: SheetLike
+  actionSheet?: SheetLike
   dyingSheet?: SheetLike
-  ridingSheet?: SheetLike
   mountedOnHorse?: boolean
 }
 
@@ -372,21 +372,21 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     }
     return
   }
-  const mountedRiderSheet =
+  const mountedActionSheet =
     instance.mountedOnHorse &&
-    instance.ridingSheet &&
+    instance.actionSheet &&
     [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
-      ? instance.ridingSheet
+      ? instance.actionSheet
       : null
-  const selectedSheet = (mountedRiderSheet ?? sheets[sheet]) as SheetLike
+  const selectedSheet = (mountedActionSheet ?? sheets[sheet]) as SheetLike
   const goto = instance.currentSheet === sheet && instance.sprite.currentFrame
   instance.currentSheet = sheet
   const directionCount =
-    mountedRiderSheet && sheet !== SHEET_TYPES.action
+    mountedActionSheet && sheet !== SHEET_TYPES.action
       ? instance.sheetDirectionCounts?.[SHEET_TYPES.action] ?? instance.sheetDirectionCounts?.[sheet] ?? null
       : instance.sheetDirectionCounts?.[sheet] ?? null
   const directionOrderOverride =
-    mountedRiderSheet && sheet !== SHEET_TYPES.action
+    mountedActionSheet && sheet !== SHEET_TYPES.action
       ? instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null
       : instance.sheetDirectionOrders?.[sheet] ?? null
   const { textures, mirrored } = getSpriteFrameSelection(
@@ -407,7 +407,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
   // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
   // (e.g. wildlife idle animations) is real art and should play normally.
-  if (mountedRiderSheet && sheet !== SHEET_TYPES.action) {
+  if (mountedActionSheet && sheet !== SHEET_TYPES.action) {
     instance.sprite.textures = [instance.sprite.textures[0]]
     instance.sprite.stop()
     return

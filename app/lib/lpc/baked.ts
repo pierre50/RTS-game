@@ -11,7 +11,7 @@ const BAKED_LPC_BASE_URL = 'assets/graphics/lpc-baked'
 const BAKED_LPC_ALIAS_PREFIX = 'lpc-baked'
 const BAKED_GENDERS = ['male', 'female'] as const
 
-const UNIT_SHEETS = ['walking', 'action', 'riding', 'dying', 'corpse'] as const
+const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'shoot'] as const
 const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
@@ -107,9 +107,6 @@ export function getBakedUnitStandingSheetAlias(
   return bakedUnitAlias(bakedUnit, variant, 'walking')
 }
 
-const HERO_RIDING_ACTION_SHEETS = HERO_BASE_ACTION_SHEETS.map(sheet => `riding/${sheet}`) as readonly string[]
-const HERO_ACTION_SHEETS = [...HERO_BASE_ACTION_SHEETS, ...HERO_RIDING_ACTION_SHEETS] as const
-
 function isAssetCached(alias: string): boolean {
   return Assets.cache.has(alias)
 }
@@ -118,7 +115,7 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
   if (unit === 'villager' || unit === 'hero') {
     const bodyAlias = unit === 'hero' ? heroBodyAlias : villagerBodyAlias
     const actionAlias = unit === 'hero' ? heroActionAlias : villagerActionAlias
-    const actionSheets: readonly string[] = unit === 'hero' ? HERO_ACTION_SHEETS : VILLAGER_ACTION_SHEETS
+    const actionSheets: readonly string[] = unit === 'hero' ? HERO_BASE_ACTION_SHEETS : VILLAGER_ACTION_SHEETS
     const assets = [
       ...VILLAGER_BODY_SHEETS.map(sheet => ({
         alias: bodyAlias(variant, sheet),
@@ -163,7 +160,7 @@ function resolveBakedUnitForRuntime(unit: UnitEntity): BakedUnitType | undefined
 
 function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType): string | null {
   if (!unit.owner) return null
-  const preferredGender = bakedUnit === 'hero' ? unit.owner.gender : null
+  const preferredGender = unit.appearanceVariants?.gender ?? (bakedUnit === 'hero' ? unit.owner.gender : null)
   return bakedVariantKey(unit.owner, `${unit.owner.label}:${unit.label}:${unit.i}:${unit.j}`, preferredGender)
 }
 
@@ -214,7 +211,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     standingSheet: 3,
     walkingSheet: 3,
     actionSheet: 3,
-    ridingSheet: 3,
     harvestSheet: 3,
     loadedSheet: 3,
     dyingSheet: 1,
@@ -236,7 +232,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       standingSheet: walking,
       walkingSheet: walking,
       actionSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'action'),
-      ridingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'riding'),
       dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),
       corpseSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'corpse'),
     }
@@ -255,7 +250,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       dyingSheet: bodyDying,
       corpseSheet: bodyCorpse,
     }
-    return resolvedBakedUnit === 'hero' ? { ...sheets, ridingSheet: actionAlias(variant, `riding/${actionAnimation}`) } : sheets
+    return sheets
   }
 
   unit.allAssets = {

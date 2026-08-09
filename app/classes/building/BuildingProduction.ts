@@ -80,6 +80,7 @@ function getProductionTime(
 function getTrainingExtra(building: Building, trainee: UnitEntity, type: string): UnitCreationExtra | undefined {
   const baseExtra: UnitCreationExtra = {}
   if (trainee.name) baseExtra.name = trainee.name
+  if (trainee.appearanceVariants) baseExtra.appearanceVariants = { ...trainee.appearanceVariants }
   if (trainee.mountedOnHorse) {
     baseExtra.mountedOnHorse = true
     const traineeSpeed = Number(trainee.speed)

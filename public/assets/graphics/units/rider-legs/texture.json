@@ -1,0 +1,95 @@
+{
+  "frames": {
+    "000_graphics_units_rider-legs.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "001_graphics_units_rider-legs.png": {
+      "frame": {
+        "x": 54,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "002_graphics_units_rider-legs.png": {
+      "frame": {
+        "x": 108,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 54,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 54,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "meta": {
+    "app": "rts-game",
+    "version": "1.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 162,
+      "h": 62
+    },
+    "scale": "1"
+  },
+  "animations": {
+    "default": [
+      "000_graphics_units_rider-legs.png",
+      "001_graphics_units_rider-legs.png",
+      "002_graphics_units_rider-legs.png"
+    ]
+  },
+  "animationSpeed": 0
+}

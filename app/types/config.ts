@@ -16,6 +16,7 @@ export type UnitAppearanceLayerConfig = {
   hideWhenLoading?: boolean
   showWhenLoading?: boolean
   hideForActions?: string[]
+  mountedCut?: boolean
   workTypes?: string[]
   minLevel?: number
   maxLevel?: number
@@ -30,6 +31,7 @@ export type UnitAppearanceLayerConfig = {
   paletteSize?: number
   standingSheet?: string
   walkingSheet?: string
+  mountedSheet?: string
   actionSheet?: string
   harvestSheet?: string
   loadedSheet?: string

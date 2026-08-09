@@ -86,6 +86,7 @@ type EquipmentOptions = Pick<
   | 'hideForActions'
   | 'minLevel'
   | 'maxLevel'
+  | 'mountedCut'
   | 'actionWorkSheetOverrides'
 >
 type AgeEquipmentOverrides = Partial<Record<number, DynamicEquipmentKey>>
@@ -204,6 +205,57 @@ const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'crest',
   'centurion_crest',
   'centurion_plumage',
+])
+
+const MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
+  'crest',
+  'centurion_crest',
+  'centurion_plumage',
+])
+
+const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
+  'axe_copper',
+  'axe_ceramic',
+  'axe_bronze',
+  'axe_iron',
+  'pickaxe_copper',
+  'pickaxe_ceramic',
+  'pickaxe_bronze',
+  'pickaxe_iron',
+  'hammer_copper',
+  'hammer_ceramic',
+  'hammer_bronze',
+  'hammer_iron',
+  'scythe_copper',
+  'scythe_ceramic',
+  'scythe_bronze',
+  'scythe_iron',
+  'bow',
+  'bow_great',
+  'bow_recurve',
+  'halberd',
+  'sword_copper',
+  'sword_ceramic',
+  'sword_bronze',
+  'sword_iron',
+  'helmet_pointed_ceramic',
+  'helmet_pointed_copper',
+  'helmet_pointed_bronze',
+  'helmet_pointed_iron',
+  'helmet_barbuta_ceramic',
+  'helmet_barbuta_copper',
+  'helmet_barbuta_bronze',
+  'helmet_barbuta_iron',
+  'crest',
+  'centurion_crest',
+  'centurion_plumage',
+  'longsword',
+  'round_shield_ceramic_slash',
+  'round_shield_copper_slash',
+  'round_shield_bronze_slash',
+  'round_shield_iron_slash',
+  'cane',
+  'quiver',
 ])
 
 const EQUIPMENT_SHEET_OVERRIDES: Partial<
@@ -513,8 +565,10 @@ function layerConfig(
     ageSheetOverrides: ageSheetOverrides(layer, ageEquipment),
     appearanceVariantKey: GENDERED_EQUIPMENT_KEYS.has(equipment) ? 'gender' : undefined,
     palette: PLAYER_COLORED_EQUIPMENT_KEYS.has(equipment) ? 'player' : undefined,
+    mountedCut: MOUNTED_UNCUT_EQUIPMENT_KEYS.has(equipment) ? false : options.mountedCut,
     standingSheet: walkingSheet,
     walkingSheet,
+    mountedSheet: MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS.has(equipment) ? walkingSheet : undefined,
     actionSheet,
     sheetDirectionCounts: {
       [SHEET_TYPES.standing]: 3,

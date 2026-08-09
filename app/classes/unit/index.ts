@@ -1,4 +1,4 @@
-import { Assets, AnimatedSprite } from 'pixi.js'
+import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import {
   STEP_TIME,
@@ -51,6 +51,15 @@ import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } f
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
 import { heroCanCommand } from '../../lib/chief'
+import {
+  MOUNTED_HORSE_BOB,
+  MOUNTED_RIDER_CUT_Y,
+  MOUNTED_RIDER_LEGS_SHEET,
+  MOUNTED_RIDER_Y_OFFSET,
+  mountedRiderBaseDirection,
+  mountedRiderLegOffset,
+  mountedRiderXOffset,
+} from '../../lib/mountedRider'
 import type {
   BuildingEntity,
   EntityInfoRenderOptions,
@@ -90,12 +99,6 @@ const MOUNTED_HORSE_BEHIND_Z_INDEX = 0
 const MOUNTED_HORSE_FRONT_Z_INDEX = 13
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
 const MOUNTED_HORSE_WALKING_SHEET = 'animals/horse/walking'
-const MOUNTED_RIDER_Y_OFFSET = -20
-const MOUNTED_HORSE_BOB: Record<string, number[]> = {
-  north: [0, 1, 2, 1, 0, -1],
-  west: [0, -1, 0, 1, 2, 0],
-  south: [0, 1, 2, 1, 0, -1],
-}
 const MOUNTED_HORSE_DIRECTIONS_IN_FRONT = new Set(['south', 'southwest', 'southeast'])
 const SHADOW_ALPHA = 0.42
 const SHADOW_SCALE_X = 1.05
@@ -194,6 +197,8 @@ export class Unit extends Instance implements UnitEntity {
   shadow: AnimatedSprite | null
   horseSprite: AnimatedSprite | null
   horseShadow: AnimatedSprite | null
+  mountedRiderLegsSprite: AnimatedSprite | null
+  mountedRiderMask: Graphics | null
   appearanceLayerSprites: Map<number, AnimatedSprite>
   declare reliefLift: number
   sheetDirectionCounts?: Record<string, number>
@@ -225,7 +230,6 @@ export class Unit extends Instance implements UnitEntity {
   currentFrame!: NonNullable<UnitEntity['currentFrame']>
   mountedOnHorse?: UnitEntity['mountedOnHorse']
   actionSheet?: UnitEntity['actionSheet']
-  ridingSheet?: UnitEntity['ridingSheet']
   walkingSheet?: UnitEntity['walkingSheet']
   standingSheet?: UnitEntity['standingSheet']
   loop?: UnitEntity['loop']
@@ -276,6 +280,8 @@ export class Unit extends Instance implements UnitEntity {
     this.shadow = null
     this.horseSprite = null
     this.horseShadow = null
+    this.mountedRiderLegsSprite = null
+    this.mountedRiderMask = null
     this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
     this.reliefLift = 0
@@ -500,13 +506,20 @@ export class Unit extends Instance implements UnitEntity {
   getMountedHorseBob(): number {
     if (!this.mountedOnHorse || !this.horseSprite) return 0
     const direction = degreeToDirection(this.degree) ?? 'south'
-    const bobDirection = direction.includes('north') ? 'north' : direction.includes('south') ? 'south' : 'west'
+    const bobDirection = mountedRiderBaseDirection(direction)
     const bob = MOUNTED_HORSE_BOB[bobDirection]
     return bob[this.horseSprite.currentFrame % bob.length] ?? 0
   }
 
   getMountedRiderY(): number {
-    return this.reliefLift + (this.mountedOnHorse ? MOUNTED_RIDER_Y_OFFSET + this.getMountedHorseBob() : 0)
+    if (!this.mountedOnHorse) return this.reliefLift
+    return this.reliefLift + MOUNTED_RIDER_Y_OFFSET + this.getMountedHorseBob()
+  }
+
+  getMountedRiderX(): number {
+    if (!this.mountedOnHorse) return 0
+    const direction = degreeToDirection(this.degree) ?? 'south'
+    return mountedRiderXOffset(direction)
   }
 
   setupMountedHorseSprite() {
@@ -526,20 +539,136 @@ export class Unit extends Instance implements UnitEntity {
     this.addChild(this.horseSprite)
     this.horseShadow = this.createShadow(this.horseSprite, `${LABEL_TYPES.shadow}-horse`)
     this.addChild(this.horseShadow)
+    this.setupMountedRiderLegsSprite()
     this.syncMountedHorseSprite()
+  }
+
+  setupMountedRiderLegsSprite() {
+    if (!this.mountedOnHorse || this.mountedRiderLegsSprite) return
+    const legsSheet = getCachedSpritesheet(MOUNTED_RIDER_LEGS_SHEET)
+    if (!legsSheet?.textures) return
+
+    const { textures } = getSpriteFrameSelection(legsSheet.textures, this.degree, 3, null)
+    this.mountedRiderLegsSprite = new AnimatedSprite(textures as Texture[])
+    bindAnimatedSpriteToTicker(this.mountedRiderLegsSprite, this.context.app)
+    this.mountedRiderLegsSprite.label = `${LABEL_TYPES.sprite}-mounted-rider-legs`
+    this.mountedRiderLegsSprite.eventMode = 'none'
+    this.mountedRiderLegsSprite.roundPixels = true
+    this.mountedRiderLegsSprite.loop = false
+    this.mountedRiderLegsSprite.updateAnchor = true
+    this.mountedRiderLegsSprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX - 1
+    this.addChild(this.mountedRiderLegsSprite)
+    this.syncMountedRiderLegsSprite()
   }
 
   syncMountedRiderPosition() {
     if (!this.sprite) return
+    const riderX = this.getMountedRiderX()
     const riderY = this.getMountedRiderY()
+    this.sprite.position.x = riderX
     this.sprite.position.y = riderY
     for (const layerSprite of this.appearanceLayerSprites.values()) {
+      layerSprite.position.x = riderX
       layerSprite.position.y = riderY
     }
+    this.syncMountedRiderLegsSprite()
+    this.updateMountedRiderMask(this.currentSheet)
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = riderY
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
     if (powerBar) powerBar.position.y = riderY
+  }
+
+  shouldUseMountedRiderCut(sheet = this.currentSheet): boolean {
+    return Boolean(
+      this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
+    )
+  }
+
+  updateMountedRiderMask(sheet = this.currentSheet) {
+    if (!this.shouldUseMountedRiderCut(sheet) || !this.sprite?.textures?.length) {
+      this.clearMountedRiderMask()
+      return
+    }
+
+    const texture = this.sprite.textures[0] as Texture
+    const frameHeight = texture.height || 64
+    const scaleY = Math.max(0.001, Math.abs(this.sprite.scale.y || 1))
+    const topY = this.sprite.position.y - this.sprite.anchor.y * frameHeight * scaleY
+    const cutHeight = Math.min(MOUNTED_RIDER_CUT_Y, frameHeight) * scaleY
+
+    if (!this.mountedRiderMask) {
+      this.mountedRiderMask = new Graphics()
+      this.mountedRiderMask.label = `${LABEL_TYPES.sprite}-mounted-rider-mask`
+      this.mountedRiderMask.eventMode = 'none'
+      this.addChild(this.mountedRiderMask)
+    }
+
+    this.mountedRiderMask.clear()
+    this.mountedRiderMask.rect(-512, topY, 1024, cutHeight).fill({ color: 0xffffff })
+    this.sprite.mask = this.mountedRiderMask
+    for (const [spriteKey, layerSprite] of this.appearanceLayerSprites.entries()) {
+      const layer = this.appearance?.layers[spriteKey]
+      layerSprite.mask = layer?.mountedCut === false ? null : this.mountedRiderMask
+    }
+  }
+
+  clearMountedRiderMask() {
+    if (this.sprite) this.sprite.mask = null
+    for (const layerSprite of this.appearanceLayerSprites.values()) {
+      layerSprite.mask = null
+    }
+    if (!this.mountedRiderMask) return
+    this.mountedRiderMask.parent?.removeChild(this.mountedRiderMask)
+    this.mountedRiderMask.destroy()
+    this.mountedRiderMask = null
+  }
+
+  getMountedRiderBodyTopLeft(): { x: number; y: number; width: number; scale: number } {
+    const texture = (this.sprite.textures[0] as Texture | undefined) ?? null
+    const width = texture?.width || 64
+    const height = texture?.height || 64
+    const scale = Math.max(0.001, Math.abs(this.sprite.scale.y || this.spriteScale || 1))
+    const mirrored = this.sprite.scale.x < 0
+    const x = mirrored
+      ? this.sprite.position.x - (1 - this.sprite.anchor.x) * width * scale
+      : this.sprite.position.x - this.sprite.anchor.x * width * scale
+    const y = this.sprite.position.y - this.sprite.anchor.y * height * scale
+    return { x, y, width, scale }
+  }
+
+  syncMountedRiderLegsSprite() {
+    if (!this.mountedOnHorse) {
+      this.removeMountedRiderLegsSprite()
+      return
+    }
+    if (!this.mountedRiderLegsSprite) this.setupMountedRiderLegsSprite()
+    if (!this.mountedRiderLegsSprite) return
+
+    const legsSheet = getCachedSpritesheet(MOUNTED_RIDER_LEGS_SHEET)
+    if (!legsSheet?.textures) return
+
+    const { textures, mirrored } = getSpriteFrameSelection(legsSheet.textures, this.degree, 3, null)
+    const body = this.getMountedRiderBodyTopLeft()
+    const direction = degreeToDirection(this.degree) ?? 'south'
+    const legOffset = mountedRiderLegOffset(direction, body.scale)
+
+    this.mountedRiderLegsSprite.textures = textures as Texture[]
+    this.mountedRiderLegsSprite.anchor.set(0, 0)
+    this.mountedRiderLegsSprite.scale.x = mirrored ? -body.scale : body.scale
+    this.mountedRiderLegsSprite.scale.y = body.scale
+    this.mountedRiderLegsSprite.position.x =
+      body.x + (mirrored ? body.width * body.scale - legOffset.x : legOffset.x)
+    this.mountedRiderLegsSprite.position.y = body.y + legOffset.y
+    this.mountedRiderLegsSprite.animationSpeed = 0
+    this.mountedRiderLegsSprite.gotoAndStop(0)
+  }
+
+  removeMountedRiderLegsSprite() {
+    if (!this.mountedRiderLegsSprite) return
+    this.mountedRiderLegsSprite.parent?.removeChild(this.mountedRiderLegsSprite)
+    this.mountedRiderLegsSprite.destroy({ children: true, texture: false })
+    this.mountedRiderLegsSprite = null
   }
 
   syncMountedHorseSprite() {
@@ -548,6 +677,7 @@ export class Unit extends Instance implements UnitEntity {
       return
     }
     if (!this.horseSprite) this.setupMountedHorseSprite()
+    if (!this.mountedRiderLegsSprite) this.setupMountedRiderLegsSprite()
     if (!this.horseSprite) return
 
     const horseShouldMove = this.currentSheet === SHEET_TYPES.walking || this.isDirectMoving
@@ -582,10 +712,13 @@ export class Unit extends Instance implements UnitEntity {
     } else {
       this.horseSprite.gotoAndPlay(Math.min(frame, this.horseSprite.textures.length - 1))
     }
+    this.syncMountedRiderLegsSprite()
     this.syncShadow(this.horseShadow, this.horseSprite)
   }
 
   removeMountedHorseSprite() {
+    this.clearMountedRiderMask()
+    this.removeMountedRiderLegsSprite()
     if (this.horseShadow) {
       this.horseShadow.parent?.removeChild(this.horseShadow)
       this.horseShadow.destroy({ children: true, texture: false })
@@ -669,10 +802,15 @@ export class Unit extends Instance implements UnitEntity {
       const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
       const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
       const ageSheetOverride = getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
+      const mountedSheetOverride =
+        this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
+          ? layer.mountedSheet
+          : undefined
       const baseSheetId =
         loadedSheetOverride ??
         actionWorkSheetOverride ??
         workSheetOverride ??
+        mountedSheetOverride ??
         ageSheetOverride ??
         (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
       const playerColorVariant = this.owner.color ? layer.playerColorVariants?.[this.owner.color] : undefined
@@ -721,7 +859,7 @@ export class Unit extends Instance implements UnitEntity {
 
       let layerSprite = this.appearanceLayerSprites.get(spriteKey)
       const frameIndex =
-        this.mountedOnHorse && sheet !== SHEET_TYPES.action
+        mountedSheetOverride || (this.mountedOnHorse && sheet !== SHEET_TYPES.action)
           ? 0
           : Math.min(this.sprite.currentFrame, Math.max(textures.length - 1, 0))
 
@@ -730,6 +868,7 @@ export class Unit extends Instance implements UnitEntity {
         bindAnimatedSpriteToTicker(layerSprite, this.context.app)
         layerSprite.label = `${LABEL_TYPES.sprite}-layer-${spriteKey}`
         layerSprite.eventMode = 'none'
+        layerSprite.position.x = this.getMountedRiderX()
         layerSprite.position.y = this.getMountedRiderY()
         layerSprite.roundPixels = true
         layerSprite.loop = this.loop ?? true
@@ -744,6 +883,8 @@ export class Unit extends Instance implements UnitEntity {
       }
 
       layerSprite.visible = true
+      layerSprite.position.x = this.getMountedRiderX()
+      layerSprite.position.y = this.getMountedRiderY()
       layerSprite.zIndex = layer.zIndex
       layerSprite.textures = textures as Texture[]
       if (layer.palette === 'player') {
@@ -761,7 +902,7 @@ export class Unit extends Instance implements UnitEntity {
       }
       layerSprite.animationSpeed = spritesheet.data?.animationSpeed ?? 0.18
       layerSprite.currentFrame = frameIndex
-      if (this.mountedOnHorse && sheet !== SHEET_TYPES.action) {
+      if (mountedSheetOverride || (this.mountedOnHorse && sheet !== SHEET_TYPES.action)) {
         layerSprite.gotoAndStop(frameIndex)
       } else if (this.sprite.playing) {
         layerSprite.gotoAndPlay(frameIndex)
@@ -784,6 +925,7 @@ export class Unit extends Instance implements UnitEntity {
     this.syncShadow()
     this.syncMountedHorseSprite()
     this.syncAppearanceLayers(sheet)
+    this.updateMountedRiderMask(sheet)
   }
 
   applyOwnerColorToSprite() {

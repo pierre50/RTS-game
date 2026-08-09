@@ -10,9 +10,7 @@ import sys
 import warnings
 from pathlib import Path
 
-from PIL import Image
-
-from config import ANCHOR, CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, UNIT_VARIANTS, variant_look_for_civ
+from config import CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, UNIT_VARIANTS, variant_look_for_civ
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
 
@@ -26,7 +24,6 @@ from retro_palette import bake_retro_style, find_hex_palette, load_hex_palette
 from add_sprite_lighting import process_sprite_file
 from outline_style import OUTLINE_MODE, apply_outline_style_to_atlas
 from simple_darken_border import darken_border as apply_simple_darken_border
-from compose_rider import compose_rider_frames
 
 warnings.simplefilter("ignore", DeprecationWarning)
 
@@ -49,15 +46,10 @@ SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
 CACHE_FILENAME = ".build-cache.json"
 SheetPlan = dict[str, tuple[Sheet, str, str | None]]
 BuildTask = tuple[str, Sheet, str]
-RIDER_LEGS_PATH = PROJECT_ROOT / "scripts" / "legs_3frames.png"
 
 
 def animation_speed_for(output_sheet: str) -> float:
     return 0 if output_sheet == "corpse" else LPC_ANIMATION_SPEED
-
-
-def is_riding_output(relative_suffix: str) -> bool:
-    return relative_suffix == "action/riding" or relative_suffix.startswith("action/riding/")
 
 
 def file_fingerprint(path: Path) -> dict[str, int | str]:
@@ -108,8 +100,6 @@ def script_dependencies(retro_palette_hex: Path) -> list[dict[str, int | str]]:
         PROJECT_ROOT / "scripts/lpc/image_pipeline.py",
         PROJECT_ROOT / "scripts/lpc/jobs.py",
         PROJECT_ROOT / "scripts/lpc/outline_style.py",
-        PROJECT_ROOT / "scripts/compose_rider.py",
-        RIDER_LEGS_PATH,
         RETRO_PALETTE_ROOT / "retro_palette.py",
         SPRITE_LIGHTING_ROOT / "add_sprite_lighting.py",
         retro_palette_hex,
@@ -184,7 +174,6 @@ def build_sheet_plan(unit: str, job: Job) -> SheetPlan:
     plan = {
         "walking": (SHEET_BY_KEY["walking"], "walk", job.walking_equipment),
         "action": (SHEET_BY_ANIMATION[job.action_animation], job.action_animation, job.action_equipment),
-        "riding": (SHEET_BY_ANIMATION[job.action_animation], job.action_animation, job.action_equipment),
     }
     if unit != "villager" or job.key == "default":
         plan["dying"] = (SHEET_BY_KEY["dying"], "hurt", job.hurt_equipment)
@@ -212,8 +201,6 @@ def hero_build_tasks() -> list[BuildTask]:
         ("body/corpse", SHEET_BY_KEY["corpse"], "hurt"),
         ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
         ("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
-        ("action/riding/slash", SHEET_BY_ANIMATION["slash"], "slash"),
-        ("action/riding/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
     ]
 
 
@@ -311,15 +298,7 @@ def build(
                         compose_frame(layers, frame_index, source_sheet.columns)
                         for frame_index in source_frames(source_sheet)
                     ]
-                    anchor_override = None
-                    if is_riding_output(relative_suffix):
-                        base_frame_height = frames[0].height
-                        frames = compose_rider_frames(frames, Image.open(RIDER_LEGS_PATH).convert("RGBA"))
-                        anchor_override = {
-                            "x": ANCHOR["x"],
-                            "y": ANCHOR["y"] * base_frame_height / frames[0].height,
-                        }
-                    bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette, anchor_override)
+                    bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette)
                     rebuilt += 1
                 print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")
