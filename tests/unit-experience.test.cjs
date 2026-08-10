@@ -46,6 +46,10 @@ const constants = {
   },
 }
 
+const entityHealthDisplayMock = {
+  syncEntityHealthDisplay: entity => entity.drawHealthBar?.(),
+}
+
 function loadExperience(feedbackCalls = []) {
   return loadModule('app/lib/unitExperience.ts', {
     '../constants': constants,
@@ -326,6 +330,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       getHealingXpBonus: () => 0,
       grantUnitXp: (unit, category, amount) => xpCalls.push({ category, amount }),
     },
+    '../../lib/entityHealthDisplay': entityHealthDisplayMock,
     '../../lib/unitControl': {
       isHeroControlled: () => false,
       isManualHeroActionReleased: () => false,

@@ -1,6 +1,6 @@
-import { MENU_INFO_IDS } from '../constants'
 import { getHitPointsWithDamage, type CombatDamageType, type CombatEntity } from './combat'
 import { showDamageFeedback, showParryFeedback } from './combatFeedback'
+import { syncEntityHealthDisplay } from './entityHealthDisplay'
 import { t } from './lang'
 import { attemptAutomaticParry } from './parry'
 import { grantUnitXp, XP_KILL_BONUS } from './unitExperience'
@@ -32,11 +32,7 @@ export type CombatHitResult = {
 }
 
 function updateHitPointsDisplay(target: RuntimeEntity, player?: PlayerLike | null, menu?: MenuLike | null): void {
-  if (!(target.selected || target.shouldKeepHealthBarVisible?.())) return
-  target.drawHealthBar?.()
-  if (player?.selectedUnit === target || player?.selectedBuilding === target || player?.selectedOther === target) {
-    menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, target.hitPoints + '/' + target.totalHitPoints)
-  }
+  syncEntityHealthDisplay(target, { player, menu })
 }
 
 function applyFactionAttackPenalty(attacker: RuntimeEntity, target: RuntimeEntity, killed: boolean, damageDealt: number): void {

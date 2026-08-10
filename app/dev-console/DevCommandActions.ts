@@ -4,6 +4,7 @@ export {
   toggleCoordsDebug,
   toggleFreeCamera,
   toggleGridDebug,
+  toggleHeroAimDebug,
   toggleHeroCollisionDebug,
   togglePathDebug,
   togglePerfDebug,

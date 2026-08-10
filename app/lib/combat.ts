@@ -393,7 +393,7 @@ export const getActionCondition = (
       (target.hitPoints ?? 0) > 0 &&
       target.owner?.label === source.owner?.label &&
       (target.quantity ?? 0) > 0 &&
-      (!target.isUsedBy || target.isUsedBy === source) &&
+      (source.type === UNIT_TYPES.hero || !target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
       isVillagerOrHero(source) &&

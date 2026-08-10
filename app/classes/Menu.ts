@@ -198,6 +198,8 @@ export default class Menu implements MenuLike {
   updateInfo(target: string, action: string | number | ((element: HTMLElement) => void)): void {
     void target
     void action
+    this.entityInfoModalManager.syncLiveState()
+    this.heroBuildingMenuManager.syncLiveState()
   }
   updateButtonContent(target: string, action: string | ((element: HTMLElement) => void)): void {
     void target
@@ -320,6 +322,9 @@ export default class Menu implements MenuLike {
   }
   closeEntityInfoModal(): void {
     return this.entityInfoModalManager.close()
+  }
+  syncEntityInfoModal(): void {
+    return this.entityInfoModalManager.syncLiveState()
   }
   isHeroBuildingMenuOpen(): boolean {
     return this.heroBuildingMenuManager.isOpen()

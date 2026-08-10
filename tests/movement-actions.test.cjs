@@ -26,6 +26,17 @@ const unitExperienceMock = {
   grantUnitXp: () => {},
 }
 
+const entityHealthDisplayMock = {
+  syncEntityHealthDisplay: (entity, options = {}) => {
+    entity.drawHealthBar?.()
+    if (options.menu && (options.forceInfo || entity.selected)) {
+      const value =
+        options.emptyWhenDepleted && (entity.hitPoints ?? 0) <= 0 ? '' : `${entity.hitPoints}/${entity.totalHitPoints}`
+      options.menu.updateInfo?.('hitPoints', value)
+    }
+  },
+}
+
 function mockRoundedIsoShapePoints({ x, y }) {
   return [
     { x, y: y - 10 },
@@ -47,6 +58,7 @@ function loadModule(relativePath, mocks) {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/lang') return { t: value => value }
     if (request === '../../lib/diplomaticAggression') {
       return {
@@ -2041,6 +2053,38 @@ test('exploration orders bypass the human command throttle', () => {
   assert.deepEqual(calls, [['sendToEvt', targetCell, null, { forceRepath: true }]])
 })
 
+test('runaway units use the shared reachable flee cell selection', () => {
+  const calls = []
+  const escapeCell = { i: 2, j: 5, solid: false, category: 'Land', border: false }
+  let optionsSeen = null
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      findReachableFleeCell: (_unit, _threat, _map, options) => {
+        optionsSeen = options
+        return escapeCell
+      },
+    },
+  })
+  const unit = {
+    context: { map: { grid: [] } },
+    i: 5,
+    j: 5,
+    sight: 3,
+    sendTo: cell => calls.push(['sendTo', cell]),
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitMovement(unit).runaway({ i: 3, j: 5 })
+
+  assert.deepEqual(calls, [['sendTo', escapeCell]])
+  assert.equal(optionsSeen.range, 3)
+  assert.equal(optionsSeen.isCellAllowed({ solid: true, category: 'Land', border: false }), false)
+  assert.equal(optionsSeen.isCellAllowed({ solid: false, category: 'Water', border: false }), false)
+  assert.equal(optionsSeen.isCellAllowed({ solid: false, category: 'Land', border: true }), false)
+  assert.equal(optionsSeen.isCellAllowed({ solid: false, category: 'Land', border: false }), true)
+})
+
 test('delivery shows a resource gain over the delivering unit', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
@@ -2101,6 +2145,80 @@ test('delivery shows a resource gain over the delivering unit', () => {
     ['updateInterfaceLoading'],
     ['setTextures', 'standing'],
     ['stop'],
+  ])
+})
+
+test('hero farming does not claim or replace the farm worker slot', () => {
+  const occupant = { label: 'villager-1' }
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wheat: 'wheat' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { gatherFood: 'gather-food' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      SLASH_IMPACT_FRAME: 3,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/buildings/towers': {
+      getTowerType: () => constants.BUILDING_TYPES.watchTower,
+      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
+    },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const farm = {
+    family: constants.FAMILY_TYPES.building,
+    isUsedBy: occupant,
+    label: 'farm-1',
+    quantity: 20,
+    selected: true,
+    type: constants.BUILDING_TYPES.farm,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.farm,
+    allAssets: { [constants.WORK_TYPES.farmer]: {} },
+    context: { menu: { updateInfo: (id, value) => calls.push(['updateInfo', id, value]) } },
+    dest: farm,
+    label: 'hero',
+    loading: 0,
+    loadingMax: { wheat: 10 },
+    owner: { isPlayed: true },
+    sprite: {},
+    work: constants.WORK_TYPES.farmer,
+    getActionCondition: target => target === farm,
+    getWorkSound: () => 'gather-food',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
+
+  assert.equal(farm.isUsedBy, occupant)
+  assert.equal(unit.loading, 1)
+  assert.equal(farm.quantity, 19)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['updateInterfaceLoading'],
+    ['feedback', 'hero', 1],
+    ['updateInfo', 'quantityText', 19],
   ])
 })
 

@@ -115,7 +115,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
 
 function createController({
   nearbyGroup = [],
-  getInstanceDegree,
+  getInstanceDegree = () => 0,
   heroToolsOverride = {},
   commIndicatorDelayMs,
   resolveCommGroup,
@@ -177,6 +177,7 @@ function createController({
     beginHeroDefense: () => false,
     cancelHeroBowCharge: () => {},
     cancelHeroDefense: () => {},
+    getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
     HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,

@@ -10,6 +10,7 @@ export const DEBUG_PATH_LAYER = 'debugPathLayer'
 export const DEBUG_VISION_LAYER = 'debugVisionLayer'
 export const DEBUG_GRID_LAYER = 'debugGridLayer'
 export const DEBUG_COORDS_LAYER = 'debugCoordsLayer'
+export const DEBUG_HERO_AIM_LAYER = 'debugHeroAimLayer'
 export const DEBUG_HERO_COLLISION_LAYER = 'debugHeroCollisionLayer'
 export const DEBUG_TERRAIN_FRAME_LAYER = 'debugTerrainFrameLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
@@ -186,6 +187,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     '_debugVisionTicker',
     '_debugGridTicker',
     '_debugCoordsTicker',
+    '_debugHeroAimTicker',
     '_debugHeroCollisionTicker',
     '_debugPerfTicker',
     '_debugAiInfoTicker',
@@ -201,6 +203,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     DEBUG_VISION_LAYER,
     DEBUG_GRID_LAYER,
     DEBUG_COORDS_LAYER,
+    DEBUG_HERO_AIM_LAYER,
     DEBUG_HERO_COLLISION_LAYER,
     DEBUG_TERRAIN_FRAME_LAYER,
   ]

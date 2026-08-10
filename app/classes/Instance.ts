@@ -129,7 +129,12 @@ export class Instance extends Container {
     if (commSelection) commSelection.position.y = y
   }
 
-  startInterval(callback: () => void, time: number, immediate = true, name = `${this.family || 'instance'}.interval`): void {
+  startInterval(
+    callback: () => void,
+    time: number,
+    immediate = true,
+    name = `${this.family || 'instance'}.interval`
+  ): void {
     this.stopInterval()
     this.interval = this.context.scheduler.add(callback, time, name)
     if (immediate) callback()

@@ -8,6 +8,10 @@ const constants = {
   MENU_INFO_IDS: { hitPoints: 'hitPoints' },
 }
 
+const entityHealthDisplayMock = {
+  syncEntityHealthDisplay: () => {},
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -32,6 +36,7 @@ function loadCombatHit({ rawDamage = 6, parryResult = false, grantCalls = [], fe
       showDamageFeedback: (target, damage) => feedbackCalls.push({ kind: 'damage', target, damage }),
       showParryFeedback: (target, text) => feedbackCalls.push({ kind: 'parry', target, text }),
     },
+    './entityHealthDisplay': entityHealthDisplayMock,
     './lang': { t: key => key },
     './parry': { attemptAutomaticParry: () => parryResult },
     './unitExperience': {
@@ -66,6 +71,7 @@ test('isMelee is required to even attempt a parry — a ranged hit never rolls o
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - 6 },
     './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
+    './entityHealthDisplay': entityHealthDisplayMock,
     './lang': { t: key => key },
     './parry': {
       attemptAutomaticParry: () => {

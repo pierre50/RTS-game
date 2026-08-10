@@ -28,7 +28,7 @@ import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
 import { t } from './lang'
-import { angleDelta, degreeToDirection, getInstanceDegree, getReliefOffset } from './maths'
+import { angleDelta, degreeToDirection, getReliefOffset } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
 import {
@@ -77,6 +77,7 @@ const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * HERO_ARROW_CELL_DISTANCE
+const HERO_AIM_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
 
 export const contextualToolByAction: Partial<Record<HeroContextAction, HeroCivilTool>> = {
   chop: 'axe',
@@ -88,6 +89,12 @@ export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
   axe: 1,
   pickaxe: 1,
   hammer: 1,
+}
+
+export function getHeroAimDegree(hero: Point, destination: Point): number {
+  const dx = destination.x - hero.x
+  const dy = (destination.y - hero.y) * HERO_AIM_Y_SCALE
+  return Math.round((Math.atan2(dy, dx) * 180) / Math.PI + 180)
 }
 
 const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
@@ -172,7 +179,7 @@ function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string):
   if (hero.actionLocked) return
   hero.setDest?.(target)
   hero.action = action
-  hero.degree = getInstanceDegree(hero, target.x, target.y)
+  hero.degree = getHeroAimDegree(hero, target)
   hero.getAction?.(action)
 }
 
@@ -204,6 +211,8 @@ function getLoadingTypeForAction(action: string): string | null {
       return LOADING_TYPES.berry
     case ACTION_TYPES.takemeat:
       return LOADING_TYPES.meat
+    case ACTION_TYPES.farm:
+      return LOADING_TYPES.wheat
     default:
       return null
   }
@@ -238,8 +247,13 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   {
     action: 'gather',
     matches: target =>
-      resourceKind(target) === 'Berrybush' || (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
+      resourceKind(target) === 'Berrybush' ||
+      (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) ||
+      (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
+      if (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
+        return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
+      }
       if (resourceKind(target) === 'Berrybush') {
         return getActionCondition(hero, target, ACTION_TYPES.forageberry)
           ? resolveHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
@@ -484,7 +498,7 @@ function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): bool
 }
 
 function getAimDelta(hero: UnitEntity, target: Point): number {
-  return angleDelta(getInstanceDegree(hero, target.x, target.y), hero.degree ?? 0)
+  return angleDelta(getHeroAimDegree(hero, target), hero.degree ?? 0)
 }
 
 // A mounted hero can't snap-turn the horse to face an attack the way an unmounted hero can, so
@@ -492,7 +506,7 @@ function getAimDelta(hero: UnitEntity, target: Point): number {
 // swing/shot) until the player physically re-orients the horse via movement.
 export function isMountedAttackAimBlocked(hero: UnitEntity, point: Point): boolean {
   if (!hero.mountedOnHorse) return false
-  return angleDelta(getInstanceDegree(hero, point.x, point.y), hero.degree ?? 0) > MOUNTED_ATTACK_HALF_ANGLE
+  return angleDelta(getHeroAimDegree(hero, point), hero.degree ?? 0) > MOUNTED_ATTACK_HALF_ANGLE
 }
 
 function getDirectionalTarget<T extends RuntimeEntity>(
@@ -601,6 +615,9 @@ function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): Run
 }
 
 function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {
+  if (contextAction === 'gather' && target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
+    return ACTION_TYPES.farm
+  }
   if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
   if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (contextAction === 'chop' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
@@ -932,7 +949,7 @@ export function updateHeroDefense(hero: UnitEntity, now = performance.now()): vo
 export function aimHeroDefenseAt(hero: UnitEntity, destination: Point): boolean {
   if (!hero.heroDefenseActive) return false
   const previousDirection = degreeToDirection(hero.degree ?? 0)
-  hero.degree = getInstanceDegree(hero, destination.x, destination.y)
+  hero.degree = getHeroAimDegree(hero, destination)
   if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
     hero.setTextures?.(SHEET_TYPES.action)
     continueHeroDefenseAnimation(hero)
@@ -980,7 +997,7 @@ export function cancelHeroDefense(hero: UnitEntity): void {
 export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolean {
   if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
   const previousDirection = degreeToDirection(hero.degree ?? 0)
-  hero.degree = getInstanceDegree(hero, destination.x, destination.y)
+  hero.degree = getHeroAimDegree(hero, destination)
   hero.heroBowChargeDestination = destination
   hero.heroBowChargeTarget = null
   if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
@@ -1168,7 +1185,7 @@ export function triggerEquippedItemActionAt(
   destination: Point
 ): boolean {
   if (!tool || hero.actionLocked) return false
-  hero.degree = getInstanceDegree(hero, destination.x, destination.y)
+  hero.degree = getHeroAimDegree(hero, destination)
   const deliveryResult = tryDeliverAt(hero)
   if (deliveryResult === 'delivered') return true
   if (tool === 'bow') {

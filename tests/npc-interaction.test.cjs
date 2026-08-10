@@ -49,6 +49,7 @@ const constants = {
   ACTION_TYPES: {
     attack: 'attack',
     build: 'build',
+    farm: 'farm',
     hunt: 'hunt',
     takemeat: 'takemeat',
     train: 'train',
@@ -60,6 +61,7 @@ const constants = {
     unit: 'unit',
   },
   BUILDING_TYPES: {
+    farm: 'Farm',
     temple: 'Temple',
   },
   COLOR_WHITE: 0xffffff,
@@ -258,6 +260,39 @@ test('"aller vers" sends a communicated villager into a training building', () =
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['train', 'Fantassin', undefined, npc]])
+})
+
+test('"aller vers" sends a communicated villager to farm an available farm', () => {
+  const owner = { label: 'player' }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    isUsedBy: null,
+    j: 5,
+    owner,
+    quantity: 200,
+    type: constants.BUILDING_TYPES.farm,
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: { map: { grid: [] } },
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.farm,
+    i: 1,
+    j: 1,
+    owner,
+    sendToFarm: orderTarget => calls.push(['farm', orderTarget]),
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['farm', target]])
 })
 
 test('"aller vers" sends a communicated villager into a temple to train a priest', () => {

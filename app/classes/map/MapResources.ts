@@ -26,6 +26,9 @@ type NeutralResourceGroup = ResourceGroupEntry & {
   profileKey: NeutralResourceProfileKey
 }
 type ResourceCenter = GridPosition
+type ResourcePlacementOptions = {
+  textureName?: string
+}
 type MapResourcesMap = {
   context: object
   grid: RuntimeCell[][]
@@ -39,7 +42,13 @@ type MapResourcesMap = {
   randomItem<T>(items: T[]): T
   addChild<T extends ContainerChild>(child: T): T
   placeResourceGroup(player: GridPosition, type: ResourceType, quantity: number, range: ResourceRange): boolean
-  placeResourceGroupAt(center: GridPosition, type: ResourceType, quantity: number, clusterRadius?: number): boolean
+  placeResourceGroupAt(
+    center: GridPosition,
+    type: ResourceType,
+    quantity: number,
+    clusterRadius?: number,
+    options?: ResourcePlacementOptions
+  ): boolean
   generateForestAroundPlayer(player: GridPosition, treeCount: number): void
   findNeutralResourceCenter(
     playersPos: GridPosition[],
@@ -115,8 +124,23 @@ function hasSpacedResourceAround(grid: RuntimeCell[][], i: number, j: number, ra
   return false
 }
 
-function createResource(map: MapResourcesMap, i: number, j: number, type: ResourceType): ResourceEntity {
-  return map.addChild(new Resource({ i, j, type }, map.context as ConstructorParameters<typeof Resource>[1]))
+function createResource(
+  map: MapResourcesMap,
+  i: number,
+  j: number,
+  type: ResourceType,
+  options: ResourcePlacementOptions = {}
+): ResourceEntity {
+  return map.addChild(
+    new Resource(
+      { i, j, type, textureName: options.textureName },
+      map.context as ConstructorParameters<typeof Resource>[1]
+    )
+  )
+}
+
+function berryBushTextureName(frame: number): string {
+  return `${String(frame).padStart(3, '0')}_resources/berrybush`
 }
 
 const RESOURCE_DENSITY_PROFILES = {
@@ -498,7 +522,8 @@ export class MapResources {
     center: GridPosition,
     instance: ResourceType,
     quantity: number,
-    clusterRadius: number = 2
+    clusterRadius: number = 2,
+    options: ResourcePlacementOptions = {}
   ): boolean {
     const { grid } = this.map
 
@@ -539,10 +564,16 @@ export class MapResources {
       cellsToPlace.push(validCells.splice(idx, 1)[0])
     }
 
+    const sharedTextureName = options.textureName ?? this.getSharedGroupTextureName(instance)
     for (const cell of cellsToPlace) {
-      this.map.resources.add(createResource(this.map, cell.i, cell.j, instance))
+      this.map.resources.add(createResource(this.map, cell.i, cell.j, instance, { textureName: sharedTextureName }))
     }
     return true
+  }
+
+  getSharedGroupTextureName(instance: ResourceType): string | undefined {
+    if (instance !== RESOURCE_TYPES.berrybush) return undefined
+    return berryBushTextureName(this.map.randomItem([0, 1]))
   }
 
   async generateBiomeTreesAsync(playersPos: GridPosition[]): Promise<void> {

@@ -64,6 +64,10 @@ function makeFakeElement() {
       this.children.push(child)
       return child
     },
+    replaceChildren(...children) {
+      this.children = [...children]
+      this.textContent = ''
+    },
     addEventListener(type, handler) {
       this._listeners[type] = this._listeners[type] || []
       this._listeners[type].push(handler)
@@ -227,5 +231,58 @@ test('resource info modal title uses translated resource type instead of technic
 
     assert.equal(opened, true)
     assert.equal(capturedTitle, 'Portail')
+  })
+})
+
+test('entity info modal syncs live resource health without reopening', () => {
+  withFakeDocument(() => {
+    const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
+      '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
+      '../lib': { changeSpriteColor: () => {} },
+      '../lib/avatar': {
+        renderAnimalAvatar: () => false,
+        renderResourceAvatar: () => false,
+        renderUnitHeadAvatar: () => false,
+      },
+      '../lib/lang': { t: key => key },
+      './entityDisplayName': {
+        getEntityDisplayName: entity => entity.type,
+      },
+      './InspectionPanel': {
+        createInspectionModal: () => ({ close() {} }),
+      },
+    })
+    const player = { unselectAll() {} }
+    const menu = {
+      context: {
+        app: {},
+        controls: {},
+        player,
+      },
+    }
+    const resource = {
+      family: 'resource',
+      type: 'Tree',
+      hitPoints: 5,
+      totalHitPoints: 10,
+      interface: {
+        info: element => {
+          const hp = makeFakeElement()
+          hp.className = 'hit-points'
+          hp.textContent = `${resource.hitPoints}/${resource.totalHitPoints}`
+          element.appendChild(hp)
+        },
+      },
+      select() {},
+    }
+    const manager = new EntityInfoModalManager(menu)
+
+    assert.equal(manager.open(resource), true)
+    assert.equal(manager.infoPanel.children[0].textContent, '5/10')
+
+    resource.hitPoints = 3
+    manager.syncLiveState()
+
+    assert.equal(manager.infoPanel.children[0].textContent, '3/10')
   })
 })

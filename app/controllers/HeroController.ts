@@ -2,7 +2,6 @@ import { Assets, Graphics } from 'pixi.js'
 import {
   cartesianToIsometric,
   drawRoundedIsoShape,
-  getInstanceDegree,
   getReliefOffset,
   getRoundedIsoShapePoints,
   updateInstanceRenderVisibility,
@@ -32,6 +31,7 @@ import {
   triggerToolAttackAt,
   updateHeroDefense,
   updateHeroBowCharge,
+  getHeroAimDegree,
   HERO_TOOL_ORDER,
   type HeroEquippedItem,
 } from '../lib/heroTools'
@@ -204,7 +204,7 @@ export class HeroController {
   facePoint(point: HeroAimPoint): void {
     const unit = this.heroUnit
     if (!unit || unit.actionLocked) return
-    const aimDegree = getInstanceDegree(unit, point.x, point.y)
+    const aimDegree = getHeroAimDegree(unit, point)
     if (unit.degree !== aimDegree) {
       unit.degree = aimDegree
       unit.setTextures?.(unit.currentSheet === SHEET_TYPES.walking ? SHEET_TYPES.walking : SHEET_TYPES.standing)
@@ -240,7 +240,7 @@ export class HeroController {
       if (this.controls.closeAnyHeroPanel()) return true
       if (this.commCharging) return true
       // Only a chief can charge up to give orders — everyone else just resolves the tap
-      // immediately as an inspect/chatter interaction, same as a non-chief always could via F.
+      // immediately as an inspect/chatter interaction.
       if (!heroCanCommand(this.heroUnit)) {
         this.controls.openHeroEntityInteraction()
         return true

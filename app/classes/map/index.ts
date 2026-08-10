@@ -345,8 +345,14 @@ export default class Map extends Container {
     return this.mapResources.placeResourceGroup(player, instance, quantity, range)
   }
 
-  placeResourceGroupAt(center: GridPosition, instance: string, quantity: number, clusterRadius?: number): boolean {
-    return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius)
+  placeResourceGroupAt(
+    center: GridPosition,
+    instance: string,
+    quantity: number,
+    clusterRadius?: number,
+    options?: { textureName?: string }
+  ): boolean {
+    return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
   }
 
   // MapTerrain

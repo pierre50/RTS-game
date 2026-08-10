@@ -22,6 +22,7 @@ import {
   FAMILY_TYPES,
   LABEL_TYPES,
   PLAYER_TYPES,
+  POPULATION_MAX,
   UNIT_TYPES,
   FLOOR_SETS_GRASS,
   FLOOR_SETS_DESERT,
@@ -69,6 +70,7 @@ type GeneratedPosition = GridPosition | null
 // Unowned, indestructible landmark: exactly one is placed per map, never tied to any player.
 const PORTAL_RESOURCE_TYPE = 'Portal'
 const PORTAL_FOOTPRINT_SIZE = 3
+const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
 
 // Outline (not filled) cells of a diamond at exactly `radius` tiles from the origin - used to lay a
 // one-tile-wide wall perimeter around a Town Center without a full path-finding/drafting system.
@@ -926,8 +928,18 @@ export class MapGeneration {
         isBuilt: true,
       })
       if (!towncenter) continue
-      for (let i = 0; i < this.map.startingUnits; i++) {
-        towncenter.placeUnit?.(player.type === PLAYER_TYPES.ai && i === 0 ? UNIT_TYPES.chief : UNIT_TYPES.villager)
+      const hasStartingLeader = player.type === PLAYER_TYPES.ai || player.isPlayed
+      const startingCivilianCount = Math.max(this.map.startingUnits, STARTING_CIVILIAN_GENDERS.length)
+      const requiredStartingPopulation = startingCivilianCount + (hasStartingLeader ? 1 : 0)
+      player.populationMax = Math.max(player.populationMax, Math.min(POPULATION_MAX, requiredStartingPopulation))
+      if (player.type === PLAYER_TYPES.ai) {
+        towncenter.placeUnit?.(UNIT_TYPES.chief)
+      } else if (player.isPlayed) {
+        towncenter.placeUnit?.(UNIT_TYPES.villager)
+      }
+      for (let i = 0; i < startingCivilianCount; i++) {
+        const gender = STARTING_CIVILIAN_GENDERS[i % STARTING_CIVILIAN_GENDERS.length]
+        towncenter.placeUnit?.(UNIT_TYPES.villager, { gender, appearanceVariants: { gender } })
       }
       if (player.civilizationLevel) {
         this.applyCivilizationLevelStartingKit(player, player.civilizationLevel, towncenter)

@@ -192,6 +192,11 @@ test('early resource actions require only their remaining unlocking technologies
   assert.equal(getActionCondition(source, stone, 'minestone'), true)
   assert.equal(getActionCondition(source, gold, 'minegold'), true)
   assert.equal(getActionCondition(source, farm, 'farm'), true)
+
+  const otherVillager = { owner: source.owner, type: constants.UNIT_TYPES.villager }
+  farm.isUsedBy = otherVillager
+  assert.equal(getActionCondition(source, farm, 'farm'), false)
+  assert.equal(getActionCondition({ ...source, type: constants.UNIT_TYPES.hero }, farm, 'farm'), true)
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {

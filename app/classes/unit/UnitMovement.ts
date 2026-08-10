@@ -15,6 +15,7 @@ import {
   degreeToDirection,
   getCellsAroundPoint,
   findInstancesInSight,
+  findReachableFleeCell,
   getClosestInstanceWithPath,
   getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
@@ -1084,20 +1085,13 @@ export class UnitMovement {
     const unit = this.unit
     const map = unit.context?.map
     if (!map) return
-    const di = unit.i - instance.i
-    const dj = unit.j - instance.j
-    const len = Math.sqrt(di * di + dj * dj) || 1
-    for (let dist = unit.sight ?? 0; dist >= 1; dist--) {
-      const ti = Math.round(unit.i + (di / len) * dist)
-      const tj = Math.round(unit.j + (dj / len) * dist)
-      if (ti >= 0 && ti < map.grid.length && tj >= 0 && tj < (map.grid[ti]?.length ?? 0)) {
-        const cell = map.grid[ti][tj]
-        const categoryAllowed = cell.category !== 'Water'
-        if (categoryAllowed && !cell.solid && !cell.border) {
-          unit.sendTo?.(cell)
-          return
-        }
-      }
+    const cell = findReachableFleeCell<RuntimeCell>(unit, instance, map, {
+      isCellAllowed: candidate => !candidate.solid && candidate.category !== 'Water' && !candidate.border,
+      range: unit.sight ?? 0,
+    })
+    if (cell) {
+      unit.sendTo?.(cell)
+      return
     }
     unit.stop?.()
   }

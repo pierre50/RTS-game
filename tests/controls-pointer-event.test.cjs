@@ -67,7 +67,6 @@ function loadControls() {
           return this.active
         }
         handleKeyDown(action) {
-          if (action === 'heroEntityInteraction') return false
           return typeof action === 'string' && action.startsWith('hero')
         }
         handleKeyUp(action) {
@@ -113,7 +112,7 @@ function loadControls() {
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: evt => {
         if (evt.key === 'z') return 'heroUp'
-        if (evt.key === 'f') return 'heroEntityInteraction'
+        if (evt.key === 'e') return 'heroInteract'
         if (evt.key === 'i') return 'inventory'
         if (evt.key === ' ') return 'heroDefense'
         if (evt.key === 'ArrowLeft') return 'cameraLeft'
@@ -485,7 +484,7 @@ test('hero right click no longer opens building selection interaction', () => {
   }
 })
 
-test('hero entity interaction key opens building selection interaction', () => {
+test('hero entity interaction opens building selection interaction', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -500,15 +499,9 @@ test('hero entity interaction key opens building selection interaction', () => {
       return true
     }
 
-    controls.mouse.x = 10
-    controls.mouse.y = 10
-    controls.onKeyDown({
-      key: 'f',
-      code: 'KeyF',
-      preventDefault: () => calls.push('preventDefault'),
-    })
+    assert.equal(controls.openHeroEntityInteraction(building), true)
 
-    assert.deepEqual(calls, ['preventDefault', ['openHeroBuildingMenu', building], 'select'])
+    assert.deepEqual(calls, [['openHeroBuildingMenu', building], 'select'])
     assert.equal(controls.context.player.selectedBuilding, building)
     assert.equal(controls.heroController.primaryPointerDowns, 0)
   } finally {
@@ -586,7 +579,7 @@ test('hero defense key is handled by hero controller', () => {
   }
 })
 
-test('hero entity interaction key opens info modal for units', () => {
+test('hero entity interaction opens info modal for units', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -599,21 +592,15 @@ test('hero entity interaction key opens info modal for units', () => {
       return true
     }
 
-    controls.mouse.x = 10
-    controls.mouse.y = 10
-    controls.onKeyDown({
-      key: 'f',
-      code: 'KeyF',
-      preventDefault: () => calls.push('preventDefault'),
-    })
+    assert.equal(controls.openHeroEntityInteraction(unit), true)
 
-    assert.deepEqual(calls, ['preventDefault', ['openEntityInfoModal', unit]])
+    assert.deepEqual(calls, [['openEntityInfoModal', unit]])
   } finally {
     restore()
   }
 })
 
-test('hero entity interaction key on self does not open info modal', () => {
+test('hero entity interaction on self does not open info modal', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -626,15 +613,9 @@ test('hero entity interaction key on self does not open info modal', () => {
       return true
     }
 
-    controls.mouse.x = 10
-    controls.mouse.y = 10
-    controls.onKeyDown({
-      key: 'f',
-      code: 'KeyF',
-      preventDefault: () => calls.push('preventDefault'),
-    })
+    assert.equal(controls.openHeroEntityInteraction(hero), false)
 
-    assert.deepEqual(calls, ['preventDefault'])
+    assert.deepEqual(calls, [])
   } finally {
     restore()
   }

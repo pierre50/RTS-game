@@ -89,7 +89,7 @@ export class HeroBuildingMenuManager {
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
     const hero = this.menu.context.controls.heroUnit
     const player = this.menu.context.player
-    if (!hero || !building || building.isDestroyed || building.isDead || !building.isBuilt) return false
+    if (!hero || !building || building.isDestroyed || building.isDead) return false
     if (building.owner !== player || !building.owner?.isPlayed) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }

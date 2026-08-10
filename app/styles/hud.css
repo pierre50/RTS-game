@@ -78,9 +78,7 @@
   padding: 8px 10px;
   border: var(--panel-border);
   border-radius: var(--main-border-radius-lg);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%),
-    var(--main-primary-color);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%), var(--main-primary-color);
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.42),
     inset 0 -2px 0 rgba(5, 7, 18, 0.82),
@@ -101,9 +99,7 @@
   height: 76px;
   min-height: 0;
   border: 0;
-  background:
-    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.08), transparent 56%),
-    rgba(5, 7, 18, 0.22);
+  background: radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.08), transparent 56%), rgba(5, 7, 18, 0.22);
   box-shadow:
     inset 0 0 0 1px rgba(207, 216, 255, 0.18),
     inset 0 -2px 0 rgba(5, 7, 18, 0.56);
@@ -243,18 +239,14 @@
   text-shadow: var(--text-shadow-light-ui);
   border: var(--ui-slot-border);
   border-radius: var(--main-border-radius);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 34%),
-    var(--surface-black-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 34%), var(--surface-black-soft);
   transition:
     border-color var(--ui-transition-panel),
     background-color var(--ui-transition-panel);
 }
 
 .selection-info.active {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%),
-    var(--surface-black-solid);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%), var(--surface-black-solid);
 }
 
 .selection-info .entity-info-header {
@@ -995,9 +987,7 @@
   height: 96px;
   min-height: 0;
   border: var(--ui-slot-border);
-  background:
-    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.08), transparent 58%),
-    var(--surface-black-soft);
+  background: radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.08), transparent 58%), var(--surface-black-soft);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -2px 0 rgba(5, 7, 18, 0.72);

@@ -358,6 +358,7 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   getShadowTexture(): Texture | null {
+    if (this.type === BUILDING_TYPES.farm) return null
     if (!this.textureName) return null
     const sheet = getTextureSheet(this.textureName)
     const shadowAtlasId = `${sheet}/shadow`

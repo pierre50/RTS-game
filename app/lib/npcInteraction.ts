@@ -556,6 +556,10 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
       npc.sendToBuilding?.(target as BuildingEntity)
       return true
     }
+    if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.farm)) {
+      npc.sendToFarm?.(target)
+      return true
+    }
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (building.owner === npc.owner && building.isBuilt) {

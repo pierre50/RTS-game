@@ -45,6 +45,7 @@ import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
+import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
@@ -514,7 +515,7 @@ export class UnitActions {
         }
         const dest = isBuildingEntity(unit.dest) ? unit.dest : null
         if (!dest) return
-        dest.isUsedBy = unit
+        if (!isHeroControlled(unit)) dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
         lockManualHeroAction(unit)
@@ -527,7 +528,7 @@ export class UnitActions {
             unit.affectNewDest?.()
             return
           }
-          if (d) d.isUsedBy = unit
+          if (d && !isHeroControlled(unit)) d.isUsedBy = unit
           const maxLoad = unit.loadingMax?.[LOADING_TYPES.wheat] ?? Infinity
           const wasEmpty = (unit.loading ?? 0) === 0
           const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
@@ -612,11 +613,7 @@ export class UnitActions {
             showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
             grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
             if (dest.selected) {
-              dest.drawHealthBar?.()
-              menu?.updateInfo?.(
-                MENU_INFO_IDS.hitPoints,
-                (dest.hitPoints ?? 0) > 0 ? dest.hitPoints + '/' + dest.totalHitPoints : ''
-              )
+              syncEntityHealthDisplay(dest, { menu, player, emptyWhenDepleted: true })
             }
             if ((dest.hitPoints ?? 0) <= 0) {
               dest.hitPoints = 0
@@ -696,10 +693,7 @@ export class UnitActions {
             )
             grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
             if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-              dest.drawHealthBar?.()
-              if (unit.owner?.isPlayed) {
-                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
-              }
+              syncEntityHealthDisplay(dest, { menu, player, forceInfo: unit.owner?.isPlayed })
             }
             dest.updateHitPoints?.(unit.action ?? '')
           } else {
@@ -784,10 +778,7 @@ export class UnitActions {
             if (healedAmount > 0) showHealingFeedback(dest)
             grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
             if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-              dest.drawHealthBar?.()
-              if (player?.selectedUnit === dest) {
-                menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, dest.hitPoints + '/' + dest.totalHitPoints)
-              }
+              syncEntityHealthDisplay(dest, { menu, player })
             }
           }
         }

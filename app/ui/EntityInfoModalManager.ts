@@ -127,6 +127,14 @@ function createPortalInfoModalContent(menu: Menu, portal: ResourceEntity): HTMLE
   const content = document.createElement('div')
   content.className = 'portal-info-modal-content'
   const infoContent = createTitledEntityInfoContent(menu.context.app, portal)
+  appendPortalDescription(infoContent)
+  content.appendChild(infoContent)
+
+  content.appendChild(createPortalColorOptions(menu, portal))
+  return content
+}
+
+function appendPortalDescription(infoContent: HTMLElement): void {
   const description = document.createElement('p')
   description.className = 'portal-description'
   description.textContent = t('portalDescriptionMysterious')
@@ -136,22 +144,20 @@ function createPortalInfoModalContent(menu: Menu, portal: ResourceEntity): HTMLE
   if (infoPanel) {
     infoPanel.appendChild(description)
   } else {
-    content.appendChild(description)
+    infoContent.appendChild(description)
   }
-  content.appendChild(infoContent)
-
-  content.appendChild(createPortalColorOptions(menu, portal))
-  return content
 }
 
 export class EntityInfoModalManager {
   menu: Menu
   modal?: Modal
   entity: RuntimeEntity | null
+  infoPanel: HTMLElement | null
 
   constructor(menu: Menu) {
     this.menu = menu
     this.entity = null
+    this.infoPanel = null
   }
 
   open(entity: RuntimeEntity): boolean {
@@ -178,6 +184,7 @@ export class EntityInfoModalManager {
         : createTitledEntityInfoContent(this.menu.context.app, entity)
 
     this.entity = entity
+    this.infoPanel = this.getInfoPanel(modalContent)
     this.modal = createInspectionModal({
       title: getEntityTitle(entity),
       content: modalContent,
@@ -192,6 +199,7 @@ export class EntityInfoModalManager {
     const entity = this.entity
     this.modal = undefined
     this.entity = null
+    this.infoPanel = null
     modal?.close()
 
     const player = this.menu.context.player
@@ -205,5 +213,18 @@ export class EntityInfoModalManager {
 
   isOpen(): boolean {
     return Boolean(this.modal)
+  }
+
+  syncLiveState(): void {
+    const entity = this.entity
+    const infoPanel = this.infoPanel
+    if (!this.modal || !entity || !infoPanel || entity.isDestroyed) return
+    infoPanel.replaceChildren()
+    entity.interface?.info?.(infoPanel, TITLED_ENTITY_INFO_OPTIONS)
+    if (isResourceEntity(entity) && entity.type === PORTAL_RESOURCE_TYPE) appendPortalDescription(infoPanel)
+  }
+
+  getInfoPanel(content: HTMLElement): HTMLElement | null {
+    return content.classList.contains('selection-info') ? content : content.querySelector<HTMLElement>('.selection-info')
   }
 }

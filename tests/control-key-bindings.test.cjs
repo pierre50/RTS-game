@@ -68,12 +68,15 @@ test('H is the default debug mount key for the hero', () => {
   }
 })
 
-test('F is the default hero entity interaction key', () => {
+test('E is the default hero interaction key', () => {
   const { settings, restore } = loadSettings()
   try {
-    assert.equal(settings.getKeyBindings().heroEntityInteraction, 'f')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyF', key: 'f' }), 'heroEntityInteraction')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyF', key: 'F' }), 'heroEntityInteraction')
+    assert.equal(settings.getKeyBindings().heroInteract, 'e')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyE', key: 'e' }), 'heroInteract')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyE', key: 'E' }), 'heroInteract')
+
+    settings.setKeyBinding('heroInteract', 'r')
+    assert.equal(settings.getKeyBindings().heroInteract, 'r')
   } finally {
     restore()
   }

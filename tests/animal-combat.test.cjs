@@ -28,7 +28,7 @@ function buildGrid(size, solidCells = []) {
   return grid
 }
 
-function loadAnimalCombat({ isometricToCartesianImpl } = {}) {
+function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.solid } = {}) {
   const constants = {
     ACTION_TYPES: { attack: 'attack' },
     FAMILY_TYPES: { unit: 'unit' },
@@ -50,6 +50,24 @@ function loadAnimalCombat({ isometricToCartesianImpl } = {}) {
     },
     getClosestInstanceWithPath: () => null,
     getInstanceDegree: () => 0,
+    getInstancePath: (_animal, i, j, map) => {
+      const cell = map.grid[i]?.[j]
+      return cell && pathable(cell) ? [cell] : []
+    },
+    findReachableFleeCell: (animal, threat, map, options) => {
+      const preferred = options.preferredCell
+      if (preferred && lib.getInstancePath(animal, preferred.i, preferred.j, map).length) return preferred
+      let best = null
+      lib.getCellsAroundPoint(animal.i, animal.j, map.grid, options.range, cell => {
+        if (cell.i === animal.i && cell.j === animal.j) return false
+        if (options.isCellAllowed ? !options.isCellAllowed(cell) : cell.solid || cell.category === 'Water') return false
+        if (!lib.getInstancePath(animal, cell.i, cell.j, map).length) return false
+        const distance = lib.pointsDistance(cell.i, cell.j, threat.i, threat.j)
+        if (!best || distance > best.distance) best = { cell, distance }
+        return false
+      })
+      return best?.cell ?? null
+    },
     instanceContactInstance: () => false,
     isometricToCartesian: isometricToCartesianImpl ?? (() => [0, 0]),
     pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
@@ -72,8 +90,8 @@ function loadAnimalCombat({ isometricToCartesianImpl } = {}) {
 // Mirrors how the real Animal class wires itself: AnimalCombat.getReaction() calls
 // back out to `animal.runaway(...)`, which on the real class delegates right back
 // into the same AnimalCombat instance.
-function createAnimalCombat({ solidCells = [], isometricToCartesianImpl, animalOverrides = {} } = {}) {
-  const { AnimalCombat, getCellsAroundPointCalls } = loadAnimalCombat({ isometricToCartesianImpl })
+function createAnimalCombat({ solidCells = [], isometricToCartesianImpl, animalOverrides = {}, pathable } = {}) {
+  const { AnimalCombat, getCellsAroundPointCalls } = loadAnimalCombat({ isometricToCartesianImpl, pathable })
   const calls = []
   const animal = {
     i: 5,
@@ -165,4 +183,25 @@ test('runaway falls back to fleeing away from the shooter when no hit direction 
   assert.equal(getCellsAroundPointCalls.length, 1)
   const [, dest] = calls[0]
   assert.equal(dest.j < shooter.j, true)
+})
+
+test('runaway picks a reachable escape when the best opposite side is blocked', () => {
+  const { combat, calls } = createAnimalCombat({
+    pathable: cell => cell.i < 5,
+    animalOverrides: {
+      i: 5,
+      j: 5,
+      sight: 3,
+      runningSheet: {},
+    },
+  })
+  const hero = { i: 3, j: 5, label: 'hero' }
+
+  combat.runaway(hero)
+
+  assert.equal(calls[0]?.[0], 'sendTo')
+  const [, dest, action, options] = calls[0]
+  assert.equal(dest.i < 5, true)
+  assert.equal(action, null)
+  assert.equal(options.movementSheet, 'running')
 })

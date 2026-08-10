@@ -13,6 +13,7 @@ import {
   isValidCondition,
   canPlaceBuildingAt,
   playSoundCue,
+  isBuildingLimitReached,
 } from '../../lib'
 import { Building } from '../building'
 import type { BuildingOptions } from '../building'
@@ -533,6 +534,7 @@ export class Player implements PlayerLike {
     if (
       canAfford(this, config.cost) &&
       this.isBuildingEligible(type) &&
+      !isBuildingLimitReached(this, type) &&
       canPlaceBuildingAt(map.grid, i, j, placementConfig)
     ) {
       this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })

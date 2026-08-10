@@ -2,12 +2,11 @@ import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import {
   applyCombatHit,
   findInstancesInSight,
-  getCellsAroundPoint,
   getClosestInstanceWithPath,
   getInstanceDegree,
+  findReachableFleeCell,
   instanceContactInstance,
   isometricToCartesian,
-  pointsDistance,
   playAudibleSoundCue,
 } from '../../lib'
 import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
@@ -134,25 +133,17 @@ export class AnimalCombat {
     return null
   }
 
+  getBestFleeCell(instance: RuntimeEntity, preferredCell: RuntimeCell | null): RuntimeCell | null {
+    const animal = this.animal
+    return findReachableFleeCell<RuntimeCell>(animal, instance, animal.context.map, {
+      preferredCell,
+      range: animal.sight ?? 0,
+    })
+  }
+
   runaway(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
-    const {
-      context: { map },
-    } = animal
-    let dest: RuntimeCell | null = this.getFleeCellAlongDirection(hitDirection)
-    if (!dest) {
-      getCellsAroundPoint(animal.i, animal.j, map.grid, animal.sight ?? 0, (cell: RuntimeCell) => {
-        if (
-          !cell.solid &&
-          (!dest ||
-            pointsDistance(cell.i, cell.j, instance.i, instance.j) >
-              pointsDistance(dest.i, dest.j, instance.i, instance.j))
-        ) {
-          dest = cell
-        }
-        return false
-      })
-    }
+    const dest = this.getBestFleeCell(instance, this.getFleeCellAlongDirection(hitDirection))
     if (dest) {
       animal.isFleeing = true
       const flying = Boolean(animal.flyingSheet)

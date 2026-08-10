@@ -41,6 +41,7 @@ function loadBuildingPlacer() {
         return result
       },
       getTexture: () => ({}),
+      isBuildingLimitReached: () => false,
       payCost: () => {},
     },
     '../constants': {

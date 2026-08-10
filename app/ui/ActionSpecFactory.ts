@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { canAfford, getBuildingAsset, getIconPath, isValidCondition } from '../lib'
+import { canAfford, getBuildingAsset, getIconPath, isBuildingLimitReached, isValidCondition } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
@@ -112,6 +112,7 @@ export class ActionSpecFactory {
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
         t('tooltipBuildTime', { time: config.constructionTime ?? 0 }),
         this.isChiefCommandBlocked() ? t('requiresChief') : null,
+        isBuildingLimitReached(owner, type) ? t('buildingLimitReached') : null,
       ],
     }
   }
@@ -298,13 +299,17 @@ export class ActionSpecFactory {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       hide: () => !owner.isBuildingEligible?.(type),
-      disabled: () => this.isChiefCommandBlocked(),
+      disabled: () => this.isChiefCommandBlocked() || isBuildingLimitReached(owner, type),
       onClick: () => {
         const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
         const assets = getBuildingAsset(displayType, owner, Assets)
         controls.removeMouseBuilding()
         if (this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
+          return
+        }
+        if (isBuildingLimitReached(owner, type)) {
+          menu.showMessage(t('buildingLimitReached'), 'warning')
           return
         }
         if (canAfford(owner, config.cost)) {

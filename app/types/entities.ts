@@ -15,6 +15,7 @@ export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
 export type UnitCreationExtra = {
   name?: string
+  gender?: 'male' | 'female'
   isChief?: boolean
   handleSetDest?: (target: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean

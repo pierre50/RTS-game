@@ -25,6 +25,7 @@ export type DevMapLike = {
   debugVisionVisible?: boolean
   debugGridVisible?: boolean
   debugCoordsVisible?: boolean
+  debugHeroAimVisible?: boolean
   debugHeroCollisionVisible?: boolean
   debugPerfVisible?: boolean
   debugAiInfoVisible?: boolean
@@ -38,6 +39,7 @@ export type DevMapLike = {
   _debugVisionTicker?: DebugTickerCallback | null
   _debugGridTicker?: DebugTickerCallback | null
   _debugCoordsTicker?: DebugTickerCallback | null
+  _debugHeroAimTicker?: DebugTickerCallback | null
   _debugHeroCollisionTicker?: DebugTickerCallback | null
   _debugTerrainFrameTicker?: DebugTickerCallback | null
   _fogQueue?: Map<RuntimeCell, string>
@@ -71,7 +73,9 @@ type DevMenuLike = {
 type DevControlsLike = {
   mouse?: { x: number; y: number }
   getCellUnderCursor?(): DevCell | null
+  getWorldPointUnderCursor?(): { x: number; y: number }
   updateVisibleCells?(): void
+  heroUnit?: UnitEntity | null
   cameraController?: {
     getViewportRect(): { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
     set?(x: number, y: number, direct?: boolean): void

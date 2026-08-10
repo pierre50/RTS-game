@@ -13,7 +13,13 @@ function loadMapResources() {
   })
   const module = { exports: {} }
   const mocks = {
-    '../Resource': { Resource: class {} },
+    '../Resource': {
+      Resource: class {
+        constructor(options) {
+          Object.assign(this, options)
+        }
+      },
+    },
     '../../constants': {
       RESOURCE_TYPES: {
         berrybush: 'Berrybush',
@@ -42,7 +48,7 @@ function loadMapResources() {
   return module.exports
 }
 
-const { getNeutralResourceGroupCount } = loadMapResources()
+const { MapResources, getNeutralResourceGroupCount } = loadMapResources()
 
 test('neutral resource groups lean by environment without changing starting resources', () => {
   assert.equal(getNeutralResourceGroupCount('moderate', 'Temperate', 'berrybush', 120), 4)
@@ -68,4 +74,38 @@ test('neutral resource groups lean by environment without changing starting reso
 test('neutral resource group counts still scale with map area', () => {
   assert.equal(getNeutralResourceGroupCount('moderate', 'Desert', 'stone', 240), 44)
   assert.equal(getNeutralResourceGroupCount('moderate', 'Jungle', 'berrybush', 240), 20)
+})
+
+test('berrybush groups share one color variant across the whole cluster', () => {
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      category: 'Land',
+      type: 'Grass',
+      has: null,
+      border: false,
+      inclined: false,
+    }))
+  )
+  const map = {
+    context: {},
+    grid,
+    size: 3,
+    resources: new Set(),
+    random: () => 0,
+    randomRange: (min, _max) => min,
+    randomItem: items => items[1],
+    addChild: child => child,
+    placeResourceGroupAt(center, instance, quantity, clusterRadius, options) {
+      return mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
+    },
+  }
+  const mapResources = new MapResources(map)
+
+  assert.equal(mapResources.placeResourceGroupAt({ i: 1, j: 1 }, 'Berrybush', 3), true)
+
+  const textureNames = [...map.resources].map(resource => resource.textureName)
+  assert.deepEqual(textureNames, ['001_resources/berrybush', '001_resources/berrybush', '001_resources/berrybush'])
 })

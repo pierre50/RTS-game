@@ -6,6 +6,10 @@
       {
         "sheet": "resources/berrybush",
         "frame": 0
+      },
+      {
+        "sheet": "resources/berrybush",
+        "frame": 1
       }
     ]
   },

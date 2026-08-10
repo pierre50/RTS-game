@@ -37,7 +37,6 @@ export type ControlBindingAction =
   | 'heroLeft'
   | 'heroRight'
   | 'heroInteract'
-  | 'heroEntityInteraction'
   | 'heroDefense'
   | 'heroTool1'
   | 'heroTool2'
@@ -59,7 +58,6 @@ export const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroLeft: 'q',
   heroRight: 'd',
   heroInteract: 'e',
-  heroEntityInteraction: 'f',
   heroDefense: 'Space',
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
@@ -80,7 +78,6 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroLeft',
       'heroRight',
       'heroInteract',
-      'heroEntityInteraction',
       'heroDefense',
       'heroTool1',
       'heroTool2',
@@ -248,7 +245,8 @@ export function getKeyBindings(): ControlKeyBindings {
 }
 
 export function setKeyBinding(action: ControlBindingAction, key: string): void {
-  _keyBindings = { ..._keyBindings, [action]: normalizeControlKey(key) }
+  const normalizedKey = normalizeControlKey(key)
+  _keyBindings = { ..._keyBindings, [action]: normalizedKey }
   localStorage.setItem(KEY_BINDINGS_KEY, JSON.stringify(_keyBindings))
 }
 
@@ -282,7 +280,6 @@ export function getReservedGameplayHotkeys(): string[] {
     'heroLeft',
     'heroRight',
     'heroInteract',
-    'heroEntityInteraction',
     'heroDefense',
     'heroTool1',
     'heroTool2',

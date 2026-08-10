@@ -8,6 +8,7 @@ import {
   getPlainCellsAroundPoint,
   getTexture,
   payCost,
+  isBuildingLimitReached,
 } from '../lib'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
@@ -168,6 +169,7 @@ export class BuildingPlacer {
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
     if (!cell) return false
+    if (isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     return canPlaceBuildingAt(map.grid, cell.i, cell.j, mouseBuilding, {
       requireVisible: true,

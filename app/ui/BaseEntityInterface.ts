@@ -1,4 +1,5 @@
 import { MENU_INFO_IDS } from '../constants'
+import { formatHitPointsText } from '../lib/hitPointsText'
 
 export function createInfoImage(className: string, src: string): HTMLImageElement {
   const img = document.createElement('img')
@@ -44,16 +45,17 @@ export function syncHitPointsInfo(
   const safeCurrent = Math.max(0, Math.min(current, safeMax || current))
   const ratio = safeMax > 0 ? safeCurrent / safeMax : 0
 
-  element.textContent = `${safeCurrent}/${safeMax}`
+  element.textContent = formatHitPointsText(safeCurrent, safeMax)
 
   const fill =
     element.closest('.hit-points-display')?.querySelector<HTMLElement>('.hit-points-fill') ||
     element._hitPointsFill ||
     null
+  const display = element.closest<HTMLElement>('.hit-points-display')
   if (fill) {
     fill.style.width = `${Math.round(ratio * 100)}%`
   }
-  element.closest<HTMLElement>('.hit-points-display')?.style.setProperty('--entity-hit-points-percent', `${ratio * 100}%`)
+  display?.style.setProperty('--entity-hit-points-percent', `${ratio * 100}%`)
 }
 
 export function createHitPointsInfo(
@@ -73,10 +75,10 @@ export function createHitPointsInfo(
 
   const text: HitPointsFillElement = createInfoText(className, '')
   text._hitPointsFill = fill
-  syncHitPointsInfo(text, hitPoints, totalHitPoints)
 
   bar.appendChild(text)
   wrapper.appendChild(bar)
+  syncHitPointsInfo(text, hitPoints, totalHitPoints)
   return wrapper
 }
 

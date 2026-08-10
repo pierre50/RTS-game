@@ -20,6 +20,7 @@ import {
   PLAYER_TYPES,
   LABEL_TYPES,
   RESOURCE_TYPES,
+  MINING_RESOURCE_TYPES,
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
@@ -64,7 +65,7 @@ const WIND_AMPLITUDE = 0.018
 const WIND_ROTATION = 0.006
 const WIND_SPEED = 0.0018
 
-export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string }
+export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string; textureName?: string }
 
 function getResourceConfig(): ResourceConfigCache {
   return Assets.cache.get('config') as ResourceConfigCache
@@ -162,7 +163,8 @@ export class Resource extends Instance implements ResourceEntity {
         throw new Error(`Missing texture for resource ${this.type} on ${cell.type}`)
       }
       const texture = getTexture(textureRef, Assets)
-      const textureFile = (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(textureRef)}.png`
+      const textureFile =
+        (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(textureRef)}.png`
       const spritesheet = Assets.cache.get(getTextureSheet(textureRef))
       this.textureName = textureRefToString(textureRef)
       this.sprite = Sprite.from(texture)
@@ -388,6 +390,8 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   createShadow(): ResourceShadow | null {
+    if (MINING_RESOURCE_TYPES.includes(this.type)) return null
+
     const shadow =
       this.sprite instanceof AnimatedSprite
         ? new AnimatedSprite(this.sprite.textures as Texture[])

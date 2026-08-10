@@ -1,4 +1,5 @@
 export * from './grid/cells'
+export * from './grid/flee'
 export * from './grid/movement'
 export * from './grid/placement'
 export * from './grid/queries'

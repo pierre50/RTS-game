@@ -1,5 +1,5 @@
 import { Text } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, UNIT_TYPES } from '../../constants'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import {
   canPlayerStillAct,
@@ -16,6 +16,7 @@ import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } fr
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
+  DEBUG_HERO_AIM_LAYER,
   DEBUG_HERO_COLLISION_LAYER,
   DEBUG_OVERLAY_Z,
   DEBUG_PATH_LAYER,
@@ -35,6 +36,21 @@ import {
 } from './shared'
 
 const HERO_COLLISION_SCAN_RADIUS = 8
+const HERO_AIM_DEBUG_RADIUS = 120
+const HERO_AIM_DEBUG_SEGMENTS = 10
+const HERO_AIM_DEBUG_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
+const HERO_AIM_DEBUG_BOUNDARIES = [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5]
+const HERO_AIM_DEBUG_CARDINALS = [0, 90, 180, 270]
+const HERO_AIM_DEBUG_SECTORS = [
+  { start: 337.5, end: 382.5, color: 0x2dd4bf },
+  { start: 22.5, end: 67.5, color: 0x38bdf8 },
+  { start: 67.5, end: 112.5, color: 0xfacc15 },
+  { start: 112.5, end: 157.5, color: 0x38bdf8 },
+  { start: 157.5, end: 202.5, color: 0x2dd4bf },
+  { start: 202.5, end: 247.5, color: 0xfb7185 },
+  { start: 247.5, end: 292.5, color: 0xf97316 },
+  { start: 292.5, end: 337.5, color: 0xfb7185 },
+] as const
 const HERO_COLLISION_FAMILY_COLORS: Record<string, number> = {
   [FAMILY_TYPES.resource]: 0xffa500,
   [FAMILY_TYPES.unit]: 0xb46bff,
@@ -171,6 +187,75 @@ function getHeroDebugUnit(context: DevConsoleContext): DevEntity | null {
   const controlsHero = context.controls && 'heroUnit' in context.controls ? (context.controls.heroUnit as DevEntity | null) : null
   if (controlsHero) return controlsHero
   return (context.player.units.find(unit => unit.controlMode === 'hero') as DevEntity | undefined) ?? null
+}
+
+function getPointForDegree(origin: { x: number; y: number }, degree: number, distance: number): { x: number; y: number } {
+  const radians = ((degree - 180) * Math.PI) / 180
+  return {
+    x: origin.x + Math.cos(radians) * distance,
+    y: origin.y + (Math.sin(radians) * distance) / HERO_AIM_DEBUG_Y_SCALE,
+  }
+}
+
+function drawHeroAimSector(
+  layer: ReturnType<typeof getDebugLayer>,
+  origin: { x: number; y: number },
+  start: number,
+  end: number,
+  color: number
+): void {
+  layer.moveTo(origin.x, origin.y)
+  for (let i = 0; i <= HERO_AIM_DEBUG_SEGMENTS; i += 1) {
+    const degree = start + ((end - start) * i) / HERO_AIM_DEBUG_SEGMENTS
+    const point = getPointForDegree(origin, degree, HERO_AIM_DEBUG_RADIUS)
+    layer.lineTo(point.x, point.y)
+  }
+  layer.lineTo(origin.x, origin.y)
+  layer.fill({ color, alpha: 0.12 })
+}
+
+function drawHeroAimDebug(context: DevConsoleContext): void {
+  const { map } = context
+  const layer = getDebugLayer(map, DEBUG_HERO_AIM_LAYER, DEBUG_OVERLAY_Z + 7)
+  layer.clear()
+
+  const hero = getHeroDebugUnit(context)
+  const aimPoint = context.controls?.getWorldPointUnderCursor?.()
+  if (!hero || !aimPoint) return
+
+  const origin = { x: hero.x, y: hero.y + getReliefOffset(hero) }
+  for (const sector of HERO_AIM_DEBUG_SECTORS) {
+    drawHeroAimSector(layer, origin, sector.start, sector.end, sector.color)
+  }
+
+  for (const degree of HERO_AIM_DEBUG_BOUNDARIES) {
+    const point = getPointForDegree(origin, degree, HERO_AIM_DEBUG_RADIUS)
+    layer.moveTo(origin.x, origin.y)
+    layer.lineTo(point.x, point.y)
+  }
+  layer.stroke({ color: 0xffffff, alpha: 0.55, width: 1 })
+
+  for (const degree of HERO_AIM_DEBUG_CARDINALS) {
+    const point = getPointForDegree(origin, degree, HERO_AIM_DEBUG_RADIUS + 14)
+    layer.moveTo(origin.x, origin.y)
+    layer.lineTo(point.x, point.y)
+  }
+  layer.stroke({ color: 0xffffff, alpha: 0.85, width: 2 })
+
+  const aimDx = aimPoint.x - hero.x
+  const aimDy = aimPoint.y - hero.y
+  const aimLength = Math.hypot(aimDx, aimDy)
+  if (aimLength > 0) {
+    layer.moveTo(origin.x, origin.y)
+    layer.lineTo(
+      origin.x + (aimDx / aimLength) * (HERO_AIM_DEBUG_RADIUS + 22),
+      origin.y + (aimDy / aimLength) * (HERO_AIM_DEBUG_RADIUS + 22)
+    )
+    layer.stroke({ color: 0xffffff, alpha: 1, width: 4 })
+  }
+
+  layer.circle(origin.x, origin.y, 4)
+  layer.fill({ color: 0xffffff, alpha: 0.95 })
 }
 
 function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
@@ -547,6 +632,23 @@ export function toggleHeroCollisionDebug(context: DevConsoleContext, value: stri
   map._debugHeroCollisionTicker = () => drawHeroCollisionDebug(context)
   app?.ticker.add(map._debugHeroCollisionTicker)
   return { ok: true, message: 'Hero collision debug: on' }
+}
+
+export function toggleHeroAimDebug(context: DevConsoleContext, value: string): CommandResult {
+  const { app, map } = context
+  const showHeroAim = normalizeToggle(value, Boolean(map.debugHeroAimVisible))
+  map.debugHeroAimVisible = showHeroAim
+
+  if (!showHeroAim) {
+    removeDebugLayer(context, DEBUG_HERO_AIM_LAYER, '_debugHeroAimTicker')
+    return { ok: true, message: 'Hero aim debug: off' }
+  }
+
+  drawHeroAimDebug(context)
+  stopDebugTicker(context, '_debugHeroAimTicker')
+  map._debugHeroAimTicker = () => drawHeroAimDebug(context)
+  app?.ticker.add(map._debugHeroAimTicker)
+  return { ok: true, message: 'Hero aim debug: on' }
 }
 
 export function toggleTerrainFrameDebug(context: DevConsoleContext, value: string): CommandResult {

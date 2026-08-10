@@ -23,6 +23,30 @@
         "x": 0.5135135135135135,
         "y": 0.8064516129032258
       }
+    },
+    "001_graphics_resources_berrybush.png": {
+      "frame": {
+        "x": 49,
+        "y": 0,
+        "w": 49,
+        "h": 39
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 49,
+        "h": 39
+      },
+      "sourceSize": {
+        "w": 49,
+        "h": 39
+      },
+      "anchor": {
+        "x": 0.5135135135135135,
+        "y": 0.8064516129032258
+      }
     }
   },
   "meta": {
@@ -31,7 +55,7 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 49,
+      "w": 98,
       "h": 39
     },
     "scale": 1

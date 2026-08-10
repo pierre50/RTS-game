@@ -25,6 +25,7 @@ import {
   toggleCoordsDebug,
   toggleFreeCamera,
   toggleGridDebug,
+  toggleHeroAimDebug,
   togglePathDebug,
   togglePerfDebug,
   togglePlayerStatsDebug,
@@ -277,6 +278,15 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Toggle hero-controlled unit collision shape debug overlay',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleHeroCollisionDebug(context, value),
+  })
+
+  registry.register({
+    name: 'hero-aim',
+    aliases: ['haim'],
+    usage: 'hero-aim [on|off]',
+    describe: 'Toggle hero mouse aim direction-sector debug overlay',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleHeroAimDebug(context, value),
   })
 
   registry.register({

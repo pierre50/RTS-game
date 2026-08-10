@@ -54,13 +54,14 @@ function loadHeroTools(overrides = {}) {
         build: 'build',
         chopwood: 'chopwood',
         delivery: 'delivery',
+        farm: 'farm',
         forageberry: 'forageberry',
         hunt: 'hunt',
         minegold: 'minegold',
         minestone: 'minestone',
         takemeat: 'takemeat',
       },
-      BUILDING_TYPES: { townCenter: 'TownCenter' },
+      BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
@@ -69,6 +70,7 @@ function loadHeroTools(overrides = {}) {
         gold: 'gold',
         meat: 'meat',
         stone: 'stone',
+        wheat: 'wheat',
         wood: 'wood',
       },
       SHEET_TYPES: {
@@ -82,6 +84,7 @@ function loadHeroTools(overrides = {}) {
       WORK_TYPES: {
         attacker: 'attacker',
         builder: 'builder',
+        farmer: 'farmer',
         hunter: 'hunter',
         goldminer: 'goldminer',
         stoneminer: 'stoneminer',
@@ -112,6 +115,7 @@ function loadHeroTools(overrides = {}) {
           gold: 'goldminer',
           meat: 'hunter',
           stone: 'stoneminer',
+          wheat: 'farmer',
           wood: 'woodcutter',
         })[loadingType] ?? 'default',
     },
@@ -320,6 +324,15 @@ function makeHero() {
   }
   return { hero, projectiles }
 }
+
+test('hero aim degree gives horizontal screen aim more room on isometric terrain', () => {
+  const { getHeroAimDegree } = loadHeroTools()
+  const hero = { x: 0, y: 0 }
+
+  assert.equal(getHeroAimDegree(hero, { x: 10, y: 0 }), 180)
+  assert.equal(getHeroAimDegree(hero, { x: 0, y: 10 }), 270)
+  assert.equal(getHeroAimDegree(hero, { x: 10, y: 10 }), 207)
+})
 
 test('bow charge plays the action animation once while power keeps charging', () => {
   const { aimHeroBowChargeAt, triggerToolAttackAt, updateHeroBowCharge } = loadHeroTools()
@@ -680,6 +693,53 @@ test('hero resource tools get a small hero contact forgiveness band', () => {
   assert.deepEqual(calls, [
     ['setDest', carcass],
     ['getAction', 'takemeat'],
+  ])
+})
+
+test('free-hand interact starts farming an aimed farm instead of whiffing', () => {
+  const farm = {
+    family: 'building',
+    hitPoints: 50,
+    i: 1,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    isUsedBy: { label: 'villager-1' },
+    j: 0,
+    owner: { label: 'player' },
+    quantity: 100,
+    type: 'Farm',
+    x: 10,
+    y: 0,
+  }
+  const calls = []
+  const { triggerToolAction } = loadHeroTools({
+    './combat': { getActionCondition: (_hero, target, action) => target === farm && action === 'farm' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [farm].filter(predicate) },
+    './grid/queries': {
+      getClosestInstanceWithPath: (_hero, candidates) =>
+        candidates.length ? { instance: candidates[0], path: [] } : null,
+    },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    i: 0,
+    j: 0,
+    loading: 0,
+    loadingMax: { wheat: 10 },
+    loadingType: null,
+    owner: farm.owner,
+    isUnitAtDest: () => true,
+    getAction: action => calls.push(['getAction', action]),
+    setDest: target => calls.push(['setDest', target]),
+  })
+
+  assert.equal(triggerToolAction(hero, 'interact'), true)
+  assert.equal(hero.work, 'farmer')
+  assert.equal(hero.action, 'farm')
+  assert.deepEqual(calls, [
+    ['setDest', farm],
+    ['getAction', 'farm'],
   ])
 })
 

@@ -3,6 +3,7 @@ import { canUpdateMinimap, playAudibleSoundCue, updateInstanceVisibility } from 
 import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
+import { getEntityHitPointsText } from '../../lib/entityHealthDisplay'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -96,7 +97,7 @@ export class UnitLifecycle {
         unit.owner.units.splice(index, 1)
       }
       if (unit.owner.selectedUnit === unit) {
-        menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, unit.hitPoints + '/' + unit.totalHitPoints)
+        menu?.updateInfo?.(MENU_INFO_IDS.hitPoints, getEntityHitPointsText(unit))
       }
     }
     this.death()

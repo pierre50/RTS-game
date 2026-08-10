@@ -75,6 +75,7 @@ export interface MenuLike {
   openEntityInfoModal?(entity: RuntimeEntity): boolean
   isEntityInfoModalOpen?(): boolean
   closeEntityInfoModal?(): void
+  syncEntityInfoModal?(): void
   isHeroBuildingMenuOpen?(): boolean
   closeHeroBuildingMenu?(): void
   getHeroBuildingMenuTarget?(): BuildingEntity | null
