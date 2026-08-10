@@ -12,6 +12,7 @@ export const CIVILIZATIONS: Civilization[] = [
   { labelKey: 'civBabylonian', value: 'Babylonian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civAsian', value: 'Asian', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civCeltic', value: 'Celtic', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civNordic', value: 'Nordic', disabledUnits: [], disabledTechnologies: [] },
   { labelKey: 'civNubian', value: 'Nubian', disabledUnits: [], disabledTechnologies: [] },
 ]
 

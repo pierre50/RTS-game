@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const LZString = require('lz-string')
 
 function loadSaveStorage(storage) {
   const filename = path.join(__dirname, '../app/serialization/SaveStorage.ts')
@@ -12,8 +13,6 @@ function loadSaveStorage(storage) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const previousWindow = global.window
-  const previousLocalStorage = global.localStorage
   global.window = {}
   global.localStorage = storage
   const mockRequire = id => {
@@ -27,13 +26,8 @@ function loadSaveStorage(storage) {
     return require(id)
   }
 
-  try {
-    new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
-    return module.exports
-  } finally {
-    global.window = previousWindow
-    global.localStorage = previousLocalStorage
-  }
+  new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
+  return module.exports
 }
 
 function minimalSaveRecord() {
@@ -47,6 +41,24 @@ function minimalSaveRecord() {
     resources: [],
     animals: [],
   }
+}
+
+function makeMemoryStorage(initial = {}) {
+  const items = new Map(Object.entries(initial))
+  return {
+    items,
+    getItem: key => items.get(key) ?? null,
+    setItem: (key, value) => {
+      items.set(key, value)
+    },
+    removeItem: key => {
+      items.delete(key)
+    },
+  }
+}
+
+function compressedSave(data = minimalSaveRecord()) {
+  return LZString.compressToBase64(JSON.stringify(data))
 }
 
 test('autosave storage failures do not throw', () => {
@@ -68,5 +80,40 @@ test('autosave storage failures do not throw', () => {
     assert.throws(() => saveRecord(minimalSaveRecord()), /STORAGE_FULL/)
   } finally {
     console.warn = previousWarn
+  }
+})
+
+test('listSaves removes missing and corrupt entries from the index', () => {
+  const index = [
+    { key: 'save_1', name: 'Missing', date: 1 },
+    { key: 'save_2', name: 'Corrupt', date: 2 },
+    { key: 'save_3', name: 'Valid', date: 3 },
+  ]
+  const storage = makeMemoryStorage({
+    saves_index: JSON.stringify(index),
+    save_2: 'not-compressed-json',
+    save_3: compressedSave(),
+  })
+
+  const { listSaves } = loadSaveStorage(storage)
+
+  assert.deepEqual(listSaves(), [{ key: 'save_3', name: 'Valid', date: 3 }])
+  assert.deepEqual(JSON.parse(storage.items.get('saves_index')), [{ key: 'save_3', name: 'Valid', date: 3 }])
+})
+
+test('saveRecord creates numeric unique keys inside the same millisecond', () => {
+  const storage = makeMemoryStorage({ saves_index: '[]' })
+  const previousNow = Date.now
+  Date.now = () => 1234567890
+
+  try {
+    const { saveRecord } = loadSaveStorage(storage)
+
+    assert.equal(saveRecord(minimalSaveRecord()).key, 'save_1234567890')
+    assert.equal(saveRecord(minimalSaveRecord()).key, 'save_1234567891')
+    assert.equal(storage.items.has('save_1234567890'), true)
+    assert.equal(storage.items.has('save_1234567891'), true)
+  } finally {
+    Date.now = previousNow
   }
 })

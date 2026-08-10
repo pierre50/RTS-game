@@ -510,12 +510,6 @@
       ]
     }
   },
-  "Bow": {
-    "icon": "076_50729",
-    "key": "technologies",
-    "researchTime": 0,
-    "cost": {}
-  },
   "Pickaxe": {
     "icon": "017_50729",
     "key": "technologies",

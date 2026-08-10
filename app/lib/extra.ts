@@ -808,15 +808,21 @@ type PlayerLike = {
   }
 }
 
+export const playerOwnsInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
+  if (!instance || !player) return false
+  return instance.owner?.label === player.label
+}
+
+export const playerHasVisionOfInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
+  if (!instance || !player) return false
+  return instanceIsInPlayerSight(instance as RenderableInstance, player)
+}
+
 export const canUpdateMinimap = (instance: VisibleInstance, player?: PlayerLike | null): boolean => {
   if (instance.context?.map?.revealEverything) return true
-  return playerCanSeeInstance(instance, player)
+  return playerOwnsInstance(instance, player)
 }
 
 export const playerCanSeeInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
-  if (!instance || !player) return false
-  return (
-    instance.owner?.label === player.label ||
-    instanceIsInPlayerSight(instance as RenderableInstance, player)
-  )
+  return playerOwnsInstance(instance, player) || playerHasVisionOfInstance(instance, player)
 }

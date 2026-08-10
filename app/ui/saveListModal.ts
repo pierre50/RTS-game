@@ -4,15 +4,14 @@ import { t } from '../lib/lang'
 import { listSaves, loadSave, deleteSave, exportSave, importSaveFile, EXPORT_EXT } from '../serialization/SaveStorage'
 import type { SaveIndexEntry, SaveRecord } from '../types/save'
 
-export function openSaveListModal({
-  onLoad,
-  onError,
-  onClose,
-}: {
+type SaveListModalOptions = {
   onLoad: (saveData: SaveRecord) => void
   onError?: (message: string) => void
+  onChange?: () => void
   onClose?: () => void
-}): void {
+}
+
+export function openSaveListModal({ onLoad, onError, onChange, onClose }: SaveListModalOptions): void {
   let saves: SaveIndexEntry[] = listSaves()
 
   const wrapper = document.createElement('div')
@@ -60,6 +59,7 @@ export function openSaveListModal({
       deleteSave(key)
       saves = saves.filter(save => save.key !== key)
       renderList()
+      onChange?.()
     })
     cancelBtn.addEventListener('pointerdown', playClickSound)
     cancelBtn.addEventListener('click', () => confirmModal.close())
@@ -163,6 +163,7 @@ export function openSaveListModal({
       const { name } = await importSaveFile(file)
       saves = listSaves()
       renderList()
+      onChange?.()
       importStatus.textContent = t('importSuccess', { name })
       importStatus.classList.add('save-list-import-status--ok')
     } catch (err) {

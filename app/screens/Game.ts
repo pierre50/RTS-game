@@ -11,9 +11,8 @@ import {
   canPlayerStillAct,
   colors,
   debounce,
-  getFreeCellAroundPoint,
+  getFreeLandCellAroundInstance,
   getGaiaAnimals,
-  getPositionInGridAroundInstance,
   isPlayedHeroDefeated,
   updateInstanceVisibility,
 } from '../lib'
@@ -830,66 +829,18 @@ export default class Game extends Container {
     const portal = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
     if (!portal) return null
 
-    const position =
-      getPositionInGridAroundInstance(
-        portal,
-        map.grid,
-        [1, 8],
-        0,
-        false,
-        cell => cell.category !== 'Water' && !cell.waterBorder
-      ) ||
-      getPositionInGridAroundInstance(
-        portal,
-        map.grid,
-        [1, 18],
-        0,
-        false,
-        cell => cell.category !== 'Water' && !cell.waterBorder
-      )
-
-    return position ? map.grid[position.i]?.[position.j] || null : this._findFallbackPortalArrivalCell(portal)
+    return getFreeLandCellAroundInstance(
+      portal,
+      map.grid,
+      cells => cells[Math.floor(map.random() * cells.length)]
+    )
   }
 
   _findPartyFollowerArrivalCell(anchor: UnitEntity): RuntimeCell | null {
     const { map } = this._gameContext()
-    const position =
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [1, 4],
-        0,
-        false,
-        cell => cell.category !== 'Water' && !cell.waterBorder
-      ) ||
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [1, 10],
-        0,
-        false,
-        cell => cell.category !== 'Water' && !cell.waterBorder
-      )
-
-    return position
-      ? map.grid[position.i]?.[position.j] || null
-      : getFreeCellAroundPoint(
-          anchor.i,
-          anchor.j,
-          1,
-          map.grid,
-          candidate => !candidate.solid && candidate.category !== 'Water' && !candidate.waterBorder
-        )
-  }
-
-  _findFallbackPortalArrivalCell(portal: ResourceEntity): RuntimeCell | null {
-    const { map } = this._gameContext()
-    return getFreeCellAroundPoint(
-      portal.i,
-      portal.j,
-      Math.max(2, Math.ceil(portal.size || 1)),
+    return getFreeLandCellAroundInstance(
+      { i: anchor.i, j: anchor.j, size: 1 },
       map.grid,
-      cell => !cell.solid && cell.category !== 'Water' && !cell.waterBorder && !cell.border,
       cells => cells[Math.floor(map.random() * cells.length)]
     )
   }

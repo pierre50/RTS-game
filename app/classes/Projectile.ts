@@ -26,6 +26,7 @@ import {
   playAudibleSoundCue,
   randomRange,
 } from '../lib'
+import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomaticAggression'
 import { fadeOutThenClear } from '../lib/entityFade'
 import { getEntityWeaponPower } from '../lib/equipmentStats'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
@@ -776,7 +777,7 @@ export class Projectile extends Container {
   canCollideWith(instance: RuntimeEntity): boolean {
     if (
       instance === this.owner ||
-      isFriendlyTarget(this.owner, instance) ||
+      (isFriendlyTarget(this.owner, instance) && !canTargetBeAggressed(this.owner, instance)) ||
       instance.isDead ||
       instance.isDestroyed ||
       (instance.hitPoints ?? 0) <= 0
@@ -866,6 +867,8 @@ export class Projectile extends Container {
     if (instance.family === FAMILY_TYPES.building) {
       playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact)
     }
+    const openingAggression = applyDiplomaticAggression(this.owner, instance)
+    if (openingAggression.changed && !openingAggression.hostileNow) return
     const xpCategory = this.getXpCategory()
     const xpBonusDamage = xpCategory ? getCombatXpBonus(this.owner as UnitEntity, xpCategory) : 0
     const damageFactor = this.getDamageFactor()

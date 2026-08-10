@@ -89,12 +89,22 @@ function loadHeroTools(overrides = {}) {
       },
     },
     './heroActionRange': {
+      getHeroInteractionTargetPoint: (_hero, target) => ({
+        x: target.i ?? target.x ?? 0,
+        y: target.j ?? target.y ?? 0,
+      }),
       isHeroActionInRange: (_hero, action, target) => {
         if (action !== 'takemeat') return false
         return Math.hypot(target.i, target.j) <= 2.5
       },
+      isHeroInteractionTargetReachable: (hero, _action, target) =>
+        Math.hypot((target.i ?? 0) - (hero.i ?? 0), (target.j ?? 0) - (hero.j ?? 0)) <= 2.5,
     },
     './combat': { getActionCondition: () => false, getHitPointsWithDamage: () => 0 },
+    './diplomaticAggression': {
+      applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
+      canTriggerDiplomaticAggression: () => false,
+    },
     './extra': {
       getWorkWithLoadingType: loadingType =>
         ({
@@ -110,7 +120,7 @@ function loadHeroTools(overrides = {}) {
       getEquipmentCombatStats: equipment => {
         const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
-          if (item === 'sword_ceramic') stats.weaponPower += 4
+          if (item === 'sword_ceramic') stats.weaponPower += 11
           if (item === 'sword_copper') stats.weaponPower += 6
           if (item === 'bow') stats.weaponPower += 4
         }

@@ -150,6 +150,10 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     '../../constants': constants,
   })
 
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 0, 0), ['sword_ceramic'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 1, 0), ['sword_copper'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 2, 0), ['sword_bronze'])
+  assert.deepEqual(dynamicEquipmentForUnit('Chief', 3, 0), ['sword_iron'])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 0), ['sword_ceramic'])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 0, 2), ['sword_ceramic', 'armor_leather'])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 15), [

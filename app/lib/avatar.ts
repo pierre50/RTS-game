@@ -164,6 +164,15 @@ function extractSquareCanvasAvatar(
   return true
 }
 
+export function renderUnitHeadCanvasAvatar(
+  source: HTMLCanvasElement,
+  canvas: HTMLCanvasElement,
+  color: string
+): boolean {
+  const scanHeight = Math.min(source.height, Math.round(source.height * HEAD_SCAN_HEIGHT_RATIO))
+  return extractSquareCanvasAvatar(source, scanHeight, canvas, color, UNIT_SOURCE_COLORS)
+}
+
 function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
   return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
 }

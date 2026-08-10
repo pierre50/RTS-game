@@ -99,6 +99,8 @@ type StrategySnapshotState = {
 }
 
 const DEBUG = false
+const CHIEF_FORUM_GUARD_RANGE = 8
+const CHIEF_HERO_TALK_RANGE = 2.5
 
 export class AI extends Player {
   declare age: AIAge
@@ -825,6 +827,7 @@ export class AI extends Player {
     if (!anchor) return 0
     let actions = 0
     const now = this.getNow()
+    const hero = this.getApproachableHeroNearChiefAnchor(anchor)
     for (const chief of this.getLivingChiefs()) {
       if (chief.controlMode === 'hero') continue
       const hostiles = this.getVisibleHostilesNear(anchor, 12)
@@ -836,13 +839,21 @@ export class AI extends Player {
       }
 
       const distanceToAnchor = Math.abs(chief.i - anchor.i) + Math.abs(chief.j - anchor.j)
-      if (distanceToAnchor > 8) {
+      if (distanceToAnchor > CHIEF_FORUM_GUARD_RANGE) {
         chief.sendTo?.(anchor)
         actions++
         continue
       }
 
-      if (chief.inactif && distanceToAnchor <= 8 && now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)) {
+      if (hero && instancesDistance(chief, hero) > CHIEF_HERO_TALK_RANGE) {
+        if (chief.dest !== hero) {
+          chief.sendTo?.(hero)
+          actions++
+        }
+        continue
+      }
+
+      if (chief.inactif && distanceToAnchor <= CHIEF_FORUM_GUARD_RANGE && now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)) {
         const guardCell = getPositionInGridAroundInstance(anchor, this.context.map.grid, [2, 6], 0)
         this.chiefWanderReadyAt.set(chief.label, now + this.context.map.randomRange(6000, 12000))
         if (guardCell) {
@@ -852,6 +863,13 @@ export class AI extends Player {
       }
     }
     return actions
+  }
+
+  getApproachableHeroNearChiefAnchor(anchor: AIBuildingLike): UnitEntity | null {
+    const hero = this.context.controls?.heroUnit
+    if (!hero || hero.isDead || hero.isDestroyed || !hero.owner) return null
+    if (this.isEnemy(hero.owner) || hero.owner.isEnemy?.(this)) return null
+    return instancesDistance(anchor, hero) <= CHIEF_FORUM_GUARD_RANGE ? hero : null
   }
 
   step() {

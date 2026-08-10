@@ -1,6 +1,6 @@
 import { RESOURCE_STOCKPILE_TYPES } from '../constants'
-import { t } from '../lib/lang'
 import { appendBaseEntityInfo, appendQuantityInfo } from './BaseEntityInterface'
+import { getEntityDisplayName } from './entityDisplayName'
 import type { EntityInfoRenderOptions, ResourceEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
@@ -16,9 +16,16 @@ export class ResourceInterface {
     const resource = this.resource
     const menu = (resource.context as { menu: MenuLike }).menu
 
-    appendBaseEntityInfo(element, '', t(resource.type), resource.hitPoints, resource.totalHitPoints ?? 0, {
-      hideType: options?.hideIdentity,
-    })
+    appendBaseEntityInfo(
+      element,
+      '',
+      getEntityDisplayName(resource),
+      resource.hitPoints,
+      resource.totalHitPoints ?? 0,
+      {
+        hideType: options?.hideIdentity,
+      }
+    )
 
     if (resource.quantity) {
       const stockpileType = RESOURCE_STOCKPILE_TYPES[resource.type as keyof typeof RESOURCE_STOCKPILE_TYPES]

@@ -19,6 +19,7 @@ import {
   setVillagerAutonomy,
 } from '../../lib'
 import { t } from '../../lib/lang'
+import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
 import { isHeroControlled } from '../../lib/unitControl'
 import type {
   BuildingEntity,
@@ -224,7 +225,10 @@ export class UnitCommands {
   }
 
   sendToAttack(target: RuntimeEntity) {
-    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
+    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) {
+      if (!applyDiplomaticAggression(this.unit, target).hostileNow) return
+      if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
+    }
     return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
   }
 

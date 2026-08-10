@@ -75,6 +75,9 @@ const constants = {
     unit: { militaryCommand: 'militaryCommand' },
     villager: { command: 'villagerCommand' },
   },
+  PLAYER_TYPES: {
+    ai: 'AI',
+  },
   UNIT_TYPES: {
     priest: 'Priest',
     villager: 'Villager',
@@ -561,6 +564,36 @@ function makeCommAlly(props) {
     ...props,
   }
 }
+
+test('hero can talk to a non-hostile AI unit without owning it', () => {
+  const player = { label: 'player', isEnemy: owner => owner.relation === 'hostile' }
+  const hero = { owner: player }
+  const neutralOwner = { label: 'neutral-ai', type: constants.PLAYER_TYPES.ai, relation: 'neutral' }
+  const villager = makeCommAlly({ owner: neutralOwner })
+  const { isTalkableNpc } = loadNpcInteraction(null)
+
+  assert.equal(isTalkableNpc(hero, villager), true)
+})
+
+test('hero cannot talk to a hostile AI unit', () => {
+  const player = { label: 'player', isEnemy: owner => owner.relation === 'hostile' }
+  const hero = { owner: player }
+  const hostileOwner = { label: 'hostile-ai', type: constants.PLAYER_TYPES.ai, relation: 'hostile' }
+  const soldier = makeCommAlly({ owner: hostileOwner })
+  const { isTalkableNpc } = loadNpcInteraction(null)
+
+  assert.equal(isTalkableNpc(hero, soldier), false)
+})
+
+test('communication radius still ignores non-owned neutral AI units', () => {
+  const owner = { label: 'player' }
+  const neutralOwner = { label: 'neutral-ai', type: constants.PLAYER_TYPES.ai }
+  const hero = { owner, degree: 0, x: 0, y: 0, i: 0, j: 0 }
+  const neutralVillager = makeCommAlly({ owner: neutralOwner, i: 1, j: 0, x: 10, y: 0 })
+  const { resolveCommGroup } = loadCommModule([neutralVillager], () => 0)
+
+  assert.deepEqual(resolveCommGroup(hero, 0), [])
+})
 
 test('a quick tap (radius 0) resolves to the ally the hero is facing, ignoring one to the side', () => {
   const owner = { label: 'player' }

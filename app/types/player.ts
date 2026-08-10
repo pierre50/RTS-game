@@ -88,7 +88,6 @@ export interface PlayerLike {
   animals?: AnimalEntity[]
   buildings: BuildingEntity[]
   corpses: UnitEntity[]
-  visiblePlayers?: () => PlayerLike[]
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean

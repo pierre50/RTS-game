@@ -25,6 +25,10 @@ const CIVILIZATION_PLAYER_NAMES: Record<string, Record<PlayerNameGender, string[
     male: ['Aedan', 'Brennus', 'Caradoc', 'Cian', 'Lugus', 'Taran'],
     female: ['Aife', 'Brigid', 'Cartimandua', 'Epona', 'Maeve', 'Nessa'],
   },
+  Nordic: {
+    male: ['Arne', 'Bjorn', 'Eirik', 'Gunnar', 'Leif', 'Ragnar'],
+    female: ['Astrid', 'Freydis', 'Gudrun', 'Ingrid', 'Sigrid', 'Thyra'],
+  },
   Nubian: {
     male: ['Akinidad', 'Amankhar', 'Arakamani', 'Harsiotef', 'Nastasen', 'Teriteqas'],
     female: ['Amanitore', 'Amanishakheto', 'Bartare', 'Kandake', 'Maletasen', 'Shanakdakhete'],

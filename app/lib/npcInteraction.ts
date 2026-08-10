@@ -4,6 +4,7 @@ import {
   COMM_SELECTION_COLOR,
   FAMILY_TYPES,
   LABEL_TYPES,
+  PLAYER_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
@@ -87,12 +88,24 @@ function isCommEligible(hero: UnitEntity, target: UnitEntity): boolean {
   return isFriendlyAvailable(hero, target)
 }
 
+function isForeignTalkableNpc(hero: UnitEntity, target: UnitEntity): boolean {
+  const heroOwner = hero.owner
+  const targetOwner = target.owner
+  if (!heroOwner || !targetOwner || targetOwner === heroOwner) return false
+  if (targetOwner.type !== PLAYER_TYPES.ai) return false
+  if (heroOwner.isEnemy?.(targetOwner)) return false
+  if (targetOwner.isEnemy?.(heroOwner)) return false
+  return true
+}
+
 // Any living unit on the hero's own side, regardless of what it's currently doing (fighting,
-// working...) — the bar for a flavor chatter line is much lower than for a giveable order.
+// working...) or a non-hostile foreign AI unit. The bar for a flavor chatter line is much
+// lower than for a giveable order.
 export function isTalkableNpc(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (target === hero || target.family !== FAMILY_TYPES.unit) return false
   const unit = target as UnitEntity
-  return !unit.isDead && !unit.isDestroyed && unit.owner === hero.owner
+  if (unit.isDead || unit.isDestroyed) return false
+  return unit.owner === hero.owner || isForeignTalkableNpc(hero, unit)
 }
 
 // Marks a frozen comm target with the same selection lozenge as a regular unit selection, kept

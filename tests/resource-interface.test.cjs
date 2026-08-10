@@ -123,6 +123,7 @@ test('portal modal renders its description and color actions outside the info bl
         renderUnitHeadAvatar: () => false,
       },
       '../lib/lang': { t: key => key },
+      './entityDisplayName': { getEntityDisplayName: entity => entity.type },
       './InspectionPanel': {
         createInspectionModal: options => {
           capturedContent = options.content
@@ -169,7 +170,10 @@ test('portal modal renders its description and color actions outside the info bl
       colorGroup.children.map(button => button.textContent),
       ['portalColorBlue', 'portalColorYellow', 'portalColorRed']
     )
-    assert.equal(colorGroup.children.every(button => button.classList.contains('ui-btn')), true)
+    assert.equal(
+      colorGroup.children.every(button => button.classList.contains('ui-btn')),
+      true
+    )
 
     colorGroup.children[2].click()
 
@@ -193,6 +197,9 @@ test('resource info modal title uses translated resource type instead of technic
         renderUnitHeadAvatar: () => false,
       },
       '../lib/lang': { t: key => (key === 'Portal' ? 'Portail' : key) },
+      './entityDisplayName': {
+        getEntityDisplayName: entity => (entity.type === 'Portal' ? 'Portail' : entity.type),
+      },
       './InspectionPanel': {
         createInspectionModal: options => {
           capturedTitle = options.title

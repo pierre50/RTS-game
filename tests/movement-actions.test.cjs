@@ -48,6 +48,11 @@ function loadModule(relativePath, mocks) {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/lang') return { t: value => value }
+    if (request === '../../lib/diplomaticAggression') {
+      return {
+        applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
+      }
+    }
     if (request === '../../lib/unitEnergy') {
       return {
         getEnergyMoveSpeedMultiplier: unit => {
@@ -72,6 +77,14 @@ function loadModule(relativePath, mocks) {
         isManualHeroActionReleased: () => false,
         setUnitControlMode: (unit, controlMode) => {
           unit.controlMode = controlMode
+        },
+      }
+    }
+    if (request === './UnitCommands') {
+      return {
+        applyWorkForAction: (unit, work, action) => {
+          unit.work = work
+          unit.action = action
         },
       }
     }
@@ -1402,6 +1415,81 @@ test('a villager retries the original gather order after approaching a blocked t
   assert.equal(unit.blockedGatherApproach, null)
   assert.deepEqual(calls, [
     ['berries-1', constants.ACTION_TYPES.forageberry, { forceRepath: true, allowBlockedGatherApproach: false }],
+  ])
+})
+
+test('low-level gather orders realign villager work before starting the action', () => {
+  const tree = { family: constants.FAMILY_TYPES.resource, i: 0, isDestroyed: false, j: 0, label: 'tree-1', x: 10, y: 0 }
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getGroundReliefLevel: () => 0,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 180,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      getRoundedIsoShapePoints: () => [],
+      instanceContactInstance: () => true,
+      instancesDistance: () => 0,
+      isometricToCartesian: () => ({ x: 0, y: 0 }),
+      moveTowardPoint: () => {},
+      resumeVillagerAutonomy: () => false,
+      showBlockedFeedback: () => {},
+      showConfusionFeedback: () => {},
+      updateInstanceRenderVisibility: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitControl': { isHeroControlled: () => false },
+    '../../lib/heroActionRange': { isHeroActionInRange: () => false },
+    '../../lib/unitEnergy': { getEnergyMoveSpeedMultiplier: () => 1 },
+    './UnitCommands': {
+      applyWorkForAction: (unit, work, action) => {
+        calls.push(['applyWorkForAction', work, action])
+        unit.work = work
+        unit.action = action
+      },
+    },
+  })
+  const grid = [[{ has: null, i: 0, j: 0, solid: false }]]
+  const unit = {
+    action: null,
+    actionLocked: false,
+    blockedGatherApproach: null,
+    context: { map: { grid }, performance: { record: () => {} } },
+    dest: null,
+    getAction: action => calls.push(['getAction', action, unit.work]),
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => true,
+    j: 0,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: target => {
+      unit.dest = target
+    },
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.hunter,
+  }
+
+  new UnitMovement(unit).sendToEvt(tree, constants.ACTION_TYPES.chopwood)
+
+  assert.equal(unit.work, constants.WORK_TYPES.woodcutter)
+  assert.equal(unit.action, constants.ACTION_TYPES.chopwood)
+  assert.deepEqual(calls, [
+    ['applyWorkForAction', constants.WORK_TYPES.woodcutter, constants.ACTION_TYPES.chopwood],
+    ['getAction', constants.ACTION_TYPES.chopwood, constants.WORK_TYPES.woodcutter],
   ])
 })
 

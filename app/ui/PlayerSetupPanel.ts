@@ -2,6 +2,7 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { CIVILIZATIONS } from '../config/civilizations'
 import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../config/playerNames'
+import { renderUnitHeadCanvasAvatar } from '../lib/avatar'
 import type { PlayerSetupConfig } from '../types/save'
 
 type PlayerSetupPanelOptions = {
@@ -36,6 +37,10 @@ const GENDERS = [
 const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
 const MIN_PLAYERS = 1
+const HERO_PREVIEW_SIZE = 96
+const HERO_FRAME_SIZE = 64
+const HERO_DIRECTION_COUNT = 3
+const HERO_SOUTH_DIRECTION_INDEX = 2
 
 const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
 
@@ -61,6 +66,8 @@ export class PlayerSetupPanel {
   playerCountRow!: HTMLDivElement
   playerCountSelect!: HTMLSelectElement
   humanControlsEl!: HTMLDivElement
+  simplifiedExtraControls: HTMLElement[] = []
+  heroPreviewRequestId = 0
 
   constructor({ players, maxPlayers, onChange = null, showAge = false, simplified = false }: PlayerSetupPanelOptions) {
     this.onChange = onChange
@@ -81,14 +88,13 @@ export class PlayerSetupPanel {
     this._reassignAIColors()
 
     this.element = document.createElement('div')
-    this.element.className = 'lobby-col'
 
     if (this.simplified) {
-      this.humanControlsEl = document.createElement('div')
-      this.humanControlsEl.className = 'config-form'
-      this.element.appendChild(this.humanControlsEl)
+      this.element.className = 'config-form player-setup-form'
+      this.humanControlsEl = this.element
       this._refreshHumanControls()
     } else {
+      this.element.className = 'player-setup-panel'
       this.playerTableEl = document.createElement('div')
       this.playerTableEl.className = `player-table${this.showAge ? ' player-table--with-age' : ''}`
       this.playerCountRow = this._createPlayerCountSelect()
@@ -96,6 +102,12 @@ export class PlayerSetupPanel {
       this.element.appendChild(this.playerTableEl)
       this._refreshPlayerTable()
     }
+  }
+
+  appendSimplifiedControl(control: HTMLElement): void {
+    if (!this.simplified) return
+    this.simplifiedExtraControls.push(control)
+    this.humanControlsEl.appendChild(control)
   }
 
   _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
@@ -306,6 +318,82 @@ export class PlayerSetupPanel {
     this._emitChange()
   }
 
+  _heroPreviewSrc(player: PlayerSetupConfigWithAge): string {
+    const civ = (player.civ || 'Greek').toLowerCase()
+    const gender = player.gender === 'female' ? 'female' : 'male'
+    return `assets/graphics/lpc-baked/hero/${civ}/${gender}/body/walking/texture.png`
+  }
+
+  _renderHeroPreview(canvas: HTMLCanvasElement, player: PlayerSetupConfigWithAge): void {
+    const requestId = ++this.heroPreviewRequestId
+    const img = new Image()
+    let triedFallback = false
+    img.onload = () => {
+      if (requestId !== this.heroPreviewRequestId) return
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      const frame = document.createElement('canvas')
+      frame.width = HERO_FRAME_SIZE
+      frame.height = HERO_FRAME_SIZE
+      const frameCtx = frame.getContext('2d')
+      if (!frameCtx) return
+      frameCtx.imageSmoothingEnabled = false
+
+      const totalFrames = Math.max(1, Math.floor(img.width / HERO_FRAME_SIZE))
+      const framesPerDirection = Math.max(1, Math.floor(totalFrames / HERO_DIRECTION_COUNT))
+      const southFrameIndex = framesPerDirection * HERO_SOUTH_DIRECTION_INDEX
+      frameCtx.drawImage(
+        img,
+        southFrameIndex * HERO_FRAME_SIZE,
+        0,
+        HERO_FRAME_SIZE,
+        HERO_FRAME_SIZE,
+        0,
+        0,
+        HERO_FRAME_SIZE,
+        HERO_FRAME_SIZE
+      )
+      renderUnitHeadCanvasAvatar(frame, canvas, player.color)
+    }
+    img.onerror = () => {
+      if (requestId !== this.heroPreviewRequestId) return
+      if (triedFallback) return
+      triedFallback = true
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      img.src = `assets/graphics/lpc-baked/hero/greek/male/body/walking/texture.png`
+    }
+    img.src = this._heroPreviewSrc(player)
+  }
+
+  _createHeroPreview(player: PlayerSetupConfigWithAge): HTMLDivElement {
+    const row = document.createElement('div')
+    row.className = 'config-row hero-avatar-row'
+
+    const preview = document.createElement('div')
+    preview.className = 'hero-avatar-preview'
+
+    const frame = document.createElement('div')
+    frame.className = 'hero-avatar-preview-frame'
+
+    const canvas = document.createElement('canvas')
+    canvas.width = HERO_PREVIEW_SIZE
+    canvas.height = HERO_PREVIEW_SIZE
+    canvas.setAttribute('role', 'img')
+    canvas.setAttribute('aria-label', player.name)
+    frame.appendChild(canvas)
+
+    preview.appendChild(frame)
+    row.appendChild(preview)
+    this._renderHeroPreview(canvas, player)
+    return row
+  }
+
   _cycleTeam(playerIndex: number): void {
     const current = this.players[playerIndex].team
     this.players[playerIndex].team = current === null || current >= 9 ? (current === null ? 1 : null) : current + 1
@@ -463,6 +551,8 @@ export class PlayerSetupPanel {
     civRow.appendChild(civSelect)
     this.humanControlsEl.appendChild(civRow)
 
+    this.humanControlsEl.appendChild(this._createHeroPreview(human))
+
     const genderRow = document.createElement('div')
     genderRow.className = 'config-row'
     const genderLabel = document.createElement('label')
@@ -500,6 +590,9 @@ export class PlayerSetupPanel {
     colorRow.appendChild(swatch)
     this.humanControlsEl.appendChild(colorRow)
 
+    this.simplifiedExtraControls.forEach(control => {
+      this.humanControlsEl.appendChild(control)
+    })
   }
 
   _createPlayerCountSelect(): HTMLDivElement {

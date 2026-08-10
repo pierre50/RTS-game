@@ -398,7 +398,9 @@ const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
 ]
 
 const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>> = {
-  [UNIT_TYPES.chief]: ['halberd'],
+  [UNIT_TYPES.chief]: [
+    { equipment: 'sword_ceramic', ageEquipment: metalAgeEquipment('sword_copper', 'sword_bronze', 'sword_iron') },
+  ],
   [UNIT_TYPES.infantry]: [
     { equipment: 'sword_ceramic', ageEquipment: metalAgeEquipment('sword_copper', 'sword_bronze', 'sword_iron') },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,

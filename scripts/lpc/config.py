@@ -25,6 +25,7 @@ PALETTES: dict[str, list[str]] = {
     # ── Skin tones ──────────────────────────────────────────────────────────
     "fair":        ["#1D1D21", "#453125", "#784C49", "#AE6B60", "#D89F75", "#EBBD9D"],
     "celtic_fair": ["#492129", "#633432", "#8A5258", "#BD7D64", "#EBBD9D", "#FEDFB1"],
+    "nordic_fair": ["#1D1D21", "#3B303C", "#76524E", "#B87A68", "#E6B58D", "#F8DEC0"],
     "olive":       ["#1D1D21", "#492129", "#885041", "#AD6E51", "#D58D6B", "#E59A7C"],
     "brown":       ["#1D1D21", "#49251C", "#662B29", "#9E6520", "#AD6E51", "#D58D6B"],
     "deep_brown":  ["#000000", "#1D1D21", "#222323", "#31222A", "#4A353C", "#5E4646"],
@@ -35,6 +36,7 @@ PALETTES: dict[str, list[str]] = {
     "dark_brown":  ["#000000", "#1D1D21", "#372423", "#453125", "#633432", "#885041"],
     "brown_hair":  ["#000000", "#372423", "#583126", "#753B09", "#854F12", "#9E6520"],
     "light_brown": ["#1A0E04", "#301B07", "#60350F", "#7D4513", "#AE682A", "#C88D58"],
+    "blond":       ["#2E2533", "#61482C", "#8E6A2F", "#C29443", "#E7C46F", "#FFF0B0"],
 
     # ── Player colours ──────────────────────────────────────────────────────
     "navy":          ["#1D1D21", "#2E1026", "#26233D", "#28335D", "#5165AE", "#5274C5"],
@@ -83,6 +85,7 @@ PALETTES: dict[str, list[str]] = {
 SKIN_TONES = {
     "fair": "Light skin used by Babylonian variants.",
     "celtic_fair": "Warm fair skin used by Celtic variants.",
+    "nordic_fair": "Cool fair skin used by Nordic variants.",
     "olive": "Mediterranean olive skin used by Greek variants.",
     "brown": "Brown skin used by Egyptian variants.",
     "deep_brown": "Deep brown skin used by Nubian variants.",
@@ -96,6 +99,7 @@ CIVS = {
     "babylonian": {"skin": "fair", "hair": "black"},
     "asian": {"skin": "golden", "hair": "black"},
     "celtic": {"skin": "celtic_fair", "hair": "brown_hair"},
+    "nordic": {"skin": "nordic_fair", "hair": "blond"},
     "nubian": {"skin": "deep_brown", "hair": "black"},
 }
 
@@ -220,7 +224,7 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     "hero": UnitLook(
         hair="plain",
         hat=HEADBAND_BLUE,
-        dress=(SHORTS, SANDALS),
+        dress=(SLIT_SKIRT, SANDALS),
     ),
     "priest": UnitLook(
         hair="long",
@@ -255,32 +259,46 @@ CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "greek": {
         "villager": {"hair": "page2", "beard": "beard/medium"},
         "infantry": {"hair": "long_messy", "beard": "beard/winter/male"},
+        "hero": {"hair": "page2"},
     },
     "roman": {
         "villager": {"hair": "plain"},
         "infantry": {"hair": "buzzcut"},
+        "hero": {"hair": "buzzcut"},
     },
     "babylonian": {
         "villager": {"hair": "jewfro", "beard": "beard/winter/male"},
         "infantry": {"hair": "curly_short", "beard": "beard/winter/male"},
+        "hero": {"hair": "jewfro", "beard": "beard/winter/male"},
     },
     "asian": {
         "villager": {"hair": "ponytail", "hair_split": True},
         "infantry": {"hair": "ponytail2", "hair_split": True},
+        "hero": {"hair": "ponytail", "hair_split": True},
     },
     "celtic": {
         "villager": {"hair": "swoop", "beard": "beard/basic"},
         "infantry": {"hair": "bangslong", "beard": "beard/basic"},
+        "hero": {"hair": "swoop", "beard": "beard/medium"},
+        "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
+    },
+    "nordic": {
+        "villager": {"hair": "swoop", "beard": "beard/basic"},
+        "infantry": {"hair": "bangslong", "beard": "beard/winter/male"},
+        "hero": {"hair": "bob_side_part", "beard": "beard/basic"},
+        "chief": {"hair": "long_messy", "beard": "beard/medium"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "egyptian": {
         "villager": {"hair": "bob"},
         "infantry": {"hair": "buzzcut"},
+        "hero": {"hair": "bob"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nubian": {
         "villager": {"hair": "cornrows"},
         "infantry": {"hair": "dreadlocks_short"},
+        "hero": {"hair": "cornrows", "beard": None},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
 }
@@ -335,6 +353,13 @@ FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
         "villager": {"hair": "wavy", "hair_body_type": "female"},
         "infantry": {"hair": "bangslong2", "hair_body_type": "female"},
         "hero": {"hair": "wavy", "hair_body_type": "female"},
+        "chief": {"hair": "braid2", "hair_body_type": "female"},
+        "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
+    },
+    "nordic": {
+        "villager": {"hair": "wavy", "hair_body_type": "female"},
+        "infantry": {"hair": "braid2", "hair_body_type": "female"},
+        "hero": {"hair": "braid", "hair_body_type": "female"},
         "chief": {"hair": "braid2", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },

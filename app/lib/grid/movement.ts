@@ -47,6 +47,21 @@ export function getFreeCellAroundPoint<TCell extends GridCell>(
   return null
 }
 
+export function getFreeLandCellAroundInstance<TCell extends GridCell>(
+  instance: GridPosition & { size?: number },
+  grid: Grid<TCell>,
+  pickRandomItem: (items: TCell[]) => TCell | undefined = randomItem
+): TCell | null {
+  return getFreeCellAroundPoint(
+    instance.i,
+    instance.j,
+    instance.size || 1,
+    grid,
+    cell => !cell.solid && cell.category !== 'Water' && !cell.waterBorder && !cell.border,
+    pickRandomItem
+  )
+}
+
 export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   instance: PathInstanceLike,
   target: GridInstanceLike | TCell,

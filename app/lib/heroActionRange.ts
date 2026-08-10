@@ -7,7 +7,8 @@ import { instancesDistance } from './maths'
 import { isHeroControlled } from './unitControl'
 
 const HERO_FOOD_CONTACT_EXTRA_RANGE = 1.5
-const HERO_FOOTPRINT_INTERACTION_MARGIN = CELL_HEIGHT
+const HERO_FOOTPRINT_INTERACTION_BASE_MARGIN = CELL_HEIGHT * 1.5
+const HERO_FOOTPRINT_INTERACTION_MAX_MARGIN = CELL_HEIGHT * 2
 
 type Point = { x: number; y: number }
 
@@ -75,10 +76,15 @@ function getTargetFootprintPoints(target: RuntimeEntity): Point[] | null {
   return getRoundedIsoShapePoints({ x: target.x, y: target.y, factor: Math.max(1, factor) })
 }
 
+function getTargetFootprintInteractionMargin(target: RuntimeEntity): number {
+  const factor = Math.max(1, target.selectionFactor ?? target.size ?? 1)
+  return Math.min(HERO_FOOTPRINT_INTERACTION_MAX_MARGIN, HERO_FOOTPRINT_INTERACTION_BASE_MARGIN + (factor - 1) * 8)
+}
+
 function isHeroNearTargetFootprint(unit: UnitEntity, target: RuntimeEntity): boolean {
   const points = getTargetFootprintPoints(target)
   if (!points) return false
-  return distanceToPolygon(points, unit) <= HERO_FOOTPRINT_INTERACTION_MARGIN
+  return distanceToPolygon(points, unit) <= getTargetFootprintInteractionMargin(target)
 }
 
 export function getHeroInteractionTargetPoint(unit: UnitEntity, target: RuntimeEntity): Point {

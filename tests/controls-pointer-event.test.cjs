@@ -67,6 +67,7 @@ function loadControls() {
           return this.active
         }
         handleKeyDown(action) {
+          if (action === 'heroEntityInteraction') return false
           return typeof action === 'string' && action.startsWith('hero')
         }
         handleKeyUp(action) {
@@ -134,6 +135,7 @@ function loadControls() {
       isTalkableNpc: () => false,
     },
     '../lib/npcChatter': {
+      pickForeignNpcChatterLine: () => '',
       pickNpcChatterLine: () => '',
     },
     '../constants': {

@@ -191,12 +191,9 @@ export class Building extends Instance implements BuildingEntity {
       }
       cell.has = this
       cell.solid = true
-      const visiblePlayers = this.owner.visiblePlayers ? this.owner.visiblePlayers() : [this.owner]
-      for (const viewer of visiblePlayers) {
-        viewer.views.addViewer(cell.i, cell.j, this)
-        if (viewer.views.setViewed(cell.i, cell.j)) {
-          viewer.cellViewed++
-        }
+      this.owner.views.addViewer(cell.i, cell.j, this)
+      if (this.owner.views.setViewed(cell.i, cell.j)) {
+        this.owner.cellViewed++
       }
       cell.viewBy = new Set(this.context.player.views.getViewers(cell.i, cell.j))
       if (this.context.player.views.hasViewer(cell.i, cell.j, this) && !map.revealEverything) {

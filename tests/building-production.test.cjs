@@ -99,7 +99,7 @@ test('resource rally commands keep the spawned unit context', () => {
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => spawnCell,
+      getFreeLandCellAroundInstance: () => spawnCell,
       getTexture: () => null,
       payCost: () => {},
       refundCost: () => {},
@@ -203,7 +203,7 @@ test('military unit purchase reserves and sends an existing villager instead of 
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -319,7 +319,7 @@ test('military unit purchase can reserve compatible trainee training', () => {
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -436,7 +436,7 @@ test('temple priest training reserves and sends an existing villager instead of 
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -551,7 +551,7 @@ test('military training is first arrived first served', () => {
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -658,7 +658,7 @@ test('military training reservation can be cancelled before the unit enters the 
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: () => {},
       refundCost: () => {
@@ -771,7 +771,7 @@ test('trainee training updates loading even when the building is not classically
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -862,7 +862,7 @@ test('missing resources for trainee training list the exact resources', () => {
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: () => {},
       refundCost: () => {},
@@ -924,7 +924,7 @@ test('active military training cannot be cancelled after the unit entered the bu
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: () => {},
       refundCost: () => {
@@ -1044,7 +1044,7 @@ test('stable training remounts the same unit type without charging unit cost or 
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => spawnCell,
+      getFreeLandCellAroundInstance: () => spawnCell,
       getTexture: () => null,
       payCost: (targetOwner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) targetOwner[key] -= amount
@@ -1182,7 +1182,7 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => spawnCell,
+      getFreeLandCellAroundInstance: () => spawnCell,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -1306,7 +1306,7 @@ test('failed trainee placement clears active military training state', () => {
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => null,
+      getFreeLandCellAroundInstance: () => null,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount
@@ -1425,7 +1425,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
       changeSpriteColorDirectly: () => {},
       getActionCondition: () => false,
       getBuildingAsset: () => null,
-      getFreeCellAroundPoint: () => spawnCell,
+      getFreeLandCellAroundInstance: () => spawnCell,
       getTexture: () => null,
       payCost: (owner, cost = {}) => {
         for (const [key, amount] of Object.entries(cost)) owner[key] -= amount

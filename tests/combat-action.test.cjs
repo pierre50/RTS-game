@@ -132,7 +132,7 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
   assert.equal(shouldFleeWhenAttacked(chief, enemySoldier), false)
 })
 
-test('early resource actions require their unlocking technologies', () => {
+test('early resource actions require only their remaining unlocking technologies', () => {
   const actionConstants = {
     ...constants,
     ACTION_TYPES: {
@@ -179,13 +179,13 @@ test('early resource actions require their unlocking technologies', () => {
     type: 'Farm',
   }
 
-  assert.equal(getActionCondition(source, deer, 'hunt'), false)
-  assert.equal(getActionCondition(source, carcass, 'takemeat'), false)
+  assert.equal(getActionCondition(source, deer, 'hunt'), true)
+  assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
   assert.equal(getActionCondition(source, stone, 'minestone'), false)
   assert.equal(getActionCondition(source, gold, 'minegold'), false)
   assert.equal(getActionCondition(source, farm, 'farm'), false)
 
-  source.owner.technologies.push('Bow', 'Pickaxe', 'Farming')
+  source.owner.technologies.push('Pickaxe', 'Farming')
 
   assert.equal(getActionCondition(source, deer, 'hunt'), true)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)

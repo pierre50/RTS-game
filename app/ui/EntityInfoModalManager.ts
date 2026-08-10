@@ -3,6 +3,7 @@ import { changeSpriteColor } from '../lib'
 import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { createInspectionModal } from './InspectionPanel'
+import { getEntityDisplayName } from './entityDisplayName'
 import type { Application } from 'pixi.js'
 import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
@@ -25,10 +26,7 @@ const PORTAL_COLOR_LABEL_KEYS: Record<(typeof PORTAL_COLOR_CHOICES)[number], str
 }
 
 function getEntityTitle(entity: RuntimeEntity): string {
-  if (isResourceEntity(entity)) return t(entity.type)
-  if (entity.name) return entity.name
-  const assetType = (entity as { assetType?: string }).assetType
-  return t(assetType || entity.type)
+  return getEntityDisplayName(entity)
 }
 
 function isBuildingEntity(entity: RuntimeEntity): entity is BuildingEntity {
@@ -132,8 +130,9 @@ function createPortalInfoModalContent(menu: Menu, portal: ResourceEntity): HTMLE
   const description = document.createElement('p')
   description.className = 'portal-description'
   description.textContent = t('portalDescriptionMysterious')
-  const infoPanel =
-    infoContent.classList.contains('selection-info') ? infoContent : infoContent.querySelector<HTMLElement>('.selection-info')
+  const infoPanel = infoContent.classList.contains('selection-info')
+    ? infoContent
+    : infoContent.querySelector<HTMLElement>('.selection-info')
   if (infoPanel) {
     infoPanel.appendChild(description)
   } else {

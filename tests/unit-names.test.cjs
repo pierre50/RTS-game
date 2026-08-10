@@ -36,3 +36,10 @@ test('Roman unit names use female pool when gender is female', () => {
   assert.equal(getRandomUnitName('Roman', 'male', () => 0.74), 'Rufus')
   assert.equal(getRandomUnitName('Roman', 'female', () => 0), 'Aelia')
 })
+
+test('Nordic unit names are registered for both genders', () => {
+  const { getRandomUnitName } = loadTsModule(path.join(__dirname, '../app/config/name/index.ts'))
+
+  assert.equal(getRandomUnitName('Nordic', 'male', () => 0), 'Alf')
+  assert.equal(getRandomUnitName('Nordic', 'female', () => 0), 'Alfhild')
+})

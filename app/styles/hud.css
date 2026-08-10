@@ -945,6 +945,10 @@
   gap: var(--ui-gap-8);
 }
 
+.npc-orders-options[hidden] {
+  display: none;
+}
+
 .npc-orders-option {
   width: 100%;
 }

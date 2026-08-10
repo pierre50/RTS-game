@@ -84,7 +84,7 @@ function makeContext(calls) {
   const context = {
     paused: false,
     app: {},
-    player: { name: 'Hero' },
+    player: { name: 'Hero', isPlayed: true },
     controls: { beginNpcGoTo: () => {} },
     pause() {
       calls.push(['pause'])
@@ -149,7 +149,7 @@ function buildMocks(calls, context) {
         modal.title = title
       },
     },
-    '../lib/npcChatter': { pickNpcGreetingLine: () => 'hi' },
+    '../lib/npcChatter': { pickForeignNpcChatterLine: () => 'foreign hi', pickNpcGreetingLine: () => 'hi' },
   }
 }
 
@@ -177,12 +177,28 @@ test('opening the communication panel does not pause the game', () => {
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1' }
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
 
     manager.open([npc])
 
     assert.equal(context.paused, false)
     assert.deepEqual(calls, [])
+  })
+})
+
+test('foreign AI units never expose direct order buttons', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'neutral-villager', owner: { label: 'neutral-ai' } }
+
+    manager.open([npc])
+
+    assert.equal(manager.buttonsContainer.hidden, true)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'foreign hi')
   })
 })
 
@@ -193,7 +209,7 @@ test('closing the communication panel without picking an order releases frozen N
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1' }
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
 
     manager.open([npc])
     manager.close()
@@ -211,7 +227,7 @@ test('picking a villager-job order assigns it without pausing or resuming the ga
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
-    const npc = { type: 'Villager', label: 'villager-1' }
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
 
     manager.open([npc])
     const foodButton = manager.buttons.get('food')

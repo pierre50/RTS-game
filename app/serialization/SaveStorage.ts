@@ -78,6 +78,34 @@ function setIndex(index: SaveIndexEntry[]): void {
   backend.setIndex(JSON.stringify(index))
 }
 
+function isLoadableSaveData(compressed: string | null): boolean {
+  if (!compressed) return false
+
+  const raw = LZString.decompressFromBase64(compressed)
+  if (!raw) return false
+
+  try {
+    JSON.parse(raw)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function createSaveKey(index: SaveIndexEntry[]): string {
+  const usedKeys = new Set(index.map(entry => entry.key))
+  const timestamp = Date.now()
+
+  for (let offset = 0; offset < 1000; offset++) {
+    const key = `save_${timestamp + offset}`
+    if (!usedKeys.has(key) && !backend.getItem(key)) return key
+  }
+
+  return `save_${timestamp}${Math.floor(Math.random() * 1_000_000)
+    .toString()
+    .padStart(6, '0')}`
+}
+
 function formatSaveName() {
   const now = new Date()
   const day = String(now.getDate()).padStart(2, '0')
@@ -100,7 +128,7 @@ export function saveRecord(data: SaveRecord, options: SaveRecordOptions = {}): {
     throw new Error('MAX_SAVES_REACHED')
   }
   const compressed = LZString.compressToBase64(JSON.stringify(data))
-  const key = options.key ?? `save_${Date.now()}`
+  const key = options.key ?? createSaveKey(index)
   try {
     backend.setItem(key, compressed)
   } catch (error) {
@@ -132,7 +160,16 @@ export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: stri
 }
 
 export function listSaves(): SaveIndexEntry[] {
-  return getIndex().slice().reverse()
+  const index = getIndex()
+  const loadableIndex = index.filter(entry => isLoadableSaveData(backend.getItem(entry.key)))
+  if (loadableIndex.length !== index.length) {
+    try {
+      setIndex(loadableIndex)
+    } catch (error) {
+      console.warn('[save] Unable to clean save index', error)
+    }
+  }
+  return loadableIndex.slice().reverse()
 }
 
 export function loadSave(key: string): SaveRecord {
@@ -194,7 +231,7 @@ export function importSaveFile(file: File): Promise<{ key: string; name: string 
 
         const index = getIndex()
         if (index.length >= MAX_SAVES) throw new Error('MAX_SAVES_REACHED')
-        const key = `save_${Date.now()}`
+        const key = createSaveKey(index)
         try {
           backend.setItem(key, parsed.data)
         } catch {

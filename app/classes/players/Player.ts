@@ -46,7 +46,7 @@ import type { SerializedVisionGrid } from '../../types/vision'
 import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
-const DEBUG_STARTING_TECHNOLOGIES = ['Bow', 'Pickaxe', 'Farming', 'HorseTaming']
+const DEBUG_STARTING_TECHNOLOGIES = ['Pickaxe', 'Farming', 'HorseTaming']
 
 type NumericConfigOperation = ConfigOperation & {
   key: string
@@ -459,10 +459,6 @@ export class Player implements PlayerLike {
 
   enemyPlayers() {
     return this.otherPlayers().filter(player => this.isEnemy(player))
-  }
-
-  visiblePlayers() {
-    return [this, ...this.otherPlayers().filter(player => this.isAlliedWith(player))]
   }
 
   unselectAllUnits() {

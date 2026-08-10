@@ -3,6 +3,7 @@ import babylonian from './babylonian'
 import celtic from './celtic'
 import egyptian from './egyptian'
 import greek from './greek'
+import nordic from './nordic'
 import nubian from './nubian'
 import roman from './roman'
 
@@ -15,6 +16,7 @@ const NAMES_BY_CIV: Record<string, UnitNamesByGender> = {
   Celtic: celtic,
   Egyptian: egyptian,
   Greek: greek,
+  Nordic: nordic,
   Nubian: nubian,
   Roman: roman,
 }

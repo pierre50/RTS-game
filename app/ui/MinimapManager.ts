@@ -260,10 +260,13 @@ export class MinimapManager {
     const { factor, translate } = this.getMinimapParams()
     const color = owner.colorHex
     const id = `minimap-${owner.label}`
+    const shouldDrawOwner = map.revealEverything || owner.label === player?.label
 
     let canvas: HTMLCanvasElement
     let context: CanvasRenderingContext2D
     const existing = menu.playersMinimap.find(p => p.id === id)
+    if (!shouldDrawOwner && !existing) return
+
     if (existing) {
       canvas = existing.canvas
       context = existing.context
@@ -278,6 +281,7 @@ export class MinimapManager {
     }
 
     context.clearRect(-translate, 0, canvas.width, canvas.height)
+    if (!shouldDrawOwner) return
 
     const isVisible = (instance: RuntimeEntity) => map.revealEverything || playerCanSeeInstance(instance, player)
 

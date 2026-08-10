@@ -12,6 +12,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { ResourceEntity } from '../../types/entities'
 
 export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
+type NeutralResourceProfileKey = keyof (typeof RESOURCE_DENSITY_PROFILES)['moderate']['neutralGroups']
 type ResourceType = string
 type ResourceRange = [min: number, max: number]
 type ResourceGroupEntry = {
@@ -22,7 +23,7 @@ type ResourceGroupEntry = {
   minNeutralDistance: number
 }
 type NeutralResourceGroup = ResourceGroupEntry & {
-  profileKey: keyof (typeof RESOURCE_DENSITY_PROFILES)['moderate']['neutralGroups']
+  profileKey: NeutralResourceProfileKey
 }
 type ResourceCenter = GridPosition
 type MapResourcesMap = {
@@ -134,6 +135,55 @@ const RESOURCE_DENSITY_PROFILES = {
     minNeutralDistance: 20,
     playerSafeDistance: 26,
   },
+}
+
+const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<NeutralResourceProfileKey, number>>> = {
+  Temperate: {
+    berrybush: 1,
+    stone: 1,
+    copper: 1,
+    iron: 1,
+    gold: 1,
+    tree: 1,
+  },
+  BlackForest: {
+    berrybush: 0.8,
+    stone: 1,
+    copper: 0.9,
+    iron: 0.9,
+    gold: 0.85,
+    tree: 1.25,
+  },
+  Jungle: {
+    berrybush: 1.25,
+    stone: 0.85,
+    copper: 0.85,
+    iron: 0.8,
+    gold: 0.8,
+    tree: 1.25,
+  },
+  Desert: {
+    berrybush: 0.45,
+    stone: 1.25,
+    copper: 1.3,
+    iron: 1.2,
+    gold: 1.3,
+    tree: 0.7,
+  },
+}
+
+export function getNeutralResourceGroupCount(
+  resourceDensity: ResourceDensity | undefined,
+  environment: string | undefined,
+  profileKey: NeutralResourceProfileKey,
+  mapSize: number
+): number {
+  const profile = RESOURCE_DENSITY_PROFILES[resourceDensity as ResourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
+  const sizeScale = Math.max(1, Math.round((mapSize / 120) ** 2))
+  const resourceMultiplier = ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS[environment ?? '']?.[profileKey] ?? 1
+  const terrainMultiplier = profileKey === 'tree' ? getEnvironmentTerrainParams(environment).forestDensity : 1
+
+  return Math.round(profile.neutralGroups[profileKey] * resourceMultiplier * terrainMultiplier) * sizeScale
 }
 
 function shuffled<T>(items: T[], random: () => number): T[] {
@@ -363,21 +413,31 @@ export class MapResources {
   async generateNeutralResourceGroupsAsync(playersPos: GridPosition[]): Promise<void> {
     const profile =
       RESOURCE_DENSITY_PROFILES[this.map.resourceDensity as ResourceDensity] ?? RESOURCE_DENSITY_PROFILES.moderate
-    const { forestDensity } = getEnvironmentTerrainParams(this.map.environment)
     const placedCenters: GridPosition[] = []
-    const sizeScale = Math.max(1, Math.round((this.map.size / 120) ** 2))
     const groupEntries: ResourceGroupEntry[] = []
     for (const group of NEUTRAL_RESOURCE_GROUPS) {
-      const count = profile.neutralGroups[group.profileKey] * sizeScale
+      const count = getNeutralResourceGroupCount(
+        this.map.resourceDensity,
+        this.map.environment,
+        group.profileKey,
+        this.map.size
+      )
       for (let i = 0; i < count; i++) groupEntries.push(group)
     }
-    for (let i = 0; i < Math.round(profile.neutralGroups.tree * forestDensity) * sizeScale; i++) {
+    const treeGroupCount = getNeutralResourceGroupCount(
+      this.map.resourceDensity,
+      this.map.environment,
+      'tree',
+      this.map.size
+    )
+    const treeParams = getEnvironmentTerrainParams(this.map.environment)
+    for (let i = 0; i < treeGroupCount; i++) {
       groupEntries.push({
         type: RESOURCE_TYPES.tree,
         quantity: 14,
         clusterRadius: 4,
         playerSafeDistance: profile.playerSafeDistance,
-        minNeutralDistance: profile.minNeutralDistance,
+        minNeutralDistance: Math.round(profile.minNeutralDistance * (treeParams.forestDensity < 0.15 ? 1.15 : 1)),
       })
     }
     let batch = 0

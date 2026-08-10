@@ -170,7 +170,7 @@ export class AnimalMovement {
       return
     }
     if (nextCell.solid && animal.dest) {
-      animal.sendTo(animal.dest, animal.action, { forceRepath: true })
+      animal.sendTo(animal.dest, animal.action, { forceRepath: true, movementSheet: animal.movementSheet })
       return
     }
     if (!animal.sprite.playing) {
@@ -196,7 +196,7 @@ export class AnimalMovement {
       updateInstanceVisibility(animal)
       animal.path.pop()
       if (this.destHasMoved()) {
-        animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true })
+        animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true, movementSheet: animal.movementSheet })
         return
       }
       if (this.isAnimalAtDest(animal.action ?? null, animal.dest)) {

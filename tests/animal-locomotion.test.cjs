@@ -65,7 +65,18 @@ function createMovement(animalOverrides = {}) {
   for (let i = 0; i < 12; i++) {
     grid[i] = []
     for (let j = 0; j < 12; j++) {
-      grid[i][j] = { i, j, x: i * 10, y: j * 10, z: 0, solid: false, has: null }
+      grid[i][j] = {
+        i,
+        j,
+        x: i * 10,
+        y: j * 10,
+        z: 0,
+        solid: false,
+        has: null,
+        place(instance) {
+          this.has = instance
+        },
+      }
     }
   }
   const animal = {
@@ -81,8 +92,10 @@ function createMovement(animalOverrides = {}) {
     path: [],
     dest: null,
     realDest: null,
+    currentCell: grid[5][5],
     altitude: 0,
     currentSheet: 'walkingSheet',
+    applyReliefLift: () => {},
     sprite: {
       playing: true,
       playCalls: 0,
@@ -96,14 +109,14 @@ function createMovement(animalOverrides = {}) {
         this.stopCalls++
       },
     },
-    context: { map: { grid } },
+    context: { map: { grid, updateInstanceBucket: () => {} } },
     stop: () => calls.push(['stop']),
     stopInterval: () => {},
     setDest: dest => calls.push(['setDest', dest.i, dest.j]),
     setPath: (path, sheet) => calls.push(['setPath', sheet]),
     getAction: name => calls.push(['getAction', name]),
     affectNewDest: () => calls.push(['affectNewDest']),
-    sendTo: () => calls.push(['sendTo']),
+    sendTo: (dest, action, options) => calls.push(['sendTo', dest, action, options]),
     ...animalOverrides,
   }
   const lib = {
@@ -113,6 +126,7 @@ function createMovement(animalOverrides = {}) {
     getInstanceDegree: () => 0,
     getInstancePath: (_animal, i, j) => [grid[i][j]],
     getInstanceZIndex: () => 0,
+    getGroundReliefLevel: () => 0,
     instanceContactInstance: () => false,
     instancesDistance: () => 1,
     moveTowardPoint: () => {},
@@ -186,5 +200,30 @@ test('a repath on the ground still defaults to the walking sheet', () => {
   assert.deepEqual(calls, [
     ['setDest', 8, 8],
     ['setPath', 'walkingSheet'],
+  ])
+})
+
+test('a moving attack target keeps the active running sheet when repathing', () => {
+  const { movement, animal, grid, calls } = createMovement({
+    speed: 20,
+    action: 'attack',
+    movementSheet: 'runningSheet',
+    dest: { i: 9, j: 9, x: 90, y: 90, label: 'villager' },
+    realDest: { i: 8, j: 8 },
+  })
+  animal.path = [grid[6][6]]
+
+  movement.moveToPath()
+
+  assert.deepEqual(calls, [
+    [
+      'sendTo',
+      animal.dest,
+      'attack',
+      {
+        forceRepath: true,
+        movementSheet: 'runningSheet',
+      },
+    ],
   ])
 })

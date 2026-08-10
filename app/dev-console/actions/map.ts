@@ -1,7 +1,7 @@
 import {
   cartesianToIsometric,
   drawInstanceBlinkingSelection,
-  getFreeCellAroundPoint,
+  getFreeLandCellAroundInstance,
   getGaiaAnimals,
   getGroundReliefLevel,
   getInstanceZIndex,
@@ -80,12 +80,9 @@ function teleportUnitToCell(context: DevConsoleContext, unit: DevEntity, cell: D
 
 function findPortalArrivalCell(context: DevConsoleContext, portal: DevEntity): DevCell | null {
   const { map } = context
-  return getFreeCellAroundPoint(
-    portal.i,
-    portal.j,
-    portal.size || 1,
+  return getFreeLandCellAroundInstance(
+    portal,
     map.grid,
-    cell => cell.category !== 'Water' && !cell.solid,
     cells => cells[0]
   )
 }

@@ -11,7 +11,7 @@ import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
 import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
 import { isTalkableNpc } from '../lib/npcInteraction'
-import { pickNpcChatterLine } from '../lib/npcChatter'
+import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npcChatter'
 import type { AudibleInstanceLike, ControlPointerEvent, ControlsLike, GameContextLike } from '../types/context'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -798,7 +798,9 @@ export default class Controls extends Container implements ControlsLike {
     if (isTalkableNpc(hero, target)) {
       // No order is possible here (non-chief hero, or the ally isn't commandable right now) —
       // same orders panel as a single-target order, just with a chatter line and no buttons.
-      menu?.openNpcOrders?.([target as UnitEntity], { chatterLine: pickNpcChatterLine(), ordersEnabled: false })
+      const unit = target as UnitEntity
+      const chatterLine = unit.owner === hero.owner ? pickNpcChatterLine() : pickForeignNpcChatterLine(unit)
+      menu?.openNpcOrders?.([unit], { chatterLine, ordersEnabled: false })
       return true
     }
     return Boolean(menu?.openEntityInfoModal?.(target))

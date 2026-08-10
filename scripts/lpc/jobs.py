@@ -37,7 +37,7 @@ INFANTRY_JOBS: tuple[Job, ...] = (
 )
 
 CHIEF_JOBS: tuple[Job, ...] = (
-    Job("default", walking_equipment="halberd", action_animation="slash", action_equipment="halberd"),
+    Job("default", walking_equipment="sword_ceramic", action_animation="slash", action_equipment="sword_ceramic"),
 )
 
 # The cane has no spellcast-pose art, so action_equipment is left unset — the

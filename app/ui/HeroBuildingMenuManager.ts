@@ -5,6 +5,7 @@ import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
+import { getBuildingDisplayName } from './entityDisplayName'
 import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
@@ -106,7 +107,7 @@ export class HeroBuildingMenuManager {
     this.opened = true
     this.structureSignature = this.getStructureSignature()
     this.modal = createInspectionModal({
-      title: t(building.assetType || building.type),
+      title: getBuildingDisplayName(building),
       content: this.panel,
       onClose: () => this.close(),
     })

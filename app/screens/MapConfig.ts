@@ -62,28 +62,14 @@ export default class MapConfig {
     const layout = document.createElement('div')
     layout.className = 'lobby-layout'
 
-    const leftCol = document.createElement('div')
-    leftCol.className = 'lobby-col'
-
     this.playerSetupPanel = new PlayerSetupPanel({ maxPlayers: 1, simplified: true })
-    leftCol.appendChild(this.playerSetupPanel.element)
-
-    const rightCol = document.createElement('div')
-    rightCol.className = 'lobby-col'
-
-    const settingsForm = document.createElement('div')
-    settingsForm.className = 'config-form lobby-settings-form'
-
-    settingsForm.appendChild(
+    this.playerSetupPanel.appendSimplifiedControl(
       buildSelectRow(t('colDifficulty'), DIFFICULTIES, 'medium', val => {
         this.config.difficulty = val
       })
     )
 
-    rightCol.appendChild(settingsForm)
-
-    layout.appendChild(leftCol)
-    layout.appendChild(rightCol)
+    layout.appendChild(this.playerSetupPanel.element)
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group button-group--row'

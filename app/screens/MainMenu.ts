@@ -144,17 +144,20 @@ export default class MainMenu {
 
   _openSettings(): void {
     openSettingsModal({
-      onLangChange: () => {
-        this._showMain()
-        this._focusFirstHomeButton()
-      },
+      onLangChange: () => this._refreshHome(),
     })
   }
 
   _openSaveList(): void {
     openSaveListModal({
       onLoad: saveData => this.onLoad(saveData),
+      onChange: () => this._refreshHome(),
     })
+  }
+
+  _refreshHome(): void {
+    this._showMain()
+    this._focusFirstHomeButton()
   }
 
   _continueLatestSave(): void {

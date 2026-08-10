@@ -373,7 +373,6 @@ export const getActionCondition = (
     takemeat: () =>
       Boolean(
         isVillagerOrHero(source) &&
-          ownerHasTechnology(source, 'Bow') &&
           target.family === FAMILY_TYPES.animal &&
           (target.quantity ?? 0) > 0 &&
           target.isDead &&
@@ -381,7 +380,6 @@ export const getActionCondition = (
       ),
     hunt: () =>
       isVillagerOrHero(source) &&
-      ownerHasTechnology(source, 'Bow') &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&

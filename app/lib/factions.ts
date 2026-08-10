@@ -1,5 +1,6 @@
 import type { FactionRelationState, FactionSave, SavePlayerState } from '../types/save'
 import type { PlayerLike } from '../types/player'
+import { t } from './lang'
 
 export const FACTION_SCORE = {
   allied: 75,
@@ -10,31 +11,31 @@ export const FACTION_SCORE = {
 
 const CIV_TRIBE_NAMES: Record<string, { prefixes: string[]; roots: string[] }> = {
   Greek: {
-    prefixes: ['Maison', 'Ligue', 'Clan', 'Cercle'],
+    prefixes: ['factionPrefixHouse', 'factionPrefixLeague', 'factionPrefixClan', 'factionPrefixCircle'],
     roots: ['Athros', 'Myron', 'Helika', 'Dorien', 'Ephyra', 'Kallias'],
   },
   Egyptian: {
-    prefixes: ['Maison', 'Nomades', 'Gardiens', 'Enfants'],
+    prefixes: ['factionPrefixHouse', 'factionPrefixNomads', 'factionPrefixGuardians', 'factionPrefixChildren'],
     roots: ['Akhet', 'Menka', 'Sobek', 'Nehesi', 'Aset', 'Kem'],
   },
   Babylonian: {
-    prefixes: ['Cite', 'Maison', 'Clan', 'Veilleurs'],
+    prefixes: ['factionPrefixCity', 'factionPrefixHouse', 'factionPrefixClan', 'factionPrefixWatchers'],
     roots: ['Ur-Nammu', 'Ishtar', 'Nabur', 'Enlil', 'Kish', 'Sippar'],
   },
   Celtic: {
-    prefixes: ['Clan', 'Cercle', 'Maison', 'Veilleurs'],
+    prefixes: ['factionPrefixClan', 'factionPrefixCircle', 'factionPrefixHouse', 'factionPrefixWatchers'],
     roots: ['Brennos', 'Epona', 'Nemeton', 'Lugos', 'Arduenna', 'Cernun'],
   },
   Roman: {
-    prefixes: ['Maison', 'Cohorte', 'Gens', 'Gardes'],
+    prefixes: ['factionPrefixHouse', 'factionPrefixCohort', 'factionPrefixPeople', 'factionPrefixGuards'],
     roots: ['Valeria', 'Aquila', 'Marcellus', 'Sabina', 'Rufus', 'Livia'],
   },
   Nubian: {
-    prefixes: ['Maison', 'Gardes', 'Clan', 'Enfants'],
+    prefixes: ['factionPrefixHouse', 'factionPrefixGuards', 'factionPrefixClan', 'factionPrefixChildren'],
     roots: ['Kush', 'Amani', 'Napata', 'Meroe', 'Taharka', 'Kandake'],
   },
   Asian: {
-    prefixes: ['Maison', 'Clan', 'Jardin', 'Gardes'],
+    prefixes: ['factionPrefixHouse', 'factionPrefixClan', 'factionPrefixGarden', 'factionPrefixGuards'],
     roots: ['Shen', 'Yun', 'Qiao', 'Han', 'Lin', 'Ming'],
   },
 }
@@ -62,7 +63,7 @@ export function getFactionRelationState(score: number): FactionRelationState {
 
 export function createFactionName(civilization: string | undefined, seed: string): string {
   const names = CIV_TRIBE_NAMES[civilization || ''] ?? CIV_TRIBE_NAMES.Greek
-  return `${pickStable(names.prefixes, seed, 'prefix')} ${pickStable(names.roots, seed, 'root')}`
+  return `${t(pickStable(names.prefixes, seed, 'prefix'))} ${pickStable(names.roots, seed, 'root')}`
 }
 
 export function createFactionSave(options: {
@@ -97,7 +98,9 @@ export function adjustFactionRelation(faction: FactionSave, delta: number, now: 
   }
 }
 
-export function playerFactionId(player?: Pick<PlayerLike, 'factionId'> | Pick<SavePlayerState, 'factionId'> | null): string | null {
+export function playerFactionId(
+  player?: Pick<PlayerLike, 'factionId'> | Pick<SavePlayerState, 'factionId'> | null
+): string | null {
   return player?.factionId ?? null
 }
 

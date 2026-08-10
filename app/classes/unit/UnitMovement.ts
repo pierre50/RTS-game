@@ -37,6 +37,7 @@ import {
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
 import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
+import { applyWorkForAction } from './UnitCommands'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
@@ -51,6 +52,34 @@ function getMiningActions(): string[] {
     .filter((action): action is string => Boolean(action))
   if (configured.length) return configured
   return [ACTION_TYPES.minestone, ACTION_TYPES.minegold].filter((action): action is string => Boolean(action))
+}
+
+function getVillagerWorkForAction(action: string | null | undefined): string | null {
+  if (!action) return null
+  const miningConfig = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(config => config.action === action)
+  if (miningConfig?.work) return miningConfig.work
+  switch (action) {
+    case ACTION_TYPES.chopwood:
+      return WORK_TYPES.woodcutter
+    case ACTION_TYPES.forageberry:
+      return WORK_TYPES.forager
+    case ACTION_TYPES.farm:
+      return WORK_TYPES.farmer
+    case ACTION_TYPES.hunt:
+    case ACTION_TYPES.takemeat:
+      return WORK_TYPES.hunter
+    case ACTION_TYPES.build:
+      return WORK_TYPES.builder
+    default:
+      return null
+  }
+}
+
+function syncVillagerWorkForAction(unit: UnitEntity, action: string | null | undefined): void {
+  if (unit.type !== UNIT_TYPES.villager) return
+  const work = getVillagerWorkForAction(action)
+  if (!work) return
+  applyWorkForAction(unit, work, action ?? null)
 }
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
@@ -414,6 +443,7 @@ export class UnitMovement {
       unit.previousWork = null
       clearVillagerAutonomy?.(unit)
     }
+    syncVillagerWorkForAction(unit, action)
     if (
       unit.isUnitAtDest?.(action, dest) &&
       (!map.grid[unit.i][unit.j].solid ||

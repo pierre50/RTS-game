@@ -14,7 +14,7 @@ import {
   changeSpriteColorDirectly,
   getActionCondition,
   getBuildingAsset,
-  getFreeCellAroundPoint,
+  getFreeLandCellAroundInstance,
   getTexture,
   payCost,
   refundCost,
@@ -154,12 +154,9 @@ export class BuildingProduction {
     const {
       context: { map },
     } = building
-    const spawnCell = getFreeCellAroundPoint(
-      building.i,
-      building.j,
-      building.size,
+    const spawnCell = getFreeLandCellAroundInstance(
+      building,
       map.grid,
-      (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
       (items: RuntimeCell[]) => map.randomItem(items)
     )
     const consumePopulationSlot = options.consumePopulationSlot ?? true
@@ -269,12 +266,9 @@ export class BuildingProduction {
     const {
       context: { map },
     } = building
-    const spawnCell = getFreeCellAroundPoint(
-      building.i,
-      building.j,
-      building.size,
+    const spawnCell = getFreeLandCellAroundInstance(
+      building,
       map.grid,
-      (cell: RuntimeCell) => cell.category !== 'Water' && !cell.solid,
       (items: RuntimeCell[]) => map.randomItem(items)
     )
     if (!spawnCell) return

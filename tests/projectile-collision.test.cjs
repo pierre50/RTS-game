@@ -83,6 +83,12 @@ function loadProjectile(libOverrides = {}) {
       ...libOverrides,
     },
     '../lib/combatFeedback': { showDamageFeedback: () => {} },
+    '../lib/diplomaticAggression': {
+      applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
+      canTargetBeAggressed: () => false,
+      canTriggerDiplomaticAggression: () => false,
+      ...libOverrides,
+    },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
     '../lib/equipmentStats': { getEntityWeaponPower: () => 0 },
     '../lib/settings': { getShadowsEnabled: () => false },
@@ -130,6 +136,68 @@ test('projectile collision candidates include enemy buildings', () => {
   const candidates = projectile.getCollisionCandidates()
 
   assert.deepEqual(candidates, [enemyBuilding, enemyUnit, gaiaAnimal])
+})
+
+test('player arrows can turn a neutral faction hostile and damage the target', () => {
+  let hit = null
+  const faction = { relationState: 'neutral' }
+  const Projectile = loadProjectile({
+    applyCombatHit: (_source, target, options) => {
+      hit = { target, options }
+      target.hitPoints -= options.defaultDamage
+      return { damageDealt: options.defaultDamage, killed: false }
+    },
+    applyDiplomaticAggression: (source, target) => {
+      if (!source.owner?.isPlayed || target.owner?.factionId !== 'neutral-tribe') {
+        return { changed: false, hostileNow: false, relation: 'unchanged' }
+      }
+      faction.relationState = 'hostile'
+      return { changed: true, hostileNow: true, relation: 'hostile' }
+    },
+    canTargetBeAggressed: (source, target) =>
+      Boolean(source.owner?.isPlayed && target.owner?.factionId === 'neutral-tribe'),
+    canTriggerDiplomaticAggression: (source, target) =>
+      Boolean(source.owner?.isPlayed && target.owner?.factionId === 'neutral-tribe'),
+    isFriendlyTarget: (source, target) => !source.owner?.isEnemy?.(target.owner),
+  })
+  const owner = {
+    family: 'unit',
+    type: 'Hero',
+    owner: {
+      label: 'player',
+      isPlayed: true,
+      isEnemy: targetOwner => faction.relationState === 'hostile' && targetOwner?.factionId === 'neutral-tribe',
+      config: { projectiles: { Arrow: { assets: 'projectiles/arrow', size: 3, speed: 14 } } },
+    },
+    x: 0,
+    y: 0,
+    z: 0,
+    width: 32,
+    height: 48,
+    range: 5,
+    sprite: { height: 48 },
+  }
+  const target = {
+    family: 'unit',
+    owner: { label: 'neutral-ai', factionId: 'neutral-tribe' },
+    x: 0,
+    y: 0,
+    z: 0,
+    width: 32,
+    height: 32,
+    hitPoints: 20,
+  }
+  const projectile = new Projectile(
+    { owner, target, type: 'Arrow', destination: { x: target.x, y: target.y }, weaponPower: 5 },
+    { app: {}, players: [{ units: [target], buildings: [], animals: [] }], map: {}, scheduler: { add: () => null }, player: owner.owner }
+  )
+
+  assert.deepEqual(projectile.getCollisionCandidates(), [target])
+  projectile.onHit(target)
+
+  assert.equal(faction.relationState, 'hostile')
+  assert.equal(target.hitPoints, 15)
+  assert.equal(hit.target, target)
 })
 
 test('mounted archers spawn arrows from the visual rider height', () => {

@@ -16,7 +16,7 @@ import {
 } from '../lib/npcInteraction'
 import { createTitledEntityInfoContent } from './EntityInfoModalManager'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
-import { pickNpcGreetingLine } from '../lib/npcChatter'
+import { pickForeignNpcChatterLine, pickNpcGreetingLine } from '../lib/npcChatter'
 import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
@@ -144,7 +144,8 @@ export class NpcOrdersManager {
     // Just chatting (no order possible right now — non-chief hero, or the ally isn't
     // commandable) shows the same panel with the buttons hidden rather than a whole
     // separate window.
-    const ordersEnabled = options.ordersEnabled ?? true
+    const isOwnGroup = npcs.every(npc => npc.owner?.isPlayed === true)
+    const ordersEnabled = (options.ordersEnabled ?? true) && isOwnGroup
     this.buttonsContainer.hidden = !ordersEnabled
 
     // A commandable single target gets a short in-character greeting addressed to the player
@@ -152,7 +153,11 @@ export class NpcOrdersManager {
     this.chatterContainer.replaceChildren()
     const chatterLine =
       options.chatterLine ??
-      (soloTarget && ordersEnabled ? pickNpcGreetingLine(this.menu.context.player?.name ?? '') : null)
+      (soloTarget
+        ? ordersEnabled
+          ? pickNpcGreetingLine(this.menu.context.player?.name ?? '')
+          : pickForeignNpcChatterLine(soloTarget)
+        : null)
     if (chatterLine) {
       const line = document.createElement('p')
       line.className = 'npc-orders-chatter-line'

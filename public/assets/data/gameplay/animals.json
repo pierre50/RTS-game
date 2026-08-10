@@ -2,7 +2,7 @@
   "Deer": {
     "totalHitPoints": 16,
     "sight": 8,
-    "speed": 1.2,
+    "speed": 1.6,
     "strategy": "runaway",
     "ambientMovement": true,
     "ambientWalkDelayMin": 7000,
@@ -113,7 +113,7 @@
   "Boar": {
     "totalHitPoints": 30,
     "sight": 8,
-    "speed": 0.9,
+    "speed": 1.15,
     "equipment": ["boar_tusks"],
     "strategy": "attack",
     "ambientMovement": true,

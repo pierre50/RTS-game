@@ -19,7 +19,6 @@ type VisibilityContext = {
 
 type VisibilityOwner = Partial<PlayerLike> & {
   views?: PlayerLike['views']
-  visiblePlayers?: () => PlayerLike[]
 }
 
 export type VisibilityEntity = {
@@ -133,7 +132,6 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   if (!owner?.views || !player?.views || !map?.grid) return
   const ownerPlayer = owner as PlayerLike
   const sightSq = sight * sight
-  const visiblePlayers = ownerPlayer.visiblePlayers ? ownerPlayer.visiblePlayers() : [ownerPlayer]
 
   const prevVisible = instance.visibleCells ?? new Set()
   const newVisible = instance._visibleScratch ?? new Set()
@@ -159,9 +157,7 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
     if (!newVisible.has(index)) {
       const [i, j] = owner.views.coordinates(index)
       const globalCell = map.grid[i][j]
-      for (const viewer of visiblePlayers) {
-        viewer.views.removeViewer(i, j, instance)
-      }
+      ownerPlayer.views.removeViewer(i, j, instance)
       syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
 
       if (!player.views.isVisible(i, j) && !map.revealEverything) {
@@ -175,14 +171,12 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
       const [i, j] = owner.views.coordinates(index)
       const globalCell = map.grid[i][j]
 
-      for (const viewer of visiblePlayers) {
-        viewer.views.addViewer(i, j, instance)
-        if (viewer.views.setViewed(i, j)) {
-          viewer.cellViewed++
-        }
-        if (viewer.type === PLAYER_TYPES.ai) {
-          updateAIKnowledge(globalCell, viewer)
-        }
+      ownerPlayer.views.addViewer(i, j, instance)
+      if (ownerPlayer.views.setViewed(i, j)) {
+        ownerPlayer.cellViewed++
+      }
+      if (ownerPlayer.type === PLAYER_TYPES.ai) {
+        updateAIKnowledge(globalCell, ownerPlayer)
       }
       syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
       globalCell.updateVisible()

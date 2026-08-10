@@ -16,6 +16,7 @@ import { getHeroInteractionTargetPoint, isHeroActionInRange, isHeroInteractionTa
 import { getActionCondition, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
+import { applyDiplomaticAggression, canTriggerDiplomaticAggression } from './diplomaticAggression'
 import { getWorkWithLoadingType } from './extra'
 import {
   getEquipmentCombatStats,
@@ -70,6 +71,7 @@ const HERO_DEFENSE_SPARK_STEP_MS = 30
 const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
+const LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE = 45
 const MOUNTED_ATTACK_HALF_ANGLE = 45
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
@@ -521,13 +523,16 @@ function getDirectionalTargets<T extends RuntimeEntity>(
   return candidates
     .map(target => {
       const aimPoint = getHeroInteractionTargetPoint(hero, target)
+      const targetHalfAngle =
+        [FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '') ? LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE : halfAngle
       return {
         target,
         angle: getAimDelta(hero, aimPoint),
         dist: Math.hypot(aimPoint.x - hero.x, aimPoint.y - hero.y),
+        halfAngle: targetHalfAngle,
       }
     })
-    .filter(candidate => candidate.angle <= halfAngle)
+    .filter(candidate => candidate.angle <= candidate.halfAngle)
     .sort((a, b) => a.angle - b.angle || a.dist - b.dist)
     .map(candidate => candidate.target)
 }
@@ -579,7 +584,11 @@ function canBeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: Her
   ) {
     return false
   }
-  return getActionCondition(getHeroWeaponCombatSource(hero, tool), target, ACTION_TYPES.attack)
+  const combatSource = getHeroWeaponCombatSource(hero, tool)
+  return (
+    getActionCondition(combatSource, target, ACTION_TYPES.attack) ||
+    canTriggerDiplomaticAggression(hero, target)
+  )
 }
 
 function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): RuntimeEntity | null {
@@ -1121,6 +1130,8 @@ function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: He
   if (!isHeroActionInRange(hero, ACTION_TYPES.attack, target) && !hero.isUnitAtDest?.(ACTION_TYPES.attack, target)) {
     return false
   }
+  const openingAggression = applyDiplomaticAggression(hero, target)
+  if (openingAggression.changed && !openingAggression.hostileNow) return true
   if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return false
   hero.action = ACTION_TYPES.attack
   hero.setDest?.(target)

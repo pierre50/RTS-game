@@ -1,8 +1,8 @@
 import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
 import { getIconPath } from '../lib'
 import { t } from '../lib/lang'
-import { getTowerType, isTower } from '../lib/buildings/towers'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+import { getBuildingDisplayName } from './entityDisplayName'
 import type { BuildingEntity, EntityInfoRenderOptions } from '../types/entities'
 import type { BuildingConfig } from '../types/config'
 import type { MenuLike } from '../types/context'
@@ -63,10 +63,16 @@ export class BuildingInterface {
     const menu = (building.context as { menu: MenuLike }).menu
     const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
 
-    const displayType = (isTower(building) ? getTowerType(building.owner!) : building.type) || building.type
-    appendBaseEntityInfo(element, t(building.owner!.civ || ''), t(displayType), hitPoints, building.totalHitPoints, {
-      hideType: options?.hideIdentity,
-    })
+    appendBaseEntityInfo(
+      element,
+      t(building.owner!.civ || ''),
+      getBuildingDisplayName(building),
+      hitPoints,
+      building.totalHitPoints,
+      {
+        hideType: options?.hideIdentity,
+      }
+    )
 
     if (building.owner?.isPlayed && building.isBuilt && building.quantity) {
       appendQuantityInfo(element, menu.icons!['food'], building.quantity)

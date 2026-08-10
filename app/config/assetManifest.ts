@@ -43,6 +43,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     asian: 'assets/data/civilizations/asian.json',
     babylonian: 'assets/data/civilizations/babylonian.json',
     celtic: 'assets/data/civilizations/celtic.json',
+    nordic: 'assets/data/civilizations/nordic.json',
     nubian: 'assets/data/civilizations/nubian.json',
     technology: 'assets/data/technologies/technologies.json',
   },
