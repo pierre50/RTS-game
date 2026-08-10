@@ -13,6 +13,8 @@ import {
   COMM_INDICATOR_STROKE_COLOR,
   COMM_INDICATOR_STROKE_WIDTH,
   HERO_ACTION_MOVE_SPEED_FACTOR,
+  HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR,
+  HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
   SHEET_TYPES,
@@ -132,6 +134,21 @@ function getPointInDirection(unit: UnitEntity, degree: number, distance = 100): 
     x: unit.x + vector.dx * distance,
     y: unit.y + vector.dy * distance,
   }
+}
+
+function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): number {
+  const moveLength = Math.hypot(move.dx, move.dy)
+  const facingLength = Math.hypot(facing.dx, facing.dy)
+  if (moveLength <= 0 || facingLength <= 0) return 1
+
+  const alignment = (move.dx * facing.dx + move.dy * facing.dy) / (moveLength * facingLength)
+  if (alignment >= 0) {
+    return HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (1 - HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR) * alignment
+  }
+  return (
+    HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR +
+    (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR) * alignment
+  )
 }
 
 // controlMode determines the baked look (see applyBakedLpcUnitAssets), and this
@@ -352,14 +369,17 @@ export class HeroController {
     let moved = false
     if (isMoving) {
       const len = Math.hypot(dx, dy)
+      const lockedFacingVector =
+        lockedKeyboardMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
       const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
+      const lockedMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
-      const facingVector =
-        lockedKeyboardMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
-      const moveOptions = facingVector ? { facingDirX: facingVector.dx, facingDirY: facingVector.dy } : undefined
-      moved = unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false
+      const moveOptions = lockedFacingVector
+        ? { facingDirX: lockedFacingVector.dx, facingDirY: lockedFacingVector.dy }
+        : undefined
+      moved = unit.moveDirect?.(dx / len, dy / len, distance * lockedMoveSpeedFactor, moveOptions) ?? false
       if (aimedDegree != null && unit.degree !== aimedDegree) {
         unit.degree = aimedDegree
       }
@@ -372,6 +392,7 @@ export class HeroController {
           distance,
           frameScale,
           speedFactor,
+          lockedMoveSpeedFactor,
           attacking,
           hasMoveDirect: Boolean(unit.moveDirect),
           before,

@@ -51,6 +51,8 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
     '../constants': {
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
+      HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR: 0.6,
+      HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR: 0.8,
       LABEL_TYPES: { commRadius: 'commRadius' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
       SHEET_TYPES: { action: 'action', standing: 'standing', walking: 'walking' },
@@ -283,7 +285,7 @@ test('shift keyboard movement on foot keeps absolute movement and locks current 
   assert.equal(moveCalls.length, 1)
   assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
-  assert.ok(moveCalls[0][2] > 0)
+  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.8) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
 
@@ -292,6 +294,28 @@ test('shift keyboard movement on foot keeps absolute movement and locks current 
   const attackCall = calls.find(call => Array.isArray(call) && call[0] === 'attack')
   assert.ok(attackCall)
   assert.ok(attackCall[1].x > hero.x)
+})
+
+test('shift keyboard movement slows backpedaling more than strafing', () => {
+  const { controller, hero } = createController()
+  const moveCalls = []
+  hero.degree = 180
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.controls.shiftKeyActive = true
+
+  assert.equal(controller.handleKeyDown('heroLeft'), true)
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.ok(Math.abs(moveCalls[0][0] + 1) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][1]) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.6) < 1e-9)
 })
 
 test('shift keyboard movement does not lock facing while mounted', () => {

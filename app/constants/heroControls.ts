@@ -12,3 +12,5 @@ export const HERO_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
 }
 
 export const HERO_ACTION_MOVE_SPEED_FACTOR = 0
+export const HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR = 0.8
+export const HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR = 0.6
