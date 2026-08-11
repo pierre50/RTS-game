@@ -60,7 +60,7 @@ test('an airborne animal without a flying sheet falls back to the requested shee
   assert.equal(locomotion.resolveMovementSheet({ altitude: 5, currentSheet: 'walkingSheet' }), 'walkingSheet')
 })
 
-function createMovement(animalOverrides = {}) {
+function createMovement(animalOverrides = {}, libOverrides = {}) {
   const calls = []
   const grid = []
   for (let i = 0; i < 12; i++) {
@@ -132,6 +132,7 @@ function createMovement(animalOverrides = {}) {
     instancesDistance: () => 1,
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
+    ...libOverrides,
   }
   const { AnimalMovement } = loadModule('app/classes/animal/AnimalMovement.ts', {
     '../../constants': constants,
@@ -182,6 +183,52 @@ test('a walking animal blocked by another animal pauses its animation', () => {
 
   assert.equal(animal.sprite.playing, false)
   assert.equal(animal.sprite.stopCalls, 1)
+})
+
+test('a flying animal uses flyingSpeed for path movement', () => {
+  const speeds = []
+  const { movement, animal, grid } = createMovement(
+    {
+      speed: 1,
+      flyingSpeed: 2,
+      movementSheet: 'flyingSheet',
+      currentSheet: 'flyingSheet',
+      flyingSheet: {},
+    },
+    {
+      instancesDistance: () => 100,
+      moveTowardPoint: (_animal, _x, _y, speed) => speeds.push(speed),
+    }
+  )
+  animal.path = [grid[5][6]]
+  animal.dest = grid[9][9]
+
+  movement.moveToPath()
+
+  assert.deepEqual(speeds, [2])
+})
+
+test('a running animal uses runningSpeed for path movement', () => {
+  const speeds = []
+  const { movement, animal, grid } = createMovement(
+    {
+      speed: 1,
+      runningSpeed: 1.75,
+      movementSheet: 'runningSheet',
+      currentSheet: 'runningSheet',
+      runningSheet: {},
+    },
+    {
+      instancesDistance: () => 100,
+      moveTowardPoint: (_animal, _x, _y, speed) => speeds.push(speed),
+    }
+  )
+  animal.path = [grid[5][6]]
+  animal.dest = grid[9][9]
+
+  movement.moveToPath()
+
+  assert.deepEqual(speeds, [1.75])
 })
 
 test('a repath while flying keeps the flying sheet instead of walking', () => {

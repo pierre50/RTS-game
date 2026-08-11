@@ -113,6 +113,8 @@ export type ResourceConfig = EntityConfig
 export interface AnimalConfig extends EntityConfig {
   totalHitPoints?: number
   totalQuantity?: number
+  runningSpeed?: number
+  flyingSpeed?: number
   ambientMovement?: boolean
   ambientWalkDelayMin?: number
   ambientWalkDelayMax?: number

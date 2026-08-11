@@ -187,7 +187,13 @@ export class AnimalMovement {
     if (!animal.sprite.playing) {
       animal.sprite.play()
     }
-    if (instancesDistance(animal, nextFlatPoint, false) < animal.speed) {
+    const moveSpeed =
+      animal.movementSheet === SHEET_TYPES.flying && typeof animal.flyingSpeed === 'number'
+        ? animal.flyingSpeed
+        : animal.movementSheet === SHEET_TYPES.running && typeof animal.runningSpeed === 'number'
+          ? animal.runningSpeed
+          : animal.speed
+    if (instancesDistance(animal, nextFlatPoint, false) < moveSpeed) {
       const oldI = animal.i,
         oldJ = animal.j
       animal.z = nextCell.z
@@ -225,7 +231,7 @@ export class AnimalMovement {
       const isFastFlee =
         animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
       if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee))
-      let speed = animal.speed * getEnergyMoveSpeedMultiplier(animal)
+      let speed = moveSpeed * getEnergyMoveSpeedMultiplier(animal)
       if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {

@@ -81,6 +81,8 @@ export class Animal extends Instance implements AnimalEntity {
   loop?: boolean
   huntRange?: number
   speed!: number
+  runningSpeed?: number
+  flyingSpeed?: number
   sight!: number
   runningSheet?: SpritesheetLike
   flyingSheet?: SpritesheetLike
