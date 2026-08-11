@@ -1,488 +1,8 @@
 {
   "frames": {
-    "008_border_relief-borders_water.png": {
-      "frame": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "009_border_relief-borders_water.png": {
-      "frame": {
-        "x": 65,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "010_border_relief-borders_water.png": {
-      "frame": {
-        "x": 130,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "011_border_relief-borders_water.png": {
-      "frame": {
-        "x": 195,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "024_border_relief-borders_water.png": {
-      "frame": {
-        "x": 260,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "025_border_relief-borders_water.png": {
-      "frame": {
-        "x": 325,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "026_border_relief-borders_water.png": {
-      "frame": {
-        "x": 390,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "027_border_relief-borders_water.png": {
-      "frame": {
-        "x": 455,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "032_border_relief-borders_water.png": {
-      "frame": {
-        "x": 520,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "033_border_relief-borders_water.png": {
-      "frame": {
-        "x": 585,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "034_border_relief-borders_water.png": {
-      "frame": {
-        "x": 650,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "035_border_relief-borders_water.png": {
-      "frame": {
-        "x": 715,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "040_border_relief-borders_water.png": {
-      "frame": {
-        "x": 780,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "041_border_relief-borders_water.png": {
-      "frame": {
-        "x": 845,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "042_border_relief-borders_water.png": {
-      "frame": {
-        "x": 910,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "043_border_relief-borders_water.png": {
-      "frame": {
-        "x": 975,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "056_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1040,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "057_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1105,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "058_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1170,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "059_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1235,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 49
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 49
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
     "000_border_relief-borders_water.png": {
       "frame": {
-        "x": 1300,
+        "x": 0,
         "y": 0,
         "w": 64,
         "h": 32
@@ -506,7 +26,7 @@
     },
     "001_border_relief-borders_water.png": {
       "frame": {
-        "x": 1365,
+        "x": 64,
         "y": 0,
         "w": 64,
         "h": 32
@@ -530,7 +50,7 @@
     },
     "002_border_relief-borders_water.png": {
       "frame": {
-        "x": 1430,
+        "x": 128,
         "y": 0,
         "w": 64,
         "h": 32
@@ -554,392 +74,8 @@
     },
     "003_border_relief-borders_water.png": {
       "frame": {
-        "x": 1495,
+        "x": 192,
         "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "016_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1560,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "017_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1625,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "018_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1690,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "019_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1755,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "048_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1820,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "049_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1885,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "050_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1950,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "051_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1300,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "060_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1365,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "061_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1430,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "062_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1495,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "063_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1560,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "064_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1625,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "065_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1690,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "066_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1755,
-        "y": 33,
-        "w": 64,
-        "h": 32
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 64,
-        "h": 32
-      },
-      "sourceSize": {
-        "w": 64,
-        "h": 32
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "067_border_relief-borders_water.png": {
-      "frame": {
-        "x": 1820,
-        "y": 33,
         "w": 64,
         "h": 32
       },
@@ -962,8 +98,8 @@
     },
     "004_border_relief-borders_water.png": {
       "frame": {
-        "x": 1885,
-        "y": 33,
+        "x": 256,
+        "y": 0,
         "w": 65,
         "h": 17
       },
@@ -986,8 +122,8 @@
     },
     "005_border_relief-borders_water.png": {
       "frame": {
-        "x": 1950,
-        "y": 33,
+        "x": 321,
+        "y": 0,
         "w": 65,
         "h": 17
       },
@@ -1010,8 +146,8 @@
     },
     "006_border_relief-borders_water.png": {
       "frame": {
-        "x": 1885,
-        "y": 50,
+        "x": 386,
+        "y": 0,
         "w": 65,
         "h": 17
       },
@@ -1034,8 +170,8 @@
     },
     "007_border_relief-borders_water.png": {
       "frame": {
-        "x": 1950,
-        "y": 50,
+        "x": 451,
+        "y": 0,
         "w": 65,
         "h": 17
       },
@@ -1056,12 +192,12 @@
         "y": 0.5
       }
     },
-    "020_border_relief-borders_water.png": {
+    "008_border_relief-borders_water.png": {
       "frame": {
-        "x": 0,
-        "y": 49,
+        "x": 516,
+        "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "rotated": false,
       "trimmed": false,
@@ -1069,23 +205,23 @@
         "x": 0,
         "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "sourceSize": {
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "pivot": {
         "x": 0.5,
         "y": 0.5
       }
     },
-    "021_border_relief-borders_water.png": {
+    "009_border_relief-borders_water.png": {
       "frame": {
-        "x": 65,
-        "y": 49,
+        "x": 581,
+        "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "rotated": false,
       "trimmed": false,
@@ -1093,23 +229,23 @@
         "x": 0,
         "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "sourceSize": {
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "pivot": {
         "x": 0.5,
         "y": 0.5
       }
     },
-    "022_border_relief-borders_water.png": {
+    "010_border_relief-borders_water.png": {
       "frame": {
-        "x": 130,
-        "y": 49,
+        "x": 646,
+        "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "rotated": false,
       "trimmed": false,
@@ -1117,23 +253,23 @@
         "x": 0,
         "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "sourceSize": {
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "pivot": {
         "x": 0.5,
         "y": 0.5
       }
     },
-    "023_border_relief-borders_water.png": {
+    "011_border_relief-borders_water.png": {
       "frame": {
-        "x": 195,
-        "y": 49,
+        "x": 711,
+        "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "rotated": false,
       "trimmed": false,
@@ -1141,299 +277,11 @@
         "x": 0,
         "y": 0,
         "w": 65,
-        "h": 17
+        "h": 49
       },
       "sourceSize": {
         "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "028_border_relief-borders_water.png": {
-      "frame": {
-        "x": 260,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "029_border_relief-borders_water.png": {
-      "frame": {
-        "x": 325,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "030_border_relief-borders_water.png": {
-      "frame": {
-        "x": 390,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "031_border_relief-borders_water.png": {
-      "frame": {
-        "x": 455,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "036_border_relief-borders_water.png": {
-      "frame": {
-        "x": 520,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "037_border_relief-borders_water.png": {
-      "frame": {
-        "x": 585,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "038_border_relief-borders_water.png": {
-      "frame": {
-        "x": 650,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "039_border_relief-borders_water.png": {
-      "frame": {
-        "x": 715,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "052_border_relief-borders_water.png": {
-      "frame": {
-        "x": 780,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "053_border_relief-borders_water.png": {
-      "frame": {
-        "x": 845,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "054_border_relief-borders_water.png": {
-      "frame": {
-        "x": 910,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
-      },
-      "pivot": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    },
-    "055_border_relief-borders_water.png": {
-      "frame": {
-        "x": 975,
-        "y": 49,
-        "w": 65,
-        "h": 17
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 65,
-        "h": 17
-      },
-      "sourceSize": {
-        "w": 65,
-        "h": 17
+        "h": 49
       },
       "pivot": {
         "x": 0.5,
@@ -1442,7 +290,7 @@
     },
     "012_border_relief-borders_water.png": {
       "frame": {
-        "x": 1040,
+        "x": 0,
         "y": 49,
         "w": 63,
         "h": 33
@@ -1466,7 +314,7 @@
     },
     "013_border_relief-borders_water.png": {
       "frame": {
-        "x": 1103,
+        "x": 63,
         "y": 49,
         "w": 63,
         "h": 33
@@ -1490,7 +338,7 @@
     },
     "014_border_relief-borders_water.png": {
       "frame": {
-        "x": 1166,
+        "x": 126,
         "y": 49,
         "w": 63,
         "h": 33
@@ -1514,7 +362,7 @@
     },
     "015_border_relief-borders_water.png": {
       "frame": {
-        "x": 1229,
+        "x": 189,
         "y": 49,
         "w": 63,
         "h": 33
@@ -1536,10 +384,682 @@
         "y": 0.5
       }
     },
+    "016_border_relief-borders_water.png": {
+      "frame": {
+        "x": 252,
+        "y": 49,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "017_border_relief-borders_water.png": {
+      "frame": {
+        "x": 316,
+        "y": 49,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "018_border_relief-borders_water.png": {
+      "frame": {
+        "x": 380,
+        "y": 49,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "019_border_relief-borders_water.png": {
+      "frame": {
+        "x": 444,
+        "y": 49,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "020_border_relief-borders_water.png": {
+      "frame": {
+        "x": 508,
+        "y": 49,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "021_border_relief-borders_water.png": {
+      "frame": {
+        "x": 573,
+        "y": 49,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "022_border_relief-borders_water.png": {
+      "frame": {
+        "x": 638,
+        "y": 49,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "023_border_relief-borders_water.png": {
+      "frame": {
+        "x": 703,
+        "y": 49,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "024_border_relief-borders_water.png": {
+      "frame": {
+        "x": 0,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "025_border_relief-borders_water.png": {
+      "frame": {
+        "x": 65,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "026_border_relief-borders_water.png": {
+      "frame": {
+        "x": 130,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "027_border_relief-borders_water.png": {
+      "frame": {
+        "x": 195,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "028_border_relief-borders_water.png": {
+      "frame": {
+        "x": 260,
+        "y": 82,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "029_border_relief-borders_water.png": {
+      "frame": {
+        "x": 325,
+        "y": 82,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "030_border_relief-borders_water.png": {
+      "frame": {
+        "x": 390,
+        "y": 82,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "031_border_relief-borders_water.png": {
+      "frame": {
+        "x": 455,
+        "y": 82,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "032_border_relief-borders_water.png": {
+      "frame": {
+        "x": 520,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "033_border_relief-borders_water.png": {
+      "frame": {
+        "x": 585,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "034_border_relief-borders_water.png": {
+      "frame": {
+        "x": 650,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "035_border_relief-borders_water.png": {
+      "frame": {
+        "x": 715,
+        "y": 82,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "036_border_relief-borders_water.png": {
+      "frame": {
+        "x": 0,
+        "y": 131,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "037_border_relief-borders_water.png": {
+      "frame": {
+        "x": 65,
+        "y": 131,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "038_border_relief-borders_water.png": {
+      "frame": {
+        "x": 130,
+        "y": 131,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "039_border_relief-borders_water.png": {
+      "frame": {
+        "x": 195,
+        "y": 131,
+        "w": 65,
+        "h": 17
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 17
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 17
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "040_border_relief-borders_water.png": {
+      "frame": {
+        "x": 260,
+        "y": 131,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "041_border_relief-borders_water.png": {
+      "frame": {
+        "x": 325,
+        "y": 131,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "042_border_relief-borders_water.png": {
+      "frame": {
+        "x": 390,
+        "y": 131,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "043_border_relief-borders_water.png": {
+      "frame": {
+        "x": 455,
+        "y": 131,
+        "w": 65,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 49
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
     "044_border_relief-borders_water.png": {
       "frame": {
-        "x": 1292,
-        "y": 66,
+        "x": 520,
+        "y": 131,
         "w": 63,
         "h": 33
       },
@@ -1562,8 +1082,8 @@
     },
     "045_border_relief-borders_water.png": {
       "frame": {
-        "x": 1355,
-        "y": 66,
+        "x": 583,
+        "y": 131,
         "w": 63,
         "h": 33
       },
@@ -1586,8 +1106,8 @@
     },
     "046_border_relief-borders_water.png": {
       "frame": {
-        "x": 1418,
-        "y": 66,
+        "x": 646,
+        "y": 131,
         "w": 63,
         "h": 33
       },
@@ -1610,8 +1130,8 @@
     },
     "047_border_relief-borders_water.png": {
       "frame": {
-        "x": 1481,
-        "y": 66,
+        "x": 709,
+        "y": 131,
         "w": 63,
         "h": 33
       },
@@ -1639,8 +1159,8 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 2015,
-      "h": 99
+      "w": 780,
+      "h": 180
     },
     "scale": 1
   }
