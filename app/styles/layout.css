@@ -1,9 +1,13 @@
 #game {
-  flex: 1;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   touch-action: none;
 }
 
 #game canvas {
+  display: block;
   touch-action: none;
   image-rendering: pixelated;
 }

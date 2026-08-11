@@ -137,7 +137,36 @@ export interface UnitSounds {
   fall?: CommandSound
 }
 
-export interface UnitEntity extends RuntimeEntityBase {
+export interface EnergyEntity extends RuntimeEntityBase {
+  action?: string | null
+  dest?: RuntimeEntity | RuntimeCell | null
+  path?: RuntimeCell[]
+  speed?: number
+  mountedOnHorse?: boolean
+  energy?: number
+  totalEnergy?: number
+  energyRegenRate?: number
+  energyRegenDelay?: number
+  energyRegenMultiplier?: number
+  lastEnergySpentAt?: number
+  energyCosts?: Partial<Record<string, number>>
+  waitingForEnergyAction?: string | null
+  waitingForEnergyTarget?: RuntimeEntity | null
+  energyWaitTaskId?: number | null
+  actionLocked?: boolean
+  stop?: () => void
+  sendTo?: (target: RuntimeEntity | RuntimeCell, action?: string, options?: { forceRepath?: boolean }) => void
+  sendToEvt?: (
+    dest: RuntimeEntity | RuntimeCell | null,
+    action?: string | null,
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+  ) => void
+  startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
+  stopInterval?: () => void
+  setTextures?: (sheet: string) => void
+}
+
+export interface UnitEntity extends EnergyEntity {
   sprite?: AnimatedSprite
   shadow?: AnimatedSprite | null
   syncShadow?: () => void
@@ -156,12 +185,9 @@ export interface UnitEntity extends RuntimeEntityBase {
   upgrade?: (target: string) => void
   trainingTargetType?: string | null
 
-  // Movement / order state
-  dest?: RuntimeEntity | RuntimeCell | null
   realDest?: UnitRealDest | null
   previousDest?: RuntimeEntity | RuntimeCell | null
   previousWork?: string | null
-  path?: RuntimeCell[]
   hasPath?: () => boolean
   moveDirect?: (
     dirX: number,
@@ -181,13 +207,10 @@ export interface UnitEntity extends RuntimeEntityBase {
   visibleCells?: Set<number>
 
   // Animation / action state
-  action?: string | null
-  actionLocked?: boolean
   lookingAtHero?: boolean
   followingHero?: boolean
   currentSheet?: string
   currentFrame?: number
-  mountedOnHorse?: boolean
   horseColor?: string
   removeMountedHorseSprite?: () => void
   syncMountedHorseSprite?: () => void
@@ -242,15 +265,6 @@ export interface UnitEntity extends RuntimeEntityBase {
   gatheringRate?: Record<string, number>
   gatherAmount?: Record<string, number>
   loadingMax?: Record<string, number>
-  energy?: number
-  totalEnergy?: number
-  energyRegenRate?: number
-  energyRegenDelay?: number
-  energyRegenMultiplier?: number
-  lastEnergySpentAt?: number
-  energyCosts?: Partial<Record<string, number>>
-  waitingForEnergyAction?: string | null
-  waitingForEnergyTarget?: RuntimeEntity | null
   contextActionEnergyCosts?: Partial<Record<HeroContextAction, number>>
   toolLevels?: Partial<Record<HeroCivilTool, number>>
   assets?: Record<string, string>
@@ -377,9 +391,7 @@ export interface ResourceEntity extends RuntimeEntityBase {
   addChild?: Container['addChild']
 }
 
-export interface AnimalEntity extends RuntimeEntityBase {
-  dest?: RuntimeCell | RuntimeEntity | null
-  action?: string | null
+export interface AnimalEntity extends EnergyEntity {
   isFleeing?: boolean
   horseColor?: string
   standingSheet?: SpritesheetLike | null

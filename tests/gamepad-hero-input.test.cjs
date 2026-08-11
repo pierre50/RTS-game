@@ -111,3 +111,31 @@ test('gamepad L1 holds and releases hero defense', () => {
     ['up', 'heroDefense'],
   ])
 })
+
+test('gamepad X holds and releases hero direction lock', () => {
+  let gamepad = makeGamepad()
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: { app: { screen: { width: 100, height: 100 } } },
+    mouse: { x: 0, y: 0 },
+    heroController: {
+      handleKeyDown: () => {},
+      handleKeyUp: () => {},
+      cycleTool: () => {},
+      handlePrimaryPointerDown: () => {},
+      handlePointerUp: () => {},
+    },
+    openHeroEntityInteraction: () => {},
+  })
+
+  input.update()
+  assert.equal(input.directionLockActive, false)
+
+  gamepad = makeGamepad([2])
+  input.update()
+  assert.equal(input.directionLockActive, true)
+
+  gamepad = makeGamepad()
+  input.update()
+  assert.equal(input.directionLockActive, false)
+})

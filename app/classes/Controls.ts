@@ -320,13 +320,18 @@ export default class Controls extends Container implements ControlsLike {
 
   onKeyDown(evt: KeyboardEvent): void {
     if (this.isEditableTarget(evt.target)) return
-    this.shiftKeyActive = evt.shiftKey
     if (evt.key === 'Alt' || evt.altKey) {
       this.stopKeyboardMove()
       return
     }
     if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
     const action = getControlActionForKeyboardEvent(evt)
+    if (action === 'heroDirectionLock') {
+      if (evt.code) this.keyActionsByCode[evt.code] = action
+      this.shiftKeyActive = true
+      evt.preventDefault()
+      return
+    }
     if (
       action === 'inventory' &&
       this.isHeroControlActive() &&
@@ -357,25 +362,10 @@ export default class Controls extends Container implements ControlsLike {
       return
     }
 
-    if (evt.key === 'Delete' || evt.keyCode === 8) {
-      if (this.isHeroControlActive()) return
-      const {
-        context: { player },
-      } = this
-      for (const unit of [...player.selectedUnits]) {
-        unit.die?.()
-      }
-      if (player.selectedBuilding) {
-        player.selectedBuilding.die?.()
-      }
-      return
-    }
-
     this.context.menu?.handleHotkey?.(evt.key.toLowerCase())
   }
 
   onKeyUp(evt: KeyboardEvent): void {
-    this.shiftKeyActive = evt.key === 'Shift' ? false : evt.shiftKey
     if (this.isInteractionBlocked()) {
       this.stopKeyboardMove()
       return
@@ -388,6 +378,11 @@ export default class Controls extends Container implements ControlsLike {
 
     const action = getControlActionForKeyboardEvent(evt) || (evt.code ? this.keyActionsByCode[evt.code] : null)
     if (evt.code) delete this.keyActionsByCode[evt.code]
+    if (action === 'heroDirectionLock') {
+      this.shiftKeyActive = false
+      evt.preventDefault()
+      return
+    }
     if (action) this.heroController.handleKeyUp(action)
 
     if (!action || !CAMERA_ACTIONS.has(action)) return
@@ -808,6 +803,10 @@ export default class Controls extends Container implements ControlsLike {
 
   getGamepadMoveVector(): { dx: number; dy: number } {
     return this.gamepadInput.moveVector
+  }
+
+  isHeroDirectionLockActive(): boolean {
+    return this.shiftKeyActive || this.gamepadInput.directionLockActive
   }
 
   isMouseInApp(evt: PointerPageEvent): boolean {

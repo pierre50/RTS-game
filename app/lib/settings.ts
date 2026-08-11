@@ -38,6 +38,7 @@ export type ControlBindingAction =
   | 'heroRight'
   | 'heroInteract'
   | 'heroDefense'
+  | 'heroDirectionLock'
   | 'heroTool1'
   | 'heroTool2'
   | 'heroTool3'
@@ -59,6 +60,7 @@ export const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroRight: 'd',
   heroInteract: 'e',
   heroDefense: 'Space',
+  heroDirectionLock: 'Shift',
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
   heroTool3: 'Digit3',
@@ -79,6 +81,7 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
       'heroRight',
       'heroInteract',
       'heroDefense',
+      'heroDirectionLock',
       'heroTool1',
       'heroTool2',
       'heroTool3',
@@ -281,6 +284,7 @@ export function getReservedGameplayHotkeys(): string[] {
     'heroRight',
     'heroInteract',
     'heroDefense',
+    'heroDirectionLock',
     'heroTool1',
     'heroTool2',
     'heroTool3',

@@ -318,6 +318,29 @@ test('shift keyboard movement slows backpedaling more than strafing', () => {
   assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.6) < 1e-9)
 })
 
+test('gamepad direction lock keeps current facing while moving with the stick', () => {
+  const { controller, hero } = createController()
+  const moveCalls = []
+  hero.degree = 180
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.controls.getGamepadMoveVector = () => ({ dx: 0, dy: -1 })
+  controller.controls.isHeroDirectionLockActive = () => true
+
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
+})
+
 test('shift keyboard movement does not lock facing while mounted', () => {
   const { controller, hero, setCursorPoint } = createController()
   const moveCalls = []

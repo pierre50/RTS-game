@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   cartesianToIsometric,
   degreeToDirection,
@@ -12,6 +12,12 @@ import {
   moveTowardPoint,
   updateInstanceVisibility,
 } from '../../lib'
+import {
+  drainEnergyAmount,
+  getActionEnergyCost,
+  getEnergyMoveSpeedMultiplier,
+  updateUnitEnergy,
+} from '../../lib/unitEnergy'
 import type { RuntimeCell } from '../../types/map'
 import { isAirborne, resolveMovementSheet } from './locomotion'
 import type { Animal, AnimalDestination, AnimalMoveOptions } from './index'
@@ -29,6 +35,7 @@ export class AnimalMovement {
 
   setDest(dest: AnimalDestination | null): void {
     const animal = this.animal
+    if (animal.isDead || animal.isDestroyed) return
     if (!dest) {
       animal.stop()
       return
@@ -39,6 +46,7 @@ export class AnimalMovement {
 
   setPath(path: RuntimeCell[], sheet = SHEET_TYPES.walking): void {
     const animal = this.animal
+    if (animal.isDead || animal.isDestroyed) return
     if (!path.length) {
       animal.stop()
       return
@@ -71,6 +79,7 @@ export class AnimalMovement {
     { forceRepath = false, movementSheet }: AnimalMoveOptions = {}
   ): void {
     const animal = this.animal
+    if (animal.isDead || animal.isDestroyed) return
     const {
       context: { map },
     } = animal
@@ -126,6 +135,8 @@ export class AnimalMovement {
 
   moveToPath(): void {
     const animal = this.animal
+    if (animal.isDead || animal.isDestroyed) return
+    updateUnitEnergy(animal, STEP_TIME)
     const {
       context: { map },
     } = animal
@@ -211,7 +222,10 @@ export class AnimalMovement {
       }
     } else {
       const oldDeg = animal.degree
-      let speed = animal.speed
+      const isFastFlee =
+        animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
+      if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee))
+      let speed = animal.speed * getEnergyMoveSpeedMultiplier(animal)
       if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
       moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
       if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {

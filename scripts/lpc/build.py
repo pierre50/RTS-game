@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import hashlib
 import json
 import shutil
@@ -46,6 +46,12 @@ SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
 CACHE_FILENAME = ".build-cache.json"
 SheetPlan = dict[str, tuple[Sheet, str, str | None]]
 BuildTask = tuple[str, Sheet, str]
+
+ANIMATION_FALLBACKS = {
+    "shoot": ("slash", "walk"),
+    "slash": ("walk",),
+    "spellcast": ("walk",),
+}
 
 
 def animation_speed_for(output_sheet: str) -> float:
@@ -165,6 +171,29 @@ def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_pal
     apply_simple_darken_border(output_dir / "texture.png")
 
 
+def fallback_layer_path(path: str, animation: str, fallback: str) -> str:
+    return path.replace(f"/{animation}/", f"/{fallback}/").replace(f"/{animation}.png", f"/{fallback}.png")
+
+
+def resolve_layer_paths(source_root: Path, paths: list, animation: str) -> list:
+    resolved = []
+    for layer in paths:
+        if (source_root / layer.path).exists():
+            resolved.append(layer)
+            continue
+        fallback = next(
+            (
+                fallback_path
+                for fallback_animation in ANIMATION_FALLBACKS.get(animation, ())
+                for fallback_path in [fallback_layer_path(layer.path, animation, fallback_animation)]
+                if fallback_path != layer.path and (source_root / fallback_path).exists()
+            ),
+            None,
+        )
+        resolved.append(replace(layer, path=fallback) if fallback else layer)
+    return resolved
+
+
 def prune_stale_outputs(output_root: Path, previous_assets: set[str], current_assets: set[str]) -> None:
     for relative_path in sorted(previous_assets - current_assets):
         shutil.rmtree(output_root / relative_path, ignore_errors=True)
@@ -202,6 +231,16 @@ def hero_build_tasks() -> list[BuildTask]:
         ("action/slash", SHEET_BY_ANIMATION["slash"], "slash"),
         ("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"),
     ]
+
+
+def unit_build_tasks(unit: str) -> list[BuildTask]:
+    tasks = [
+        (output_sheet, source_sheet, animation)
+        for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
+    ]
+    if unit in {"infantry", "infantry_nohair"}:
+        tasks.append(("action/shoot", SHEET_BY_ANIMATION["shoot"], "shoot"))
+    return tasks
 
 
 def build(
@@ -261,17 +300,14 @@ def build(
                 elif unit == "hero":
                     tasks = hero_build_tasks()
                 else:
-                    tasks = [
-                        (output_sheet, source_sheet, animation)
-                        for output_sheet, (source_sheet, animation, _equipment) in build_sheet_plan(unit, UNIT_JOBS[unit][0]).items()
-                    ]
+                    tasks = unit_build_tasks(unit)
                 for relative_suffix, source_sheet, animation in tasks:
                     # "neutral" isn't a real player color, so this always resolves to the
                     # "blue" team-color convention (image_pipeline.layer_paths) — every
                     # recolorable piece, whether pixel-recolored or picked by filename, is
                     # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
                     # matches at runtime, so one bake per civ covers every player color.
-                    paths = layer_paths(look, animation, civ, "neutral")
+                    paths = resolve_layer_paths(source_root, layer_paths(look, animation, civ, "neutral"), animation)
                     relative_path = f"{unit}/{civ_key}/{variant.key}/{relative_suffix}"
                     output_sheet = relative_suffix.rsplit("/", 1)[-1]
                     animation_speed = animation_speed_for(output_sheet)

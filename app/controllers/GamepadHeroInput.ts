@@ -26,6 +26,7 @@ export class GamepadHeroInput {
   controls: Controls
   moveVector: { dx: number; dy: number }
   aimVector: { x: number; y: number } | null
+  directionLockActive: boolean
   connected: boolean
   private pressedButtons: Set<number>
   private cursorActive: boolean
@@ -34,6 +35,7 @@ export class GamepadHeroInput {
     this.controls = controls
     this.moveVector = { dx: 0, dy: 0 }
     this.aimVector = null
+    this.directionLockActive = false
     this.connected = false
     this.pressedButtons = new Set()
     this.cursorActive = false
@@ -45,6 +47,7 @@ export class GamepadHeroInput {
     if (!gamepad) {
       this.moveVector = { dx: 0, dy: 0 }
       this.aimVector = null
+      this.directionLockActive = false
       this.pressedButtons.clear()
       if (this.cursorActive) {
         this.cursorActive = false
@@ -58,6 +61,7 @@ export class GamepadHeroInput {
 
     const aim = readStick(gamepad, GAMEPAD_AXIS.aimX, GAMEPAD_AXIS.aimY)
     this.aimVector = aim.x || aim.y ? aim : null
+    this.directionLockActive = Boolean(gamepad.buttons[GAMEPAD_BUTTON.interact]?.pressed)
     this.updateVirtualCursor()
 
     const hero = this.controls.heroController

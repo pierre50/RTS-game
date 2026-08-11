@@ -25,6 +25,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
+import { ensureUnitEnergy } from '../../lib/unitEnergy'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
 export type AnimalDestination = RuntimeEntity | RuntimeCell
@@ -93,6 +94,16 @@ export class Animal extends Instance implements AnimalEntity {
   ambientWalkRange?: number
   sounds?: UnitSounds
   horseColor?: HorseColor
+  energy?: AnimalEntity['energy']
+  totalEnergy?: AnimalEntity['totalEnergy']
+  energyRegenRate?: AnimalEntity['energyRegenRate']
+  energyRegenDelay?: AnimalEntity['energyRegenDelay']
+  energyRegenMultiplier?: AnimalEntity['energyRegenMultiplier']
+  lastEnergySpentAt?: AnimalEntity['lastEnergySpentAt']
+  energyCosts?: AnimalEntity['energyCosts']
+  waitingForEnergyAction?: AnimalEntity['waitingForEnergyAction']
+  waitingForEnergyTarget?: AnimalEntity['waitingForEnergyTarget']
+  energyWaitTaskId?: AnimalEntity['energyWaitTaskId']
 
   constructor(options: AnimalOptions, context: GameContextLike) {
     super(context)
@@ -151,6 +162,7 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     this.quantity = this.quantity ?? this.totalQuantity
+    ensureUnitEnergy(this)
     map.addToInstanceBucket(this)
 
     for (const [key, value] of Object.entries(this.assets)) {
@@ -204,6 +216,7 @@ export class Animal extends Instance implements AnimalEntity {
   }
 
   stop(): void {
+    if (this.isDead || this.isDestroyed) return
     if (this.currentCell.has && this.currentCell.has.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)
       return

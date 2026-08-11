@@ -10,6 +10,7 @@ import {
   playAudibleSoundCue,
 } from '../../lib'
 import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
+import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -200,11 +201,12 @@ export class AnimalCombat {
             })
             return
           }
-          animal.sounds &&
-            animal.sounds.hit &&
-            animal.context.controls.instanceIsAudible(animal) &&
-            playAudibleSoundCue(animal, animal.sounds.hit)
           if ((target.hitPoints ?? 0) > 0) {
+            if (!spendOrWaitForEnergy(animal, ACTION_TYPES.attack, target)) return
+            animal.sounds &&
+              animal.sounds.hit &&
+              animal.context.controls.instanceIsAudible(animal) &&
+              playAudibleSoundCue(animal, animal.sounds.hit)
             const { killed } = applyCombatHit(animal, target, { isMelee: true, menu, player })
             if (killed) animal.affectNewDest()
           }

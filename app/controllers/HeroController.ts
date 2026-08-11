@@ -123,6 +123,10 @@ function getKeyboardMoveVector(keysPressed: Set<ControlBindingAction>): MoveVect
   return { dx, dy }
 }
 
+function isHeroDirectionLockActive(controls: Controls): boolean {
+  return controls.isHeroDirectionLockActive?.() ?? controls.shiftKeyActive
+}
+
 function getVectorFromDegree(degree: number): MoveVector {
   const radians = ((degree - 180) * Math.PI) / 180
   return { dx: Math.cos(radians), dy: Math.sin(radians) }
@@ -348,19 +352,18 @@ export class HeroController {
     const attacking = Boolean(unit.actionLocked)
 
     const keyboardMove = getKeyboardMoveVector(this.keysPressed)
-    const keyboardMoving = keyboardMove.dx !== 0 || keyboardMove.dy !== 0
-    const lockedKeyboardMove = Boolean(this.controls.shiftKeyActive && keyboardMoving && !unit.mountedOnHorse)
-    if (lockedKeyboardMove && this.shiftMoveLockedDegree == null) {
-      this.shiftMoveLockedDegree = unit.degree ?? 0
-    } else if (!lockedKeyboardMove) {
-      this.shiftMoveLockedDegree = null
-    }
-    const lockedDegree = this.shiftMoveLockedDegree
     let { dx, dy } = keyboardMove
     const gamepadMove = this.controls.getGamepadMoveVector()
     dx += gamepadMove.dx
     dy += gamepadMove.dy
     const isMoving = dx !== 0 || dy !== 0
+    const lockedMove = Boolean(isHeroDirectionLockActive(this.controls) && isMoving && !unit.mountedOnHorse)
+    if (lockedMove && this.shiftMoveLockedDegree == null) {
+      this.shiftMoveLockedDegree = unit.degree ?? 0
+    } else if (!lockedMove) {
+      this.shiftMoveLockedDegree = null
+    }
+    const lockedDegree = this.shiftMoveLockedDegree
     if (unit.isDirectMoving !== isMoving) {
       unit.isDirectMoving = isMoving
       unit.syncMountedHorseSprite?.()
@@ -370,7 +373,7 @@ export class HeroController {
     if (isMoving) {
       const len = Math.hypot(dx, dy)
       const lockedFacingVector =
-        lockedKeyboardMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
+        lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
       const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
       const lockedMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
       const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale

@@ -21,6 +21,7 @@ function loadUnitEnergy() {
         chopwood: 'chopwood',
         convert: 'convert',
         farm: 'farm',
+        flee: 'flee',
         forageberry: 'forageberry',
         heal: 'heal',
         hunt: 'hunt',
@@ -72,6 +73,7 @@ test('work energy costs reflect action effort', () => {
   assert.equal(getActionEnergyCost(unit, 'minestone'), 3)
   assert.equal(getActionEnergyCost(unit, 'chopwood'), 2)
   assert.equal(getActionEnergyCost(unit, 'build'), 2)
+  assert.equal(getActionEnergyCost(unit, 'flee'), 0.25)
   assert.equal(getActionEnergyCost(unit, 'forageberry'), 0.75)
   assert.equal(getActionEnergyCost(unit, 'takemeat'), 0.5)
 
@@ -79,6 +81,32 @@ test('work energy costs reflect action effort', () => {
   assert.equal(unit.energy, 9.5)
   assert.equal(spendEnergyForAction(unit, 'minegold'), true)
   assert.equal(unit.energy, 6.5)
+})
+
+test('generic energy wait can resume an animal through sendTo fallback', () => {
+  const { resumeEnergyWaitIfReady, waitForEnergy } = loadUnitEnergy()
+  const calls = []
+  const target = { family: 'unit', isDestroyed: false, isDead: false }
+  const animal = {
+    action: 'attack',
+    context: { scheduler: { elapsedMs: 0 } },
+    dest: target,
+    energy: 0,
+    totalEnergy: 2,
+    energyRegenRate: 20,
+    energyRegenDelay: 0,
+    sendTo: (resumeTarget, action, options) => calls.push(['sendTo', resumeTarget, action, options]),
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite: { stop: () => calls.push(['sprite.stop']) },
+    startInterval: () => calls.push(['startInterval']),
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+
+  assert.equal(waitForEnergy(animal, 'flee', target), false)
+  animal.context.scheduler.elapsedMs = 100
+  assert.equal(resumeEnergyWaitIfReady(animal), true)
+
+  assert.deepEqual(calls.at(-1), ['sendTo', target, 'flee', { forceRepath: true }])
 })
 
 test('npc waits for full energy before resuming an action', () => {
@@ -109,6 +137,66 @@ test('npc waits for full energy before resuming an action', () => {
   assert.equal(resumeEnergyWaitIfReady(unit), true)
   assert.equal(unit.waitingForEnergyAction, null)
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'chopwood'])
+})
+
+test('npc attack fatigue resumes after retreat movement stops the unit interval', () => {
+  const { __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
+  const calls = []
+  const schedulerTasks = new Map()
+  const target = { family: 'unit', isDestroyed: false, isDead: false, solid: true, i: 0, j: 0, x: 0, y: 0 }
+  const retreatCell = { solid: false, border: false, i: 2, j: 0, x: 96, y: 0 }
+  const unit = {
+    action: 'attack',
+    context: {
+      map: { grid: [[target], [retreatCell]] },
+      scheduler: {
+        elapsedMs: 0,
+        add(callback, _time, name) {
+          const id = schedulerTasks.size + 1
+          schedulerTasks.set(id, { callback, name })
+          calls.push(['scheduler.add', name])
+          return id
+        },
+        remove(id) {
+          schedulerTasks.delete(id)
+          calls.push(['scheduler.remove', id])
+        },
+      },
+    },
+    dest: target,
+    energy: 0,
+    totalEnergy: 2,
+    energyRegenRate: 20,
+    energyRegenDelay: 0,
+    i: 0,
+    j: 0,
+    x: 0,
+    y: 0,
+    sendTo: destination => {
+      calls.push(['sendTo', destination])
+      unit.stopInterval()
+    },
+    sendToEvt: (resumeTarget, action, options) => calls.push(['sendToEvt', resumeTarget, action, options]),
+    startInterval: () => calls.push(['startInterval']),
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+
+  assert.equal(waitForEnergy(unit, 'attack', target), false)
+  assert.equal(unit.waitingForEnergyAction, 'attack')
+  assert.deepEqual(__fatigueFeedbackCalls, [unit])
+  assert.equal(schedulerTasks.size, 1)
+  assert.deepEqual(calls, [
+    ['stopInterval'],
+    ['sendTo', retreatCell],
+    ['stopInterval'],
+    ['scheduler.add', 'unit.energyWait'],
+  ])
+
+  unit.context.scheduler.elapsedMs = 100
+  schedulerTasks.get(1).callback()
+  assert.equal(unit.waitingForEnergyAction, null)
+  assert.equal(unit.energyWaitTaskId, null)
+  assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'attack', { forceRepath: true }])
 })
 
 test('hero shows fatigue feedback but does not auto-resume when energy is missing', () => {

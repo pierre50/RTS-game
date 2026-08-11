@@ -15,6 +15,7 @@ const UNIT_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
 const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'shoot'] as const
 const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
+const RANGED_INFANTRY_ACTION_SHEETS = ['shoot'] as const
 
 type BakedUnitType =
   | 'villager'
@@ -69,6 +70,14 @@ function bakedUnitAlias(unit: BakedUnitType, variant: string, sheet: string): st
 
 function bakedUnitSrc(unit: BakedUnitType, variant: string, sheet: string): string {
   return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${sheet}/texture.json`
+}
+
+function bakedUnitActionAlias(unit: BakedUnitType, variant: string, animation: string): string {
+  return `${bakedUnitAlias(unit, variant, 'action')}/${animation}`
+}
+
+function bakedUnitActionSrc(unit: BakedUnitType, variant: string, animation: string): string {
+  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/action/${animation}/texture.json`
 }
 
 function villagerBodyAlias(variant: string, sheet: string): string {
@@ -133,10 +142,18 @@ async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promi
     return
   }
 
-  const assets = UNIT_SHEETS.map(sheet => ({
-    alias: bakedUnitAlias(unit, variant, sheet),
-    src: bakedUnitSrc(unit, variant, sheet),
-  })).filter(asset => !isAssetCached(asset.alias))
+  const assets = [
+    ...UNIT_SHEETS.map(sheet => ({
+      alias: bakedUnitAlias(unit, variant, sheet),
+      src: bakedUnitSrc(unit, variant, sheet),
+    })),
+    ...(unit === 'infantry' || unit === 'infantry_nohair'
+      ? RANGED_INFANTRY_ACTION_SHEETS.map(sheet => ({
+          alias: bakedUnitActionAlias(unit, variant, sheet),
+          src: bakedUnitActionSrc(unit, variant, sheet),
+        }))
+      : []),
+  ].filter(asset => !isAssetCached(asset.alias))
 
   if (assets.length) {
     await Assets.load(assets)
@@ -228,10 +245,14 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   unit.appearance = dynamicLayers.length ? { layers: dynamicLayers } : undefined
 
   if (!isVillagerLike) {
+    const actionSheet =
+      unit.type === UNIT_TYPES.bowman
+        ? bakedUnitActionAlias(resolvedBakedUnit, variant, 'shoot')
+        : bakedUnitAlias(resolvedBakedUnit, variant, 'action')
     unit.assets = {
       standingSheet: walking,
       walkingSheet: walking,
-      actionSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'action'),
+      actionSheet,
       dyingSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'dying'),
       corpseSheet: bakedUnitAlias(resolvedBakedUnit, variant, 'corpse'),
     }

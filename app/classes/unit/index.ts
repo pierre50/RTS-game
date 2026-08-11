@@ -1198,6 +1198,7 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   stop() {
+    if (this.isDead || this.isDestroyed) return
     const heroControlled = isHeroControlled(this)
     if (!heroControlled && this.currentCell.has?.label !== this.label && this.currentCell.solid) {
       this.sendTo(this.currentCell)

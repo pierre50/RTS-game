@@ -342,8 +342,10 @@ test('helmeted infantry swaps to no-hair baked base', () => {
 
   assert.equal(applyBakedLpcUnitAssets(baseUnit), true)
   assert.equal(baseUnit.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
+  assert.equal(baseUnit.assets.actionSheet, 'lpc-baked/infantry/greek/male/action')
   assert.equal(applyBakedLpcUnitAssets(helmetedUnit), true)
   assert.equal(helmetedUnit.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
+  assert.equal(helmetedUnit.assets.actionSheet, 'lpc-baked/infantry_nohair/greek/male/action')
 })
 
 test('helmeted archer swaps to no-hair baked base', () => {
@@ -375,6 +377,8 @@ test('helmeted archer swaps to no-hair baked base', () => {
 
   assert.equal(applyBakedLpcUnitAssets(baseUnit), true)
   assert.equal(baseUnit.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
+  assert.equal(baseUnit.assets.actionSheet, 'lpc-baked/infantry/greek/male/action/shoot')
   assert.equal(applyBakedLpcUnitAssets(helmetedUnit), true)
   assert.equal(helmetedUnit.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
+  assert.equal(helmetedUnit.assets.actionSheet, 'lpc-baked/infantry_nohair/greek/male/action/shoot')
 })

@@ -18,6 +18,7 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  ACTION_TYPES: { flee: 'flee' },
   FAMILY_TYPES: { animal: 'animal' },
   SHEET_TYPES: {
     walking: 'walkingSheet',
@@ -135,6 +136,12 @@ function createMovement(animalOverrides = {}) {
   const { AnimalMovement } = loadModule('app/classes/animal/AnimalMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    '../../lib/unitEnergy': {
+      drainEnergyAmount: () => true,
+      getActionEnergyCost: () => 0,
+      getEnergyMoveSpeedMultiplier: () => 1,
+      updateUnitEnergy: () => {},
+    },
     './locomotion': locomotion,
   })
   return { movement: new AnimalMovement(animal), animal, grid, calls }
@@ -226,4 +233,21 @@ test('a moving attack target keeps the active running sheet when repathing', () 
       },
     ],
   ])
+})
+
+test('a dead animal ignores late movement updates instead of leaving dying animation', () => {
+  const { movement, animal, grid, calls } = createMovement({
+    isDead: true,
+    currentSheet: 'dyingSheet',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  })
+  animal.path = [grid[6][6]]
+  animal.dest = grid[8][8]
+
+  movement.sendTo(grid[9][9], null, { forceRepath: true })
+  movement.moveToPath()
+  movement.setPath([grid[7][7]], 'runningSheet')
+
+  assert.deepEqual(calls, [])
+  assert.equal(animal.currentSheet, 'dyingSheet')
 })

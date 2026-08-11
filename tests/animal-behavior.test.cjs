@@ -84,6 +84,7 @@ function createBehavior({
     '../../constants': constants,
     '../../lib': lib,
     '../../lib/combatFeedback': { showAlertFeedback: target => alertCalls.push(target) },
+    '../../lib/unitEnergy': { updateUnitEnergy: () => {} },
     './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
   })
   return { behavior: new AnimalBehavior(animal), calls, alertCalls, animal, randomRangeCalls, scheduler }

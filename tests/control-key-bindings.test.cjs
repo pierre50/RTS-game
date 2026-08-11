@@ -93,6 +93,21 @@ test('Space is the default hero defense key', () => {
   }
 })
 
+test('Shift is the default hero direction lock key and can be rebound', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getKeyBindings().heroDirectionLock, 'Shift')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDirectionLock')
+    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDirectionLock), 'Shift')
+
+    settings.setKeyBinding('heroDirectionLock', 'Control')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), null)
+  } finally {
+    restore()
+  }
+})
+
 test('recording a digit-row binding stores the physical key code', () => {
   const { settings, restore } = loadSettings()
   try {
