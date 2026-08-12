@@ -1,5 +1,16 @@
-import { Container, type ContainerChild } from 'pixi.js'
-import { BUCKET_SIZE, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
+import {
+  Assets,
+  Container,
+  Graphics,
+  Matrix,
+  RenderTexture,
+  Sprite,
+  TilingSprite,
+  type ContainerChild,
+  type Texture,
+  type Ticker,
+} from 'pixi.js'
+import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
@@ -13,6 +24,7 @@ import { MapTerrain, type ReliefLevelBounds } from './MapTerrain'
 import { MapFog } from './MapFog'
 import { createSeededRandom } from '../../lib/random'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
+import { getTextureByFrame } from '../../lib'
 import { TerrainChunkManager, type ChunkedTerrainMap } from './TerrainChunkManager'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
@@ -38,6 +50,32 @@ export type MapContext = Omit<
 }
 type InstanceBuckets = Array<Array<Set<RuntimeEntity>>>
 type GeneratedPosition = GridPosition | null
+type WaterOverlayTicker = { add: (tick: (ticker: Ticker) => void) => void; remove: (tick: (ticker: Ticker) => void) => void }
+type WaterBorderSurface = { sprite: { texture: Texture; parent?: unknown }; frames: Texture[] }
+type WaterBorderAppearance = { resourceName: string; index: number }
+type WaterBorderCell = RuntimeCell & { _terrainAppearance?: { waterBorder?: WaterBorderAppearance | null } }
+type WaterBorderFilterLayer = Container & { overlay?: TilingSprite | null; maskTexture?: RenderTexture | null }
+
+const WATER_OVERLAY_TEXTURES = [
+  'water-surface/filter-0',
+  'water-surface/filter-1',
+  'water-surface/filter-2',
+  'water-surface/filter-3',
+]
+const WATER_OVERLAY_FRAME_SPEED = 0.06
+const WATER_OVERLAY_ALPHA = 0.32
+const WATER_OVERLAY_MARGIN = CELL_WIDTH * 2
+const WATER_OVERLAY_Z_INDEX = -0.5
+const WATER_BORDER_WATER_SHEETS: Record<string, string> = {
+  'water-borders/desert': 'water-borders/desert-water-filter-mask',
+}
+const WATER_BORDER_ANIMATION_Z_INDEX = -0.45
+
+function getWaterOverlayFrames(): Texture[] {
+  return WATER_OVERLAY_TEXTURES.map(id => (Assets.cache.has(id) ? (Assets.cache.get(id) as Texture) : null)).filter(
+    (texture): texture is Texture => Boolean(texture)
+  )
+}
 
 function compactPositions(positions: GeneratedPosition[]): GridPosition[] {
   return positions.filter((position): position is GridPosition =>
@@ -85,6 +123,14 @@ export default class Map extends Container {
   mapTerrain: MapTerrain
   mapFog: MapFog
   terrainChunkManager: TerrainChunkManager
+  waterOverlay: TilingSprite | null
+  waterOverlayMask: Graphics | null
+  waterOverlayDirty: boolean
+  waterOverlayFrame: number
+  waterOverlayElapsed: number
+  waterOverlayTick: ((ticker: Ticker) => void) | null
+  waterBorderSurfaces: Set<WaterBorderSurface>
+  waterBorderAnimationLayer: WaterBorderFilterLayer | null
 
   visibleRenderChunkCount?: number
 
@@ -138,6 +184,14 @@ export default class Map extends Container {
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
     this.terrainChunkManager = new TerrainChunkManager(this as ChunkedTerrainMap)
+    this.waterOverlay = null
+    this.waterOverlayMask = null
+    this.waterOverlayDirty = true
+    this.waterOverlayFrame = 0
+    this.waterOverlayElapsed = 0
+    this.waterOverlayTick = null
+    this.waterBorderSurfaces = new Set()
+    this.waterBorderAnimationLayer = null
   }
 
   resetRandom(stream: number | string = 0): void {
@@ -176,6 +230,7 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport: Viewport, margin: number = CELL_WIDTH * 2): void {
+    this.updateWaterOverlay()
     if (this.terrainChunkManager?.chunks.size) {
       this.context.performance?.measure?.('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
     }
@@ -202,6 +257,193 @@ export default class Map extends Container {
     } finally {
       this.context.performance?.record?.('renderChunks.update', performance.now() - startedAt)
     }
+  }
+
+  getWaterOverlayBounds(): Bounds {
+    const mapWidth = (this.size + 1) * CELL_WIDTH
+    const mapHeight = (this.size + 1) * CELL_HEIGHT + CELL_HEIGHT
+    return {
+      minX: -mapWidth / 2 - WATER_OVERLAY_MARGIN,
+      minY: -WATER_OVERLAY_MARGIN,
+      width: mapWidth + WATER_OVERLAY_MARGIN * 2,
+      height: mapHeight + WATER_OVERLAY_MARGIN * 2,
+    }
+  }
+
+  updateWaterOverlay(): void {
+    if (!this.grid.length || this.size <= 0) return
+    if (!this.waterOverlay || !this.waterOverlayMask) this.createWaterOverlay()
+    if (this.waterOverlayDirty) this.rebuildWaterOverlayMask()
+  }
+
+  createWaterOverlay(): void {
+    const frames = getWaterOverlayFrames()
+    if (!frames.length || this.waterOverlay) return
+    const bounds = this.getWaterOverlayBounds()
+    const overlay = new TilingSprite({ texture: frames[0], width: bounds.width, height: bounds.height })
+    overlay.label = 'waterOverlayFilter'
+    overlay.position.set(bounds.minX, bounds.minY)
+    overlay.alpha = WATER_OVERLAY_ALPHA
+    overlay.eventMode = 'none'
+    overlay.zIndex = WATER_OVERLAY_Z_INDEX
+
+    const mask = new Graphics()
+    mask.label = 'waterOverlayMask'
+    mask.eventMode = 'none'
+
+    this.addChild(overlay)
+    this.addChild(mask)
+    overlay.mask = mask
+    this.waterOverlay = overlay
+    this.waterOverlayMask = mask
+    this.waterOverlayDirty = true
+    this.ensureWaterAnimationTicker()
+  }
+
+  ensureWaterAnimationTicker(): void {
+    if (this.waterOverlayTick) return
+    const ticker = this.context.app?.ticker as WaterOverlayTicker | undefined
+    if (ticker) {
+      const tick = (ticker: Ticker) => {
+        const frames = getWaterOverlayFrames()
+        const borderFrameCount = Math.max(0, ...Array.from(this.waterBorderSurfaces, surface => surface.frames.length))
+        const frameCount = frames.length || borderFrameCount
+        if (!frameCount) return
+        this.waterOverlayElapsed += ticker.deltaTime * WATER_OVERLAY_FRAME_SPEED
+        if (this.waterOverlayElapsed >= 1) {
+          this.waterOverlayElapsed %= 1
+          this.waterOverlayFrame = (this.waterOverlayFrame + 1) % frameCount
+          if (this.waterOverlay?.parent && frames.length) {
+            this.waterOverlay.texture = frames[this.waterOverlayFrame % frames.length]
+          }
+          if (this.waterBorderAnimationLayer?.overlay && frames.length) {
+            this.waterBorderAnimationLayer.overlay.texture = frames[this.waterOverlayFrame % frames.length]
+          }
+          for (const surface of this.waterBorderSurfaces) {
+            if (!surface.sprite.parent) continue
+            surface.sprite.texture = surface.frames[this.waterOverlayFrame % surface.frames.length]
+          }
+        }
+      }
+      ticker.add(tick)
+      this.waterOverlayTick = tick
+    }
+  }
+
+  registerWaterBorderSurface(sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame: number = 0): () => void {
+    if (!frames.length) return () => {}
+    const surface = { sprite, frames }
+    sprite.texture = frames[initialFrame % frames.length]
+    this.waterBorderSurfaces.add(surface)
+    this.ensureWaterAnimationTicker()
+    return () => {
+      this.waterBorderSurfaces.delete(surface)
+    }
+  }
+
+  rebuildWaterOverlayMask(): void {
+    const mask = this.waterOverlayMask
+    if (!mask) return
+    mask.clear()
+    for (const row of this.grid) {
+      for (const cell of row || []) {
+        if (!cell || cell.category !== 'Water' || cell.waterBorder) continue
+        mask.poly([
+          cell.x - CELL_WIDTH / 2,
+          cell.y,
+          cell.x,
+          cell.y - CELL_HEIGHT / 2,
+          cell.x + CELL_WIDTH / 2,
+          cell.y,
+          cell.x,
+          cell.y + CELL_HEIGHT / 2,
+        ])
+        mask.fill({ color: 0xffffff })
+      }
+    }
+    this.waterOverlayDirty = false
+  }
+
+  invalidateWaterOverlay(): void {
+    this.waterOverlayDirty = true
+  }
+
+  rebuildWaterBorderAnimationLayer(): void {
+    this.waterBorderAnimationLayer?.maskTexture?.destroy(true)
+    this.waterBorderAnimationLayer?.destroy({ children: true, texture: false, textureSource: false })
+    this.waterBorderAnimationLayer = null
+    if (!this.grid.length) return
+
+    const frames = getWaterOverlayFrames()
+    if (!frames.length) return
+    const renderer = this.context.app?.renderer
+    if (!renderer) return
+    const bounds = this.getWaterOverlayBounds()
+    const layer = new Container() as WaterBorderFilterLayer
+    layer.label = 'waterBorderAnimationLayer'
+    layer.eventMode = 'none'
+    layer.zIndex = WATER_BORDER_ANIMATION_Z_INDEX
+
+    const overlay = new TilingSprite({ texture: frames[this.waterOverlayFrame % frames.length], width: bounds.width, height: bounds.height })
+    overlay.label = 'waterBorderSurfaceFilter'
+    overlay.position.set(bounds.minX, bounds.minY)
+    overlay.alpha = WATER_OVERLAY_ALPHA
+    overlay.eventMode = 'none'
+    overlay.zIndex = 1
+
+    const maskContainer = new Container()
+    maskContainer.label = 'waterBorderSurfaceMaskBake'
+    maskContainer.eventMode = 'none'
+    maskContainer.sortableChildren = true
+    let maskCount = 0
+
+    for (const row of this.grid) {
+      for (const cell of row || []) {
+        const appearance = (cell as WaterBorderCell)?._terrainAppearance?.waterBorder
+        const waterSheet = appearance ? WATER_BORDER_WATER_SHEETS[appearance.resourceName] : null
+        if (!appearance || !waterSheet) continue
+
+        const frameIndex = Number(appearance.index)
+        const waterTexture = getTextureByFrame(waterSheet, frameIndex, Assets)
+        const waterMask = new Sprite(waterTexture)
+        waterMask.label = 'waterBorderSurfaceMaskSprite'
+        waterMask.position.set(cell.x, cell.y)
+        waterMask.anchor.set(Math.floor(waterTexture.width / 2) / waterTexture.width, Math.floor(waterTexture.height / 2) / waterTexture.height)
+        waterMask.roundPixels = true
+        waterMask.eventMode = 'none'
+        waterMask.zIndex = cell.zIndex ?? 0
+        maskContainer.addChild(waterMask)
+        maskCount++
+      }
+    }
+
+    if (!maskCount) {
+      maskContainer.destroy({ children: true, texture: false, textureSource: false })
+      layer.destroy({ children: true, texture: false, textureSource: false })
+      return
+    }
+
+    const maskTexture = RenderTexture.create({ width: Math.ceil(bounds.width), height: Math.ceil(bounds.height) })
+    renderer.render({
+      container: maskContainer,
+      target: maskTexture,
+      transform: new Matrix().translate(-bounds.minX, -bounds.minY),
+      clear: true,
+    })
+    maskContainer.destroy({ children: true, texture: false, textureSource: false })
+
+    const mask = new Sprite(maskTexture)
+    mask.label = 'waterBorderSurfaceMask'
+    mask.position.set(bounds.minX, bounds.minY)
+    mask.eventMode = 'none'
+    overlay.mask = mask
+
+    layer.overlay = overlay
+    layer.maskTexture = maskTexture
+    layer.addChild(overlay)
+    this.addChild(layer)
+    this.waterBorderAnimationLayer = layer
+    this.ensureWaterAnimationTicker()
   }
 
   _ensureBuckets(): void {
@@ -446,7 +688,8 @@ export default class Map extends Container {
 
   // MapFog
   bakeTerrainToChunks(): void {
-    return this.mapFog.bakeTerrainToChunks()
+    this.mapFog.bakeTerrainToChunks()
+    this.rebuildWaterBorderAnimationLayer()
   }
 
   _initFogChunks(): void {
@@ -462,6 +705,14 @@ export default class Map extends Container {
   }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    const ticker = this.context.app?.ticker as WaterOverlayTicker | undefined
+    if (ticker && this.waterOverlayTick) ticker.remove(this.waterOverlayTick)
+    this.waterOverlayTick = null
+    this.waterOverlay = null
+    this.waterOverlayMask = null
+    this.waterBorderSurfaces.clear()
+    this.waterBorderAnimationLayer?.destroy({ children: true, texture: false, textureSource: false })
+    this.waterBorderAnimationLayer = null
     this.terrainChunkManager?.destroy()
     this.mapFog?.destroyFogResources()
     super.destroy(options ?? undefined)

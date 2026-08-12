@@ -216,18 +216,6 @@
       {
         "sheet": "terrain/water",
         "frame": 0
-      },
-      {
-        "sheet": "terrain/water",
-        "frame": 1
-      },
-      {
-        "sheet": "terrain/water",
-        "frame": 2
-      },
-      {
-        "sheet": "terrain/water",
-        "frame": 3
       }
     ]
   },
@@ -238,18 +226,6 @@
       {
         "sheet": "terrain/deep-water",
         "frame": 0
-      },
-      {
-        "sheet": "terrain/deep-water",
-        "frame": 1
-      },
-      {
-        "sheet": "terrain/deep-water",
-        "frame": 2
-      },
-      {
-        "sheet": "terrain/deep-water",
-        "frame": 3
       }
     ]
   }

@@ -44,6 +44,9 @@ export type ChunkedTerrainMap = {
   size: number
   grid: RuntimeCell[][]
   visibleRenderChunkCount?: number
+  randomRange(min: number, max: number): number
+  randomItem<T>(items: T[]): T
+  registerWaterBorderSurface?: ConstructorParameters<typeof Cell>[1]['map']['registerWaterBorderSurface']
   addChild(child: Container): Container
 }
 
@@ -186,6 +189,7 @@ export class TerrainChunkManager {
   }
 
   _createTerrainCell(source: RuntimeCell): Cell {
+    const context = { ...(this.map.context as ConstructorParameters<typeof Cell>[1]), map: this.map }
     const cell = new Cell(
       {
         i: source.i,
@@ -194,7 +198,7 @@ export class TerrainChunkManager {
         type: source.type,
         textureName: terrainSource(source).terrainTextureName,
       },
-      this.map.context as ConstructorParameters<typeof Cell>[1]
+      context as ConstructorParameters<typeof Cell>[1]
     )
     cell.visible = true
 

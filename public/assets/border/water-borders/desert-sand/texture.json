@@ -1,0 +1,303 @@
+{
+  "frames": {
+    "000_border_water-borders_desert.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 33
+      },
+      "anchor": {
+        "x": -0.015625,
+        "y": 0
+      }
+    },
+    "001_border_water-borders_desert.png": {
+      "frame": {
+        "x": 65,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "002_border_water-borders_desert.png": {
+      "frame": {
+        "x": 131,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "003_border_water-borders_desert.png": {
+      "frame": {
+        "x": 197,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "004_border_water-borders_desert.png": {
+      "frame": {
+        "x": 263,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "005_border_water-borders_desert.png": {
+      "frame": {
+        "x": 329,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "006_border_water-borders_desert.png": {
+      "frame": {
+        "x": 395,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "007_border_water-borders_desert.png": {
+      "frame": {
+        "x": 461,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "008_border_water-borders_desert.png": {
+      "frame": {
+        "x": 527,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "009_border_water-borders_desert.png": {
+      "frame": {
+        "x": 593,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "010_border_water-borders_desert.png": {
+      "frame": {
+        "x": 659,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "011_border_water-borders_desert.png": {
+      "frame": {
+        "x": 725,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 65,
+        "h": 33
+      },
+      "sourceSize": {
+        "w": 65,
+        "h": 33
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 790,
+      "h": 33
+    },
+    "scale": 1
+  }
+}

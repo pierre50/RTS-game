@@ -1,5 +1,4 @@
-import type { Container, ContainerChild, Texture } from 'pixi.js'
-import { Assets, Sprite } from 'pixi.js'
+import { Assets, Sprite, type Container, type ContainerChild, type Texture } from 'pixi.js'
 import {
   instancesDistance,
   getCellsAroundPoint,
@@ -30,6 +29,12 @@ const BORDER_SHEETS = {
   dirtRelief: 'relief-borders/dirt',
   waterRelief: 'relief-borders/water',
 } as const
+const WATER_BORDER_SPLIT_SHEETS: Record<string, { water: string; sand: string }> = {
+  'water-borders/desert': {
+    water: 'water-borders/desert-water',
+    sand: 'water-borders/desert-sand',
+  },
+}
 
 type TerrainDefinition = {
   category?: string
@@ -65,8 +70,13 @@ export type TerrainParentLike = {
   invalidateReliefCoastDistances?: () => void
 }
 
+type TerrainContextLike = {
+  map: TerrainContextMapLike
+}
+
 type TerrainContextMapLike = {
   randomRange(min: number, max: number): number
+  registerWaterBorderSurface?: (sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame?: number) => () => void
 }
 
 type TerrainVariantMapLike = {
@@ -74,7 +84,7 @@ type TerrainVariantMapLike = {
 }
 
 export type TerrainCellLike = {
-  context: { map: TerrainContextMapLike }
+  context: TerrainContextLike
   parent?: Container | TerrainParentLike | null
   map?: TerrainVariantMapLike
   i: number
@@ -92,9 +102,11 @@ export type TerrainCellLike = {
     patchBorderGroundType?: 'Desert' | 'Dirt' | null
     deepWaterBorders?: Set<string> | null
     relief?: { index: number; elevation: number } | null
+    waterBorder?: { resourceName: string; index: number } | null
   }
   children: TerrainChild[]
   sprite: TerrainSprite | null
+  _waterBorderWaterCleanup?: (() => void) | null
   has: RuntimeEntity | null
   inclined: boolean
   border: boolean
@@ -196,6 +208,7 @@ export class CellTerrain {
       cell._terrainAppearance.patchBorderGroundType = null
       cell._terrainAppearance.deepWaterBorders = null
       cell._terrainAppearance.relief = null
+      cell._terrainAppearance.waterBorder = null
     }
   }
 
@@ -293,13 +306,44 @@ export class CellTerrain {
     const { cell } = this
     const { sprite } = cell
     if (!sprite) return
-    const texture = getTextureByFrame(resourceName, Number(index), Assets)
+    const frameIndex = Number(index)
+    const splitSheets = WATER_BORDER_SPLIT_SHEETS[resourceName]
+    const texture = getTextureByFrame(splitSheets?.sand ?? resourceName, frameIndex, Assets)
     cell.border = true
     cell.waterBorder = true
     if (cell.has && typeof cell.has.die === 'function') {
       cell.has.die()
     }
+    for (let childIndex = cell.children.length - 1; childIndex >= 0; childIndex--) {
+      const child = cell.children[childIndex]
+      if (
+        child.type !== 'waterBorderWater'
+      )
+        continue
+      if (child.type === 'waterBorderWater') cell._waterBorderWaterCleanup?.()
+      cell.removeChild(child)
+      child.destroy?.()
+    }
+    cell._waterBorderWaterCleanup = null
+    if (splitSheets) {
+      const waterTexture = getTextureByFrame(splitSheets.water, frameIndex, Assets)
+      const water = new Sprite(waterTexture) as TerrainSprite
+      water.type = 'waterBorderWater'
+      water.zIndex = 0
+      water.roundPixels = true
+      water.eventMode = 'none'
+      water.anchor.set(
+        Math.floor(waterTexture.width / 2) / waterTexture.width,
+        Math.floor(waterTexture.height / 2) / waterTexture.height
+      )
+      cell.addChild(water)
+
+      sprite.zIndex = 1
+    }
     sprite.texture = texture
+    sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
+    cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: frameIndex })
+    if (cell._terrainAppearance) cell._terrainAppearance.waterBorder = { resourceName, index: frameIndex }
   }
 
   setReliefBorder(index: number, elevation: number = 0): void {
@@ -346,11 +390,11 @@ export class CellTerrain {
   setWater(): void {
     const { cell } = this
     if (!cell.sprite) return
-    const index = formatNumber(cell.context.map.randomRange(0, 3))
     const resourceName = TERRAIN_SHEETS.water
-    cell.sprite.texture = getTextureByFrame(resourceName, Number(index), Assets)
+    cell.sprite.texture = getTextureByFrame(resourceName, 0, Assets)
     cell.type = 'Water'
     cell.category = 'Water'
+    cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: 0 })
     asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
   }
 

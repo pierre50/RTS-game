@@ -61,9 +61,16 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
   },
   border: {
     'water-borders/desert': 'assets/border/water-borders/desert/texture.json',
+    'water-borders/desert-water': 'assets/border/water-borders/desert-water/texture.json',
+    'water-borders/desert-water-filter-mask': 'assets/border/water-borders/desert-water-filter-mask/texture.json',
+    'water-borders/desert-sand': 'assets/border/water-borders/desert-sand/texture.json',
     'relief-borders/desert': 'assets/border/relief-borders/desert/texture.json',
     'relief-borders/dirt': 'assets/border/relief-borders/dirt/texture.json',
     'relief-borders/water': 'assets/border/relief-borders/water/texture.json',
+    'water-surface/filter-0': 'assets/border/water-surface-filter/000.png',
+    'water-surface/filter-1': 'assets/border/water-surface-filter/001.png',
+    'water-surface/filter-2': 'assets/border/water-surface-filter/002.png',
+    'water-surface/filter-3': 'assets/border/water-surface-filter/003.png',
   },
   graphics: {
     ...toTextureBundle('assets/graphics', [

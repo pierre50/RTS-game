@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite } from 'pixi.js'
+import { Container, Assets, Sprite, type Texture } from 'pixi.js'
 import { cartesianToIsometric, getTexture, textureRefToString, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
@@ -17,6 +17,8 @@ type CellMap = {
   randomRange(min: number, max: number): number
   randomItem<T>(items: T[]): T
   invalidateReliefCoastDistances?: () => void
+  invalidateWaterOverlay?: () => void
+  registerWaterBorderSurface?: (sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame?: number) => () => void
 }
 
 type CellContext = {
@@ -229,16 +231,19 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     return this.cellTerrain.resetTerrainAppearance()
   }
   setTerrainType(type: string): void {
-    return this.cellTerrain.setTerrainType(type)
+    this.cellTerrain.setTerrainType(type)
+    this.map.invalidateWaterOverlay?.()
   }
   setWaterBorder(resourceName: string, index: number): void {
-    return this.cellTerrain.setWaterBorder(resourceName, index)
+    this.cellTerrain.setWaterBorder(resourceName, index)
+    this.map.invalidateWaterOverlay?.()
   }
   setReliefBorder(index: number, elevation?: number): void {
     return this.cellTerrain.setReliefBorder(index, elevation)
   }
   setWater(): void {
-    return this.cellTerrain.setWater()
+    this.cellTerrain.setWater()
+    this.map.invalidateWaterOverlay?.()
   }
   fillReliefCellsAroundCell(): void {
     return this.cellTerrain.fillReliefCellsAroundCell()
@@ -246,4 +251,5 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   setCellLevel(level: number, cpt?: number): void {
     return this.cellTerrain.setCellLevel(level, cpt)
   }
+
 }
