@@ -58,7 +58,7 @@ type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
 type ResourceShadow = Sprite | AnimatedSprite
 type WindTick = (ticker: { deltaMS?: number; elapsedMS?: number }) => void
 
-const SHADOW_ALPHA = 0.42
+const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.02
 const SHADOW_SCALE_Y = -0.5
 const WIND_AMPLITUDE = 0.018
@@ -189,7 +189,8 @@ export class Resource extends Instance implements ResourceEntity {
 
       this.shadow = this.createShadow()
       if (this.shadow) {
-        this.addChild(this.shadow, this.sprite)
+        this.context.map.shadowLayer?.addChild(this.shadow)
+        this.addChild(this.sprite)
       } else {
         this.addChild(this.sprite)
       }
@@ -403,7 +404,7 @@ export class Resource extends Instance implements ResourceEntity {
     shadow.eventMode = 'none'
     shadow.roundPixels = true
     shadow.tint = 0x000000
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_MASK_ALPHA
     shadow.zIndex = -2
     this.syncShadow(shadow)
     return shadow
@@ -411,7 +412,7 @@ export class Resource extends Instance implements ResourceEntity {
 
   syncShadow(shadow = this.shadow): void {
     if (!shadow || !this.sprite) return
-    shadow.visible = getShadowsEnabled()
+    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     if (this.sprite instanceof AnimatedSprite && shadow instanceof AnimatedSprite) {
       const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
       shadow.textures = this.sprite.textures
@@ -427,15 +428,15 @@ export class Resource extends Instance implements ResourceEntity {
       shadow.texture = this.sprite.texture
       shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
     }
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_MASK_ALPHA
     shadow.rotation = 0
     shadow.scale.set(Math.abs(this.sprite.scale.x) * SHADOW_SCALE_X, Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y)
-    shadow.position.set(0, this.reliefLift ?? 0)
+    shadow.position.set(this.x, this.y + (this.reliefLift ?? 0))
   }
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled()
+      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     }
     if (getResourceWindAnimationEnabled()) {
       this.startWindMotion()
@@ -458,6 +459,9 @@ export class Resource extends Instance implements ResourceEntity {
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
     this.stopWindMotion()
+    this.shadow?.parent?.removeChild(this.shadow)
+    this.shadow?.destroy({ children: true, texture: false })
+    this.shadow = null
     super.destroy(options)
   }
 }

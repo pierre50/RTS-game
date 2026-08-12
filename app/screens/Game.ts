@@ -39,6 +39,7 @@ import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import { WeatherSystem } from '../services/WeatherSystem'
 import { LightSystem } from '../services/LightSystem'
+import { ShadowSystem } from '../services/ShadowSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
@@ -184,6 +185,7 @@ export default class Game extends Container {
   _onDocumentVisibilityChange?: () => void
   _weather?: WeatherSystem | null
   _lights?: LightSystem | null
+  _shadows?: ShadowSystem | null
 
   constructor(
     app: Application,
@@ -438,6 +440,7 @@ export default class Game extends Container {
     const { map, controls } = this.context
     if (!map || !controls) return
     this.addChild(map as ContainerChild)
+    this._shadows = new ShadowSystem(this._gameContext(), map)
     this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
     this._lights = new LightSystem(this._gameContext(), () => this._getScreenRect(), () => this._weather?.getDarknessLevel() ?? 0)
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = this._weather
@@ -488,6 +491,8 @@ export default class Game extends Container {
     this.context.performance?.reset?.()
     this._lights?.destroy()
     this._lights = null
+    this._shadows?.destroy()
+    this._shadows = null
     this._weather?.destroy()
     this._weather = null
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null

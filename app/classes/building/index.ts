@@ -51,7 +51,7 @@ type BuildingShadow = Sprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
 
-const SHADOW_ALPHA = 0.42
+const SHADOW_MASK_ALPHA = 1
 const SHADOW_OFFSET_Y = 0
 const shadowTextureFrameCache = new Map<string, Texture>()
 
@@ -224,7 +224,7 @@ export class Building extends Instance implements BuildingEntity {
         }
       })
 
-      if (this.shadow) this.addChild(this.shadow)
+      if (this.shadow) this.context.map.shadowLayer?.addChild(this.shadow)
       this.addChild(this.sprite)
       this.buildingTrainingPreview = new BuildingTrainingPreview(this)
       this.buildingTrainingPreview.update()
@@ -406,6 +406,7 @@ export class Building extends Instance implements BuildingEntity {
   updateShadow(shadow: BuildingShadow | null = this.shadow): void {
     const texture = this.getShadowTexture()
     if (!texture) {
+      this.shadow?.parent?.removeChild(this.shadow)
       this.shadow?.destroy()
       this.shadow = null
       return
@@ -416,9 +417,7 @@ export class Building extends Instance implements BuildingEntity {
       shadow.eventMode = 'none'
       shadow.roundPixels = true
       this.shadow = shadow
-      if (this.sprite.parent === this) {
-        this.addChildAt(shadow, Math.max(0, this.getChildIndex(this.sprite)))
-      }
+      this.context.map.shadowLayer?.addChild(shadow)
     }
     const sprite = this.sprite
     shadow.texture = texture
@@ -426,17 +425,17 @@ export class Building extends Instance implements BuildingEntity {
       shadow.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
     }
     shadow.zIndex = -2
-    shadow.alpha = SHADOW_ALPHA
-    shadow.visible = getShadowsEnabled()
+    shadow.alpha = SHADOW_MASK_ALPHA
+    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     shadow.rotation = 0
     shadow.tint = 0xffffff
     shadow.scale.set(sprite.scale.x, sprite.scale.y)
-    shadow.position.set(0, (this.reliefLift ?? 0) + SHADOW_OFFSET_Y)
+    shadow.position.set(this.x, this.y + (this.reliefLift ?? 0) + SHADOW_OFFSET_Y)
   }
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled()
+      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     }
   }
 
@@ -445,6 +444,9 @@ export class Building extends Instance implements BuildingEntity {
     this.buildingTrainingPreview = null
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
+    this.shadow?.parent?.removeChild(this.shadow)
+    this.shadow?.destroy({ children: true, texture: false })
+    this.shadow = null
     super.destroy(options)
   }
 

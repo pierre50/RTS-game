@@ -101,7 +101,7 @@ const MOUNTED_HORSE_FRONT_Z_INDEX = 13
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
 const MOUNTED_HORSE_WALKING_SHEET = 'animals/horse/walking'
 const MOUNTED_HORSE_DIRECTIONS_IN_FRONT = new Set(['south', 'southwest', 'southeast'])
-const SHADOW_ALPHA = 0.42
+const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
 
@@ -428,7 +428,8 @@ export class Unit extends Instance implements UnitEntity {
     this.sprite.loop = this.loop ?? true
     this.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
     this.shadow = this.createShadow()
-    this.addChild(this.shadow, this.sprite)
+    this.context.map.shadowLayer?.addChild(this.shadow)
+    this.addChild(this.sprite)
     this.setupMountedHorseSprite()
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     if (this.isDead) {
@@ -484,7 +485,7 @@ export class Unit extends Instance implements UnitEntity {
     shadow.eventMode = 'none'
     shadow.roundPixels = true
     shadow.tint = 0x000000
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_MASK_ALPHA
     shadow.zIndex = -2
     this.syncShadow(shadow, source)
     return shadow
@@ -493,18 +494,18 @@ export class Unit extends Instance implements UnitEntity {
   syncShadow(shadow = this.shadow, source: AnimatedSprite | null = this.sprite) {
     if (!shadow || !source) return
     const frame = Math.min(source.currentFrame, Math.max(source.textures.length - 1, 0))
-    shadow.visible = getShadowsEnabled()
+    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     shadow.textures = source.textures
     shadow.animationSpeed = source.animationSpeed
     shadow.loop = source.loop
     shadow.anchor.set(source.anchor.x, source.anchor.y)
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_MASK_ALPHA
     shadow.rotation = 0
     shadow.scale.x = source.scale.x * SHADOW_SCALE_X
     shadow.scale.y = Math.abs(source.scale.y) * SHADOW_SCALE_Y
     // The shadow rises/sinks with the sprite on relief (both stand on the same raised
     // ground) — unlike a flying animal's shadow, which stays pinned to the ground.
-    shadow.position.set(0, this.reliefLift)
+    shadow.position.set(this.x + source.position.x, this.y + (this.reliefLift ?? 0))
     if (source.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -547,7 +548,7 @@ export class Unit extends Instance implements UnitEntity {
     this.horseSprite.onFrameChange = () => this.syncMountedRiderPosition()
     this.addChild(this.horseSprite)
     this.horseShadow = this.createShadow(this.horseSprite, `${LABEL_TYPES.shadow}-horse`)
-    this.addChild(this.horseShadow)
+    this.context.map.shadowLayer?.addChild(this.horseShadow)
     this.setupMountedRiderLegsSprite()
     this.syncMountedHorseSprite()
   }
@@ -741,10 +742,10 @@ export class Unit extends Instance implements UnitEntity {
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled()
+      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     }
     if (this.horseShadow) {
-      this.horseShadow.visible = getShadowsEnabled()
+      this.horseShadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     }
   }
 
@@ -758,8 +759,8 @@ export class Unit extends Instance implements UnitEntity {
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
     this.syncMountedRiderPosition()
     if (this.horseSprite) this.horseSprite.position.y = this.reliefLift
-    if (this.shadow) this.shadow.position.y = this.reliefLift
-    if (this.horseShadow) this.horseShadow.position.y = this.reliefLift
+    this.syncShadow()
+    this.syncShadow(this.horseShadow, this.horseSprite)
     this.syncSelectionMarkersToRelief()
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) healthBar.position.y = this.getMountedRiderY()
@@ -1358,6 +1359,9 @@ export class Unit extends Instance implements UnitEntity {
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
+    this.shadow?.parent?.removeChild(this.shadow)
+    this.shadow?.destroy({ children: true, texture: false })
+    this.shadow = null
     this.removeMountedHorseSprite()
     super.destroy(options)
   }

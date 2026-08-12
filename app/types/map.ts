@@ -79,6 +79,7 @@ export interface RuntimeMap {
   floatingItems?: Set<FloatingItemEntity>
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container
+  shadowLayer?: Container
   randomRange(min: number, max: number): number
   random(): number
   randomItem<T>(items: T[]): T

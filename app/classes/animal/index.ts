@@ -36,7 +36,7 @@ export type AnimalMoveOptions = {
   movementSheet?: string
 }
 
-const SHADOW_ALPHA = 0.42
+const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
 export const FLYING_ALTITUDE = 20
@@ -207,7 +207,8 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.sprite.updateAnchor = true
     this.shadow = this.createShadow()
-    this.addChild(this.shadow, this.sprite)
+    this.context.map.shadowLayer?.addChild(this.shadow)
+    this.addChild(this.sprite)
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 
     setTimeout(() => {
@@ -269,7 +270,7 @@ export class Animal extends Instance implements AnimalEntity {
     shadow.eventMode = 'none'
     shadow.roundPixels = true
     shadow.tint = 0x000000
-    shadow.alpha = SHADOW_ALPHA
+    shadow.alpha = SHADOW_MASK_ALPHA
     shadow.zIndex = -2
     this.syncShadow(shadow)
     return shadow
@@ -286,12 +287,12 @@ export class Animal extends Instance implements AnimalEntity {
     shadow.animationSpeed = this.sprite.animationSpeed
     shadow.loop = this.sprite.loop
     shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
-    shadow.alpha = SHADOW_ALPHA * altitudeFactor
-    shadow.visible = getShadowsEnabled()
+    shadow.alpha = SHADOW_MASK_ALPHA
+    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     shadow.rotation = 0
     shadow.scale.x = this.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
     shadow.scale.y = Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
-    shadow.position.set(0, this.reliefLift)
+    shadow.position.set(this.x, this.y + this.reliefLift)
     if (this.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -316,13 +317,13 @@ export class Animal extends Instance implements AnimalEntity {
     const target = -getReliefLiftPixels(level)
     this.reliefLift = immediate ? target : this.reliefLift + (target - this.reliefLift) * RELIEF_LIFT_SMOOTHING
     this.sprite.position.y = -this.altitude + this.reliefLift
-    if (this.shadow) this.shadow.position.y = this.reliefLift
+    this.syncShadow()
     this.syncSelectionMarkersToRelief()
   }
 
   syncVisualSettings(): void {
     if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled()
+      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
     }
   }
 
@@ -407,6 +408,9 @@ export class Animal extends Instance implements AnimalEntity {
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
     this.visualSettingsCleanup?.()
     this.visualSettingsCleanup = null
+    this.shadow?.parent?.removeChild(this.shadow)
+    this.shadow?.destroy({ children: true, texture: false })
+    this.shadow = null
     super.destroy(options)
   }
 }

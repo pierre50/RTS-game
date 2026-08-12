@@ -37,6 +37,7 @@ export type RenderableInstance = VisibilityEntity &
     isDestroyed?: boolean
     size?: number
     sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
+    syncShadow?: () => void
   }
 
 export type BoundsSource = {
@@ -135,6 +136,7 @@ export function updateInstanceRenderVisibility(instance?: RenderableInstance | n
   if (!instance) return false
   const visible = instanceShouldRender(instance)
   instance.visible = visible
+  instance.syncShadow?.()
   return visible
 }
 

@@ -112,6 +112,7 @@ export default class Map extends Container {
   mapTerrain: MapTerrain
   mapFog: MapFog
   terrainChunkManager: TerrainChunkManager
+  shadowLayer: Container
   waterOverlay: TilingSprite | null
   waterOverlayFrame: number
   waterOverlayElapsed: number
@@ -171,6 +172,10 @@ export default class Map extends Container {
     this.mapTerrain = new MapTerrain(this)
     this.mapFog = new MapFog(this)
     this.terrainChunkManager = new TerrainChunkManager(this as ChunkedTerrainMap)
+    this.shadowLayer = new Container()
+    this.shadowLayer.eventMode = 'none'
+    this.shadowLayer.label = 'shadow-source-layer'
+    this.shadowLayer.sortableChildren = true
     this.waterOverlay = null
     this.waterOverlayFrame = 0
     this.waterOverlayElapsed = 0
@@ -588,6 +593,7 @@ export default class Map extends Container {
     this.waterOverlay = null
     this.waterBorderSurfaces.clear()
     this.waterBackground = null
+    this.shadowLayer?.destroy({ children: true, texture: false, textureSource: false })
     this.terrainChunkManager?.destroy()
     this.mapFog?.destroyFogResources()
     super.destroy(options ?? undefined)
