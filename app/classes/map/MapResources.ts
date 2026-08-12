@@ -4,8 +4,10 @@ import {
   SPACED_RESOURCE_TYPES,
   BIOME_TREE_CHANCE,
   BIOME_TREE_PLAYER_SAFE_DIST,
+  WATER_BORDER_PLACEMENT_CLEARANCE,
   getEnvironmentTerrainParams,
 } from '../../constants'
+import { hasWaterBorderWithin } from '../../lib'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -275,6 +277,7 @@ export class MapResources {
               cellJ < gridHeight &&
               !grid[cellI][cellJ].solid &&
               grid[cellI][cellJ].category !== 'Water' &&
+              !hasWaterBorderWithin(grid, cellI, cellJ, WATER_BORDER_PLACEMENT_CLEARANCE) &&
               grid[cellI][cellJ].type !== 'Border' &&
               grid[cellI][cellJ].type !== 'Dirt' &&
               !grid[cellI][cellJ].inclined &&
@@ -307,6 +310,7 @@ export class MapResources {
         clusterCenterJ < 0 ||
         clusterCenterJ >= gridHeight ||
         grid[clusterCenterI][clusterCenterJ].category === 'Water' ||
+        hasWaterBorderWithin(grid, clusterCenterI, clusterCenterJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
         grid[clusterCenterI][clusterCenterJ].solid ||
         grid[clusterCenterI][clusterCenterJ].inclined
       )
@@ -334,6 +338,7 @@ export class MapResources {
         soloJ < 0 ||
         soloJ >= gridHeight ||
         grid[soloI][soloJ].category === 'Water' ||
+        hasWaterBorderWithin(grid, soloI, soloJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
         grid[soloI][soloJ].solid ||
         grid[soloI][soloJ].inclined ||
         grid[soloI][soloJ].type === 'Dirt'
@@ -363,6 +368,7 @@ export class MapResources {
           clearingCenterJ < 0 ||
           clearingCenterJ >= gridHeight ||
           grid[clearingCenterI][clearingCenterJ].category === 'Water' ||
+          hasWaterBorderWithin(grid, clearingCenterI, clearingCenterJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
           grid[clearingCenterI][clearingCenterJ].solid ||
           grid[clearingCenterI][clearingCenterJ].inclined
         )
@@ -415,6 +421,7 @@ export class MapResources {
       if (
         grid[cell.i][cell.j].category !== 'Water' &&
         !grid[cell.i][cell.j].waterBorder &&
+        !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
         !grid[cell.i][cell.j].solid &&
         !grid[cell.i][cell.j].inclined
       ) {
@@ -496,6 +503,7 @@ export class MapResources {
       const j = this.map.randomRange(border, this.map.size - border)
       const cell = this.map.grid[i]?.[j]
       if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
+      if (hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
 
       const tooCloseToPlayer = playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
       if (tooCloseToPlayer) continue
@@ -539,6 +547,7 @@ export class MapResources {
             !hasSpacedResourceAround(grid, cell.i, cell.j) &&
             !cell.solid &&
             cell.category !== 'Water' &&
+            !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
             !cell.has &&
             !cell.border &&
             !cell.inclined &&
@@ -594,6 +603,7 @@ export class MapResources {
       for (let j = 1; j < size; j++) {
         const cell = grid[i][j]
         if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
+        if (hasWaterBorderWithin(grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
         let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
         if (cell.type === params.groundType && params.groundTreeChance != null) {
           chance = params.groundTreeChance

@@ -37,7 +37,6 @@ type CellDefinition = {
 type TerrainAppearance = {
   patchBorders: Set<string> | null
   patchBorderGroundType?: 'Desert' | 'Dirt' | null
-  deepWaterBorders: Set<string> | null
   relief: { index: number; elevation: number } | null
   waterBorder: { resourceName: string; index: number } | null
 }
@@ -104,7 +103,6 @@ export class GenerationCell implements RuntimeCell {
     this._terrainAppearance = {
       patchBorders: null,
       patchBorderGroundType: null,
-      deepWaterBorders: null,
       relief: null,
       waterBorder: null,
     }
@@ -171,14 +169,8 @@ export class GenerationCell implements RuntimeCell {
     }
     this._terrainAppearance.patchBorders = null
     this._terrainAppearance.patchBorderGroundType = null
-    this._terrainAppearance.deepWaterBorders = null
     this._terrainAppearance.relief = null
     if (!preserveWaterBorder) this._terrainAppearance.waterBorder = null
-  }
-
-  setDeepWaterBorder(direction: string): void {
-    if (!this._terrainAppearance.deepWaterBorders) this._terrainAppearance.deepWaterBorders = new Set()
-    this._terrainAppearance.deepWaterBorders.add(direction)
   }
 
   setTerrainType(type: string): void {

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import random
 from pathlib import Path
 
@@ -179,15 +180,52 @@ def enhance_frame(
     return image
 
 
+def write_atlas(frames: list[Image.Image]) -> None:
+    if not frames:
+        raise ValueError("No frames to write")
+    frame_width = frames[0].width
+    frame_height = frames[0].height
+    atlas = Image.new("RGBA", (frame_width * len(frames), frame_height), (255, 255, 255, 0))
+    metadata = {
+        "frames": {},
+        "meta": {
+            "app": "scripts/enhance_water_surface_filter.py",
+            "image": "texture.png",
+            "format": "RGBA8888",
+            "size": {"w": atlas.width, "h": atlas.height},
+            "scale": 1,
+        },
+    }
+
+    for index, frame in enumerate(frames):
+        x = index * frame_width
+        atlas.paste(frame, (x, 0))
+        metadata["frames"][f"{index:03d}_border_water-surface-filter.png"] = {
+            "frame": {"x": x, "y": 0, "w": frame_width, "h": frame_height},
+            "rotated": False,
+            "trimmed": False,
+            "spriteSourceSize": {"x": 0, "y": 0, "w": frame_width, "h": frame_height},
+            "sourceSize": {"w": frame_width, "h": frame_height},
+            "anchor": {"x": 0, "y": 0},
+        }
+
+    FRAME_DIR.mkdir(exist_ok=True)
+    atlas.save(FRAME_DIR / "texture.png")
+    (FRAME_DIR / "texture.json").write_text(json.dumps(metadata, indent=2) + "\n")
+
+
 def main() -> None:
     base_frames, candidate_masks = rebuild_base_frames_from_source()
     flash_candidate_mask = merge_candidate_masks(candidate_masks)
     specs = create_flash_specs(flash_candidate_mask)
+    frames = []
 
     for index, base_frame in enumerate(base_frames):
-        output_path = FRAME_DIR / f"{index:03d}.png"
-        enhance_frame(base_frame, flash_candidate_mask, index, specs).save(output_path)
-        print(f"wrote {output_path.relative_to(ROOT)}")
+        frames.append(enhance_frame(base_frame, flash_candidate_mask, index, specs))
+
+    write_atlas(frames)
+    print(f"wrote {(FRAME_DIR / 'texture.png').relative_to(ROOT)}")
+    print(f"wrote {(FRAME_DIR / 'texture.json').relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

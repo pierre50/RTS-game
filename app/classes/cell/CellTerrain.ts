@@ -25,16 +25,9 @@ const TERRAIN_SHEETS = {
 } as const
 
 const BORDER_SHEETS = {
-  desertRelief: 'relief-borders/desert',
-  dirtRelief: 'relief-borders/dirt',
-  waterRelief: 'relief-borders/water',
+  desertRelief: 'desert-relief',
+  dirtRelief: 'dirt-relief',
 } as const
-const WATER_BORDER_SPLIT_SHEETS: Record<string, { water: string; sand: string }> = {
-  'water-borders/desert': {
-    water: 'water-borders/desert-water',
-    sand: 'water-borders/desert-sand',
-  },
-}
 
 type TerrainDefinition = {
   category?: string
@@ -100,13 +93,11 @@ export type TerrainCellLike = {
   _terrainAppearance?: {
     patchBorders?: Set<string> | null
     patchBorderGroundType?: 'Desert' | 'Dirt' | null
-    deepWaterBorders?: Set<string> | null
     relief?: { index: number; elevation: number } | null
     waterBorder?: { resourceName: string; index: number } | null
   }
   children: TerrainChild[]
   sprite: TerrainSprite | null
-  _waterBorderWaterCleanup?: (() => void) | null
   has: RuntimeEntity | null
   inclined: boolean
   border: boolean
@@ -197,6 +188,7 @@ export class CellTerrain {
         Math.floor(texture.height / 2) / texture.height
       )
     }
+    cell.sprite.renderable = cell.category !== 'Water'
 
     cell.x = x
     cell.y = y - cell.z * CELL_DEPTH
@@ -206,7 +198,6 @@ export class CellTerrain {
     if (cell._terrainAppearance) {
       cell._terrainAppearance.patchBorders = null
       cell._terrainAppearance.patchBorderGroundType = null
-      cell._terrainAppearance.deepWaterBorders = null
       cell._terrainAppearance.relief = null
       cell._terrainAppearance.waterBorder = null
     }
@@ -273,74 +264,20 @@ export class CellTerrain {
     }
   }
 
-  setDeepWaterBorder(direction: string): void {
-    const { cell } = this
-    if (!cell.sprite) return
-    const alreadySet = cell.children.some(c => c.type === 'deepWaterBorder' && c.direction === direction)
-    if (alreadySet) return
-    const resourceName = BORDER_SHEETS.waterRelief
-    const cellSpriteTextureName = cell.terrainTextureName
-    if (!cellSpriteTextureName) return
-    const cellSpriteIndex = cell._terrainAppearance?.relief?.index ?? parseTextureRef(cellSpriteTextureName).frame
-    const dirIndex = ({ west: 0, north: 1, south: 2, east: 3 } satisfies Record<Direction, number>)[
-      direction as Direction
-    ]
-    const variants = getReliefBorderVariants(cellSpriteIndex)
-    const index = variants[dirIndex]
-    if (index == null) return
-    const texture = getTextureByFrame(resourceName, index, Assets)
-    if (!texture) return
-    const sprite = new Sprite(texture) as TerrainSprite
-    sprite.direction = direction as Direction
-    sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
-    sprite.type = 'deepWaterBorder'
-    sprite.zIndex = 10
-    cell.addChild(sprite)
-    if (cell._terrainAppearance) {
-      if (!cell._terrainAppearance.deepWaterBorders) cell._terrainAppearance.deepWaterBorders = new Set()
-      cell._terrainAppearance.deepWaterBorders.add(direction)
-    }
-  }
-
   setWaterBorder(resourceName: string, index: number): void {
     const { cell } = this
     const { sprite } = cell
     if (!sprite) return
     const frameIndex = Number(index)
-    const splitSheets = WATER_BORDER_SPLIT_SHEETS[resourceName]
-    const texture = getTextureByFrame(splitSheets?.sand ?? resourceName, frameIndex, Assets)
+    const texture = getTextureByFrame(resourceName, frameIndex, Assets)
     cell.border = true
     cell.waterBorder = true
     if (cell.has && typeof cell.has.die === 'function') {
       cell.has.die()
     }
-    for (let childIndex = cell.children.length - 1; childIndex >= 0; childIndex--) {
-      const child = cell.children[childIndex]
-      if (
-        child.type !== 'waterBorderWater'
-      )
-        continue
-      if (child.type === 'waterBorderWater') cell._waterBorderWaterCleanup?.()
-      cell.removeChild(child)
-      child.destroy?.()
-    }
-    cell._waterBorderWaterCleanup = null
-    if (splitSheets) {
-      const waterTexture = getTextureByFrame(splitSheets.water, frameIndex, Assets)
-      const water = new Sprite(waterTexture) as TerrainSprite
-      water.type = 'waterBorderWater'
-      water.zIndex = 0
-      water.roundPixels = true
-      water.eventMode = 'none'
-      water.anchor.set(
-        Math.floor(waterTexture.width / 2) / waterTexture.width,
-        Math.floor(waterTexture.height / 2) / waterTexture.height
-      )
-      cell.addChild(water)
-
-      sprite.zIndex = 1
-    }
+    sprite.zIndex = 1
     sprite.texture = texture
+    sprite.renderable = true
     sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
     cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: frameIndex })
     if (cell._terrainAppearance) cell._terrainAppearance.waterBorder = { resourceName, index: frameIndex }
@@ -392,6 +329,7 @@ export class CellTerrain {
     if (!cell.sprite) return
     const resourceName = TERRAIN_SHEETS.water
     cell.sprite.texture = getTextureByFrame(resourceName, 0, Assets)
+    cell.sprite.renderable = false
     cell.type = 'Water'
     cell.category = 'Water'
     cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: 0 })

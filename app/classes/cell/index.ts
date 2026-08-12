@@ -77,7 +77,6 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   _terrainAppearance: {
     patchBorders: Set<string> | null
     patchBorderGroundType?: 'Desert' | 'Dirt' | null
-    deepWaterBorders: Set<string> | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
   }
@@ -113,7 +112,6 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this._terrainAppearance = {
       patchBorders: null,
       patchBorderGroundType: null,
-      deepWaterBorders: null,
       relief: null,
       waterBorder: null,
     }
@@ -142,6 +140,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     )
     this.sprite.roundPixels = true
     this.sprite.eventMode = 'none'
+    this.sprite.renderable = this.category !== 'Water'
     this.addChild(this.sprite)
 
     this.cellFog = options.skipFog ? null : new CellFog(this)
@@ -223,9 +222,6 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   // Terrain delegates
   setPatchBorder(direction: string, groundType?: 'Desert' | 'Dirt'): void {
     return this.cellTerrain.setPatchBorder(direction, groundType)
-  }
-  setDeepWaterBorder(direction: string): void {
-    return this.cellTerrain.setDeepWaterBorder(direction)
   }
   resetTerrainAppearance(): void {
     return this.cellTerrain.resetTerrainAppearance()

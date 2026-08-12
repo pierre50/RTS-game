@@ -21,7 +21,6 @@ type TerrainAppearance = {
   // adjacent Desert/Dirt patch or the generic water-edge overlay — so one value per cell
   // is enough; see CellTerrain#setPatchBorder.
   patchBorderGroundType?: 'Desert' | 'Dirt' | null
-  deepWaterBorders?: Set<string> | null
   relief?: { index: number; elevation: number } | null
   waterBorder?: { resourceName: string; index: number } | null
 }

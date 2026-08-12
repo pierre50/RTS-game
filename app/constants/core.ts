@@ -19,6 +19,9 @@ export const RELIEF_LIFT_SMOOTHING = 0.03
 
 export const STEP_TIME = 20
 export const BUCKET_SIZE = 8
+// Keeps resources, ambient animals, and decorative ground sets from spawning too close
+// to shoreline border cells. Set to 0 to only block the water-border cell itself.
+export const WATER_BORDER_PLACEMENT_CLEARANCE = 2
 
 export const IS_MOBILE =
   window.matchMedia('(pointer: coarse)').matches || (window.innerWidth <= 800 && window.innerHeight <= 600)

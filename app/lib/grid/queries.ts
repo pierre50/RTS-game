@@ -1,6 +1,6 @@
 import { instancesDistance } from '../maths'
 import { getInstanceClosestFreeCellPath, type GameMap } from './movement'
-import type { GridCell, GridInstanceLike } from '../../types/grid'
+import type { Grid, GridCell, GridInstanceLike } from '../../types/grid'
 
 type Candidate<TInstance extends GridInstanceLike> = {
   distance: number
@@ -80,4 +80,26 @@ export function getClosestInstanceWithPath<TInstance extends GridInstanceLike, T
   }
 
   return closest
+}
+
+export function hasWaterBorderWithin<TCell extends GridCell>(
+  grid: Grid<TCell>,
+  i: number,
+  j: number,
+  radius: number
+): boolean {
+  if (radius <= 0) return Boolean(grid[i]?.[j]?.waterBorder)
+
+  const minI = Math.max(0, i - radius)
+  const maxI = Math.min(grid.length - 1, i + radius)
+  for (let ni = minI; ni <= maxI; ni++) {
+    const row = grid[ni]
+    if (!row) continue
+    const minJ = Math.max(0, j - radius)
+    const maxJ = Math.min(row.length - 1, j + radius)
+    for (let nj = minJ; nj <= maxJ; nj++) {
+      if (row[nj]?.waterBorder) return true
+    }
+  }
+  return false
 }

@@ -60,17 +60,10 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'terrain/deep-water': 'assets/terrain/deep-water/texture.json',
   },
   border: {
-    'water-borders/desert': 'assets/border/water-borders/desert/texture.json',
-    'water-borders/desert-water': 'assets/border/water-borders/desert-water/texture.json',
-    'water-borders/desert-water-filter-mask': 'assets/border/water-borders/desert-water-filter-mask/texture.json',
-    'water-borders/desert-sand': 'assets/border/water-borders/desert-sand/texture.json',
-    'relief-borders/desert': 'assets/border/relief-borders/desert/texture.json',
-    'relief-borders/dirt': 'assets/border/relief-borders/dirt/texture.json',
-    'relief-borders/water': 'assets/border/relief-borders/water/texture.json',
-    'water-surface/filter-0': 'assets/border/water-surface-filter/000.png',
-    'water-surface/filter-1': 'assets/border/water-surface-filter/001.png',
-    'water-surface/filter-2': 'assets/border/water-surface-filter/002.png',
-    'water-surface/filter-3': 'assets/border/water-surface-filter/003.png',
+    'desert-sand-water-border': 'assets/border/desert-sand-water-border/texture.json',
+    'desert-relief': 'assets/border/desert-relief/texture.json',
+    'dirt-relief': 'assets/border/dirt-relief/texture.json',
+    'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },
   graphics: {
     ...toTextureBundle('assets/graphics', [

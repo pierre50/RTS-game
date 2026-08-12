@@ -9,6 +9,7 @@ import {
   getTextureByFrame,
   getPositionInGridAroundInstance,
   canPlaceBuildingAt,
+  hasWaterBorderWithin,
   getBuildingFootprintRadius,
   getPlainCellsAroundPoint,
 } from '../../lib'
@@ -35,6 +36,7 @@ import {
   WATER_SET_DEEP_LAND_MIN_DIST,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
+  WATER_BORDER_PLACEMENT_CLEARANCE,
   getEnvironmentTerrainParams,
 } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
@@ -429,6 +431,7 @@ export class MapGeneration {
         !cell.has &&
         !cell.border &&
         !cell.waterBorder &&
+        !hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
         !cell.inclined &&
         cell.category !== 'Water' &&
         !this._hasWaterNeighbor(i, j) &&
@@ -1588,9 +1591,16 @@ export class MapGeneration {
         if (this._hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
           const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
+          const hasWaterBorderClearance = hasWaterBorderWithin(
+            this.map.grid,
+            i,
+            j,
+            WATER_BORDER_PLACEMENT_CLEARANCE
+          )
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
+            !hasWaterBorderClearance &&
             this.map.random() < FLOOR_SET_CHANCE &&
             i > 1 &&
             j > 1 &&
@@ -1619,7 +1629,12 @@ export class MapGeneration {
             floor.zIndex = 1
             cell.addChild?.(floor)
           }
-          if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
+          if (
+            !hasWaterNeighbour &&
+            !hasWaterBorderClearance &&
+            cell.category !== 'Water' &&
+            this.map.random() < this.map.chanceOfSets
+          ) {
             const randomSpritesheet = this.map.randomItem(GROUND_SETS)
             const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
             const rock: SetSprite = Sprite.from(texture)
@@ -1630,7 +1645,12 @@ export class MapGeneration {
             rock.zIndex = 2
             cell.addChild?.(rock)
           }
-          if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
+          if (
+            !hasWaterNeighbour &&
+            !hasWaterBorderClearance &&
+            cell.category !== 'Water' &&
+            this.map.random() < AMBIENT_ANIMAL_CHANCE
+          ) {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
           if (
@@ -1652,9 +1672,11 @@ export class MapGeneration {
         const cell = this.map.grid[i][j]
         if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
         const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
+        const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
         if (
           cell.category !== 'Water' &&
           !hasWaterNeighbour &&
+          !hasWaterBorderClearance &&
           this.map.random() < FLOOR_SET_CHANCE &&
           i > 1 &&
           j > 1 &&
@@ -1675,7 +1697,12 @@ export class MapGeneration {
             cell.addChild?.(floor)
           }
         }
-        if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < this.map.chanceOfSets) {
+        if (
+          !hasWaterNeighbour &&
+          !hasWaterBorderClearance &&
+          cell.category !== 'Water' &&
+          this.map.random() < this.map.chanceOfSets
+        ) {
           const sheet = this.map.randomItem(GROUND_SETS)
           const texture = getTextureByFrame(sheet, 0, Assets)
           if (texture) {
@@ -1687,7 +1714,12 @@ export class MapGeneration {
             cell.addChild?.(rock)
           }
         }
-        if (!hasWaterNeighbour && cell.category !== 'Water' && this.map.random() < AMBIENT_ANIMAL_CHANCE) {
+        if (
+          !hasWaterNeighbour &&
+          !hasWaterBorderClearance &&
+          cell.category !== 'Water' &&
+          this.map.random() < AMBIENT_ANIMAL_CHANCE
+        ) {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
         if (

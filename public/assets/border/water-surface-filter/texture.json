@@ -1,0 +1,110 @@
+{
+  "frames": {
+    "000_border_water-surface-filter.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 114
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "001_border_water-surface-filter.png": {
+      "frame": {
+        "x": 116,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 114
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "002_border_water-surface-filter.png": {
+      "frame": {
+        "x": 232,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 114
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "003_border_water-surface-filter.png": {
+      "frame": {
+        "x": 348,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 116,
+        "h": 114
+      },
+      "sourceSize": {
+        "w": 116,
+        "h": 114
+      },
+      "anchor": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  },
+  "meta": {
+    "app": "scripts/enhance_water_surface_filter.py",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 464,
+      "h": 114
+    },
+    "scale": 1
+  }
+}

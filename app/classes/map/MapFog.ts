@@ -58,7 +58,6 @@ type TerrainAppearance = {
   relief?: { index: number; elevation: number } | null
   patchBorders?: Iterable<string> | null
   patchBorderGroundType?: 'Desert' | 'Dirt' | null
-  deepWaterBorders?: Iterable<string> | null
 }
 
 type TerrainDecoration = {
@@ -84,7 +83,6 @@ type FogGridCell = MapTypes.RuntimeCell & {
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
   setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
-  setDeepWaterBorder?(direction: string): void
 }
 
 type FogContainerCell = FogGridCell & ContainerChild
@@ -365,7 +363,6 @@ export class MapFog {
       for (const direction of appearance.patchBorders ?? []) {
         cell.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
       }
-      for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
     }
     this.map.context.performance?.record?.(
       'generationCellMaterialization.appearance',

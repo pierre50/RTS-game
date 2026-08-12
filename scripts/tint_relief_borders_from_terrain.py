@@ -53,9 +53,20 @@ def frame_index(name: str) -> int:
     return int(match.group(1))
 
 
-def load_indexed_frames(directory: Path) -> tuple[Image.Image, dict[int, dict]]:
-    atlas = Image.open(directory / "texture.png").convert("RGBA")
-    with (directory / "texture.json").open() as file:
+def resolve_atlas_paths(path: Path) -> tuple[Path, Path]:
+    if path.is_dir():
+        return path / "texture.png", path / "texture.json"
+    if path.suffix == ".png":
+        return path, path.with_suffix(".json")
+    if path.suffix == ".json":
+        return path.with_suffix(".png"), path
+    return path.with_suffix(".png"), path.with_suffix(".json")
+
+
+def load_indexed_frames(path: Path) -> tuple[Image.Image, dict[int, dict]]:
+    image_path, metadata_path = resolve_atlas_paths(path)
+    atlas = Image.open(image_path).convert("RGBA")
+    with metadata_path.open() as file:
         metadata = json.load(file)
     frames = {frame_index(name): info for name, info in metadata["frames"].items()}
     return atlas, frames
@@ -116,6 +127,7 @@ def tint_border_frame(border: Image.Image, terrain: Image.Image) -> tuple[Image.
 def tint_relief_borders(terrain_dir: Path, border_dir: Path, output: Path | None = None) -> None:
     terrain_atlas, terrain_frames = load_indexed_frames(terrain_dir)
     border_atlas, border_frames = load_indexed_frames(border_dir)
+    border_image_path, _ = resolve_atlas_paths(border_dir)
     border_to_terrain = {
         border_index: terrain_index
         for terrain_index, variants in RELIEF_BORDER_VARIANTS_BY_TILE_INDEX.items()
@@ -142,16 +154,16 @@ def tint_relief_borders(terrain_dir: Path, border_dir: Path, output: Path | None
         total_changed += changed
         total_skipped += skipped
 
-    target = output or border_dir / "texture.png"
+    target = output or border_image_path
     output_atlas.save(target, optimize=True)
     print(f"{target}: tinted {len(border_frames)} frames, changed {total_changed} pixels, skipped {total_skipped}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--terrain-dir", type=Path, required=True, help="Directory containing terrain texture.png/json")
-    parser.add_argument("--border-dir", type=Path, required=True, help="Directory containing relief border texture.png/json")
-    parser.add_argument("--output", type=Path, help="Optional output texture path; defaults to overwriting border texture.png")
+    parser.add_argument("--terrain-dir", type=Path, required=True, help="Terrain atlas directory or .png/.json path")
+    parser.add_argument("--border-dir", type=Path, required=True, help="Relief border atlas directory or .png/.json path")
+    parser.add_argument("--output", type=Path, help="Optional output path; defaults to overwriting the border atlas image")
     args = parser.parse_args()
 
     tint_relief_borders(args.terrain_dir, args.border_dir, args.output)

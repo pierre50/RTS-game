@@ -20,7 +20,6 @@ type TerrainAppearance = {
   relief?: { index: number; elevation: number }
   patchBorders?: string[]
   patchBorderGroundType?: 'Desert' | 'Dirt' | null
-  deepWaterBorders?: string[]
 }
 export type TerrainSourceCell = RuntimeCell & {
   _terrainAppearance: TerrainAppearance
@@ -213,7 +212,6 @@ export class TerrainChunkManager {
     for (const direction of appearance.patchBorders ?? []) {
       cell.setPatchBorder(direction, appearance.patchBorderGroundType ?? undefined)
     }
-    for (const direction of appearance.deepWaterBorders ?? []) cell.setDeepWaterBorder(direction)
     for (const decoration of sourceTerrain.getTerrainDecorations?.() ?? []) {
       const sprite = new Sprite(decoration.texture)
       sprite.label = decoration.label

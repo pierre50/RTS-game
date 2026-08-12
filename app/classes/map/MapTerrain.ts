@@ -33,7 +33,7 @@ type TerrainConfig = {
 }
 
 const BORDER_SHEETS = {
-  waterDesert: 'water-borders/desert',
+  waterDesertSand: 'desert-sand-water-border',
 } as const
 
 type TerrainCell = MapTypes.RuntimeCell & {
@@ -48,7 +48,6 @@ type TerrainCell = MapTypes.RuntimeCell & {
   setWaterBorder?(resourceName: string, frame: string): void
   setReliefBorder?(frame: string, elevation?: number): void
   setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
-  setDeepWaterBorder?(direction: string): void
   resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
 }
 
@@ -77,7 +76,6 @@ type TerrainMap = Container & {
   ): void
   formatCellsRelief(): void
   formatCellsWaterBorderOverlays(): void
-  formatCellsDeepWaterBorder(): void
   formatCellsPatchBorders(): void
 }
 
@@ -880,7 +878,7 @@ export class MapTerrain {
           isAnyWater(neighbor?.type)
         )
         const frame = getWaterBorderFrame(flags)
-        if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesert, frame)
+        if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesertSand, frame)
       }
     }
   }
@@ -954,7 +952,6 @@ export class MapTerrain {
       )
     }
     measure('terrainReliefBorders', () => this.map.formatCellsRelief())
-    measure('terrainDeepWaterBorders', () => this.map.formatCellsDeepWaterBorder())
     // Runs before the water-border overlay so a cell right next to a Desert/Dirt patch
     // always gets that patch's own relief sheet — setPatchBorder's "already set" guard
     // then makes the water overlay (which defaults to the desert sheet) a no-op there,
@@ -964,67 +961,16 @@ export class MapTerrain {
   }
 
   classifyDeepWater(): void {
-    const TRANSITION_DIST_FROM_LAND = 4
-    const DEEP_DIST_FROM_LAND = 5
-    const mapSeed = typeof this.map.seed === 'number' && Number.isFinite(this.map.seed) ? this.map.seed : 0
     const config = Assets.cache.get('config') as TerrainConfig
-    const deepWaterDef = config?.cells?.['DeepWater']
     const waterDef = config?.cells?.['Water']
-
-    const n = this.map.size + 1
-    const dist = new Int16Array(n * n).fill(9999)
-    const queue: number[] = []
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        if (this.map.grid[i][j].category !== 'Water') {
-          const idx = i * n + j
-          dist[idx] = 0
-          queue.push(idx)
-        }
-      }
-    }
-
-    for (let qi = 0; qi < queue.length; qi++) {
-      const idx = queue[qi]
-      const ci = Math.floor(idx / n)
-      const cj = idx % n
-      const d = dist[idx]
-      for (const [di, dj] of [
-        [-1, 0],
-        [1, 0],
-        [0, -1],
-        [0, 1],
-      ]) {
-        const ni = ci + di,
-          nj = cj + dj
-        if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
-        const nidx = ni * n + nj
-        if (dist[nidx] > d + 1) {
-          dist[nidx] = d + 1
-          queue.push(nidx)
-        }
-      }
-    }
 
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category !== 'Water') continue
 
-        const d = dist[i * n + j]
-        let isDeep = false
-        if (d >= DEEP_DIST_FROM_LAND) {
-          isDeep = true
-        } else if (d >= TRANSITION_DIST_FROM_LAND) {
-          // Keep a one-cell organic transition band before the full deep-water shelf.
-          const h = Math.sin(i * 0.11 + j * 0.17 + mapSeed * 2.3) * 43758.5453
-          const noise = h - Math.floor(h)
-          isDeep = noise > 0.55
-        }
-
-        const def = isDeep ? deepWaterDef : waterDef
-        cell.type = isDeep ? 'DeepWater' : 'Water'
+        const def = waterDef
+        cell.type = 'Water'
         if (def) {
           cell.category = def.category
           if (typeof def.color === 'string') cell.color = def.color
@@ -1039,29 +985,11 @@ export class MapTerrain {
         const texture = getTexture(textureRef, Assets)
         if (!texture) continue
         cell.sprite.texture = texture
+        cell.sprite.renderable = false
         cell.sprite.anchor.set(
           Math.floor(texture.width / 2) / texture.width,
           Math.floor(texture.height / 2) / texture.height
         )
-      }
-    }
-  }
-
-  formatCellsDeepWaterBorder(): void {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.type !== 'DeepWater') continue
-        const { n, s, w, e } = getNeighborFlags(
-          this.map.grid,
-          i,
-          j,
-          (neighbor: TerrainCell | undefined) => neighbor != null && neighbor.type !== 'DeepWater'
-        )
-        if (n) cell.setDeepWaterBorder?.('west')
-        if (s) cell.setDeepWaterBorder?.('east')
-        if (w) cell.setDeepWaterBorder?.('north')
-        if (e) cell.setDeepWaterBorder?.('south')
       }
     }
   }
