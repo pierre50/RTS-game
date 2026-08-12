@@ -332,7 +332,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   shouldUseWindMotion(): boolean {
-    return this.isWindMotionEligible() && getResourceWindAnimationEnabled()
+    return !this.isDestroyed && !this.destroyed && this.isWindMotionEligible() && getResourceWindAnimationEnabled()
   }
 
   isWindMotionEligible(): boolean {
@@ -350,7 +350,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   startWindMotion(): void {
-    if (!this.shouldUseWindMotion() || this.windTick) return
+    if (!this.shouldUseWindMotion() || this.windTick || !this.canApplyWindMotion(this.sprite)) return
     this.windPhase = ((this.i * 37 + this.j * 17) % 360) * (Math.PI / 180)
     this.windTick = ticker => this.updateWindMotion(ticker.deltaMS ?? ticker.elapsedMS ?? 16.67)
     this.context.app.ticker.add(this.windTick)
@@ -365,16 +365,22 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   resetWindMotion(): void {
-    if (!this.sprite) return
-    this.sprite.skew.x = 0
-    this.sprite.rotation = 0
-    if (this.shadow) {
+    const sprite = this.sprite
+    if (!this.canApplyWindMotion(sprite)) return
+    sprite.skew.x = 0
+    sprite.rotation = 0
+    if (this.canApplyWindMotion(this.shadow)) {
       this.shadow.skew.x = 0
       this.shadow.rotation = 0
     }
   }
 
   updateWindMotion(deltaMS: number): void {
+    const sprite = this.sprite
+    if (!this.canApplyWindMotion(sprite)) {
+      this.stopWindMotion()
+      return
+    }
     if (this.context.paused) return
     if (!this.shouldUseWindMotion()) {
       this.resetWindMotion()
@@ -383,11 +389,15 @@ export class Resource extends Instance implements ResourceEntity {
     this.windTime += deltaMS
     const sway = Math.sin(this.windPhase + this.windTime * WIND_SPEED)
     const secondary = Math.sin(this.windPhase * 0.7 + this.windTime * WIND_SPEED * 0.47)
-    this.sprite.skew.x = sway * WIND_AMPLITUDE
-    this.sprite.rotation = secondary * WIND_ROTATION
-    if (this.shadow) {
-      this.shadow.skew.x = this.sprite.skew.x * 0.45
+    sprite.skew.x = sway * WIND_AMPLITUDE
+    sprite.rotation = secondary * WIND_ROTATION
+    if (this.canApplyWindMotion(this.shadow)) {
+      this.shadow.skew.x = sprite.skew.x * 0.45
     }
+  }
+
+  canApplyWindMotion(displayObject: ResourceShadow | null | undefined): displayObject is ResourceShadow {
+    return Boolean(displayObject && !displayObject.destroyed && displayObject.skew)
   }
 
   createShadow(): ResourceShadow | null {

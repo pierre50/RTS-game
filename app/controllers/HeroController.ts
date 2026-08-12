@@ -33,6 +33,7 @@ import {
   triggerToolAttackAt,
   updateHeroDefense,
   updateHeroBowCharge,
+  findFacingEntity,
   getHeroAimDegree,
   HERO_TOOL_ORDER,
   type HeroEquippedItem,
@@ -50,14 +51,17 @@ import {
   sendNpcGroupToTarget,
   updateNpcFollow,
 } from '../lib/npcInteraction'
+import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
 import type { ControlBindingAction } from '../lib/settings'
 import { setUnitControlMode } from '../lib/unitControl'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
+import { t } from '../lib/lang'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type Controls from '../classes/Controls'
-import type { UnitEntity } from '../types/entities'
+import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
 
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
@@ -74,7 +78,16 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool3: 2,
   heroTool4: 3,
 }
+const COMPANION_HORSE_CALL_MIN_RADIUS = 10
+const COMPANION_HORSE_CALL_MAX_RADIUS = 36
 type MoveVector = { dx: number; dy: number }
+type CompanionHorse = AnimalEntity & {
+  degree?: number
+  strategy?: string
+  ambientMovement?: boolean
+  stop?: () => void
+  sendTo?: (target: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: { forceRepath?: boolean }) => void
+}
 
 let lastHeroMoveDebugAt = 0
 
@@ -189,6 +202,58 @@ function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: n
   })
 }
 
+function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
+  return Boolean(cell && !cell.solid && !cell.has && cell.category !== 'Water' && !cell.waterBorder && !cell.border)
+}
+
+type ViewportMetrics = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
+
+function cellIsOutsideViewport(cell: RuntimeCell, viewport: ViewportMetrics, margin = 48): boolean {
+  return (
+    cell.x < viewport.visibleLeft - margin ||
+    cell.x > viewport.visibleLeft + viewport.visibleWidth + margin ||
+    cell.y < viewport.visibleTop - margin ||
+    cell.y > viewport.visibleTop + viewport.visibleHeight + margin
+  )
+}
+
+function findCompanionHorseSpawnCell(
+  hero: UnitEntity,
+  radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
+  options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
+): RuntimeCell | null {
+  const grid = hero.context?.map?.grid
+  if (!grid) return null
+  const minRadius = Math.max(1, Math.min(options.minRadius ?? 1, radiusLimit))
+  const viewport = options.viewport ?? null
+  if (radiusLimit > 1 && !viewport) {
+    const preferred: Array<[number, number]> = [
+      [0, radiusLimit],
+      [-radiusLimit, 0],
+      [radiusLimit, 0],
+      [0, -radiusLimit],
+    ]
+    for (const [di, dj] of preferred) {
+      const cell = grid[hero.i + di]?.[hero.j + dj]
+      if (isFreeHorseCell(cell)) return cell
+    }
+  }
+  let firstFreeCell: RuntimeCell | null = null
+  for (let radius = minRadius; radius <= radiusLimit; radius++) {
+    for (let di = -radius; di <= radius; di++) {
+      const djAbs = radius - Math.abs(di)
+      const offsets: Array<[number, number]> = djAbs === 0 ? [[di, 0]] : [[di, djAbs], [di, -djAbs]]
+      for (const [oi, oj] of offsets) {
+        const cell = grid[hero.i + oi]?.[hero.j + oj]
+        if (!isFreeHorseCell(cell)) continue
+        if (!firstFreeCell) firstFreeCell = cell
+        if (!viewport || cellIsOutsideViewport(cell, viewport)) return cell
+      }
+    }
+  }
+  return firstFreeCell
+}
+
 export class HeroController {
   controls: Controls
   heroUnit: UnitEntity | null
@@ -202,6 +267,7 @@ export class HeroController {
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
   shiftMoveLockedDegree: number | null
+  companionHorse: CompanionHorse | null
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -218,6 +284,7 @@ export class HeroController {
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
     this.shiftMoveLockedDegree = null
+    this.companionHorse = null
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
   }
@@ -303,10 +370,10 @@ export class HeroController {
     return this.equipToolAt(nextIndex)
   }
 
-  toggleHeroHorse(): boolean {
+  setHeroMountedOnHorse(mounted: boolean): boolean {
     const unit = this.heroUnit
     if (!unit) return false
-    if (unit.mountedOnHorse) {
+    if (!mounted && unit.mountedOnHorse) {
       unit.mountedOnHorse = false
       unit.speed = Math.max(0, Number(((unit.speed ?? 0) - MOUNTED_HORSE_SPEED_BONUS).toFixed(6)))
       unit.removeMountedHorseSprite?.()
@@ -314,10 +381,154 @@ export class HeroController {
       unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
       return true
     }
+    if (!mounted || unit.mountedOnHorse) return false
     unit.mountedOnHorse = true
     unit.speed = (unit.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
     unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
     return true
+  }
+
+  getViewportMetrics(): ViewportMetrics | null {
+    const getViewportMetrics = this.controls.getViewportMetrics
+    if (typeof getViewportMetrics !== 'function') return null
+    const viewport = getViewportMetrics.call(this.controls)
+    if (
+      typeof viewport?.visibleLeft !== 'number' ||
+      typeof viewport.visibleTop !== 'number' ||
+      typeof viewport.visibleWidth !== 'number' ||
+      typeof viewport.visibleHeight !== 'number'
+    ) {
+      return null
+    }
+    return viewport
+  }
+
+  createCompanionHorseNearHero(
+    radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
+    options: { minRadius?: number; useViewport?: boolean } = {}
+  ): CompanionHorse | null {
+    const unit = this.heroUnit
+    const map = unit?.context?.map
+    const createAnimal = map?.gaia?.createAnimal
+    if (!unit || !map || typeof createAnimal !== 'function') return null
+    const cell = findCompanionHorseSpawnCell(unit, radiusLimit, {
+      minRadius: options.minRadius,
+      viewport: options.useViewport ? this.getViewportMetrics() : null,
+    })
+    if (!cell) return null
+    return this.createCompanionHorseAt(cell)
+  }
+
+  createCompanionHorseAt(cell: RuntimeCell): CompanionHorse | null {
+    const unit = this.heroUnit
+    const map = unit?.context?.map
+    const createAnimal = map?.gaia?.createAnimal
+    if (!unit || !map || typeof createAnimal !== 'function') return null
+    const horse = createAnimal.call(map.gaia, { i: cell.i, j: cell.j, type: 'Horse', horseColor: unit.horseColor }) as CompanionHorse
+    return this.registerCompanionHorse(horse)
+  }
+
+  registerCompanionHorse(horse: CompanionHorse): CompanionHorse {
+    horse.strategy = undefined
+    horse.ambientMovement = false
+    horse.animalBehavior?.stop?.()
+    this.companionHorse = horse
+    return horse
+  }
+
+  getActiveCompanionHorse(): CompanionHorse | null {
+    if (this.companionHorse && !this.companionHorse.isDead && !this.companionHorse.isDestroyed) {
+      return this.companionHorse
+    }
+    this.companionHorse = null
+    return null
+  }
+
+  sendCompanionHorseToHero(horse: CompanionHorse, unit: UnitEntity): void {
+    horse.sendTo?.(unit, null, { forceRepath: true })
+    this.controls.context.menu?.showMessage(t('companionHorseComing'), 'success')
+  }
+
+  callCompanionHorse(): boolean {
+    const unit = this.heroUnit
+    if (!unit) return false
+    const activeHorse = this.getActiveCompanionHorse()
+    if (activeHorse) {
+      const facingHorse = findFacingEntity(
+        unit,
+        target => target === activeHorse && isHeroInteractionTargetReachable(unit, null, target)
+      )
+      if (facingHorse === activeHorse) return this.mountCompanionHorse(activeHorse)
+      this.sendCompanionHorseToHero(activeHorse, unit)
+      return true
+    }
+
+    const horse = this.createCompanionHorseNearHero(COMPANION_HORSE_CALL_MAX_RADIUS, {
+      minRadius: COMPANION_HORSE_CALL_MIN_RADIUS,
+      useViewport: true,
+    })
+    if (!horse) return false
+    this.sendCompanionHorseToHero(horse, unit)
+    return true
+  }
+
+  snapHeroToCell(targetCell: RuntimeCell): void {
+    const unit = this.heroUnit
+    const map = unit?.context?.map
+    if (!unit || !map) return
+    const oldI = unit.i
+    const oldJ = unit.j
+    const currentCell = unit.currentCell
+    if (currentCell?.has === unit) {
+      currentCell.has = null
+      currentCell.solid = false
+    }
+    unit.i = targetCell.i
+    unit.j = targetCell.j
+    unit.x = targetCell.x
+    unit.y = targetCell.y
+    unit.z = targetCell.z
+    unit.currentCell = targetCell
+    targetCell.place(unit)
+    targetCell.solid = true
+    map.updateInstanceBucket?.(unit, oldI, oldJ)
+  }
+
+  snapHeroToHorse(horse: CompanionHorse): void {
+    const map = this.heroUnit?.context?.map
+    const targetCell = map?.grid[horse.i]?.[horse.j]
+    if (targetCell) this.snapHeroToCell(targetCell)
+  }
+
+  mountCompanionHorse(horse: CompanionHorse): boolean {
+    const unit = this.heroUnit
+    if (unit && horse.horseColor) unit.horseColor = horse.horseColor
+    if (unit && typeof horse.degree === 'number') unit.degree = horse.degree
+    this.snapHeroToHorse(horse)
+    horse.clear?.()
+    if (!this.setHeroMountedOnHorse(true)) return false
+    this.companionHorse = null
+    return true
+  }
+
+  dismountCompanionHorse(): boolean {
+    const unit = this.heroUnit
+    const map = unit?.context?.map
+    const createAnimal = map?.gaia?.createAnimal
+    if (!unit || !map || typeof createAnimal !== 'function') return false
+    const horseCell = unit.currentCell ?? map.grid[unit.i]?.[unit.j]
+    const heroCell = findCompanionHorseSpawnCell(unit, 1)
+    if (!horseCell || !heroCell) return false
+    if (!this.setHeroMountedOnHorse(false)) return false
+    this.snapHeroToCell(heroCell)
+    const horse = this.createCompanionHorseAt(horseCell)
+    if (!horse) return false
+    if (typeof unit.degree === 'number') horse.degree = unit.degree
+    return true
+  }
+
+  toggleHeroHorse(): boolean {
+    return this.heroUnit?.mountedOnHorse ? this.dismountCompanionHorse() : this.callCompanionHorse()
   }
 
   handleKeyUp(action: ControlBindingAction): void {

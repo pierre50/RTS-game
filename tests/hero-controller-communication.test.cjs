@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () => 0 }) {
+function loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree = () => 0 }) {
   const filename = path.join(__dirname, '../app/controllers/HeroController.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -79,6 +79,7 @@ function loadHeroController({ npcInteraction, heroTools, getInstanceDegree = () 
     '../lib/heroCursor': {
       updateHeroCursor: () => {},
     },
+    '../lib/heroActionRange': heroActionRange,
     '../lib/chief': {
       heroCanCommand: hero => Boolean(hero?.isChief),
     },
@@ -123,26 +124,67 @@ function createController({
   resolveCommGroup,
 } = {}) {
   const calls = []
+  const grid = Array.from({ length: 15 }, (_, i) =>
+    Array.from({ length: 15 }, (_, j) => ({
+      i,
+      j,
+      x: (i - j) * 32,
+      y: (i + j) * 16,
+      z: 0,
+      solid: false,
+      has: null,
+      category: 'Land',
+      waterBorder: false,
+      border: false,
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  const createdAnimals = []
+  const map = {
+    grid,
+    updateInstanceBucket: (unit, oldI, oldJ) => calls.push(['updateInstanceBucket', unit.label, oldI, oldJ]),
+    gaia: {
+      createAnimal(options) {
+        const animal = {
+          ...options,
+          label: `animal-${createdAnimals.length + 1}`,
+          family: 'animal',
+          x: grid[options.i][options.j].x,
+          y: grid[options.i][options.j].y,
+          z: grid[options.i][options.j].z,
+          horseColor: options.horseColor ?? 'chestnut',
+          isDead: false,
+          isDestroyed: false,
+          animalBehavior: { stop: () => calls.push(['animalBehavior.stop', options.type]) },
+          stop: () => calls.push(['horse.stop', animal.label]),
+          sendTo: (target, action, callOptions) => calls.push(['horse.sendTo', target.label, action, callOptions]),
+          clear() {
+            animal.isDestroyed = true
+            animal.x = null
+            animal.y = null
+            animal.z = null
+            calls.push(['horse.clear', animal.label])
+          },
+        }
+        createdAnimals.push(animal)
+        return animal
+      },
+    },
+  }
   const hero = {
     isChief: true,
     context: {
-      map: {
-        grid: [
-          [
-            { i: 0, j: 0 },
-            { i: 0, j: 1 },
-          ],
-          [
-            { i: 1, j: 0 },
-            { i: 1, j: 1 },
-          ],
-        ],
-      },
+      map,
     },
+    label: 'hero',
     i: 0,
     j: 0,
     x: 0,
     y: 0,
+    z: 0,
+    currentCell: grid[0][0],
     addChildAt: child => {
       child.parent = { removeChild: () => calls.push('removeIndicator') }
     },
@@ -151,6 +193,7 @@ function createController({
     loading: 0,
     currentSheet: 'standing',
     setTextures: sheet => calls.push(['setTextures', sheet]),
+    sendToEvt: (target, action, options) => calls.push(['hero.sendToEvt', target.label, action, options]),
     syncMountedHorseSprite: () => {
       hero.syncMountedHorseSpriteCalls = (hero.syncMountedHorseSpriteCalls ?? 0) + 1
     },
@@ -179,6 +222,7 @@ function createController({
     beginHeroDefense: () => false,
     cancelHeroBowCharge: () => {},
     cancelHeroDefense: () => {},
+    findFacingEntity: (_hero, matches) => createdAnimals.find(animal => matches(animal)) ?? null,
     getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
     HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
     isMountedAttackAimBlocked: () => false,
@@ -192,7 +236,10 @@ function createController({
     updateHeroDefense: () => {},
     ...heroToolsOverride,
   }
-  const HeroController = loadHeroController({ npcInteraction, heroTools, getInstanceDegree })
+  const heroActionRange = {
+    isHeroInteractionTargetReachable: (hero, _action, target) => Math.hypot(hero.i - target.i, hero.j - target.j) <= 1,
+  }
+  const HeroController = loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree })
   let cursorPoint = { x: 10, y: 20 }
   const controller = new HeroController({
     context: {
@@ -204,6 +251,7 @@ function createController({
     getCellUnderCursor: () => null,
     getWorldPointUnderCursor: () => cursorPoint,
     getGamepadMoveVector: () => ({ dx: 0, dy: 0 }),
+    getViewportMetrics: () => ({ visibleLeft: -80, visibleTop: -80, visibleWidth: 160, visibleHeight: 160 }),
     closeAnyHeroPanel: () => false,
     openHeroEntityInteraction: () => false,
     shiftKeyActive: false,
@@ -212,7 +260,9 @@ function createController({
   return {
     calls,
     controller,
+    grid,
     hero,
+    createdAnimals,
     nearbyGroup,
     setCursorPoint: point => {
       cursorPoint = point
@@ -364,21 +414,97 @@ test('shift keyboard movement does not lock facing while mounted', () => {
   assert.equal(moveCalls[0][3], undefined)
 })
 
-test('H mounts the hero once for debug without stacking speed', () => {
-  const { calls, controller, hero } = createController()
+test('H calls a companion horse, then mounts when it is close', () => {
+  const { calls, controller, createdAnimals, grid, hero } = createController()
   hero.speed = 1
-  hero.removeMountedHorseSprite = () => calls.push('removeHorse')
-  hero.syncMountedRiderPosition = () => calls.push('syncRider')
 
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, undefined)
+  assert.equal(hero.speed, 1)
+  assert.equal(createdAnimals.length, 1)
+  assert.equal(createdAnimals[0].type, 'Horse')
+  assert.ok(Math.hypot(createdAnimals[0].i - hero.i, createdAnimals[0].j - hero.j) >= 10)
+  assert.deepEqual(calls, [
+    ['animalBehavior.stop', 'Horse'],
+    ['horse.sendTo', 'hero', null, { forceRepath: true }],
+    ['showMessage', 'companionHorseComing', 'success'],
+  ])
+
+  createdAnimals[0].i = 0
+  createdAnimals[0].j = 1
+  createdAnimals[0].x = grid[0][1].x
+  createdAnimals[0].y = grid[0][1].y
+  createdAnimals[0].horseColor = 'black'
+  createdAnimals[0].degree = 270
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)
   assert.equal(hero.mountedOnHorse, true)
   assert.equal(hero.speed, 1.45)
-  assert.deepEqual(calls, [['setTextures', 'standing']])
+  assert.equal(hero.i, 0)
+  assert.equal(hero.j, 1)
+  assert.equal(hero.x, grid[0][1].x)
+  assert.equal(hero.y, grid[0][1].y)
+  assert.equal(hero.horseColor, 'black')
+  assert.equal(hero.degree, 270)
+  assert.deepEqual(calls.slice(3), [
+    ['updateInstanceBucket', 'hero', 0, 0],
+    ['horse.clear', 'animal-1'],
+    ['setTextures', 'standing'],
+  ])
+})
+
+test('H does not mount a close companion horse behind the hero', () => {
+  const { calls, controller, createdAnimals, grid, hero } = createController({
+    heroToolsOverride: {
+      findFacingEntity: () => null,
+    },
+  })
+  hero.speed = 1
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  createdAnimals[0].i = 0
+  createdAnimals[0].j = 1
+  createdAnimals[0].x = grid[0][1].x
+  createdAnimals[0].y = grid[0][1].y
+  calls.length = 0
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, undefined)
+  assert.equal(hero.speed, 1)
+  assert.deepEqual(calls, [
+    ['horse.sendTo', 'hero', null, { forceRepath: true }],
+    ['showMessage', 'companionHorseComing', 'success'],
+  ])
+})
+
+test('H dismounts and leaves the horse in place while the hero steps aside', () => {
+  const { calls, controller, createdAnimals, grid, hero } = createController()
+  hero.speed = 1.45
+  hero.mountedOnHorse = true
+  hero.horseColor = 'white'
+  hero.removeMountedHorseSprite = () => calls.push('removeHorse')
+  hero.syncMountedRiderPosition = () => calls.push('syncRider')
+  const mountedI = hero.i
+  const mountedJ = hero.j
 
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)
   assert.equal(hero.mountedOnHorse, false)
   assert.equal(hero.speed, 1)
-  assert.deepEqual(calls, [['setTextures', 'standing'], 'removeHorse', 'syncRider', ['setTextures', 'standing']])
+  assert.equal(createdAnimals.length, 1)
+  assert.equal(createdAnimals[0].type, 'Horse')
+  assert.equal(createdAnimals[0].horseColor, 'white')
+  assert.equal(createdAnimals[0].i, mountedI)
+  assert.equal(createdAnimals[0].j, mountedJ)
+  assert.ok(Math.hypot(hero.i - mountedI, hero.j - mountedJ) <= 1)
+  assert.notDeepEqual([hero.i, hero.j], [mountedI, mountedJ])
+  assert.equal(hero.x, grid[hero.i][hero.j].x)
+  assert.equal(hero.y, grid[hero.i][hero.j].y)
+  assert.deepEqual(calls, [
+    'removeHorse',
+    'syncRider',
+    ['setTextures', 'standing'],
+    ['updateInstanceBucket', 'hero', mountedI, mountedJ],
+    ['animalBehavior.stop', 'Horse'],
+  ])
 })
 
 test('E owns villager communication and opens orders on key release', () => {
