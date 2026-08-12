@@ -433,6 +433,10 @@ export class Building extends Instance implements BuildingEntity {
     shadow.position.set(this.x, this.y + (this.reliefLift ?? 0) + SHADOW_OFFSET_Y)
   }
 
+  syncShadow(): void {
+    this.updateShadow()
+  }
+
   syncVisualSettings(): void {
     if (this.shadow) {
       this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed

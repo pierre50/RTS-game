@@ -14,6 +14,7 @@ type ViewportMetrics = {
 const TARGET_FRAME_MS = 1000 / 60
 const SHADOW_ALPHA = 0.42
 const SHADOW_LAYER_Z_INDEX = 0.5
+const SHADOW_RENDER_OFFSET_Y = 3
 
 export class ShadowSystem {
   context: GameContextLike
@@ -61,7 +62,7 @@ export class ShadowSystem {
 
     this.layer.visible = true
     this.resizeTexture(viewport)
-    this.sprite.position.set(viewport.visibleLeft, viewport.visibleTop)
+    this.sprite.position.set(viewport.visibleLeft, viewport.visibleTop + SHADOW_RENDER_OFFSET_Y)
     this.sprite.width = viewport.visibleWidth
     this.sprite.height = viewport.visibleHeight
     this.transform.identity()
