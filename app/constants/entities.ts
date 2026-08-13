@@ -1,6 +1,7 @@
 export const RESOURCE_TYPES = {
   tree: 'Tree',
   berrybush: 'Berrybush',
+  wheat: 'Wheat',
   stone: 'Stone',
   gold: 'Gold',
   copper: 'Copper',
@@ -21,7 +22,6 @@ export const BUILDING_TYPES = {
   archeryRange: 'ArcheryRange',
   stable: 'Stable',
   watchTower: 'WatchTower',
-  sentryTower: 'SentryTower',
   smallWall: 'SmallWall',
 }
 
@@ -105,12 +105,14 @@ export const TYPE_ACTION = {
   Copper: ACTION_TYPES.minecopper,
   Iron: ACTION_TYPES.mineiron,
   Berrybush: ACTION_TYPES.forageberry,
+  Wheat: ACTION_TYPES.farm,
   Tree: ACTION_TYPES.chopwood,
 }
 
 export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.tree]: 'wood',
   [RESOURCE_TYPES.berrybush]: 'food',
+  [RESOURCE_TYPES.wheat]: 'food',
   [RESOURCE_TYPES.stone]: 'stone',
   [RESOURCE_TYPES.gold]: 'gold',
   [RESOURCE_TYPES.copper]: 'copper',
@@ -161,6 +163,7 @@ export const MINING_RESOURCE_CONFIG = {
 export const MINING_RESOURCE_TYPES = Object.keys(MINING_RESOURCE_CONFIG)
 export const SPACED_RESOURCE_TYPES = [
   RESOURCE_TYPES.berrybush,
+  RESOURCE_TYPES.wheat,
   RESOURCE_TYPES.gold,
   RESOURCE_TYPES.stone,
   RESOURCE_TYPES.copper,

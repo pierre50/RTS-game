@@ -69,12 +69,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": [
-            "axe_ceramic",
-            "axe_copper",
-            "longsword",
-            "halberd"
-          ]
+          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
         }
       ]
     }
@@ -106,12 +101,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": [
-            "axe_ceramic",
-            "axe_copper",
-            "longsword",
-            "halberd"
-          ]
+          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
         }
       ]
     }
@@ -143,12 +133,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 3,
-          "type": [
-            "axe_ceramic",
-            "axe_copper",
-            "longsword",
-            "halberd"
-          ]
+          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
         }
       ]
     }
@@ -175,9 +160,7 @@
           "key": "pierceArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -209,9 +192,7 @@
           "key": "pierceArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -237,9 +218,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -271,9 +250,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -305,9 +282,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -333,9 +308,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Bowman"
-          ]
+          "type": ["Bowman"]
         }
       ]
     }
@@ -367,9 +340,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Bowman"
-          ]
+          "type": ["Bowman"]
         }
       ]
     }
@@ -401,9 +372,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Bowman"
-          ]
+          "type": ["Bowman"]
         }
       ]
     }
@@ -429,11 +398,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "ScytheChariot",
-            "HeavyCavalry",
-            "Camel Rider"
-          ]
+          "type": ["ScytheChariot", "HeavyCavalry", "Camel Rider"]
         }
       ]
     }
@@ -465,11 +430,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "ScytheChariot",
-            "HeavyCavalry",
-            "Camel Rider"
-          ]
+          "type": ["ScytheChariot", "HeavyCavalry", "Camel Rider"]
         }
       ]
     }
@@ -501,11 +462,7 @@
           "key": "meleeArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "ScytheChariot",
-            "HeavyCavalry",
-            "Camel Rider"
-          ]
+          "type": ["ScytheChariot", "HeavyCavalry", "Camel Rider"]
         }
       ]
     }
@@ -562,15 +519,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": [
-            "bow",
-            "bow_great",
-            "bow_recurve",
-            "watch_tower_arrow",
-            "sentry_tower_arrow",
-            "guard_tower_arrow",
-            "ballista_tower_bolt"
-          ]
+          "type": ["bow", "bow_great", "bow_recurve", "watch_tower_arrow"]
         }
       ]
     }
@@ -663,7 +612,7 @@
           "key": "totalQuantity",
           "op": "+",
           "value": "75",
-          "type": "Farm"
+          "type": "Wheat"
         }
       ]
     }
@@ -746,78 +695,6 @@
       "food": 50
     }
   },
-  "ResearchSentryTower": {
-    "icon": "049_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchWatchTower"
-      }
-    ],
-    "researchTime": 30,
-    "cost": {
-      "food": 120,
-      "stone": 50
-    },
-    "action": {
-      "type": "refreshTowers"
-    }
-  },
-  "ResearchGuardTower": {
-    "icon": "013_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "ResearchSentryTower"
-      }
-    ],
-    "researchTime": 50,
-    "cost": {
-      "food": 150,
-      "stone": 75
-    },
-    "action": {
-      "type": "refreshTowers"
-    }
-  },
-  "ResearchBallistaTower": {
-    "icon": "015_50729",
-    "key": "technologies",
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 3
-      },
-      {
-        "key": "technologies",
-        "op": "includes",
-        "value": "Ballistics"
-      }
-    ],
-    "researchTime": 75,
-    "cost": {
-      "food": 200,
-      "stone": 100
-    },
-    "action": {
-      "type": "refreshTowers"
-    }
-  },
   "Artisanship": {
     "icon": "077_50729",
     "key": "technologies",
@@ -857,15 +734,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": [
-            "bow",
-            "bow_great",
-            "bow_recurve",
-            "watch_tower_arrow",
-            "sentry_tower_arrow",
-            "guard_tower_arrow",
-            "ballista_tower_bolt"
-          ]
+          "type": ["bow", "bow_great", "bow_recurve", "watch_tower_arrow"]
         }
       ]
     }
@@ -909,15 +778,7 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": [
-            "bow",
-            "bow_great",
-            "bow_recurve",
-            "watch_tower_arrow",
-            "sentry_tower_arrow",
-            "guard_tower_arrow",
-            "ballista_tower_bolt"
-          ]
+          "type": ["bow", "bow_great", "bow_recurve", "watch_tower_arrow"]
         }
       ]
     }
@@ -949,7 +810,7 @@
           "key": "totalQuantity",
           "op": "+",
           "value": "75",
-          "type": "Farm"
+          "type": "Wheat"
         }
       ]
     }
@@ -981,7 +842,7 @@
           "key": "totalQuantity",
           "op": "+",
           "value": "100",
-          "type": "Farm"
+          "type": "Wheat"
         }
       ]
     }
@@ -1008,11 +869,7 @@
           "key": "totalHitPoints",
           "op": "+",
           "value": "25",
-          "type": [
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider"
-          ]
+          "type": ["ScytheChariot", "HeavyCavalry", "CamelRider"]
         }
       ]
     }
@@ -1039,11 +896,7 @@
           "key": "speed",
           "op": "+",
           "value": "0.25",
-          "type": [
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider"
-          ]
+          "type": ["ScytheChariot", "HeavyCavalry", "CamelRider"]
         }
       ]
     }
@@ -1093,10 +946,7 @@
             "stone_thrower_stone",
             "catapult_stone",
             "ballista_bolt",
-            "watch_tower_arrow",
-            "sentry_tower_arrow",
-            "guard_tower_arrow",
-            "ballista_tower_bolt"
+            "watch_tower_arrow"
           ]
         }
       ]
@@ -1129,9 +979,7 @@
           "key": "pierceArmor",
           "op": "+",
           "value": "2",
-          "type": [
-            "Fantassin"
-          ]
+          "type": ["Fantassin"]
         }
       ]
     }
@@ -1158,15 +1006,7 @@
           "key": "sight",
           "op": "+",
           "value": "2",
-          "type": [
-            "Villager",
-            "Fantassin",
-            "ScytheChariot",
-            "HeavyCavalry",
-            "CamelRider",
-            "Bowman",
-            "Priest"
-          ]
+          "type": ["Villager", "Fantassin", "ScytheChariot", "HeavyCavalry", "CamelRider", "Bowman", "Priest"]
         }
       ]
     }
@@ -1223,12 +1063,7 @@
           "key": "totalHitPoints",
           "op": "+",
           "value": "75",
-          "type": [
-            "WatchTower",
-            "SentryTower",
-            "GuardTower",
-            "BallistaTower"
-          ]
+          "type": ["WatchTower"]
         }
       ]
     }

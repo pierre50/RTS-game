@@ -45,16 +45,6 @@ test('Ballistics tracks standard and fiery military projectiles', () => {
   assert.equal(projectileTracksTarget('Arrow', { technologies: [] }), false)
 })
 
-test('Ballista Tower research requires Ballistics', () => {
-  const conditions = technologies.ResearchBallistaTower.conditions
-
-  assert.ok(
-    conditions.some(
-      condition => condition.key === 'technologies' && condition.op === 'includes' && condition.value === 'Ballistics'
-    )
-  )
-})
-
 test('Alchemy improves siege attack without retaining the old Ballistics fire-rate bonus', () => {
   const alchemyTypes = technologies.Alchemy.action.operations[0].type
 

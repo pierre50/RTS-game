@@ -124,21 +124,6 @@
       "power": 3
     }
   },
-  "sentry_tower_arrow": {
-    "weapon": {
-      "power": 4
-    }
-  },
-  "guard_tower_arrow": {
-    "weapon": {
-      "power": 6
-    }
-  },
-  "ballista_tower_bolt": {
-    "weapon": {
-      "power": 20
-    }
-  },
   "stone_thrower_stone": {
     "weapon": {
       "power": 50

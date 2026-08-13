@@ -3,7 +3,9 @@ import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, UNIT
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import {
   canPlayerStillAct,
+  cartesianToIsometric,
   drawRoundedIsoShape,
+  getBuildingFootprintCells,
   getGaiaAnimals,
   getReliefOffset,
   getRoundedIsoShapePoints,
@@ -281,8 +283,17 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
   return [...entities]
 }
 
-function getRoundedIsoFootprintPoints(entity: DevEntity): Array<{ x: number; y: number }> {
-  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: Math.max(1, entity.size ?? 1) })
+function getRoundedIsoFootprintPoints(context: DevConsoleContext, entity: DevEntity): Array<{ x: number; y: number }> {
+  const size = Math.max(1, entity.size ?? 1)
+  if (size % 2 === 0) {
+    const cells = getBuildingFootprintCells(entity.i, entity.j, context.map.grid, size)
+    if (cells.length === size ** 2) {
+      const offset = (size - 1) / 2
+      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
+      return getRoundedIsoShapePoints({ x, y, factor: size })
+    }
+  }
+  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: size })
 }
 
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
@@ -299,8 +310,8 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
-function getEntityCollisionInfo(hero: DevEntity, entity: DevEntity) {
-  const points = getRoundedIsoFootprintPoints(entity)
+function getEntityCollisionInfo(context: DevConsoleContext, hero: DevEntity, entity: DevEntity) {
+  const points = getRoundedIsoFootprintPoints(context, entity)
   const inside = pointIsInsidePolygon(points, hero.x, hero.y)
   const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }
@@ -319,7 +330,7 @@ function drawHeroCollisionDebug(context: DevConsoleContext): void {
 
   const entities = getNearbyHeroCollisionEntities(context, hero)
   const infos = entities
-    .map(entity => ({ entity, ...getEntityCollisionInfo(hero, entity) }))
+    .map(entity => ({ entity, ...getEntityCollisionInfo(context, hero, entity) }))
     .sort((a, b) => a.value - b.value)
 
   for (const info of infos) {

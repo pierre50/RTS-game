@@ -30,7 +30,8 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
-    if (request === './equipmentStats') return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
+    if (request === './equipmentStats')
+      return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
     if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
@@ -151,8 +152,7 @@ test('early resource actions require only their remaining unlocking technologies
       minestone: 'minestone',
       takemeat: 'takemeat',
     },
-    BUILDING_TYPES: { farm: 'Farm' },
-    RESOURCE_TYPES: { gold: 'Gold', stone: 'Stone' },
+    RESOURCE_TYPES: { gold: 'Gold', stone: 'Stone', wheat: 'Wheat' },
   }
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': actionConstants,
@@ -178,21 +178,20 @@ test('early resource actions require only their remaining unlocking technologies
     type: 'Stone',
   }
   const gold = { ...stone, type: 'Gold' }
-  const farm = {
-    family: constants.FAMILY_TYPES.building,
-    hitPoints: 50,
+  const wheat = {
+    family: constants.FAMILY_TYPES.resource,
     isDead: false,
     isUsedBy: null,
-    owner: source.owner,
-    quantity: 250,
-    type: 'Farm',
+    quantity: 10,
+    sprite: { currentFrame: 0, textures: [{}, {}, {}, {}, {}] },
+    type: 'Wheat',
   }
 
   assert.equal(getActionCondition(source, deer, 'hunt'), true)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
   assert.equal(getActionCondition(source, stone, 'minestone'), false)
   assert.equal(getActionCondition(source, gold, 'minegold'), false)
-  assert.equal(getActionCondition(source, farm, 'farm'), false)
+  assert.equal(getActionCondition(source, wheat, 'farm'), false)
 
   source.owner.technologies.push('Pickaxe', 'Farming')
 
@@ -200,12 +199,15 @@ test('early resource actions require only their remaining unlocking technologies
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
   assert.equal(getActionCondition(source, stone, 'minestone'), true)
   assert.equal(getActionCondition(source, gold, 'minegold'), true)
-  assert.equal(getActionCondition(source, farm, 'farm'), true)
+  assert.equal(getActionCondition(source, wheat, 'farm'), false)
+
+  wheat.sprite.currentFrame = wheat.sprite.textures.length - 1
+  assert.equal(getActionCondition(source, wheat, 'farm'), true)
 
   const otherVillager = { owner: source.owner, type: constants.UNIT_TYPES.villager }
-  farm.isUsedBy = otherVillager
-  assert.equal(getActionCondition(source, farm, 'farm'), false)
-  assert.equal(getActionCondition({ ...source, type: constants.UNIT_TYPES.hero }, farm, 'farm'), true)
+  wheat.isUsedBy = otherVillager
+  assert.equal(getActionCondition(source, wheat, 'farm'), false)
+  assert.equal(getActionCondition({ ...source, type: constants.UNIT_TYPES.hero }, wheat, 'farm'), true)
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {

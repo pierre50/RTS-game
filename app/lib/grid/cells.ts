@@ -90,8 +90,33 @@ export function getPlainCellsAroundPoint<TCell extends GridCell>(
   return result
 }
 
-// Buildings are anchored on a single center cell, so only odd footprints (1, 3, 5...) have
-// a symmetric center; radius is how many cells the footprint extends on each side of it.
+export function getBuildingFootprintCells<TCell extends GridCell>(
+  startX: number,
+  startY: number,
+  grid: Grid<TCell>,
+  size = 1,
+  callback?: CellCondition<TCell>
+): TCell[] {
+  const result: TCell[] = []
+  const footprintSize = Math.max(1, Math.floor(size))
+  const before = Math.floor((footprintSize - 1) / 2)
+  const after = footprintSize - before - 1
+
+  for (let i = startX - before; i <= startX + after; i++) {
+    const row = grid[i]
+    if (!row) continue
+
+    for (let j = startY - before; j <= startY + after; j++) {
+      const cell = row[j]
+      if (cell && (!callback || callback(cell))) result.push(cell)
+    }
+  }
+
+  return result
+}
+
+// Radius used by centered visual/contact logic. Even footprints still occupy their exact square
+// through getBuildingFootprintCells(), because a 2x2 building cannot be symmetric around one cell.
 export function getBuildingFootprintRadius(size: number): number {
   return Math.floor((size - 1) / 2)
 }

@@ -28,7 +28,7 @@ const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.ts', {
 const { instanceShouldRender } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
-  './cells': { getBuildingFootprintRadius: () => 0 },
+  './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
 })
 
 test('skips animation updates when the entity container is hidden', () => {
@@ -58,6 +58,8 @@ test('renders an explored resource only while it is inside the camera', () => {
   let inCamera = false
   const resource = {
     family: 'resource',
+    x: 0,
+    y: 0,
     context: {
       map: { showResources: true, revealEverything: false, revealTerrain: false },
       player: {},

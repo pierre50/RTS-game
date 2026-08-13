@@ -29,9 +29,6 @@ const constants = {
     build: 'build',
     farm: 'farm',
   },
-  BUILDING_TYPES: {
-    farm: 'Farm',
-  },
   FAMILY_TYPES: {
     building: 'building',
     resource: 'resource',
@@ -41,6 +38,7 @@ const constants = {
     gold: 'Gold',
     stone: 'Stone',
     tree: 'Tree',
+    wheat: 'Wheat',
   },
   UNIT_TYPES: {
     villager: 'Villager',
@@ -59,6 +57,12 @@ const constants = {
 function loadVillagerAutonomy() {
   return loadModule('app/lib/villagerAutonomy.ts', {
     '../constants': constants,
+    './combat': {
+      isWheatMature: target => {
+        const sprite = target?.sprite
+        return Boolean(sprite?.textures?.length && sprite.currentFrame >= sprite.textures.length - 1)
+      },
+    },
   })
 }
 
@@ -104,19 +108,19 @@ function createVillager(owner, extra = {}) {
   return villager
 }
 
-test('food autonomy treats a farm with an incoming farmer as occupied', () => {
+test('food autonomy treats wheat with an incoming farmer as occupied', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
-  const farm = {
-    family: constants.FAMILY_TYPES.building,
+  const wheat = {
+    family: constants.FAMILY_TYPES.resource,
     i: 1,
-    isBuilt: true,
     isDead: false,
     isDestroyed: false,
     isUsedBy: null,
     j: 1,
-    label: 'farm-1',
-    quantity: 250,
-    type: constants.BUILDING_TYPES.farm,
+    label: 'wheat-1',
+    quantity: 10,
+    sprite: { currentFrame: 4, textures: [{}, {}, {}, {}, {}] },
+    type: constants.RESOURCE_TYPES.wheat,
   }
   const berry = {
     family: constants.FAMILY_TYPES.resource,
@@ -127,14 +131,17 @@ test('food autonomy treats a farm with an incoming farmer as occupied', () => {
     quantity: 250,
     type: constants.RESOURCE_TYPES.berrybush,
   }
-  const owner = createOwner({ buildings: [farm], foundedBerrybushs: new Set([berry]) })
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.wheat]: new Set([wheat]) },
+    foundedBerrybushs: new Set([berry]),
+  })
   const first = createVillager(owner)
   const second = createVillager(owner)
 
   assert.equal(assignVillagerAutonomy(first, 'food'), true)
   assert.equal(assignVillagerAutonomy(second, 'food'), true)
 
-  assert.equal(first.dest, farm)
+  assert.equal(first.dest, wheat)
   assert.equal(second.dest, berry)
 })
 

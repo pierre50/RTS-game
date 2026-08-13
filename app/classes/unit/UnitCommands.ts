@@ -3,6 +3,7 @@ import {
   BUILDING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
+  RESOURCE_TYPES,
   SHEET_TYPES,
   UNIT_TYPES,
   WORK_FOOD_TYPES,
@@ -15,6 +16,7 @@ import {
   getInstancePath,
   getWorkWithLoadingType,
   getAutonomyJobForWork,
+  isWheatMature,
   setVillagerAutonomy,
 } from '../../lib'
 import { t } from '../../lib/lang'
@@ -110,7 +112,17 @@ export class UnitCommands {
     const unit = this.unit
     if (!target || target.isDestroyed || unit.isDead) return false
     if (!preserveBuildQueue) unit.buildQueue = []
-    if (action && !checkActionCondition(unit, target, action)) return false
+    if (action && !checkActionCondition(unit, target, action)) {
+      if (
+        action === ACTION_TYPES.farm &&
+        target.type === RESOURCE_TYPES.wheat &&
+        !isWheatMature(target) &&
+        unit.owner?.isPlayed
+      ) {
+        unit.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
+      }
+      return false
+    }
     if (unit.actionLocked) return unit.queueOrder?.(target, action)
     if (this.isRedundantOrder(target, work, action)) return false
 

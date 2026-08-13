@@ -1,4 +1,4 @@
-import { Container, Assets, Sprite, type Texture } from 'pixi.js'
+import { Container, Assets, Sprite, Texture } from 'pixi.js'
 import { cartesianToIsometric, getTexture, textureRefToString, updateInstanceRenderVisibility } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
@@ -128,9 +128,9 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.zIndex = this.i + this.j
     this.sortableChildren = true
 
-    const textureRef = options.textureName || map.randomItem(this.assets)
-    this.terrainTextureName = textureRefToString(textureRef)
-    const texture = getTexture(textureRef, Assets)
+    const textureRef = options.textureName || (this.assets.length ? map.randomItem(this.assets) : null)
+    this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
+    const texture = textureRef ? getTexture(textureRef, Assets) : Texture.EMPTY
     this.sprite = new Sprite(texture) as CellSprite
     this.sprite.zIndex = 0
     this.sprite.label = LABEL_TYPES.sprite

@@ -2,8 +2,7 @@ import { Assets } from 'pixi.js'
 import { canAfford, getBuildingAsset, getIconPath, isBuildingLimitReached, isValidCondition } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
-import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { getTowerType, type TowerOwner } from '../lib/buildings/towers'
+import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/uiSound'
@@ -104,13 +103,12 @@ export class ActionSpecFactory {
   }
 
   getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
-    const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
     return {
-      title: t(displayType),
-      description: t(`${displayType}Description`),
+      title: t(type),
+      description: t(`${type}Description`),
       meta: [
         t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipBuildTime', { time: config.constructionTime ?? 0 }),
+        (config.constructionTime ?? 0) > 0 ? t('tooltipBuildTime', { time: config.constructionTime ?? 0 }) : null,
         this.isChiefCommandBlocked() ? t('requiresChief') : null,
         isBuildingLimitReached(owner, type) ? t('buildingLimitReached') : null,
       ],
@@ -301,8 +299,6 @@ export class ActionSpecFactory {
       hide: () => !owner.isBuildingEligible?.(type),
       disabled: () => this.isChiefCommandBlocked() || isBuildingLimitReached(owner, type),
       onClick: () => {
-        const displayType = type === BUILDING_TYPES.watchTower ? getTowerType(owner as TowerOwner) : type
-        const assets = getBuildingAsset(displayType, owner, Assets)
         controls.removeMouseBuilding()
         if (this.isChiefCommandBlocked()) {
           menu.showMessage(t('requiresChief'), 'warning')
@@ -313,6 +309,10 @@ export class ActionSpecFactory {
           return
         }
         if (canAfford(owner, config.cost)) {
+          const assets =
+            type === 'Farm'
+              ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
+              : getBuildingAsset(type, owner, Assets)
           const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
           controls.setMouseBuilding?.(placeableBuilding)
         } else {

@@ -12,7 +12,10 @@ const ZINDEX_EPSILON = 0.01
 function isFadeableOccluder(target: RuntimeEntity): boolean {
   if (!target || target.isDead || target.isDestroyed || !target.sprite) return false
   if (target.family === FAMILY_TYPES.building) return true
-  return target.family === FAMILY_TYPES.resource && target.type === RESOURCE_TYPES.tree
+  return (
+    target.family === FAMILY_TYPES.resource &&
+    [RESOURCE_TYPES.tree, RESOURCE_TYPES.berrybush, RESOURCE_TYPES.wheat].includes(target.type)
+  )
 }
 
 // Fades trees/buildings that visually overlap the hero on screen while drawing in front of it

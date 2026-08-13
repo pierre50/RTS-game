@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadAIStrategy() {
+function loadAIStrategy(options = {}) {
   const filename = path.join(__dirname, '../app/ai/AIStrategy.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -14,10 +14,16 @@ function loadAIStrategy() {
   const constants = {
     ACTION_TYPES: { delivery: 'delivery' },
     BUILDING_TYPES: {
+      archeryRange: 'ArcheryRange',
       barracks: 'Barracks',
+      farm: 'Farm',
+      granary: 'Granary',
       house: 'House',
       market: 'Market',
+      stable: 'Stable',
+      storagePit: 'StoragePit',
       townCenter: 'TownCenter',
+      watchTower: 'WatchTower',
     },
     UNIT_TYPES: {
       chief: 'Chief',
@@ -35,6 +41,7 @@ function loadAIStrategy() {
         getClosestInstance: () => null,
         getPositionInGridAroundInstance: () => null,
         instancesDistance: (a, b) => Math.abs(a.i - b.i) + Math.abs(a.j - b.j),
+        ...options.lib,
       }
     }
     if (request === '../lib/chief') {
@@ -49,8 +56,10 @@ function loadAIStrategy() {
         AGE_UP_BUFFERS: {},
         AGE_UP_COSTS: {},
         AI_DIFFICULTIES: { medium: {} },
+        CHIEF_TECH_PRIORITY: [],
         MAX_ARCHER_BY_AGE: {},
         MAX_BUILDING_BY_AGE: {},
+        MAX_BUILDING_BY_AGE_FROZEN: {},
         MAX_CAVALRY_BY_AGE: {},
         MAX_INFANTRY_BY_AGE: {},
         MAX_VILLAGER_PER_AGE: {},
@@ -104,6 +113,63 @@ test('ai production does not train villagers without a living chief', () => {
 
   assert.equal(requested.includes('Villager'), false)
   assert.equal(requested.includes('Fantassin'), true)
+})
+
+test('ai building strategy plants wheat fields after farming is unlocked', () => {
+  const AIStrategy = loadAIStrategy({
+    lib: {
+      getPositionInGridAroundInstance: () => ({ i: 12, j: 14 }),
+    },
+  })
+  const bought = []
+  const ai = {
+    age: 0,
+    config: { buildings: { Farm: { cost: { wood: 75 }, size: 4 } } },
+    food: 0,
+    gold: 0,
+    phase: 'economy',
+    population: 4,
+    populationMax: 20,
+    stone: 0,
+    technologies: ['Farming'],
+    units: [{ type: 'Chief', hitPoints: 10 }],
+    wood: 200,
+    buyBuilding: (i, j, type) => {
+      bought.push([i, j, type])
+      return true
+    },
+    hasNotReachBuildingLimit: () => true,
+  }
+  const strategy = new AIStrategy(ai)
+
+  const actions = strategy.handleBuildingActions({
+    map: { grid: [] },
+    otherPlayers: [],
+    villagers: [],
+    maxVillagers: 16,
+    towncenters: [{ i: 8, j: 8 }],
+    infantry: [],
+    maxInfantry: 0,
+    barracks: [],
+    infantryUnit: null,
+    archers: [],
+    maxArcher: 0,
+    archeryRanges: [],
+    archerUnit: null,
+    cavalry: [],
+    maxCavalry: 0,
+    stables: [],
+    houses: [],
+    farms: [],
+    granarys: [{ i: 9, j: 9, isBuilt: true }],
+    storagepits: [],
+    markets: [{}],
+    watchTowers: [],
+    notBuiltHouses: [],
+  })
+
+  assert.equal(actions, 1)
+  assert.deepEqual(bought, [[12, 14, 'Farm']])
 })
 
 test('ai production trains villagers again when a chief is alive', () => {

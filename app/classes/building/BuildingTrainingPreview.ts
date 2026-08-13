@@ -29,15 +29,13 @@ import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { SpritesheetLike } from '../../types/pixi'
 
-const TRAINING_PREVIEW_X = 41
-const TRAINING_PREVIEW_Y = 110
 const TRAINING_PREVIEW_SCALE = 1
 const TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR = 0.45
 const MAIN_PREVIEW_Z_INDEX = 10
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
 const MOUNTED_PREVIEW_DIRECTION = 'south'
 const TRAINING_PREVIEW_POSITIONS: Partial<Record<string, { x: number; y: number }>> = {
-  [BUILDING_TYPES.barracks]: { x: TRAINING_PREVIEW_X, y: TRAINING_PREVIEW_Y },
+  [BUILDING_TYPES.barracks]: { x: 71, y: 90 },
   [BUILDING_TYPES.archeryRange]: { x: 85, y: 80 },
   [BUILDING_TYPES.temple]: { x: 50, y: 100 },
   [BUILDING_TYPES.stable]: { x: 53, y: 80 },

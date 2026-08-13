@@ -90,7 +90,6 @@ export const MAX_BUILDING_BY_AGE = {
   1: {
     StoragePit: 2,
     Granary: 2,
-    Farm: 4,
     Barracks: 1,
     Market: 1,
     ArcheryRange: 1,
@@ -100,26 +99,22 @@ export const MAX_BUILDING_BY_AGE = {
   2: {
     StoragePit: 3,
     Granary: 3,
-    Farm: 6,
     Barracks: 2,
     Market: 1,
     TownCenter: 2,
     ArcheryRange: 1,
     Stable: 1,
     WatchTower: 3,
-    SentryTower: 2,
   },
   3: {
     StoragePit: 4,
     Granary: 4,
-    Farm: 10,
     Barracks: 3,
     Market: 1,
     TownCenter: 2,
     ArcheryRange: 2,
     Stable: 1,
     WatchTower: 3,
-    SentryTower: 3,
   },
 }
 
@@ -165,7 +160,7 @@ export const TECH_PRIORITY_BY_BUILDING = {
     'IronShield',
   ],
   [BUILDING_TYPES.market]: ['Woodworking', 'GoldMining', 'StoneMining', 'Domestication'],
-  [BUILDING_TYPES.granary]: ['ResearchWatchTower', 'ResearchSentryTower'],
+  [BUILDING_TYPES.granary]: ['ResearchWatchTower'],
 }
 
 export const BASE_TARGET_VALUE_BY_TYPE = {
@@ -178,5 +173,4 @@ export const BASE_TARGET_VALUE_BY_TYPE = {
   [BUILDING_TYPES.granary]: 6,
   [BUILDING_TYPES.storagePit]: 6,
   [BUILDING_TYPES.watchTower]: 4,
-  [BUILDING_TYPES.sentryTower]: 5,
 }

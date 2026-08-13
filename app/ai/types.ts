@@ -207,6 +207,7 @@ export type AIStrategyPlayerLike = {
   foundedAnimals: Set<RuntimeEntity>
   foundedDeadAnimals: Set<RuntimeEntity>
   foundedBerrybushs: Set<RuntimeEntity>
+  foundedWheats: Set<RuntimeEntity>
   foundedResources: Record<string, Set<RuntimeEntity>>
   lastAttackWaveAt?: number
   scout?: AIEntityLike | null
@@ -271,7 +272,7 @@ export type AIFoodSources = {
 export type AIVillagerActionOptions = {
   villagers: AIEntityLike[]
   map: RuntimeMap
-  farms: AIBuildingLike[]
+  farms: AIEntityLike[]
   notBuiltBuildings: AIBuildingLike[]
   storagepits: AIBuildingLike[]
   towncenters: AIBuildingLike[]
@@ -298,12 +299,11 @@ export type AIStrategySnapshot = {
   maxCavalry: number
   stables: AIBuildingLike[]
   houses: AIBuildingLike[]
-  farms: AIBuildingLike[]
+  farms: AIEntityLike[]
   granarys: AIBuildingLike[]
   storagepits: AIBuildingLike[]
   markets: AIBuildingLike[]
   watchTowers: AIBuildingLike[]
-  sentryTowers: AIBuildingLike[]
   notBuiltHouses: AIBuildingLike[]
 }
 

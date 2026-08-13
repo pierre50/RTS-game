@@ -1,7 +1,14 @@
 import type { RuntimeCell } from './map'
 import type { AnimalEntity, RuntimeEntity, UnitCreationExtra, UnitEntity, BuildingEntity } from './entities'
 import type { SaveDestination, SaveGridPoint, SaveReference } from './save'
-import type { AnimalConfig, BuildingConfig, EquipmentStats, ProjectileConfig, TechnologyConfig, UnitConfig } from './config'
+import type {
+  AnimalConfig,
+  BuildingConfig,
+  EquipmentStats,
+  ProjectileConfig,
+  TechnologyConfig,
+  UnitConfig,
+} from './config'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
 
@@ -91,6 +98,7 @@ export interface PlayerLike {
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
   buyBuilding?: (i: number, j: number, type: string) => boolean
+  plantWheatField?: (i: number, j: number) => boolean
   createBuilding: (
     options: Partial<BuildingConfig> & {
       i: number
@@ -115,6 +123,7 @@ export interface PlayerLike {
   unselectUnit?: (unit: UnitEntity) => void
   foundedTrees?: Set<RuntimeEntity>
   foundedBerrybushs?: Set<RuntimeEntity>
+  foundedWheats?: Set<RuntimeEntity>
   foundedStones?: Set<RuntimeEntity>
   foundedGolds?: Set<RuntimeEntity>
   foundedCoppers?: Set<RuntimeEntity>

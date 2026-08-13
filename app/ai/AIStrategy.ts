@@ -1,10 +1,4 @@
-import {
-  AGE_GATE_MAX_UNLOCKABLE_VALUE,
-  AGE_UP_ENABLED,
-  BUILDING_TYPES,
-  UNIT_TYPES,
-  WORK_TYPES,
-} from '../constants'
+import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { hasLivingChief } from '../lib/chief'
 import { AIMilitary } from './AIMilitary'
@@ -46,6 +40,8 @@ type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
 type ResourceLedger = Record<string, number | undefined>
 
 const RESOURCE_NAMES: AIResourceName[] = ['wood', 'food', 'gold', 'stone']
+const WHEAT_TILES_PER_FIELD = 16
+const MAX_AI_WHEAT_FIELDS = 4
 
 function resourceEntries(cost: AIResourceAmount = {}): [AIResourceName, number][] {
   return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AIResourceName, number | undefined]).filter(
@@ -203,8 +199,7 @@ export class AIStrategy {
     const militaryProductionBuildings =
       archeryRanges.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
         .length +
-      stables.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
-        .length
+      stables.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed).length
 
     let desired = ai.phase !== 'economy' ? 1 : 0
 
@@ -365,37 +360,6 @@ export class AIStrategy {
     }).length
   }
 
-  shouldBuyFarm(snapshot: AIStrategySnapshot): boolean {
-    const { ai } = this
-    const { villagers, farms } = snapshot
-    const builtFarms = farms.filter((farm: AIBuildingLike) => farm.isBuilt && !farm.isDead)
-    const emptyBuiltFarms = builtFarms.filter((farm: AIBuildingLike) => !farm.isUsedBy)
-    const occupiedBuiltFarms = builtFarms.length - emptyBuiltFarms.length
-    const pendingFarms = farms.filter((farm: AIBuildingLike) => !farm.isBuilt && !farm.isDead).length
-    const villagersOnFood = villagers.filter(
-      (villager: AIEntityLike) =>
-        !villager.isDead &&
-        !villager.inactif &&
-        [WORK_TYPES.forager, WORK_TYPES.hunter, WORK_TYPES.farmer].includes(villager.work || '')
-    ).length
-
-    if (villagers.length < 8) return false
-    if (pendingFarms > 0) return false
-    if (emptyBuiltFarms.length >= Math.max(1, Math.ceil(villagers.length / 14))) return false
-
-    const aliveAnimals = [...ai.foundedAnimals].filter((animal: AIEntityLike) => !animal.isDead).length
-    const deadAnimals = [...ai.foundedDeadAnimals].filter(
-      (animal: AIEntityLike) => !animal.isDestroyed && (animal.quantity || 0) > 0
-    ).length
-    const naturalFoodCapacity = this.getViableBerryBushCount() * 2 + aliveAnimals * 2 + deadAnimals
-    const naturalFoodUnderPressure =
-      villagersOnFood > naturalFoodCapacity || naturalFoodCapacity < Math.max(4, Math.ceil(villagers.length * 0.35))
-    const foodDemand = (this.getEconomicDemand().food || 0) > 0 || ai.food < 80
-    const farmsNearlySaturated = builtFarms.length > 0 && occupiedBuiltFarms >= builtFarms.length - 1
-
-    return naturalFoodUnderPressure && (foodDemand || farmsNearlySaturated)
-  }
-
   buyBuildingIfNeeded(
     condition: boolean,
     buildingType: string,
@@ -421,12 +385,40 @@ export class AIStrategy {
     return false
   }
 
+  buyWheatFieldIfNeeded(
+    condition: boolean,
+    currentWheatTiles: AIEntityLike[],
+    positionCallback: () => AIGridPosition | null,
+    reserve: AIResourceAmount = {},
+    debug: boolean = false
+  ): boolean {
+    const { ai } = this
+    const field = ai.config.buildings[BUILDING_TYPES.farm]
+    if (
+      condition &&
+      field &&
+      canAfford(asResourceLedger(ai), field.cost) &&
+      this.canSpendWithReserve(field.cost || {}, reserve)
+    ) {
+      const pos = positionCallback()
+      if (pos && ai.buyBuilding(pos.i, pos.j, BUILDING_TYPES.farm)) {
+        if (debug) {
+          const fieldCount = Math.ceil(currentWheatTiles.length / WHEAT_TILES_PER_FIELD)
+          console.log(`Planting wheat field ${fieldCount + 1} at position:`, pos)
+        }
+        return true
+      }
+    }
+    return false
+  }
+
   handleBuildingActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
     const { ai } = this
     const {
       map,
       otherPlayers,
       towncenters,
+      maxVillagers,
       houses,
       farms,
       barracks,
@@ -436,7 +428,6 @@ export class AIStrategy {
       archeryRanges,
       stables,
       watchTowers,
-      sentryTowers,
       notBuiltHouses,
     } = snapshot
 
@@ -446,7 +437,6 @@ export class AIStrategy {
     const buildingsByType = {
       [BUILDING_TYPES.townCenter]: towncenters,
       [BUILDING_TYPES.house]: houses,
-      [BUILDING_TYPES.farm]: farms,
       [BUILDING_TYPES.barracks]: barracks,
       [BUILDING_TYPES.granary]: granarys,
       [BUILDING_TYPES.storagePit]: storagepits,
@@ -454,7 +444,6 @@ export class AIStrategy {
       [BUILDING_TYPES.archeryRange]: archeryRanges,
       [BUILDING_TYPES.stable]: stables,
       [BUILDING_TYPES.watchTower]: watchTowers,
-      [BUILDING_TYPES.sentryTower]: sentryTowers,
     }
 
     const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
@@ -517,35 +506,23 @@ export class AIStrategy {
       actions++
 
     if (
-      buy(this.shouldBuyFarm(snapshot), BUILDING_TYPES.farm, () => {
-        const buildings = [...granarys, ...towncenters]
-        for (const building of buildings) {
-          const position = getPositionInGridAroundInstance(
-            building,
-            map.grid,
-            [2, 10],
-            2,
-            false,
-            isEnemyFacing(building),
-            false
-          )
-          if (position) return position
-        }
-        return null
-      })
-    )
-      actions++
-
-    if (
       buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
         getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
       )
     )
       actions++
 
+    const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)
+    const currentWheatFields = Math.ceil(livingWheatTiles.length / WHEAT_TILES_PER_FIELD)
+    const desiredWheatFields = Math.min(MAX_AI_WHEAT_FIELDS, Math.max(1, Math.ceil(maxVillagers / 10)))
+    const wheatAnchor = granarys.find(granary => granary.isBuilt && !granary.isDead && !granary.isDestroyed) || anchor
     if (
-      buy(ai.technologies.includes('ResearchSentryTower'), BUILDING_TYPES.sentryTower, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
+      this.buyWheatFieldIfNeeded(
+        ai.technologies.includes('Farming') && granarys.length > 0 && currentWheatFields < desiredWheatFields,
+        livingWheatTiles,
+        () => getPositionInGridAroundInstance(wheatAnchor, map.grid, [4, 14], 4, false),
+        ageUpReserve,
+        debug
       )
     )
       actions++

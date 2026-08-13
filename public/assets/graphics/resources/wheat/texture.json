@@ -1,0 +1,54 @@
+{
+  "frames": {
+    "000_graphics_resources_wheat.png": {
+      "frame": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "sourceSize": { "w": 70, "h": 77 },
+      "anchor": { "x": 0.2857142857, "y": 0.8376623377 }
+    },
+    "001_graphics_resources_wheat.png": {
+      "frame": { "x": 70, "y": 0, "w": 70, "h": 77 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "sourceSize": { "w": 70, "h": 77 },
+      "anchor": { "x": 0.3357142857, "y": 0.8376623377 }
+    },
+    "002_graphics_resources_wheat.png": {
+      "frame": { "x": 140, "y": 0, "w": 70, "h": 77 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "sourceSize": { "w": 70, "h": 77 },
+      "anchor": { "x": 0.4357142857, "y": 0.8376623377 }
+    },
+    "003_graphics_resources_wheat.png": {
+      "frame": { "x": 210, "y": 0, "w": 70, "h": 77 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "sourceSize": { "w": 70, "h": 77 },
+      "anchor": { "x": 0.4785714286, "y": 0.8376623377 }
+    },
+    "004_graphics_resources_wheat.png": {
+      "frame": { "x": 280, "y": 0, "w": 70, "h": 77 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 70, "h": 77 },
+      "sourceSize": { "w": 70, "h": 77 },
+      "anchor": { "x": 0.5785714286, "y": 0.8376623377 }
+    }
+  },
+  "meta": {
+    "app": "manual",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": { "w": 350, "h": 77 },
+    "scale": 1
+  },
+  "animationSpeed": 0.00037,
+  "loop": false
+}

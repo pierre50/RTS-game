@@ -2,8 +2,7 @@ import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
 import { LABEL_TYPES } from '../../constants'
 import {
-  getPlainCellsAroundPoint,
-  getBuildingFootprintRadius,
+  getBuildingFootprintCells,
   getRandomZoneInGridWithCondition,
   getZoneInGridWithCondition,
 } from './cells'
@@ -84,15 +83,15 @@ function createPositionCondition<TCell extends GridCell>(
   }
 }
 
-function getBuildingFootprintCells<TCell extends GridCell>(
+function getPlacementFootprintCells<TCell extends GridCell>(
   grid: Grid<TCell>,
   i: number,
   j: number,
   building: BuildingPlacement
 ): { cells: TCell[]; expectedCells: number } {
-  const dist = getBuildingFootprintRadius(building.size ?? 1)
-  const cells = getPlainCellsAroundPoint(i, j, grid, dist)
-  const expectedCells = dist === 0 ? 1 : (dist * 2 + 1) ** 2
+  const size = Math.max(1, Math.floor(building.size ?? 1))
+  const cells = getBuildingFootprintCells(i, j, grid, size)
+  const expectedCells = size ** 2
   return { cells, expectedCells }
 }
 
@@ -145,7 +144,7 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
   building: BuildingPlacement,
   { requireVisible = false, requireExplored = false, isExplored = null }: Partial<PlacementVisibility<TCell>> = {}
 ): boolean {
-  const { cells, expectedCells } = getBuildingFootprintCells(grid, i, j, building)
+  const { cells, expectedCells } = getPlacementFootprintCells(grid, i, j, building)
   if (cells.length !== expectedCells) return false
 
   const visibility: PlacementVisibility<TCell> = { requireVisible, requireExplored, isExplored }

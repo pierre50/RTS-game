@@ -61,8 +61,10 @@ const constants = {
     unit: 'unit',
   },
   BUILDING_TYPES: {
-    farm: 'Farm',
     temple: 'Temple',
+  },
+  RESOURCE_TYPES: {
+    wheat: 'Wheat',
   },
   COLOR_WHITE: 0xffffff,
   CELL_WIDTH: 64,
@@ -262,19 +264,17 @@ test('"aller vers" sends a communicated villager into a training building', () =
   assert.deepEqual(calls, [['train', 'Fantassin', undefined, npc]])
 })
 
-test('"aller vers" sends a communicated villager to farm an available farm', () => {
+test('"aller vers" sends a communicated villager to harvest wheat', () => {
   const owner = { label: 'player' }
   const target = {
-    family: constants.FAMILY_TYPES.building,
+    family: constants.FAMILY_TYPES.resource,
     i: 5,
-    isBuilt: true,
     isDead: false,
     isDestroyed: false,
     isUsedBy: null,
     j: 5,
-    owner,
-    quantity: 200,
-    type: constants.BUILDING_TYPES.farm,
+    quantity: 10,
+    type: constants.RESOURCE_TYPES.wheat,
     x: 100,
     y: 100,
   }

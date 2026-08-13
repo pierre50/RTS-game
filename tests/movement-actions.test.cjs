@@ -64,6 +64,19 @@ function mockRoundedIsoShapePoints({ x, y }) {
   ]
 }
 
+function mockBuildingFootprintCells(startX, startY, grid, size = 1) {
+  const result = []
+  const footprintSize = Math.max(1, Math.floor(size))
+  const before = Math.floor((footprintSize - 1) / 2)
+  const after = footprintSize - before - 1
+  for (let i = startX - before; i <= startX + after; i++) {
+    for (let j = startY - before; j <= startY + after; j++) {
+      if (grid[i]?.[j]) result.push(grid[i][j])
+    }
+  }
+  return result
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -161,6 +174,9 @@ const constants = {
   },
   RELIEF_CLIMB_SPEED_MULTIPLIER: 0.7,
   RELIEF_LIFT_SMOOTHING: 1,
+  RESOURCE_TYPES: {
+    wheat: 'Wheat',
+  },
   STEP_TIME: 100,
   UNIT_TYPES: {
     priest: 'Priest',
@@ -493,10 +509,6 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.owner.color]),
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = { color: 'red', label: 'enemy', population: 1, units: [] }
@@ -578,10 +590,6 @@ test('converted buildings keep their source civilization and age assets', () => 
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetAge]),
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = {
@@ -1144,6 +1152,94 @@ test('hero direct movement slides along rounded building collision instead of is
   assert.equal(movement.directMoveBlocker, building)
 })
 
+test('hero direct movement aligns size 2 collision to the even footprint center', () => {
+  const grid = Array.from({ length: 4 }, (_, i) =>
+    Array.from({ length: 4 }, (_, j) => ({
+      i,
+      j,
+      x: (i - j) * 32,
+      y: (i + j - 2) * 16,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  const building = {
+    family: 'building',
+    i: 1,
+    isDestroyed: false,
+    j: 1,
+    label: 'tower-1',
+    size: 2,
+    x: grid[1][1].x,
+    y: grid[1][1].y,
+  }
+  for (const cell of [grid[1][1], grid[2][1], grid[1][2], grid[2][2]]) {
+    cell.solid = true
+    cell.has = building
+  }
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getBuildingFootprintCells: mockBuildingFootprintCells,
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    cartesianToIsometric: () => [0, 0],
+    isometricToCartesian: () => [0, 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Fantassin',
+    context: {
+      map: {
+        grid,
+        size: 3,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: -12,
+  }
+
+  const moved = new UnitMovement(unit).attemptMoveDirect(0, 1, 3)
+
+  assert.equal(moved, false)
+  assert.equal(unit.y, -12)
+})
+
 test('hero direct movement slides along water-border terrain like a rounded obstacle', () => {
   const grid = Array.from({ length: 2 }, (_, i) =>
     Array.from({ length: 2 }, (_, j) => ({
@@ -1449,6 +1545,88 @@ test('a villager retries the original gather order after approaching a blocked t
   ])
 })
 
+test('an autonomous villager retries its job instead of stopping when pathing fails', () => {
+  const target = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 2,
+    isDestroyed: false,
+    j: 2,
+    label: 'berries-1',
+    type: 'Berrybush',
+  }
+  const grid = Array.from({ length: 4 }, (_, i) =>
+    Array.from({ length: 4 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      border: false,
+      category: 'Grass',
+      has: null,
+    }))
+  )
+  grid[target.i][target.j].solid = true
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      resumeVillagerAutonomy: unit => {
+        calls.push(['resumeVillagerAutonomy', unit.autonomousJob, unit.dest])
+        return true
+      },
+      showBlockedFeedback: () => calls.push(['showBlockedFeedback']),
+      updateInstanceVisibility: () => {},
+    },
+    './UnitCommands': {
+      applyWorkForAction: (unit, work, action) => {
+        unit.work = work
+        unit.action = action
+      },
+    },
+  })
+  const unit = {
+    action: null,
+    actionLocked: false,
+    autonomousJob: 'food',
+    blockedGatherApproach: null,
+    context: { map: { grid }, performance: { record: () => {} } },
+    dest: null,
+    getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.forageberry,
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => false,
+    j: 0,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: nextTarget => {
+      unit.dest = nextTarget
+    },
+    stop: () => calls.push(['stop']),
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+    work: null,
+  }
+
+  new UnitMovement(unit).sendToEvt(target, constants.ACTION_TYPES.forageberry)
+
+  assert.deepEqual(calls, [['resumeVillagerAutonomy', 'food', null]])
+})
+
 test('low-level gather orders realign villager work before starting the action', () => {
   const tree = { family: constants.FAMILY_TYPES.resource, i: 0, isDestroyed: false, j: 0, label: 'tree-1', x: 10, y: 0 }
   const calls = []
@@ -1736,10 +1914,6 @@ test('chopping wood shows damage before wood is gathered', () => {
     },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const tree = {
@@ -1801,10 +1975,6 @@ test('hero building health bar refreshes while construction progresses', () => {
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const building = {
@@ -1842,8 +2012,8 @@ test('hero building health bar refreshes while construction progresses', () => {
 test('a farmer returns to the same farm after delivering food', () => {
   const farm = {
     label: 'farm-1',
-    family: constants.FAMILY_TYPES.building,
-    type: constants.BUILDING_TYPES.farm,
+    family: constants.FAMILY_TYPES.resource,
+    type: constants.RESOURCE_TYPES.wheat,
   }
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
@@ -1853,7 +2023,7 @@ test('a farmer returns to the same farm after delivering food', () => {
       LOADING_FOOD_TYPES: [],
       LOADING_TYPES: {},
       SOUND_CUES: { villager: {} },
-      TYPE_ACTION: {},
+      TYPE_ACTION: { [constants.RESOURCE_TYPES.wheat]: constants.ACTION_TYPES.farm },
     },
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -1866,10 +2036,6 @@ test('a farmer returns to the same farm after delivering food', () => {
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const unit = {
@@ -1916,10 +2082,6 @@ test('resuming previous animal work does not remember the interrupted target aga
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const unit = {
@@ -2127,10 +2289,6 @@ test('delivery shows a resource gain over the delivering unit', () => {
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
@@ -2197,19 +2355,15 @@ test('hero farming does not claim or replace the farm worker slot', () => {
       isManualHeroActionReleased: () => false,
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => constants.BUILDING_TYPES.watchTower,
-      isTower: target => target?.type === constants.BUILDING_TYPES.watchTower,
-    },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const farm = {
-    family: constants.FAMILY_TYPES.building,
+    family: constants.FAMILY_TYPES.resource,
     isUsedBy: occupant,
     label: 'farm-1',
     quantity: 20,
     selected: true,
-    type: constants.BUILDING_TYPES.farm,
+    type: constants.RESOURCE_TYPES.wheat,
   }
   const unit = {
     action: constants.ACTION_TYPES.farm,
@@ -2242,7 +2396,7 @@ test('hero farming does not claim or replace the farm worker slot', () => {
 })
 
 test('immediate farm orders bypass the human command throttle', () => {
-  const farm = { label: 'farm-1', type: constants.BUILDING_TYPES.farm }
+  const farm = { label: 'farm-1', family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.wheat }
   const calls = []
   const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -2282,4 +2436,38 @@ test('immediate farm orders bypass the human command throttle', () => {
     [['sendToEvt', 'farm-1', constants.ACTION_TYPES.farm]]
   )
   assert.equal(unit.work, constants.WORK_TYPES.farmer)
+})
+
+test('farm orders warn when wheat is not mature yet', () => {
+  const wheat = {
+    label: 'wheat-1',
+    family: constants.FAMILY_TYPES.resource,
+    type: constants.RESOURCE_TYPES.wheat,
+  }
+  const messages = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition: () => false,
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+      isWheatMature: () => false,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    buildQueue: [],
+    context: { menu: { showMessage: (message, level) => messages.push([message, level]) } },
+    isDead: false,
+    owner: { isPlayed: true },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  const started = new UnitCommands(unit).sendToFarm(wheat, true)
+
+  assert.equal(started, false)
+  assert.deepEqual(messages, [['wheatNotReady', 'warning']])
 })

@@ -1,5 +1,4 @@
 import { FAMILY_TYPES } from '../constants'
-import { getTowerType, isTower } from '../lib/buildings/towers'
 import { t } from '../lib/lang'
 import type { BuildingEntity, RuntimeEntity } from '../types/entities'
 
@@ -20,7 +19,6 @@ function translateTypeKey(key: string | undefined): string {
 }
 
 export function getBuildingDisplayType(building: BuildingEntity): string {
-  if (isTower(building)) return getTowerType(building.owner)
   return building.type || building.assetType || ''
 }
 

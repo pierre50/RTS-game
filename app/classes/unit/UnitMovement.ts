@@ -17,6 +17,7 @@ import {
   findInstancesInSight,
   findReachableFleeCell,
   getClosestInstanceWithPath,
+  getBuildingFootprintCells,
   getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
@@ -118,8 +119,20 @@ function blocksHeroDirectMoveWithSoftBody(entity: HeroDirectMoveBlocker | null |
   return Boolean(entity && (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal))
 }
 
-function getRoundedIsoFootprintPoints(entity: HeroDirectMoveBlocker): Array<{ x: number; y: number }> {
-  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: Math.max(1, entity.size ?? 1) })
+function getRoundedIsoFootprintPoints(
+  entity: HeroDirectMoveBlocker,
+  map?: RuntimeMap | null
+): Array<{ x: number; y: number }> {
+  const size = Math.max(1, entity.size ?? 1)
+  if (size % 2 === 0 && map?.grid) {
+    const cells = getBuildingFootprintCells(entity.i, entity.j, map.grid, size)
+    if (cells.length === size ** 2) {
+      const offset = (size - 1) / 2
+      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
+      return getRoundedIsoShapePoints({ x, y, factor: size })
+    }
+  }
+  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: size })
 }
 
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
@@ -136,18 +149,28 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
-function isHeroInsideRoundedFootprint(entity: HeroDirectMoveBlocker, x: number, y: number): boolean {
-  return pointIsInsidePolygon(getRoundedIsoFootprintPoints(entity), x, y)
+function isHeroInsideRoundedFootprint(
+  entity: HeroDirectMoveBlocker,
+  x: number,
+  y: number,
+  map?: RuntimeMap | null
+): boolean {
+  return pointIsInsidePolygon(getRoundedIsoFootprintPoints(entity, map), x, y)
 }
 
-function blocksHeroDirectMoveAtPoint(entity: RuntimeEntity | null | undefined, x: number, y: number): boolean {
+function blocksHeroDirectMoveAtPoint(
+  entity: RuntimeEntity | null | undefined,
+  x: number,
+  y: number,
+  map?: RuntimeMap | null
+): boolean {
   if (!entity || !blocksHeroDirectMove(entity)) return false
   if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
     const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
     const currentDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
     return currentDistance < collisionRadius
   }
-  return isHeroInsideRoundedFootprint(entity, x, y)
+  return isHeroInsideRoundedFootprint(entity, x, y, map)
 }
 
 function blocksHeroMobileDirectMoveAtPoint(unit: UnitEntity, entity: RuntimeEntity, x: number, y: number): boolean {
@@ -203,7 +226,7 @@ function getHeroDirectMoveBlockerAtPoint(
       if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) return entity
       continue
     }
-    if (blocksHeroDirectMoveAtPoint(entity, x, y)) return entity
+    if (blocksHeroDirectMoveAtPoint(entity, x, y, map)) return entity
   }
   return null
 }
@@ -275,6 +298,15 @@ const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
 type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
 let lastDirectMoveDebugAt = 0
+
+function resumeAutonomyBeforeStopping(unit: UnitEntity): boolean {
+  if (!unit.autonomousJob || isHeroControlled(unit)) return false
+  unit.action = null
+  unit.dest = null
+  unit.realDest = null
+  unit.path = []
+  return Boolean(resumeVillagerAutonomy?.(unit))
+}
 
 function debugBlockedDirectMove(
   unit: UnitEntity,
@@ -470,6 +502,8 @@ export class UnitMovement {
             return
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
+          } else if (resumeAutonomyBeforeStopping(unit)) {
+            return
           } else {
             showBlockedFeedback(unit)
             unit.affectNewDest?.()
@@ -487,7 +521,8 @@ export class UnitMovement {
           )
             return
           showBlockedFeedback(unit)
-          action ? unit.affectNewDest?.() : unit.stop?.()
+          if (action) unit.affectNewDest?.()
+          else if (!resumeAutonomyBeforeStopping(unit)) unit.stop?.()
           return
         }
         if (!action) {
@@ -518,6 +553,8 @@ export class UnitMovement {
         return
       if (action === ACTION_TYPES.delivery) {
         unit.stop?.()
+      } else if (resumeAutonomyBeforeStopping(unit)) {
+        return
       } else {
         showBlockedFeedback(unit)
         unit.affectNewDest?.()
@@ -722,7 +759,7 @@ export class UnitMovement {
     facingDirY: number = dirY
   ): boolean {
     const unit = this.unit
-    const points = getRoundedIsoFootprintPoints(blocker)
+    const points = getRoundedIsoFootprintPoints(blocker, unit.context?.map)
     let tangentX = 0
     let tangentY = 0
     let closestDistanceSq = Infinity

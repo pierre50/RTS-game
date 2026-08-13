@@ -65,7 +65,13 @@ const WIND_AMPLITUDE = 0.018
 const WIND_ROTATION = 0.006
 const WIND_SPEED = 0.0018
 
-export type ResourceOptions = Partial<ResourceDefinition> & { i: number; j: number; type: string; textureName?: string }
+export type ResourceOptions = Partial<ResourceDefinition> & {
+  i: number
+  j: number
+  type: string
+  textureName?: string
+  startsMature?: boolean
+}
 
 function getResourceConfig(): ResourceConfigCache {
   return Assets.cache.get('config') as ResourceConfigCache
@@ -99,6 +105,7 @@ export class Resource extends Instance implements ResourceEntity {
   textureName!: string
   category?: string
   sounds?: UnitSounds
+  spriteScale?: number
 
   constructor(options: ResourceOptions, context: GameContextLike) {
     super(context)
@@ -116,6 +123,7 @@ export class Resource extends Instance implements ResourceEntity {
     this.windPhase = 0
     this.visualSettingsCleanup = null
 
+    const startsMature = options.startsMature === true
     this.assignProperties(options)
     const config = getResourceConfig()
     this.assignProperties(config.resources[this.type])
@@ -147,8 +155,22 @@ export class Resource extends Instance implements ResourceEntity {
       const spritesheetJump = Assets.cache.get(this.assets as string)
       const animatedSprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
       bindAnimatedSpriteToTicker(animatedSprite, this.context.app)
-      animatedSprite.play()
-      animatedSprite.animationSpeed = 0.2
+      animatedSprite.animationSpeed = spritesheetJump.data?.animationSpeed ?? 0.2
+      animatedSprite.loop = spritesheetJump.data?.loop ?? true
+      if (animatedSprite.texture.defaultAnchor) {
+        animatedSprite.anchor.copyFrom(animatedSprite.texture.defaultAnchor)
+      }
+      if (this.type === RESOURCE_TYPES.wheat) {
+        animatedSprite.onFrameChange = () => {
+          if (this.isWindAnimatedWheat()) this.startWindMotion()
+        }
+        animatedSprite.onComplete = () => this.startWindMotion()
+      }
+      if (startsMature && this.type === RESOURCE_TYPES.wheat) {
+        animatedSprite.gotoAndStop(Math.max(0, animatedSprite.textures.length - 1))
+      } else {
+        animatedSprite.play()
+      }
       this.sprite = animatedSprite
     } else {
       const terrainAssets = getTerrainAssets(this.assets, cell.type)
@@ -175,6 +197,8 @@ export class Resource extends Instance implements ResourceEntity {
     const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
     interactiveSprite.updateAnchor = true
     interactiveSprite.label = LABEL_TYPES.sprite
+    const spriteScale = this.spriteScale ?? 1
+    this.sprite.scale.set(spriteScale)
     this.sprite.position.y = this.reliefLift
     if (this.sprite) {
       interactiveSprite.eventMode = 'static'
@@ -339,7 +363,15 @@ export class Resource extends Instance implements ResourceEntity {
     return (
       !this.isDead &&
       !this.isCutOrFallenTree() &&
-      (this.type === RESOURCE_TYPES.tree || this.type === RESOURCE_TYPES.berrybush)
+      (this.type === RESOURCE_TYPES.tree || this.type === RESOURCE_TYPES.berrybush || this.isWindAnimatedWheat())
+    )
+  }
+
+  isWindAnimatedWheat(): boolean {
+    if (this.type !== RESOURCE_TYPES.wheat || !(this.sprite instanceof AnimatedSprite)) return false
+    return (
+      this.sprite.currentFrame > 0 ||
+      (!this.sprite.playing && this.sprite.currentFrame >= this.sprite.textures.length - 1)
     )
   }
 

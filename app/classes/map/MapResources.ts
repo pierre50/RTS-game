@@ -30,6 +30,8 @@ type NeutralResourceGroup = ResourceGroupEntry & {
 type ResourceCenter = GridPosition
 type ResourcePlacementOptions = {
   textureName?: string
+  quantity?: number
+  startsMature?: boolean
 }
 type MapResourcesMap = {
   context: object
@@ -75,6 +77,14 @@ const NEUTRAL_RESOURCE_GROUPS: NeutralResourceGroup[] = [
     quantity: 8,
     clusterRadius: 2,
     playerSafeDistance: 26,
+    minNeutralDistance: 20,
+  },
+  {
+    type: RESOURCE_TYPES.wheat,
+    profileKey: 'wheat',
+    quantity: 7,
+    clusterRadius: 3,
+    playerSafeDistance: 24,
     minNeutralDistance: 20,
   },
   {
@@ -135,7 +145,14 @@ function createResource(
 ): ResourceEntity {
   return map.addChild(
     new Resource(
-      { i, j, type, textureName: options.textureName },
+      {
+        i,
+        j,
+        type,
+        textureName: options.textureName,
+        quantity: options.quantity,
+        startsMature: options.startsMature,
+      },
       map.context as ConstructorParameters<typeof Resource>[1]
     )
   )
@@ -147,25 +164,43 @@ function berryBushTextureName(frame: number): string {
 
 const RESOURCE_DENSITY_PROFILES = {
   low: {
-    neutralGroups: { berrybush: 2, stone: 5, copper: 3, iron: 2, gold: 1, tree: 4 },
+    neutralGroups: { berrybush: 2, wheat: 2, stone: 4, copper: 3, iron: 2, gold: 1, tree: 4 },
     minNeutralDistance: 28,
     playerSafeDistance: 34,
   },
   moderate: {
-    neutralGroups: { berrybush: 4, stone: 9, copper: 6, iron: 4, gold: 3, tree: 7 },
+    neutralGroups: { berrybush: 4, wheat: 4, stone: 8, copper: 6, iron: 4, gold: 3, tree: 7 },
     minNeutralDistance: 24,
     playerSafeDistance: 30,
   },
   high: {
-    neutralGroups: { berrybush: 7, stone: 14, copper: 10, iron: 7, gold: 5, tree: 11 },
+    neutralGroups: { berrybush: 7, wheat: 7, stone: 12, copper: 10, iron: 7, gold: 5, tree: 11 },
     minNeutralDistance: 20,
     playerSafeDistance: 26,
   },
 }
 
+const SCATTERED_STONE_PROFILES: Record<ResourceDensity, number> = {
+  low: 14,
+  moderate: 32,
+  high: 52,
+}
+
+const SCATTERED_STONE_ENVIRONMENT_MULTIPLIERS: Record<string, number> = {
+  Temperate: 1,
+  BlackForest: 0.9,
+  Jungle: 0.7,
+  Desert: 1.6,
+}
+
+const SCATTERED_STONE_PLAYER_SAFE_DISTANCE = 20
+const SCATTERED_STONE_RESOURCE_CLEARANCE = 4
+const SCATTERED_STONE_QUANTITY = 55
+
 const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<NeutralResourceProfileKey, number>>> = {
   Temperate: {
     berrybush: 1,
+    wheat: 1.2,
     stone: 1,
     copper: 1,
     iron: 1,
@@ -174,6 +209,7 @@ const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<Ne
   },
   BlackForest: {
     berrybush: 0.8,
+    wheat: 0.65,
     stone: 1,
     copper: 0.9,
     iron: 0.9,
@@ -182,6 +218,7 @@ const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<Ne
   },
   Jungle: {
     berrybush: 1.25,
+    wheat: 0.75,
     stone: 0.85,
     copper: 0.85,
     iron: 0.8,
@@ -190,6 +227,7 @@ const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<Ne
   },
   Desert: {
     berrybush: 0.45,
+    wheat: 0.25,
     stone: 1.25,
     copper: 1.3,
     iron: 1.2,
@@ -210,6 +248,19 @@ export function getNeutralResourceGroupCount(
   const terrainMultiplier = profileKey === 'tree' ? getEnvironmentTerrainParams(environment).forestDensity : 1
 
   return Math.round(profile.neutralGroups[profileKey] * resourceMultiplier * terrainMultiplier) * sizeScale
+}
+
+export function getScatteredStoneCount(
+  resourceDensity: ResourceDensity | undefined,
+  environment: string | undefined,
+  mapSize: number
+): number {
+  const density = resourceDensity as ResourceDensity
+  const baseCount = SCATTERED_STONE_PROFILES[density] ?? SCATTERED_STONE_PROFILES.moderate
+  const environmentMultiplier = SCATTERED_STONE_ENVIRONMENT_MULTIPLIERS[environment ?? ''] ?? 1
+  const sizeScale = Math.max(1, Math.round((mapSize / 120) ** 2))
+
+  return Math.round(baseCount * environmentMultiplier) * sizeScale
 }
 
 function shuffled<T>(items: T[], random: () => number): T[] {
@@ -479,10 +530,42 @@ export class MapResources {
         group.playerSafeDistance,
         group.minNeutralDistance
       )
-      if (center && this.map.placeResourceGroupAt(center, group.type, group.quantity, group.clusterRadius)) {
+      const options = group.type === RESOURCE_TYPES.wheat ? { startsMature: true } : undefined
+      if (center && this.map.placeResourceGroupAt(center, group.type, group.quantity, group.clusterRadius, options)) {
         placedCenters.push(center)
       }
       if (++batch % 4 === 0) {
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      }
+    }
+    await this.generateScatteredStoneAsync(playersPos)
+  }
+
+  async generateScatteredStoneAsync(playersPos: GridPosition[]): Promise<void> {
+    const { grid } = this.map
+    const count = getScatteredStoneCount(this.map.resourceDensity, this.map.environment, this.map.size)
+    const playerSafeDistanceSq = SCATTERED_STONE_PLAYER_SAFE_DISTANCE ** 2
+    const border = 8
+    let placed = 0
+    let batch = 0
+
+    for (let attempt = 0; attempt < count * 80 && placed < count; attempt++) {
+      const i = this.map.randomRange(border, this.map.size - border)
+      const j = this.map.randomRange(border, this.map.size - border)
+      const cell = grid[i]?.[j]
+      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
+      if (hasWaterBorderWithin(grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
+      if (hasSpacedResourceAround(grid, i, j, SCATTERED_STONE_RESOURCE_CLEARANCE)) continue
+
+      const tooCloseToPlayer = playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
+      if (tooCloseToPlayer) continue
+
+      this.map.resources.add(
+        createResource(this.map, i, j, RESOURCE_TYPES.stone, { quantity: SCATTERED_STONE_QUANTITY })
+      )
+      placed++
+
+      if (++batch % 12 === 0) {
         await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
       }
     }
@@ -575,7 +658,13 @@ export class MapResources {
 
     const sharedTextureName = options.textureName ?? this.getSharedGroupTextureName(instance)
     for (const cell of cellsToPlace) {
-      this.map.resources.add(createResource(this.map, cell.i, cell.j, instance, { textureName: sharedTextureName }))
+      this.map.resources.add(
+        createResource(this.map, cell.i, cell.j, instance, {
+          textureName: sharedTextureName,
+          quantity: options.quantity,
+          startsMature: options.startsMature,
+        })
+      )
     }
     return true
   }

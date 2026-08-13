@@ -72,6 +72,14 @@
             "frame": 0
           }
         }
+      },
+      "WatchTower": {
+        "images": {
+          "final": {
+            "sheet": "buildings/age-0/watch-tower",
+            "frame": 0
+          }
+        }
       }
     },
     "1": {
@@ -79,14 +87,6 @@
         "images": {
           "final": {
             "sheet": "environment/ground/stone-set-2",
-            "frame": 0
-          }
-        }
-      },
-      "Farm": {
-        "images": {
-          "final": {
-            "sheet": "buildings/age-0/farm",
             "frame": 0
           }
         }

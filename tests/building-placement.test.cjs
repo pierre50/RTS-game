@@ -20,19 +20,38 @@ function loadPlacementModule() {
       return { LABEL_TYPES: {} }
     }
     if (request === './cells') {
-      return {
-        getPlainCellsAroundPoint(startX, startY, grid, dist = 0) {
-          const result = []
-          const minX = Math.max(startX - dist, 0)
-          const maxX = Math.min(startX + dist, grid.length - 1)
+      const getPlainCellsAroundPoint = (startX, startY, grid, dist = 0) => {
+        const result = []
+        const minX = Math.max(startX - dist, 0)
+        const maxX = Math.min(startX + dist, grid.length - 1)
 
-          for (let i = minX; i <= maxX; i++) {
+        for (let i = minX; i <= maxX; i++) {
+          const row = grid[i]
+          if (!row) continue
+          const minY = Math.max(startY - dist, 0)
+          const maxY = Math.min(startY + dist, row.length - 1)
+
+          for (let j = minY; j <= maxY; j++) {
+            const cell = row[j]
+            if (cell) result.push(cell)
+          }
+        }
+
+        return result
+      }
+      return {
+        getPlainCellsAroundPoint,
+        getBuildingFootprintCells(startX, startY, grid, size = 1) {
+          const result = []
+          const footprintSize = Math.max(1, Math.floor(size))
+          const before = Math.floor((footprintSize - 1) / 2)
+          const after = footprintSize - before - 1
+
+          for (let i = startX - before; i <= startX + after; i++) {
             const row = grid[i]
             if (!row) continue
-            const minY = Math.max(startY - dist, 0)
-            const maxY = Math.min(startY + dist, row.length - 1)
 
-            for (let j = minY; j <= maxY; j++) {
+            for (let j = startY - before; j <= startY + after; j++) {
               const cell = row[j]
               if (cell) result.push(cell)
             }
@@ -78,6 +97,7 @@ function createGrid(size, factory) {
 
 const { canPlaceBuildingAt } = loadPlacementModule()
 const barracks = { type: 'Barracks', size: 3 }
+const tower = { type: 'WatchTower', size: 2 }
 
 test('building placement is rejected when any footprint cell is unexplored', () => {
   const grid = createGrid(5, (i, j) => createCell(i, j))
@@ -104,4 +124,20 @@ test('building placement is allowed on explored fogged terrain', () => {
     }),
     true
   )
+})
+
+test('size 2 building placement validates all four footprint cells', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j))
+  grid[2][3].solid = true
+
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, tower), false)
+
+  grid[2][3].solid = false
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, tower), true)
+})
+
+test('size 2 building placement is rejected when footprint leaves the grid', () => {
+  const grid = createGrid(5, (i, j) => createCell(i, j))
+
+  assert.equal(canPlaceBuildingAt(grid, 4, 4, tower), false)
 })

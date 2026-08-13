@@ -5,7 +5,6 @@ import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/settings'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { RESOURCE_NAMES, findKey } from './shared'
-import { refreshOwnerTowers } from '../../lib/buildings/towers'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { ResourceAmount } from '../../types/common'
 import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
@@ -15,7 +14,6 @@ const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 type TechnologyAction =
   | { type: 'upgradeUnit'; source: string; target: string }
   | { type: 'upgradeBuilding'; source: string; target: string }
-  | { type: 'refreshTowers' }
   | { type: 'improve'; operations: ConfigOperation[] }
 
 type DevTechnologyConfig = BaseTechnologyConfig & {
@@ -133,9 +131,6 @@ export function applyTechnology(context: DevConsoleContext, typeName: string): C
           if (building.type === action.source)
             (building as DevEntity & { upgrade?: (target: string) => void }).upgrade?.(action.target)
         })
-        break
-      case 'refreshTowers':
-        refreshOwnerTowers(player)
         break
       case 'improve':
         player.updateConfig?.(

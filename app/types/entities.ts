@@ -384,6 +384,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
 
 export interface ResourceEntity extends RuntimeEntityBase {
   textureName?: string
+  startsMature?: boolean
   setCuttedTreeTexture?: () => void
   refreshTextureForTerrain?: () => void
   syncWithCell?: () => void

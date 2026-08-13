@@ -40,7 +40,6 @@ export class BuildingCombat {
 
     const actionOk = getActionCondition(building, instance, ACTION_TYPES.attack)
     const dist = instancesDistance(building, instance)
-    // eslint-disable-next-line no-console
     console.debug(
       `[TowerDetect] ${building.type}#${building.label} <- ${instance.type ?? instance.family}#${instance.label}`,
       {
@@ -80,7 +79,6 @@ export class BuildingCombat {
       candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
       building.range
     )
-    // eslint-disable-next-line no-console
     console.debug(
       `[TowerBuilt] ${building.type}#${building.label} range=${building.range}: ${candidates.length} hostile candidate(s)`,
       candidates.map(c => ({

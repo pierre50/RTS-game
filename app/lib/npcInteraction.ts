@@ -56,6 +56,7 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Stone: (npc, target) => npc.sendToStone?.(target),
   Gold: (npc, target) => npc.sendToGold?.(target),
   Berrybush: (npc, target) => npc.sendToBerrybush?.(target),
+  Wheat: (npc, target) => npc.sendToFarm?.(target),
 }
 
 function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -554,10 +555,6 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     }
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
       npc.sendToBuilding?.(target as BuildingEntity)
-      return true
-    }
-    if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.farm)) {
-      npc.sendToFarm?.(target)
       return true
     }
     if (target.family === FAMILY_TYPES.building) {

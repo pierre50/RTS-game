@@ -10,6 +10,7 @@ import {
   getPositionInGridAroundInstance,
   canPlaceBuildingAt,
   hasWaterBorderWithin,
+  getBuildingFootprintCells,
   getBuildingFootprintRadius,
   getPlainCellsAroundPoint,
 } from '../../lib'
@@ -184,7 +185,9 @@ type BlueprintResource = {
   i: number
   j: number
   type: string
+  quantity?: number
   textureName?: string
+  startsMature?: boolean
 }
 export type MapBlueprint = {
   seed?: string | number
@@ -293,8 +296,7 @@ function gameConfig(): GameConfig {
 function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
   const instance = map.addChild(new Resource(resource, runtimeContext(map.context)))
   if (instance.type === PORTAL_RESOURCE_TYPE) {
-    const footprintRadius = getBuildingFootprintRadius(instance.size || PORTAL_FOOTPRINT_SIZE)
-    getPlainCellsAroundPoint(instance.i, instance.j, map.grid, footprintRadius, cell => {
+    getBuildingFootprintCells(instance.i, instance.j, map.grid, instance.size || PORTAL_FOOTPRINT_SIZE, cell => {
       cell.solid = true
       cell.has = instance
       return true
@@ -963,7 +965,7 @@ export class MapGeneration {
       return [6, 22]
     }
     const placementSizeFor = (type: string): number => {
-      if (type === BUILDING_TYPES.townCenter || type === BUILDING_TYPES.farm) return 2
+      if (type === BUILDING_TYPES.townCenter) return 2
       if (type === BUILDING_TYPES.house) return 0
       return 1
     }
@@ -974,8 +976,8 @@ export class MapGeneration {
     const placeExtraBuilding = (type: string): boolean => {
       const config = player.config.buildings[type]
       if (!config) return false
-      // MAX_BUILDING_BY_AGE still lists buildings gated behind an age this player can never reach
-      // (e.g. SentryTower, sentinel-disabled) - skip those instead of crashing on a missing asset.
+      // MAX_BUILDING_BY_AGE can still list buildings gated behind unavailable techs - skip those
+      // instead of crashing on a missing asset.
       if (player.isBuildingEligible && !player.isBuildingEligible(type)) return false
       const placementConfig = { ...config, type }
       const [minSpace, maxSpace] = placementSpaceFor(type)
@@ -1042,8 +1044,8 @@ export class MapGeneration {
       }
     }
 
-    // 4. Technologies consistent with the age/buildings just granted - also retextures the walls/towers
-    // above to the right tier via the 'refreshWalls'/'refreshTowers' actions already wired on unlock.
+    // 4. Technologies consistent with the age/buildings just granted - also retextures the walls
+    // above to the right tier via the 'refreshWalls' action already wired on unlock.
     player.applyEligibleTechnologies?.()
 
     // 5. Resource cushion.
@@ -1394,7 +1396,18 @@ export class MapGeneration {
       salt: number
     ): void {
       const shapeIndex = randomInt(0, 3, salt + 17)
-      const maxRadius = Math.ceil(radius * 1.5)
+      const lobeCount = randomInt(1, 3, salt + 23)
+      const lobeAngles = [randomRange(0, Math.PI * 2, salt + 31), randomRange(0, Math.PI * 2, salt + 37)]
+      const lobeOffsets = [
+        randomRange(radius * 0.18, radius * 0.42, salt + 41),
+        randomRange(radius * 0.16, radius * 0.36, salt + 43),
+      ]
+      const lobeRadii = [
+        randomRange(radius * 0.42, radius * 0.72, salt + 47),
+        randomRange(radius * 0.34, radius * 0.58, salt + 53),
+      ]
+      const maxRadius = Math.ceil(radius * 2)
+      const patchCells: Array<[number, number]> = []
       for (let di = -maxRadius; di <= maxRadius; di++) {
         for (let dj = -maxRadius; dj <= maxRadius; dj++) {
           const ni = centerI + di
@@ -1408,10 +1421,42 @@ export class MapGeneration {
           ) {
             continue
           }
-          const edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
-          const roughness = (hash(ni * 0.73 + salt, nj * 0.73 - salt) - 0.5) * 0.32
-          if (edge + roughness <= 1) terrainMap[ni][nj] = terrainValue
+          let edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
+          for (let lobeIndex = 0; lobeIndex < lobeCount - 1; lobeIndex++) {
+            const angle = lobeAngles[lobeIndex]
+            const li = Math.cos(angle) * lobeOffsets[lobeIndex]
+            const lj = Math.sin(angle) * lobeOffsets[lobeIndex]
+            edge = Math.min(edge, normalizedShapeDistance(di - li, dj - lj, lobeRadii[lobeIndex], shapeIndex))
+          }
+          const angle = Math.atan2(dj, di)
+          const contour =
+            Math.sin(angle * 2 + randomRange(-Math.PI, Math.PI, salt + 59)) * 0.1 +
+            Math.sin(angle * 5 + randomRange(-Math.PI, Math.PI, salt + 61)) * 0.06
+          const coarseNoise = (hash(ni * 0.37 + salt, nj * 0.37 - salt) - 0.5) * 0.28
+          const fineNoise = (hash(ni * 1.17 - salt, nj * 1.17 + salt) - 0.5) * 0.16
+          const porousEdge = edge > 0.72 && hash(ni * 2.19 + salt, nj * 2.19 - salt) < (edge - 0.72) * 0.45
+          if (edge + contour + coarseNoise + fineNoise <= 1 && !porousEdge) {
+            patchCells.push([ni, nj])
+          }
         }
+      }
+      const shouldKeep = (i: number, j: number): boolean => {
+        let neighbours = 0
+        for (let ai = -1; ai <= 1; ai++) {
+          for (let aj = -1; aj <= 1; aj++) {
+            if (ai === 0 && aj === 0) continue
+            if (terrainMap[i + ai]?.[j + aj] === terrainValue) neighbours++
+          }
+        }
+        return neighbours >= 2
+      }
+      for (let index = 0; index < patchCells.length; index++) {
+        const cell = patchCells[index]
+        terrainMap[cell[0]][cell[1]] = terrainValue
+      }
+      for (let index = 0; index < patchCells.length; index++) {
+        const cell = patchCells[index]
+        if (!shouldKeep(cell[0], cell[1])) terrainMap[cell[0]][cell[1]] = groundTypeValue
       }
     }
 
@@ -1584,12 +1629,7 @@ export class MapGeneration {
         if (this._hasSolidNeighbor(i, j)) continue
         if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
           const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
-          const hasWaterBorderClearance = hasWaterBorderWithin(
-            this.map.grid,
-            i,
-            j,
-            WATER_BORDER_PLACEMENT_CLEARANCE
-          )
+          const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
           if (
             cell.category !== 'Water' &&
             !hasWaterNeighbour &&
@@ -1646,11 +1686,7 @@ export class MapGeneration {
           ) {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
           }
-          if (
-            this.isShoreWaterCell(i, j) &&
-            !cell.has &&
-            this.map.random() < WATER_SET_CHANCE
-          ) {
+          if (this.isShoreWaterCell(i, j) && !cell.has && this.map.random() < WATER_SET_CHANCE) {
             this._placeWaterSet(cell)
           }
         }
@@ -1714,11 +1750,7 @@ export class MapGeneration {
         ) {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
         }
-        if (
-          this.isShoreWaterCell(i, j) &&
-          !cell.has &&
-          this.map.random() < WATER_SET_CHANCE
-        ) {
+        if (this.isShoreWaterCell(i, j) && !cell.has && this.map.random() < WATER_SET_CHANCE) {
           this._placeWaterSet(cell)
         }
       }
@@ -1770,7 +1802,7 @@ export class MapGeneration {
       new Resource({ i: position.i, j: position.j, type: PORTAL_RESOURCE_TYPE, size: PORTAL_FOOTPRINT_SIZE }, context)
     )
     map.resources.add(portal)
-    getPlainCellsAroundPoint(position.i, position.j, map.grid, footprintRadius, cell => {
+    getBuildingFootprintCells(position.i, position.j, map.grid, PORTAL_FOOTPRINT_SIZE, cell => {
       cell.solid = true
       cell.has = portal
       return true

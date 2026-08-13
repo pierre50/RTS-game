@@ -1,4 +1,5 @@
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import { isWheatMature } from './combat'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -44,8 +45,8 @@ function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string,
 }
 
 function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {
-  if (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
-    return targetWorkerLoad(unit, target, WORK_TYPES.farmer, ACTION_TYPES.farm) < 1
+  if (target.family === FAMILY_TYPES.resource && target.type === RESOURCE_TYPES.wheat) {
+    return isWheatMature(target) && targetWorkerLoad(unit, target, WORK_TYPES.farmer, ACTION_TYPES.farm) < 1
   }
   return true
 }
@@ -76,15 +77,13 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
   const berries = foundedBerries?.size
     ? [...foundedBerries]
     : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.berrybush)
-  const farms = (unit.owner?.buildings ?? []).filter(
-    building =>
-      building.type === BUILDING_TYPES.farm &&
-      building.isBuilt &&
-      !building.isUsedBy &&
-      (building.quantity ?? 1) > 0 &&
-      unit.getActionCondition?.(building, ACTION_TYPES.farm)
+  const foundedWheat = unit.owner?.foundedResources?.[RESOURCE_TYPES.wheat] ?? unit.owner?.foundedWheats
+  const wheat = foundedWheat?.size
+    ? [...foundedWheat]
+    : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.wheat)
+  return [...berries.filter(isUsableResource), ...wheat.filter(isUsableResource)].filter(target =>
+    isFoodTargetAvailable(unit, target)
   )
-  return [...berries.filter(isUsableResource), ...farms].filter(target => isFoodTargetAvailable(unit, target))
 }
 
 function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
@@ -139,7 +138,7 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
     if (job === 'food') {
       const target = closest(unit, knownFoodTargets(unit))
       if (!target) return exploreForAutonomy(unit, job)
-      if (target.family === FAMILY_TYPES.building) unit.sendToFarm?.(target)
+      if (target.type === RESOURCE_TYPES.wheat) unit.sendToFarm?.(target)
       else unit.sendToBerrybush?.(target)
       return true
     }

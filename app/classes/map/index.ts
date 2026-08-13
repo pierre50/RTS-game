@@ -1,12 +1,4 @@
-import {
-  Assets,
-  Container,
-  Graphics,
-  TilingSprite,
-  type ContainerChild,
-  type Texture,
-  type Ticker,
-} from 'pixi.js'
+import { Assets, Container, Graphics, TilingSprite, type ContainerChild, type Texture, type Ticker } from 'pixi.js'
 import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
 import {
@@ -47,7 +39,10 @@ export type MapContext = Omit<
 }
 type InstanceBuckets = Array<Array<Set<RuntimeEntity>>>
 type GeneratedPosition = GridPosition | null
-type WaterOverlayTicker = { add: (tick: (ticker: Ticker) => void) => void; remove: (tick: (ticker: Ticker) => void) => void }
+type WaterOverlayTicker = {
+  add: (tick: (ticker: Ticker) => void) => void
+  remove: (tick: (ticker: Ticker) => void) => void
+}
 type WaterBorderSurface = { sprite: { texture: Texture; parent?: unknown }; frames: Texture[] }
 
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
@@ -317,7 +312,11 @@ export default class Map extends Container {
     }
   }
 
-  registerWaterBorderSurface(sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame: number = 0): () => void {
+  registerWaterBorderSurface(
+    sprite: { texture: Texture; parent?: unknown },
+    frames: Texture[],
+    initialFrame: number = 0
+  ): () => void {
     if (!frames.length) return () => {}
     const surface = { sprite, frames }
     sprite.texture = frames[initialFrame % frames.length]
@@ -479,7 +478,7 @@ export default class Map extends Container {
     instance: string,
     quantity: number,
     clusterRadius?: number,
-    options?: { textureName?: string }
+    options?: { textureName?: string; quantity?: number; startsMature?: boolean }
   ): boolean {
     return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
   }

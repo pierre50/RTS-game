@@ -342,10 +342,6 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
-    '../../lib/buildings/towers': {
-      getTowerType: () => null,
-      isTower: () => false,
-    },
   })
 
   const berryBush = { quantity: 10, selected: false }

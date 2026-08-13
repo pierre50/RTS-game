@@ -2,7 +2,6 @@ import { Assets, AnimatedSprite, Container } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   LABEL_TYPES,
   MENU_INFO_IDS,
   PLAYER_TYPES,
@@ -18,7 +17,7 @@ import {
   getBuildingTextureNameWithSize,
   getBuildingRubbleTextureNameWithSize,
   getPercentage,
-  getPlainCellsAroundPoint,
+  getBuildingFootprintCells,
   getBuildingFootprintRadius,
   getTexture,
   getTextureByFrame,
@@ -31,7 +30,6 @@ import {
   playSoundCue,
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
-import { getTowerType, isTower } from '../../lib/buildings/towers'
 import type { RuntimeCell } from '../../types/map'
 import type { Building } from './index'
 import type { Texture } from 'pixi.js'
@@ -39,6 +37,7 @@ import type { Texture } from 'pixi.js'
 type RuntimeAnimatedSprite = AnimatedSprite
 type RuntimeContainer = Container
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
+type BuildingSpritesheetData = { animationSpeed?: number; loop?: boolean }
 
 const BUILDING_FIRE_SHEETS = {
   light: 'effects/fire/light',
@@ -48,6 +47,7 @@ const BUILDING_FIRE_SHEETS = {
 
 export class BuildingLifecycle {
   building: Building
+  private spriteWasPlayingBeforePause = false
 
   constructor(building: Building) {
     this.building = building
@@ -96,10 +96,41 @@ export class BuildingLifecycle {
   finalTexture(): void {
     const building = this.building
     const assetOwner = getBuildingAssetOwner(building)
-    const effectiveType = building.assetType || (isTower(building) ? getTowerType(building.owner) : building.type)
+    const effectiveType = building.assetType || building.type
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)
-    const texture = getTexture(assets.images!.final as string, Assets) as BuildingTexture
-    building.textureName = assets.images!.final as string
+    const finalTextureRef = assets.images!.final!
+    const finalSheetId = getTextureSheet(finalTextureRef)
+    const spritesheet = Assets.cache.get(finalSheetId)
+    const frames = spritesheet?.textures ? (getAnimationFrames(spritesheet.textures) as Texture[]) : []
+    const texture = getTexture(finalTextureRef, Assets) as BuildingTexture
+    building.textureName = textureRefToString(finalTextureRef)
+
+    if (frames.length > 1 && !(building.sprite instanceof AnimatedSprite)) {
+      const oldSprite = building.sprite
+      const childIndex = building.getChildIndex(oldSprite)
+      const animatedSprite = new AnimatedSprite(frames)
+      bindAnimatedSpriteToTicker(animatedSprite, building.context.app)
+      animatedSprite.label = oldSprite.label
+      animatedSprite.eventMode = oldSprite.eventMode
+      animatedSprite.roundPixels = oldSprite.roundPixels
+      animatedSprite.position.copyFrom(oldSprite.position)
+      animatedSprite.scale.copyFrom(oldSprite.scale)
+      ;(animatedSprite as AnimatedSprite & { updateAnchor?: boolean }).updateAnchor = true
+      building.removeChild(oldSprite)
+      oldSprite.destroy({ children: true, texture: false })
+      building.sprite = animatedSprite
+      building.addChildAt(animatedSprite, Math.max(0, childIndex))
+      building.bindSpriteInteractions()
+    }
+
+    if (building.sprite instanceof AnimatedSprite && frames.length > 1) {
+      const data = (spritesheet?.data ?? {}) as BuildingSpritesheetData
+      building.sprite.textures = frames
+      building.sprite.loop = data.loop ?? true
+      building.sprite.animationSpeed = data.animationSpeed ?? 0.12
+      building.sprite.gotoAndPlay(0)
+    }
+
     building.sprite.texture = texture
     building.sprite.hitArea = texture.hitArea
       ? new Polygon(texture.hitArea)
@@ -216,6 +247,9 @@ export class BuildingLifecycle {
 
   pause(): void {
     const building = this.building
+    const sprite = building.sprite
+    this.spriteWasPlayingBeforePause = Boolean(sprite instanceof AnimatedSprite && sprite.playing)
+    if (this.spriteWasPlayingBeforePause && sprite instanceof AnimatedSprite) sprite.stop()
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
@@ -225,6 +259,10 @@ export class BuildingLifecycle {
 
   resume(): void {
     const building = this.building
+    if (this.spriteWasPlayingBeforePause && building.sprite instanceof AnimatedSprite) {
+      building.sprite.play()
+    }
+    this.spriteWasPlayingBeforePause = false
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
@@ -282,29 +320,23 @@ export class BuildingLifecycle {
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     fire && fire.destroy()
 
-    let rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
-    if (building.type === BUILDING_TYPES.farm) {
-      rubbleSheet = { sheet: 'buildings/rubble/farm-depleted', frame: 0 }
-    }
+    const rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
     building.textureName = textureRefToString(rubbleSheet!)
     building.sprite.texture = getTexture(rubbleSheet!, Assets)
     building.sprite.eventMode = 'none'
     const footprintRadius = getBuildingFootprintRadius(building.size)
     building.zIndex = building.i + building.j - footprintRadius * 2 - 0.1
-    if (building.type === BUILDING_TYPES.farm) {
-      changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
-    }
     building.updateShadow()
 
     updateInstanceVisibility(building)
-    getPlainCellsAroundPoint(building.i, building.j, map.grid, footprintRadius, ((cell: RuntimeCell) => {
+    getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false
         cell.corpses.add(building)
       }
       return true
-    }))
+    })
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
@@ -320,11 +352,10 @@ export class BuildingLifecycle {
     const {
       context: { map },
     } = building
-    const dist = getBuildingFootprintRadius(building.size)
-    getPlainCellsAroundPoint(building.i, building.j, map.grid, dist, ((cell: RuntimeCell) => {
+    getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
       cell.corpses.delete(building)
       return true
-    }))
+    })
     building.isDestroyed = true
     building.destroy({ children: true, texture: false })
   }

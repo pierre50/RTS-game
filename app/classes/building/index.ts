@@ -6,8 +6,7 @@ import {
   getGroundReliefLevel,
   getTexture,
   getInstanceZIndex,
-  getPlainCellsAroundPoint,
-  getBuildingFootprintRadius,
+  getBuildingFootprintCells,
   getReliefLiftPixels,
   clearCellTerrainSet,
   drawInstanceBlinkingSelection,
@@ -29,7 +28,6 @@ import { BuildingProduction } from './BuildingProduction'
 import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
-import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
@@ -46,7 +44,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
-type BuildingSprite = Sprite
+type BuildingSprite = Sprite | AnimatedSprite
 type BuildingShadow = Sprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
@@ -125,10 +123,6 @@ export class Building extends Instance implements BuildingEntity {
 
     this.assignProperties(options)
     this.assignProperties(this.owner.config.buildings[this.type])
-    if (isTower(this)) {
-      const effectiveType = getTowerType(this.owner)
-      if (effectiveType !== this.type) this.assignProperties(this.owner.config.buildings[effectiveType])
-    }
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
     this.intervalId = null
@@ -150,9 +144,6 @@ export class Building extends Instance implements BuildingEntity {
     this.y = flatY
     this.z = anchorCell.z
     this.zIndex = getInstanceZIndex(this)
-    if (this.type === BUILDING_TYPES.farm) {
-      this.zIndex -= 0.1
-    }
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(anchorCell))
     this.visible = map.revealEverything && controls.instanceInCamera(this)
     const spriteSheet = getBuildingTextureNameWithSize(this.size)
@@ -172,7 +163,7 @@ export class Building extends Instance implements BuildingEntity {
       : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key, this))
     this.interface = {
       info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
-        const displayType = this.assetType || (isTower(this) ? getTowerType(this.owner) : this.type)
+        const displayType = this.assetType || this.type
         const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this), Assets)
         this.buildingInterface.renderInfo(element, assets as BuildingConfig, options)
       },
@@ -183,8 +174,7 @@ export class Building extends Instance implements BuildingEntity {
     }
 
     // Set solid zone
-    const dist = getBuildingFootprintRadius(this.size)
-    getPlainCellsAroundPoint(this.i, this.j, map.grid, dist, (cell: RuntimeCell) => {
+    getBuildingFootprintCells(this.i, this.j, map.grid, this.size, (cell: RuntimeCell) => {
       clearCellTerrainSet(cell)
       for (const corpse of cell.corpses) {
         typeof corpse.clear === 'function' && corpse.clear()
@@ -206,23 +196,7 @@ export class Building extends Instance implements BuildingEntity {
       this.sprite.eventMode = 'static'
       this.sprite.roundPixels = true
 
-      this.sprite.on('pointertap', () => {
-        const {
-          context: { controls, editor },
-        } = this
-        if (editor?.handleEntityInteraction(this)) return
-        if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
-          controls.mouse.prevent = true
-          drawInstanceBlinkingSelection(this)
-          controls.rallyPointController.cancel({ clear: true })
-          return
-        }
-        if (controls.rallyPointController?.active) {
-          controls.mouse.prevent = true
-          controls.rallyPointController.handleMouseUpOnEntity(this)
-          return
-        }
-      })
+      this.bindSpriteInteractions()
 
       if (this.shadow) this.context.map.shadowLayer?.addChild(this.shadow)
       this.addChild(this.sprite)
@@ -258,6 +232,27 @@ export class Building extends Instance implements BuildingEntity {
 
   attackAction(target: RuntimeEntity): void {
     return this.buildingCombat.attackAction(target)
+  }
+
+  bindSpriteInteractions(): void {
+    const sprite = this.sprite
+    sprite.on('pointertap', () => {
+      const {
+        context: { controls, editor },
+      } = this
+      if (editor?.handleEntityInteraction(this)) return
+      if (controls.rallyPointController?.active && controls.rallyPointController.building === this) {
+        controls.mouse.prevent = true
+        drawInstanceBlinkingSelection(this)
+        controls.rallyPointController.cancel({ clear: true })
+        return
+      }
+      if (controls.rallyPointController?.active) {
+        controls.mouse.prevent = true
+        controls.rallyPointController.handleMouseUpOnEntity(this)
+        return
+      }
+    })
   }
 
   override startInterval(
@@ -358,11 +353,12 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   getShadowTexture(): Texture | null {
-    if (this.type === BUILDING_TYPES.farm) return null
     if (!this.textureName) return null
     const sheet = getTextureSheet(this.textureName)
     const shadowAtlasId = `${sheet}/shadow`
-    const shadowAtlas = Assets.cache.has(shadowAtlasId) ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null) : null
+    const shadowAtlas = Assets.cache.has(shadowAtlasId)
+      ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null)
+      : null
     if (!shadowAtlas || !this.sprite?.texture) return null
 
     const { frame, rotate } = this.sprite.texture

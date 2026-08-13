@@ -212,11 +212,6 @@
   "Water": {
     "category": "Water",
     "color": "#2C46A0",
-    "assets": [
-      {
-        "sheet": "terrain/water",
-        "frame": 0
-      }
-    ]
+    "assets": []
   }
 }

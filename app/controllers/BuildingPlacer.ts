@@ -1,11 +1,11 @@
 import { Assets, Container, Sprite } from 'pixi.js'
 import {
+  cartesianToIsometric,
   isometricToCartesian,
   canAfford,
   canPlaceBuildingAt,
   changeSpriteColor,
-  getBuildingFootprintRadius,
-  getPlainCellsAroundPoint,
+  getBuildingFootprintCells,
   getTexture,
   payCost,
   isBuildingLimitReached,
@@ -25,6 +25,9 @@ type MouseBuilding = Container &
   PlaceableBuildingConfig & {
     isFree?: boolean
   }
+
+const WHEAT_FIELD_SIZE = 4
+const WHEAT_PREVIEW_ALPHA = 0.75
 
 export class BuildingPlacer {
   controls: ControlsLike
@@ -83,10 +86,8 @@ export class BuildingPlacer {
     mouseBuilding.y = cell.y - controls.camera.y
     const isFree = this.canPlaceMouseBuilding(cell)
 
-    const sprite = mouseBuilding.getChildByLabel(LABEL_TYPES.sprite) as Sprite | null
-    if (!sprite) return
     const tint = isFree ? COLOR_GREEN : COLOR_RED
-    sprite.tint = tint
+    this.tintMouseBuilding(tint)
     mouseBuilding.isFree = isFree
   }
 
@@ -102,6 +103,9 @@ export class BuildingPlacer {
     }
     if (cell.inclined || cell.border) return
     if (this.canPlaceMouseBuilding(cell)) {
+      if (mouseBuilding.type === BUILDING_TYPES.farm) {
+        return this.placeWheatField(cell, mouseBuilding)
+      }
       if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
         controls.removeMouseBuilding()
         if (controls.isHeroControlActive?.()) {
@@ -122,17 +126,26 @@ export class BuildingPlacer {
     const texture =
       building.type === BUILDING_TYPES.smallWall
         ? getWallTexture(player, 2)
-        : getTexture(building.images?.final ?? '', Assets)
-    const sprite = Sprite.from(texture)
-    sprite.label = LABEL_TYPES.sprite
-    if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
-    sprite.visible = building.type !== BUILDING_TYPES.smallWall
-    controls.mouseBuilding.addChild(sprite)
+        : getTexture(
+            building.type === BUILDING_TYPES.farm
+              ? { sheet: 'resources/wheat', frame: 0 }
+              : (building.images?.final ?? ''),
+            Assets
+          )
+    if (building.type === BUILDING_TYPES.farm) {
+      this.addWheatFieldPreview(controls.mouseBuilding, texture)
+    } else {
+      const sprite = Sprite.from(texture)
+      sprite.label = LABEL_TYPES.sprite
+      if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
+      sprite.visible = building.type !== BUILDING_TYPES.smallWall
+      controls.mouseBuilding.addChild(sprite)
+    }
     Object.keys(building).forEach(prop => {
       ;(controls.mouseBuilding as MouseBuilding)[prop] = building[prop]
     })
     controls.mouseBuilding.label = LABEL_TYPES.mouseBuilding
-    changeSpriteColor(sprite as RecolorableSprite, player.color ?? '')
+    this.tintMouseBuilding(COLOR_GREEN)
     controls.addChild(controls.mouseBuilding)
     this.handleMouseMove()
   }
@@ -169,7 +182,7 @@ export class BuildingPlacer {
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
     if (!cell) return false
-    if (isBuildingLimitReached(player, mouseBuilding.type)) return false
+    if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     return canPlaceBuildingAt(map.grid, cell.i, cell.j, mouseBuilding, {
       requireVisible: true,
@@ -178,12 +191,56 @@ export class BuildingPlacer {
     })
   }
 
+  addWheatFieldPreview(container: Container, texture: ReturnType<typeof getTexture>): void {
+    const before = Math.floor((WHEAT_FIELD_SIZE - 1) / 2)
+    const after = WHEAT_FIELD_SIZE - before - 1
+    for (let di = -before; di <= after; di++) {
+      for (let dj = -before; dj <= after; dj++) {
+        const [x, y] = cartesianToIsometric(di, dj)
+        const sprite = Sprite.from(texture)
+        sprite.label = LABEL_TYPES.sprite
+        sprite.alpha = WHEAT_PREVIEW_ALPHA
+        sprite.x = x
+        sprite.y = y
+        sprite.zIndex = di + dj
+        if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
+        container.addChild(sprite)
+      }
+    }
+    container.sortableChildren = true
+  }
+
+  tintMouseBuilding(tint: number): void {
+    const mouseBuilding = this.controls.mouseBuilding as MouseBuilding | null | undefined
+    if (!mouseBuilding) return
+    for (const child of mouseBuilding.children) {
+      if (child.label === LABEL_TYPES.sprite && child instanceof Sprite) {
+        child.tint = tint
+      }
+    }
+  }
+
+  placeWheatField(cell: RuntimeCell, mouseBuilding: MouseBuilding): boolean {
+    const { controls } = this
+    const {
+      context: { menu, player },
+    } = controls
+    if (!player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm)) return false
+
+    controls.removeMouseBuilding()
+    if (controls.isHeroControlActive?.()) {
+      menu.setActionTarget(controls.heroUnit ?? null)
+    } else if (menu.selection) {
+      menu.setActionTarget(menu.selection)
+    }
+    return true
+  }
+
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
     const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
     if (!hero || hero.isDead || hero.isDestroyed) return false
     const size = typeof building.size === 'number' ? building.size : 1
-    const radius = getBuildingFootprintRadius(size)
-    return getPlainCellsAroundPoint(cell.i, cell.j, this.controls.context.map.grid, radius).some(
+    return getBuildingFootprintCells(cell.i, cell.j, this.controls.context.map.grid, size).some(
       footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
     )
   }

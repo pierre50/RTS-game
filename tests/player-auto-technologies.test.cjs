@@ -77,9 +77,6 @@ function loadPlayer(overrides = {}) {
         updateWallAndNeighbours: () => {},
       }
     }
-    if (request === '../../lib/buildings/towers') {
-      return { refreshOwnerTowers: () => {} }
-    }
     return require(request)
   }
 

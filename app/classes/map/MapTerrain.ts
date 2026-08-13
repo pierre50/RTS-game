@@ -5,7 +5,6 @@ import {
   getDeterministicCellVariant,
   getPlainCellsAroundPoint,
   getTexture,
-  textureRefToString,
 } from '../../lib'
 import { CELL_DEPTH, getEnvironmentTerrainParams } from '../../constants'
 import {

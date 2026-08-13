@@ -13,6 +13,13 @@
       }
     ]
   },
+  "Wheat": {
+    "totalQuantity": 10,
+    "color": "#D9B84A",
+    "assets": "resources/wheat",
+    "isAnimated": true,
+    "spriteScale": 0.875
+  },
   "Tree": {
     "selectionFactor": 2,
     "totalQuantity": 300,

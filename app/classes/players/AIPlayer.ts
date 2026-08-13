@@ -106,6 +106,7 @@ export class AI extends Player {
   declare age: AIAge
   foundedTrees!: Set<RuntimeEntity>
   foundedBerrybushs!: Set<RuntimeEntity>
+  foundedWheats!: Set<RuntimeEntity>
   foundedGolds!: Set<RuntimeEntity>
   foundedStones!: Set<RuntimeEntity>
   foundedCoppers!: Set<RuntimeEntity>
@@ -142,6 +143,7 @@ export class AI extends Player {
     super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
     this.foundedTrees = new Set()
     this.foundedBerrybushs = new Set()
+    this.foundedWheats = new Set()
     this.foundedGolds = new Set()
     this.foundedStones = new Set()
     this.foundedCoppers = new Set()
@@ -149,6 +151,7 @@ export class AI extends Player {
     this.foundedResources = {
       [RESOURCE_TYPES.tree]: this.foundedTrees,
       [RESOURCE_TYPES.berrybush]: this.foundedBerrybushs,
+      [RESOURCE_TYPES.wheat]: this.foundedWheats,
       [RESOURCE_TYPES.stone]: this.foundedStones,
       [RESOURCE_TYPES.gold]: this.foundedGolds,
       [RESOURCE_TYPES.copper]: this.foundedCoppers,
@@ -699,12 +702,11 @@ export class AI extends Player {
       maxCavalry: state.maxCavalry,
       stables: this.buildingsByTypes([BUILDING_TYPES.stable]),
       houses: this.buildingsByTypes([BUILDING_TYPES.house]),
-      farms: this.buildingsByTypes([BUILDING_TYPES.farm]),
+      farms: [...this.foundedWheats],
       granarys: this.buildingsByTypes([BUILDING_TYPES.granary]),
       storagepits: this.buildingsByTypes([BUILDING_TYPES.storagePit]),
       markets: this.buildingsByTypes([BUILDING_TYPES.market]),
       watchTowers: this.buildingsByTypes([BUILDING_TYPES.watchTower]),
-      sentryTowers: this.buildingsByTypes([BUILDING_TYPES.sentryTower]),
       notBuiltHouses: state.notBuiltHouses,
     }
   }
@@ -853,7 +855,11 @@ export class AI extends Player {
         continue
       }
 
-      if (chief.inactif && distanceToAnchor <= CHIEF_FORUM_GUARD_RANGE && now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)) {
+      if (
+        chief.inactif &&
+        distanceToAnchor <= CHIEF_FORUM_GUARD_RANGE &&
+        now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)
+      ) {
         const guardCell = getPositionInGridAroundInstance(anchor, this.context.map.grid, [2, 6], 0)
         this.chiefWanderReadyAt.set(chief.label, now + this.context.map.randomRange(6000, 12000))
         if (guardCell) {
@@ -916,7 +922,7 @@ export class AI extends Player {
     const granarys = this.buildingsByTypes([BUILDING_TYPES.granary])
     const barracks = this.buildingsByTypes([BUILDING_TYPES.barracks])
     const markets = this.buildingsByTypes([BUILDING_TYPES.market])
-    const farms = this.buildingsByTypes([BUILDING_TYPES.farm])
+    const farms = [...this.foundedWheats]
     if (DEBUG)
       console.log(
         `Towncenters: ${towncenters.length}, Houses: ${houses.length}, StoragePits: ${storagepits.length}, Granaries: ${granarys.length}, Barracks: ${barracks.length}, Markets: ${markets.length}`

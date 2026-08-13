@@ -14,19 +14,23 @@ import {
   canPlaceBuildingAt,
   playSoundCue,
   isBuildingLimitReached,
+  getBuildingFootprintCells,
 } from '../../lib'
 import { Building } from '../building'
 import type { BuildingOptions } from '../building'
+import { Resource } from '../Resource'
 import { Unit } from '../unit'
 import type { UnitSpawnOptions } from '../unit'
 import {
   ACTION_TYPES,
   AGE_GATE_MAX_UNLOCKABLE_VALUE,
   AGE_UP_ENABLED,
+  BUILDING_TYPES,
   FAMILY_TYPES,
   PLAYER_TYPES,
   POPULATION_MAX,
   RESOURCE_NAMES,
+  RESOURCE_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
 } from '../../constants'
@@ -37,7 +41,6 @@ import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
-import { refreshOwnerTowers } from '../../lib/buildings/towers'
 import type { GameContextLike } from '../../types/context'
 import type { ConfigOperation, ConfigValue, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -58,6 +61,10 @@ type NumericConfigOperation = ConfigOperation & {
 type PlayerTechnologyValue = ConfigValue | ConfigValue[]
 type PlayerTechnologyHandler = (value?: ConfigValue) => void
 type QueuedTechnology = { type: string; config: TechnologyConfig }
+type PlayerResourceMemory = {
+  foundedWheats?: Set<RuntimeEntity>
+  foundedResources?: Record<string, Set<RuntimeEntity>>
+}
 
 function isNumericConfigOperation(operation: ConfigOperation): operation is NumericConfigOperation {
   return (
@@ -363,9 +370,6 @@ export class Player implements PlayerLike {
         case 'refreshWalls':
           refreshOwnerWalls(this)
           break
-        case 'refreshTowers':
-          refreshOwnerTowers(this)
-          break
       }
     }
 
@@ -525,7 +529,37 @@ export class Player implements PlayerLike {
     )
   }
 
+  plantWheatField(i: number, j: number) {
+    const {
+      context: { menu, map },
+    } = this
+    const config = this.config.buildings[BUILDING_TYPES.farm]
+    const placementConfig = { ...config, type: BUILDING_TYPES.farm }
+    if (
+      canAfford(this, config.cost) &&
+      this.isBuildingEligible(BUILDING_TYPES.farm) &&
+      canPlaceBuildingAt(map.grid, i, j, placementConfig)
+    ) {
+      const planted: RuntimeEntity[] = []
+      payCost(this, config.cost)
+      const size = typeof config.size === 'number' ? config.size : 4
+      for (const cell of getBuildingFootprintCells(i, j, map.grid, size)) {
+        const wheat = map.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.wheat }, this.context))
+        map.resources.add(wheat)
+        planted.push(wheat)
+      }
+      const memory = this as PlayerResourceMemory
+      planted.forEach(wheat => memory.foundedWheats?.add(wheat))
+      planted.forEach(wheat => memory.foundedResources?.[RESOURCE_TYPES.wheat]?.add(wheat))
+      this.isPlayed && menu.updateTopbar()
+      menu.updateResourcesMiniMap?.()
+      return true
+    }
+    return false
+  }
+
   buyBuilding(i: number, j: number, type: string) {
+    if (type === BUILDING_TYPES.farm) return this.plantWheatField(i, j)
     const {
       context: { menu, map },
     } = this
@@ -549,7 +583,8 @@ export class Player implements PlayerLike {
     const { context } = this
     const isHeroUnit = !creationOptions.preserveType && this.isPlayed && !this.units.length
     const unitGender = options.gender ?? this.gender
-    const name = options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
+    const name =
+      options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = context.map.addChild(
       new Unit(

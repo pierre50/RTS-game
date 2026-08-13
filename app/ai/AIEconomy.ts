@@ -1,5 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { getClosestInstance, getGaiaAnimals, instancesDistance } from '../lib'
+import { getClosestInstance, getGaiaAnimals, instancesDistance, isWheatMature } from '../lib'
 import type { RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
@@ -482,7 +482,7 @@ export class AIEconomy {
     availableVillagers: AIEntityLike[],
     workerSnapshot: AIWorkerSnapshot,
     targets: AIWorkerTargets,
-    emptyFarms: AIBuildingLike[]
+    emptyFarms: AIEntityLike[]
   ): number {
     const { ai } = this
     const { villagersForaging = [], villagersHunting = [], villagersFarming = [] } = workerSnapshot
@@ -498,12 +498,12 @@ export class AIEconomy {
         villager.action === ACTION_TYPES.hunt && villager.dest && !(villager.dest as AIEntityLike).isDead
     )
     const farmCandidates = new Set([
-      ...emptyFarms.filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0),
+      ...emptyFarms.filter(farm => !farm.isDead && (farm.quantity || 0) > 0 && isWheatMature(farm)),
       ...villagersFarming
         .map((villager: AIEntityLike) => villager.dest)
         .filter(
-          (farm): farm is AIBuildingLike =>
-            !!farm && 'isDead' in farm && !farm.isDead && (Number(farm.quantity) || 0) > 0
+          (farm): farm is AIEntityLike =>
+            !!farm && 'isDead' in farm && !farm.isDead && (Number(farm.quantity) || 0) > 0 && isWheatMature(farm)
         ),
     ])
     const sources = {
@@ -558,7 +558,7 @@ export class AIEconomy {
     actions += this.assignHunters(availableVillagers, activeLiveHunters, sourceTargets.hunt, sources.animals)
 
     const availableFarms = emptyFarms
-      .filter(farm => farm.isBuilt && !farm.isDead && (farm.quantity || 0) > 0 && !farm.isUsedBy)
+      .filter(farm => !farm.isDead && (farm.quantity || 0) > 0 && !farm.isUsedBy && isWheatMature(farm))
       .sort((a, b) => {
         const worker = availableVillagers[0]
         if (!worker) return 0
@@ -681,7 +681,7 @@ export class AIEconomy {
   }: AIVillagerActionOptions): number {
     const workerSnapshot = this.getWorkerSnapshot(villagers)
     const targets = this.getResourceTargets(villagers.length)
-    const emptyFarms = farms.filter(({ isUsedBy }) => !isUsedBy)
+    const emptyFarms = farms.filter(farm => !farm.isUsedBy && isWheatMature(farm))
 
     if (debug)
       console.log(

@@ -23,10 +23,6 @@ function loadModule(relativePath, mocks) {
 function loadDisplayName(t = key => key) {
   return loadModule('app/ui/entityDisplayName.ts', {
     '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
-    '../lib/buildings/towers': {
-      getTowerType: owner => owner?.towerType || 'WatchTower',
-      isTower: building => building?.type === 'WatchTower',
-    },
     '../lib/lang': { t },
   })
 }

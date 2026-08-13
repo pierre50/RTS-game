@@ -1,6 +1,6 @@
 {
   "House": {
-    "size": 3,
+    "size": 2,
     "sight": 6,
     "totalHitPoints": 75,
     "constructionTime": 20,
@@ -11,41 +11,23 @@
     },
     "sounds": {
       "create": "house-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "Barracks": {
-    "size": 5,
+    "size": 3,
     "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 30,
     "cost": {
       "wood": 125
     },
-    "units": [
-      "Fantassin"
-    ],
+    "units": ["Fantassin"],
     "sounds": {
       "create": "barracks-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "Granary": {
@@ -56,32 +38,12 @@
     "cost": {
       "wood": 120
     },
-    "accept": [
-      "berry",
-      "wheat",
-      "meat"
-    ],
-    "technologies": [
-      "ResearchWatchTower",
-      "ResearchSentryTower",
-      "ResearchSmallWall",
-      "UpgradeMediumWall",
-      "UpgradeFortification",
-      "ResearchGuardTower",
-      "ResearchBallistaTower"
-    ],
+    "accept": ["berry", "wheat", "meat"],
+    "technologies": ["ResearchWatchTower", "ResearchSmallWall", "UpgradeMediumWall", "UpgradeFortification"],
     "sounds": {
       "create": "granary-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "StoragePit": {
@@ -92,13 +54,7 @@
     "cost": {
       "wood": 120
     },
-    "accept": [
-      "wood",
-      "stone",
-      "gold",
-      "copper",
-      "iron"
-    ],
+    "accept": ["wood", "stone", "gold", "copper", "iron"],
     "technologies": [
       "Toolworking",
       "Metalworking",
@@ -118,16 +74,8 @@
     ],
     "sounds": {
       "create": "storage-pit-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "ArcheryRange": {
@@ -139,22 +87,12 @@
       "wood": 150
     },
     "conditions": [],
-    "units": [
-      "Bowman"
-    ],
+    "units": ["Bowman"],
     "technologies": [],
     "sounds": {
       "create": "archery-range-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "Stable": {
@@ -172,32 +110,18 @@
         "value": "HorseTaming"
       }
     ],
-    "units": [
-      "Fantassin",
-      "Bowman"
-    ],
+    "units": ["Fantassin", "Bowman"],
     "technologies": [],
     "sounds": {
       "create": "horse-4",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     },
     "mountingTime": 20
   },
   "Farm": {
-    "size": 3,
-    "sight": 6,
-    "totalHitPoints": 50,
-    "constructionTime": 30,
-    "totalQuantity": 250,
+    "size": 4,
+    "constructionTime": 0,
     "cost": {
       "wood": 75
     },
@@ -207,16 +131,7 @@
         "op": "includes",
         "value": "Farming"
       }
-    ],
-    "sounds": {
-      "create": "farm-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": []
-    }
+    ]
   },
   "WatchTower": {
     "size": 2,
@@ -225,9 +140,7 @@
     "constructionTime": 80,
     "range": 6,
     "projectile": "Arrow",
-    "equipment": [
-      "watch_tower_arrow"
-    ],
+    "equipment": ["watch_tower_arrow"],
     "rateOfFire": 1.5,
     "cost": {
       "stone": 150
@@ -246,51 +159,8 @@
     ],
     "sounds": {
       "create": "tower-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
-  "SentryTower": {
-    "size": 2,
-    "sight": 18,
-    "totalHitPoints": 150,
-    "constructionTime": 80,
-    "range": 7,
-    "projectile": "Arrow",
-    "equipment": [
-      "sentry_tower_arrow"
-    ],
-    "rateOfFire": 1.5,
-    "cost": {
-      "stone": 150
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">",
-        "value": 99
-      }
-    ],
-    "sounds": {
-      "create": "tower-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "SmallWall": {
@@ -315,16 +185,8 @@
     ],
     "sounds": {
       "create": "wall-fortification-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "Market": {
@@ -348,45 +210,24 @@
     ],
     "sounds": {
       "create": "market-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "Temple": {
-    "size": 3,
+    "size": 2,
     "sight": 10,
     "totalHitPoints": 350,
     "constructionTime": 60,
     "cost": {
       "wood": 200
     },
-    "units": [
-      "Priest"
-    ],
-    "technologies": [
-      "Astrology",
-      "Monotheism"
-    ],
+    "units": ["Priest"],
+    "technologies": ["Astrology", "Monotheism"],
     "sounds": {
       "create": "temple-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "TownCenter": {
@@ -398,26 +239,12 @@
     "cost": {
       "wood": 200
     },
-    "units": [
-      "Villager"
-    ],
-    "technologies": [
-      "ToolAge",
-      "BronzeAge",
-      "IronAge"
-    ],
+    "units": ["Villager"],
+    "technologies": ["ToolAge", "BronzeAge", "IronAge"],
     "sounds": {
       "create": "town-center-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
   "SiegeWorkshop": {
@@ -442,86 +269,8 @@
     ],
     "sounds": {
       "create": "siege-workshop-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
-  "GuardTower": {
-    "size": 3,
-    "sight": 20,
-    "totalHitPoints": 200,
-    "constructionTime": 80,
-    "range": 8,
-    "projectile": "Arrow",
-    "equipment": [
-      "guard_tower_arrow"
-    ],
-    "rateOfFire": 1.5,
-    "cost": {
-      "stone": 150
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">",
-        "value": 99
-      }
-    ],
-    "sounds": {
-      "create": "tower-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
-    }
-  },
-  "BallistaTower": {
-    "size": 2,
-    "sight": 22,
-    "totalHitPoints": 200,
-    "constructionTime": 80,
-    "range": 8,
-    "projectile": "Bolt",
-    "equipment": [
-      "ballista_tower_bolt"
-    ],
-    "rateOfFire": 3,
-    "cost": {
-      "stone": 150
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">",
-        "value": 99
-      }
-    ],
-    "sounds": {
-      "create": "tower-completed-selected",
-      "burning": [
-        "building-burning",
-        "building-burning-2",
-        "building-burning-3"
-      ],
-      "collapse": [
-        "building-destroyed",
-        "building-destroyed-2",
-        "building-destroyed-3"
-      ]
+      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   }
 }

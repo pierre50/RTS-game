@@ -26,15 +26,20 @@ function loadBuildingPlacer() {
       },
     },
     '../lib': {
+      cartesianToIsometric: (i, j) => [i * 32 - j * 32, i * 16 + j * 16],
       isometricToCartesian: () => [0, 0],
       canAfford: () => true,
       canPlaceBuildingAt: () => true,
       changeSpriteColor: () => {},
-      getBuildingFootprintRadius: size => Math.floor((size - 1) / 2),
-      getPlainCellsAroundPoint(startX, startY, grid, dist = 0) {
+      getBuildingFootprintCells(startX, startY, grid, size = 1) {
         const result = []
-        for (let i = Math.max(startX - dist, 0); i <= Math.min(startX + dist, grid.length - 1); i++) {
-          for (let j = Math.max(startY - dist, 0); j <= Math.min(startY + dist, grid[i].length - 1); j++) {
+        const footprintSize = Math.max(1, Math.floor(size))
+        const before = Math.floor((footprintSize - 1) / 2)
+        const after = footprintSize - before - 1
+        for (let i = startX - before; i <= startX + after; i++) {
+          if (!grid[i]) continue
+          for (let j = startY - before; j <= startY + after; j++) {
+            if (!grid[i][j]) continue
             result.push(grid[i][j])
           }
         }
@@ -45,11 +50,19 @@ function loadBuildingPlacer() {
       payCost: () => {},
     },
     '../constants': {
-      BUILDING_TYPES: { smallWall: 'SmallWall' },
+      BUILDING_TYPES: { farm: 'Farm', smallWall: 'SmallWall' },
       COLOR_GREEN: 0x00ff00,
       COLOR_RED: 0xff0000,
       LABEL_TYPES: { sprite: 'sprite' },
+      RESOURCE_TYPES: { wheat: 'Wheat' },
       UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../classes/Resource': {
+      Resource: class {
+        constructor(options) {
+          Object.assign(this, options)
+        }
+      },
     },
     '../lib/buildings/walls': {
       getWallTexture: () => ({}),
@@ -110,4 +123,56 @@ test('hero wall preview rejects the hero cell', () => {
 
   assert.equal(placer.canWallUseCell(grid[2][2], owner), false)
   assert.equal(placer.canWallUseCell(grid[1][2], owner), true)
+})
+
+test('farm placement creates a 4x4 neutral wheat field instead of a building', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const grid = createGrid(6)
+  const created = []
+  const paid = []
+  const controls = {
+    context: {
+      map: {
+        grid,
+        resources: new Set(),
+        addChild: child => {
+          created.push(child)
+          return child
+        },
+      },
+      menu: {
+        selection: null,
+        setActionTarget: () => {},
+        updateTopbar: () => {},
+      },
+      player: {
+        isPlayed: true,
+        wood: 100,
+        buyBuilding: (i, j, type) => {
+          paid.push([i, j, type])
+          for (let x = i - 1; x <= i + 2; x++) {
+            for (let y = j - 1; y <= j + 2; y++) {
+              const wheat = { i: x, j: y, type: 'Wheat' }
+              created.push(wheat)
+              controls.context.map.resources.add(wheat)
+            }
+          }
+          return true
+        },
+      },
+    },
+    mouseBuilding: { type: 'Farm', size: 4, cost: { wood: 75 } },
+    removeMouseBuilding: () => {},
+    isHeroControlActive: () => false,
+  }
+  const placer = new BuildingPlacer(controls)
+
+  assert.equal(placer.placeWheatField(grid[2][2], controls.mouseBuilding), true)
+  assert.deepEqual(paid, [[2, 2, 'Farm']])
+  assert.equal(created.length, 16)
+  assert.equal(controls.context.map.resources.size, 16)
+  assert.deepEqual(
+    created.map(resource => resource.type),
+    Array.from({ length: 16 }, () => 'Wheat')
+  )
 })

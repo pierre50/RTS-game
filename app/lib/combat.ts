@@ -1,7 +1,6 @@
 import {
   ACTION_TYPES,
   BUCKET_SIZE,
-  BUILDING_TYPES,
   FAMILY_TYPES,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
@@ -36,6 +35,7 @@ export type CombatEntity = {
   trainingUnit?: CombatEntity | null
   heroDefenseActive?: boolean
   showHeroDefenseFlash?: () => void
+  sprite?: unknown
   context?: {
     map?: {
       grid?: Array<Array<{ border?: boolean; category?: string; solid?: boolean }>>
@@ -260,6 +260,20 @@ function isVillagerOrHero(source?: CombatEntity | null): boolean {
   return source?.type === UNIT_TYPES.villager || source?.type === UNIT_TYPES.hero
 }
 
+export function isWheatMature(target?: CombatEntity | null): boolean {
+  if (!target || target.type !== RESOURCE_TYPES.wheat) return false
+  const sprite = target.sprite as { currentFrame?: number; textures?: unknown[] } | null | undefined
+  if (
+    !sprite ||
+    typeof sprite.currentFrame !== 'number' ||
+    !Array.isArray(sprite.textures) ||
+    !sprite.textures.length
+  ) {
+    return false
+  }
+  return sprite.currentFrame >= sprite.textures.length - 1
+}
+
 function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
   return Boolean(source.owner?.technologies?.includes(technology))
 }
@@ -389,9 +403,8 @@ export const getActionCondition = (
     farm: () =>
       isVillagerOrHero(source) &&
       ownerHasTechnology(source, 'Farming') &&
-      target.type === BUILDING_TYPES.farm &&
-      (target.hitPoints ?? 0) > 0 &&
-      target.owner?.label === source.owner?.label &&
+      target.type === RESOURCE_TYPES.wheat &&
+      isWheatMature(target) &&
       (target.quantity ?? 0) > 0 &&
       (source.type === UNIT_TYPES.hero || !target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,

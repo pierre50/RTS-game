@@ -30,7 +30,7 @@ type GenerationCellOptions = {
 type CellDefinition = {
   category?: string
   color?: string | number
-  assets: TextureRef[]
+  assets?: TextureRef[]
   [key: string]: string | TextureRef | TextureRef[] | number | boolean | undefined
 }
 
@@ -110,10 +110,10 @@ export class GenerationCell implements RuntimeCell {
     const definition = options.definition || (Assets.cache.get('config').cells[this.type] as CellDefinition)
     this.category = definition.category
     this.color = definition.color
-    this.assets = definition.assets
-    this.terrainTextureName = textureRefToString(
+    this.assets = definition.assets ?? []
+    const textureRef =
       options.textureName || getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) || this.assets[0]
-    )
+    this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
     const [x, y] = cartesianToIsometric(this.i, this.j)
     this.x = x
     this.y = y - this.z * CELL_DEPTH
@@ -179,7 +179,9 @@ export class GenerationCell implements RuntimeCell {
     const wasWater = this.category === 'Water'
     this.type = type
     Object.assign(this, definition)
-    this.terrainTextureName = textureRefToString(this.map.randomItem(this.assets))
+    this.assets = definition.assets ?? []
+    const textureRef = this.assets.length ? this.map.randomItem(this.assets) : null
+    this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
     if (wasWater !== (this.category === 'Water')) this.map.invalidateReliefCoastDistances()
   }
 

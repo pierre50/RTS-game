@@ -38,7 +38,9 @@ const { createSeededRandom } = loadPlainTsModule('app/lib/random.ts')
 
 function mapSettingsFromRuntimeConfig() {
   const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
-  const sizes = [...sizesSource.matchAll(/value:\s*(\d+),\s*idealSpawnRange:\s*\[(\d+),\s*(\d+)\](?:,\s*editorOnly:\s*true)?/g)]
+  const sizes = [
+    ...sizesSource.matchAll(/value:\s*(\d+),\s*idealSpawnRange:\s*\[(\d+),\s*(\d+)\](?:,\s*editorOnly:\s*true)?/g),
+  ]
     .map(([, size, minSpawns, maxSpawns]) => ({
       size: Number(size),
       minSpawns: Number(minSpawns),
@@ -690,6 +692,9 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
     type: resource.type,
     i: resource.i,
     j: resource.j,
+    ...(typeof resource.quantity === 'number' ? { quantity: resource.quantity } : {}),
+    ...(resource.textureName ? { textureName: resource.textureName } : {}),
+    ...(resource.startsMature ? { startsMature: true } : {}),
   }))
   return {
     format: 'map-blueprint',

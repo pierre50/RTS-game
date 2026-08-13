@@ -1,11 +1,11 @@
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   FAMILY_TYPES,
   LOADING_FOOD_TYPES,
   LOADING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
+  RESOURCE_TYPES,
   RESOURCE_STOCKPILE_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
@@ -39,7 +39,6 @@ import {
   XP_CONVERT_SUCCESS,
   XP_FELL_TREE_TICK,
 } from '../../lib/unitExperience'
-import { getTowerType, isTower } from '../../lib/buildings/towers'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
@@ -59,6 +58,7 @@ const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEnti
   Copper: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
   Iron: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
   Berrybush: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
+  Wheat: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),
   Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
 }
 
@@ -80,6 +80,10 @@ function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value i
 
 function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value is ResourceEntity {
   return isRuntimeEntity(value) && value.family === FAMILY_TYPES.resource
+}
+
+function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity | ResourceEntity {
+  return isResourceEntity(value) && value.type === RESOURCE_TYPES.wheat
 }
 
 const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined => {
@@ -131,10 +135,7 @@ function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
 
 function applyLoadingWorkAssets(unit: UnitEntity): void {
   applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: true })
-  if (
-    unit.currentSheet &&
-    (unit.currentSheet === SHEET_TYPES.standing || unit.currentSheet === SHEET_TYPES.walking)
-  ) {
+  if (unit.currentSheet && (unit.currentSheet === SHEET_TYPES.standing || unit.currentSheet === SHEET_TYPES.walking)) {
     unit.setTextures?.(unit.currentSheet)
   }
 }
@@ -226,11 +227,10 @@ export class UnitActions {
   startMiningResource(action: string | null | undefined): void {
     const config = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(entry => entry.action === action)
     if (!config) return
-    this.startGathering(
-      config.loadingType,
-      this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre),
-      { dieOnEmpty: Boolean(config.dieOnEmpty), gatherEvery: config.gatherEvery }
-    )
+    this.startGathering(config.loadingType, this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre), {
+      dieOnEmpty: Boolean(config.dieOnEmpty),
+      gatherEvery: config.gatherEvery,
+    })
   }
 
   getConversionRules() {
@@ -284,7 +284,7 @@ export class UnitActions {
       newOwner.population += 1
       t.setTextures?.(SHEET_TYPES.standing)
     } else if (t.family === FAMILY_TYPES.building) {
-      t.assetType = t.assetType || (isTower(t) ? getTowerType(oldOwner) : t.type)
+      t.assetType = t.assetType || t.type
       removeFromOwnerList(oldOwner, 'buildings', t)
       addToOwnerList(newOwner, 'buildings', t)
       if (t.increasePopulation && t.populationCapacityApplied) {
@@ -515,14 +515,14 @@ export class UnitActions {
           unit.affectNewDest?.()
           return
         }
-        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+        const dest = isFarmHarvestTarget(unit.dest) ? unit.dest : null
         if (!dest) return
         if (!isHeroControlled(unit)) dest.isUsedBy = unit
         unit.setTextures?.(SHEET_TYPES.action)
         if (!unit.sprite) return
         lockManualHeroAction(unit)
         onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
-          const d = isBuildingEntity(unit.dest) ? unit.dest : null
+          const d = isFarmHarvestTarget(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(d)) {
             if ((d?.quantity ?? 0) <= 0) {
               d?.die?.()
@@ -664,10 +664,6 @@ export class UnitActions {
           const dest = isBuildingEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
             if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
-            if (dest?.type === BUILDING_TYPES.farm && !dest.isUsedBy && !isHeroControlled(unit)) {
-              unit.sendToFarm?.(dest, true)
-              return
-            }
             unit.affectNewDest?.()
             return
           }
@@ -694,10 +690,6 @@ export class UnitActions {
             if (!dest.isBuilt) {
               dest.updateHitPoints?.(unit.action ?? '')
               dest.isBuilt = true
-              if (dest.type === BUILDING_TYPES.farm && !dest.isUsedBy && !isHeroControlled(unit)) {
-                unit.sendToFarm?.(dest, true)
-                return
-              }
             }
             if (unit.continueBuildingQueue?.()) return
             unit.affectNewDest?.()

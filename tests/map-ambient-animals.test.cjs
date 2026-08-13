@@ -51,6 +51,7 @@ function loadMapGeneration() {
       getPositionInGridAroundInstance: () => null,
       canPlaceBuildingAt: () => false,
       hasWaterBorderWithin: () => false,
+      getBuildingFootprintCells: () => [],
       getBuildingFootprintRadius: () => 1,
       getPlainCellsAroundPoint: () => [],
     },

@@ -61,10 +61,10 @@ function loadHeroTools(overrides = {}) {
         minestone: 'minestone',
         takemeat: 'takemeat',
       },
-      BUILDING_TYPES: { farm: 'Farm', townCenter: 'TownCenter' },
+      BUILDING_TYPES: { townCenter: 'TownCenter' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
-      FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
+      FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
       LOADING_TYPES: {
         berry: 'berry',
         gold: 'gold',
@@ -73,6 +73,7 @@ function loadHeroTools(overrides = {}) {
         wheat: 'wheat',
         wood: 'wood',
       },
+      RESOURCE_TYPES: { wheat: 'Wheat' },
       SHEET_TYPES: {
         action: 'actionSheet',
         harvest: 'harvestSheet',
@@ -710,26 +711,23 @@ test('hero resource tools get a small hero contact forgiveness band', () => {
   ])
 })
 
-test('free-hand interact starts farming an aimed farm instead of whiffing', () => {
-  const farm = {
-    family: 'building',
-    hitPoints: 50,
+test('free-hand interact starts farming aimed wheat instead of whiffing', () => {
+  const wheat = {
+    family: 'resource',
     i: 1,
-    isBuilt: true,
     isDead: false,
     isDestroyed: false,
     isUsedBy: { label: 'villager-1' },
     j: 0,
-    owner: { label: 'player' },
-    quantity: 100,
-    type: 'Farm',
+    quantity: 10,
+    type: 'Wheat',
     x: 10,
     y: 0,
   }
   const calls = []
   const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === farm && action === 'farm' },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [farm].filter(predicate) },
+    './combat': { getActionCondition: (_hero, target, action) => target === wheat && action === 'farm' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [wheat].filter(predicate) },
     './grid/queries': {
       getClosestInstanceWithPath: (_hero, candidates) =>
         candidates.length ? { instance: candidates[0], path: [] } : null,
@@ -742,7 +740,7 @@ test('free-hand interact starts farming an aimed farm instead of whiffing', () =
     loading: 0,
     loadingMax: { wheat: 10 },
     loadingType: null,
-    owner: farm.owner,
+    owner: { label: 'player' },
     isUnitAtDest: () => true,
     getAction: action => calls.push(['getAction', action]),
     setDest: target => calls.push(['setDest', target]),
@@ -752,7 +750,7 @@ test('free-hand interact starts farming an aimed farm instead of whiffing', () =
   assert.equal(hero.work, 'farmer')
   assert.equal(hero.action, 'farm')
   assert.deepEqual(calls, [
-    ['setDest', farm],
+    ['setDest', wheat],
     ['getAction', 'farm'],
   ])
 })

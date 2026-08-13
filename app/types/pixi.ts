@@ -19,6 +19,7 @@ export type SpritesheetLike<TTexture = Texture> = {
   data?: {
     animationSpeed?: number
     frames?: Record<string, TextureFrameData>
+    loop?: boolean
   }
   textures: TextureMapLike<TTexture>
 }

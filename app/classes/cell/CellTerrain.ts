@@ -1,4 +1,4 @@
-import { Assets, Sprite, type Container, type ContainerChild, type Texture } from 'pixi.js'
+import { Assets, Sprite, Texture, type Container, type ContainerChild } from 'pixi.js'
 import {
   instancesDistance,
   getCellsAroundPoint,
@@ -19,10 +19,6 @@ type ZIndexedPoint = { x: number; y: number; z?: number | null }
 
 type Direction = 'west' | 'north' | 'south' | 'east'
 type BorderVariantMap = Record<number, number[]>
-
-const TERRAIN_SHEETS = {
-  water: 'terrain/water',
-} as const
 
 const BORDER_SHEETS = {
   desertRelief: 'desert-relief',
@@ -327,12 +323,11 @@ export class CellTerrain {
   setWater(): void {
     const { cell } = this
     if (!cell.sprite) return
-    const resourceName = TERRAIN_SHEETS.water
-    cell.sprite.texture = getTextureByFrame(resourceName, 0, Assets)
+    cell.sprite.texture = Texture.EMPTY
     cell.sprite.renderable = false
     cell.type = 'Water'
     cell.category = 'Water'
-    cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: 0 })
+    cell.terrainTextureName = ''
     asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
   }
 

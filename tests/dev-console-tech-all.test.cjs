@@ -39,9 +39,6 @@ function loadPlayerActions() {
         isGameSpeedPreset: () => true,
       }
     }
-    if (request === '../../lib/buildings/towers') {
-      return { refreshOwnerTowers: () => {} }
-    }
     if (request === '../../lib/equipmentStats') {
       return { refreshUnitEquipmentStats: unit => unit.calls.push(['refreshUnitEquipmentStats']) }
     }

@@ -13,7 +13,7 @@ import {
   WORK_TYPES,
 } from '../constants'
 import { getHeroInteractionTargetPoint, isHeroActionInRange, isHeroInteractionTargetReachable } from './heroActionRange'
-import { getActionCondition, type CombatEntity } from './combat'
+import { getActionCondition, isWheatMature, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
 import { applyDiplomaticAggression, canTriggerDiplomaticAggression } from './diplomaticAggression'
@@ -236,7 +236,12 @@ function resolveHeroGatherAction(
   action: string,
   work: string
 ): (() => void) | null {
-  if (!getActionCondition(hero, target, action)) return null
+  if (!getActionCondition(hero, target, action)) {
+    if (action === ACTION_TYPES.farm && resourceKind(target) === 'Wheat' && !isWheatMature(target)) {
+      hero.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
+    }
+    return null
+  }
   if (!heroHasGatherSpace(hero, action, work)) {
     hero.context?.menu?.showMessage(t('heroInventoryFull'), 'warning')
     return null
@@ -249,10 +254,10 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
     action: 'gather',
     matches: target =>
       resourceKind(target) === 'Berrybush' ||
-      (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) ||
+      resourceKind(target) === 'Wheat' ||
       (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
-      if (target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
+      if (resourceKind(target) === 'Wheat') {
         return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
       }
       if (resourceKind(target) === 'Berrybush') {
@@ -530,8 +535,9 @@ function getDirectionalTargets<T extends RuntimeEntity>(
   return candidates
     .map(target => {
       const aimPoint = getHeroInteractionTargetPoint(hero, target)
-      const targetHalfAngle =
-        [FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '') ? LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE : halfAngle
+      const targetHalfAngle = [FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')
+        ? LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE
+        : halfAngle
       return {
         target,
         angle: getAimDelta(hero, aimPoint),
@@ -592,10 +598,7 @@ function canBeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: Her
     return false
   }
   const combatSource = getHeroWeaponCombatSource(hero, tool)
-  return (
-    getActionCondition(combatSource, target, ACTION_TYPES.attack) ||
-    canTriggerDiplomaticAggression(hero, target)
-  )
+  return getActionCondition(combatSource, target, ACTION_TYPES.attack) || canTriggerDiplomaticAggression(hero, target)
 }
 
 function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): RuntimeEntity | null {
@@ -608,9 +611,7 @@ function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): Run
 }
 
 function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {
-  if (contextAction === 'gather' && target.family === FAMILY_TYPES.building && target.type === BUILDING_TYPES.farm) {
-    return ACTION_TYPES.farm
-  }
+  if (contextAction === 'gather' && resourceKind(target) === 'Wheat') return ACTION_TYPES.farm
   if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
   if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (contextAction === 'chop' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
