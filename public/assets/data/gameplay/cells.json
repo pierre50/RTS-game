@@ -218,15 +218,5 @@
         "frame": 0
       }
     ]
-  },
-  "DeepWater": {
-    "category": "Water",
-    "color": "#17277B",
-    "assets": [
-      {
-        "sheet": "terrain/deep-water",
-        "frame": 0
-      }
-    ]
   }
 }

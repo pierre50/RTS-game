@@ -565,10 +565,6 @@ export default class Map extends Container {
     return this.mapTerrain.formatCellsPatchBorders()
   }
 
-  classifyDeepWater(): void {
-    return this.mapTerrain.classifyDeepWater()
-  }
-
   // MapFog
   bakeTerrainToChunks(): void {
     this.mapFog.bakeTerrainToChunks()

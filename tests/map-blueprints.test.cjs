@@ -6,8 +6,8 @@ const { execFileSync } = require('node:child_process')
 const test = require('node:test')
 
 const ROOT = path.join(__dirname, '..')
-const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', 'DeepWater']
-const DEEP_WATER_INDEX = TERRAIN_TYPES.indexOf('DeepWater')
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
+const WATER_INDEX = TERRAIN_TYPES.indexOf('Water')
 
 function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   if (w && n) return '001'
@@ -25,7 +25,7 @@ function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   return null
 }
 
-test('pregenerated map blueprints persist deep water terrain', () => {
+test('pregenerated map blueprints persist water terrain', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'map-blueprint-'))
 
   try {
@@ -43,15 +43,13 @@ test('pregenerated map blueprints persist deep water terrain', () => {
     const terrain = Buffer.from(blueprint.terrain, 'base64')
     const relief = Buffer.from(blueprint.relief, 'base64')
     const width = blueprint.size + 1
-    let deepWaterBorderCandidates = 0
     let shoreLevelViolations = 0
     let reliefStepViolations = 0
     let waterBufferViolations = 0
     let spawnPlateauViolations = 0
 
     const isWater = (i, j) => {
-      const type = TERRAIN_TYPES[terrain[i * width + j]]
-      return type === 'Water' || type === 'DeepWater'
+      return terrain[i * width + j] === WATER_INDEX
     }
     const getRelief = (i, j) => relief.readInt8(i * width + j)
 
@@ -82,29 +80,6 @@ test('pregenerated map blueprints persist deep water terrain', () => {
         if (waterDistances[next] <= waterDistances[index] + 1) continue
         waterDistances[next] = waterDistances[index] + 1
         waterQueue.push(next)
-      }
-    }
-
-    for (let i = 0; i <= blueprint.size; i++) {
-      for (let j = 0; j <= blueprint.size; j++) {
-        if (terrain[i * width + j] !== DEEP_WATER_INDEX) continue
-        const touchesNonDeepWater = [
-          [-1, 0],
-          [1, 0],
-          [0, -1],
-          [0, 1],
-        ].some(([di, dj]) => {
-          const ni = i + di
-          const nj = j + dj
-          return (
-            ni < 0 ||
-            ni > blueprint.size ||
-            nj < 0 ||
-            nj > blueprint.size ||
-            terrain[ni * width + nj] !== DEEP_WATER_INDEX
-          )
-        })
-        if (touchesNonDeepWater) deepWaterBorderCandidates++
       }
     }
 
@@ -171,8 +146,7 @@ test('pregenerated map blueprints persist deep water terrain', () => {
       }
     }
 
-    assert.ok(terrain.includes(DEEP_WATER_INDEX), 'blueprint terrain should include DeepWater cells')
-    assert.ok(deepWaterBorderCandidates > 0, 'blueprint terrain should include DeepWater border candidates')
+    assert.ok(terrain.includes(WATER_INDEX), 'blueprint terrain should include Water cells')
     assert.equal(shoreLevelViolations, 0, 'blueprint relief should keep shore cells at water level')
     assert.equal(waterBufferViolations, 0, 'blueprint relief should keep a three-cell water buffer at z=0')
     assert.equal(spawnPlateauViolations, 0, 'blueprint relief should keep Town Center spawn zones at z=0')

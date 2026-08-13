@@ -869,13 +869,12 @@ export class MapTerrain {
   }
 
   formatCellsWaterBorder(): void {
-    const isAnyWater = (type: string | undefined) => type === 'Water' || type === 'DeepWater'
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category === 'Water') continue
         const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell | undefined) =>
-          isAnyWater(neighbor?.type)
+          neighbor?.category === 'Water'
         )
         const frame = getWaterBorderFrame(flags)
         if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesertSand, frame)
@@ -958,40 +957,6 @@ export class MapTerrain {
     // instead of the reverse where the generic water overlay would win first.
     measure('terrainPatchBorders', () => this.map.formatCellsPatchBorders())
     measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
-  }
-
-  classifyDeepWater(): void {
-    const config = Assets.cache.get('config') as TerrainConfig
-    const waterDef = config?.cells?.['Water']
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category !== 'Water') continue
-
-        const def = waterDef
-        cell.type = 'Water'
-        if (def) {
-          cell.category = def.category
-          if (typeof def.color === 'string') cell.color = def.color
-          cell.assets = def.assets
-        }
-        const textureRef = getDeterministicCellVariant(def?.assets, i, j, this.map.seed)
-        if (textureRef) cell.terrainTextureName = textureRefToString(textureRef)
-        if (!cell.sprite) {
-          continue
-        }
-        if (!textureRef) continue
-        const texture = getTexture(textureRef, Assets)
-        if (!texture) continue
-        cell.sprite.texture = texture
-        cell.sprite.renderable = false
-        cell.sprite.anchor.set(
-          Math.floor(texture.width / 2) / texture.width,
-          Math.floor(texture.height / 2) / texture.height
-        )
-      }
-    }
   }
 
   // Also covers Dirt (the water-patch ground for Temperate/BlackForest/Jungle, see

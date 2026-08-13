@@ -35,9 +35,6 @@ export const GROUND_SET_CHANCE = 0//0.02
 // Water decorative sets (LABEL_TYPES.set, zIndex 2)
 // Small/medium sprites (width ≤ 57px): safe near any water cell
 export const WATER_SETS = ['environment/water/shore-set-1', 'environment/water/shore-set-2', 'environment/water/shore-set-3', 'environment/water/shore-set-4', 'environment/water/shore-set-5', 'environment/water/shore-set-6', 'environment/water/shore-set-7', 'environment/water/shore-set-8', 'environment/water/shore-set-9', 'environment/water/shore-set-10']
-// Large sprites (width > 64px, spills across cells): require deep water with no land in range
-export const WATER_SETS_DEEP = ['environment/water/deep-set-1', 'environment/water/deep-set-2']
-export const WATER_SET_DEEP_LAND_MIN_DIST = 3
 export const WATER_SET_CHANCE = 0//0.002
 
 // Bird ambience

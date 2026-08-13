@@ -32,6 +32,7 @@ function loadMapResources() {
       SPACED_RESOURCE_TYPES: ['Stone', 'Copper', 'Iron', 'Gold', 'Tree'],
       BIOME_TREE_CHANCE: {},
       BIOME_TREE_PLAYER_SAFE_DIST: 10,
+      WATER_BORDER_PLACEMENT_CLEARANCE: 2,
       getEnvironmentTerrainParams: environment => ({
         forestDensity:
           {
@@ -41,6 +42,9 @@ function loadMapResources() {
             Desert: 0.1,
           }[environment] ?? 0.2,
       }),
+    },
+    '../../lib': {
+      hasWaterBorderWithin: () => false,
     },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))

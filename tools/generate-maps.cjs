@@ -14,11 +14,8 @@ if (typeof globalThis.requestAnimationFrame !== 'function') {
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
-// Index must match MapGeneration#generateTerrain's raw output (0-5: Grass/Desert/Water/
-// Jungle/DarkForest/Dirt) for buildHeadlessMap's `TERRAIN[terrain[i][j]]` lookup to be
-// correct — DeepWater is never a raw generateTerrain value (only derived later from a
-// Water cell's coast distance), so it must come after, not collide with Dirt's slot.
-const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', 'DeepWater']
+// Index must match MapGeneration#generateTerrain's raw output.
+const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 // app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded
@@ -148,6 +145,19 @@ function getCellsAroundPoint(i, j, grid, radius, predicate) {
   return cells
 }
 
+function hasWaterBorderWithin(grid, i, j, radius) {
+  if (radius <= 0) return Boolean(grid[i]?.[j]?.waterBorder)
+
+  for (let x = Math.max(0, i - radius); x <= Math.min(grid.length - 1, i + radius); x++) {
+    const row = grid[x]
+    if (!row) continue
+    for (let y = Math.max(0, j - radius); y <= Math.min(row.length - 1, j + radius); y++) {
+      if (row[y]?.waterBorder) return true
+    }
+  }
+  return false
+}
+
 function getZoneInGridWithCondition(bounds, grid, radius, predicate) {
   for (let i = bounds.minX; i <= bounds.maxX; i++)
     for (let j = bounds.minY; j <= bounds.maxY; j++) {
@@ -265,6 +275,7 @@ function loadRuntimeGenerators() {
       Desert: 0,
     },
     BIOME_TREE_PLAYER_SAFE_DIST: 22,
+    WATER_BORDER_PLACEMENT_CLEARANCE: 2,
     ENVIRONMENT_TERRAIN_PARAMS,
     DEFAULT_ENVIRONMENT_ID,
     getEnvironmentTerrainParams: environment =>
@@ -279,6 +290,7 @@ function loadRuntimeGenerators() {
           getCellsAroundPoint,
           getDeterministicCellVariant,
           getZoneInGridWithCondition,
+          hasWaterBorderWithin,
         }
       }
       if (request === '../../constants') return constants
@@ -321,7 +333,6 @@ function loadRuntimeGenerators() {
 const { MapGeneration, MapTerrain, MapResources } = loadRuntimeGenerators()
 const runtimeTerrain = MapGeneration.prototype.generateTerrain
 const runtimeRelief = MapTerrain.prototype.generateMapRelief
-const runtimeClassifyDeepWater = MapTerrain.prototype.classifyDeepWater
 const runtimeClampReliefAroundWaterLevels = MapTerrain.prototype.clampReliefAroundWaterLevels
 const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefStepContinuity
 const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
@@ -334,6 +345,7 @@ const runtimeGenerateForestAroundPlayer = MapResources.prototype.generateForestA
 const runtimeFindNeutralResourceCenter = MapResources.prototype.findNeutralResourceCenter
 const runtimePlaceResourceGroup = MapResources.prototype.placeResourceGroup
 const runtimePlaceResourceGroupAt = MapResources.prototype.placeResourceGroupAt
+const runtimeGetSharedGroupTextureName = MapResources.prototype.getSharedGroupTextureName
 
 function coastDistances(map) {
   const n = map.size + 1
@@ -399,7 +411,7 @@ function buildHeadlessMap(
         i,
         j,
         type,
-        category: type === 'Water' || type === 'DeepWater' ? 'Water' : 'Land',
+        category: type === 'Water' ? 'Water' : 'Land',
         z: 0,
         y: 0,
         has: null,
@@ -453,7 +465,10 @@ function buildHeadlessMap(
   map.randomRange = (min, max) => Math.floor(map.random() * (max - min + 1) + min)
   map.randomItem = (items = []) => items[Math.floor(map.random() * items.length)]
   map.context = { map }
-  const resourcesScope = { map }
+  const resourcesScope = {
+    map,
+    getSharedGroupTextureName: (...args) => runtimeGetSharedGroupTextureName.apply(resourcesScope, args),
+  }
   map.generateForestAroundPlayer = (...args) => runtimeGenerateForestAroundPlayer.apply(resourcesScope, args)
   map.findNeutralResourceCenter = (...args) => runtimeFindNeutralResourceCenter.apply(resourcesScope, args)
   map.placeResourceGroup = (...args) => runtimePlaceResourceGroup.apply(resourcesScope, args)
@@ -639,7 +654,6 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   if (spawns.length !== spawnCount) return null
   const map = buildHeadlessMap(terrain, size, seed, spawns, spawnCount, environmentId)
   runtimeRelief.call({ map })
-  runtimeClassifyDeepWater.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
   const unrestrictedReliefDistances = new Int16Array((map.size + 1) ** 2).fill(map.size + 4)
   map.enforceReliefStepContinuity(unrestrictedReliefDistances, new Set(), waterLevelBounds)

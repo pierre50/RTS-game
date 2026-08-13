@@ -43,6 +43,11 @@ function loadGame() {
       isPlayedHeroDefeated: () => false,
     },
     '../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
+    '../lib/factions': {
+      adjustFactionRelation: faction => faction,
+      createFactionSave: () => ({}),
+      FACTION_SCORE: {},
+    },
     '../lib/combatFeedback': { clearAllCombatFeedback() {} },
     '../lib/ActionScheduler': {
       ActionScheduler: class ActionScheduler {
@@ -54,6 +59,22 @@ function loadGame() {
     '../serialization/SaveValidator': { validateSaveData() {} },
     '../serialization/SaveStorage': { save: () => ({}) },
     '../serialization/SaveSerializer': { serializeGame: () => ({}) },
+    '../serialization/CampaignSave': {
+      addChildWorldToCampaign: campaign => campaign,
+      createInitialCampaignSave: save => ({
+        format: 'campaign-v1',
+        version: 1,
+        currentWorldId: 'root',
+        heroParty: {},
+        worlds: { root: { id: 'root', state: save } },
+        worldGraph: { rootWorldId: 'root', nodes: {} },
+      }),
+      enterCampaignWorld: campaign => campaign,
+      getCurrentWorldState: campaign => campaign?.worlds?.[campaign.currentWorldId]?.state ?? null,
+      isCampaignSave: save => save?.format === 'campaign-v1',
+      returnToParentWorld: campaign => campaign,
+      updateCurrentWorldState: campaign => campaign,
+    },
     '../serialization/MapBlueprintLoader': { loadPregeneratedMapBlueprint: async () => null },
     '../dev-console/DevConsole': class DevConsole {},
     '../dev-console/actions/shared': { cleanupDebugArtifacts() {} },
@@ -64,6 +85,16 @@ function loadGame() {
       },
     },
     '../services/WeatherSystem': class WeatherSystem {},
+    '../services/LightSystem': {
+      LightSystem: class LightSystem {
+        destroy() {}
+      },
+    },
+    '../services/ShadowSystem': {
+      ShadowSystem: class ShadowSystem {
+        destroy() {}
+      },
+    },
     '../lib/settings': {
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: () => null,
@@ -75,8 +106,28 @@ function loadGame() {
         destroy() {}
       },
     },
+    '../ui/PortalTravelTransition': {
+      PortalTravelTransition: class PortalTravelTransition {
+        play() {}
+        destroy() {}
+      },
+    },
     '../services/AmbientBirds': class AmbientBirds {},
-    '../constants': { CELL_WIDTH: 64, CELL_HEIGHT: 32, AMBIENT_BIRD_WORLD_ZINDEX: 0 },
+    '../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
+    '../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
+    '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
+    '../lib/maths': {
+      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
+      getGroundReliefLevel: () => 0,
+      getInstanceZIndex: instance => (instance?.i ?? 0) + (instance?.j ?? 0),
+    },
+    '../constants': {
+      CELL_WIDTH: 64,
+      CELL_HEIGHT: 32,
+      AMBIENT_BIRD_WORLD_ZINDEX: 0,
+      ENVIRONMENT_IDS: ['temperate'],
+      PLAYER_TYPES: { human: 'human', computer: 'computer' },
+    },
   }
 
   const module = { exports: {} }
@@ -161,6 +212,29 @@ test('restored saves initialize hero controls before mounting runtime', async ()
   })
 
   assert.deepEqual(calls, ['createRuntime', 'createUiRuntime', 'generateFromJSON', 'controls.init', 'mountRuntime'])
+})
+
+test('portable hero state preserves mounted horse color across worlds', () => {
+  const Game = loadGame()
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  const target = {
+    context: {
+      scheduler: { elapsedMs: 1000 },
+    },
+  }
+
+  game._applyPortableUnitState(target, {
+    i: 0,
+    j: 0,
+    type: 'Hero',
+    mountedOnHorse: true,
+    horseColor: 'gray',
+    hitPoints: 20,
+    totalHitPoints: 30,
+  })
+
+  assert.equal(target.mountedOnHorse, true)
+  assert.equal(target.horseColor, 'gray')
 })
 
 test('pause applies to live units, buildings, gaia animals and corpses once', () => {

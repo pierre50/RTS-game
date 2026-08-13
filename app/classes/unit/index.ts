@@ -46,6 +46,7 @@ import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
 import { applyToolAppearance } from '../../lib/heroTools'
 import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
+import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
@@ -163,19 +164,6 @@ function getLevelSheetOverride(
 
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
-
-function getActionSheet(
-  work: string | null | undefined,
-  action: string | null | undefined,
-  AssetsRef: typeof Assets,
-  unit: UnitEntity
-) {
-  if (!work) {
-    return
-  }
-  const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
-  return AssetsRef.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
-}
 
 function isEntityDestination(dest: RuntimeEntity | RuntimeCell | null | undefined): dest is RuntimeEntity {
   return Boolean(dest && 'label' in dest)
@@ -417,7 +405,7 @@ export class Unit extends Instance implements UnitEntity {
     }
 
     this.eventMode = 'static'
-    this.actionSheet = this.actionSheet || getActionSheet(this.work, this.action, Assets, this)
+    this.actionSheet = this.actionSheet || getUnitWorkActionSheet(this, this.work, this.action)
     this.sprite = new AnimatedSprite(
       getAnimationFrames((this.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]
     )

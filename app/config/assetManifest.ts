@@ -57,7 +57,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'terrain/jungle': 'assets/terrain/jungle/texture.json',
     'terrain/dirt': 'assets/terrain/dirt/texture.json',
     'terrain/water': 'assets/terrain/water/texture.json',
-    'terrain/deep-water': 'assets/terrain/deep-water/texture.json',
   },
   border: {
     'desert-sand-water-border': 'assets/border/desert-sand-water-border/texture.json',

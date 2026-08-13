@@ -31,9 +31,7 @@ import {
   FLOOR_SET_CHANCE,
   GROUND_SETS,
   WATER_SETS,
-  WATER_SETS_DEEP,
   WATER_SET_CHANCE,
-  WATER_SET_DEEP_LAND_MIN_DIST,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
   WATER_BORDER_PLACEMENT_CLEARANCE,
@@ -144,7 +142,6 @@ export type MapGenerationMap = RuntimeMap & {
   ): Set<RuntimeCell>
   formatCellsWaterBorder(): void
   rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
-  classifyDeepWater(): void
   generateMapRelief(): void
   generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
   generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
@@ -467,7 +464,7 @@ export class MapGeneration {
 
   isShoreWaterCell(i: number, j: number): boolean {
     const cell = this.map.grid[i]?.[j]
-    return Boolean(cell?.category === 'Water' && cell.type !== 'DeepWater' && this._hasLandNeighborInRange(i, j, 1))
+    return Boolean(cell?.category === 'Water' && this._hasLandNeighborInRange(i, j, 1))
   }
 
   generateFromJSON(data: SavedGameData): void {
@@ -714,7 +711,6 @@ export class MapGeneration {
       measure('relief', () => this.map.generateMapRelief())
     }
     await this.yieldToBrowser()
-    measure('deepWater', () => this.map.classifyDeepWater())
     measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
     await onProgress('generatingPlayers', 0.48)
     measure('playerPlacement', () => this.map.placePlayers())
@@ -797,7 +793,6 @@ export class MapGeneration {
       measure('relief', () => this.map.generateMapRelief())
     }
     await this.yieldToBrowser()
-    measure('deepWater', () => this.map.classifyDeepWater())
     measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
     await onProgress('generatingFog', 0.72)
     measure('fogInit', () => this.map._initFogChunks())
@@ -1570,9 +1565,7 @@ export class MapGeneration {
   }
 
   _placeWaterSet(cell: RuntimeCell): void {
-    const nearLand = this._hasLandNeighborInRange(cell.i, cell.j, WATER_SET_DEEP_LAND_MIN_DIST)
-    const pool = nearLand ? WATER_SETS : [...WATER_SETS, ...WATER_SETS_DEEP]
-    const sheet = this.map.randomItem(pool)
+    const sheet = this.map.randomItem(WATER_SETS)
     const texture = getTextureByFrame(sheet, 0, Assets)
     if (!texture) return
     const set: SetSprite = Sprite.from(texture)
@@ -1656,7 +1649,6 @@ export class MapGeneration {
           if (
             this.isShoreWaterCell(i, j) &&
             !cell.has &&
-            cell.type !== 'DeepWater' &&
             this.map.random() < WATER_SET_CHANCE
           ) {
             this._placeWaterSet(cell)
@@ -1725,7 +1717,6 @@ export class MapGeneration {
         if (
           this.isShoreWaterCell(i, j) &&
           !cell.has &&
-          cell.type !== 'DeepWater' &&
           this.map.random() < WATER_SET_CHANCE
         ) {
           this._placeWaterSet(cell)

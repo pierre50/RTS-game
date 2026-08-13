@@ -24,6 +24,7 @@ import {
   refreshUnitEquipmentStats,
   UNARMED_UNIT_WEAPON_POWER,
 } from './equipmentStats'
+import { applyUnitWorkAssets } from './unitWorkAppearance'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
@@ -428,15 +429,7 @@ export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquipped
     return
   }
   hero.work = work
-  refreshUnitEquipmentStats(hero)
-  const workAssets = hero.allAssets?.[work]
-  if (workAssets) {
-    if (workAssets[SHEET_TYPES.action]) hero.actionSheet = Assets.cache.get(workAssets[SHEET_TYPES.action])
-    if (!hero.loading) {
-      if (workAssets[SHEET_TYPES.standing]) hero.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
-      if (workAssets[SHEET_TYPES.walking]) hero.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
-    }
-  }
+  applyUnitWorkAssets(hero, work, { loading: Boolean(hero.loading), refreshEquipmentStats: true })
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
 

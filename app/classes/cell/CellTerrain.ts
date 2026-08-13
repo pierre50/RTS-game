@@ -214,7 +214,7 @@ export class CellTerrain {
     Object.assign(cell, definition)
     const textureRef = getDeterministicCellVariant(definition.assets || [], cell.i, cell.j, cell.map?.seed)
     if (textureRef) cell.terrainTextureName = textureRefToString(textureRef)
-    if ((previousType === 'Water' || previousType === 'DeepWater') !== (type === 'Water' || type === 'DeepWater')) {
+    if ((previousType === 'Water') !== (type === 'Water')) {
       asTerrainParent(cell.parent)?.invalidateReliefCoastDistances?.()
     }
     this.resetTerrainAppearance()

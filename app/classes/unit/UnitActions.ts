@@ -1,4 +1,3 @@
-import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
@@ -45,6 +44,7 @@ import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
+import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -127,6 +127,20 @@ function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
   for (const sprite of layers?.values() ?? []) {
     sprite.loop = loop
   }
+}
+
+function applyLoadingWorkAssets(unit: UnitEntity): void {
+  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: true })
+  if (
+    unit.currentSheet &&
+    (unit.currentSheet === SHEET_TYPES.standing || unit.currentSheet === SHEET_TYPES.walking)
+  ) {
+    unit.setTextures?.(unit.currentSheet)
+  }
+}
+
+function applyUnloadedWorkAssets(unit: UnitEntity): void {
+  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: false })
 }
 
 function removeFromOwnerList(
@@ -432,15 +446,7 @@ export class UnitActions {
         unit.affectNewDest?.()
       }
       if (wasEmpty) {
-        const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
-        if (workAssets) {
-          unit.walkingSheet = Assets.cache.has(workAssets.loadedSheet)
-            ? Assets.cache.get(workAssets.loadedSheet)
-            : unit.walkingSheet
-          unit.standingSheet = Assets.cache.has(workAssets.standingSheet)
-            ? Assets.cache.get(workAssets.standingSheet)
-            : unit.standingSheet
-        }
+        applyLoadingWorkAssets(unit)
       }
       if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
     }
@@ -495,11 +501,7 @@ export class UnitActions {
         unit.loading = 0
         unit.loadingType = null
         unit.updateInterfaceLoading?.()
-        const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
-        if (workAssets) {
-          unit.standingSheet = Assets.cache.get(workAssets.standingSheet)
-          unit.walkingSheet = Assets.cache.get(workAssets.walkingSheet)
-        }
+        applyUnloadedWorkAssets(unit)
         unit.setTextures?.(SHEET_TYPES.standing)
         if (unit.previousDest) {
           unit.goBackToPrevious?.()
@@ -564,11 +566,7 @@ export class UnitActions {
             unit.affectNewDest?.()
           }
           if (wasEmpty) {
-            const workAssets2 = unit.work ? unit.allAssets?.[unit.work] : undefined
-            if (workAssets2) {
-              unit.walkingSheet = Assets.cache.get(workAssets2.loadedSheet)
-            }
-            unit.standingSheet = null
+            applyLoadingWorkAssets(unit)
           }
           if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
         })
@@ -636,11 +634,7 @@ export class UnitActions {
               unit.affectNewDest?.()
             }
             if (wasEmpty) {
-              const workAssets3 = unit.work ? unit.allAssets?.[unit.work] : undefined
-              if (workAssets3) {
-                unit.walkingSheet = Assets.cache.get(workAssets3.loadedSheet)
-              }
-              unit.standingSheet = null
+              applyLoadingWorkAssets(unit)
             }
           }
           if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)

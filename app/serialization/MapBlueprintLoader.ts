@@ -1,7 +1,7 @@
 import { DEFAULT_ENVIRONMENT_ID } from '../constants'
 
 // Must match tools/generate-maps.cjs's TERRAIN encoding order exactly.
-const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', 'DeepWater']
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
 
 type BlueprintManifestEntry = {
   id?: string
@@ -131,7 +131,7 @@ export async function loadPregeneratedMapBlueprint({
     if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) return null
 
     const gridStartedAt = performance.now()
-    const terrain = toGrid(terrainValues, size, value => TERRAIN_TYPES[value] || 'Grass')
+    const terrain = toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'))
     const relief = toGrid(reliefValues, size, value => value)
     timings.blueprintGridInflate = performance.now() - gridStartedAt
 

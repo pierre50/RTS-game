@@ -48,6 +48,11 @@ function loadMapGeneration() {
       updateInstanceVisibility: () => {},
       getGaiaAnimals: () => [],
       getTextureByFrame: () => null,
+      getPositionInGridAroundInstance: () => null,
+      canPlaceBuildingAt: () => false,
+      hasWaterBorderWithin: () => false,
+      getBuildingFootprintRadius: () => 1,
+      getPlainCellsAroundPoint: () => [],
     },
     '../../services/FogOfWar': { rehydrateAIKnowledge: () => {} },
     '../../ai/config': {
@@ -63,6 +68,9 @@ function loadMapGeneration() {
     '../../config/resourcePresets': {
       CIVILIZATION_LEVEL_RESOURCE_BONUS: {},
     },
+    '../../config/mapSizes': {
+      getIdealSpawnRangeForMapSize: () => ({ minSpawns: 1, maxSpawns: 2 }),
+    },
     '../../constants': {
       BUILDING_TYPES: {},
       FAMILY_TYPES: {},
@@ -75,9 +83,8 @@ function loadMapGeneration() {
       FLOOR_SET_CHANCE: 0,
       GROUND_SETS: [],
       WATER_SETS: [],
-      WATER_SETS_DEEP: [],
       WATER_SET_CHANCE: 0,
-      WATER_SET_DEEP_LAND_MIN_DIST: 3,
+      WATER_BORDER_PLACEMENT_CLEARANCE: 2,
       ANIMAL_PLAYER_SAFE_DIST: 14,
       AMBIENT_ANIMAL_CHANCE: 0.0015,
       getEnvironmentTerrainParams: () => ({}),

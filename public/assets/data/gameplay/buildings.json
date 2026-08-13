@@ -131,7 +131,7 @@
     }
   },
   "ArcheryRange": {
-    "size": 5,
+    "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
     "constructionTime": 40,
@@ -390,7 +390,7 @@
     }
   },
   "TownCenter": {
-    "size": 5,
+    "size": 3,
     "sight": 14,
     "totalHitPoints": 600,
     "constructionTime": 60,
@@ -455,7 +455,7 @@
     }
   },
   "GuardTower": {
-    "size": 2,
+    "size": 3,
     "sight": 20,
     "totalHitPoints": 200,
     "constructionTime": 80,

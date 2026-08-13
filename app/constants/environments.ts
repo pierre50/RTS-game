@@ -101,9 +101,9 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
   Desert: {
     groundType: 'Desert',
     groundTreeChance: null,
-    // Applies to the oasis Jungle patches/rings — much sparser than a full Jungle environment.
-    patchwork: { count: 12, minRadius: 1.8, maxRadius: 3.6, terrainType: 'Jungle', treeChance: 0.12 },
-    lakes: { count: 2, minRadius: 4.2, maxRadius: 8.0, shoreRadius: 4.0, shoreType: 'Jungle', shoreTreeChance: 0.12 },
+    // Applies to the oasis Jungle patches/rings — still sparser than a full Jungle environment.
+    patchwork: { count: 16, minRadius: 2.0, maxRadius: 4.8, terrainType: 'Jungle', treeChance: 0.28 },
+    lakes: { count: 2, minRadius: 3.2, maxRadius: 6.2, shoreRadius: 6.5, shoreType: 'Jungle', shoreTreeChance: 0.28 },
     reliefAmplitude: 0.3,
     forestDensity: 0.1,
   },

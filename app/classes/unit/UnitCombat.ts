@@ -1,4 +1,3 @@
-import { Assets } from 'pixi.js'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   applyCombatHit,
@@ -17,6 +16,7 @@ import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
 import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
+import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -112,10 +112,7 @@ export class UnitCombat {
       if (target) {
         if (unit.action !== ACTION_TYPES.takemeat) {
           unit.action = ACTION_TYPES.takemeat
-          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
-          if (workAssets) {
-            unit.actionSheet = Assets.cache.get(workAssets.harvestSheet)
-          }
+          unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
         }
         unit.setDest?.(target.instance)
         if (instanceContactInstance(unitAsInstance, target.instance)) {
@@ -135,10 +132,7 @@ export class UnitCombat {
       if (target) {
         if (unit.action !== ACTION_TYPES.hunt) {
           unit.action = ACTION_TYPES.hunt
-          const workAssets = unit.work ? unit.allAssets?.[unit.work] : undefined
-          if (workAssets) {
-            unit.actionSheet = Assets.cache.get(workAssets.actionSheet)
-          }
+          unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
         }
         unit.setDest?.(target.instance)
         if (instanceContactInstance(unitAsInstance, target.instance)) {

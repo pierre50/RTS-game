@@ -11,6 +11,14 @@ const unitExperienceMock = {
   grantUnitXp: () => {},
 }
 
+const unitWorkAppearanceMock = {
+  getUnitWorkActionSheet: (unit, work, action) => {
+    if (!work) return undefined
+    const key = action === 'takemeat' ? 'harvestSheet' : 'actionSheet'
+    return unit.allAssets?.[work]?.[key]
+  },
+}
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -25,6 +33,7 @@ function loadModule(relativePath, mocks) {
     if (request === './equipmentStats') return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
     if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
+    if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === './maths') return { getReliefOffset: () => 0 }
     return require(request)
   }

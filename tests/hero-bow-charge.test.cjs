@@ -254,7 +254,21 @@ function loadHeroTools(overrides = {}) {
       },
     }
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => {
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './unitWorkAppearance') {
+      return {
+        applyUnitWorkAssets: (unit, work) => {
+          const assets = unit.allAssets?.[work]
+          if (!assets) return
+          unit.actionSheet = assets.actionSheet
+          unit.standingSheet = assets.standingSheet
+          unit.walkingSheet = unit.loading && assets.loadedSheet ? assets.loadedSheet : assets.walkingSheet
+        },
+      }
+    }
+    return require(request)
+  }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

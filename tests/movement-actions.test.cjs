@@ -37,6 +37,24 @@ const entityHealthDisplayMock = {
   },
 }
 
+const unitWorkAppearanceMock = {
+  getUnitWorkActionSheet: (unit, work, action) => {
+    if (!work) return undefined
+    const key = action === 'takemeat' ? 'harvestSheet' : 'actionSheet'
+    return unit.allAssets?.[work]?.[key]
+  },
+  applyUnitWorkAssets: (unit, work, options = {}) => {
+    if (!work) return
+    const assets = unit.allAssets?.[work]
+    if (!assets) return
+    unit.actionSheet = unitWorkAppearanceMock.getUnitWorkActionSheet(unit, work, options.action)
+    unit.standingSheet = assets.standingSheet
+    unit.walkingSheet = options.loading && assets.loadedSheet ? assets.loadedSheet : assets.walkingSheet
+    unit.dyingSheet = assets.dyingSheet
+    unit.corpseSheet = assets.corpseSheet
+  },
+}
+
 function mockRoundedIsoShapePoints({ x, y }) {
   return [
     { x, y: y - 10 },
@@ -57,6 +75,7 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/lang') return { t: value => value }

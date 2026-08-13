@@ -337,6 +337,9 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     },
     '../../lib/lang': { t: key => key },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/unitWorkAppearance': {
+      applyUnitWorkAssets: () => {},
+    },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
     '../../lib/buildings/towers': {

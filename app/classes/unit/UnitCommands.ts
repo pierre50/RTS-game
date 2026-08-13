@@ -1,4 +1,3 @@
-import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
@@ -21,6 +20,7 @@ import {
 import { t } from '../../lib/lang'
 import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
 import { isHeroControlled } from '../../lib/unitControl'
+import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -33,14 +33,6 @@ import type { ActionProps } from '../../lib/combat'
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function getActionSheet(work: string | null | undefined, action: string | null | undefined, unit: UnitEntity) {
-  if (!work) {
-    return
-  }
-  const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
-  return Assets.cache.get(unit.allAssets?.[work]?.[actionSheet] ?? '')
 }
 
 function checkActionCondition(
@@ -76,16 +68,7 @@ export function applyWorkForAction(unit: UnitEntity, work: string, action: strin
   if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
     menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
   }
-  const workAssets = unit.allAssets?.[work]
-  if (workAssets) {
-    unit.actionSheet = getActionSheet(work, action, unit)
-    if (!unit.loading) {
-      unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
-      unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
-      unit.dyingSheet = Assets.cache.get(workAssets[SHEET_TYPES.dying])
-      unit.corpseSheet = Assets.cache.get(workAssets[SHEET_TYPES.corpse])
-    }
-  }
+  applyUnitWorkAssets(unit, work, { action, loading: Boolean(unit.loading), refreshEquipmentStats: true })
   // If the unit is already moving when AI/job assignment changes its role,
   // refresh the walking animation immediately so the sprite matches the new work.
   if (unit.path?.length) {

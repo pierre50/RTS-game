@@ -1,0 +1,87 @@
+{
+  "frames": {
+    "000_graphics_buildings_construction_size-5.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 193,
+        "h": 108
+      },
+      "anchor": {
+        "x": 0.523316,
+        "y": 0.62037
+      }
+    },
+    "001_graphics_buildings_construction_size-5.png": {
+      "frame": {
+        "x": 194,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 193,
+        "h": 108
+      },
+      "anchor": {
+        "x": 0.523316,
+        "y": 0.62037
+      }
+    },
+    "002_graphics_buildings_construction_size-5.png": {
+      "frame": {
+        "x": 388,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 193,
+        "h": 108
+      },
+      "sourceSize": {
+        "w": 193,
+        "h": 108
+      },
+      "anchor": {
+        "x": 0.523316,
+        "y": 0.62037
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 581,
+      "h": 108
+    },
+    "scale": 1
+  }
+}
