@@ -1,11 +1,11 @@
 import type { Application } from 'pixi.js'
-import { Assets, Container, type ContainerChild, Sprite } from 'pixi.js'
+import { Assets, Container, type ContainerChild } from 'pixi.js'
 import Map from '../classes/map'
 import { Cell } from '../classes/cell'
 import { Resource } from '../classes/Resource'
 import { AI, Gaia, Human } from '../classes/players'
 import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
-import { getBuildingFootprintCells, getTextureByFrame, randomItem } from '../lib'
+import { getBuildingFootprintCells } from '../lib'
 import { getCameraZoom } from '../lib/settings'
 import { canPlaceBuildingAt } from '../lib/grid/placement'
 import { getAdjacentWalls, isWall, updateWallTexture, type WallBuilding } from '../lib/buildings/walls'
@@ -76,11 +76,6 @@ function isEditorUnitListEntity(entity: RuntimeEntity | null | undefined): entit
 const DEFAULT_MAP_SIZE = 120
 const MAP_EXPORT_EXT = '.map'
 const PLACEMENT_SELECTION_SUPPRESS_MS = 150
-const EDITOR_FLOOR_SPRITESHEETS: Record<string, string[]> = {
-  Desert: ['environment/floor/desert-4', 'environment/floor/desert-5', 'environment/floor/desert-6', 'environment/floor/desert-7', 'environment/floor/desert-8', 'environment/floor/desert-9', 'environment/floor/desert-10', 'environment/floor/desert-11', 'environment/floor/desert-12'],
-  Jungle: ['environment/floor/desert-4', 'environment/floor/desert-5', 'environment/floor/desert-6', 'environment/floor/desert-7', 'environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10'],
-  Grass: ['environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10'],
-}
 export default class MapEditor extends Container {
   config: EditorConfig
   onQuit: (() => void) | null
@@ -1173,13 +1168,6 @@ export default class MapEditor extends Container {
 
   _applyTerrainSetDecorations(cell: RuntimeCell): void {
     if (!cell || !this._canDecorateTerrainCell(cell)) return
-
-    if (Math.random() < 0.03) {
-      this._addFloorDecoration(cell)
-    }
-    if (Math.random() < this._map.chanceOfSets) {
-      this._addSetDecoration(cell)
-    }
   }
 
   _canDecorateTerrainCell(cell: RuntimeCell): boolean {
@@ -1204,37 +1192,6 @@ export default class MapEditor extends Container {
 
     const { size } = this._map
     return cell.i > 1 && cell.j > 1 && cell.i < size && cell.j < size
-  }
-
-  _addFloorDecoration(cell: RuntimeCell): void {
-    const sheets = EDITOR_FLOOR_SPRITESHEETS[cell.type] || EDITOR_FLOOR_SPRITESHEETS.Grass
-    const randomSpritesheet = randomItem(sheets)
-    if (!randomSpritesheet) return
-    const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-    if (!texture) return
-
-    const floor = Sprite.from(texture) as Sprite & { updateAnchor?: boolean }
-    floor.label = LABEL_TYPES.floor
-    floor.roundPixels = true
-    floor.eventMode = 'none'
-    floor.updateAnchor = true
-    floor.zIndex = 1
-    ;(cell as EditableCell).addChild(floor)
-  }
-
-  _addSetDecoration(cell: RuntimeCell): void {
-    const randomSpritesheet = randomItem(['environment/ground/stone-set-1', 'environment/ground/stone-set-2', 'environment/ground/stone-set-3', 'environment/ground/stone-set-4'])
-    if (!randomSpritesheet) return
-    const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-    if (!texture) return
-
-    const set = Sprite.from(texture) as Sprite & { updateAnchor?: boolean }
-    set.label = LABEL_TYPES.set
-    set.roundPixels = true
-    set.eventMode = 'none'
-    set.updateAnchor = true
-    set.zIndex = 11
-    ;(cell as EditableCell).addChild(set)
   }
 
   syncResourceSprites(): void {

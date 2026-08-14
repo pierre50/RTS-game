@@ -22,6 +22,7 @@ import {
 import { canUnitTrainInto, getMissingResourceNames, isTraineeTrainingType } from '../../lib/buildingTraining'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { t } from '../../lib/lang'
+import { consumeStableHorse, returnStableHorse, type StableHorse } from '../../lib/stableHorses'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ConfigValue } from '../../types/config'
 import type { RuntimeCell } from '../../types/map'
@@ -77,7 +78,12 @@ function getProductionTime(
     : (unit.trainingTime ?? 0)
 }
 
-function getTrainingExtra(building: Building, trainee: UnitEntity, type: string): UnitCreationExtra | undefined {
+function getTrainingExtra(
+  building: Building,
+  trainee: UnitEntity,
+  type: string,
+  stableHorse?: StableHorse | null
+): UnitCreationExtra | undefined {
   const baseExtra: UnitCreationExtra = {}
   if (trainee.name) baseExtra.name = trainee.name
   if (trainee.appearanceVariants) baseExtra.appearanceVariants = { ...trainee.appearanceVariants }
@@ -96,7 +102,7 @@ function getTrainingExtra(building: Building, trainee: UnitEntity, type: string)
     speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
     experience: trainee.experience ? { ...trainee.experience } : undefined,
   }
-  if (trainee.horseColor) mountedExtra.horseColor = trainee.horseColor
+  mountedExtra.horseColor = stableHorse?.horseColor ?? trainee.horseColor
   return mountedExtra
 }
 
@@ -297,25 +303,33 @@ export class BuildingProduction {
     return true
   }
 
+  failTraineeEntry(trainee: UnitEntity, message?: string, updateTopbar = false): false {
+    const building = getTrainingBuilding(this.building)
+    if (message && building.owner.isPlayed) building.context.menu.showMessage(message, 'warning')
+    if (updateTopbar && building.owner.isPlayed) building.context.menu.updateTopbar?.()
+    trainee.trainingTargetType = null
+    this.clearActiveTraining(trainee)
+    return false
+  }
+
   startTrainingWithUnit(trainee: UnitEntity): boolean {
     const building = getTrainingBuilding(this.building)
     const type = trainee.trainingTargetType
     if (!type || !isTraineeTrainingType(building, type)) return false
     if (building.loading !== null || building.queue.length || building.technology) return false
     if (!isExpectedTrainingUnit(trainee, type) || !canUnitTrainInto(building, trainee, type)) return false
+    if (isBlockedByMissingChief(building, type)) {
+      return this.failTraineeEntry(trainee, t('requiresChief'))
+    }
     const unit = building.owner.config.units[type]
+    const stableHorse = isStableMountTraining(building, trainee, type) ? consumeStableHorse(building) : null
+    if (isStableMountTraining(building, trainee, type) && !stableHorse) {
+      return this.failTraineeEntry(trainee, t('stableNeedsHorse'))
+    }
     const cost = getTrainingCost(building, unit, trainee, type)
     if (!canAfford(building.owner, cost)) {
-      if (building.owner.isPlayed) {
-        building.context.menu.showMessage(
-          t('needMore', { resource: formatMissingResources(building.owner, cost) }),
-          'warning'
-        )
-        building.context.menu.updateTopbar()
-      }
-      trainee.trainingTargetType = null
-      this.clearActiveTraining(trainee)
-      return false
+      returnStableHorse(building, stableHorse)
+      return this.failTraineeEntry(trainee, t('needMore', { resource: formatMissingResources(building.owner, cost) }), true)
     }
     payCost(building.owner, cost)
     if (building.owner.isPlayed) building.context.menu.updateTopbar()
@@ -323,7 +337,9 @@ export class BuildingProduction {
     building.trainingType = type
     building.isUsedBy = trainee
     this.removeTraineeForTraining(trainee)
-    return Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, trainee, type), trainee))
+    const started = Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, trainee, type, stableHorse), trainee))
+    if (!started) returnStableHorse(building, stableHorse)
+    return started
   }
 
   requestUnitTraining(type: string, extra?: UnitCreationExtra, traineeOverride?: UnitEntity | null): boolean {
@@ -334,15 +350,6 @@ export class BuildingProduction {
     const unit = building.owner.config.units[type]
     if (!unit || !building.units?.includes(type)) return false
     if (!building.isBuilt || building.isDead) return false
-    if (isBlockedByMissingChief(building, type)) {
-      if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
-      return false
-    }
-    if (building.loading !== null || building.queue.length || building.technology) {
-      if (building.owner.isPlayed)
-        menu.showMessage(t('buildingAlreadyTraining', { building: t(building.type) }), 'warning')
-      return false
-    }
     const trainee = traineeOverride || this.findTrainingUnit(type)
     if (!trainee) {
       if (building.owner.isPlayed) menu.showMessage(t('noTrainingUnitAvailable'), 'warning')
@@ -376,12 +383,12 @@ export class BuildingProduction {
     let success = false
     const unit = building.owner.config.units[type]
     const traineeTraining = isTraineeTrainingType(building, type)
+    if (traineeTraining && !alreadyPaid && !force) {
+      return this.requestUnitTraining(type, extra)
+    }
     if (isBlockedByMissingChief(building, type)) {
       if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
       return false
-    }
-    if (traineeTraining && !alreadyPaid && !force) {
-      return this.requestUnitTraining(type, extra)
     }
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {

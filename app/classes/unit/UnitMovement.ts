@@ -295,7 +295,7 @@ const DIRECT_MOVE_DEBUG_THROTTLE_MS = 250
 // cornered (e.g. a U-shaped pocket) is a legitimate full stop.
 const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 
-type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
 type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
 let lastDirectMoveDebugAt = 0
 
@@ -433,12 +433,12 @@ export class UnitMovement {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
-    { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}
+    { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
   ) {
     const startedAt = performance.now()
     if (forceRepath) this.unit.context?.performance?.record?.('unit.repath', 0)
     try {
-      return this._sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach })
+      return this._sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach, preserveAutonomy })
     } finally {
       this.unit.context?.performance?.record?.('unit.command', performance.now() - startedAt)
     }
@@ -447,7 +447,7 @@ export class UnitMovement {
   _sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
-    { forceRepath = false, allowBlockedGatherApproach = true }: SendToOptions = {}
+    { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
   ) {
     const unit = this.unit
     const map = unit.context?.map
@@ -471,7 +471,7 @@ export class UnitMovement {
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []
     if (!dest || isDestroyedEntity(dest) || unit.isDead || !map) return
-    if (!action) {
+    if (!action && !preserveAutonomy) {
       unit.previousDest = null
       unit.previousWork = null
       clearVillagerAutonomy?.(unit)
@@ -1109,7 +1109,7 @@ export class UnitMovement {
     for (const { cell } of candidates.slice(0, 12)) {
       const path = getInstancePath(unit, cell.i, cell.j, map)
       if (path.length) {
-        unit.sendToEvt?.(cell, null, { forceRepath: true })
+        unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
         return true
       }
     }

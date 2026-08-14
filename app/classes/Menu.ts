@@ -257,7 +257,7 @@ export default class Menu implements MenuLike {
     index: number,
     hotkey: string | null,
     onNavigate: (children: MenuButtonSpec[]) => void
-  ): HTMLDivElement {
+  ): HTMLButtonElement {
     return this.actionRenderer.createMenuButton(selection, button, index, hotkey, onNavigate)
   }
   setActionHotkey(key: string, action: () => void): void {

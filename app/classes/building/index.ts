@@ -1,6 +1,6 @@
 import { AnimatedSprite, Assets, Rectangle, Sprite, Texture } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import { BUILDING_TYPES, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   getGroundReliefLevel,
@@ -20,6 +20,7 @@ import {
   bindAnimatedSpriteToTicker,
   getRallyPointFrames,
   RALLY_POINT_SHEET_ID,
+  STABLE_HORSE_CAPACITY,
   textureRefToString,
 } from '../../lib'
 import { BuildingInterface } from '../../ui/BuildingInterface'
@@ -57,6 +58,8 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
   j: number
   type: string
+  horseAmount?: number
+  stableHorses?: Array<{ horseColor?: string }>
   isBuilt?: boolean
   skipBuiltEffects?: boolean
 }
@@ -85,6 +88,8 @@ export class Building extends Instance implements BuildingEntity {
   totalQuantity?: number
   units?: string[]
   technologies?: string[]
+  horseAmount?: number
+  stableHorses?: Array<{ horseColor?: string }>
   mountingTime?: number
   interface!: EntityInterfaceLike
   assetType?: string
@@ -116,6 +121,8 @@ export class Building extends Instance implements BuildingEntity {
     this.isUsedBy = null
     this.trainingUnit = null
     this.trainingType = null
+    this.stableHorses = []
+    this.horseAmount = 0
     this.rallyPoint = null
     this.rallyPointFlag = null
     this.shadow = null
@@ -123,6 +130,13 @@ export class Building extends Instance implements BuildingEntity {
 
     this.assignProperties(options)
     this.assignProperties(this.owner.config.buildings[this.type])
+    this.stableHorses = Array.isArray(options.stableHorses)
+      ? [...options.stableHorses]
+      : Array.from(
+          { length: Math.max(0, Math.min(STABLE_HORSE_CAPACITY, Number(options.horseAmount) || 0)) },
+          () => ({})
+        )
+    this.horseAmount = this.stableHorses.length
     this.populationCapacityApplied = Boolean(options.skipBuiltEffects && this.isBuilt)
 
     this.intervalId = null

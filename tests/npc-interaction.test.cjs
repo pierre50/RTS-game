@@ -438,6 +438,120 @@ test('"aller vers" moves specialized infantry when no barracks upgrade is availa
   assert.deepEqual(calls, [['move', 5, 5]])
 })
 
+test('"aller vers" shows a warning when a soldier targets an empty stable', () => {
+  const calls = []
+  const owner = {
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Stable',
+    units: ['Fantassin'],
+    x: 100,
+    y: 100,
+    requestUnitTraining(type, extra, unit) {
+      calls.push(['requestUnitTraining', type, unit.type])
+      unit.context.menu.showMessage('stableNeedsHorse', 'warning')
+      return false
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
+    './buildingTraining': {
+      getTrainingTargetForUnit: (building, unit) =>
+        building.type === 'Stable' && unit.type === 'Fantassin' ? 'Fantassin' : null,
+    },
+  })
+  const npc = {
+    context: {
+      map: { grid: [] },
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+      },
+    },
+    i: 1,
+    j: 1,
+    owner,
+    sendTo() {
+      calls.push(['move'])
+    },
+    type: 'Fantassin',
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [
+    ['requestUnitTraining', 'Fantassin', 'Fantassin'],
+    ['message', 'stableNeedsHorse', 'warning'],
+  ])
+})
+
+test('"aller vers" sends a bowman to the stable even before a horse is available', () => {
+  const calls = []
+  const owner = {
+    config: {
+      units: {
+        Bowman: { category: 'Bowman' },
+      },
+    },
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'Stable',
+    units: ['Bowman'],
+    x: 100,
+    y: 100,
+    requestUnitTraining(type, extra, unit) {
+      calls.push(['requestUnitTraining', type, unit.type])
+      return true
+    },
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
+    './buildingTraining': {
+      getTrainingTargetForUnit: (building, unit) =>
+        building.type === 'Stable' && unit.type === 'Bowman' ? 'Bowman' : null,
+    },
+  })
+  const npc = {
+    context: {
+      map: { grid: [] },
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+      },
+    },
+    i: 1,
+    j: 1,
+    owner,
+    sendTo() {
+      calls.push(['move'])
+    },
+    type: 'Bowman',
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['requestUnitTraining', 'Bowman', 'Bowman']])
+})
+
 test('closing communication resumes a pending training order', () => {
   const calls = []
   const barracks = {

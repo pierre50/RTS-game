@@ -4,6 +4,7 @@ import { syncEntityHealthDisplay } from './entityHealthDisplay'
 import { t } from './lang'
 import { attemptAutomaticParry } from './parry'
 import { grantUnitXp, XP_KILL_BONUS } from './unitExperience'
+import { handleCompanionHorseDamage } from './companionHorseCombat'
 import type { MenuLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'
@@ -78,8 +79,16 @@ export function applyCombatHit(
     if (xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, damageDealt)
   }
   updateHitPointsDisplay(target, player, menu)
+  const companionHorseHandled = handleCompanionHorseDamage({
+    attacker,
+    target,
+    damageDealt,
+    killed,
+    hitDirection,
+    menu,
+  })
   if (notifyTarget === 'always' || (notifyTarget === 'survived' && !killed)) {
-    target.isAttacked?.(attacker, hitDirection)
+    if (!companionHorseHandled) target.isAttacked?.(attacker, hitDirection)
   }
   if (killed) {
     if (grantKillXp && xpUnit && xpCategory) grantUnitXp(xpUnit, xpCategory, XP_KILL_BONUS)

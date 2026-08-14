@@ -1,4 +1,5 @@
 import { getCivilizationDefinition } from './civilizations'
+import { SOUND_CUES } from '../constants/sounds'
 import { applyEquipmentStatsToUnitConfig } from '../lib/equipmentStats'
 import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { PlayerConfigLike } from '../types/player'
@@ -8,7 +9,6 @@ function deepClone<T>(value: T): T {
 }
 
 const STONE_START_SOUND = null
-const ARROW_LAUNCH_SOUNDS = ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4']
 
 function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConfig> = {}): ProjectileConfig {
   return {
@@ -26,10 +26,23 @@ function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConf
       maxArcHeight: 16,
     },
     sounds: {
-      launch: ARROW_LAUNCH_SOUNDS,
+      launch: SOUND_CUES.projectile.arrowLaunch,
     },
     ...overrides,
   }
+}
+
+const LPC_ARROW_PROJECTILE_CONFIG: Partial<ProjectileConfig> = {
+  directionalSpawnOffsets: {
+    south: { x: -2, y: -3 },
+    southwest: { x: -2, y: -3 },
+    west: { x: -10, y: -10 },
+    northwest: { x: 7, y: -4 },
+    north: { x: 7, y: -4 },
+    northeast: { x: 7, y: -4 },
+    east: { x: 10, y: -10 },
+    southeast: { x: -2, y: -3 },
+  },
 }
 
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
@@ -198,11 +211,11 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
       impact: 'target-hit-2',
     },
   },
-  Arrow: arrowProjectileConfig('projectiles/arrow_ceramic'),
-  ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic'),
-  ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper'),
-  ArrowBronze: arrowProjectileConfig('projectiles/arrow_bronze'),
-  ArrowIron: arrowProjectileConfig('projectiles/arrow_iron'),
+  Arrow: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
+  ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
+  ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper', LPC_ARROW_PROJECTILE_CONFIG),
+  ArrowBronze: arrowProjectileConfig('projectiles/arrow_bronze', LPC_ARROW_PROJECTILE_CONFIG),
+  ArrowIron: arrowProjectileConfig('projectiles/arrow_iron', LPC_ARROW_PROJECTILE_CONFIG),
   FireArrow: arrowProjectileConfig('projectiles/fire-arrow', {
     staticFrame: 1,
   }),

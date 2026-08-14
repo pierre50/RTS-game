@@ -39,6 +39,7 @@ function loadCombatHit({ rawDamage = 6, parryResult = false, grantCalls = [], fe
     './entityHealthDisplay': entityHealthDisplayMock,
     './lang': { t: key => key },
     './parry': { attemptAutomaticParry: () => parryResult },
+    './companionHorseCombat': { handleCompanionHorseDamage: () => false },
     './unitExperience': {
       XP_KILL_BONUS: 15,
       grantUnitXp: (unit, category, amount) => grantCalls.push({ unit, category, amount }),
@@ -79,6 +80,7 @@ test('isMelee is required to even attempt a parry — a ranged hit never rolls o
         return true
       },
     },
+    './companionHorseCombat': { handleCompanionHorseDamage: () => false },
     './unitExperience': { XP_KILL_BONUS: 15, grantUnitXp: () => {} },
   })
   const target = makeTarget()

@@ -123,7 +123,7 @@ test('berrybush groups share one color variant across the whole cluster', () => 
   assert.equal(mapResources.placeResourceGroupAt({ i: 1, j: 1 }, 'Berrybush', 3), true)
 
   const textureNames = [...map.resources].map(resource => resource.textureName)
-  assert.deepEqual(textureNames, ['001_resources/berrybush', '001_resources/berrybush', '001_resources/berrybush'])
+  assert.deepEqual(textureNames, ['002_resources/berrybush', '002_resources/berrybush', '002_resources/berrybush'])
 })
 
 test('neutral wheat groups spawn mature', async () => {

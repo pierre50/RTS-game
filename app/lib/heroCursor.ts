@@ -2,13 +2,14 @@ import { FAMILY_TYPES } from '../constants'
 import type { HeroEquippedItem } from './heroTools'
 import type { RuntimeEntity } from '../types/entities'
 
-type CursorState = 'default' | 'pointer' | 'resource' | 'combat' | 'bow' | 'move'
+type CursorState = 'default' | 'pointer' | 'resource' | 'combat' | 'bow' | 'lasso' | 'move'
 
 const CURSOR_CLASSES: Partial<Record<CursorState, string>> = {
   pointer: 'hero-cursor-pointer',
   resource: 'hero-cursor-resource',
   combat: 'hero-cursor-combat',
   bow: 'hero-cursor-bow',
+  lasso: 'hero-cursor-bow',
   move: 'hero-cursor-move',
 }
 
@@ -37,6 +38,7 @@ function resolveCursorState(
     return 'pointer'
   }
   if (tool === 'bow') return 'bow'
+  if (tool === 'lasso') return 'lasso'
   return 'default'
 }
 

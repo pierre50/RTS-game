@@ -8,16 +8,16 @@
         "h": 5
       },
       "rotated": false,
-      "trimmed": false,
+      "trimmed": true,
       "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
+        "x": 25,
+        "y": 39,
         "w": 31,
         "h": 5
       },
       "sourceSize": {
-        "w": 31,
-        "h": 5
+        "w": 64,
+        "h": 64
       },
       "anchor": {
         "x": 0.5,
@@ -26,7 +26,7 @@
     }
   },
   "meta": {
-    "app": "pack_aoe1_atlases.py",
+    "app": "build_arrow_projectiles.py",
     "version": "1.0.0",
     "image": "texture.png",
     "format": "RGBA8888",

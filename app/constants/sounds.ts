@@ -11,8 +11,12 @@ export const SOUND_CUES = {
     heartbeat: 'heartbeat',
     meleeWhiff: 'attack-swipe',
   },
+  projectile: {
+    arrowLaunch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
+  },
   unit: {
     fallbackCreate: 'human-unit-completed',
+    horseMoving: 'horse-moving',
     militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],
   },
   villager: {

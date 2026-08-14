@@ -317,7 +317,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       playerCanSeeInstance: () => false,
       showResourceGainFeedback: () => {},
       SLASH_IMPACT_FRAME: 3,
-      SHOOT_RELEASE_FRAME: 5,
+      BOW_SHOOT_RELEASE_FRAME: 8,
     },
     '../../lib/unitExperience': {
       LOADING_XP_CATEGORY: { berry: 'farming' },

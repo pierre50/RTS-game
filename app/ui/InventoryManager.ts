@@ -18,6 +18,7 @@ const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
   bow: 'heroToolBow',
+  lasso: 'heroToolLasso',
 }
 
 export class InventoryManager {
@@ -30,7 +31,7 @@ export class InventoryManager {
   worldMapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   technologiesPanel: HTMLDivElement
-  slots: Map<HeroEquippedItem, HTMLDivElement>
+  slots: Map<HeroEquippedItem, HTMLButtonElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
   modal?: Modal
@@ -80,11 +81,10 @@ export class InventoryManager {
     )
 
     for (const tool of HERO_TOOL_ORDER) {
-      const slot = document.createElement('div')
-      slot.className = 'inventory-slot'
-      slot.setAttribute('role', 'button')
-      slot.tabIndex = 0
-      slot.addEventListener('pointerup', () => this.selectTool(tool))
+      const slot = document.createElement('button')
+      slot.type = 'button'
+      slot.className = 'inventory-slot ui-btn'
+      slot.addEventListener('click', () => this.selectTool(tool))
 
       if (EQUIPPED_ITEM_WEAPON[tool]) {
         const icon = document.createElement('canvas')
@@ -251,7 +251,12 @@ export class InventoryManager {
     return `${this.getFactionRelationIcon(faction.relationState)} ${this.getFactionRelationText(faction.relationState)} ${faction.relationScore}`
   }
 
-  renderWorldMapNode(graph: WorldGraphSave, node: WorldGraphNode, currentWorldId: string | null, depth = 0): HTMLLIElement {
+  renderWorldMapNode(
+    graph: WorldGraphSave,
+    node: WorldGraphNode,
+    currentWorldId: string | null,
+    depth = 0
+  ): HTMLLIElement {
     const item = document.createElement('li')
     item.className = 'worldmap-node'
     item.style.setProperty('--worldmap-depth', String(depth))
@@ -366,7 +371,7 @@ export class InventoryManager {
     const disabled = button.disabled?.() ?? false
     const acquired = button.acquired?.() ?? false
     element.type = 'button'
-    element.className = 'technology-menu-button'
+    element.className = 'ui-btn ui-action-row'
     element.classList.toggle('is-acquired', acquired)
     element.setAttribute('aria-disabled', String(disabled))
     element.setAttribute('aria-pressed', String(acquired))

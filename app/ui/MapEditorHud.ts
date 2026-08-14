@@ -207,12 +207,11 @@ export class MapEditorHud {
     return button
   }
 
-  _createIconActionBox(iconPath: string, onClick: (evt: Event) => void, label: string): HTMLDivElement {
-    const box = document.createElement('div')
-    box.className = 'action-menu-box'
-    box.setAttribute('role', 'button')
-    box.tabIndex = 0
-    box.setAttribute('aria-label', label)
+  _createIconActionBox(iconPath: string, onClick: (evt: Event) => void, label: string): HTMLButtonElement {
+    const box = document.createElement('button')
+    box.type = 'button'
+    box.className = 'ui-btn ui-icon-btn'
+    box.ariaLabel = label
     box.title = label
 
     const icon = document.createElement('img')
@@ -221,14 +220,9 @@ export class MapEditorHud {
     icon.className = 'img'
     box.appendChild(icon)
 
-    box.addEventListener('pointerdown', playClickSound)
-    box.addEventListener('pointerup', evt => {
+    box.addEventListener('click', evt => {
       evt.preventDefault()
-      onClick(evt)
-    })
-    box.addEventListener('keydown', evt => {
-      if (evt.key !== 'Enter' && evt.key !== ' ') return
-      evt.preventDefault()
+      playClickSound()
       onClick(evt)
     })
 

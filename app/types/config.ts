@@ -16,6 +16,7 @@ export type UnitAppearanceLayerConfig = {
   hideWhenLoading?: boolean
   showWhenLoading?: boolean
   hideForActions?: string[]
+  hideOnOrAfterFrame?: number
   mountedCut?: boolean
   workTypes?: string[]
   minLevel?: number
@@ -135,6 +136,11 @@ interface ProjectileImpactEffect {
   scale?: number
 }
 
+interface ProjectileSpawnOffset {
+  x?: number
+  y?: number
+}
+
 export interface ProjectileConfig {
   size: number
   speed: number
@@ -148,10 +154,19 @@ export interface ProjectileConfig {
   directionalFrameOrder?: string[]
   directionalAnimationFrames?: number
   scale?: number
+  spawnOffsetX?: number
   spawnOffsetY?: number
+  directionalSpawnOffsets?: Record<string, ProjectileSpawnOffset>
   fullCircleStartDegree?: number
   trajectory?: ProjectileTrajectory
   impactEffect?: ProjectileImpactEffect
   sounds?: { launch?: CommandSound; impact?: CommandSound }
-  [key: string]: ConfigValue | ProjectileTrajectory | ProjectileImpactEffect | { launch?: CommandSound; impact?: CommandSound } | undefined
+  [key: string]:
+    | ConfigValue
+    | ProjectileTrajectory
+    | ProjectileImpactEffect
+    | ProjectileSpawnOffset
+    | Record<string, ProjectileSpawnOffset>
+    | { launch?: CommandSound; impact?: CommandSound }
+    | undefined
 }

@@ -3,6 +3,7 @@ import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '..
 import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
+import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
 import type { Animal } from './index'
 
@@ -39,6 +40,11 @@ export class AnimalLifecycle {
     animal.stopTimeout()
     animal.animalBehavior.stop()
     clearDamageFeedback(animal)
+    if (animal.companionOwner) {
+      animal.companionOwner.companionHorseColor = null
+      animal.companionOwner = null
+      animal.companionHitCount = 0
+    }
     animal.isDead = true
     animal.zIndex--
     animal.path = []
@@ -52,10 +58,12 @@ export class AnimalLifecycle {
     if (animal.altitude) this.startDeathFall()
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
-    animal.sprite.loop = false
     animal.syncShadow()
-    animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
-      animal.decompose()
+    playSpriteAnimationFromStart(animal.sprite, {
+      loop: false,
+      onComplete: runAfterDeathFlash(animal.sprite, () => {
+        animal.decompose()
+      }),
     })
   }
 

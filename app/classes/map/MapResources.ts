@@ -671,7 +671,7 @@ export class MapResources {
 
   getSharedGroupTextureName(instance: ResourceType): string | undefined {
     if (instance !== RESOURCE_TYPES.berrybush) return undefined
-    return berryBushTextureName(this.map.randomItem([0, 1]))
+    return berryBushTextureName(this.map.randomItem([1, 2]))
   }
 
   async generateBiomeTreesAsync(playersPos: GridPosition[]): Promise<void> {

@@ -186,7 +186,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
 
       const button = document.createElement('button')
       button.type = 'button'
-      button.className = 'settings-key-button'
+      button.className = 'settings-key-button ui-btn'
       button.textContent = getControlKeyLabel(bindings[action])
       button.addEventListener('click', () => {
         button.textContent = t('controlsPressKey')
@@ -225,7 +225,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
 
   const reset = document.createElement('button')
   reset.type = 'button'
-  reset.className = 'settings-reset-button'
+  reset.className = 'settings-reset-button ui-btn'
   reset.textContent = t('controlsReset')
   reset.addEventListener('click', () => {
     resetKeyBindings()

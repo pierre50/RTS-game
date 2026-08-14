@@ -49,6 +49,10 @@ function checkActionCondition(
   return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
 }
 
+function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
+  return Boolean(unit.owner?.isPlayed && (unit.context?.controls?.instanceInCamera?.(target) ?? true))
+}
+
 // Applies the work/texture/cargo bookkeeping a work reassignment needs: drops mismatched
 // cargo when switching to an incompatible gather type, and swaps in the right animation
 // sheets. Extracted out of commonSendTo so hero-direct triggers (heroTools.ts) can reuse it
@@ -117,9 +121,16 @@ export class UnitCommands {
         action === ACTION_TYPES.farm &&
         target.type === RESOURCE_TYPES.wheat &&
         !isWheatMature(target) &&
-        unit.owner?.isPlayed
+        canShowTargetAlert(unit, target)
       ) {
         unit.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
+      } else if (
+        action === ACTION_TYPES.forageberry &&
+        target.type === RESOURCE_TYPES.berrybush &&
+        (target.quantity ?? 0) <= 0 &&
+        canShowTargetAlert(unit, target)
+      ) {
+        unit.context?.menu?.showMessage(t('berrybushDepleted'), 'warning')
       }
       return false
     }

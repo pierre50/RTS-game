@@ -92,6 +92,7 @@ function loadProjectile(libOverrides = {}) {
     '../lib/entityFade': { fadeOutThenClear: () => {} },
     '../lib/equipmentStats': { getEntityWeaponPower: () => 0 },
     '../lib/settings': { getShadowsEnabled: () => false },
+    '../lib/treeCollision': { findTreeSegmentCollision: () => null },
     '../lib/unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
@@ -167,7 +168,7 @@ test('player arrows can turn a neutral faction hostile and damage the target', (
       label: 'player',
       isPlayed: true,
       isEnemy: targetOwner => faction.relationState === 'hostile' && targetOwner?.factionId === 'neutral-tribe',
-      config: { projectiles: { Arrow: { assets: 'projectiles/arrow', size: 3, speed: 14 } } },
+      config: { projectiles: { Arrow: { assets: 'projectiles/arrow_ceramic', size: 3, speed: 14 } } },
     },
     x: 0,
     y: 0,
@@ -210,7 +211,7 @@ test('mounted archers spawn arrows from the visual rider height', () => {
       config: {
         projectiles: {
           Arrow: {
-            assets: 'projectiles/arrow',
+            assets: 'projectiles/arrow_ceramic',
             size: 3,
             speed: 14,
             spawnOffsetY: 10,
@@ -258,6 +259,59 @@ test('mounted archers spawn arrows from the visual rider height', () => {
   assert.equal(projectile.destinationPoint.y, 164)
 })
 
+test('directional spawn offsets move arrows toward the firing side', () => {
+  const Projectile = loadProjectile({ degreeToDirection: () => 'east' })
+  const owner = {
+    family: 'unit',
+    type: 'Bowman',
+    owner: {
+      label: 'player',
+      config: {
+        projectiles: {
+          Arrow: {
+            assets: 'projectiles/arrow_ceramic',
+            size: 3,
+            speed: 14,
+            spawnOffsetY: 10,
+            directionalSpawnOffsets: { east: { x: 10, y: -10 } },
+          },
+        },
+      },
+    },
+    x: 100,
+    y: 100,
+    z: 0,
+    width: 32,
+    height: 48,
+    range: 5,
+    sprite: { height: 48 },
+  }
+  const projectile = new Projectile(
+    {
+      owner,
+      type: 'Arrow',
+      destination: { x: 200, y: 100 },
+    },
+    {
+      app: {},
+      players: [],
+      map: {},
+      scheduler: { add: () => null },
+    }
+  )
+
+  assert.equal(projectile.x, 110)
+  assert.equal(projectile.y, 76)
+})
+
+test('age-specific arrows can still embed into the ground', () => {
+  const Projectile = loadProjectile()
+  const projectile = Object.create(Projectile.prototype)
+  projectile.type = 'ArrowBronze'
+
+  assert.equal(projectile.canUseEmbeddedMask(), true)
+})
+
 test('onHit reports the spawn-to-target vector as the hit direction', () => {
   let capturedOptions = null
   const Projectile = loadProjectile({
@@ -269,7 +323,7 @@ test('onHit reports the spawn-to-target vector as the hit direction', () => {
   const owner = {
     family: 'unit',
     type: 'Bowman',
-    owner: { label: 'player', config: { projectiles: { Arrow: { assets: 'projectiles/arrow', size: 3, speed: 14 } } } },
+    owner: { label: 'player', config: { projectiles: { Arrow: { assets: 'projectiles/arrow_ceramic', size: 3, speed: 14 } } } },
     x: 0,
     y: 0,
     z: 0,

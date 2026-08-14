@@ -78,7 +78,7 @@ export class NpcOrdersManager {
 
     this.debugLevelButton = document.createElement('button')
     this.debugLevelButton.type = 'button'
-    this.debugLevelButton.className = 'npc-orders-option npc-orders-debug-level ui-btn'
+    this.debugLevelButton.className = 'npc-orders-debug-level ui-btn'
     this.debugLevelButton.addEventListener('click', () => {
       const target = this.npcs.length === 1 ? this.npcs[0] : null
       if (!target || this.debugLevelButton.disabled) return
@@ -94,7 +94,7 @@ export class NpcOrdersManager {
     for (const spec of NPC_ORDER_SPECS) {
       const button = document.createElement('button')
       button.type = 'button'
-      button.className = 'npc-orders-option ui-btn'
+      button.className = 'ui-btn'
       button.textContent = t(spec.labelKey)
       button.addEventListener('click', () => {
         if (!this.npcs.length || button.disabled) return
@@ -170,12 +170,10 @@ export class NpcOrdersManager {
     const stockpileButton = this.buttons.get('stockpile')
     if (stockpileButton) {
       stockpileButton.disabled = !npcs.some(npc => (npc.loading ?? 0) > 0)
-      stockpileButton.classList.toggle('disabled', stockpileButton.disabled)
     }
     const stayButton = this.buttons.get('stay')
     if (stayButton) {
       stayButton.disabled = !npcs.some(canKeepNpcHere)
-      stayButton.classList.toggle('disabled', stayButton.disabled)
     }
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
     for (const spec of NPC_ORDER_SPECS) {
@@ -186,7 +184,6 @@ export class NpcOrdersManager {
         spec.villagerJob !== 'construction' ||
         npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, spec.villagerJob!))
       button.disabled = !hasVillager || !hasTarget
-      button.classList.toggle('disabled', button.disabled)
     }
     if (this.modal) {
       setModalTitle(this.modal, title)
@@ -224,7 +221,6 @@ export class NpcOrdersManager {
     const isMaxLevel = currentLevel >= XP_MAX_LEVEL
     const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)
     this.debugLevelButton.disabled = isMaxLevel
-    this.debugLevelButton.classList.toggle('disabled', isMaxLevel)
     this.debugLevelButton.textContent = isMaxLevel ? 'Debug niveau max' : `Debug niveau ${nextLevel}`
   }
 

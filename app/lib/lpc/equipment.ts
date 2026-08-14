@@ -30,6 +30,10 @@ type DynamicEquipmentKey =
   | 'bow'
   | 'bow_great'
   | 'bow_recurve'
+  | 'arrow_ceramic'
+  | 'arrow_copper'
+  | 'arrow_bronze'
+  | 'arrow_iron'
   | 'halberd'
   | 'sword_copper'
   | 'sword_ceramic'
@@ -84,6 +88,7 @@ type EquipmentOptions = Pick<
   | 'hideWhenLoading'
   | 'showWhenLoading'
   | 'hideForActions'
+  | 'hideOnOrAfterFrame'
   | 'minLevel'
   | 'maxLevel'
   | 'mountedCut'
@@ -110,6 +115,10 @@ const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly Eq
   gold: ['front'],
   cane: ['front'],
   quiver: ['back'],
+  arrow_ceramic: ['front'],
+  arrow_copper: ['front'],
+  arrow_bronze: ['front'],
+  arrow_iron: ['front'],
   armor_leather: ['front'],
   armor_mail_ceramic: ['front'],
   armor_mail_copper: ['front'],
@@ -233,6 +242,10 @@ const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'bow',
   'bow_great',
   'bow_recurve',
+  'arrow_ceramic',
+  'arrow_copper',
+  'arrow_bronze',
+  'arrow_iron',
   'halberd',
   'sword_copper',
   'sword_ceramic',
@@ -262,6 +275,10 @@ const EQUIPMENT_SHEET_OVERRIDES: Partial<
   Record<DynamicEquipmentKey, Partial<Record<EquipmentLayer, readonly EquipmentSheet[]>>>
 > = {
   cane: { front: ['walking'] },
+  arrow_ceramic: { front: ['action'] },
+  arrow_copper: { front: ['action'] },
+  arrow_bronze: { front: ['action'] },
+  arrow_iron: { front: ['action'] },
 }
 
 const DYNAMIC_EQUIPMENT_KEYS = [
@@ -287,6 +304,10 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'bow',
   'bow_great',
   'bow_recurve',
+  'arrow_ceramic',
+  'arrow_copper',
+  'arrow_bronze',
+  'arrow_iron',
   'halberd',
   'sword_copper',
   'sword_ceramic',
@@ -339,6 +360,7 @@ type UnitEquipmentEntry = {
   ageEquipment?: AgeEquipmentOverrides
   minLevel?: number
   maxLevel?: number
+  options?: EquipmentOptions
 }
 
 type UnitEquipmentDefinition = DynamicEquipmentKey | UnitEquipmentEntry
@@ -348,6 +370,7 @@ const metalAgeEquipment = (
   bronze: DynamicEquipmentKey,
   iron: DynamicEquipmentKey
 ): AgeEquipmentOverrides => ({ 1: copper, 2: bronze, 3: iron })
+const HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME = 9
 
 const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   { equipment: 'armor_leather', minLevel: 2, maxLevel: 9 },
@@ -418,6 +441,11 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>
   [UNIT_TYPES.bowman]: [
     'quiver',
     { equipment: 'bow', ageEquipment: { 1: 'bow_great', 2: 'bow_recurve' } },
+    {
+      equipment: 'arrow_ceramic',
+      ageEquipment: metalAgeEquipment('arrow_copper', 'arrow_bronze', 'arrow_iron'),
+      options: { hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME },
+    },
     ...SOLDIER_EARLY_ARMOR_EQUIPMENT,
     ...SOLDIER_HEAVY_ARMOR_EQUIPMENT,
   ],
@@ -472,6 +500,16 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
     workType: WORK_TYPES.hunter,
     equipment: 'bow',
     options: { hideWhenLoading: true, hideForActions: [ACTION_TYPES.takemeat] },
+  },
+  {
+    workType: WORK_TYPES.hunter,
+    equipment: 'arrow_ceramic',
+    ageEquipment: metalAgeEquipment('arrow_copper', 'arrow_bronze', 'arrow_iron'),
+    options: {
+      hideWhenLoading: true,
+      hideForActions: [ACTION_TYPES.takemeat],
+      hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME,
+    },
   },
   { workType: WORK_TYPES.hunter, equipment: 'meat', options: { showWhenLoading: true } },
   { workType: WORK_TYPES.stoneminer, equipment: 'stone', options: { showWhenLoading: true } },
@@ -612,8 +650,8 @@ export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
 
 export function dynamicEquipmentLayersForUnit(unitType: string): UnitAppearanceLayerConfig[] {
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
-    const { equipment, ageEquipment, minLevel, maxLevel } = unitEquipmentEntry(definition)
-    return equipmentLayerConfigs(equipment, { minLevel, maxLevel }, ageEquipment)
+    const { equipment, ageEquipment, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
+    return equipmentLayerConfigs(equipment, { ...options, minLevel, maxLevel }, ageEquipment)
   })
 }
 

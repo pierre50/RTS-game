@@ -222,12 +222,10 @@ export class HeroBuildingMenuManager {
   createButton(building: BuildingEntity, button: MenuButtonSpec): HTMLButtonElement {
     const element = document.createElement('button')
     element.type = 'button'
-    element.className = 'hero-building-menu-button'
+    element.className = 'ui-btn ui-action-row'
     element.id = button.id ? `hero-${button.id}` : ''
     const disabled = button.disabled?.() ?? false
     element.disabled = disabled
-    element.classList.toggle('is-disabled', disabled)
-    element.setAttribute('aria-disabled', String(disabled))
 
     const icon = document.createElement('span')
     icon.className = 'hero-building-menu-icon'
@@ -299,7 +297,7 @@ export class HeroBuildingMenuManager {
   updateProgress(): void {
     const building = this.building
     if (!building) return
-    this.body.querySelectorAll<HTMLElement>('.hero-building-menu-button').forEach(button => {
+    this.body.querySelectorAll<HTMLElement>('button.ui-btn').forEach(button => {
       const id = button.id.replace(/^hero-/, '')
       const status = button.querySelector<HTMLElement>('.hero-building-menu-status')
       const fill = button.querySelector<HTMLElement>('.hero-building-menu-progress-fill')

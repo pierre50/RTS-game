@@ -33,8 +33,10 @@ export function onSpriteLoopAtFrame(sprite: FrameChangeSprite, frame: number, cb
 }
 
 // Baked LPC action sheets are per-direction slices (scripts/lpc/config.py
-// SHEETS). These are the in-loop frame where the weapon/projectile actually
-// connects/releases, found by inspecting the source equipment-overlay
-// spritesheets frame-by-frame for when the weapon/arrow is at full extension.
+// SHEETS). These are local frame indices inside that sliced direction, found by
+// inspecting the source equipment-overlay spritesheets frame-by-frame for when
+// the weapon/projectile actually connects/releases. Lasso leaves the hand
+// earlier; bow holds and releases on the final, fully extended pose.
 export const SLASH_IMPACT_FRAME = 1
-export const SHOOT_RELEASE_FRAME = 5
+export const BOW_SHOOT_RELEASE_FRAME = 8
+export const LASSO_SHOOT_RELEASE_FRAME = 5

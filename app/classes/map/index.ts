@@ -1,5 +1,5 @@
 import { Assets, Container, Graphics, TilingSprite, type ContainerChild, type Texture, type Ticker } from 'pixi.js'
-import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, GROUND_SET_CHANCE } from '../../constants'
+import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
@@ -122,7 +122,7 @@ export default class Map extends Container {
 
     this.context = context
     this.size = 0
-    this.chanceOfSets = GROUND_SET_CHANCE
+    this.chanceOfSets = 0
 
     this.ready = false
     this.grid = []

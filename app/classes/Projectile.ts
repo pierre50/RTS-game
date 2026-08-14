@@ -10,7 +10,6 @@ import {
   isFriendlyTarget,
   isometricToCartesian,
   moveTowardPoint,
-  pointIsBetweenTwoPoint,
   pointsDistance,
   average,
   uuidv4,
@@ -26,20 +25,19 @@ import {
   playAudibleSoundCue,
   randomRange,
 } from '../lib'
+import { findTreeSegmentCollision } from '../lib/treeCollision'
 import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomaticAggression'
 import { fadeOutThenClear } from '../lib/entityFade'
 import { getEntityWeaponPower } from '../lib/equipmentStats'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
-  BUCKET_SIZE,
   CELL_DEPTH,
   CELL_HEIGHT,
   CELL_WIDTH,
   FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
-  RESOURCE_TYPES,
   STEP_TIME,
   UNIT_TYPES,
 } from '../constants'
@@ -47,7 +45,6 @@ import { getShadowsEnabled } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { CommandSound, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeMap } from '../types/map'
 import type { Point } from '../types/grid'
 import type { AudibleInstance } from '../lib'
 
@@ -78,6 +75,7 @@ type RuntimeProjectile = ProjectileOptions & {
   directionalAnimationFrames?: number
   fullCircleStartDegree?: number
 }
+type ProjectileSpawnOffset = { x?: number; y?: number }
 type ProjectileTexture = Texture & { defaultAnchor?: { x: number; y: number } }
 type ProjectileSprite = AnimatedSprite
 type EmbeddedMaskKind = 'ground' | 'tree'
@@ -91,20 +89,19 @@ const PROJECTILE_SLOWDOWN_START = 0.65
 const PROJECTILE_MIN_SPEED_FACTOR = 0.18
 const PROJECTILE_MIN_DAMAGE_FACTOR = 0.35
 const PROJECTILE_COLLISION_SCALE = 0.35
-// Small fixed hitbox around a tree's anchor point — deliberately much smaller than the canopy
-// sprite, which visually overlaps neighboring tiles. Using the sprite's bounds instead would
-// block shots that only cross rendered foliage pixels while their real ground path passes beside
-// the tree.
-const TREE_TRUNK_RADIUS = 10
-// Shots flying higher above the ground than this (arced lobs, mostly) are treated as clearing the
-// canopy and never test against trees at all.
-const TREE_CANOPY_BLOCK_HEIGHT = 90
-// Cartesian-cell radius used to gather bucket candidates around the projectile's current cell —
-// comfortably larger than the trunk radius plus a tick's worth of travel, in cell units.
-const TREE_SEARCH_RADIUS = 1.5
 const TREE_STICK_JITTER = 5
 const TREE_STICK_HEIGHT = 10
-const EMBEDDED_MASK_PROJECTILE_TYPES = new Set(['Arrow', 'FireArrow', 'Spear', 'Bolt', 'FireBolt'])
+const EMBEDDED_MASK_PROJECTILE_TYPES = new Set([
+  'Arrow',
+  'ArrowCeramic',
+  'ArrowCopper',
+  'ArrowBronze',
+  'ArrowIron',
+  'FireArrow',
+  'Spear',
+  'Bolt',
+  'FireBolt',
+])
 const EMBEDDED_MASK_SIZE = 256
 const GROUND_EMBED_DEPTH = 5
 const TREE_EMBED_DEPTH = 4
@@ -142,28 +139,6 @@ function clipPolygonWithHalfPlane(polygon: Point[], plane: HalfPlane): Point[] {
     if (currentInside) clipped.push(current)
   }
   return clipped
-}
-
-function findNearbyTrees(map: RuntimeMap, i: number, j: number): ResourceEntity[] {
-  const buckets = map.instanceBuckets
-  if (!buckets || !buckets.length) return []
-
-  const minBi = Math.max(Math.floor((i - TREE_SEARCH_RADIUS) / BUCKET_SIZE), 0)
-  const maxBi = Math.min(Math.floor((i + TREE_SEARCH_RADIUS) / BUCKET_SIZE), buckets.length - 1)
-  const minBj = Math.max(Math.floor((j - TREE_SEARCH_RADIUS) / BUCKET_SIZE), 0)
-  const maxBj = Math.min(Math.floor((j + TREE_SEARCH_RADIUS) / BUCKET_SIZE), (buckets[0]?.length ?? 1) - 1)
-
-  const trees: ResourceEntity[] = []
-  for (let bi = minBi; bi <= maxBi; bi++) {
-    for (let bj = minBj; bj <= maxBj; bj++) {
-      for (const instance of buckets[bi]?.[bj] ?? []) {
-        if (instance.family === FAMILY_TYPES.resource && (instance as ResourceEntity).type === RESOURCE_TYPES.tree) {
-          trees.push(instance as ResourceEntity)
-        }
-      }
-    }
-  }
-  return trees
 }
 
 function getProjectileVisualOffset(instance: RuntimeEntity | null | undefined): number {
@@ -224,7 +199,11 @@ function getDirectionalAnimation(projectile: RuntimeProjectile, textures: Textur
 
   let directionIndex
   let mirrored = false
-  if (projectile.fullCircleStartDegree != null) {
+  if (Array.isArray(projectile.directionalFrameOrder)) {
+    const direction = degreeToDirection(degree)
+    const orderedIndex = projectile.directionalFrameOrder.indexOf(direction as string)
+    directionIndex = orderedIndex >= 0 ? Math.min(orderedIndex, directionCount - 1) : 0
+  } else if (projectile.fullCircleStartDegree != null) {
     const normalizedDegree = (((degree - projectile.fullCircleStartDegree) % 360) + 360) % 360
     directionIndex = Math.round(normalizedDegree / (360 / directionCount)) % directionCount
   } else {
@@ -296,6 +275,7 @@ export class Projectile extends Container {
   projectileScale?: number
   spawnOffsetX?: number
   spawnOffsetY?: number
+  directionalSpawnOffsets?: Record<string, ProjectileSpawnOffset>
   fullCircleStartDegree?: number
   trajectory?: { kind: string; minArcHeight?: number; arcHeightFactor?: number; maxArcHeight?: number }
   impactEffect?: { assets: string; animationSpeed?: number; scale?: number }
@@ -324,27 +304,31 @@ export class Projectile extends Container {
     }
     this.maxDistance = options.maxDistance ?? this.maxDistance ?? this.getOwnerProjectileMaxDistance()
 
-    const ownerSpriteHeight = this.owner.sprite?.height ?? 0
-    this.x = this.spawnPoint?.x ?? this.owner.x + (this.spawnOffsetX ?? 0)
-    this.y =
-      this.spawnPoint?.y ??
-      this.owner.y + getProjectileVisualOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
-    this.z = this.owner.z ?? 0
     const targetPoint = this.destination || this.target
     if (!targetPoint) {
       this.isDead = true
       return
     }
+    const ownerSpriteHeight = this.owner.sprite?.height ?? 0
+    const baseX = this.spawnPoint?.x ?? this.owner.x + (this.spawnOffsetX ?? 0)
+    const baseY =
+      this.spawnPoint?.y ??
+      this.owner.y + getProjectileVisualOffset(this.owner) - ownerSpriteHeight / 2 + (this.spawnOffsetY ?? 0)
     // this.destination (when set) is a plain world point, never an instance with relief lift.
     let { x: targetX } = targetPoint
     let targetY =
       targetPoint.y +
       (this.destination ? getProjectileDestinationVisualDelta(this) : getProjectileVisualOffset(this.target))
+    const degree = this.degree || getPointsDegree(baseX, baseY, targetX, targetY)
+    this.direction = degreeToDirection(degree)
+    const directionalSpawnOffset =
+      !this.spawnPoint && this.direction ? this.directionalSpawnOffsets?.[this.direction] : undefined
+    this.x = baseX + (directionalSpawnOffset?.x ?? 0)
+    this.y = baseY + (directionalSpawnOffset?.y ?? 0)
+    this.z = this.owner.z ?? 0
 
     playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
 
-    const degree = this.degree || getPointsDegree(this.x, this.y, targetX, targetY)
-    this.direction = degreeToDirection(degree)
     const sprite = this.createSprite(degree)
     this.sprite = sprite
     this.spawnOrigin = { x: this.x, y: this.y }
@@ -825,29 +809,12 @@ export class Projectile extends Container {
   // otherwise tunnel past a narrow trunk between two ticks. Skipped entirely once the shot is
   // flying above TREE_CANOPY_BLOCK_HEIGHT, so arced/lobbed projectiles can clear the canopy.
   findTreeCollision(previousX: number, previousY: number): ResourceEntity | null {
-    if (this.currentAltitude > TREE_CANOPY_BLOCK_HEIGHT) return null
-
-    const [i, j] = isometricToCartesian(this.x, this.y)
-    let closest: ResourceEntity | null = null
-    let closestDistance = Infinity
-    for (const tree of findNearbyTrees(this.context.map, i, j)) {
-      if (tree.isDead || tree.isDestroyed) continue
-      if (
-        !pointIsBetweenTwoPoint(
-          { x: previousX, y: previousY },
-          { x: this.x, y: this.y },
-          { x: tree.x, y: tree.y },
-          TREE_TRUNK_RADIUS
-        )
-      ) {
-        continue
-      }
-      const distance = pointsDistance(this.x, this.y, tree.x, tree.y)
-      if (distance >= closestDistance) continue
-      closest = tree
-      closestDistance = distance
-    }
-    return closest
+    return findTreeSegmentCollision(
+      this.context.map,
+      { x: previousX, y: previousY },
+      { x: this.x, y: this.y },
+      { currentAltitude: this.currentAltitude }
+    )
   }
 
   // Hunting spears train the hunting skill; every other unit-fired projectile

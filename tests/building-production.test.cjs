@@ -20,6 +20,17 @@ function loadModule(relativePath, mocks) {
         playerNeedsChiefForCommand: () => false,
       }
     }
+    if (request === '../../lib/stableHorses') {
+      return {
+        getStableHorseAmount: building => building.stableHorses?.length ?? 0,
+        consumeStableHorse: building => building.stableHorses?.shift?.() ?? null,
+        returnStableHorse: (building, horse) => {
+          if (!horse) return
+          building.stableHorses = building.stableHorses ?? []
+          building.stableHorses.unshift(horse)
+        },
+      }
+    }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -1010,6 +1021,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     loading: null,
     technology: null,
     units: ['Fantassin'],
+    stableHorses: [{ horseColor: 'dark' }],
     context: { map, menu: {} },
     owner,
     startInterval(callback, delay) {
@@ -1077,12 +1089,201 @@ test('stable training remounts the same unit type without charging unit cost or 
         type: 'Fantassin',
         name: 'Alexios',
         mountedOnHorse: true,
+        horseColor: 'dark',
         hitPoints: 32,
         speed: 1.65,
         experience: { combat: 12 },
       },
     ]
   )
+})
+
+test('empty stable checks horse stock when the trainee enters, not when ordered', () => {
+  const calls = []
+  const owner = {
+    food: 50,
+    population: 3,
+    populationMax: 10,
+    selectedUnits: [],
+    units: [],
+    isPlayed: true,
+    config: {
+      units: {
+        Bowman: { category: 'Bowman', cost: { food: 50 }, trainingTime: 27 },
+      },
+    },
+  }
+  const bowman = {
+    type: 'Bowman',
+    owner,
+    context: {},
+    sendToEvt(target, action, options) {
+      calls.push(['sendToEvt', target.type, action, options])
+    },
+  }
+  owner.units.push(bowman)
+  const building = {
+    type: 'Stable',
+    isBuilt: true,
+    isDead: false,
+    queue: [],
+    loading: null,
+    technology: null,
+    units: ['Bowman'],
+    stableHorses: [],
+    context: {
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+        updateButtonContent() {},
+        toggleQueuedActionCancel() {},
+      },
+    },
+    owner,
+  }
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      MOUNTED_HORSE_SPEED_BONUS: 0.45,
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => null,
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: () => {},
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildingTraining': buildingTrainingMock,
+    '../../lib/unitUpgrades': {
+      canUpgradeUnitAtBuilding: () => true,
+    },
+  })
+  const production = new BuildingProduction(building)
+
+  assert.equal(production.requestUnitTraining('Bowman', undefined, bowman), true)
+  assert.equal(bowman.trainingTargetType, 'Bowman')
+  assert.deepEqual(calls, [['sendToEvt', 'Stable', 'train', { forceRepath: true }]])
+
+  assert.equal(production.startTrainingWithUnit(bowman), false)
+  assert.equal(bowman.trainingTargetType, null)
+  assert.deepEqual(calls.slice(1), [['message', 'stableNeedsHorse', 'warning']])
+})
+
+test('chief requirement for trainee training is checked when the unit enters', () => {
+  const calls = []
+  const owner = {
+    food: 50,
+    population: 3,
+    populationMax: 10,
+    selectedUnits: [],
+    units: [],
+    isPlayed: true,
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingTime: 27 },
+      },
+    },
+  }
+  const trainee = {
+    type: 'Fantassin',
+    owner,
+    context: {},
+    sendToEvt(target, action, options) {
+      calls.push(['sendToEvt', target.type, action, options])
+    },
+  }
+  owner.selectedUnits.push(trainee)
+  owner.units.push(trainee)
+  const building = {
+    type: 'Barracks',
+    isBuilt: true,
+    isDead: false,
+    queue: [],
+    loading: null,
+    technology: null,
+    units: ['Fantassin'],
+    context: {
+      menu: {
+        showMessage(message, type) {
+          calls.push(['message', message, type])
+        },
+        updateButtonContent() {},
+        toggleQueuedActionCancel() {},
+      },
+    },
+    owner,
+  }
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      MOUNTED_HORSE_SPEED_BONUS: 0.45,
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => null,
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: () => {},
+    },
+    '../../lib/chief': {
+      hasLivingChief: () => false,
+      playerNeedsChiefForCommand: () => true,
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildingTraining': buildingTrainingMock,
+    '../../lib/unitUpgrades': {
+      canUpgradeUnitAtBuilding: () => true,
+    },
+  })
+  const production = new BuildingProduction(building)
+
+  assert.equal(production.buyUnit('Fantassin'), true)
+  assert.equal(trainee.trainingTargetType, 'Fantassin')
+  assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true }]])
+
+  assert.equal(production.startTrainingWithUnit(trainee), false)
+  assert.equal(trainee.trainingTargetType, null)
+  assert.deepEqual(calls.slice(1), [['message', 'requiresChief', 'warning']])
 })
 
 test('arrived trainee unit is consumed and trained unit reuses the same population slot', () => {

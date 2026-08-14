@@ -783,6 +783,7 @@ export default class Game extends Container {
       healthRegenRate: source.healthRegenRate,
       hitPoints: source.hitPoints,
       horseColor: source.horseColor,
+      companionHorseColor: source.companionHorseColor,
       isChief: source.isChief,
       lastHealthDamagedAt: source.lastHealthDamagedAt,
       loading: source.loading,

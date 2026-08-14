@@ -75,6 +75,15 @@ PALETTES: dict[str, list[str]] = {
         "#8AAAAB",
         "#A9C9CA",
     ],
+    "arrow_metal_source": [
+        "#2E2533",
+        "#4B444C",
+        "#726B7E",
+        "#7E7068",
+        "#867E7F",
+        "#748DA4",
+        "#A9C9CA",
+    ],
 
     # ── Cloth ───────────────────────────────────────────────────────────────
     "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
@@ -214,8 +223,8 @@ class UnitLook:
 
 UNIT_LOOKS: dict[str, UnitLook] = {
     "villager": UnitLook(hair="plain", dress=(SANDALS, SLIT_SKIRT)),
-    "infantry": UnitLook(hair="long", hat=HEADBAND, dress=(SKIRT_LEGION_TEAM, SANDALS)),
-    "infantry_nohair": UnitLook(dress=(SKIRT_LEGION_TEAM, SANDALS)),
+    "infantry": UnitLook(hair="long", hat=HEADBAND, dress=(SANDALS, SKIRT_LEGION_TEAM)),
+    "infantry_nohair": UnitLook(dress=(SANDALS, SKIRT_LEGION_TEAM)),
     # The ARPG hero's own signature look, distinct from a plain "villager": light
     # brown hair, a blue headband, and a white-shirt/brown-pantaloons/black-shoes
     # outfit with black suspenders on top. Baked like "villager" (see
@@ -224,7 +233,7 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     "hero": UnitLook(
         hair="plain",
         hat=HEADBAND_BLUE,
-        dress=(SLIT_SKIRT, SANDALS),
+        dress=(SANDALS, SLIT_SKIRT),
     ),
     "priest": UnitLook(
         hair="long",
@@ -234,8 +243,8 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         head="human/male_elderly",
         cape=DressItem("cape/solid", team_colored=True),
         dress=(
-            DressItem("legs/skirts/plain/male/{animation}.png", palette="white"),
             SANDALS,
+            DressItem("legs/skirts/plain/male/{animation}.png", palette="white"),
             DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white"),
             DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True),
         ),
@@ -249,8 +258,8 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         cape=DressItem("cape/solid", team_colored=True),
         neck=DressItem("neck/capeclip/male/{animation}/{color}.png"),
         dress=(
-            DressItem("legs/formal_striped/male/{animation}.png", team_colored=True),
             SANDALS,
+            DressItem("legs/formal_striped/male/{animation}.png", team_colored=True),
         ),
     ),
 }
@@ -403,14 +412,15 @@ class Sheet:
 
 # Rows are up/left/down in source-row order; the LPC source's 4th row (right) is
 # dropped here since it's a near-mirror of left — the runtime mirrors left frames
-# for east-facing sprites instead (see getSpriteFrameSelection in app/lib/extra.ts).
+# for east-facing sprites instead. Keep each retained row's animation complete.
 SHEETS: tuple[Sheet, ...] = (
     Sheet(
         "walking",
         "walk",
         9,
         4,
-        frame_indices=(0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 25, 26),
+        keep_every_other_frame=False,
+        frame_indices=tuple(range(0, 27)),
     ),
     Sheet("action", "slash", 6, 3, keep_every_other_frame=False),
     Sheet(
@@ -418,7 +428,8 @@ SHEETS: tuple[Sheet, ...] = (
         "shoot",
         13,
         4,
-        frame_indices=(0, 2, 3, 5, 7, 9, 10, 12, 13, 15, 16, 18, 20, 22, 23, 25, 26, 28, 29, 31, 33, 35, 36, 38),
+        keep_every_other_frame=False,
+        frame_indices=tuple(range(0, 39)),
     ),
     Sheet("spellcast", "spellcast", 7, 3, keep_every_other_frame=False),
     Sheet("dying", "hurt", 6, 1, keep_every_other_frame=False),

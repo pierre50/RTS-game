@@ -30,11 +30,14 @@ export type SaveEntityState = {
   lastEnergySpentAt?: number
   hitPoints?: number
   horseColor?: string
+  companionHorseColor?: string | null
   healthRegenRate?: number
   healthRegenDelay?: number
   healthRegenMultiplier?: number
   lastHealthDamagedAt?: number
   i: number
+  horseAmount?: number
+  stableHorses?: Array<{ horseColor?: string }>
   inactif?: boolean
   isBuilt?: boolean
   isDead?: boolean

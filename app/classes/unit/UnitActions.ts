@@ -19,13 +19,14 @@ import {
   updateInstanceVisibility,
   playSoundCue,
   playerCanSeeInstance,
-  SHOOT_RELEASE_FRAME,
+  BOW_SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
   showDamageFeedback,
   showHealingFeedback,
   showResourceGainFeedback,
   HUNTING_SPEAR_POWER,
   HUNTING_SPEAR_PROJECTILE,
+  resumeVillagerAutonomy,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import {
@@ -80,6 +81,26 @@ function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value i
 
 function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value is ResourceEntity {
   return isRuntimeEntity(value) && value.family === FAMILY_TYPES.resource
+}
+
+function isDepletedBerrybush(value: RuntimeEntity | null | undefined): boolean {
+  return Boolean(value?.type === RESOURCE_TYPES.berrybush && (value.quantity ?? 0) <= 0)
+}
+
+function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
+  if (
+    isDepletedBerrybush(target) &&
+    unit.owner?.isPlayed &&
+    target &&
+    (unit.context?.controls?.instanceInCamera?.(target) ?? true)
+  ) {
+    unit.context?.menu?.showMessage(t('berrybushDepleted'), 'warning')
+  }
+}
+
+function markBerrybushDepleted(target: RuntimeEntity): void {
+  if (!isDepletedBerrybush(target)) return
+  target.updateTexture?.()
 }
 
 function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity | ResourceEntity {
@@ -142,6 +163,11 @@ function applyLoadingWorkAssets(unit: UnitEntity): void {
 
 function applyUnloadedWorkAssets(unit: UnitEntity): void {
   applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: false })
+}
+
+function resumeAutonomyOrStop(unit: UnitEntity): void {
+  if (resumeVillagerAutonomy?.(unit)) return
+  unit.stop?.()
 }
 
 function removeFromOwnerList(
@@ -326,14 +352,14 @@ export class UnitActions {
     this.clearInvalidPreviousTask()
     if (!unit.previousDest) {
       this.restorePreviousWork()
-      unit.stop?.()
+      resumeAutonomyOrStop(unit)
       return
     }
     const dest = isRuntimeEntity(unit.previousDest) ? unit.previousDest : null
     if (!dest) {
       unit.previousDest = null
       this.restorePreviousWork()
-      unit.stop?.()
+      resumeAutonomyOrStop(unit)
       return true
     }
     const type = dest.category || dest.type
@@ -379,6 +405,7 @@ export class UnitActions {
       releaseFrame = SLASH_IMPACT_FRAME,
       gatherEvery = 1,
       onRelease,
+      onDepleted,
     }: {
       dieOnEmpty?: boolean
       checkOwner?: boolean
@@ -386,11 +413,13 @@ export class UnitActions {
       releaseFrame?: number
       gatherEvery?: number
       onRelease?: () => void
+      onDepleted?: (target: RuntimeEntity) => void
     } = {}
   ) {
     const unit = this.unit
     const menu = unit.context?.menu
     if (!unit.getActionCondition?.(unit.dest)) {
+      showDepletedBerrybushMessage(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
       unit.affectNewDest?.()
       return
     }
@@ -404,6 +433,7 @@ export class UnitActions {
         if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
           dest.die?.()
         }
+        showDepletedBerrybushMessage(unit, dest)
         unit.affectNewDest?.()
         return
       }
@@ -443,6 +473,7 @@ export class UnitActions {
       }
       if ((dest.quantity ?? 0) <= 0) {
         if (dieOnEmpty) dest.die?.()
+        onDepleted?.(dest)
         unit.affectNewDest?.()
       }
       if (wasEmpty) {
@@ -506,7 +537,7 @@ export class UnitActions {
         if (unit.previousDest) {
           unit.goBackToPrevious?.()
         } else {
-          unit.stop?.()
+          resumeAutonomyOrStop(unit)
         }
         break
       }
@@ -643,7 +674,10 @@ export class UnitActions {
       }
       case ACTION_TYPES.forageberry:
         this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
-          dieOnEmpty: true,
+          onDepleted: dest => {
+            markBerrybushDepleted(dest)
+            showDepletedBerrybushMessage(unit, dest)
+          },
         })
         break
       case ACTION_TYPES.minestone:
@@ -868,7 +902,7 @@ export class UnitActions {
           }
         }
         if (unit.sprite) {
-          onSpriteLoopAtFrame(unit.sprite, SHOOT_RELEASE_FRAME, () => {
+          onSpriteLoopAtFrame(unit.sprite, BOW_SHOOT_RELEASE_FRAME, () => {
             const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
             if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
             if (!spendOrWaitForEnergy(unit, unit.action, dest)) return

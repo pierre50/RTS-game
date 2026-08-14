@@ -26,10 +26,12 @@ const constants = {
     forageberry: 'forageberry',
     minestone: 'minestone',
     minegold: 'minegold',
+    takemeat: 'takemeat',
     build: 'build',
     farm: 'farm',
   },
   FAMILY_TYPES: {
+    animal: 'animal',
     building: 'building',
     resource: 'resource',
   },
@@ -62,6 +64,9 @@ function loadVillagerAutonomy() {
         const sprite = target?.sprite
         return Boolean(sprite?.textures?.length && sprite.currentFrame >= sprite.textures.length - 1)
       },
+    },
+    './playerState': {
+      getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
     },
   })
 }
@@ -101,6 +106,11 @@ function createVillager(owner, extra = {}) {
       this.dest = target
       this.work = constants.WORK_TYPES.builder
       this.action = constants.ACTION_TYPES.build
+    },
+    sendToTakeMeat(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.hunter
+      this.action = constants.ACTION_TYPES.takemeat
     },
     ...extra,
   }
@@ -174,6 +184,39 @@ test('food autonomy does not recursively resume while assigning an order', () =>
   assert.equal(villager.assigningAutonomousJob, false)
 })
 
+test('food autonomy prefers a closer visible animal carcass with meat', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const carcass = {
+    family: constants.FAMILY_TYPES.animal,
+    i: 1,
+    isDead: true,
+    isDestroyed: false,
+    j: 1,
+    label: 'deer-carcass-1',
+    quantity: 100,
+    type: 'Deer',
+    visible: true,
+  }
+  const berry = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 4,
+    isDestroyed: false,
+    j: 4,
+    label: 'berry-1',
+    quantity: 250,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+  const owner = createOwner({ foundedBerrybushs: new Set([berry]) })
+  const villager = createVillager(owner, {
+    context: { map: { gaia: { animals: [carcass] } } },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'food'), true)
+
+  assert.equal(villager.dest, carcass)
+  assert.equal(villager.action, constants.ACTION_TYPES.takemeat)
+})
+
 test('construction autonomy does not explore when there is no construction target', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const owner = createOwner()
@@ -207,6 +250,24 @@ test('resource autonomy explores when the requested resource is unknown', () => 
   assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
   assert.equal(villager.explored, true)
   assert.equal(villager.autonomousJob, 'wood')
+})
+
+test('resource autonomy clears the job when no target or exploration route exists', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const owner = createOwner({ foundedTrees: new Set() })
+  const villager = createVillager(owner, {
+    autonomousJob: 'wood',
+    explored: false,
+    explore() {
+      this.explored = true
+      return false
+    },
+  })
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'wood'), false)
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
+  assert.equal(villager.explored, true)
+  assert.equal(villager.autonomousJob, null)
 })
 
 test('construction autonomy only targets own unfinished buildings', () => {

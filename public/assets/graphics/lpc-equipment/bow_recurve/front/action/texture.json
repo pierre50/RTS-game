@@ -575,6 +575,678 @@
         "x": 0.5,
         "y": 0.86
       }
+    },
+    "024_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1536,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "025_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1600,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "026_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1664,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "027_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1728,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "028_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1792,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "029_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1856,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "030_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1920,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "031_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 1984,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "032_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2048,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "033_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2112,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "034_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2176,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "035_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2240,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "036_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2304,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "037_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2368,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "038_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2432,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "039_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2496,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "040_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2560,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "041_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2624,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "042_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2688,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "043_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2752,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "044_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2816,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "045_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2880,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "046_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 2944,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "047_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 3008,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "048_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 3072,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "049_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 3136,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "050_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 3200,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "051_graphics_lpc-equipment_bow_recurve_front_action.png": {
+      "frame": {
+        "x": 3264,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
     }
   },
   "meta": {

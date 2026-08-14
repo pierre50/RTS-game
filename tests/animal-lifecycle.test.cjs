@@ -39,6 +39,15 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
   '../../lib/entityFade': {
     fadeOutThenClear: () => {},
   },
+  '../../lib/spriteAnimation': {
+    playSpriteAnimationFromStart: (sprite, options = {}) => {
+      if (options.clearFrameChange) sprite.onFrameChange = undefined
+      if (options.clearLoop !== false) sprite.onLoop = undefined
+      sprite.loop = options.loop ?? sprite.loop
+      if (options.onComplete !== undefined) sprite.onComplete = options.onComplete
+      sprite.gotoAndPlay(0)
+    },
+  },
 })
 
 function createAnimal({ quantity = 50, selected = false } = {}) {
@@ -96,4 +105,37 @@ test('fully depleted single-frame animal corpses clear without invalid frame wri
   assert.equal(sprite.currentFrame, 0)
   assert.equal(animal.context.map.grid[0][0].has, null)
   assert.equal(animal.context.map.grid[0][0].corpses.has(animal), true)
+})
+
+test('animal death always starts the dying animation from the first frame', () => {
+  const calls = []
+  const sprite = {
+    loop: true,
+    onComplete: undefined,
+    onLoop: () => {},
+    currentFrame: 3,
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+  }
+  const animal = {
+    altitude: 0,
+    sprite,
+    zIndex: 10,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    syncShadow: () => calls.push(['syncShadow']),
+  }
+
+  new AnimalLifecycle(animal).death()
+
+  assert.deepEqual(calls, [
+    ['setTextures', 'dyingSheet'],
+    ['syncShadow'],
+    ['gotoAndPlay', 0],
+  ])
+  assert.equal(sprite.loop, false)
+  assert.equal(sprite.onLoop, undefined)
+  assert.equal(typeof sprite.onComplete, 'function')
+  assert.equal(sprite.currentFrame, 0)
 })

@@ -575,6 +575,78 @@
         "x": 0.5,
         "y": 0.68
       }
+    },
+    "024_graphics_lpc-equipment_bow_front_walking.png": {
+      "frame": {
+        "x": 3072,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.68
+      }
+    },
+    "025_graphics_lpc-equipment_bow_front_walking.png": {
+      "frame": {
+        "x": 3200,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.68
+      }
+    },
+    "026_graphics_lpc-equipment_bow_front_walking.png": {
+      "frame": {
+        "x": 3328,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.68
+      }
     }
   },
   "meta": {

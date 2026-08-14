@@ -8,7 +8,7 @@ import {
   instanceContactInstance,
   onSpriteLoopAtFrame,
   playAudibleSoundCue,
-  SHOOT_RELEASE_FRAME,
+  BOW_SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
 } from '../../lib'
 import { Projectile } from '../Projectile'
@@ -174,7 +174,7 @@ export class UnitCombat {
       return
     }
     if (unit.range && unit.projectile && unit.type !== UNIT_TYPES.villager) {
-      this.runAttackLoop(SHOOT_RELEASE_FRAME, dest => {
+      this.runAttackLoop(BOW_SHOOT_RELEASE_FRAME, dest => {
         if (!dest || !unit.realDest || !map) return
         playAudibleSoundCue(unit, unit.sounds?.attack)
         const projectile = new Projectile(

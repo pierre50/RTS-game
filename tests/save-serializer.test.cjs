@@ -191,6 +191,7 @@ test('serializes unit work orders, carried resources, equipment state and build 
       currentSheet: 'action',
       currentFrame: 2,
       mountedOnHorse: true,
+      companionHorseColor: 'dark',
       followingHero: true,
       assetCiv: 'franks',
       assetAge: 2,
@@ -219,6 +220,7 @@ test('serializes unit work orders, carried resources, equipment state and build 
   })
   assert.equal(save.players[0].units[0].loading, 7)
   assert.equal(save.players[0].units[0].mountedOnHorse, true)
+  assert.equal(save.players[0].units[0].companionHorseColor, 'dark')
   assert.deepEqual(save.players[0].units[0].experience, { woodcutting: 15 })
 })
 
@@ -237,6 +239,8 @@ test('serializes building production, research, rally points and active user lin
       isBuilt: true,
       hitPoints: 500,
       quantity: 3,
+      horseAmount: 2,
+      stableHorses: [{ horseColor: 'dark' }, { horseColor: 'light' }],
       rallyPoint: { i: 22, j: 23, direction: 1 },
       assetCiv: 'greek',
       assetAge: 1,
@@ -258,6 +262,8 @@ test('serializes building production, research, rally points and active user lin
     isBuilt: true,
     hitPoints: 500,
     quantity: 3,
+    horseAmount: 2,
+    stableHorses: [{ horseColor: 'dark' }, { horseColor: 'light' }],
     rallyPoint: { i: 22, j: 23, direction: 1 },
     assetCiv: 'greek',
     assetAge: 1,

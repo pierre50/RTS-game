@@ -1,15 +1,15 @@
 {
   "Berrybush": {
-    "totalQuantity": 200,
+    "totalQuantity": 100,
     "color": "#7B9051",
     "assets": [
       {
         "sheet": "resources/berrybush",
-        "frame": 0
+        "frame": 1
       },
       {
         "sheet": "resources/berrybush",
-        "frame": 1
+        "frame": 2
       }
     ]
   },

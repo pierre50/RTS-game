@@ -267,16 +267,17 @@ test('infantry equipment layers unlock by level and switch metal by civilization
 })
 
 test('archer equipment follows soldier armor progression without shield', () => {
-  const { dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
+  const { dynamicEquipmentAssets, dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
     '../../constants': constants,
   })
 
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 0, 0), ['quiver', 'bow'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_great'])
-  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 0), ['quiver', 'bow_recurve'])
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 0, 0), ['quiver', 'bow', 'arrow_ceramic'])
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_great', 'arrow_copper'])
+  assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 0), ['quiver', 'bow_recurve', 'arrow_bronze'])
   assert.deepEqual(dynamicEquipmentForUnit('Bowman', 2, 15), [
     'quiver',
     'bow_recurve',
+    'arrow_bronze',
     'shoulder_legion_bronze',
     'bracers_bronze',
     'armor_mail_bronze',
@@ -287,6 +288,7 @@ test('archer equipment follows soldier armor progression without shield', () => 
   assert.deepEqual(dynamicEquipmentForUnit('Bowman', 3, 15), [
     'quiver',
     'bow_recurve',
+    'arrow_iron',
     'shoulder_legion_iron',
     'bracers_iron',
     'armor_mail_iron',
@@ -299,18 +301,36 @@ test('archer equipment follows soldier armor progression without shield', () => 
 
   const layers = dynamicEquipmentLayersForUnit('Bowman')
   const bow = layers.find(layer => layer.walkingSheet === 'lpc-equipment/bow/front/walking')
+  const arrow = layers.find(layer => layer.actionSheet === 'lpc-equipment/arrow_ceramic/front/action')
   const quiver = layers.find(layer => layer.walkingSheet === 'lpc-equipment/quiver/back/walking')
   const mail = layers.find(layer => layer.walkingSheet === 'lpc-equipment/armor_mail_ceramic/front/walking')
   const shield = layers.find(layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking')
   assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/bow_great/front/walking')
   assert.equal(bow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/bow_recurve/front/action')
   assert.equal(bow?.mountedCut, false)
+  assert.equal(arrow?.walkingSheet, undefined)
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/arrow_copper/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['3']?.actionSheet, 'lpc-equipment/arrow_iron/front/action')
+  assert.equal(arrow?.mountedCut, false)
+  assert.equal(arrow?.hideOnOrAfterFrame, 9)
   assert.equal(quiver?.mountedCut, false)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.mountedCut, undefined)
   assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'lpc-equipment/armor_mail_bronze/front/walking')
   assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/armor_mail_iron/front/walking')
   assert.equal(shield, undefined)
+
+  const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/arrow_'))
+  assert.deepEqual(
+    arrowAssets.map(asset => asset.alias).sort(),
+    [
+      'lpc-equipment/arrow_bronze/front/action',
+      'lpc-equipment/arrow_ceramic/front/action',
+      'lpc-equipment/arrow_copper/front/action',
+      'lpc-equipment/arrow_iron/front/action',
+    ]
+  )
 })
 
 test('helmeted infantry swaps to no-hair baked base', () => {

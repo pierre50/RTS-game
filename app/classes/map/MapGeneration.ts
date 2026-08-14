@@ -1,4 +1,4 @@
-import { Assets, Sprite, type ContainerChild } from 'pixi.js'
+import { Assets, type ContainerChild } from 'pixi.js'
 import { Resource } from '../Resource'
 import { Human, AI, Gaia } from '../players'
 import {
@@ -26,13 +26,6 @@ import {
   PLAYER_TYPES,
   POPULATION_MAX,
   UNIT_TYPES,
-  FLOOR_SETS_GRASS,
-  FLOOR_SETS_DESERT,
-  FLOOR_SETS_JUNGLE,
-  FLOOR_SET_CHANCE,
-  GROUND_SETS,
-  WATER_SETS,
-  WATER_SET_CHANCE,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
   WATER_BORDER_PLACEMENT_CLEARANCE,
@@ -154,9 +147,6 @@ export type MapGenerationMap = RuntimeMap & {
   bakeTerrainToChunks(): void
   getChildByLabel(label: string): ContainerChild | null
   removeChild(child: ContainerChild): ContainerChild
-}
-type SetSprite = Sprite & {
-  updateAnchor?: boolean
 }
 type AmbientAnimalProfile = {
   weight: number
@@ -1609,19 +1599,6 @@ export class MapGeneration {
     }
   }
 
-  _placeWaterSet(cell: RuntimeCell): void {
-    const sheet = this.map.randomItem(WATER_SETS)
-    const texture = getTextureByFrame(sheet, 0, Assets)
-    if (!texture) return
-    const set: SetSprite = Sprite.from(texture)
-    set.label = LABEL_TYPES.set
-    set.roundPixels = true
-    set.eventMode = 'none'
-    set.updateAnchor = true
-    set.zIndex = 2
-    cell.addChild?.(set)
-  }
-
   generateSets() {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -1631,63 +1608,12 @@ export class MapGeneration {
           const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
           const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
           if (
-            cell.category !== 'Water' &&
-            !hasWaterNeighbour &&
-            !hasWaterBorderClearance &&
-            this.map.random() < FLOOR_SET_CHANCE &&
-            i > 1 &&
-            j > 1 &&
-            i < this.map.size &&
-            j < this.map.size
-          ) {
-            let floorSpritesheets
-            switch (cell.type) {
-              case 'Desert':
-                floorSpritesheets = FLOOR_SETS_DESERT
-                break
-              case 'Jungle':
-                floorSpritesheets = FLOOR_SETS_JUNGLE
-                break
-              default:
-                floorSpritesheets = FLOOR_SETS_GRASS
-                break
-            }
-            const randomSpritesheet = this.map.randomItem(floorSpritesheets)
-            const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-            const floor: SetSprite = Sprite.from(texture)
-            floor.label = LABEL_TYPES.floor
-            floor.roundPixels = true
-            floor.eventMode = 'none'
-            floor.updateAnchor = true
-            floor.zIndex = 1
-            cell.addChild?.(floor)
-          }
-          if (
-            !hasWaterNeighbour &&
-            !hasWaterBorderClearance &&
-            cell.category !== 'Water' &&
-            this.map.random() < this.map.chanceOfSets
-          ) {
-            const randomSpritesheet = this.map.randomItem(GROUND_SETS)
-            const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-            const rock: SetSprite = Sprite.from(texture)
-            rock.label = LABEL_TYPES.set
-            rock.roundPixels = true
-            rock.eventMode = 'none'
-            rock.updateAnchor = true
-            rock.zIndex = 2
-            cell.addChild?.(rock)
-          }
-          if (
             !hasWaterNeighbour &&
             !hasWaterBorderClearance &&
             cell.category !== 'Water' &&
             this.map.random() < AMBIENT_ANIMAL_CHANCE
           ) {
             this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
-          }
-          if (this.isShoreWaterCell(i, j) && !cell.has && this.map.random() < WATER_SET_CHANCE) {
-            this._placeWaterSet(cell)
           }
         }
       }
@@ -1702,56 +1628,12 @@ export class MapGeneration {
         const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
         const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
         if (
-          cell.category !== 'Water' &&
-          !hasWaterNeighbour &&
-          !hasWaterBorderClearance &&
-          this.map.random() < FLOOR_SET_CHANCE &&
-          i > 1 &&
-          j > 1 &&
-          i < this.map.size &&
-          j < this.map.size
-        ) {
-          const sheets =
-            cell.type === 'Desert' ? FLOOR_SETS_DESERT : cell.type === 'Jungle' ? FLOOR_SETS_JUNGLE : FLOOR_SETS_GRASS
-          const randomSpritesheet = this.map.randomItem(sheets)
-          const texture = getTextureByFrame(randomSpritesheet, 0, Assets)
-          if (texture) {
-            const floor: SetSprite = Sprite.from(texture)
-            floor.label = LABEL_TYPES.floor
-            floor.roundPixels = true
-            floor.eventMode = 'none'
-            floor.updateAnchor = true
-            floor.zIndex = 1
-            cell.addChild?.(floor)
-          }
-        }
-        if (
-          !hasWaterNeighbour &&
-          !hasWaterBorderClearance &&
-          cell.category !== 'Water' &&
-          this.map.random() < this.map.chanceOfSets
-        ) {
-          const sheet = this.map.randomItem(GROUND_SETS)
-          const texture = getTextureByFrame(sheet, 0, Assets)
-          if (texture) {
-            const rock: SetSprite = Sprite.from(texture)
-            rock.label = LABEL_TYPES.set
-            rock.roundPixels = true
-            rock.eventMode = 'none'
-            rock.zIndex = 2
-            cell.addChild?.(rock)
-          }
-        }
-        if (
           !hasWaterNeighbour &&
           !hasWaterBorderClearance &&
           cell.category !== 'Water' &&
           this.map.random() < AMBIENT_ANIMAL_CHANCE
         ) {
           this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
-        }
-        if (this.isShoreWaterCell(i, j) && !cell.has && this.map.random() < WATER_SET_CHANCE) {
-          this._placeWaterSet(cell)
         }
       }
       const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 8

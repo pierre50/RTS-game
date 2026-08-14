@@ -1,6 +1,8 @@
-import { MENU_INFO_IDS, POPULATION_MAX } from '../constants'
+import { BUILDING_TYPES, MENU_INFO_IDS, POPULATION_MAX } from '../constants'
 import { getIconPath } from '../lib'
+import { HORSE_COLOR_PALETTES, isHorseColor } from '../lib/horseColors'
 import { t } from '../lib/lang'
+import { getStableHorseAmount, getStableHorses, STABLE_HORSE_CAPACITY } from '../lib/stableHorses'
 import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import { getBuildingDisplayName } from './entityDisplayName'
 import type { BuildingEntity, EntityInfoRenderOptions } from '../types/entities'
@@ -20,6 +22,9 @@ export class BuildingInterface {
     if (building.displayPopulation && building.owner?.isPlayed && building.isBuilt) {
       element.appendChild(this.getPopulationElement())
     }
+    if (building.type === BUILDING_TYPES.stable && building.owner?.isPlayed && building.isBuilt) {
+      element.appendChild(this.getStableHorseElement())
+    }
     element.appendChild(this.getLoadingElement())
   }
 
@@ -34,6 +39,35 @@ export class BuildingInterface {
     populationSpan.textContent = owner.population + '/' + Math.min(POPULATION_MAX, owner.populationMax)
     populationDiv.appendChild(populationSpan)
     return populationDiv
+  }
+
+  getStableHorseElement(): HTMLDivElement {
+    const building = this.building
+    const horses = getStableHorses(building)
+    const horseDiv = document.createElement('div')
+    horseDiv.className = 'stable-horses'
+
+    const count = document.createElement('div')
+    count.className = 'stable-horses-count'
+    count.textContent = `${t('stableHorses')} ${getStableHorseAmount(building)}/${STABLE_HORSE_CAPACITY}`
+    horseDiv.appendChild(count)
+
+    const avatars = document.createElement('div')
+    avatars.className = 'stable-horse-avatars'
+    for (let index = 0; index < STABLE_HORSE_CAPACITY; index++) {
+      const horse = horses[index]
+      const color = isHorseColor(horse?.horseColor) ? horse.horseColor : null
+      const avatar = document.createElement('div')
+      avatar.className = `stable-horse-avatar${color ? ' filled' : ''}`
+      avatar.title = color ? t(`horseColor_${color}`) : ''
+      if (color) {
+        avatar.style.setProperty('--stable-horse-color', `#${HORSE_COLOR_PALETTES[color][1].toString(16).padStart(6, '0')}`)
+        avatar.style.setProperty('--stable-horse-shadow', `#${HORSE_COLOR_PALETTES[color][4].toString(16).padStart(6, '0')}`)
+      }
+      avatars.appendChild(avatar)
+    }
+    horseDiv.appendChild(avatars)
+    return horseDiv
   }
 
   updateLoading(): void {

@@ -28,6 +28,35 @@ function loadSpawnActions(sharedOverrides = {}) {
         ...sharedOverrides,
       }
     }
+    if (request === '../../classes/FloatingItem') return { FloatingItem: class {} }
+    if (request === '../../classes/Resource') {
+      return {
+        Resource: class {
+          constructor(options) {
+            Object.assign(this, options)
+          }
+        },
+      }
+    }
+    if (request === '../../constants') {
+      return {
+        BUILDING_TYPES: { farm: 'Farm' },
+        RESOURCE_TYPES: { gold: 'Gold', wheat: 'Wheat' },
+      }
+    }
+    if (request === '../../lib') {
+      return {
+        getBuildingFootprintCells(i, j) {
+          const cells = []
+          for (let x = i - 1; x <= i + 2; x++) {
+            for (let y = j - 1; y <= j + 2; y++) {
+              cells.push({ i: x, j: y })
+            }
+          }
+          return cells
+        },
+      }
+    }
     return require(request)
   }
 
@@ -66,6 +95,43 @@ test('spawn can target another player by index', () => {
     { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
     { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
   ])
+})
+
+test('building farm spawns a mature wheat field instead of a building entity', () => {
+  const { spawnBuilding } = loadSpawnActions()
+  const spawned = []
+  const currentPlayer = {
+    config: { buildings: { Farm: { size: 4 } } },
+    createBuilding: () => {
+      throw new Error('Farm should not create a building')
+    },
+  }
+  const context = {
+    player: currentPlayer,
+    players: [currentPlayer],
+    map: {
+      grid: [],
+      resources: new Set(),
+      addChild: resource => {
+        spawned.push(resource)
+        return resource
+      },
+    },
+    menu: {
+      updateTopbar: () => {},
+      updateResourcesMiniMapEvt: () => {},
+    },
+  }
+
+  const result = spawnBuilding(context, 'farm')
+
+  assert.deepEqual(result, { ok: true, message: 'Spawned Wheat Field' })
+  assert.equal(spawned.length, 16)
+  assert.equal(context.map.resources.size, 16)
+  assert.deepEqual(
+    spawned.map(resource => [resource.type, resource.startsMature]),
+    Array.from({ length: 16 }, () => ['Wheat', true])
+  )
 })
 
 test('spawn rejects an invalid player index', () => {

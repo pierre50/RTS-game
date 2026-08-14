@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { isWheatMature } from './combat'
+import { getGaiaAnimals } from './playerState'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -8,6 +9,16 @@ function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is Runt
 
 function isUsableResource(entity: RuntimeEntity | null | undefined): entity is ResourceEntity {
   return Boolean(isAliveEntity(entity) && entity.family === FAMILY_TYPES.resource && (entity.quantity ?? 1) > 0)
+}
+
+function isUsableAnimalCarcass(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
+  return Boolean(
+    entity &&
+      entity.family === FAMILY_TYPES.animal &&
+      entity.isDead &&
+      !entity.isDestroyed &&
+      (entity.quantity ?? 0) > 0
+  )
 }
 
 function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -60,6 +71,7 @@ function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
 function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   const started = unit.explore?.() ?? false
   if (started) unit.autonomousJob = job
+  else clearVillagerAutonomy(unit)
   return started
 }
 
@@ -81,9 +93,15 @@ function knownFoodTargets(unit: UnitEntity): RuntimeEntity[] {
   const wheat = foundedWheat?.size
     ? [...foundedWheat]
     : [...resources].filter(resource => isKnownToUnit(unit, resource) && resource.type === RESOURCE_TYPES.wheat)
-  return [...berries.filter(isUsableResource), ...wheat.filter(isUsableResource)].filter(target =>
-    isFoodTargetAvailable(unit, target)
-  )
+  const foundedCarcasses = unit.owner?.foundedDeadAnimals
+  const carcasses = foundedCarcasses?.size
+    ? [...foundedCarcasses]
+    : getGaiaAnimals(unit.context?.map?.gaia).filter(animal => isKnownToUnit(unit, animal))
+  return [
+    ...berries.filter(isUsableResource),
+    ...wheat.filter(isUsableResource),
+    ...carcasses.filter(isUsableAnimalCarcass),
+  ].filter(target => isFoodTargetAvailable(unit, target))
 }
 
 function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
@@ -138,7 +156,8 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
     if (job === 'food') {
       const target = closest(unit, knownFoodTargets(unit))
       if (!target) return exploreForAutonomy(unit, job)
-      if (target.type === RESOURCE_TYPES.wheat) unit.sendToFarm?.(target)
+      if (target.family === FAMILY_TYPES.animal) unit.sendToTakeMeat?.(target)
+      else if (target.type === RESOURCE_TYPES.wheat) unit.sendToFarm?.(target)
       else unit.sendToBerrybush?.(target)
       return true
     }

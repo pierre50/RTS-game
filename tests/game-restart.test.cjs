@@ -229,12 +229,14 @@ test('portable hero state preserves mounted horse color across worlds', () => {
     type: 'Hero',
     mountedOnHorse: true,
     horseColor: 'gray',
+    companionHorseColor: 'gray',
     hitPoints: 20,
     totalHitPoints: 30,
   })
 
   assert.equal(target.mountedOnHorse, true)
   assert.equal(target.horseColor, 'gray')
+  assert.equal(target.companionHorseColor, 'gray')
 })
 
 test('pause applies to live units, buildings, gaia animals and corpses once', () => {

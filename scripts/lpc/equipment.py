@@ -71,6 +71,20 @@ def scythe_equipment(palette: str | None = None) -> dict[str, Equipment]:
     }
 
 
+def arrow_equipment(palette: str | None = None) -> dict[str, Equipment]:
+    return {
+        "shoot": Equipment(
+            foreground=(
+                LayerSpec(
+                    "weapon/ranged/bow/arrow/shoot/arrow.png",
+                    palette,
+                    source_palette="arrow_metal_source" if palette else None,
+                ),
+            ),
+        ),
+    }
+
+
 def arming_sword_equipment(palette: str | None = None) -> dict[str, Equipment]:
     def sword_layer(path: str) -> LayerSpec:
         return LayerSpec(path, palette, source_palette="brass" if palette else None)
@@ -212,7 +226,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             background=(LayerSpec("weapon/ranged/bow/normal/universal/background/shoot/dark.png"),),
             foreground=(
                 LayerSpec("weapon/ranged/bow/normal/universal/foreground/shoot/dark.png"),
-                LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
         ),
     },
@@ -228,7 +241,6 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
         "shoot": Equipment(
             foreground=(
                 LayerSpec("weapon/ranged/bow/great/universal/foreground/shoot/dark.png"),
-                LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
         ),
     },
@@ -245,10 +257,13 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
             background=(LayerSpec("weapon/ranged/bow/recurve/universal/background/shoot/dark.png"),),
             foreground=(
                 LayerSpec("weapon/ranged/bow/recurve/universal/foreground/shoot/dark.png"),
-                LayerSpec("weapon/ranged/bow/arrow/shoot/arrow.png"),
             ),
         ),
     },
+    "arrow_ceramic": arrow_equipment("ceramic"),
+    "arrow_copper": arrow_equipment("copper"),
+    "arrow_bronze": arrow_equipment("bronze"),
+    "arrow_iron": arrow_equipment("iron"),
     "halberd": {
         "walk": Equipment(
             background=(LayerSpec("weapon/polearm/halberd/walk/behind/halberd.png"),),

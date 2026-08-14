@@ -7,10 +7,15 @@ export function startDeathFlash(sprite: AnimatedSprite | null | undefined): () =
   if (!sprite) return () => {}
 
   const originalTint = sprite.tint ?? DEFAULT_TINT
+  const originalTextures = sprite.textures
   const previousOnFrameChange = sprite.onFrameChange
   let active = true
 
   const applyTint = (frame: number): void => {
+    if (sprite.textures !== originalTextures) {
+      stop()
+      return
+    }
     sprite.tint = frame % 2 === 0 ? DEATH_FLASH_TINT : originalTint
   }
 
@@ -22,7 +27,7 @@ export function startDeathFlash(sprite: AnimatedSprite | null | undefined): () =
   applyTint(sprite.currentFrame ?? 0)
   sprite.onFrameChange = onFrameChange
 
-  return () => {
+  const stop = () => {
     if (!active) return
     active = false
     if (sprite.onFrameChange === onFrameChange) {
@@ -30,6 +35,8 @@ export function startDeathFlash(sprite: AnimatedSprite | null | undefined): () =
     }
     sprite.tint = originalTint
   }
+
+  return stop
 }
 
 export function runAfterDeathFlash(sprite: AnimatedSprite | null | undefined, onComplete: () => void): () => void {

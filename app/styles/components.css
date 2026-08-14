@@ -31,29 +31,15 @@
   flex: 1 1 0;
   padding: 8px 12px;
   overflow: hidden;
-  color: var(--text-color-inverse);
   font-size: var(--font-size-sm);
   font-weight: bold;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: var(--text-shadow-dark-ui);
-  border: var(--border-btn);
-  background: var(--ui-bar-bg);
-  box-shadow: var(--ui-button-shadow-raised);
-  transition:
-    background-color var(--ui-transition-fast),
-    color var(--ui-transition-panel);
 }
 
 .ui-tab + .ui-tab {
   margin-left: -2px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .ui-tab:not(.active):hover {
-    filter: brightness(var(--ui-hover-brightness));
-  }
 }
 
 .ui-tab.active {

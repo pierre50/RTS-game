@@ -21,6 +21,7 @@ export type UnitCreationExtra = {
   handleIsAttacked?: (attacker: RuntimeEntity, unit: UnitEntity) => boolean
   mountedOnHorse?: boolean
   horseColor?: string
+  companionHorseColor?: string | null
   hitPoints?: number
   speed?: number
   experience?: Record<string, number>
@@ -159,7 +160,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
   sendToEvt?: (
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
   ) => void
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
@@ -212,6 +213,7 @@ export interface UnitEntity extends EnergyEntity {
   currentSheet?: string
   currentFrame?: number
   horseColor?: string
+  companionHorseColor?: string | null
   removeMountedHorseSprite?: () => void
   syncMountedHorseSprite?: () => void
   syncMountedRiderPosition?: () => void
@@ -219,10 +221,12 @@ export interface UnitEntity extends EnergyEntity {
   heroBowChargeRatio?: number
   heroBowChargeDestination?: Point | null
   heroBowChargeTarget?: RuntimeEntity | null
+  heroBowChargeTool?: 'bow' | 'lasso'
   heroBowReleaseQueued?: boolean
   heroBowReleasePower?: number
   heroBowChargeVisualLocked?: boolean
   heroBowChargeLastEnergyAt?: number
+  heroLasso?: { clearLasso: (options?: { releaseHorse?: boolean }) => void } | null
   heroDefenseStart?: number | null
   heroDefenseLastEnergyAt?: number
   heroDefenseActive?: boolean
@@ -300,7 +304,7 @@ export interface UnitEntity extends EnergyEntity {
   sendToEvt?: (
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
   ) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
@@ -350,6 +354,8 @@ export interface BuildingEntity extends RuntimeEntityBase {
   queue?: string[]
   technology?: { type?: string; config?: TechnologyConfig } | null
   isUsedBy?: RuntimeEntity | null
+  horseAmount?: number
+  stableHorses?: Array<{ horseColor?: string }>
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
   addChild?: Container['addChild']
@@ -395,6 +401,8 @@ export interface ResourceEntity extends RuntimeEntityBase {
 export interface AnimalEntity extends EnergyEntity {
   isFleeing?: boolean
   horseColor?: string
+  companionOwner?: UnitEntity | null
+  companionHitCount?: number
   standingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
 }

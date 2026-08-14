@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree = () => 0 }) {
+function loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree = () => 0, playSoundCue = () => {} }) {
   const filename = path.join(__dirname, '../app/controllers/HeroController.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -56,6 +56,7 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
       LABEL_TYPES: { commRadius: 'commRadius' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
       SHEET_TYPES: { action: 'action', standing: 'standing', walking: 'walking' },
+      SOUND_CUES: { unit: { horseMoving: 'horse-moving' } },
       STEP_TIME: 100,
     },
     '../lib': {
@@ -73,6 +74,7 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
         { x: x - 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
         { x: x + 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
       ],
+      playSoundCue,
       updateInstanceRenderVisibility: () => {},
     },
     '../lib/heroTools': heroTools,
@@ -159,7 +161,7 @@ function createController({
           isDestroyed: false,
           animalBehavior: { stop: () => calls.push(['animalBehavior.stop', options.type]) },
           stop: () => calls.push(['horse.stop', animal.label]),
-          sendTo: (target, action, callOptions) => calls.push(['horse.sendTo', target.label, action, callOptions]),
+          sendTo: (target, action, callOptions) => calls.push(['horse.sendTo', target, action, callOptions]),
           clear() {
             animal.isDestroyed = true
             animal.x = null
@@ -221,10 +223,11 @@ function createController({
     applyToolAppearance: () => {},
     beginHeroDefense: () => false,
     cancelHeroBowCharge: () => {},
+    cancelHeroLasso: hero => hero.heroLasso?.clearLasso({ releaseHorse: true }),
     cancelHeroDefense: () => {},
     findFacingEntity: (_hero, matches) => createdAnimals.find(animal => matches(animal)) ?? null,
     getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
-    HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
+    HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
     releaseHeroBowCharge: () => false,
@@ -239,7 +242,13 @@ function createController({
   const heroActionRange = {
     isHeroInteractionTargetReachable: (hero, _action, target) => Math.hypot(hero.i - target.i, hero.j - target.j) <= 1,
   }
-  const HeroController = loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree })
+  const HeroController = loadHeroController({
+    npcInteraction,
+    heroTools,
+    heroActionRange,
+    getInstanceDegree,
+    playSoundCue: cue => calls.push(['playSoundCue', cue]),
+  })
   let cursorPoint = { x: 10, y: 20 }
   const controller = new HeroController({
     context: {
@@ -253,7 +262,10 @@ function createController({
     getGamepadMoveVector: () => ({ dx: 0, dy: 0 }),
     getViewportMetrics: () => ({ visibleLeft: -80, visibleTop: -80, visibleWidth: 160, visibleHeight: 160 }),
     closeAnyHeroPanel: () => false,
-    openHeroEntityInteraction: () => false,
+    openHeroEntityInteraction: () => {
+      calls.push('openHeroEntityInteraction')
+      return true
+    },
     shiftKeyActive: false,
   })
   controller.heroUnit = hero
@@ -417,16 +429,19 @@ test('shift keyboard movement does not lock facing while mounted', () => {
 test('H calls a companion horse, then mounts when it is close', () => {
   const { calls, controller, createdAnimals, grid, hero } = createController()
   hero.speed = 1
+  hero.companionHorseColor = 'dark'
 
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)
   assert.equal(hero.mountedOnHorse, undefined)
   assert.equal(hero.speed, 1)
   assert.equal(createdAnimals.length, 1)
   assert.equal(createdAnimals[0].type, 'Horse')
+  assert.equal(createdAnimals[0].horseColor, 'dark')
   assert.ok(Math.hypot(createdAnimals[0].i - hero.i, createdAnimals[0].j - hero.j) >= 10)
   assert.deepEqual(calls, [
     ['animalBehavior.stop', 'Horse'],
-    ['horse.sendTo', 'hero', null, { forceRepath: true }],
+    ['horse.sendTo', { i: 0, j: 0, x: 0, y: 0, z: 0 }, null, { forceRepath: true }],
+    ['playSoundCue', 'horse-moving'],
     ['showMessage', 'companionHorseComing', 'success'],
   ])
 
@@ -445,7 +460,7 @@ test('H calls a companion horse, then mounts when it is close', () => {
   assert.equal(hero.y, grid[0][1].y)
   assert.equal(hero.horseColor, 'black')
   assert.equal(hero.degree, 270)
-  assert.deepEqual(calls.slice(3), [
+  assert.deepEqual(calls.slice(4), [
     ['updateInstanceBucket', 'hero', 0, 0],
     ['horse.clear', 'animal-1'],
     ['setTextures', 'standing'],
@@ -459,6 +474,7 @@ test('H does not mount a close companion horse behind the hero', () => {
     },
   })
   hero.speed = 1
+  hero.companionHorseColor = 'dark'
 
   assert.equal(controller.handleKeyDown('heroMountHorse'), true)
   createdAnimals[0].i = 0
@@ -471,9 +487,42 @@ test('H does not mount a close companion horse behind the hero', () => {
   assert.equal(hero.mountedOnHorse, undefined)
   assert.equal(hero.speed, 1)
   assert.deepEqual(calls, [
-    ['horse.sendTo', 'hero', null, { forceRepath: true }],
+    ['horse.sendTo', { i: 0, j: 0, x: 0, y: 0, z: 0 }, null, { forceRepath: true }],
+    ['playSoundCue', 'horse-moving'],
     ['showMessage', 'companionHorseComing', 'success'],
   ])
+})
+
+test('H sends the companion horse to the hero position captured on key press', () => {
+  const { calls, controller, createdAnimals, grid, hero } = createController()
+  hero.speed = 1
+  hero.companionHorseColor = 'dark'
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  hero.i = 2
+  hero.j = 2
+  hero.x = grid[2][2].x
+  hero.y = grid[2][2].y
+  hero.z = grid[2][2].z
+  hero.currentCell = grid[2][2]
+
+  assert.equal(createdAnimals.length, 1)
+  assert.deepEqual(calls.find(call => call[0] === 'horse.sendTo'), [
+    'horse.sendTo',
+    { i: 0, j: 0, x: 0, y: 0, z: 0 },
+    null,
+    { forceRepath: true },
+  ])
+})
+
+test('H warns instead of spawning a horse when no horse is linked', () => {
+  const { calls, controller, createdAnimals, hero } = createController()
+  hero.speed = 1
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(createdAnimals.length, 0)
+  assert.equal(hero.mountedOnHorse, undefined)
+  assert.deepEqual(calls, [['showMessage', 'heroNeedsLinkedHorse', 'warning']])
 })
 
 test('H dismounts and leaves the horse in place while the hero steps aside', () => {
@@ -481,6 +530,7 @@ test('H dismounts and leaves the horse in place while the hero steps aside', () 
   hero.speed = 1.45
   hero.mountedOnHorse = true
   hero.horseColor = 'white'
+  hero.companionHorseColor = 'white'
   hero.removeMountedHorseSprite = () => calls.push('removeHorse')
   hero.syncMountedRiderPosition = () => calls.push('syncRider')
   const mountedI = hero.i
@@ -507,6 +557,33 @@ test('H dismounts and leaves the horse in place while the hero steps aside', () 
   ])
 })
 
+test('changing away from lasso clears the active lasso', () => {
+  const { calls, controller, hero } = createController()
+  hero.heroLasso = {
+    clearLasso: options => calls.push(['clearLasso', options]),
+  }
+
+  controller.setEquippedTool('lasso')
+  assert.deepEqual(calls, [])
+
+  controller.setEquippedTool('sword')
+  assert.deepEqual(calls, [['clearLasso', { releaseHorse: true }]])
+})
+
+test('left click with an active lasso clears it instead of throwing again', () => {
+  const { calls, controller, hero } = createController()
+  hero.heroLasso = {
+    clearLasso: options => calls.push(['clearLasso', options]),
+  }
+
+  controller.setEquippedTool('lasso')
+  controller.handlePrimaryPointerDown()
+
+  assert.deepEqual(calls, [['clearLasso', { releaseHorse: true }]])
+  assert.equal(controller.mouseHeld, false)
+  assert.equal(controller.primaryClickPoint, null)
+})
+
 test('E owns villager communication and opens orders on key release', () => {
   const group = [{ label: 'villager-1' }, { label: 'villager-2' }]
   const { calls, controller } = createController({ nearbyGroup: group })
@@ -520,13 +597,13 @@ test('E owns villager communication and opens orders on key release', () => {
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 
-test('E is blocked when the hero is not a chief', () => {
+test('E opens direct interaction when the hero is not a chief', () => {
   const { calls, controller, hero } = createController({ nearbyGroup: [{ label: 'villager' }] })
   hero.isChief = false
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, false)
-  assert.deepEqual(calls, [['showMessage', 'requiresChief', 'warning']])
+  assert.deepEqual(calls, ['openHeroEntityInteraction'])
 })
 
 test('E shows communication radius even when no villagers are nearby', () => {

@@ -2231,7 +2231,7 @@ test('exploration orders bypass the human command throttle', () => {
   }
 
   assert.equal(new UnitMovement(unit).explore(), true)
-  assert.deepEqual(calls, [['sendToEvt', targetCell, null, { forceRepath: true }]])
+  assert.deepEqual(calls, [['sendToEvt', targetCell, null, { forceRepath: true, preserveAutonomy: true }]])
 })
 
 test('runaway units use the shared reachable flee cell selection', () => {
@@ -2325,6 +2325,64 @@ test('delivery shows a resource gain over the delivering unit', () => {
   ])
 })
 
+test('delivery resumes a communication food job when there is no previous target', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: ['berry'],
+      LOADING_TYPES: {},
+      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      resumeVillagerAutonomy: unit => {
+        calls.push(['resumeVillagerAutonomy', unit.autonomousJob])
+        return true
+      },
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
+  const unit = {
+    action: constants.ACTION_TYPES.delivery,
+    autonomousJob: 'food',
+    label: 'villager-1',
+    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
+    dest: forum,
+    loading: 7,
+    loadingType: 'berry',
+    owner: { food: 0, isPlayed: true },
+    previousDest: null,
+    sprite: {},
+    getActionCondition: target => target === forum,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    stop: () => calls.push(['stop']),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
+
+  assert.deepEqual(calls, [
+    ['feedback', 'villager-1', 7],
+    ['topbar'],
+    ['updateInterfaceLoading'],
+    ['setTextures', 'standing'],
+    ['resumeVillagerAutonomy', 'food'],
+  ])
+})
+
 test('hero farming does not claim or replace the farm worker slot', () => {
   const occupant = { label: 'villager-1' }
   const calls = []
@@ -2392,6 +2450,80 @@ test('hero farming does not claim or replace the farm worker slot', () => {
     ['updateInterfaceLoading'],
     ['feedback', 'hero', 1],
     ['updateInfo', 'quantityText', 19],
+  ])
+})
+
+test('depleted berrybushes stay on the map as empty bushes', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: ['berry'],
+      LOADING_TYPES: { berry: 'berry' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, berrybush: 'Berrybush' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { forageBerry: 'forage-berry' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      SLASH_IMPACT_FRAME: 3,
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    isDead: false,
+    label: 'berrybush-1',
+    quantity: 1,
+    selected: true,
+    type: 'Berrybush',
+    die: () => calls.push(['die']),
+    updateTexture: () => calls.push(['updateTexture']),
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.forageberry,
+    context: {
+      menu: {
+        showMessage: (message, level) => calls.push(['message', message, level]),
+        updateInfo: (id, value) => calls.push(['updateInfo', id, value]),
+      },
+    },
+    dest: berrybush,
+    label: 'villager-1',
+    loading: 0,
+    loadingMax: { berry: 10 },
+    owner: { isPlayed: true },
+    sprite: {},
+    getActionCondition: target => target === berrybush && berrybush.quantity > 0,
+    getWorkSound: () => 'forage-berry',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+    affectNewDest: () => calls.push(['affectNewDest']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.forageberry)
+
+  assert.equal(berrybush.quantity, 0)
+  assert.equal(berrybush.isDead, false)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['updateInterfaceLoading'],
+    ['feedback', 'villager-1', 1],
+    ['updateInfo', 'quantityText', 0],
+    ['updateTexture'],
+    ['message', 'berrybushDepleted', 'warning'],
+    ['affectNewDest'],
   ])
 })
 
@@ -2470,4 +2602,124 @@ test('farm orders warn when wheat is not mature yet', () => {
 
   assert.equal(started, false)
   assert.deepEqual(messages, [['wheatNotReady', 'warning']])
+})
+
+test('farm orders stay quiet when immature wheat is outside the camera', () => {
+  const wheat = {
+    label: 'wheat-1',
+    family: constants.FAMILY_TYPES.resource,
+    type: constants.RESOURCE_TYPES.wheat,
+  }
+  const messages = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition: () => false,
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+      isWheatMature: () => false,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    buildQueue: [],
+    context: {
+      controls: { instanceInCamera: () => false },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    isDead: false,
+    owner: { isPlayed: true },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  const started = new UnitCommands(unit).sendToFarm(wheat, true)
+
+  assert.equal(started, false)
+  assert.deepEqual(messages, [])
+})
+
+test('berry orders warn when the bush is depleted', () => {
+  const berrybush = {
+    label: 'berrybush-1',
+    family: constants.FAMILY_TYPES.resource,
+    quantity: 0,
+    type: 'Berrybush',
+  }
+  const messages = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      ACTION_TYPES: { ...constants.ACTION_TYPES, forageberry: 'forageberry' },
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, berrybush: 'Berrybush' },
+      WORK_TYPES: { ...constants.WORK_TYPES, forager: 'forager' },
+    },
+    '../../lib': {
+      getActionCondition: () => false,
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+      isWheatMature: () => false,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    buildQueue: [],
+    context: { menu: { showMessage: (message, level) => messages.push([message, level]) } },
+    isDead: false,
+    owner: { isPlayed: true },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  const started = new UnitCommands(unit).sendToBerrybush(berrybush, true)
+
+  assert.equal(started, false)
+  assert.deepEqual(messages, [['berrybushDepleted', 'warning']])
+})
+
+test('berry orders stay quiet when the depleted bush is outside the camera', () => {
+  const berrybush = {
+    label: 'berrybush-1',
+    family: constants.FAMILY_TYPES.resource,
+    quantity: 0,
+    type: 'Berrybush',
+  }
+  const messages = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      ACTION_TYPES: { ...constants.ACTION_TYPES, forageberry: 'forageberry' },
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, berrybush: 'Berrybush' },
+      WORK_TYPES: { ...constants.WORK_TYPES, forager: 'forager' },
+    },
+    '../../lib': {
+      getActionCondition: () => false,
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+      isWheatMature: () => false,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    buildQueue: [],
+    context: {
+      controls: { instanceInCamera: () => false },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    isDead: false,
+    owner: { isPlayed: true },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  const started = new UnitCommands(unit).sendToBerrybush(berrybush, true)
+
+  assert.equal(started, false)
+  assert.deepEqual(messages, [])
 })

@@ -32,6 +32,7 @@ import {
   getSpriteFrameSelection,
   showAggressionFeedback,
   updateInstanceRenderVisibility,
+  resumeVillagerAutonomy,
 } from '../../lib'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
@@ -791,6 +792,10 @@ export class Unit extends Instance implements UnitEntity {
         heroControlled,
       })
       const isLayerHiddenByAction = Boolean(this.action && layer.hideForActions?.includes(this.action))
+      const isLayerHiddenByFrame =
+        sheet === SHEET_TYPES.action &&
+        typeof layer.hideOnOrAfterFrame === 'number' &&
+        this.sprite.currentFrame >= layer.hideOnOrAfterFrame
       const loadedSheetOverride =
         !this.mountedOnHorse && this.loading && sheet === SHEET_TYPES.walking
           ? (layer.loadedSheet as string | undefined)
@@ -831,6 +836,7 @@ export class Unit extends Instance implements UnitEntity {
         !isLayerEnabledForLevel ||
         isLayerHiddenByLoading ||
         isLayerHiddenByAction ||
+        isLayerHiddenByFrame ||
         !sheetId ||
         !spritesheet?.textures
       ) {
@@ -881,6 +887,7 @@ export class Unit extends Instance implements UnitEntity {
       }
 
       layerSprite.visible = true
+      layerSprite.loop = this.sprite.loop
       layerSprite.position.x = this.getMountedRiderX()
       layerSprite.position.y = this.getMountedRiderY()
       layerSprite.zIndex = layer.zIndex
@@ -899,7 +906,17 @@ export class Unit extends Instance implements UnitEntity {
         layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
       }
       layerSprite.animationSpeed = spritesheet.data?.animationSpeed ?? 0.18
+      layerSprite.onFrameChange =
+        sheet === SHEET_TYPES.action && typeof layer.hideOnOrAfterFrame === 'number'
+          ? currentFrame => {
+              layerSprite.visible = currentFrame < layer.hideOnOrAfterFrame!
+            }
+          : undefined
       layerSprite.currentFrame = frameIndex
+      layerSprite.visible =
+        sheet === SHEET_TYPES.action && typeof layer.hideOnOrAfterFrame === 'number'
+          ? frameIndex < layer.hideOnOrAfterFrame
+          : true
       if (mountedSheetOverride || (this.mountedOnHorse && sheet !== SHEET_TYPES.action)) {
         layerSprite.gotoAndStop(frameIndex)
       } else if (this.sprite.playing) {
@@ -1066,7 +1083,7 @@ export class Unit extends Instance implements UnitEntity {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean }
+    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
   ) {
     return this.unitMovement.sendToEvt(dest, action ?? null, options)
   }
@@ -1193,6 +1210,7 @@ export class Unit extends Instance implements UnitEntity {
       this.sendTo(this.currentCell)
       return
     }
+    if (!heroControlled && resumeVillagerAutonomy?.(this)) return
     this.handleChangeDest()
     this.actionLocked = false
     this.pendingOrder = null

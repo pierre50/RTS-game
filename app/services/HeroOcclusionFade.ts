@@ -1,5 +1,6 @@
 import { FAMILY_TYPES, RESOURCE_TYPES } from '../constants'
 import { getInstanceZIndex } from '../lib/maths'
+import { texturesHaveOpaqueOverlap } from '../lib/graphics/alphaMask'
 import { boundsIntersect } from '../lib/graphics/chunkCulling'
 import { findInstancesInSight, getInstanceScreenBounds, type RenderableInstance } from '../lib/grid/visibility'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -74,7 +75,19 @@ export class HeroOcclusionFade {
       const candidateZIndex = candidate.zIndex ?? getInstanceZIndex(candidate)
       if (candidateZIndex <= heroZIndex + ZINDEX_EPSILON) continue
       const candidateBounds = getInstanceScreenBounds(candidate)
-      if (candidateBounds && boundsIntersect(heroBounds, candidateBounds)) occluding.add(candidate)
+      if (
+        candidateBounds &&
+        boundsIntersect(heroBounds, candidateBounds) &&
+        texturesHaveOpaqueOverlap(
+          candidate.sprite!.texture,
+          candidateBounds,
+          hero.sprite!.texture,
+          heroBounds,
+          hero.context.app.renderer
+        )
+      ) {
+        occluding.add(candidate)
+      }
     }
 
     return occluding

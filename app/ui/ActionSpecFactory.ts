@@ -1,8 +1,17 @@
 import { Assets } from 'pixi.js'
-import { canAfford, getBuildingAsset, getIconPath, isBuildingLimitReached, isValidCondition } from '../lib'
+import {
+  assignStableHorseToHero,
+  canAfford,
+  getBuildingAsset,
+  getIconPath,
+  getStableHorseAmount,
+  heroHasLinkedHorse,
+  isBuildingLimitReached,
+  isValidCondition,
+} from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
-import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/uiSound'
@@ -286,6 +295,41 @@ export class ActionSpecFactory {
     }
   }
 
+  getStableBindHeroHorseButton(building: BuildingEntity): MenuButtonSpec {
+    const { menu } = this
+    const hero = () => menu.context.controls.heroUnit
+    const isUnavailable = () => getStableHorseAmount(building) <= 0 || heroHasLinkedHorse(hero())
+    return {
+      id: 'stableBindHeroHorse',
+      icon: getIconPath('004_50731'),
+      tooltip: () => ({
+        title: t('stableBindHeroHorse'),
+        description: t('stableBindHeroHorseDescription'),
+        meta: [
+          getStableHorseAmount(building) <= 0 ? t('stableNeedsHorse') : null,
+          heroHasLinkedHorse(hero()) ? t('heroAlreadyHasHorse') : null,
+        ],
+      }),
+      disabled: isUnavailable,
+      onClick: () => {
+        const heroUnit = hero()
+        if (heroHasLinkedHorse(heroUnit)) {
+          menu.showMessage(t('heroAlreadyHasHorse'), 'warning')
+          return
+        }
+        if (getStableHorseAmount(building) <= 0) {
+          menu.showMessage(t('stableNeedsHorse'), 'warning')
+          return
+        }
+        if (!assignStableHorseToHero(building, heroUnit)) {
+          menu.showMessage(t('stableNeedsHorse'), 'warning')
+          return
+        }
+        menu.showMessage(t('heroHorseLinked'), 'success')
+      },
+    }
+  }
+
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     const { menu } = this
     const {
@@ -380,6 +424,8 @@ export class ActionSpecFactory {
     if (!selection.interface) return []
     if (!isBuildingEntity(selection)) return selection.interface.menu || []
     if (!selection.isBuilt) return []
-    return selection.interface.menu || []
+    const items = selection.interface.menu || []
+    if (selection.type !== BUILDING_TYPES.stable) return items
+    return [this.getStableBindHeroHorseButton(selection), ...items]
   }
 }

@@ -4,6 +4,7 @@ import {
   drawRoundedIsoShape,
   getReliefOffset,
   getRoundedIsoShapePoints,
+  playSoundCue,
   updateInstanceRenderVisibility,
 } from '../lib'
 import {
@@ -18,6 +19,7 @@ import {
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
   SHEET_TYPES,
+  SOUND_CUES,
   STEP_TIME,
 } from '../constants'
 import {
@@ -26,6 +28,7 @@ import {
   applyToolAppearance,
   beginHeroDefense,
   cancelHeroBowCharge,
+  cancelHeroLasso,
   cancelHeroDefense,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
@@ -81,12 +84,19 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
 const COMPANION_HORSE_CALL_MIN_RADIUS = 10
 const COMPANION_HORSE_CALL_MAX_RADIUS = 36
 type MoveVector = { dx: number; dy: number }
+type HorseCallDestination = Pick<RuntimeCell, 'i' | 'j' | 'x' | 'y' | 'z'>
 type CompanionHorse = AnimalEntity & {
   degree?: number
+  companionOwner?: UnitEntity | null
+  companionHitCount?: number
   strategy?: string
   ambientMovement?: boolean
   stop?: () => void
-  sendTo?: (target: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: { forceRepath?: boolean }) => void
+  sendTo?: (
+    target: RuntimeEntity | RuntimeCell | HorseCallDestination | null,
+    action?: string | null,
+    options?: { forceRepath?: boolean }
+  ) => void
 }
 
 let lastHeroMoveDebugAt = 0
@@ -424,28 +434,42 @@ export class HeroController {
     const map = unit?.context?.map
     const createAnimal = map?.gaia?.createAnimal
     if (!unit || !map || typeof createAnimal !== 'function') return null
-    const horse = createAnimal.call(map.gaia, { i: cell.i, j: cell.j, type: 'Horse', horseColor: unit.horseColor }) as CompanionHorse
+    const horseColor = unit.companionHorseColor ?? unit.horseColor
+    const horse = createAnimal.call(map.gaia, { i: cell.i, j: cell.j, type: 'Horse', horseColor }) as CompanionHorse
     return this.registerCompanionHorse(horse)
   }
 
   registerCompanionHorse(horse: CompanionHorse): CompanionHorse {
+    const unit = this.heroUnit
     horse.strategy = undefined
     horse.ambientMovement = false
+    horse.companionOwner = unit ?? null
+    horse.companionHitCount = 0
     horse.animalBehavior?.stop?.()
     this.companionHorse = horse
     return horse
   }
 
   getActiveCompanionHorse(): CompanionHorse | null {
-    if (this.companionHorse && !this.companionHorse.isDead && !this.companionHorse.isDestroyed) {
-      return this.companionHorse
+    const unit = this.heroUnit
+    const horse = this.companionHorse
+    if (horse?.isDead || horse?.isDestroyed) {
+      if (unit) unit.companionHorseColor = null
+      this.companionHorse = null
+      return null
     }
+    if (horse && unit?.companionHorseColor && horse.companionOwner === unit) return horse
     this.companionHorse = null
     return null
   }
 
   sendCompanionHorseToHero(horse: CompanionHorse, unit: UnitEntity): void {
-    horse.sendTo?.(unit, null, { forceRepath: true })
+    const cell = unit.currentCell ?? unit.context?.map?.grid?.[unit.i]?.[unit.j]
+    const destination = cell
+      ? { i: cell.i, j: cell.j, x: cell.x, y: cell.y, z: cell.z }
+      : { i: unit.i, j: unit.j, x: unit.x, y: unit.y, z: unit.z ?? 0 }
+    horse.sendTo?.(destination, null, { forceRepath: true })
+    playSoundCue(SOUND_CUES.unit.horseMoving)
     this.controls.context.menu?.showMessage(t('companionHorseComing'), 'success')
   }
 
@@ -461,6 +485,10 @@ export class HeroController {
       if (facingHorse === activeHorse) return this.mountCompanionHorse(activeHorse)
       this.sendCompanionHorseToHero(activeHorse, unit)
       return true
+    }
+    if (!unit.companionHorseColor) {
+      this.controls.context.menu?.showMessage(t('heroNeedsLinkedHorse'), 'warning')
+      return false
     }
 
     const horse = this.createCompanionHorseNearHero(COMPANION_HORSE_CALL_MAX_RADIUS, {
@@ -502,7 +530,10 @@ export class HeroController {
 
   mountCompanionHorse(horse: CompanionHorse): boolean {
     const unit = this.heroUnit
-    if (unit && horse.horseColor) unit.horseColor = horse.horseColor
+    if (unit && horse.horseColor) {
+      unit.horseColor = horse.horseColor
+      unit.companionHorseColor = horse.horseColor
+    }
     if (unit && typeof horse.degree === 'number') unit.degree = horse.degree
     this.snapHeroToHorse(horse)
     horse.clear?.()
@@ -519,6 +550,7 @@ export class HeroController {
     const horseCell = unit.currentCell ?? map.grid[unit.i]?.[unit.j]
     const heroCell = findCompanionHorseSpawnCell(unit, 1)
     if (!horseCell || !heroCell) return false
+    unit.companionHorseColor = unit.horseColor ?? unit.companionHorseColor ?? 'brown'
     if (!this.setHeroMountedOnHorse(false)) return false
     this.snapHeroToCell(heroCell)
     const horse = this.createCompanionHorseAt(horseCell)
@@ -561,6 +593,20 @@ export class HeroController {
     )
     updateHeroCursor(this.equippedItem, hoverTarget, Boolean(this.pendingGoToNpcs))
     const attacking = Boolean(unit.actionLocked)
+    if (
+      this.mouseHeld &&
+      this.primaryClickPoint &&
+      !attacking &&
+      this.equippedItem !== 'bow' &&
+      this.equippedItem !== 'lasso'
+    ) {
+      const nextPoint = this.getShiftMoveLockedAimPoint() ?? aimPoint
+      this.primaryClickPoint = nextPoint
+      if (!this.attackTowardPoint(nextPoint)) {
+        this.mouseHeld = false
+        this.primaryClickPoint = null
+      }
+    }
 
     const keyboardMove = getKeyboardMoveVector(this.keysPressed)
     let { dx, dy } = keyboardMove
@@ -643,6 +689,12 @@ export class HeroController {
       this.resolveGoTo()
       return
     }
+    if (this.equippedItem === 'lasso' && this.heroUnit?.heroLasso) {
+      cancelHeroLasso(this.heroUnit)
+      this.mouseHeld = false
+      this.primaryClickPoint = null
+      return
+    }
     this.primaryClickPoint = this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor()
     const beforeLoad = this.heroUnit?.loading ?? 0
     const triggered = this.attackTowardPoint(this.primaryClickPoint)
@@ -674,7 +726,7 @@ export class HeroController {
       return
     }
     if (button !== 0) return
-    if (unit && this.equippedItem === 'bow' && releaseHeroBowCharge(unit)) {
+    if (unit && (this.equippedItem === 'bow' || this.equippedItem === 'lasso') && releaseHeroBowCharge(unit)) {
       this.mouseHeld = false
       this.primaryClickPoint = null
       return
@@ -768,6 +820,7 @@ export class HeroController {
 
   setEquippedItem(item: HeroEquippedItem | null): void {
     if (this.heroUnit?.heroDefenseActive) cancelHeroDefense(this.heroUnit)
+    if (this.heroUnit && item !== 'lasso') cancelHeroLasso(this.heroUnit)
     this.equippedItem = item
     if (this.heroUnit?.actionLocked) {
       // Mid-action (e.g. chopping wood) the sprite is looping on the action sheet;
@@ -796,6 +849,7 @@ export class HeroController {
     this.mouseHeld = false
     this.primaryClickPoint = null
     if (this.heroUnit) cancelHeroBowCharge(this.heroUnit)
+    if (this.heroUnit) cancelHeroLasso(this.heroUnit)
     if (this.heroUnit) cancelHeroDefense(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()
     if (this.pendingGoToNpcs) this.cancelGoToPicking()

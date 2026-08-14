@@ -4,7 +4,6 @@ import {
   isometricToCartesian,
   canAfford,
   canPlaceBuildingAt,
-  changeSpriteColor,
   getBuildingFootprintCells,
   getTexture,
   payCost,
@@ -18,7 +17,6 @@ import type { ControlsLike } from '../types/context'
 import type { PlaceableBuildingConfig, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
-import type { RecolorableSprite } from '../lib'
 import type { ResourceLedger } from '../lib'
 
 type MouseBuilding = Container &
@@ -104,7 +102,7 @@ export class BuildingPlacer {
     if (cell.inclined || cell.border) return
     if (this.canPlaceMouseBuilding(cell)) {
       if (mouseBuilding.type === BUILDING_TYPES.farm) {
-        return this.placeWheatField(cell, mouseBuilding)
+        return this.placeWheatField(cell)
       }
       if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
         controls.removeMouseBuilding()
@@ -220,7 +218,7 @@ export class BuildingPlacer {
     }
   }
 
-  placeWheatField(cell: RuntimeCell, mouseBuilding: MouseBuilding): boolean {
+  placeWheatField(cell: RuntimeCell): boolean {
     const { controls } = this
     const {
       context: { menu, player },

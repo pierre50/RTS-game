@@ -46,6 +46,7 @@ function loadHeroTools(overrides = {}) {
       this.destroyed = true
     }
   }
+  const combatMock = { getActionCondition: () => false, getHitPointsWithDamage: () => 0 }
   const mocks = {
     'pixi.js': { Assets: { cache: { get: id => ({ id, textures: [], data: {} }) } }, Graphics },
     '../constants': {
@@ -80,7 +81,10 @@ function loadHeroTools(overrides = {}) {
         standing: 'standingSheet',
         walking: 'walkingSheet',
       },
-      SOUND_CUES: { hero: { meleeWhiff: 'meleeWhiff' } },
+      SOUND_CUES: {
+        hero: { meleeWhiff: 'meleeWhiff' },
+        projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
+      },
       WORK_FOOD_TYPES: ['hunter', 'farmer', 'forager'],
       WORK_TYPES: {
         attacker: 'attacker',
@@ -104,7 +108,7 @@ function loadHeroTools(overrides = {}) {
       isHeroInteractionTargetReachable: (hero, _action, target) =>
         Math.hypot((target.i ?? 0) - (hero.i ?? 0), (target.j ?? 0) - (hero.j ?? 0)) <= 2.5,
     },
-    './combat': { getActionCondition: () => false, getHitPointsWithDamage: () => 0 },
+    './combat': combatMock,
     './diplomaticAggression': {
       applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
       canTriggerDiplomaticAggression: () => false,
@@ -142,7 +146,8 @@ function loadHeroTools(overrides = {}) {
     './grid/visibility': { findInstancesInSight: () => [] },
     './grid/queries': { getClosestInstanceWithPath: () => null },
     './graphics': {
-      SHOOT_RELEASE_FRAME: 5,
+      BOW_SHOOT_RELEASE_FRAME: 8,
+      LASSO_SHOOT_RELEASE_FRAME: 5,
       SLASH_IMPACT_FRAME: 1,
       onSpriteLoopAtFrame: (sprite, frame, cb) => {
         sprite.onFrameChange = currentFrame => {
@@ -216,11 +221,19 @@ function loadHeroTools(overrides = {}) {
       XP_KILL_BONUS: 0,
     },
     '../classes/Projectile': { Projectile },
+    '../classes/HeroLassoThrow': {
+      HeroLassoThrow: class HeroLassoThrow {
+        constructor(hero, destination) {
+          Object.assign(this, { hero, destination, type: 'HeroLassoThrow' })
+        }
+      },
+    },
     '../classes/unit/UnitCommands': {
       applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
     },
   }
   Object.assign(mocks, overrides)
+  if (overrides['./combat']) mocks['./combat'] = { ...combatMock, ...overrides['./combat'] }
   if (!mocks['./combatHit']) {
     mocks['./combatHit'] = {
       applyCombatHit: (source, target, options = {}) => {
@@ -340,6 +353,25 @@ function makeHero() {
   return { hero, projectiles }
 }
 
+test('directional targeting prefers a much closer nearby resource over a perfectly aligned far one', () => {
+  const nearWheat = { family: 'resource', label: 'near-wheat', x: 32, y: 32 }
+  const farTree = { family: 'resource', label: 'far-tree', x: 120, y: 0 }
+  const { findFacingEntity } = loadHeroTools({
+    './grid/visibility': {
+      findInstancesInSight: (_hero, matches) => [farTree, nearWheat].filter(matches),
+    },
+    './heroActionRange': {
+      getHeroInteractionTargetPoint: (_hero, target) => target,
+      isHeroActionInRange: () => false,
+      isHeroInteractionTargetReachable: () => true,
+    },
+  })
+
+  const target = findFacingEntity({ x: 0, y: 0, degree: 180 }, () => true)
+
+  assert.equal(target, nearWheat)
+})
+
 test('hero aim degree gives horizontal screen aim more room on isometric terrain', () => {
   const { getHeroAimDegree } = loadHeroTools()
   const hero = { x: 0, y: 0 }
@@ -363,22 +395,22 @@ test('bow charge plays the action animation once while power keeps charging', ()
     assert.equal(hero.sprite.onComplete, undefined)
 
     hero.sprite.playing = false
-    hero.sprite.currentFrame = 4
-    hero.sprite.onFrameChange(4)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange(8)
     now += 100
     updateHeroBowCharge(hero)
 
     assert.ok(hero.energy < 10)
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
-    assert.equal(hero.sprite.currentFrame, 4)
+    assert.equal(hero.sprite.currentFrame, 8)
     assert.equal(hero.heroBowChargeVisualLocked, true)
     assert.ok(hero.drawRatios.at(-1) < 1)
 
     aimHeroBowChargeAt(hero, { x: 220, y: 20 })
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
-    assert.equal(hero.sprite.currentFrame, 4)
+    assert.equal(hero.sprite.currentFrame, 8)
   } finally {
     global.performance = originalPerformance
   }
@@ -589,12 +621,43 @@ test('bow charge keeps the manually aimed destination instead of snapping to a n
     aimHeroBowChargeAt(hero, { x: 240, y: 0 })
     now += 350
     assert.equal(releaseHeroBowCharge(hero, now), true)
-    hero.sprite.currentFrame = 5
-    hero.sprite.onFrameChange?.(5)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
 
     assert.equal(projectiles.length, 1)
     assert.deepEqual(projectiles[0].destination, { x: 240, y: 0 })
     assert.equal(projectiles[0].target, undefined)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('lasso charge releases a drawn lasso instead of an arrow', () => {
+  const soundCues = []
+  const { aimHeroBowChargeAt, releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools({
+    './sound': {
+      playAudibleSoundCue: () => {},
+      playSoundCue: cue => soundCues.push(cue),
+    },
+  })
+  const { hero, projectiles } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'lasso', { x: 120, y: 0 }), true)
+    aimHeroBowChargeAt(hero, { x: 180, y: 0 })
+    now += 700
+    assert.equal(releaseHeroBowCharge(hero, now), true)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
+
+    assert.equal(projectiles.length, 1)
+    assert.equal(projectiles[0].type, 'HeroLassoThrow')
+    assert.deepEqual(projectiles[0].destination, { x: 180, y: 0 })
+    assert.equal(projectiles[0].maxDistance, undefined)
+    assert.deepEqual(soundCues, [['archer-attack', 'archer-attack-2']])
   } finally {
     global.performance = originalPerformance
   }
@@ -643,8 +706,8 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
     assert.equal(hero.drawRatios.at(-1), releasePower)
     assert.equal(projectiles.length, 0)
 
-    hero.sprite.currentFrame = 5
-    hero.sprite.onFrameChange?.(5)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
 
     assert.equal(projectiles.length, 1)
     assert.equal(projectiles[0].maxDistance, Math.hypot(64, 32) * 4 * 0.2)

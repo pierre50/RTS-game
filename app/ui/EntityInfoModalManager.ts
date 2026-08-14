@@ -104,7 +104,7 @@ function createPortalColorOptions(menu: Menu, portal: ResourceEntity): HTMLDivEl
   for (const color of PORTAL_COLOR_CHOICES) {
     const button = document.createElement('button')
     button.type = 'button'
-    button.className = 'portal-color-option npc-orders-option ui-btn'
+    button.className = 'portal-color-option ui-btn'
     button.textContent = t(PORTAL_COLOR_LABEL_KEYS[color])
     button.classList.toggle('is-selected', currentColor === color)
     button.addEventListener('click', () => {
@@ -225,6 +225,8 @@ export class EntityInfoModalManager {
   }
 
   getInfoPanel(content: HTMLElement): HTMLElement | null {
-    return content.classList.contains('selection-info') ? content : content.querySelector<HTMLElement>('.selection-info')
+    return content.classList.contains('selection-info')
+      ? content
+      : content.querySelector<HTMLElement>('.selection-info')
   }
 }

@@ -1,0 +1,112 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+const babel = require('@babel/core')
+
+function loadModule(relativePath, mocks = {}) {
+  const filename = path.join(__dirname, '..', relativePath)
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports
+}
+
+test('playSpriteAnimationFromStart resets transient callbacks and restarts frame zero', () => {
+  const { playSpriteAnimationFromStart } = loadModule('app/lib/spriteAnimation.ts')
+  const calls = []
+  const complete = () => {}
+  const sprite = {
+    loop: true,
+    onComplete: null,
+    onFrameChange: () => {},
+    onLoop: () => {},
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+  }
+
+  playSpriteAnimationFromStart(sprite, {
+    clearFrameChange: true,
+    loop: false,
+    onComplete: complete,
+  })
+
+  assert.equal(sprite.loop, false)
+  assert.equal(sprite.onComplete, complete)
+  assert.equal(sprite.onFrameChange, undefined)
+  assert.equal(sprite.onLoop, undefined)
+  assert.equal(sprite.currentFrame, 0)
+  assert.deepEqual(calls, [['gotoAndPlay', 0]])
+})
+
+test('unit death starts the dying animation through the shared helper', () => {
+  const calls = []
+  const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
+    '../../constants': {
+      CORPSE_TIME: 60,
+      FADE_DURATION_MS: 2000,
+      MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
+      POPULATION_MAX: 50,
+      SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      playAudibleSoundCue: () => {},
+      updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
+    },
+    '../../lib/combatFeedback': { clearDamageFeedback: () => {} },
+    '../../lib/deathFlash': { runAfterDeathFlash: (_sprite, onComplete) => onComplete },
+    '../../lib/entityFade': { fadeOutThenClear: () => {} },
+    '../../lib/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
+    '../../lib/spriteAnimation': {
+      playSpriteAnimationFromStart: (sprite, options = {}) => {
+        calls.push(['playSpriteAnimationFromStart', options.clearFrameChange, options.loop])
+        if (options.clearFrameChange) sprite.onFrameChange = undefined
+        if (options.clearLoop !== false) sprite.onLoop = undefined
+        sprite.loop = options.loop ?? sprite.loop
+        if (options.onComplete !== undefined) sprite.onComplete = options.onComplete
+        sprite.gotoAndPlay(0)
+      },
+    },
+  })
+  const sprite = {
+    loop: true,
+    onFrameChange: () => {},
+    onLoop: () => {},
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+  }
+  const unit = {
+    context: {},
+    i: 0,
+    j: 0,
+    owner: { corpses: [] },
+    sprite,
+    zIndex: 4,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    syncShadow: () => calls.push(['syncShadow']),
+  }
+
+  new UnitLifecycle(unit).death()
+
+  assert.deepEqual(calls, [
+    ['setTextures', 'dyingSheet'],
+    ['syncShadow'],
+    ['playSpriteAnimationFromStart', true, false],
+    ['gotoAndPlay', 0],
+  ])
+  assert.equal(sprite.loop, false)
+  assert.equal(sprite.onFrameChange, undefined)
+  assert.equal(sprite.onLoop, undefined)
+  assert.equal(typeof sprite.onComplete, 'function')
+  assert.equal(sprite.currentFrame, 0)
+})

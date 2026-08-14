@@ -96,6 +96,8 @@ export class Animal extends Instance implements AnimalEntity {
   ambientWalkRange?: number
   sounds?: UnitSounds
   horseColor?: HorseColor
+  companionOwner?: AnimalEntity['companionOwner']
+  companionHitCount?: AnimalEntity['companionHitCount']
   energy?: AnimalEntity['energy']
   totalEnergy?: AnimalEntity['totalEnergy']
   energyRegenRate?: AnimalEntity['energyRegenRate']

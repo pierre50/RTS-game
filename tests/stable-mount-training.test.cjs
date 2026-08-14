@@ -27,6 +27,7 @@ test('Stable trains only unmounted matching military units into mounted units', 
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
     './combat': { isValidCondition: () => true },
+    './stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
     './unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
       getUnitUpgradeTargetForBuilding: () => null,
@@ -37,6 +38,7 @@ test('Stable trains only unmounted matching military units into mounted units', 
   const stable = {
     type: 'Stable',
     units: ['Fantassin', 'Bowman'],
+    stableHorses: [{ horseColor: 'dark' }],
     owner,
     isBuilt: true,
     isDead: false,
@@ -63,6 +65,7 @@ test('Barracks and archery range no longer upgrade trained soldiers', () => {
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
     './combat': { isValidCondition: () => true },
+    './stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
     './unitUpgrades': loadModule('app/lib/unitUpgrades.ts', {
       '../constants': {
         BUILDING_TYPES: { stable: 'Stable', barracks: 'Barracks', archeryRange: 'ArcheryRange' },

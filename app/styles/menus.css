@@ -25,8 +25,7 @@
   justify-content: center;
   padding: var(--menu-page-padding);
   overflow-y: var(--menu-page-overflow);
-  background:
-    url('../../public/assets/graphics/ui/menu-bg.jpg') no-repeat center center;
+  background: url('../../public/assets/graphics/ui/menu-bg.jpg') no-repeat center center;
   background-size: cover;
 }
 
@@ -50,7 +49,9 @@
   background-image:
     linear-gradient(45deg, rgba(255, 255, 255, 0.16) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(5, 7, 18, 0.22) 25%, transparent 25%);
-  background-position: 0 0, 1px 0;
+  background-position:
+    0 0,
+    1px 0;
   background-size: 2px 2px;
   mix-blend-mode: overlay;
 }
@@ -105,9 +106,7 @@ img.menu-title {
   width: 100%;
   opacity: 0;
   transform: translateY(6px);
-  filter:
-    drop-shadow(3px 3px 0 rgba(5, 7, 18, 0.85))
-    drop-shadow(0 0 10px rgba(154, 167, 217, 0.16));
+  filter: drop-shadow(3px 3px 0 rgba(5, 7, 18, 0.85)) drop-shadow(0 0 10px rgba(154, 167, 217, 0.16));
   transition:
     opacity 200ms steps(4, end),
     transform 200ms steps(4, end);
@@ -184,9 +183,7 @@ div.menu-title {
   padding: 16px 14px;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 32%),
-    var(--main-primary-color);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 32%), var(--main-primary-color);
 }
 
 .settings-page.hidden {
@@ -258,14 +255,7 @@ div.menu-title {
 .settings-reset-button {
   min-width: 112px;
   padding: 7px 10px;
-  color: var(--text-color-inverse);
-  font: inherit;
   font-size: var(--font-size-sm);
-  font-weight: bold;
-  text-align: center;
-  border: var(--border-btn);
-  background: var(--ui-bar-bg);
-  box-shadow: var(--ui-button-shadow-raised);
 }
 
 .settings-key-button.is-listening {

@@ -64,6 +64,8 @@ const SHADOW_SCALE_Y = -0.5
 const WIND_AMPLITUDE = 0.018
 const WIND_ROTATION = 0.006
 const WIND_SPEED = 0.0018
+const BERRYBUSH_SHEET_ID = 'resources/berrybush'
+const EMPTY_BERRYBUSH_FRAME = 0
 
 export type ResourceOptions = Partial<ResourceDefinition> & {
   i: number
@@ -270,6 +272,24 @@ export class Resource extends Instance implements ResourceEntity {
     }
     this.syncShadow()
     this.stopWindMotion()
+  }
+
+  updateTexture() {
+    if (this.type !== RESOURCE_TYPES.berrybush) return
+    const textureRef = {
+      sheet: BERRYBUSH_SHEET_ID,
+      frame: (this.quantity ?? 0) <= 0 ? EMPTY_BERRYBUSH_FRAME : 1,
+    }
+    const texture = getTexture(textureRef, Assets)
+    if (!texture) return
+
+    this.textureName = textureRefToString(textureRef)
+    this.sprite.texture = texture
+    if (texture.defaultAnchor) {
+      this.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+    }
+    this.syncShadow()
+    this.startWindMotion()
   }
 
   onTreeDie() {

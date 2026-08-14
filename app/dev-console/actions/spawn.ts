@@ -3,7 +3,9 @@ import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
 import { findKey, getAmount, getSpawnCell } from './shared'
 import { FloatingItem } from '../../classes/FloatingItem'
-import { RESOURCE_TYPES } from '../../constants'
+import { Resource } from '../../classes/Resource'
+import { BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
+import { getBuildingFootprintCells } from '../../lib'
 
 function canSpawnUnitOnCell(cell: DevCell): boolean {
   if (!cell || cell.solid || cell.has) return false
@@ -33,6 +35,30 @@ function resolveOwner(context: DevConsoleContext, playerIndex: string | number |
 function formatSpawnMessage(entityType: string, spawned: number, ownerIndex: number, includeOwner: boolean): string {
   const entityLabel = spawned > 1 ? `${spawned} ${entityType}` : entityType
   return includeOwner ? `Spawned ${entityLabel} for player ${ownerIndex}` : `Spawned ${entityLabel}`
+}
+
+function spawnWheatField(
+  context: DevConsoleContext,
+  owner: DevPlayer,
+  cell: DevCell,
+  ownerIndex: number,
+  includeOwner: boolean
+): CommandResult {
+  const { map, menu } = context
+  const size = Number(owner.config.buildings[BUILDING_TYPES.farm]?.size ?? 4)
+  const cells = getBuildingFootprintCells(cell.i, cell.j, map.grid, size)
+  for (const footprintCell of cells) {
+    const wheat = map.addChild(
+      new Resource(
+        { i: footprintCell.i, j: footprintCell.j, type: RESOURCE_TYPES.wheat, startsMature: true },
+        context as unknown as ConstructorParameters<typeof Resource>[1]
+      )
+    )
+    map.resources.add(wheat)
+  }
+  menu.updateTopbar()
+  menu.updateResourcesMiniMapEvt?.()
+  return { ok: true, message: formatSpawnMessage('Wheat Field', 1, ownerIndex, includeOwner) }
 }
 
 export function spawnUnits(
@@ -106,6 +132,10 @@ export function spawnBuilding(
 
   const cell = getSpawnCell(context, { buildingConfig: config })
   if (!cell) return { ok: false, message: 'No buildable cell near cursor' }
+
+  if (type === BUILDING_TYPES.farm) {
+    return spawnWheatField(context, owner, cell, ownerIndex, playerIndex != null)
+  }
 
   const building = owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
   owner.hasBuilt ??= []

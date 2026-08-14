@@ -271,10 +271,12 @@
 }
 
 .modal-panel {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--ui-gap-12);
+  width: min(560px, 100%);
   padding: 24px 32px;
   background: var(--main-primary-color);
   border: var(--panel-border);

@@ -4,6 +4,7 @@ import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import { getEntityHitPointsText } from '../../lib/entityHealthDisplay'
+import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -39,21 +40,21 @@ export class UnitLifecycle {
     clearDamageFeedback(unit)
     // dying/corpse are exempt from setUnitTexture's onFrameChange reset (kept for mid-attack direction changes), so a stale attack/gather callback must be cleared here or it hijacks the death animation back to standing.
     const sprite = unit.sprite as AnimatedSprite
-    sprite.onFrameChange = undefined
-    sprite.onLoop = undefined
-
     unit.setTextures?.(SHEET_TYPES.dying)
     unit.zIndex = (unit.zIndex ?? 0) - 1
-    sprite.loop = false
     unit.syncShadow?.()
-    sprite.onComplete = runAfterDeathFlash(sprite, () => {
-      updateInstanceVisibility(unit)
-      const corpses = unit.owner?.corpses
-      const index = corpses?.indexOf(unit) ?? -1
-      if (index < 0) {
-        corpses?.push(unit)
-      }
-      this.decompose()
+    playSpriteAnimationFromStart(sprite, {
+      clearFrameChange: true,
+      loop: false,
+      onComplete: runAfterDeathFlash(sprite, () => {
+        updateInstanceVisibility(unit)
+        const corpses = unit.owner?.corpses
+        const index = corpses?.indexOf(unit) ?? -1
+        if (index < 0) {
+          corpses?.push(unit)
+        }
+        this.decompose()
+      }),
     })
   }
 

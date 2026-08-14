@@ -27,7 +27,12 @@ import {
 import { applyUnitWorkAssets } from './unitWorkAppearance'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
-import { onSpriteLoopAtFrame, SHOOT_RELEASE_FRAME, SLASH_IMPACT_FRAME } from './graphics'
+import {
+  BOW_SHOOT_RELEASE_FRAME,
+  LASSO_SHOOT_RELEASE_FRAME,
+  onSpriteLoopAtFrame,
+  SLASH_IMPACT_FRAME,
+} from './graphics'
 import { t } from './lang'
 import { angleDelta, degreeToDirection, getReliefOffset } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
@@ -40,6 +45,7 @@ import {
   spendEnergyForAction,
 } from './unitEnergy'
 import { Projectile } from '../classes/Projectile'
+import { HeroLassoThrow } from '../classes/HeroLassoThrow'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -48,10 +54,10 @@ import type { DynamicEquipmentKey } from './lpc/equipment'
 
 export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
-export type HeroEquippedItem = 'interact' | 'sword' | 'bow'
+export type HeroEquippedItem = 'interact' | 'sword' | 'bow' | 'lasso'
 export type HeroTool = HeroEquippedItem
 
-export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow']
+export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
 const TOOL_ACTION_RANGE = 3
@@ -62,7 +68,6 @@ const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
 const HERO_PARRY_SOUND_CUES = ['sword-attack', 'sword-attack-2']
 const HERO_BOW_CHARGE_MS = 700
 const HERO_BOW_MIN_POWER = 0.2
-const HERO_BOW_HOLD_FRAME = Math.max(0, SHOOT_RELEASE_FRAME - 1)
 const HERO_DEFENSE_HOLD_FRAME = 2
 const HERO_DEFENSE_REVERSE_FRAME_MS = 45
 const HERO_DEFENSE_RELEASE_FALLBACK_MS = 260
@@ -73,12 +78,36 @@ const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
 const LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE = 45
+const DIRECTIONAL_TARGET_MAX_ANGLE_PENALTY = CELL_WIDTH
 const MOUNTED_ATTACK_HALF_ANGLE = 45
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
+const HERO_ARROW_DIRECTION_OFFSETS: Record<string, Partial<Point>> = {
+  east: { y: -8 },
+  south: { x: 4 },
+  west: { y: 8 },
+  north: { x: -4 },
+  northwest: { y: 4 },
+  southwest: { y: 4 },
+}
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * HERO_ARROW_CELL_DISTANCE
 const HERO_AIM_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
+
+function getHeroShootReleaseFrame(tool: 'bow' | 'lasso' | null | undefined): number {
+  return tool === 'lasso' ? LASSO_SHOOT_RELEASE_FRAME : BOW_SHOOT_RELEASE_FRAME
+}
+
+function getHeroShootHoldFrame(tool: 'bow' | 'lasso' | null | undefined): number {
+  return tool === 'lasso' ? Math.max(0, LASSO_SHOOT_RELEASE_FRAME - 1) : BOW_SHOOT_RELEASE_FRAME
+}
+
+function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['sprite']): void {
+  if (!sprite || sprite.currentFrame < BOW_SHOOT_RELEASE_FRAME) return
+  const nextFrame = Math.min(Math.floor(sprite.currentFrame) + 1, Math.max(0, sprite.textures.length - 1))
+  sprite.gotoAndStop?.(nextFrame)
+  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
+}
 
 export const contextualToolByAction: Partial<Record<HeroContextAction, HeroCivilTool>> = {
   chop: 'axe',
@@ -102,6 +131,7 @@ const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   interact: WORK_TYPES.attacker,
   sword: 'heroSword',
   bow: WORK_TYPES.hunter,
+  lasso: WORK_TYPES.attacker,
 }
 
 // Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
@@ -230,6 +260,10 @@ function heroHasGatherSpace(hero: UnitEntity, action: string, work: string): boo
   return effectiveLoad < maxLoad
 }
 
+function canShowTargetAlert(hero: UnitEntity, target: RuntimeEntity): boolean {
+  return Boolean(hero.owner?.isPlayed && (hero.context?.controls?.instanceInCamera?.(target) ?? true))
+}
+
 function resolveHeroGatherAction(
   hero: UnitEntity,
   target: RuntimeEntity,
@@ -237,7 +271,12 @@ function resolveHeroGatherAction(
   work: string
 ): (() => void) | null {
   if (!getActionCondition(hero, target, action)) {
-    if (action === ACTION_TYPES.farm && resourceKind(target) === 'Wheat' && !isWheatMature(target)) {
+    if (
+      action === ACTION_TYPES.farm &&
+      resourceKind(target) === 'Wheat' &&
+      !isWheatMature(target) &&
+      canShowTargetAlert(hero, target)
+    ) {
       hero.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
     }
     return null
@@ -546,7 +585,13 @@ function getDirectionalTargets<T extends RuntimeEntity>(
       }
     })
     .filter(candidate => candidate.angle <= candidate.halfAngle)
-    .sort((a, b) => a.angle - b.angle || a.dist - b.dist)
+    .map(candidate => ({
+      ...candidate,
+      score:
+        candidate.dist +
+        (candidate.angle / Math.max(candidate.halfAngle, 1)) * DIRECTIONAL_TARGET_MAX_ANGLE_PENALTY,
+    }))
+    .sort((a, b) => a.score - b.score || a.dist - b.dist || a.angle - b.angle)
     .map(candidate => candidate.target)
 }
 
@@ -677,9 +722,11 @@ function fireBlindArrow(hero: UnitEntity): void {
 
 function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
   const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
+  const direction = degreeToDirection(hero.degree ?? 0)
+  const directionOffset = direction ? (HERO_ARROW_DIRECTION_OFFSETS[direction] ?? {}) : {}
   return {
-    x: hero.x + Math.cos(rad) * HERO_ARROW_FORWARD_OFFSET,
-    y: hero.y + getReliefOffset(hero) - HERO_ARROW_HEIGHT_OFFSET,
+    x: hero.x + Math.cos(rad) * HERO_ARROW_FORWARD_OFFSET + (directionOffset.x ?? 0),
+    y: hero.y + getReliefOffset(hero) - HERO_ARROW_HEIGHT_OFFSET + (directionOffset.y ?? 0),
   }
 }
 
@@ -704,8 +751,22 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
       )
       map.addChild(projectile)
     },
-    SHOOT_RELEASE_FRAME
+    BOW_SHOOT_RELEASE_FRAME
   )
+}
+
+function throwLassoAt(hero: UnitEntity, destination: Point, power = 1): void {
+  const map = hero.context?.map
+  if (!map || !hero.context) return
+  const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
+  const origin = getHeroArrowSpawnPoint(hero)
+  const maxDestination = {
+    x: origin.x + (destination.x - origin.x) * rangePower,
+    y: origin.y + (destination.y - origin.y) * rangePower,
+  }
+  playSoundCue(SOUND_CUES.projectile.arrowLaunch)
+  const lasso = new HeroLassoThrow(hero, maxDestination, hero.context)
+  map.addChild(lasso)
 }
 
 function getHeroBowChargeRatio(hero: UnitEntity, now = performance.now()): number {
@@ -733,9 +794,10 @@ function freezeHeroBowChargeFrame(hero: UnitEntity, frame?: number): void {
   const sprite = hero.sprite
   if (!sprite || hero.currentSheet !== SHEET_TYPES.action) return
   const lastFrame = Math.max(0, sprite.textures.length - 1)
+  const holdFrame = getHeroShootHoldFrame(hero.heroBowChargeTool)
   hero.heroBowChargeVisualLocked = true
   sprite.loop = false
-  sprite.gotoAndStop(Math.max(0, Math.min(frame ?? HERO_BOW_HOLD_FRAME, lastFrame)))
+  sprite.gotoAndStop(Math.max(0, Math.min(frame ?? holdFrame, lastFrame)))
   hero.syncShadow?.()
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
 }
@@ -747,11 +809,12 @@ function continueHeroBowChargeAnimation(hero: UnitEntity): void {
     freezeHeroBowChargeFrame(hero)
     return
   }
+  const holdFrame = getHeroShootHoldFrame(hero.heroBowChargeTool)
   sprite.loop = false
   sprite.onComplete = undefined
-  onSpriteLoopAtFrame(sprite, HERO_BOW_HOLD_FRAME, () => freezeHeroBowChargeFrame(hero))
-  if (!sprite.playing && sprite.currentFrame < HERO_BOW_HOLD_FRAME) sprite.play()
-  if (sprite.currentFrame >= HERO_BOW_HOLD_FRAME) freezeHeroBowChargeFrame(hero)
+  onSpriteLoopAtFrame(sprite, holdFrame, () => freezeHeroBowChargeFrame(hero))
+  if (!sprite.playing && sprite.currentFrame < holdFrame) sprite.play()
+  if (sprite.currentFrame >= holdFrame) freezeHeroBowChargeFrame(hero)
   hero.syncShadow?.()
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
 }
@@ -1031,6 +1094,7 @@ function clearHeroBowCharge(hero: UnitEntity): void {
   hero.heroBowReleasePower = undefined
   hero.heroBowChargeVisualLocked = false
   hero.heroBowChargeLastEnergyAt = undefined
+  hero.heroBowChargeTool = undefined
   hero.removeHeroPowerBar?.()
 }
 
@@ -1046,6 +1110,10 @@ export function cancelHeroBowCharge(hero: UnitEntity): void {
   finishHeroToolAnimation(hero)
 }
 
+export function cancelHeroLasso(hero: UnitEntity): void {
+  hero.heroLasso?.clearLasso({ releaseHorse: true })
+}
+
 function finishHeroBowChargeShot(hero: UnitEntity): void {
   const destination = hero.heroBowChargeDestination
   if (!destination) {
@@ -1054,10 +1122,13 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
   }
   const power = hero.heroBowReleasePower ?? getHeroBowChargeRatio(hero)
   const target = hero.heroBowChargeTarget ?? undefined
+  const tool = hero.heroBowChargeTool ?? 'bow'
   clearHeroBowCharge(hero)
   const map = hero.context?.map
   const sprite = hero.sprite
-  if (map) {
+  if (tool === 'lasso') {
+    throwLassoAt(hero, destination, power)
+  } else if (map) {
     const projectile = new Projectile(
       {
         owner: hero,
@@ -1076,6 +1147,11 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
     finishHeroToolAnimation(hero)
     return
   }
+  if (tool === 'bow') {
+    hideReleasedBowArrowLayer(hero, sprite)
+  } else {
+    hero.syncAppearanceLayers?.(SHEET_TYPES.action)
+  }
   sprite.onFrameChange = undefined
   sprite.onComplete = () => finishHeroToolAnimation(hero)
   sprite.loop = false
@@ -1083,7 +1159,12 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
   else sprite.play()
 }
 
-function beginHeroBowChargeAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null): boolean {
+function beginHeroBowChargeAt(
+  hero: UnitEntity,
+  destination: Point,
+  target?: RuntimeEntity | null,
+  tool: 'bow' | 'lasso' = 'bow'
+): boolean {
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked) return false
   if (!hasEnergyToStartBowCharge(hero)) return false
@@ -1094,15 +1175,17 @@ function beginHeroBowChargeAt(hero: UnitEntity, destination: Point, target?: Run
   hero.heroBowChargeLastEnergyAt = now
   hero.heroBowChargeDestination = destination
   hero.heroBowChargeTarget = target ?? null
+  hero.heroBowChargeTool = tool
   hero.heroBowReleaseQueued = false
   hero.heroBowReleasePower = undefined
   hero.heroBowChargeVisualLocked = false
   hero.setTextures?.(SHEET_TYPES.action)
   sprite.loop = false
+  hero.syncAppearanceLayers?.(SHEET_TYPES.action)
   sprite.onComplete = undefined
   hero.syncShadow?.()
   hero.drawHeroPowerBar?.(0)
-  onSpriteLoopAtFrame(sprite, HERO_BOW_HOLD_FRAME, () => freezeHeroBowChargeFrame(hero))
+  onSpriteLoopAtFrame(sprite, getHeroShootHoldFrame(tool), () => freezeHeroBowChargeFrame(hero))
   return true
 }
 
@@ -1113,11 +1196,12 @@ export function releaseHeroBowCharge(hero: UnitEntity, now = performance.now()):
   hero.heroBowChargeRatio = hero.heroBowReleasePower
   hero.drawHeroPowerBar?.(hero.heroBowReleasePower)
   const sprite = hero.sprite
+  const releaseFrame = getHeroShootReleaseFrame(hero.heroBowChargeTool)
   hero.heroBowReleaseQueued = true
-  if (sprite && hero.currentSheet === SHEET_TYPES.action && sprite.currentFrame < SHOOT_RELEASE_FRAME) {
+  if (sprite && hero.currentSheet === SHEET_TYPES.action && sprite.currentFrame < releaseFrame) {
     sprite.loop = false
     sprite.onComplete = undefined
-    onSpriteLoopAtFrame(sprite, SHOOT_RELEASE_FRAME, () => finishHeroBowChargeShot(hero))
+    onSpriteLoopAtFrame(sprite, releaseFrame, () => finishHeroBowChargeShot(hero))
     if (!sprite.playing) sprite.play()
     return true
   }
@@ -1182,8 +1266,8 @@ export function triggerEquippedItemActionAt(
   hero.degree = getHeroAimDegree(hero, destination)
   const deliveryResult = tryDeliverAt(hero)
   if (deliveryResult === 'delivered') return true
-  if (tool === 'bow') {
-    return beginHeroBowChargeAt(hero, destination)
+  if (tool === 'bow' || tool === 'lasso') {
+    return beginHeroBowChargeAt(hero, destination, null, tool)
   }
   if (tool === 'sword') {
     const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
@@ -1242,6 +1326,7 @@ export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedIt
     fireBlindArrow(hero)
     return true
   }
+  if (tool === 'lasso') return false
   return false
 }
 

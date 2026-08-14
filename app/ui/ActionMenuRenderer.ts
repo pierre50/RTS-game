@@ -31,24 +31,17 @@ export class ActionMenuRenderer {
     return null
   }
 
-  makePressable(element: HTMLElement, action: (evt: Event) => void): void {
-    element.setAttribute('role', 'button')
-    element.tabIndex = 0
-    element.addEventListener('pointerup', evt => {
-      this.menu.menuTooltip.hide()
-      action(evt)
-    })
-    element.addEventListener('keydown', (evt: KeyboardEvent) => {
-      if (evt.key !== 'Enter' && evt.key !== ' ') return
-      evt.preventDefault()
+  makePressable(element: HTMLButtonElement, action: (evt: Event) => void): void {
+    element.addEventListener('click', evt => {
       this.menu.menuTooltip.hide()
       action(evt)
     })
   }
 
-  createMenuBox(id: string): HTMLDivElement {
-    const box = document.createElement('div')
-    box.className = 'action-menu-box'
+  createMenuBox(id: string): HTMLButtonElement {
+    const box = document.createElement('button')
+    box.type = 'button'
+    box.className = 'ui-btn ui-icon-btn'
     box.id = id
     return box
   }
@@ -59,10 +52,9 @@ export class ActionMenuRenderer {
     index: number,
     hotkey: string | null,
     onNavigate: (children: MenuButtonSpec[]) => void
-  ): HTMLDivElement {
+  ): HTMLButtonElement {
     const box = this.createMenuBox(btn.id || `btn-${index}`)
     const disabled = btn.disabled?.() ?? false
-    box.classList.toggle('is-disabled', disabled)
     box.setAttribute('aria-disabled', String(disabled))
     if (typeof btn.onCreate === 'function') {
       btn.onCreate(selection, box)

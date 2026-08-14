@@ -16,26 +16,9 @@ export const BIOME_TREE_PLAYER_SAFE_DIST = 22
 // above the highest runaway sight (Deer: 8) so the camp start isn't a stampede
 export const ANIMAL_PLAYER_SAFE_DIST = 14
 // Per-cell chance of rolling an ambient wildlife group outside the player safe zone.
-// Kept independent from GROUND_SET_CHANCE/FLOOR_SET_CHANCE so disabling ground clutter
-// (rocks/floor variants) never silently kills wildlife spawning, and vice versa.
 // This scales with map area (cells checked ~ size^2), so keep it small: at 0.008 a
 // default Small (144x144) map placed ~300 animals and a Medium (256x256) map ~1000.
 export const AMBIENT_ANIMAL_CHANCE = 0.0015
-
-// Ground floor decorations (LABEL_TYPES.floor, zIndex 1)
-export const FLOOR_SETS_GRASS = ['environment/floor/grass-1', 'environment/floor/grass-2', 'environment/floor/grass-3', 'environment/floor/grass-4', 'environment/floor/grass-5', 'environment/floor/grass-6', 'environment/floor/grass-7', 'environment/floor/grass-8', 'environment/floor/grass-9', 'environment/floor/grass-10']
-export const FLOOR_SETS_DESERT = ['environment/floor/desert-1', 'environment/floor/desert-2', 'environment/floor/desert-3', 'environment/floor/desert-4', 'environment/floor/desert-5', 'environment/floor/desert-6', 'environment/floor/desert-7', 'environment/floor/desert-8', 'environment/floor/desert-9', 'environment/floor/desert-10', 'environment/floor/desert-11', 'environment/floor/desert-12']
-export const FLOOR_SETS_JUNGLE = [...FLOOR_SETS_DESERT, ...FLOOR_SETS_GRASS]
-export const FLOOR_SET_CHANCE = 0//0.03
-
-// Ground decorative sets (LABEL_TYPES.set, zIndex 2)
-export const GROUND_SETS = ['environment/ground/stone-set-1', 'environment/ground/stone-set-2', 'environment/ground/stone-set-3', 'environment/ground/stone-set-4']
-export const GROUND_SET_CHANCE = 0//0.02
-
-// Water decorative sets (LABEL_TYPES.set, zIndex 2)
-// Small/medium sprites (width ≤ 57px): safe near any water cell
-export const WATER_SETS = ['environment/water/shore-set-1', 'environment/water/shore-set-2', 'environment/water/shore-set-3', 'environment/water/shore-set-4', 'environment/water/shore-set-5', 'environment/water/shore-set-6', 'environment/water/shore-set-7', 'environment/water/shore-set-8', 'environment/water/shore-set-9', 'environment/water/shore-set-10']
-export const WATER_SET_CHANCE = 0//0.002
 
 // Bird ambience
 export const AMBIENT_BIRD_MAX_CONCURRENT = 3
