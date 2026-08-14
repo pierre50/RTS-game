@@ -575,6 +575,78 @@
         "x": 0.5,
         "y": 0.86
       }
+    },
+    "024_graphics_lpc-baked_hero_nubian_female_body_walking.png": {
+      "frame": {
+        "x": 1536,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "025_graphics_lpc-baked_hero_nubian_female_body_walking.png": {
+      "frame": {
+        "x": 1600,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "026_graphics_lpc-baked_hero_nubian_female_body_walking.png": {
+      "frame": {
+        "x": 1664,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
     }
   },
   "meta": {
