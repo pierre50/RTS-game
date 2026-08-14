@@ -24,6 +24,14 @@ function loadCompanionHorseCombat() {
   return loadModule('app/lib/companionHorseCombat.ts', {
     '../constants': { FAMILY_TYPES: { animal: 'animal' } },
     './lang': { t: key => key },
+    './wildHorseBehavior': {
+      spookWildHorse: (horse, threat, hitDirection) => {
+        horse.strategy = 'runaway'
+        horse.ambientMovement = true
+        horse.animalBehavior?.start?.()
+        if (threat) horse.isAttacked?.(threat, hitDirection)
+      },
+    },
   })
 }
 

@@ -1,0 +1,1 @@
+export const RELIEF_WATER_BUFFER_RADIUS = 5

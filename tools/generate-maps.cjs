@@ -34,6 +34,7 @@ function loadPlainTsModule(relativePath) {
 const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = loadPlainTsModule(
   'app/constants/environments.ts'
 )
+const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 const { createSeededRandom } = loadPlainTsModule('app/lib/random.ts')
 
 function mapSettingsFromRuntimeConfig() {
@@ -348,6 +349,16 @@ const runtimeFindNeutralResourceCenter = MapResources.prototype.findNeutralResou
 const runtimePlaceResourceGroup = MapResources.prototype.placeResourceGroup
 const runtimePlaceResourceGroupAt = MapResources.prototype.placeResourceGroupAt
 const runtimeGetSharedGroupTextureName = MapResources.prototype.getSharedGroupTextureName
+const runtimeGenerateScatteredStone = MapResources.prototype.generateScatteredStoneAsync
+
+function createResourceScope(map) {
+  const resourcesScope = {
+    map,
+    getSharedGroupTextureName: (...args) => runtimeGetSharedGroupTextureName.apply(resourcesScope, args),
+    generateScatteredStoneAsync: (...args) => runtimeGenerateScatteredStone.apply(resourcesScope, args),
+  }
+  return resourcesScope
+}
 
 function coastDistances(map) {
   const n = map.size + 1
@@ -434,7 +445,7 @@ function buildHeadlessMap(
     }
   }
   map.getReliefCoastDistances = () => map._coastDistances || (map._coastDistances = coastDistances(map))
-  map.getMaxReliefLevelFromCoastDistance = distance => Math.max(0, distance - 3)
+  map.getMaxReliefLevelFromCoastDistance = distance => Math.max(0, distance - RELIEF_WATER_BUFFER_RADIUS)
   map.getMinReliefLevelFromCoastDistance = distance => -map.getMaxReliefLevelFromCoastDistance(distance)
   map.setCellReliefLevelDirect = (cell, level) => {
     cell.z = level
@@ -467,14 +478,12 @@ function buildHeadlessMap(
   map.randomRange = (min, max) => Math.floor(map.random() * (max - min + 1) + min)
   map.randomItem = (items = []) => items[Math.floor(map.random() * items.length)]
   map.context = { map }
-  const resourcesScope = {
-    map,
-    getSharedGroupTextureName: (...args) => runtimeGetSharedGroupTextureName.apply(resourcesScope, args),
-  }
+  const resourcesScope = createResourceScope(map)
   map.generateForestAroundPlayer = (...args) => runtimeGenerateForestAroundPlayer.apply(resourcesScope, args)
   map.findNeutralResourceCenter = (...args) => runtimeFindNeutralResourceCenter.apply(resourcesScope, args)
   map.placeResourceGroup = (...args) => runtimePlaceResourceGroup.apply(resourcesScope, args)
   map.placeResourceGroupAt = (...args) => runtimePlaceResourceGroupAt.apply(resourcesScope, args)
+  map.generateScatteredStoneAsync = (...args) => runtimeGenerateScatteredStone.apply(resourcesScope, args)
   return map
 }
 
@@ -569,7 +578,7 @@ function enforceGeneratedReliefContinuity(map, protectedCells = new Set()) {
   }
 }
 
-function flattenFinalProtectedZones(map, spawns, waterRadius = 3, spawnRadius = 6) {
+function flattenFinalProtectedZones(map, spawns, waterRadius = RELIEF_WATER_BUFFER_RADIUS, spawnRadius = 6) {
   const protectedCells = new Set()
   const distances = coastDistances(map)
   const n = map.size + 1
@@ -677,9 +686,10 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   // now final, so mark border cells before placement - MapResources' placement guards
   // check cell.inclined, which only formatCellsRelief() ever sets.
   map.formatCellsRelief()
-  await runtimePlayerResources.call({ map }, spawns)
-  await runtimeNeutralResources.call({ map }, spawns)
-  await runtimeBiomeTrees.call({ map }, spawns)
+  const resourcesScope = createResourceScope(map)
+  await runtimePlayerResources.call(resourcesScope, spawns)
+  await runtimeNeutralResources.call(resourcesScope, spawns)
+  await runtimeBiomeTrees.call(resourcesScope, spawns)
   const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
   if (resourcesOnReliefBorders.length) {
     console.warn(

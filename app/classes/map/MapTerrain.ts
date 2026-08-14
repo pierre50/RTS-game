@@ -6,7 +6,7 @@ import {
   getPlainCellsAroundPoint,
   getTexture,
 } from '../../lib'
-import { CELL_DEPTH, getEnvironmentTerrainParams } from '../../constants'
+import { CELL_DEPTH, RELIEF_WATER_BUFFER_RADIUS, getEnvironmentTerrainParams } from '../../constants'
 import {
   EIGHT_NEIGHBOR_OFFSETS,
   getCyclicGroups,
@@ -297,7 +297,7 @@ export class MapTerrain {
   }
 
   getMaxReliefLevelFromCoastDistance(distance: number): number {
-    return Math.max(0, distance - 3)
+    return Math.max(0, distance - RELIEF_WATER_BUFFER_RADIUS)
   }
 
   getMinReliefLevelFromCoastDistance(distance: number): number {
@@ -872,8 +872,11 @@ export class MapTerrain {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
         if (cell.category === 'Water') continue
-        const flags = getNeighborFlags(this.map.grid, i, j, (neighbor: TerrainCell | undefined) =>
-          neighbor?.category === 'Water'
+        const flags = getNeighborFlags(
+          this.map.grid,
+          i,
+          j,
+          (neighbor: TerrainCell | undefined) => neighbor?.category === 'Water'
         )
         const frame = getWaterBorderFrame(flags)
         if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesertSand, frame)

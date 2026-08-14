@@ -76,6 +76,14 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
       },
     },
     '../lib/treeCollision': { findTreeSegmentCollision: treeCollision },
+    '../lib/wildHorseBehavior': {
+      spookWildHorse: (horse, threat) => {
+        horse.strategy = 'runaway'
+        horse.ambientMovement = true
+        horse.animalBehavior?.start?.()
+        if (threat) horse.isAttacked?.(threat)
+      },
+    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -130,7 +138,10 @@ function makeHorse(calls = []) {
     horseColor: 'dark',
     stop: () => calls.push(['horse.stop']),
     sendTo: (target, action, options) => calls.push(['horse.sendTo', target, action, options]),
-    animalBehavior: { stop: () => calls.push(['animalBehavior.stop']) },
+    animalBehavior: {
+      start: () => calls.push(['animalBehavior.start']),
+      stop: () => calls.push(['animalBehavior.stop']),
+    },
     isAttacked: attacker => calls.push(['horse.isAttacked', attacker]),
     clear: () => calls.push(['horse.clear']),
   }
@@ -158,6 +169,9 @@ test('attached lasso makes the horse follow and releases it when cleared', () =>
   assert.equal(horse.isLassoed, false)
   assert.equal(horse.lassoOwner, null)
   assert.equal(hero.heroLasso, null)
+  assert.equal(horse.strategy, 'runaway')
+  assert.equal(horse.ambientMovement, true)
+  assert.equal(calls.some(call => call[0] === 'animalBehavior.start'), true)
   assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), true)
 })
 
@@ -255,6 +269,39 @@ test('released lasso sends a nearby horse into the stable', () => {
   assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), false)
 })
 
+test('horse returns to wild behavior if its target stable disappears', () => {
+  const HeroLassoThrow = loadHeroLassoThrow()
+  const calls = []
+  const hero = makeHero()
+  const horse = makeHorse(calls)
+  const stable = {
+    family: 'building',
+    type: 'Stable',
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    i: 6,
+    j: 1,
+    x: 180,
+    y: 32,
+    stableHorses: [],
+  }
+  const context = makeContext(calls)
+  context.players = [{ buildings: [stable] }]
+  hero.owner = context.players[0]
+  const lasso = new HeroLassoThrow(hero, { x: 220, y: 0 }, context)
+
+  lasso.attachToHorse(horse)
+  lasso.clearLasso()
+  stable.isDestroyed = true
+  context.scheduler.tasks[1]()
+
+  assert.equal(horse.strategy, 'runaway')
+  assert.equal(horse.ambientMovement, true)
+  assert.equal(calls.some(call => call[0] === 'animalBehavior.start'), true)
+  assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), true)
+})
+
 test('attached lasso cuts when the rope crosses a tree trunk', () => {
   const HeroLassoThrow = loadHeroLassoThrow({ treeCollision: () => ({ type: 'Tree' }) })
   const calls = []
@@ -269,5 +316,8 @@ test('attached lasso cuts when the rope crosses a tree trunk', () => {
   assert.equal(horse.isLassoed, false)
   assert.equal(horse.lassoOwner, null)
   assert.equal(lasso.state, 'retracting')
+  assert.equal(horse.strategy, 'runaway')
+  assert.equal(horse.ambientMovement, true)
+  assert.equal(calls.some(call => call[0] === 'animalBehavior.start'), true)
   assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), true)
 })

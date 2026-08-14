@@ -4,10 +4,23 @@ const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const test = require('node:test')
+const babel = require('@babel/core')
 
 const ROOT = path.join(__dirname, '..')
 const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
 const WATER_INDEX = TERRAIN_TYPES.indexOf('Water')
+
+function loadPlainTsModule(relativePath) {
+  const filename = path.join(ROOT, relativePath)
+  const { code } = babel.transformFileSync(filename, {
+    presets: [['@babel/preset-env', { targets: { node: 'current' } }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  new Function('module', 'exports', 'require', code)(module, module.exports, require)
+  return module.exports
+}
+
+const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 
 function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   if (w && n) return '001'
@@ -85,7 +98,9 @@ test('pregenerated map blueprints persist water terrain', () => {
 
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
-        if (waterDistances[i * width + j] <= 3 && getRelief(i, j) !== 0) waterBufferViolations++
+        if (waterDistances[i * width + j] <= RELIEF_WATER_BUFFER_RADIUS && getRelief(i, j) !== 0) {
+          waterBufferViolations++
+        }
         if (isWater(i, j)) continue
         const flags = {
           n: i > 0 && isWater(i - 1, j),
@@ -148,7 +163,11 @@ test('pregenerated map blueprints persist water terrain', () => {
 
     assert.ok(terrain.includes(WATER_INDEX), 'blueprint terrain should include Water cells')
     assert.equal(shoreLevelViolations, 0, 'blueprint relief should keep shore cells at water level')
-    assert.equal(waterBufferViolations, 0, 'blueprint relief should keep a three-cell water buffer at z=0')
+    assert.equal(
+      waterBufferViolations,
+      0,
+      `blueprint relief should keep a ${RELIEF_WATER_BUFFER_RADIUS}-cell water buffer at z=0`
+    )
     assert.equal(spawnPlateauViolations, 0, 'blueprint relief should keep Town Center spawn zones at z=0')
     assert.equal(reliefStepViolations, 0, 'blueprint relief should not contain unsupported height jumps')
     assert.equal(

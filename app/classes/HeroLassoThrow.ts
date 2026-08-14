@@ -5,6 +5,7 @@ import { degreeToDirection, instancesDistance, pointIsBetweenTwoPoint, pointsDis
 import { t } from '../lib/lang'
 import { canStoreStableHorse, storeStableHorse } from '../lib/stableHorses'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
+import { spookWildHorse } from '../lib/wildHorseBehavior'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { Point } from '../types/grid'
@@ -94,6 +95,8 @@ type LassoedHorse = AnimalEntity & {
   degree?: number
   isLassoed?: boolean
   lassoOwner?: UnitEntity | null
+  strategy?: string
+  ambientMovement?: boolean
   stop?: () => void
   sendTo?: (
     target: RuntimeEntity | RuntimeCell | null,
@@ -243,8 +246,13 @@ export class HeroLassoThrow extends Graphics {
     let taskId: SchedulerTaskId | null = null
     taskId = scheduler.add(
       () => {
-        if (horse.isDead || horse.isDestroyed || stable.isDead || stable.isDestroyed) {
+        if (horse.isDead || horse.isDestroyed) {
           if (taskId != null) scheduler.remove(taskId)
+          return
+        }
+        if (stable.isDead || stable.isDestroyed) {
+          if (taskId != null) scheduler.remove(taskId)
+          this.releaseHorseToWild(horse)
           return
         }
         if (instanceContactInstance(horse, stable)) {
@@ -256,13 +264,13 @@ export class HeroLassoThrow extends Graphics {
             this.gameContext.menu?.showMessage?.(t('lassoHorseStabled'), 'success')
           } else {
             if (taskId != null) scheduler.remove(taskId)
-            horse.isAttacked?.(this.hero)
+            this.releaseHorseToWild(horse)
           }
           return
         }
         if (scheduler.elapsedMs - startedAt >= LASSO_STABLE_ENTER_TIMEOUT_MS) {
           if (taskId != null) scheduler.remove(taskId)
-          horse.isAttacked?.(this.hero)
+          this.releaseHorseToWild(horse)
           return
         }
         horse.sendTo?.(stable, null, { forceRepath: false })
@@ -270,6 +278,11 @@ export class HeroLassoThrow extends Graphics {
       STEP_TIME,
       'hero.lassoStableEntry'
     )
+  }
+
+  releaseHorseToWild(horse: LassoedHorse): void {
+    if (horse.isDead || horse.isDestroyed) return
+    spookWildHorse(horse, this.hero)
   }
 
   stepToward(point: Point, speed: number): void {
@@ -331,7 +344,7 @@ export class HeroLassoThrow extends Graphics {
       this.scheduleHorseStableEntry(horse, stable)
       return
     }
-    if (allowFlee && !horse.isDead && !horse.isDestroyed) horse.isAttacked?.(this.hero)
+    if (allowFlee) this.releaseHorseToWild(horse)
   }
 
   startRetracting({ releaseHorse = false }: { releaseHorse?: boolean } = {}): void {
