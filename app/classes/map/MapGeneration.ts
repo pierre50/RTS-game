@@ -126,6 +126,7 @@ export type MapGenerationMap = RuntimeMap & {
   instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
   pregeneratedBlueprintId?: string | null
   pregeneratedResourcesLoaded?: boolean
+  naturalResourceRespawnSlots?: SaveEntityState[]
   blueprintDestroyMs?: number
   blueprintCellCreationMs?: number
   blueprintFillWaterGapsMs?: number
@@ -204,11 +205,12 @@ export type MapBlueprint = {
   relief?: number[][]
   resources?: BlueprintResource[]
 }
-export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals'> & {
+export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals' | 'naturalResourceRespawnSlots'> & {
   map: SaveCellState[][]
   players: SavedPlayer[]
   camera: { x: number; y: number }
   resources: SaveEntityState[]
+  naturalResourceRespawnSlots?: SaveEntityState[]
   animals: SaveEntityState[]
 }
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
@@ -480,7 +482,7 @@ export class MapGeneration {
   }
 
   generateFromJSON(data: SavedGameData): void {
-    const { map, players, camera, resources, animals, runtime } = data
+    const { map, players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
     const context = runtimeContext(this.map.context)
     const { menu, controls } = context
@@ -531,6 +533,7 @@ export class MapGeneration {
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
     this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
+    this.map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
 
     this.map.rebuildTerrainAppearance()
 
@@ -597,6 +600,7 @@ export class MapGeneration {
       }
     }
     this.map.resources = new Set()
+    this.map.naturalResourceRespawnSlots = []
     this.map.instanceBuckets = null
     this.map.context.players = []
     this.map.context.player = null
@@ -604,7 +608,7 @@ export class MapGeneration {
   }
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
-    const { players, camera, resources, animals, runtime } = data
+    const { players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
     const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
     const context = runtimeContext(this.map.context)
     const { menu, controls } = context
@@ -632,6 +636,7 @@ export class MapGeneration {
     }
 
     this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
+    this.map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
 
     controls?.setCamera?.(camera.x, camera.y, true)
     menu?.init?.()

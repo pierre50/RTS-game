@@ -4,6 +4,9 @@ import type { AudibleInstanceLike } from '../types/context'
 
 type SoundCue = string | number
 type MaybeSoundCue = SoundCue | SoundCue[] | null | undefined
+type PlaySoundCueOptions = {
+  volume?: number
+}
 
 export type AudibleInstance = {
   context?: {
@@ -24,10 +27,10 @@ function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
   return cue
 }
 
-export function playSoundCue(cue: MaybeSoundCue): SoundCue | null {
+export function playSoundCue(cue: MaybeSoundCue, options: PlaySoundCueOptions = {}): SoundCue | null {
   const soundId = resolveSoundCue(cue)
   if (!soundId) return null
-  sound.play(soundId as string)
+  sound.play(soundId as string, options)
   return soundId
 }
 

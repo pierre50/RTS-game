@@ -28,6 +28,7 @@ import {
   instancesDistance,
   isometricToCartesian,
   moveTowardPoint,
+  playMovementSurfaceAudio,
   showBlockedFeedback,
   showConfusionFeedback,
   updateInstanceRenderVisibility,
@@ -647,6 +648,8 @@ export class UnitMovement {
     if (instancesDistance(unit, nextFlatPoint, false) <= moveSpeed) {
       const oldI = unit.i,
         oldJ = unit.j
+      const beforeX = unit.x
+      const beforeY = unit.y
       unit.z = nextCell.z
       unit.i = nextCell.i
       unit.j = nextCell.j
@@ -679,12 +682,22 @@ export class UnitMovement {
         if (this.retryBlockedGatherApproach()) return
         unit.affectNewDest?.()
       }
+      playMovementSurfaceAudio(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), {
+        previousX: beforeX,
+        previousY: beforeY,
+      })
     } else {
       const menu = unit.context?.menu
       const player = unit.owner
       const oldDeg = unit.degree
       const wasWalking = unit.currentSheet === SHEET_TYPES.walking
+      const beforeX = unit.x
+      const beforeY = unit.y
       moveTowardPoint(unit, nextFlatX, nextFlatY, moveSpeed)
+      playMovementSurfaceAudio(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), {
+        previousX: beforeX,
+        previousY: beforeY,
+      })
       canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
       if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
         unit.setTextures?.(SHEET_TYPES.walking)
@@ -915,6 +928,8 @@ export class UnitMovement {
     const oldJ = unit.j
     const oldDeg = unit.degree ?? 0
     const wasWalking = unit.currentSheet === SHEET_TYPES.walking
+    const beforeX = unit.x
+    const beforeY = unit.y
     unit.degree = getInstanceDegree(unit, unit.x + facingDirX, unit.y + facingDirY)
     unit.x = candidateX
     unit.y = candidateY
@@ -951,6 +966,7 @@ export class UnitMovement {
     }
     updateInstanceVisibility(unit)
     unit.applyReliefLift?.(getGroundReliefLevel(unit.currentCell))
+    playMovementSurfaceAudio(unit, effectiveDistance, { previousX: beforeX, previousY: beforeY })
     if (!unit.actionLocked) {
       if (!unit.sprite.playing) unit.sprite.play()
       if (!wasWalking || degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {

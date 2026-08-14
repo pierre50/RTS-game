@@ -72,6 +72,7 @@ const EMPTY_BERRYBUSH_FRAME = 0
 export type ResourceOptions = Partial<ResourceDefinition> & {
   currentFrame?: number
   i: number
+  isNaturalResource?: boolean
   j: number
   type: string
   textureName?: string
@@ -104,6 +105,7 @@ export class Resource extends Instance implements ResourceEntity {
   windPhase: number
   visualSettingsCleanup: (() => void) | null
   totalQuantity!: number
+  isNaturalResource?: boolean
   isAnimated?: boolean
   assets!: ResourceAssets
   lifecycleAssets?: ResourceDefinition['lifecycleAssets']
@@ -254,6 +256,7 @@ export class Resource extends Instance implements ResourceEntity {
       }
     }
     map.resources.delete(this)
+    this.registerNaturalRespawnSlot()
     menu.updateResourcesMiniMap()
     map.removeFromInstanceBucket(this)
     this.isDead = true
@@ -281,6 +284,21 @@ export class Resource extends Instance implements ResourceEntity {
     }
     this.syncShadow()
     this.stopWindMotion()
+  }
+
+  registerNaturalRespawnSlot(): void {
+    if (!this.isNaturalResource) return
+    if (this.type !== RESOURCE_TYPES.berrybush && this.type !== RESOURCE_TYPES.wheat) return
+    const slots = this.context.map.naturalResourceRespawnSlots ?? (this.context.map.naturalResourceRespawnSlots = [])
+    slots.push({
+      i: this.i,
+      isDestroyed: true,
+      isNaturalResource: true,
+      j: this.j,
+      label: this.label,
+      textureName: this.type === RESOURCE_TYPES.berrybush ? this.textureName : undefined,
+      type: this.type,
+    })
   }
 
   updateTexture() {

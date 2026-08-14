@@ -247,6 +247,17 @@ function validateResources(resources: unknown, size: number, config: LoadedGameC
   })
 }
 
+function validateNaturalResourceRespawnSlots(slots: unknown, size: number, config: LoadedGameConfig): void {
+  const list = slots ?? []
+  validateArray(list, 'naturalResourceRespawnSlots')
+  list.forEach((slot, index) => {
+    validateEntityPosition(slot, size, `natural resource respawn slot ${index}`)
+    if (!isObject(slot) || typeof slot.type !== 'string' || !config.resources?.[slot.type]) {
+      fail(`Invalid save file: natural resource respawn slot ${index} has an unsupported type.`)
+    }
+  })
+}
+
 function validateAnimals(animals: unknown, size: number, config: LoadedGameConfig): void {
   validateArray(animals, 'animals')
   animals.forEach((animal, index) => {
@@ -334,6 +345,7 @@ export function validateSaveData(data: unknown): SaveRecord {
   validateCamera(data.camera)
   validatePlayers(data.players, size, config)
   validateResources(data.resources, size, config)
+  validateNaturalResourceRespawnSlots(data.naturalResourceRespawnSlots, size, config)
   validateAnimals(data.animals, size, config)
 
   if (data.runtime != null) {

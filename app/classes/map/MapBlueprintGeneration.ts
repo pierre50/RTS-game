@@ -35,7 +35,7 @@ function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record
 }
 
 function createResourceFromState(resource: BlueprintResourceState, map: MapGenerationMap): ResourceEntity {
-  return map.addChild(new Resource(resource, runtimeContext(map.context)))
+  return map.addChild(new Resource({ ...resource, isNaturalResource: true }, runtimeContext(map.context)))
 }
 
 export class MapBlueprintGeneration {
@@ -154,6 +154,7 @@ export class MapBlueprintGeneration {
 
     const startedAt = performance.now()
     this.map.resources = new Set()
+    this.map.naturalResourceRespawnSlots = []
     const resourcesConfig = gameConfig().resources
     for (const resource of blueprint.resources) {
       const cell = this.map.grid[resource.i]?.[resource.j]

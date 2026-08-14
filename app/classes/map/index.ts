@@ -22,6 +22,7 @@ import type { FloatingItemEntity, ResourceEntity, RuntimeEntity } from '../../ty
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
 import type { PlayerSetupConfig } from '../../types/save'
+import type { SaveEntityState } from '../../types/save'
 import type { GameContextLike } from '../../types/context'
 import type { MapEditorControlsLike } from '../../types/mapEditor'
 
@@ -98,6 +99,7 @@ export default class Map extends Container {
   positionsCount: number
   gaia: PlayerLike | null
   resources: Set<ResourceEntity>
+  naturalResourceRespawnSlots: SaveEntityState[]
   floatingItems: Set<FloatingItemEntity>
   instanceBuckets: InstanceBuckets | null
   renderChunks: RenderChunk[]
@@ -155,6 +157,7 @@ export default class Map extends Container {
     this.positionsCount = 2
     this.gaia = null
     this.resources = new Set()
+    this.naturalResourceRespawnSlots = []
     this.floatingItems = new Set()
     this.instanceBuckets = null
     this.renderChunks = []
@@ -479,9 +482,13 @@ export default class Map extends Container {
     instance: string,
     quantity: number,
     clusterRadius?: number,
-    options?: { textureName?: string; quantity?: number; startsMature?: boolean }
+    options?: { isNaturalResource?: boolean; textureName?: string; quantity?: number; startsMature?: boolean }
   ): boolean {
     return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
+  }
+
+  respawnNaturalResource(slot: SaveEntityState): boolean {
+    return this.mapResources.respawnNaturalResource(slot)
   }
 
   // MapTerrain

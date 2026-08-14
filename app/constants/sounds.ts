@@ -19,6 +19,9 @@ export const SOUND_CUES = {
     horseMoving: 'horse-moving',
     militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],
   },
+  surface: {
+    bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'],
+  },
   villager: {
     command: 'olmars',
     gatherFood: 'farming-3',

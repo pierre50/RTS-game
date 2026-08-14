@@ -12,6 +12,7 @@ import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import type { ResourceEntity } from '../../types/entities'
+import type { SaveEntityState } from '../../types/save'
 
 export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
 type NeutralResourceProfileKey = keyof (typeof RESOURCE_DENSITY_PROFILES)['moderate']['neutralGroups']
@@ -29,6 +30,7 @@ type NeutralResourceGroup = ResourceGroupEntry & {
 }
 type ResourceCenter = GridPosition
 type ResourcePlacementOptions = {
+  isNaturalResource?: boolean
   textureName?: string
   quantity?: number
   startsMature?: boolean
@@ -53,6 +55,8 @@ type MapResourcesMap = {
     clusterRadius?: number,
     options?: ResourcePlacementOptions
   ): boolean
+  respawnNaturalResource?(slot: SaveEntityState): boolean
+  naturalResourceRespawnSlots?: SaveEntityState[]
   generateForestAroundPlayer(player: GridPosition, treeCount: number): void
   findNeutralResourceCenter(
     playersPos: GridPosition[],
@@ -149,6 +153,7 @@ function createResource(
         i,
         j,
         type,
+        isNaturalResource: options.isNaturalResource ?? true,
         textureName: options.textureName,
         quantity: options.quantity,
         startsMature: options.startsMature,
@@ -661,12 +666,37 @@ export class MapResources {
       this.map.resources.add(
         createResource(this.map, cell.i, cell.j, instance, {
           textureName: sharedTextureName,
+          isNaturalResource: options.isNaturalResource ?? true,
           quantity: options.quantity,
           startsMature: options.startsMature,
         })
       )
     }
     return true
+  }
+
+  respawnNaturalResource(slot: SaveEntityState): boolean {
+    if (slot.type !== RESOURCE_TYPES.berrybush && slot.type !== RESOURCE_TYPES.wheat) return false
+    const border = 10
+    const attempts = Math.max(120, this.map.size * 2)
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const i = this.map.randomRange(border, this.map.size - border)
+      const j = this.map.randomRange(border, this.map.size - border)
+      const cell = this.map.grid[i]?.[j]
+      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
+      if (hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
+      if (hasSpacedResourceAround(this.map.grid, i, j)) continue
+
+      this.map.resources.add(
+        createResource(this.map, i, j, slot.type, {
+          isNaturalResource: true,
+          textureName: slot.type === RESOURCE_TYPES.berrybush ? slot.textureName : undefined,
+          startsMature: slot.type === RESOURCE_TYPES.wheat ? true : undefined,
+        })
+      )
+      return true
+    }
+    return false
   }
 
   getSharedGroupTextureName(instance: ResourceType): string | undefined {

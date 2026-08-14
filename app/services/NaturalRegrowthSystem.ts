@@ -3,6 +3,7 @@ import { getGaiaAnimals, getInstanceZIndex, isWheatMature, updateInstanceVisibil
 import type { GameContextLike } from '../types/context'
 import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
+import type { SaveEntityState } from '../types/save'
 import { NATURAL_REGROWTH_CONFIG } from '../config/gameplay'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventSystem'
 
@@ -17,6 +18,10 @@ type AnimalSlot = Partial<AnimalEntity> & {
 type GaiaWithRespawnSlots = PlayerLike & {
   animals?: AnimalSlot[]
   createAnimal?: (options: { horseColor?: string; i: number; j: number; type: string }) => AnimalEntity
+}
+type MapWithNaturalResourceRespawn = GameContextLike['map'] & {
+  naturalResourceRespawnSlots?: SaveEntityState[]
+  respawnNaturalResource?: (slot: SaveEntityState) => boolean
 }
 
 function maxQuantity(entity: RuntimeEntity): number {
@@ -109,6 +114,16 @@ export class NaturalRegrowthSystem implements DailyWorldEventHandler {
   applyDailyRegrowth(): void {
     const { map, menu } = this.context
     let resourcesChanged = false
+    const respawnMap = map as MapWithNaturalResourceRespawn
+    const respawnSlots = respawnMap.naturalResourceRespawnSlots ?? []
+
+    for (let index = respawnSlots.length - 1; index >= 0; index--) {
+      const slot = respawnSlots[index]
+      if (respawnMap.respawnNaturalResource?.(slot)) {
+        respawnSlots.splice(index, 1)
+        resourcesChanged = true
+      }
+    }
 
     for (const resource of map.resources as Set<ResourceEntity>) {
       if (resource.type === RESOURCE_TYPES.berrybush) {

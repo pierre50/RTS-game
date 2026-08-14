@@ -3,6 +3,7 @@ import type { GridCell, Grid } from './grid'
 import type { FloatingItemEntity, ResourceEntity, RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
+import type { SaveEntityState } from './save'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib'
@@ -73,6 +74,7 @@ export interface RuntimeMap {
   pregeneratedBlueprintId?: string | number | null
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>
+  naturalResourceRespawnSlots?: SaveEntityState[]
   // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
@@ -88,6 +90,7 @@ export interface RuntimeMap {
   updateRenderChunks?(viewport: Viewport): void
   addToInstanceBucket(instance: RuntimeEntity): void
   removeFromInstanceBucket(instance: RuntimeEntity): void
+  respawnNaturalResource?(slot: SaveEntityState): boolean
   updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void
   addChild: Container['addChild']
   removeChild(child: RuntimeEntity | Container): ContainerChild

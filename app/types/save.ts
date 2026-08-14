@@ -42,6 +42,7 @@ export type SaveEntityState = {
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
+  isNaturalResource?: boolean
   isChief?: boolean
   followingHero?: boolean
   isFleeing?: boolean
@@ -270,6 +271,7 @@ export type SerializedSave = {
   players: SavePlayerState[]
   resources: SaveEntityState[]
   animals: SaveEntityState[]
+  naturalResourceRespawnSlots?: SaveEntityState[]
   runtime?: SaveRuntimeState
   world?: SaveWorldState
 }

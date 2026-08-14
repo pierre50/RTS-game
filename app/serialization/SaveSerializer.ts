@@ -122,7 +122,18 @@ function referenceData(dest?: Destination | null): SaveReference | null | undefi
 
 function resourceData(resource: SerializableEntity): SaveEntityState {
   return {
-    ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
+    ...filterObject(resource, [
+      'label',
+      'i',
+      'j',
+      'type',
+      'isDead',
+      'quantity',
+      'isDestroyed',
+      'isNaturalResource',
+      'size',
+      'hitPoints',
+    ]),
     currentFrame: resource.sprite?.currentFrame,
     textureName: (resource.textureName || '').split('.')[0],
   }
@@ -356,6 +367,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     },
     players: (context.players ?? []).map(player => playerData(player)),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
+    naturalResourceRespawnSlots: (context.map.naturalResourceRespawnSlots ?? []).map(slot => ({ ...slot })),
     animals: getGaiaAnimals(context.map.gaia).map(animal => animalData(animal as SerializableEntity)),
   }
 

@@ -342,6 +342,9 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'weather/thunder-1',
       'weather/thunder-2',
       'weather/thunder-3',
+      'surface/bush-rustling-1',
+      'surface/bush-rustling-2',
+      'surface/bush-rustling-3',
     ]),
   },
 }

@@ -69,6 +69,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   totalQuantity?: number
   isDead?: boolean
   isDestroyed?: boolean
+  isNaturalResource?: boolean
   sprite?: Sprite | AnimatedSprite
   reliefLift?: number
   context?: GameContextLike
