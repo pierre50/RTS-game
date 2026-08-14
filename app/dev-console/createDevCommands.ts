@@ -5,27 +5,30 @@ import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
   aiInfo,
-  performanceReport,
   applyAllTechnologies,
   applyTechnology,
+  forceNextDay,
   healAll,
   highlightInstances,
-  killResources,
   killEntities,
-  toggleInstantMode,
-  setGameSpeed,
-  setPopMax,
+  killResources,
+  performanceReport,
   setAge,
   setCiv,
+  setGameSpeed,
+  setPopMax,
+  setWeatherPhase,
+  showTimeState,
   spawnAnimal,
   spawnBuilding,
   spawnFloatingItem,
   spawnUnits,
-  toggleFog,
   toggleCoordsDebug,
+  toggleFog,
   toggleFreeCamera,
   toggleGridDebug,
   toggleHeroAimDebug,
+  toggleInstantMode,
   togglePathDebug,
   togglePerfDebug,
   togglePlayerStatsDebug,
@@ -34,6 +37,7 @@ import {
   toggleTerrainFrameDebug,
   teleportHeroToPortal,
   toggleVisionDebug,
+  WEATHER_PHASES,
 } from './DevCommandActions'
 import { toggleHeroCollisionDebug } from './actions/debug'
 import type { DevEntity, DevPlayer } from './types'
@@ -161,6 +165,30 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Set player age',
     complete: () => ['0', '1', '2', '3'],
     run: ([value], context) => setAge(context, value),
+  })
+
+  registry.register({
+    name: 'nextday',
+    aliases: ['daynext'],
+    usage: 'nextday',
+    describe: 'Advance the day/night cycle to the next day',
+    run: (_args, context) => forceNextDay(context),
+  })
+
+  registry.register({
+    name: 'time',
+    aliases: ['clock'],
+    usage: 'time',
+    describe: 'Print day/night debug state',
+    run: (_args, context) => showTimeState(context),
+  })
+
+  registry.register({
+    name: 'weather',
+    usage: `weather [${WEATHER_PHASES.join('|')}]`,
+    describe: 'Print weather state or force a weather phase',
+    complete: () => WEATHER_PHASES,
+    run: ([phase], context) => setWeatherPhase(context, phase),
   })
 
   registry.register({

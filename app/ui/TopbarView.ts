@@ -25,19 +25,31 @@ export class TopbarView {
     menu.icons = resourceIcons.icons
     menu.infoIcons = resourceIcons.infoIcons
 
-    menu.resources = document.createElement('div')
-    menu.resources.className = 'topbar-resources'
-    RESOURCE_NAMES.forEach(res => this.setResourceBox(res))
+    menu.topbarStatusStack = document.createElement('div')
+    menu.topbarStatusStack.className = 'topbar-status-stack'
 
     menu.age = document.createElement('div')
     menu.age.className = 'topbar-age'
+
+    menu.dayTime = document.createElement('div')
+    menu.dayTime.className = 'topbar-daytime'
+
+    const status = document.createElement('div')
+    status.className = 'topbar-status hud-info-panel'
+
+    menu.resources = document.createElement('div')
+    menu.resources.className = 'topbar-resources'
+    RESOURCE_NAMES.forEach(res => this.setResourceBox(res))
 
     const options = document.createElement('div')
     options.className = 'topbar-options'
     options.appendChild(menu.pauseMenu.createOpenButton())
 
-    menu.topbar.appendChild(menu.resources)
-    menu.topbar.appendChild(menu.age)
+    status.appendChild(menu.resources)
+    status.appendChild(menu.age)
+    status.appendChild(menu.dayTime)
+    menu.topbarStatusStack.appendChild(status)
+    menu.topbar.appendChild(menu.topbarStatusStack)
     menu.topbar.appendChild(options)
     menu.gameHud.prepend(menu.topbar)
   }
@@ -72,7 +84,13 @@ export class TopbarView {
     })
     const age = this.getClampedAge()
     this.menu.age.textContent = t(AGE_LABEL_KEYS[age])
+    this.updateDayTime()
     this.updateAgeTheme()
+  }
+
+  updateDayTime(): void {
+    const dayNight = this.menu.context.dayNight
+    this.menu.dayTime.textContent = dayNight ? `${dayNight.getDayLabel()} - ${dayNight.getTimeLabel()}` : ''
   }
 
   updateAgeTheme(): void {

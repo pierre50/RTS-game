@@ -25,6 +25,7 @@ import {
   LABEL_TYPES,
   PLAYER_TYPES,
   POPULATION_MAX,
+  RESOURCE_TYPES,
   UNIT_TYPES,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
@@ -60,6 +61,11 @@ type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
+type GaiaRespawnSlot = SaveEntityState & {
+  context: GameContextLike
+  family: typeof FAMILY_TYPES.animal
+  owner: PlayerLike
+}
 
 // Unowned, indestructible landmark: exactly one is placed per map, never tied to any player.
 const PORTAL_RESOURCE_TYPE = 'Portal'
@@ -79,6 +85,16 @@ function getDiamondRingOffsets(radius: number): Array<[number, number]> {
     }
   }
   return offsets
+}
+
+function createGaiaRespawnSlot(animal: SaveEntityState, context: GameContextLike, owner: PlayerLike): GaiaRespawnSlot {
+  return {
+    ...animal,
+    context,
+    family: FAMILY_TYPES.animal,
+    isDestroyed: true,
+    owner,
+  }
 }
 export type MapGenerationContext = Omit<
   Partial<GameContextLike>,
@@ -284,7 +300,11 @@ function gameConfig(): GameConfig {
 }
 
 function createResourceFromState(resource: ResourceOptions, map: MapGenerationMap): ResourceEntity {
-  const instance = map.addChild(new Resource(resource, runtimeContext(map.context)))
+  const resourceState =
+    resource.type === RESOURCE_TYPES.wheat && resource.currentFrame == null && resource.startsMature == null
+      ? { ...resource, startsMature: true }
+      : resource
+  const instance = map.addChild(new Resource(resourceState, runtimeContext(map.context)))
   if (instance.type === PORTAL_RESOURCE_TYPE) {
     getBuildingFootprintCells(instance.i, instance.j, map.grid, instance.size || PORTAL_FOOTPRINT_SIZE, cell => {
       cell.solid = true
@@ -527,9 +547,14 @@ export class MapGeneration {
     menu?.updateResourcesMiniMap()
 
     this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
-    animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia.createAnimal(animal))
+    animals.forEach(animal => {
+      if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
+      else gaia.createAnimal(animal)
+    })
 
-    getGaiaAnimals(gaia).forEach(animal => processUnit(animal, this.map))
+    getGaiaAnimals(gaia)
+      .filter(animal => !animal.isDestroyed)
+      .forEach(animal => processUnit(animal, this.map))
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]
@@ -614,9 +639,15 @@ export class MapGeneration {
 
     this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
     const gaia = this.map.gaia instanceof Gaia ? this.map.gaia : null
-    animals.filter(animal => !animal.isDestroyed).forEach(animal => gaia?.createAnimal(animal))
+    animals.forEach(animal => {
+      if (!gaia) return
+      if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
+      else gaia.createAnimal(animal)
+    })
 
-    getGaiaAnimals(gaia).forEach(animal => processUnit(animal, this.map))
+    getGaiaAnimals(gaia)
+      .filter(animal => !animal.isDestroyed)
+      .forEach(animal => processUnit(animal, this.map))
 
     this.map.context.players.forEach((player, index) => {
       const savedPlayer = players[index]

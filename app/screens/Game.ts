@@ -40,6 +40,8 @@ import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import { WeatherSystem } from '../services/WeatherSystem'
 import { LightSystem } from '../services/LightSystem'
 import { ShadowSystem } from '../services/ShadowSystem'
+import { DayNightSystem } from '../services/DayNightSystem'
+import { DailyWorldEventSystem } from '../services/DailyWorldEventSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
@@ -139,6 +141,12 @@ function assignDefined(target: Record<string, unknown>, values: Record<string, u
 
 const PORTAL_RESOURCE_TYPE = 'Portal'
 
+function heroTravelImageSrc(player: PlayerLike | null | undefined): string {
+  const civ = (player?.civ || 'Greek').toLowerCase()
+  const gender = player?.gender === 'female' ? 'female' : 'male'
+  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/body/walking/texture.png`
+}
+
 function addPausableInstance(instances: Set<RuntimeEntity>, instance: RuntimeEntity | null | undefined): void {
   if (!instance || instance.isDestroyed) return
   if (!instance.pause && !instance.resume) return
@@ -186,6 +194,8 @@ export default class Game extends Container {
   _weather?: WeatherSystem | null
   _lights?: LightSystem | null
   _shadows?: ShadowSystem | null
+  _dayNight?: DayNightSystem | null
+  _dailyWorldEvents?: DailyWorldEventSystem | null
 
   constructor(
     app: Application,
@@ -201,6 +211,8 @@ export default class Game extends Container {
     this._isRestarting = false
     this._weather = null
     this._lights = null
+    this._dayNight = null
+    this._dailyWorldEvents = null
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -212,6 +224,8 @@ export default class Game extends Container {
       map: null,
       controls: null,
       ambientBirds: null,
+      dayNight: null,
+      weather: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -414,6 +428,8 @@ export default class Game extends Container {
       map: null,
       controls: null,
       ambientBirds: null,
+      dayNight: null,
+      weather: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -436,13 +452,18 @@ export default class Game extends Container {
     ;(window as unknown as { __debugContext?: unknown }).__debugContext = context
   }
 
-  _mountRuntime(): void {
+  _mountRuntime(dayNightElapsedMs: number | null | undefined = null): void {
     const { map, controls } = this.context
     if (!map || !controls) return
     this.addChild(map as ContainerChild)
+    this._dayNight = new DayNightSystem(this._gameContext(), { elapsedMs: dayNightElapsedMs })
+    this.context.dayNight = this._dayNight
+    this._dailyWorldEvents = new DailyWorldEventSystem(this._gameContext())
     this._shadows = new ShadowSystem(this._gameContext(), map)
     this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
-    this._lights = new LightSystem(this._gameContext(), () => this._getScreenRect(), () => this._weather?.getDarknessLevel() ?? 0)
+    this.context.weather = this._weather
+    this._lights = new LightSystem(this._gameContext(), () => this._getScreenRect(), () => this._dayNight?.getDarknessLevel() ?? 0)
+    ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = this._dayNight
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = this._weather
     ;(window as unknown as { __lightSystem?: LightSystem | null }).__lightSystem = this._lights
     this.addChild(this._lights.layer)
@@ -476,6 +497,18 @@ export default class Game extends Container {
     }
   }
 
+  _worldStateWithCampaignClock(state: SerializedSave): SerializedSave {
+    const elapsedMs = this._campaignSave?.clock?.dayNightElapsedMs
+    if (!Number.isFinite(elapsedMs)) return state
+    return {
+      ...state,
+      runtime: {
+        ...(state.runtime ?? {}),
+        dayNightElapsedMs: Math.max(0, elapsedMs ?? 0),
+      },
+    }
+  }
+
   _destroyRuntime({ preserveLoadingScreen = false }: { preserveLoadingScreen?: boolean } = {}): void {
     if (!preserveLoadingScreen) {
       this._loadingScreen?.destroy()
@@ -493,8 +526,15 @@ export default class Game extends Container {
     this._lights = null
     this._shadows?.destroy()
     this._shadows = null
+    this._dailyWorldEvents?.destroy()
+    this._dailyWorldEvents = null
+    this._dayNight?.destroy()
+    this._dayNight = null
+    this.context.dayNight = null
     this._weather?.destroy()
     this._weather = null
+    this.context.weather = null
+    ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = null
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null
     ;(window as unknown as { __lightSystem?: LightSystem | null }).__lightSystem = null
     this.context.controls?.destroy({ children: true })
@@ -505,7 +545,7 @@ export default class Game extends Container {
     this._resetRuntimeState()
   }
 
-  async _bootFromConfig(config: GameConfig): Promise<void> {
+  async _bootFromConfig(config: GameConfig, options: { dayNightElapsedMs?: number | null } = {}): Promise<void> {
     this.context.performance?.setPhase?.('load')
     this._createRuntime()
     const map = this._map()
@@ -553,7 +593,7 @@ export default class Game extends Container {
     this.context.controls?.init?.()
     ;(window as unknown as { __debugContext?: unknown }).__debugContext = this.context
 
-    this._mountRuntime()
+    this._mountRuntime(options.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
     this._campaignSave = createInitialCampaignSave(serializeGame(this._gameContext()))
@@ -610,7 +650,7 @@ export default class Game extends Container {
     })
     map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
     this.context.controls?.init?.()
-    this._mountRuntime()
+    this._mountRuntime(json.runtime?.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
   }
@@ -629,7 +669,7 @@ export default class Game extends Container {
     this._createUiRuntime()
     map.generateFromJSON(savedRuntimeState(json))
     this.context.controls?.init?.()
-    this._mountRuntime()
+    this._mountRuntime(json.runtime?.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
     this.checkVictory()
   }
@@ -989,7 +1029,7 @@ export default class Game extends Container {
     const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
     const targetWorldId = this._portalWorldId(portal, color)
     const existingTarget = campaign.worlds[targetWorldId]
-    const portalTransition = new PortalTravelTransition(color)
+    const portalTransition = new PortalTravelTransition(color, { heroImageSrc: heroTravelImageSrc(this.context.player) })
     this._loadingScreen = portalTransition
     portalTransition.update('generatingWorld', 0.02)
     await portalTransition.waitForFlash()
@@ -997,9 +1037,9 @@ export default class Game extends Container {
     try {
       if (shouldReturnToParent) {
         const nextCampaign = returnToParentWorld(campaign, now)
-        const parentState = getCurrentWorldState(nextCampaign)
         this._campaignSave = structuredClone(nextCampaign)
         this._restartSaveData = structuredClone(nextCampaign)
+        const parentState = this._worldStateWithCampaignClock(getCurrentWorldState(nextCampaign))
         this._destroyRuntime({ preserveLoadingScreen: true })
         await this._bootFromSave(withFogEnabledState(structuredClone(parentState)))
         this._map().revealEverything = false
@@ -1014,7 +1054,7 @@ export default class Game extends Container {
         this._campaignSave = structuredClone(nextCampaign)
         this._restartSaveData = structuredClone(nextCampaign)
         this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromSave(withFogEnabledState(structuredClone(existingTarget.state)))
+        await this._bootFromSave(withFogEnabledState(this._worldStateWithCampaignClock(structuredClone(existingTarget.state))))
         this._map().revealEverything = false
         this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
         const targetState = withFogEnabledState(serializeGame(this._gameContext()))
@@ -1026,7 +1066,7 @@ export default class Game extends Container {
         const parentWorldId = campaign.currentWorldId
         const portalWorld = this._configForPortalWorld(color, targetWorldId, now)
         this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromConfig(portalWorld.config)
+        await this._bootFromConfig(portalWorld.config, { dayNightElapsedMs: campaign.clock?.dayNightElapsedMs })
         this._map().revealEverything = false
         this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell(), { freshWorld: true })
         const childState = withFogEnabledState(serializeGame(this._gameContext()))
@@ -1069,7 +1109,7 @@ export default class Game extends Container {
       this._loadingScreen = new GameLoadingScreen()
       this._loadingScreen.update('generatingTerrain', 0.02)
       await this._yieldToBrowser()
-      await this._bootFromSave(structuredClone(getCurrentWorldState(this._restartSaveData)))
+      await this._bootFromSave(this._worldStateWithCampaignClock(structuredClone(getCurrentWorldState(this._restartSaveData))))
       booted = true
     } catch (error) {
       const message = error instanceof Error ? error.message : t('corruptSave')
@@ -1109,7 +1149,7 @@ export default class Game extends Container {
     await this._yieldToBrowser()
     let booted = false
     try {
-      await this._bootFromSave(structuredClone(getCurrentWorldState(this._restartSaveData!)))
+      await this._bootFromSave(this._worldStateWithCampaignClock(structuredClone(getCurrentWorldState(this._restartSaveData!))))
       booted = true
     } finally {
       this._loadingScreen?.destroy()

@@ -49,12 +49,12 @@ const VEIL_TARGETS: Record<WeatherPhase, number> = {
 const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
   sunny: {
     gamma: 1,
-    contrast: 1.04,
-    saturation: 1.08,
-    brightness: 1.04,
-    red: 1.04,
-    green: 1.02,
-    blue: 0.96,
+    contrast: 1,
+    saturation: 1,
+    brightness: 1,
+    red: 1,
+    green: 1,
+    blue: 1,
   },
   clouding: {
     gamma: 1,
@@ -102,13 +102,13 @@ const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
     blue: 1,
   },
   night: {
-    gamma: 0.98,
+    gamma: 1,
     contrast: 1,
-    saturation: 0.72,
-    brightness: 0.98,
-    red: 0.86,
-    green: 0.9,
-    blue: 1.06,
+    saturation: 1,
+    brightness: 1,
+    red: 1,
+    green: 1,
+    blue: 1,
   },
 }
 
@@ -146,6 +146,18 @@ function lerp(current: number, target: number, amount: number): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+function combineColor(base: WeatherColor, weather: WeatherColor): WeatherColor {
+  return {
+    gamma: base.gamma * weather.gamma,
+    contrast: base.contrast * weather.contrast,
+    saturation: base.saturation * weather.saturation,
+    brightness: base.brightness * weather.brightness,
+    red: base.red * weather.red,
+    green: base.green * weather.green,
+    blue: base.blue * weather.blue,
+  }
 }
 
 // Triangular crossfade: `low` peaks at `mid` then fades out, `high` ramps in from `mid` to 1.
@@ -393,7 +405,7 @@ export class WeatherSystem {
   }
 
   updateColor(elapsedSeconds: number): void {
-    const target = WEATHER_COLORS[this.phase]
+    const target = combineColor(this.context.dayNight?.getColorAdjustment?.() ?? WEATHER_COLORS.sunny, WEATHER_COLORS[this.phase])
     const amount = elapsedSeconds * COLOR_LERP_PER_SECOND
     this.currentColor.gamma = lerp(this.currentColor.gamma, target.gamma, amount)
     this.currentColor.contrast = lerp(this.currentColor.contrast, target.contrast, amount)

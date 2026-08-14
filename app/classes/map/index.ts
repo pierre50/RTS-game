@@ -196,8 +196,9 @@ export default class Map extends Container {
   }
 
   setCoordinate(x: number, y: number): void {
-    this.x = Math.round(x)
-    this.y = Math.round(y)
+    // Keep camera movement smooth; rounding here reintroduces visible jitter on pixel-art sprites.
+    this.x = x
+    this.y = y
   }
 
   clearRenderChunks(): void {

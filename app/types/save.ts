@@ -139,7 +139,9 @@ export type SavePlayerState = PlayerSetupConfig & {
 }
 
 export type SaveRuntimeState = {
+  dayNightElapsedMs?: number
   elapsedMs?: number
+  savedAt?: number
 }
 
 export type SaveWorldState = {
@@ -199,12 +201,19 @@ export type CampaignWorldSave = {
   returnPortalId?: string | null
   discoveredAt: number
   visitedAt: number
+  visitedDayNightElapsedMs?: number
   state: SerializedSave
+}
+
+export type CampaignClockSave = {
+  dayNightElapsedMs?: number
+  savedAt?: number
 }
 
 export type CampaignSave = {
   format: 'campaign-v1'
   version: number
+  clock?: CampaignClockSave
   currentWorldId: string
   factions?: Record<string, FactionSave>
   heroParty: HeroPartySave

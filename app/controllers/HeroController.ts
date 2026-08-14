@@ -30,6 +30,7 @@ import {
   cancelHeroBowCharge,
   cancelHeroLasso,
   cancelHeroDefense,
+  isHeroBowChargeActiveForTool,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
   releaseHeroBowCharge,
@@ -83,6 +84,11 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
 }
 const COMPANION_HORSE_CALL_MIN_RADIUS = 10
 const COMPANION_HORSE_CALL_MAX_RADIUS = 36
+const MOUNT_TRANSITION_FADE_OUT_MS = 120
+const MOUNT_TRANSITION_FADE_IN_MS = 140
+const MOUNT_TRANSITION_CAMERA_MS = 180
+const MOUNT_TRANSITION_TICK_MS = 40
+const MOUNT_TRANSITION_HIDDEN_ALPHA = 0.05
 type MoveVector = { dx: number; dy: number }
 type HorseCallDestination = Pick<RuntimeCell, 'i' | 'j' | 'x' | 'y' | 'z'>
 type CompanionHorse = AnimalEntity & {
@@ -144,6 +150,11 @@ function getKeyboardMoveVector(keysPressed: Set<ControlBindingAction>): MoveVect
     dy += dir.dy
   }
   return { dx, dy }
+}
+
+function easeInOut(t: number): number {
+  const clamped = Math.max(0, Math.min(1, t))
+  return clamped * clamped * (3 - 2 * clamped)
 }
 
 function isHeroDirectionLockActive(controls: Controls): boolean {
@@ -278,6 +289,7 @@ export class HeroController {
   primaryClickPoint: HeroAimPoint | null
   shiftMoveLockedDegree: number | null
   companionHorse: CompanionHorse | null
+  mountTransitionTaskId: number | null
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -295,6 +307,7 @@ export class HeroController {
     this.primaryClickPoint = null
     this.shiftMoveLockedDegree = null
     this.companionHorse = null
+    this.mountTransitionTaskId = null
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
   }
@@ -528,7 +541,7 @@ export class HeroController {
     if (targetCell) this.snapHeroToCell(targetCell)
   }
 
-  mountCompanionHorse(horse: CompanionHorse): boolean {
+  finishCompanionHorseMount(horse: CompanionHorse): boolean {
     const unit = this.heroUnit
     if (unit && horse.horseColor) {
       unit.horseColor = horse.horseColor
@@ -536,13 +549,14 @@ export class HeroController {
     }
     if (unit && typeof horse.degree === 'number') unit.degree = horse.degree
     this.snapHeroToHorse(horse)
-    horse.clear?.()
     if (!this.setHeroMountedOnHorse(true)) return false
+    horse.clear?.()
     this.companionHorse = null
+    if (unit) this.controls.setCamera?.(unit.x, unit.y)
     return true
   }
 
-  dismountCompanionHorse(): boolean {
+  finishCompanionHorseDismount(): boolean {
     const unit = this.heroUnit
     const map = unit?.context?.map
     const createAnimal = map?.gaia?.createAnimal
@@ -556,7 +570,96 @@ export class HeroController {
     const horse = this.createCompanionHorseAt(horseCell)
     if (!horse) return false
     if (typeof unit.degree === 'number') horse.degree = unit.degree
+    this.controls.setCamera?.(unit.x, unit.y)
     return true
+  }
+
+  cancelMountTransition(restoreAlpha = true): void {
+    if (this.mountTransitionTaskId != null) {
+      this.controls.context.scheduler?.remove(this.mountTransitionTaskId)
+      this.mountTransitionTaskId = null
+    }
+    if (restoreAlpha && this.heroUnit && !this.heroUnit.isDestroyed) this.heroUnit.alpha = 1
+  }
+
+  startHorseTransition({
+    cameraEnd,
+    finish,
+    taskName,
+    targetValid,
+  }: {
+    cameraEnd: HeroAimPoint
+    finish: () => boolean
+    taskName: string
+    targetValid?: () => boolean
+  }): boolean {
+    const unit = this.heroUnit
+    const scheduler = this.controls.context.scheduler
+    if (!unit) return false
+    if (this.mountTransitionTaskId != null) return true
+    if (!scheduler) return finish()
+
+    const startedAt = scheduler.elapsedMs
+    const cameraStart = { x: unit.x, y: unit.y }
+    let swapped = false
+    unit.alpha = 1
+    const taskId = scheduler.add(
+      () => {
+        const currentUnit = this.heroUnit
+        if (!currentUnit || currentUnit.isDead || currentUnit.isDestroyed || targetValid?.() === false) {
+          this.cancelMountTransition()
+          return
+        }
+        const elapsed = scheduler.elapsedMs - startedAt
+        const cameraProgress = easeInOut(elapsed / MOUNT_TRANSITION_CAMERA_MS)
+        this.controls.setCamera?.(
+          cameraStart.x + (cameraEnd.x - cameraStart.x) * cameraProgress,
+          cameraStart.y + (cameraEnd.y - cameraStart.y) * cameraProgress
+        )
+        if (elapsed < MOUNT_TRANSITION_FADE_OUT_MS) {
+          const progress = Math.max(0, elapsed / MOUNT_TRANSITION_FADE_OUT_MS)
+          currentUnit.alpha = 1 - (1 - MOUNT_TRANSITION_HIDDEN_ALPHA) * progress
+          return
+        }
+        if (!swapped) {
+          currentUnit.alpha = MOUNT_TRANSITION_HIDDEN_ALPHA
+          if (!finish()) {
+            this.cancelMountTransition()
+            return
+          }
+          swapped = true
+        }
+        const fadeInProgress = Math.min(1, (elapsed - MOUNT_TRANSITION_FADE_OUT_MS) / MOUNT_TRANSITION_FADE_IN_MS)
+        currentUnit.alpha = MOUNT_TRANSITION_HIDDEN_ALPHA + (1 - MOUNT_TRANSITION_HIDDEN_ALPHA) * fadeInProgress
+        if (fadeInProgress >= 1) this.cancelMountTransition(false)
+      },
+      MOUNT_TRANSITION_TICK_MS,
+      taskName
+    )
+    this.mountTransitionTaskId = taskId
+    return true
+  }
+
+  mountCompanionHorse(horse: CompanionHorse): boolean {
+    return this.startHorseTransition({
+      cameraEnd: { x: horse.x, y: horse.y },
+      finish: () => this.finishCompanionHorseMount(horse),
+      targetValid: () => !horse.isDead && !horse.isDestroyed,
+      taskName: 'hero.mountHorseTransition',
+    })
+  }
+
+  dismountCompanionHorse(): boolean {
+    const unit = this.heroUnit
+    const map = unit?.context?.map
+    if (!unit || !map) return false
+    const heroCell = findCompanionHorseSpawnCell(unit, 1)
+    if (!heroCell) return false
+    return this.startHorseTransition({
+      cameraEnd: { x: heroCell.x, y: heroCell.y },
+      finish: () => this.finishCompanionHorseDismount(),
+      taskName: 'hero.dismountHorseTransition',
+    })
   }
 
   toggleHeroHorse(): boolean {
@@ -580,7 +683,9 @@ export class HeroController {
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
     const aimPoint = this.controls.getWorldPointUnderCursor()
-    const bowChargeAiming = aimHeroBowChargeAt(unit, aimPoint)
+    const bowChargeAiming = isHeroBowChargeActiveForTool(unit, this.equippedItem)
+      ? aimHeroBowChargeAt(unit, aimPoint)
+      : false
     const defenseAiming = aimHeroDefenseAt(unit, aimPoint)
     updateHeroBowCharge(unit)
     updateHeroDefense(unit)
@@ -726,7 +831,7 @@ export class HeroController {
       return
     }
     if (button !== 0) return
-    if (unit && (this.equippedItem === 'bow' || this.equippedItem === 'lasso') && releaseHeroBowCharge(unit)) {
+    if (unit && isHeroBowChargeActiveForTool(unit, this.equippedItem) && releaseHeroBowCharge(unit)) {
       this.mouseHeld = false
       this.primaryClickPoint = null
       return
@@ -819,17 +924,23 @@ export class HeroController {
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {
-    if (this.heroUnit?.heroDefenseActive) cancelHeroDefense(this.heroUnit)
-    if (this.heroUnit && item !== 'lasso') cancelHeroLasso(this.heroUnit)
+    const unit = this.heroUnit
+    if (unit?.heroDefenseActive) cancelHeroDefense(unit)
+    if (unit && item !== 'lasso') cancelHeroLasso(unit)
+    if (unit && !isHeroBowChargeActiveForTool(unit, item)) {
+      cancelHeroBowCharge(unit)
+      this.mouseHeld = false
+      this.primaryClickPoint = null
+    }
     this.equippedItem = item
-    if (this.heroUnit?.actionLocked) {
+    if (unit?.actionLocked) {
       // Mid-action (e.g. chopping wood) the sprite is looping on the action sheet;
       // reconcile via stop() first so it resets actionLocked/sprite.loop and clears
       // the loop callback, instead of applyToolAppearance swapping to the walking
       // sheet mid-loop and leaving actionLocked stuck true forever.
-      this.heroUnit.stop?.()
-    } else if (item && this.heroUnit) {
-      applyToolAppearance(this.heroUnit, item)
+      unit.stop?.()
+    } else if (item && unit) {
+      applyToolAppearance(unit, item)
     }
     this.controls.context.menu?.setEquippedItem?.(item)
     this.controls.context.menu?.setEquippedTool?.(item)
@@ -848,6 +959,7 @@ export class HeroController {
     this.stopKeyboardMove()
     this.mouseHeld = false
     this.primaryClickPoint = null
+    this.cancelMountTransition()
     if (this.heroUnit) cancelHeroBowCharge(this.heroUnit)
     if (this.heroUnit) cancelHeroLasso(this.heroUnit)
     if (this.heroUnit) cancelHeroDefense(this.heroUnit)
@@ -864,6 +976,7 @@ export class HeroController {
   }
 
   destroy(): void {
+    this.cancelMountTransition()
     this.criticalHealthEffects.destroy()
     this.occlusionFade.destroy()
   }

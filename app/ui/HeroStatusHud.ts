@@ -34,7 +34,7 @@ export class HeroStatusHud {
     this.element.className = 'hero-status-hud hidden'
 
     const frame = document.createElement('div')
-    frame.className = 'hero-status-frame'
+    frame.className = 'hero-status-frame hud-info-panel'
 
     const avatarWrap = document.createElement('div')
     avatarWrap.className = 'unit-avatar-frame'

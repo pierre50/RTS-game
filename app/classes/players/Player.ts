@@ -13,6 +13,7 @@ import {
   isValidCondition,
   canPlaceBuildingAt,
   playSoundCue,
+  updateInstanceVisibility,
   isBuildingLimitReached,
   getBuildingFootprintCells,
 } from '../../lib'
@@ -33,10 +34,12 @@ import {
   RESOURCE_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
+  FADE_DURATION_MS,
 } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { getRandomUnitName } from '../../config/name'
 import { playUiSound } from '../../lib/uiSound'
+import { fadeIn } from '../../lib/entityFade'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { VisionGrid } from '../../services/VisionGrid'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
@@ -205,6 +208,8 @@ export class Player implements PlayerLike {
 
   spawnBuilding(options: BuildingOptions) {
     const building = this.createBuilding(options)
+    updateInstanceVisibility(building)
+    fadeIn(building, FADE_DURATION_MS)
     if (this.isPlayed) {
       let hasSentWorker = false
       let hasSentOther = false
@@ -545,6 +550,8 @@ export class Player implements PlayerLike {
       const size = typeof config.size === 'number' ? config.size : 4
       for (const cell of getBuildingFootprintCells(i, j, map.grid, size)) {
         const wheat = map.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.wheat }, this.context))
+        cell.updateVisible()
+        fadeIn(wheat, FADE_DURATION_MS)
         map.resources.add(wheat)
         planted.push(wheat)
       }

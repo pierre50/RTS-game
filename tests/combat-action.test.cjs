@@ -51,9 +51,12 @@ const constants = {
   FAMILY_TYPES: {
     animal: 'animal',
     building: 'building',
+    resource: 'resource',
     unit: 'unit',
   },
-  RESOURCE_TYPES: {},
+  RESOURCE_TYPES: {
+    berrybush: 'Berrybush',
+  },
   UNIT_TYPES: {
     chief: 'Chief',
     hero: 'Hero',
@@ -94,6 +97,56 @@ test('units with no weapon config can attack enemies with unarmed power', () => 
   }
 
   assert.equal(getActionCondition(villager, target, 'attack'), true)
+})
+
+test('combat weapons can attack neutral berry bushes', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+
+  const swordsman = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 45,
+    isDead: false,
+    owner,
+    type: 'Villager',
+    weaponPower: 4,
+  }
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 40,
+    isDead: false,
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+
+  assert.equal(getActionCondition(swordsman, berrybush, 'attack'), true)
+})
+
+test('unarmed units cannot attack neutral berry bushes', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+
+  const unarmedUnit = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 45,
+    isDead: false,
+    owner,
+    type: 'Villager',
+    weaponPower: 0.5,
+  }
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 40,
+    isDead: false,
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+
+  assert.equal(getActionCondition(unarmedUnit, berrybush, 'attack'), false)
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
@@ -854,6 +907,57 @@ test('unit control policy disables automatic reactions for the active hero-contr
   setUnitControlMode(explicitStandardUnit, 'standard')
   assert.equal(isHeroControlled(explicitStandardUnit), false)
   assert.equal(canAutoReactToAttack(explicitStandardUnit), true)
+})
+
+test('melee unit attacks damage berry bushes with weapon damage', () => {
+  let impactCallback = null
+  const applyCalls = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      applyCombatHit: (_source, target, options) => {
+        applyCalls.push({ target, defaultDamage: options.defaultDamage })
+        target.hitPoints -= 4
+        return { damageDealt: 4, killed: false }
+      },
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => true,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => {
+        impactCallback = callback
+      },
+      playAudibleSoundCue: () => {},
+      BOW_SHOOT_RELEASE_FRAME: 8,
+      SLASH_IMPACT_FRAME: 1,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+  })
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 40,
+    isDead: false,
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    dest: berrybush,
+    getActionCondition: instance => instance === berrybush && berrybush.hitPoints > 0,
+    isUnitAtDest: () => true,
+    setTextures: () => {},
+    sprite: { loop: false, onComplete: null, onFrameChange: null, onLoop: null },
+  }
+
+  new UnitCombat(unit).handleAttackAction()
+  impactCallback()
+
+  assert.equal(berrybush.hitPoints, 36)
+  assert.deepEqual(applyCalls, [{ target: berrybush, defaultDamage: undefined }])
 })
 
 test('damage feedback can be cleared before its timer fires', () => {

@@ -39,6 +39,18 @@ function worldEnvironment(world: SerializedSave): string | null {
   return world.world?.environment ?? world.config?.environment ?? null
 }
 
+function dayNightElapsedMs(world: SerializedSave): number {
+  const value = world.runtime?.dayNightElapsedMs
+  return Number.isFinite(value) ? Math.max(0, value ?? 0) : 0
+}
+
+function campaignClockFromWorld(world: SerializedSave, now: number) {
+  return {
+    dayNightElapsedMs: dayNightElapsedMs(world),
+    savedAt: now,
+  }
+}
+
 export function isCampaignSave(save: SaveRecord | unknown): save is CampaignSave {
   return Boolean(
     save &&
@@ -63,12 +75,14 @@ export function createInitialCampaignSave(
     returnPortalId: null,
     discoveredAt: now,
     visitedAt: now,
+    visitedDayNightElapsedMs: dayNightElapsedMs(worldState),
     state: worldState,
   }
 
   return {
     format: CAMPAIGN_SAVE_FORMAT,
     version: 1,
+    clock: campaignClockFromWorld(worldState, now),
     currentWorldId: id,
     heroParty: {
       playerLabel: worldState.players.find(player => player.isPlayed)?.label,
@@ -109,12 +123,14 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
   const world = {
     ...currentWorld,
     visitedAt: now,
+    visitedDayNightElapsedMs: dayNightElapsedMs(state),
     state,
   }
   const node = campaign.worldGraph.nodes[campaign.currentWorldId]
 
   return {
     ...campaign,
+    clock: campaignClockFromWorld(state, now),
     heroParty: {
       ...campaign.heroParty,
       playerLabel: state.players.find(player => player.isPlayed)?.label ?? campaign.heroParty.playerLabel,
@@ -169,6 +185,7 @@ export function addChildWorldToCampaign(
 
   return {
     ...campaign,
+    clock: campaignClockFromWorld(childState, now),
     factions: {
       ...(campaign.factions ?? {}),
       ...factions,
@@ -189,6 +206,7 @@ export function addChildWorldToCampaign(
         returnPortalId,
         discoveredAt: existingWorld?.discoveredAt ?? now,
         visitedAt: now,
+        visitedDayNightElapsedMs: dayNightElapsedMs(childState),
         state: childState,
       },
     },

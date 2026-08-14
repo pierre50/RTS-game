@@ -53,8 +53,10 @@ export default class Menu implements MenuLike {
   icons!: Record<string, string>
   infoIcons!: Record<string, string>
   topbar!: HTMLDivElement
+  topbarStatusStack!: HTMLDivElement
   resources!: HTMLDivElement
   age!: HTMLDivElement
+  dayTime!: HTMLDivElement
   updatePlayerMiniMap: (owner: PlayerLike) => void
   updateResourcesMiniMap: () => void
   updateCameraMiniMap: () => void

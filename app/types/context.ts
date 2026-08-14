@@ -8,6 +8,41 @@ import type { HeroEquippedItem } from '../lib/heroTools'
 import type { FactionSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
+export interface DayNightStateLike {
+  day: number
+  darkness: number
+  hour: number
+  minute: number
+  phase: string
+}
+
+export type DayNightColorAdjustment = {
+  blue: number
+  brightness: number
+  contrast: number
+  gamma: number
+  green: number
+  red: number
+  saturation: number
+}
+
+export interface DayNightSystemLike {
+  getColorAdjustment(): DayNightColorAdjustment
+  getDarknessLevel(): number
+  getElapsedMs(): number
+  getDayLabel(): string
+  getTimeLabel(): string
+  onDayChange?(callback: (day: number, previousDay: number) => void): () => void
+  state: DayNightStateLike
+}
+
+export interface WeatherSystemLike {
+  debugState?(): object
+  forcePhase?(phase: string): void
+  getDarknessLevel?(): number
+  phase?: string
+}
+
 export type SchedulerTaskId = number
 
 export type NpcOrdersOpenOptions = { chatterLine?: string; ordersEnabled?: boolean }
@@ -181,6 +216,8 @@ export interface GameContextLike {
   menu: MenuLike
   scheduler: SchedulerLike
   performance?: PerformanceMonitorLike | null
+  dayNight?: DayNightSystemLike | null
+  weather?: WeatherSystemLike | null
   editor?: MapEditorLike
   paused?: boolean
   devConsoleOpen?: boolean

@@ -89,10 +89,10 @@
   justify-content: center;
   overflow: hidden;
   color: #ffffff;
-  background: #ffffff;
-  opacity: 1;
+  background: #020204;
+  opacity: 0;
   pointer-events: none;
-  transition: opacity 520ms ease-out;
+  transition: opacity 360ms ease-out;
 }
 
 .portal-travel.is-open {
@@ -121,86 +121,186 @@
   inset: -18vmax;
   content: '';
   background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 1) 0 20%, rgba(255, 255, 255, 0.88) 34%, rgba(255, 255, 255, 0.2) 62%),
-    conic-gradient(from 0deg, transparent 0deg 28deg, color-mix(in srgb, var(--portal-travel-color) 42%, transparent) 30deg 36deg, transparent 38deg 72deg);
-  filter: blur(0.5px);
-  animation: portal-travel-spin 1.8s linear infinite;
+    radial-gradient(circle at center, color-mix(in srgb, var(--portal-travel-color) 48%, transparent) 0 8%, rgba(8, 10, 18, 0.82) 22%, rgba(0, 0, 0, 0.98) 60%),
+    conic-gradient(
+      from 0deg,
+      transparent 0deg 24deg,
+      color-mix(in srgb, var(--portal-travel-color) 46%, transparent) 28deg 34deg,
+      transparent 42deg 70deg,
+      rgba(255, 255, 255, 0.09) 74deg 78deg,
+      transparent 82deg 110deg
+    );
+  filter: blur(0.8px);
+  opacity: 0.94;
+  animation: portal-travel-spin 5.8s linear infinite;
+}
+
+.portal-travel::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background:
+    radial-gradient(circle at center, transparent 0 18%, rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.96) 78%),
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.045) 0 1px, transparent 2px);
+  background-size: auto, 48px 48px;
+  opacity: 0.78;
 }
 
 .portal-travel.is-arriving::before {
-  animation-duration: 0.8s;
+  animation-duration: 2.4s;
 }
 
 .portal-travel__core {
   position: relative;
-  width: min(44vmin, 340px);
-  height: min(44vmin, 340px);
-  opacity: 0.9;
-  transform: scale(0.82);
-  animation: portal-travel-pulse 1.3s ease-in-out infinite alternate;
+  z-index: 2;
+  width: min(15vmin, 118px);
+  height: min(15vmin, 118px);
+  border-radius: 50%;
+  box-shadow:
+    0 0 22px color-mix(in srgb, var(--portal-travel-color) 68%, transparent),
+    0 0 92px color-mix(in srgb, var(--portal-travel-color) 34%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--portal-travel-color) 22%, transparent);
+  background: radial-gradient(circle, color-mix(in srgb, var(--portal-travel-color) 72%, #ffffff) 0 8%, color-mix(in srgb, var(--portal-travel-color) 42%, transparent) 32%, transparent 72%);
+  opacity: 0.72;
+  animation: portal-travel-glow 2.6s ease-in-out infinite alternate;
 }
 
-.portal-travel__ring,
-.portal-travel__shard {
+.portal-travel__core::before,
+.portal-travel__core::after {
   position: absolute;
-  display: block;
+  inset: -54%;
+  content: '';
+  border-radius: 50%;
   pointer-events: none;
 }
 
-.portal-travel__ring {
-  inset: 8%;
-  border: 2px solid color-mix(in srgb, var(--portal-travel-color) 62%, #ffffff);
-  border-radius: 50%;
+.portal-travel__core::before {
+  border: 1px solid color-mix(in srgb, var(--portal-travel-color) 28%, transparent);
   box-shadow:
-    0 0 18px color-mix(in srgb, var(--portal-travel-color) 38%, transparent),
-    inset 0 0 20px rgba(255, 255, 255, 0.68);
-  opacity: 0.54;
+    inset 0 0 20px color-mix(in srgb, var(--portal-travel-color) 18%, transparent),
+    0 0 32px rgba(0, 0, 0, 0.74);
+  opacity: 0.5;
+  animation: portal-travel-lens 3.8s ease-in-out infinite;
 }
 
-.portal-travel__ring--1 {
-  animation: portal-travel-spin 1.05s linear infinite;
+.portal-travel__core::after {
+  inset: -118%;
+  background: conic-gradient(
+    from 18deg,
+    transparent 0deg 58deg,
+    color-mix(in srgb, var(--portal-travel-color) 12%, transparent) 74deg 86deg,
+    transparent 108deg 180deg,
+    rgba(255, 255, 255, 0.035) 210deg 224deg,
+    transparent 252deg 360deg
+  );
+  filter: blur(8px);
+  opacity: 0.42;
+  animation: portal-travel-lens-spin 9s linear infinite;
 }
 
-.portal-travel__ring--2 {
-  inset: 22%;
-  border-style: dashed;
-  animation: portal-travel-spin 1.45s linear infinite reverse;
-}
-
-.portal-travel__ring--3 {
-  inset: 36%;
-  border-width: 3px;
-  opacity: 0.68;
-  animation: portal-travel-spin 0.82s linear infinite;
-}
-
-.portal-travel__shard {
+.portal-travel__hero-path {
+  position: absolute;
   top: 50%;
   left: 50%;
-  width: 4px;
-  height: 42%;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--portal-travel-color) 58%, #ffffff), transparent);
-  opacity: 0.28;
-  transform: rotate(calc(var(--portal-shard-index) * 36deg)) translateY(-48%);
-  transform-origin: 0 0;
-  animation: portal-travel-shard 0.95s ease-in-out infinite alternate;
-  animation-delay: calc(var(--portal-shard-index) * -90ms);
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  transform: translate3d(-50%, -50%, 0);
+  transform-origin: center;
+  will-change: opacity;
+  animation: portal-travel-hero-fade 6.2s linear both;
+}
+
+.portal-travel__hero-orbit {
+  width: 64px;
+  height: 64px;
+  transform-origin: center;
+  will-change: transform;
+  animation: portal-travel-hero-orbit 6.2s linear both;
+}
+
+.portal-travel__hero-pull {
+  width: 64px;
+  height: 64px;
+  transform: translate3d(72vmin, 0, 0) scale(7.4);
+  transform-origin: center;
+  will-change: transform;
+  animation: portal-travel-hero-pull 6.2s cubic-bezier(0.18, 0.72, 0.18, 1) both;
+}
+
+.portal-travel__hero-spin {
+  width: 64px;
+  height: 64px;
+  transform-origin: 50% 60%;
+  will-change: transform;
+  animation: portal-travel-hero-spin 10s linear infinite;
+}
+
+.portal-travel__hero-frame {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  image-rendering: pixelated;
+  transform: translateY(4px);
+  transform-origin: 50% 60%;
+  filter:
+    drop-shadow(0 0 8px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 0 16px color-mix(in srgb, var(--portal-travel-color) 54%, transparent));
+}
+
+.portal-travel__hero-frame::before,
+.portal-travel__hero-frame::after {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  content: '';
+  background-image: var(--portal-hero-image);
+  background-repeat: no-repeat;
+  background-position: var(--portal-hero-frame-x, 0) 0;
+  background-size: auto 64px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.portal-travel__hero-frame::before {
+  opacity: 0.32;
+  filter: blur(0.4px) saturate(1.25);
+  transform: translate3d(-7px, 5px, 0) scale(1.02);
+}
+
+.portal-travel__hero-frame::after {
+  opacity: 0.18;
+  filter: blur(1px) saturate(1.6);
+  transform: translate3d(-14px, 10px, 0) scale(1.04);
+}
+
+.portal-travel__hero-image {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: auto;
+  height: 64px;
+  max-width: none;
+  image-rendering: pixelated;
 }
 
 .portal-travel__status {
   position: absolute;
+  z-index: 3;
   left: 24px;
   right: 24px;
   bottom: 32px;
-  color: rgba(42, 45, 54, 0.58);
+  color: rgba(255, 255, 255, 0.72);
   font-size: var(--font-size-sm);
   font-weight: bold;
   text-align: center;
-  text-shadow: none;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.86);
 }
 
 .portal-travel__progress {
   position: absolute;
+  z-index: 3;
   right: 0;
   bottom: 0;
   left: 0;
@@ -215,21 +315,71 @@
   }
 }
 
-@keyframes portal-travel-pulse {
+@keyframes portal-travel-glow {
   from {
-    transform: scale(0.82);
+    opacity: 0.46;
+    transform: scale(0.92);
   }
   to {
-    transform: scale(1.04);
+    opacity: 0.78;
+    transform: scale(1.08);
   }
 }
 
-@keyframes portal-travel-shard {
+@keyframes portal-travel-lens {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.88);
+  }
+  48% {
+    opacity: 0.58;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes portal-travel-lens-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes portal-travel-hero-fade {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.92;
+  }
+  92% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes portal-travel-hero-orbit {
   from {
-    opacity: 0.14;
+    transform: rotate(-112deg);
   }
   to {
-    opacity: 0.5;
+    transform: rotate(468deg);
+  }
+}
+
+@keyframes portal-travel-hero-pull {
+  from {
+    transform: translate3d(72vmin, 0, 0) scale(7.4);
+  }
+  to {
+    transform: translate3d(5vmin, 0, 0) scale(0.92);
+  }
+}
+
+@keyframes portal-travel-hero-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

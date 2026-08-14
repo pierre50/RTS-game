@@ -312,6 +312,11 @@ export function validateSaveData(data: unknown): SaveRecord {
     if (data.format !== CAMPAIGN_SAVE_FORMAT) fail('Invalid save file: campaign format is invalid.')
     if (!isObject(data.worlds)) fail('Invalid save file: campaign worlds are invalid.')
     if (!isObject(data.worldGraph)) fail('Invalid save file: campaign world graph is invalid.')
+    if (data.clock != null) {
+      if (!isObject(data.clock)) fail('Invalid save file: campaign clock is invalid.')
+      validateOptionalFiniteNumber(data.clock.dayNightElapsedMs, 'campaign clock dayNightElapsedMs')
+      validateOptionalFiniteNumber(data.clock.savedAt, 'campaign clock savedAt')
+    }
     if (!isObject(data.heroParty)) fail('Invalid save file: campaign hero party is invalid.')
     if (!Array.isArray(data.heroParty.followerLabels)) {
       fail('Invalid save file: campaign hero party followers are invalid.')
@@ -333,7 +338,9 @@ export function validateSaveData(data: unknown): SaveRecord {
 
   if (data.runtime != null) {
     if (!isObject(data.runtime)) fail('Invalid save file: runtime is invalid.')
+    validateOptionalFiniteNumber(data.runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(data.runtime.elapsedMs, 'runtime elapsedMs')
+    validateOptionalFiniteNumber(data.runtime.savedAt, 'runtime savedAt')
   }
   if (data.config != null && !isObject(data.config)) {
     fail('Invalid save file: config is invalid.')

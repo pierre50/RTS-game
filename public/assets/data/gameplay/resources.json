@@ -1,6 +1,7 @@
 {
   "Berrybush": {
     "totalQuantity": 100,
+    "totalHitPoints": 40,
     "color": "#7B9051",
     "assets": [
       {

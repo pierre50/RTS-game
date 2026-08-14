@@ -124,6 +124,7 @@ function createController({
   heroToolsOverride = {},
   commIndicatorDelayMs,
   resolveCommGroup,
+  withScheduler = false,
 } = {}) {
   const calls = []
   const grid = Array.from({ length: 15 }, (_, i) =>
@@ -228,6 +229,8 @@ function createController({
     findFacingEntity: (_hero, matches) => createdAnimals.find(animal => matches(animal)) ?? null,
     getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
     HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
+    isHeroBowChargeActiveForTool: (hero, tool) =>
+      hero.heroBowChargeStart != null && hero.heroBowChargeTool === tool && !hero.heroBowReleaseQueued,
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
     releaseHeroBowCharge: () => false,
@@ -250,8 +253,32 @@ function createController({
     playSoundCue: cue => calls.push(['playSoundCue', cue]),
   })
   let cursorPoint = { x: 10, y: 20 }
+  const scheduler = withScheduler
+    ? {
+        elapsedMs: 0,
+        tasks: new Map(),
+        nextId: 1,
+        add(callback, interval, name) {
+          const id = this.nextId++
+          this.tasks.set(id, { callback, interval, name })
+          return id
+        },
+        remove(id) {
+          this.tasks.delete(id)
+        },
+        update(id, interval) {
+          const task = this.tasks.get(id)
+          if (task) task.interval = interval
+        },
+        tick(ms) {
+          this.elapsedMs += ms
+          for (const task of [...this.tasks.values()]) task.callback()
+        },
+      }
+    : undefined
   const controller = new HeroController({
     context: {
+      scheduler,
       menu: {
         openNpcOrders: npcs => calls.push(['openNpcOrders', npcs]),
         showMessage: (message, tone) => calls.push(['showMessage', message, tone]),
@@ -261,6 +288,7 @@ function createController({
     getWorldPointUnderCursor: () => cursorPoint,
     getGamepadMoveVector: () => ({ dx: 0, dy: 0 }),
     getViewportMetrics: () => ({ visibleLeft: -80, visibleTop: -80, visibleWidth: 160, visibleHeight: 160 }),
+    setCamera: (x, y, direct) => calls.push(['setCamera', x, y, direct]),
     closeAnyHeroPanel: () => false,
     openHeroEntityInteraction: () => {
       calls.push('openHeroEntityInteraction')
@@ -276,6 +304,7 @@ function createController({
     hero,
     createdAnimals,
     nearbyGroup,
+    scheduler,
     setCursorPoint: point => {
       cursorPoint = point
     },
@@ -301,9 +330,12 @@ test('keyboard movement during bow charge restores aim without resetting action 
     },
   })
   hero.actionLocked = true
+  hero.heroBowChargeStart = 1000
+  hero.heroBowChargeTool = 'bow'
   hero.currentSheet = 'action'
   hero.speed = 1
   hero.degree = 40
+  controller.equippedItem = 'bow'
   hero.moveDirect = () => {
     hero.x += 1
     hero.degree = 270
@@ -323,6 +355,40 @@ test('keyboard movement during bow charge restores aim without resetting action 
 
   assert.equal(hero.isDirectMoving, false)
   assert.equal(hero.syncMountedHorseSpriteCalls, 2)
+})
+
+test('switching tools during bow charge cancels the charge before pointer release', () => {
+  const { controller, hero } = createController({
+    heroToolsOverride: {
+      applyToolAppearance: (unit, tool) => {
+        unit.appliedTool = tool
+      },
+      cancelHeroBowCharge: unit => {
+        unit.heroBowChargeStart = null
+        unit.heroBowChargeTool = undefined
+        unit.actionLocked = false
+        unit.cancelledBowCharge = true
+      },
+      releaseHeroBowCharge: () => {
+        throw new Error('stale bow charge should not release after switching tools')
+      },
+    },
+  })
+  hero.heroBowChargeStart = 1000
+  hero.heroBowChargeTool = 'bow'
+  hero.actionLocked = true
+  controller.equippedItem = 'bow'
+  controller.mouseHeld = true
+  controller.primaryClickPoint = { x: 20, y: 30 }
+
+  assert.equal(controller.handleKeyDown('heroTool2'), true)
+  controller.handlePointerUp(0)
+
+  assert.equal(hero.cancelledBowCharge, true)
+  assert.equal(hero.appliedTool, 'sword')
+  assert.equal(controller.equippedItem, 'sword')
+  assert.equal(controller.mouseHeld, false)
+  assert.equal(controller.primaryClickPoint, null)
 })
 
 test('shift keyboard movement on foot keeps absolute movement and locks current facing', () => {
@@ -462,9 +528,58 @@ test('H calls a companion horse, then mounts when it is close', () => {
   assert.equal(hero.degree, 270)
   assert.deepEqual(calls.slice(4), [
     ['updateInstanceBucket', 'hero', 0, 0],
-    ['horse.clear', 'animal-1'],
     ['setTextures', 'standing'],
+    ['horse.clear', 'animal-1'],
+    ['setCamera', grid[0][1].x, grid[0][1].y, undefined],
   ])
+})
+
+test('H fades the hero through the companion horse mount transition when scheduled', () => {
+  const { calls, controller, createdAnimals, grid, hero, scheduler } = createController({ withScheduler: true })
+  hero.speed = 1
+  hero.companionHorseColor = 'dark'
+  hero.alpha = 1
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  createdAnimals[0].i = 0
+  createdAnimals[0].j = 1
+  createdAnimals[0].x = grid[0][1].x
+  createdAnimals[0].y = grid[0][1].y
+  createdAnimals[0].horseColor = 'black'
+  createdAnimals[0].degree = 270
+  calls.length = 0
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, undefined)
+  assert.equal(controller.mountTransitionTaskId, 1)
+
+  scheduler.tick(60)
+  assert.ok(hero.alpha < 1)
+  assert.equal(hero.mountedOnHorse, undefined)
+  assert.equal(createdAnimals[0].isDestroyed, false)
+  assert.ok(
+    calls.some(
+      call =>
+        Array.isArray(call) &&
+        call[0] === 'setCamera' &&
+        call[1] > Math.min(grid[0][0].x, grid[0][1].x) &&
+        call[1] < Math.max(grid[0][0].x, grid[0][1].x)
+    )
+  )
+
+  scheduler.tick(80)
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(hero.i, 0)
+  assert.equal(hero.j, 1)
+  assert.equal(hero.horseColor, 'black')
+  assert.equal(createdAnimals[0].isDestroyed, true)
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'updateInstanceBucket'))
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'horse.clear'))
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'setCamera' && call[1] === grid[0][1].x))
+
+  scheduler.tick(140)
+  assert.equal(hero.alpha, 1)
+  assert.equal(controller.mountTransitionTaskId, null)
 })
 
 test('H does not mount a close companion horse behind the hero', () => {
@@ -554,7 +669,52 @@ test('H dismounts and leaves the horse in place while the hero steps aside', () 
     ['setTextures', 'standing'],
     ['updateInstanceBucket', 'hero', mountedI, mountedJ],
     ['animalBehavior.stop', 'Horse'],
+    ['setCamera', hero.x, hero.y, undefined],
   ])
+})
+
+test('H fades the hero through the companion horse dismount transition when scheduled', () => {
+  const { calls, controller, createdAnimals, grid, hero, scheduler } = createController({ withScheduler: true })
+  hero.speed = 1.45
+  hero.mountedOnHorse = true
+  hero.horseColor = 'white'
+  hero.companionHorseColor = 'white'
+  hero.alpha = 1
+  hero.removeMountedHorseSprite = () => calls.push('removeHorse')
+  hero.syncMountedRiderPosition = () => calls.push('syncRider')
+  const mountedI = hero.i
+  const mountedJ = hero.j
+
+  assert.equal(controller.handleKeyDown('heroMountHorse'), true)
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(createdAnimals.length, 0)
+  assert.equal(controller.mountTransitionTaskId, 1)
+
+  scheduler.tick(60)
+  assert.ok(hero.alpha < 1)
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(createdAnimals.length, 0)
+
+  scheduler.tick(80)
+  assert.equal(hero.mountedOnHorse, false)
+  assert.equal(hero.speed, 1)
+  assert.equal(createdAnimals.length, 1)
+  assert.equal(createdAnimals[0].type, 'Horse')
+  assert.equal(createdAnimals[0].horseColor, 'white')
+  assert.equal(createdAnimals[0].i, mountedI)
+  assert.equal(createdAnimals[0].j, mountedJ)
+  assert.ok(Math.hypot(hero.i - mountedI, hero.j - mountedJ) <= 1)
+  assert.notDeepEqual([hero.i, hero.j], [mountedI, mountedJ])
+  assert.equal(hero.x, grid[hero.i][hero.j].x)
+  assert.equal(hero.y, grid[hero.i][hero.j].y)
+  assert.ok(calls.some(call => call === 'removeHorse'))
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'updateInstanceBucket'))
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'animalBehavior.stop'))
+  assert.ok(calls.some(call => Array.isArray(call) && call[0] === 'setCamera' && call[1] === hero.x))
+
+  scheduler.tick(140)
+  assert.equal(hero.alpha, 1)
+  assert.equal(controller.mountTransitionTaskId, null)
 })
 
 test('changing away from lasso clears the active lasso', () => {

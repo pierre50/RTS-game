@@ -16,6 +16,7 @@ import {
 import {
   CELL_WIDTH,
   CELL_HEIGHT,
+  FADE_DURATION_MS,
   FAMILY_TYPES,
   PLAYER_TYPES,
   LABEL_TYPES,
@@ -24,6 +25,7 @@ import {
 } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
+import { fadeOutThenClear } from '../lib/entityFade'
 import { getResourceWindAnimationEnabled, getShadowsEnabled, onVisualSettingsChange } from '../lib/settings'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../types/context'
@@ -68,6 +70,7 @@ const BERRYBUSH_SHEET_ID = 'resources/berrybush'
 const EMPTY_BERRYBUSH_FRAME = 0
 
 export type ResourceOptions = Partial<ResourceDefinition> & {
+  currentFrame?: number
   i: number
   j: number
   type: string
@@ -168,12 +171,17 @@ export class Resource extends Instance implements ResourceEntity {
         }
         animatedSprite.onComplete = () => this.startWindMotion()
       }
-      if (startsMature && this.type === RESOURCE_TYPES.wheat) {
-        animatedSprite.gotoAndStop(Math.max(0, animatedSprite.textures.length - 1))
+      this.sprite = animatedSprite
+      if (this.type === RESOURCE_TYPES.wheat) {
+        const lastFrame = Math.max(0, animatedSprite.textures.length - 1)
+        const frame = startsMature
+          ? lastFrame
+          : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
+        animatedSprite.gotoAndStop(frame)
+        if (this.isWindAnimatedWheat()) this.startWindMotion()
       } else {
         animatedSprite.play()
       }
-      this.sprite = animatedSprite
     } else {
       const terrainAssets = getTerrainAssets(this.assets, cell.type)
       const textureRef =
@@ -253,8 +261,9 @@ export class Resource extends Instance implements ResourceEntity {
     if (this.type === RESOURCE_TYPES.tree && !immediate) {
       this.onTreeDie()
     } else {
-      this.clear()
+      this.prepareFadeOut()
     }
+    fadeOutThenClear(this, FADE_DURATION_MS)
   }
 
   setCuttedTreeTexture() {
@@ -292,20 +301,38 @@ export class Resource extends Instance implements ResourceEntity {
     this.startWindMotion()
   }
 
+  advanceWheatGrowth(frames = 1): boolean {
+    if (this.type !== RESOURCE_TYPES.wheat || !(this.sprite instanceof AnimatedSprite)) return false
+    if (this.isDead || this.isDestroyed) return false
+    const lastFrame = Math.max(0, this.sprite.textures.length - 1)
+    const currentFrame = Math.max(0, Math.min(lastFrame, this.sprite.currentFrame ?? 0))
+    const nextFrame = Math.min(lastFrame, currentFrame + Math.max(1, Math.floor(frames)))
+    if (nextFrame === currentFrame) return false
+    this.sprite.gotoAndStop(nextFrame)
+    this.syncShadow()
+    if (this.isWindAnimatedWheat()) this.startWindMotion()
+    return true
+  }
+
   onTreeDie() {
+    const sheetId = this.lifecycleAssets?.fallen
+    if (sheetId) {
+      const frameIndex = randomRange(0, 3)
+      const texture = getTextureByFrame(sheetId, frameIndex, Assets)
+      this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
+      this.sprite.texture = texture
+      this.zIndex--
+      this.syncShadow()
+    }
+    this.prepareFadeOut()
+  }
+
+  prepareFadeOut() {
     const {
       context: { map },
     } = this
-    const sheetId = this.lifecycleAssets?.fallen
-    if (!sheetId) return this.clear()
-    const frameIndex = randomRange(0, 3)
-    const texture = getTextureByFrame(sheetId, frameIndex, Assets)
-    this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
-    const { sprite } = this
-    sprite.texture = texture
-    sprite.eventMode = 'none'
-    this.zIndex--
-    this.syncShadow()
+    this.eventMode = 'none'
+    if (this.sprite) this.sprite.eventMode = 'none'
     if (map.grid[this.i][this.j].has === this) {
       map.grid[this.i][this.j].has = null
       map.grid[this.i][this.j].corpses.add(this)
@@ -513,6 +540,10 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   override resume(): void {
+    if (this.type === RESOURCE_TYPES.wheat) {
+      this.syncShadow()
+      return
+    }
     super.resume()
     ;(this.shadow as AnimatedSprite | null)?.play?.()
   }

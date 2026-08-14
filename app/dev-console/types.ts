@@ -4,6 +4,27 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entitie
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
+import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
+
+export type DevWeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'clearing' | 'night'
+
+export type DevDayNightLike = {
+  debugState?(): object
+  forceNextDay?(): void
+  getColorAdjustment?(): DayNightColorAdjustment
+  getDarknessLevel?(): number
+  getDayLabel?(): string
+  getElapsedMs?(): number
+  getTimeLabel?(): string
+  state?: DayNightStateLike
+}
+
+export type DevWeatherLike = {
+  debugState?(): object
+  forcePhase?(phase: DevWeatherPhase): void
+  getDarknessLevel?(): number
+  phase?: DevWeatherPhase
+}
 
 export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
@@ -128,6 +149,8 @@ export type DevConsoleContext = {
     snapshot?(): DevPerformanceSnapshot
     reset?(): void
   } | null
+  dayNight?: DevDayNightLike | null
+  weather?: DevWeatherLike | null
   app?: {
     ticker: {
       FPS?: number

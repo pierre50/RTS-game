@@ -1,7 +1,6 @@
 import { Container } from 'pixi.js'
 import { isometricToCartesian } from '../lib'
 import { CameraController } from './CameraController'
-import { getCameraZoom } from '../lib/settings'
 import { EditorEntityPreview, type EditorPreviewControls } from './EditorEntityPreview'
 import type { SelectionRectangle } from '../types/context'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -152,22 +151,7 @@ export class EditorControls extends Container {
   }
 
   getViewportMetrics(): ViewportMetrics {
-    const {
-      context: { app },
-    } = this
-    const zoom = getCameraZoom()
-    const offsetX = (app.screen.width * (1 - zoom)) / 2
-    const offsetY = (app.screen.height * (1 - zoom)) / 2
-
-    return {
-      zoom,
-      offsetX,
-      offsetY,
-      visibleLeft: this.camera.x - offsetX / zoom,
-      visibleTop: this.camera.y - offsetY / zoom,
-      visibleWidth: app.screen.width / zoom,
-      visibleHeight: app.screen.height / zoom,
-    }
+    return this.cameraController.getViewportRect()
   }
 
   screenToLocal(x: number, y: number): { x: number; y: number } {

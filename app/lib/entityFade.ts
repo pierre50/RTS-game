@@ -9,6 +9,7 @@ export interface FadeableEntity {
   isDestroyed?: boolean
   context?: GameContextLike | null
   clear?: () => void
+  shadow?: { alpha?: number; destroyed?: boolean } | null
 }
 
 // Steps alpha down to 0 over durationMs, then calls entity.clear(). Bails without animating if
@@ -22,6 +23,9 @@ export function fadeOutThenClear(entity: FadeableEntity, durationMs: number): vo
   const steps = Math.max(1, Math.round(durationMs / FADE_STEP_MS))
   let step = 0
   let taskId: SchedulerTaskId | null = null
+  const initialAlpha = entity.alpha ?? 1
+  const shadow = entity.shadow
+  const initialShadowAlpha = shadow?.alpha ?? 1
   taskId = scheduler.add(
     () => {
       if (entity.isDestroyed) {
@@ -29,7 +33,9 @@ export function fadeOutThenClear(entity: FadeableEntity, durationMs: number): vo
         return
       }
       step += 1
-      entity.alpha = Math.max(0, 1 - step / steps)
+      const ratio = Math.max(0, 1 - step / steps)
+      entity.alpha = initialAlpha * ratio
+      if (shadow && !shadow.destroyed) shadow.alpha = initialShadowAlpha * ratio
       if (step >= steps) {
         if (taskId != null) scheduler.remove(taskId)
         entity.clear?.()
@@ -37,5 +43,39 @@ export function fadeOutThenClear(entity: FadeableEntity, durationMs: number): vo
     },
     FADE_STEP_MS,
     'entity.fadeOut'
+  )
+}
+
+export function fadeIn(entity: FadeableEntity, durationMs: number): void {
+  const targetAlpha = entity.alpha ?? 1
+  const shadow = entity.shadow
+  const targetShadowAlpha = shadow?.alpha ?? 1
+  const scheduler = entity.context?.scheduler
+  if (!scheduler) {
+    entity.alpha = targetAlpha
+    if (shadow && !shadow.destroyed) shadow.alpha = targetShadowAlpha
+    return
+  }
+
+  const steps = Math.max(1, Math.round(durationMs / FADE_STEP_MS))
+  let step = 0
+  let taskId: SchedulerTaskId | null = null
+  entity.alpha = 0
+  if (shadow && !shadow.destroyed) shadow.alpha = 0
+
+  taskId = scheduler.add(
+    () => {
+      if (entity.isDestroyed) {
+        if (taskId != null) scheduler.remove(taskId)
+        return
+      }
+      step += 1
+      const ratio = Math.min(1, step / steps)
+      entity.alpha = targetAlpha * ratio
+      if (shadow && !shadow.destroyed) shadow.alpha = targetShadowAlpha * ratio
+      if (step >= steps && taskId != null) scheduler.remove(taskId)
+    },
+    FADE_STEP_MS,
+    'entity.fadeIn'
   )
 }

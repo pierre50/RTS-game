@@ -74,7 +74,7 @@ function loadHeroTools(overrides = {}) {
         wheat: 'wheat',
         wood: 'wood',
       },
-      RESOURCE_TYPES: { wheat: 'Wheat' },
+      RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' },
       SHEET_TYPES: {
         action: 'actionSheet',
         harvest: 'harvestSheet',
@@ -129,7 +129,7 @@ function loadHeroTools(overrides = {}) {
       getEquipmentCombatStats: equipment => {
         const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
-          if (item === 'sword_ceramic') stats.weaponPower += 11
+          if (item === 'sword_ceramic') stats.weaponPower += 4
           if (item === 'sword_copper') stats.weaponPower += 6
           if (item === 'bow') stats.weaponPower += 4
         }
@@ -1223,8 +1223,51 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
   hero.sprite.currentFrame = 1
   hero.sprite.onFrameChange(1)
 
-  assert.equal(animal.hitPoints, 9)
-  assert.deepEqual(damageFeedback, [['enemy-animal', 11]])
+  assert.equal(animal.hitPoints, 16)
+  assert.deepEqual(damageFeedback, [['enemy-animal', 4]])
+})
+
+test('sword damages berry bushes with weapon damage', () => {
+  const berrybush = {
+    family: 'resource',
+    hitPoints: 40,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'berrybush',
+    quantity: 100,
+    totalHitPoints: 40,
+    type: 'Berrybush',
+    x: 10,
+    y: 0,
+  }
+  const damageFeedback = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_source, target, action) => action === 'attack' && target === berrybush,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    isUnitAtDest: () => true,
+    owner: { age: 0, isPlayed: true },
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+  hero.sprite.currentFrame = 1
+  hero.sprite.onFrameChange(1)
+
+  assert.equal(berrybush.hitPoints, 36)
+  assert.equal(berrybush.quantity, 100)
+  assert.deepEqual(damageFeedback, [['berrybush', 4]])
 })
 
 test('free-hand interact does not whiff without energy', () => {

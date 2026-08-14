@@ -38,10 +38,23 @@ function loadPlayer(overrides = {}) {
         },
         canPlaceBuildingAt: () => true,
         playSoundCue: () => {},
+        updateInstanceVisibility: () => {},
+        isBuildingLimitReached: () => false,
+        getBuildingFootprintCells:
+          overrides.getBuildingFootprintCells ?? ((i, j, grid) => [grid[i][j]]),
         capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
       }
     }
     if (request === '../building') return { Building: class {} }
+    if (request === '../Resource') {
+      return {
+        Resource: class {
+          constructor(options) {
+            Object.assign(this, options)
+          }
+        },
+      }
+    }
     if (request === '../unit') {
       return {
         Unit: class {
@@ -54,15 +67,23 @@ function loadPlayer(overrides = {}) {
     if (request === '../../constants') {
       return {
         ACTION_TYPES: {},
+        AGE_GATE_MAX_UNLOCKABLE_VALUE: 1,
+        AGE_UP_ENABLED: false,
+        AGE_TECHNOLOGIES: new Set(['ToolAge', 'BronzeAge', 'IronAge']),
+        BUILDING_TYPES: { farm: 'Farm' },
         FAMILY_TYPES: { player: 'player' },
         PLAYER_TYPES: { human: 'human' },
         POPULATION_MAX: 200,
+        RESOURCE_NAMES: [],
+        RESOURCE_TYPES: { wheat: 'Wheat' },
         SOUND_CUES: { player: { ageAdvance: 'ageAdvance' } },
         UNIT_TYPES: { villager: 'Villager' },
+        FADE_DURATION_MS: 2000,
       }
     }
     if (request === '../../config/playerConfig') return { createPlayerData: () => ({ config: {}, techs: {} }) }
     if (request === '../../config/name') return { getRandomUnitName: overrides.getRandomUnitName ?? (() => 'Unit') }
+    if (request === '../../lib/entityFade') return { fadeIn: overrides.fadeIn ?? (() => {}) }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,
@@ -286,4 +307,52 @@ test('unlocking age technology calls age change handler with player context', ()
   assert.equal(player.age, 1)
   assert.equal(player.buildings[0].assetAge, undefined)
   assert.deepEqual(calls, [['building', undefined]])
+})
+
+test('planting wheat fields refreshes each planted cell before fading resources in', () => {
+  const updated = []
+  const faded = []
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 2 }, (_, j) => ({
+      i,
+      j,
+      updateVisible() {
+        updated.push(`${i},${j}`)
+      },
+    }))
+  )
+  const Player = loadPlayer({
+    fadeIn: resource => faded.push(`${resource.i},${resource.j}`),
+    getBuildingFootprintCells: () => [grid[0][0], grid[0][1], grid[1][0], grid[1][1]],
+  })
+  const player = {
+    isPlayed: true,
+    technologies: ['Farming'],
+    config: {
+      buildings: {
+        Farm: {
+          size: 2,
+          cost: { wood: 75 },
+        },
+      },
+    },
+    context: {
+      map: {
+        grid,
+        resources: new Set(),
+        addChild: resource => resource,
+      },
+      menu: {
+        updateTopbar: () => {},
+        updateResourcesMiniMap: () => {},
+      },
+    },
+    foundedWheats: new Set(),
+    foundedResources: { Wheat: new Set() },
+  }
+  Object.setPrototypeOf(player, Player.prototype)
+
+  assert.equal(player.plantWheatField(0, 0), true)
+  assert.deepEqual(updated, ['0,0', '0,1', '1,0', '1,1'])
+  assert.deepEqual(faded, ['0,0', '0,1', '1,0', '1,1'])
 })

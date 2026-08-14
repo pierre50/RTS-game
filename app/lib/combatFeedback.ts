@@ -141,6 +141,7 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
   if (!scheduler || target.context?.victory || target.context?.defeat || target.isDestroyed || target.isDead) return
 
   const spriteTop = (target.sprite ? -(target.sprite.height * target.sprite.anchor.y) : -40) + getReliefOffset(target)
+  const detached = target.family === FAMILY_TYPES.resource
   const text = new Text({
     text: options.text,
     style: {
@@ -152,11 +153,15 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
     },
   })
   text.anchor.set(0.5, 0.5)
-  text.x = 0
-  text.y = spriteTop - (options.yOffset ?? 12)
+  const baseY = (detached ? (target.y ?? 0) : 0) + spriteTop - (options.yOffset ?? 12)
+  text.x = detached ? (target.x ?? 0) : 0
+  text.y = baseY
   text.alpha = 1
   text.zIndex = 100
-  ;(target as unknown as Container).addChild(text)
+  const targetContainer = target as unknown as Container
+  const textParent = detached ? targetContainer.parent : targetContainer
+  if (!textParent || textParent.destroyed) return
+  textParent.addChild(text)
 
   let step = 0
   const records = floatingTexts.get(target) ?? new Set<FloatingTextRecord>()
@@ -178,12 +183,12 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
   }
   record.taskId = scheduler.add(
     () => {
-      if (target.isDestroyed || text.destroyed) {
+      if ((!detached && target.isDestroyed) || text.destroyed) {
         stopFloatingText()
         return
       }
       step += 1
-      text.y = spriteTop - (options.yOffset ?? 12) - (FLOAT_RISE * step) / FLOAT_STEPS
+      text.y = baseY - (FLOAT_RISE * step) / FLOAT_STEPS
       text.alpha = Math.max(0, 1 - step / FLOAT_STEPS)
       if (step < FLOAT_STEPS || record.taskId == null) return
       stopFloatingText()

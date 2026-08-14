@@ -82,6 +82,10 @@ export class CameraController {
     })
   }
 
+  applyCameraTransform(): void {
+    this.context.map.setCoordinate(-this.camera.x, -this.camera.y)
+  }
+
   getViewportRect(): Viewport & { zoom: number; offsetX: number; offsetY: number } {
     const {
       context: { app },
@@ -135,7 +139,7 @@ export class CameraController {
      */
 
     const {
-      context: { map, app, menu },
+      context: { app, menu },
     } = this
 
     const dividedSpeed = isSpeedDivided ? 1.5 : 1
@@ -195,7 +199,7 @@ export class CameraController {
 
     this.clampCameraToMap()
     menu?.updateCameraMiniMap?.()
-    map.setCoordinate(-this.camera.x, -this.camera.y)
+    this.applyCameraTransform()
     this.scheduleVisibleCellsUpdate()
   }
 
@@ -333,18 +337,26 @@ export class CameraController {
     }
   }
 
-  set(x: number, y: number, direct?: boolean): void {
+  set(x: number, y: number, direct?: boolean, refreshVisibleCells = true): void {
     const {
-      context: { map, app, menu },
+      context: { app, menu },
     } = this
     const requestedCenter = direct ? { x: x + app.screen.width / 2, y: y + app.screen.height / 2 } : { x, y }
     const center = this.clampWorldPointToMap(requestedCenter.x, requestedCenter.y)
-    this.camera = {
+    const nextCamera = {
       x: center.x - app.screen.width / 2,
       y: center.y - app.screen.height / 2,
     }
+    const moved = nextCamera.x !== this.camera.x || nextCamera.y !== this.camera.y
+    if (!moved) return
+
+    this.camera = nextCamera
+    this.applyCameraTransform()
     menu?.updateCameraMiniMap?.()
-    map.setCoordinate(-this.camera.x, -this.camera.y)
-    this.updateVisibleCells()
+    if (refreshVisibleCells) {
+      this.updateVisibleCells()
+    } else {
+      this.scheduleVisibleCellsUpdate()
+    }
   }
 }

@@ -79,6 +79,14 @@ function canAttack(source?: CombatEntity | null): boolean {
   return getEntityWeaponPower(source) > 0
 }
 
+function canAttackResource(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
+  return (
+    target?.family === FAMILY_TYPES.resource &&
+    target.type === RESOURCE_TYPES.berrybush &&
+    getEntityWeaponPower(source) > UNARMED_UNIT_WEAPON_POWER
+  )
+}
+
 export function isFriendlyTarget(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
   if (!source?.owner || !target?.owner) return false
   if (source.owner.label === target.owner.label) return true
@@ -436,8 +444,9 @@ export const getActionCondition = (
         canAttack(source) &&
           target &&
           !isFriendlyTarget(source, target) &&
-          source.owner?.isEnemy?.(target.owner) &&
-          [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
+          (source.owner?.isEnemy?.(target.owner) || canAttackResource(source, target)) &&
+          ([FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') ||
+            canAttackResource(source, target)) &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead
       ),

@@ -66,6 +66,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   totalHitPoints?: number
   sight?: number
   quantity?: number
+  totalQuantity?: number
   isDead?: boolean
   isDestroyed?: boolean
   sprite?: Sprite | AnimatedSprite
@@ -142,6 +143,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
   action?: string | null
   dest?: RuntimeEntity | RuntimeCell | null
   path?: RuntimeCell[]
+  currentCell?: RuntimeCell | null
   speed?: number
   mountedOnHorse?: boolean
   energy?: number
@@ -389,6 +391,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
 }
 
 export interface ResourceEntity extends RuntimeEntityBase {
+  advanceWheatGrowth?: (frames?: number) => boolean
   textureName?: string
   startsMature?: boolean
   setCuttedTreeTexture?: () => void
@@ -399,12 +402,18 @@ export interface ResourceEntity extends RuntimeEntityBase {
 }
 
 export interface AnimalEntity extends EnergyEntity {
+  currentSheet?: string
+  inactif?: boolean
   isFleeing?: boolean
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  realDest?: Pick<RuntimeEntity | RuntimeCell, 'i' | 'j'> | null
   horseColor?: string
   companionOwner?: UnitEntity | null
   companionHitCount?: number
   standingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null
+  animalBehavior?: { start?: () => void; stop?: () => void }
+  setAltitude?: (altitude: number) => void
 }
 
 export type RuntimeEntity = UnitEntity | BuildingEntity | ResourceEntity | AnimalEntity

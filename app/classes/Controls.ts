@@ -5,7 +5,7 @@ import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
 import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
-import { getCameraZoom, getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
+import { getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
 import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
 import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
@@ -215,22 +215,7 @@ export default class Controls extends Container implements ControlsLike {
     visibleWidth: number
     visibleHeight: number
   } {
-    const {
-      context: { app },
-    } = this
-    const zoom = getCameraZoom()
-    const offsetX = (app.screen.width * (1 - zoom)) / 2
-    const offsetY = (app.screen.height * (1 - zoom)) / 2
-
-    return {
-      zoom,
-      offsetX,
-      offsetY,
-      visibleLeft: this.camera.x - offsetX / zoom,
-      visibleTop: this.camera.y - offsetY / zoom,
-      visibleWidth: app.screen.width / zoom,
-      visibleHeight: app.screen.height / zoom,
-    }
+    return this.cameraController.getViewportRect()
   }
 
   screenToLocal(x: number, y: number): { x: number; y: number } {
@@ -418,7 +403,7 @@ export default class Controls extends Container implements ControlsLike {
       if (this.freeCameraActive) {
         this.panCameraWithArrowKeys(frameScale)
       } else {
-        this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y)
+        this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y, false, false)
       }
       if (this.mouseBuilding || this.rallyPointController.active) {
         this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()

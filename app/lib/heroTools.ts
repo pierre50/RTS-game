@@ -636,7 +636,9 @@ function getHeroWeaponCombatSource(hero: UnitEntity, tool: HeroEquippedItem): Co
 function canBeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): boolean {
   if (
     target === hero ||
-    ![FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') ||
+    ![FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal, FAMILY_TYPES.resource].includes(
+      target.family ?? ''
+    ) ||
     target.isDead ||
     target.isDestroyed
   ) {
@@ -1063,6 +1065,13 @@ export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolea
     updateHeroBowCharge(hero)
   }
   return true
+}
+
+export function isHeroBowChargeActiveForTool(
+  hero: UnitEntity,
+  tool: HeroEquippedItem | null | undefined
+): boolean {
+  return hero.heroBowChargeStart != null && hero.heroBowChargeTool === tool && !hero.heroBowReleaseQueued
 }
 
 export function updateHeroBowCharge(hero: UnitEntity, now = performance.now()): void {

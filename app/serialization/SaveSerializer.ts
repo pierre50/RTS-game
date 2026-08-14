@@ -123,6 +123,7 @@ function referenceData(dest?: Destination | null): SaveReference | null | undefi
 function resourceData(resource: SerializableEntity): SaveEntityState {
   return {
     ...filterObject(resource, ['label', 'i', 'j', 'type', 'isDead', 'quantity', 'isDestroyed', 'size', 'hitPoints']),
+    currentFrame: resource.sprite?.currentFrame,
     textureName: (resource.textureName || '').split('.')[0],
   }
 }
@@ -332,7 +333,9 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const data: SerializedSave = {
     version: 2,
     runtime: {
+      dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,
+      savedAt: Date.now(),
     },
     camera: cameraData(context.controls.camera),
     world,
@@ -353,9 +356,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     },
     players: (context.players ?? []).map(player => playerData(player)),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
-    animals: getGaiaAnimals(context.map.gaia)
-      .filter(animal => !animal.isDestroyed)
-      .map(animal => animalData(animal as SerializableEntity)),
+    animals: getGaiaAnimals(context.map.gaia).map(animal => animalData(animal as SerializableEntity)),
   }
 
   return data

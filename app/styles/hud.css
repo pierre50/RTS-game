@@ -1,36 +1,99 @@
 .topbar {
   position: absolute;
-  top: 0;
-  display: grid;
-  padding: 5px 0;
-  grid-template-columns: 33% 33% 33%;
+  top: max(8px, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 350;
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-10);
   width: 100%;
+  padding: 0 12px;
   font-weight: bold;
   color: var(--main-text-color);
   text-shadow: var(--text-shadow-light-ui);
-  border-bottom: var(--panel-border);
+  background: transparent;
+  pointer-events: none;
   transition:
     background-color var(--ui-transition-panel),
     border-color var(--ui-transition-panel);
+}
+
+.topbar-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ui-gap-8);
+  min-width: 0;
+  max-width: calc(100vw - 112px);
+  pointer-events: none;
+}
+
+.hud-info-panel {
+  pointer-events: auto;
+  background: var(--main-primary-color);
+  border: var(--panel-border);
+  border-radius: var(--main-border-radius);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.2);
+  transition:
+    background-color var(--ui-transition-panel),
+    border-color var(--ui-transition-panel);
+}
+
+.topbar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-gap-12);
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 10px;
 }
 
 .topbar-age {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 82px;
+  padding-left: 10px;
+  white-space: nowrap;
+  border-left: var(--panel-border);
+  transition: border-color var(--ui-transition-panel);
+}
+
+.topbar-daytime {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 118px;
+  padding-left: 10px;
+  color: var(--main-accent-color);
+  white-space: nowrap;
+  border-left: var(--panel-border);
+  transition: border-color var(--ui-transition-panel);
 }
 
 .topbar-resources {
   display: flex;
-  gap: var(--ui-gap-10);
+  flex: 1 1 auto;
+  gap: var(--ui-gap-8);
+  min-width: 0;
 }
 
 .topbar-options {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
   display: flex;
   align-items: center;
   justify-content: end;
+  pointer-events: auto;
+}
+
+.topbar-options-menu {
+  min-width: 64px;
+  border: var(--panel-border);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.2);
 }
 
 .editor-panel {
@@ -58,10 +121,10 @@
 
 .hero-status-hud {
   position: fixed;
-  bottom: 18px;
-  left: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: max(18px, env(safe-area-inset-left));
   z-index: 420;
-  width: min(340px, calc(100vw - 36px));
+  width: min(320px, 100%);
   pointer-events: none;
   color: var(--main-text-color);
   text-shadow: var(--text-shadow-light-ui);
@@ -76,13 +139,6 @@
   align-items: stretch;
   gap: var(--ui-gap-8);
   padding: 8px 10px;
-  border: var(--panel-border);
-  border-radius: var(--main-border-radius-lg);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%), var(--main-primary-color);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.42),
-    inset 0 -2px 0 rgba(5, 7, 18, 0.82),
-    var(--main-box-shadow);
 }
 
 .unit-avatar-frame {
@@ -1198,7 +1254,9 @@ body.hero-cursor-hidden {
 }
 
 .resource > div {
-  width: 40px;
+  width: 44px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
 }
 
 .resource-content {
@@ -1360,23 +1418,51 @@ body.hero-cursor-hidden {
 
 @media (max-width: 900px) {
   .topbar {
-    grid-template-columns: 1fr auto auto;
+    top: max(6px, env(safe-area-inset-top));
+    gap: var(--ui-gap-6);
+    padding: 0 8px;
+  }
+
+  .topbar-status {
     gap: var(--ui-gap-8);
+    padding: 5px 7px;
+  }
+
+  .topbar-status-stack {
+    max-width: calc(100vw - 88px);
   }
 
   .topbar-resources {
-    flex-wrap: wrap;
+    overflow: hidden;
     gap: 6px;
   }
 
-  .topbar-age,
-  .topbar-options {
-    justify-content: flex-end;
+  .topbar-age {
+    min-width: 0;
+    padding-left: 8px;
+    font-size: var(--font-size-sm);
   }
 
   .resource > div {
     width: auto;
     min-width: 36px;
+  }
+
+  .topbar-options-menu {
+    min-width: 56px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .topbar-options {
+    top: max(6px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+  }
+
+  .hero-status-hud {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: max(8px, env(safe-area-inset-left));
+    width: min(320px, calc(100vw - 16px));
   }
 
   .editor-panel {
