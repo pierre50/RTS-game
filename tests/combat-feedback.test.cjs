@@ -127,3 +127,54 @@ test('clearAllCombatFeedback removes active hit flashes without waiting for sche
 
   assert.deepEqual(sprite.filters, originalFilters)
 })
+
+test('base filter updates preserve an active hit flash until its scheduled cleanup', () => {
+  const scheduled = []
+  const scheduler = {
+    elapsedMs: 0,
+    add: () => 1,
+    remove: () => {},
+    addOneShot: (callback, delay, name) => {
+      scheduled.push({ callback, delay, name })
+      return scheduled.length
+    },
+  }
+  const originalFilters = [{ name: 'base' }]
+  const sprite = {
+    anchor: { y: 1 },
+    destroyed: false,
+    filters: originalFilters,
+    height: 40,
+  }
+  const target = {
+    family: 'unit',
+    context: { scheduler },
+    isDead: false,
+    isDestroyed: false,
+    sprite,
+    addChild: () => {},
+  }
+
+  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+    'pixi.js': {
+      ColorMatrixFilter: class {},
+      Text: MockText,
+    },
+    '../constants': {
+      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
+    },
+    './maths': { getReliefOffset: () => 0 },
+  })
+
+  showDamageFeedback(target, 3)
+  assert.equal(sprite.filters.length, 2)
+
+  setSpriteFiltersPreservingDamageFeedback(sprite, null)
+
+  assert.equal(sprite.filters.length, 1)
+  assert.notEqual(sprite.filters[0], originalFilters[0])
+
+  scheduled[0].callback()
+
+  assert.equal(sprite.filters, null)
+})

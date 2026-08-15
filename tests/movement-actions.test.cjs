@@ -506,20 +506,31 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       onSpriteLoopAtFrame: () => {},
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
+      showConversionFeedback: (target, color) => calls.push(['showConversionFeedback', target.label, color]),
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.owner.color]),
     },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
   const oldOwner = { color: 'red', label: 'enemy', population: 1, units: [] }
-  const newOwner = { color: 'blue', isPlayed: true, label: 'player', population: 0, units: [], technologies: [] }
+  const newOwner = {
+    color: 'blue',
+    colorHex: '#ffffff',
+    isPlayed: true,
+    label: 'player',
+    population: 0,
+    units: [],
+    technologies: [],
+  }
   const target = {
     action: constants.ACTION_TYPES.attack,
     actionLocked: true,
     blockedGatherApproach: { target: 'tree' },
     dest: { label: 'old-target' },
     family: constants.FAMILY_TYPES.unit,
+    hitPoints: 7,
     inactif: false,
+    label: 'convert-target',
     owner: oldOwner,
     path: [{ i: 1, j: 1 }],
     pendingOrder: { dest: { label: 'queued' } },
@@ -527,6 +538,8 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     previousWork: constants.WORK_TYPES.attacker,
     realDest: { i: 1, j: 1 },
     selected: false,
+    shouldKeepHealthBarVisible: () => target.owner?.isPlayed,
+    drawHealthBar: () => calls.push(['drawHealthBar']),
     setTextures: sheet => calls.push(['setTextures', sheet]),
     sprite: {
       onComplete: () => {},
@@ -566,6 +579,67 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     calls.filter(([name]) => name === 'setTextures'),
     [['setTextures', constants.SHEET_TYPES.standing]]
   )
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'showConversionFeedback'),
+    [['showConversionFeedback', 'convert-target', 'blue']]
+  )
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'drawHealthBar'),
+    [['drawHealthBar']]
+  )
+})
+
+test('converted player units remove their stale health bar when captured by another owner', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showConversionFeedback: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const oldOwner = { color: 'blue', isPlayed: true, label: 'player', population: 1, units: [] }
+  const newOwner = { color: 'red', label: 'enemy', population: 0, units: [], technologies: [] }
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    owner: oldOwner,
+    path: [],
+    selected: false,
+    shouldKeepHealthBarVisible: () => target.owner?.isPlayed,
+    removeHealthBar: () => calls.push(['removeHealthBar']),
+    setTextures: () => {},
+  }
+  oldOwner.units.push(target)
+  const captor = {
+    context: {
+      menu: {
+        updatePlayerMiniMapEvt: () => {},
+      },
+    },
+    owner: newOwner,
+    stop: () => {},
+  }
+
+  const converted = new UnitActions(captor).convertTarget(target)
+
+  assert.equal(converted, true)
+  assert.equal(target.owner, newOwner)
+  assert.deepEqual(calls, [['removeHealthBar']])
 })
 
 test('converted buildings keep their source civilization and age assets', () => {
@@ -587,6 +661,7 @@ test('converted buildings keep their source civilization and age assets', () => 
       onSpriteLoopAtFrame: () => {},
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
+      showConversionFeedback: (target, color) => calls.push(['showConversionFeedback', target.type, color]),
       updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.assetCiv, target.assetAge]),
     },
     '../Projectile': { Projectile: class {} },
@@ -652,6 +727,10 @@ test('converted buildings keep their source civilization and age assets', () => 
   )
   assert.equal(oldOwner.buildings.includes(target), false)
   assert.equal(newOwner.buildings.includes(target), true)
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'showConversionFeedback'),
+    [['showConversionFeedback', 'TownCenter', 'blue']]
+  )
 })
 
 test('destination checks stay pure when no destination exists', () => {

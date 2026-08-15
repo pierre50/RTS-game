@@ -57,7 +57,7 @@ type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
   relief?: { index: number; elevation: number } | null
   patchBorders?: Iterable<string> | null
-  patchBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
 }
 
 type TerrainDecoration = {
@@ -82,7 +82,7 @@ type FogGridCell = MapTypes.RuntimeCell & {
   getTerrainDecorations?(): TerrainDecoration[]
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
-  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
+  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void
 }
 
 type FogContainerCell = FogGridCell & ContainerChild
@@ -120,6 +120,7 @@ type FogRuntimeMap = {
   _fogChunks?: Array<{ cells?: FogGridCell[]; bounds?: Bounds }>
   _fogTickerCb?: TickerCallback | null
   _fogScratchEraseContainer?: Container | null
+  terrainChunkManager?: { initialize(viewport?: Viewport): void }
   addChild<T extends ContainerChild>(child: T): T
   registerRenderChunk(displayObjects: ContainerChild | ContainerChild[], bounds: Bounds): object
 }
@@ -300,6 +301,7 @@ export class MapFog {
       this._indexFogChunkCells()
       this.map.context.performance?.record?.('cellCompaction.reindexFog', performance.now() - indexStartedAt)
       this.map.context.performance?.record?.('cellCompaction', performance.now() - compactStartedAt)
+      this.map.terrainChunkManager?.initialize(getFogCameraController(this.map.context.controls)?.getViewportRect())
     }
 
     const { player } = this.map.context

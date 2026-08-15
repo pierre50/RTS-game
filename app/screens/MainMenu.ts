@@ -5,6 +5,14 @@ import { openSaveListModal } from '../ui/saveListModal'
 import { listSaves, loadSave } from '../serialization/SaveStorage'
 import type { SaveRecord } from '../types/save'
 
+declare global {
+  interface Window {
+    electronApp?: {
+      quit(): void
+    }
+  }
+}
+
 export default class MainMenu {
   onStart: () => void
   onLoad: (save: SaveRecord) => void
@@ -88,6 +96,7 @@ export default class MainMenu {
     buttons.appendChild(this._btn(t('newGame'), this.onStart))
     buttons.appendChild(this._btn(t('loadGame'), () => this._openSaveList()))
     buttons.appendChild(this._btn(t('settings'), () => this._openSettings()))
+    buttons.appendChild(this._btn(t('quit'), () => this._quitGame()))
     panel.appendChild(buttons)
 
     const copyright = document.createElement('div')
@@ -170,6 +179,15 @@ export default class MainMenu {
       console.warn('[save] Unable to continue latest save', error)
       this._openSaveList()
     }
+  }
+
+  _quitGame(): void {
+    if (window.electronApp) {
+      window.electronApp.quit()
+      return
+    }
+
+    window.close()
   }
 
   destroy(): void {

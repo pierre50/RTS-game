@@ -11,6 +11,7 @@ export const CIV_ENVIRONMENTS: Record<string, EnvironmentId> = {
   Nubian: 'Desert',
   Asian: 'Jungle',
   Celtic: 'BlackForest',
+  Nordic: 'BlackForest',
 }
 
 export function getEnvironmentForCiv(civ?: string | null): EnvironmentId {

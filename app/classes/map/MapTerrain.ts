@@ -35,6 +35,8 @@ const BORDER_SHEETS = {
   waterDesertSand: 'desert-sand-water-border',
 } as const
 
+type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
+
 type TerrainCell = MapTypes.RuntimeCell & {
   category?: string
   color?: string | number
@@ -46,7 +48,7 @@ type TerrainCell = MapTypes.RuntimeCell & {
   setWater?(): void
   setWaterBorder?(resourceName: string, frame: string): void
   setReliefBorder?(frame: string, elevation?: number): void
-  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt'): void
+  setPatchBorder?(direction: string, groundType?: PatchBorderGroundType): void
   resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
 }
 
@@ -902,7 +904,8 @@ export class MapTerrain {
             !neighbor.waterBorder &&
             neighbor.category !== 'Water' &&
             neighbor.type !== 'Desert' &&
-            neighbor.type !== 'Dirt'
+            neighbor.type !== 'Dirt' &&
+            neighbor.type !== 'Snow'
           ) {
             neighbor.setPatchBorder?.(direction)
           }
@@ -953,7 +956,7 @@ export class MapTerrain {
       )
     }
     measure('terrainReliefBorders', () => this.map.formatCellsRelief())
-    // Runs before the water-border overlay so a cell right next to a Desert/Dirt patch
+    // Runs before the water-border overlay so a cell right next to a Desert/Dirt/Snow patch
     // always gets that patch's own relief sheet — setPatchBorder's "already set" guard
     // then makes the water overlay (which defaults to the desert sheet) a no-op there,
     // instead of the reverse where the generic water overlay would win first.
@@ -961,9 +964,9 @@ export class MapTerrain {
     measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
   }
 
-  // Also covers Dirt (the water-patch ground for Temperate/BlackForest/Jungle, see
+  // Also covers Dirt/Snow (the water-patch ground for Temperate/BlackForest/Jungle, see
   // EnvironmentTerrainParams.patchwork) — passes the triggering cell's own type through so
-  // Desert patches get the desert relief sheet and Dirt patches get the dirt relief sheet,
+  // Desert patches get the desert relief sheet and Dirt/Snow patches get their own relief sheet,
   // regardless of which environment/map they're on.
   formatCellsPatchBorders(): void {
     const typeToFormat = ['Grass', 'Jungle', 'DarkForest']
@@ -971,8 +974,8 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (cell.type === 'Desert' || cell.type === 'Dirt') {
-          const groundType = cell.type as 'Desert' | 'Dirt'
+        if (cell.type === 'Desert' || cell.type === 'Dirt' || cell.type === 'Snow') {
+          const groundType = cell.type as PatchBorderGroundType
           const n = this.map.grid[i - 1]?.[j]
           const s = this.map.grid[i + 1]?.[j]
           const w = this.map.grid[i]?.[j - 1]

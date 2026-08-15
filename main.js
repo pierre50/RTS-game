@@ -83,6 +83,10 @@ ipcMain.on('saves:removeItem', (event, key) => {
   event.returnValue = true
 })
 
+ipcMain.on('app:quit', () => {
+  app.quit()
+})
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,

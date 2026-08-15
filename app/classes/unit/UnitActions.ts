@@ -23,6 +23,7 @@ import {
   SLASH_IMPACT_FRAME,
   showDamageFeedback,
   showHealingFeedback,
+  showConversionFeedback,
   showResourceGainFeedback,
   HUNTING_SPEAR_POWER,
   HUNTING_SPEAR_PROJECTILE,
@@ -338,6 +339,12 @@ export class UnitActions {
     }
 
     updateInstanceVisibility(t)
+    showConversionFeedback?.(t, newOwner.color ?? newOwner.colorHex)
+    if (t.selected || t.shouldKeepHealthBarVisible?.()) {
+      syncEntityHealthDisplay(t, { menu, player: newOwner })
+    } else {
+      t.removeHealthBar?.()
+    }
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
     canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
     if (newOwner.isPlayed) menu?.updateTopbar()

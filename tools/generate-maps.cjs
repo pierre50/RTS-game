@@ -15,7 +15,7 @@ if (typeof globalThis.requestAnimationFrame !== 'function') {
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
 // Index must match MapGeneration#generateTerrain's raw output.
-const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
+const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 
 // app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded

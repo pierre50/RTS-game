@@ -8,6 +8,7 @@ import type { RuntimeCell } from '../../types/map'
 const TERRAIN_CHUNK_SIZE = 32
 const TERRAIN_CHUNK_CACHE_LIMIT = 20
 const VIEWPORT_MARGIN = CELL_WIDTH * 4
+const TERRAIN_STREAM_LAYER_Z_INDEX = -0.5
 type TerrainDecoration = {
   texture: ConstructorParameters<typeof Sprite>[0]
   label: string
@@ -19,7 +20,7 @@ type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number }
   relief?: { index: number; elevation: number }
   patchBorders?: string[]
-  patchBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
 }
 export type TerrainSourceCell = RuntimeCell & {
   _terrainAppearance: TerrainAppearance
@@ -53,6 +54,10 @@ function terrainSource(cell: RuntimeCell): Partial<TerrainSourceCell> {
   return cell as Partial<TerrainSourceCell>
 }
 
+function needsAnimatedTerrainOverlay(cell: RuntimeCell): boolean {
+  return Boolean(terrainSource(cell)._terrainAppearance?.waterBorder)
+}
+
 export class TerrainChunkManager {
   map: ChunkedTerrainMap
   chunks: Map<string, TerrainChunk>
@@ -74,7 +79,7 @@ export class TerrainChunkManager {
     this.terrainLayer.label = 'streamedTerrain'
     this.terrainLayer.eventMode = 'none'
     this.terrainLayer.sortableChildren = true
-    this.terrainLayer.zIndex = -1
+    this.terrainLayer.zIndex = TERRAIN_STREAM_LAYER_Z_INDEX
     this.map.addChild(this.terrainLayer)
 
     const chunkCount = Math.ceil((this.map.size + 1) / TERRAIN_CHUNK_SIZE)
@@ -157,6 +162,14 @@ export class TerrainChunkManager {
     const chunk = this.chunks.get(key)
     if (!chunk?.mounted) return
     const cellKey = `${cell.i}:${cell.j}`
+    if (!needsAnimatedTerrainOverlay(cell)) {
+      const existing = chunk.visualCells?.get(cellKey)
+      if (existing) {
+        existing.destroy({ children: true, texture: false, textureSource: false })
+        chunk.visualCells?.delete(cellKey)
+      }
+      return
+    }
     if (!chunk.visualCells?.get(cellKey)) {
       const visualCell = this._createTerrainCell(cell)
       chunk.visualCells?.set(cellKey, visualCell)
@@ -180,6 +193,7 @@ export class TerrainChunkManager {
     for (let i = chunk.startI; i <= chunk.endI; i++) {
       for (let j = chunk.startJ; j <= chunk.endJ; j++) {
         const source = this.map.grid[i][j]
+        if (!needsAnimatedTerrainOverlay(source)) continue
         const visualCell = this._createTerrainCell(source)
         chunk.visualCells.set(`${i}:${j}`, visualCell)
         this.terrainLayer?.addChild(visualCell)
@@ -245,13 +259,13 @@ export class TerrainChunkManager {
   _trimCache(): void {
     let mountedCount = 0
     for (const chunk of this.chunks.values()) {
-      if (chunk.mounted) mountedCount++
+      if (chunk.mounted && chunk.visualCells?.size) mountedCount++
     }
     if (mountedCount <= TERRAIN_CHUNK_CACHE_LIMIT) return
 
     const removable = []
     for (const chunk of this.chunks.values()) {
-      if (chunk.mounted && chunk.lastUsed < this.clock) removable.push(chunk)
+      if (chunk.mounted && chunk.visualCells?.size && chunk.lastUsed < this.clock) removable.push(chunk)
     }
     removable.sort((a, b) => a.lastUsed - b.lastUsed)
     while (mountedCount > TERRAIN_CHUNK_CACHE_LIMIT && removable.length) {

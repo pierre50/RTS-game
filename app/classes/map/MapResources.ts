@@ -336,6 +336,7 @@ export class MapResources {
               !hasWaterBorderWithin(grid, cellI, cellJ, WATER_BORDER_PLACEMENT_CLEARANCE) &&
               grid[cellI][cellJ].type !== 'Border' &&
               grid[cellI][cellJ].type !== 'Dirt' &&
+              grid[cellI][cellJ].type !== 'Snow' &&
               !grid[cellI][cellJ].inclined &&
               random() < density
             ) {
@@ -397,7 +398,8 @@ export class MapResources {
         hasWaterBorderWithin(grid, soloI, soloJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
         grid[soloI][soloJ].solid ||
         grid[soloI][soloJ].inclined ||
-        grid[soloI][soloJ].type === 'Dirt'
+        grid[soloI][soloJ].type === 'Dirt' ||
+        grid[soloI][soloJ].type === 'Snow'
       )
 
       if (tries <= 50) {
@@ -639,9 +641,9 @@ export class MapResources {
             !cell.has &&
             !cell.border &&
             !cell.inclined &&
-            // Dirt water-patches are meant to read as bare ground; trees there would also
-            // fall back to the wrong sprite since resources.json has no Dirt tree variant.
-            (instance !== RESOURCE_TYPES.tree || cell.type !== 'Dirt')
+            // Dirt/Snow patches are meant to read as bare ground; trees there would also
+            // fall back to the wrong sprite since resources.json has no matching tree variants.
+            (instance !== RESOURCE_TYPES.tree || (cell.type !== 'Dirt' && cell.type !== 'Snow'))
           ) {
             cells.push({ i: newI, j: newJ })
           }

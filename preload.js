@@ -7,3 +7,7 @@ contextBridge.exposeInMainWorld('electronSaves', {
   setItem: (key, value) => ipcRenderer.sendSync('saves:setItem', key, value),
   removeItem: key => ipcRenderer.sendSync('saves:removeItem', key),
 })
+
+contextBridge.exposeInMainWorld('electronApp', {
+  quit: () => ipcRenderer.send('app:quit'),
+})

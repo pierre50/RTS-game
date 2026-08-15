@@ -18,7 +18,11 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' },
-      SOUND_CUES: { surface: { bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'] } },
+      SOUND_CUES: {
+        surface: {
+          bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'],
+        },
+      },
     },
     './unitControl': {
       isHeroControlled: () => heroControlled,
@@ -98,6 +102,7 @@ test('movement surface audio uses movement direction in the outer contact margin
   const towardPlayed = []
   const towardLoaded = loadMovementSurfaceAudio({ played: towardPlayed })
   const { unit: towardUnit, resource: towardResource } = createUnit()
+  towardUnit.currentCell.type = 'Dirt'
   towardUnit.x = 0
   towardResource.x = 40
   towardLoaded.playMovementSurfaceAudio(towardUnit, 4, { previousX: -4, previousY: 0 })
@@ -106,6 +111,7 @@ test('movement surface audio uses movement direction in the outer contact margin
   const awayPlayed = []
   const awayLoaded = loadMovementSurfaceAudio({ played: awayPlayed })
   const { unit: awayUnit, resource: awayResource } = createUnit()
+  awayUnit.currentCell.type = 'Dirt'
   awayUnit.x = 0
   awayResource.x = 40
   awayLoaded.playMovementSurfaceAudio(awayUnit, 4, { previousX: 4, previousY: 0 })

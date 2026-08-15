@@ -18,7 +18,11 @@ type CellMap = {
   randomItem<T>(items: T[]): T
   invalidateReliefCoastDistances?: () => void
   invalidateWaterOverlay?: () => void
-  registerWaterBorderSurface?: (sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame?: number) => () => void
+  registerWaterBorderSurface?: (
+    sprite: { texture: Texture; destroyed?: boolean },
+    frames: Texture[],
+    initialFrame?: number
+  ) => () => void
 }
 
 type CellContext = {
@@ -73,10 +77,11 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   sprite: CellSprite | null
   cellFog: CellFog | null
   cellTerrain: CellTerrain
+  unregisterWaterBorderSurface: (() => void) | null
   _terrainRenderResourcesReleased?: boolean
   _terrainAppearance: {
     patchBorders: Set<string> | null
-    patchBorderGroundType?: 'Desert' | 'Dirt' | null
+    patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
   }
@@ -109,6 +114,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.type = options.type
     this.assets = []
     this.terrainTextureName = ''
+    this.unregisterWaterBorderSurface = null
     this._terrainAppearance = {
       patchBorders: null,
       patchBorderGroundType: null,
@@ -191,10 +197,18 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   releaseTerrainRenderResources(): void {
     if (this._terrainRenderResourcesReleased) return
     this._terrainRenderResourcesReleased = true
+    this.unregisterWaterBorderSurface?.()
+    this.unregisterWaterBorderSurface = null
     for (const child of this.removeChildren()) {
       child.destroy?.({ children: true, texture: false, textureSource: false })
     }
     this.sprite = null
+  }
+
+  override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this.unregisterWaterBorderSurface?.()
+    this.unregisterWaterBorderSurface = null
+    super.destroy(options)
   }
 
   _ensureCellFog(): CellFog {
@@ -220,7 +234,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   }
 
   // Terrain delegates
-  setPatchBorder(direction: string, groundType?: 'Desert' | 'Dirt'): void {
+  setPatchBorder(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void {
     return this.cellTerrain.setPatchBorder(direction, groundType)
   }
   resetTerrainAppearance(): void {
@@ -247,5 +261,4 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   setCellLevel(level: number, cpt?: number): void {
     return this.cellTerrain.setCellLevel(level, cpt)
   }
-
 }

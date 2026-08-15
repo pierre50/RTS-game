@@ -69,6 +69,7 @@ const constants = {
   WORK_TYPES: {
     attacker: 'attacker',
   },
+  WORK_FOOD_TYPES: [],
 }
 
 const owner = {
@@ -99,7 +100,7 @@ test('units with no weapon config can attack enemies with unarmed power', () => 
   assert.equal(getActionCondition(villager, target, 'attack'), true)
 })
 
-test('combat weapons can attack neutral berry bushes', () => {
+test('combat weapons cannot attack neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
@@ -121,16 +122,95 @@ test('combat weapons can attack neutral berry bushes', () => {
     type: constants.RESOURCE_TYPES.berrybush,
   }
 
-  assert.equal(getActionCondition(swordsman, berrybush, 'attack'), true)
+  assert.equal(getActionCondition(swordsman, berrybush, 'attack'), false)
 })
 
-test('unarmed units cannot attack neutral berry bushes', () => {
+test('explicit attack orders can target neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
-  const unarmedUnit = {
+  const swordsman = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 45,
+    isDead: false,
+    owner,
+    type: 'Fantassin',
+    weaponPower: 4,
+  }
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 40,
+    isDead: false,
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+
+  assert.equal(getActionCondition(swordsman, berrybush, 'attack', { allowResourceAttack: true }), true)
+})
+
+test('sendToAttack issues an explicit attack order against neutral berry bushes', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+  const sendCalls = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition,
+      getAutonomyJobForWork: () => null,
+      getClosestInstance: () => false,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getWorkWithLoadingType: () => null,
+      isWheatMature: () => false,
+      setVillagerAutonomy: () => {},
+    },
+    '../../lib/diplomaticAggression': { applyDiplomaticAggression: () => ({ hostileNow: false }) },
+    '../../lib/lang': { t: key => key },
+    '../../lib/unitControl': { isHeroControlled: () => false },
+    '../../lib/unitWorkAppearance': { applyUnitWorkAssets: () => {} },
+  })
+
+  const berrybush = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 40,
+    i: 3,
+    isDead: false,
+    j: 4,
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+  const unit = {
+    action: null,
+    actionLocked: false,
+    buildQueue: [],
+    context: {},
+    dest: null,
+    hitPoints: 45,
+    isDead: false,
+    isUnitAtDest: () => false,
+    owner: { isEnemy: targetOwner => targetOwner?.label === 'enemy', isPlayed: false },
+    path: [],
+    sendToEvt: (target, action) => sendCalls.push({ action, target }),
+    type: 'Fantassin',
+    weaponPower: 4,
+    work: null,
+  }
+
+  assert.equal(new UnitCommands(unit).sendToAttack(berrybush), 1)
+  assert.deepEqual(sendCalls, [{ action: constants.ACTION_TYPES.attack, target: berrybush }])
+})
+
+test('villagers can still forage neutral berry bushes', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+
+  const villager = {
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 45,
     isDead: false,
@@ -146,7 +226,7 @@ test('unarmed units cannot attack neutral berry bushes', () => {
     type: constants.RESOURCE_TYPES.berrybush,
   }
 
-  assert.equal(getActionCondition(unarmedUnit, berrybush, 'attack'), false)
+  assert.equal(getActionCondition(villager, berrybush, 'forageberry'), true)
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
@@ -909,7 +989,7 @@ test('unit control policy disables automatic reactions for the active hero-contr
   assert.equal(canAutoReactToAttack(explicitStandardUnit), true)
 })
 
-test('melee unit attacks damage berry bushes with weapon damage', () => {
+test('melee unit attacks damage targets with weapon damage', () => {
   let impactCallback = null
   const applyCalls = []
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
@@ -937,17 +1017,17 @@ test('melee unit attacks damage berry bushes with weapon damage', () => {
     '../../lib/unitControl': { canAutoAcquireTarget: () => true },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
   })
-  const berrybush = {
-    family: constants.FAMILY_TYPES.resource,
+  const enemyUnit = {
+    family: constants.FAMILY_TYPES.unit,
     hitPoints: 40,
     isDead: false,
-    quantity: 100,
-    type: constants.RESOURCE_TYPES.berrybush,
+    owner: { label: 'enemy' },
+    type: 'Fantassin',
   }
   const unit = {
     action: constants.ACTION_TYPES.attack,
-    dest: berrybush,
-    getActionCondition: instance => instance === berrybush && berrybush.hitPoints > 0,
+    dest: enemyUnit,
+    getActionCondition: instance => instance === enemyUnit && enemyUnit.hitPoints > 0,
     isUnitAtDest: () => true,
     setTextures: () => {},
     sprite: { loop: false, onComplete: null, onFrameChange: null, onLoop: null },
@@ -956,8 +1036,8 @@ test('melee unit attacks damage berry bushes with weapon damage', () => {
   new UnitCombat(unit).handleAttackAction()
   impactCallback()
 
-  assert.equal(berrybush.hitPoints, 36)
-  assert.deepEqual(applyCalls, [{ target: berrybush, defaultDamage: undefined }])
+  assert.equal(enemyUnit.hitPoints, 36)
+  assert.deepEqual(applyCalls, [{ target: enemyUnit, defaultDamage: undefined }])
 })
 
 test('damage feedback can be cleared before its timer fires', () => {

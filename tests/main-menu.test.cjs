@@ -108,7 +108,7 @@ test('main menu refreshes continue button when save list changes', () => {
 
     assert.deepEqual(
       menu._getHomeButtons().map(button => button.textContent),
-      ['continueGame', 'newGame', 'loadGame', 'settings']
+      ['continueGame', 'newGame', 'loadGame', 'settings', 'quit']
     )
 
     menu._getHomeButtons()[2].click()
@@ -117,10 +117,56 @@ test('main menu refreshes continue button when save list changes', () => {
 
     assert.deepEqual(
       menu._getHomeButtons().map(button => button.textContent),
-      ['newGame', 'loadGame', 'settings']
+      ['newGame', 'loadGame', 'settings', 'quit']
     )
   } finally {
     global.document = previousDocument
     global.requestAnimationFrame = previousRequestAnimationFrame
+  }
+})
+
+test('main menu quit button exits through electron bridge', () => {
+  const previousDocument = global.document
+  const previousRequestAnimationFrame = global.requestAnimationFrame
+  const previousWindow = global.window
+
+  let didQuit = false
+  const body = makeElement('body')
+  global.document = {
+    body,
+    activeElement: null,
+    createElement: makeElement,
+    addEventListener() {},
+    removeEventListener() {},
+    querySelector: () => null,
+  }
+  global.requestAnimationFrame = callback => callback()
+  global.window = {
+    electronApp: {
+      quit() {
+        didQuit = true
+      },
+    },
+    close() {
+      throw new Error('window.close should not be used when electronApp is available')
+    },
+  }
+
+  try {
+    const { MainMenu } = loadMainMenu({ saveEntries: [] })
+    const menu = new MainMenu({ onStart() {}, onLoad() {}, onMapEditor() {} })
+
+    assert.deepEqual(
+      menu._getHomeButtons().map(button => button.textContent),
+      ['newGame', 'loadGame', 'settings', 'quit']
+    )
+
+    menu._getHomeButtons()[3].click()
+
+    assert.equal(didQuit, true)
+  } finally {
+    global.document = previousDocument
+    global.requestAnimationFrame = previousRequestAnimationFrame
+    global.window = previousWindow
   }
 })

@@ -1,5 +1,5 @@
 import { Assets, Container, Graphics, TilingSprite, type ContainerChild, type Texture, type Ticker } from 'pixi.js'
-import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH } from '../../constants'
+import { BUCKET_SIZE, CELL_HEIGHT, CELL_WIDTH, getEnvironmentTerrainParams } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
@@ -44,14 +44,13 @@ type WaterOverlayTicker = {
   add: (tick: (ticker: Ticker) => void) => void
   remove: (tick: (ticker: Ticker) => void) => void
 }
-type WaterBorderSurface = { sprite: { texture: Texture; parent?: unknown }; frames: Texture[] }
+type WaterBorderSurface = { sprite: { texture: Texture; destroyed?: boolean }; frames: Texture[] }
 
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
 const WATER_OVERLAY_FRAME_COUNT = 4
 const WATER_OVERLAY_FRAME_SPEED = 0.06
 const WATER_OVERLAY_ALPHA = 0.32
 const WATER_OVERLAY_MARGIN = CELL_WIDTH * 2
-const WATER_BACKGROUND_COLOR = 0x07487c
 const WATER_BACKGROUND_Z_INDEX = -3
 const WATER_OVERLAY_Z_INDEX = -2.5
 
@@ -60,6 +59,13 @@ function getWaterOverlayFrames(): Texture[] {
   return Array.from({ length: WATER_OVERLAY_FRAME_COUNT }, (_, index) =>
     getTextureByFrame(WATER_OVERLAY_SHEET, index, Assets)
   )
+}
+
+function getPingPongFrameIndex(frame: number, frameCount: number): number {
+  if (frameCount <= 1) return 0
+  const cycleLength = (frameCount - 1) * 2
+  const cycleFrame = frame % cycleLength
+  return cycleFrame < frameCount ? cycleFrame : cycleLength - cycleFrame
 }
 
 function compactPositions(positions: GeneratedPosition[]): GridPosition[] {
@@ -273,7 +279,7 @@ export default class Map extends Container {
     background.eventMode = 'none'
     background.zIndex = WATER_BACKGROUND_Z_INDEX
     background.rect(bounds.minX, bounds.minY, bounds.width, bounds.height)
-    background.fill({ color: WATER_BACKGROUND_COLOR })
+    background.fill({ color: getEnvironmentTerrainParams(this.environment).waterBackgroundColor })
 
     const overlay = new TilingSprite({ texture: frames[0], width: bounds.width, height: bounds.height })
     overlay.label = 'waterOverlayFilter'
@@ -296,18 +302,19 @@ export default class Map extends Container {
       const tick = (ticker: Ticker) => {
         const frames = getWaterOverlayFrames()
         const borderFrameCount = Math.max(0, ...Array.from(this.waterBorderSurfaces, surface => surface.frames.length))
-        const frameCount = frames.length || borderFrameCount
+        const frameCount = Math.max(frames.length, borderFrameCount)
         if (!frameCount) return
         this.waterOverlayElapsed += ticker.deltaTime * WATER_OVERLAY_FRAME_SPEED
         if (this.waterOverlayElapsed >= 1) {
           this.waterOverlayElapsed %= 1
-          this.waterOverlayFrame = (this.waterOverlayFrame + 1) % frameCount
+          this.waterOverlayFrame += 1
           if (this.waterOverlay?.parent && frames.length) {
             this.waterOverlay.texture = frames[this.waterOverlayFrame % frames.length]
           }
           for (const surface of this.waterBorderSurfaces) {
-            if (!surface.sprite.parent) continue
-            surface.sprite.texture = surface.frames[this.waterOverlayFrame % surface.frames.length]
+            if (surface.sprite.destroyed) continue
+            surface.sprite.texture =
+              surface.frames[getPingPongFrameIndex(this.waterOverlayFrame, surface.frames.length)]
           }
         }
       }
@@ -317,7 +324,7 @@ export default class Map extends Container {
   }
 
   registerWaterBorderSurface(
-    sprite: { texture: Texture; parent?: unknown },
+    sprite: { texture: Texture; destroyed?: boolean },
     frames: Texture[],
     initialFrame: number = 0
   ): () => void {

@@ -18,9 +18,9 @@ export type RuntimeCellContext = {
 type TerrainAppearance = {
   patchBorders?: Set<string> | null
   // A cell's patch-relief borders (if any) always come from the same source — either an
-  // adjacent Desert/Dirt patch or the generic water-edge overlay — so one value per cell
+  // adjacent Desert/Dirt/Snow patch or the generic water-edge overlay — so one value per cell
   // is enough; see CellTerrain#setPatchBorder.
-  patchBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
   relief?: { index: number; elevation: number } | null
   waterBorder?: { resourceName: string; index: number } | null
 }

@@ -36,7 +36,7 @@ type CellDefinition = {
 
 type TerrainAppearance = {
   patchBorders: Set<string> | null
-  patchBorderGroundType?: 'Desert' | 'Dirt' | null
+  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
   relief: { index: number; elevation: number } | null
   waterBorder: { resourceName: string; index: number } | null
 }
@@ -202,7 +202,7 @@ export class GenerationCell implements RuntimeCell {
     this.inclined = true
   }
 
-  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
+  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' | 'Snow' = 'Desert'): void {
     if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Set()
     this._terrainAppearance.patchBorders.add(direction)
     this._terrainAppearance.patchBorderGroundType = groundType

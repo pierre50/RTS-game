@@ -23,7 +23,10 @@ type BorderVariantMap = Record<number, number[]>
 const BORDER_SHEETS = {
   desertRelief: 'desert-relief',
   dirtRelief: 'dirt-relief',
+  snowRelief: 'snow-relief',
 } as const
+
+type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
 
 type TerrainDefinition = {
   category?: string
@@ -65,7 +68,11 @@ type TerrainContextLike = {
 
 type TerrainContextMapLike = {
   randomRange(min: number, max: number): number
-  registerWaterBorderSurface?: (sprite: { texture: Texture; parent?: unknown }, frames: Texture[], initialFrame?: number) => () => void
+  registerWaterBorderSurface?: (
+    sprite: { texture: Texture; destroyed?: boolean },
+    frames: Texture[],
+    initialFrame?: number
+  ) => () => void
 }
 
 type TerrainVariantMapLike = {
@@ -88,7 +95,7 @@ export type TerrainCellLike = {
   terrainTextureName?: string
   _terrainAppearance?: {
     patchBorders?: Set<string> | null
-    patchBorderGroundType?: 'Desert' | 'Dirt' | null
+    patchBorderGroundType?: PatchBorderGroundType | null
     relief?: { index: number; elevation: number } | null
     waterBorder?: { resourceName: string; index: number } | null
   }
@@ -98,6 +105,7 @@ export type TerrainCellLike = {
   inclined: boolean
   border: boolean
   waterBorder: boolean
+  unregisterWaterBorderSurface?: (() => void) | null
   addChild(child: TerrainSprite): TerrainSprite
   removeChild(child: TerrainChild): TerrainChild
   setCellLevel(level: number, cpt?: number): void
@@ -146,6 +154,21 @@ function getReliefBorderVariants(cellSpriteIndex: number): number[] {
   return RELIEF_BORDER_VARIANTS_BY_TILE_INDEX[cellSpriteIndex] ?? RELIEF_BORDER_VARIANTS_BY_TILE_INDEX[0]
 }
 
+const WATER_BORDER_BASE_FRAME_COUNT = 12
+const WATER_BORDER_ANIMATION_PHASES = 4
+
+function getWaterBorderAnimationFrames(resourceName: string, frameIndex: number): Texture[] {
+  const frames: Texture[] = []
+  for (let phase = 0; phase < WATER_BORDER_ANIMATION_PHASES; phase++) {
+    try {
+      frames.push(getTextureByFrame(resourceName, frameIndex + phase * WATER_BORDER_BASE_FRAME_COUNT, Assets))
+    } catch {
+      break
+    }
+  }
+  return frames
+}
+
 export class CellTerrain {
   cell: TerrainCellLike
 
@@ -191,6 +214,8 @@ export class CellTerrain {
     cell.inclined = false
     cell.border = false
     cell.waterBorder = false
+    cell.unregisterWaterBorderSurface?.()
+    cell.unregisterWaterBorderSurface = null
     if (cell._terrainAppearance) {
       cell._terrainAppearance.patchBorders = null
       cell._terrainAppearance.patchBorderGroundType = null
@@ -221,12 +246,17 @@ export class CellTerrain {
   // callers that react to a specific cell.type (formatCellsPatchBorders) pass it through;
   // callers that decorate water edges universally (formatCellsWaterBorderOverlays, and
   // chunk/fog restore) omit it and get the desert sheet, matching every environment.
-  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' = 'Desert'): void {
+  setPatchBorder(direction: string, groundType: PatchBorderGroundType = 'Desert'): void {
     const { cell } = this
     if (!cell.sprite) return
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
     if (alreadySet) return
-    const resourceName = groundType === 'Dirt' ? BORDER_SHEETS.dirtRelief : BORDER_SHEETS.desertRelief
+    const resourceName =
+      groundType === 'Dirt'
+        ? BORDER_SHEETS.dirtRelief
+        : groundType === 'Snow'
+          ? BORDER_SHEETS.snowRelief
+          : BORDER_SHEETS.desertRelief
     const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
     // Relief formatting runs before biome borders. The base terrain reference is
@@ -266,6 +296,7 @@ export class CellTerrain {
     if (!sprite) return
     const frameIndex = Number(index)
     const texture = getTextureByFrame(resourceName, frameIndex, Assets)
+    const frames = getWaterBorderAnimationFrames(resourceName, frameIndex)
     cell.border = true
     cell.waterBorder = true
     if (cell.has && typeof cell.has.die === 'function') {
@@ -276,6 +307,9 @@ export class CellTerrain {
     sprite.renderable = true
     sprite.anchor.set(Math.floor(texture.width / 2) / texture.width, Math.floor(texture.height / 2) / texture.height)
     cell.terrainTextureName = textureRefToString({ sheet: resourceName, frame: frameIndex })
+    cell.unregisterWaterBorderSurface?.()
+    cell.unregisterWaterBorderSurface =
+      frames.length > 1 ? (cell.context.map.registerWaterBorderSurface?.(sprite, frames) ?? null) : null
     if (cell._terrainAppearance) cell._terrainAppearance.waterBorder = { resourceName, index: frameIndex }
   }
 

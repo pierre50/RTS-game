@@ -6,6 +6,19 @@ export const DEFAULT_ENVIRONMENT_ID: EnvironmentId = 'Temperate'
 
 export const ENVIRONMENT_IDS: EnvironmentId[] = ['Temperate', 'BlackForest', 'Jungle', 'Desert']
 
+// Palette source: scripts/retro_palette/duel.hex.
+export const TEMPERATE_WATER_BACKGROUND_COLOR = 0x006b6d
+export const BLACK_FOREST_WATER_BACKGROUND_COLOR = 0x07487c
+export const JUNGLE_WATER_BACKGROUND_COLOR = 0x008279
+export const DESERT_WATER_BACKGROUND_COLOR = 0x328ca7
+
+export const WATER_BACKGROUND_COLORS_BY_ENVIRONMENT: Record<EnvironmentId, number> = {
+  Temperate: TEMPERATE_WATER_BACKGROUND_COLOR,
+  BlackForest: BLACK_FOREST_WATER_BACKGROUND_COLOR,
+  Jungle: JUNGLE_WATER_BACKGROUND_COLOR,
+  Desert: DESERT_WATER_BACKGROUND_COLOR,
+}
+
 export interface EnvironmentTerrainParams {
   // The single ground type covering this environment's non-water land. Each environment
   // is exactly one type — there's nothing to classify, so this is a plain literal rather
@@ -27,10 +40,10 @@ export interface EnvironmentTerrainParams {
     count: number
     minRadius: number
     maxRadius: number
-    terrainType: 'Jungle' | 'Dirt'
+    terrainType: 'Jungle' | 'Dirt' | 'Snow'
     // Ambient tree chance on patchwork cells specifically — only meaningful when
     // terrainType is 'Jungle' (Desert's oasis patches); null wherever terrainType is
-    // 'Dirt', since Dirt never gets trees (no Dirt tree sprite in resources.json).
+    // Dirt/Snow, since those patch materials never get trees.
     treeChance: number | null
   }
   // Lakes are carved from rounded-but-irregular predefined shapes. Desert lakes get a
@@ -65,6 +78,7 @@ export interface EnvironmentTerrainParams {
   // environment is now single-type ground, these can no longer place a wrong-sprite tree —
   // this is purely a density knob (e.g. Desert's "peu de foret").
   forestDensity: number
+  waterBackgroundColor: number
 }
 
 export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrainParams> = {
@@ -76,15 +90,17 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.8, maxRadius: 7.2, shoreRadius: 2.5, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.2,
+    waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Temperate,
   },
   // Beaucoup de foret (noire), quelques lacs et petites zones de terre.
   BlackForest: {
     groundType: 'DarkForest',
     groundTreeChance: 0.1,
-    patchwork: { count: 14, minRadius: 1.5, maxRadius: 3.0, terrainType: 'Dirt', treeChance: null },
+    patchwork: { count: 20, minRadius: 2.4, maxRadius: 5.6, terrainType: 'Snow', treeChance: null },
     lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
+    waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.BlackForest,
   },
   // Beaucoup de foret palmier, quelques lacs et petites zones de terre.
   Jungle: {
@@ -94,6 +110,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
+    waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Jungle,
   },
   // Peu de foret, sol en desert, quelques points d'eau (oasis: herbe + arbres palmier autour),
   // peu de relief. Pure Desert + oasis Jungle rings — both the Desert and Jungle tree assets
@@ -106,6 +123,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.2, maxRadius: 6.2, shoreRadius: 6.5, shoreType: 'Jungle', shoreTreeChance: 0.28 },
     reliefAmplitude: 0.3,
     forestDensity: 0.1,
+    waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Desert,
   },
 }
 

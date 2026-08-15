@@ -7,7 +7,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 const ROOT = path.join(__dirname, '..')
-const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const WATER_INDEX = TERRAIN_TYPES.indexOf('Water')
 
 function loadPlainTsModule(relativePath) {

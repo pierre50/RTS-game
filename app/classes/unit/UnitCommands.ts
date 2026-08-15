@@ -1,6 +1,7 @@
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
+  FAMILY_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
@@ -44,9 +45,24 @@ function checkActionCondition(
   props?: ActionProps | UnitCreationExtra
 ): boolean {
   if (!target) return false
+  const isExplicitResourceAttack =
+    action === ACTION_TYPES.attack &&
+    (props as ActionProps | undefined)?.allowResourceAttack !== false &&
+    source.action === ACTION_TYPES.attack &&
+    source.dest === target &&
+    (target as RuntimeEntity).family === FAMILY_TYPES.resource
   const actionProps =
-    action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
+    action === ACTION_TYPES.train && !props
+      ? { trainingType: source.trainingTargetType ?? '' }
+      : isExplicitResourceAttack
+        ? { ...(props as ActionProps | undefined), allowResourceAttack: true }
+        : props
   return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
+}
+
+function getAttackActionProps(target: RuntimeEntity): ActionProps | undefined {
+  if (target.family === FAMILY_TYPES.resource) return { allowResourceAttack: true }
+  return undefined
 }
 
 function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
@@ -111,12 +127,13 @@ export class UnitCommands {
     action: string | null,
     keepPrevious: boolean | UnitCommandOptions,
     immediate = false,
-    preserveBuildQueue = false
+    preserveBuildQueue = false,
+    actionProps?: ActionProps
   ) {
     const unit = this.unit
     if (!target || target.isDestroyed || unit.isDead) return false
     if (!preserveBuildQueue) unit.buildQueue = []
-    if (action && !checkActionCondition(unit, target, action)) {
+    if (action && !checkActionCondition(unit, target, action, actionProps)) {
       if (
         action === ACTION_TYPES.farm &&
         target.type === RESOURCE_TYPES.wheat &&
@@ -134,7 +151,14 @@ export class UnitCommands {
       }
       return false
     }
-    if (unit.actionLocked) return unit.queueOrder?.(target, action)
+    if (unit.actionLocked) {
+      if (actionProps?.allowResourceAttack) {
+        return unit.queueOrder?.(() =>
+          this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
+        )
+      }
+      return unit.queueOrder?.(target, action)
+    }
     if (this.isRedundantOrder(target, work, action)) return false
 
     // The hero never auto-resumes a previous job — it's player-controlled, not AI, and
@@ -231,11 +255,20 @@ export class UnitCommands {
   }
 
   sendToAttack(target: RuntimeEntity) {
-    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) {
+    const attackProps = getAttackActionProps(target)
+    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack, attackProps)) {
       if (!applyDiplomaticAggression(this.unit, target).hostileNow) return
-      if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
+      if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack, attackProps)) return
     }
-    return this.commonSendTo(target, WORK_TYPES.attacker, ACTION_TYPES.attack, { resource: 'attack' })
+    return this.commonSendTo(
+      target,
+      WORK_TYPES.attacker,
+      ACTION_TYPES.attack,
+      { resource: 'attack' },
+      false,
+      false,
+      attackProps
+    )
   }
 
   sendToConvert(target: RuntimeEntity) {

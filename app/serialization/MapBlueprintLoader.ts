@@ -1,7 +1,7 @@
 import { DEFAULT_ENVIRONMENT_ID } from '../constants'
 
 // Must match tools/generate-maps.cjs's TERRAIN encoding order exactly.
-const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt']
+const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 
 type BlueprintManifestEntry = {
   id?: string

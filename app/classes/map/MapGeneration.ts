@@ -57,7 +57,7 @@ import {
 } from './MapSaveRestore'
 import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
 
-type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5
+type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
 type BlueprintTerrainValue = TerrainValue | string
 export type TerrainGrid = TerrainValue[][]
 type GeneratedPosition = GridPosition | null
@@ -1116,6 +1116,7 @@ export class MapGeneration {
       3: 'Jungle',
       4: 'DarkForest',
       5: 'Dirt',
+      7: 'Snow',
     }
 
     for (let i = 0; i <= this.map.size; i++) {
@@ -1167,6 +1168,7 @@ export class MapGeneration {
       3: 'Jungle',
       4: 'DarkForest',
       5: 'Dirt',
+      7: 'Snow',
     }
     const startedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
@@ -1267,7 +1269,8 @@ export class MapGeneration {
       Jungle: 3,
       DarkForest: 4,
       Dirt: 5,
-    } satisfies Record<'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | 'Dirt', TerrainValue>
+      Snow: 7,
+    } satisfies Record<'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | 'Dirt' | 'Snow', TerrainValue>
     const groundTypeValue = terrainValueByType[params.groundType ?? 'Grass']
     const height = new Float32Array(gridSize * gridSize)
     for (let i = 0; i < gridSize; i++) {
@@ -1570,8 +1573,8 @@ export class MapGeneration {
     if (patchwork && patchwork.count > 0) {
       const terrainValue = terrainValueByType[patchwork.terrainType]
       // Desert's own patchwork/lakes use Jungle and are meant to hug water (the oasis
-      // look); only Dirt needs to stay clear of the desert-styled water border.
-      const requireWaterClearance = patchwork.terrainType === 'Dirt'
+      // look); Dirt/Snow need to stay clear of the desert-styled water border.
+      const requireWaterClearance = patchwork.terrainType === 'Dirt' || patchwork.terrainType === 'Snow'
       for (let index = 0; index < featureCount(patchwork.count); index++) {
         const salt = 1000 + index * 31
         const margin = borderWaterWidth + Math.ceil(patchwork.maxRadius) + 4

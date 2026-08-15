@@ -56,11 +56,13 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'terrain/dark-grass': 'assets/terrain/dark-grass/texture.json',
     'terrain/jungle': 'assets/terrain/jungle/texture.json',
     'terrain/dirt': 'assets/terrain/dirt/texture.json',
+    'terrain/snow': 'assets/terrain/snow/texture.json',
   },
   border: {
     'desert-sand-water-border': 'assets/border/desert-sand-water-border/texture.json',
     'desert-relief': 'assets/border/desert-relief/texture.json',
     'dirt-relief': 'assets/border/dirt-relief/texture.json',
+    'snow-relief': 'assets/border/snow-relief/texture.json',
     'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },
   graphics: {

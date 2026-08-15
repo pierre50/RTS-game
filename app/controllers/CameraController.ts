@@ -11,6 +11,7 @@ import type { VisionGridLike } from '../types/player'
 // (biggest observed sprite is ~220x170px) so an entity's bounding box is always re-checked against
 // the true viewport before it visually enters or leaves the screen.
 const CAMERA_CULL_MARGIN = CELL_WIDTH * 4
+const CAMERA_VISIBLE_CELLS_SNAP = CELL_WIDTH / 2
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'
@@ -45,6 +46,7 @@ export class CameraController {
   mouseMoveState: MouseMoveState | null
   _rafPending: boolean
   _nextVisibleCells?: Set<RuntimeCell>
+  _lastVisibleCellsViewportKey: string | null
 
   constructor(context: CameraContext) {
     this.context = context
@@ -55,6 +57,7 @@ export class CameraController {
     this.visibleCells = new Set()
     this.mouseMoveState = null
     this._rafPending = false
+    this._lastVisibleCellsViewportKey = null
   }
 
   getCameraDiamondBounds(): { A: Point; B: Point; D: Point; C: Point } {
@@ -73,12 +76,25 @@ export class CameraController {
     }
   }
 
+  getVisibleCellsViewportKey(viewport: Viewport): string {
+    return [
+      Math.floor(viewport.visibleLeft / CAMERA_VISIBLE_CELLS_SNAP),
+      Math.floor(viewport.visibleTop / CAMERA_VISIBLE_CELLS_SNAP),
+      Math.ceil(viewport.visibleWidth / CAMERA_VISIBLE_CELLS_SNAP),
+      Math.ceil(viewport.visibleHeight / CAMERA_VISIBLE_CELLS_SNAP),
+    ].join(':')
+  }
+
   scheduleVisibleCellsUpdate(): void {
+    const { map } = this.context
+    if (!map?.grid?.length) return
+    const viewport = this.getViewportRect()
+    if (this.getVisibleCellsViewportKey(viewport) === this._lastVisibleCellsViewportKey) return
     if (this._rafPending) return
     this._rafPending = true
     requestAnimationFrame(() => {
       this._rafPending = false
-      this.updateVisibleCells()
+      this.updateVisibleCells(false)
     })
   }
 
@@ -284,10 +300,16 @@ export class CameraController {
     }
   }
 
-  updateVisibleCells(): void {
+  updateVisibleCells(force = true): void {
     const { map, player } = this.context
     if (!map?.grid?.length) return
     const viewport = this.getViewportRect()
+    const viewportKey = this.getVisibleCellsViewportKey(viewport)
+    if (!force && viewportKey === this._lastVisibleCellsViewportKey) {
+      this.context.performance?.record('camera.visibleCellsSkip', 0)
+      return
+    }
+    this._lastVisibleCellsViewportKey = viewportKey
     map.updateRenderChunks?.(viewport)
 
     const startedAt = performance.now()

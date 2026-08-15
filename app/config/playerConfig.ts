@@ -13,7 +13,7 @@ const STONE_START_SOUND = null
 function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConfig> = {}): ProjectileConfig {
   return {
     size: 3,
-    speed: 14,
+    speed: 20,
     assets,
     isAnimated: true,
     rotateSprite: true,

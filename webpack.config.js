@@ -78,6 +78,9 @@ module.exports = (_env, argv = {}) => {
         { directory: env.staticMapsDir, publicPath: '/maps', watch: true },
       ],
       compress: true,
+      headers: {
+        'Cache-Control': 'no-store',
+      },
       port: env.devServerPort,
       hot: true,
       historyApiFallback: true,

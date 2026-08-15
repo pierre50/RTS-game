@@ -331,7 +331,15 @@ export default class Game extends Container {
 
   _attachWindowListeners(): void {
     this._onKeydown = evt => {
+      if (evt.defaultPrevented) return
       if (this.context.devConsoleOpen) return
+      if (evt.key === 'Escape') {
+        if (this.context.victory || this.context.defeat) return
+        if (document.querySelector('.modal')) return
+        evt.preventDefault()
+        this.context.menu?.pauseMenu?.open()
+        return
+      }
       if (getControlActionForKeyboardEvent(evt) === 'pause') {
         if (this.context.victory || this.context.defeat) return
         if (document.querySelector('.modal')) return

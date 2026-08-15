@@ -57,6 +57,7 @@ export type Condition = {
 }
 
 export type ActionProps = {
+  allowResourceAttack?: boolean
   buildingTypes?: string[]
   trainingType?: string
 }
@@ -79,11 +80,12 @@ function canAttack(source?: CombatEntity | null): boolean {
   return getEntityWeaponPower(source) > 0
 }
 
-function canAttackResource(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
-  return (
-    target?.family === FAMILY_TYPES.resource &&
-    target.type === RESOURCE_TYPES.berrybush &&
-    getEntityWeaponPower(source) > UNARMED_UNIT_WEAPON_POWER
+function canAttackResource(source?: CombatEntity | null, target?: CombatEntity | null, props?: ActionProps): boolean {
+  return Boolean(
+    props?.allowResourceAttack &&
+      target?.family === FAMILY_TYPES.resource &&
+      target.type === RESOURCE_TYPES.berrybush &&
+      getEntityWeaponPower(source) > UNARMED_UNIT_WEAPON_POWER
   )
 }
 
@@ -444,9 +446,11 @@ export const getActionCondition = (
         canAttack(source) &&
           target &&
           !isFriendlyTarget(source, target) &&
-          (source.owner?.isEnemy?.(target.owner) || canAttackResource(source, target)) &&
+          (source.owner?.isEnemy?.(target.owner) ||
+            target.family === FAMILY_TYPES.animal ||
+            canAttackResource(source, target, props)) &&
           ([FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') ||
-            canAttackResource(source, target)) &&
+            canAttackResource(source, target, props)) &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead
       ),

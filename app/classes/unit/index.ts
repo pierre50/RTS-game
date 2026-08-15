@@ -30,6 +30,7 @@ import {
   evaluateCombatMorale,
   getIconPath,
   getSpriteFrameSelection,
+  setSpriteFiltersPreservingDamageFeedback,
   showAggressionFeedback,
   updateInstanceRenderVisibility,
   resumeVillagerAutonomy,
@@ -949,7 +950,7 @@ export class Unit extends Instance implements UnitEntity {
     const frame = this.sprite.currentFrame
     const playing = this.sprite.playing
     const textures = changeSpriteTexturesColorDirectly(this.sprite.textures as Texture[], this.owner.color ?? '')
-    this.sprite.filters = null
+    setSpriteFiltersPreservingDamageFeedback(this.sprite, null)
     this.sprite.textures = textures as Texture[]
 
     const restoredFrame = Math.min(frame, Math.max(textures.length - 1, 0))

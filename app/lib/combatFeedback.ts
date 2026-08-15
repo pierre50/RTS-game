@@ -7,7 +7,8 @@ import type { AnimatedSprite, Container, Filter, Sprite } from 'pixi.js'
 
 type DamageSprite = Sprite | AnimatedSprite
 type FlashState = {
-  filters: readonly Filter[] | null
+  baseFilters: readonly Filter[] | null
+  flash: Filter
   token: number
 }
 type FloatingTextOptions = {
@@ -44,6 +45,16 @@ const confusionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const blockedFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const floatingTexts = new WeakMap<RuntimeEntity, Set<FloatingTextRecord>>()
 const floatingTextTargets = new Set<RuntimeEntity>()
+const PLAYER_FLASH_COLORS: Record<string, string> = {
+  blue: '#466ac9',
+  red: '#e30b00',
+  yellow: '#c3a31b',
+  brown: '#8b5b37',
+  orange: '#ef6307',
+  green: '#4b6b2b',
+  grey: '#8f8f8f',
+  cyan: '#00837b',
+}
 
 function formatDamageFeedback(damage: number): string | null {
   if (!Number.isFinite(damage)) return null
@@ -65,31 +76,59 @@ function canFlashDamage(target: RuntimeEntity): boolean {
   return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
 }
 
-function flashWhite(target: RuntimeEntity): void {
+export function setSpriteFiltersPreservingDamageFeedback(
+  sprite: DamageSprite,
+  filters: readonly Filter[] | null
+): void {
+  const state = flashStates.get(sprite)
+  if (!state) {
+    sprite.filters = filters ? [...filters] : null
+    return
+  }
+
+  state.baseFilters = filters ? [...filters] : null
+  sprite.filters = [...(state.baseFilters ?? []), state.flash]
+}
+
+function parseFlashColor(color: string | null | undefined): [number, number, number] {
+  const normalized = color?.startsWith('#') ? color : PLAYER_FLASH_COLORS[color ?? ''] ?? '#ffffff'
+  const match = /^#?([0-9a-f]{6})$/i.exec(normalized)
+  if (!match) return [1, 1, 1]
+  const value = Number.parseInt(match[1], 16)
+  return [((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255]
+}
+
+function flashColor(target: RuntimeEntity, color?: string | null): void {
   const sprite = target.sprite
   const scheduler = target.context?.scheduler
   if (!sprite || !scheduler) return
 
   const previous = flashStates.get(sprite)
   const token = (previous?.token ?? 0) + 1
-  const originalFilters = previous?.filters ?? sprite.filters ?? null
+  const baseFilters = previous?.baseFilters ?? sprite.filters ?? null
+  const [r, g, b] = parseFlashColor(color)
   const flash = new ColorMatrixFilter()
-  flash.matrix = [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0]
+  flash.matrix = [0, 0, 0, 0, r, 0, 0, 0, 0, g, 0, 0, 0, 0, b, 0, 0, 0, 1, 0]
 
-  flashStates.set(sprite, { filters: originalFilters, token })
+  flashStates.set(sprite, { baseFilters, flash, token })
   flashSprites.add(sprite)
-  sprite.filters = [...(originalFilters ?? []), flash]
+  sprite.filters = [...(baseFilters ?? []), flash]
   scheduler.addOneShot(
     () => {
       if (sprite.destroyed) return
-      if (flashStates.get(sprite)?.token !== token) return
-      sprite.filters = originalFilters ? [...originalFilters] : null
+      const state = flashStates.get(sprite)
+      if (state?.token !== token) return
+      sprite.filters = state.baseFilters ? [...state.baseFilters] : null
       flashStates.delete(sprite)
       flashSprites.delete(sprite)
     },
     FLASH_MS,
     'combat.flash'
   )
+}
+
+function flashWhite(target: RuntimeEntity): void {
+  flashColor(target, '#ffffff')
 }
 
 export function clearDamageFeedback(target: RuntimeEntity): void {
@@ -109,7 +148,7 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
 
   const state = flashStates.get(sprite)
   if (state) {
-    sprite.filters = state.filters ? [...state.filters] : null
+    sprite.filters = state.baseFilters ? [...state.baseFilters] : null
     flashStates.delete(sprite)
     flashSprites.delete(sprite)
     return
@@ -130,7 +169,7 @@ export function clearAllCombatFeedback(): void {
       continue
     }
     const state = flashStates.get(sprite)
-    sprite.filters = state?.filters ? [...state.filters] : null
+    sprite.filters = state?.baseFilters ? [...state.baseFilters] : null
     flashStates.delete(sprite)
     flashSprites.delete(sprite)
   }
@@ -217,6 +256,11 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
     stroke: 0x6b0f0f,
     taskLabel: 'combat.damageText',
   })
+}
+
+export function showConversionFeedback(target: RuntimeEntity, color?: string | null): void {
+  if (!canShowCombatFeedback(target) || target.context?.victory || target.context?.defeat || target.isDestroyed) return
+  if (canFlashDamage(target)) flashColor(target, color)
 }
 
 export function showResourceGainFeedback(target: RuntimeEntity, amount: number): void {

@@ -112,3 +112,37 @@ test('recomputes render visibility instead of blindly hiding when a cell drops o
   assert.equal(cell.has.visible, false)
   assert.equal(cell.has.__renderRecomputed, true)
 })
+
+test('skips scheduled visible-cell refreshes while the camera stays in the same culling bucket', () => {
+  const CameraController = loadCameraController()
+  let updates = 0
+  let renderChunkUpdates = 0
+  const cell = {
+    has: null,
+    corpses: new Set(),
+    updateVisible: () => updates++,
+  }
+  const map = {
+    grid: [[cell]],
+    size: 0,
+    updateRenderChunks: () => renderChunkUpdates++,
+  }
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map,
+    player: { views: {} },
+  })
+  controller.getViewportRect = () => ({
+    visibleLeft: 0,
+    visibleTop: 0,
+    visibleWidth: 64,
+    visibleHeight: 32,
+  })
+
+  controller.updateVisibleCells(false)
+  controller.updateVisibleCells(false)
+  controller.updateVisibleCells()
+
+  assert.equal(renderChunkUpdates, 2)
+  assert.equal(updates, 1)
+})

@@ -95,6 +95,16 @@ function loadGame() {
         destroy() {}
       },
     },
+    '../services/DayNightSystem': {
+      DayNightSystem: class DayNightSystem {
+        destroy() {}
+      },
+    },
+    '../services/DailyWorldEventSystem': {
+      DailyWorldEventSystem: class DailyWorldEventSystem {
+        destroy() {}
+      },
+    },
     '../lib/settings': {
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: () => null,
@@ -289,4 +299,77 @@ test('pause applies to live units, buildings, gaia animals and corpses once', ()
     ['pause', 'cell-corpse'],
   ])
   assert.equal(calls.filter(([, label]) => label === 'shared-corpse').length, 1)
+})
+
+test('Escape opens the in-game pause menu', () => {
+  const previousWindow = global.window
+  const previousDocument = global.document
+  const listeners = new Map()
+  global.window = {
+    addEventListener: (type, handler) => listeners.set(type, handler),
+    removeEventListener() {},
+  }
+  global.document = {
+    addEventListener() {},
+    removeEventListener() {},
+    querySelector: () => null,
+  }
+
+  try {
+    const Game = loadGame()
+    const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+    let openCalls = 0
+    let pauseCalls = 0
+    let preventDefaultCalls = 0
+    game.context.menu = { pauseMenu: { open: () => openCalls++ } }
+    game.context.pause = () => pauseCalls++
+
+    game._attachWindowListeners()
+    listeners.get('keydown')({
+      key: 'Escape',
+      defaultPrevented: false,
+      preventDefault: () => preventDefaultCalls++,
+    })
+
+    assert.equal(openCalls, 1)
+    assert.equal(pauseCalls, 0)
+    assert.equal(preventDefaultCalls, 1)
+  } finally {
+    global.window = previousWindow
+    global.document = previousDocument
+  }
+})
+
+test('Escape does not open the in-game menu after another handler consumes it', () => {
+  const previousWindow = global.window
+  const previousDocument = global.document
+  const listeners = new Map()
+  global.window = {
+    addEventListener: (type, handler) => listeners.set(type, handler),
+    removeEventListener() {},
+  }
+  global.document = {
+    addEventListener() {},
+    removeEventListener() {},
+    querySelector: () => null,
+  }
+
+  try {
+    const Game = loadGame()
+    const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+    let openCalls = 0
+    game.context.menu = { pauseMenu: { open: () => openCalls++ } }
+
+    game._attachWindowListeners()
+    listeners.get('keydown')({
+      key: 'Escape',
+      defaultPrevented: true,
+      preventDefault: () => {},
+    })
+
+    assert.equal(openCalls, 0)
+  } finally {
+    global.window = previousWindow
+    global.document = previousDocument
+  }
 })
