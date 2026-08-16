@@ -107,10 +107,6 @@ export function getUnitEquipmentLevel(unit: UnitEntity, category = unit.category
 
 // Kept for legacy/debug summaries only. Gameplay unlocks should use getUnitEquipmentLevel,
 // and user-facing "unit level" should use getUnitOverallLevel.
-export function getHighestUnitLevel(unit: UnitEntity): number {
-  return Object.values(XP_CATEGORIES).reduce((max, category) => Math.max(max, getUnitLevel(unit, category)), 0)
-}
-
 function getDebugLevelCategories(unit: UnitEntity, category = unit.category || unit.type): string[] {
   if (category === 'Fantassin') return [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
   if (category === 'Archer') return [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]

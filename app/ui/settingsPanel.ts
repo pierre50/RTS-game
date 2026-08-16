@@ -45,14 +45,6 @@ type SettingsModalOptions = SettingsContentOptions & {
  * @param {Function} [opts.onSpeedChange] - called with new speed value for live in-game updates
  * @param {Function} [opts.onZoomChange] - called with new zoom value for live in-game updates
  */
-export function buildSettingsContent({
-  onLangChange,
-  onSpeedChange,
-  onZoomChange,
-}: SettingsContentOptions = {}): HTMLDivElement {
-  return createSettingsTabs({ onLangChange, onSpeedChange, onZoomChange }).element
-}
-
 export function openSettingsModal(options: SettingsModalOptions = {}): Modal {
   const modalTabs = createSettingsTabs(options)
   const modal = new Modal({ content: modalTabs.element, onClose: options.onClose })

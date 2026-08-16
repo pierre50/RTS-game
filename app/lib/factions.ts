@@ -1,5 +1,4 @@
-import type { FactionRelationState, FactionSave, SavePlayerState } from '../types/save'
-import type { PlayerLike } from '../types/player'
+import type { FactionRelationState, FactionSave } from '../types/save'
 import { t } from './lang'
 
 export const FACTION_SCORE = {
@@ -96,29 +95,4 @@ export function adjustFactionRelation(faction: FactionSave, delta: number, now: 
     relationState: getFactionRelationState(relationScore),
     updatedAt: now,
   }
-}
-
-export function playerFactionId(
-  player?: Pick<PlayerLike, 'factionId'> | Pick<SavePlayerState, 'factionId'> | null
-): string | null {
-  return player?.factionId ?? null
-}
-
-export function arePlayersHostile(
-  a: Pick<PlayerLike, 'label' | 'team' | 'factionId' | 'diplomacy'>,
-  b: Pick<PlayerLike, 'label' | 'team' | 'factionId' | 'diplomacy'> | null | undefined,
-  factions?: Record<string, FactionSave> | null
-): boolean {
-  if (!b || a.label === b.label) return false
-
-  const aFaction = playerFactionId(a)
-  const bFaction = playerFactionId(b)
-  if (aFaction && bFaction && aFaction === bFaction) return false
-
-  if (aFaction && factions?.[aFaction]) return factions[aFaction].relationState === 'hostile'
-  if (bFaction && factions?.[bFaction]) return factions[bFaction].relationState === 'hostile'
-
-  if (a.diplomacy === 'neutral' || b.diplomacy === 'neutral') return false
-  if (a.team !== null && a.team !== undefined && a.team === b.team) return false
-  return true
 }

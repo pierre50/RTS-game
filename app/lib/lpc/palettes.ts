@@ -25,7 +25,3 @@ export const PLAYER_COLOR_TO_LPC_VARIANT: Record<string, string> = {
   grey: 'gray',
   cyan: 'teal',
 }
-
-export function paletteByName(name: string): string[] {
-  return LPC_PALETTES[name] ?? LPC_PALETTES.olive
-}

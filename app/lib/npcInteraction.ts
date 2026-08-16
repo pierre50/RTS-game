@@ -202,25 +202,6 @@ function releaseNpc(target: UnitEntity): void {
 // picked, not before. No passive "stops whenever you walk by" scanning: freezing only happens
 // at the moment of interaction, otherwise an order given right as you approach could get
 // immediately re-frozen by a proximity scan and never actually execute.
-export function findInteractableNpc(hero: UnitEntity): UnitEntity | null {
-  const candidates = findInstancesInSight<UnitEntity, UnitEntity>(
-    hero,
-    target => isCommEligible(hero, target),
-    NPC_INTERACT_RANGE
-  )
-  let closest: UnitEntity | null = null
-  let closestDist = Infinity
-  for (const candidate of candidates) {
-    const dist = cellDistance(hero, candidate)
-    if (dist < closestDist) {
-      closest = candidate
-      closestDist = dist
-    }
-  }
-  if (closest) noticeNpc(closest, hero)
-  return closest
-}
-
 // Releases any of these npcs still frozen from an interaction the player didn't follow through
 // on (e.g. closed the panel without picking an order) so they resume whatever they were doing.
 export function releaseIfStillLooking(npcs: UnitEntity[]): void {
@@ -228,10 +209,6 @@ export function releaseIfStillLooking(npcs: UnitEntity[]): void {
 }
 
 // Whether the hero is still close enough to any of these npcs to keep their orders panel open.
-export function isAnyNpcNear(hero: UnitEntity, npcs: UnitEntity[], range = NPC_MENU_KEEP_RANGE): boolean {
-  return npcs.some(npc => npc && !npc.isDead && !npc.isDestroyed && cellDistance(hero, npc) <= range)
-}
-
 // All villagers eligible for the hold-to-charge "communication zone", within the given radius.
 export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
   const candidates = findInstancesInSight<UnitEntity, UnitEntity>(hero, target => isCommEligible(hero, target), radius)

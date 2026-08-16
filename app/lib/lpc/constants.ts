@@ -8,7 +8,3 @@ export const TOOL_ROD_FRAME_INDICES = [0, 1, 2, 3].flatMap(row =>
 )
 
 const OVERSIZE_SLASH_COLUMNS = 6
-
-export function makeLpcUrl(path: string): string {
-  return `${LPC_BASE_URL}/${path}`
-}

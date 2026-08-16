@@ -12,10 +12,6 @@ const HERO_FOOTPRINT_INTERACTION_MAX_MARGIN = CELL_HEIGHT * 2
 
 type Point = { x: number; y: number }
 
-export function isHeroControlledUnit(unit: UnitEntity): boolean {
-  return isHeroControlled(unit)
-}
-
 export function getHeroActionDistance(action: string | null | undefined, target: RuntimeEntity): number | null {
   if (!action) return null
   if (action !== ACTION_TYPES.takemeat) return null

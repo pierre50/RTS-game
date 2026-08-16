@@ -337,10 +337,6 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   },
 ]
 
-export function getHeroToolLevel(hero: UnitEntity, tool: HeroCivilTool): number {
-  return Math.max(0, Math.floor(hero.toolLevels?.[tool] ?? DEFAULT_HERO_TOOL_LEVELS[tool] ?? 0))
-}
-
 function spendHeroEnergy(hero: UnitEntity, action: string): boolean {
   if (spendEnergyForAction(hero, action)) return true
   if (hero.owner?.isPlayed) {
@@ -1311,10 +1307,6 @@ function performNearestContextAction(hero: UnitEntity): ToolActionResult {
   }
   if (tryDeliver(hero)) return 'triggered'
   return 'miss'
-}
-
-export function performContextAction(hero: UnitEntity): boolean {
-  return performNearestContextAction(hero) === 'triggered'
 }
 
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
