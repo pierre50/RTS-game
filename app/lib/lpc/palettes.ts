@@ -26,8 +26,6 @@ export const PLAYER_COLOR_TO_LPC_VARIANT: Record<string, string> = {
   cyan: 'teal',
 }
 
-export const SHORTS_PLAYER_COLOR_VARIANTS = Object.values(PLAYER_COLOR_TO_LPC_VARIANT)
-
 export function paletteByName(name: string): string[] {
   return LPC_PALETTES[name] ?? LPC_PALETTES.olive
 }

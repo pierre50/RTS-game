@@ -160,7 +160,6 @@ export const MINING_RESOURCE_CONFIG = {
   },
 } as const
 
-export const MINING_RESOURCE_TYPES = Object.keys(MINING_RESOURCE_CONFIG)
 export const SPACED_RESOURCE_TYPES = [
   RESOURCE_TYPES.berrybush,
   RESOURCE_TYPES.wheat,

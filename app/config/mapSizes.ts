@@ -11,7 +11,6 @@ const MAP_SIZE_DEFINITIONS: MapSizeDefinition[] = [
   { label: 'Medium (256x256)', value: 256, idealSpawnRange: [3, 6] },
 ]
 
-export const MAP_SIZES = MAP_SIZE_DEFINITIONS.filter(size => !size.editorOnly)
 export const MAP_EDITOR_SIZES = MAP_SIZE_DEFINITIONS
 
 export function getIdealSpawnRangeForMapSize(size: number): [number, number] {

@@ -54,5 +54,3 @@ export const HEALTH_BAR_TRACK_GRADIENT_TOP = 0x9c2e1b
 export const HEALTH_BAR_TRACK_GRADIENT_BOTTOM = 0x701d12
 export const HEALTH_BAR_FILL_GRADIENT_TOP = 0x52c44f
 export const HEALTH_BAR_FILL_GRADIENT_BOTTOM = 0x24822b
-
-export const COMMAND_POINTER_SHEET_ID = 'pointers/move-target'

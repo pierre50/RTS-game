@@ -1,7 +1,5 @@
 import type { AIEntityLike } from './types'
 
-export const INFANTRY_TECH_UPGRADES: string[][] = []
-
 export const ARCHER_TECH_UPGRADES: string[][] = []
 
 const INFANTRY_UNIT_TYPES = ['Fantassin']
