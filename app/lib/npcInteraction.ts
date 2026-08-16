@@ -15,7 +15,6 @@ import { angleDelta, getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from './buildingFeedback'
-import type { SelectableInstance } from './graphics/selection'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Point } from '../types/grid'
@@ -120,13 +119,14 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   }
   if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
   const factor = target.selectionFactor ?? target.size ?? 1
+  const markerY = target.reliefLift ?? 0
   const marker = createIsoSelectionMarker({
     color: COMM_SELECTION_COLOR,
     factor,
     label: LABEL_TYPES.commSelection,
     zIndex: -1,
   })
-  marker.position.y = target.reliefLift ?? 0
+  marker.position.y = markerY
   const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
   target.addChildAt(marker, shadowIndex)
 }

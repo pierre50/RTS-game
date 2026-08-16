@@ -11,7 +11,7 @@ import {
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../constants'
-import { bindAnimatedSpriteToTicker, getAnimationFrames } from '../../lib'
+import { bindAnimatedSpriteToTicker, changeSpriteTexturesColorDirectly, getAnimationFrames } from '../../lib'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import {
@@ -185,7 +185,10 @@ export class BuildingTrainingPreview {
     if (!sheet?.textures || !app) return null
 
     const frames = getAnimationFrames(sheet.textures, 'south', directionCount) as Texture[]
-    const sprite = new AnimatedSprite(isHorseSheet(sheetId) ? recolorHorseTextures(frames, horseColor) : frames)
+    const baseTextures = isHorseSheet(sheetId)
+      ? recolorHorseTextures(frames, horseColor)
+      : changeSpriteTexturesColorDirectly(frames, this.building.owner?.color ?? 'blue')
+    const sprite = new AnimatedSprite(baseTextures)
     bindAnimatedSpriteToTicker(sprite, app)
     sprite.label = LABEL_TYPES.sprite
     sprite.eventMode = 'none'
