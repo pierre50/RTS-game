@@ -4,24 +4,24 @@
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 212,
-        "h": 120
+        "w": 186,
+        "h": 115
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 212,
-        "h": 120
+        "w": 186,
+        "h": 115
       },
       "sourceSize": {
-        "w": 212,
-        "h": 120
+        "w": 186,
+        "h": 115
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.7
+        "y": 0.75
       }
     }
   },
@@ -31,8 +31,8 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 212,
-      "h": 120
+      "w": 186,
+      "h": 115
     },
     "scale": 1
   }
