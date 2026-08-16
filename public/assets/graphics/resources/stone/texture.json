@@ -45,7 +45,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.7115384616
+        "y": 0.6346153846
       }
     },
     "002_graphics_resources_stone.png": {
@@ -69,103 +69,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.6346153846
-      }
-    },
-    "003_graphics_resources_stone.png": {
-      "frame": {
-        "x": 210,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 52
-      },
-      "anchor": {
-        "x": 0.5,
         "y": 0.6538461539
-      }
-    },
-    "004_graphics_resources_stone.png": {
-      "frame": {
-        "x": 280,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 52
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.7115384616
-      }
-    },
-    "005_graphics_resources_stone.png": {
-      "frame": {
-        "x": 350,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 52
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.5961538462
-      }
-    },
-    "006_graphics_resources_stone.png": {
-      "frame": {
-        "x": 420,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "rotated": false,
-      "trimmed": false,
-      "spriteSourceSize": {
-        "x": 0,
-        "y": 0,
-        "w": 70,
-        "h": 52
-      },
-      "sourceSize": {
-        "w": 70,
-        "h": 52
-      },
-      "anchor": {
-        "x": 0.5,
-        "y": 0.6730769231
       }
     }
   },
@@ -175,7 +79,7 @@
     "image": "texture.png",
     "format": "RGBA8888",
     "size": {
-      "w": 490,
+      "w": 210,
       "h": 52
     },
     "scale": 1

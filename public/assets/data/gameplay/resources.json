@@ -121,22 +121,6 @@
       {
         "sheet": "resources/gold",
         "frame": 2
-      },
-      {
-        "sheet": "resources/gold",
-        "frame": 3
-      },
-      {
-        "sheet": "resources/gold",
-        "frame": 4
-      },
-      {
-        "sheet": "resources/gold",
-        "frame": 5
-      },
-      {
-        "sheet": "resources/gold",
-        "frame": 6
       }
     ]
   },
@@ -156,22 +140,6 @@
       {
         "sheet": "resources/stone",
         "frame": 2
-      },
-      {
-        "sheet": "resources/stone",
-        "frame": 3
-      },
-      {
-        "sheet": "resources/stone",
-        "frame": 4
-      },
-      {
-        "sheet": "resources/stone",
-        "frame": 5
-      },
-      {
-        "sheet": "resources/stone",
-        "frame": 6
       }
     ]
   },
@@ -191,22 +159,6 @@
       {
         "sheet": "resources/copper",
         "frame": 2
-      },
-      {
-        "sheet": "resources/copper",
-        "frame": 3
-      },
-      {
-        "sheet": "resources/copper",
-        "frame": 4
-      },
-      {
-        "sheet": "resources/copper",
-        "frame": 5
-      },
-      {
-        "sheet": "resources/copper",
-        "frame": 6
       }
     ]
   },
@@ -226,22 +178,6 @@
       {
         "sheet": "resources/iron",
         "frame": 2
-      },
-      {
-        "sheet": "resources/iron",
-        "frame": 3
-      },
-      {
-        "sheet": "resources/iron",
-        "frame": 4
-      },
-      {
-        "sheet": "resources/iron",
-        "frame": 5
-      },
-      {
-        "sheet": "resources/iron",
-        "frame": 6
       }
     ]
   },

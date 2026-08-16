@@ -205,6 +205,10 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/age-1/stable',
       'buildings/age-0/watch-tower',
       'buildings/age-1/watch-tower',
+      'resources/gold',
+      'resources/stone',
+      'resources/copper',
+      'resources/iron',
     ]),
   },
   sounds: {
