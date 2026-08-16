@@ -64,6 +64,7 @@ export type SaveEntityState = {
   size?: number
   technology?: SaveTechnologyState
   textureName?: string
+  berrybushFullTextureName?: string
   totalHitPoints?: number
   type: string
   work?: string | null

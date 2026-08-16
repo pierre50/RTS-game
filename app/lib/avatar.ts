@@ -2,7 +2,7 @@ import { Assets, Rectangle, Texture } from 'pixi.js'
 import { SHEET_TYPES } from '../constants'
 import { getAnimationFrames } from './extra'
 import { getBuildingAsset, type AssetOwner } from './graphics/assets'
-import { recolorCanvasPixels, SOURCE_COLORS, UNIT_SOURCE_COLORS } from './graphics/colors'
+import { recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
 import { getTexture } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getUnitEquipmentLevel } from './unitExperience'
@@ -170,7 +170,7 @@ export function renderUnitHeadCanvasAvatar(
   color: string
 ): boolean {
   const scanHeight = Math.min(source.height, Math.round(source.height * HEAD_SCAN_HEIGHT_RATIO))
-  return extractSquareCanvasAvatar(source, scanHeight, canvas, color, UNIT_SOURCE_COLORS)
+  return extractSquareCanvasAvatar(source, scanHeight, canvas, color, SOURCE_COLORS)
 }
 
 function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
@@ -254,7 +254,7 @@ function renderLayeredUnitHeadAvatar(
   }
 
   const scanHeight = Math.min(composed.height, Math.round(composed.height * HEAD_SCAN_HEIGHT_RATIO))
-  return extractSquareCanvasAvatar(composed, scanHeight, canvas, unit.owner?.color ?? '', UNIT_SOURCE_COLORS)
+  return extractSquareCanvasAvatar(composed, scanHeight, canvas, unit.owner?.color ?? '', SOURCE_COLORS)
 }
 
 // Renders the unit's face into `canvas`, tightly cropped and scaled to fill
@@ -268,7 +268,7 @@ export function renderUnitHeadAvatar(app: Application, unit: PortraitSource, can
 
   const scanHeight = Math.min(texture.height, Math.round(texture.height * HEAD_SCAN_HEIGHT_RATIO))
   const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, scanHeight)
-  return extractSquareAvatar(app, texture, scanRect, canvas, unit.owner?.color ?? '', UNIT_SOURCE_COLORS)
+  return extractSquareAvatar(app, texture, scanRect, canvas, unit.owner?.color ?? '', SOURCE_COLORS)
 }
 
 // Renders a building type's completed appearance into `canvas`, tightly
@@ -319,7 +319,7 @@ export function renderUnitTypeAvatar(
 
   const scanHeight = Math.min(texture.height, Math.round(texture.height * HEAD_SCAN_HEIGHT_RATIO))
   const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, scanHeight)
-  return extractSquareAvatar(app, texture, scanRect, canvas, owner.color ?? '', UNIT_SOURCE_COLORS)
+  return extractSquareAvatar(app, texture, scanRect, canvas, owner.color ?? '', SOURCE_COLORS)
 }
 
 type AnimalPortraitSource = Pick<AnimalEntity, 'standingSheet' | 'walkingSheet'>

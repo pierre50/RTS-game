@@ -11,6 +11,7 @@ import {
   getTexture,
   getTextureSheet,
   getTextureByFrame,
+  parseTextureRef,
   textureRefToString,
 } from '../lib'
 import {
@@ -73,6 +74,7 @@ export type ResourceOptions = Partial<ResourceDefinition> & {
   i: number
   isNaturalResource?: boolean
   j: number
+  berrybushFullTextureName?: string
   type: string
   textureName?: string
   startsMature?: boolean
@@ -144,6 +146,7 @@ export class Resource extends Instance implements ResourceEntity {
   assets!: ResourceAssets
   lifecycleAssets?: ResourceDefinition['lifecycleAssets']
   textureName!: string
+  berrybushFullTextureName?: string
   category?: string
   sounds?: UnitSounds
   spriteScale?: number
@@ -236,6 +239,12 @@ export class Resource extends Instance implements ResourceEntity {
       const spritesheet = Assets.cache.get(getTextureSheet(textureRef))
       this.textureName = textureRefToString(textureRef)
       this.sprite = Sprite.from(texture)
+      if (this.type === RESOURCE_TYPES.berrybush && this.berrybushFullTextureName == null) {
+        const berrybushTextureRef = parseTextureRef(this.textureName)
+        if (berrybushTextureRef.frame > 0) {
+          this.berrybushFullTextureName = this.textureName
+        }
+      }
       this.sprite.hitArea =
         spritesheet?.data?.frames?.[textureFile]?.hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
     }
@@ -337,9 +346,17 @@ export class Resource extends Instance implements ResourceEntity {
 
   updateTexture() {
     if (this.type !== RESOURCE_TYPES.berrybush) return
+    const berrybushFullTextureRef = parseTextureRef(this.berrybushFullTextureName ?? this.textureName)
+    const berrybushFullFrame =
+      berrybushFullTextureRef.frame > 0 ? berrybushFullTextureRef.frame : EMPTY_BERRYBUSH_FRAME + 1
+    const isEmpty = (this.quantity ?? 0) <= 0
+    const frame = isEmpty ? EMPTY_BERRYBUSH_FRAME : berrybushFullFrame
+    if (this.berrybushFullTextureName == null && frame > 0) {
+      this.berrybushFullTextureName = textureRefToString({ ...berrybushFullTextureRef, frame })
+    }
     const textureRef = {
       sheet: BERRYBUSH_SHEET_ID,
-      frame: (this.quantity ?? 0) <= 0 ? EMPTY_BERRYBUSH_FRAME : 1,
+      frame,
     }
     const texture = getTexture(textureRef, Assets)
     if (!texture) return

@@ -60,7 +60,7 @@ export const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroRight: 'd',
   heroInteract: 'e',
   heroDefense: 'Space',
-  heroDirectionLock: 'Shift',
+  heroDirectionLock: 'Control',
   heroTool1: 'Digit1',
   heroTool2: 'Digit2',
   heroTool3: 'Digit3',

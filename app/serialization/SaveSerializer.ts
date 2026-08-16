@@ -53,6 +53,7 @@ type SerializableEntity = RuntimeEntityBase & {
   path?: GridPoint[]
   previousDest?: Destination | null
   previousWork?: string | null
+  berrybushFullTextureName?: string
   queue?: string[]
   rallyPoint?: SaveRallyPoint | null
   realDest?: Destination | null
@@ -136,6 +137,7 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
     ]),
     currentFrame: resource.sprite?.currentFrame,
     textureName: (resource.textureName || '').split('.')[0],
+    berrybushFullTextureName: resource.berrybushFullTextureName,
   }
 }
 

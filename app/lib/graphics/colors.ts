@@ -12,8 +12,6 @@ type PlayerColor = (typeof colors)[number]
 // verified against the actual lpc-baked and buildings/age-0 textures.
 export const SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x105da2, 0x1476c0, 0x07487c, 0x03315f, 0x001b40]
 
-export const UNIT_SOURCE_COLORS = [0x6dccff, 0x55b1f1, 0x4097ea, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450]
-
 const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
   red: [0xff7676, 0xe45c5f, 0xb63c35, 0x9c3327, 0x82211d, 0x721c03, 0x5e0711, 0x662b29],
 
@@ -260,7 +258,7 @@ export function changeSpriteTexturesColorDirectly<TTexture extends RecolorableTe
   if (color === 'blue') return [...textures]
   if (!isPlayerColor(color)) return [...textures]
 
-  return textures.map(texture => recolorTextureDirectly(texture, color, UNIT_SOURCE_COLORS))
+  return textures.map(texture => recolorTextureDirectly(texture, color, SOURCE_COLORS))
 }
 
 export function changeSpriteColor(sprite: RecolorableSprite, color: string): void {

@@ -10,6 +10,7 @@ import {
   UNIT_TYPES,
 } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
+import { applyDiplomaticAggression } from './diplomaticAggression'
 import {
   createIsoSelectionMarker,
   drawInstanceBlinkingSelection,
@@ -561,6 +562,20 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.takemeat)) {
         npc.sendToTakeMeat?.(target)
+        return true
+      }
+    }
+    if (npc.type === UNIT_TYPES.priest) {
+      if (npc.getActionCondition?.(target, ACTION_TYPES.heal)) {
+        npc.sendTo?.(target, ACTION_TYPES.heal)
+        return true
+      }
+      if (npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
+        npc.sendToConvert?.(target)
+        return true
+      }
+      if (applyDiplomaticAggression(npc, target).changed && npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
+        npc.sendToConvert?.(target)
         return true
       }
     }

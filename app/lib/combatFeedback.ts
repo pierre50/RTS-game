@@ -1,4 +1,4 @@
-import { ColorMatrixFilter, Text } from 'pixi.js'
+import { ColorMatrixFilter, Graphics, Text } from 'pixi.js'
 import { FAMILY_TYPES } from '../constants'
 import { getReliefOffset } from './maths'
 import type { RuntimeEntity } from '../types/entities'
@@ -34,8 +34,19 @@ const FATIGUE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_FEEDBACK_COOLDOWN_MS = 1200
 const EMOTE_FEEDBACK_COOLDOWN_MS = 1200
 const ALERT_TO_AGGRESSION_DELAY_MS = 350
+const CONVERSION_FLASH_DURATION_MS = 170
+const CONVERSION_FLASH_STEP_MS = 16
+const CONVERSION_FLASH_MAX_ALPHA = 0.45
 const flashStates = new WeakMap<DamageSprite, FlashState>()
 const flashSprites = new Set<DamageSprite>()
+type ConversionFlashState = {
+  overlay: Graphics
+  scheduler: NonNullable<RuntimeEntity['context']>['scheduler']
+  token: number
+  taskId: SchedulerTaskId
+}
+const conversionFlashStates = new WeakMap<DamageSprite, ConversionFlashState>()
+const conversionFlashSprites = new Set<DamageSprite>()
 const fatigueFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const alertFeedbackTimes = new WeakMap<RuntimeEntity, number>()
 const aggressionFeedbackTimes = new WeakMap<RuntimeEntity, number>()
@@ -98,6 +109,85 @@ function parseFlashColor(color: string | null | undefined): [number, number, num
   return [((value >> 16) & 0xff) / 255, ((value >> 8) & 0xff) / 255, (value & 0xff) / 255]
 }
 
+function colorToInt(color: string | null | undefined): number {
+  const [r, g, b] = parseFlashColor(color)
+  const toByte = (value: number): number => Math.round(Math.max(0, Math.min(255, value * 255)))
+  return (toByte(r) << 16) + (toByte(g) << 8) + toByte(b)
+}
+
+function stopConversionFlash(sprite: DamageSprite, token?: number): void {
+  const state = conversionFlashStates.get(sprite)
+  if (!state || (token != null && state.token !== token)) return
+  state.scheduler.remove(state.taskId)
+  state.overlay.parent?.removeChild(state.overlay)
+  state.overlay.destroy()
+  conversionFlashStates.delete(sprite)
+  conversionFlashSprites.delete(sprite)
+}
+
+function startConversionWave(target: RuntimeEntity, color?: string | null): void {
+  const sprite = target.sprite
+  const scheduler = target.context?.scheduler
+  const parent = sprite?.parent
+  if (!sprite || !parent || !scheduler) return
+
+  const token = (conversionFlashStates.get(sprite)?.token ?? 0) + 1
+  stopConversionFlash(sprite)
+
+  const overlay = new Graphics()
+  overlay.eventMode = 'none'
+  overlay.zIndex = 30
+  overlay.label = 'combat.conversionWave'
+  overlay.mask = sprite
+  parent.addChild(overlay)
+  conversionFlashSprites.add(sprite)
+
+  const waveColor = colorToInt(color)
+  let elapsed = 0
+  const state: ConversionFlashState = {
+    overlay,
+    scheduler,
+    token,
+    taskId: -1,
+  }
+
+  state.taskId = scheduler.add(
+    () => {
+      if (
+        sprite.destroyed ||
+        target.isDestroyed ||
+        target.context?.victory ||
+        target.context?.defeat ||
+        (conversionFlashStates.get(sprite)?.token !== token)
+      ) {
+        stopConversionFlash(sprite, token)
+        return
+      }
+
+      const width = Math.max(1, sprite.width)
+      const height = Math.max(1, sprite.height)
+      const progress = Math.min(1, elapsed / CONVERSION_FLASH_DURATION_MS)
+      const easedProgress = 1 - (1 - progress) * (1 - progress)
+      const fillHeight = height * easedProgress
+      const x = sprite.x - width * sprite.anchor.x
+      const y = sprite.y - height * sprite.anchor.y + (height - fillHeight)
+      const alpha = CONVERSION_FLASH_MAX_ALPHA * (1 - progress)
+
+      overlay.clear()
+      overlay.rect(x, y, width, fillHeight)
+      overlay.fill({ color: waveColor, alpha })
+      elapsed += CONVERSION_FLASH_STEP_MS
+
+      if (progress >= 1) {
+        stopConversionFlash(sprite, token)
+      }
+    },
+    CONVERSION_FLASH_STEP_MS,
+    'combat.conversionWave'
+  )
+  conversionFlashStates.set(sprite, state)
+}
+
 function flashColor(target: RuntimeEntity, color?: string | null): void {
   const sprite = target.sprite
   const scheduler = target.context?.scheduler
@@ -147,14 +237,20 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
   if (!sprite) return
 
   const state = flashStates.get(sprite)
+  const conversionState = conversionFlashStates.get(sprite)
   if (state) {
     sprite.filters = state.baseFilters ? [...state.baseFilters] : null
     flashStates.delete(sprite)
     flashSprites.delete(sprite)
-    return
   }
+  if (conversionState) {
+    stopConversionFlash(sprite, conversionState.token)
+  }
+  if (state || conversionState) return
 
-  sprite.filters = null
+  if (sprite.filters?.length) {
+    sprite.filters = null
+  }
 }
 
 export function clearAllCombatFeedback(): void {
@@ -172,6 +268,10 @@ export function clearAllCombatFeedback(): void {
     sprite.filters = state?.baseFilters ? [...state.baseFilters] : null
     flashStates.delete(sprite)
     flashSprites.delete(sprite)
+  }
+
+  for (const sprite of [...conversionFlashSprites]) {
+    stopConversionFlash(sprite)
   }
 }
 
@@ -260,7 +360,7 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
 
 export function showConversionFeedback(target: RuntimeEntity, color?: string | null): void {
   if (!canShowCombatFeedback(target) || target.context?.victory || target.context?.defeat || target.isDestroyed) return
-  if (canFlashDamage(target)) flashColor(target, color)
+  if (canFlashDamage(target)) startConversionWave(target, color)
 }
 
 export function showResourceGainFeedback(target: RuntimeEntity, amount: number): void {

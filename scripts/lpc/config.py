@@ -40,7 +40,9 @@ PALETTES: dict[str, list[str]] = {
 
     # ── Player colours ──────────────────────────────────────────────────────
     "navy":          ["#1D1D21", "#2E1026", "#26233D", "#28335D", "#5165AE", "#5274C5"],
-    "player_blue":   ["#1D1D21", "#26233D", "#28335D", "#5165AE", "#5274C5", "#55B1F1"],
+    # Keep aligned with changeSpriteColor's runtime SOURCE_COLORS in
+    # app/lib/graphics/colors.ts for exact post-snap blue->team remapping.
+    "player_blue": ["#6DCCFF", "#55B1F1", "#4097EA", "#105DA2", "#1476C0", "#07487C", "#03315F", "#001B40"],
     "player_red":    ["#5E0711", "#721C03", "#9C3327", "#B63C35", "#E45C5F", "#FF7676"],
     "player_yellow": ["#583126", "#614A3C", "#9E6520", "#BA882E", "#B4AA33", "#FFCF05"],
     "player_green":  ["#002219", "#003221", "#174A1B", "#4C5F33", "#58712C", "#6B842D"],
