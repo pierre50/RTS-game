@@ -11,7 +11,13 @@ import {
   HEALTH_BAR_FILL_GRADIENT_TOP,
   HEALTH_BAR_FILL_GRADIENT_BOTTOM,
 } from '../constants'
-import { createIsoSelectionMarker, getActionCondition, setUnitTexture, uuidv4 } from '../lib'
+import {
+  createIsoSelectionMarker,
+  getActionCondition,
+  getSelectionMarkerOffset,
+  setUnitTexture,
+  uuidv4,
+} from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { PlayerLike } from '../types/player'
 import type { CombatEntity, UnitTextureInstance } from '../lib'
@@ -122,11 +128,18 @@ export class Instance extends Container {
   }
 
   syncSelectionMarkersToRelief(): void {
-    const y = this.reliefLift ?? 0
+    const markerOffset = getSelectionMarkerOffset(this)
+    const y = markerOffset.y + (this.reliefLift ?? 0)
     const selection = this.getChildByLabel(LABEL_TYPES.selection)
-    if (selection) selection.position.y = y
+    if (selection) {
+      selection.position.x = markerOffset.x
+      selection.position.y = y
+    }
     const commSelection = this.getChildByLabel(LABEL_TYPES.commSelection)
-    if (commSelection) commSelection.position.y = y
+    if (commSelection) {
+      commSelection.position.x = markerOffset.x
+      commSelection.position.y = y
+    }
   }
 
   startInterval(
@@ -171,7 +184,9 @@ export class Instance extends Container {
     this.selected = true
     const f = this.selectionFactor ?? this.size
     const selection = createIsoSelectionMarker({ color: COLOR_WHITE, factor: f, zIndex: -1 })
-    selection.position.y = this.reliefLift ?? 0
+    const markerOffset = getSelectionMarkerOffset(this)
+    selection.position.x = markerOffset.x
+    selection.position.y = markerOffset.y + (this.reliefLift ?? 0)
     const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
     this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()

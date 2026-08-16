@@ -17,13 +17,12 @@ import {
   findInstancesInSight,
   findReachableFleeCell,
   getClosestInstanceWithPath,
-  getBuildingFootprintCells,
   getGroundReliefLevel,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
   getInstanceZIndex,
-  getRoundedIsoShapePoints,
+  getRoundedIsoFootprintPoints,
   instanceContactInstance,
   instancesDistance,
   isometricToCartesian,
@@ -120,22 +119,6 @@ function blocksHeroDirectMoveWithSoftBody(entity: HeroDirectMoveBlocker | null |
   return Boolean(entity && (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal))
 }
 
-function getRoundedIsoFootprintPoints(
-  entity: HeroDirectMoveBlocker,
-  map?: RuntimeMap | null
-): Array<{ x: number; y: number }> {
-  const size = Math.max(1, entity.size ?? 1)
-  if (size % 2 === 0 && map?.grid) {
-    const cells = getBuildingFootprintCells(entity.i, entity.j, map.grid, size)
-    if (cells.length === size ** 2) {
-      const offset = (size - 1) / 2
-      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
-      return getRoundedIsoShapePoints({ x, y, factor: size })
-    }
-  }
-  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: size })
-}
-
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
   let inside = false
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -150,13 +133,56 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
   return inside
 }
 
+const HERO_BUILDING_COLLISION_PADDING = 10
+
 function isHeroInsideRoundedFootprint(
   entity: HeroDirectMoveBlocker,
   x: number,
   y: number,
   map?: RuntimeMap | null
 ): boolean {
-  return pointIsInsidePolygon(getRoundedIsoFootprintPoints(entity, map), x, y)
+  const points = getHeroCollisionFootprintPoints(entity, map)
+  return pointIsInsidePolygon(points, x, y)
+}
+
+function getHeroCollisionFootprintPadding(entity: HeroDirectMoveBlocker): number {
+  return entity.family === FAMILY_TYPES.building ? HERO_BUILDING_COLLISION_PADDING : 0
+}
+
+function getHeroCollisionFootprintPoints(
+  entity: HeroDirectMoveBlocker,
+  map?: RuntimeMap | null
+): Array<{ x: number; y: number }> {
+  let points = getRoundedIsoFootprintPoints(entity, map?.grid)
+  const padding = getHeroCollisionFootprintPadding(entity)
+  if (padding > 0) points = inflateFootprintPoints(points, padding)
+  return points
+}
+
+function inflateFootprintPoints(points: Array<{ x: number; y: number }>, padding: number): Array<{ x: number; y: number }> {
+  if (!points.length || padding <= 0) return points
+
+  let centerX = 0
+  let centerY = 0
+  for (const point of points) {
+    centerX += point.x
+    centerY += point.y
+  }
+  centerX /= points.length
+  centerY /= points.length
+
+  return points.map(point => {
+    const offsetX = point.x - centerX
+    const offsetY = point.y - centerY
+    const distance = Math.hypot(offsetX, offsetY)
+    if (distance <= 0) return point
+
+    const scale = 1 + padding / distance
+    return {
+      x: centerX + offsetX * scale,
+      y: centerY + offsetY * scale,
+    }
+  })
 }
 
 function blocksHeroDirectMoveAtPoint(
@@ -772,7 +798,7 @@ export class UnitMovement {
     facingDirY: number = dirY
   ): boolean {
     const unit = this.unit
-    const points = getRoundedIsoFootprintPoints(blocker, unit.context?.map)
+    const points = getHeroCollisionFootprintPoints(blocker, unit.context?.map)
     let tangentX = 0
     let tangentY = 0
     let closestDistanceSq = Infinity

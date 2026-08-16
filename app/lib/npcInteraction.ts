@@ -10,7 +10,11 @@ import {
   UNIT_TYPES,
 } from '../constants'
 import { findInstancesInSight } from './grid/visibility'
-import { createIsoSelectionMarker, drawInstanceBlinkingSelection } from './graphics/selection'
+import {
+  createIsoSelectionMarker,
+  drawInstanceBlinkingSelection,
+  getSelectionMarkerOffset,
+} from './graphics/selection'
 import { angleDelta, getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
@@ -119,14 +123,15 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   }
   if (target.getChildByLabel?.(LABEL_TYPES.commSelection)) return
   const factor = target.selectionFactor ?? target.size ?? 1
-  const markerY = target.reliefLift ?? 0
+  const markerOffset = getSelectionMarkerOffset(target)
   const marker = createIsoSelectionMarker({
     color: COMM_SELECTION_COLOR,
     factor,
     label: LABEL_TYPES.commSelection,
     zIndex: -1,
   })
-  marker.position.y = markerY
+  marker.position.x = markerOffset.x
+  marker.position.y = markerOffset.y + (target.reliefLift ?? 0)
   const shadowIndex = target.getChildByLabel?.(LABEL_TYPES.shadow) ? 1 : 0
   target.addChildAt(marker, shadowIndex)
 }

@@ -3,12 +3,10 @@ import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, PLAYER_TYPES, UNIT
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import {
   canPlayerStillAct,
-  cartesianToIsometric,
   drawRoundedIsoShape,
-  getBuildingFootprintCells,
   getGaiaAnimals,
+  getRoundedIsoFootprintPoints,
   getReliefOffset,
-  getRoundedIsoShapePoints,
   isPlayerEliminated,
   parseTextureRef,
 } from '../../lib'
@@ -283,19 +281,6 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
   return [...entities]
 }
 
-function getRoundedIsoFootprintPoints(context: DevConsoleContext, entity: DevEntity): Array<{ x: number; y: number }> {
-  const size = Math.max(1, entity.size ?? 1)
-  if (size % 2 === 0) {
-    const cells = getBuildingFootprintCells(entity.i, entity.j, context.map.grid, size)
-    if (cells.length === size ** 2) {
-      const offset = (size - 1) / 2
-      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
-      return getRoundedIsoShapePoints({ x, y, factor: size })
-    }
-  }
-  return getRoundedIsoShapePoints({ x: entity.x, y: entity.y, factor: size })
-}
-
 function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
   let inside = false
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -311,7 +296,7 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
 }
 
 function getEntityCollisionInfo(context: DevConsoleContext, hero: DevEntity, entity: DevEntity) {
-  const points = getRoundedIsoFootprintPoints(context, entity)
+  const points = getRoundedIsoFootprintPoints(entity, context.map.grid)
   const inside = pointIsInsidePolygon(points, hero.x, hero.y)
   const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }

@@ -1,5 +1,8 @@
 import { Graphics } from 'pixi.js'
 import { COLOR_GREEN, LABEL_TYPES } from '../../constants'
+import { cartesianToIsometric } from '../maths'
+import { getBuildingFootprintCells } from '../grid/cells'
+import type { Grid, GridCell } from '../../types/grid'
 
 const ISO_FOOTPRINT_HALF_WIDTH = 32
 const ISO_FOOTPRINT_HALF_HEIGHT = 16
@@ -10,6 +13,10 @@ export type SelectableInstance = {
   addChildAt: (child: Graphics, index: number) => void
   removeChild: (child: Graphics) => void
   reliefLift?: number
+  x?: number
+  y?: number
+  i?: number
+  j?: number
   selectionFactor?: number
   size?: number
 }
@@ -27,6 +34,14 @@ export type IsoSelectionOptions = IsoShapeOptions & {
   label?: string
   zIndex?: number
   width?: number
+}
+
+export type RoundedIsoFootprintSource = {
+  i?: number
+  j?: number
+  x?: number
+  y?: number
+  size?: number
 }
 
 export function getRoundedIsoShapePoints({ x = 0, y = 0, factor = 1 }: IsoShapeOptions = {}): IsoShapePoint[] {
@@ -68,6 +83,41 @@ export function getRoundedIsoShapePoints({ x = 0, y = 0, factor = 1 }: IsoShapeO
   return points
 }
 
+function getSelectionOffsetForEvenFootprint({ i, j, x = 0, y = 0, size = 1 }: RoundedIsoFootprintSource): { x: number; y: number } {
+  const footprintSize = Math.max(1, size)
+  if (!Number.isFinite(i ?? NaN) || !Number.isFinite(j ?? NaN) || footprintSize % 2 !== 0) {
+    return { x: 0, y: 0 }
+  }
+
+  const offset = (footprintSize - 1) / 2
+  const [centerX, centerY] = cartesianToIsometric(i + offset, j + offset)
+  return { x: centerX - x, y: centerY - y }
+}
+
+export function getSelectionMarkerOffset(instance: RoundedIsoFootprintSource): { x: number; y: number } {
+  return getSelectionOffsetForEvenFootprint(instance)
+}
+
+export function getRoundedIsoFootprintPoints<TCell extends GridCell = GridCell>(
+  entity: RoundedIsoFootprintSource,
+  grid?: Grid<TCell> | null
+): IsoShapePoint[] {
+  const size = Math.max(1, entity.size ?? 1)
+  const fallbackX = entity.x ?? 0
+  const fallbackY = entity.y ?? 0
+
+  if (size % 2 === 0 && Number.isFinite(entity.i ?? NaN) && Number.isFinite(entity.j ?? NaN) && grid) {
+    const cells = getBuildingFootprintCells(entity.i, entity.j, grid, size)
+    if (cells.length === size ** 2) {
+      const offset = (size - 1) / 2
+      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
+      return getRoundedIsoShapePoints({ x, y, factor: size })
+    }
+  }
+
+  return getRoundedIsoShapePoints({ x: fallbackX, y: fallbackY, factor: size })
+}
+
 export function drawRoundedIsoShape(
   layer: { moveTo(x: number, y: number): void; lineTo(x: number, y: number): void; closePath(): void },
   points: IsoShapePoint[]
@@ -97,7 +147,9 @@ export function createIsoSelectionMarker({
 export function drawInstanceBlinkingSelection(instance: SelectableInstance): void {
   const selectionFactor = instance.selectionFactor ?? instance.size ?? 1
   const selection = createIsoSelectionMarker({ factor: selectionFactor })
-  selection.position.y = instance.reliefLift ?? 0
+  const markerOffset = getSelectionMarkerOffset(instance)
+  selection.position.x = markerOffset.x
+  selection.position.y = markerOffset.y + (instance.reliefLift ?? 0)
   instance.addChildAt(selection, 0)
 
   const blink = (alpha: number, duration: number): Promise<void> =>
