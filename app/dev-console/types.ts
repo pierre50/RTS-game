@@ -6,7 +6,7 @@ import type { PlayerLike } from '../types/player'
 import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
 
-export type DevWeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'clearing' | 'night'
+export type DevWeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'snow' | 'clearing' | 'night'
 
 export type DevDayNightLike = {
   debugState?(): object

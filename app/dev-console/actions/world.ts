@@ -7,6 +7,7 @@ export const WEATHER_PHASES: DevWeatherPhase[] = [
   'stormBuildUp',
   'rainLight',
   'rainHeavy',
+  'snow',
   'clearing',
   'night',
 ]
