@@ -55,8 +55,6 @@ import type { DynamicEquipmentKey } from './lpc/equipment'
 export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
 export type HeroEquippedItem = 'interact' | 'sword' | 'bow' | 'lasso'
-export type HeroTool = HeroEquippedItem
-
 export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
@@ -107,18 +105,6 @@ function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['sprite'
   const nextFrame = Math.min(Math.floor(sprite.currentFrame) + 1, Math.max(0, sprite.textures.length - 1))
   sprite.gotoAndStop?.(nextFrame)
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
-}
-
-export const contextualToolByAction: Partial<Record<HeroContextAction, HeroCivilTool>> = {
-  chop: 'axe',
-  mine: 'pickaxe',
-  build: 'hammer',
-}
-
-export const DEFAULT_HERO_TOOL_LEVELS: Record<HeroCivilTool, number> = {
-  axe: 1,
-  pickaxe: 1,
-  hammer: 1,
 }
 
 export function getHeroAimDegree(hero: Point, destination: Point): number {
@@ -1332,4 +1318,3 @@ export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedIt
 }
 
 export const triggerToolAttackAt = triggerEquippedItemActionAt
-export const triggerToolAction = triggerEquippedItemAction

@@ -16,7 +16,6 @@ declare global {
 export default class MainMenu {
   onStart: () => void
   onLoad: (save: SaveRecord) => void
-  onMapEditor: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
   _activeHomeButton: HTMLButtonElement | null
   el: HTMLDivElement
@@ -24,15 +23,12 @@ export default class MainMenu {
   constructor({
     onStart,
     onLoad,
-    onMapEditor,
   }: {
     onStart: () => void
     onLoad: (save: SaveRecord) => void
-    onMapEditor: () => void
   }) {
     this.onStart = onStart
     this.onLoad = onLoad
-    this.onMapEditor = onMapEditor
     this._onKeyDown = this._handleKeyDown.bind(this)
     this._activeHomeButton = null
 

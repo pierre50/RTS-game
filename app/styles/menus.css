@@ -289,20 +289,6 @@ div.menu-title {
   max-width: 100%;
 }
 
-.map-editor-players-modal .lobby-layout {
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  gap: 0;
-  width: min(96vw, 1180px);
-  max-width: 100%;
-}
-
-.map-editor-players-modal .player-setup-panel {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .player-setup-panel {
   display: flex;
   flex-direction: column;

@@ -44,8 +44,7 @@ img {
 
 div.menu-title,
 .game-overlay,
-.orientation-guard-title,
-.map-editor-titlebar {
+.orientation-guard-title {
   font-family: var(--font-family-display);
 }
 

@@ -2,7 +2,6 @@ import type { Application, Container, Graphics } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
 import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity, ResourceEntity } from './entities'
-import type { MapEditorLike } from './mapEditor'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroEquippedItem } from '../lib/heroTools'
 import type { FactionSave, WorldGraphSave } from './save'
@@ -129,8 +128,6 @@ interface MinimapManagerLike {
 export interface MinimapHostLike {
   context: GameContextLike
   gameHud: HTMLDivElement
-  editorPanel?: HTMLDivElement
-  editorPanelMap?: HTMLDivElement
   minimapMap?: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   resourcesMinimap: HTMLCanvasElement
@@ -206,6 +203,10 @@ export type ControlPointerEvent = {
   } | null
 }
 
+interface EditorInteractionTarget {
+  handleEntityInteraction(entity: RuntimeEntity): boolean | void
+}
+
 export interface GameContextLike {
   app: Application
   gamebox: HTMLElement
@@ -218,7 +219,7 @@ export interface GameContextLike {
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
-  editor?: MapEditorLike
+  editor?: EditorInteractionTarget
   paused?: boolean
   devConsoleOpen?: boolean
   victory?: boolean

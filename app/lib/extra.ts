@@ -420,8 +420,6 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 
-export { EAST_FIRST_EIGHT_DIRECTION_ORDER }
-
 export function displayObjectCanUpdateAnimation(displayObject?: DisplayObjectLike | null): boolean {
   if (!displayObject?.playing || displayObject.destroyed) return false
   if (displayObject.onLoop || displayObject.onFrameChange || displayObject.onComplete) return true

@@ -29,7 +29,7 @@ function isResourceEntity(instance: RuntimeEntity | null | undefined): instance 
 }
 
 function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
-  const element = menu.minimapMap ?? menu.editorPanelMap
+  const element = menu.minimapMap
   if (!element) throw new Error('Minimap host is missing a minimap element')
   return element
 }

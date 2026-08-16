@@ -80,8 +80,6 @@ type DynamicEquipmentKey =
   | 'cane'
   | 'quiver'
 
-export type { DynamicEquipmentKey }
-
 type EquipmentOptions = Pick<
   UnitAppearanceLayerConfig,
   | 'workTypes'

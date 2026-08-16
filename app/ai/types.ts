@@ -141,13 +141,6 @@ export type AIDifficultyConfig = {
   villageCoreRadius: number
 }
 
-export type AILandAccessDiagnostic = {
-  reachable: boolean
-  reason: 'missing_target' | 'invalid_land_anchor' | 'land_path' | 'land_search_cap' | 'no_land_path'
-  distance: number
-  visited: number
-}
-
 type AIEconomyLike = {
   isLocationSafe(pos: AIGridPosition): boolean
 }

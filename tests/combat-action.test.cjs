@@ -125,7 +125,7 @@ test('combat weapons cannot attack neutral berry bushes', () => {
   assert.equal(getActionCondition(swordsman, berrybush, 'attack'), false)
 })
 
-test('explicit attack orders can target neutral berry bushes', () => {
+test('attack orders cannot target neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
@@ -147,10 +147,10 @@ test('explicit attack orders can target neutral berry bushes', () => {
     type: constants.RESOURCE_TYPES.berrybush,
   }
 
-  assert.equal(getActionCondition(swordsman, berrybush, 'attack', { allowResourceAttack: true }), true)
+  assert.equal(getActionCondition(swordsman, berrybush, 'attack'), false)
 })
 
-test('sendToAttack issues an explicit attack order against neutral berry bushes', () => {
+test('sendToAttack does not issue an attack order against neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
@@ -200,8 +200,8 @@ test('sendToAttack issues an explicit attack order against neutral berry bushes'
     work: null,
   }
 
-  assert.equal(new UnitCommands(unit).sendToAttack(berrybush), 1)
-  assert.deepEqual(sendCalls, [{ action: constants.ACTION_TYPES.attack, target: berrybush }])
+  assert.equal(new UnitCommands(unit).sendToAttack(berrybush), undefined)
+  assert.deepEqual(sendCalls, [])
 })
 
 test('villagers can still forage neutral berry bushes', () => {

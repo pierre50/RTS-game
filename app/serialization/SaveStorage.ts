@@ -146,10 +146,6 @@ export function buildSaveRecord(context: GameContextLike, campaign: CampaignSave
   return campaign ? updateCurrentWorldState(campaign, worldState) : createInitialCampaignSave(worldState)
 }
 
-export function save(context: GameContextLike, campaign: CampaignSave | null = null): { key: string; name: string } {
-  return saveRecord(buildSaveRecord(context, campaign))
-}
-
 export function autosaveRecord(data: SaveRecord, name = 'Autosave'): { key: string; name: string } | null {
   try {
     return saveRecord(data, { key: AUTOSAVE_KEY, name })

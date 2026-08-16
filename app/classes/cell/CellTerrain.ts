@@ -48,13 +48,6 @@ type TerrainChild = ContainerChild & {
   type?: string
 }
 
-export type TerrainMapLike = {
-  seed?: string | number
-  size: number
-  grid: TerrainCellLike[][]
-  randomRange(min: number, max: number): number
-}
-
 export type TerrainParentLike = {
   size?: number
   grid?: TerrainCellLike[][]

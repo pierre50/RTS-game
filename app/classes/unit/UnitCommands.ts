@@ -45,24 +45,8 @@ function checkActionCondition(
   props?: ActionProps | UnitCreationExtra
 ): boolean {
   if (!target) return false
-  const isExplicitResourceAttack =
-    action === ACTION_TYPES.attack &&
-    (props as ActionProps | undefined)?.allowResourceAttack !== false &&
-    source.action === ACTION_TYPES.attack &&
-    source.dest === target &&
-    (target as RuntimeEntity).family === FAMILY_TYPES.resource
-  const actionProps =
-    action === ACTION_TYPES.train && !props
-      ? { trainingType: source.trainingTargetType ?? '' }
-      : isExplicitResourceAttack
-        ? { ...(props as ActionProps | undefined), allowResourceAttack: true }
-        : props
+  const actionProps = action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
   return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
-}
-
-function getAttackActionProps(target: RuntimeEntity): ActionProps | undefined {
-  if (target.family === FAMILY_TYPES.resource) return { allowResourceAttack: true }
-  return undefined
 }
 
 function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
@@ -152,12 +136,7 @@ export class UnitCommands {
       return false
     }
     if (unit.actionLocked) {
-      if (actionProps?.allowResourceAttack) {
-        return unit.queueOrder?.(() =>
-          this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
-        )
-      }
-      return unit.queueOrder?.(target, action)
+      return unit.queueOrder?.(() => this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps))
     }
     if (this.isRedundantOrder(target, work, action)) return false
 
@@ -255,10 +234,9 @@ export class UnitCommands {
   }
 
   sendToAttack(target: RuntimeEntity) {
-    const attackProps = getAttackActionProps(target)
-    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack, attackProps)) {
+    if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) {
       if (!applyDiplomaticAggression(this.unit, target).hostileNow) return
-      if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack, attackProps)) return
+      if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
     }
     return this.commonSendTo(
       target,
@@ -266,8 +244,7 @@ export class UnitCommands {
       ACTION_TYPES.attack,
       { resource: 'attack' },
       false,
-      false,
-      attackProps
+      false
     )
   }
 

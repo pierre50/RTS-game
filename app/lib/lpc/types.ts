@@ -50,11 +50,3 @@ export type LpcAppearanceLayer = {
   dyingSheet?: string
   corpseSheet?: string
 }
-
-export type LpcUnitPreset = {
-  sheets: LpcSheetRuntime[]
-  unitPatch: Partial<UnitConfig>
-  appearance?: {
-    layers: LpcAppearanceLayer[]
-  }
-}

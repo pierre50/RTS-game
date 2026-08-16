@@ -22,7 +22,7 @@ export class MinimapInputController {
   }
 
   getElement(): HTMLDivElement {
-    const element = this.menu.minimapMap ?? this.menu.editorPanelMap
+    const element = this.menu.minimapMap
     if (!element) throw new Error('Minimap host is missing a minimap element')
     return element
   }
@@ -126,12 +126,12 @@ export class MinimapInputController {
   }
 
   canMoveCamera(controls: ControlsLike): boolean {
-    return Boolean(this.menu.editorPanelMap || controls.freeCameraActive)
+    return Boolean(controls.freeCameraActive)
   }
 
   destroy(): void {
     clearTimeout(this.mouseHoldTimeout ?? undefined)
-    const minimap = this.menu.minimapMap ?? this.menu.editorPanelMap
+    const minimap = this.menu.minimapMap
     minimap?.removeEventListener('pointerdown', this.onPointerDown)
     minimap?.removeEventListener('pointermove', this.onPointerMove)
     minimap?.removeEventListener('pointerup', this.onPointerUp)

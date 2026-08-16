@@ -1,13 +1,11 @@
 import type { Application } from 'pixi.js'
 import Game from './Game'
-import MapEditor from './MapEditor'
-import MapEditorConfig from './MapEditorConfig'
 import MainMenu from './MainMenu'
 import MapConfig from './MapConfig'
 import { OrientationGuard } from '../ui/OrientationGuard'
 import type { GameConfig, SaveRecord } from '../types/save'
 
-type RuntimeScreen = (Game | MapEditor) & {
+type RuntimeScreen = Game & {
   setOrientationBlocked(blocked: boolean): void
 }
 
@@ -51,7 +49,6 @@ export class ScreenManager {
     this.destroyCurrentMenuScreen()
     this.currentMenuScreen = new MainMenu({
       onStart: () => this.showMapConfig(),
-      onMapEditor: () => this.showMapEditorConfig(),
       onLoad: (save: SaveRecord) => this.loadGame(save),
     })
   }
@@ -62,24 +59,10 @@ export class ScreenManager {
     })
   }
 
-  showMapEditorConfig(): void {
-    new MapEditorConfig({
-      onCreate: (config: GameConfig) => this.showMapEditor(config),
-    })
-  }
-
   startGame(config: GameConfig): void {
     this.destroyCurrentMenuScreen()
     this.destroyCurrentRuntime()
     this.currentRuntime = new Game(this.app, this.gamebox, config, () => this.handleQuitRuntime())
-    this.app.stage.addChild(this.currentRuntime)
-    this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
-  }
-
-  showMapEditor(config: GameConfig): void {
-    this.destroyCurrentMenuScreen()
-    this.destroyCurrentRuntime()
-    this.currentRuntime = new MapEditor(this.app, this.gamebox, config, () => this.handleQuitRuntime())
     this.app.stage.addChild(this.currentRuntime)
     this.currentRuntime.setOrientationBlocked(this.orientationGuard.blocked)
   }

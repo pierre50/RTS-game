@@ -24,13 +24,12 @@ import type { Viewport, Bounds } from '../../types/geometry'
 import type { PlayerSetupConfig } from '../../types/save'
 import type { SaveEntityState } from '../../types/save'
 import type { GameContextLike } from '../../types/context'
-import type { MapEditorControlsLike } from '../../types/mapEditor'
 
 export type MapContext = Omit<
   Partial<GameContextLike>,
   'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
 > & {
-  controls?: GameContextLike['controls'] | MapEditorControlsLike | null
+  controls?: GameContextLike['controls'] | null
   map?: GameContextLike['map'] | null
   menu?: GameContextLike['menu'] | null
   performance?: GameContextLike['performance'] | null

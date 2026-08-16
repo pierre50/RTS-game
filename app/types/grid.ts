@@ -8,10 +8,6 @@ export type GridPosition = {
   j: number
 }
 
-export type IsoPosition = Point & {
-  z: number
-}
-
 export type GridCell = GridPosition & {
   border?: boolean
   category?: string

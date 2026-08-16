@@ -304,24 +304,3 @@ export function enterCampaignWorld(campaign: CampaignSave, worldId: string, now:
     },
   }
 }
-
-export function getWorldTreePath(campaign: CampaignSave, worldId: string = campaign.currentWorldId): WorldGraphNode[] {
-  const path: WorldGraphNode[] = []
-  const seen = new Set<string>()
-  let cursor: string | null | undefined = worldId
-
-  while (cursor) {
-    if (seen.has(cursor)) throw new Error('Invalid save file: campaign world graph contains a cycle.')
-    seen.add(cursor)
-    const node: WorldGraphNode | undefined = campaign.worldGraph.nodes[cursor]
-    if (!node) throw new Error('Invalid save file: campaign world graph node is missing.')
-    path.unshift(node)
-    cursor = node.parentId
-  }
-
-  return path
-}
-
-export function getVisitedWorldNodes(campaign: CampaignSave): WorldGraphNode[] {
-  return Object.values(campaign.worldGraph.nodes).sort((a, b) => a.discoveredAt - b.discoveredAt)
-}

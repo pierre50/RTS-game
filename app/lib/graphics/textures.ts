@@ -69,5 +69,3 @@ export function getTexture(ref: TextureRef, assets: AssetCacheLike): Texture {
   const { sheet, frame } = parseTextureRef(ref)
   return getTextureByFrame(sheet, frame, assets)
 }
-
-export { Texture }

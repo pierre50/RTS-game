@@ -43,7 +43,6 @@ import type { ResourceOptions } from '../Resource'
 import type { AnimalOptions } from '../animal'
 import type { RuntimeEntity, ResourceEntity, BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
-import type { MapEditorControlsLike } from '../../types/mapEditor'
 import type { AnimalConfig } from '../../types/config'
 import type { TextureRef } from '../../lib'
 import {
@@ -100,7 +99,7 @@ export type MapGenerationContext = Omit<
   Partial<GameContextLike>,
   'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
 > & {
-  controls?: GameContextLike['controls'] | MapEditorControlsLike | null
+  controls?: GameContextLike['controls'] | null
   map?: GameContextLike['map'] | null
   menu?: GameContextLike['menu'] | null
   performance?: GameContextLike['performance'] | null

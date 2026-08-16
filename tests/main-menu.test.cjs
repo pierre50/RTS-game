@@ -104,7 +104,7 @@ test('main menu refreshes continue button when save list changes', () => {
   try {
     const saves = [{ key: 'save_1', name: 'Save 1', date: 1 }]
     const { MainMenu, getSaveListOptions } = loadMainMenu({ saveEntries: saves })
-    const menu = new MainMenu({ onStart() {}, onLoad() {}, onMapEditor() {} })
+    const menu = new MainMenu({ onStart() {}, onLoad() {} })
 
     assert.deepEqual(
       menu._getHomeButtons().map(button => button.textContent),
@@ -154,7 +154,7 @@ test('main menu quit button exits through electron bridge', () => {
 
   try {
     const { MainMenu } = loadMainMenu({ saveEntries: [] })
-    const menu = new MainMenu({ onStart() {}, onLoad() {}, onMapEditor() {} })
+    const menu = new MainMenu({ onStart() {}, onLoad() {} })
 
     assert.deepEqual(
       menu._getHomeButtons().map(button => button.textContent),
