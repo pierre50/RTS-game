@@ -143,37 +143,48 @@ class DressItem:
     palette: str | None = None
 
 
-SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png")
-SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/{color}.png")
+SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png", team_colored=True)
+SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/{color}.png", team_colored=True)
 SANDALS = DressItem("feet/sandals/male/{animation}.png", palette="cloth_brown")
+SANDALS_FEMALE = DressItem("feet/sandals/female/{animation}.png", palette="cloth_brown")
 BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
+BELT_FEMALE = DressItem("torso/waist/belt_leather/female/{animation}/brown.png")
 BRACERS_PATH = "arms/bracers/male/{animation}.png"
 BRACERS_BRASS = DressItem(BRACERS_PATH, palette="brass")
 BRACERS_SILVER = DressItem(BRACERS_PATH, palette="silver")
 HEADBAND = DressItem("hat/headband/tied", team_colored=True)
 APRON_BROWN = DressItem("torso/aprons/suspenders/male/{animation}/brown.png")
+APRON_BROWN_FEMALE = DressItem("torso/aprons/suspenders/female/{animation}/brown.png")
 CUFFS_WHITE = DressItem("arms/wrists/cuffs/male/{animation}.png", palette="white")
 SASH_WHITE = DressItem("torso/waist/sash_narrow/male/{animation}/white.png")
+SASH_WHITE_FEMALE = DressItem("torso/waist/sash_narrow/female/{animation}/white.png")
+SASH = DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True)
+SASH_FEMALE = DressItem("torso/waist/sash_narrow/female/{animation}/{color}.png", team_colored=True)
 # plain/legion skirts have no pre-made color variants, so they're pixel-recolored to
 # the player palette instead of picking a hand-colored file.
 SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", team_colored=True)
+SKIRT_PLAIN_FEMALE = DressItem("legs/skirts/plain/female/{animation}.png", team_colored=True)
 SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", team_colored=True)
+SKIRT_LEGION_TEAM_FEMALE = DressItem("legs/skirts/legion/female/{animation}.png", team_colored=True)
 
 # Hero outfit pieces. Unlike SHORTS/APRON_BROWN (pre-colored files picked by name),
 # shortsleeve/pantaloons/shoes only ship one colorless template per animation
-# upstream, so they're pixel-recolored to a fixed palette instead. Suspenders and
-# the headband are the exception: suspenders only ships pre-colored per-animation
-# files (like APRON_BROWN's "brown"), and the headband is recolored like a
-# metal/hat piece (see HEADBAND above, just with a fixed "cloth_blue" instead of
-# the player's team color).
+# upstream, so they're pixel-recolored to a fixed palette instead. Suspenders only
+# ships pre-colored per-animation files (like APRON_BROWN's "brown"), while the
+# headband uses the same team-color recoloring flow as other clothing (team-colored
+# at bake time, then recolored per-player at runtime).
 SHORTSLEEVE_WHITE = DressItem("torso/clothes/shortsleeve/shortsleeve/male/{animation}.png", palette="white")
+SHORTSLEEVE_WHITE_FEMALE = DressItem("torso/clothes/shortsleeve/shortsleeve/female/{animation}.png", palette="white")
+LONGSLEEVE_WHITE = DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white")
+LONGSLEEVE_WHITE_FEMALE = DressItem("torso/clothes/longsleeve/longsleeve/female/{animation}.png", palette="white")
 PANTALOONS_BROWN = DressItem("legs/pantaloons/male/{animation}.png", palette="cloth_brown")
 SHOES_BLACK = DressItem("feet/shoes/basic/male/{animation}.png", palette="black")
 SUSPENDERS_BLACK = DressItem("torso/aprons/suspenders/male/{animation}/black.png")
-HEADBAND_BLUE = DressItem("hat/headband/tied", palette="cloth_blue")
+SUSPENDERS_BLACK_FEMALE = DressItem("torso/aprons/suspenders/female/{animation}/black.png")
+HEADBAND_BLUE = DressItem("hat/headband/tied", team_colored=True)
 HIJAB_TEAM = DressItem("hat/cloth/hijab/thin", team_colored=True)
-FEMALE_TANKTOP = DressItem("torso/clothes/sleeveless/tanktop/female/{animation}/{color}.png")
-FEMALE_SLEEVELESS_VNECK = DressItem("torso/clothes/sleeveless/sleeveless2_vneck/female/{animation}/{color}.png")
+FEMALE_TANKTOP = DressItem("torso/clothes/sleeveless/tanktop/female/{animation}/{color}.png", team_colored=True)
+FEMALE_SLEEVELESS_VNECK = DressItem("torso/clothes/sleeveless/sleeveless2_vneck/female/{animation}/{color}.png", team_colored=True)
 
 @dataclass(frozen=True)
 class UnitVariant:
@@ -246,9 +257,9 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         cape=DressItem("cape/solid", team_colored=True),
         dress=(
             SANDALS,
-            DressItem("legs/skirts/plain/male/{animation}.png", palette="white"),
-            DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white"),
-            DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True),
+            SKIRT_PLAIN,
+            LONGSLEEVE_WHITE,
+            SASH,
         ),
     ),
     # Same base as "villager" (plain hair, sandals), with the shorts swapped for
@@ -258,7 +269,7 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     "chief": UnitLook(
         hair="plain",
         cape=DressItem("cape/solid", team_colored=True),
-        neck=DressItem("neck/capeclip/male/{animation}/{color}.png"),
+        neck=DressItem("neck/capeclip/male/{animation}/{color}.png", team_colored=True),
         dress=(
             SANDALS,
             DressItem("legs/formal_striped/male/{animation}.png", team_colored=True),
@@ -395,10 +406,24 @@ def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitL
     if variant.body != "female":
         return look
 
+    female_dress_map = {
+        SANDALS: SANDALS_FEMALE,
+        BELT: BELT_FEMALE,
+        APRON_BROWN: APRON_BROWN_FEMALE,
+        SASH: SASH_FEMALE,
+        SKIRT_PLAIN: SKIRT_PLAIN_FEMALE,
+        SKIRT_LEGION_TEAM: SKIRT_LEGION_TEAM_FEMALE,
+        SHORTSLEEVE_WHITE: SHORTSLEEVE_WHITE_FEMALE,
+        LONGSLEEVE_WHITE: LONGSLEEVE_WHITE_FEMALE,
+        SUSPENDERS_BLACK: SUSPENDERS_BLACK_FEMALE,
+    }
+
     look = replace(look, **FEMALE_BASE_LOOK_OVERRIDES)
     overrides = FEMALE_CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(unit)
     look = replace(look, **overrides) if overrides else look
     female_top = FEMALE_SLEEVELESS_VNECK if unit == "villager" else FEMALE_TANKTOP
+    if look.dress:
+        look = replace(look, dress=tuple(female_dress_map.get(item, item) for item in look.dress))
     return replace(look, dress=(female_top, *look.dress))
 
 

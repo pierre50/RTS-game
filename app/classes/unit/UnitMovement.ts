@@ -134,6 +134,7 @@ function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number
 }
 
 const HERO_BUILDING_COLLISION_PADDING = 10
+const PORTAL_RESOURCE_TYPE = 'Portal'
 
 function isHeroInsideRoundedFootprint(
   entity: HeroDirectMoveBlocker,
@@ -146,7 +147,9 @@ function isHeroInsideRoundedFootprint(
 }
 
 function getHeroCollisionFootprintPadding(entity: HeroDirectMoveBlocker): number {
-  return entity.family === FAMILY_TYPES.building ? HERO_BUILDING_COLLISION_PADDING : 0
+  if (entity.family === FAMILY_TYPES.building) return HERO_BUILDING_COLLISION_PADDING
+  if (entity.type === PORTAL_RESOURCE_TYPE) return HERO_BUILDING_COLLISION_PADDING
+  return 0
 }
 
 function getHeroCollisionFootprintPoints(

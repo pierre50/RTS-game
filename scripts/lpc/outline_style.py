@@ -30,7 +30,7 @@ from PIL import Image
 
 # The dial: flip this to bake with a softened/removed outline and compare against
 # "off". Read by build.py, which calls apply_outline_style_to_atlas() with it.
-OUTLINE_MODE = "attenuate"  # "off" | "attenuate" | "remove"
+OUTLINE_MODE = "off"  # "off" | "attenuate" | "remove"
 
 # A pixel counts as "outline" only if its simple luminance is at or below this (out
 # of 255) — tuned against aap-64.hex's darkest entries (its outline near-blacks/greys

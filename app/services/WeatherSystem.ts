@@ -712,16 +712,8 @@ export class WeatherSystem {
     this.drawRainVeil()
     this.updateLightning(safeElapsedMs)
     this.updatePrecipitation(elapsedSeconds, mapShiftX, mapShiftY)
-    this.updateParticleVisibility()
     this.updateAmbientSound()
     this.drawFlash()
-  }
-
-  updateParticleVisibility(): void {
-    const showRain = this.precipIntensity > 0.02 && this.phase !== 'snow'
-    const showSnow = this.precipIntensity > 0.02 && this.phase === 'snow'
-    this.rain.visible = showRain
-    this.snow.visible = showSnow
   }
 
   updateAmbientSound(): void {
