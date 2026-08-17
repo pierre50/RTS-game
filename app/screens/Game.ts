@@ -1212,7 +1212,6 @@ export default class Game extends Container {
 
     this.context.defeat = true
     clearAllCombatFeedback()
-    this.togglePause(true, { silent: true })
     const div = document.createElement('div')
     div.id = 'defeat'
     div.className = 'game-overlay'

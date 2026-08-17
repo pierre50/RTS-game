@@ -5,6 +5,11 @@ import {
   COLOR_GOLD,
   FAMILY_TYPES,
   LABEL_TYPES,
+  ENERGY_BAR_BORDER_COLOR,
+  ENERGY_BAR_TRACK_GRADIENT_TOP,
+  ENERGY_BAR_TRACK_GRADIENT_BOTTOM,
+  ENERGY_BAR_FILL_GRADIENT_TOP,
+  ENERGY_BAR_FILL_GRADIENT_BOTTOM,
   HEALTH_BAR_BORDER_COLOR,
   HEALTH_BAR_TRACK_GRADIENT_TOP,
   HEALTH_BAR_TRACK_GRADIENT_BOTTOM,
@@ -24,6 +29,8 @@ import type { CombatEntity, UnitTextureInstance } from '../lib'
 
 let healthBarTrackGradient: FillGradient | null = null
 let healthBarFillGradient: FillGradient | null = null
+let energyBarTrackGradient: FillGradient | null = null
+let energyBarFillGradient: FillGradient | null = null
 
 function getHealthBarTrackGradient(): FillGradient {
   if (!healthBarTrackGradient) {
@@ -55,6 +62,36 @@ function getHealthBarFillGradient(): FillGradient {
   return healthBarFillGradient
 }
 
+function getEnergyBarTrackGradient(): FillGradient {
+  if (!energyBarTrackGradient) {
+    energyBarTrackGradient = new FillGradient({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: [
+        { offset: 0, color: ENERGY_BAR_TRACK_GRADIENT_TOP },
+        { offset: 1, color: ENERGY_BAR_TRACK_GRADIENT_BOTTOM },
+      ],
+    })
+  }
+  return energyBarTrackGradient
+}
+
+function getEnergyBarFillGradient(): FillGradient {
+  if (!energyBarFillGradient) {
+    energyBarFillGradient = new FillGradient({
+      type: 'linear',
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: [
+        { offset: 0, color: ENERGY_BAR_FILL_GRADIENT_TOP },
+        { offset: 1, color: ENERGY_BAR_FILL_GRADIENT_BOTTOM },
+      ],
+    })
+  }
+  return energyBarFillGradient
+}
+
 export class Instance extends Container {
   context: GameContextLike
   selected: boolean
@@ -73,6 +110,8 @@ export class Instance extends Container {
   owner!: PlayerLike
   hitPoints!: number
   totalHitPoints!: number
+  energy?: number
+  totalEnergy?: number
   sprite?: Sprite | AnimatedSprite
   reliefLift?: number
   action?: string | null
@@ -81,10 +120,16 @@ export class Instance extends Container {
   moveToPath?(): void
 
   shouldKeepHealthBarVisible(): boolean {
+    const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
+    const showForFamily =
+      this.family === FAMILY_TYPES.unit ||
+      this.family === FAMILY_TYPES.building ||
+      this.family === FAMILY_TYPES.animal
+    const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(
-      (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
-        this.owner?.isPlayed &&
-        this.context?.controls?.heroUnit?.label !== this.label &&
+      showForFamily &&
+        showEntityBars &&
+        !isHeroUnit &&
         !this.isDead &&
         !this.isDestroyed
     )
@@ -93,6 +138,11 @@ export class Instance extends Container {
   removeHealthBar(): void {
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (healthBar) this.removeChild(healthBar)
+  }
+
+  removeEnergyBar(): void {
+    const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
+    if (energyBar) this.removeChild(energyBar)
   }
 
   removeHeroPowerBar(): void {
@@ -190,6 +240,7 @@ export class Instance extends Container {
     const shadowIndex = this.getChildByLabel(LABEL_TYPES.shadow) ? 1 : 0
     this.addChildAt(selection, shadowIndex)
     this.drawHealthBar()
+    this.drawEnergyBar()
   }
 
   unselect(): void {
@@ -199,8 +250,10 @@ export class Instance extends Container {
     if (selection) this.removeChild(selection)
     if (this.shouldKeepHealthBarVisible()) {
       this.drawHealthBar()
+      this.drawEnergyBar()
     } else {
       this.removeHealthBar()
+      this.removeEnergyBar()
     }
   }
 
@@ -208,8 +261,13 @@ export class Instance extends Container {
     const existing = this.getChildByLabel(LABEL_TYPES.healthBar)
     if (existing) this.removeChild(existing)
     if (!this.totalHitPoints) return
-    if (this.family !== FAMILY_TYPES.unit && this.family !== FAMILY_TYPES.building) return
-    if (!this.owner?.isPlayed) return
+    if (
+      this.family !== FAMILY_TYPES.unit &&
+      this.family !== FAMILY_TYPES.building &&
+      this.family !== FAMILY_TYPES.animal
+    )
+      return
+    if (!this.shouldKeepHealthBarVisible() && !this.selected) return
     const barWidth = 22
     const barHeight = 6
     const borderWidth = 1
@@ -233,6 +291,38 @@ export class Instance extends Container {
       bar.fill(getHealthBarFillGradient())
     }
     // Tracks relief the same way the shadow does — see Unit.applyReliefLift.
+    bar.position.y = this.reliefLift ?? 0
+    this.addChild(bar)
+  }
+
+  drawEnergyBar(): void {
+    const existing = this.getChildByLabel(LABEL_TYPES.energyBar)
+    if (existing) this.removeChild(existing)
+    const totalEnergy = this.totalEnergy ?? 0
+    if (!totalEnergy) return
+    if (!this.shouldKeepHealthBarVisible() && !this.selected) return
+    const barWidth = 22
+    const barHeight = 5
+    const borderWidth = 1
+    const x = -barWidth / 2
+    const spriteTop = this.sprite ? -(this.sprite.height * this.sprite.anchor.y) : -40
+    const y = spriteTop - 18
+    const innerX = x + borderWidth
+    const innerY = y + borderWidth
+    const innerWidth = barWidth - borderWidth * 2
+    const innerHeight = barHeight - borderWidth * 2
+    const ratio = Math.max(0, Math.min(1, (this.energy ?? totalEnergy) / totalEnergy))
+    const bar = new Graphics()
+    bar.label = LABEL_TYPES.energyBar
+    bar.zIndex = 6
+    bar.rect(x, y, barWidth, barHeight)
+    bar.fill(ENERGY_BAR_BORDER_COLOR)
+    bar.rect(innerX, innerY, innerWidth, innerHeight)
+    bar.fill(getEnergyBarTrackGradient())
+    if (ratio > 0) {
+      bar.rect(innerX, innerY, Math.round(innerWidth * ratio), innerHeight)
+      bar.fill(getEnergyBarFillGradient())
+    }
     bar.position.y = this.reliefLift ?? 0
     this.addChild(bar)
   }

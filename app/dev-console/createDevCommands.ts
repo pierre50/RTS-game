@@ -23,6 +23,7 @@ import {
   spawnBuilding,
   spawnFloatingItem,
   spawnUnits,
+  toggleEntityBars,
   toggleCoordsDebug,
   toggleFog,
   toggleFreeCamera,
@@ -397,6 +398,15 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Remove resources from the map',
     complete: (_args, { map }) => ['all', ...new Set([...map.resources].map((resource: DevEntity) => resource.type))],
     run: ([type], context) => killResources(context, type),
+  })
+
+  registry.register({
+    name: 'entity-bars',
+    aliases: ['ebars', '9a', '9A'],
+    usage: 'entity-bars [on|off]',
+    describe: 'Toggle health and energy bars on visible units, buildings and animals',
+    complete: () => ['on', 'off'],
+    run: (_args, context) => toggleEntityBars(context, _args[0] || ''),
   })
 
   return registry

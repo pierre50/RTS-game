@@ -46,6 +46,13 @@
   text-decoration: line-through;
 }
 
+.debug-player-stats-unit {
+  font-size: 11px;
+  opacity: 0.9;
+  margin-left: 8px;
+  white-space: pre;
+}
+
 .dev-console-panel {
   position: absolute;
   right: 14px;

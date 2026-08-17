@@ -12,6 +12,8 @@ export {
   toggleSolidDebug,
   toggleTerrainFrameDebug,
   toggleVisionDebug,
+  refreshEntityBars,
+  toggleEntityBars,
 } from './actions/debug'
 
 export {

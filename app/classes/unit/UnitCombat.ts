@@ -6,7 +6,6 @@ import {
   getClosestInstanceWithPath,
   getInstanceDegree,
   instanceContactInstance,
-  onSpriteLoopAtFrame,
   playAudibleSoundCue,
   BOW_SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
@@ -15,7 +14,7 @@ import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
 import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
-import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
+import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -38,28 +37,22 @@ export class UnitCombat {
   // (apply a hit, launch a projectile).
   runAttackLoop(releaseFrame: number, onFire: (dest: RuntimeEntity | null) => void) {
     const unit = this.unit
-    const sprite = unit.sprite
-    if (!sprite) return
-    sprite.loop = true
-    sprite.onComplete = undefined
-    unit.setTextures?.(SHEET_TYPES.action)
-    unit.syncMountedHorseSprite?.()
-    onSpriteLoopAtFrame(sprite, releaseFrame, () => {
-      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(dest)) {
+    runAttackLoopOnFrame(unit, {
+      releaseFrame,
+      prepareAttackSheet: () => {
+        unit.setTextures?.(SHEET_TYPES.action)
+        unit.syncMountedHorseSprite?.()
+      },
+      onOutOfRange: dest => {
+        unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
+      },
+      onTargetUnavailable: dest => {
         if (dest && (dest.hitPoints ?? 0) <= 0) {
           dest.die?.()
         }
         this.finishAttackAfterCurrentLoop()
-        return
-      }
-      this.syncMovingTargetDirection()
-      if (!unit.isUnitAtDest?.(unit.action, dest)) {
-        unit.sendToEvt?.(dest ?? null, ACTION_TYPES.attack, { forceRepath: true })
-        return
-      }
-      if (!spendOrWaitForEnergy(unit, ACTION_TYPES.attack, dest)) return
-      onFire(dest)
+      },
+      onReadyToAttack: target => onFire(target),
     })
   }
 

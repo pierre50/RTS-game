@@ -217,6 +217,7 @@ export class Building extends Instance implements BuildingEntity {
       this.buildingTrainingPreview = new BuildingTrainingPreview(this)
       this.buildingTrainingPreview.update()
       if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
+      if (this.shouldKeepHealthBarVisible()) this.drawEnergyBar()
     }
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
 

@@ -43,6 +43,7 @@ function notifyHeroEnergyChanged(unit: EnergyEntity): void {
   if (controls?.heroUnit === unit) {
     unit.context?.menu?.updateHeroStatus?.(unit as UnitEntity)
   }
+  unit.drawEnergyBar?.()
 }
 
 export function ensureUnitEnergy(unit: EnergyEntity): void {
@@ -182,26 +183,6 @@ function startEnergyWaitTask(unit: EnergyEntity): void {
   }, STEP_TIME, 'unit.energyWait')
 }
 
-function retreatFromTarget(unit: EnergyEntity, target: RuntimeEntity): void {
-  const map = unit.context?.map
-  if (!map) return
-  const dx = unit.x - target.x
-  const dy = unit.y - target.y
-  const len = Math.hypot(dx, dy) || 1
-  const destination = {
-    x: unit.x + (dx / len) * NPC_ATTACK_RETREAT_DISTANCE,
-    y: unit.y + (dy / len) * NPC_ATTACK_RETREAT_DISTANCE,
-  }
-  const cell = map.grid
-    .flat()
-    .filter(candidate => !candidate.solid && !candidate.border)
-    .sort(
-      (a, b) =>
-        Math.hypot(a.x - destination.x, a.y - destination.y) - Math.hypot(b.x - destination.x, b.y - destination.y)
-    )[0]
-  if (cell && !cell.solid && !cell.border) unit.sendTo?.(cell)
-}
-
 export function waitForEnergy(unit: EnergyEntity, action: string | null | undefined, target?: RuntimeEntity | null): false {
   ensureUnitEnergy(unit)
   const heroControlled = isHeroControlled(unit as UnitEntity)
@@ -227,6 +208,26 @@ export function waitForEnergy(unit: EnergyEntity, action: string | null | undefi
   }
   startEnergyWaitInterval(unit)
   return false
+}
+
+function retreatFromTarget(unit: EnergyEntity, target: RuntimeEntity): void {
+  const map = unit.context?.map
+  if (!map) return
+  const dx = unit.x - target.x
+  const dy = unit.y - target.y
+  const len = Math.hypot(dx, dy) || 1
+  const destination = {
+    x: unit.x + (dx / len) * NPC_ATTACK_RETREAT_DISTANCE,
+    y: unit.y + (dy / len) * NPC_ATTACK_RETREAT_DISTANCE,
+  }
+  const cell = map.grid
+    .flat()
+    .filter(candidate => !candidate.solid && !candidate.border)
+    .sort(
+      (a, b) =>
+        Math.hypot(a.x - destination.x, a.y - destination.y) - Math.hypot(b.x - destination.x, b.y - destination.y)
+    )[0]
+  if (cell && !cell.solid && !cell.border) unit.sendTo?.(cell)
 }
 
 export function resumeEnergyWaitIfReady(unit: EnergyEntity): boolean {

@@ -34,7 +34,7 @@ import {
   SLASH_IMPACT_FRAME,
 } from './graphics'
 import { t } from './lang'
-import { angleDelta, degreeToDirection, getReliefOffset } from './maths'
+import { angleDelta, degreeToDirection, getReliefOffset, instancesDistance } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
 import {
@@ -51,6 +51,7 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entitie
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
 import type { DynamicEquipmentKey } from './lpc/equipment'
+import { getBuildingContactDistance } from './grid/cells'
 
 export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
@@ -76,6 +77,8 @@ const BLIND_SHOT_DISTANCE = 200
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_DIRECTION_HALF_ANGLE = 25
 const LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE = 45
+const HERO_MELEE_STRIKE_HALF_ANGLE = 45
+const HERO_MELEE_DISTANCE_TOLERANCE = 0.9
 const DIRECTIONAL_TARGET_MAX_ANGLE_PENALTY = CELL_WIDTH
 const MOUNTED_ATTACK_HALF_ANGLE = 45
 const HERO_ARROW_FORWARD_OFFSET = 16
@@ -577,6 +580,19 @@ function getDirectionalTargets<T extends RuntimeEntity>(
     .map(candidate => candidate.target)
 }
 
+function isHeroMeleeTargetInRange(hero: UnitEntity, target: RuntimeEntity): boolean {
+  if (isHeroActionInRange(hero, ACTION_TYPES.attack, target)) return true
+  const targetSize = Math.max(1, target.size ?? target.selectionFactor ?? 1)
+  const range = getBuildingContactDistance(targetSize) + HERO_MELEE_DISTANCE_TOLERANCE
+  return instancesDistance(hero, target) <= range
+}
+
+function isHeroMeleeTargetInAttackZone(hero: UnitEntity, target: RuntimeEntity): boolean {
+  const aimPoint = getHeroInteractionTargetPoint(hero, target)
+  if (getAimDelta(hero, aimPoint) > HERO_MELEE_STRIKE_HALF_ANGLE) return false
+  return isHeroMeleeTargetInRange(hero, target)
+}
+
 function tryDeliver(hero: UnitEntity): boolean {
   if (!((hero.loading ?? 0) > 0)) return false
   const nearBuilding = findInstancesInSight<UnitEntity, RuntimeEntity>(
@@ -636,7 +652,7 @@ function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): Run
     target => canBeHeroMeleeTarget(hero, target, tool),
     CLICK_TARGET_SEARCH_RANGE
   )
-  return getDirectionalTarget(hero, candidates)
+  return getDirectionalTarget(hero, candidates, HERO_MELEE_STRIKE_HALF_ANGLE)
 }
 
 function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {
@@ -1213,23 +1229,25 @@ function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
 }
 
 function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): boolean {
-  if (!isHeroActionInRange(hero, ACTION_TYPES.attack, target) && !hero.isUnitAtDest?.(ACTION_TYPES.attack, target)) {
+  const resolvedTarget =
+    isHeroMeleeTargetInAttackZone(hero, target) ? target : findHeroMeleeTargetInAim(hero, tool)
+  if (!resolvedTarget || !isHeroMeleeTargetInAttackZone(hero, resolvedTarget)) {
     return false
   }
-  const openingAggression = applyDiplomaticAggression(hero, target)
+  const openingAggression = applyDiplomaticAggression(hero, resolvedTarget)
   if (openingAggression.changed && !openingAggression.hostileNow) return true
   if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return false
   hero.action = ACTION_TYPES.attack
-  hero.setDest?.(target)
+  hero.setDest?.(resolvedTarget)
   playHeroToolAnimation(
     hero,
     () => {
       const combatSource = getHeroWeaponCombatSource(hero, tool)
-      if (!getActionCondition(combatSource, target, ACTION_TYPES.attack)) {
-        if ((target.hitPoints ?? 0) <= 0) target.die?.()
+      if (!getActionCondition(combatSource, resolvedTarget, ACTION_TYPES.attack)) {
+        if ((resolvedTarget.hitPoints ?? 0) <= 0) resolvedTarget.die?.()
         return
       }
-      const { damageDealt } = applyCombatHit(combatSource, target, {
+      const { damageDealt } = applyCombatHit(combatSource, resolvedTarget, {
         attacker: hero,
         bonusDamage: getCombatXpBonus(hero, XP_CATEGORIES.melee),
         defaultDamage: getHeroWeaponDamage(hero, tool),

@@ -212,6 +212,10 @@ export class Animal extends Instance implements AnimalEntity {
     this.context.map.shadowLayer?.addChild(this.shadow)
     this.addChild(this.sprite)
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
+    if (this.shouldKeepHealthBarVisible()) {
+      this.drawHealthBar()
+      this.drawEnergyBar()
+    }
 
     setTimeout(() => {
       if (this.isDestroyed) return
@@ -321,6 +325,10 @@ export class Animal extends Instance implements AnimalEntity {
     this.sprite.position.y = -this.altitude + this.reliefLift
     this.syncShadow()
     this.syncSelectionMarkersToRelief()
+    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
+    if (healthBar) healthBar.position.y = this.reliefLift
+    const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
+    if (energyBar) energyBar.position.y = this.reliefLift
   }
 
   syncVisualSettings(): void {

@@ -75,6 +75,7 @@ export interface RuntimeMap {
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>
   naturalResourceRespawnSlots?: SaveEntityState[]
+  debugEntityBarsVisible?: boolean
   // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null

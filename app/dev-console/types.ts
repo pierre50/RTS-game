@@ -33,7 +33,11 @@ export type DevMapLike = {
   grid: RuntimeCell[][]
   resources: Set<DevEntity>
   floatingItems?: Set<DevEntity>
-  gaia?: { units: DevEntity[]; createAnimal?(options: { i: number; j: number; type: string }): unknown } | null
+  gaia?: {
+    units: DevEntity[]
+    animals?: DevEntity[]
+    createAnimal?(options: { i: number; j: number; type: string }): unknown
+  } | null
   instantMode?: boolean
   revealEverything?: boolean
   showResources?: boolean
@@ -52,6 +56,7 @@ export type DevMapLike = {
   debugAiInfoVisible?: boolean
   debugPlayerStatsVisible?: boolean
   debugTerrainFrameVisible?: boolean
+  debugEntityBarsVisible?: boolean
   _debugPathTicker?: DebugTickerCallback | null
   _debugPerfTicker?: DebugTickerCallback | null
   _debugAiInfoTicker?: DebugTickerCallback | null
@@ -63,6 +68,7 @@ export type DevMapLike = {
   _debugHeroAimTicker?: DebugTickerCallback | null
   _debugHeroCollisionTicker?: DebugTickerCallback | null
   _debugTerrainFrameTicker?: DebugTickerCallback | null
+  _debugEntityBarsTicker?: DebugTickerCallback | null
   _fogQueue?: Map<RuntimeCell, string>
   _pendingFogChunkUpdates?: Map<RuntimeCell, string>
   viewportRenderer?: { invalidate(): void; update(viewport?: DevViewportRect): void }

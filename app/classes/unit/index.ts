@@ -438,7 +438,10 @@ export class Unit extends Instance implements UnitEntity {
     this.syncAppearanceLayers(this.currentSheet)
     this.applyReliefLift(getGroundReliefLevel(spawnCell), true)
     this.sprite.updateAnchor = true
-    if (this.shouldKeepHealthBarVisible()) this.drawHealthBar()
+    if (this.shouldKeepHealthBarVisible()) {
+      this.drawHealthBar()
+      this.drawEnergyBar()
+    }
 
     this.sendTo = this.owner.isPlayed
       ? throttle(
@@ -577,6 +580,8 @@ export class Unit extends Instance implements UnitEntity {
     if (healthBar) healthBar.position.y = riderY
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
     if (powerBar) powerBar.position.y = riderY
+    const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
+    if (energyBar) energyBar.position.y = riderY
   }
 
   shouldUseMountedRiderCut(sheet = this.currentSheet): boolean {
@@ -756,6 +761,8 @@ export class Unit extends Instance implements UnitEntity {
     if (healthBar) healthBar.position.y = this.getMountedRiderY()
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
     if (powerBar) powerBar.position.y = this.getMountedRiderY()
+    const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
+    if (energyBar) energyBar.position.y = this.getMountedRiderY()
   }
 
   syncAppearanceLayers(sheet: string) {

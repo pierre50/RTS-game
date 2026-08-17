@@ -10,6 +10,7 @@ import {
   isPlayerEliminated,
   parseTextureRef,
 } from '../../lib'
+import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import type { TerrainSourceCell } from '../../classes/map/TerrainChunkManager'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPlayer } from '../types'
@@ -690,6 +691,85 @@ export function togglePerfDebug(context: DevConsoleContext, value: string): Comm
   return { ok: true, message: 'Perf debug: on' }
 }
 
+function getVisibleEntities(context: DevConsoleContext): Set<DevEntity> {
+  const visibleCells = getCameraCells(context)
+  const entities = new Set<DevEntity>()
+  const addIfVisible = (entity: DevEntity | undefined): void => {
+    const cell = context.map.grid[entity?.i]?.[entity?.j]
+    if (!cell || !visibleCells.has(cell)) return
+    entities.add(entity)
+  }
+
+  context.players.forEach(player => {
+    player.units.forEach(addIfVisible)
+    player.buildings.forEach(addIfVisible)
+    player.animals?.forEach(addIfVisible)
+  })
+
+  context.map.gaia?.units?.forEach(addIfVisible)
+  context.map.gaia?.animals?.forEach(addIfVisible)
+  return entities
+}
+
+function getAllEntities(context: DevConsoleContext): Set<DevEntity> {
+  const entities = new Set<DevEntity>()
+  const add = (entity: DevEntity | undefined): void => {
+    if (entity) entities.add(entity)
+  }
+
+  context.players.forEach(player => {
+    player.units.forEach(add)
+    player.buildings.forEach(add)
+    player.animals?.forEach(add)
+  })
+
+  context.map.gaia?.units?.forEach(add)
+  context.map.gaia?.animals?.forEach(add)
+  return entities
+}
+
+function applyEntityBars(context: DevConsoleContext, entities: Set<DevEntity>): number {
+  let refreshed = 0
+  for (const entity of entities) {
+    if (entity.selected || entity.shouldKeepHealthBarVisible?.()) {
+      syncEntityHealthDisplay(entity)
+      refreshed += 1
+      continue
+    }
+    entity.removeHealthBar?.()
+    entity.removeEnergyBar?.()
+  }
+  return refreshed
+}
+
+function hideEntityBars(entities: Set<DevEntity>): void {
+  for (const entity of entities) {
+    entity.removeHealthBar?.()
+    entity.removeEnergyBar?.()
+  }
+}
+
+export function refreshEntityBars(context: DevConsoleContext): CommandResult {
+  const refreshed = applyEntityBars(context, getVisibleEntities(context))
+  return { ok: true, message: `Entity bars refreshed on ${refreshed} entities` }
+}
+
+export function toggleEntityBars(context: DevConsoleContext, value: string): CommandResult {
+  const { app, map } = context
+  const showEntityBars = normalizeToggle(value, Boolean(map.debugEntityBarsVisible))
+
+  map.debugEntityBarsVisible = showEntityBars
+  if (!showEntityBars) {
+    stopDebugTicker(context, '_debugEntityBarsTicker')
+    hideEntityBars(getAllEntities(context))
+    return { ok: true, message: 'Entity bars: off' }
+  }
+
+  refreshEntityBars(context)
+  addDebugTicker(context, '_debugEntityBarsTicker', refreshEntityBars)
+  return { ok: true, message: 'Entity bars: on' }
+}
+
 function ensurePlayerStatsOverlay(context: DevConsoleContext): void {
   const overlay = ensureDebugOverlay('debug-player-stats')
   const { players = [], player: me } = context
@@ -699,16 +779,41 @@ function ensurePlayerStatsOverlay(context: DevConsoleContext): void {
     return b.units.length + b.buildings.length - (a.units.length + a.buildings.length)
   })
 
+  const formatValue = (current: number | undefined, total: number | undefined): string => {
+    const normalizedCurrent = Number.isFinite(current) ? Math.round(current) : 0
+    const normalizedTotal = Number.isFinite(total) ? Math.round(total) : normalizedCurrent
+    return `${normalizedCurrent}/${normalizedTotal}`
+  }
+
   overlay.innerHTML = ''
   sorted.forEach((p, rank) => {
     const dead = isPlayerEliminated(p)
     const isMe = p === me
     const label = isMe ? 'You' : (p.color?.charAt(0).toUpperCase() ?? '') + p.color?.slice(1)
+
     const row = document.createElement('div')
     row.className = 'debug-player-stats-row' + (dead ? ' debug-player-stats-row--dead' : '')
     row.style.color = p.colorHex
-    row.textContent = `${rank + 1}. ${label}: ${p.units.length}/${p.buildings.length}`
+    const totalUnits = p.units.length
+    const totalBuildings = p.buildings.length
+    row.textContent = `${rank + 1}. ${label}: ${totalUnits}/${totalBuildings}`
     overlay.appendChild(row)
+
+    for (const unit of p.units) {
+      const unitRow = document.createElement('div')
+      unitRow.className = 'debug-player-stats-unit' + (dead ? ' debug-player-stats-row--dead' : '')
+      unitRow.style.color = p.colorHex
+
+      const unitLabel = unit.name || `${unit.type}`
+      const hp = formatValue(unit.hitPoints, unit.totalHitPoints)
+      const energy =
+        unit.energy == null || unit.totalEnergy == null
+          ? null
+          : formatValue(unit.energy, unit.totalEnergy)
+
+      unitRow.textContent = `  ${unitLabel}: HP ${hp}${energy ? ` | EN ${energy}` : ''}`
+      overlay.appendChild(unitRow)
+    }
   })
 }
 

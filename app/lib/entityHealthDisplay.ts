@@ -32,6 +32,7 @@ export function getEntityHitPointsText(
 export function syncEntityHealthDisplay(entity: RuntimeEntity, options: EntityHealthDisplayOptions = {}): void {
   if (shouldShowEntityHealthBar(entity)) {
     entity.drawHealthBar?.()
+    entity.drawEnergyBar?.()
   }
 
   if (options.menu && (options.forceInfo || isEntitySelectedForInfo(entity, options.player))) {

@@ -193,6 +193,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
     '_debugAiInfoTicker',
     '_debugPlayerStatsTicker',
     '_debugTerrainFrameTicker',
+    '_debugEntityBarsTicker',
   ]
 
   tickerNames.forEach(tickerName => stopDebugTicker(context, tickerName))

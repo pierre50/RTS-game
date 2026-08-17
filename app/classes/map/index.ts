@@ -99,6 +99,7 @@ export default class Map extends Container {
   debugGridVisible: boolean
   debugCoordsVisible: boolean
   debugPerfVisible: boolean
+  debugEntityBarsVisible: boolean
   startingUnits: number
   playersPos: GeneratedPosition[]
   positionsCount: number
@@ -153,6 +154,7 @@ export default class Map extends Container {
     this.debugGridVisible = false
     this.debugCoordsVisible = false
     this.debugPerfVisible = false
+    this.debugEntityBarsVisible = false
 
     this.x = 0
     this.y = 0

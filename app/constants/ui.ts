@@ -19,6 +19,7 @@ export const LABEL_TYPES = {
   fire: 'fire',
   selection: 'selection',
   healthBar: 'healthBar',
+  energyBar: 'energyBar',
   powerBar: 'powerBar',
   buildingFog: 'building',
   mouseBuilding: 'mouseBuilding',
@@ -54,3 +55,10 @@ export const HEALTH_BAR_TRACK_GRADIENT_TOP = 0x9c2e1b
 export const HEALTH_BAR_TRACK_GRADIENT_BOTTOM = 0x701d12
 export const HEALTH_BAR_FILL_GRADIENT_TOP = 0x52c44f
 export const HEALTH_BAR_FILL_GRADIENT_BOTTOM = 0x24822b
+
+// Energy bar colors mirror the in-game hero energy accent with a subtle dark border / fill.
+export const ENERGY_BAR_BORDER_COLOR = 0x1d2d47
+export const ENERGY_BAR_TRACK_GRADIENT_TOP = 0x1f3d65
+export const ENERGY_BAR_TRACK_GRADIENT_BOTTOM = 0x162b48
+export const ENERGY_BAR_FILL_GRADIENT_TOP = 0x4e9cff
+export const ENERGY_BAR_FILL_GRADIENT_BOTTOM = 0x2f75d6
