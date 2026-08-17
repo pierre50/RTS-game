@@ -1,6 +1,7 @@
 import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
+import { HERO_STEALTH_ANIMAL_DETECTION_FACTOR } from '../constants/heroControls'
 import type { PerformanceMonitorLike } from '../types/context'
-import type { RuntimeEntity } from '../types/entities'
+import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { VisionViewerRef } from '../types/vision'
@@ -15,6 +16,10 @@ type VisibilityContext = {
   }
   player?: PlayerLike
   editor?: object
+  controls?: {
+    heroUnit?: UnitEntity | null
+    isHeroStealthMode?: () => boolean
+  }
 }
 
 type VisibilityOwner = Partial<PlayerLike> & {
@@ -187,7 +192,14 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
 
       if (!context?.editor && globalCell.has && globalCell.has.sight && canDetect(globalCell.has)) {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
-        if (distSq <= globalCell.has.sight ** 2) {
+        const isStealthHero =
+          context.controls?.isHeroStealthMode?.() === true &&
+          context.controls.heroUnit != null &&
+          context.controls.heroUnit === globalCell.has
+        const detectRange = isStealthHero
+          ? globalCell.has.sight * HERO_STEALTH_ANIMAL_DETECTION_FACTOR
+          : globalCell.has.sight
+        if (distSq <= detectRange ** 2) {
           globalCell.has.detect(instance)
         }
       }

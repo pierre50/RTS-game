@@ -56,6 +56,7 @@ export default class Controls extends Container implements ControlsLike {
   keyActionsByCode: Partial<Record<string, ControlBindingAction>>
   keyPressedCount: number
   keySpeed: number
+  heroDirectionLockActive: boolean
   shiftKeyActive: boolean
   freeCameraActive: boolean
   heroController: HeroController
@@ -109,6 +110,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keyActionsByCode = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
+    this.heroDirectionLockActive = false
     this.shiftKeyActive = false
     this.freeCameraActive = false
     this.heroController = new HeroController(this)
@@ -313,6 +315,12 @@ export default class Controls extends Container implements ControlsLike {
     const action = getControlActionForKeyboardEvent(evt)
     if (action === 'heroDirectionLock') {
       if (evt.code) this.keyActionsByCode[evt.code] = action
+      this.heroDirectionLockActive = true
+      if (evt.key === 'Shift') this.shiftKeyActive = true
+      evt.preventDefault()
+      return
+    }
+    if (evt.key === 'Shift') {
       this.shiftKeyActive = true
       evt.preventDefault()
       return
@@ -364,6 +372,12 @@ export default class Controls extends Container implements ControlsLike {
     const action = getControlActionForKeyboardEvent(evt) || (evt.code ? this.keyActionsByCode[evt.code] : null)
     if (evt.code) delete this.keyActionsByCode[evt.code]
     if (action === 'heroDirectionLock') {
+      this.heroDirectionLockActive = false
+      if (evt.key === 'Shift') this.shiftKeyActive = false
+      evt.preventDefault()
+      return
+    }
+    if (evt.key === 'Shift') {
       this.shiftKeyActive = false
       evt.preventDefault()
       return
@@ -791,7 +805,11 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   isHeroDirectionLockActive(): boolean {
-    return this.shiftKeyActive || this.gamepadInput.directionLockActive
+    return this.heroDirectionLockActive || this.gamepadInput.directionLockActive
+  }
+
+  isHeroStealthMode(): boolean {
+    return this.shiftKeyActive
   }
 
   isMouseInApp(evt: PointerPageEvent): boolean {
@@ -849,6 +867,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keysPressed = {}
     this.keyActionsByCode = {}
     this.keyPressedCount = 0
+    this.heroDirectionLockActive = false
     this.keySpeed = 0
     this.shiftKeyActive = false
     this.heroController.stopKeyboardMove()

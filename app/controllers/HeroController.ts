@@ -18,6 +18,7 @@ import {
   HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
+  HERO_STEALTH_SPEED_FACTOR,
   SHEET_TYPES,
   SOUND_CUES,
   STEP_TIME,
@@ -737,8 +738,10 @@ export class HeroController {
       const lockedFacingVector =
         lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
       const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
+      const stealthSpeedFactor = this.controls.isHeroStealthMode?.() ? HERO_STEALTH_SPEED_FACTOR : 1
       const lockedMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
-      const distance = (unit.speed ?? 0) * speedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
+      const distance =
+        (unit.speed ?? 0) * speedFactor * stealthSpeedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
       const moveOptions = lockedFacingVector
@@ -757,6 +760,7 @@ export class HeroController {
           distance,
           frameScale,
           speedFactor,
+          stealthSpeedFactor,
           lockedMoveSpeedFactor,
           attacking,
           hasMoveDirect: Boolean(unit.moveDirect),

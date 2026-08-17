@@ -175,6 +175,7 @@ export interface ControlsLike extends Container {
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
   isHeroControlActive?(): boolean
+  isHeroStealthMode?(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void
   openHeroEntityInteraction?(target?: RuntimeEntity | null): boolean
   freeCameraActive?: boolean

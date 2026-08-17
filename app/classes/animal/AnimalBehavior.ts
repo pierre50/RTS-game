@@ -1,4 +1,5 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
+import { HERO_STEALTH_ANIMAL_DETECTION_FACTOR } from '../../constants/heroControls'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
 import { showAlertFeedback } from '../../lib/combatFeedback'
 import { updateUnitEnergy } from '../../lib/unitEnergy'
@@ -59,12 +60,20 @@ export class AnimalBehavior {
   // (villagers, hero, military) and buildings (a camp encroaching on their territory).
   findNearbyThreat(): AnimalThreat | null {
     const animal = this.animal
+    const controls = animal.context.controls
+    const controlsHeroUnit = controls?.heroUnit
+    const isStealthMode = Boolean(controlsHeroUnit && controls?.isHeroStealthMode?.())
+    const stealthRangeSq =
+      isStealthMode && animal.sight ? (animal.sight * HERO_STEALTH_ANIMAL_DETECTION_FACTOR) ** 2 : Number.POSITIVE_INFINITY
     const threats = findInstancesInSight<Animal, AnimalThreat>(
       animal,
       (instance: AnimalThreat) =>
         !instance.isDead &&
         !instance.isDestroyed &&
-        (instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.building)
+        (instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.building) &&
+        (isStealthMode && instance === controlsHeroUnit
+          ? (instance.i - animal.i) ** 2 + (instance.j - animal.j) ** 2 <= stealthRangeSq
+          : true)
     )
     return threats.reduce(
       (closest: AnimalThreat | null, threat: AnimalThreat) =>
