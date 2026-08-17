@@ -214,9 +214,10 @@ export class NpcOrdersManager {
   }
 
   private updateDebugControls(target: UnitEntity | null): void {
-    const showDebug = Boolean(target)
+    const showDebug = Boolean(target && target.type !== UNIT_TYPES.villager)
     this.debugContainer.hidden = !showDebug
     if (!target) return
+    if (!showDebug) return
     const currentLevel = getUnitEquipmentLevel(target)
     const isMaxLevel = currentLevel >= XP_MAX_LEVEL
     const nextLevel = Math.min(XP_MAX_LEVEL, currentLevel + 1)

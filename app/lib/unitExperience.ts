@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, WORK_TYPES } from '../constants'
+import { FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { showLevelUpFeedback } from './combatFeedback'
 import { t } from './lang'
 import type { UnitEntity } from '../types/entities'
@@ -200,6 +200,7 @@ function syncExperienceInterface(unit: UnitEntity, category: string, leveledUp: 
 
 export function grantUnitXp(unit: UnitEntity, category: string | null | undefined, amount: number): void {
   if (!category || !(amount > 0) || unit.isDead || unit.isDestroyed) return
+  if (unit.type === UNIT_TYPES.villager) return
   if (unit.family !== FAMILY_TYPES.unit) return
   const levelBefore = getUnitLevel(unit, category)
   unit.experience = unit.experience ?? {}

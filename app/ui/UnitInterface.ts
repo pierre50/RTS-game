@@ -26,6 +26,10 @@ const VILLAGER_HIDDEN_XP_CATEGORIES = new Set([
   XP_CATEGORIES.healing,
 ])
 
+function unitSupportsExperience(unit: UnitEntity): boolean {
+  return unit.type !== UNIT_TYPES.villager
+}
+
 function getFocusedXpCategories(unit: UnitEntity, data: UnitConfig): string[] | null {
   if (unit.type === UNIT_TYPES.priest) return PRIEST_XP_CATEGORIES
   if (data.category === 'Archer') return ARCHER_XP_CATEGORIES
@@ -87,6 +91,7 @@ export class UnitInterface {
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {
     const unit = this.unit
     const typeText = t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type)
+    const showExperience = unitSupportsExperience(unit)
     appendBaseEntityInfo(element, t(unit.owner!.civ!), typeText, unit.hitPoints, unit.totalHitPoints, {
       hideType: Boolean(options?.hideIdentity && !unit.name),
     })
@@ -96,9 +101,11 @@ export class UnitInterface {
       header?.prepend(nameElement)
     }
 
-    // A single glanceable global level, always shown. Per-category rows below still expose
-    // the skills that explain where that level came from.
-    element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getUnitOverallLevel(unit)}`))
+    if (showExperience) {
+      // A single glanceable global level, then per-category rows that explain where
+      // that level came from.
+      element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getUnitOverallLevel(unit)}`))
+    }
 
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
@@ -131,8 +138,9 @@ export class UnitInterface {
 
     element.appendChild(infosDiv)
 
-    const focusedXpCategories = getFocusedXpCategories(unit, data)
-    const xpEntries = focusedXpCategories
+    const focusedXpCategories = showExperience ? getFocusedXpCategories(unit, data) : null
+    const xpEntries = showExperience
+      ? focusedXpCategories
       ? focusedXpCategories.map(category => ({
           category,
           ...getUnitExperienceEntries(unit, { includeZero: true }).find(entry => entry.category === category),
@@ -140,6 +148,7 @@ export class UnitInterface {
       : getUnitExperienceEntries(unit, { includeZero: options?.showAllXp }).filter(
           entry => shouldShowGenericXpCategory(unit, entry.category)
         )
+      : []
     if (xpEntries.length) {
       const xpDiv = document.createElement('div')
       xpDiv.classList.add('unit-xp')
