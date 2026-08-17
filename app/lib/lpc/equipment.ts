@@ -497,6 +497,7 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   {
     workType: WORK_TYPES.hunter,
     equipment: 'bow',
+    ageEquipment: { 1: 'bow_great', 2: 'bow_recurve' },
     options: { hideWhenLoading: true, hideForActions: [ACTION_TYPES.takemeat] },
   },
   {

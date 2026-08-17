@@ -216,44 +216,6 @@ const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
   ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowBronze: arrowProjectileConfig('projectiles/arrow_bronze', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowIron: arrowProjectileConfig('projectiles/arrow_iron', LPC_ARROW_PROJECTILE_CONFIG),
-  FireArrow: arrowProjectileConfig('projectiles/fire-arrow', {
-    staticFrame: 1,
-  }),
-  Bolt: {
-    size: 12,
-    speed: 12,
-    assets: 'projectiles/bolt',
-    isAnimated: true,
-    directionalFrames: 8,
-    directionalFrameOrder: ['east', 'southeast', 'south', 'southwest', 'west', 'northwest', 'north', 'northeast'],
-    sounds: {
-      launch: ['ballista-bolt-shot', 'ballista-bolt-shot-2', 'ballista-bolt-shot-3', 'ballista-bolt-shot-4', 'ballista-bolt-shot-5'],
-      impact: 'target-hit',
-    },
-  },
-  FireBolt: {
-    size: 12,
-    speed: 12,
-    assets: 'projectiles/fire-bolt',
-    isAnimated: true,
-    directionalAnimationFrames: 3,
-    animationSpeed: 0.35,
-    sounds: {
-      launch: ['ballista-bolt-shot', 'ballista-bolt-shot-2', 'ballista-bolt-shot-3', 'ballista-bolt-shot-4', 'ballista-bolt-shot-5'],
-      impact: 'target-hit',
-    },
-  },
-  Spear: {
-    size: 10,
-    speed: 8,
-    assets: 'projectiles/spear',
-    isAnimated: true,
-    directionalFrames: 32,
-    fullCircleStartDegree: 191.25,
-    sounds: {
-      launch: 'arrow-shot',
-    },
-  },
 }
 
 function normalizeUnitSounds(unit: UnitConfig): UnitConfig {

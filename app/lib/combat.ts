@@ -394,6 +394,14 @@ export const getActionCondition = (
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
       !target.isDead,
+    captureHorse: () =>
+      source.type === UNIT_TYPES.villager &&
+      target.family === FAMILY_TYPES.animal &&
+      target.type === 'Horse' &&
+      (target.hitPoints ?? 0) > 0 &&
+      !target.isDead &&
+      !target.isDestroyed &&
+      !(target as { isLassoed?: boolean }).isLassoed,
     chopwood: () =>
       isVillagerOrHero(source) && target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead,
     farm: () =>

@@ -1,6 +1,7 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint, getBuildingContactDistance } from '../lib'
-import { getEquipmentCombatStats, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipmentStats'
+import { getEquipmentCombatStats, getUnitCombatRange, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipmentStats'
+import type { UnitEntity } from '../types/entities'
 import { BASE_TARGET_VALUE_BY_TYPE } from './config'
 import type { RuntimeCell } from '../types/map'
 import type {
@@ -111,7 +112,7 @@ export class AIMilitary {
         : instance.family === FAMILY_TYPES.unit
           ? UNARMED_UNIT_WEAPON_POWER
           : 0
-    const range = instance.range ?? config.range ?? 0
+    const range = instance.family === FAMILY_TYPES.unit ? getUnitCombatRange(instance as UnitEntity) : instance.range ?? 0
     const speed = instance.speed ?? config.speed ?? 0
     const meleeArmor = instance.meleeArmor ?? config.meleeArmor ?? 0
     const pierceArmor = instance.pierceArmor ?? config.pierceArmor ?? 0

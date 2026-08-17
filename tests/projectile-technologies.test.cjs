@@ -19,29 +19,26 @@ function loadProjectileHelpers() {
 
 const technologies = require('../public/assets/data/technologies/technologies.json')
 
-test('Alchemy converts each military projectile family to its fiery variant', () => {
+test('Alchemy keeps arrow family by age while still using stone enhancements', () => {
   const { getEffectiveProjectileType } = loadProjectileHelpers()
   const player = { technologies: ['Alchemy'] }
 
-  assert.equal(getEffectiveProjectileType('Arrow', player), 'FireArrow')
-  assert.equal(getEffectiveProjectileType('ArrowCopper', player), 'FireArrow')
-  assert.equal(getEffectiveProjectileType('Bolt', player), 'FireBolt')
+  assert.equal(getEffectiveProjectileType('Arrow', player), 'ArrowCeramic')
+  assert.equal(getEffectiveProjectileType('ArrowCopper', player), 'ArrowCopper')
   assert.equal(getEffectiveProjectileType('Stone', player), 'FireStone')
-  assert.equal(getEffectiveProjectileType('Spear', player), 'Spear')
+  assert.equal(getEffectiveProjectileType('Arrow', { age: 1, technologies: ['Alchemy'] }), 'ArrowCopper')
+  assert.equal(getEffectiveProjectileType('Arrow', { age: 2, technologies: ['Alchemy'] }), 'ArrowBronze')
+  assert.equal(getEffectiveProjectileType('Arrow', { age: 3, technologies: ['Alchemy'] }), 'ArrowIron')
   assert.equal(getEffectiveProjectileType('Arrow', { age: 0, technologies: [] }), 'ArrowCeramic')
-  assert.equal(getEffectiveProjectileType('Arrow', { age: 1, technologies: [] }), 'ArrowCopper')
-  assert.equal(getEffectiveProjectileType('Arrow', { age: 2, technologies: [] }), 'ArrowBronze')
-  assert.equal(getEffectiveProjectileType('Arrow', { age: 3, technologies: [] }), 'ArrowIron')
 })
 
-test('Ballistics tracks standard and fiery military projectiles', () => {
+test('Ballistics tracks standard military projectiles', () => {
   const { projectileTracksTarget } = loadProjectileHelpers()
   const player = { technologies: ['Ballistics'] }
 
-  for (const type of ['Arrow', 'ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron', 'FireArrow', 'Bolt', 'FireBolt', 'Stone', 'FireStone']) {
+  for (const type of ['Arrow', 'ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron', 'Stone', 'FireStone']) {
     assert.equal(projectileTracksTarget(type, player), true)
   }
-  assert.equal(projectileTracksTarget('Spear', player), false)
   assert.equal(projectileTracksTarget('Arrow', { technologies: [] }), false)
 })
 

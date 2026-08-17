@@ -33,12 +33,12 @@ import {
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
   clearVillagerAutonomy,
-  DEFAULT_HUNT_RANGE,
   resumeVillagerAutonomy,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
 import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
+import { getUnitCombatRange } from '../../lib/equipmentStats'
 import { applyWorkForAction } from './UnitCommands'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -47,6 +47,34 @@ type HeroDirectMoveBlocker = Pick<
   RuntimeEntity,
   'family' | 'i' | 'isDead' | 'isDestroyed' | 'j' | 'label' | 'size' | 'type' | 'x' | 'y'
 >
+
+const CAPTURE_HORSE_TRIGGER_RANGE = 4
+const HUNT_RANGE_DEBUG_THROTTLE_MS = 250
+let lastHuntRangeDebugAt = 0
+
+function debugHuntRangeCheck(
+  unit: UnitEntity,
+  action: string | null | undefined,
+  dest: RuntimeEntity | RuntimeCell,
+  effectiveRange: number | undefined,
+  distance: number
+): void {
+  if (action !== ACTION_TYPES.hunt || !effectiveRange) return
+  const now = Date.now()
+  if (now - lastHuntRangeDebugAt < HUNT_RANGE_DEBUG_THROTTLE_MS) return
+  lastHuntRangeDebugAt = now
+  console.debug('[villager-hunt-range]', {
+    unitLabel: unit.label,
+    action,
+    work: unit.work,
+    ownerAge: unit.owner?.age ?? 0,
+    targetType: isRuntimeEntity(dest) ? dest.type : 'cell',
+    targetLabel: isRuntimeEntity(dest) ? dest.label : undefined,
+    rangeCells: effectiveRange,
+    distanceToTarget: Number(distance.toFixed(2)),
+    inRange: distance <= effectiveRange,
+  })
+}
 
 function getMiningActions(): string[] {
   const configured = Object.values(MINING_RESOURCE_CONFIG ?? {})
@@ -69,7 +97,8 @@ function getVillagerWorkForAction(action: string | null | undefined): string | n
       return WORK_TYPES.farmer
     case ACTION_TYPES.hunt:
     case ACTION_TYPES.takemeat:
-      return WORK_TYPES.hunter
+    case ACTION_TYPES.captureHorse:
+      return WORK_TYPES.horseCapture
     case ACTION_TYPES.build:
       return WORK_TYPES.builder
     default:
@@ -299,6 +328,7 @@ const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: Runtim
   [ACTION_TYPES.forageberry]: (unit, target) =>
     unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
   [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
+  [ACTION_TYPES.captureHorse]: (unit, target) => (unit.sendToCaptureHorse ? (unit.sendToCaptureHorse(target, true), true) : false),
   ...Object.fromEntries(
     getMiningActions().map(action => [
       action,
@@ -314,6 +344,7 @@ const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
   ACTION_TYPES.farm,
   ACTION_TYPES.forageberry,
   ACTION_TYPES.hunt,
+  ACTION_TYPES.captureHorse,
   ...getMiningActions(),
   ACTION_TYPES.takemeat,
 ])
@@ -600,12 +631,24 @@ export class UnitMovement {
       action === ACTION_TYPES.attack ||
       action === ACTION_TYPES.convert ||
       action === ACTION_TYPES.heal ||
-      (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt)
+      (unit.type === UNIT_TYPES.villager && (action === ACTION_TYPES.hunt || action === ACTION_TYPES.captureHorse))
     const effectiveRange =
-      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
-        ? unit.huntRange || DEFAULT_HUNT_RANGE
-        : unit.range
-    if (usesActionRange && effectiveRange && instancesDistance(unit, dest) <= effectiveRange) {
+      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse
+        ? CAPTURE_HORSE_TRIGGER_RANGE
+        : unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
+        ? getUnitCombatRange(unit)
+        : action === ACTION_TYPES.attack
+        ? getUnitCombatRange(unit)
+        : undefined
+    const distance = instancesDistance(unit, dest)
+    debugHuntRangeCheck(unit, action, dest, effectiveRange, distance)
+    if (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse) {
+      if (isRuntimeEntity(dest) && dest.family === FAMILY_TYPES.building) {
+        return instanceContactInstance(unit, dest)
+      }
+      return effectiveRange !== undefined && distance <= effectiveRange
+    }
+    if (usesActionRange && effectiveRange && distance <= effectiveRange) {
       return true
     }
     return instanceContactInstance(unit, dest)

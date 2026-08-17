@@ -74,6 +74,7 @@ export interface UnitConfig extends EntityConfig {
 export type EquipmentStats = {
   weapon?: {
     power?: number
+    range?: number
   }
   armor?: {
     melee?: number

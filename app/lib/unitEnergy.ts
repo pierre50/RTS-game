@@ -25,6 +25,7 @@ const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.flee]: 0.25,
   flee: 0.25,
   [ACTION_TYPES.hunt]: 2,
+  [ACTION_TYPES.captureHorse]: 2,
   [ACTION_TYPES.chopwood]: 2,
   ...Object.fromEntries(getMiningActions().map(action => [action, 3])),
   [ACTION_TYPES.build]: 2,

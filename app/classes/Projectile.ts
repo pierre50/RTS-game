@@ -1,12 +1,10 @@
 import { AnimatedSprite, Assets, Container, Graphics } from 'pixi.js'
 import {
-  DEFAULT_HUNT_RANGE,
   degreesToRadians,
   applyCombatHit,
   getInstanceZIndex,
   getReliefOffset,
   getTerrainSetZIndex,
-  HUNTING_SPEAR_PROJECTILE,
   isFriendlyTarget,
   isometricToCartesian,
   moveTowardPoint,
@@ -28,7 +26,7 @@ import {
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomaticAggression'
 import { fadeOutThenClear } from '../lib/entityFade'
-import { getEntityWeaponPower } from '../lib/equipmentStats'
+import { getEntityWeaponPower, getUnitCombatRange } from '../lib/equipmentStats'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
 import {
   ARROW_GROUND_TIME,
@@ -38,6 +36,7 @@ import {
   FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
+  WORK_TYPES,
   STEP_TIME,
   UNIT_TYPES,
 } from '../constants'
@@ -91,16 +90,14 @@ const PROJECTILE_MIN_DAMAGE_FACTOR = 0.35
 const PROJECTILE_COLLISION_SCALE = 0.35
 const TREE_STICK_JITTER = 5
 const TREE_STICK_HEIGHT = 10
+const PROJECTILE_GEOMETRY_DEBUG_THROTTLE_MS = 250
+let lastProjectileGeometryLogAt = 0
 const EMBEDDED_MASK_PROJECTILE_TYPES = new Set([
   'Arrow',
   'ArrowCeramic',
   'ArrowCopper',
   'ArrowBronze',
   'ArrowIron',
-  'FireArrow',
-  'Spear',
-  'Bolt',
-  'FireBolt',
 ])
 const EMBEDDED_MASK_SIZE = 256
 const GROUND_EMBED_DEPTH = 5
@@ -167,6 +164,53 @@ function getSortedTextureNames(textures: Record<string, Texture>) {
     const na = parseInt(a.split('_')[0], 10)
     const nb = parseInt(b.split('_')[0], 10)
     return na - nb
+  })
+}
+
+function debugProjectileGeometry(projectile: Projectile, destinationPoint: Point): void {
+  if (!projectile.type.includes('Arrow')) return
+  const now = Date.now()
+  if (now - lastProjectileGeometryLogAt < PROJECTILE_GEOMETRY_DEBUG_THROTTLE_MS) return
+  lastProjectileGeometryLogAt = now
+  const spawnSource = projectile.spawnPoint
+    ? {
+        x: Number(projectile.spawnPoint.x.toFixed(2)),
+        y: Number(projectile.spawnPoint.y.toFixed(2)),
+      }
+    : {
+        x: Number(projectile.spawnOrigin.x.toFixed(2)),
+        y: Number(projectile.spawnOrigin.y.toFixed(2)),
+      }
+  const targetPoint = projectile.target ?? projectile.destination
+  const targetLabel = targetPoint && 'label' in targetPoint ? targetPoint.label : undefined
+  const targetType = targetPoint && 'type' in targetPoint ? targetPoint.type : undefined
+  console.debug('[projectile-arrow-geometry]', {
+    ownerLabel: projectile.owner.label,
+    ownerType: projectile.owner.type,
+    ownerWork: (projectile.owner as UnitEntity).work,
+    ownerFamily: projectile.owner.family,
+    ownerIsHero: projectile.owner.isHero,
+    projectileType: projectile.type,
+    spawn: spawnSource,
+    destinationRaw:
+      projectile.destination == null && targetPoint == null
+        ? null
+        : {
+            x: Number(targetPoint!.x.toFixed(2)),
+            y: Number(targetPoint!.y.toFixed(2)),
+          },
+    targetLabel,
+    targetType,
+    destinationFinal: {
+      x: Number(destinationPoint.x.toFixed(2)),
+      y: Number(destinationPoint.y.toFixed(2)),
+    },
+    requestedMaxDistance: projectile.maxDistance == null ? null : Number(projectile.maxDistance.toFixed(2)),
+    pathLengthTotal: Number(projectile.totalDistance.toFixed(2)),
+    launchToTargetRawPx:
+      targetPoint == null
+        ? null
+        : Number(pointsDistance(spawnSource.x, spawnSource.y, targetPoint.x, targetPoint.y).toFixed(2)),
   })
 }
 
@@ -346,6 +390,7 @@ export class Projectile extends Container {
     this.addChild(this.shadow, sprite)
     this.updateTrajectoryVisual()
     this.zIndex = this.getProjectileZIndex()
+    debugProjectileGeometry(this, this.destinationPoint)
 
     this.interval = this.context.scheduler.add(
       () => {
@@ -547,8 +592,8 @@ export class Projectile extends Container {
 
   getOwnerProjectileMaxDistance(): number | undefined {
     const ownerRange =
-      this.owner.type === UNIT_TYPES.villager && this.type === HUNTING_SPEAR_PROJECTILE
-        ? (this.owner as { huntRange?: number }).huntRange || DEFAULT_HUNT_RANGE
+      this.owner.family === FAMILY_TYPES.unit
+        ? getUnitCombatRange(this.owner as UnitEntity)
         : (this.owner as { range?: number }).range
     return ownerRange ? ownerRange * PROJECTILE_CELL_DISTANCE : undefined
   }
@@ -817,12 +862,12 @@ export class Projectile extends Container {
     )
   }
 
-  // Hunting spears train the hunting skill; every other unit-fired projectile
+  // Hunting arrows train the hunting skill; every other unit-fired projectile
   // (archers, war boats, the hero-controlled unit's bow) trains the ranged-weapon skill.
   // Buildings (towers) fire projectiles too but never earn experience.
   getXpCategory(): string | null {
     if (this.owner.family !== FAMILY_TYPES.unit) return null
-    return this.owner.type === UNIT_TYPES.villager && this.type === HUNTING_SPEAR_PROJECTILE
+    return this.owner.type === UNIT_TYPES.villager && (this.owner as UnitEntity).work === WORK_TYPES.hunter
       ? XP_CATEGORIES.hunting
       : XP_CATEGORIES.ranged
   }

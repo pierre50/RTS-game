@@ -52,6 +52,8 @@ export type AIEntityLike = {
   totalQuantity?: number
   loading?: number | null
   isUsedBy?: AIEntityLike | RuntimeEntity | null
+  isLassoed?: boolean
+  lassoOwner?: AIEntityLike | null
   assault?: boolean
   realDest?: (GridInstanceLike & Partial<Point>) | RuntimeCell | RuntimeEntity | AIEntityLike | null
   eventMode?: string
@@ -73,6 +75,7 @@ export type AIEntityLike = {
   sendToBerrybush?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToHunt?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToTakeMeat?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToCaptureHorse?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToFarm?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToBuilding?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToAttack?(target: AIEntityLike | RuntimeEntity): boolean | void

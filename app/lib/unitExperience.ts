@@ -46,6 +46,7 @@ export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.woodcutter]: XP_CATEGORIES.woodcutting,
   [WORK_TYPES.stoneminer]: XP_CATEGORIES.mining,
   [WORK_TYPES.goldminer]: XP_CATEGORIES.mining,
+  [WORK_TYPES.horseCapture]: XP_CATEGORIES.hunting,
   [WORK_TYPES.hunter]: XP_CATEGORIES.hunting,
   [WORK_TYPES.builder]: XP_CATEGORIES.building,
   [WORK_TYPES.attacker]: XP_CATEGORIES.melee,

@@ -7,7 +7,6 @@
     "trainingTime": 20,
     "meleeArmor": 0,
     "pierceArmor": 0,
-    "range": 1,
     "cost": {
       "food": 50
     },
@@ -146,7 +145,6 @@
     "speed": 1.28,
     "meleeArmor": 0,
     "pierceArmor": 1,
-    "range": 1,
     "showBuildings": true,
     "showLoading": true,
     "loadingMax": {
@@ -262,7 +260,6 @@
     "trainingTime": 30,
     "meleeArmor": 0,
     "pierceArmor": 1,
-    "range": 1,
     "cost": {
       "food": 50,
       "gold": 25
@@ -346,7 +343,6 @@
     "trainingTime": 30,
     "meleeArmor": 0,
     "pierceArmor": 0,
-    "range": 5,
     "projectile": "Arrow",
     "cost": {
       "food": 40,
@@ -389,7 +385,6 @@
     "healing": 1,
     "meleeArmor": 0,
     "pierceArmor": 0,
-    "range": 10,
     "cost": {
       "gold": 125
     },

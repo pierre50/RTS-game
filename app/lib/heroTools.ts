@@ -20,6 +20,7 @@ import { applyDiplomaticAggression, canTriggerDiplomaticAggression } from './dip
 import { getWorkWithLoadingType } from './extra'
 import {
   getEquipmentCombatStats,
+  getUnitCombatRange,
   getUnitWorkEquipment,
   refreshUnitEquipmentStats,
   UNARMED_UNIT_WEAPON_POWER,
@@ -60,7 +61,6 @@ export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword'
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
 const TOOL_ACTION_RANGE = 3
-const HUNTER_ARROW_RANGE = 4
 const HERO_BOW_CHARGE_ENERGY_ACTION = 'heroBowCharge'
 const HERO_DEFENSE_ENERGY_ACTION = 'heroDefense'
 const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
@@ -92,8 +92,26 @@ const HERO_ARROW_DIRECTION_OFFSETS: Record<string, Partial<Point>> = {
   southwest: { y: 4 },
 }
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
-const HERO_ARROW_MAX_DISTANCE = HUNTER_ARROW_RANGE * HERO_ARROW_CELL_DISTANCE
 const HERO_AIM_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
+
+function getHeroBowRange(hero: UnitEntity): number {
+  return getUnitCombatRange(hero) ?? 0
+}
+
+function getHeroMaxArrowDistance(hero: UnitEntity, power = 1): number {
+  const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
+  const baseRange = getHeroBowRange(hero)
+  const maxDistance = baseRange * HERO_ARROW_CELL_DISTANCE * rangePower
+  console.debug('[hero-bow-range]', {
+    unitLabel: hero.label,
+    work: hero.work,
+    ownerAge: hero.owner?.age ?? 0,
+    baseRange,
+    rangePower: Number(rangePower.toFixed(2)),
+    maxDistance: Number(maxDistance.toFixed(2)),
+  })
+  return maxDistance
+}
 
 function getHeroShootReleaseFrame(tool: 'bow' | 'lasso' | null | undefined): number {
   return tool === 'lasso' ? LASSO_SHOOT_RELEASE_FRAME : BOW_SHOOT_RELEASE_FRAME
@@ -133,6 +151,10 @@ export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquip
 
 export function getEquippedItemWeapon(tool: HeroEquippedItem, age = 0): DynamicEquipmentKey | undefined {
   if (tool === 'sword') return age >= 1 ? 'sword_copper' : 'sword_ceramic'
+  if (tool === 'bow') {
+    const bowEquipment = getUnitWorkEquipment(WORK_TYPES.hunter, age)
+    return bowEquipment.find(key => key.includes('bow')) as DynamicEquipmentKey | undefined
+  }
   return EQUIPPED_ITEM_WEAPON[tool]
 }
 
@@ -733,7 +755,6 @@ function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
 function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null, power = 1): void {
   const map = hero.context?.map
   if (!map) return
-  const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
   playHeroToolAnimation(
     hero,
     () => {
@@ -745,7 +766,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
           destination,
           spawnPoint: getHeroArrowSpawnPoint(hero),
           weaponPower: getHeroWeaponDamage(hero, 'bow'),
-          maxDistance: HERO_ARROW_MAX_DISTANCE * rangePower,
+          maxDistance: getHeroMaxArrowDistance(hero, power),
         },
         hero.context!
       )
@@ -1144,7 +1165,7 @@ function finishHeroBowChargeShot(hero: UnitEntity): void {
         destination,
         spawnPoint: getHeroArrowSpawnPoint(hero),
         weaponPower: getHeroWeaponDamage(hero, 'bow'),
-        maxDistance: HERO_ARROW_MAX_DISTANCE * Math.max(HERO_BOW_MIN_POWER, Math.min(1, power)),
+        maxDistance: getHeroMaxArrowDistance(hero, power),
       },
       hero.context!
     )

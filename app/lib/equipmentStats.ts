@@ -57,9 +57,9 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   scythe_ceramic: { weapon: { power: 2 } },
   scythe_bronze: { weapon: { power: 6 } },
   scythe_iron: { weapon: { power: 8 } },
-  bow: { weapon: { power: 4 } },
-  bow_great: { weapon: { power: 6 } },
-  bow_recurve: { weapon: { power: 8 } },
+  bow: { weapon: { power: 4, range: 4 } },
+  bow_great: { weapon: { power: 6, range: 5 } },
+  bow_recurve: { weapon: { power: 8, range: 6 } },
   halberd: { weapon: { power: 17 } },
   sword_copper: { weapon: { power: 6 } },
   sword_ceramic: { weapon: { power: 4 } },
@@ -118,6 +118,20 @@ function loadedEquipmentStats(): Record<string, EquipmentStats> {
 
 function emptyStats(): EquipmentCombatStats {
   return { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
+}
+
+function getWeaponRangeFromEquipment(
+  equipment: readonly string[] = [],
+  definitions: Record<string, EquipmentStats> = loadedEquipmentStats()
+): number | undefined {
+  let bestRange = 0
+  for (const key of equipment) {
+    const itemRange = definitions[key]?.weapon?.range
+    if (typeof itemRange === 'number' && itemRange > bestRange) {
+      bestRange = itemRange
+    }
+  }
+  return bestRange > 0 ? bestRange : undefined
 }
 
 export function getEquipmentCombatStats(
@@ -193,6 +207,25 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
   for (const stat of COMBAT_STAT_KEYS) {
     unit[stat] = stats[stat]
   }
+}
+
+export function getUnitCombatRange(unit: UnitEntity): number | undefined {
+  const age = unit.owner?.age ?? 0
+  const config = unit.owner?.config.units[unit.type]
+
+  const explicitEquipment = Array.isArray(unit.equipment) && unit.equipment.length ? unit.equipment : []
+  const explicitRange = getWeaponRangeFromEquipment(explicitEquipment)
+  if (explicitRange != null) return explicitRange
+
+  if (unit.work) {
+    const workEquipment = getUnitWorkEquipment(unit.work, age)
+    const workRange = getWeaponRangeFromEquipment(workEquipment)
+    if (workRange != null) return workRange
+  }
+
+  const level = getUnitEquipmentLevel(unit, config?.category)
+  const unitEquipment = getUnitEquipment(unit.type, config, age, level)
+  return getWeaponRangeFromEquipment(unitEquipment)
 }
 
 function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {

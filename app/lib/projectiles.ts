@@ -3,16 +3,6 @@ type PlayerTechnologyState = {
   technologies?: string[]
 }
 
-const FIERY_PROJECTILES: Record<string, string> = {
-  Arrow: 'FireArrow',
-  ArrowCeramic: 'FireArrow',
-  ArrowCopper: 'FireArrow',
-  ArrowBronze: 'FireArrow',
-  ArrowIron: 'FireArrow',
-  Bolt: 'FireBolt',
-  Stone: 'FireStone',
-}
-
 const AGE_ARROW_PROJECTILES = ['ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron'] as const
 
 const BALLISTICS_PROJECTILES = new Set([
@@ -21,9 +11,6 @@ const BALLISTICS_PROJECTILES = new Set([
   'ArrowCopper',
   'ArrowBronze',
   'ArrowIron',
-  'FireArrow',
-  'Bolt',
-  'FireBolt',
   'Stone',
   'FireStone',
 ])
@@ -34,12 +21,7 @@ function getAgeArrowProjectile(player?: PlayerTechnologyState | null): string {
 }
 
 export function getEffectiveProjectileType(projectileType: string, player?: PlayerTechnologyState | null): string {
-  if (!player?.technologies?.includes('Alchemy')) {
-    return projectileType === 'Arrow' ? getAgeArrowProjectile(player) : projectileType
-  }
-
-  const agedProjectileType = projectileType === 'Arrow' ? getAgeArrowProjectile(player) : projectileType
-  return FIERY_PROJECTILES[agedProjectileType] ?? agedProjectileType
+  return projectileType === 'Arrow' ? getAgeArrowProjectile(player) : projectileType
 }
 
 export function projectileTracksTarget(projectileType: string, player?: PlayerTechnologyState | null): boolean {

@@ -1334,6 +1334,10 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToHunt(target, immediate)
   }
 
+  sendToCaptureHorse(target: RuntimeEntity, immediate = false) {
+    return this.unitCommands.sendToCaptureHorse(target, immediate)
+  }
+
   sendToBuilding(target: BuildingEntity, preserveBuildQueue = false) {
     return this.unitCommands.sendToBuilding(target, preserveBuildQueue)
   }

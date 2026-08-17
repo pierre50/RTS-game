@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   applyCombatHit,
   degreeToDirection,
@@ -14,10 +14,13 @@ import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
 import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
+import { getUnitCombatRange } from '../../lib/equipmentStats'
 import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+
+const PROJECTILE_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -161,12 +164,13 @@ export class UnitCombat {
     const map = unit.context?.map
     const menu = unit.context?.menu
     const player = unit.owner
+    const rangedAttackRange = getUnitCombatRange(unit)
 
     if (!unit.getActionCondition?.(unit.dest)) {
       unit.affectNewDest?.()
       return
     }
-    if (unit.range && unit.projectile && unit.type !== UNIT_TYPES.villager) {
+    if (rangedAttackRange && unit.projectile && unit.type !== UNIT_TYPES.villager) {
       this.runAttackLoop(BOW_SHOOT_RELEASE_FRAME, dest => {
         if (!dest || !unit.realDest || !map) return
         playAudibleSoundCue(unit, unit.sounds?.attack)
@@ -176,6 +180,7 @@ export class UnitCombat {
             target: dest,
             type: unit.projectile || '',
             destination: unit.realDest,
+            maxDistance: rangedAttackRange * PROJECTILE_CELL_DISTANCE,
           },
           unit.context!
         )

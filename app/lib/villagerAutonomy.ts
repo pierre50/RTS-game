@@ -1,6 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { isWheatMature } from './combat'
 import { getGaiaAnimals } from './playerState'
+import { getNearestAvailableStableForUnit } from './horseCapture'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../types/entities'
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
@@ -18,6 +19,17 @@ function isUsableAnimalCarcass(entity: RuntimeEntity | null | undefined): entity
       entity.isDead &&
       !entity.isDestroyed &&
       (entity.quantity ?? 0) > 0
+  )
+}
+
+function isCapturableHorse(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
+  return Boolean(
+    entity &&
+      entity.family === FAMILY_TYPES.animal &&
+      entity.type === 'Horse' &&
+      !entity.isDead &&
+      !entity.isDestroyed &&
+      !(entity as { isLassoed?: boolean }).isLassoed
   )
 }
 
@@ -114,11 +126,27 @@ function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
   )
 }
 
+function knownCapturableHorses(unit: UnitEntity): RuntimeEntity[] {
+  const foundedHorses = unit.owner?.foundedAnimals
+  const source = foundedHorses?.size
+    ? [...foundedHorses]
+    : [...getGaiaAnimals(unit.context?.map?.gaia)].filter(animal => isKnownToUnit(unit, animal))
+
+  return source.filter(isCapturableHorse)
+}
+
 export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
   if (job === 'construction') return knownConstructionTargets(unit).length > 0
   if (job === 'food') return knownFoodTargets(unit).length > 0
-  const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction'>, string> = {
+  if (job === 'horseCapture') {
+    const horses = knownCapturableHorses(unit)
+    return (
+      horses.length > 0 && horses.some(horse => Boolean(getNearestAvailableStableForUnit(unit, horse, { maxDistance: null })))
+    )
+  }
+
+  const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>, string> = {
     wood: RESOURCE_TYPES.tree,
     stone: RESOURCE_TYPES.stone,
     gold: RESOURCE_TYPES.gold,
@@ -131,6 +159,7 @@ export function getAutonomyJobForWork(work: string | null | undefined): Villager
   if (work === WORK_TYPES.stoneminer) return 'stone'
   if (work === WORK_TYPES.goldminer) return 'gold'
   if (work === WORK_TYPES.builder) return 'construction'
+  if (work === WORK_TYPES.horseCapture) return 'horseCapture'
   if (work === WORK_TYPES.forager || work === WORK_TYPES.farmer || work === WORK_TYPES.hunter) {
     return 'food'
   }
@@ -162,6 +191,14 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
       return true
     }
 
+    if (job === 'horseCapture') {
+      const target = closest(unit, knownCapturableHorses(unit))
+      if (!target) return exploreForAutonomy(unit, job)
+      if (!getNearestAvailableStableForUnit(unit, target)) return false
+      unit.sendToCaptureHorse?.(target)
+      return true
+    }
+
     if (job === 'construction') {
       const target = closest(unit, knownConstructionTargets(unit))
       if (!target) {
@@ -172,7 +209,7 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
       return true
     }
 
-    const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction'>, string> = {
+    const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>, string> = {
       wood: RESOURCE_TYPES.tree,
       stone: RESOURCE_TYPES.stone,
       gold: RESOURCE_TYPES.gold,

@@ -20,6 +20,7 @@ import {
   isWheatMature,
   setVillagerAutonomy,
 } from '../../lib'
+import { getNearestAvailableStableForUnit } from '../../lib/horseCapture'
 import { t } from '../../lib/lang'
 import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
 import { isHeroControlled } from '../../lib/unitControl'
@@ -264,6 +265,21 @@ export class UnitCommands {
 
   sendToHunt(target: RuntimeEntity, immediate = false) {
     return this.commonSendTo(target, WORK_TYPES.hunter, ACTION_TYPES.hunt, false, immediate)
+  }
+
+  sendToCaptureHorse(target: RuntimeEntity, immediate = false) {
+    const unit = this.unit
+    const nearestStable = getNearestAvailableStableForUnit(unit, target)
+    const hasAvailableStable = Boolean(nearestStable)
+    const canCaptureTarget = this.getActionCondition(target, ACTION_TYPES.captureHorse)
+    if (!hasAvailableStable) {
+      return false
+    }
+    if (!canCaptureTarget) {
+      return false
+    }
+    const commandSent = this.commonSendTo(target, WORK_TYPES.horseCapture, ACTION_TYPES.captureHorse, false, immediate) !== false
+    return commandSent
   }
 
   sendToBuilding(target: BuildingEntity, preserveBuildQueue = false) {

@@ -1,8 +1,28 @@
-import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getActionCondition, instancesDistance } from '../../lib'
 import { Projectile } from '../Projectile'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Building } from './index'
+
+type BuildingCombatRangeByAge = Partial<Record<number, number>>
+
+const BUILDING_RANGED_ATTACK_RANGES_BY_AGE: Record<string, BuildingCombatRangeByAge> = {
+  [BUILDING_TYPES.watchTower]: {
+    1: 6,
+  },
+}
+
+function getBuildingCombatRange(building: Building): number | undefined {
+  const map = BUILDING_RANGED_ATTACK_RANGES_BY_AGE[building.type]
+  if (!map) return building.range
+
+  const ownerAge = building.owner?.age ?? 0
+  for (let currentAge = ownerAge; currentAge >= 0; currentAge--) {
+    const ageRange = map[currentAge]
+    if (typeof ageRange === 'number') return ageRange
+  }
+  return building.range
+}
 
 export class BuildingCombat {
   building: Building
@@ -13,8 +33,8 @@ export class BuildingCombat {
 
   attackAction(target: RuntimeEntity): void {
     const building = this.building
-    if (!building.isBuilt || building.isDead || !building.range || !building.projectile) return
-    const range = building.range
+    const range = getBuildingCombatRange(building)
+    if (!building.isBuilt || building.isDead || !range || !building.projectile) return
     const projectileType = building.projectile
     const {
       context: { map },
@@ -36,7 +56,8 @@ export class BuildingCombat {
   detect(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
-    if (!building.range) return
+    const range = getBuildingCombatRange(building)
+    if (!range) return
 
     const actionOk = getActionCondition(building, instance, ACTION_TYPES.attack)
     const dist = instancesDistance(building, instance)
@@ -48,8 +69,8 @@ export class BuildingCombat {
         alreadyAttacking: Boolean(building.attackIntervalId),
         actionOk,
         dist: Number(dist.toFixed(1)),
-        range: building.range,
-        inRange: dist <= building.range,
+        range,
+        inRange: dist <= range,
         targetOwner: instance.owner?.label,
         targetHitPoints: instance.hitPoints,
       }
@@ -60,7 +81,7 @@ export class BuildingCombat {
       instance.family !== FAMILY_TYPES.animal &&
       !building.attackIntervalId &&
       actionOk &&
-      dist <= building.range
+      dist <= range
     ) {
       this.attackAction(instance)
     }
@@ -73,14 +94,15 @@ export class BuildingCombat {
   // instant-build path (constructed directly with isBuilt: true, e.g. dev-console/map generation).
   scanForInitialTarget(): void {
     const building = this.building
-    if (!building.range || !building.projectile) return
+    const range = getBuildingCombatRange(building)
+    if (!range || !building.projectile) return
     const candidates = findInstancesInSight<Building, RuntimeEntity>(
       building,
       candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
-      building.range
+      range
     )
     console.debug(
-      `[TowerBuilt] ${building.type}#${building.label} range=${building.range}: ${candidates.length} hostile candidate(s)`,
+      `[TowerBuilt] ${building.type}#${building.label} range=${range}: ${candidates.length} hostile candidate(s)`,
       candidates.map(c => ({
         type: c.type ?? c.family,
         label: c.label,
@@ -95,13 +117,14 @@ export class BuildingCombat {
   isAttacked(instance: RuntimeEntity): void {
     const building = this.building
     if (building.context.editor) return
+    const range = getBuildingCombatRange(building)
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)
     if (
       building.isBuilt &&
-      building.range &&
+      range &&
       getActionCondition(building, instance, ACTION_TYPES.attack) &&
-      instancesDistance(building, instance) <= building.range
+      instancesDistance(building, instance) <= range
     ) {
       this.attackAction(instance)
     }

@@ -1,12 +1,16 @@
 import { Graphics } from 'pixi.js'
-import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, STEP_TIME } from '../constants'
-import { getReliefOffset, instanceContactInstance } from '../lib'
-import { degreeToDirection, instancesDistance, pointIsBetweenTwoPoint, pointsDistance } from '../lib/maths'
+import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, STEP_TIME } from '../constants'
+import { getReliefOffset } from '../lib'
+import { degreeToDirection, pointIsBetweenTwoPoint, pointsDistance } from '../lib/maths'
 import { t } from '../lib/lang'
-import { canStoreStableHorse, storeStableHorse } from '../lib/stableHorses'
+import {
+  HORSE_CAPTURE_STABLE_MAX_DISTANCE,
+  HORSE_CAPTURE_STABLE_TIMEOUT_MS,
+  routeCapturedHorseToStableWithOwnerContact,
+} from '../lib/horseCapture'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import { spookWildHorse } from '../lib/wildHorseBehavior'
-import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { Point } from '../types/grid'
 import type { RuntimeCell } from '../types/map'
@@ -25,8 +29,6 @@ const LASSO_START_HEIGHT = 18
 const LASSO_FOLLOW_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT) * 1.8
 const LASSO_REPATH_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT) * 2.4
 const LASSO_REPATH_INTERVAL_MS = 300
-const LASSO_STABLE_RELEASE_DISTANCE = 7
-const LASSO_STABLE_ENTER_TIMEOUT_MS = 12000
 const LASSO_HAND_FRAME_COUNT = 8
 const LASSO_HORSE_NECK_FRAME_COUNT = 6
 const LASSO_DEFAULT_Z_OFFSET = 2
@@ -91,6 +93,12 @@ const LASSO_HORSE_NECK_OFFSETS = {
 } as const
 
 type LassoState = 'outbound' | 'attached' | 'retracting'
+type HeroLassoThrowOptions = {
+  allowStableOnRelease?: boolean
+  releaseHorseOnClear?: boolean
+  showMessages?: boolean
+  pullCapturedHorseToOwner?: boolean
+}
 type LassoedHorse = AnimalEntity & {
   degree?: number
   isLassoed?: boolean
@@ -103,10 +111,6 @@ type LassoedHorse = AnimalEntity & {
     action?: string | null,
     options?: { forceRepath?: boolean; movementSheet?: string }
   ) => void
-}
-
-type StableEntryHorse = LassoedHorse & {
-  clear?: () => void
 }
 
 function clampToMaxDistance(origin: Point, destination: Point, maxDistance: number): Point {
@@ -188,11 +192,21 @@ export class HeroLassoThrow extends Graphics {
   taskId: SchedulerTaskId | null
   spawnOrigin: Point
   lastFollowAt: number
+  options: Required<HeroLassoThrowOptions>
+  stableRouteCleanup: (() => void) | null
+  isStableHorseRouteActive: boolean
 
-  constructor(hero: UnitEntity, destination: Point, context: GameContextLike) {
+  constructor(hero: UnitEntity, destination: Point, context: GameContextLike, options: HeroLassoThrowOptions = {}) {
     super()
     this.gameContext = context
     this.hero = hero
+    this.options = {
+      allowStableOnRelease: true,
+      releaseHorseOnClear: true,
+      showMessages: true,
+      pullCapturedHorseToOwner: true,
+      ...options,
+    }
     this.spawnOrigin = getHeroLassoStart(hero)
     this.destination = clampToMaxDistance(this.spawnOrigin, destination, LASSO_MAX_DISTANCE)
     this.tip = { ...this.spawnOrigin }
@@ -200,6 +214,8 @@ export class HeroLassoThrow extends Graphics {
     this.state = 'outbound'
     this.taskId = null
     this.lastFollowAt = 0
+    this.isStableHorseRouteActive = false
+    this.stableRouteCleanup = null
     hero.heroLasso?.clearLasso({ releaseHorse: true })
     hero.heroLasso = this
     this.eventMode = 'none'
@@ -215,69 +231,6 @@ export class HeroLassoThrow extends Graphics {
     }
     for (const animal of this.gameContext.map.gaia?.animals ?? []) candidates.add(animal)
     return [...candidates]
-  }
-
-  findReleaseStable(horse: LassoedHorse): BuildingEntity | null {
-    let closest: BuildingEntity | null = null
-    let closestDistance = Infinity
-    for (const player of this.gameContext.players ?? []) {
-      if (this.hero.owner && player !== this.hero.owner) continue
-      for (const building of player.buildings ?? []) {
-        if (
-          building.type !== BUILDING_TYPES.stable ||
-          building.isDead ||
-          building.isDestroyed ||
-          !building.isBuilt ||
-          !canStoreStableHorse(building)
-        )
-          continue
-        const distance = instancesDistance(horse, building)
-        if (distance > LASSO_STABLE_RELEASE_DISTANCE || distance >= closestDistance) continue
-        closest = building
-        closestDistance = distance
-      }
-    }
-    return closest
-  }
-
-  scheduleHorseStableEntry(horse: StableEntryHorse, stable: BuildingEntity): void {
-    const scheduler = this.gameContext.scheduler
-    const startedAt = scheduler.elapsedMs
-    let taskId: SchedulerTaskId | null = null
-    taskId = scheduler.add(
-      () => {
-        if (horse.isDead || horse.isDestroyed) {
-          if (taskId != null) scheduler.remove(taskId)
-          return
-        }
-        if (stable.isDead || stable.isDestroyed) {
-          if (taskId != null) scheduler.remove(taskId)
-          this.releaseHorseToWild(horse)
-          return
-        }
-        if (instanceContactInstance(horse, stable)) {
-          if (storeStableHorse(stable, horse)) {
-            horse.clear?.()
-            if (taskId != null) scheduler.remove(taskId)
-            this.gameContext.menu?.syncEntityInfoModal?.()
-            this.gameContext.menu?.refreshHeroBuildingMenu?.()
-            this.gameContext.menu?.showMessage?.(t('lassoHorseStabled'), 'success')
-          } else {
-            if (taskId != null) scheduler.remove(taskId)
-            this.releaseHorseToWild(horse)
-          }
-          return
-        }
-        if (scheduler.elapsedMs - startedAt >= LASSO_STABLE_ENTER_TIMEOUT_MS) {
-          if (taskId != null) scheduler.remove(taskId)
-          this.releaseHorseToWild(horse)
-          return
-        }
-        horse.sendTo?.(stable, null, { forceRepath: false })
-      },
-      STEP_TIME,
-      'hero.lassoStableEntry'
-    )
   }
 
   releaseHorseToWild(horse: LassoedHorse): void {
@@ -327,7 +280,9 @@ export class HeroLassoThrow extends Graphics {
     horse.lassoOwner = this.hero
     horse.stop?.()
     horse.animalBehavior?.stop?.()
-    this.gameContext.menu?.showMessage?.(t('lassoHorseCaught'), 'success')
+    if (this.options.showMessages) {
+      this.gameContext.menu?.showMessage?.(t('lassoHorseCaught'), 'success')
+    }
   }
 
   releaseHorse({ allowFlee = true, allowStable = true }: { allowFlee?: boolean; allowStable?: boolean } = {}): void {
@@ -336,12 +291,27 @@ export class HeroLassoThrow extends Graphics {
     horse.isLassoed = false
     horse.lassoOwner = null
     this.target = null
-    const stable = allowStable ? this.findReleaseStable(horse) : null
-    if (stable) {
+    if (allowStable && this.options.allowStableOnRelease) {
       horse.stop?.()
       horse.animalBehavior?.stop?.()
-      horse.sendTo?.(stable, null, { forceRepath: true })
-      this.scheduleHorseStableEntry(horse, stable)
+      routeCapturedHorseToStableWithOwnerContact({
+        gameContext: this.gameContext,
+        horse,
+        owner: this.hero,
+        forceRepath: false,
+        timeoutMs: HORSE_CAPTURE_STABLE_TIMEOUT_MS,
+        taskName: 'hero.lassoStableEntry',
+        maxDistance: HORSE_CAPTURE_STABLE_MAX_DISTANCE,
+        onStored: () => {
+          this.gameContext.menu?.syncEntityInfoModal?.()
+          this.gameContext.menu?.refreshHeroBuildingMenu?.()
+          this.gameContext.menu?.showMessage?.(t('lassoHorseStabled'), 'success')
+        },
+        onStableUnavailable: () => {
+          if (allowFlee) this.releaseHorseToWild(horse)
+        },
+        onFailure: () => this.releaseHorseToWild(horse),
+      })
       return
     }
     if (allowFlee) this.releaseHorseToWild(horse)
@@ -368,14 +338,64 @@ export class HeroLassoThrow extends Graphics {
       this.startRetracting()
       return
     }
+    this.tryRouteAttachedHorseToStable()
+    if (this.isStableHorseRouteActive) return
     const distance = pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.tip.x, this.tip.y)
     const now = this.gameContext.scheduler.elapsedMs
     if (distance >= LASSO_REPATH_DISTANCE && now - this.lastFollowAt >= LASSO_REPATH_INTERVAL_MS) {
       this.lastFollowAt = now
-      horse.sendTo?.(this.hero, null, { forceRepath: true })
+      if (this.options.pullCapturedHorseToOwner) {
+        horse.sendTo?.(this.hero, null, { forceRepath: true })
+      }
     } else if (distance <= LASSO_FOLLOW_DISTANCE) {
-      horse.stop?.()
+      if (this.options.pullCapturedHorseToOwner) {
+        horse.stop?.()
+      }
     }
+  }
+
+  clearAttachedStableRoute(): void {
+    if (!this.stableRouteCleanup) return
+    this.stableRouteCleanup()
+    this.isStableHorseRouteActive = false
+    this.stableRouteCleanup = null
+  }
+
+  tryRouteAttachedHorseToStable(): void {
+    const horse = this.target
+    if (!horse) return
+    if (this.stableRouteCleanup) return
+    this.stableRouteCleanup = routeCapturedHorseToStableWithOwnerContact({
+      gameContext: this.gameContext,
+      owner: this.hero,
+      horse,
+      forceRepath: false,
+      timeoutMs: HORSE_CAPTURE_STABLE_TIMEOUT_MS,
+      taskName: 'hero.lassoStableEntry',
+      maxDistance: HORSE_CAPTURE_STABLE_MAX_DISTANCE,
+      isRouteValid: () =>
+        this.state === 'attached' && this.target === horse && (horse.lassoOwner === this.hero || Boolean(horse.isLassoed)),
+      onStored: () => {
+        this.isStableHorseRouteActive = false
+        this.stableRouteCleanup = null
+        horse.isLassoed = false
+        horse.lassoOwner = null
+        horse.clear?.()
+        this.gameContext.menu?.syncEntityInfoModal?.()
+        this.gameContext.menu?.refreshHeroBuildingMenu?.()
+        this.gameContext.menu?.showMessage?.(t('lassoHorseStabled'), 'success')
+        this.clearLasso({ releaseHorse: false })
+      },
+      onFailure: () => {
+        this.isStableHorseRouteActive = false
+        this.stableRouteCleanup = null
+        this.releaseHorseToWild(horse)
+        this.clearLasso({ releaseHorse: false })
+      },
+      onHorseRouteStart: () => {
+        this.isStableHorseRouteActive = true
+      },
+    })
   }
 
   step(): void {
@@ -425,7 +445,8 @@ export class HeroLassoThrow extends Graphics {
   }
 
   clearLasso({ releaseHorse = true }: { releaseHorse?: boolean } = {}): void {
-    if (releaseHorse) this.releaseHorse()
+    if (releaseHorse && this.options.releaseHorseOnClear) this.releaseHorse()
+    this.clearAttachedStableRoute()
     if (this.hero.heroLasso === this) this.hero.heroLasso = null
     if (this.taskId != null) {
       this.gameContext.scheduler.remove(this.taskId)

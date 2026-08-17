@@ -283,6 +283,11 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
       harvestSheet: actionAlias(variant, 'slash'),
       loadedSheet: bodyAlias(variant, 'walking'),
     },
+    horseCapture: {
+      ...villagerSheets('slash'),
+      harvestSheet: actionAlias(variant, 'slash'),
+      loadedSheet: bodyAlias(variant, 'walking'),
+    },
     farmer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
     forager: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
     stoneminer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },

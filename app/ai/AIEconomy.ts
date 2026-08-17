@@ -1,5 +1,6 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, getGaiaAnimals, instancesDistance, isWheatMature } from '../lib'
+import { canStoreStableHorse, getStableHorseAmount, STABLE_HORSE_CAPACITY } from '../lib/stableHorses'
 import type { RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
@@ -294,8 +295,81 @@ export class AIEconomy {
 
   getViableHuntAnimals(hasKnownBerryFood: boolean, dropSites: AIBuildingLike[] = []): AIEntityLike[] {
     return [...this.ai.foundedAnimals].filter((animal: AIEntityLike) =>
-      this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
+      animal.type !== 'Horse' && this.isViableLiveHunt(animal, hasKnownBerryFood, dropSites)
     )
+  }
+
+  getAvailableStableForCapture(): AIBuildingLike[] {
+    return this.ai
+      .buildingsByTypes([BUILDING_TYPES.stable])
+      .filter(
+        (building: AIBuildingLike) =>
+          building.isBuilt && !building.isDead && !building.isDestroyed && canStoreStableHorse(building)
+      )
+  }
+
+  getAvailableHorseCaptureSlots(): number {
+    return this.getAvailableStableForCapture().reduce(
+      (sum, stable) => sum + Math.max(0, STABLE_HORSE_CAPACITY - getStableHorseAmount(stable)),
+      0
+    )
+  }
+
+  getCapturableHorses() {
+    return [...this.ai.foundedAnimals]
+      .filter((animal: AIEntityLike) => animal.type === 'Horse' && !animal.isDead && !animal.isDestroyed)
+      .filter((animal: AIEntityLike) => this.isLocationSafe(animal))
+      .filter(animal => !(animal as { isLassoed?: boolean }).isLassoed)
+  }
+
+  assignHorseCaptures(availableVillagers: AIEntityLike[]): number {
+    const stables = this.getAvailableStableForCapture()
+    if (!stables.length || !availableVillagers.length) return 0
+
+    const horses = this.getCapturableHorses()
+    if (!horses.length) return 0
+
+    const safeSlots = this.getAvailableHorseCaptureSlots()
+    if (!safeSlots) return 0
+
+    let actions = 0
+    const reserved: Map<AIBuildingLike, number> = new Map()
+    const reservedForHorse = new Set<AIEntityLike>()
+
+    const findNearestStable = (horse: AIEntityLike) => {
+      let selected: AIBuildingLike | null = null
+      let best = Infinity
+      for (const stable of stables) {
+        const used = reserved.get(stable) || 0
+        if (getStableHorseAmount(stable) + used >= STABLE_HORSE_CAPACITY) continue
+        const distance = Math.abs(stable.i - horse.i) + Math.abs(stable.j - horse.j)
+        if (distance < best) {
+          selected = stable
+          best = distance
+        }
+      }
+      return selected
+    }
+
+    for (let i = 0; i < safeSlots && availableVillagers.length; i++) {
+      const villager = availableVillagers.shift()
+      if (!villager) break
+      const horse = getClosestInstance(villager, horses)
+      if (!horse || reservedForHorse.has(horse)) {
+        availableVillagers.push(villager)
+        continue
+      }
+      const stable = findNearestStable(horse)
+      if (!stable) {
+        availableVillagers.unshift(villager)
+        break
+      }
+      reserved.set(stable, (reserved.get(stable) || 0) + 1)
+      reservedForHorse.add(horse)
+      villager.sendToCaptureHorse?.(horse)
+      actions++
+    }
+    return actions
   }
 
   getNearestDropDistance(source: AIEntityLike, dropSites: AIBuildingLike[]): number {
@@ -408,14 +482,14 @@ export class AIEconomy {
     }
   }
 
-  // Group-aware hunting: large animals need several hunters on the same target.
-  // Small animals get 1 hunter each. Returns count of new hunters assigned.
-  assignHunters(
-    availableVillagers: AIEntityLike[],
-    villagersHunting: AIEntityLike[],
-    maxTotalHunters: number,
-    huntAnimals?: AIEntityLike[]
-  ): number {
+    // Group-aware hunting: large animals need several hunters on the same target.
+    // Small animals get 1 hunter each. Returns count of new hunters assigned.
+    assignHunters(
+      availableVillagers: AIEntityLike[],
+      villagersHunting: AIEntityLike[],
+      maxTotalHunters: number,
+      huntAnimals?: AIEntityLike[]
+    ): number {
     const safeAnimals = huntAnimals || this.getViableHuntAnimals(false)
     if (!safeAnimals.length) return 0
 
@@ -428,7 +502,7 @@ export class AIEconomy {
     }
 
     const LARGE_HP = 20 // threshold for group hunt
-    const DAMAGE_PER_HUNTER = 4 // spear damage per throw
+    const hunterDamagePerThrow = 4
 
     let actions = 0
     let totalHunters = villagersHunting.length // includes already-hunting villagers
@@ -445,7 +519,7 @@ export class AIEconomy {
       const maxAssignable = Math.min(maxTotalHunters - totalHunters, availableVillagers.length)
 
       // How many hunters needed to kill this animal within ~3 attack rounds
-      const needed = Math.max(0, Math.ceil((animal.hitPoints || 0) / DAMAGE_PER_HUNTER) - current)
+      const needed = Math.max(0, Math.ceil((animal.hitPoints || 0) / hunterDamagePerThrow) - current)
       if (needed === 0) continue
       const toSend = Math.min(needed, maxAssignable)
       for (let i = 0; i < toSend; i++) {
@@ -699,6 +773,8 @@ export class AIEconomy {
     const availableVillagers = workerSnapshot.inactifVillagers
       .filter((v: AIEntityLike) => !buildingVillagers.has(v))
       .sort((a: AIEntityLike, b: AIEntityLike) => (b.hitPoints || 0) - (a.hitPoints || 0))
+
+    actions += this.assignHorseCaptures(availableVillagers)
 
     actions += this.assignFoodSources(availableVillagers, workerSnapshot, targets, emptyFarms)
 

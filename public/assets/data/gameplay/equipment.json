@@ -81,17 +81,20 @@
   },
   "bow": {
     "weapon": {
-      "power": 4
+      "power": 4,
+      "range": 4
     }
   },
   "bow_great": {
     "weapon": {
-      "power": 6
+      "power": 6,
+      "range": 5
     }
   },
   "bow_recurve": {
     "weapon": {
-      "power": 8
+      "power": 8,
+      "range": 6
     }
   },
   "longsword": {

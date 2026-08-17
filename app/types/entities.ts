@@ -12,7 +12,7 @@ import type { ActionProps } from '../lib/combat'
 
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitControlMode = 'standard' | 'hero' | 'ai'
-export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction'
+export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
 export type UnitCreationExtra = {
   name?: string
   gender?: 'male' | 'female'
@@ -319,6 +319,7 @@ export interface UnitEntity extends EnergyEntity {
   sendToConvert(target: RuntimeEntity): void
   sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
   sendToHunt(target: RuntimeEntity, immediate?: boolean): void
+  sendToCaptureHorse?(target: RuntimeEntity, immediate?: boolean): void
   sendToFarm(target: RuntimeEntity, immediate?: boolean): void
   sendToTree?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void
@@ -412,6 +413,8 @@ export interface AnimalEntity extends EnergyEntity {
   realDest?: Pick<RuntimeEntity | RuntimeCell, 'i' | 'j'> | null
   horseColor?: string
   companionOwner?: UnitEntity | null
+  isLassoed?: boolean
+  lassoOwner?: UnitEntity | null
   companionHitCount?: number
   standingSheet?: SpritesheetLike | null
   walkingSheet?: SpritesheetLike | null

@@ -56,6 +56,7 @@ export const FAMILY_TYPES = {
 
 export const WORK_TYPES = {
   hunter: 'hunter',
+  horseCapture: 'horseCapture',
   farmer: 'farmer',
   forager: 'forager',
   woodcutter: 'woodcutter',
@@ -70,6 +71,7 @@ export const ACTION_TYPES = {
   delivery: 'delivery',
   takemeat: 'takemeat',
   hunt: 'hunt',
+  captureHorse: 'captureHorse',
   attack: 'attack',
   flee: 'flee',
   train: 'train',

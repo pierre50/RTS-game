@@ -560,6 +560,12 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
       }
     }
     if (target.family === FAMILY_TYPES.animal) {
+      if (target.type === 'Horse' && npc.type === UNIT_TYPES.villager) {
+        const captureAttemptResult = npc.sendToCaptureHorse?.(target)
+        const captureAttemptStarted = captureAttemptResult !== false
+        if (captureAttemptStarted) return true
+        return false
+      }
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {
         npc.sendToHunt?.(target)
         return true
