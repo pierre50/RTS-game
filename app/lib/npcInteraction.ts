@@ -137,7 +137,7 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   target.addChildAt(marker, shadowIndex)
 }
 
-function noticeNpc(target: UnitEntity, hero: UnitEntity): void {
+function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
   if (target.lookingAtHero) return
   const sprite = target.sprite
   if (sprite) {
@@ -152,7 +152,7 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity): void {
   target.degree = getInstanceDegree(target, hero.x, hero.y)
   target.setTextures?.(SHEET_TYPES.standing)
   setCommSelected(target, true)
-  playSelectionSound(target)
+  if (shouldPlayVoice) playSelectionSound(target)
 }
 
 // A cue shared by the whole group plays once,
@@ -288,7 +288,11 @@ export function resolveCommGroup(
     if (options.precisionOnly) return []
   }
   const group = findCommGroup(hero, radius)
-  for (const npc of group) noticeNpc(npc, hero)
+  let playedVoice = false
+  for (const npc of group) {
+    noticeNpc(npc, hero, !playedVoice)
+    if (!playedVoice) playedVoice = true
+  }
   return group
 }
 
