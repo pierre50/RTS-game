@@ -74,7 +74,7 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
     isometricToCartesian: isometricToCartesianImpl ?? (() => [0, 0]),
     pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
     playAudibleSoundCue: () => {},
-    SLASH_IMPACT_FRAME: 1,
+    SLASH_IMPACT_FRAME: 5,
   }
   const { AnimalCombat } = loadModule('app/classes/animal/AnimalCombat.ts', {
     '../../constants': constants,
@@ -219,6 +219,24 @@ test('animal attacks use their configured impact frame when provided', () => {
 
   assert.equal(attackLoopCalls.length, 1)
   assert.equal(attackLoopCalls[0][1].releaseFrame, 3)
+})
+
+test('animal attacks fall back to the shared slash impact frame', () => {
+  const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
+  const { combat, attackLoopCalls } = createAnimalCombat({
+    animalOverrides: {
+      action: 'attack',
+      dest: target,
+      getActionCondition: () => true,
+      setTextures: () => {},
+      strategy: 'attack',
+    },
+  })
+
+  combat.getAction('attack')
+
+  assert.equal(attackLoopCalls.length, 1)
+  assert.equal(attackLoopCalls[0][1].releaseFrame, 5)
 })
 
 test('runaway flees along the projectile direction instead of away from the shooter position', () => {

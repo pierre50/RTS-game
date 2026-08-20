@@ -624,7 +624,10 @@ export class WeatherSystem {
     startAmbientLoop(SOUND_CUES.weather.windLight, instance => (this.windLoopLight = instance))
     startAmbientLoop(SOUND_CUES.weather.windHeavy, instance => (this.windLoopHeavy = instance))
 
-    this._onTick = ticker => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
+    this._onTick = ticker => {
+      const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
+      this.context.performance?.measure?.('weather.update', update) ?? update()
+    }
     context.app.ticker.add(this._onTick)
     this.log('started', this.debugState())
   }

@@ -281,6 +281,158 @@ test('hero units never draw energy bars', () => {
   assert.equal(children.some(child => child.label === 'energyBar'), false)
 })
 
+test('world hud bars fade in when they appear', () => {
+  const { Instance } = loadInstance()
+  const children = []
+  const tasks = new Map()
+  const instance = Object.create(Instance.prototype)
+  Object.assign(instance, {
+    label: 'unit-1',
+    context: {
+      map: {},
+      controls: { heroUnit: { label: 'hero-1' } },
+      scheduler: {
+        add(callback, _interval, name) {
+          const id = tasks.size + 1
+          tasks.set(id, { callback, name })
+          return id
+        },
+        remove(id) {
+          tasks.delete(id)
+        },
+      },
+    },
+    family: 'unit',
+    owner: { isPlayed: true },
+    selected: true,
+    isDead: false,
+    isDestroyed: false,
+    hitPoints: 7,
+    totalHitPoints: 10,
+    sprite: { height: 40, anchor: { y: 1 } },
+    children,
+    getChildByLabel: label => children.find(child => child.label === label) || null,
+    addChild: child => {
+      children.push(child)
+    },
+    removeChild: child => {
+      const index = children.indexOf(child)
+      if (index >= 0) children.splice(index, 1)
+    },
+  })
+
+  Instance.prototype.drawHealthBar.call(instance)
+
+  const bar = instance.getChildByLabel('healthBar')
+  assert.equal(bar.alpha, 0)
+  assert.equal(tasks.size, 1)
+
+  tasks.get(1).callback()
+  assert.ok(bar.alpha > 0 && bar.alpha < 1)
+
+  for (let i = 0; i < 8; i += 1) tasks.get(1)?.callback()
+
+  assert.equal(bar.alpha, 1)
+  assert.equal(tasks.size, 0)
+})
+
+test('world hud bars keep fading in across redraws', () => {
+  const { Instance } = loadInstance()
+  const children = []
+  const tasks = new Map()
+  const instance = Object.create(Instance.prototype)
+  Object.assign(instance, {
+    label: 'unit-1',
+    context: {
+      map: {},
+      controls: { heroUnit: { label: 'hero-1' } },
+      scheduler: {
+        add(callback, _interval, name) {
+          const id = tasks.size + 1
+          tasks.set(id, { callback, name })
+          return id
+        },
+        remove(id) {
+          tasks.delete(id)
+        },
+      },
+    },
+    family: 'unit',
+    owner: { isPlayed: true },
+    selected: true,
+    isDead: false,
+    isDestroyed: false,
+    hitPoints: 7,
+    totalHitPoints: 10,
+    sprite: { height: 40, anchor: { y: 1 } },
+    children,
+    getChildByLabel: label => children.find(child => child.label === label) || null,
+    addChild: child => {
+      children.push(child)
+    },
+    removeChild: child => {
+      const index = children.indexOf(child)
+      if (index >= 0) children.splice(index, 1)
+    },
+  })
+
+  Instance.prototype.drawHealthBar.call(instance)
+  const firstBar = instance.getChildByLabel('healthBar')
+
+  Instance.prototype.drawHealthBar.call(instance)
+  const redrawnBar = instance.getChildByLabel('healthBar')
+
+  assert.notEqual(redrawnBar, firstBar)
+  assert.equal(children.includes(firstBar), false)
+  assert.equal(redrawnBar.alpha, 0)
+  assert.equal(tasks.size, 1)
+
+  tasks.get(1).callback()
+
+  assert.ok(redrawnBar.alpha > 0 && redrawnBar.alpha < 1)
+})
+
+test('world hud bars fade out before removal', () => {
+  const { Instance } = loadInstance()
+  const children = [{ label: 'healthBar', alpha: 1 }]
+  const tasks = new Map()
+  const instance = Object.create(Instance.prototype)
+  Object.assign(instance, {
+    context: {
+      scheduler: {
+        add(callback, _interval, name) {
+          const id = tasks.size + 1
+          tasks.set(id, { callback, name })
+          return id
+        },
+        remove(id) {
+          tasks.delete(id)
+        },
+      },
+    },
+    children,
+    getChildByLabel: label => children.find(child => child.label === label) || null,
+    removeChild: child => {
+      const index = children.indexOf(child)
+      if (index >= 0) children.splice(index, 1)
+    },
+  })
+
+  Instance.prototype.removeHealthBar.call(instance)
+
+  const bar = children[0]
+  assert.equal(children.includes(bar), true)
+  assert.equal(tasks.size, 1)
+
+  tasks.get(1).callback()
+  assert.ok(bar.alpha > 0 && bar.alpha < 1)
+
+  for (let i = 0; i < 8; i += 1) tasks.get(1)?.callback()
+
+  assert.equal(children.includes(bar), false)
+  assert.equal(tasks.size, 0)
+})
+
 test('pause and resume ignore static sprites but control animated sprites', () => {
   const { Instance } = loadInstance()
   const staticInstance = Object.create(Instance.prototype)

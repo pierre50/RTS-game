@@ -36,7 +36,12 @@ function loadResourceCarry() {
   return module.exports
 }
 
-const { addCarriedResource, getDisplayedCarriedResourceEntries } = loadResourceCarry()
+const {
+  addCarriedResource,
+  clearCarriedResource,
+  getDeliverableResourceEntries,
+  getDisplayedCarriedResourceEntries,
+} = loadResourceCarry()
 
 test('hero display keeps food and iron as separate carried resources', () => {
   const hero = {
@@ -54,4 +59,36 @@ test('hero display keeps food and iron as separate carried resources', () => {
     ['food', 10],
     ['iron', 1],
   ])
+})
+
+test('hero carried resource stays cleared after deposit', () => {
+  const hero = {
+    controlMode: 'hero',
+    loading: 10,
+    loadingType: 'wheat',
+    resourceLoads: { wheat: 10 },
+  }
+
+  clearCarriedResource(hero, 'wheat')
+
+  assert.deepEqual(hero.resourceLoads, {})
+  assert.equal(hero.loading, 0)
+  assert.equal(hero.loadingType, null)
+  assert.deepEqual(getDisplayedCarriedResourceEntries(hero), [])
+})
+
+test('hero only offers building-compatible resources for deposit', () => {
+  const hero = {
+    controlMode: 'hero',
+    loading: 11,
+    loadingType: 'iron',
+    resourceLoads: { wheat: 10, iron: 1 },
+  }
+  const granary = {
+    family: 'building',
+    type: 'Granary',
+    accept: ['wheat', 'berry', 'meat'],
+  }
+
+  assert.deepEqual(getDeliverableResourceEntries(hero, granary), [['wheat', 10]])
 })

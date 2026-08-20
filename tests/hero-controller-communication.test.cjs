@@ -222,26 +222,26 @@ function createController({
     updateNpcFollow: () => {},
   }
   const heroTools = {
-    aimHeroBowChargeAt: () => false,
+    aimHeroPowerChargeAt: () => false,
     aimHeroDefenseAt: () => false,
     applyToolAppearance: () => {},
     beginHeroDefense: () => false,
-    cancelHeroBowCharge: () => {},
+    cancelHeroPowerCharge: () => {},
     cancelHeroLasso: hero => hero.heroLasso?.clearLasso({ releaseHorse: true }),
     cancelHeroDefense: () => {},
     findFacingEntity: (_hero, matches) => createdAnimals.find(animal => matches(animal)) ?? null,
     getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
     HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
-    isHeroBowChargeActiveForTool: (hero, tool) =>
-      hero.heroBowChargeStart != null && hero.heroBowChargeTool === tool && !hero.heroBowReleaseQueued,
+    isHeroPowerChargeActiveForTool: (hero, tool) =>
+      hero.heroPowerChargeStart != null && hero.heroPowerChargeTool === tool && !hero.heroPowerReleaseQueued,
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
-    releaseHeroBowCharge: () => false,
+    releaseHeroPowerCharge: () => false,
     triggerToolAttackAt: (_hero, _tool, destination) => {
       calls.push(['attack', destination])
       return true
     },
-    updateHeroBowCharge: () => {},
+    updateHeroPowerCharge: () => {},
     updateHeroDefense: () => {},
     ...heroToolsOverride,
   }
@@ -326,15 +326,15 @@ test('primary hero click still attacks when communicable villagers are nearby', 
 test('keyboard movement during bow charge restores aim without resetting action textures', () => {
   const { calls, controller, hero } = createController({
     heroToolsOverride: {
-      aimHeroBowChargeAt: unit => {
+      aimHeroPowerChargeAt: unit => {
         unit.degree = 40
         return true
       },
     },
   })
   hero.actionLocked = true
-  hero.heroBowChargeStart = 1000
-  hero.heroBowChargeTool = 'bow'
+  hero.heroPowerChargeStart = 1000
+  hero.heroPowerChargeTool = 'bow'
   hero.currentSheet = 'action'
   hero.speed = 1
   hero.degree = 40
@@ -371,19 +371,19 @@ test('switching tools during bow charge cancels the charge before pointer releas
       applyToolAppearance: (unit, tool) => {
         unit.appliedTool = tool
       },
-      cancelHeroBowCharge: unit => {
-        unit.heroBowChargeStart = null
-        unit.heroBowChargeTool = undefined
+      cancelHeroPowerCharge: unit => {
+        unit.heroPowerChargeStart = null
+        unit.heroPowerChargeTool = undefined
         unit.actionLocked = false
-        unit.cancelledBowCharge = true
+        unit.cancelledPowerCharge = true
       },
-      releaseHeroBowCharge: () => {
+      releaseHeroPowerCharge: () => {
         throw new Error('stale bow charge should not release after switching tools')
       },
     },
   })
-  hero.heroBowChargeStart = 1000
-  hero.heroBowChargeTool = 'bow'
+  hero.heroPowerChargeStart = 1000
+  hero.heroPowerChargeTool = 'bow'
   hero.actionLocked = true
   controller.equippedItem = 'bow'
   controller.mouseHeld = true
@@ -392,7 +392,7 @@ test('switching tools during bow charge cancels the charge before pointer releas
   assert.equal(controller.handleKeyDown('heroTool2'), true)
   controller.handlePointerUp(0)
 
-  assert.equal(hero.cancelledBowCharge, true)
+  assert.equal(hero.cancelledPowerCharge, true)
   assert.equal(hero.appliedTool, 'sword')
   assert.equal(controller.equippedItem, 'sword')
   assert.equal(controller.mouseHeld, false)
@@ -911,4 +911,67 @@ test('held primary attack re-aims at the current cursor on the next swing', () =
     { x: 40, y: 50 },
   ])
   assert.deepEqual(calls.slice(-2), ['stop', ['attack', { x: 40, y: 50 }]])
+})
+
+test('held sword primary does not repeat while held', () => {
+  const degreeCalls = []
+  const { calls, controller, hero, setCursorPoint } = createController({
+    getInstanceDegree: (_hero, x, y) => {
+      degreeCalls.push({ x, y })
+      return x
+    },
+  })
+
+  controller.equippedItem = 'sword'
+  hero.degree = 90
+
+  controller.handlePrimaryPointerDown()
+
+  assert.equal(controller.mouseHeld, true)
+  assert.deepEqual(controller.primaryClickPoint, { x: 10, y: 20 })
+  assert.equal(hero.degree, 10)
+
+  setCursorPoint({ x: 40, y: 50 })
+  hero.actionLocked = false
+  hero.currentSheet = 'standing'
+  controller.update(1)
+
+  assert.equal(hero.degree, 10)
+  assert.deepEqual(degreeCalls, [{ x: 10, y: 20 }])
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'attack'),
+    [['attack', { x: 10, y: 20 }]]
+  )
+})
+
+test('releasing held sword primary uses the shared charge release', () => {
+  const releases = []
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      releaseHeroPowerCharge: unit => {
+        releases.push(unit.heroPowerChargeTool)
+        unit.heroPowerChargeStart = null
+        unit.heroPowerChargeTool = undefined
+        return true
+      },
+      triggerToolAttackAt: (unit, tool, destination) => {
+        calls.push(['attack', tool, destination])
+        unit.heroPowerChargeStart = 1000
+        unit.heroPowerChargeTool = tool
+        return true
+      },
+    },
+  })
+
+  controller.equippedItem = 'sword'
+  controller.handlePrimaryPointerDown()
+
+  assert.equal(controller.mouseHeld, true)
+
+  controller.handlePointerUp(0)
+
+  assert.deepEqual(releases, ['sword'])
+  assert.equal(controller.mouseHeld, false)
+  assert.equal(controller.primaryClickPoint, null)
+  assert.equal(hero.heroPowerChargeStart, null)
 })

@@ -31,6 +31,22 @@ let healthBarTrackGradient: FillGradient | null = null
 let healthBarFillGradient: FillGradient | null = null
 let energyBarTrackGradient: FillGradient | null = null
 let energyBarFillGradient: FillGradient | null = null
+const HUD_BAR_FADE_MS = 140
+const HUD_BAR_FADE_STEP_MS = 1000 / 60
+
+type HudBarHost = {
+  context?: GameContextLike
+  addChild: Container['addChild']
+  removeChild: Container['removeChild']
+}
+
+type HudBarFadeState = {
+  bar: Container
+  mode: 'in' | 'out'
+  taskId: SchedulerTaskId
+}
+
+const hudBarFadeStates = new WeakMap<Container, HudBarFadeState>()
 
 function getHealthBarTrackGradient(): FillGradient {
   if (!healthBarTrackGradient) {
@@ -90,6 +106,109 @@ function getEnergyBarFillGradient(): FillGradient {
     })
   }
   return energyBarFillGradient
+}
+
+function isChildOf(host: HudBarHost, child: Container): boolean {
+  return child.parent === host || Boolean((host as { children?: Container[] }).children?.includes(child))
+}
+
+function stopHudBarFade(host: HudBarHost, bar: Container): void {
+  const state = hudBarFadeStates.get(bar)
+  if (state) host.context?.scheduler?.remove(state.taskId)
+  hudBarFadeStates.delete(bar)
+}
+
+function removeHudBarNow(host: HudBarHost, bar: Container, stopFade = true): void {
+  if (stopFade) stopHudBarFade(host, bar)
+  if (isChildOf(host, bar)) host.removeChild(bar)
+}
+
+function fadeInHudBar(host: HudBarHost, bar: Container, fromAlpha = 0): void {
+  const scheduler = host.context?.scheduler
+  const startAlpha = Math.max(0, Math.min(1, fromAlpha))
+  bar.alpha = startAlpha
+  if (!scheduler || startAlpha >= 1) {
+    bar.alpha = 1
+    return
+  }
+  const steps = Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS))
+  let step = Math.round(startAlpha * steps)
+  const state: HudBarFadeState = { bar, mode: 'in', taskId: -1 as SchedulerTaskId }
+  let taskId: SchedulerTaskId | null = null
+  taskId = scheduler.add(
+    () => {
+      const activeBar = state.bar
+      if ((activeBar as { destroyed?: boolean }).destroyed || !isChildOf(host, activeBar)) {
+        if (taskId != null) scheduler.remove(taskId)
+        hudBarFadeStates.delete(activeBar)
+        return
+      }
+      step += 1
+      activeBar.alpha = Math.min(1, step / steps)
+      if (step >= steps) {
+        if (taskId != null) scheduler.remove(taskId)
+        hudBarFadeStates.delete(activeBar)
+      }
+    },
+    HUD_BAR_FADE_STEP_MS,
+    'hud.barFadeIn'
+  )
+  state.taskId = taskId
+  hudBarFadeStates.set(bar, state)
+}
+
+function fadeOutHudBar(host: HudBarHost, bar: Container): void {
+  const scheduler = host.context?.scheduler
+  if (!scheduler) {
+    removeHudBarNow(host, bar)
+    return
+  }
+  stopHudBarFade(host, bar)
+  const startAlpha = Math.max(0, Math.min(1, bar.alpha ?? 1))
+  if (startAlpha <= 0) {
+    removeHudBarNow(host, bar)
+    return
+  }
+  const steps = Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS))
+  let step = 0
+  const state: HudBarFadeState = { bar, mode: 'out', taskId: -1 as SchedulerTaskId }
+  let taskId: SchedulerTaskId | null = null
+  taskId = scheduler.add(
+    () => {
+      const activeBar = state.bar
+      if ((activeBar as { destroyed?: boolean }).destroyed || !isChildOf(host, activeBar)) {
+        if (taskId != null) scheduler.remove(taskId)
+        hudBarFadeStates.delete(activeBar)
+        return
+      }
+      step += 1
+      activeBar.alpha = startAlpha * Math.max(0, 1 - step / steps)
+      if (step >= steps) {
+        removeHudBarNow(host, activeBar)
+      }
+    },
+    HUD_BAR_FADE_STEP_MS,
+    'hud.barFadeOut'
+  )
+  state.taskId = taskId
+  hudBarFadeStates.set(bar, state)
+}
+
+function replaceHudBar(host: HudBarHost, bar: Container, previous: Container | null): void {
+  const previousFadeState = previous ? hudBarFadeStates.get(previous) : null
+  if (previous && previousFadeState?.mode === 'in') {
+    bar.alpha = previous.alpha ?? 0
+    hudBarFadeStates.delete(previous)
+    removeHudBarNow(host, previous, false)
+    host.addChild(bar)
+    previousFadeState.bar = bar
+    hudBarFadeStates.set(bar, previousFadeState)
+    return
+  }
+  const fadeFromAlpha = previous ? (previous.alpha ?? 1) : 0
+  if (previous) removeHudBarNow(host, previous)
+  host.addChild(bar)
+  fadeInHudBar(host, bar, fadeFromAlpha)
 }
 
 export class Instance extends Container {
@@ -154,17 +273,17 @@ export class Instance extends Container {
 
   removeHealthBar(): void {
     const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
-    if (healthBar) this.removeChild(healthBar)
+    if (healthBar) fadeOutHudBar(this, healthBar)
   }
 
   removeEnergyBar(): void {
     const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
-    if (energyBar) this.removeChild(energyBar)
+    if (energyBar) fadeOutHudBar(this, energyBar)
   }
 
   removeHeroPowerBar(): void {
     const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
-    if (powerBar) this.removeChild(powerBar)
+    if (powerBar) fadeOutHudBar(this, powerBar)
   }
 
   constructor(context: GameContextLike) {
@@ -276,15 +395,22 @@ export class Instance extends Container {
 
   drawHealthBar(): void {
     const existing = this.getChildByLabel(LABEL_TYPES.healthBar)
-    if (existing) this.removeChild(existing)
-    if (!this.totalHitPoints) return
+    if (!this.totalHitPoints) {
+      if (existing) fadeOutHudBar(this, existing)
+      return
+    }
     if (
       this.family !== FAMILY_TYPES.unit &&
       this.family !== FAMILY_TYPES.building &&
       this.family !== FAMILY_TYPES.animal
-    )
+    ) {
+      if (existing) fadeOutHudBar(this, existing)
       return
-    if (!this.shouldKeepHealthBarVisible() && !this.selected) return
+    }
+    if (!this.shouldKeepHealthBarVisible() && !this.selected) {
+      if (existing) fadeOutHudBar(this, existing)
+      return
+    }
     const barWidth = 22
     const barHeight = 6
     const borderWidth = 1
@@ -309,15 +435,20 @@ export class Instance extends Container {
     }
     // Tracks relief the same way the shadow does — see Unit.applyReliefLift.
     bar.position.y = this.reliefLift ?? 0
-    this.addChild(bar)
+    replaceHudBar(this, bar, existing)
   }
 
   drawEnergyBar(): void {
     const existing = this.getChildByLabel(LABEL_TYPES.energyBar)
-    if (existing) this.removeChild(existing)
     const totalEnergy = this.totalEnergy ?? 0
-    if (!totalEnergy) return
-    if (!this.shouldKeepEnergyBarVisible()) return
+    if (!totalEnergy) {
+      if (existing) fadeOutHudBar(this, existing)
+      return
+    }
+    if (!this.shouldKeepEnergyBarVisible()) {
+      if (existing) fadeOutHudBar(this, existing)
+      return
+    }
     const barWidth = 22
     const barHeight = 5
     const borderWidth = 1
@@ -341,13 +472,15 @@ export class Instance extends Container {
       bar.fill(getEnergyBarFillGradient())
     }
     bar.position.y = this.reliefLift ?? 0
-    this.addChild(bar)
+    replaceHudBar(this, bar, existing)
   }
 
   drawHeroPowerBar(ratio: number): void {
     const existing = this.getChildByLabel(LABEL_TYPES.powerBar)
-    if (existing) this.removeChild(existing)
-    if (this.isDead || this.isDestroyed || !this.owner?.isPlayed) return
+    if (this.isDead || this.isDestroyed || !this.owner?.isPlayed) {
+      if (existing) fadeOutHudBar(this, existing)
+      return
+    }
     const clampedRatio = Math.max(0, Math.min(1, ratio))
     const barWidth = 26
     const barHeight = 5
@@ -371,7 +504,7 @@ export class Instance extends Container {
       bar.fill(clampedRatio >= 1 ? COLOR_GOLD : 0xf28722)
     }
     bar.position.y = this.reliefLift ?? 0
-    this.addChild(bar)
+    replaceHudBar(this, bar, existing)
   }
 
   step(): void {

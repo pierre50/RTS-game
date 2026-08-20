@@ -47,7 +47,7 @@ type WaterBorderSurface = { sprite: { texture: Texture; destroyed?: boolean }; f
 
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
 const WATER_OVERLAY_FRAME_COUNT = 4
-const WATER_OVERLAY_FRAME_SPEED = 0.06
+const WATER_OVERLAY_FRAME_SPEED = 0.03
 const WATER_OVERLAY_ALPHA = 0.32
 const WATER_OVERLAY_MARGIN = CELL_WIDTH * 2
 const WATER_BACKGROUND_Z_INDEX = -3
@@ -299,23 +299,26 @@ export default class Map extends Container {
     const ticker = this.context.app?.ticker as WaterOverlayTicker | undefined
     if (ticker) {
       const tick = (ticker: Ticker) => {
-        const frames = getWaterOverlayFrames()
-        const borderFrameCount = Math.max(0, ...Array.from(this.waterBorderSurfaces, surface => surface.frames.length))
-        const frameCount = Math.max(frames.length, borderFrameCount)
-        if (!frameCount) return
-        this.waterOverlayElapsed += ticker.deltaTime * WATER_OVERLAY_FRAME_SPEED
-        if (this.waterOverlayElapsed >= 1) {
-          this.waterOverlayElapsed %= 1
-          this.waterOverlayFrame += 1
-          if (this.waterOverlay?.parent && frames.length) {
-            this.waterOverlay.texture = frames[this.waterOverlayFrame % frames.length]
-          }
-          for (const surface of this.waterBorderSurfaces) {
-            if (surface.sprite.destroyed) continue
-            surface.sprite.texture =
-              surface.frames[getPingPongFrameIndex(this.waterOverlayFrame, surface.frames.length)]
+        const update = () => {
+          const frames = getWaterOverlayFrames()
+          const borderFrameCount = Math.max(0, ...Array.from(this.waterBorderSurfaces, surface => surface.frames.length))
+          const frameCount = Math.max(frames.length, borderFrameCount)
+          if (!frameCount) return
+          this.waterOverlayElapsed += ticker.deltaTime * WATER_OVERLAY_FRAME_SPEED
+          if (this.waterOverlayElapsed >= 1) {
+            this.waterOverlayElapsed %= 1
+            this.waterOverlayFrame += 1
+            if (this.waterOverlay?.parent && frames.length) {
+              this.waterOverlay.texture = frames[this.waterOverlayFrame % frames.length]
+            }
+            for (const surface of this.waterBorderSurfaces) {
+              if (surface.sprite.destroyed) continue
+              surface.sprite.texture =
+                surface.frames[getPingPongFrameIndex(this.waterOverlayFrame, surface.frames.length)]
+            }
           }
         }
+        this.context.performance?.measure?.('water.update', update) ?? update()
       }
       ticker.add(tick)
       this.waterOverlayTick = tick

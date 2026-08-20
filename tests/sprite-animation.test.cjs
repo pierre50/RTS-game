@@ -46,6 +46,52 @@ test('playSpriteAnimationFromStart resets transient callbacks and restarts frame
   assert.deepEqual(calls, [['gotoAndPlay', 0]])
 })
 
+test('playSpriteFrameSequence drives Pixi frames through the scheduler', () => {
+  const { playSpriteFrameSequence } = loadModule('app/lib/spriteAnimation.ts')
+  const calls = []
+  const scheduled = new Map()
+  const scheduler = {
+    add: (callback, time, name) => {
+      calls.push(['add', time, name])
+      scheduled.set(11, callback)
+      return 11
+    },
+    remove: taskId => calls.push(['remove', taskId]),
+  }
+  const sprite = {
+    currentFrame: 0,
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+      calls.push(['gotoAndStop', frame])
+    },
+  }
+  const completed = []
+
+  const taskId = playSpriteFrameSequence(sprite, scheduler, {
+    frameMs: 45,
+    frames: [5, 4, 3],
+    onComplete: () => completed.push(true),
+    onFrame: (frame, index) => calls.push(['onFrame', frame, index]),
+    taskName: 'test.sequence',
+  })
+
+  assert.equal(taskId, 11)
+  scheduled.get(11)()
+  scheduled.get(11)()
+
+  assert.deepEqual(calls, [
+    ['gotoAndStop', 5],
+    ['onFrame', 5, 0],
+    ['add', 45, 'test.sequence'],
+    ['gotoAndStop', 4],
+    ['onFrame', 4, 1],
+    ['gotoAndStop', 3],
+    ['onFrame', 3, 2],
+    ['remove', 11],
+  ])
+  assert.deepEqual(completed, [true])
+})
+
 test('unit death starts the dying animation through the shared helper', () => {
   const calls = []
   const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {

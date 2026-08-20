@@ -43,7 +43,10 @@ export class ShadowSystem {
 
     map.addChild(this.layer)
 
-    this._onTick = ticker => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
+    this._onTick = ticker => {
+      const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
+      this.context.performance?.measure?.('shadow.update', update) ?? update()
+    }
     context.app.ticker.add(this._onTick)
   }
 

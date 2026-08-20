@@ -150,7 +150,7 @@ function loadHeroTools(overrides = {}) {
     './graphics': {
       BOW_SHOOT_RELEASE_FRAME: 8,
       LASSO_SHOOT_RELEASE_FRAME: 5,
-      SLASH_IMPACT_FRAME: 1,
+      SLASH_IMPACT_FRAME: 5,
       onSpriteLoopAtFrame: (sprite, frame, cb) => {
         sprite.onFrameChange = currentFrame => {
           if (currentFrame >= frame) cb()
@@ -169,6 +169,7 @@ function loadHeroTools(overrides = {}) {
     },
     './lang': { t: key => (key === 'heroDefenseMissed' ? 'Loupé !' : key) },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
+    './slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
     './resourceCarry': {
       buildingAcceptsCarriedResources: (hero, target) => {
         const entries = hero.resourceLoads
@@ -176,7 +177,10 @@ function loadHeroTools(overrides = {}) {
           : hero.loadingType && (hero.loading ?? 0) > 0
             ? [[hero.loadingType, hero.loading]]
             : []
-        return target.family === 'building' && (target.type === 'TownCenter' || entries.some(([type]) => target.accept?.includes(type)))
+        return (
+          target.family === 'building' &&
+          (target.type === 'TownCenter' || entries.some(([type]) => target.accept?.includes(type)))
+        )
       },
       getCarriedResourceSpace: () => Number.POSITIVE_INFINITY,
       getTotalCarriedResources: hero => hero.loading ?? 0,
@@ -188,7 +192,7 @@ function loadHeroTools(overrides = {}) {
           chopwood: 1,
           minestone: 1,
           takemeat: 1,
-          heroBowCharge: 2,
+          heroPowerCharge: 2,
           heroDefense: 2,
           heroWhiff: 1,
         }
@@ -203,7 +207,7 @@ function loadHeroTools(overrides = {}) {
           chopwood: 1,
           minestone: 1,
           takemeat: 1,
-          heroBowCharge: 2,
+          heroPowerCharge: 2,
           heroDefense: 2,
           heroWhiff: 1,
         }
@@ -225,7 +229,7 @@ function loadHeroTools(overrides = {}) {
         if (unit.totalEnergy == null) unit.totalEnergy = 10
         if (unit.energy == null) unit.energy = unit.totalEnergy
       },
-      getActionEnergyCost: (_unit, action) => ({ heroBowCharge: 2, heroDefense: 2, heroWhiff: 1 })[action] ?? 0,
+      getActionEnergyCost: (_unit, action) => ({ heroPowerCharge: 2, heroDefense: 2, heroWhiff: 1 })[action] ?? 0,
     },
     './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
     './unitExperience': {
@@ -367,6 +371,16 @@ function makeHero() {
   return { hero, projectiles }
 }
 
+function playImpactFrame(hero, frame = 5) {
+  hero.sprite.currentFrame = frame
+  hero.sprite.onFrameChange?.(frame)
+}
+
+function releaseChargedSword(tools, hero, now = performance.now()) {
+  assert.equal(tools.releaseHeroPowerCharge(hero, now), true)
+  playImpactFrame(hero)
+}
+
 test('directional targeting prefers a much closer nearby resource over a perfectly aligned far one', () => {
   const nearWheat = { family: 'resource', label: 'near-wheat', x: 32, y: 32 }
   const farTree = { family: 'resource', label: 'far-tree', x: 120, y: 0 }
@@ -396,7 +410,7 @@ test('hero aim degree gives horizontal screen aim more room on isometric terrain
 })
 
 test('bow charge plays the action animation once while power keeps charging', () => {
-  const { aimHeroBowChargeAt, triggerToolAttackAt, updateHeroBowCharge } = loadHeroTools()
+  const { aimHeroPowerChargeAt, triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
   const { hero } = makeHero()
   let now = 1000
   const originalPerformance = global.performance
@@ -412,16 +426,16 @@ test('bow charge plays the action animation once while power keeps charging', ()
     hero.sprite.currentFrame = 8
     hero.sprite.onFrameChange(8)
     now += 100
-    updateHeroBowCharge(hero)
+    updateHeroPowerCharge(hero)
 
     assert.ok(hero.energy < 10)
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 8)
-    assert.equal(hero.heroBowChargeVisualLocked, true)
+    assert.equal(hero.heroPowerChargeVisualLocked, true)
     assert.ok(hero.drawRatios.at(-1) < 1)
 
-    aimHeroBowChargeAt(hero, { x: 220, y: 20 })
+    aimHeroPowerChargeAt(hero, { x: 220, y: 20 })
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 8)
@@ -430,18 +444,113 @@ test('bow charge plays the action animation once while power keeps charging', ()
   }
 })
 
+test('sword charge freezes the action animation on frame 0 while power charges', () => {
+  const { triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
+  const { hero } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 20 }), true)
+
+    assert.equal(hero.actionLocked, true)
+    assert.equal(hero.currentSheet, 'actionSheet')
+    assert.equal(hero.heroPowerChargeTool, 'sword')
+    assert.equal(hero.heroPowerChargeVisualLocked, true)
+    assert.equal(hero.sprite.currentFrame, 0)
+    assert.equal(hero.sprite.playing, false)
+    assert.deepEqual(hero.drawRatios, [0])
+
+    now += 350
+    updateHeroPowerCharge(hero, now)
+
+    assert.equal(hero.sprite.currentFrame, 0)
+    assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.drawRatios.at(-1), 0.5)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('hero sword whiff rewinds the slash recovery through the shared helper', () => {
+  const reverseCalls = []
+  const soundCalls = []
+  const tools = loadHeroTools({
+    './slashRecoveryAnimation': {
+      playReverseSlashRecovery: (hero, options) => {
+        reverseCalls.push([hero, options.releaseFrame])
+        options.onComplete()
+        return true
+      },
+    },
+    './sound': {
+      playAudibleSoundCue: () => {},
+      playSoundCue: cue => soundCalls.push(cue),
+    },
+  })
+  const { releaseHeroPowerCharge, triggerEquippedItemActionAt } = tools
+  const { hero } = makeHero()
+
+  assert.equal(triggerEquippedItemActionAt(hero, 'sword', { x: 10, y: 0 }), true)
+  assert.equal(hero.actionLocked, true)
+  assert.equal(releaseHeroPowerCharge(hero), true)
+  assert.equal(typeof hero.sprite.onFrameChange, 'function')
+
+  hero.sprite.onFrameChange(5)
+
+  assert.deepEqual(reverseCalls, [[hero, 5]])
+  assert.deepEqual(soundCalls, ['meleeWhiff'])
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.equal(hero.sprite.onComplete, undefined)
+  assert.equal(hero.sprite.onFrameChange, undefined)
+})
+
+test('free-hand whiff rewinds the slash recovery through the shared helper', () => {
+  const reverseCalls = []
+  const soundCalls = []
+  const { triggerEquippedItemActionAt } = loadHeroTools({
+    './slashRecoveryAnimation': {
+      playReverseSlashRecovery: (hero, options) => {
+        reverseCalls.push([hero, options.releaseFrame])
+        options.onComplete()
+        return true
+      },
+    },
+    './sound': {
+      playAudibleSoundCue: () => {},
+      playSoundCue: cue => soundCalls.push(cue),
+    },
+  })
+  const { hero } = makeHero()
+
+  assert.equal(triggerEquippedItemActionAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.actionLocked, true)
+  assert.equal(typeof hero.sprite.onFrameChange, 'function')
+
+  hero.sprite.onFrameChange(5)
+
+  assert.deepEqual(reverseCalls, [[hero, 5]])
+  assert.deepEqual(soundCalls, ['meleeWhiff'])
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.equal(hero.sprite.onComplete, undefined)
+  assert.equal(hero.sprite.onFrameChange, undefined)
+})
+
 test('mounted bow charge keeps aim inside the starting horse cone', () => {
-  const { aimHeroBowChargeAt, triggerToolAttackAt } = loadHeroTools()
+  const { aimHeroPowerChargeAt, triggerToolAttackAt } = loadHeroTools()
   const { hero } = makeHero()
 
   hero.mountedOnHorse = true
 
   assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), true)
   assert.equal(hero.degree, 180)
-  assert.equal(hero.heroBowChargeFacingDegree, 180)
-  assert.equal(aimHeroBowChargeAt(hero, { x: -10, y: 0 }), true)
+  assert.equal(hero.heroPowerChargeFacingDegree, 180)
+  assert.equal(aimHeroPowerChargeAt(hero, { x: -10, y: 0 }), true)
   assert.equal(hero.degree, 180)
-  assert.deepEqual(hero.heroBowChargeDestination, { x: 10, y: 0 })
+  assert.deepEqual(hero.heroPowerChargeDestination, { x: 10, y: 0 })
 })
 
 test('hero defense holds melee tools on the third action frame', () => {
@@ -636,7 +745,7 @@ test('bow charge keeps the manually aimed destination instead of snapping to a n
     x: 10,
     y: 0,
   }
-  const { aimHeroBowChargeAt, releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools({
+  const { aimHeroPowerChargeAt, releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
   })
   const { hero, projectiles } = makeHero()
@@ -646,9 +755,9 @@ test('bow charge keeps the manually aimed destination instead of snapping to a n
 
   try {
     assert.equal(triggerToolAttackAt(hero, 'bow', { x: 120, y: 0 }), true)
-    aimHeroBowChargeAt(hero, { x: 240, y: 0 })
+    aimHeroPowerChargeAt(hero, { x: 240, y: 0 })
     now += 350
-    assert.equal(releaseHeroBowCharge(hero, now), true)
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
     hero.sprite.currentFrame = 8
     hero.sprite.onFrameChange?.(8)
 
@@ -661,7 +770,7 @@ test('bow charge keeps the manually aimed destination instead of snapping to a n
 })
 
 test('mounted bow release spawns the arrow from the rider height', () => {
-  const { releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools()
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
   const { hero, projectiles } = makeHero()
   let now = 1000
   const originalPerformance = global.performance
@@ -675,7 +784,7 @@ test('mounted bow release spawns the arrow from the rider height', () => {
 
     assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
     now += 700
-    assert.equal(releaseHeroBowCharge(hero, now), true)
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
     hero.sprite.currentFrame = 8
     hero.sprite.onFrameChange?.(8)
 
@@ -688,7 +797,7 @@ test('mounted bow release spawns the arrow from the rider height', () => {
 
 test('lasso charge releases a drawn lasso instead of an arrow', () => {
   const soundCues = []
-  const { aimHeroBowChargeAt, releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools({
+  const { aimHeroPowerChargeAt, releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
     './sound': {
       playAudibleSoundCue: () => {},
       playSoundCue: cue => soundCues.push(cue),
@@ -701,9 +810,9 @@ test('lasso charge releases a drawn lasso instead of an arrow', () => {
 
   try {
     assert.equal(triggerToolAttackAt(hero, 'lasso', { x: 120, y: 0 }), true)
-    aimHeroBowChargeAt(hero, { x: 180, y: 0 })
+    aimHeroPowerChargeAt(hero, { x: 180, y: 0 })
     now += 700
-    assert.equal(releaseHeroBowCharge(hero, now), true)
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
     hero.sprite.currentFrame = 8
     hero.sprite.onFrameChange?.(8)
 
@@ -718,7 +827,7 @@ test('lasso charge releases a drawn lasso instead of an arrow', () => {
 })
 
 test('bow charge drains energy while held and releases when energy is empty', () => {
-  const { triggerToolAttackAt, updateHeroBowCharge } = loadHeroTools()
+  const { triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
   const { hero } = makeHero()
   let now = 3000
   const originalPerformance = global.performance
@@ -730,17 +839,17 @@ test('bow charge drains energy while held and releases when energy is empty', ()
 
     assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 }), true)
     now += 100
-    updateHeroBowCharge(hero)
+    updateHeroPowerCharge(hero)
 
     assert.equal(hero.energy, 0)
-    assert.equal(hero.heroBowReleaseQueued, true)
+    assert.equal(hero.heroPowerReleaseQueued, true)
   } finally {
     global.performance = originalPerformance
   }
 })
 
 test('bow release freezes power at mouse-up while waiting for release frame', () => {
-  const { releaseHeroBowCharge, triggerToolAttackAt, updateHeroBowCharge } = loadHeroTools()
+  const { releaseHeroPowerCharge, triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
   const { hero, projectiles } = makeHero()
   let now = 2000
   const originalPerformance = global.performance
@@ -748,15 +857,15 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
 
   try {
     triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 })
-    hero.sprite.currentFrame = 1
+    hero.sprite.currentFrame = 5
     now += 70
-    assert.equal(releaseHeroBowCharge(hero), true)
-    const releasePower = hero.heroBowReleasePower
+    assert.equal(releaseHeroPowerCharge(hero), true)
+    const releasePower = hero.heroPowerReleasePower
     assert.ok(releasePower > 0 && releasePower < 0.2)
 
     now += 600
-    updateHeroBowCharge(hero)
-    assert.equal(hero.heroBowReleasePower, releasePower)
+    updateHeroPowerCharge(hero)
+    assert.equal(hero.heroPowerReleasePower, releasePower)
     assert.equal(hero.drawRatios.at(-1), releasePower)
     assert.equal(projectiles.length, 0)
 
@@ -771,7 +880,7 @@ test('bow release freezes power at mouse-up while waiting for release frame', ()
 })
 
 test('bow release drains energy up to the mouse-up instant', () => {
-  const { releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools()
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
   const { hero } = makeHero()
   let now = 4000
   const originalPerformance = global.performance
@@ -783,10 +892,10 @@ test('bow release drains energy up to the mouse-up instant', () => {
 
     assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 20 }), true)
     now += 350
-    assert.equal(releaseHeroBowCharge(hero), true)
+    assert.equal(releaseHeroPowerCharge(hero), true)
 
     assert.equal(hero.energy, 9)
-    assert.equal(hero.heroBowReleasePower, 0.5)
+    assert.equal(hero.heroPowerReleasePower, 0.5)
   } finally {
     global.performance = originalPerformance
   }
@@ -1127,9 +1236,10 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
 
 test('sword whiffs use the generic melee whiff sound', () => {
   const soundCues = []
-  const { triggerToolAttackAt } = loadHeroTools({
+  const tools = loadHeroTools({
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
   })
+  const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
@@ -1137,8 +1247,7 @@ test('sword whiffs use the generic melee whiff sound', () => {
 
   assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
   assert.deepEqual(soundCues, [])
-  hero.sprite.currentFrame = 1
-  hero.sprite.onFrameChange(1)
+  releaseChargedSword(tools, hero)
 
   assert.deepEqual(soundCues, ['meleeWhiff'])
 })
@@ -1179,7 +1288,9 @@ test('free-hand interact damages an aimed enemy unit on the slash impact frame',
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
+    i: 0,
     isUnitAtDest: () => true,
+    j: 0,
     setDest: target => {
       hero.dest = target
     },
@@ -1191,8 +1302,8 @@ test('free-hand interact damages an aimed enemy unit on the slash impact frame',
   assert.equal(hero.dest, enemy)
   assert.equal(enemy.hitPoints, 10)
 
-  hero.sprite.currentFrame = 1
-  hero.sprite.onFrameChange(1)
+  hero.sprite.currentFrame = 5
+  hero.sprite.onFrameChange(5)
 
   assert.equal(enemy.hitPoints, 7)
   assert.deepEqual(damageFeedback, [['enemy', 3]])
@@ -1232,8 +1343,10 @@ for (const family of ['building', 'animal']) {
     const { hero } = makeHero()
     Object.assign(hero, {
       energy: 10,
+      i: 0,
       sounds: { hit: 'hero-hit' },
       isUnitAtDest: () => true,
+      j: 0,
       setDest: target => {
         hero.dest = target
       },
@@ -1241,8 +1354,8 @@ for (const family of ['building', 'animal']) {
 
     assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
     assert.deepEqual(soundCues, [])
-    hero.sprite.currentFrame = 1
-    hero.sprite.onFrameChange(1)
+    hero.sprite.currentFrame = 5
+    hero.sprite.onFrameChange(5)
 
     assert.equal(enemy.hitPoints, 8)
     assert.deepEqual(soundCues, ['hero-hit'])
@@ -1266,7 +1379,7 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
     y: 0,
   }
   const damageFeedback = []
-  const { triggerToolAttackAt } = loadHeroTools({
+  const tools = loadHeroTools({
     './combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
@@ -1280,6 +1393,7 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
     './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
   })
+  const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
@@ -1294,11 +1408,70 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
   })
 
   assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
-  hero.sprite.currentFrame = 1
-  hero.sprite.onFrameChange(1)
+  releaseChargedSword(tools, hero)
 
   assert.equal(animal.hitPoints, 16)
   assert.deepEqual(damageFeedback, [['enemy-animal', 4]])
+})
+
+test('fully charged sword releases on the backslash damage tier', () => {
+  const animal = {
+    family: 'animal',
+    hitPoints: 20,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy-animal',
+    owner: { label: 'gaia' },
+    totalHitPoints: 20,
+    x: 10,
+    y: 0,
+  }
+  const damageFeedback = []
+  const tools = loadHeroTools({
+    './combat': {
+      getActionCondition: (source, target, action) =>
+        action === 'attack' &&
+        target === animal &&
+        (source.equipment?.length ?? 0) > 0 &&
+        source.owner?.isEnemy?.(target.owner) &&
+        target.hitPoints > 0 &&
+        !target.isDead,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
+  })
+  const { triggerToolAttackAt } = tools
+  const { hero } = makeHero()
+  let now = 3000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    Object.assign(hero, {
+      energy: 10,
+      equipment: [],
+      i: 0,
+      j: 0,
+      owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
+      isUnitAtDest: () => true,
+      setDest: target => {
+        hero.dest = target
+      },
+    })
+
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+    now += 700
+    releaseChargedSword(tools, hero, now)
+
+    assert.equal(animal.hitPoints, 14)
+    assert.deepEqual(damageFeedback, [['enemy-animal', 6]])
+    assert.equal(hero.powerBarRemoved, true)
+  } finally {
+    global.performance = originalPerformance
+  }
 })
 
 test('sword attacks use sword attack cues on the slash impact frame', () => {
@@ -1316,7 +1489,7 @@ test('sword attacks use sword attack cues on the slash impact frame', () => {
     y: 0,
   }
   const soundCues = []
-  const { triggerToolAttackAt } = loadHeroTools({
+  const tools = loadHeroTools({
     './combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
@@ -1330,6 +1503,7 @@ test('sword attacks use sword attack cues on the slash impact frame', () => {
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
     './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
   })
+  const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
@@ -1345,8 +1519,7 @@ test('sword attacks use sword attack cues on the slash impact frame', () => {
 
   assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
   assert.deepEqual(soundCues, [])
-  hero.sprite.currentFrame = 1
-  hero.sprite.onFrameChange(1)
+  releaseChargedSword(tools, hero)
 
   assert.deepEqual(soundCues, [['sword-attack', 'sword-attack-2']])
 })
@@ -1367,7 +1540,7 @@ test('sword damages berry bushes with weapon damage', () => {
     y: 0,
   }
   const damageFeedback = []
-  const { triggerToolAttackAt } = loadHeroTools({
+  const tools = loadHeroTools({
     './combat': {
       getActionCondition: (_source, target, action) => action === 'attack' && target === berrybush,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
@@ -1375,10 +1548,13 @@ test('sword damages berry bushes with weapon damage', () => {
     './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
   })
+  const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
   Object.assign(hero, {
     energy: 10,
+    i: 0,
     isUnitAtDest: () => true,
+    j: 0,
     owner: { age: 0, isPlayed: true },
     setDest: target => {
       hero.dest = target
@@ -1386,8 +1562,7 @@ test('sword damages berry bushes with weapon damage', () => {
   })
 
   assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
-  hero.sprite.currentFrame = 1
-  hero.sprite.onFrameChange(1)
+  releaseChargedSword(tools, hero)
 
   assert.equal(berrybush.hitPoints, 36)
   assert.equal(berrybush.quantity, 100)
@@ -1412,7 +1587,7 @@ test('free-hand interact does not whiff without energy', () => {
   assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 
-test('aimed sword attack does not fall back to a whiff when attack energy is too low', () => {
+test('charged sword release does not fall back to a whiff when attack energy is too low', () => {
   const enemy = {
     family: 'animal',
     hitPoints: 10,
@@ -1427,7 +1602,7 @@ test('aimed sword attack does not fall back to a whiff when attack energy is too
   }
   const messages = []
   const soundCues = []
-  const { triggerToolAttackAt } = loadHeroTools({
+  const tools = loadHeroTools({
     './combat': {
       getActionCondition: (_source, target, action) => action === 'attack' && target === enemy,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
@@ -1435,7 +1610,11 @@ test('aimed sword attack does not fall back to a whiff when attack energy is too
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
   })
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = tools
   const { hero } = makeHero()
+  let now = 5000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
   Object.assign(hero, {
     context: {
       map: { addChild: () => {} },
@@ -1447,13 +1626,18 @@ test('aimed sword attack does not fall back to a whiff when attack energy is too
     j: 0,
   })
 
-  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), false)
-  assert.equal(hero.energy, 1)
-  assert.equal(hero.actionLocked, false)
-  assert.equal(hero.currentSheet, 'standingSheet')
-  assert.equal(enemy.hitPoints, 10)
-  assert.deepEqual(soundCues, [])
-  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+    assert.equal(releaseHeroPowerCharge(hero, now), false)
+    assert.equal(hero.energy, 1)
+    assert.equal(hero.actionLocked, false)
+    assert.equal(hero.currentSheet, 'standingSheet')
+    assert.equal(enemy.hitPoints, 10)
+    assert.deepEqual(soundCues, [])
+    assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+  } finally {
+    global.performance = originalPerformance
+  }
 })
 
 test('bow charge does not start without energy', () => {
@@ -1470,7 +1654,7 @@ test('bow charge does not start without energy', () => {
 
   assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), false)
   assert.equal(hero.actionLocked, false)
-  assert.equal(hero.heroBowChargeStart, undefined)
+  assert.equal(hero.heroPowerChargeStart, undefined)
   assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 

@@ -74,6 +74,7 @@ type AttackFrameActor = Partial<
     ) => boolean
     attackRecoveryMs?: number
     attackRecoveryTaskId?: number | null
+    attackRecoveryAnimationTaskId?: number | null
     context?: EnergyEntity['context']
     flushPendingOrder?: () => boolean
     sprite?: {
@@ -102,6 +103,7 @@ type AttackFrameCallbacks = {
   releaseFrame: number
   prepareAttackSheet: () => void
   prepareRecoverySheet?: () => void
+  playRecoveryAnimation?: (releaseFrame: number, onComplete: () => void) => boolean | void
   syncMovingTargetDirection?: () => void
   onOutOfRange: (target: RuntimeEntity | null) => void
   onTargetUnavailable: (target: RuntimeEntity | null, phase: 'preflight' | 'release') => void
@@ -121,7 +123,7 @@ type AttackLoopActorState = {
 
 type AttackLoopReadiness = { status: 'ready'; target: RuntimeEntity } | { status: 'blocked' } | { status: 'not-ready' }
 
-type AttackRecoveryHandle = Pick<EnergyEntity, 'attackRecoveryTaskId' | 'context'> & {
+type AttackRecoveryHandle = Pick<EnergyEntity, 'attackRecoveryAnimationTaskId' | 'attackRecoveryTaskId' | 'context'> & {
   sprite?: { onLoop?: (() => void) | undefined } | null
 }
 
@@ -143,10 +145,16 @@ function getAttackRecoveryMs(attacker: AttackFrameActor): number {
 }
 
 export function clearCombatAttackRecovery(attacker: AttackRecoveryHandle): void {
-  if (attacker.attackRecoveryTaskId == null) return
-  attacker.context?.scheduler?.remove?.(attacker.attackRecoveryTaskId)
-  attacker.attackRecoveryTaskId = null
-  if (attacker.sprite && 'onLoop' in attacker.sprite) attacker.sprite.onLoop = undefined
+  const hadRecovery = attacker.attackRecoveryTaskId != null || attacker.attackRecoveryAnimationTaskId != null
+  if (attacker.attackRecoveryTaskId != null) {
+    attacker.context?.scheduler?.remove?.(attacker.attackRecoveryTaskId)
+    attacker.attackRecoveryTaskId = null
+  }
+  if (attacker.attackRecoveryAnimationTaskId != null) {
+    attacker.context?.scheduler?.remove?.(attacker.attackRecoveryAnimationTaskId)
+    attacker.attackRecoveryAnimationTaskId = null
+  }
+  if (hadRecovery && attacker.sprite && 'onLoop' in attacker.sprite) attacker.sprite.onLoop = undefined
 }
 
 function finishAttackRecovery(
@@ -194,18 +202,23 @@ function beginAttackRecovery(
     if (!timerComplete || !animationComplete) return
     finishAttackRecovery(attacker, callbacks, actionAtAttack, targetAtAttack, taskId)
   }
+  const markAnimationComplete = (): void => {
+    animationComplete = true
+    callbacks.prepareRecoverySheet?.()
+    finishIfReady()
+  }
 
   clearCombatAttackRecovery(attacker)
   actor.actionLocked = true
   clearAttackCallbacks()
 
-  if (sprite && 'onLoop' in sprite) {
+  const customRecoveryAnimation =
+    callbacks.playRecoveryAnimation?.(callbacks.releaseFrame, markAnimationComplete) === true
+  if (!customRecoveryAnimation && sprite && 'onLoop' in sprite) {
     sprite.onLoop = () => {
       sprite.onLoop = undefined
       if (!isCurrentRecovery()) return
-      animationComplete = true
-      callbacks.prepareRecoverySheet?.()
-      finishIfReady()
+      markAnimationComplete()
     }
   }
 

@@ -110,6 +110,7 @@ function loadModule(relativePath, mocks) {
     }
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
+    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/resourceCarry') {
       return {
         clearCarriedResources: unit => {
@@ -1132,7 +1133,7 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
       onSpriteLoopAtFrame: () => {},
       playAudibleSoundCue: () => {},
       BOW_SHOOT_RELEASE_FRAME: 8,
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
@@ -1172,7 +1173,7 @@ test('attacker units show alert feedback when detection starts an attack', () =>
       onSpriteLoopAtFrame: () => {},
       playAudibleSoundCue: () => {},
       BOW_SHOOT_RELEASE_FRAME: 8,
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
@@ -1227,7 +1228,7 @@ test('melee attacks finish their current animation loop before resuming after a 
       },
       playAudibleSoundCue: () => {},
       BOW_SHOOT_RELEASE_FRAME: 8,
-      SLASH_IMPACT_FRAME: 1,
+      SLASH_IMPACT_FRAME: 5,
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
@@ -1338,7 +1339,7 @@ test('melee unit attacks damage targets with weapon damage', () => {
       },
       playAudibleSoundCue: () => {},
       BOW_SHOOT_RELEASE_FRAME: 8,
-      SLASH_IMPACT_FRAME: 1,
+      SLASH_IMPACT_FRAME: 5,
     },
     '../Projectile': { Projectile: class {} },
     '../../lib/combatFeedback': { showDamageFeedback: () => {} },
@@ -1366,6 +1367,60 @@ test('melee unit attacks damage targets with weapon damage', () => {
 
   assert.equal(enemyUnit.hitPoints, 36)
   assert.deepEqual(applyCalls, [{ target: enemyUnit, defaultDamage: undefined }])
+})
+
+test('melee slash recovery rewinds Pixi frames before completing', () => {
+  const calls = []
+  const scheduled = new Map()
+  const spriteAnimation = loadModule('app/lib/spriteAnimation.ts')
+  const { playReverseSlashRecovery } = loadModule('app/lib/slashRecoveryAnimation.ts', {
+    '../constants': constants,
+    './spriteAnimation': spriteAnimation,
+  })
+  const sprite = {
+    currentFrame: 5,
+    gotoAndStop: frame => {
+      sprite.currentFrame = frame
+      calls.push(['gotoAndStop', frame])
+    },
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    context: {
+      scheduler: {
+        add: (callback, time, name) => {
+          calls.push(['add', time, name])
+          scheduled.set(7, callback)
+          return 7
+        },
+        remove: taskId => calls.push(['remove', taskId]),
+      },
+    },
+    isDead: false,
+    isDestroyed: false,
+    sprite,
+    syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
+    syncShadow: () => calls.push(['syncShadow']),
+  }
+
+  const completed = []
+  const handled = playReverseSlashRecovery(unit, { releaseFrame: 5, onComplete: () => completed.push(true) })
+
+  assert.equal(handled, true)
+  assert.equal(unit.attackRecoveryAnimationTaskId, 7)
+  for (let i = 0; i < 3; i++) scheduled.get(7)()
+
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'gotoAndStop').map(([, frame]) => frame),
+    [3, 2, 1, 0]
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'add'),
+    [['add', 45, 'combat.slashReverseRecovery']]
+  )
+  assert.deepEqual(calls.slice(-1), [['remove', 7]])
+  assert.equal(unit.attackRecoveryAnimationTaskId, null)
+  assert.deepEqual(completed, [true])
 })
 
 test('damage feedback can be cleared before its timer fires', () => {

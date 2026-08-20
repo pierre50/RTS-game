@@ -18,8 +18,9 @@ function normalizeResourceLoads(loads: UnitEntity['resourceLoads']): ResourceLoa
 }
 
 function ensureHeroResourceLoads(unit: UnitEntity): ResourceLoadMap {
+  const hasExplicitLoads = unit.resourceLoads != null
   const normalized = normalizeResourceLoads(unit.resourceLoads)
-  if (!Object.keys(normalized).length && unit.loadingType && (unit.loading ?? 0) > 0) {
+  if (!hasExplicitLoads && !Object.keys(normalized).length && unit.loadingType && (unit.loading ?? 0) > 0) {
     normalized[unit.loadingType] = unit.loading ?? 0
   }
   unit.resourceLoads = normalized

@@ -423,7 +423,8 @@ export class MapFog {
         this.map.context.app?.ticker.remove(this.map._fogTickerCb!)
         return
       }
-      this._flushFogQueue()
+      const flush = () => this._flushFogQueue()
+      this.map.context.performance?.measure?.('fog.flushQueue', flush) ?? flush()
     }
     this.map.context.app?.ticker.add(this.map._fogTickerCb)
   }

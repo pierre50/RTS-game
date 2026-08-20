@@ -21,6 +21,7 @@ function loadModule(relativePath, mocks) {
         routeCapturedHorseToStableWithOwnerContact: () => null,
       }
     }
+    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/resourceCarry') {
       return {
         addCarriedResource: (unit, loadingType, amount) => {
@@ -344,7 +345,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       playSoundCue: () => {},
       playerCanSeeInstance: () => false,
       showResourceGainFeedback: () => {},
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       BOW_SHOOT_RELEASE_FRAME: 8,
     },
     '../../lib/unitExperience': {

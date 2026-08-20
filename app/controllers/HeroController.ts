@@ -24,20 +24,20 @@ import {
   STEP_TIME,
 } from '../constants'
 import {
-  aimHeroBowChargeAt,
+  aimHeroPowerChargeAt,
   aimHeroDefenseAt,
   applyToolAppearance,
   beginHeroDefense,
-  cancelHeroBowCharge,
+  cancelHeroPowerCharge,
   cancelHeroLasso,
   cancelHeroDefense,
-  isHeroBowChargeActiveForTool,
+  isHeroPowerChargeActiveForTool,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
-  releaseHeroBowCharge,
+  releaseHeroPowerCharge,
   triggerToolAttackAt,
   updateHeroDefense,
-  updateHeroBowCharge,
+  updateHeroPowerCharge,
   findFacingEntity,
   getHeroAimDegree,
   HERO_TOOL_ORDER,
@@ -684,11 +684,11 @@ export class HeroController {
     updateNpcFollow(unit)
     if (this.commCharging) this.updateCommIndicator()
     const aimPoint = this.controls.getWorldPointUnderCursor()
-    const bowChargeAiming = isHeroBowChargeActiveForTool(unit, this.equippedItem)
-      ? aimHeroBowChargeAt(unit, aimPoint)
+    const powerChargeAiming = isHeroPowerChargeActiveForTool(unit, this.equippedItem)
+      ? aimHeroPowerChargeAt(unit, aimPoint)
       : false
     const defenseAiming = aimHeroDefenseAt(unit, aimPoint)
-    updateHeroBowCharge(unit)
+    updateHeroPowerCharge(unit)
     updateHeroDefense(unit)
     // Keep the hover-based cursor live even while picking a "go to" target — it already tells
     // the player what a click will do here (gather hand, move icon, combat icon, plain pointer).
@@ -704,7 +704,8 @@ export class HeroController {
       this.primaryClickPoint &&
       !attacking &&
       this.equippedItem !== 'bow' &&
-      this.equippedItem !== 'lasso'
+      this.equippedItem !== 'lasso' &&
+      this.equippedItem !== 'sword'
     ) {
       const nextPoint = this.getShiftMoveLockedAimPoint() ?? aimPoint
       this.primaryClickPoint = nextPoint
@@ -743,7 +744,7 @@ export class HeroController {
       const distance =
         (unit.speed ?? 0) * speedFactor * stealthSpeedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
-      const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
+      const aimedDegree = powerChargeAiming || defenseAiming ? unit.degree : null
       const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
       const moveFacingVector = aimedFacingVector ?? lockedFacingVector
       const moveOptions = moveFacingVector
@@ -838,7 +839,7 @@ export class HeroController {
       return
     }
     if (button !== 0) return
-    if (unit && isHeroBowChargeActiveForTool(unit, this.equippedItem) && releaseHeroBowCharge(unit)) {
+    if (unit && isHeroPowerChargeActiveForTool(unit, this.equippedItem) && releaseHeroPowerCharge(unit)) {
       this.mouseHeld = false
       this.primaryClickPoint = null
       return
@@ -934,8 +935,8 @@ export class HeroController {
     const unit = this.heroUnit
     if (unit?.heroDefenseActive) cancelHeroDefense(unit)
     if (unit && item !== 'lasso') cancelHeroLasso(unit)
-    if (unit && !isHeroBowChargeActiveForTool(unit, item)) {
-      cancelHeroBowCharge(unit)
+    if (unit && !isHeroPowerChargeActiveForTool(unit, item)) {
+      cancelHeroPowerCharge(unit)
       this.mouseHeld = false
       this.primaryClickPoint = null
     }
@@ -967,7 +968,7 @@ export class HeroController {
     this.mouseHeld = false
     this.primaryClickPoint = null
     this.cancelMountTransition()
-    if (this.heroUnit) cancelHeroBowCharge(this.heroUnit)
+    if (this.heroUnit) cancelHeroPowerCharge(this.heroUnit)
     if (this.heroUnit) cancelHeroLasso(this.heroUnit)
     if (this.heroUnit) cancelHeroDefense(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()

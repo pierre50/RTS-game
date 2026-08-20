@@ -24,6 +24,7 @@ import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { getUnitCombatRange } from '../../lib/equipmentStats'
 import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
+import { playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -33,6 +34,10 @@ const PROJECTILE_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
+}
+
+type AttackLoopVisualOptions = {
+  playRecoveryAnimation?: (releaseFrame: number, onComplete: () => void) => boolean | void
 }
 
 export class UnitCombat {
@@ -47,7 +52,11 @@ export class UnitCombat {
   // fast that animation naturally runs, not a separate rateOfFire-driven timer. Shared by melee
   // and ranged; onFire receives the current target so each caller only supplies its own effect
   // (apply a hit, launch a projectile).
-  runAttackLoop(releaseFrame: number, onFire: (dest: RuntimeEntity | null) => boolean | void) {
+  runAttackLoop(
+    releaseFrame: number,
+    onFire: (dest: RuntimeEntity | null) => boolean | void,
+    visualOptions: AttackLoopVisualOptions = {}
+  ) {
     const unit = this.unit
     runAttackLoopOnFrame(unit, {
       releaseFrame,
@@ -60,6 +69,7 @@ export class UnitCombat {
       prepareRecoverySheet: () => {
         unit.setTextures?.(SHEET_TYPES.standing)
       },
+      playRecoveryAnimation: visualOptions.playRecoveryAnimation,
       onOutOfRange: dest => {
         unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
       },
@@ -75,6 +85,10 @@ export class UnitCombat {
       },
       onReadyToAttack: target => onFire(target),
     })
+  }
+
+  playReverseSlashRecovery(releaseFrame: number, onComplete: () => void): boolean {
+    return playReverseSlashRecovery(this.unit, { onComplete, releaseFrame })
   }
 
   finishAttackAfterCurrentLoop() {
@@ -207,25 +221,31 @@ export class UnitCombat {
         map.addChild(projectile)
       })
     } else {
-      this.runAttackLoop(SLASH_IMPACT_FRAME, dest => {
-        if (unit.sounds?.hit) {
-          playAudibleSoundCue(unit, unit.sounds.hit)
-        }
-        if (dest && (dest.hitPoints ?? 0) > 0) {
-          const { killed } = applyCombatHit(unit, dest, {
-            bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),
-            isMelee: true,
-            menu,
-            player,
-            xpCategory: XP_CATEGORIES.melee,
-            xpUnit: unit,
-          })
-          if (killed) {
-            this.finishAttackAfterCurrentLoop()
-            return false
+      this.runAttackLoop(
+        SLASH_IMPACT_FRAME,
+        dest => {
+          if (unit.sounds?.hit) {
+            playAudibleSoundCue(unit, unit.sounds.hit)
           }
+          if (dest && (dest.hitPoints ?? 0) > 0) {
+            const { killed } = applyCombatHit(unit, dest, {
+              bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),
+              isMelee: true,
+              menu,
+              player,
+              xpCategory: XP_CATEGORIES.melee,
+              xpUnit: unit,
+            })
+            if (killed) {
+              this.finishAttackAfterCurrentLoop()
+              return false
+            }
+          }
+        },
+        {
+          playRecoveryAnimation: (releaseFrame, onComplete) => this.playReverseSlashRecovery(releaseFrame, onComplete),
         }
-      })
+      )
     }
   }
 }

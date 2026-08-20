@@ -189,6 +189,70 @@ test('attack loop applies configured recovery before rearming the next swing', (
   ])
 })
 
+test('attack loop can wait for a custom recovery animation before rearming', () => {
+  const calls = []
+  const scheduled = []
+  let finishRecoveryAnimation = null
+  const { attacker, target } = makeAttackLoopSubject()
+  attacker.attackRecoveryMs = 1000
+  attacker.context = {
+    scheduler: {
+      addOneShot: (callback, time, name) => {
+        calls.push(['addOneShot', time, name])
+        scheduled.push(callback)
+        return 18
+      },
+      remove: taskId => calls.push(['remove', taskId]),
+    },
+  }
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+
+  runAttackLoopOnFrame(attacker, {
+    releaseFrame: 5,
+    prepareAttackSheet: () => calls.push(['prepareAttackSheet']),
+    prepareRecoverySheet: () => calls.push(['prepareRecoverySheet']),
+    playRecoveryAnimation: (releaseFrame, onComplete) => {
+      calls.push(['playRecoveryAnimation', releaseFrame])
+      finishRecoveryAnimation = onComplete
+      return true
+    },
+    onOutOfRange: () => calls.push(['outOfRange']),
+    onTargetUnavailable: () => calls.push(['targetUnavailable']),
+    onReadyToAttack: readyTarget => calls.push(['readyToAttack', readyTarget]),
+  })
+  const firstFrameCallback = attacker.sprite.onFrameChange
+  firstFrameCallback(5)
+
+  assert.equal(attacker.actionLocked, true)
+  assert.equal(attacker.attackRecoveryTaskId, 18)
+  assert.equal(attacker.sprite.onLoop, undefined)
+  assert.equal(typeof finishRecoveryAnimation, 'function')
+  assert.deepEqual(calls, [
+    ['prepareAttackSheet'],
+    ['readyToAttack', target],
+    ['playRecoveryAnimation', 5],
+    ['addOneShot', 1000, 'combat.attackRecovery'],
+  ])
+
+  scheduled[0]()
+  assert.equal(attacker.actionLocked, true)
+
+  finishRecoveryAnimation()
+
+  assert.equal(attacker.actionLocked, false)
+  assert.equal(attacker.attackRecoveryTaskId, null)
+  assert.equal(typeof attacker.sprite.onFrameChange, 'function')
+  assert.notEqual(attacker.sprite.onFrameChange, firstFrameCallback)
+  assert.deepEqual(calls, [
+    ['prepareAttackSheet'],
+    ['readyToAttack', target],
+    ['playRecoveryAnimation', 5],
+    ['addOneShot', 1000, 'combat.attackRecovery'],
+    ['prepareRecoverySheet'],
+    ['prepareAttackSheet'],
+  ])
+})
+
 test('attack loop skips recovery when the attack callback finishes the action', () => {
   const calls = []
   const { attacker } = makeAttackLoopSubject()
@@ -224,6 +288,7 @@ test('attack loop skips recovery when the attack callback finishes the action', 
 test('clearing attack recovery removes the pending scheduler task', () => {
   const calls = []
   const unit = {
+    attackRecoveryAnimationTaskId: 24,
     attackRecoveryTaskId: 23,
     context: {
       scheduler: {
@@ -239,6 +304,10 @@ test('clearing attack recovery removes the pending scheduler task', () => {
   clearCombatAttackRecovery(unit)
 
   assert.equal(unit.attackRecoveryTaskId, null)
+  assert.equal(unit.attackRecoveryAnimationTaskId, null)
   assert.equal(unit.sprite.onLoop, undefined)
-  assert.deepEqual(calls, [['remove', 23]])
+  assert.deepEqual(calls, [
+    ['remove', 23],
+    ['remove', 24],
+  ])
 })

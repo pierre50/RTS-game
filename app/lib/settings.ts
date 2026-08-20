@@ -96,7 +96,7 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
 const CONTROL_BINDING_ACTIONS = Object.keys(DEFAULT_KEY_BINDINGS) as ControlBindingAction[]
 
 export const SPEED_PRESETS = [
-  { key: 'speedSlow', value: 1.35 },
+  { key: 'speedSlow', value: 1.25 },
   { key: 'speedNormal', value: 1.5 },
   { key: 'speedFast', value: 2 },
 ]

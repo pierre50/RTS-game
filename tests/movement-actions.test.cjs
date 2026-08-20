@@ -121,7 +121,10 @@ const resourceCarryMock = {
   getDeliverableResourceEntries(unit, building) {
     return resourceCarryMock
       .getCarriedResourceEntries(unit)
-      .filter(([loadingType]) => building.type === constants.BUILDING_TYPES.townCenter || building.accept?.includes(loadingType))
+      .filter(
+        ([loadingType]) =>
+          building.type === constants.BUILDING_TYPES.townCenter || building.accept?.includes(loadingType)
+      )
   },
   getPlayerResourceKey(loadingType) {
     if (['berry', 'wheat', 'meat'].includes(loadingType)) return 'food'
@@ -169,7 +172,8 @@ function loadModule(relativePath, mocks) {
       return {
         getRoundedIsoFootprintPoints:
           libMock.getRoundedIsoFootprintPoints ?? libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
-        isBanditOwner: owner => Boolean(owner?.devConsoleBanditOwner || (owner?.isPlayed !== true && owner?.name === 'Bandits')),
+        isBanditOwner: owner =>
+          Boolean(owner?.devConsoleBanditOwner || (owner?.isPlayed !== true && owner?.name === 'Bandits')),
         playMovementSurfaceAudio: () => {},
         ...libMock,
       }
@@ -180,6 +184,7 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/resourceCarry') return resourceCarryMock
     if (request === '../../lib/lang') return { t: value => value }
+    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/diplomaticAggression') {
       return {
         applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
@@ -1017,10 +1022,7 @@ test('combat recovery idles when its reposition path finishes without an action'
   assert.deepEqual(unit.path, [])
   assert.deepEqual(
     calls.filter(([name]) => ['setTextures', 'sprite.stop', 'stop'].includes(name)),
-    [
-      ['setTextures', constants.SHEET_TYPES.standing],
-      ['sprite.stop'],
-    ]
+    [['setTextures', constants.SHEET_TYPES.standing], ['sprite.stop']]
   )
 })
 
@@ -1096,7 +1098,10 @@ test('path movement treats a same-label solid cell as its own stale occupancy', 
   assert.equal(cell0.solid, false)
   assert.equal(cell1.has, unit)
   assert.equal(cell1.solid, true)
-  assert.equal(calls.some(([name]) => name === 'sendToEvt'), false)
+  assert.equal(
+    calls.some(([name]) => name === 'sendToEvt'),
+    false
+  )
 })
 
 test('path movement starts the action when the target occupies the next blocked cell in range', () => {
@@ -1173,10 +1178,7 @@ test('path movement starts the action when the target occupies the next blocked 
 
   assert.deepEqual(unit.path, [])
   assert.equal(unit.degree, 90)
-  assert.deepEqual(calls, [
-    ['stopInterval'],
-    ['getAction', constants.ACTION_TYPES.attack],
-  ])
+  assert.deepEqual(calls, [['stopInterval'], ['getAction', constants.ACTION_TYPES.attack]])
 })
 
 test('combat recovery with no active action pauses instead of using the generic stop flow', () => {
@@ -1204,8 +1206,14 @@ test('combat recovery with no active action pauses instead of using the generic 
   new UnitMovement(unit).affectNewDest()
 
   assert.deepEqual(unit.path, [])
-  assert.equal(calls.some(([name]) => name === 'stop'), false)
-  assert.equal(calls.some(([name]) => name === 'resumeVillagerAutonomy'), false)
+  assert.equal(
+    calls.some(([name]) => name === 'stop'),
+    false
+  )
+  assert.equal(
+    calls.some(([name]) => name === 'resumeVillagerAutonomy'),
+    false
+  )
   assert.ok(calls.some(([name, sheet]) => name === 'setTextures' && sheet === constants.SHEET_TYPES.standing))
   assert.ok(calls.some(([name]) => name === 'sprite.stop'))
 })
@@ -2474,6 +2482,76 @@ test('chopping wood shows damage before wood is gathered', () => {
   ])
 })
 
+test('hero chopping wood rewinds the work swing after the impact frame', () => {
+  const calls = []
+  const reverseCalls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wood: 'wood' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, hitPoints: 'hitPoints' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { chopWood: 'chop-wood' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, frame, callback) => {
+        calls.push(['releaseFrame', frame])
+        callback()
+      },
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showDamageFeedback: (target, amount) => calls.push(['damage', target.label, amount]),
+      showResourceGainFeedback: () => {},
+      SLASH_IMPACT_FRAME: 5,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/slashRecoveryAnimation': {
+      playReverseSlashRecovery: (unit, options) => {
+        reverseCalls.push([unit, options.releaseFrame])
+        return true
+      },
+    },
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 3,
+    label: 'tree-1',
+    selected: false,
+    totalHitPoints: 5,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: { menu: {} },
+    dest: tree,
+    loading: 0,
+    loadingMax: { wood: 10 },
+    sprite: { loop: true },
+    getActionCondition: target => target === tree,
+    getWorkSound: () => 'chop-wood',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
+
+  assert.equal(tree.hitPoints, 2)
+  assert.equal(unit.actionLocked, true)
+  assert.equal(unit.sprite.loop, false)
+  assert.deepEqual(reverseCalls, [[unit, 5]])
+})
+
 test('hero building health bar refreshes while construction progresses', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
@@ -2496,7 +2574,7 @@ test('hero building health bar refreshes while construction progresses', () => {
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
       showResourceGainFeedback: () => {},
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },
@@ -2939,7 +3017,12 @@ test('hero delivery deposits accepted carried resources and keeps the rest', () 
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
-  const granary = { accept: ['wheat'], family: constants.FAMILY_TYPES.building, label: 'granary-1', type: constants.BUILDING_TYPES.granary }
+  const granary = {
+    accept: ['wheat'],
+    family: constants.FAMILY_TYPES.building,
+    label: 'granary-1',
+    type: constants.BUILDING_TYPES.granary,
+  }
   const player = { food: 10, iron: 0, isPlayed: true }
   const unit = {
     action: constants.ACTION_TYPES.delivery,
@@ -2998,7 +3081,7 @@ test('hero farming does not claim or replace the farm worker slot', () => {
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
       showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
     '../../lib/unitControl': {
@@ -3067,7 +3150,7 @@ test('hero keeps existing carried resources when gathering another resource type
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
       showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
     '../../lib/unitControl': {
@@ -3109,11 +3192,7 @@ test('hero keeps existing carried resources when gathering another resource type
   assert.equal(unit.loading, 5)
   assert.equal(unit.loadingType, 'wheat')
   assert.equal(wheat.quantity, 19)
-  assert.deepEqual(calls, [
-    ['setTextures', 'action'],
-    ['updateInterfaceLoading'],
-    ['feedback', 'hero', 1],
-  ])
+  assert.deepEqual(calls, [['setTextures', 'action'], ['updateInterfaceLoading'], ['feedback', 'hero', 1]])
 })
 
 test('depleted berrybushes stay on the map as empty bushes', () => {
@@ -3138,7 +3217,7 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
       showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      SLASH_IMPACT_FRAME: 3,
+      SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
     '../Projectile': { Projectile: class {} },

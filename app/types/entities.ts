@@ -154,6 +154,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
   energyWaitTaskId?: number | null
   attackRecoveryMs?: number
   attackRecoveryTaskId?: number | null
+  attackRecoveryAnimationTaskId?: number | null
   combatBehavior?: CombatBehaviorConfig
   combatBehaviorPreset?: string
   combatMoraleRoll?: number
@@ -224,16 +225,16 @@ export interface UnitEntity extends EnergyEntity {
   removeMountedHorseSprite?: () => void
   syncMountedHorseSprite?: () => void
   syncMountedRiderPosition?: () => void
-  heroBowChargeStart?: number | null
-  heroBowChargeRatio?: number
-  heroBowChargeDestination?: Point | null
-  heroBowChargeTarget?: RuntimeEntity | null
-  heroBowChargeTool?: 'bow' | 'lasso'
-  heroBowReleaseQueued?: boolean
-  heroBowReleasePower?: number
-  heroBowChargeFacingDegree?: number | null
-  heroBowChargeVisualLocked?: boolean
-  heroBowChargeLastEnergyAt?: number
+  heroPowerChargeStart?: number | null
+  heroPowerChargeRatio?: number
+  heroPowerChargeDestination?: Point | null
+  heroPowerChargeTarget?: RuntimeEntity | null
+  heroPowerChargeTool?: 'bow' | 'lasso' | 'sword'
+  heroPowerReleaseQueued?: boolean
+  heroPowerReleasePower?: number
+  heroPowerChargeFacingDegree?: number | null
+  heroPowerChargeVisualLocked?: boolean
+  heroPowerChargeLastEnergyAt?: number
   heroLasso?: { clearLasso: (options?: { releaseHorse?: boolean }) => void } | null
   heroDefenseStart?: number | null
   heroDefenseLastEnergyAt?: number

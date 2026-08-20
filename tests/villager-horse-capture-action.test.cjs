@@ -55,7 +55,7 @@ function loadUnitActions(calls, captureHorse) {
       return {
         BOW_SHOOT_RELEASE_FRAME: 8,
         HUNTING_PROJECTILE: 'Arrow',
-        SLASH_IMPACT_FRAME: 3,
+        SLASH_IMPACT_FRAME: 5,
         canUpdateMinimap: () => false,
         degreeToDirection: () => 'south',
         getInstanceDegree: () => 0,
@@ -104,6 +104,7 @@ function loadUnitActions(calls, captureHorse) {
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
     if (request === '../../lib/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
+    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/resourceCarry') {
       return {
         addCarriedResource: () => 0,
@@ -187,11 +188,17 @@ test('villager horse capture resumes after the lasso and routes the owner to the
   actions.getAction('captureHorse')
 
   assert.equal(horse.isLassoed, true)
-  assert.deepEqual(calls.filter(call => call[0] === 'lasso'), [['lasso', false]])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'lasso'),
+    [['lasso', false]]
+  )
 
   scheduler.tasks[0]()
 
-  assert.deepEqual(calls.filter(call => call[0] === 'route'), [['route', 'villager-1', 'horse-1']])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'route'),
+    [['route', 'villager-1', 'horse-1']]
+  )
   assert.deepEqual(calls.filter(call => call[0] === 'externalStableRouteActive').slice(-2), [
     ['externalStableRouteActive', false],
     ['externalStableRouteActive', true],
@@ -258,7 +265,10 @@ test('villager horse capture repath throttle survives synchronous action reentry
   actions.getAction('captureHorse')
 
   assert.equal(calls.filter(call => call[0] === 'sendToEvt').length, 1)
-  assert.equal(calls.some(call => call[0] === 'lasso'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'lasso'),
+    false
+  )
 })
 
 test('villager horse capture cleanup releases the attached horse when the order changes', () => {
@@ -332,9 +342,16 @@ test('villager horse capture cleanup releases the attached horse when the order 
 
   assert.equal(horse.isLassoed, false)
   assert.equal(horse.lassoOwner, null)
-  assert.deepEqual(calls.filter(call => call[0] === 'externalStableRouteActive'), [
-    ['externalStableRouteActive', false],
-  ])
-  assert.deepEqual(calls.filter(call => call[0] === 'releaseHorse'), [['releaseHorse', false, true]])
-  assert.deepEqual(calls.filter(call => call[0] === 'clearLasso'), [['clearLasso', false]])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'externalStableRouteActive'),
+    [['externalStableRouteActive', false]]
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'releaseHorse'),
+    [['releaseHorse', false, true]]
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'clearLasso'),
+    [['clearLasso', false]]
+  )
 })

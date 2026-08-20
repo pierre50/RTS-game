@@ -47,6 +47,7 @@ import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitCont
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
+import { playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import {
   addCarriedResource,
   clearCarriedResource,
@@ -57,10 +58,7 @@ import {
   getTotalCarriedResources,
 } from '../../lib/resourceCarry'
 import { HeroLassoThrow } from '../HeroLassoThrow'
-import {
-  getNearestAvailableStableForUnit,
-  routeCapturedHorseToStableWithOwnerContact,
-} from '../../lib/horseCapture'
+import { getNearestAvailableStableForUnit, routeCapturedHorseToStableWithOwnerContact } from '../../lib/horseCapture'
 import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { SchedulerTaskId } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
@@ -121,13 +119,17 @@ function stopCaptureHorseTick(unit: UnitEntity, state: CaptureHorseActionState):
 function ensureCaptureHorseTick(unit: UnitEntity, state: CaptureHorseActionState): void {
   const scheduler = unit.context?.scheduler
   if (!scheduler || state.tickTaskId != null) return
-  state.tickTaskId = scheduler.add(() => {
-    if (unit.action !== ACTION_TYPES.captureHorse || unit.isDead || unit.isDestroyed) {
-      resetCaptureHorseActionState(unit)
-      return
-    }
-    unit.getAction?.(ACTION_TYPES.captureHorse)
-  }, STEP_TIME, 'unit.captureHorse')
+  state.tickTaskId = scheduler.add(
+    () => {
+      if (unit.action !== ACTION_TYPES.captureHorse || unit.isDead || unit.isDestroyed) {
+        resetCaptureHorseActionState(unit)
+        return
+      }
+      unit.getAction?.(ACTION_TYPES.captureHorse)
+    },
+    STEP_TIME,
+    'unit.captureHorse'
+  )
 }
 
 function getCaptureHorseOwnerStableTimeoutMs(owner: UnitEntity, stable: BuildingEntity): number {
@@ -257,6 +259,43 @@ function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
 function lockManualHeroAction(unit: UnitEntity): void {
   if (!isHeroControlled(unit)) return
   unit.actionLocked = true
+}
+
+function finishManualHeroWorkRecovery(unit: UnitEntity, releaseFrame: number): boolean {
+  if (!isHeroControlled(unit)) return false
+  const actionAtRelease = unit.action ?? null
+  const destAtRelease = unit.dest
+  const sprite = unit.sprite
+  if (sprite) {
+    sprite.onFrameChange = undefined
+    sprite.onLoop = undefined
+  }
+  setActionSpriteLoop(unit, false)
+  const handled = playReverseSlashRecovery(unit, {
+    onComplete: () => {
+      setActionSpriteLoop(unit, true)
+      unit.actionLocked = false
+      if (!actionAtRelease || unit.isDead || unit.isDestroyed) return
+      if (isManualHeroActionReleased(unit)) {
+        stopManualHeroAction(unit)
+        return
+      }
+      if (unit.action !== actionAtRelease || unit.dest !== destAtRelease) return
+      if (!unit.getActionCondition?.(destAtRelease, actionAtRelease)) {
+        unit.affectNewDest?.()
+        return
+      }
+      unit.getAction?.(actionAtRelease)
+    },
+    releaseFrame,
+  })
+  if (!handled) setActionSpriteLoop(unit, true)
+  return handled
+}
+
+function finishManualHeroWorkSwing(unit: UnitEntity, releaseFrame: number): void {
+  if (finishManualHeroWorkRecovery(unit, releaseFrame)) return
+  if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
 }
 
 function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
@@ -637,7 +676,7 @@ export class UnitActions {
       gatherProgress++
       if (gatherProgress < Math.max(1, gatherEvery)) {
         this.playSound(soundId)
-        if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+        finishManualHeroWorkSwing(unit, releaseFrame)
         return
       }
       gatherProgress = 0
@@ -659,7 +698,7 @@ export class UnitActions {
       if (wasEmpty) {
         applyLoadingWorkAssets(unit)
       }
-      if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+      finishManualHeroWorkSwing(unit, releaseFrame)
     }
     onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
       onRelease?.()
@@ -790,7 +829,7 @@ export class UnitActions {
           if (wasEmpty) {
             applyLoadingWorkAssets(unit)
           }
-          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
         })
         break
       }
@@ -858,7 +897,7 @@ export class UnitActions {
               applyLoadingWorkAssets(unit)
             }
           }
-          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
         })
         break
       }
@@ -918,7 +957,7 @@ export class UnitActions {
             if (unit.continueBuildingQueue?.()) return
             unit.affectNewDest?.()
           }
-          if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
+          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
         })
         break
       }
@@ -1177,9 +1216,7 @@ export class UnitActions {
           Boolean(
             heroCaptureLasso &&
               heroCaptureLasso.state !== 'retracting' &&
-              (!isRuntimeEntity(lassoTarget)
-                ? unitDest?.label === horse.label
-                : lassoTarget.label === horse.label)
+              (!isRuntimeEntity(lassoTarget) ? unitDest?.label === horse.label : lassoTarget.label === horse.label)
           )
         const isHeroLassoOwner = horse.isLassoed && horse.type === 'Horse' && lassoOwner?.label === unit.label
         const isCapturing = isHeroLassoOwner || hasActiveCaptureLasso
@@ -1267,8 +1304,7 @@ export class UnitActions {
             owner: unit,
             horse,
             ownerContactTimeoutMs: getCaptureHorseOwnerStableTimeoutMs(unit, stable),
-            isRouteValid: () =>
-              Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
+            isRouteValid: () => Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
             onHorseRouteStart: () => {
               getHeroCaptureLasso(unit)?.setExternalStableRouteActive(true)
             },

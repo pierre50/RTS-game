@@ -420,6 +420,7 @@ export class Unit extends Instance implements UnitEntity {
   energyWaitTaskId?: UnitEntity['energyWaitTaskId']
   attackRecoveryMs?: UnitEntity['attackRecoveryMs']
   attackRecoveryTaskId?: UnitEntity['attackRecoveryTaskId']
+  attackRecoveryAnimationTaskId?: UnitEntity['attackRecoveryAnimationTaskId']
   combatBehavior?: UnitEntity['combatBehavior']
   combatBehaviorPreset?: UnitEntity['combatBehaviorPreset']
   combatMode?: UnitEntity['combatMode']
