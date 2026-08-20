@@ -2,7 +2,6 @@ import { Assets } from 'pixi.js'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
 import { findKey, getAmount, getSpawnCell, normalize } from './shared'
-import { FloatingItem } from '../../classes/FloatingItem'
 import { Resource } from '../../classes/Resource'
 import { Player } from '../../classes/players/Player'
 import { BUILDING_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
@@ -262,31 +261,4 @@ export function spawnBuilding(
   menu.updateTopbar()
   menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, 1, ownerIndex, playerIndex != null) }
-}
-
-export function spawnFloatingItem(
-  context: DevConsoleContext,
-  resourceName: string = RESOURCE_TYPES.gold,
-  amount: string | number = 1
-): CommandResult {
-  const resourceKey = findKey(RESOURCE_TYPES, resourceName) as keyof typeof RESOURCE_TYPES | undefined
-  const resourceType = resourceKey ? RESOURCE_TYPES[resourceKey] : resourceName
-  if (resourceType !== RESOURCE_TYPES.gold) {
-    return { ok: false, message: 'Only Gold floating items are available for now' }
-  }
-
-  const cell = getSpawnCell(context)
-  if (!cell) return { ok: false, message: 'No cell near cursor' }
-
-  new FloatingItem(
-    {
-      i: cell.i,
-      j: cell.j,
-      resourceType,
-      amount: getAmount(amount),
-    },
-    context as unknown as ConstructorParameters<typeof FloatingItem>[1]
-  )
-
-  return { ok: true, message: `Spawned floating ${resourceType} item` }
 }

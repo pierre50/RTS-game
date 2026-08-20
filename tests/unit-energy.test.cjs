@@ -47,6 +47,16 @@ function loadUnitEnergy() {
       isCombatRecoveryReadyToReengage: unit => (unit.energy ?? 0) >= (unit.totalEnergy ?? 0),
       updateCombatRecoveryMovement: unit => combatBehaviorCalls.push(['update', unit]),
     },
+    '../config/gameDifficultyBalance': {
+      getGameDifficultyCombatBalance: difficulty => {
+        const balances = {
+          easy: { enemyAttackEnergyCostMultiplier: 2 },
+          medium: { enemyAttackEnergyCostMultiplier: 1 },
+          hard: { enemyAttackEnergyCostMultiplier: 0.8 },
+        }
+        return balances[difficulty] ?? balances.medium
+      },
+    },
     './lang': { t: key => key },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'arpg' },
   }
@@ -98,6 +108,34 @@ test('work energy costs reflect action effort', () => {
   assert.equal(unit.energy, 6.5)
 })
 
+test('easy difficulty makes enemy attacks cost more energy against played units', () => {
+  const { getActionEnergyCost, spendEnergyForAction } = loadUnitEnergy()
+  const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
+  const enemyOwner = { label: 'enemy', isEnemy: targetOwner => targetOwner?.label === 'player' }
+  const target = { family: 'unit', owner: playedOwner }
+  const enemy = {
+    action: 'attack',
+    context: { map: { difficulty: 'easy' } },
+    dest: target,
+    energy: 10,
+    owner: enemyOwner,
+    totalEnergy: 10,
+  }
+  const playerUnit = {
+    action: 'attack',
+    context: { map: { difficulty: 'easy' } },
+    dest: { family: 'unit', owner: enemyOwner },
+    energy: 10,
+    owner: playedOwner,
+    totalEnergy: 10,
+  }
+
+  assert.equal(getActionEnergyCost(enemy, 'attack'), 4)
+  assert.equal(spendEnergyForAction(enemy, 'attack'), true)
+  assert.equal(enemy.energy, 6)
+  assert.equal(getActionEnergyCost(playerUnit, 'attack'), 2)
+})
+
 test('generic energy wait can resume an animal through sendTo fallback', () => {
   const { resumeEnergyWaitIfReady, waitForEnergy } = loadUnitEnergy()
   const calls = []
@@ -146,7 +184,12 @@ test('npc waits for full energy before resuming an action', () => {
   assert.equal(waitForEnergy(unit, 'chopwood', target), false)
   assert.equal(unit.waitingForEnergyAction, 'chopwood')
   assert.deepEqual(__fatigueFeedbackCalls, [unit])
-  assert.deepEqual(calls.slice(0, 4), [['stopInterval'], ['setTextures', 'standingSheet'], ['sprite.stop'], ['startInterval']])
+  assert.deepEqual(calls.slice(0, 4), [
+    ['stopInterval'],
+    ['setTextures', 'standingSheet'],
+    ['sprite.stop'],
+    ['startInterval'],
+  ])
 
   unit.context.scheduler.elapsedMs = 100
   assert.equal(resumeEnergyWaitIfReady(unit), true)

@@ -1255,7 +1255,7 @@ function playEmptyHandWhiff(hero: UnitEntity): boolean {
 
 function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
-  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.unit.swordAttack), SLASH_IMPACT_FRAME)
+  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), SLASH_IMPACT_FRAME)
   return true
 }
 

@@ -1,7 +1,7 @@
 {
   "Villager": {
     "category": "Civilian",
-    "totalHitPoints": 25,
+    "totalHitPoints": 18,
     "sight": 8,
     "speed": 1.2,
     "trainingTime": 20,
@@ -111,11 +111,7 @@
     },
     "sounds": {
       "create": "villager-completed",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -228,16 +224,8 @@
     },
     "sounds": {
       "create": "human-unit-completed",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"],
       "command": "olmars",
       "buildCommand": "homis",
       "huntCommand": "isay",
@@ -254,7 +242,7 @@
   "Chief": {
     "category": "Civilian",
     "isChief": true,
-    "totalHitPoints": 45,
+    "totalHitPoints": 32,
     "sight": 10,
     "speed": 1.2,
     "trainingTime": 30,
@@ -283,21 +271,13 @@
     "sounds": {
       "create": "human-unit-completed",
       "command": "olmars",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3"
-      ]
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
+      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"]
     }
   },
   "Fantassin": {
     "category": "Fantassin",
-    "totalHitPoints": 40,
+    "totalHitPoints": 24,
     "sight": 8,
     "speed": 1.3,
     "trainingTime": 27,
@@ -314,18 +294,8 @@
       "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
         "human-unit-killed-7",
@@ -337,7 +307,7 @@
   },
   "Bowman": {
     "category": "Archer",
-    "totalHitPoints": 35,
+    "totalHitPoints": 20,
     "sight": 14,
     "speed": 1.3,
     "trainingTime": 30,
@@ -356,17 +326,8 @@
       "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
-      "command": [
-        "eventide",
-        "arectus",
-        "conan",
-        "werebus"
-      ],
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "command": ["eventide", "arectus", "conan", "werebus"],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",
@@ -378,7 +339,7 @@
   },
   "Priest": {
     "category": "Civilian",
-    "totalHitPoints": 25,
+    "totalHitPoints": 18,
     "sight": 24,
     "speed": 0.9,
     "trainingTime": 50,
@@ -397,23 +358,11 @@
     },
     "sounds": {
       "create": "priest-completed",
-      "command": [
-        "ayohoyohoyo",
-        "wololo",
-        "hayoyo"
-      ],
-      "move": [
-        "ayohoyohoyo",
-        "wololo",
-        "hayoyo"
-      ],
+      "command": ["ayohoyohoyo", "wololo", "hayoyo"],
+      "move": ["ayohoyohoyo", "wololo", "hayoyo"],
       "heal": "ayohoyohoyo",
       "convert": "wololo",
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2",
-        "attack-class-2-3"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
         "human-unit-killed-2",

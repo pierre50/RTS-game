@@ -30,6 +30,29 @@ function loadModule(relativePath, mocks) {
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitExperience') return unitExperienceMock
+    if (request === '../config/gameDifficultyBalance') {
+      const balances = {
+        easy: {
+          enemyAttackEnergyCostMultiplier: 2,
+          playerDamageDealtMultiplier: 2,
+          playerDamageReceivedMultiplier: 0.5,
+        },
+        medium: {
+          enemyAttackEnergyCostMultiplier: 1,
+          playerDamageDealtMultiplier: 1,
+          playerDamageReceivedMultiplier: 1,
+        },
+        hard: {
+          enemyAttackEnergyCostMultiplier: 0.8,
+          playerDamageDealtMultiplier: 0.75,
+          playerDamageReceivedMultiplier: 1.35,
+        },
+      }
+      return {
+        GAME_DIFFICULTY_COMBAT_BALANCE: balances,
+        getGameDifficultyCombatBalance: difficulty => balances[difficulty] ?? balances.medium,
+      }
+    }
     if (request === './equipmentStats')
       return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
     if (request === '../../lib/equipmentStats') return { getUnitCombatRange: unit => unit?.combatRange ?? 0 }
@@ -825,6 +848,111 @@ test('pierce damage uses pierce armor and still applies armor to default damage'
 
   assert.equal(getHitPointsWithDamage(attacker, enemy, undefined, 0, 'pierce'), 12)
   assert.equal(getHitPointsWithDamage(attacker, enemy, 6, 0, 'pierce'), 16)
+})
+
+test('easy combat difficulty increases played damage against enemies', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
+  const enemyOwner = { label: 'enemy', isEnemy: targetOwner => targetOwner?.label === 'player' }
+  const attacker = {
+    context: { map: { difficulty: 'easy' } },
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: playedOwner,
+    type: 'Fantassin',
+    weaponPower: 6,
+  }
+  const enemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: enemyOwner,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, enemy), 8)
+})
+
+test('easy combat difficulty reduces enemy damage against played units', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
+  const enemyOwner = { label: 'enemy', isEnemy: targetOwner => targetOwner?.label === 'player' }
+  const attacker = {
+    context: { map: { difficulty: 'easy' } },
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: enemyOwner,
+    type: 'Fantassin',
+    weaponPower: 8,
+  }
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: playedOwner,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, target), 16)
+})
+
+test('combat difficulty treats armed animals as threats but leaves passive hunting unchanged', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const playedOwner = { label: 'player', isPlayed: true, isEnemy: () => false }
+  const attacker = {
+    context: { map: { difficulty: 'easy' } },
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: playedOwner,
+    type: 'Fantassin',
+    weaponPower: 10,
+  }
+  const boar = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 20,
+    isDead: false,
+    weaponPower: 3,
+  }
+  const deer = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 20,
+    isDead: false,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, boar), 0)
+  assert.equal(getHitPointsWithDamage(attacker, deer), 10)
+})
+
+test('medium combat difficulty keeps current damage unchanged', () => {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
+  const enemyOwner = { label: 'enemy', isEnemy: targetOwner => targetOwner?.label === 'player' }
+  const attacker = {
+    context: { map: { difficulty: 'medium' } },
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: playedOwner,
+    type: 'Fantassin',
+    weaponPower: 6,
+  }
+  const enemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: enemyOwner,
+  }
+
+  assert.equal(getHitPointsWithDamage(attacker, enemy), 14)
 })
 
 test('hero defense blocks incoming damage and flashes', () => {

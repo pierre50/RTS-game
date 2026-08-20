@@ -35,6 +35,7 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
     SHEET_TYPES: { action: 'action', flying: 'flying', running: 'running', standing: 'standing', walking: 'walking' },
   }
   const getCellsAroundPointCalls = []
+  const attackLoopCalls = []
   const lib = {
     applyCombatHit: () => ({ killed: false }),
     evaluateCombatMorale: () => 'fight',
@@ -73,7 +74,6 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
     isometricToCartesian: isometricToCartesianImpl ?? (() => [0, 0]),
     pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
     playAudibleSoundCue: () => {},
-    runAttackLoopOnFrame: () => {},
     SLASH_IMPACT_FRAME: 1,
   }
   const { AnimalCombat } = loadModule('app/classes/animal/AnimalCombat.ts', {
@@ -84,7 +84,9 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
       showAlertFeedback: () => {},
       showAlertThenAggressionFeedback: () => {},
     },
-    '../../lib/combatAttackLoop': { runAttackLoopOnFrame: () => {} },
+    '../../lib/combatAttackLoop': {
+      runAttackLoopOnFrame: (animal, callbacks) => attackLoopCalls.push([animal, callbacks]),
+    },
     '../../lib/combatBehavior': {
       markCombatAttack: () => {},
       markCombatFlee: () => {},
@@ -95,14 +97,17 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
     './index': { FLYING_ALTITUDE: 20 },
     './locomotion': { isAirborne: () => false, resolveMovementSheet: (_animal, sheet) => sheet },
   })
-  return { AnimalCombat, getCellsAroundPointCalls }
+  return { AnimalCombat, attackLoopCalls, getCellsAroundPointCalls }
 }
 
 // Mirrors how the real Animal class wires itself: AnimalCombat.getReaction() calls
 // back out to `animal.runaway(...)`, which on the real class delegates right back
 // into the same AnimalCombat instance.
 function createAnimalCombat({ solidCells = [], isometricToCartesianImpl, animalOverrides = {}, pathable } = {}) {
-  const { AnimalCombat, getCellsAroundPointCalls } = loadAnimalCombat({ isometricToCartesianImpl, pathable })
+  const { AnimalCombat, attackLoopCalls, getCellsAroundPointCalls } = loadAnimalCombat({
+    isometricToCartesianImpl,
+    pathable,
+  })
   const calls = []
   const animal = {
     i: 5,
@@ -119,7 +124,7 @@ function createAnimalCombat({ solidCells = [], isometricToCartesianImpl, animalO
   }
   const combat = new AnimalCombat(animal)
   animal.runaway = (instance, hitDirection) => combat.runaway(instance, hitDirection)
-  return { combat, animal, calls, getCellsAroundPointCalls }
+  return { combat, animal, calls, attackLoopCalls, getCellsAroundPointCalls }
 }
 
 test('isAttacked reacts even while the animal has an ambient-walk destination', () => {
@@ -195,6 +200,25 @@ test('an aggressive animal falls back to walking when it has no running sheet', 
   combat.getReaction(target)
 
   assert.deepEqual(calls, [['sendTo', target, 'attack', { movementSheet: 'walking' }]])
+})
+
+test('animal attacks use their configured impact frame when provided', () => {
+  const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
+  const { combat, attackLoopCalls } = createAnimalCombat({
+    animalOverrides: {
+      action: 'attack',
+      attackImpactFrame: 3,
+      dest: target,
+      getActionCondition: () => true,
+      setTextures: () => {},
+      strategy: 'attack',
+    },
+  })
+
+  combat.getAction('attack')
+
+  assert.equal(attackLoopCalls.length, 1)
+  assert.equal(attackLoopCalls[0][1].releaseFrame, 3)
 })
 
 test('runaway flees along the projectile direction instead of away from the shooter position', () => {

@@ -37,7 +37,7 @@ const LPC_ARROW_PROJECTILE_CONFIG: Partial<ProjectileConfig> = {
   directionalSpawnOffsets: {
     south: { x: -2, y: -3 },
     southwest: { x: -2, y: -3 },
-    west: { x: -10, y: -10 },
+    west: { x: -10, y: 8 },
     northwest: { x: 7, y: -4 },
     north: { x: 7, y: -4 },
     northeast: { x: 7, y: -4 },
@@ -50,7 +50,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   [UNIT_TYPES.banditChief]: {
     category: 'Bandit',
     selectionFactor: 0.75,
-    totalHitPoints: 70,
+    totalHitPoints: 36,
     sight: 7,
     speed: 0.95,
     trainingTime: 0,
@@ -68,7 +68,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   [UNIT_TYPES.banditSword]: {
     category: 'Bandit',
     selectionFactor: 0.65,
-    totalHitPoints: 48,
+    totalHitPoints: 20,
     sight: 7,
     speed: 1,
     trainingTime: 0,
@@ -82,7 +82,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
   [UNIT_TYPES.banditArcher]: {
     category: 'Bandit',
     selectionFactor: 0.6,
-    totalHitPoints: 34,
+    totalHitPoints: 16,
     sight: 8,
     speed: 1,
     trainingTime: 0,
@@ -208,6 +208,21 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
 
 const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {}
 
+const UNIT_COMBAT_BALANCE_OVERRIDES: Record<string, Partial<Pick<UnitConfig, 'meleeArmor' | 'pierceArmor'>>> = {
+  [UNIT_TYPES.banditChief]: {
+    meleeArmor: 1,
+    pierceArmor: 1,
+  },
+  [UNIT_TYPES.banditSword]: {
+    meleeArmor: 1,
+    pierceArmor: 0,
+  },
+  [UNIT_TYPES.banditArcher]: {
+    meleeArmor: 0,
+    pierceArmor: 0,
+  },
+}
+
 const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   ArcheryRange: {
     units: ['Bowman'],
@@ -302,6 +317,7 @@ export function createPlayerData(
 
   for (const [unitName, unit] of Object.entries(config.units)) {
     applyEquipmentStatsToUnitConfig(unitName, unit)
+    Object.assign(unit, UNIT_COMBAT_BALANCE_OVERRIDES[unitName])
     normalizeUnitSounds(unit)
   }
 

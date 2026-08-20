@@ -19,6 +19,27 @@ const constants = {
   },
 }
 
+const VISUAL_ONLY_EQUIPMENT = [
+  'arrow_ceramic',
+  'arrow_copper',
+  'arrow_bronze',
+  'arrow_iron',
+  'cape_solid',
+  'centurion_crest',
+  'centurion_plumage',
+  'crest',
+  'gold',
+  'helmet_wings',
+  'legion_plumage',
+  'meat',
+  'plumage',
+  'quiver',
+  'sack_cloth_hood_leather',
+  'stone',
+  'upward_horns_ceramic',
+  'upward_horns_white',
+]
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
   const source = fs.readFileSync(filename, 'utf8')
@@ -54,6 +75,61 @@ function loadEquipmentStats({ unitEquipment = {}, workEquipment = {} } = {}) {
     },
   })
 }
+
+function loadGameplayEquipmentJson() {
+  return JSON.parse(fs.readFileSync(path.join(__dirname, '../public/assets/data/gameplay/equipment.json'), 'utf8'))
+}
+
+function getDynamicEquipmentKeys() {
+  const source = fs.readFileSync(path.join(__dirname, '../app/lib/lpc/equipment.ts'), 'utf8')
+  const match = source.match(
+    /const DYNAMIC_EQUIPMENT_KEYS = \[([\s\S]*?)\] as const satisfies readonly DynamicEquipmentKey\[\]/
+  )
+  assert.ok(match, 'DYNAMIC_EQUIPMENT_KEYS not found')
+  return [...match[1].matchAll(/'([^']+)'/g)].map(([, key]) => key)
+}
+
+test('gameplay equipment data covers every dynamic equipment key', () => {
+  const equipment = loadGameplayEquipmentJson()
+  const missing = getDynamicEquipmentKeys().filter(key => !Object.hasOwn(equipment, key))
+
+  assert.deepEqual(missing, [])
+  assert.deepEqual(equipment.helmet_barbarian_ceramic, { armor: { melee: 1, pierce: 1 } })
+  assert.deepEqual(equipment.helmet_barbarian_nasal_ceramic, { armor: { melee: 1, pierce: 1 } })
+
+  for (const visualOnly of VISUAL_ONLY_EQUIPMENT) {
+    assert.deepEqual(equipment[visualOnly], {}, `${visualOnly} should remain visual-only`)
+  }
+})
+
+test('combat equipment data declares weapon and armor stats by role', () => {
+  const equipment = loadGameplayEquipmentJson()
+  const visualOnly = new Set(VISUAL_ONLY_EQUIPMENT)
+  const explicitWeapons = new Set([
+    'ballista_bolt',
+    'boar_tusks',
+    'bow',
+    'bow_great',
+    'bow_recurve',
+    'cane',
+    'catapult_stone',
+    'halberd',
+    'longsword',
+    'stone_thrower_stone',
+    'watch_tower_arrow',
+    'wolf_bite',
+  ])
+
+  for (const key of Object.keys(equipment)) {
+    if (explicitWeapons.has(key) || /^(axe|hammer|pickaxe|scythe|sword)_/.test(key)) {
+      assert.ok((equipment[key].weapon?.power ?? 0) > 0, `${key} should declare weapon.power`)
+    }
+    if (!visualOnly.has(key) && /^(armor_|bracers_|helmet_|leg_armor_|round_shield_|shoulder_)/.test(key)) {
+      const armor = equipment[key].armor ?? {}
+      assert.ok((armor.melee ?? 0) > 0 || (armor.pierce ?? 0) > 0, `${key} should declare armor stats`)
+    }
+  }
+})
 
 test('the Fantassin qualifies for a melee parry with its sword', () => {
   const { isUnitMeleeWeaponEquipped } = loadEquipmentStats({
@@ -106,8 +182,8 @@ test('villager work equipment resolves material-specific stats by owner age', ()
     },
   })
 
-  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 0).weaponPower, 3)
-  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 1).weaponPower, 6)
+  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 0).weaponPower, 5)
+  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 1).weaponPower, 7)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -115,7 +191,7 @@ test('villager work equipment resolves material-specific stats by owner age', ()
       work: 'woodcutter',
       owner: { age: 1, config: {} },
     }),
-    6
+    7
   )
 })
 
@@ -126,15 +202,15 @@ test('infantry equipment resolves its sword material by owner age', () => {
     },
   })
 
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 0).weaponPower, 4)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 1).weaponPower, 6)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 0).weaponPower, 6)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 1).weaponPower, 8)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
       type: 'Fantassin',
       owner: { age: 1, config: {} },
     }),
-    6
+    8
   )
 })
 
@@ -145,13 +221,13 @@ test('unit combat stats ignore non-work roles and still use unit equipment', () 
   })
 
   assert.deepEqual(getUnitEffectiveCombatStats('Fantassin', {}, 'attacker', 0, 2), {
-    weaponPower: 4,
+    weaponPower: 6,
     meleeArmor: 1,
     pierceArmor: 0,
   })
 })
 
-test('infantry equipment stats unlock armor by level and civilization age', () => {
+test('infantry equipment stats unlock armor by level and cap effective combat armor', () => {
   const { getUnitEffectiveCombatStats, getEntityWeaponPower } = loadEquipmentStats({
     unitEquipment: {
       Fantassin: (age, level) => {
@@ -173,14 +249,14 @@ test('infantry equipment stats unlock armor by level and civilization age', () =
   })
 
   assert.deepEqual(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 0, 0), {
-    weaponPower: 4,
+    weaponPower: 6,
     meleeArmor: 0,
     pierceArmor: 0,
   })
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).meleeArmor, 13)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).pierceArmor, 8)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).meleeArmor, 14)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).pierceArmor, 9)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).meleeArmor, 3)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).pierceArmor, 2)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).meleeArmor, 3)
+  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).pierceArmor, 2)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -188,6 +264,6 @@ test('infantry equipment stats unlock armor by level and civilization age', () =
       level: 15,
       owner: { age: 2, config: {} },
     }),
-    6
+    8
   )
 })

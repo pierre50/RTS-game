@@ -1,6 +1,6 @@
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid } from './grid'
-import type { FloatingItemEntity, ResourceEntity, RuntimeEntity } from './entities'
+import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
 import type { SaveEntityState } from './save'
@@ -79,7 +79,6 @@ export interface RuntimeMap {
   // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
-  floatingItems?: Set<FloatingItemEntity>
   gaia?: PlayerLike | null
   fogMemoryLayer?: Container
   shadowLayer?: Container

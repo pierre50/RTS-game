@@ -745,8 +745,12 @@ function applyEntityBars(context: DevConsoleContext, entities: Set<DevEntity>): 
 
 function hideEntityBars(entities: Set<DevEntity>): void {
   for (const entity of entities) {
-    entity.removeHealthBar?.()
     entity.removeEnergyBar?.()
+    if (entity.selected || entity.shouldKeepHealthBarVisible?.()) {
+      entity.drawHealthBar?.()
+      continue
+    }
+    entity.removeHealthBar?.()
   }
 }
 
@@ -756,7 +760,7 @@ export function refreshEntityBars(context: DevConsoleContext): CommandResult {
 }
 
 export function toggleEntityBars(context: DevConsoleContext, value: string): CommandResult {
-  const { app, map } = context
+  const { map } = context
   const showEntityBars = normalizeToggle(value, Boolean(map.debugEntityBarsVisible))
 
   map.debugEntityBarsVisible = showEntityBars

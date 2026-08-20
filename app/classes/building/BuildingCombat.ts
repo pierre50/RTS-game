@@ -91,7 +91,7 @@ export class BuildingCombat {
   // newly reveals this building, so a tower that just came into existence surrounded by
   // already-stationary enemies would otherwise never take its first shot. Scan once here.
   // Called both from the gradual-construction path (BuildingLifecycle.updateTexture) and the
-  // instant-build path (constructed directly with isBuilt: true, e.g. dev-console/map generation).
+  // instant-build path (constructed directly with isBuilt: true, e.g. map generation).
   scanForInitialTarget(): void {
     const building = this.building
     const range = getBuildingCombatRange(building)

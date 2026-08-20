@@ -203,7 +203,7 @@ test('hero player units keep world health bars visible', () => {
   assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), true)
 })
 
-test('same-team AI units do not keep world health bars visible without debug mode', () => {
+test('same-team AI units do not keep world health bars visible', () => {
   const { Instance } = loadInstance()
   const instance = Object.create(Instance.prototype)
   instance.label = 'ai-ally-1'
@@ -220,7 +220,7 @@ test('same-team AI units do not keep world health bars visible without debug mod
   assert.equal(Instance.prototype.shouldKeepHealthBarVisible.call(instance), false)
 })
 
-test('selected hero player units do not draw energy bars without debug mode', () => {
+test('selected hero player units do not draw energy bars', () => {
   const { Instance } = loadInstance()
   const children = []
   const instance = Object.create(Instance.prototype)
@@ -251,43 +251,13 @@ test('selected hero player units do not draw energy bars without debug mode', ()
   assert.equal(children.some(child => child.label === 'energyBar'), false)
 })
 
-test('dev console entity bars can draw non-hero energy bars', () => {
-  const { Instance } = loadInstance()
-  const children = []
-  const instance = Object.create(Instance.prototype)
-  instance.label = 'unit-1'
-  instance.context = {
-    map: { debugEntityBarsVisible: true },
-    controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
-  }
-  instance.family = 'unit'
-  instance.owner = { label: 'player-1', isPlayed: true }
-  instance.selected = false
-  instance.isDead = false
-  instance.isDestroyed = false
-  instance.energy = 7
-  instance.totalEnergy = 10
-  instance.sprite = { height: 40, anchor: { y: 1 } }
-  instance.children = children
-  instance.getChildByLabel = label => children.find(child => child.label === label) || null
-  instance.removeChild = child => {
-    const index = children.indexOf(child)
-    if (index >= 0) children.splice(index, 1)
-  }
-  instance.addChild = child => children.push(child)
-
-  Instance.prototype.drawEnergyBar.call(instance)
-
-  assert.equal(children.some(child => child.label === 'energyBar'), true)
-})
-
-test('hero units never draw energy bars even in debug mode', () => {
+test('hero units never draw energy bars', () => {
   const { Instance } = loadInstance()
   const children = []
   const instance = Object.create(Instance.prototype)
   instance.label = 'hero-1'
   instance.context = {
-    map: { debugEntityBarsVisible: true },
+    map: {},
     controls: { heroUnit: { label: 'hero-1', owner: { label: 'player-1' } } },
   }
   instance.family = 'unit'

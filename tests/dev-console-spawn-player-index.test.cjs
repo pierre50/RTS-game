@@ -31,7 +31,6 @@ function loadSpawnActions(sharedOverrides = {}) {
         ...sharedOverrides,
       }
     }
-    if (request === '../../classes/FloatingItem') return { FloatingItem: class {} }
     if (request === '../../classes/Resource') {
       return {
         Resource: class {

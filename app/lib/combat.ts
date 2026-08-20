@@ -6,6 +6,7 @@ import {
   RESOURCE_TYPES,
   UNIT_TYPES,
 } from '../constants'
+import { getGameDifficultyCombatBalance } from '../config/gameDifficultyBalance'
 import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from './equipmentStats'
 import { getCombatBehavior, getCombatMoraleRoll } from './combatBehavior'
 import { angleDelta, getPointsDegree } from './maths'
@@ -43,6 +44,7 @@ export type CombatEntity = {
   sprite?: unknown
   context?: {
     map?: {
+      difficulty?: string
       grid?: Array<Array<{ border?: boolean; category?: string; solid?: boolean }>>
       instanceBuckets?: Array<Array<Set<CombatEntity>>> | null
     }
@@ -329,6 +331,33 @@ function getDamage(
   return Math.max(minimumDamage, weaponPower - armor)
 }
 
+function getCombatDifficulty(source: CombatEntity, target: CombatEntity): string | undefined {
+  return source.context?.map?.difficulty ?? target.context?.map?.difficulty
+}
+
+function isHostileToPlayedOwner(entity: CombatEntity, playedOwner: PlayerLike): boolean {
+  const owner = entity.owner
+  if (!owner || owner.label === playedOwner.label) return false
+  return Boolean(owner.isEnemy?.(playedOwner) || playedOwner.isEnemy?.(owner))
+}
+
+function isCombatDifficultyThreat(entity: CombatEntity, playedOwner: PlayerLike): boolean {
+  if (entity.family === FAMILY_TYPES.animal) return getEntityWeaponPower(entity) > 0
+  return isHostileToPlayedOwner(entity, playedOwner)
+}
+
+function getCombatDifficultyDamageMultiplier(source: CombatEntity, target: CombatEntity): number {
+  const balance = getGameDifficultyCombatBalance(getCombatDifficulty(source, target))
+
+  if (source.owner?.isPlayed && isCombatDifficultyThreat(target, source.owner)) {
+    return balance.playerDamageDealtMultiplier
+  }
+  if (target.owner?.isPlayed && isCombatDifficultyThreat(source, target.owner)) {
+    return balance.playerDamageReceivedMultiplier
+  }
+  return 1
+}
+
 // Hero defense only blocks what it's actually facing — a hit landing outside this frontal
 // arc (e.g. from behind) goes through untouched even while heroDefenseActive is true.
 const HERO_DEFENSE_FRONTAL_HALF_ANGLE = 90
@@ -356,7 +385,8 @@ export function getHitPointsWithDamage(
 ): number {
   if (isFriendlyTarget(source, target)) return target.hitPoints ?? 0
   const rawDamage = getDamage(source, target, damageType, defaultDamage) + Math.max(0, bonusDamage)
-  const damage = applyHeroDefenseDamage(source, target, rawDamage)
+  const difficultyDamage = rawDamage * getCombatDifficultyDamageMultiplier(source, target)
+  const damage = applyHeroDefenseDamage(source, target, difficultyDamage)
   return Math.max(0, (target.hitPoints ?? 0) - damage)
 }
 

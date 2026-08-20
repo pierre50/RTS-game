@@ -101,13 +101,6 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   setTextures?: (sheet: string) => void
 }
 
-export interface FloatingItemEntity extends RuntimeEntityBase {
-  family: 'floatingItem'
-  resourceType: string
-  amount: number
-  clear?: () => void
-}
-
 export interface UnitPendingOrder {
   execute?: () => void
   dest?: RuntimeEntity | RuntimeCell | null
@@ -420,6 +413,7 @@ export interface AnimalEntity extends EnergyEntity {
   previousDest?: RuntimeEntity | RuntimeCell | null
   realDest?: Pick<RuntimeEntity | RuntimeCell, 'i' | 'j'> | null
   horseColor?: string
+  attackImpactFrame?: number
   companionOwner?: UnitEntity | null
   isLassoed?: boolean
   lassoOwner?: UnitEntity | null

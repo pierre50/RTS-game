@@ -69,7 +69,18 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
+          "type": [
+            "axe_ceramic",
+            "axe_copper",
+            "axe_bronze",
+            "axe_iron",
+            "sword_ceramic",
+            "sword_copper",
+            "sword_bronze",
+            "sword_iron",
+            "longsword",
+            "halberd"
+          ]
         }
       ]
     }
@@ -101,7 +112,18 @@
           "key": "weapon.power",
           "op": "+",
           "value": 2,
-          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
+          "type": [
+            "axe_ceramic",
+            "axe_copper",
+            "axe_bronze",
+            "axe_iron",
+            "sword_ceramic",
+            "sword_copper",
+            "sword_bronze",
+            "sword_iron",
+            "longsword",
+            "halberd"
+          ]
         }
       ]
     }
@@ -133,7 +155,18 @@
           "key": "weapon.power",
           "op": "+",
           "value": 3,
-          "type": ["axe_ceramic", "axe_copper", "longsword", "halberd"]
+          "type": [
+            "axe_ceramic",
+            "axe_copper",
+            "axe_bronze",
+            "axe_iron",
+            "sword_ceramic",
+            "sword_copper",
+            "sword_bronze",
+            "sword_iron",
+            "longsword",
+            "halberd"
+          ]
         }
       ]
     }

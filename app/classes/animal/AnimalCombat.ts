@@ -197,7 +197,7 @@ export class AnimalCombat {
           return
         }
         runAttackLoopOnFrame(animal, {
-          releaseFrame: SLASH_IMPACT_FRAME,
+          releaseFrame: animal.attackImpactFrame ?? SLASH_IMPACT_FRAME,
           prepareAttackSheet: () => animal.setTextures(SHEET_TYPES.action),
           syncMovingTargetDirection: () => {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null

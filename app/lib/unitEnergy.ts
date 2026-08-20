@@ -1,4 +1,5 @@
 import { ACTION_TYPES, MINING_RESOURCE_CONFIG, SHEET_TYPES, STEP_TIME } from '../constants'
+import { getGameDifficultyCombatBalance } from '../config/gameDifficultyBalance'
 import {
   enterCombatRecovery,
   exitCombatRecovery,
@@ -9,6 +10,7 @@ import { showFatigueFeedback } from './combatFeedback'
 import { t } from './lang'
 import { isHeroControlled } from './unitControl'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { PlayerLike } from '../types/player'
 
 export const HERO_ENERGY_COLOR = '#2f8cff'
 export const DEFAULT_UNIT_TOTAL_ENERGY = 10
@@ -44,6 +46,31 @@ const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   heroWhiff: 0.75,
 }
 
+function getRuntimeEntity(target: EnergyEntity['dest']): RuntimeEntity | null {
+  if (!target || typeof target !== 'object') return null
+  return typeof (target as Partial<RuntimeEntity>).family === 'string' ? (target as RuntimeEntity) : null
+}
+
+function isEnemyOfPlayedOwner(entity: EnergyEntity, playedOwner: PlayerLike): boolean {
+  const owner = entity.owner
+  if (!owner || owner.label === playedOwner.label) return false
+  return Boolean(owner.isEnemy?.(playedOwner) || playedOwner.isEnemy?.(owner))
+}
+
+function getCombatDifficulty(unit: EnergyEntity): string | undefined {
+  return unit.context?.map?.difficulty
+}
+
+function getActionEnergyCostMultiplier(unit: EnergyEntity, action: string): number {
+  if (action !== ACTION_TYPES.attack || unit.owner?.isPlayed) return 1
+
+  const target = getRuntimeEntity(unit.dest)
+  const targetOwner = target?.owner
+  if (!targetOwner?.isPlayed || !isEnemyOfPlayedOwner(unit, targetOwner)) return 1
+
+  return getGameDifficultyCombatBalance(getCombatDifficulty(unit)).enemyAttackEnergyCostMultiplier
+}
+
 function notifyHeroEnergyChanged(unit: EnergyEntity): void {
   const controls = unit.context?.controls
   if (controls?.heroUnit === unit) {
@@ -66,7 +93,7 @@ export function getActionEnergyCost(unit: EnergyEntity, action: string | null | 
   if (!action) return 0
   ensureUnitEnergy(unit)
   const base = unit.energyCosts?.[action] ?? DEFAULT_ACTION_ENERGY_COST[action] ?? 0
-  return Math.max(0, base)
+  return Math.max(0, base * getActionEnergyCostMultiplier(unit, action))
 }
 
 export function hasEnergyForAction(unit: EnergyEntity, action: string | null | undefined): boolean {
@@ -172,14 +199,19 @@ function isEnergyWaitReady(unit: EnergyEntity): boolean {
 }
 
 function startEnergyWaitInterval(unit: EnergyEntity): void {
-  unit.startInterval?.(() => {
-    updateUnitEnergy(unit)
-    if (!isEnergyWaitReady(unit)) {
-      updateCombatRecoveryMovement(unit)
-      return
-    }
-    resumeWaitedEnergyAction(unit)
-  }, STEP_TIME, false, 'unit.energyWait')
+  unit.startInterval?.(
+    () => {
+      updateUnitEnergy(unit)
+      if (!isEnergyWaitReady(unit)) {
+        updateCombatRecoveryMovement(unit)
+        return
+      }
+      resumeWaitedEnergyAction(unit)
+    },
+    STEP_TIME,
+    false,
+    'unit.energyWait'
+  )
 }
 
 function startEnergyWaitTask(unit: EnergyEntity): void {
@@ -189,21 +221,29 @@ function startEnergyWaitTask(unit: EnergyEntity): void {
     startEnergyWaitInterval(unit)
     return
   }
-  unit.energyWaitTaskId = scheduler.add(() => {
-    if (!unit.waitingForEnergyAction) {
-      clearEnergyWaitTask(unit)
-      return
-    }
-    updateUnitEnergy(unit)
-    if (!isEnergyWaitReady(unit)) {
-      updateCombatRecoveryMovement(unit)
-      return
-    }
-    resumeWaitedEnergyAction(unit)
-  }, STEP_TIME, 'unit.energyWait')
+  unit.energyWaitTaskId = scheduler.add(
+    () => {
+      if (!unit.waitingForEnergyAction) {
+        clearEnergyWaitTask(unit)
+        return
+      }
+      updateUnitEnergy(unit)
+      if (!isEnergyWaitReady(unit)) {
+        updateCombatRecoveryMovement(unit)
+        return
+      }
+      resumeWaitedEnergyAction(unit)
+    },
+    STEP_TIME,
+    'unit.energyWait'
+  )
 }
 
-export function waitForEnergy(unit: EnergyEntity, action: string | null | undefined, target?: RuntimeEntity | null): false {
+export function waitForEnergy(
+  unit: EnergyEntity,
+  action: string | null | undefined,
+  target?: RuntimeEntity | null
+): false {
   ensureUnitEnergy(unit)
   const heroControlled = isHeroControlled(unit as UnitEntity)
   if (heroControlled) {

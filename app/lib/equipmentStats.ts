@@ -10,6 +10,8 @@ const COMBAT_STAT_KEYS = ['meleeArmor', 'pierceArmor'] as const
 type CombatStatKey = (typeof COMBAT_STAT_KEYS)[number]
 
 export const UNARMED_UNIT_WEAPON_POWER = 0.5
+const MAX_UNIT_EQUIPMENT_MELEE_ARMOR = 3
+const MAX_UNIT_EQUIPMENT_PIERCE_ARMOR = 2
 
 export type EquipmentCombatStats = {
   weaponPower: number
@@ -41,10 +43,10 @@ const MELEE_WEAPON_EQUIPMENT_KEYS = new Set([
 ])
 
 const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
-  axe_copper: { weapon: { power: 6 } },
-  axe_ceramic: { weapon: { power: 3 } },
-  axe_bronze: { weapon: { power: 8 } },
-  axe_iron: { weapon: { power: 10 } },
+  axe_copper: { weapon: { power: 7 } },
+  axe_ceramic: { weapon: { power: 5 } },
+  axe_bronze: { weapon: { power: 9 } },
+  axe_iron: { weapon: { power: 11 } },
   pickaxe_copper: { weapon: { power: 3 } },
   pickaxe_ceramic: { weapon: { power: 1 } },
   pickaxe_bronze: { weapon: { power: 5 } },
@@ -57,14 +59,14 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   scythe_ceramic: { weapon: { power: 2 } },
   scythe_bronze: { weapon: { power: 6 } },
   scythe_iron: { weapon: { power: 8 } },
-  bow: { weapon: { power: 4, range: 4 } },
-  bow_great: { weapon: { power: 6, range: 5 } },
-  bow_recurve: { weapon: { power: 8, range: 6 } },
+  bow: { weapon: { power: 5, range: 4 } },
+  bow_great: { weapon: { power: 7, range: 5 } },
+  bow_recurve: { weapon: { power: 9, range: 6 } },
   halberd: { weapon: { power: 17 } },
-  sword_copper: { weapon: { power: 6 } },
-  sword_ceramic: { weapon: { power: 4 } },
-  sword_bronze: { weapon: { power: 8 } },
-  sword_iron: { weapon: { power: 10 } },
+  sword_copper: { weapon: { power: 8 } },
+  sword_ceramic: { weapon: { power: 6 } },
+  sword_bronze: { weapon: { power: 10 } },
+  sword_iron: { weapon: { power: 12 } },
   armor_leather: { armor: { melee: 1 } },
   armor_mail_ceramic: { armor: { melee: 2 } },
   armor_mail_copper: { armor: { melee: 2, pierce: 1 } },
@@ -138,6 +140,14 @@ function emptyStats(): EquipmentCombatStats {
   return { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
 }
 
+function capUnitEquipmentArmor(stats: EquipmentCombatStats): EquipmentCombatStats {
+  return {
+    ...stats,
+    meleeArmor: Math.min(stats.meleeArmor, MAX_UNIT_EQUIPMENT_MELEE_ARMOR),
+    pierceArmor: Math.min(stats.pierceArmor, MAX_UNIT_EQUIPMENT_PIERCE_ARMOR),
+  }
+}
+
 function getWeaponRangeFromEquipment(
   equipment: readonly string[] = [],
   definitions: Record<string, EquipmentStats> = loadedEquipmentStats()
@@ -191,7 +201,7 @@ export function getUnitEffectiveCombatStats(
 ): EquipmentCombatStats {
   const workEquipment = work ? getUnitWorkEquipment(work, age) : []
   const equipment = workEquipment.length ? workEquipment : getUnitEquipment(unitType, config, age, level, civilization)
-  if (equipment.length) return getEquipmentCombatStats(equipment)
+  if (equipment.length) return capUnitEquipmentArmor(getEquipmentCombatStats(equipment))
 
   return {
     weaponPower: UNARMED_UNIT_WEAPON_POWER,
@@ -204,7 +214,7 @@ export function applyEquipmentStatsToUnitConfig(unitType: string, config: UnitCo
   const equipment = Array.isArray(config.equipment) ? [...config.equipment] : []
   if (!equipment.length) return
 
-  const stats = getEquipmentCombatStats(equipment)
+  const stats = capUnitEquipmentArmor(getEquipmentCombatStats(equipment))
   config.equipment = equipment
   for (const stat of COMBAT_STAT_KEYS) {
     config[stat] = stats[stat]

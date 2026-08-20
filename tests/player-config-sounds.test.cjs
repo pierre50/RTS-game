@@ -46,3 +46,19 @@ test('BanditSword uses the sword attack sound cues for melee impacts', () => {
 
   assert.deepEqual(config.units.BanditSword.sounds.hit, soundCues.unit.swordAttack)
 })
+
+test('LPC arrows spawn lower when fired toward the left', () => {
+  const { createPlayerData } = loadPlayerConfig()
+  const { config } = createPlayerData(
+    {
+      buildings: {},
+      projectiles: {},
+      units: {},
+    },
+    {},
+    'Greek'
+  )
+
+  assert.deepEqual(config.projectiles.Arrow.directionalSpawnOffsets.west, { x: -10, y: 8 })
+  assert.deepEqual(config.projectiles.ArrowCeramic.directionalSpawnOffsets.west, { x: -10, y: 8 })
+})

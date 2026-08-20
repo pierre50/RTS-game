@@ -76,7 +76,7 @@ function loadGame() {
       updateCurrentWorldState: campaign => campaign,
     },
     '../serialization/MapBlueprintLoader': { loadPregeneratedMapBlueprint: async () => null },
-    '../dev-console/DevConsole': class DevConsole {},
+    '../dev-console/DevConsole': { DevConsole: class DevConsole {} },
     '../dev-console/actions/shared': { cleanupDebugArtifacts() {} },
     '../services/PerformanceMonitor': {
       PerformanceMonitor: class PerformanceMonitor {

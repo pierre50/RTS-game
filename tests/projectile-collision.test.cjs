@@ -73,6 +73,7 @@ function loadProjectile(libOverrides = {}) {
       getPointsDegree: () => 0,
       getReliefOffset: () => 0,
       getTerrainSetZIndex: () => 0,
+      isHeroControlled: () => false,
       isFriendlyTarget: (source, target) => source.owner?.label === target.owner?.label,
       isometricToCartesian: () => [0, 0],
       moveTowardPoint: () => {},
@@ -90,7 +91,7 @@ function loadProjectile(libOverrides = {}) {
       ...libOverrides,
     },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
-    '../lib/equipmentStats': { getEntityWeaponPower: () => 0 },
+    '../lib/equipmentStats': { getEntityWeaponPower: () => 0, getUnitCombatRange: unit => unit.range },
     '../lib/settings': { getShadowsEnabled: () => false },
     '../lib/treeCollision': { findTreeSegmentCollision: () => null },
     '../lib/unitExperience': {
@@ -302,6 +303,51 @@ test('directional spawn offsets move arrows toward the firing side', () => {
 
   assert.equal(projectile.x, 110)
   assert.equal(projectile.y, 76)
+})
+
+test('left-facing LPC arrows spawn at the release pose height', () => {
+  const Projectile = loadProjectile({ degreeToDirection: () => 'west' })
+  const owner = {
+    family: 'unit',
+    type: 'BanditArcher',
+    owner: {
+      label: 'player',
+      config: {
+        projectiles: {
+          Arrow: {
+            assets: 'projectiles/arrow_ceramic',
+            size: 3,
+            speed: 14,
+            spawnOffsetY: 10,
+            directionalSpawnOffsets: { west: { x: -10, y: 8 } },
+          },
+        },
+      },
+    },
+    x: 100,
+    y: 100,
+    z: 0,
+    width: 32,
+    height: 48,
+    range: 5,
+    sprite: { height: 64 },
+  }
+  const projectile = new Projectile(
+    {
+      owner,
+      type: 'Arrow',
+      destination: { x: 0, y: 100 },
+    },
+    {
+      app: {},
+      players: [],
+      map: {},
+      scheduler: { add: () => null },
+    }
+  )
+
+  assert.equal(projectile.x, 90)
+  assert.equal(projectile.y, 86)
 })
 
 test('age-specific arrows can still embed into the ground', () => {

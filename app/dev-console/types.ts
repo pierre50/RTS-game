@@ -40,7 +40,6 @@ export type DevMapLike = {
   size: number
   grid: RuntimeCell[][]
   resources: Set<DevEntity>
-  floatingItems?: Set<DevEntity>
   gaia?: {
     units: DevEntity[]
     animals?: DevEntity[]

@@ -37,6 +37,6 @@ export {
   toggleInstantMode,
 } from './actions/player'
 
-export { spawnAnimal, spawnBuilding, spawnFloatingItem, spawnUnits } from './actions/spawn'
+export { spawnAnimal, spawnBuilding, spawnUnits } from './actions/spawn'
 
 export { forceNextDay, setWeatherPhase, showTimeState, WEATHER_PHASES } from './actions/world'

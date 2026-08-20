@@ -37,6 +37,6 @@ export function onSpriteLoopAtFrame(sprite: FrameChangeSprite, frame: number, cb
 // inspecting the source equipment-overlay spritesheets frame-by-frame for when
 // the weapon/projectile actually connects/releases. Lasso leaves the hand
 // earlier; bow holds and releases on the final, fully extended pose.
-export const SLASH_IMPACT_FRAME = 1
+export const SLASH_IMPACT_FRAME = 5
 export const BOW_SHOOT_RELEASE_FRAME = 8
 export const LASSO_SHOOT_RELEASE_FRAME = 5

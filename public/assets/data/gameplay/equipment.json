@@ -1,22 +1,22 @@
 {
   "axe_ceramic": {
     "weapon": {
-      "power": 3
+      "power": 5
     }
   },
   "axe_copper": {
     "weapon": {
-      "power": 6
+      "power": 7
     }
   },
   "axe_bronze": {
     "weapon": {
-      "power": 8
+      "power": 9
     }
   },
   "axe_iron": {
     "weapon": {
-      "power": 10
+      "power": 11
     }
   },
   "pickaxe_ceramic": {
@@ -59,6 +59,9 @@
       "power": 7
     }
   },
+  "meat": {},
+  "stone": {},
+  "gold": {},
   "scythe_ceramic": {
     "weapon": {
       "power": 2
@@ -81,22 +84,26 @@
   },
   "bow": {
     "weapon": {
-      "power": 4,
+      "power": 5,
       "range": 4
     }
   },
   "bow_great": {
     "weapon": {
-      "power": 6,
+      "power": 7,
       "range": 5
     }
   },
   "bow_recurve": {
     "weapon": {
-      "power": 8,
+      "power": 9,
       "range": 6
     }
   },
+  "arrow_ceramic": {},
+  "arrow_copper": {},
+  "arrow_bronze": {},
+  "arrow_iron": {},
   "longsword": {
     "weapon": {
       "power": 11
@@ -144,22 +151,22 @@
   },
   "sword_ceramic": {
     "weapon": {
-      "power": 4
+      "power": 6
     }
   },
   "sword_copper": {
     "weapon": {
-      "power": 6
+      "power": 8
     }
   },
   "sword_bronze": {
     "weapon": {
-      "power": 8
+      "power": 10
     }
   },
   "sword_iron": {
     "weapon": {
-      "power": 10
+      "power": 12
     }
   },
   "armor_leather": {
@@ -290,6 +297,7 @@
   "plumage": {},
   "helmet_wings": {},
   "upward_horns_white": {},
+  "upward_horns_ceramic": {},
   "helmet_barbuta_ceramic": {
     "armor": {
       "melee": 1,
@@ -410,6 +418,19 @@
       "pierce": 2
     }
   },
+  "helmet_barbarian_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "helmet_barbarian_nasal_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "sack_cloth_hood_leather": {},
   "leg_armor_ceramic": {
     "armor": {
       "melee": 1
@@ -456,5 +477,6 @@
       "melee": 3,
       "pierce": 2
     }
-  }
+  },
+  "quiver": {}
 }

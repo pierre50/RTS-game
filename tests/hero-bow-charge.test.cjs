@@ -1125,6 +1125,24 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
   assert.equal(hero.syncMountedHorseSpriteCalls, 1)
 })
 
+test('sword whiffs use the generic melee whiff sound', () => {
+  const soundCues = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+  assert.deepEqual(soundCues, [])
+  hero.sprite.currentFrame = 1
+  hero.sprite.onFrameChange(1)
+
+  assert.deepEqual(soundCues, ['meleeWhiff'])
+})
+
 test('free-hand interact damages an aimed enemy unit on the slash impact frame', () => {
   const enemy = {
     family: 'unit',
