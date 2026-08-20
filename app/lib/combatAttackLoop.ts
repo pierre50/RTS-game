@@ -72,6 +72,10 @@ type AttackFrameActor = Partial<
       action?: string,
       props?: ActionProps | UnitCreationExtra
     ) => boolean
+    attackRecoveryMs?: number
+    attackRecoveryTaskId?: number | null
+    context?: EnergyEntity['context']
+    flushPendingOrder?: () => boolean
     sprite?: {
       onFrameChange?: ((currentFrame: number) => void) | undefined
       onComplete?: (() => void) | undefined
@@ -97,10 +101,11 @@ type AttackFrameActor = Partial<
 type AttackFrameCallbacks = {
   releaseFrame: number
   prepareAttackSheet: () => void
+  prepareRecoverySheet?: () => void
   syncMovingTargetDirection?: () => void
   onOutOfRange: (target: RuntimeEntity | null) => void
   onTargetUnavailable: (target: RuntimeEntity | null, phase: 'preflight' | 'release') => void
-  onReadyToAttack: (target: RuntimeEntity) => void
+  onReadyToAttack: (target: RuntimeEntity) => boolean | void
 }
 
 type AttackLoopActorState = {
@@ -110,12 +115,15 @@ type AttackLoopActorState = {
   actionLocked?: boolean
   energy?: number
   hitPoints?: number
+  isDead?: boolean
+  isDestroyed?: boolean
 }
 
-type AttackLoopReadiness =
-  | { status: 'ready'; target: RuntimeEntity }
-  | { status: 'blocked' }
-  | { status: 'not-ready' }
+type AttackLoopReadiness = { status: 'ready'; target: RuntimeEntity } | { status: 'blocked' } | { status: 'not-ready' }
+
+type AttackRecoveryHandle = Pick<EnergyEntity, 'attackRecoveryTaskId' | 'context'> & {
+  sprite?: { onLoop?: (() => void) | undefined } | null
+}
 
 function getAttackLoopActorState(attacker: AttackFrameActor): AttackLoopActorState {
   return attacker as AttackLoopActorState
@@ -127,6 +135,97 @@ function syncAttackTargetDirection(attacker: AttackFrameActor, callbacks: Attack
   } else if (attacker.syncMovingTargetDirection) {
     attacker.syncMovingTargetDirection()
   }
+}
+
+function getAttackRecoveryMs(attacker: AttackFrameActor): number {
+  const value = attacker.attackRecoveryMs
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
+export function clearCombatAttackRecovery(attacker: AttackRecoveryHandle): void {
+  if (attacker.attackRecoveryTaskId == null) return
+  attacker.context?.scheduler?.remove?.(attacker.attackRecoveryTaskId)
+  attacker.attackRecoveryTaskId = null
+  if (attacker.sprite && 'onLoop' in attacker.sprite) attacker.sprite.onLoop = undefined
+}
+
+function finishAttackRecovery(
+  attacker: AttackFrameActor,
+  callbacks: AttackFrameCallbacks,
+  actionAtAttack: string | null,
+  targetAtAttack: RuntimeEntity,
+  taskId: number | null
+): void {
+  const actor = getAttackLoopActorState(attacker)
+  if (taskId != null && attacker.attackRecoveryTaskId !== taskId) return
+  attacker.attackRecoveryTaskId = null
+  actor.actionLocked = false
+
+  if (attacker.flushPendingOrder?.()) return
+  if (actor.isDead || actor.isDestroyed) return
+  if ((actor.action ?? null) !== actionAtAttack) return
+
+  const target = getRuntimeEntity(attacker.dest)
+  if (target !== targetAtAttack || !attacker.getActionCondition?.(target, actionAtAttack ?? undefined)) {
+    callbacks.onTargetUnavailable(target, 'preflight')
+    return
+  }
+
+  runAttackLoopOnFrame(attacker, callbacks)
+}
+
+function beginAttackRecovery(
+  attacker: AttackFrameActor,
+  callbacks: AttackFrameCallbacks,
+  targetAtAttack: RuntimeEntity,
+  clearAttackCallbacks: () => void
+): void {
+  const recoveryMs = getAttackRecoveryMs(attacker)
+  if (!recoveryMs) return
+
+  const sprite = attacker.sprite
+  const actor = getAttackLoopActorState(attacker)
+  const actionAtAttack = attacker.action ?? null
+  let animationComplete = !sprite || !('onLoop' in sprite)
+  let timerComplete = false
+  let taskId: number | null = null
+  const isCurrentRecovery = (): boolean => taskId == null || attacker.attackRecoveryTaskId === taskId
+  const finishIfReady = (): void => {
+    if (!timerComplete || !animationComplete) return
+    finishAttackRecovery(attacker, callbacks, actionAtAttack, targetAtAttack, taskId)
+  }
+
+  clearCombatAttackRecovery(attacker)
+  actor.actionLocked = true
+  clearAttackCallbacks()
+
+  if (sprite && 'onLoop' in sprite) {
+    sprite.onLoop = () => {
+      sprite.onLoop = undefined
+      if (!isCurrentRecovery()) return
+      animationComplete = true
+      callbacks.prepareRecoverySheet?.()
+      finishIfReady()
+    }
+  }
+
+  const scheduler = attacker.context?.scheduler
+  if (!scheduler?.addOneShot) {
+    timerComplete = true
+    finishIfReady()
+    return
+  }
+
+  taskId = scheduler.addOneShot(
+    () => {
+      if (!isCurrentRecovery()) return
+      timerComplete = true
+      finishIfReady()
+    },
+    recoveryMs,
+    'combat.attackRecovery'
+  )
+  attacker.attackRecoveryTaskId = taskId
 }
 
 function resolveReadyAttackTarget(
@@ -219,7 +318,8 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
       debugAttackLoop(attacker, 'ready-to-attack', {
         target: getTargetLabel(readyTarget),
       })
-      callbacks.onReadyToAttack(readyTarget)
+      const shouldRecover = callbacks.onReadyToAttack(readyTarget) !== false
+      if (shouldRecover) beginAttackRecovery(attacker, callbacks, readyTarget, clearAttackCallbacks)
     } catch {
       if (actor.family === 'animal') {
         console.error('[combat-loop] exception', {

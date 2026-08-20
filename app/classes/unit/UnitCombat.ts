@@ -1,4 +1,12 @@
-import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  CELL_HEIGHT,
+  CELL_WIDTH,
+  FAMILY_TYPES,
+  SHEET_TYPES,
+  UNIT_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import {
   applyCombatHit,
   degreeToDirection,
@@ -39,13 +47,18 @@ export class UnitCombat {
   // fast that animation naturally runs, not a separate rateOfFire-driven timer. Shared by melee
   // and ranged; onFire receives the current target so each caller only supplies its own effect
   // (apply a hit, launch a projectile).
-  runAttackLoop(releaseFrame: number, onFire: (dest: RuntimeEntity | null) => void) {
+  runAttackLoop(releaseFrame: number, onFire: (dest: RuntimeEntity | null) => boolean | void) {
     const unit = this.unit
     runAttackLoopOnFrame(unit, {
       releaseFrame,
       prepareAttackSheet: () => {
         unit.setTextures?.(SHEET_TYPES.action)
+        unit.sprite?.gotoAndPlay?.(0)
         unit.syncMountedHorseSprite?.()
+        unit.syncAppearanceLayers?.(SHEET_TYPES.action)
+      },
+      prepareRecoverySheet: () => {
+        unit.setTextures?.(SHEET_TYPES.standing)
       },
       onOutOfRange: dest => {
         unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
@@ -207,7 +220,10 @@ export class UnitCombat {
             xpCategory: XP_CATEGORIES.melee,
             xpUnit: unit,
           })
-          if (killed) this.finishAttackAfterCurrentLoop()
+          if (killed) {
+            this.finishAttackAfterCurrentLoop()
+            return false
+          }
         }
       })
     }

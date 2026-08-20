@@ -152,6 +152,8 @@ export interface EnergyEntity extends RuntimeEntityBase {
   waitingForEnergyAction?: string | null
   waitingForEnergyTarget?: RuntimeEntity | null
   energyWaitTaskId?: number | null
+  attackRecoveryMs?: number
+  attackRecoveryTaskId?: number | null
   combatBehavior?: CombatBehaviorConfig
   combatBehaviorPreset?: string
   combatMoraleRoll?: number

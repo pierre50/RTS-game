@@ -36,6 +36,7 @@ import {
   updateInstanceRenderVisibility,
   resumeVillagerAutonomy,
 } from '../../lib'
+import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
@@ -113,7 +114,10 @@ const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
 const BANDIT_STOP_DEBUG_THROTTLE_MS = 600
 let lastBanditStopDebugAt = 0
-const banditStepDebugState = new WeakMap<UnitEntity, { stillTicks: number; x: number; y: number; lastReason?: string }>()
+const banditStepDebugState = new WeakMap<
+  UnitEntity,
+  { stillTicks: number; x: number; y: number; lastReason?: string }
+>()
 
 function isBanditDebugUnit(unit: UnitEntity): boolean {
   const owner = unit.owner as (PlayerLike & { devConsoleBanditOwner?: boolean }) | undefined
@@ -245,7 +249,8 @@ function watchBanditStep(unit: UnitEntity, beforeX: number, beforeY: number): vo
     banditStepDebugState.delete(unit)
     return
   }
-  const walking = unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.sprite?.playing && (unit.path?.length ?? 0) > 0)
+  const walking =
+    unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.sprite?.playing && (unit.path?.length ?? 0) > 0)
   if (!walking || unit.isDead || unit.isDestroyed) {
     banditStepDebugState.delete(unit)
     return
@@ -413,6 +418,8 @@ export class Unit extends Instance implements UnitEntity {
   waitingForEnergyAction?: UnitEntity['waitingForEnergyAction']
   waitingForEnergyTarget?: UnitEntity['waitingForEnergyTarget']
   energyWaitTaskId?: UnitEntity['energyWaitTaskId']
+  attackRecoveryMs?: UnitEntity['attackRecoveryMs']
+  attackRecoveryTaskId?: UnitEntity['attackRecoveryTaskId']
   combatBehavior?: UnitEntity['combatBehavior']
   combatBehaviorPreset?: UnitEntity['combatBehaviorPreset']
   combatMode?: UnitEntity['combatMode']
@@ -1420,6 +1427,7 @@ export class Unit extends Instance implements UnitEntity {
       this.currentCell.solid = true
     }
     if (!heroControlled && resumeVillagerAutonomy?.(this)) return
+    clearCombatAttackRecovery(this)
     this.handleChangeDest()
     this.actionLocked = false
     this.pendingOrder = null

@@ -9,6 +9,7 @@ import {
   updateInstanceVisibility,
   getAnimationFrames,
 } from '../../lib'
+import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { AnimalInterface } from '../../ui/AnimalInterface'
 import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
@@ -109,6 +110,8 @@ export class Animal extends Instance implements AnimalEntity {
   waitingForEnergyAction?: AnimalEntity['waitingForEnergyAction']
   waitingForEnergyTarget?: AnimalEntity['waitingForEnergyTarget']
   energyWaitTaskId?: AnimalEntity['energyWaitTaskId']
+  attackRecoveryMs?: AnimalEntity['attackRecoveryMs']
+  attackRecoveryTaskId?: AnimalEntity['attackRecoveryTaskId']
   combatBehavior?: AnimalEntity['combatBehavior']
   combatBehaviorPreset?: AnimalEntity['combatBehaviorPreset']
   combatMode?: AnimalEntity['combatMode']
@@ -236,6 +239,7 @@ export class Animal extends Instance implements AnimalEntity {
       this.sendTo(this.currentCell)
       return
     }
+    clearCombatAttackRecovery(this)
     this.inactif = true
     this.isFleeing = false
     this.action = null

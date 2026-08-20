@@ -127,6 +127,7 @@
       "flee": 0.35
     },
     "attackImpactFrame": 3,
+    "attackRecoveryMs": 1000,
     "combatBehaviorPreset": "animalAggressive",
     "equipment": ["boar_tusks"],
     "strategy": "attack",
@@ -158,6 +159,7 @@
     "totalHitPoints": 20,
     "sight": 9,
     "speed": 1.25,
+    "attackRecoveryMs": 1000,
     "equipment": ["wolf_bite"],
     "strategy": "attack",
     "ambientMovement": true,

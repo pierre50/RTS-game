@@ -130,6 +130,21 @@ test('starting bandits remain dangerous without deleting the hero instantly', ()
   assert.equal(hitsToKill(banditArcher, hero, 'pierce'), 12)
 })
 
+test('non-siege enemies and aggressive animals have ARPG attack recovery', () => {
+  const config = createCombatConfig()
+
+  assert.equal(config.units.BanditChief.attackRecoveryMs, 950)
+  assert.equal(config.units.BanditSword.attackRecoveryMs, 800)
+  assert.equal(config.units.BanditArcher.attackRecoveryMs, 1000)
+  assert.equal(units.Villager.attackRecoveryMs, 700)
+  assert.equal(units.Chief.attackRecoveryMs, 950)
+  assert.equal(units.Fantassin.attackRecoveryMs, 800)
+  assert.equal(units.Bowman.attackRecoveryMs, 1000)
+  assert.equal(animals.Boar.attackImpactFrame, 3)
+  assert.equal(animals.Boar.attackRecoveryMs, 1000)
+  assert.equal(animals.Wolf.attackRecoveryMs, 1000)
+})
+
 test('melee weapon technologies improve swords and axes across all ages', () => {
   const expectedTypes = [
     'axe_ceramic',

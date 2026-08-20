@@ -84,6 +84,7 @@ interface EntityConfig {
 export interface UnitConfig extends EntityConfig {
   trainingTime?: number
   equipment?: string[]
+  attackRecoveryMs?: number
   meleeArmor?: number
   pierceArmor?: number
   sounds?: UnitSounds
@@ -136,6 +137,7 @@ export interface AnimalConfig extends EntityConfig {
   totalHitPoints?: number
   totalQuantity?: number
   attackImpactFrame?: number
+  attackRecoveryMs?: number
   runningSpeed?: number
   flyingSpeed?: number
   ambientMovement?: boolean

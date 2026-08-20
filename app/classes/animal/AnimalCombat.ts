@@ -198,7 +198,14 @@ export class AnimalCombat {
         }
         runAttackLoopOnFrame(animal, {
           releaseFrame: animal.attackImpactFrame ?? SLASH_IMPACT_FRAME,
-          prepareAttackSheet: () => animal.setTextures(SHEET_TYPES.action),
+          prepareAttackSheet: () => {
+            animal.setTextures(SHEET_TYPES.action)
+            animal.sprite.gotoAndPlay(0)
+            animal.syncShadow()
+          },
+          prepareRecoverySheet: () => {
+            animal.setTextures(SHEET_TYPES.standing)
+          },
           syncMovingTargetDirection: () => {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
             if (!target || !animal.destHasMoved()) return
@@ -224,7 +231,10 @@ export class AnimalCombat {
               animal.context.controls.instanceIsAudible(animal) &&
               playAudibleSoundCue(animal, animal.sounds.hit)
             const { killed } = applyCombatHit(animal, target, { isMelee: true, menu, player })
-            if (killed) animal.affectNewDest()
+            if (killed) {
+              animal.affectNewDest()
+              return false
+            }
           },
         })
         break
