@@ -128,9 +128,9 @@ export class AnimalLifecycle {
     animal.syncShadow()
     playSpriteAnimationFromStart(animal.sprite, {
       loop: false,
-      onComplete: runAfterDeathFlash(animal.sprite, () => {
-        animal.decompose()
-      }),
+    })
+    animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
+      animal.decompose()
     })
   }
 

@@ -47,15 +47,15 @@ export class UnitLifecycle {
     playSpriteAnimationFromStart(sprite, {
       clearFrameChange: true,
       loop: false,
-      onComplete: runAfterDeathFlash(sprite, () => {
-        updateInstanceVisibility(unit)
-        const corpses = unit.owner?.corpses
-        const index = corpses?.indexOf(unit) ?? -1
-        if (index < 0) {
-          corpses?.push(unit)
-        }
-        this.decompose()
-      }),
+    })
+    sprite.onComplete = runAfterDeathFlash(sprite, () => {
+      updateInstanceVisibility(unit)
+      const corpses = unit.owner?.corpses
+      const index = corpses?.indexOf(unit) ?? -1
+      if (index < 0) {
+        corpses?.push(unit)
+      }
+      this.decompose()
     })
     unit.syncAppearanceLayers?.(SHEET_TYPES.dying)
   }

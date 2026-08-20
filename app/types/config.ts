@@ -136,7 +136,6 @@ export type ResourceConfig = EntityConfig
 export interface AnimalConfig extends EntityConfig {
   totalHitPoints?: number
   totalQuantity?: number
-  attackImpactFrame?: number
   attackRecoveryMs?: number
   runningSpeed?: number
   flyingSpeed?: number

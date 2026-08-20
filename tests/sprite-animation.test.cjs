@@ -108,7 +108,12 @@ test('unit death starts the dying animation through the shared helper', () => {
       updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
     },
     '../../lib/combatFeedback': { clearDamageFeedback: () => {} },
-    '../../lib/deathFlash': { runAfterDeathFlash: (_sprite, onComplete) => onComplete },
+    '../../lib/deathFlash': {
+      runAfterDeathFlash: (sprite, onComplete) => {
+        sprite.onFrameChange = () => calls.push(['deathFlashFrame'])
+        return onComplete
+      },
+    },
     '../../lib/entityFade': { fadeOutThenClear: () => {} },
     '../../lib/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
     '../../lib/spriteAnimation': {
@@ -153,7 +158,9 @@ test('unit death starts the dying animation through the shared helper', () => {
     ['syncAppearanceLayers', 'dyingSheet'],
   ])
   assert.equal(sprite.loop, false)
-  assert.equal(sprite.onFrameChange, undefined)
+  assert.equal(typeof sprite.onFrameChange, 'function')
+  sprite.onFrameChange(1)
+  assert.deepEqual(calls.at(-1), ['deathFlashFrame'])
   assert.equal(sprite.onLoop, undefined)
   assert.equal(typeof sprite.onComplete, 'function')
   assert.equal(sprite.currentFrame, 0)

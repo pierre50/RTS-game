@@ -38,7 +38,10 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
   },
   '../../lib/deathFlash': {
     startDeathFlash: () => () => {},
-    runAfterDeathFlash: (_sprite, onComplete) => onComplete,
+    runAfterDeathFlash: (sprite, onComplete) => {
+      sprite.onFrameChange = () => {}
+      return onComplete
+    },
   },
   '../../lib/entityFade': {
     fadeOutThenClear: () => {},
@@ -140,6 +143,7 @@ test('animal death always starts the dying animation from the first frame', () =
   ])
   assert.equal(sprite.loop, false)
   assert.equal(sprite.onLoop, undefined)
+  assert.equal(typeof sprite.onFrameChange, 'function')
   assert.equal(typeof sprite.onComplete, 'function')
   assert.equal(sprite.currentFrame, 0)
 })

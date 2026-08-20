@@ -197,7 +197,7 @@ export class AnimalCombat {
           return
         }
         runAttackLoopOnFrame(animal, {
-          releaseFrame: animal.attackImpactFrame ?? SLASH_IMPACT_FRAME,
+          releaseFrame: SLASH_IMPACT_FRAME,
           prepareAttackSheet: () => {
             animal.setTextures(SHEET_TYPES.action)
             animal.sprite.gotoAndPlay(0)

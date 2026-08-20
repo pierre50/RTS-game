@@ -126,7 +126,6 @@
       "attack": 3.25,
       "flee": 0.35
     },
-    "attackImpactFrame": 3,
     "attackRecoveryMs": 1000,
     "combatBehaviorPreset": "animalAggressive",
     "equipment": ["boar_tusks"],

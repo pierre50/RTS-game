@@ -416,7 +416,6 @@ export interface AnimalEntity extends EnergyEntity {
   previousDest?: RuntimeEntity | RuntimeCell | null
   realDest?: Pick<RuntimeEntity | RuntimeCell, 'i' | 'j'> | null
   horseColor?: string
-  attackImpactFrame?: number
   companionOwner?: UnitEntity | null
   isLassoed?: boolean
   lassoOwner?: UnitEntity | null

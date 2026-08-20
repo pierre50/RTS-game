@@ -202,25 +202,6 @@ test('an aggressive animal falls back to walking when it has no running sheet', 
   assert.deepEqual(calls, [['sendTo', target, 'attack', { movementSheet: 'walking' }]])
 })
 
-test('animal attacks use their configured impact frame when provided', () => {
-  const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
-  const { combat, attackLoopCalls } = createAnimalCombat({
-    animalOverrides: {
-      action: 'attack',
-      attackImpactFrame: 3,
-      dest: target,
-      getActionCondition: () => true,
-      setTextures: () => {},
-      strategy: 'attack',
-    },
-  })
-
-  combat.getAction('attack')
-
-  assert.equal(attackLoopCalls.length, 1)
-  assert.equal(attackLoopCalls[0][1].releaseFrame, 3)
-})
-
 test('animal attacks fall back to the shared slash impact frame', () => {
   const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
   const { combat, attackLoopCalls } = createAnimalCombat({
