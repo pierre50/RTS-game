@@ -29,6 +29,7 @@ const constants = {
     takemeat: 'takemeat',
     build: 'build',
     farm: 'farm',
+    captureHorse: 'captureHorse',
   },
   FAMILY_TYPES: {
     animal: 'animal',
@@ -53,6 +54,7 @@ const constants = {
     stoneminer: 'stoneminer',
     woodcutter: 'woodcutter',
     hunter: 'hunter',
+    horseCapture: 'horseCapture',
   },
 }
 
@@ -67,6 +69,17 @@ function loadVillagerAutonomy() {
     },
     './playerState': {
       getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
+    },
+    './horseCapture': {
+      getNearestAvailableStableForUnit: unit =>
+        unit.owner?.buildings?.find(
+          building =>
+            building.type === 'Stable' &&
+            building.isBuilt &&
+            !building.isDead &&
+            !building.isDestroyed &&
+            (building.stableHorses?.length ?? 0) < 5
+        ) ?? null,
     },
   })
 }
@@ -111,6 +124,12 @@ function createVillager(owner, extra = {}) {
       this.dest = target
       this.work = constants.WORK_TYPES.hunter
       this.action = constants.ACTION_TYPES.takemeat
+    },
+    sendToCaptureHorse(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.horseCapture
+      this.action = constants.ACTION_TYPES.captureHorse
+      return true
     },
     ...extra,
   }
@@ -215,6 +234,53 @@ test('food autonomy prefers a closer visible animal carcass with meat', () => {
 
   assert.equal(villager.dest, carcass)
   assert.equal(villager.action, constants.ACTION_TYPES.takemeat)
+})
+
+test('horse capture autonomy targets a known horse when a stable has room', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const horse = {
+    family: constants.FAMILY_TYPES.animal,
+    i: 3,
+    isDead: false,
+    isDestroyed: false,
+    j: 3,
+    label: 'horse-1',
+    type: 'Horse',
+  }
+  const owner = createOwner({
+    buildings: [{ type: 'Stable', isBuilt: true, isDead: false, isDestroyed: false, stableHorses: [] }],
+    foundedAnimals: new Set([horse]),
+  })
+  const villager = createVillager(owner)
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'horseCapture'), true)
+  assert.equal(assignVillagerAutonomy(villager, 'horseCapture'), true)
+
+  assert.equal(villager.dest, horse)
+  assert.equal(villager.work, constants.WORK_TYPES.horseCapture)
+  assert.equal(villager.action, constants.ACTION_TYPES.captureHorse)
+})
+
+test('horse capture autonomy refuses when no stable can store the horse', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const horse = {
+    family: constants.FAMILY_TYPES.animal,
+    i: 3,
+    isDead: false,
+    isDestroyed: false,
+    j: 3,
+    label: 'horse-1',
+    type: 'Horse',
+  }
+  const owner = createOwner({
+    buildings: [{ type: 'Stable', isBuilt: true, isDead: false, isDestroyed: false, stableHorses: [{}, {}, {}, {}, {}] }],
+    foundedAnimals: new Set([horse]),
+  })
+  const villager = createVillager(owner)
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'horseCapture'), false)
+  assert.equal(assignVillagerAutonomy(villager, 'horseCapture'), false)
+  assert.equal(villager.dest, null)
 })
 
 test('construction autonomy does not explore when there is no construction target', () => {

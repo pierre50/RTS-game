@@ -19,6 +19,7 @@ export type UnitAppearanceLayerConfig = {
   hideOnOrAfterFrame?: number
   mountedCut?: boolean
   workTypes?: string[]
+  civilizations?: string[]
   minLevel?: number
   maxLevel?: number
   ageSheetOverrides?: Record<string, Partial<Record<string, string>>>
@@ -44,15 +45,34 @@ export interface UnitAppearanceConfig {
   layers: UnitAppearanceLayerConfig[]
 }
 
+export type CombatRecoveryMode = 'hold' | 'orbit' | 'retreat'
+
+export interface CombatBehaviorConfig {
+  [key: string]: ConfigValue
+  recoveryMode?: CombatRecoveryMode
+  reengageEnergyRatio?: number
+  recoveryMinDistance?: number
+  recoveryMaxDistance?: number
+  recoveryStrafeDistance?: number
+  recoveryRepositionMs?: number
+  recoverySearchRadius?: number
+  fleeHealthRatio?: number
+  aggression?: number
+  bravery?: number
+}
+
 interface EntityConfig {
   // Optional: still used by technologies, no longer read for units/buildings/
   // animals/resources now that those show a cropped sprite avatar instead.
   icon?: string
   category?: string
+  combatBehavior?: CombatBehaviorConfig
+  combatBehaviorPreset?: string
   cost?: ResourceAmount
   conditions?: Condition[]
   [key: string]:
     | ConfigValue
+    | CombatBehaviorConfig
     | ResourceAmount
     | Condition[]
     | UnitSounds

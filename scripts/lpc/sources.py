@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from config import CIVS, PLAYER_SHORTS, UNIT_LOOKS, UNIT_VARIANTS, variant_look_for_civ
-from dynamic_equipment import required_dynamic_equipment_source_paths
+from config import CIVS, PLAYER_SHORTS, UNIT_LOOKS, civs_for_unit, variant_look_for_civ, variants_for_unit
+from equipment import required_dynamic_equipment_source_paths
 from image_pipeline import layer_paths
 from jobs import UNIT_JOBS
 
@@ -15,9 +15,9 @@ MULTI_ANIMATION_BODY_UNITS = {"villager": VILLAGER_BODY_ANIMATIONS, "hero": HERO
 
 def required_source_paths() -> list[str]:
     paths: set[str] = set()
-    for civ_key, civ in CIVS.items():
-        for unit in UNIT_LOOKS:
-            for variant in UNIT_VARIANTS:
+    for unit in UNIT_LOOKS:
+        for civ_key, civ in civs_for_unit(unit, CIVS).items():
+            for variant in variants_for_unit(unit):
                 look = variant_look_for_civ(unit, civ_key, variant)
                 player_colors = PLAYER_SHORTS.keys() if unit == "villager" else ("neutral",)
                 body_animations = MULTI_ANIMATION_BODY_UNITS.get(unit)

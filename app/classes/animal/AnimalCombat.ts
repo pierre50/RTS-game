@@ -1,6 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import {
   applyCombatHit,
+  evaluateCombatMorale,
   findInstancesInSight,
   getClosestInstanceWithPath,
   getInstanceDegree,
@@ -8,9 +9,11 @@ import {
   instanceContactInstance,
   isometricToCartesian,
   playAudibleSoundCue,
+  SLASH_IMPACT_FRAME,
 } from '../../lib'
+import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
+import { markCombatAttack, markCombatFlee, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
 import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
-import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -29,11 +32,27 @@ export class AnimalCombat {
     return this.animal.runningSheet ? SHEET_TYPES.running : SHEET_TYPES.walking
   }
 
+  isRecoveringAttack(): boolean {
+    return shouldSuppressAggroDuringCombatRecovery(this.animal)
+  }
+
   getReaction(instance: RuntimeEntity, hitDirection?: Point): void {
     const animal = this.animal
     if (animal.strategy === 'runaway') {
       animal.runaway(instance, hitDirection)
     } else {
+      if (this.isRecoveringAttack()) {
+        if (evaluateCombatMorale(animal, instance) === 'flee') {
+          showAlertFeedback(animal)
+          animal.runaway(instance, hitDirection)
+        }
+        return
+      }
+      if (evaluateCombatMorale(animal, instance) === 'flee') {
+        showAlertFeedback(animal)
+        animal.runaway(instance, hitDirection)
+        return
+      }
       showAggressionFeedback(animal)
       animal.sendTo(instance, ACTION_TYPES.attack, { movementSheet: this.getAttackMovementSheet() })
     }
@@ -42,6 +61,7 @@ export class AnimalCombat {
   detect(instance: RuntimeEntity): void {
     const animal = this.animal
     if (animal.context.editor) return
+    if (this.isRecoveringAttack()) return
     if (
       animal.strategy &&
       instance &&
@@ -79,6 +99,7 @@ export class AnimalCombat {
 
   affectNewDest(): void {
     const animal = this.animal
+    if (this.isRecoveringAttack()) return
     animal.stopInterval()
     if (animal.strategy !== 'attack') {
       animal.stop()
@@ -146,6 +167,7 @@ export class AnimalCombat {
     const animal = this.animal
     const dest = this.getBestFleeCell(instance, this.getFleeCellAlongDirection(hitDirection))
     if (dest) {
+      markCombatFlee(animal)
       animal.isFleeing = true
       const flying = Boolean(animal.flyingSheet)
       animal.sendTo(dest, null, {
@@ -169,48 +191,42 @@ export class AnimalCombat {
     } = animal
     switch (name) {
       case ACTION_TYPES.attack: {
+        markCombatAttack(animal)
         if (!animal.getActionCondition(animal.dest)) {
           animal.affectNewDest()
           return
         }
-        // Loops the action sheet at its own baked speed (no separate rateOfFire timer) and bites
-        // once per loop pass, same model as UnitCombat.runAttackLoop.
-        const sprite = animal.sprite
-        sprite.loop = true
-        sprite.onComplete = undefined
-        animal.setTextures(SHEET_TYPES.action)
-        sprite.onLoop = () => {
-          if (!animal.getActionCondition(animal.dest)) {
+        runAttackLoopOnFrame(animal, {
+          releaseFrame: SLASH_IMPACT_FRAME,
+          prepareAttackSheet: () => animal.setTextures(SHEET_TYPES.action),
+          syncMovingTargetDirection: () => {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
-            if (target && (target.hitPoints ?? 0) <= 0) {
-              target.die?.()
-            }
-            animal.affectNewDest()
-            return
-          }
-          const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
-          if (!target) return
-          if (animal.destHasMoved()) {
+            if (!target || !animal.destHasMoved()) return
             animal.degree = getInstanceDegree(animal, target.x, target.y)
             animal.setTextures(SHEET_TYPES.action)
-          }
-          if (!instanceContactInstance(animal, target)) {
+          },
+          onOutOfRange: target => {
+            if (!target) return
             animal.sendTo(target, ACTION_TYPES.attack, {
               forceRepath: true,
               movementSheet: this.getAttackMovementSheet(),
             })
-            return
-          }
-          if ((target.hitPoints ?? 0) > 0) {
-            if (!spendOrWaitForEnergy(animal, ACTION_TYPES.attack, target)) return
+          },
+          onTargetUnavailable: target => {
+            if (target && (target.hitPoints ?? 0) <= 0) {
+              target.die?.()
+            }
+            animal.affectNewDest()
+          },
+          onReadyToAttack: target => {
             animal.sounds &&
               animal.sounds.hit &&
               animal.context.controls.instanceIsAudible(animal) &&
               playAudibleSoundCue(animal, animal.sounds.hit)
             const { killed } = applyCombatHit(animal, target, { isMelee: true, menu, player })
             if (killed) animal.affectNewDest()
-          }
-        }
+          },
+        })
         break
       }
       default:

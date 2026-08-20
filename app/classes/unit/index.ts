@@ -37,6 +37,7 @@ import {
 } from '../../lib'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
 import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
+import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
@@ -51,6 +52,8 @@ import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
+import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
+import { syncHeroResourceLoadState } from '../../lib/resourceCarry'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
 import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
@@ -201,6 +204,7 @@ export class Unit extends Instance implements UnitEntity {
   work: UnitEntity['work']
   loading!: UnitEntity['loading']
   loadingType: UnitEntity['loadingType']
+  resourceLoads: UnitEntity['resourceLoads']
 
   dest: UnitEntity['dest']
   realDest: UnitEntity['realDest']
@@ -232,8 +236,8 @@ export class Unit extends Instance implements UnitEntity {
 
   assets?: UnitEntity['assets']
   allAssets?: UnitEntity['allAssets']
-  energy?: UnitEntity['energy']
-  totalEnergy?: UnitEntity['totalEnergy']
+  declare energy?: UnitEntity['energy']
+  declare totalEnergy?: UnitEntity['totalEnergy']
   energyRegenRate?: UnitEntity['energyRegenRate']
   energyRegenDelay?: UnitEntity['energyRegenDelay']
   energyRegenMultiplier?: UnitEntity['energyRegenMultiplier']
@@ -241,6 +245,12 @@ export class Unit extends Instance implements UnitEntity {
   energyCosts?: UnitEntity['energyCosts']
   waitingForEnergyAction?: UnitEntity['waitingForEnergyAction']
   waitingForEnergyTarget?: UnitEntity['waitingForEnergyTarget']
+  energyWaitTaskId?: UnitEntity['energyWaitTaskId']
+  combatBehavior?: UnitEntity['combatBehavior']
+  combatBehaviorPreset?: UnitEntity['combatBehaviorPreset']
+  combatMode?: UnitEntity['combatMode']
+  combatRecoveryOrbitDirection?: UnitEntity['combatRecoveryOrbitDirection']
+  lastCombatRecoveryMoveAt?: UnitEntity['lastCombatRecoveryMoveAt']
   contextActionEnergyCosts?: UnitEntity['contextActionEnergyCosts']
   toolLevels?: UnitEntity['toolLevels']
   appearance?: UnitEntity['appearance']
@@ -310,6 +320,7 @@ export class Unit extends Instance implements UnitEntity {
     this.hitPoints = options.hitPoints ?? this.hitPoints
     this.speed = options.speed ?? this.speed
     if (this.mountedOnHorse && options.speed == null) this.speed = (this.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
+    syncHeroResourceLoadState(this)
     this.experience = options.experience ? { ...options.experience } : this.experience
     if (this.appearance) {
       this.appearance = { ...this.appearance, layers: this.appearance.layers.map(layer => ({ ...layer })) }
@@ -662,8 +673,7 @@ export class Unit extends Instance implements UnitEntity {
     this.mountedRiderLegsSprite.anchor.set(0, 0)
     this.mountedRiderLegsSprite.scale.x = mirrored ? -body.scale : body.scale
     this.mountedRiderLegsSprite.scale.y = body.scale
-    this.mountedRiderLegsSprite.position.x =
-      body.x + (mirrored ? body.width * body.scale - legOffset.x : legOffset.x)
+    this.mountedRiderLegsSprite.position.x = body.x + (mirrored ? body.width * body.scale - legOffset.x : legOffset.x)
     this.mountedRiderLegsSprite.position.y = body.y + legOffset.y
     this.mountedRiderLegsSprite.animationSpeed = 0
     this.mountedRiderLegsSprite.gotoAndStop(0)
@@ -767,10 +777,9 @@ export class Unit extends Instance implements UnitEntity {
 
   syncAppearanceLayers(sheet: string) {
     const layers = this.appearance?.layers
-    const hideEquipment = sheet === SHEET_TYPES.dying || sheet === SHEET_TYPES.corpse
     const mountedRiderSheet =
       this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
-    if (!layers?.length || hideEquipment) {
+    if (!layers?.length) {
       for (const sprite of this.appearanceLayerSprites.values()) {
         sprite.parent?.removeChild(sprite)
         sprite.destroy({ children: true, texture: false })
@@ -786,7 +795,11 @@ export class Unit extends Instance implements UnitEntity {
       const actionWorkKey = this.work && this.action ? `${this.work}:${this.action}` : undefined
       const hasActionWorkSheetOverride = Boolean(actionWorkKey && layer.actionWorkSheetOverrides?.[actionWorkKey])
       const isLayerEnabledForWork =
-        !layer.workTypes?.length || (this.work ? layer.workTypes.includes(this.work) : false) || hasActionWorkSheetOverride
+        !layer.workTypes?.length ||
+        (this.work ? layer.workTypes.includes(this.work) : false) ||
+        hasActionWorkSheetOverride
+      const isLayerEnabledForCivilization =
+        !layer.civilizations?.length || layer.civilizations.includes(civilizationKey(this.owner?.civ))
       const unitLevel = getUnitEquipmentLevel(this)
       const isLayerEnabledForLevel =
         unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
@@ -808,8 +821,9 @@ export class Unit extends Instance implements UnitEntity {
         !this.mountedOnHorse && this.loading && sheet === SHEET_TYPES.walking
           ? (layer.loadedSheet as string | undefined)
           : undefined
-      const actionWorkSheetOverride =
-        actionWorkKey ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet] : undefined
+      const actionWorkSheetOverride = actionWorkKey
+        ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet]
+        : undefined
       const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
       const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
       const ageSheetOverride = getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
@@ -841,6 +855,7 @@ export class Unit extends Instance implements UnitEntity {
 
       if (
         !isLayerEnabledForWork ||
+        !isLayerEnabledForCivilization ||
         !isLayerEnabledForLevel ||
         isLayerHiddenByLoading ||
         isLayerHiddenByAction ||
@@ -1188,6 +1203,9 @@ export class Unit extends Instance implements UnitEntity {
     }
     if (moraleDecision === 'flee') {
       this.runaway(instance)
+      return
+    }
+    if (shouldSuppressAggroDuringCombatRecovery(this)) {
       return
     }
     if (!this.getActionCondition(instance, ACTION_TYPES.attack)) {

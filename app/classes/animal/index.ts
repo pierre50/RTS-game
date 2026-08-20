@@ -98,8 +98,8 @@ export class Animal extends Instance implements AnimalEntity {
   horseColor?: HorseColor
   companionOwner?: AnimalEntity['companionOwner']
   companionHitCount?: AnimalEntity['companionHitCount']
-  energy?: AnimalEntity['energy']
-  totalEnergy?: AnimalEntity['totalEnergy']
+  declare energy?: AnimalEntity['energy']
+  declare totalEnergy?: AnimalEntity['totalEnergy']
   energyRegenRate?: AnimalEntity['energyRegenRate']
   energyRegenDelay?: AnimalEntity['energyRegenDelay']
   energyRegenMultiplier?: AnimalEntity['energyRegenMultiplier']
@@ -108,6 +108,11 @@ export class Animal extends Instance implements AnimalEntity {
   waitingForEnergyAction?: AnimalEntity['waitingForEnergyAction']
   waitingForEnergyTarget?: AnimalEntity['waitingForEnergyTarget']
   energyWaitTaskId?: AnimalEntity['energyWaitTaskId']
+  combatBehavior?: AnimalEntity['combatBehavior']
+  combatBehaviorPreset?: AnimalEntity['combatBehaviorPreset']
+  combatMode?: AnimalEntity['combatMode']
+  combatRecoveryOrbitDirection?: AnimalEntity['combatRecoveryOrbitDirection']
+  lastCombatRecoveryMoveAt?: AnimalEntity['lastCombatRecoveryMoveAt']
 
   constructor(options: AnimalOptions, context: GameContextLike) {
     super(context)

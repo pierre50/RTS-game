@@ -208,12 +208,6 @@ export function createDevCommands(): DevCommandRegistry {
   })
 
   registry.register({
-    name: 'win',
-    describe: 'Instantly win by killing all enemies',
-    run: (_args, context) => killEntities(context, 'enemies'),
-  })
-
-  registry.register({
     name: 'heal',
     describe: 'Restore all your units and buildings to full HP',
     run: (_args, context) => healAll(context),

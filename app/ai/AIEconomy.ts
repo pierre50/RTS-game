@@ -13,6 +13,7 @@ import type {
   AIWorkerSnapshot,
   AIWorkerTargets,
 } from './types'
+import type { BuildingEntity } from '../types/entities'
 
 type FoodOpportunity = {
   type: AIFoodSourceType
@@ -39,6 +40,10 @@ export class AIEconomy {
   ai: AIStrategyPlayerLike
   _exploredAll: boolean
   _unexploredScanIndex: number
+
+  getBuildingAsRuntimeEntity(building: AIBuildingLike): BuildingEntity {
+    return building as unknown as BuildingEntity
+  }
 
   constructor(ai: AIStrategyPlayerLike) {
     this.ai = ai
@@ -304,13 +309,17 @@ export class AIEconomy {
       .buildingsByTypes([BUILDING_TYPES.stable])
       .filter(
         (building: AIBuildingLike) =>
-          building.isBuilt && !building.isDead && !building.isDestroyed && canStoreStableHorse(building)
+          building.isBuilt &&
+          !building.isDead &&
+          !building.isDestroyed &&
+          canStoreStableHorse(this.getBuildingAsRuntimeEntity(building))
       )
   }
 
   getAvailableHorseCaptureSlots(): number {
     return this.getAvailableStableForCapture().reduce(
-      (sum, stable) => sum + Math.max(0, STABLE_HORSE_CAPACITY - getStableHorseAmount(stable)),
+      (sum, stable) =>
+        sum + Math.max(0, STABLE_HORSE_CAPACITY - getStableHorseAmount(this.getBuildingAsRuntimeEntity(stable))),
       0
     )
   }
@@ -341,7 +350,7 @@ export class AIEconomy {
       let best = Infinity
       for (const stable of stables) {
         const used = reserved.get(stable) || 0
-        if (getStableHorseAmount(stable) + used >= STABLE_HORSE_CAPACITY) continue
+        if (getStableHorseAmount(this.getBuildingAsRuntimeEntity(stable)) + used >= STABLE_HORSE_CAPACITY) continue
         const distance = Math.abs(stable.i - horse.i) + Math.abs(stable.j - horse.j)
         if (distance < best) {
           selected = stable
@@ -354,19 +363,29 @@ export class AIEconomy {
     for (let i = 0; i < safeSlots && availableVillagers.length; i++) {
       const villager = availableVillagers.shift()
       if (!villager) break
-      const horse = getClosestInstance(villager, horses)
-      if (!horse || reservedForHorse.has(horse)) {
-        availableVillagers.push(villager)
-        continue
+      const availableHorses = horses.filter(horse => !reservedForHorse.has(horse))
+      if (!availableHorses.length) {
+        availableVillagers.unshift(villager)
+        break
+      }
+      const horse = getClosestInstance(villager, availableHorses)
+      if (!horse) {
+        availableVillagers.unshift(villager)
+        break
       }
       const stable = findNearestStable(horse)
       if (!stable) {
         availableVillagers.unshift(villager)
         break
       }
+      const captureResult = villager.sendToCaptureHorse?.(horse)
+      if (captureResult === false || !villager.sendToCaptureHorse) {
+        reservedForHorse.add(horse)
+        availableVillagers.unshift(villager)
+        continue
+      }
       reserved.set(stable, (reserved.get(stable) || 0) + 1)
       reservedForHorse.add(horse)
-      villager.sendToCaptureHorse?.(horse)
       actions++
     }
     return actions

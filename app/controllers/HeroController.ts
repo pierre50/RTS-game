@@ -744,12 +744,15 @@ export class HeroController {
         (unit.speed ?? 0) * speedFactor * stealthSpeedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
       const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
       const aimedDegree = bowChargeAiming || defenseAiming ? unit.degree : null
-      const moveOptions = lockedFacingVector
-        ? { facingDirX: lockedFacingVector.dx, facingDirY: lockedFacingVector.dy }
+      const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
+      const moveFacingVector = aimedFacingVector ?? lockedFacingVector
+      const moveOptions = moveFacingVector
+        ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy }
         : undefined
       moved = unit.moveDirect?.(dx / len, dy / len, distance * lockedMoveSpeedFactor, moveOptions) ?? false
       if (aimedDegree != null && unit.degree !== aimedDegree) {
         unit.degree = aimedDegree
+        if (unit.mountedOnHorse) unit.syncMountedRiderPosition?.()
       }
       const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
       if (!moved || delta < 0.01) {

@@ -65,14 +65,52 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
       pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
     },
     '../lib/lang': { t: key => key },
-    '../lib/stableHorses': {
-      canStoreStableHorse: building => (building.stableHorses?.length ?? 0) < 5,
-      storeStableHorse: (building, horse) => {
-        building.stableHorses = building.stableHorses ?? []
-        if (building.stableHorses.length >= 5) return false
-        building.stableHorses.push({ horseColor: horse.horseColor })
-        building.horseAmount = building.stableHorses.length
-        return true
+    '../lib/horseCapture': {
+      HORSE_CAPTURE_STABLE_MAX_DISTANCE: 7,
+      HORSE_CAPTURE_STABLE_TIMEOUT_MS: 12000,
+      routeCapturedHorseToStableWithOwnerContact: options => {
+        const {
+          gameContext,
+          owner,
+          horse,
+          forceRepath = false,
+          isRouteValid,
+          onStored,
+          onFailure,
+          onStableUnavailable,
+          onHorseRouteStart,
+        } = options
+        const tick = () => {
+          if (isRouteValid && !isRouteValid()) {
+            onFailure?.()
+            return
+          }
+          const stable = owner.owner?.buildings?.find(
+            building =>
+              building.type === 'Stable' &&
+              !building.isDead &&
+              !building.isDestroyed &&
+              (building.stableHorses?.length ?? 0) < 5
+          )
+          if (!stable) {
+            onStableUnavailable?.()
+            return
+          }
+          if (Math.hypot(owner.i - stable.i, owner.j - stable.j) > 1) return
+          onHorseRouteStart?.(stable)
+          if (Math.hypot(horse.i - stable.i, horse.j - stable.j) <= 1) {
+            stable.stableHorses = stable.stableHorses ?? []
+            stable.stableHorses.push({ horseColor: horse.horseColor })
+            stable.horseAmount = stable.stableHorses.length
+            horse.clear?.()
+            onStored?.()
+            return
+          }
+          horse.sendTo?.(stable, undefined, { forceRepath })
+        }
+        const taskId = gameContext.scheduler.add(tick)
+        tick()
+        return () => gameContext.scheduler.remove(taskId)
       },
     },
     '../lib/treeCollision': { findTreeSegmentCollision: treeCollision },
@@ -175,6 +213,28 @@ test('attached lasso makes the horse follow and releases it when cleared', () =>
   assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), true)
 })
 
+test('external stable routing suspends lasso follow and stop commands', () => {
+  const HeroLassoThrow = loadHeroLassoThrow()
+  const calls = []
+  const hero = makeHero()
+  const horse = makeHorse(calls)
+  horse.i = 0
+  horse.j = 0
+  horse.x = 12
+  horse.y = 0
+  const context = makeContext(calls)
+  const lasso = new HeroLassoThrow(hero, { x: 220, y: 0 }, context, {
+    autoRouteStableWhileAttached: false,
+  })
+
+  lasso.attachToHorse(horse)
+  lasso.setExternalStableRouteActive(true)
+  lasso.step()
+
+  assert.deepEqual(calls.filter(call => call[0] === 'horse.stop'), [['horse.stop']])
+  assert.deepEqual(calls.filter(call => call[0] === 'horse.sendTo'), [])
+})
+
 test('attached lasso starts from the walking hand position and mirrors east-facing frames', () => {
   const HeroLassoThrow = loadHeroLassoThrow()
   const calls = []
@@ -232,7 +292,26 @@ test('attached lasso renders under the horse and retracts above the hero again',
   assert.equal(lasso.zIndex, 6)
 })
 
-test('released lasso sends a nearby horse into the stable', () => {
+test('outbound lasso ignores a horse already held by another owner', () => {
+  const HeroLassoThrow = loadHeroLassoThrow()
+  const calls = []
+  const hero = makeHero()
+  const otherOwner = { label: 'villager-2' }
+  const horse = makeHorse(calls)
+  horse.isLassoed = true
+  horse.lassoOwner = otherOwner
+  const context = makeContext(calls)
+  context.map.gaia.animals = [horse]
+  const lasso = new HeroLassoThrow(hero, { x: 220, y: 0 }, context)
+
+  lasso.step()
+
+  assert.equal(lasso.target, null)
+  assert.equal(horse.isLassoed, true)
+  assert.equal(horse.lassoOwner, otherOwner)
+})
+
+test('released lasso stores a nearby horse when the owner is at the stable', () => {
   const HeroLassoThrow = loadHeroLassoThrow()
   const calls = []
   const hero = makeHero()
@@ -252,17 +331,17 @@ test('released lasso sends a nearby horse into the stable', () => {
   const context = makeContext(calls)
   context.players = [{ buildings: [stable] }]
   hero.owner = context.players[0]
+  hero.i = stable.i
+  hero.j = stable.j
+  hero.x = stable.x
+  hero.y = stable.y
   const lasso = new HeroLassoThrow(hero, { x: 220, y: 0 }, context)
 
   lasso.attachToHorse(horse)
   lasso.clearLasso()
 
   assert.equal(horse.isLassoed, false)
-  assert.deepEqual(calls.filter(call => call[0] === 'horse.sendTo'), [
-    ['horse.sendTo', stable, null, { forceRepath: true }],
-  ])
-  context.scheduler.tasks[1]()
-
+  assert.deepEqual(calls.filter(call => call[0] === 'horse.sendTo'), [])
   assert.deepEqual(stable.stableHorses, [{ horseColor: 'dark' }])
   assert.equal(stable.horseAmount, 1)
   assert.equal(calls.some(call => call[0] === 'horse.clear'), true)

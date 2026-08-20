@@ -93,7 +93,7 @@ export class DayNightSystem {
   }
 
   update(elapsedMs: number): void {
-    if (this.context.paused || this.context.victory || this.context.defeat) return
+    if (this.context.paused || this.context.defeat) return
     const previousDay = this.state.day
     this.elapsedMs += Math.min(Math.max(elapsedMs, 0), 250)
     this.state = this.computeState()

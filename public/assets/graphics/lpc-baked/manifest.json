@@ -43,6 +43,18 @@
     }
   },
   "assets": [
+    "bandit_archer/male/action",
+    "bandit_archer/male/corpse",
+    "bandit_archer/male/dying",
+    "bandit_archer/male/walking",
+    "bandit_chief/male/action",
+    "bandit_chief/male/corpse",
+    "bandit_chief/male/dying",
+    "bandit_chief/male/walking",
+    "bandit_sword/male/action",
+    "bandit_sword/male/corpse",
+    "bandit_sword/male/dying",
+    "bandit_sword/male/walking",
     "chief/asian/female/action",
     "chief/asian/female/corpse",
     "chief/asian/female/dying",

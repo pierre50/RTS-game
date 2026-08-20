@@ -133,7 +133,7 @@
         "mineStone": "mining-2",
         "mineGold": "mining-2",
         "build": "building",
-        "throwSpear": "arrow-shot"
+        "shootArrow": "arrow-shot"
       }
     }
   },
@@ -247,7 +247,7 @@
         "mineStone": "mining-2",
         "mineGold": "mining-2",
         "build": "building",
-        "throwSpear": "arrow-shot"
+        "shootArrow": "arrow-shot"
       }
     }
   },

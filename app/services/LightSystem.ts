@@ -72,7 +72,7 @@ export class LightSystem {
   }
 
   update(elapsedMs: number): void {
-    if (this.context.paused || this.context.victory || this.context.defeat) return
+    if (this.context.paused || this.context.defeat) return
     const elapsedSeconds = Math.min(Math.max(elapsedMs, 0), 250) / 1000
     this.screenRect = this.getScreenRect()
     this.layer.position.set(this.screenRect.x, this.screenRect.y)

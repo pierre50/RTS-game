@@ -32,6 +32,9 @@ export const UNIT_TYPES = {
   priest: 'Priest',
   infantry: 'Fantassin',
   bowman: 'Bowman',
+  banditChief: 'BanditChief',
+  banditSword: 'BanditSword',
+  banditArcher: 'BanditArcher',
   scout: 'Scout',
 }
 

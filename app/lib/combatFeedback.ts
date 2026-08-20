@@ -156,7 +156,6 @@ function startConversionWave(target: RuntimeEntity, color?: string | null): void
       if (
         sprite.destroyed ||
         target.isDestroyed ||
-        target.context?.victory ||
         target.context?.defeat ||
         (conversionFlashStates.get(sprite)?.token !== token)
       ) {
@@ -277,7 +276,7 @@ export function clearAllCombatFeedback(): void {
 
 function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): void {
   const scheduler = target.context?.scheduler
-  if (!scheduler || target.context?.victory || target.context?.defeat || target.isDestroyed || target.isDead) return
+  if (!scheduler || target.context?.defeat || target.isDestroyed || target.isDead) return
 
   const spriteTop = (target.sprite ? -(target.sprite.height * target.sprite.anchor.y) : -40) + getReliefOffset(target)
   const detached = target.family === FAMILY_TYPES.resource
@@ -342,7 +341,6 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
   if (
     !text ||
     !canShowCombatFeedback(target) ||
-    target.context?.victory ||
     target.context?.defeat ||
     target.isDestroyed ||
     target.isDead
@@ -359,7 +357,7 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
 }
 
 export function showConversionFeedback(target: RuntimeEntity, color?: string | null): void {
-  if (!canShowCombatFeedback(target) || target.context?.victory || target.context?.defeat || target.isDestroyed) return
+  if (!canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed) return
   if (canFlashDamage(target)) startConversionWave(target, color)
 }
 

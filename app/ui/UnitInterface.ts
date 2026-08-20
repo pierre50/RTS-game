@@ -1,7 +1,8 @@
-import { LOADING_FOOD_TYPES, MENU_INFO_IDS, UNIT_TYPES } from '../constants'
+import { MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
 import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
 import type { EquipmentCombatStats } from '../lib/equipmentStats'
+import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import {
   formatXpProgressText,
   getUnitEquipmentLevel,
@@ -42,6 +43,17 @@ function shouldShowGenericXpCategory(unit: UnitEntity, category: string): boolea
   return unit.type !== UNIT_TYPES.villager || !VILLAGER_HIDDEN_XP_CATEGORIES.has(category)
 }
 
+function renderLoadingEntries(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
+  element.replaceChildren()
+  for (const [resourceKey, amount] of getDisplayedCarriedResourceEntries(unit)) {
+    const item = document.createElement('div')
+    item.className = 'unit-loading-item'
+    item.appendChild(createInfoImage('unit-loading-icon', menu.infoIcons?.[resourceKey] ?? ''))
+    item.appendChild(createInfoText(MENU_INFO_IDS.loadingText, amount))
+    element.appendChild(item)
+  }
+}
+
 export class UnitInterface {
   unit: UnitEntity
 
@@ -53,18 +65,7 @@ export class UnitInterface {
     const unit = this.unit
     const menu = (unit.context as { menu: MenuLike }).menu
     if (unit.selected && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-      if (unit.loading === 1) {
-        const iconSrc = menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType!) ? 'food' : unit.loadingType!]
-        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => {
-          element.replaceChildren()
-          element.appendChild(createInfoImage('unit-loading-icon', iconSrc!))
-          element.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading!))
-        })
-      } else if (unit.loading! > 1) {
-        menu.updateInfo!(MENU_INFO_IDS.loadingText, unit.loading!)
-      } else {
-        menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => (element.innerHTML = ''))
-      }
+      menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => renderLoadingEntries(element, unit, menu))
     }
   }
 
@@ -74,17 +75,7 @@ export class UnitInterface {
     const loadingDiv = document.createElement('div')
     loadingDiv.className = 'unit-loading'
     loadingDiv.classList.add(MENU_INFO_IDS.loading)
-
-    if (unit.loading) {
-      loadingDiv.appendChild(
-        createInfoImage(
-          'unit-loading-icon',
-          menu.infoIcons?.[LOADING_FOOD_TYPES.includes(unit.loadingType ?? '') ? 'food' : (unit.loadingType ?? '')] ??
-            ''
-        )
-      )
-      loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, unit.loading))
-    }
+    renderLoadingEntries(loadingDiv, unit, menu)
     return loadingDiv
   }
 
@@ -120,7 +111,8 @@ export class UnitInterface {
       data,
       unit.work,
       unit.owner?.age,
-      getUnitEquipmentLevel(unit, data.category)
+      getUnitEquipmentLevel(unit, data.category),
+      unit.owner?.civ
     )
 
     for (let i = 0; i < infos.length; i++) {

@@ -32,9 +32,71 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === './equipmentStats')
       return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
+    if (request === '../../lib/equipmentStats') return { getUnitCombatRange: unit => unit?.combatRange ?? 0 }
+    if (request === '../../lib/horseCapture') return { getNearestAvailableStableForUnit: () => null }
+    if (request === '../../lib/combatAttackLoop') {
+      return {
+        runAttackLoopOnFrame: (attacker, callbacks) => {
+          const sprite = attacker.sprite
+          if (!sprite) return
+          sprite.loop = true
+          callbacks.prepareAttackSheet()
+          mocks['../../lib']?.onSpriteLoopAtFrame?.(sprite, callbacks.releaseFrame, () => {
+            const target = attacker.dest?.family ? attacker.dest : null
+            if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
+              callbacks.onTargetUnavailable(target)
+              return
+            }
+            if (!target) return
+            if (!attacker.isUnitAtDest?.(attacker.action, target)) {
+              callbacks.onOutOfRange(target)
+              return
+            }
+            callbacks.onReadyToAttack(target)
+          })
+        },
+      }
+    }
+    if (request === './combatBehavior') {
+      return {
+        getCombatBehavior: unit => ({
+          recoveryMode: 'orbit',
+          reengageEnergyRatio: 1,
+          recoveryMinDistance: 1.1,
+          recoveryMaxDistance: 2.7,
+          recoveryStrafeDistance: 1,
+          recoveryRepositionMs: 750,
+          recoverySearchRadius: 5,
+          fleeHealthRatio: unit?.combatBehavior?.fleeHealthRatio ?? 0.3,
+          aggression: unit?.combatBehavior?.aggression ?? 0.5,
+          bravery: unit?.combatBehavior?.bravery ?? 0.35,
+        }),
+        getCombatMoraleRoll: unit =>
+          typeof unit?.combatMoraleRoll === 'number' ? unit.combatMoraleRoll : unit?.label ? 0.5 : 1,
+      }
+    }
     if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
+    if (request === '../../lib/combatBehavior') {
+      return {
+        markCombatAttack: unit => {
+          unit.combatMode = 'attack'
+        },
+        shouldSuppressAggroDuringCombatRecovery: unit =>
+          unit.combatMode === 'recover' && unit.waitingForEnergyAction === constants.ACTION_TYPES.attack,
+      }
+    }
     if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
+    if (request === '../../lib/resourceCarry') {
+      return {
+        clearCarriedResources: unit => {
+          unit.loading = 0
+          unit.loadingType = null
+        },
+        getCarriedResourceEntries: unit =>
+          unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : [],
+      }
+    }
     if (request === './maths') return { getReliefOffset: () => 0 }
     return require(request)
   }
@@ -45,6 +107,7 @@ function loadModule(relativePath, mocks) {
 const constants = {
   ACTION_TYPES: {
     attack: 'attack',
+    convert: 'convert',
   },
   BUCKET_SIZE: 8,
   BUILDING_TYPES: {},
@@ -58,8 +121,10 @@ const constants = {
     berrybush: 'Berrybush',
   },
   UNIT_TYPES: {
+    banditSword: 'BanditSword',
     chief: 'Chief',
     hero: 'Hero',
+    priest: 'Priest',
     villager: 'Villager',
   },
   SHEET_TYPES: {
@@ -275,6 +340,79 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
   assert.equal(shouldFleeWhenAttacked(chief, enemySoldier), false)
 })
 
+test('priests cannot convert bandit units', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const playerOwner = {
+    isEnemy: targetOwner => targetOwner?.label === 'bandits',
+    label: 'player',
+    technologies: [],
+  }
+  const banditOwner = {
+    isEnemy: targetOwner => targetOwner?.label === 'player',
+    label: 'bandits',
+  }
+  const priest = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 25,
+    isDead: false,
+    owner: playerOwner,
+    type: constants.UNIT_TYPES.priest,
+  }
+  const bandit = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: banditOwner,
+    type: constants.UNIT_TYPES.banditSword,
+  }
+  const soldier = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: banditOwner,
+    type: 'Fantassin',
+  }
+
+  assert.equal(getActionCondition(priest, soldier, constants.ACTION_TYPES.convert), true)
+  assert.equal(getActionCondition(priest, bandit, constants.ACTION_TYPES.convert), false)
+})
+
+test('bandit-owned priests cannot convert units into the bandit team', () => {
+  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const banditOwner = {
+    isEnemy: targetOwner => targetOwner?.label === 'player',
+    label: 'bandit-owner',
+    name: 'Bandits',
+    isPlayed: false,
+    technologies: [],
+  }
+  const playerOwner = {
+    isEnemy: targetOwner => targetOwner?.label === 'bandit-owner',
+    label: 'player',
+    technologies: [],
+  }
+  const banditPriest = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 25,
+    isDead: false,
+    owner: banditOwner,
+    type: constants.UNIT_TYPES.priest,
+  }
+  const soldier = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: playerOwner,
+    type: 'Fantassin',
+  }
+
+  assert.equal(getActionCondition(banditPriest, soldier, constants.ACTION_TYPES.convert), false)
+})
+
 test('early resource actions require only their remaining unlocking technologies', () => {
   const actionConstants = {
     ...constants,
@@ -357,6 +495,44 @@ test('military units fight on until critically wounded, then retreat from a real
   assert.equal(shouldFleeWhenAttacked(criticalSoldier, healthyEnemy), true)
   // Even critically wounded, finishing off a nearly-dead enemy beats running from it.
   assert.equal(shouldFleeWhenAttacked(criticalSoldier, nearlyDeadEnemy), false)
+})
+
+test('brave combatants can hold their ground when critically wounded', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+  const braveSoldier = {
+    category: 'Fantassin',
+    combatBehavior: { bravery: 0.9, fleeHealthRatio: 0.3 },
+    combatMoraleRoll: 0.1,
+    hitPoints: 5,
+    weaponPower: 3,
+    totalHitPoints: 40,
+    type: 'Fantassin',
+  }
+  const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
+
+  assert.equal(shouldFleeWhenAttacked(braveSoldier, healthyEnemy), false)
+})
+
+test('low-bravery combatants still flee when critically wounded', () => {
+  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+  const cautiousSoldier = {
+    category: 'Fantassin',
+    combatBehavior: { bravery: 0.2, fleeHealthRatio: 0.3 },
+    combatMoraleRoll: 0.9,
+    hitPoints: 5,
+    weaponPower: 3,
+    totalHitPoints: 40,
+    type: 'Fantassin',
+  }
+  const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
+
+  assert.equal(shouldFleeWhenAttacked(cautiousSoldier, healthyEnemy), true)
 })
 
 function makeMoraleMap(entities, { escape = true } = {}) {
@@ -474,6 +650,30 @@ test('a trapped, critically wounded soldier can surrender to an overwhelming ene
   makeMoraleMap([soldier, ...enemies], { escape: false })
 
   assert.equal(evaluateCombatMorale(soldier, enemies[0]), 'surrender')
+})
+
+test('a brave trapped soldier keeps fighting instead of surrendering from morale', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+    '../constants': constants,
+  })
+  const soldier = makeMoraleUnit({
+    combatBehavior: { bravery: 0.95, fleeHealthRatio: 0.3 },
+    combatMoraleRoll: 0.1,
+    hitPoints: 5,
+  })
+  const enemies = [0, 1, 2].map(offset =>
+    makeMoraleUnit({
+      hitPoints: 45,
+      i: 3 + offset,
+      j: 4,
+      weaponPower: 7,
+      owner: { label: 'enemy' },
+      type: 'Fantassin',
+    })
+  )
+  makeMoraleMap([soldier, ...enemies], { escape: false })
+
+  assert.equal(evaluateCombatMorale(soldier, enemies[0]), 'fight')
 })
 
 test('heroes and chiefs never auto-surrender from morale checks', () => {

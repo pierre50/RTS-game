@@ -55,9 +55,10 @@ PALETTES: dict[str, list[str]] = {
     # ULPC metal palettes from scripts/lpc/palettes/ulpc-metal-palettes.json.
     "brass":  ["#1A1213", "#2E2533", "#61482C", "#836332", "#AF8A35", "#FDD082", "#FDF5CC"],
     "ceramic": ["#181009", "#2B1C1D", "#32251A", "#594435", "#7D604D", "#BA9069", "#FBE3B0"],
-    "copper": ["#691503", "#4F2313", "#7B2008", "#973C23", "#9D5427", "#EC855C", "#FFC95A"],
+    "copper": ["#662B29", "#94363A", "#B64D46", "#E37840", "#F99B4E"],
     "bronze": ["#4F2313", "#573726", "#6D4A00", "#966600", "#BF8200", "#E7A820", "#FBE3B0"],
-    "iron":   ["#000000", "#1D131E", "#1B192B", "#29253A", "#343043", "#484152", "#726B7E"],
+    "iron_source": ["#000000", "#1D131E", "#1B192B", "#29253A", "#343043", "#484152", "#726B7E"],
+    "iron":   ["#111216", "#1C1E24", "#2A2E36", "#3C414A", "#505762", "#67707A", "#838C98"],
     "steel":  ["#181F2F", "#48474D", "#73737F", "#917A7B", "#A6AEBA", "#EADBC9"],
     "silver": ["#181F2F", "#554769", "#73737F", "#A6AEBA", "#CDD2DA", "#EBF0F6"],
     "gold":   ["#2E1026", "#753B09", "#9E6520", "#D1AA39", "#EDD493", "#FFF3D6"],
@@ -86,6 +87,18 @@ PALETTES: dict[str, list[str]] = {
         "#748DA4",
         "#A9C9CA",
     ],
+    "shield_round_metal_source": [
+        "#302732",
+        "#3A313A",
+        "#4B444C",
+        "#5E5252",
+        "#726B7E",
+        "#7E7068",
+        "#867E7F",
+        "#B19998",
+        "#C4B59F",
+        "#E5E6C7",
+    ],
 
     # ── Cloth ───────────────────────────────────────────────────────────────
     "white":       ["#2E1026", "#554769", "#917A7B", "#BBAFA4", "#EADBC9", "#F5F7FA"],
@@ -113,6 +126,8 @@ CIVS = {
     "nordic": {"skin": "nordic_fair", "hair": "blond"},
     "nubian": {"skin": "deep_brown", "hair": "black"},
 }
+
+BANDIT_CIV = {"skin": "olive", "hair": "dark_brown"}
 
 PLAYER_SHORTS = {
     "blue": "blue",
@@ -156,6 +171,7 @@ HEADBAND = DressItem("hat/headband/tied", team_colored=True)
 APRON_BROWN = DressItem("torso/aprons/suspenders/male/{animation}/brown.png")
 APRON_BROWN_FEMALE = DressItem("torso/aprons/suspenders/female/{animation}/brown.png")
 CUFFS_WHITE = DressItem("arms/wrists/cuffs/male/{animation}.png", palette="white")
+CUFFS_LEATHER = DressItem("arms/wrists/cuffs/male/{animation}/leather.png")
 SASH_WHITE = DressItem("torso/waist/sash_narrow/male/{animation}/white.png")
 SASH_WHITE_FEMALE = DressItem("torso/waist/sash_narrow/female/{animation}/white.png")
 SASH = DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True)
@@ -166,6 +182,37 @@ SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", team_colored=T
 SKIRT_PLAIN_FEMALE = DressItem("legs/skirts/plain/female/{animation}.png", team_colored=True)
 SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", team_colored=True)
 SKIRT_LEGION_TEAM_FEMALE = DressItem("legs/skirts/legion/female/{animation}.png", team_colored=True)
+SKIRT_SHORT = DressItem("legs/skirts/short/male/{animation}.png", team_colored=True)
+PANTS_TEAM = DressItem("legs/pants/male/{animation}/{color}.png", team_colored=True)
+STRIPED_PANTS = DressItem("legs/formal_striped/male/{animation}.png", team_colored=True)
+STRIPED_PANTS_RED = DressItem("legs/formal_striped/male/{animation}/red.png")
+STRIPED_PANTS_FOREST = DressItem("legs/formal_striped/male/{animation}/forest.png")
+BASIC_SHOES_LEATHER = DressItem("feet/shoes/male/{animation}/leather.png")
+BASIC_SHOES_LEATHER_FEMALE = DressItem("feet/shoes/female/{animation}/leather.png")
+SLEEVELESS_SHIRT = DressItem("torso/clothes/sleeveless/sleeveless/male/{animation}/{color}.png", team_colored=True)
+KIMONO = DressItem("dress/kimono/normal/universal/female/{animation}/{color}.png", team_colored=True)
+KIMONO_LONGSLEEVE = DressItem("dress/kimono/sleeves/universal/female/{animation}/{color}.png", team_colored=True)
+KIMONO_LONGSLEEVE_FRONT = DressItem(
+    "dress/kimono/sleeves/universal/female_front/{animation}/{color}.png",
+    team_colored=True,
+)
+SLIT_DRESS = DressItem("dress/slit/female/{animation}/{color}.png", team_colored=True)
+
+MALE_SHORT_SKIRT_SLEEVELESS = (SANDALS, SKIRT_SHORT, SLEEVELESS_SHIRT)
+MALE_LONG_SKIRT_SLEEVELESS = (SANDALS, SKIRT_PLAIN, SLEEVELESS_SHIRT)
+MALE_SLIT_SKIRT_NO_SHIRT = (SANDALS, SLIT_SKIRT)
+MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT = (SLIT_SKIRT,)
+
+FEMALE_KIMONO_SANDALS = (SANDALS_FEMALE, KIMONO)
+FEMALE_KIMONO_LONGSLEEVE_SANDALS = (SANDALS_FEMALE, KIMONO, KIMONO_LONGSLEEVE, KIMONO_LONGSLEEVE_FRONT)
+FEMALE_SLIT_DRESS_SANDALS = (SANDALS_FEMALE, SLIT_DRESS)
+FEMALE_KIMONO_LONGSLEEVE_SHOES = (
+    BASIC_SHOES_LEATHER_FEMALE,
+    KIMONO,
+    KIMONO_LONGSLEEVE,
+    KIMONO_LONGSLEEVE_FRONT,
+)
+FEMALE_NUBIAN_SLIT_DRESS = (SLIT_DRESS,)
 
 # Hero outfit pieces. Unlike SHORTS/APRON_BROWN (pre-colored files picked by name),
 # shortsleeve/pantaloons/shoes only ship one colorless template per animation
@@ -177,6 +224,8 @@ SHORTSLEEVE_WHITE = DressItem("torso/clothes/shortsleeve/shortsleeve/male/{anima
 SHORTSLEEVE_WHITE_FEMALE = DressItem("torso/clothes/shortsleeve/shortsleeve/female/{animation}.png", palette="white")
 LONGSLEEVE_WHITE = DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", palette="white")
 LONGSLEEVE_WHITE_FEMALE = DressItem("torso/clothes/longsleeve/longsleeve/female/{animation}.png", palette="white")
+LONGSLEEVE_TEAM = DressItem("torso/clothes/longsleeve/longsleeve/male/{animation}.png", team_colored=True)
+LONGSLEEVE_TEAM_FEMALE = DressItem("torso/clothes/longsleeve/longsleeve/female/{animation}.png", team_colored=True)
 PANTALOONS_BROWN = DressItem("legs/pantaloons/male/{animation}.png", palette="cloth_brown")
 SHOES_BLACK = DressItem("feet/shoes/basic/male/{animation}.png", palette="black")
 SUSPENDERS_BLACK = DressItem("torso/aprons/suspenders/male/{animation}/black.png")
@@ -185,6 +234,20 @@ HEADBAND_BLUE = DressItem("hat/headband/tied", team_colored=True)
 HIJAB_TEAM = DressItem("hat/cloth/hijab/thin", team_colored=True)
 FEMALE_TANKTOP = DressItem("torso/clothes/sleeveless/tanktop/female/{animation}/{color}.png", team_colored=True)
 FEMALE_SLEEVELESS_VNECK = DressItem("torso/clothes/sleeveless/sleeveless2_vneck/female/{animation}/{color}.png", team_colored=True)
+
+MALE_LONG_SKIRT_LONGSLEEVE = (BASIC_SHOES_LEATHER, SKIRT_PLAIN, LONGSLEEVE_TEAM)
+MALE_STRIPED_PANTS_LONGSLEEVE = (BASIC_SHOES_LEATHER, STRIPED_PANTS, LONGSLEEVE_TEAM)
+MALE_PANTS_LONGSLEEVE = (BASIC_SHOES_LEATHER, PANTS_TEAM, LONGSLEEVE_TEAM)
+
+CHIEF_CAPE = DressItem("cape/solid", team_colored=True)
+CAPE_SOLID_GRAY = DressItem("cape/solid", palette="player_grey")
+CHIEF_CAPE_TRIM = DressItem("cape/trim/female/{animation}/white.png")
+CHIEF_ACCESSORIES = (
+    DressItem("shoulders/leather/{body}/{animation}/white.png"),
+    DressItem("arms/bracers/{body}/{animation}/gold.png"),
+    DressItem("neck/necklace/beaded_small/{body}/{animation}/gold.png"),
+    DressItem("facial/earrings/moon/{body}/{animation}/gold.png"),
+)
 
 @dataclass(frozen=True)
 class UnitVariant:
@@ -214,6 +277,12 @@ class UnitLook:
     # richer upstream female hairstyles live under "female".
     hair_body_type: str = "adult"
     body: str = "male"
+    # Overrides the civilization's skin tone for units that must keep one skin
+    # color across every civ bake (e.g. map-spawned bandits).
+    skin_palette: str | None = None
+    # Uses one fixed render palette instead of producing one output per playable
+    # civilization. The baked output path keeps only the variant key (male/female).
+    fixed_civ: dict[str, str] | None = None
     # Overrides the civilization's hair color (e.g. "white" for a gray-haired elder).
     hair_palette: str | None = None
     beard: str | None = None
@@ -228,10 +297,13 @@ class UnitLook:
     # Ships as separate bg/fg halves, like a split hairstyle: bg drapes behind the
     # body/shoulders, fg drapes over the front, above the dress items.
     cape: DressItem | None = None
+    # Single overlay drawn above the cape front, used for fixed cape trim.
+    cape_trim: DressItem | None = None
     # A clasp/brooch drawn after the cape's front drape, at the collar (e.g. the
     # chief's cape clip).
     neck: DressItem | None = None
     dress: tuple[DressItem, ...] = ()
+    variants: tuple[str, ...] | None = None
 
 
 UNIT_LOOKS: dict[str, UnitLook] = {
@@ -262,64 +334,95 @@ UNIT_LOOKS: dict[str, UnitLook] = {
             SASH,
         ),
     ),
-    # Same base as "villager" (plain hair, sandals), with the shorts swapped for
-    # formal striped pants and a team-colored cape/clip added on top to mark it
-    # as the player's leader — worn by both the starting chief and any villager
-    # later promoted into one (see isChiefUnit() in app/lib/chief.ts).
-    "chief": UnitLook(
+    # The actual chief look derives from each civilization's villager base in
+    # variant_look_for_civ(), then receives the fixed leader accessories below.
+    "chief": UnitLook(),
+    "bandit_chief": UnitLook(
+        skin_palette="olive",
+        beard="beard/winter/male",
+        beard_palette="black",
+        cape=CAPE_SOLID_GRAY,
+        dress=(BASIC_SHOES_LEATHER, STRIPED_PANTS_RED),
+        fixed_civ=BANDIT_CIV,
+        variants=("male",),
+    ),
+    "bandit_sword": UnitLook(
+        skin_palette="olive",
+        beard="mustache/basic",
+        dress=(BASIC_SHOES_LEATHER, STRIPED_PANTS_FOREST),
+        fixed_civ=BANDIT_CIV,
+        variants=("male",),
+    ),
+    "bandit_archer": UnitLook(
+        skin_palette="olive",
         hair="plain",
-        cape=DressItem("cape/solid", team_colored=True),
-        neck=DressItem("neck/capeclip/male/{animation}/{color}.png", team_colored=True),
-        dress=(
-            SANDALS,
-            DressItem("legs/formal_striped/male/{animation}.png", team_colored=True),
-        ),
+        hair_palette="dark_brown",
+        beard="beard/medium",
+        beard_palette="dark_brown",
+        dress=(BASIC_SHOES_LEATHER, STRIPED_PANTS_FOREST, CUFFS_LEATHER),
+        fixed_civ=BANDIT_CIV,
+        variants=("male",),
     ),
 }
 
+
+def variants_for_unit(unit: str) -> tuple[UnitVariant, ...]:
+    variant_keys = UNIT_LOOKS[unit].variants
+    if variant_keys is None:
+        return UNIT_VARIANTS
+    allowed = set(variant_keys)
+    return tuple(variant for variant in UNIT_VARIANTS if variant.key in allowed)
+
+
+def civs_for_unit(unit: str, selected_civs: dict[str, dict[str, str]] | None = None) -> dict[str, dict[str, str]]:
+    fixed_civ = UNIT_LOOKS[unit].fixed_civ
+    if fixed_civ is not None:
+        return {"": fixed_civ}
+    return selected_civs if selected_civs is not None else CIVS
+
+
 CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "greek": {
-        "villager": {"hair": "page2", "beard": "beard/medium"},
-        "infantry": {"hair": "long_messy", "beard": "beard/winter/male"},
+        "villager": {"hair": "page2", "beard": "beard/medium", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
+        "infantry": {"hair": "long_messy", "beard": "beard/winter/male", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "hero": {"hair": "page2"},
     },
     "roman": {
-        "villager": {"hair": "plain"},
-        "infantry": {"hair": "buzzcut"},
+        "villager": {"hair": "plain", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
+        "infantry": {"hair": "buzzcut", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "hero": {"hair": "buzzcut"},
     },
     "babylonian": {
-        "villager": {"hair": "jewfro", "beard": "beard/winter/male"},
-        "infantry": {"hair": "curly_short", "beard": "beard/winter/male"},
+        "villager": {"hair": "jewfro", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
+        "infantry": {"hair": "curly_short", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
         "hero": {"hair": "jewfro", "beard": "beard/winter/male"},
     },
     "asian": {
-        "villager": {"hair": "ponytail", "hair_split": True},
-        "infantry": {"hair": "ponytail2", "hair_split": True},
+        "villager": {"hair": "ponytail", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
+        "infantry": {"hair": "ponytail2", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
         "hero": {"hair": "ponytail", "hair_split": True},
     },
     "celtic": {
-        "villager": {"hair": "swoop", "beard": "beard/basic"},
-        "infantry": {"hair": "bangslong", "beard": "beard/basic"},
+        "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
+        "infantry": {"hair": "bangslong", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
         "hero": {"hair": "swoop", "beard": "beard/medium"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "nordic": {
-        "villager": {"hair": "swoop", "beard": "beard/basic"},
-        "infantry": {"hair": "bangslong", "beard": "beard/winter/male"},
+        "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_PANTS_LONGSLEEVE},
+        "infantry": {"hair": "bangslong", "beard": "beard/winter/male", "dress": MALE_PANTS_LONGSLEEVE},
         "hero": {"hair": "bob_side_part", "beard": "beard/basic"},
-        "chief": {"hair": "long_messy", "beard": "beard/medium"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "egyptian": {
-        "villager": {"hair": "bob"},
-        "infantry": {"hair": "buzzcut"},
+        "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_NO_SHIRT},
+        "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_NO_SHIRT},
         "hero": {"hair": "bob"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nubian": {
-        "villager": {"hair": "cornrows"},
-        "infantry": {"hair": "dreadlocks_short"},
+        "villager": {"hair": "cornrows", "dress": MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT},
+        "infantry": {"hair": "dreadlocks_short", "dress": MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT},
         "hero": {"hair": "cornrows", "beard": None},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
@@ -337,71 +440,91 @@ FEMALE_BASE_LOOK_OVERRIDES = {
 
 FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "babylonian": {
-        "villager": {"hair": None, "hat": HIJAB_TEAM},
-        "infantry": {"hair": "long_tied", "hair_body_type": "female", "hat": None},
+        "villager": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
+        "infantry": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
-        "chief": {"hair": None, "hat": HIJAB_TEAM},
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
     "egyptian": {
-        "villager": {"hair": "long_center_part", "hair_body_type": "female"},
-        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
+        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_SANDALS},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_SANDALS},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
-        "chief": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": None, "hair_palette": None},
     },
     "greek": {
-        "villager": {"hair": "braid", "hair_body_type": "female"},
-        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
+        "villager": {"hair": "braid", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "hero": {"hair": "braid", "hair_body_type": "female"},
-        "chief": {"hair": "braid", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "roman": {
-        "villager": {"hair": "long_center_part", "hair_body_type": "female"},
-        "infantry": {"hair": "long_tied", "hair_body_type": "female"},
+        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
-        "chief": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": "long_tied", "hair_body_type": "female", "hair_palette": "white"},
     },
     "asian": {
-        "villager": {"hair": "long_tied", "hair_body_type": "female"},
-        "infantry": {"hair": "ponytail", "hair_body_type": "female"},
+        "villager": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "infantry": {"hair": "ponytail", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "hero": {"hair": "long_tied", "hair_body_type": "female"},
-        "chief": {"hair": "long_tied", "hair_body_type": "female"},
         "priest": {"hair": "single", "hair_body_type": "female", "hair_palette": "white"},
     },
     "celtic": {
-        "villager": {"hair": "wavy", "hair_body_type": "female"},
-        "infantry": {"hair": "bangslong2", "hair_body_type": "female"},
+        "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "infantry": {"hair": "bangslong2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "hero": {"hair": "wavy", "hair_body_type": "female"},
-        "chief": {"hair": "braid2", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nordic": {
-        "villager": {"hair": "wavy", "hair_body_type": "female"},
-        "infantry": {"hair": "braid2", "hair_body_type": "female"},
+        "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
+        "infantry": {"hair": "braid2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "hero": {"hair": "braid", "hair_body_type": "female"},
-        "chief": {"hair": "braid2", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nubian": {
-        "villager": {"hair": "xlong", "hair_body_type": "female"},
-        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female"},
+        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS},
+        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS},
         "hero": {"hair": "xlong", "hair_body_type": "female"},
-        "chief": {"hair": "dreadlocks_long", "hair_body_type": "female"},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
     },
 }
 
 
+def remove_hair(look: UnitLook) -> UnitLook:
+    return replace(
+        look,
+        hair=None,
+        hair_split=False,
+        hair_body_type="adult",
+        hair_palette=None,
+        hair_extension=None,
+    )
+
+
+def chief_look_from_villager(look: UnitLook) -> UnitLook:
+    return replace(
+        look,
+        cape=CHIEF_CAPE,
+        cape_trim=CHIEF_CAPE_TRIM,
+        dress=(*look.dress, *CHIEF_ACCESSORIES),
+    )
+
+
 def unit_look_for_civ(unit: str, civ_key: str) -> UnitLook:
-    look = UNIT_LOOKS[unit]
-    overrides = CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(unit)
-    return replace(look, **overrides) if overrides else look
+    if unit == "chief":
+        return chief_look_from_villager(unit_look_for_civ("villager", civ_key))
+
+    base_unit = "infantry" if unit == "infantry_nohair" else unit
+    look = UNIT_LOOKS[base_unit]
+    overrides = CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(base_unit)
+    look = replace(look, **overrides) if overrides else look
+    return remove_hair(look) if unit == "infantry_nohair" else look
 
 
 def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitLook:
+    if unit == "chief":
+        return chief_look_from_villager(variant_look_for_civ("villager", civ_key, variant))
+
     look = replace(unit_look_for_civ(unit, civ_key), body=variant.body)
     if variant.body != "female":
         return look
@@ -415,16 +538,21 @@ def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitL
         SKIRT_LEGION_TEAM: SKIRT_LEGION_TEAM_FEMALE,
         SHORTSLEEVE_WHITE: SHORTSLEEVE_WHITE_FEMALE,
         LONGSLEEVE_WHITE: LONGSLEEVE_WHITE_FEMALE,
+        LONGSLEEVE_TEAM: LONGSLEEVE_TEAM_FEMALE,
         SUSPENDERS_BLACK: SUSPENDERS_BLACK_FEMALE,
     }
 
     look = replace(look, **FEMALE_BASE_LOOK_OVERRIDES)
-    overrides = FEMALE_CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(unit)
+    override_unit = "infantry" if unit == "infantry_nohair" else unit
+    overrides = FEMALE_CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(override_unit)
     look = replace(look, **overrides) if overrides else look
     female_top = FEMALE_SLEEVELESS_VNECK if unit == "villager" else FEMALE_TANKTOP
     if look.dress:
         look = replace(look, dress=tuple(female_dress_map.get(item, item) for item in look.dress))
-    return replace(look, dress=(female_top, *look.dress))
+    if overrides and "dress" in overrides:
+        return remove_hair(look) if unit == "infantry_nohair" else look
+    look = replace(look, dress=(female_top, *look.dress))
+    return remove_hair(look) if unit == "infantry_nohair" else look
 
 
 @dataclass(frozen=True)

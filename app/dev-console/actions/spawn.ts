@@ -1,15 +1,104 @@
 import { Assets } from 'pixi.js'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
-import { findKey, getAmount, getSpawnCell } from './shared'
+import { findKey, getAmount, getSpawnCell, normalize } from './shared'
 import { FloatingItem } from '../../classes/FloatingItem'
 import { Resource } from '../../classes/Resource'
-import { BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
+import { Player } from '../../classes/players/Player'
+import { BUILDING_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from '../../lib'
+import type { PlayerLike } from '../../types/player'
 
 function canSpawnUnitOnCell(cell: DevCell): boolean {
   if (!cell || cell.solid || cell.has) return false
   return cell.category !== 'Water' && !cell.waterBorder
+}
+
+const BANDIT_OWNER_NAME = 'Bandits'
+const BANDIT_UNIT_TYPES = new Set<string>([UNIT_TYPES.banditChief, UNIT_TYPES.banditSword, UNIT_TYPES.banditArcher])
+const BANDIT_UNIT_ALIASES: Record<string, string> = {
+  bandit1: UNIT_TYPES.banditChief,
+  chefbandit: UNIT_TYPES.banditChief,
+  banditchief: UNIT_TYPES.banditChief,
+  bandit2: UNIT_TYPES.banditSword,
+  banditsword: UNIT_TYPES.banditSword,
+  bandit3: UNIT_TYPES.banditArcher,
+  banditarcher: UNIT_TYPES.banditArcher,
+}
+
+type BanditPlayer = DevPlayer & { devConsoleBanditOwner?: true }
+type BanditAwarePlayer = DevPlayer & {
+  devConsoleBanditHostilityPatched?: true
+  devConsoleOriginalIsEnemy?: PlayerLike['isEnemy']
+}
+
+function isBanditUnitType(type: string): boolean {
+  return BANDIT_UNIT_TYPES.has(type)
+}
+
+function resolveUnitType(owner: DevPlayer, typeName: string): string | undefined {
+  const directType = findKey(owner.config.units, typeName)
+  if (directType) return directType
+  const compact = normalize(typeName).replace(/[\s_-]+/g, '')
+  return BANDIT_UNIT_ALIASES[compact]
+}
+
+function isDevBanditOwner(player: DevPlayer): player is BanditPlayer {
+  return Boolean((player as BanditPlayer).devConsoleBanditOwner)
+}
+
+function syncBanditHostility(context: DevConsoleContext, owner: BanditPlayer): void {
+  owner.isEnemy = (player?: PlayerLike | null) => Boolean(player && player.label !== owner.label)
+  owner.enemyPlayers = () => context.players.filter(player => owner.isEnemy?.(player))
+
+  for (const player of context.players) {
+    if (player.label === owner.label) continue
+    const banditAwarePlayer = player as BanditAwarePlayer
+    if (banditAwarePlayer.devConsoleBanditHostilityPatched) continue
+
+    const originalIsEnemy = player.isEnemy?.bind(player)
+    banditAwarePlayer.devConsoleOriginalIsEnemy = originalIsEnemy
+    player.isEnemy = (other?: PlayerLike | null) => {
+      if (other && isDevBanditOwner(other as DevPlayer)) return true
+      return originalIsEnemy?.(other) ?? Boolean(other && other.label !== player.label)
+    }
+    player.enemyPlayers = () => context.players.filter(other => other.label !== player.label && player.isEnemy?.(other))
+    banditAwarePlayer.devConsoleBanditHostilityPatched = true
+  }
+}
+
+function getOrCreateBanditOwner(context: DevConsoleContext): BanditPlayer {
+  const existing = context.players.find(isDevBanditOwner)
+  if (existing) {
+    syncBanditHostility(context, existing)
+    return existing
+  }
+
+  const owner = new Player(
+    {
+      name: BANDIT_OWNER_NAME,
+      type: PLAYER_TYPES.ai,
+      isPlayed: false,
+      color: 'red',
+      civ: context.player.civ ?? 'Greek',
+      gender: 'male',
+      team: null,
+      diplomacy: null,
+      populationMax: Number.POSITIVE_INFINITY,
+      autoTechnologyByAge: false,
+    },
+    context as unknown as ConstructorParameters<typeof Player>[1]
+  ) as BanditPlayer
+
+  owner.devConsoleBanditOwner = true
+  owner.selectedUnits = []
+  owner.selectedUnit = null
+  owner.selectedBuilding = null
+  owner.selectedOther = null
+  owner.hasBuilt = []
+  context.players.push(owner)
+  syncBanditHostility(context, owner)
+  return owner
 }
 
 type ResolveOwnerResult =
@@ -35,6 +124,32 @@ function resolveOwner(context: DevConsoleContext, playerIndex: string | number |
 function formatSpawnMessage(entityType: string, spawned: number, ownerIndex: number, includeOwner: boolean): string {
   const entityLabel = spawned > 1 ? `${spawned} ${entityType}` : entityType
   return includeOwner ? `Spawned ${entityLabel} for player ${ownerIndex}` : `Spawned ${entityLabel}`
+}
+
+function spawnBanditUnits(context: DevConsoleContext, type: string, count: string | number = 1): CommandResult {
+  const { menu } = context
+  const owner = getOrCreateBanditOwner(context)
+
+  let spawned = 0
+  for (let i = 0; i < getAmount(count); i++) {
+    const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
+    if (!cell) break
+    owner.createUnit?.({
+      i: cell.i,
+      j: cell.j,
+      type,
+      gender: 'male',
+      appearanceVariants: { gender: 'male' },
+    })
+    owner.population = (owner.population ?? 0) + 1
+    spawned++
+  }
+  if (!spawned) {
+    return { ok: false, message: 'No free land cell near cursor' }
+  }
+  menu.updateTopbar()
+  menu.updatePlayerMiniMapEvt?.(owner)
+  return { ok: true, message: `Spawned ${spawned > 1 ? `${spawned} ${type}` : type} for bandits` }
 }
 
 function spawnWheatField(
@@ -72,10 +187,13 @@ export function spawnUnits(
   if (resolved.error !== null) return { ok: false, message: resolved.error }
   const { owner, ownerIndex } = resolved
 
-  const type = findKey(owner.config.units, typeName)
+  const type = resolveUnitType(owner, typeName)
   if (!type) {
     const suffix = playerIndex == null ? '' : ` for player ${ownerIndex}`
     return { ok: false, message: `Unknown unit${suffix}: ${typeName}` }
+  }
+  if (isBanditUnitType(type)) {
+    return spawnBanditUnits(context, type, count)
   }
 
   let spawned = 0

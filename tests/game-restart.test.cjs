@@ -122,7 +122,6 @@ function loadGame() {
         destroy() {}
       },
     },
-    '../services/AmbientBirds': class AmbientBirds {},
     '../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
     '../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
     '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
@@ -134,7 +133,6 @@ function loadGame() {
     '../constants': {
       CELL_WIDTH: 64,
       CELL_HEIGHT: 32,
-      AMBIENT_BIRD_WORLD_ZINDEX: 0,
       ENVIRONMENT_IDS: ['temperate'],
       PLAYER_TYPES: { human: 'human', computer: 'computer' },
     },
@@ -209,7 +207,6 @@ test('restored saves initialize hero controls before mounting runtime', async ()
     game.context.controls = { init: () => calls.push('controls.init') }
   }
   game._mountRuntime = () => calls.push('mountRuntime')
-  game.checkVictory = () => false
 
   await game._bootFromSave({
     version: 1,

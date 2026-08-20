@@ -4,7 +4,7 @@ import type { GridPosition, Point } from './grid'
 import type { PlayerLike } from './player'
 import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
-import type { ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './config'
+import type { CombatBehaviorConfig, ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './config'
 import type { MenuButtonSpec } from './ui'
 import type { TextureRef } from '../lib'
 import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
@@ -159,6 +159,12 @@ export interface EnergyEntity extends RuntimeEntityBase {
   waitingForEnergyAction?: string | null
   waitingForEnergyTarget?: RuntimeEntity | null
   energyWaitTaskId?: number | null
+  combatBehavior?: CombatBehaviorConfig
+  combatBehaviorPreset?: string
+  combatMoraleRoll?: number
+  combatMode?: 'attack' | 'recover' | 'flee' | null
+  combatRecoveryOrbitDirection?: 1 | -1
+  lastCombatRecoveryMoveAt?: number | null
   actionLocked?: boolean
   stop?: () => void
   sendTo?: (target: RuntimeEntity | RuntimeCell, action?: string, options?: { forceRepath?: boolean }) => void
@@ -185,6 +191,7 @@ export interface UnitEntity extends EnergyEntity {
   assigningAutonomousJob?: boolean
   loading?: number | null
   loadingType?: string | null
+  resourceLoads?: Record<string, number>
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
@@ -229,6 +236,7 @@ export interface UnitEntity extends EnergyEntity {
   heroBowChargeTool?: 'bow' | 'lasso'
   heroBowReleaseQueued?: boolean
   heroBowReleasePower?: number
+  heroBowChargeFacingDegree?: number | null
   heroBowChargeVisualLocked?: boolean
   heroBowChargeLastEnergyAt?: number
   heroLasso?: { clearLasso: (options?: { releaseHorse?: boolean }) => void } | null
@@ -319,7 +327,7 @@ export interface UnitEntity extends EnergyEntity {
   sendToConvert(target: RuntimeEntity): void
   sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
   sendToHunt(target: RuntimeEntity, immediate?: boolean): void
-  sendToCaptureHorse?(target: RuntimeEntity, immediate?: boolean): void
+  sendToCaptureHorse?(target: RuntimeEntity, immediate?: boolean): boolean | void
   sendToFarm(target: RuntimeEntity, immediate?: boolean): void
   sendToTree?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void

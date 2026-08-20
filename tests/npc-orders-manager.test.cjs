@@ -239,6 +239,25 @@ test('picking a villager-job order assigns it without pausing or resuming the ga
   })
 })
 
+test('picking the horse capture order assigns the horseCapture villager job', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+    const horseCaptureButton = manager.buttons.get('horseCapture')
+    assert.equal(horseCaptureButton.disabled, false)
+
+    horseCaptureButton.click()
+
+    assert.deepEqual(calls, [['assignVillagerAutonomy', 'horseCapture', 'paused=false']])
+  })
+})
+
 test('debug level button cycles a solo unit level without closing communication', async () => {
   await withFakeDocument(async () => {
     const calls = []

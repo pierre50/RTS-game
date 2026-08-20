@@ -695,7 +695,8 @@ function getVisibleEntities(context: DevConsoleContext): Set<DevEntity> {
   const visibleCells = getCameraCells(context)
   const entities = new Set<DevEntity>()
   const addIfVisible = (entity: DevEntity | undefined): void => {
-    const cell = context.map.grid[entity?.i]?.[entity?.j]
+    if (!entity) return
+    const cell = context.map.grid[entity.i]?.[entity.j]
     if (!cell || !visibleCells.has(cell)) return
     entities.add(entity)
   }
@@ -780,8 +781,8 @@ function ensurePlayerStatsOverlay(context: DevConsoleContext): void {
   })
 
   const formatValue = (current: number | undefined, total: number | undefined): string => {
-    const normalizedCurrent = Number.isFinite(current) ? Math.round(current) : 0
-    const normalizedTotal = Number.isFinite(total) ? Math.round(total) : normalizedCurrent
+    const normalizedCurrent = Number.isFinite(current ?? NaN) ? Math.round(current ?? 0) : 0
+    const normalizedTotal = Number.isFinite(total ?? NaN) ? Math.round(total ?? normalizedCurrent) : normalizedCurrent
     return `${normalizedCurrent}/${normalizedTotal}`
   }
 

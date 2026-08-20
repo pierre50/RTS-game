@@ -686,7 +686,7 @@ export class WeatherSystem {
   }
 
   update(elapsedMs: number): void {
-    if (this.context.paused || this.context.victory || this.context.defeat) return
+    if (this.context.paused || this.context.defeat) return
     const safeElapsedMs = Math.min(Math.max(elapsedMs, 0), 250)
     const elapsedSeconds = safeElapsedMs / 1000
     this.elapsedMs += safeElapsedMs

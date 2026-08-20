@@ -94,6 +94,7 @@ test('unit death starts the dying animation through the shared helper', () => {
     zIndex: 4,
     setTextures: sheet => calls.push(['setTextures', sheet]),
     syncShadow: () => calls.push(['syncShadow']),
+    syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
   }
 
   new UnitLifecycle(unit).death()
@@ -103,6 +104,7 @@ test('unit death starts the dying animation through the shared helper', () => {
     ['syncShadow'],
     ['playSpriteAnimationFromStart', true, false],
     ['gotoAndPlay', 0],
+    ['syncAppearanceLayers', 'dyingSheet'],
   ])
   assert.equal(sprite.loop, false)
   assert.equal(sprite.onFrameChange, undefined)

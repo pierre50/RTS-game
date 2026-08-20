@@ -36,7 +36,7 @@ export class DevConsole {
   }
 
   open(): void {
-    if (this.isOpen || this.context.victory) return
+    if (this.isOpen) return
     this.isOpen = true
     this.context.devConsoleOpen = true
     this.context.controls?.stopKeyboardMove?.()

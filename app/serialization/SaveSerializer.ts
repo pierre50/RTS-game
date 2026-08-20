@@ -48,6 +48,7 @@ type SerializableEntity = RuntimeEntityBase & {
   isUsedBy?: string | { label?: string } | null
   loading?: number | null
   loadingType?: string | null
+  resourceLoads?: Record<string, number>
   loop?: boolean
   mountedOnHorse?: boolean
   path?: GridPoint[]
@@ -205,6 +206,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'action',
       'loading',
       'loadingType',
+      'resourceLoads',
       'direction',
       'currentSheet',
       'controlMode',

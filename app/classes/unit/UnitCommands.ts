@@ -1,7 +1,6 @@
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
-  FAMILY_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
@@ -25,6 +24,7 @@ import { t } from '../../lib/lang'
 import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
 import { isHeroControlled } from '../../lib/unitControl'
 import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
+import { clearCarriedResources, getCarriedResourceEntries } from '../../lib/resourceCarry'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -62,12 +62,12 @@ export function applyWorkForAction(unit: UnitEntity, work: string, action: strin
   const menu = unit.context?.menu
   const workFromLoading = getWorkWithLoadingType(unit.loadingType ?? '')
   if (
+    !isHeroControlled(unit) &&
     work !== WORK_TYPES.builder &&
     work !== workFromLoading &&
     !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading ?? ''))
   ) {
-    unit.loading = 0
-    unit.loadingType = null
+    clearCarriedResources(unit)
     unit.updateInterfaceLoading?.()
   }
   if (unit.work === work && unit.action === action) return
@@ -206,15 +206,15 @@ export class UnitCommands {
     const unit = this.unit
     const map = unit.context?.map
     let buildingTypes: string[] = [BUILDING_TYPES.townCenter]
+    const carriedTypes = getCarriedResourceEntries(unit).map(([loadingType]) => loadingType)
     const buildings = {
       Granary: unit.owner?.config.buildings.Granary,
       StoragePit: unit.owner?.config.buildings.StoragePit,
     }
     for (const [key, value] of Object.entries(buildings)) {
       const accept = (value as { accept?: string[] } | undefined)?.accept
-      if (accept && accept.includes(unit.loadingType ?? '')) {
+      if (accept?.some(loadingType => carriedTypes.includes(loadingType))) {
         buildingTypes.push(key)
-        break
       }
     }
 
@@ -279,6 +279,11 @@ export class UnitCommands {
       return false
     }
     const commandSent = this.commonSendTo(target, WORK_TYPES.horseCapture, ACTION_TYPES.captureHorse, false, immediate) !== false
+    const currentDest = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (!commandSent && unit.action === ACTION_TYPES.captureHorse && currentDest?.label === target.label) {
+      unit.sendToEvt?.(target, ACTION_TYPES.captureHorse, { forceRepath: true })
+      return true
+    }
     return commandSent
   }
 

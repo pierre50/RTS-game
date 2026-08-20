@@ -1,0 +1,375 @@
+{
+  "frames": {
+    "000_graphics_buildings_campfire.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 11,
+        "y": 13,
+        "w": 121,
+        "h": 70
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_totem_plain.png": {
+      "frame": {
+        "x": 144,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 62,
+        "y": 15,
+        "w": 19,
+        "h": 65
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_totem_horns.png": {
+      "frame": {
+        "x": 288,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 58,
+        "y": 12,
+        "w": 28,
+        "h": 71
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_totem_skull.png": {
+      "frame": {
+        "x": 432,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 62,
+        "y": 14,
+        "w": 19,
+        "h": 67
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_fence_post.png": {
+      "frame": {
+        "x": 0,
+        "y": 96,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 49,
+        "y": 14,
+        "w": 45,
+        "h": 67
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_bone_small.png": {
+      "frame": {
+        "x": 144,
+        "y": 96,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 58,
+        "y": 35,
+        "w": 27,
+        "h": 25
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_rock_pile.png": {
+      "frame": {
+        "x": 288,
+        "y": 96,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 55,
+        "y": 36,
+        "w": 34,
+        "h": 23
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_skull.png": {
+      "frame": {
+        "x": 432,
+        "y": 96,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 61,
+        "y": 37,
+        "w": 21,
+        "h": 22
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_animal_bones.png": {
+      "frame": {
+        "x": 0,
+        "y": 192,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 50,
+        "y": 33,
+        "w": 44,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_meat_rack.png": {
+      "frame": {
+        "x": 144,
+        "y": 192,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 46,
+        "y": 23,
+        "w": 51,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_drying_rack.png": {
+      "frame": {
+        "x": 288,
+        "y": 192,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 43,
+        "y": 11,
+        "w": 57,
+        "h": 74
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_bucket.png": {
+      "frame": {
+        "x": 432,
+        "y": 192,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 59,
+        "y": 29,
+        "w": 25,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_crate.png": {
+      "frame": {
+        "x": 0,
+        "y": 288,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 49,
+        "y": 27,
+        "w": 46,
+        "h": 41
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_jar_small.png": {
+      "frame": {
+        "x": 144,
+        "y": 288,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 60,
+        "y": 32,
+        "w": 23,
+        "h": 31
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    },
+    "000_graphics_buildings_jar_large.png": {
+      "frame": {
+        "x": 288,
+        "y": 288,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 56,
+        "y": 29,
+        "w": 32,
+        "h": 37
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.83
+      }
+    }
+  },
+  "meta": {
+    "app": "pack_aoe1_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 576,
+      "h": 384
+    },
+    "scale": 1
+  }
+}

@@ -55,6 +55,83 @@ const unitWorkAppearanceMock = {
   },
 }
 
+function isHeroCarrier(unit) {
+  return unit.controlMode === 'hero'
+}
+
+function ensureResourceLoads(unit) {
+  if (!unit.resourceLoads || !Object.keys(unit.resourceLoads).length) {
+    unit.resourceLoads = unit.loadingType && (unit.loading ?? 0) > 0 ? { [unit.loadingType]: unit.loading } : {}
+  }
+  return unit.resourceLoads
+}
+
+function syncHeroLoad(unit, preferredType = null) {
+  if (!isHeroCarrier(unit)) return
+  const loads = ensureResourceLoads(unit)
+  const entries = Object.entries(loads).filter(([, amount]) => amount > 0)
+  unit.resourceLoads = Object.fromEntries(entries)
+  unit.loading = entries.reduce((total, [, amount]) => total + amount, 0)
+  unit.loadingType =
+    (preferredType && unit.resourceLoads[preferredType] > 0 && preferredType) ||
+    (unit.loadingType && unit.resourceLoads[unit.loadingType] > 0 && unit.loadingType) ||
+    entries[0]?.[0] ||
+    null
+}
+
+const resourceCarryMock = {
+  addCarriedResource(unit, loadingType, amount) {
+    if (isHeroCarrier(unit)) {
+      const loads = ensureResourceLoads(unit)
+      loads[loadingType] = (loads[loadingType] ?? 0) + amount
+      syncHeroLoad(unit, loadingType)
+      return
+    }
+    unit.loading = (unit.loading ?? 0) + amount
+    unit.loadingType = loadingType
+  },
+  clearCarriedResource(unit, loadingType) {
+    if (isHeroCarrier(unit)) {
+      const loads = ensureResourceLoads(unit)
+      delete loads[loadingType]
+      syncHeroLoad(unit)
+      return
+    }
+    if (unit.loadingType === loadingType) {
+      unit.loading = 0
+      unit.loadingType = null
+    }
+  },
+  clearCarriedResources(unit) {
+    if (isHeroCarrier(unit)) unit.resourceLoads = {}
+    unit.loading = 0
+    unit.loadingType = null
+  },
+  getCarriedResourceEntries(unit) {
+    if (isHeroCarrier(unit)) {
+      syncHeroLoad(unit)
+      return Object.entries(unit.resourceLoads ?? {}).filter(([, amount]) => amount > 0)
+    }
+    return unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : []
+  },
+  getCarriedResourceSpace(unit, loadingType) {
+    if (isHeroCarrier(unit)) return Number.POSITIVE_INFINITY
+    return Math.max((unit.loadingMax?.[loadingType] ?? Number.POSITIVE_INFINITY) - (unit.loading ?? 0), 0)
+  },
+  getDeliverableResourceEntries(unit, building) {
+    return resourceCarryMock
+      .getCarriedResourceEntries(unit)
+      .filter(([loadingType]) => building.type === constants.BUILDING_TYPES.townCenter || building.accept?.includes(loadingType))
+  },
+  getPlayerResourceKey(loadingType) {
+    if (['berry', 'wheat', 'meat'].includes(loadingType)) return 'food'
+    return ['wood', 'stone', 'gold', 'copper', 'iron'].includes(loadingType) ? loadingType : null
+  },
+  getTotalCarriedResources(unit) {
+    return resourceCarryMock.getCarriedResourceEntries(unit).reduce((total, [, amount]) => total + amount, 0)
+  },
+}
+
 function mockRoundedIsoShapePoints({ x, y }) {
   return [
     { x, y: y - 10 },
@@ -87,14 +164,31 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
+    if (request === '../../lib') {
+      const libMock = mocks[request] ?? {}
+      return {
+        getRoundedIsoFootprintPoints:
+          libMock.getRoundedIsoFootprintPoints ?? libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
+        isBanditOwner: owner => Boolean(owner?.devConsoleBanditOwner || (owner?.isPlayed !== true && owner?.name === 'Bandits')),
+        playMovementSurfaceAudio: () => {},
+        ...libMock,
+      }
+    }
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
+    if (request === '../../lib/resourceCarry') return resourceCarryMock
     if (request === '../../lib/lang') return { t: value => value }
     if (request === '../../lib/diplomaticAggression') {
       return {
         applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
+      }
+    }
+    if (request === '../../lib/horseCapture') {
+      return {
+        getNearestAvailableStableForUnit: () => null,
+        routeCapturedHorseToStableWithOwnerContact: () => null,
       }
     }
     if (request === '../../lib/unitEnergy') {
@@ -108,9 +202,21 @@ function loadModule(relativePath, mocks) {
         spendOrWaitForEnergy: () => true,
       }
     }
+    if (request === '../../lib/equipmentStats') {
+      return {
+        getUnitCombatRange: unit => unit.range ?? 4,
+      }
+    }
     if (request === '../../lib/heroActionRange') {
       return {
         isHeroActionInRange: () => false,
+      }
+    }
+    if (request === '../../lib/combatBehavior') {
+      return {
+        markCombatFlee: unit => {
+          unit.combatMode = 'flee'
+        },
       }
     }
     if (request === '../../lib/unitControl') {
@@ -132,6 +238,7 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
+    if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -170,6 +277,7 @@ const constants = {
     type: 'type',
   },
   SHEET_TYPES: {
+    standing: 'standingSheet',
     walking: 'walking',
   },
   RELIEF_CLIMB_SPEED_MULTIPLIER: 0.7,
@@ -526,7 +634,9 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     action: constants.ACTION_TYPES.attack,
     actionLocked: true,
     blockedGatherApproach: { target: 'tree' },
+    combatMode: 'recover',
     dest: { label: 'old-target' },
+    energyWaitTaskId: 42,
     family: constants.FAMILY_TYPES.unit,
     hitPoints: 7,
     inactif: false,
@@ -540,6 +650,8 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
     selected: false,
     shouldKeepHealthBarVisible: () => target.owner?.isPlayed,
     drawHealthBar: () => calls.push(['drawHealthBar']),
+    context: { scheduler: { remove: taskId => calls.push(['removeTask', taskId]) } },
+    lastCombatRecoveryMoveAt: 123,
     setTextures: sheet => calls.push(['setTextures', sheet]),
     sprite: {
       onComplete: () => {},
@@ -547,6 +659,8 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
       onLoop: () => {},
     },
     stopInterval: () => calls.push(['stopInterval']),
+    waitingForEnergyAction: constants.ACTION_TYPES.attack,
+    waitingForEnergyTarget: { label: 'old-enemy' },
   }
   oldOwner.units.push(target)
   const priest = {
@@ -573,8 +687,17 @@ test('converted units stop old orders, switch owner, and refresh idle color', ()
   assert.equal(target.actionLocked, false)
   assert.equal(target.pendingOrder, null)
   assert.equal(target.blockedGatherApproach, null)
+  assert.equal(target.combatMode, null)
+  assert.equal(target.waitingForEnergyAction, null)
+  assert.equal(target.waitingForEnergyTarget, null)
+  assert.equal(target.energyWaitTaskId, null)
+  assert.equal(target.lastCombatRecoveryMoveAt, null)
   assert.equal(target.inactif, true)
   assert.deepEqual(target.path, [])
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'removeTask'),
+    [['removeTask', 42]]
+  )
   assert.deepEqual(
     calls.filter(([name]) => name === 'setTextures'),
     [['setTextures', constants.SHEET_TYPES.standing]]
@@ -640,6 +763,61 @@ test('converted player units remove their stale health bar when captured by anot
   assert.equal(converted, true)
   assert.equal(target.owner, newOwner)
   assert.deepEqual(calls, [['removeHealthBar']])
+})
+
+test('bandit-owned units cannot convert surrendered enemies into the bandit team', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showConversionFeedback: () => calls.push(['showConversionFeedback']),
+      updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const oldOwner = { color: 'blue', label: 'player', units: [] }
+  const banditOwner = { devConsoleBanditOwner: true, label: 'bandit-owner', units: [] }
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    label: 'surrender-target',
+    owner: oldOwner,
+    path: [{ i: 1, j: 0 }],
+    selected: false,
+    setTextures: () => calls.push(['setTextures']),
+  }
+  oldOwner.units.push(target)
+  const bandit = {
+    context: {
+      menu: {
+        updatePlayerMiniMapEvt: () => calls.push(['updatePlayerMiniMapEvt']),
+      },
+    },
+    owner: banditOwner,
+    stop: () => calls.push(['banditStop']),
+  }
+
+  const converted = new UnitActions(bandit).convertTarget(target, { grantXp: false, stopConverter: false })
+
+  assert.equal(converted, false)
+  assert.equal(target.owner, oldOwner)
+  assert.equal(oldOwner.units.includes(target), true)
+  assert.equal(banditOwner.units.includes(target), false)
+  assert.deepEqual(target.path, [{ i: 1, j: 0 }])
+  assert.deepEqual(calls, [])
 })
 
 test('converted buildings keep their source civilization and age assets', () => {
@@ -762,6 +940,194 @@ test('destination checks stay pure when no destination exists', () => {
 
   assert.equal(movement.isUnitAtDest('chopwood', null), false)
   assert.equal(redispatched, false)
+})
+
+test('combat recovery idles when its reposition path finishes without an action', () => {
+  const calls = []
+  const cell0 = {
+    has: null,
+    i: 0,
+    j: 0,
+    solid: true,
+    z: 0,
+  }
+  const cell1 = {
+    has: null,
+    i: 1,
+    j: 0,
+    solid: false,
+    z: 0,
+    place(entity) {
+      this.has = entity
+      this.solid = true
+    },
+  }
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i * 10, j * 10],
+    degreeToDirection: () => 'south',
+    getGroundReliefLevel: () => 0,
+    getInstanceDegree: () => 0,
+    getInstanceZIndex: () => 0,
+    instancesDistance: (a, b, useCartesian = true) =>
+      useCartesian ? Math.hypot(a.i - b.i, a.j - b.j) : Math.hypot(a.x - b.x, a.y - b.y),
+    moveTowardPoint: () => {},
+    playMovementSurfaceAudio: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    combatMode: 'recover',
+    context: {
+      map: {
+        grid: [[cell0], [cell1]],
+        updateInstanceBucket: () => calls.push(['updateInstanceBucket']),
+      },
+    },
+    currentCell: cell0,
+    dest: cell1,
+    destHasMoved: () => false,
+    i: 0,
+    isUnitAtDest: () => false,
+    j: 0,
+    path: [{ i: 1, j: 0 }],
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    speed: 20,
+    sprite: {
+      playing: true,
+      play: () => calls.push(['sprite.play']),
+      stop: () => calls.push(['sprite.stop']),
+    },
+    stop: () => calls.push(['stop']),
+    stopInterval: () => calls.push(['stopInterval']),
+    waitingForEnergyAction: constants.ACTION_TYPES.attack,
+    x: 0,
+    y: 0,
+  }
+  cell0.has = unit
+
+  new UnitMovement(unit)._moveToPath()
+
+  assert.equal(unit.i, 1)
+  assert.equal(unit.j, 0)
+  assert.deepEqual(unit.path, [])
+  assert.deepEqual(
+    calls.filter(([name]) => ['setTextures', 'sprite.stop', 'stop'].includes(name)),
+    [
+      ['setTextures', constants.SHEET_TYPES.standing],
+      ['sprite.stop'],
+    ]
+  )
+})
+
+test('path movement treats a same-label solid cell as its own stale occupancy', () => {
+  const calls = []
+  const cell0 = {
+    has: null,
+    i: 0,
+    j: 0,
+    solid: true,
+    z: 0,
+  }
+  const staleOccupant = { family: constants.FAMILY_TYPES.unit, label: 'bandit-1', type: 'Bandit2' }
+  const cell1 = {
+    has: staleOccupant,
+    i: 1,
+    j: 0,
+    solid: true,
+    z: 0,
+    place(entity) {
+      this.has = entity
+    },
+  }
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i * 10, j * 10],
+    degreeToDirection: () => 'south',
+    getGroundReliefLevel: () => 0,
+    getInstanceDegree: () => 0,
+    getInstanceZIndex: () => 0,
+    instancesDistance: (a, b, useCartesian = true) =>
+      useCartesian ? Math.hypot(a.i - b.i, a.j - b.j) : Math.hypot((a.x ?? 0) - b.x, (a.y ?? 0) - b.y),
+    moveTowardPoint: () => {},
+    playMovementSurfaceAudio: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    context: {
+      map: {
+        grid: [[cell0], [cell1]],
+        updateInstanceBucket: () => calls.push(['updateInstanceBucket']),
+      },
+    },
+    currentCell: cell0,
+    dest: cell1,
+    destHasMoved: () => false,
+    i: 0,
+    isUnitAtDest: () => false,
+    j: 0,
+    label: 'bandit-1',
+    path: [{ i: 1, j: 0 }],
+    sendToEvt: () => calls.push(['sendToEvt']),
+    speed: 20,
+    sprite: {
+      playing: true,
+      play: () => calls.push(['sprite.play']),
+    },
+    x: 0,
+    y: 0,
+  }
+  cell0.has = unit
+
+  new UnitMovement(unit)._moveToPath()
+
+  assert.equal(unit.i, 1)
+  assert.equal(unit.j, 0)
+  assert.equal(cell0.has, null)
+  assert.equal(cell0.solid, false)
+  assert.equal(cell1.has, unit)
+  assert.equal(cell1.solid, true)
+  assert.equal(calls.some(([name]) => name === 'sendToEvt'), false)
+})
+
+test('combat recovery with no active action pauses instead of using the generic stop flow', () => {
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      resumeVillagerAutonomy: () => {
+        calls.push(['resumeVillagerAutonomy'])
+        return false
+      },
+    },
+  })
+  const unit = {
+    action: null,
+    combatMode: 'recover',
+    path: [{ i: 1, j: 1 }],
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite: { stop: () => calls.push(['sprite.stop']) },
+    stop: () => calls.push(['stop']),
+    stopInterval: () => calls.push(['stopInterval']),
+    waitingForEnergyAction: constants.ACTION_TYPES.attack,
+  }
+
+  new UnitMovement(unit).affectNewDest()
+
+  assert.deepEqual(unit.path, [])
+  assert.equal(calls.some(([name]) => name === 'stop'), false)
+  assert.equal(calls.some(([name]) => name === 'resumeVillagerAutonomy'), false)
+  assert.ok(calls.some(([name, sheet]) => name === 'setTextures' && sheet === constants.SHEET_TYPES.standing))
+  assert.ok(calls.some(([name]) => name === 'sprite.stop'))
 })
 
 test('direct movement advances even when subpixel steps would be ignored by path helper', () => {
@@ -2210,6 +2576,7 @@ test('delivery orders bypass the human command throttle', () => {
     dest: resource,
     i: 0,
     j: 0,
+    loading: 7,
     loadingType: 'wheat',
     owner: {
       buildings: [granary],
@@ -2260,6 +2627,7 @@ test('hunters deliver meat to granaries instead of storage pits', () => {
     dest: resource,
     i: 0,
     j: 0,
+    loading: 7,
     loadingType: 'meat',
     owner: {
       buildings: [storagePit, granary],
@@ -2370,7 +2738,7 @@ test('delivery shows a resource gain over the delivering unit', () => {
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
-  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
+  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1', type: constants.BUILDING_TYPES.townCenter }
   const player = {
     food: 10,
     isPlayed: true,
@@ -2433,7 +2801,7 @@ test('delivery resumes a communication food job when there is no previous target
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
-  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1' }
+  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1', type: constants.BUILDING_TYPES.townCenter }
   const unit = {
     action: constants.ACTION_TYPES.delivery,
     autonomousJob: 'food',
@@ -2459,6 +2827,72 @@ test('delivery resumes a communication food job when there is no previous target
     ['updateInterfaceLoading'],
     ['setTextures', 'standing'],
     ['resumeVillagerAutonomy', 'food'],
+  ])
+})
+
+test('hero delivery deposits accepted carried resources and keeps the rest', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: ['wheat'],
+      LOADING_TYPES: {},
+      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
+      SOUND_CUES: { villager: {} },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const granary = { accept: ['wheat'], family: constants.FAMILY_TYPES.building, label: 'granary-1', type: constants.BUILDING_TYPES.granary }
+  const player = { food: 10, iron: 0, isPlayed: true }
+  const unit = {
+    action: constants.ACTION_TYPES.delivery,
+    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
+    controlMode: 'hero',
+    dest: granary,
+    label: 'hero',
+    loading: 7,
+    loadingType: 'iron',
+    owner: player,
+    previousDest: null,
+    resourceLoads: { wheat: 3, iron: 4 },
+    sprite: {},
+    work: constants.WORK_TYPES.farmer,
+    getActionCondition: target => target === granary,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    stop: () => calls.push(['stop']),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
+
+  assert.equal(player.food, 13)
+  assert.equal(player.iron, 0)
+  assert.deepEqual(unit.resourceLoads, { iron: 4 })
+  assert.equal(unit.loading, 4)
+  assert.equal(unit.loadingType, 'iron')
+  assert.deepEqual(calls, [
+    ['feedback', 'hero', 3],
+    ['topbar'],
+    ['updateInterfaceLoading'],
+    ['setTextures', 'standing'],
+    ['stop'],
   ])
 })
 
@@ -2529,6 +2963,76 @@ test('hero farming does not claim or replace the farm worker slot', () => {
     ['updateInterfaceLoading'],
     ['feedback', 'hero', 1],
     ['updateInfo', 'quantityText', 19],
+  ])
+})
+
+test('hero keeps existing carried resources when gathering another resource type', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: ['wheat'],
+      LOADING_TYPES: { wheat: 'wheat' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { gatherFood: 'gather-food' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      SLASH_IMPACT_FRAME: 3,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const wheat = {
+    family: constants.FAMILY_TYPES.resource,
+    label: 'wheat-1',
+    quantity: 20,
+    selected: false,
+    type: constants.RESOURCE_TYPES.wheat,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.farm,
+    context: { menu: { showMessage: (message, level) => calls.push(['message', message, level]) } },
+    controlMode: 'hero',
+    dest: wheat,
+    label: 'hero',
+    loading: 4,
+    loadingMax: { wheat: 1 },
+    loadingType: 'iron',
+    owner: { isPlayed: true },
+    resourceLoads: { iron: 4 },
+    sprite: {},
+    work: constants.WORK_TYPES.farmer,
+    getActionCondition: target => target === wheat,
+    getWorkSound: () => 'gather-food',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
+
+  assert.deepEqual(unit.resourceLoads, { iron: 4, wheat: 1 })
+  assert.equal(unit.loading, 5)
+  assert.equal(unit.loadingType, 'wheat')
+  assert.equal(wheat.quantity, 19)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['updateInterfaceLoading'],
+    ['feedback', 'hero', 1],
   ])
 })
 

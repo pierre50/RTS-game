@@ -98,6 +98,7 @@ type HeroLassoThrowOptions = {
   releaseHorseOnClear?: boolean
   showMessages?: boolean
   pullCapturedHorseToOwner?: boolean
+  autoRouteStableWhileAttached?: boolean
 }
 type LassoedHorse = AnimalEntity & {
   degree?: number
@@ -179,7 +180,14 @@ function getHorseLassoNeckPoint(horse: LassoedHorse): Point {
 }
 
 function isHorse(entity: RuntimeEntity): entity is LassoedHorse {
-  return entity.family === FAMILY_TYPES.animal && entity.type === 'Horse' && !entity.isDead && !entity.isDestroyed
+  return (
+    entity.family === FAMILY_TYPES.animal &&
+    entity.type === 'Horse' &&
+    !entity.isDead &&
+    !entity.isDestroyed &&
+    !(entity as LassoedHorse).isLassoed &&
+    !(entity as LassoedHorse).lassoOwner
+  )
 }
 
 export class HeroLassoThrow extends Graphics {
@@ -195,6 +203,7 @@ export class HeroLassoThrow extends Graphics {
   options: Required<HeroLassoThrowOptions>
   stableRouteCleanup: (() => void) | null
   isStableHorseRouteActive: boolean
+  externalStableRouteActive: boolean
 
   constructor(hero: UnitEntity, destination: Point, context: GameContextLike, options: HeroLassoThrowOptions = {}) {
     super()
@@ -205,6 +214,7 @@ export class HeroLassoThrow extends Graphics {
       releaseHorseOnClear: true,
       showMessages: true,
       pullCapturedHorseToOwner: true,
+      autoRouteStableWhileAttached: true,
       ...options,
     }
     this.spawnOrigin = getHeroLassoStart(hero)
@@ -215,6 +225,7 @@ export class HeroLassoThrow extends Graphics {
     this.taskId = null
     this.lastFollowAt = 0
     this.isStableHorseRouteActive = false
+    this.externalStableRouteActive = false
     this.stableRouteCleanup = null
     hero.heroLasso?.clearLasso({ releaseHorse: true })
     hero.heroLasso = this
@@ -338,8 +349,8 @@ export class HeroLassoThrow extends Graphics {
       this.startRetracting()
       return
     }
-    this.tryRouteAttachedHorseToStable()
-    if (this.isStableHorseRouteActive) return
+    if (this.options.autoRouteStableWhileAttached) this.tryRouteAttachedHorseToStable()
+    if (this.isStableHorseRouteActive || this.externalStableRouteActive) return
     const distance = pointsDistance(this.spawnOrigin.x, this.spawnOrigin.y, this.tip.x, this.tip.y)
     const now = this.gameContext.scheduler.elapsedMs
     if (distance >= LASSO_REPATH_DISTANCE && now - this.lastFollowAt >= LASSO_REPATH_INTERVAL_MS) {
@@ -359,6 +370,10 @@ export class HeroLassoThrow extends Graphics {
     this.stableRouteCleanup()
     this.isStableHorseRouteActive = false
     this.stableRouteCleanup = null
+  }
+
+  setExternalStableRouteActive(active: boolean): void {
+    this.externalStableRouteActive = active
   }
 
   tryRouteAttachedHorseToStable(): void {
@@ -446,6 +461,7 @@ export class HeroLassoThrow extends Graphics {
 
   clearLasso({ releaseHorse = true }: { releaseHorse?: boolean } = {}): void {
     if (releaseHorse && this.options.releaseHorseOnClear) this.releaseHorse()
+    this.externalStableRouteActive = false
     this.clearAttachedStableRoute()
     if (this.hero.heroLasso === this) this.hero.heroLasso = null
     if (this.taskId != null) {

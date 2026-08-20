@@ -156,6 +156,7 @@ def layer_paths(
     equipment_spec = equipment_layers(equipment, animation)
     team_color = player_color if player_color in PLAYER_SHORTS else "blue"
 
+    skin_palette = look.skin_palette or civ["skin"]
     paths: list[LayerSpec] = [*equipment_spec.background]
     # Drawn before the body (not after): on the facing/side rows this bg half is a
     # near-full-torso shape, and it must sit behind the body so the body's own
@@ -166,10 +167,10 @@ def layer_paths(
     if look.cape:
         palette = resolve_palette(look.cape, team_color)
         paths.append(LayerSpec(f"{look.cape.path}/bg/{animation}.png", palette))
-    paths.append(LayerSpec(f"body/bodies/{look.body}/{animation}.png", civ["skin"], is_body=True))
+    paths.append(LayerSpec(f"body/bodies/{look.body}/{animation}.png", skin_palette, is_body=True))
     if look.hair and look.hair_split:
         paths.append(LayerSpec(f"hair/{look.hair}/{look.hair_body_type}/bg/{animation}.png", look.hair_palette or civ["hair"]))
-    paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", civ["skin"]))
+    paths.append(LayerSpec(f"head/heads/{look.head}/{animation}.png", skin_palette))
     if look.eyebrows:
         paths.append(LayerSpec(f"eyes/eyebrows/thick/adult/{animation}.png", civ["hair"]))
     if look.hair:
@@ -187,14 +188,18 @@ def layer_paths(
 
     lpc_color = PLAYER_SHORTS[team_color]
     for dress_item in look.dress:
-        path = dress_item.path.format(animation=animation, color=lpc_color)
+        path = dress_item.path.format(animation=animation, color=lpc_color, body=look.body)
         paths.append(LayerSpec(path, resolve_palette(dress_item, team_color)))
     if look.cape:
         palette = resolve_palette(look.cape, team_color)
         paths.append(LayerSpec(f"{look.cape.path}/fg/{animation}.png", palette))
+    if look.cape_trim:
+        palette = resolve_palette(look.cape_trim, team_color)
+        path = look.cape_trim.path.format(animation=animation, color=lpc_color, body=look.body)
+        paths.append(LayerSpec(path, palette))
     if look.neck:
         palette = resolve_palette(look.neck, team_color)
-        path = look.neck.path.format(animation=animation, color=lpc_color)
+        path = look.neck.path.format(animation=animation, color=lpc_color, body=look.body)
         paths.append(LayerSpec(path, palette))
     if look.hat:
         palette = resolve_palette(look.hat, team_color)

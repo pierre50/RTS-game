@@ -1,0 +1,64 @@
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const test = require('node:test')
+const babel = require('@babel/core')
+
+function loadPathfinding() {
+  const filename = path.join(__dirname, '../app/services/Pathfinding.ts')
+  const source = fs.readFileSync(filename, 'utf8')
+  const { code } = babel.transformSync(source, {
+    filename,
+    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  })
+  const module = { exports: {} }
+  const mocks = {
+    '../lib/maths': {
+      cellIsDiag: (a, b) => a.i !== b.i && a.j !== b.j,
+      instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
+    },
+  }
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  return module.exports
+}
+
+function makeLineGrid() {
+  return Array.from({ length: 3 }, (_, i) => [
+    {
+      category: 'Land',
+      has: null,
+      i,
+      j: 0,
+      solid: false,
+    },
+  ])
+}
+
+test('pathfinding can cross a solid cell occupied by the same labelled unit', () => {
+  const { findInstancePath } = loadPathfinding()
+  const grid = makeLineGrid()
+  grid[1][0].solid = true
+  grid[1][0].has = { label: 'bandit-1' }
+
+  const path = findInstancePath({ i: 0, j: 0, label: 'bandit-1' }, 2, 0, { grid, size: 2 })
+
+  assert.deepEqual(
+    path.map(cell => [cell.i, cell.j]),
+    [
+      [2, 0],
+      [1, 0],
+    ]
+  )
+})
+
+test('pathfinding still blocks solid cells occupied by another unit', () => {
+  const { findInstancePath } = loadPathfinding()
+  const grid = makeLineGrid()
+  grid[1][0].solid = true
+  grid[1][0].has = { label: 'other-unit' }
+
+  const path = findInstancePath({ i: 0, j: 0, label: 'bandit-1' }, 2, 0, { grid, size: 2 })
+
+  assert.deepEqual(path, [])
+})

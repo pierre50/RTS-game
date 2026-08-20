@@ -200,6 +200,9 @@ function createController({
     syncMountedHorseSprite: () => {
       hero.syncMountedHorseSpriteCalls = (hero.syncMountedHorseSpriteCalls ?? 0) + 1
     },
+    syncMountedRiderPosition: () => {
+      hero.syncMountedRiderPositionCalls = (hero.syncMountedRiderPositionCalls ?? 0) + 1
+    },
     stop: () => calls.push('stop'),
   }
   const npcInteraction = {
@@ -335,10 +338,12 @@ test('keyboard movement during bow charge restores aim without resetting action 
   hero.currentSheet = 'action'
   hero.speed = 1
   hero.degree = 40
+  hero.mountedOnHorse = true
   controller.equippedItem = 'bow'
-  hero.moveDirect = () => {
+  hero.moveDirect = (_dx, _dy, _distance, options) => {
     hero.x += 1
     hero.degree = 270
+    hero.moveOptions = options
     return true
   }
 
@@ -346,8 +351,11 @@ test('keyboard movement during bow charge restores aim without resetting action 
   controller.update(1)
 
   assert.equal(hero.degree, 40)
+  assert.ok(Math.abs(hero.moveOptions.facingDirX + 0.766044443118978) < 1e-12)
+  assert.ok(Math.abs(hero.moveOptions.facingDirY + 0.6427876096865393) < 1e-12)
   assert.equal(hero.isDirectMoving, true)
   assert.equal(hero.syncMountedHorseSpriteCalls, 1)
+  assert.equal(hero.syncMountedRiderPositionCalls, 1)
   assert.deepEqual(calls, [])
 
   controller.handleKeyUp('heroRight')

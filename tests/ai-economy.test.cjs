@@ -15,6 +15,7 @@ function loadAIEconomy() {
     ACTION_TYPES: {
       attack: 'attack',
       build: 'build',
+      captureHorse: 'captureHorse',
       delivery: 'delivery',
       hunt: 'hunt',
       takemeat: 'takemeat',
@@ -35,6 +36,7 @@ function loadAIEconomy() {
       forager: 'forager',
       goldminer: 'goldminer',
       hunter: 'hunter',
+      horseCapture: 'horseCapture',
       stoneminer: 'stoneminer',
       woodcutter: 'woodcutter',
     },
@@ -59,6 +61,13 @@ function loadAIEconomy() {
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
         getInstancePath: (unit, i, j) => (unit.reachableCells?.has(`${i}:${j}`) ? [{ i, j }] : []),
         instancesDistance: () => 100,
+      }
+    }
+    if (request === '../lib/stableHorses') {
+      return {
+        canStoreStableHorse: building => (building.stableHorses?.length ?? 0) < 5,
+        getStableHorseAmount: building => building.stableHorses?.length ?? 0,
+        STABLE_HORSE_CAPACITY: 5,
       }
     }
     return require(request)
@@ -301,4 +310,53 @@ test('villager economy still permits distant hunting when no berries are known',
 
   assert.equal(actions, 1)
   assert.deepEqual(assignments, [animal])
+})
+
+test('horse capture assignment spreads villagers across unreserved horses and stable slots', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const assignments = []
+  const stable = {
+    i: 8,
+    j: 0,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    stableHorses: [{}, {}, {}],
+    type: constants.BUILDING_TYPES.stable,
+  }
+  const horses = [
+    { i: 4, j: 0, isDead: false, isDestroyed: false, label: 'horse-1', type: 'Horse' },
+    { i: 5, j: 0, isDead: false, isDestroyed: false, label: 'horse-2', type: 'Horse' },
+    { i: 6, j: 0, isDead: false, isDestroyed: false, label: 'horse-3', type: 'Horse' },
+  ]
+  const villagers = ['villager-1', 'villager-2', 'villager-3'].map(label => ({
+    hitPoints: 20,
+    i: 0,
+    inactif: true,
+    j: 0,
+    label,
+    sendToCaptureHorse: target => {
+      assignments.push([label, target.label])
+      return true
+    },
+  }))
+  const ai = {
+    buildingsByTypes: types => (types.includes(constants.BUILDING_TYPES.stable) ? [stable] : []),
+    foundedAnimals: new Set(horses),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    getHomeAnchor: () => null,
+  }
+  const economy = new AIEconomy(ai)
+
+  const actions = economy.assignHorseCaptures(villagers)
+
+  assert.equal(actions, 2)
+  assert.deepEqual(assignments, [
+    ['villager-1', 'horse-1'],
+    ['villager-2', 'horse-2'],
+  ])
+  assert.deepEqual(villagers.map(villager => villager.label), ['villager-3'])
 })

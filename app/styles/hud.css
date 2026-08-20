@@ -267,6 +267,7 @@
   display: flex;
   align-items: center;
   gap: var(--ui-gap-5);
+  flex-wrap: wrap;
   margin-top: 1px;
 }
 
@@ -277,6 +278,12 @@
 .hero-status-carry-icon {
   width: 20px;
   height: 20px;
+}
+
+.hero-status-carry-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .hero-status-carry-value {
@@ -1409,6 +1416,13 @@ body.hero-cursor-hidden {
   align-items: center;
   flex-direction: row;
   gap: var(--ui-gap-5);
+  flex-wrap: wrap;
+}
+
+.unit-loading-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .building-loading,

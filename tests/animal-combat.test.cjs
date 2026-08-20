@@ -37,6 +37,7 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
   const getCellsAroundPointCalls = []
   const lib = {
     applyCombatHit: () => ({ killed: false }),
+    evaluateCombatMorale: () => 'fight',
     findInstancesInSight: () => [],
     getCellsAroundPoint: (i, j, grid, range, condition) => {
       getCellsAroundPointCalls.push([i, j, range])
@@ -72,6 +73,8 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
     isometricToCartesian: isometricToCartesianImpl ?? (() => [0, 0]),
     pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
     playAudibleSoundCue: () => {},
+    runAttackLoopOnFrame: () => {},
+    SLASH_IMPACT_FRAME: 1,
   }
   const { AnimalCombat } = loadModule('app/classes/animal/AnimalCombat.ts', {
     '../../constants': constants,
@@ -80,6 +83,13 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
       showAggressionFeedback: () => {},
       showAlertFeedback: () => {},
       showAlertThenAggressionFeedback: () => {},
+    },
+    '../../lib/combatAttackLoop': { runAttackLoopOnFrame: () => {} },
+    '../../lib/combatBehavior': {
+      markCombatAttack: () => {},
+      markCombatFlee: () => {},
+      shouldSuppressAggroDuringCombatRecovery: animal =>
+        animal.combatMode === 'recover' && animal.waitingForEnergyAction === 'attack',
     },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
     './index': { FLYING_ALTITUDE: 20 },
@@ -125,6 +135,37 @@ test('isAttacked is ignored once the animal is already fleeing', () => {
   const { combat, calls } = createAnimalCombat({ animalOverrides: { isFleeing: true } })
 
   combat.isAttacked({ i: 5, j: 8, label: 'shooter' })
+
+  assert.deepEqual(calls, [])
+})
+
+test('aggressive animals do not break combat recovery when attacked', () => {
+  const { combat, calls } = createAnimalCombat({
+    animalOverrides: {
+      combatMode: 'recover',
+      strategy: 'attack',
+      waitingForEnergyAction: 'attack',
+    },
+  })
+
+  combat.isAttacked({ family: 'unit', i: 5, j: 8, label: 'hero' })
+
+  assert.deepEqual(calls, [])
+})
+
+test('aggressive animals do not auto-detect attacks during combat recovery', () => {
+  const { combat, calls } = createAnimalCombat({
+    animalOverrides: {
+      combatMode: 'recover',
+      dest: null,
+      getActionCondition: () => true,
+      path: [],
+      strategy: 'attack',
+      waitingForEnergyAction: 'attack',
+    },
+  })
+
+  combat.detect({ family: 'unit', i: 5, j: 8, label: 'hero' })
 
   assert.deepEqual(calls, [])
 })

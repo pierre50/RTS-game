@@ -340,7 +340,6 @@ export class BuildingLifecycle {
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), RUBBLE_TIME)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
-    building.context.checkVictory?.()
     building.context.checkDefeat?.()
   }
 

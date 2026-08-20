@@ -8,14 +8,7 @@ import type { GameContextLike, SchedulerTaskId } from '../types/context'
 export const HORSE_CAPTURE_STABLE_MAX_DISTANCE = 7
 export const HORSE_CAPTURE_STABLE_TIMEOUT_MS = 12000
 
-export type LassoedHorseForCapture = AnimalEntity & {
-  clear?: () => void
-  sendTo?: (
-    target: RuntimeEntity | null,
-    action?: string | null,
-    options?: { forceRepath?: boolean; movementSheet?: string }
-  ) => void
-}
+export type LassoedHorseForCapture = AnimalEntity
 
 export function getNearestAvailableStableForUnit(
   unit: UnitEntity,
@@ -109,10 +102,11 @@ export function routeCapturedHorseToStable({
       onFailure?.()
       return
     }
-    horse.sendTo?.(stable, null, { forceRepath })
+    horse.sendTo?.(stable, undefined, { forceRepath })
   }
 
   taskId = scheduler.add(tick, STEP_TIME, taskName)
+  tick()
   return clear
 }
 
@@ -121,6 +115,7 @@ type OwnerStableRoutingContext = {
   owner: UnitEntity
   horse: LassoedHorseForCapture
   timeoutMs?: number
+  ownerContactTimeoutMs?: number | null
   forceRepath?: boolean
   maxDistance?: number | null
   taskName?: string
@@ -142,6 +137,7 @@ export function routeCapturedHorseWithOwnerToStable({
   owner,
   horse,
   timeoutMs = HORSE_CAPTURE_STABLE_TIMEOUT_MS,
+  ownerContactTimeoutMs = timeoutMs,
   forceRepath = false,
   maxDistance = null,
   taskName = 'horse.captureToStable.owner',
@@ -209,7 +205,11 @@ export function routeCapturedHorseWithOwnerToStable({
       onFailure()
       return
     }
-    if (scheduler.elapsedMs - startedAt >= timeoutMs) {
+    if (
+      !stopCurrentHorseRoute &&
+      ownerContactTimeoutMs != null &&
+      scheduler.elapsedMs - startedAt >= ownerContactTimeoutMs
+    ) {
       clear()
       onFailure()
       return
@@ -242,6 +242,7 @@ export function routeCapturedHorseWithOwnerToStable({
   }
 
   taskId = scheduler.add(tick, STEP_TIME, taskName)
+  tick()
   return clear
 }
 

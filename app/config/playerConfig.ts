@@ -1,4 +1,5 @@
 import { getCivilizationDefinition } from './civilizations'
+import { UNIT_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
 import { applyEquipmentStatsToUnitConfig } from '../lib/equipmentStats'
 import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
@@ -46,6 +47,46 @@ const LPC_ARROW_PROJECTILE_CONFIG: Partial<ProjectileConfig> = {
 }
 
 const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
+  [UNIT_TYPES.banditChief]: {
+    category: 'Bandit',
+    selectionFactor: 0.75,
+    totalHitPoints: 70,
+    sight: 7,
+    speed: 0.95,
+    trainingTime: 0,
+    equipment: [
+      'axe_ceramic',
+      'armor_leather',
+      'helmet_barbarian_ceramic',
+      'upward_horns_ceramic',
+      'round_shield_ceramic_slash',
+    ],
+    combatBehaviorPreset: 'meleeAggressive',
+    cost: {},
+  },
+  [UNIT_TYPES.banditSword]: {
+    category: 'Bandit',
+    selectionFactor: 0.65,
+    totalHitPoints: 48,
+    sight: 7,
+    speed: 1,
+    trainingTime: 0,
+    equipment: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
+    combatBehaviorPreset: 'meleeAggressive',
+    cost: {},
+  },
+  [UNIT_TYPES.banditArcher]: {
+    category: 'Bandit',
+    selectionFactor: 0.6,
+    totalHitPoints: 34,
+    sight: 8,
+    speed: 1,
+    trainingTime: 0,
+    equipment: ['quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
+    projectile: 'Arrow',
+    combatBehaviorPreset: 'rangedKite',
+    cost: {},
+  },
   StoneThrower: {
     category: 'Siege',
     selectionFactor: 2,

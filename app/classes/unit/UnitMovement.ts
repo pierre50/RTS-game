@@ -37,6 +37,7 @@ import {
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
+import { markCombatFlee } from '../../lib/combatBehavior'
 import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
 import { getUnitCombatRange } from '../../lib/equipmentStats'
 import { applyWorkForAction } from './UnitCommands'
@@ -97,6 +98,7 @@ function getVillagerWorkForAction(action: string | null | undefined): string | n
       return WORK_TYPES.farmer
     case ACTION_TYPES.hunt:
     case ACTION_TYPES.takemeat:
+      return WORK_TYPES.hunter
     case ACTION_TYPES.captureHorse:
       return WORK_TYPES.horseCapture
     case ACTION_TYPES.build:
@@ -328,7 +330,8 @@ const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: Runtim
   [ACTION_TYPES.forageberry]: (unit, target) =>
     unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
   [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
-  [ACTION_TYPES.captureHorse]: (unit, target) => (unit.sendToCaptureHorse ? (unit.sendToCaptureHorse(target, true), true) : false),
+  [ACTION_TYPES.captureHorse]: (unit, target) =>
+    unit.sendToCaptureHorse ? unit.sendToCaptureHorse(target, true) !== false : false,
   ...Object.fromEntries(
     getMiningActions().map(action => [
       action,
@@ -359,6 +362,86 @@ const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
 type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
 let lastDirectMoveDebugAt = 0
+const lastCombatMoveDebugAt = new Map<string, number>()
+
+function isUnitCellOccupant(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
+  return Boolean(cell?.has && (cell.has === unit || cell.has.label === unit.label))
+}
+
+function isCellBlockedForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
+  return Boolean(cell?.solid && !isUnitCellOccupant(unit, cell))
+}
+
+function clearCellForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): void {
+  if (!isUnitCellOccupant(unit, cell)) return
+  cell!.has = null
+  cell!.solid = false
+}
+
+function placeUnitOnCell(unit: UnitEntity, cell: RuntimeCell): void {
+  if (cell.has === null || cell.has?.isDestroyed || isUnitCellOccupant(unit, cell)) {
+    cell.place(unit)
+    cell.solid = true
+  }
+}
+
+function shouldDebugCombatMove(unit: UnitEntity): boolean {
+  return Boolean(
+    unit.combatMode ||
+      unit.action === ACTION_TYPES.attack ||
+      unit.waitingForEnergyAction === ACTION_TYPES.attack ||
+      unit.work === WORK_TYPES.attacker
+  )
+}
+
+function debugCombatMove(unit: UnitEntity, reason: string, cell: RuntimeCell, details: Record<string, unknown> = {}): void {
+  if (!shouldDebugCombatMove(unit)) return
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  const key = unit.label ?? `${unit.type ?? 'unit'}:${unit.i},${unit.j}`
+  const last = lastCombatMoveDebugAt.get(key) ?? 0
+  if (now - last < 600) return
+  lastCombatMoveDebugAt.set(key, now)
+  const occupant = cell.has
+  const dest = unit.dest as Partial<RuntimeEntity | RuntimeCell> | null | undefined
+  console.warn('[combat-move]', reason, {
+    unit: {
+      label: unit.label,
+      type: unit.type,
+      action: unit.action,
+      combatMode: unit.combatMode,
+      waitingForEnergyAction: unit.waitingForEnergyAction,
+      i: unit.i,
+      j: unit.j,
+    },
+    cell: {
+      i: cell.i,
+      j: cell.j,
+      solid: cell.solid,
+      category: cell.category,
+      has: occupant
+        ? {
+            label: occupant.label,
+            type: occupant.type,
+            family: occupant.family,
+            isDestroyed: occupant.isDestroyed,
+            sameLabel: occupant.label === unit.label,
+            sameObject: occupant === unit,
+          }
+        : null,
+    },
+    dest: dest
+      ? {
+          label: 'label' in dest ? dest.label : undefined,
+          type: 'type' in dest ? dest.type : undefined,
+          family: 'family' in dest ? dest.family : undefined,
+          i: dest.i,
+          j: dest.j,
+        }
+      : null,
+    pathLength: unit.path?.length ?? 0,
+    ...details,
+  })
+}
 
 function resumeAutonomyBeforeStopping(unit: UnitEntity): boolean {
   if (!unit.autonomousJob || isHeroControlled(unit)) return false
@@ -367,6 +450,18 @@ function resumeAutonomyBeforeStopping(unit: UnitEntity): boolean {
   unit.realDest = null
   unit.path = []
   return Boolean(resumeVillagerAutonomy?.(unit))
+}
+
+function isRecoveringAttack(unit: UnitEntity): boolean {
+  return unit.combatMode === 'recover' && unit.waitingForEnergyAction === ACTION_TYPES.attack
+}
+
+function pauseCombatRecoveryMove(unit: UnitEntity): void {
+  unit.path = []
+  unit.action = null
+  unit.stopInterval?.()
+  unit.setTextures?.(SHEET_TYPES.standing)
+  unit.sprite?.stop()
 }
 
 function debugBlockedDirectMove(
@@ -516,12 +611,13 @@ export class UnitMovement {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
     const currentDest = unit.dest
+    const currentDestMatchesTarget =
+      isRuntimeEntity(currentDest) && isRuntimeEntity(dest) && currentDest.label === dest.label
     if (
       !forceRepath &&
       dest &&
       isRuntimeEntity(currentDest) &&
-      isRuntimeEntity(dest) &&
-      currentDest.label === dest.label &&
+      currentDestMatchesTarget &&
       unit.action === action &&
       ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
     ) {
@@ -543,6 +639,9 @@ export class UnitMovement {
       (!map.grid[unit.i][unit.j].solid ||
         (map.grid[unit.i][unit.j].solid && map.grid[unit.i][unit.j].has?.label === unit.label))
     ) {
+      if (currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
+        return
+      }
       unit.setDest?.(dest)
       unit.action = action
       unit.degree = getInstanceDegree(unit, dest.x, dest.y)
@@ -643,7 +742,8 @@ export class UnitMovement {
     const distance = instancesDistance(unit, dest)
     debugHuntRangeCheck(unit, action, dest, effectiveRange, distance)
     if (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse) {
-      if (isRuntimeEntity(dest) && dest.family === FAMILY_TYPES.building) {
+      const isStableTarget = isRuntimeEntity(dest) && dest.family === FAMILY_TYPES.building
+      if (isStableTarget) {
         return instanceContactInstance(unit, dest)
       }
       return effectiveRange !== undefined && distance <= effectiveRange
@@ -703,11 +803,30 @@ export class UnitMovement {
       instancesDistance(unit, nextCellHas) <= 1 &&
       nextCellHas.sprite?.playing
     ) {
+      debugCombatMove(unit, 'waiting-moving-blocker', nextCell, {
+        stage: 'path-step',
+        blocker: {
+          label: nextCellHas.label,
+          type: nextCellHas.type,
+          family: nextCellHas.family,
+          i: nextCellHas.i,
+          j: nextCellHas.j,
+          pathLength: nextCellHas.path?.length ?? 0,
+        },
+      })
       unit.sprite?.stop()
       return
     }
-    if (nextCell.solid && unit.dest) {
+    if (nextCell.solid && isUnitCellOccupant(unit, nextCell)) {
+      debugCombatMove(unit, 'self-solid-cell-allowed', nextCell, { stage: 'path-step' })
+    }
+    if (isCellBlockedForUnit(unit, nextCell) && unit.dest) {
       unit.context?.performance?.record?.('unit.blockedPath', 0)
+      debugCombatMove(unit, 'blocked-solid-cell', nextCell, { stage: 'path-step' })
+      if (isRecoveringAttack(unit)) {
+        pauseCombatRecoveryMove(unit)
+        return
+      }
       unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
       return
     }
@@ -726,16 +845,9 @@ export class UnitMovement {
       unit.i = nextCell.i
       unit.j = nextCell.j
       unit.zIndex = getInstanceZIndex(unit)
-      const currentCell = unit.currentCell
-      if (currentCell?.has === unit) {
-        currentCell.has = null
-        currentCell.solid = false
-      }
+      clearCellForUnit(unit, unit.currentCell)
       unit.currentCell = map.grid[unit.i][unit.j]
-      if (unit.currentCell.has === null) {
-        unit.currentCell.place(unit)
-        unit.currentCell.solid = true
-      }
+      placeUnitOnCell(unit, unit.currentCell)
       map.updateInstanceBucket(unit, oldI, oldJ)
       updateInstanceVisibility(unit)
       unit.path.pop()
@@ -751,6 +863,10 @@ export class UnitMovement {
         return
       }
       if (!unit.path.length) {
+        if (isRecoveringAttack(unit)) {
+          pauseCombatRecoveryMove(unit)
+          return
+        }
         if (this.retryBlockedGatherApproach()) return
         unit.affectNewDest?.()
       }
@@ -766,6 +882,14 @@ export class UnitMovement {
       const beforeX = unit.x
       const beforeY = unit.y
       moveTowardPoint(unit, nextFlatX, nextFlatY, moveSpeed)
+      if (unit.x === beforeX && unit.y === beforeY) {
+        debugCombatMove(unit, 'no-position-progress', nextCell, {
+          stage: 'path-step',
+          moveSpeed,
+          nextFlatX,
+          nextFlatY,
+        })
+      }
       playMovementSurfaceAudio(unit, Math.hypot(unit.x - beforeX, unit.y - beforeY), {
         previousX: beforeX,
         previousY: beforeY,
@@ -953,7 +1077,7 @@ export class UnitMovement {
         debugBlockedDirectMove(unit, 'target-border', { rawI, rawJ, newI, newJ, targetCell }, dirX, dirY)
         return false
       }
-      if (!isHeroControlled(unit) && targetCell.solid) {
+      if (!isHeroControlled(unit) && isCellBlockedForUnit(unit, targetCell)) {
         return false
       }
       const categoryAllowed = targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
@@ -1011,11 +1135,7 @@ export class UnitMovement {
       unit.i = newI
       unit.j = newJ
       unit.zIndex = getInstanceZIndex(unit)
-      const currentCell = unit.currentCell
-      if (currentCell?.has === unit) {
-        currentCell.has = null
-        currentCell.solid = false
-      }
+      clearCellForUnit(unit, unit.currentCell)
       unit.currentCell = targetCell
       if (isHeroControlled(unit) && targetCell.solid && !targetCell.has) {
         // Stale flag left over from elsewhere — the placement below keeps solid/has in sync
@@ -1026,10 +1146,7 @@ export class UnitMovement {
       // followers and attackers path around a busy hero instead of all converging onto its
       // exact tile (see getInstanceClosestFreeCellPath / AIMilitary's surround assignment,
       // both already gated on the destination cell being solid).
-      if (targetCell.has === null || targetCell.has?.isDestroyed) {
-        targetCell.place(unit)
-        targetCell.solid = true
-      }
+      placeUnitOnCell(unit, targetCell)
       if (isHeroControlled(unit)) {
         updateInstanceRenderVisibility(unit)
         unit.visible = true
@@ -1052,6 +1169,10 @@ export class UnitMovement {
     const unit = this.unit
     unit.stopInterval?.()
     if (!unit.action) {
+      if (isRecoveringAttack(unit)) {
+        pauseCombatRecoveryMove(unit)
+        return
+      }
       if (resumeVillagerAutonomy?.(unit)) return
       unit.stop?.()
       return
@@ -1211,10 +1332,11 @@ export class UnitMovement {
     const map = unit.context?.map
     if (!map) return
     const cell = findReachableFleeCell<RuntimeCell>(unit, instance, map, {
-      isCellAllowed: candidate => !candidate.solid && candidate.category !== 'Water' && !candidate.border,
+      isCellAllowed: candidate => !isCellBlockedForUnit(unit, candidate) && candidate.category !== 'Water' && !candidate.border,
       range: unit.sight ?? 0,
     })
     if (cell) {
+      markCombatFlee(unit)
       unit.sendTo?.(cell)
       return
     }

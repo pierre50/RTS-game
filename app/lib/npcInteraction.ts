@@ -16,6 +16,7 @@ import {
   drawInstanceBlinkingSelection,
   getSelectionMarkerOffset,
 } from './graphics/selection'
+import type { SelectableInstance } from './graphics/selection'
 import { angleDelta, getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'

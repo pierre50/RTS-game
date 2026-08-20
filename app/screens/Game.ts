@@ -8,7 +8,6 @@ import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
 import {
   Modal,
-  canPlayerStillAct,
   colors,
   debounce,
   getFreeLandCellAroundInstance,
@@ -45,12 +44,11 @@ import { DailyWorldEventSystem } from '../services/DailyWorldEventSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
-import { AmbientBirds } from '../services/AmbientBirds'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { CIVILIZATIONS } from '../config/civilizations'
 import { getEnvironmentForCiv } from '../config/environments'
 import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from '../lib/maths'
-import { CELL_WIDTH, CELL_HEIGHT, AMBIENT_BIRD_WORLD_ZINDEX, ENVIRONMENT_IDS, PLAYER_TYPES } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, ENVIRONMENT_IDS, PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
   CampaignSave,
@@ -95,9 +93,7 @@ type GameRuntimeContext = Omit<
   menu: Menu | null
   scheduler: SchedulerLike | null
   performance: PerformanceMonitorLike | null
-  ambientBirds: AmbientBirds | null
   devConsole: DevConsole | null
-  checkVictory: () => boolean
   checkDefeat: () => boolean
 }
 
@@ -223,13 +219,11 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
-      ambientBirds: null,
       dayNight: null,
       weather: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
-      victory: false,
       defeat: false,
       scheduler: null,
       performance: null,
@@ -237,11 +231,10 @@ export default class Game extends Container {
       load: (evt: object) => this.load(evt as SaveRecord),
       pause: () => this.togglePause(true),
       resume: () => {
-        if (!this.context.victory && !this.context.defeat) this.togglePause(false)
+        if (!this.context.defeat) this.togglePause(false)
       },
       restart: () => this.restart(),
       quit: () => this.quit(),
-      checkVictory: () => this.checkVictory(),
       checkDefeat: () => this.checkDefeat(),
       applyZoom: () => this.applyZoom(),
       getWorldGraph: () => this._campaignSave?.worldGraph ?? null,
@@ -334,14 +327,14 @@ export default class Game extends Container {
       if (evt.defaultPrevented) return
       if (this.context.devConsoleOpen) return
       if (evt.key === 'Escape') {
-        if (this.context.victory || this.context.defeat) return
+        if (this.context.defeat) return
         if (document.querySelector('.modal')) return
         evt.preventDefault()
         this.context.menu?.pauseMenu?.open()
         return
       }
       if (getControlActionForKeyboardEvent(evt) === 'pause') {
-        if (this.context.victory || this.context.defeat) return
+        if (this.context.defeat) return
         if (document.querySelector('.modal')) return
         this.context.paused ? this.context.resume() : this.context.pause()
       }
@@ -370,7 +363,7 @@ export default class Game extends Container {
   }
 
   _handleDocumentHidden(): void {
-    if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+    if (!this.context.paused && !this.context.defeat) {
       this._pausedByVisibility = true
       this.togglePause(true, { silent: true })
     }
@@ -382,14 +375,14 @@ export default class Game extends Container {
     if (!this._pausedByVisibility) return
     if (this._pausedByOrientation) return
     this._pausedByVisibility = false
-    if (!this.context.victory && !this.context.defeat) {
+    if (!this.context.defeat) {
       this.togglePause(false, { silent: true })
     }
   }
 
   setOrientationBlocked(blocked: boolean): void {
     if (blocked) {
-      if (!this.context.paused && !this.context.victory && !this.context.defeat) {
+      if (!this.context.paused && !this.context.defeat) {
         this._pausedByOrientation = true
         this.togglePause(true, { silent: true })
       }
@@ -398,7 +391,7 @@ export default class Game extends Container {
 
     if (!this._pausedByOrientation) return
     this._pausedByOrientation = false
-    if (!this._pausedByVisibility && !this.context.victory && !this.context.defeat) {
+    if (!this._pausedByVisibility && !this.context.defeat) {
       this.togglePause(false, { silent: true })
     }
   }
@@ -422,7 +415,6 @@ export default class Game extends Container {
 
   _resetOverlayDom(): void {
     document.getElementById('pause')?.remove()
-    document.getElementById('victory')?.remove()
     document.getElementById('defeat')?.remove()
   }
 
@@ -435,13 +427,11 @@ export default class Game extends Container {
       players: [],
       map: null,
       controls: null,
-      ambientBirds: null,
       dayNight: null,
       weather: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
-      victory: false,
       defeat: false,
     }
   }
@@ -477,9 +467,6 @@ export default class Game extends Container {
     this.addChild(this._lights.layer)
     this.addChild(this._weather.layer)
     this.addChild(controls)
-    this.context.ambientBirds = new AmbientBirds(this.context, () => this._getMapWorldBounds())
-    this.context.ambientBirds.zIndex = AMBIENT_BIRD_WORLD_ZINDEX
-    map.addChild(this.context.ambientBirds)
     this.applyZoom()
     this._attachWindowListeners()
   }
@@ -603,7 +590,6 @@ export default class Game extends Container {
 
     this._mountRuntime(options.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
-    this.checkVictory()
     this._campaignSave = createInitialCampaignSave(serializeGame(this._gameContext()))
     this._restartSaveData = structuredClone(this._campaignSave)
     this._autosaveCampaign()
@@ -660,7 +646,6 @@ export default class Game extends Container {
     this.context.controls?.init?.()
     this._mountRuntime(json.runtime?.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
-    this.checkVictory()
   }
 
   async _bootFromSave(json: SerializedSave): Promise<void> {
@@ -679,7 +664,6 @@ export default class Game extends Container {
     this.context.controls?.init?.()
     this._mountRuntime(json.runtime?.dayNightElapsedMs)
     this.context.performance?.setPhase?.('runtime')
-    this.checkVictory()
   }
 
   save(): { key: string; name: string } {
@@ -1183,30 +1167,9 @@ export default class Game extends Container {
     super.destroy(options)
   }
 
-  checkVictory(): boolean {
-    const { player } = this.context
-    if (this.context.victory || !player) return false
-
-    const enemies = player.enemyPlayers?.() ?? []
-    if (!enemies.length) return false
-
-    const hasLivingEnemies = enemies.some((enemy: PlayerLike) => canPlayerStillAct(enemy))
-    if (hasLivingEnemies) return false
-
-    this.context.victory = true
-    clearAllCombatFeedback()
-    this.togglePause(true, { silent: true })
-    const div = document.createElement('div')
-    div.id = 'victory'
-    div.className = 'game-overlay'
-    div.innerText = t('victory')
-    document.body.appendChild(div)
-    return true
-  }
-
   checkDefeat(): boolean {
     const { player } = this.context
-    if (this.context.defeat || this.context.victory || !player) return false
+    if (this.context.defeat || !player) return false
 
     if (!isPlayedHeroDefeated(player, this.context.controls?.heroUnit)) return false
 
@@ -1221,12 +1184,12 @@ export default class Game extends Container {
   }
 
   togglePause(pause: boolean, options: { silent?: boolean } = {}): void {
-    if ((this.context.victory || this.context.defeat) && !pause) return
+    if (this.context.defeat && !pause) return
     const { map, players = [] } = this.context
     if (!map) return
     if (pause) {
       document.getElementById('pause')?.remove()
-      if (!options.silent && !this.context.victory && !this.context.defeat) {
+      if (!options.silent && !this.context.defeat) {
         const div = document.createElement('div')
         div.id = 'pause'
         div.className = 'game-overlay'

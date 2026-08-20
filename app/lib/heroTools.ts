@@ -1,7 +1,6 @@
 import { Assets, Graphics } from 'pixi.js'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   CELL_HEIGHT,
   CELL_WIDTH,
   FAMILY_TYPES,
@@ -9,7 +8,6 @@ import {
   MINING_RESOURCE_CONFIG,
   SHEET_TYPES,
   SOUND_CUES,
-  WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../constants'
 import { getHeroInteractionTargetPoint, isHeroActionInRange, isHeroInteractionTargetReachable } from './heroActionRange'
@@ -17,7 +15,6 @@ import { getActionCondition, isWheatMature, type CombatEntity } from './combat'
 import { applyCombatHit } from './combatHit'
 import { showParryFeedback } from './combatFeedback'
 import { applyDiplomaticAggression, canTriggerDiplomaticAggression } from './diplomaticAggression'
-import { getWorkWithLoadingType } from './extra'
 import {
   getEquipmentCombatStats,
   getUnitCombatRange,
@@ -38,6 +35,11 @@ import { t } from './lang'
 import { angleDelta, degreeToDirection, getReliefOffset, instancesDistance } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
+import {
+  buildingAcceptsCarriedResources,
+  getCarriedResourceSpace,
+  getTotalCarriedResources,
+} from './resourceCarry'
 import {
   drainEnergyAmount,
   ensureUnitEnergy,
@@ -183,9 +185,7 @@ function resourceKind(target: RuntimeEntity): string | undefined {
 }
 
 export function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
-  if (target.family !== FAMILY_TYPES.building) return false
-  const building = target as BuildingEntity
-  return building.type === BUILDING_TYPES.townCenter || Boolean(building.accept?.includes(hero.loadingType ?? ''))
+  return buildingAcceptsCarriedResources(hero, target)
 }
 
 type HeroContextActionConfig = {
@@ -233,9 +233,9 @@ function refreshHeroActionSheet(hero: UnitEntity, work: string, action: string):
   if (sheet) hero.actionSheet = sheet
 }
 
-// Same as runHeroAction, but also runs the work/texture/cargo bookkeeping commonSendTo would
-// have applied for a gather-type action (correct animation sheet, dropping mismatched cargo
-// when switching gather types) — reused from the shared unit command logic, not duplicated.
+// Same as runHeroAction, but also runs the work/texture bookkeeping commonSendTo would
+// have applied for a gather-type action. The hero keeps carried resources by type, so
+// switching from one gather work to another never discards cargo.
 function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: string, work: string): void {
   if (hero.actionLocked) return
   applyWorkForAction(hero, work, action)
@@ -260,15 +260,10 @@ function getLoadingTypeForAction(action: string): string | null {
   }
 }
 
-function heroHasGatherSpace(hero: UnitEntity, action: string, work: string): boolean {
+function heroHasGatherSpace(hero: UnitEntity, action: string): boolean {
   const loadingType = getLoadingTypeForAction(action)
   if (!loadingType) return true
-  const maxLoad = hero.loadingMax?.[loadingType] ?? Infinity
-  const currentWork = getWorkWithLoadingType(hero.loadingType ?? '')
-  const keepsCurrentLoad =
-    work === currentWork || (WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(currentWork))
-  const effectiveLoad = keepsCurrentLoad ? (hero.loading ?? 0) : 0
-  return effectiveLoad < maxLoad
+  return getCarriedResourceSpace(hero, loadingType) > 0
 }
 
 function canShowTargetAlert(hero: UnitEntity, target: RuntimeEntity): boolean {
@@ -292,7 +287,7 @@ function resolveHeroGatherAction(
     }
     return null
   }
-  if (!heroHasGatherSpace(hero, action, work)) {
+  if (!heroHasGatherSpace(hero, action)) {
     hero.context?.menu?.showMessage(t('heroInventoryFull'), 'warning')
     return null
   }
@@ -480,7 +475,7 @@ export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquipped
     return
   }
   hero.work = work
-  applyUnitWorkAssets(hero, work, { loading: Boolean(hero.loading), refreshEquipmentStats: true })
+  applyUnitWorkAssets(hero, work, { loading: getTotalCarriedResources(hero) > 0, refreshEquipmentStats: true })
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
 
@@ -522,7 +517,7 @@ function finishHeroToolAnimation(hero: UnitEntity): void {
 }
 
 export function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (!((hero.loading ?? 0) > 0)) return false
+  if (getTotalCarriedResources(hero) <= 0) return false
   if (!buildingAcceptsCarriedResource(hero, target)) return false
   if (!getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })) return false
   if (!hero.isUnitAtDest?.(ACTION_TYPES.delivery, target)) return false
@@ -536,7 +531,7 @@ export function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): bool
 }
 
 function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (!((hero.loading ?? 0) > 0)) return false
+  if (getTotalCarriedResources(hero) <= 0) return false
   if (!buildingAcceptsCarriedResource(hero, target)) return false
   return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
 }
@@ -616,7 +611,7 @@ function isHeroMeleeTargetInAttackZone(hero: UnitEntity, target: RuntimeEntity):
 }
 
 function tryDeliver(hero: UnitEntity): boolean {
-  if (!((hero.loading ?? 0) > 0)) return false
+  if (getTotalCarriedResources(hero) <= 0) return false
   const nearBuilding = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => buildingAcceptsCarriedResource(hero, target),
@@ -629,7 +624,7 @@ function tryDeliver(hero: UnitEntity): boolean {
 }
 
 function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
-  if (!((hero.loading ?? 0) > 0)) return 'none'
+  if (getTotalCarriedResources(hero) <= 0) return 'none'
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => canAimDeliveryAtBuilding(hero, target),
@@ -742,13 +737,18 @@ function fireBlindArrow(hero: UnitEntity): void {
   })
 }
 
+function getHeroArrowVisualY(hero: UnitEntity): number {
+  const mountedRiderY = hero.getMountedRiderY?.()
+  return typeof mountedRiderY === 'number' && Number.isFinite(mountedRiderY) ? mountedRiderY : getReliefOffset(hero)
+}
+
 function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
   const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
   const direction = degreeToDirection(hero.degree ?? 0)
   const directionOffset = direction ? (HERO_ARROW_DIRECTION_OFFSETS[direction] ?? {}) : {}
   return {
     x: hero.x + Math.cos(rad) * HERO_ARROW_FORWARD_OFFSET + (directionOffset.x ?? 0),
-    y: hero.y + getReliefOffset(hero) - HERO_ARROW_HEIGHT_OFFSET + (directionOffset.y ?? 0),
+    y: hero.y + getHeroArrowVisualY(hero) - HERO_ARROW_HEIGHT_OFFSET + (directionOffset.y ?? 0),
   }
 }
 
@@ -1074,8 +1074,16 @@ export function cancelHeroDefense(hero: UnitEntity): void {
 
 export function aimHeroBowChargeAt(hero: UnitEntity, destination: Point): boolean {
   if (hero.heroBowChargeStart == null || hero.heroBowReleaseQueued) return false
+  const aimDegree = getHeroAimDegree(hero, destination)
+  if (
+    hero.mountedOnHorse &&
+    hero.heroBowChargeFacingDegree != null &&
+    angleDelta(aimDegree, hero.heroBowChargeFacingDegree) > MOUNTED_ATTACK_HALF_ANGLE
+  ) {
+    return true
+  }
   const previousDirection = degreeToDirection(hero.degree ?? 0)
-  hero.degree = getHeroAimDegree(hero, destination)
+  hero.degree = aimDegree
   hero.heroBowChargeDestination = destination
   hero.heroBowChargeTarget = null
   if (hero.currentSheet === SHEET_TYPES.action && degreeToDirection(hero.degree ?? 0) !== previousDirection) {
@@ -1120,6 +1128,7 @@ function clearHeroBowCharge(hero: UnitEntity): void {
   hero.heroBowChargeTarget = null
   hero.heroBowReleaseQueued = false
   hero.heroBowReleasePower = undefined
+  hero.heroBowChargeFacingDegree = null
   hero.heroBowChargeVisualLocked = false
   hero.heroBowChargeLastEnergyAt = undefined
   hero.heroBowChargeTool = undefined
@@ -1206,6 +1215,7 @@ function beginHeroBowChargeAt(
   hero.heroBowChargeTool = tool
   hero.heroBowReleaseQueued = false
   hero.heroBowReleasePower = undefined
+  hero.heroBowChargeFacingDegree = hero.mountedOnHorse ? (hero.degree ?? null) : null
   hero.heroBowChargeVisualLocked = false
   hero.setTextures?.(SHEET_TYPES.action)
   sprite.loop = false
@@ -1249,15 +1259,15 @@ function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
   return true
 }
 
-function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): boolean {
+function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): ToolActionResult {
   const resolvedTarget =
     isHeroMeleeTargetInAttackZone(hero, target) ? target : findHeroMeleeTargetInAim(hero, tool)
   if (!resolvedTarget || !isHeroMeleeTargetInAttackZone(hero, resolvedTarget)) {
-    return false
+    return 'miss'
   }
   const openingAggression = applyDiplomaticAggression(hero, resolvedTarget)
-  if (openingAggression.changed && !openingAggression.hostileNow) return true
-  if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return false
+  if (openingAggression.changed && !openingAggression.hostileNow) return 'triggered'
+  if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return 'blocked'
   hero.action = ACTION_TYPES.attack
   hero.setDest?.(resolvedTarget)
   playHeroToolAnimation(
@@ -1284,7 +1294,7 @@ function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: He
     },
     SLASH_IMPACT_FRAME
   )
-  return true
+  return 'triggered'
 }
 
 export function triggerEquippedItemActionAt(
@@ -1301,7 +1311,11 @@ export function triggerEquippedItemActionAt(
   }
   if (tool === 'sword') {
     const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
-    if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
+    if (meleeTarget) {
+      const meleeResult = strikeHeroMeleeTarget(hero, meleeTarget, tool)
+      if (meleeResult === 'triggered') return true
+      if (meleeResult === 'blocked') return false
+    }
     return playMeleeWeaponWhiff(hero)
   }
   if (tool !== 'interact') return false
@@ -1309,7 +1323,11 @@ export function triggerEquippedItemActionAt(
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
   const meleeTarget = findHeroMeleeTargetInAim(hero, 'interact')
-  if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, 'interact')) return true
+  if (meleeTarget) {
+    const meleeResult = strikeHeroMeleeTarget(hero, meleeTarget, 'interact')
+    if (meleeResult === 'triggered') return true
+    if (meleeResult === 'blocked') return false
+  }
   if (actionResult === 'miss') {
     return playEmptyHandWhiff(hero)
   }
@@ -1337,7 +1355,11 @@ function performNearestContextAction(hero: UnitEntity): ToolActionResult {
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
   if (tool === 'sword') {
     const meleeTarget = findHeroMeleeTargetInAim(hero, tool)
-    if (meleeTarget && strikeHeroMeleeTarget(hero, meleeTarget, tool)) return true
+    if (meleeTarget) {
+      const meleeResult = strikeHeroMeleeTarget(hero, meleeTarget, tool)
+      if (meleeResult === 'triggered') return true
+      if (meleeResult === 'blocked') return false
+    }
     return playMeleeWeaponWhiff(hero)
   }
   if (tool === 'interact') {

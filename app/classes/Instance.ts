@@ -125,14 +125,31 @@ export class Instance extends Container {
       this.family === FAMILY_TYPES.unit ||
       this.family === FAMILY_TYPES.building ||
       this.family === FAMILY_TYPES.animal
+    const heroOwner = this.context?.controls?.heroUnit?.owner
+    const showForHeroPlayer =
+      (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
+      this.owner &&
+      (this.owner.isPlayed ||
+        this.owner.label === this.context?.player?.label ||
+        this.owner.label === heroOwner?.label)
     const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
     return Boolean(
       showForFamily &&
-        showEntityBars &&
+        (showEntityBars || showForHeroPlayer) &&
         !isHeroUnit &&
         !this.isDead &&
         !this.isDestroyed
     )
+  }
+
+  shouldKeepEnergyBarVisible(): boolean {
+    const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
+    const showForFamily =
+      this.family === FAMILY_TYPES.unit ||
+      this.family === FAMILY_TYPES.building ||
+      this.family === FAMILY_TYPES.animal
+    const isHeroUnit = this.context?.controls?.heroUnit?.label === this.label
+    return Boolean(showForFamily && showEntityBars && !isHeroUnit && !this.isDead && !this.isDestroyed)
   }
 
   removeHealthBar(): void {
@@ -300,7 +317,7 @@ export class Instance extends Container {
     if (existing) this.removeChild(existing)
     const totalEnergy = this.totalEnergy ?? 0
     if (!totalEnergy) return
-    if (!this.shouldKeepHealthBarVisible() && !this.selected) return
+    if (!this.shouldKeepEnergyBarVisible()) return
     const barWidth = 22
     const barHeight = 5
     const borderWidth = 1

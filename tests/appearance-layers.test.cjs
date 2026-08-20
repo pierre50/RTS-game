@@ -32,6 +32,9 @@ const constants = {
   },
   UNIT_TYPES: {
     bowman: 'Bowman',
+    banditArcher: 'BanditArcher',
+    banditChief: 'BanditChief',
+    banditSword: 'BanditSword',
     chief: 'Chief',
     infantry: 'Fantassin',
     priest: 'Priest',
@@ -185,7 +188,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'leg_armor_bronze',
     'cape_solid',
     'helmet_barbuta_bronze',
-    'crest',
+    'centurion_crest',
   ])
   assert.deepEqual(dynamicEquipmentForUnit('Fantassin', 2, 18), [
     'sword_bronze',
@@ -207,8 +210,19 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'leg_armor_bronze',
     'cape_solid',
     'helmet_barbuta_bronze',
-    'centurion_plumage',
+    'centurion_crest',
   ])
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Roman').includes('helmet_legion_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Roman').includes('centurion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Babylonian').includes('helmet_nasal_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Babylonian').includes('legion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Egyptian').includes('helmet_bascinet_round_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Asian').includes('plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Celtic').includes('helmet_wings'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nordic').includes('helmet_norman_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nordic').includes('upward_horns_white'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Viking').includes('upward_horns_white'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nubian').includes('helmet_nasal_bronze'), true)
 
   const layers = dynamicEquipmentLayersForUnit('Fantassin')
   const sword = layers.find(layer => layer.walkingSheet === 'lpc-equipment/sword_ceramic/front/walking')
@@ -252,24 +266,33 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   assert.equal(bracers?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/bracers_iron/front/walking')
   assert.equal(cape?.minLevel, 14)
   assert.equal(cape?.palette, 'player')
-  assert.equal(crest?.minLevel, 16)
-  assert.equal(crest?.maxLevel, 17)
-  assert.equal(crest?.palette, 'player')
-  assert.equal(crest?.mountedSheet, 'lpc-equipment/crest/front/walking')
-  assert.equal(centurionCrest?.minLevel, 18)
-  assert.equal(centurionCrest?.maxLevel, 19)
+  assert.equal(crest, undefined)
+  assert.equal(centurionCrest?.minLevel, 16)
+  assert.equal(centurionCrest?.maxLevel, undefined)
   assert.equal(centurionCrest?.palette, 'player')
   assert.equal(centurionCrest?.mountedSheet, 'lpc-equipment/centurion_crest/front/walking')
-  assert.equal(centurionPlumage?.minLevel, 20)
-  assert.equal(centurionPlumage?.palette, 'player')
-  assert.equal(centurionPlumage?.mountedCut, false)
-  assert.equal(centurionPlumage?.mountedSheet, 'lpc-equipment/centurion_plumage/front/walking')
+  assert.equal(centurionPlumage, undefined)
+  const nordicLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nordic')
+  const nordicHorns = nordicLayers.find(
+    layer => layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'
+  )
+  assert.equal(nordicHorns?.minLevel, 16)
+  assert.equal(nordicHorns?.palette, undefined)
+  assert.equal(nordicHorns?.mountedSheet, 'lpc-equipment/upward_horns_white/front/walking')
+  const vikingLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Viking')
+  assert.equal(
+    vikingLayers.some(layer => layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'),
+    true
+  )
 })
 
 test('archer equipment follows soldier armor progression without shield', () => {
-  const { dynamicEquipmentAssets, dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
-    '../../constants': constants,
-  })
+  const { dynamicEquipmentAssets, dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule(
+    'app/lib/lpc/equipment.ts',
+    {
+      '../../constants': constants,
+    }
+  )
 
   assert.deepEqual(dynamicEquipmentForUnit('Bowman', 0, 0), ['quiver', 'bow', 'arrow_ceramic'])
   assert.deepEqual(dynamicEquipmentForUnit('Bowman', 1, 0), ['quiver', 'bow_great', 'arrow_copper'])
@@ -322,15 +345,99 @@ test('archer equipment follows soldier armor progression without shield', () => 
   assert.equal(shield, undefined)
 
   const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/arrow_'))
-  assert.deepEqual(
-    arrowAssets.map(asset => asset.alias).sort(),
-    [
-      'lpc-equipment/arrow_bronze/front/action',
-      'lpc-equipment/arrow_ceramic/front/action',
-      'lpc-equipment/arrow_copper/front/action',
-      'lpc-equipment/arrow_iron/front/action',
-    ]
+  assert.deepEqual(arrowAssets.map(asset => asset.alias).sort(), [
+    'lpc-equipment/arrow_bronze/front/action',
+    'lpc-equipment/arrow_ceramic/front/action',
+    'lpc-equipment/arrow_copper/front/action',
+    'lpc-equipment/arrow_iron/front/action',
+  ])
+})
+
+test('bandit units use fixed runtime equipment loadouts', () => {
+  const { dynamicEquipmentForUnit, dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
+    '../../constants': constants,
+  })
+
+  assert.deepEqual(dynamicEquipmentForUnit('BanditChief'), [
+    'axe_ceramic',
+    'armor_leather',
+    'helmet_barbarian_ceramic',
+    'upward_horns_ceramic',
+    'round_shield_ceramic_slash',
+  ])
+  assert.deepEqual(dynamicEquipmentForUnit('BanditSword'), [
+    'sword_ceramic',
+    'helmet_barbarian_nasal_ceramic',
+    'round_shield_ceramic_slash',
+  ])
+  assert.deepEqual(dynamicEquipmentForUnit('BanditArcher'), [
+    'quiver',
+    'bow',
+    'arrow_ceramic',
+    'sack_cloth_hood_leather',
+  ])
+
+  const chiefLayers = dynamicEquipmentLayersForUnit('BanditChief')
+  const hornFront = chiefLayers.find(layer => layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/front/walking')
+  const helmet = chiefLayers.find(
+    layer => layer.walkingSheet === 'lpc-equipment/helmet_barbarian_ceramic/front/walking'
   )
+  const shield = chiefLayers.find(
+    layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking'
+  )
+  assert.equal(hornFront?.mountedSheet, 'lpc-equipment/upward_horns_ceramic/front/walking')
+  assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_ceramic/front/dying')
+  assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_ceramic/front/corpse')
+  assert.equal(helmet?.zIndex, 11)
+  assert.equal(helmet?.dyingSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/dying')
+  assert.equal(helmet?.corpseSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/corpse')
+  assert.equal(shield?.dyingSheet, undefined)
+  assert.equal(shield?.corpseSheet, undefined)
+
+  const swordLayers = dynamicEquipmentLayersForUnit('BanditSword')
+  const sword = swordLayers.find(layer => layer.walkingSheet === 'lpc-equipment/sword_ceramic/front/walking')
+  assert.equal(sword?.dyingSheet, 'lpc-equipment/sword_ceramic/front/dying')
+  assert.equal(sword?.corpseSheet, 'lpc-equipment/sword_ceramic/front/corpse')
+
+  const archerLayers = dynamicEquipmentLayersForUnit('BanditArcher')
+  const hood = archerLayers.find(layer => layer.walkingSheet === 'lpc-equipment/sack_cloth_hood_leather/front/walking')
+  const arrow = archerLayers.find(layer => layer.actionSheet === 'lpc-equipment/arrow_ceramic/front/action')
+  assert.equal(hood?.actionSheet, 'lpc-equipment/sack_cloth_hood_leather/front/action')
+  assert.equal(hood?.dyingSheet, 'lpc-equipment/sack_cloth_hood_leather/front/dying')
+  assert.equal(hood?.corpseSheet, 'lpc-equipment/sack_cloth_hood_leather/front/corpse')
+  assert.equal(hood?.zIndex, 11)
+  assert.equal(arrow?.hideOnOrAfterFrame, 9)
+})
+
+test('unique bandit baked units do not include civilization in asset paths', () => {
+  const cachedAliases = new Set(['lpc-baked/bandit_archer/male/walking'])
+  const { applyBakedLpcUnitAssets, getBakedUnitStandingSheetAlias } = loadModule('app/lib/lpc/baked.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './equipment': {
+      dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForUnit: type => [{ unitType: type }],
+      dynamicEquipmentLayersForVillager: () => [],
+    },
+    '../chief': { isChiefUnit: () => false },
+    '../unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
+  })
+  const owner = { civ: 'Egyptian', label: 'P1', gender: 'female' }
+  const unit = {
+    type: 'BanditArcher',
+    owner,
+    label: 'bandit',
+    i: 1,
+    j: 1,
+  }
+
+  assert.equal(getBakedUnitStandingSheetAlias('BanditArcher', owner), 'lpc-baked/bandit_archer/male/walking')
+  assert.equal(applyBakedLpcUnitAssets(unit), true)
+  assert.equal(unit.assets.walkingSheet, 'lpc-baked/bandit_archer/male/walking')
+  assert.equal(unit.assets.actionSheet, 'lpc-baked/bandit_archer/male/action')
+  assert.deepEqual(unit.appearanceVariants, { gender: 'male' })
+  assert.deepEqual(unit.appearance.layers, [{ unitType: 'BanditArcher' }])
 })
 
 test('helmeted infantry swaps to no-hair baked base', () => {

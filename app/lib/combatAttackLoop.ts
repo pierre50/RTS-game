@@ -1,9 +1,11 @@
 import type { RuntimeCell } from '../types/map'
 import type { RuntimeEntity } from '../types/entities'
 import type { EnergyEntity } from '../types/entities'
+import type { UnitCreationExtra } from '../types/entities'
+import type { ActionProps } from './combat'
 import { instancesDistance } from './maths'
 import { onSpriteLoopAtFrame } from './graphics'
-import { spendOrWaitForEnergy } from './unitEnergy'
+import { hasEnergyForAction, spendOrWaitForEnergy, waitForEnergy } from './unitEnergy'
 
 const ATTACK_LOOP_DEBUG_THROTTLE_MS = 250
 const lastAttackLoopDebugAt = new WeakMap<object, number>()
@@ -55,7 +57,7 @@ function debugAttackLoop(attacker: AttackFrameActor, stage: string, details: Rec
   )
 }
 
-type AttackFrameTarget = RuntimeEntity | RuntimeCell | null
+type AttackFrameTarget = RuntimeEntity | RuntimeCell | null | undefined
 
 function getRuntimeEntity(target: AttackFrameTarget): RuntimeEntity | null {
   if (!target || typeof target !== 'object') return null
@@ -65,20 +67,29 @@ function getRuntimeEntity(target: AttackFrameTarget): RuntimeEntity | null {
 
 type AttackFrameActor = Partial<
   Pick<EnergyEntity, 'action' | 'dest'> & {
-    getActionCondition?: (target: object | null | undefined, action?: string | null) => boolean
+    getActionCondition?: (
+      target: object | null | undefined,
+      action?: string,
+      props?: ActionProps | UnitCreationExtra
+    ) => boolean
     sprite?: {
-      onFrameChange?: ((currentFrame: number) => void) | null
-      onComplete?: (() => void) | null
-      onLoop?: (() => void) | null
+      onFrameChange?: ((currentFrame: number) => void) | undefined
+      onComplete?: (() => void) | undefined
+      onLoop?: (() => void) | undefined
       loop?: boolean
     }
     isUnitAtDest?: (action: string | null | undefined, dest: AttackFrameTarget) => boolean
+    isAnimalAtDest?: (action: string | null, dest: RuntimeEntity | RuntimeCell | null) => boolean
     sendToEvt?: (
-      dest: AttackFrameTarget,
+      dest: RuntimeEntity | RuntimeCell | null,
       action?: string | null,
       options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
     ) => void
-    sendTo?: (dest: AttackFrameTarget, action?: string | null, options?: { forceRepath?: boolean }) => void
+    sendTo?: (
+      dest: RuntimeEntity | RuntimeCell,
+      action?: string,
+      options?: { forceRepath?: boolean; movementSheet?: string }
+    ) => void
     syncMovingTargetDirection?: () => void
   }
 >
@@ -86,9 +97,84 @@ type AttackFrameActor = Partial<
 type AttackFrameCallbacks = {
   releaseFrame: number
   prepareAttackSheet: () => void
-  onOutOfRange: (target: RuntimeEntity) => void
-  onTargetUnavailable: (target: RuntimeEntity | null) => void
+  syncMovingTargetDirection?: () => void
+  onOutOfRange: (target: RuntimeEntity | null) => void
+  onTargetUnavailable: (target: RuntimeEntity | null, phase: 'preflight' | 'release') => void
   onReadyToAttack: (target: RuntimeEntity) => void
+}
+
+type AttackLoopActorState = {
+  action?: string | null
+  family?: string
+  path?: unknown[]
+  actionLocked?: boolean
+  energy?: number
+  hitPoints?: number
+}
+
+type AttackLoopReadiness =
+  | { status: 'ready'; target: RuntimeEntity }
+  | { status: 'blocked' }
+  | { status: 'not-ready' }
+
+function getAttackLoopActorState(attacker: AttackFrameActor): AttackLoopActorState {
+  return attacker as AttackLoopActorState
+}
+
+function syncAttackTargetDirection(attacker: AttackFrameActor, callbacks: AttackFrameCallbacks): void {
+  if (callbacks.syncMovingTargetDirection) {
+    callbacks.syncMovingTargetDirection()
+  } else if (attacker.syncMovingTargetDirection) {
+    attacker.syncMovingTargetDirection()
+  }
+}
+
+function resolveReadyAttackTarget(
+  attacker: AttackFrameActor,
+  callbacks: AttackFrameCallbacks,
+  phase: 'preflight' | 'release'
+): AttackLoopReadiness {
+  const actor = getAttackLoopActorState(attacker)
+  const target = getRuntimeEntity(attacker.dest)
+  if (actor.actionLocked) return { status: 'not-ready' }
+
+  if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
+    debugAttackLoop(attacker, 'target-unavailable', {
+      target: getTargetLabel(target),
+    })
+    callbacks.onTargetUnavailable(target, phase)
+    return { status: 'not-ready' }
+  }
+  if (!target) return { status: 'not-ready' }
+
+  const isAtDest =
+    attacker.isUnitAtDest?.(attacker.action, target) ??
+    attacker.isAnimalAtDest?.(attacker.action ?? null, target) ??
+    false
+  if (!isAtDest) {
+    debugAttackLoop(attacker, 'out-of-range', {
+      target: getTargetLabel(target),
+      distance: instancesDistance(attacker as { i: number; j: number }, target),
+      targetI: target.i,
+      targetJ: target.j,
+      animalI: (attacker as { i: number; j: number }).i,
+      animalJ: (attacker as { j: number; i: number }).j,
+    })
+    callbacks.onOutOfRange(target)
+    return { status: 'not-ready' }
+  }
+
+  if (!hasEnergyForAction(attacker as EnergyEntity, attacker.action ?? null)) {
+    waitForEnergy(attacker as EnergyEntity, attacker.action ?? null, target)
+    debugAttackLoop(attacker, 'waiting-energy', {
+      target: getTargetLabel(target),
+      energy: actor.energy ?? 0,
+    })
+    return { status: 'blocked' }
+  }
+
+  syncAttackTargetDirection(attacker, callbacks)
+  return { status: 'ready', target }
 }
 
 export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: AttackFrameCallbacks): void {
@@ -100,75 +186,51 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
     if ('onLoop' in sprite) sprite.onLoop = undefined
   }
 
+  if (resolveReadyAttackTarget(attacker, callbacks, 'preflight').status !== 'ready') return
+
   sprite.loop = true
   if ('onComplete' in sprite) sprite.onComplete = undefined
   callbacks.prepareAttackSheet()
 
   onSpriteLoopAtFrame(sprite, callbacks.releaseFrame, () => {
-    const actor = attacker as {
-      action?: string | null
-      family?: string
-      path?: unknown[]
-      actionLocked?: boolean
-      energy?: number
-      hitPoints?: number
-    }
-    const target = getRuntimeEntity(attacker.dest)
+    const actor = getAttackLoopActorState(attacker)
     try {
+      const target = getRuntimeEntity(attacker.dest)
       debugAttackLoop(attacker, 'frame', {
         target: getTargetLabel(target),
       })
-      if (actor.actionLocked) return
-
-      if (!attacker.getActionCondition?.(target, attacker.action)) {
-        debugAttackLoop(attacker, 'target-unavailable', {
-          target: getTargetLabel(target),
-        })
-        callbacks.onTargetUnavailable(target)
+      const readiness = resolveReadyAttackTarget(attacker, callbacks, 'release')
+      if (readiness.status === 'blocked') {
+        clearAttackCallbacks()
         return
       }
-      if (!target) return
-    
-      if (attacker.syncMovingTargetDirection) {
-        attacker.syncMovingTargetDirection()
-      }
+      if (readiness.status !== 'ready') return
+      const readyTarget = readiness.target
 
-      if (!attacker.isUnitAtDest?.(attacker.action, target)) {
-        debugAttackLoop(attacker, 'out-of-range', {
-          target: getTargetLabel(target),
-          distance: instancesDistance(attacker as { i: number; j: number }, target),
-          targetI: target.i,
-          targetJ: target.j,
-          animalI: (attacker as { i: number; j: number }).i,
-          animalJ: (attacker as { j: number; i: number }).j,
-        })
-        callbacks.onOutOfRange(target)
-        return
-      }
-
-      if (!spendOrWaitForEnergy(attacker as EnergyEntity, attacker.action ?? null, target)) {
+      if (!spendOrWaitForEnergy(attacker as EnergyEntity, attacker.action ?? null, readyTarget)) {
         debugAttackLoop(attacker, 'waiting-energy', {
-          target: getTargetLabel(target),
+          target: getTargetLabel(readyTarget),
           energy: (attacker as { energy?: number }).energy ?? 0,
         })
+        clearAttackCallbacks()
         return
       }
 
       debugAttackLoop(attacker, 'ready-to-attack', {
-        target: getTargetLabel(target),
+        target: getTargetLabel(readyTarget),
       })
-      callbacks.onReadyToAttack(target)
+      callbacks.onReadyToAttack(readyTarget)
     } catch {
       if (actor.family === 'animal') {
         console.error('[combat-loop] exception', {
           actor: getActorLabel(attacker),
-          target: getTargetLabel(target),
+          target: getTargetLabel(getRuntimeEntity(attacker.dest)),
           action: actor.action,
           pathLength: (actor.path ?? []).length,
         })
       }
       clearAttackCallbacks()
-      callbacks.onTargetUnavailable(target)
+      callbacks.onTargetUnavailable(getRuntimeEntity(attacker.dest), 'release')
     }
   })
 }

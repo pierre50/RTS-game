@@ -183,6 +183,7 @@ test('serializes unit work orders, carried resources, equipment state and build 
       hitPoints: 18,
       loading: 7,
       loadingType: 'wood',
+      resourceLoads: { wood: 3, iron: 4 },
       work: 'woodcutter',
       previousWork: 'builder',
       action: 'chopwood',
@@ -219,6 +220,7 @@ test('serializes unit work orders, carried resources, equipment state and build 
     action: 'chopwood',
   })
   assert.equal(save.players[0].units[0].loading, 7)
+  assert.deepEqual(save.players[0].units[0].resourceLoads, { wood: 3, iron: 4 })
   assert.equal(save.players[0].units[0].mountedOnHorse, true)
   assert.equal(save.players[0].units[0].companionHorseColor, 'dark')
   assert.deepEqual(save.players[0].units[0].experience, { woodcutting: 15 })

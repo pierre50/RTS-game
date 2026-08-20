@@ -2,11 +2,19 @@ import type { Container, ContainerChild } from 'pixi.js'
 import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
-import type { PlayerLike } from '../types/player'
+import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
 import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
 
-export type DevWeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'snow' | 'clearing' | 'night'
+export type DevWeatherPhase =
+  | 'sunny'
+  | 'clouding'
+  | 'stormBuildUp'
+  | 'rainLight'
+  | 'rainHeavy'
+  | 'snow'
+  | 'clearing'
+  | 'night'
 
 export type DevDayNightLike = {
   debugState?(): object
@@ -147,7 +155,6 @@ export type DevConsoleContext = {
   menu: DevMenuLike
   controls?: DevControlsLike
   devConsoleOpen?: boolean
-  victory?: boolean
   instantMode?: boolean
   paused?: boolean
   performance?: {
@@ -202,7 +209,7 @@ export type DevPlayer = PlayerLike & {
   population?: number
   hasBuilt?: string[]
   isEnemy?(player: PlayerLike): boolean
-  createUnit?(options: { i: number; j: number; type: string }): UnitEntity
+  createUnit?(options: PlayerUnitCreationOptions): UnitEntity
 }
 
 export type DevCell = RuntimeCell & {

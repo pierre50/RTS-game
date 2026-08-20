@@ -286,6 +286,10 @@
   "crest": {},
   "centurion_crest": {},
   "centurion_plumage": {},
+  "legion_plumage": {},
+  "plumage": {},
+  "helmet_wings": {},
+  "upward_horns_white": {},
   "helmet_barbuta_ceramic": {
     "armor": {
       "melee": 1,
@@ -305,6 +309,102 @@
     }
   },
   "helmet_barbuta_iron": {
+    "armor": {
+      "melee": 3,
+      "pierce": 2
+    }
+  },
+  "helmet_legion_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "helmet_legion_copper": {
+    "armor": {
+      "melee": 2,
+      "pierce": 1
+    }
+  },
+  "helmet_legion_bronze": {
+    "armor": {
+      "melee": 2,
+      "pierce": 2
+    }
+  },
+  "helmet_legion_iron": {
+    "armor": {
+      "melee": 3,
+      "pierce": 2
+    }
+  },
+  "helmet_nasal_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "helmet_nasal_copper": {
+    "armor": {
+      "melee": 2,
+      "pierce": 1
+    }
+  },
+  "helmet_nasal_bronze": {
+    "armor": {
+      "melee": 2,
+      "pierce": 2
+    }
+  },
+  "helmet_nasal_iron": {
+    "armor": {
+      "melee": 3,
+      "pierce": 2
+    }
+  },
+  "helmet_bascinet_round_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "helmet_bascinet_round_copper": {
+    "armor": {
+      "melee": 2,
+      "pierce": 1
+    }
+  },
+  "helmet_bascinet_round_bronze": {
+    "armor": {
+      "melee": 2,
+      "pierce": 2
+    }
+  },
+  "helmet_bascinet_round_iron": {
+    "armor": {
+      "melee": 3,
+      "pierce": 2
+    }
+  },
+  "helmet_norman_ceramic": {
+    "armor": {
+      "melee": 1,
+      "pierce": 1
+    }
+  },
+  "helmet_norman_copper": {
+    "armor": {
+      "melee": 2,
+      "pierce": 1
+    }
+  },
+  "helmet_norman_bronze": {
+    "armor": {
+      "melee": 2,
+      "pierce": 2
+    }
+  },
+  "helmet_norman_iron": {
     "armor": {
       "melee": 3,
       "pierce": 2

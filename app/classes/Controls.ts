@@ -248,7 +248,6 @@ export default class Controls extends Container implements ControlsLike {
     return Boolean(
       this.context.devConsoleOpen ||
         this.context.paused ||
-        this.context.victory ||
         this.context.defeat
     )
   }
@@ -258,7 +257,6 @@ export default class Controls extends Container implements ControlsLike {
     return Boolean(
       this.context.devConsoleOpen ||
         this.context.paused ||
-        this.context.victory ||
         this.context.defeat ||
         menu?.isInventoryOpen?.() ||
         menu?.isNpcOrdersOpen?.() ||

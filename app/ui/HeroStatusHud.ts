@@ -1,6 +1,6 @@
-import { LOADING_FOOD_TYPES } from '../constants'
 import { renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
+import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
 import { getUnitOverallLevel } from '../lib/unitExperience'
 import type Menu from '../classes/Menu'
@@ -18,8 +18,6 @@ export class HeroStatusHud {
   energyValue: HTMLDivElement
   energyFill: HTMLDivElement
   carry: HTMLDivElement
-  carryIcon: HTMLImageElement
-  carryValue: HTMLDivElement
   hero: UnitEntity | null
   displayedHitPoints: number | null
   lastHealthDisplayUpdateAt: number | null
@@ -74,19 +72,11 @@ export class HeroStatusHud {
     this.carry = document.createElement('div')
     this.carry.className = 'hero-status-carry hidden'
 
-    this.carryIcon = document.createElement('img')
-    this.carryIcon.className = 'hero-status-carry-icon'
-
-    this.carryValue = document.createElement('div')
-    this.carryValue.className = 'hero-status-carry-value'
-
     header.appendChild(this.title)
     header.appendChild(this.level)
     this.healthBar.appendChild(this.value)
     this.energyBar.appendChild(this.energyFill)
     this.energyBar.appendChild(this.energyValue)
-    this.carry.appendChild(this.carryIcon)
-    this.carry.appendChild(this.carryValue)
     content.appendChild(header)
     content.appendChild(this.healthBar)
     content.appendChild(this.energyBar)
@@ -149,13 +139,29 @@ export class HeroStatusHud {
     this.energyFill.style.width = energyPercent
     this.element.classList.remove('hidden')
 
-    const loading = hero.loading ?? 0
-    if (loading > 0 && hero.loadingType) {
-      const iconKey = LOADING_FOOD_TYPES.includes(hero.loadingType) ? 'food' : hero.loadingType
-      this.carryIcon.src = this.menu.infoIcons?.[iconKey] ?? ''
-      this.carryValue.textContent = String(loading)
+    const carriedEntries = getDisplayedCarriedResourceEntries(hero)
+    if (carriedEntries.length) {
+      this.carry.replaceChildren(
+        ...carriedEntries.map(([resourceKey, amount]) => {
+          const item = document.createElement('div')
+          item.className = 'hero-status-carry-item'
+
+          const icon = document.createElement('img')
+          icon.className = 'hero-status-carry-icon'
+          icon.src = this.menu.infoIcons?.[resourceKey] ?? ''
+
+          const value = document.createElement('div')
+          value.className = 'hero-status-carry-value'
+          value.textContent = String(amount)
+
+          item.appendChild(icon)
+          item.appendChild(value)
+          return item
+        })
+      )
       this.carry.classList.remove('hidden')
     } else {
+      this.carry.replaceChildren()
       this.carry.classList.add('hidden')
     }
   }

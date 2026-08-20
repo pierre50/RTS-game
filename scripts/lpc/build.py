@@ -10,7 +10,20 @@ import sys
 import warnings
 from pathlib import Path
 
-from config import CIVS, DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, LPC_ANIMATION_SPEED, PROJECT_ROOT, SHEETS, SKIN_TONES, Sheet, UNIT_LOOKS, UNIT_VARIANTS, variant_look_for_civ
+from config import (
+    CIVS,
+    DEFAULT_OUTPUT_ROOT,
+    DEFAULT_SOURCE_ROOT,
+    LPC_ANIMATION_SPEED,
+    PROJECT_ROOT,
+    SHEETS,
+    SKIN_TONES,
+    Sheet,
+    UNIT_LOOKS,
+    civs_for_unit,
+    variant_look_for_civ,
+    variants_for_unit,
+)
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
 
@@ -273,11 +286,11 @@ def build(
     generated_set = set(generated)
     skipped = 0
     rebuilt = 0
-    for civ_key, civ in selected_civs.items():
-        for unit in selected_units:
-            for variant in UNIT_VARIANTS:
+    for unit in selected_units:
+        for civ_key, civ in civs_for_unit(unit, selected_civs).items():
+            for variant in variants_for_unit(unit):
                 look = variant_look_for_civ(unit, civ_key, variant)
-                variant_key = f"{civ_key}/{variant.key}"
+                variant_key = f"{civ_key}/{variant.key}" if civ_key else variant.key
                 if unit == "villager":
                     tasks = villager_build_tasks()
                 elif unit == "hero":
@@ -291,7 +304,7 @@ def build(
                     # baked in the same blue palette that changeSpriteColor's SOURCE_COLORS
                     # matches at runtime, so one bake per civ covers every player color.
                     paths = resolve_layer_paths(source_root, layer_paths(look, animation, civ, "neutral"), animation)
-                    relative_path = f"{unit}/{civ_key}/{variant.key}/{relative_suffix}"
+                    relative_path = f"{unit}/{variant_key}/{relative_suffix}"
                     output_sheet = relative_suffix.rsplit("/", 1)[-1]
                     animation_speed = animation_speed_for(output_sheet)
                     signature = sheet_signature(

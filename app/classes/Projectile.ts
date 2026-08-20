@@ -22,6 +22,7 @@ import {
   projectileTracksTarget,
   playAudibleSoundCue,
   randomRange,
+  isHeroControlled,
 } from '../lib'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomaticAggression'
@@ -189,7 +190,7 @@ function debugProjectileGeometry(projectile: Projectile, destinationPoint: Point
     ownerType: projectile.owner.type,
     ownerWork: (projectile.owner as UnitEntity).work,
     ownerFamily: projectile.owner.family,
-    ownerIsHero: projectile.owner.isHero,
+    ownerIsHero: projectile.owner.family === FAMILY_TYPES.unit && isHeroControlled(projectile.owner as UnitEntity),
     projectileType: projectile.type,
     spawn: spawnSource,
     destinationRaw:

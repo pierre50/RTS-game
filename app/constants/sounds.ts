@@ -29,7 +29,7 @@ export const SOUND_CUES = {
     forageBerry: 'berry-gathering',
     mineOre: 'mining-2',
     buildLoop: 'building',
-    throwSpear: 'arrow-shot',
+    shootArrow: 'arrow-shot',
     takeMeat: 'berry-gathering',
   },
   building: {

@@ -14,6 +14,34 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
+    if (request === '../../lib/horseCapture') {
+      return {
+        getNearestAvailableStableForUnit: () => null,
+        routeCapturedHorseToStableWithOwnerContact: () => null,
+      }
+    }
+    if (request === '../../lib/resourceCarry') {
+      return {
+        addCarriedResource: (unit, loadingType, amount) => {
+          unit.loading = (unit.loading ?? 0) + amount
+          unit.loadingType = loadingType
+        },
+        clearCarriedResource: unit => {
+          unit.loading = 0
+          unit.loadingType = null
+        },
+        clearCarriedResources: unit => {
+          unit.loading = 0
+          unit.loadingType = null
+        },
+        getCarriedResourceSpace: (unit, loadingType) =>
+          Math.max((unit.loadingMax?.[loadingType] ?? Number.POSITIVE_INFINITY) - (unit.loading ?? 0), 0),
+        getDeliverableResourceEntries: () => [],
+        getPlayerResourceKey: loadingType => (loadingType === 'berry' ? 'food' : loadingType),
+        getTotalCarriedResources: unit => unit.loading ?? 0,
+      }
+    }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

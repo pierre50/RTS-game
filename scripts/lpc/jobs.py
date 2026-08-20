@@ -40,6 +40,14 @@ CHIEF_JOBS: tuple[Job, ...] = (
     Job("default", walking_equipment="sword_ceramic", action_animation="slash", action_equipment="sword_ceramic"),
 )
 
+BANDIT_MELEE_JOBS: tuple[Job, ...] = (
+    Job("default", action_animation="slash"),
+)
+
+BANDIT_ARCHER_JOBS: tuple[Job, ...] = (
+    Job("default", action_animation="shoot"),
+)
+
 # The cane has no spellcast-pose art, so action_equipment is left unset — the
 # priest's hands perform the cast gesture unarmed; the cane only shows while walking.
 PRIEST_JOBS: tuple[Job, ...] = (
@@ -52,4 +60,7 @@ UNIT_JOBS: dict[str, tuple[Job, ...]] = {
     "infantry_nohair": INFANTRY_JOBS,
     "priest": PRIEST_JOBS,
     "chief": CHIEF_JOBS,
+    "bandit_chief": BANDIT_MELEE_JOBS,
+    "bandit_sword": BANDIT_MELEE_JOBS,
+    "bandit_archer": BANDIT_ARCHER_JOBS,
 }

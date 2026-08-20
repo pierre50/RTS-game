@@ -9,6 +9,7 @@ type PathCell = {
   _prev?: PathCell | null
   _ps?: number
   category?: string
+  has?: { label?: string } | null
   i: number
   j: number
   solid?: boolean
@@ -88,6 +89,7 @@ const _closedSet = new Set<PathCell>()
 type PathInstance = {
   i: number
   j: number
+  label?: string
 }
 
 type PathMap<TCell extends PathCell = PathCell> = {
@@ -133,9 +135,13 @@ export function findInstancePath<TCell extends PathCell>(
     return cell
   }
 
+  function isCellOccupiedByPathingInstance(cell?: PathCell): boolean {
+    return Boolean(instance.label && cell?.has?.label === instance.label)
+  }
+
   function isCellReachable(cell?: PathCell): boolean {
     if (!cell) return false
-    if (cell.solid) return false
+    if (cell.solid && !isCellOccupiedByPathingInstance(cell)) return false
     return cell.category !== 'Water'
   }
 

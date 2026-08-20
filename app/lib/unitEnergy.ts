@@ -1,4 +1,10 @@
 import { ACTION_TYPES, MINING_RESOURCE_CONFIG, SHEET_TYPES, STEP_TIME } from '../constants'
+import {
+  enterCombatRecovery,
+  exitCombatRecovery,
+  isCombatRecoveryReadyToReengage,
+  updateCombatRecoveryMovement,
+} from './combatBehavior'
 import { showFatigueFeedback } from './combatFeedback'
 import { t } from './lang'
 import { isHeroControlled } from './unitControl'
@@ -8,7 +14,6 @@ export const HERO_ENERGY_COLOR = '#2f8cff'
 export const DEFAULT_UNIT_TOTAL_ENERGY = 10
 export const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
 export const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650
-export const NPC_ATTACK_RETREAT_DISTANCE = 96
 export const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
 export const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
 
@@ -145,6 +150,7 @@ function resumeWaitedEnergyAction(unit: EnergyEntity): void {
   const resumeTarget = unit.waitingForEnergyTarget
   unit.waitingForEnergyAction = null
   unit.waitingForEnergyTarget = null
+  exitCombatRecovery(unit)
   clearEnergyWaitTask(unit)
   unit.stopInterval?.()
   if (resumeAction && resumeTarget && !resumeTarget.isDestroyed && !resumeTarget.isDead) {
@@ -158,10 +164,20 @@ function resumeWaitedEnergyAction(unit: EnergyEntity): void {
   }
 }
 
+function isEnergyWaitReady(unit: EnergyEntity): boolean {
+  if (unit.waitingForEnergyAction === ACTION_TYPES.attack && unit.combatMode === 'recover') {
+    return isCombatRecoveryReadyToReengage(unit)
+  }
+  return isUnitEnergyFull(unit)
+}
+
 function startEnergyWaitInterval(unit: EnergyEntity): void {
   unit.startInterval?.(() => {
     updateUnitEnergy(unit)
-    if (!isUnitEnergyFull(unit)) return
+    if (!isEnergyWaitReady(unit)) {
+      updateCombatRecoveryMovement(unit)
+      return
+    }
     resumeWaitedEnergyAction(unit)
   }, STEP_TIME, false, 'unit.energyWait')
 }
@@ -179,7 +195,10 @@ function startEnergyWaitTask(unit: EnergyEntity): void {
       return
     }
     updateUnitEnergy(unit)
-    if (!isUnitEnergyFull(unit)) return
+    if (!isEnergyWaitReady(unit)) {
+      updateCombatRecoveryMovement(unit)
+      return
+    }
     resumeWaitedEnergyAction(unit)
   }, STEP_TIME, 'unit.energyWait')
 }
@@ -200,7 +219,7 @@ export function waitForEnergy(unit: EnergyEntity, action: string | null | undefi
   unit.stopInterval?.()
   unit.actionLocked = false
   if (!heroControlled && action === ACTION_TYPES.attack && unit.waitingForEnergyTarget) {
-    retreatFromTarget(unit, unit.waitingForEnergyTarget)
+    enterCombatRecovery(unit, unit.waitingForEnergyTarget)
     startEnergyWaitTask(unit)
     return false
   } else if (!heroControlled) {
@@ -211,30 +230,13 @@ export function waitForEnergy(unit: EnergyEntity, action: string | null | undefi
   return false
 }
 
-function retreatFromTarget(unit: EnergyEntity, target: RuntimeEntity): void {
-  const map = unit.context?.map
-  if (!map) return
-  const dx = unit.x - target.x
-  const dy = unit.y - target.y
-  const len = Math.hypot(dx, dy) || 1
-  const destination = {
-    x: unit.x + (dx / len) * NPC_ATTACK_RETREAT_DISTANCE,
-    y: unit.y + (dy / len) * NPC_ATTACK_RETREAT_DISTANCE,
-  }
-  const cell = map.grid
-    .flat()
-    .filter(candidate => !candidate.solid && !candidate.border)
-    .sort(
-      (a, b) =>
-        Math.hypot(a.x - destination.x, a.y - destination.y) - Math.hypot(b.x - destination.x, b.y - destination.y)
-    )[0]
-  if (cell && !cell.solid && !cell.border) unit.sendTo?.(cell)
-}
-
 export function resumeEnergyWaitIfReady(unit: EnergyEntity): boolean {
   if (!unit.waitingForEnergyAction) return false
   updateUnitEnergy(unit)
-  if (!isUnitEnergyFull(unit)) return false
+  if (!isEnergyWaitReady(unit)) {
+    updateCombatRecoveryMovement(unit)
+    return false
+  }
   resumeWaitedEnergyAction(unit)
   return true
 }

@@ -7,14 +7,18 @@ import {
   UNIT_TYPES,
 } from '../constants'
 import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from './equipmentStats'
+import { getCombatBehavior, getCombatMoraleRoll } from './combatBehavior'
 import { angleDelta, getPointsDegree } from './maths'
 import { canUpgradeUnitAtBuilding } from './unitUpgrades'
-import type { ConfigValue } from '../types/config'
+import type { CombatBehaviorConfig, ConfigValue } from '../types/config'
 import type { PlayerLike } from '../types/player'
 
 export type CombatEntity = {
   allowAction?: string[]
   category?: string
+  combatBehavior?: CombatBehaviorConfig
+  combatBehaviorPreset?: string
+  combatMoraleRoll?: number
   degree?: number
   family?: string
   hitPoints?: number
@@ -29,6 +33,7 @@ export type CombatEntity = {
   pierceArmor?: number
   quantity?: number
   totalHitPoints?: number
+  label?: string
   type?: string
   units?: string[]
   trainingType?: string | null
@@ -85,7 +90,6 @@ export function isFriendlyTarget(source?: CombatEntity | null, target?: CombatEn
   return source.owner.isEnemy?.(target.owner) === false
 }
 
-const COMBATANT_FLEE_HEALTH_RATIO = 0.3
 const SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO = 0.4
 const MORALE_SCAN_RADIUS = 6
 const CIVILIAN_SURRENDER_HEALTH_RATIO = 0.28
@@ -105,13 +109,25 @@ function isLeaderUnit(source: CombatEntity): boolean {
   return source.type === UNIT_TYPES.hero || source.type === UNIT_TYPES.chief
 }
 
+function usesCombatMoralePersonality(source: CombatEntity): boolean {
+  return canAttack(source) && !(source.category === 'Civilian' && !isLeaderUnit(source))
+}
+
+function shouldStandGroundFromMorale(source: CombatEntity): boolean {
+  if (!usesCombatMoralePersonality(source)) return false
+  const behavior = getCombatBehavior(source)
+  return getCombatMoraleRoll(source) < behavior.bravery
+}
+
 // Badly hurt and the thing fighting it is still dangerous: retreat. But finishing off
 // an attacker that's nearly dead itself beats running from it (e.g. a villager mid-hunt
 // on an almost-dead animal, or a soldier one hit away from winning a duel).
 function isCriticallyOutmatched(source: CombatEntity, attacker?: CombatEntity | null): boolean {
+  const behavior = getCombatBehavior(source)
   return (
-    getHealthRatio(source) <= COMBATANT_FLEE_HEALTH_RATIO &&
-    getHealthRatio(attacker) > SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO
+    getHealthRatio(source) <= behavior.fleeHealthRatio &&
+    getHealthRatio(attacker) > SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO &&
+    !shouldStandGroundFromMorale(source)
   )
 }
 
@@ -213,6 +229,7 @@ function hasEscapeCell(source: CombatEntity, attacker?: CombatEntity | null): bo
 
 function shouldSurrenderWhenAttacked(source: CombatEntity, attacker?: CombatEntity | null): boolean {
   if (!isSurrenderEligible(source, attacker)) return false
+  if (shouldStandGroundFromMorale(source)) return false
   const healthRatio = getHealthRatio(source)
   const surrenderHealth =
     source.category === 'Civilian' && !isLeaderUnit(source)
@@ -245,10 +262,32 @@ export function evaluateCombatMorale(
   return canAttack(source) && isCriticallyOutmatched(source, attacker) ? 'flee' : 'fight'
 }
 
+export function shouldFleeWhenAttacked(source?: CombatEntity | null, attacker?: CombatEntity | null): boolean {
+  return evaluateCombatMorale(source, attacker) === 'flee'
+}
+
+function isBanditUnitType(type?: string): boolean {
+  if (!type) return false
+  return type === UNIT_TYPES.banditChief || type === UNIT_TYPES.banditSword || type === UNIT_TYPES.banditArcher
+}
+
+type BanditOwnerLike = PlayerLike & { devConsoleBanditOwner?: boolean }
+const BANDIT_OWNER_NAME = 'bandits'
+
+export function isBanditOwner(owner?: PlayerLike | null): boolean {
+  if (!owner) return false
+  if ((owner as BanditOwnerLike).devConsoleBanditOwner) return true
+  return owner.isPlayed !== true && owner.name?.trim().toLowerCase() === BANDIT_OWNER_NAME
+}
+
 function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
-  if (!source || source.type !== UNIT_TYPES.priest || !target || !source.owner?.isEnemy?.(target.owner)) return false
-  if (target.family === FAMILY_TYPES.unit && target.type !== UNIT_TYPES.priest) return true
-  const hasMonotheism = source.owner.technologies?.includes('Monotheism')
+  if (!source || source.type !== UNIT_TYPES.priest || !target) return false
+  const sourceOwner = source.owner
+  if (!sourceOwner || isBanditOwner(sourceOwner) || !sourceOwner.isEnemy?.(target.owner)) return false
+  if (target.family === FAMILY_TYPES.unit) {
+    return target.type !== UNIT_TYPES.priest && !isBanditUnitType(target.type)
+  }
+  const hasMonotheism = sourceOwner.technologies?.includes('Monotheism')
   return !!hasMonotheism && (target.family === FAMILY_TYPES.building || target.type === UNIT_TYPES.priest)
 }
 

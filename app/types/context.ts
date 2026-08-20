@@ -223,9 +223,7 @@ export interface GameContextLike {
   editor?: EditorInteractionTarget
   paused?: boolean
   devConsoleOpen?: boolean
-  victory?: boolean
   defeat?: boolean
-  checkVictory?: () => boolean
   checkDefeat?: () => boolean
   save: () => object | void
   load: (event: object) => void

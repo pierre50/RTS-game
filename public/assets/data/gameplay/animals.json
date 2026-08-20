@@ -119,6 +119,14 @@
     "sight": 8,
     "speed": 1.15,
     "runningSpeed": 1.55,
+    "totalEnergy": 8,
+    "energyRegenRate": 2,
+    "energyRegenDelay": 850,
+    "energyCosts": {
+      "attack": 3.25,
+      "flee": 0.35
+    },
+    "combatBehaviorPreset": "animalAggressive",
     "equipment": ["boar_tusks"],
     "strategy": "attack",
     "ambientMovement": true,

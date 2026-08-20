@@ -140,6 +140,7 @@ function loadHeroTools(overrides = {}) {
           heroSword: ['sword_ceramic'],
           hunter: ['bow'],
         })[work] ?? [],
+      getUnitCombatRange: unit => unit.range ?? 4,
       refreshUnitEquipmentStats: () => {},
     },
     './grid/cells': { getBuildingContactDistance: () => 1 },
@@ -167,6 +168,18 @@ function loadHeroTools(overrides = {}) {
     },
     './lang': { t: key => (key === 'heroDefenseMissed' ? 'Loupé !' : key) },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
+    './resourceCarry': {
+      buildingAcceptsCarriedResources: (hero, target) => {
+        const entries = hero.resourceLoads
+          ? Object.entries(hero.resourceLoads).filter(([, amount]) => amount > 0)
+          : hero.loadingType && (hero.loading ?? 0) > 0
+            ? [[hero.loadingType, hero.loading]]
+            : []
+        return target.family === 'building' && (target.type === 'TownCenter' || entries.some(([type]) => target.accept?.includes(type)))
+      },
+      getCarriedResourceSpace: () => Number.POSITIVE_INFINITY,
+      getTotalCarriedResources: hero => hero.loading ?? 0,
+    },
     './unitEnergy': {
       hasEnergyForAction: (unit, action) => {
         const costs = {
@@ -416,6 +429,20 @@ test('bow charge plays the action animation once while power keeps charging', ()
   }
 })
 
+test('mounted bow charge keeps aim inside the starting horse cone', () => {
+  const { aimHeroBowChargeAt, triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+
+  hero.mountedOnHorse = true
+
+  assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), true)
+  assert.equal(hero.degree, 180)
+  assert.equal(hero.heroBowChargeFacingDegree, 180)
+  assert.equal(aimHeroBowChargeAt(hero, { x: -10, y: 0 }), true)
+  assert.equal(hero.degree, 180)
+  assert.deepEqual(hero.heroBowChargeDestination, { x: 10, y: 0 })
+})
+
 test('hero defense holds melee tools on the third action frame', () => {
   const { beginHeroDefense, updateHeroDefense } = loadHeroTools()
   const { hero } = makeHero()
@@ -632,6 +659,32 @@ test('bow charge keeps the manually aimed destination instead of snapping to a n
   }
 })
 
+test('mounted bow release spawns the arrow from the rider height', () => {
+  const { releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero, projectiles } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    hero.x = 50
+    hero.y = 100
+    hero.mountedOnHorse = true
+    hero.getMountedRiderY = () => -25
+
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
+    now += 700
+    assert.equal(releaseHeroBowCharge(hero, now), true)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
+
+    assert.equal(projectiles.length, 1)
+    assert.deepEqual(projectiles[0].spawnPoint, { x: 70, y: 57 })
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
 test('lasso charge releases a drawn lasso instead of an arrow', () => {
   const soundCues = []
   const { aimHeroBowChargeAt, releaseHeroBowCharge, triggerToolAttackAt } = loadHeroTools({
@@ -818,7 +871,7 @@ test('free-hand interact starts farming aimed wheat instead of whiffing', () => 
   ])
 })
 
-test('full hero inventory blocks gathering without playing a whiff animation', () => {
+test('hero resource inventory never blocks gathering another load', () => {
   const carcass = {
     family: 'animal',
     i: 1,
@@ -854,11 +907,11 @@ test('full hero inventory blocks gathering without playing a whiff animation', (
     },
   })
 
-  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
-  assert.equal(hero.startedAction, undefined)
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.startedAction, 'takemeat')
+  assert.equal(hero.dest, carcass)
   assert.equal(hero.actionLocked, false)
-  assert.equal(hero.currentSheet, 'standingSheet')
-  assert.deepEqual(messages, [['heroInventoryFull', 'warning']])
+  assert.deepEqual(messages, [])
 })
 
 test('free-hand interact does not whiff when aiming at a delivery building out of reach', () => {
@@ -1285,6 +1338,50 @@ test('free-hand interact does not whiff without energy', () => {
   assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
   assert.equal(hero.actionLocked, false)
   assert.equal(hero.currentSheet, 'standingSheet')
+  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
+})
+
+test('aimed sword attack does not fall back to a whiff when attack energy is too low', () => {
+  const enemy = {
+    family: 'animal',
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy-animal',
+    totalHitPoints: 10,
+    x: 10,
+    y: 0,
+  }
+  const messages = []
+  const soundCues = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_source, target, action) => action === 'attack' && target === enemy,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: (message, level) => messages.push([message, level]) },
+    },
+    energy: 1,
+    i: 0,
+    isUnitAtDest: () => true,
+    j: 0,
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), false)
+  assert.equal(hero.energy, 1)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.currentSheet, 'standingSheet')
+  assert.equal(enemy.hitPoints, 10)
+  assert.deepEqual(soundCues, [])
   assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 

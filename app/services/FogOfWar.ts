@@ -190,12 +190,13 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
         globalCell.removeFog()
       }
 
+      const controls = context?.controls
       if (!context?.editor && globalCell.has && globalCell.has.sight && canDetect(globalCell.has)) {
         const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
         const isStealthHero =
-          context.controls?.isHeroStealthMode?.() === true &&
-          context.controls.heroUnit != null &&
-          context.controls.heroUnit === globalCell.has
+          controls?.isHeroStealthMode?.() === true &&
+          controls.heroUnit != null &&
+          controls.heroUnit === globalCell.has
         const detectRange = isStealthHero
           ? globalCell.has.sight * HERO_STEALTH_ANIMAL_DETECTION_FACTOR
           : globalCell.has.sight

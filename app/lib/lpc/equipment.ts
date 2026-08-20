@@ -3,11 +3,12 @@ import type { UnitAppearanceLayerConfig } from '../../types/config'
 
 const EQUIPMENT_BASE_ALIAS = 'lpc-equipment'
 const EQUIPMENT_BASE_URL = 'assets/graphics/lpc-equipment'
-const EQUIPMENT_SHEETS = ['walking', 'action'] as const
+const EQUIPMENT_DEATH_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
 
-type EquipmentSheet = (typeof EQUIPMENT_SHEETS)[number]
+type EquipmentSheet = (typeof EQUIPMENT_DEATH_SHEETS)[number]
+const EQUIPMENT_SHEETS = ['walking', 'action'] as const satisfies readonly EquipmentSheet[]
 type EquipmentLayer = 'back' | 'front'
-type DynamicEquipmentKey =
+export type DynamicEquipmentKey =
   | 'axe_copper'
   | 'axe_ceramic'
   | 'axe_bronze'
@@ -56,6 +57,25 @@ type DynamicEquipmentKey =
   | 'helmet_barbuta_copper'
   | 'helmet_barbuta_bronze'
   | 'helmet_barbuta_iron'
+  | 'helmet_legion_ceramic'
+  | 'helmet_legion_copper'
+  | 'helmet_legion_bronze'
+  | 'helmet_legion_iron'
+  | 'helmet_nasal_ceramic'
+  | 'helmet_nasal_copper'
+  | 'helmet_nasal_bronze'
+  | 'helmet_nasal_iron'
+  | 'helmet_bascinet_round_ceramic'
+  | 'helmet_bascinet_round_copper'
+  | 'helmet_bascinet_round_bronze'
+  | 'helmet_bascinet_round_iron'
+  | 'helmet_norman_ceramic'
+  | 'helmet_norman_copper'
+  | 'helmet_norman_bronze'
+  | 'helmet_norman_iron'
+  | 'helmet_barbarian_ceramic'
+  | 'helmet_barbarian_nasal_ceramic'
+  | 'sack_cloth_hood_leather'
   | 'shoulder_legion_ceramic'
   | 'shoulder_legion_copper'
   | 'shoulder_legion_bronze'
@@ -72,6 +92,11 @@ type DynamicEquipmentKey =
   | 'crest'
   | 'centurion_crest'
   | 'centurion_plumage'
+  | 'legion_plumage'
+  | 'plumage'
+  | 'helmet_wings'
+  | 'upward_horns_white'
+  | 'upward_horns_ceramic'
   | 'longsword'
   | 'round_shield_ceramic_slash'
   | 'round_shield_copper_slash'
@@ -83,6 +108,7 @@ type DynamicEquipmentKey =
 type EquipmentOptions = Pick<
   UnitAppearanceLayerConfig,
   | 'workTypes'
+  | 'civilizations'
   | 'hideWhenLoading'
   | 'showWhenLoading'
   | 'hideForActions'
@@ -106,7 +132,7 @@ const EQUIPMENT_LAYERS = ['back', 'front'] as const satisfies readonly Equipment
 // Equipment whose art never populates one side of the back/front split (e.g. a shield
 // held in front has no "behind the body" counterpart) — baking/wiring that empty side
 // would just be a fully transparent spritesheet. Keep in sync with
-// dynamic_equipment.active_layer_keys() in the Python bake pipeline.
+// equipment.active_layer_keys() in the Python bake pipeline.
 const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly EquipmentLayer[]>> = {
   meat: ['front'],
   stone: ['front'],
@@ -134,6 +160,25 @@ const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly Eq
   helmet_barbuta_copper: ['front'],
   helmet_barbuta_bronze: ['front'],
   helmet_barbuta_iron: ['front'],
+  helmet_legion_ceramic: ['front'],
+  helmet_legion_copper: ['front'],
+  helmet_legion_bronze: ['front'],
+  helmet_legion_iron: ['front'],
+  helmet_nasal_ceramic: ['front'],
+  helmet_nasal_copper: ['front'],
+  helmet_nasal_bronze: ['front'],
+  helmet_nasal_iron: ['front'],
+  helmet_bascinet_round_ceramic: ['front'],
+  helmet_bascinet_round_copper: ['front'],
+  helmet_bascinet_round_bronze: ['front'],
+  helmet_bascinet_round_iron: ['front'],
+  helmet_norman_ceramic: ['front'],
+  helmet_norman_copper: ['front'],
+  helmet_norman_bronze: ['front'],
+  helmet_norman_iron: ['front'],
+  helmet_barbarian_ceramic: ['front'],
+  helmet_barbarian_nasal_ceramic: ['front'],
+  sack_cloth_hood_leather: ['front'],
   shoulder_legion_ceramic: ['front'],
   shoulder_legion_copper: ['front'],
   shoulder_legion_bronze: ['front'],
@@ -149,6 +194,8 @@ const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly Eq
   crest: ['front'],
   centurion_crest: ['front'],
   centurion_plumage: ['front'],
+  legion_plumage: ['front'],
+  plumage: ['front'],
   round_shield_ceramic_slash: ['front'],
   round_shield_copper_slash: ['front'],
   round_shield_bronze_slash: ['front'],
@@ -193,6 +240,25 @@ const WEARABLE_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'helmet_barbuta_copper',
   'helmet_barbuta_bronze',
   'helmet_barbuta_iron',
+  'helmet_legion_ceramic',
+  'helmet_legion_copper',
+  'helmet_legion_bronze',
+  'helmet_legion_iron',
+  'helmet_nasal_ceramic',
+  'helmet_nasal_copper',
+  'helmet_nasal_bronze',
+  'helmet_nasal_iron',
+  'helmet_bascinet_round_ceramic',
+  'helmet_bascinet_round_copper',
+  'helmet_bascinet_round_bronze',
+  'helmet_bascinet_round_iron',
+  'helmet_norman_ceramic',
+  'helmet_norman_copper',
+  'helmet_norman_bronze',
+  'helmet_norman_iron',
+  'helmet_barbarian_ceramic',
+  'helmet_barbarian_nasal_ceramic',
+  'sack_cloth_hood_leather',
   'shoulder_legion_ceramic',
   'shoulder_legion_copper',
   'shoulder_legion_bronze',
@@ -212,12 +278,19 @@ const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'crest',
   'centurion_crest',
   'centurion_plumage',
+  'legion_plumage',
+  'plumage',
 ])
 
 const MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'crest',
   'centurion_crest',
   'centurion_plumage',
+  'legion_plumage',
+  'plumage',
+  'helmet_wings',
+  'upward_horns_white',
+  'upward_horns_ceramic',
 ])
 
 const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
@@ -257,9 +330,33 @@ const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'helmet_barbuta_copper',
   'helmet_barbuta_bronze',
   'helmet_barbuta_iron',
+  'helmet_legion_ceramic',
+  'helmet_legion_copper',
+  'helmet_legion_bronze',
+  'helmet_legion_iron',
+  'helmet_nasal_ceramic',
+  'helmet_nasal_copper',
+  'helmet_nasal_bronze',
+  'helmet_nasal_iron',
+  'helmet_bascinet_round_ceramic',
+  'helmet_bascinet_round_copper',
+  'helmet_bascinet_round_bronze',
+  'helmet_bascinet_round_iron',
+  'helmet_norman_ceramic',
+  'helmet_norman_copper',
+  'helmet_norman_bronze',
+  'helmet_norman_iron',
+  'helmet_barbarian_ceramic',
+  'helmet_barbarian_nasal_ceramic',
+  'sack_cloth_hood_leather',
   'crest',
   'centurion_crest',
   'centurion_plumage',
+  'legion_plumage',
+  'plumage',
+  'helmet_wings',
+  'upward_horns_white',
+  'upward_horns_ceramic',
   'longsword',
   'round_shield_ceramic_slash',
   'round_shield_copper_slash',
@@ -272,6 +369,19 @@ const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
 const EQUIPMENT_SHEET_OVERRIDES: Partial<
   Record<DynamicEquipmentKey, Partial<Record<EquipmentLayer, readonly EquipmentSheet[]>>>
 > = {
+  armor_leather: { front: EQUIPMENT_DEATH_SHEETS },
+  bow: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  bow_great: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  bow_recurve: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  helmet_barbarian_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
+  helmet_barbarian_nasal_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
+  quiver: { back: EQUIPMENT_DEATH_SHEETS },
+  sack_cloth_hood_leather: { front: EQUIPMENT_DEATH_SHEETS },
+  sword_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  sword_copper: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  sword_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  sword_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  upward_horns_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   cane: { front: ['walking'] },
   arrow_ceramic: { front: ['action'] },
   arrow_copper: { front: ['action'] },
@@ -328,6 +438,25 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'helmet_barbuta_copper',
   'helmet_barbuta_bronze',
   'helmet_barbuta_iron',
+  'helmet_legion_ceramic',
+  'helmet_legion_copper',
+  'helmet_legion_bronze',
+  'helmet_legion_iron',
+  'helmet_nasal_ceramic',
+  'helmet_nasal_copper',
+  'helmet_nasal_bronze',
+  'helmet_nasal_iron',
+  'helmet_bascinet_round_ceramic',
+  'helmet_bascinet_round_copper',
+  'helmet_bascinet_round_bronze',
+  'helmet_bascinet_round_iron',
+  'helmet_norman_ceramic',
+  'helmet_norman_copper',
+  'helmet_norman_bronze',
+  'helmet_norman_iron',
+  'helmet_barbarian_ceramic',
+  'helmet_barbarian_nasal_ceramic',
+  'sack_cloth_hood_leather',
   'shoulder_legion_ceramic',
   'shoulder_legion_copper',
   'shoulder_legion_bronze',
@@ -344,6 +473,11 @@ const DYNAMIC_EQUIPMENT_KEYS = [
   'crest',
   'centurion_crest',
   'centurion_plumage',
+  'legion_plumage',
+  'plumage',
+  'helmet_wings',
+  'upward_horns_white',
+  'upward_horns_ceramic',
   'longsword',
   'round_shield_ceramic_slash',
   'round_shield_copper_slash',
@@ -356,6 +490,7 @@ const DYNAMIC_EQUIPMENT_KEYS = [
 type UnitEquipmentEntry = {
   equipment: DynamicEquipmentKey
   ageEquipment?: AgeEquipmentOverrides
+  civilizations?: string[]
   minLevel?: number
   maxLevel?: number
   options?: EquipmentOptions
@@ -368,7 +503,31 @@ const metalAgeEquipment = (
   bronze: DynamicEquipmentKey,
   iron: DynamicEquipmentKey
 ): AgeEquipmentOverrides => ({ 1: copper, 2: bronze, 3: iron })
+const DEFAULT_CIVILIZATION = 'Greek'
+const CIVILIZATION_ALIASES: Record<string, string> = {
+  greek: 'Greek',
+  roman: 'Roman',
+  egyptian: 'Egyptian',
+  babylonian: 'Babylonian',
+  asian: 'Asian',
+  celtic: 'Celtic',
+  nordic: 'Nordic',
+  viking: 'Nordic',
+  nubian: 'Nubian',
+}
 const HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME = 9
+
+export function civilizationKey(civilization: string | null | undefined): string {
+  return CIVILIZATION_ALIASES[(civilization || DEFAULT_CIVILIZATION).toLowerCase()] ?? DEFAULT_CIVILIZATION
+}
+
+function isEquipmentEnabledForCivilization(
+  entry: Pick<UnitEquipmentEntry, 'civilizations'>,
+  civilization?: string
+): boolean {
+  if (!entry.civilizations?.length) return true
+  return entry.civilizations.includes(civilizationKey(civilization))
+}
 
 const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   { equipment: 'armor_leather', minLevel: 2, maxLevel: 9 },
@@ -390,6 +549,52 @@ const SOLDIER_EARLY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   },
 ]
 
+const SOLDIER_CIVILIZATION_HELMET_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
+  {
+    equipment: 'helmet_barbuta_ceramic',
+    ageEquipment: metalAgeEquipment('helmet_barbuta_copper', 'helmet_barbuta_bronze', 'helmet_barbuta_iron'),
+    civilizations: ['Greek'],
+    minLevel: 15,
+  },
+  {
+    equipment: 'helmet_legion_ceramic',
+    ageEquipment: metalAgeEquipment('helmet_legion_copper', 'helmet_legion_bronze', 'helmet_legion_iron'),
+    civilizations: ['Roman'],
+    minLevel: 15,
+  },
+  {
+    equipment: 'helmet_nasal_ceramic',
+    ageEquipment: metalAgeEquipment('helmet_nasal_copper', 'helmet_nasal_bronze', 'helmet_nasal_iron'),
+    civilizations: ['Babylonian', 'Nubian'],
+    minLevel: 15,
+  },
+  {
+    equipment: 'helmet_bascinet_round_ceramic',
+    ageEquipment: metalAgeEquipment(
+      'helmet_bascinet_round_copper',
+      'helmet_bascinet_round_bronze',
+      'helmet_bascinet_round_iron'
+    ),
+    civilizations: ['Egyptian', 'Asian', 'Celtic'],
+    minLevel: 15,
+  },
+  {
+    equipment: 'helmet_norman_ceramic',
+    ageEquipment: metalAgeEquipment('helmet_norman_copper', 'helmet_norman_bronze', 'helmet_norman_iron'),
+    civilizations: ['Nordic'],
+    minLevel: 15,
+  },
+]
+
+const SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
+  { equipment: 'centurion_crest', civilizations: ['Greek'], minLevel: 16 },
+  { equipment: 'centurion_plumage', civilizations: ['Roman'], minLevel: 16 },
+  { equipment: 'legion_plumage', civilizations: ['Babylonian'], minLevel: 16 },
+  { equipment: 'plumage', civilizations: ['Egyptian', 'Asian', 'Nubian'], minLevel: 16 },
+  { equipment: 'helmet_wings', civilizations: ['Celtic'], minLevel: 16 },
+  { equipment: 'upward_horns_white', civilizations: ['Nordic'], minLevel: 16 },
+]
+
 const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
   {
     equipment: 'armor_mail_ceramic',
@@ -408,14 +613,8 @@ const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
     minLevel: 12,
   },
   { equipment: 'cape_solid', minLevel: 14 },
-  {
-    equipment: 'helmet_barbuta_ceramic',
-    ageEquipment: metalAgeEquipment('helmet_barbuta_copper', 'helmet_barbuta_bronze', 'helmet_barbuta_iron'),
-    minLevel: 15,
-  },
-  { equipment: 'crest', minLevel: 16, maxLevel: 17 },
-  { equipment: 'centurion_crest', minLevel: 18, maxLevel: 19 },
-  { equipment: 'centurion_plumage', minLevel: 20 },
+  ...SOLDIER_CIVILIZATION_HELMET_EQUIPMENT,
+  ...SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT,
 ]
 
 const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>> = {
@@ -448,6 +647,23 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>
     ...SOLDIER_HEAVY_ARMOR_EQUIPMENT,
   ],
   [UNIT_TYPES.priest]: ['cane'],
+  [UNIT_TYPES.banditChief]: [
+    'axe_ceramic',
+    'armor_leather',
+    'helmet_barbarian_ceramic',
+    'upward_horns_ceramic',
+    'round_shield_ceramic_slash',
+  ],
+  [UNIT_TYPES.banditSword]: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
+  [UNIT_TYPES.banditArcher]: [
+    'quiver',
+    'bow',
+    {
+      equipment: 'arrow_ceramic',
+      options: { hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME },
+    },
+    'sack_cloth_hood_leather',
+  ],
 }
 
 const VILLAGER_WORK_EQUIPMENT: readonly {
@@ -578,6 +794,8 @@ function ageSheetOverrides(layer: EquipmentLayer, ageEquipment?: AgeEquipmentOve
             ...(sheets.includes('walking') ? { standingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
             ...(sheets.includes('walking') ? { walkingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
             ...(sheets.includes('action') ? { actionSheet: equipmentAlias(equipment, layer, 'action') } : {}),
+            ...(sheets.includes('dying') ? { dyingSheet: equipmentAlias(equipment, layer, 'dying') } : {}),
+            ...(sheets.includes('corpse') ? { corpseSheet: equipmentAlias(equipment, layer, 'corpse') } : {}),
           },
         ],
       ]
@@ -594,6 +812,8 @@ function layerConfig(
   const sheets = equipmentSheets(equipment, layer)
   const walkingSheet = sheets.includes('walking') ? equipmentAlias(equipment, layer, 'walking') : undefined
   const actionSheet = sheets.includes('action') ? equipmentAlias(equipment, layer, 'action') : undefined
+  const dyingSheet = sheets.includes('dying') ? equipmentAlias(equipment, layer, 'dying') : undefined
+  const corpseSheet = sheets.includes('corpse') ? equipmentAlias(equipment, layer, 'corpse') : undefined
 
   return {
     zIndex:
@@ -609,10 +829,14 @@ function layerConfig(
     walkingSheet,
     mountedSheet: MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS.has(equipment) ? walkingSheet : undefined,
     actionSheet,
+    dyingSheet,
+    corpseSheet,
     sheetDirectionCounts: {
       [SHEET_TYPES.standing]: 3,
       [SHEET_TYPES.walking]: 3,
       [SHEET_TYPES.action]: 3,
+      ...(dyingSheet ? { [SHEET_TYPES.dying]: 1 } : {}),
+      ...(corpseSheet ? { [SHEET_TYPES.corpse]: 1 } : {}),
     },
   }
 }
@@ -647,10 +871,11 @@ export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
   )
 }
 
-export function dynamicEquipmentLayersForUnit(unitType: string): UnitAppearanceLayerConfig[] {
+export function dynamicEquipmentLayersForUnit(unitType: string, civilization?: string): UnitAppearanceLayerConfig[] {
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
-    const { equipment, ageEquipment, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
-    return equipmentLayerConfigs(equipment, { ...options, minLevel, maxLevel }, ageEquipment)
+    const { equipment, ageEquipment, civilizations, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
+    if (!isEquipmentEnabledForCivilization({ civilizations }, civilization)) return []
+    return equipmentLayerConfigs(equipment, { ...options, civilizations, minLevel, maxLevel }, ageEquipment)
   })
 }
 
@@ -660,9 +885,10 @@ export function dynamicEquipmentLayersForVillager(): UnitAppearanceLayerConfig[]
   )
 }
 
-export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0): string[] {
+export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0, civilization?: string): string[] {
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
-    const { equipment, ageEquipment, minLevel, maxLevel } = unitEquipmentEntry(definition)
+    const { equipment, ageEquipment, civilizations, minLevel, maxLevel } = unitEquipmentEntry(definition)
+    if (!isEquipmentEnabledForCivilization({ civilizations }, civilization)) return []
     if (!isEquipmentUnlocked({ minLevel, maxLevel }, level)) return []
     return equipmentForAge(equipment, ageEquipment, age)
   })

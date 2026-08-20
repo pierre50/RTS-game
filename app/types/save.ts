@@ -51,6 +51,7 @@ export type SaveEntityState = {
   label?: string
   loading?: number | null
   loadingType?: string | null
+  resourceLoads?: Record<string, number>
   loop?: boolean
   mountedOnHorse?: boolean
   name?: string

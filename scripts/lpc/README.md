@@ -89,11 +89,12 @@ python3 scripts/lpc/audit_equipment.py
 
 - `config.py`: civilizations, skin tones, palettes, frame sizes, `Sheet`/`UnitLook`.
 - `jobs.py`: equipment worn by job/unit for each animation (walk, action, death).
-- `equipment.py`: layers (background/foreground) associated with each equipment.
+- `equipment.py`: layers (background/foreground) and runtime overlay metadata for each equipment.
 - `sources.py`: paths of the required source spritesheets (used by `sync.py`).
 - `image_pipeline.py`: frame composition (recolor, cropping, layers, sheet writing).
 - `outline_style.py`: experimental outline softening/removal pass (see above).
 - `build.py`: orchestrates the full bake + calls the retro-style and outline passes.
+- `build_equipment.py`: bakes the runtime equipment overlay sheets.
 - `build_animals.py`: bakes the wildlife spritesheets (see above).
 - `sync.py`: downloads the sources from the Universal LPC repository.
 - `audit_equipment.py`: diagnoses empty layer/animation combinations.

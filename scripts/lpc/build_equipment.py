@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
 from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS
-from dataclasses import replace
 
-from dynamic_equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
+from equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
 from image_pipeline import compose_frame, open_layer, source_frames
 from retro_palette import find_hex_palette, load_hex_palette
 
@@ -18,28 +18,48 @@ SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
 OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "lpc-equipment"
 
 
-def sheet_plan(action_animation: str) -> dict[str, tuple[str, object]]:
-    return {
+def display_path(path: Path) -> Path:
+    try:
+        return path.relative_to(PROJECT_ROOT)
+    except ValueError:
+        return path
+
+
+def sheet_plan(equipment) -> dict[str, tuple[str, object]]:
+    plan = {
         "walking": ("walk", SHEET_BY_KEY["walking"]),
-        "action": (action_animation, SHEET_BY_ANIMATION[action_animation]),
+        "action": (equipment.action_animation, SHEET_BY_ANIMATION[equipment.action_animation]),
     }
+    if has_animation_content(equipment, "hurt"):
+        plan["dying"] = ("hurt", SHEET_BY_KEY["dying"])
+        plan["corpse"] = ("hurt", SHEET_BY_KEY["corpse"])
+    return plan
 
 
 def build_equipment(source_root: Path, output_root: Path, only: set[str] | None = None) -> None:
     retro_palette_hex = find_hex_palette(RETRO_PALETTE_ROOT / "_")
     if retro_palette_hex is None:
         raise RuntimeError(f"no .hex palette found in {RETRO_PALETTE_ROOT}")
+    print(f"Retro palette: {retro_palette_hex.name} ({retro_palette_hex.relative_to(PROJECT_ROOT)})")
     retro_palette = load_hex_palette(retro_palette_hex)
     output_root.mkdir(parents=True, exist_ok=True)
 
+    unknown_equipment = sorted((only or set()) - set(DYNAMIC_EQUIPMENT))
+    if unknown_equipment:
+        raise RuntimeError(f"unknown dynamic equipment(s): {', '.join(unknown_equipment)}")
+
+    selected_equipment = [
+        equipment for equipment in DYNAMIC_EQUIPMENT.values() if only is None or equipment.key in only
+    ]
+    print(f"Building {len(selected_equipment)} dynamic LPC equipment item(s)")
+
     built = 0
-    for equipment in DYNAMIC_EQUIPMENT.values():
-        if only is not None and equipment.key not in only:
-            continue
+    for equipment in selected_equipment:
+        before_equipment = built
         active_layers = active_layer_keys(equipment)
         variants = equipment.variants or (None,)
         for variant in variants:
-            for output_sheet, (animation, source_sheet) in sheet_plan(equipment.action_animation).items():
+            for output_sheet, (animation, source_sheet) in sheet_plan(equipment).items():
                 if not has_animation_content(equipment, animation):
                     continue
                 layers_by_key = {layer.key: layer for layer in equipment.layers_by_animation.get(animation, ())}
@@ -82,8 +102,9 @@ def build_equipment(source_root: Path, output_root: Path, only: set[str] | None 
                         output_dir = output_dir / variant
                     bake_sheet(output_dir, frames, animation_speed_for(output_sheet), retro_palette)
                     built += 1
+        print(f"  baked {equipment.key} ({built - before_equipment} sheets, {built} total)")
 
-    print(f"Generated {built} dynamic LPC equipment sheets into {output_root.relative_to(PROJECT_ROOT)}")
+    print(f"Generated {built} dynamic LPC equipment sheets into {display_path(output_root)}")
 
 
 def main() -> None:

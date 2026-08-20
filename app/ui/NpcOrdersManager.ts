@@ -37,6 +37,7 @@ const NPC_ORDER_SPECS: {
   { id: 'stone', labelKey: 'npcOrderStone', villagerJob: 'stone' },
   { id: 'gold', labelKey: 'npcOrderGold', villagerJob: 'gold' },
   { id: 'construction', labelKey: 'npcOrderConstruction', villagerJob: 'construction' },
+  { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
   { id: 'stockpile', labelKey: 'npcOrderStockpile', run: sendNpcToStockpile },
@@ -180,8 +181,9 @@ export class NpcOrdersManager {
       if (!spec.villagerJob) continue
       const button = this.buttons.get(spec.id)
       if (!button) continue
+      const needsKnownTarget = spec.villagerJob === 'construction' || spec.villagerJob === 'horseCapture'
       const hasTarget =
-        spec.villagerJob !== 'construction' ||
+        !needsKnownTarget ||
         npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, spec.villagerJob!))
       button.disabled = !hasVillager || !hasTarget
     }

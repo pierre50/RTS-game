@@ -96,12 +96,13 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
 const CONTROL_BINDING_ACTIONS = Object.keys(DEFAULT_KEY_BINDINGS) as ControlBindingAction[]
 
 export const SPEED_PRESETS = [
-  { key: 'speedSlow', value: 1 },
+  { key: 'speedSlow', value: 1.35 },
   { key: 'speedNormal', value: 1.5 },
   { key: 'speedFast', value: 2 },
 ]
 export const CAMERA_ZOOM_PRESETS = [
-  { key: 'zoomVeryClose', value: 2 },
+  { key: 'zoomVeryClose', value: 4 },
+  { key: 'zoomClose', value: 2 },
   { key: 'zoomStandard', value: 1 },
 ]
 const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]

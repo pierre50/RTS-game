@@ -16,6 +16,7 @@ import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
 import { getUnitCombatRange } from '../../lib/equipmentStats'
 import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
+import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -49,9 +50,13 @@ export class UnitCombat {
       onOutOfRange: dest => {
         unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
       },
-      onTargetUnavailable: dest => {
+      onTargetUnavailable: (dest, phase) => {
         if (dest && (dest.hitPoints ?? 0) <= 0) {
           dest.die?.()
+        }
+        if (phase === 'preflight') {
+          unit.affectNewDest?.()
+          return
         }
         this.finishAttackAfterCurrentLoop()
       },
@@ -81,6 +86,7 @@ export class UnitCombat {
     const unit = this.unit
     if (unit.context?.editor) return
     if (!canAutoAcquireTarget(unit)) return
+    if (shouldSuppressAggroDuringCombatRecovery(unit)) return
     if (
       unit.work === WORK_TYPES.attacker &&
       instance &&
@@ -165,6 +171,7 @@ export class UnitCombat {
     const menu = unit.context?.menu
     const player = unit.owner
     const rangedAttackRange = getUnitCombatRange(unit)
+    markCombatAttack(unit)
 
     if (!unit.getActionCondition?.(unit.dest)) {
       unit.affectNewDest?.()

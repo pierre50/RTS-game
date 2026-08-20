@@ -1,14 +1,13 @@
 import {
   ACTION_TYPES,
   FAMILY_TYPES,
-  LOADING_FOOD_TYPES,
   LOADING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
-  RESOURCE_STOCKPILE_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
+  STEP_TIME,
   TYPE_ACTION,
 } from '../../constants'
 import {
@@ -25,8 +24,9 @@ import {
   showHealingFeedback,
   showConversionFeedback,
   showResourceGainFeedback,
-  HUNTING_SPEAR_POWER,
-  HUNTING_SPEAR_PROJECTILE,
+  HUNTING_PROJECTILE,
+  isBanditOwner,
+  instancesDistance,
   resumeVillagerAutonomy,
 } from '../../lib'
 import { Projectile } from '../Projectile'
@@ -47,7 +47,22 @@ import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitCont
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
-import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import {
+  addCarriedResource,
+  clearCarriedResource,
+  clearCarriedResources,
+  getCarriedResourceSpace,
+  getDeliverableResourceEntries,
+  getPlayerResourceKey,
+  getTotalCarriedResources,
+} from '../../lib/resourceCarry'
+import { HeroLassoThrow } from '../HeroLassoThrow'
+import {
+  getNearestAvailableStableForUnit,
+  routeCapturedHorseToStableWithOwnerContact,
+} from '../../lib/horseCapture'
+import type { AnimalEntity, BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { SchedulerTaskId } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
 const BASE_CONVERSION_MIN_CHANTS = 3
@@ -63,9 +78,96 @@ const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEnti
   Wheat: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),
   Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
 }
+const CAPTURE_HORSE_RETRY_INTERVAL_MS = 750
+const CAPTURE_HORSE_REPATH_INTERVAL_MS = 220
+const CAPTURE_HORSE_OWNER_STABLE_MIN_TIMEOUT_MS = 20000
+const CAPTURE_HORSE_OWNER_STABLE_MS_PER_CELL = 900
+
+type CaptureHorseActionState = {
+  lastLassoAttemptAt: number
+  lastRepathAt: number
+  stableRouteStop: (() => void) | null
+  stableRouteHorseLabel: string | null
+  tickTaskId: SchedulerTaskId | null
+}
+
+const captureHorseActionStateByUnit = new WeakMap<UnitEntity, CaptureHorseActionState>()
+
+type HeroLassoWithTarget = {
+  target?: RuntimeEntity | null
+}
+
+function getCaptureHorseActionState(unit: UnitEntity): CaptureHorseActionState {
+  let state = captureHorseActionStateByUnit.get(unit)
+  if (!state) {
+    state = {
+      lastLassoAttemptAt: 0,
+      lastRepathAt: 0,
+      stableRouteStop: null,
+      stableRouteHorseLabel: null,
+      tickTaskId: null,
+    }
+    captureHorseActionStateByUnit.set(unit, state)
+  }
+  return state
+}
+
+function stopCaptureHorseTick(unit: UnitEntity, state: CaptureHorseActionState): void {
+  if (state.tickTaskId == null) return
+  unit.context?.scheduler?.remove(state.tickTaskId)
+  state.tickTaskId = null
+}
+
+function ensureCaptureHorseTick(unit: UnitEntity, state: CaptureHorseActionState): void {
+  const scheduler = unit.context?.scheduler
+  if (!scheduler || state.tickTaskId != null) return
+  state.tickTaskId = scheduler.add(() => {
+    if (unit.action !== ACTION_TYPES.captureHorse || unit.isDead || unit.isDestroyed) {
+      resetCaptureHorseActionState(unit)
+      return
+    }
+    unit.getAction?.(ACTION_TYPES.captureHorse)
+  }, STEP_TIME, 'unit.captureHorse')
+}
+
+function getCaptureHorseOwnerStableTimeoutMs(owner: UnitEntity, stable: BuildingEntity): number {
+  return Math.max(
+    CAPTURE_HORSE_OWNER_STABLE_MIN_TIMEOUT_MS,
+    Math.ceil(instancesDistance(owner, stable) * CAPTURE_HORSE_OWNER_STABLE_MS_PER_CELL)
+  )
+}
+
+function releaseCaptureHorseAttachment(
+  unit: UnitEntity,
+  horse: AnimalEntity | null | undefined = null,
+  { allowFlee = true }: { allowFlee?: boolean } = {}
+): void {
+  const lasso = getHeroCaptureLasso(unit)
+  const lassoTarget = (lasso as HeroLassoWithTarget | null)?.target
+  const lassoHorse = isHorseEntity(lassoTarget) ? lassoTarget : null
+  const ownedHorse = horse && getHorseLassoOwner(horse)?.label === unit.label ? horse : lassoHorse
+
+  if (lasso && lassoHorse && getHorseLassoOwner(lassoHorse)?.label === unit.label) {
+    lasso.releaseHorse({ allowStable: false, allowFlee })
+  } else if (ownedHorse && getHorseLassoOwner(ownedHorse)?.label === unit.label) {
+    ownedHorse.isLassoed = false
+    ownedHorse.lassoOwner = null
+    if (allowFlee) ownedHorse.animalBehavior?.start?.()
+  }
+  lasso?.clearLasso({ releaseHorse: false })
+}
+
+function resetCaptureHorseActionState(unit: UnitEntity, horse: AnimalEntity | null = null): void {
+  const state = captureHorseActionStateByUnit.get(unit)
+  if (state?.stableRouteStop) {
+    state.stableRouteStop()
+  }
+  if (state) stopCaptureHorseTick(unit, state)
+  releaseCaptureHorseAttachment(unit, horse)
+  captureHorseActionStateByUnit.delete(unit)
+}
 
 type OwnerListKey = 'units' | 'buildings'
-type PlayerResourceKey = (typeof RESOURCE_STOCKPILE_TYPES)[keyof typeof RESOURCE_STOCKPILE_TYPES]
 type ConvertibleEntity = (UnitEntity | BuildingEntity) & Partial<UnitEntity & BuildingEntity>
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
@@ -84,8 +186,16 @@ function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value i
   return isRuntimeEntity(value) && value.family === FAMILY_TYPES.resource
 }
 
-function isDepletedBerrybush(value: RuntimeEntity | null | undefined): boolean {
+function isDepletedBerrybush(value: RuntimeEntity | null | undefined): value is RuntimeEntity {
   return Boolean(value?.type === RESOURCE_TYPES.berrybush && (value.quantity ?? 0) <= 0)
+}
+
+function isHorseEntity(value: RuntimeEntity | null | undefined): value is AnimalEntity {
+  return Boolean(value?.family === FAMILY_TYPES.animal && value.type === 'Horse')
+}
+
+function getHorseLassoOwner(horse: AnimalEntity): UnitEntity | null | undefined {
+  return horse.lassoOwner
 }
 
 function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
@@ -108,15 +218,19 @@ function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): valu
   return isResourceEntity(value) && value.type === RESOURCE_TYPES.wheat
 }
 
+function getHeroLassoTarget(unit: UnitEntity): RuntimeEntity | null {
+  const lasso = (unit.heroLasso ?? null) as HeroLassoWithTarget | null
+  const target = lasso?.target
+  return isRuntimeEntity(target) ? target : null
+}
+
+function getHeroCaptureLasso(unit: UnitEntity): HeroLassoThrow | null {
+  return unit.heroLasso instanceof HeroLassoThrow ? unit.heroLasso : null
+}
+
 const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined => {
   if (!owner) return undefined
   return key === 'units' ? owner.units : owner.buildings
-}
-
-function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
-  if (!loadingType) return null
-  if (LOADING_FOOD_TYPES.includes(loadingType)) return 'food'
-  return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
 }
 
 function stopManualHeroAction(unit: UnitEntity): void {
@@ -190,6 +304,67 @@ function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'bu
 
 function isConvertibleEntity(target: RuntimeEntity): target is ConvertibleEntity {
   return isUnitEntity(target) || isBuildingEntity(target)
+}
+
+const lastConversionDebugAt = new Map<string, number>()
+
+function debugConversionFailure(
+  converter: UnitEntity,
+  target: RuntimeEntity,
+  reason: string,
+  details: Record<string, unknown> = {}
+): void {
+  if (!converter.owner?.isPlayed) return
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  const key = `${converter.label ?? 'converter'}:${target.label ?? 'target'}:${reason}`
+  const last = lastConversionDebugAt.get(key) ?? 0
+  if (now - last < 600) return
+  lastConversionDebugAt.set(key, now)
+  console.warn('[conversion]', reason, {
+    converter: {
+      label: converter.label,
+      type: converter.type,
+      owner: converter.owner?.label,
+      action: converter.action,
+    },
+    target: {
+      label: target.label,
+      type: target.type,
+      family: target.family,
+      owner: target.owner?.label,
+      hitPoints: target.hitPoints,
+      isDead: target.isDead,
+      isDestroyed: target.isDestroyed,
+    },
+    ...details,
+  })
+}
+
+function clearConvertedUnitRuntimeState(target: ConvertibleEntity): void {
+  target.stopInterval?.()
+  if (target.energyWaitTaskId != null) {
+    target.context?.scheduler?.remove(target.energyWaitTaskId)
+    target.energyWaitTaskId = null
+  }
+  if (target.sprite) {
+    target.sprite.onLoop = undefined
+    target.sprite.onFrameChange = undefined
+    target.sprite.onComplete = undefined
+  }
+  target.path = []
+  target.action = null
+  target.dest = null
+  target.realDest = null
+  target.previousDest = null
+  target.previousWork = null
+  target.waitingForEnergyAction = null
+  target.waitingForEnergyTarget = null
+  target.combatMode = null
+  target.lastCombatRecoveryMoveAt = null
+  target.actionLocked = false
+  target.pendingOrder = null
+  target.blockedGatherApproach = null
+  target.inactif = true
 }
 
 // Resources gained per swing (chop/farm/mine/forage/...), separate from
@@ -273,33 +448,33 @@ export class UnitActions {
     const stopConverter = options.stopConverter ?? true
     const menu = unit.context?.menu
     const player = unit.owner
-    if (!isConvertibleEntity(target)) return false
+    if (!isConvertibleEntity(target)) {
+      debugConversionFailure(unit, target, 'target-not-convertible')
+      return false
+    }
     const t = target
     const oldOwner = t.owner
     const newOwner = unit.owner
-    if (!oldOwner || !newOwner || oldOwner.label === newOwner.label) return false
+    if (!oldOwner || !newOwner || oldOwner.label === newOwner.label) {
+      debugConversionFailure(unit, target, 'invalid-owner', {
+        oldOwner: oldOwner?.label,
+        newOwner: newOwner?.label,
+      })
+      return false
+    }
+    if (isBanditOwner(newOwner)) {
+      debugConversionFailure(unit, target, 'bandit-owner-cannot-convert', {
+        newOwner: newOwner.label,
+      })
+      return false
+    }
 
     if (t.selected) {
       t.select?.()
       if (player?.selectedOther === target) player.selectedOther = null
     }
 
-    t.stopInterval?.()
-    if (t.sprite) {
-      t.sprite.onLoop = undefined
-      t.sprite.onFrameChange = undefined
-      t.sprite.onComplete = undefined
-    }
-    t.path = []
-    t.action = null
-    t.dest = null
-    t.realDest = null
-    t.previousDest = null
-    t.previousWork = null
-    t.actionLocked = false
-    t.pendingOrder = null
-    t.blockedGatherApproach = null
-    t.inactif = true
+    clearConvertedUnitRuntimeState(t)
     t.assetCiv = t.assetCiv || oldOwner.civ
     t.assetAge = t.assetAge ?? oldOwner.age
     t.owner = newOwner
@@ -444,9 +619,8 @@ export class UnitActions {
         unit.affectNewDest?.()
         return
       }
-      const maxLoad = unit.loadingMax?.[loadingType] ?? Infinity
-      const wasEmpty = (unit.loading ?? 0) === 0
-      const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
+      const wasEmpty = getTotalCarriedResources(unit) === 0
+      const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, loadingType))
       if (!dest || gain <= 0) {
         if (isHeroControlled(unit)) {
           if (dest) menu?.showMessage(t('heroInventoryFull'), 'warning')
@@ -467,8 +641,7 @@ export class UnitActions {
         return
       }
       gatherProgress = 0
-      unit.loading = (unit.loading ?? 0) + gain
-      unit.loadingType = loadingType
+      addCarriedResource(unit, loadingType, gain)
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       unit.updateInterfaceLoading?.()
       this.playSound(soundId)
@@ -525,21 +698,34 @@ export class UnitActions {
     sprite.onFrameChange = undefined
     switch (name) {
       case ACTION_TYPES.delivery: {
+        if (isHeroControlled(unit)) getTotalCarriedResources(unit)
         if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
           unit.stop?.()
           return
         }
-        const deliveredAmount = unit.loading ?? 0
-        const resourceKey = getPlayerResourceKey(unit.loadingType)
-        if (resourceKey && unit.owner) {
-          unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + deliveredAmount
+        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+        const entries = dest ? getDeliverableResourceEntries(unit, dest) : []
+        const deliveredAmount = entries.reduce((total, [, amount]) => total + amount, 0)
+        if (deliveredAmount <= 0) {
+          unit.stop?.()
+          return
+        }
+        for (const [loadingType, amount] of entries) {
+          const resourceKey = getPlayerResourceKey(loadingType)
+          if (resourceKey && unit.owner) {
+            unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
+          }
+          clearCarriedResource(unit, loadingType)
         }
         showResourceGainFeedback(unit, deliveredAmount)
         unit.owner?.isPlayed && menu?.updateTopbar()
-        unit.loading = 0
-        unit.loadingType = null
         unit.updateInterfaceLoading?.()
-        applyUnloadedWorkAssets(unit)
+        if (getTotalCarriedResources(unit) > 0) {
+          applyLoadingWorkAssets(unit)
+        } else {
+          clearCarriedResources(unit)
+          applyUnloadedWorkAssets(unit)
+        }
         unit.setTextures?.(SHEET_TYPES.standing)
         if (unit.previousDest) {
           unit.goBackToPrevious?.()
@@ -569,9 +755,8 @@ export class UnitActions {
             return
           }
           if (d && !isHeroControlled(unit)) d.isUsedBy = unit
-          const maxLoad = unit.loadingMax?.[LOADING_TYPES.wheat] ?? Infinity
-          const wasEmpty = (unit.loading ?? 0) === 0
-          const gain = Math.min(getGatherAmount(unit), Math.max(maxLoad - (unit.loading ?? 0), 0))
+          const wasEmpty = getTotalCarriedResources(unit) === 0
+          const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, LOADING_TYPES.wheat))
           if (!d || gain <= 0) {
             if (isHeroControlled(unit)) {
               if (d) {
@@ -589,8 +774,7 @@ export class UnitActions {
             if (isHeroControlled(unit)) stopManualHeroAction(unit)
             return
           }
-          unit.loading = (unit.loading ?? 0) + gain
-          unit.loadingType = LOADING_TYPES.wheat
+          addCarriedResource(unit, LOADING_TYPES.wheat, gain)
           grantUnitXp(unit, XP_CATEGORIES.farming, gain)
           unit.updateInterfaceLoading?.()
           this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
@@ -628,8 +812,8 @@ export class UnitActions {
             return
           }
           if (!dest) return
-          const maxLoad = unit.loadingMax?.[LOADING_TYPES.wood] ?? Infinity
-          if ((unit.loading ?? 0) >= maxLoad) {
+          const woodSpace = getCarriedResourceSpace(unit, LOADING_TYPES.wood)
+          if (woodSpace <= 0) {
             if (isHeroControlled(unit)) {
               menu?.showMessage(t('heroInventoryFull'), 'warning')
               stopManualHeroAction(unit)
@@ -656,10 +840,9 @@ export class UnitActions {
               dest.setCuttedTreeTexture?.()
             }
           } else {
-            const wasEmpty = (unit.loading ?? 0) === 0
-            const gain = Math.min(getGatherAmount(unit), maxLoad - (unit.loading ?? 0))
-            unit.loading = (unit.loading ?? 0) + gain
-            unit.loadingType = LOADING_TYPES.wood
+            const wasEmpty = getTotalCarriedResources(unit) === 0
+            const gain = Math.min(getGatherAmount(unit), woodSpace)
+            addCarriedResource(unit, LOADING_TYPES.wood, gain)
             grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
             unit.updateInterfaceLoading?.()
             dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
@@ -812,6 +995,8 @@ export class UnitActions {
         break
       case ACTION_TYPES.convert:
         if (!unit.getActionCondition?.(unit.dest)) {
+          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+          if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'start' })
           unit.affectNewDest?.()
           return
         }
@@ -820,6 +1005,7 @@ export class UnitActions {
         sprite.onLoop = () => {
           const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
           if (!unit.getActionCondition?.(dest)) {
+            if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'loop' })
             unit.affectNewDest?.()
             return
           }
@@ -917,14 +1103,206 @@ export class UnitActions {
               {
                 owner: unit,
                 target: dest,
-                type: HUNTING_SPEAR_PROJECTILE,
+                type: HUNTING_PROJECTILE,
                 destination: unit.realDest,
-                weaponPower: HUNTING_SPEAR_POWER,
               },
               unit.context!
             )
             map.addChild(projectile)
           })
+        }
+        break
+      }
+      case ACTION_TYPES.captureHorse: {
+        const unitContext = unit.context
+        if (!unitContext) {
+          unit.affectNewDest?.()
+          return
+        }
+        const unitDest = isRuntimeEntity(unit.dest) ? unit.dest : null
+        const heroLassoTarget = getHeroLassoTarget(unit)
+        const now = unitContext.scheduler?.elapsedMs ?? Date.now()
+        const captureHorseState = getCaptureHorseActionState(unit)
+        const clearStableRoute = () => {
+          getHeroCaptureLasso(unit)?.setExternalStableRouteActive(false)
+          if (captureHorseState.stableRouteStop) {
+            captureHorseState.stableRouteStop()
+            captureHorseState.stableRouteStop = null
+          }
+          captureHorseState.stableRouteHorseLabel = null
+        }
+        const stableTarget = unitDest?.family === FAMILY_TYPES.building ? (unitDest as BuildingEntity) : null
+        const horse = isHorseEntity(unitDest) ? unitDest : isHorseEntity(heroLassoTarget) ? heroLassoTarget : null
+        if (!horse || horse.isDead || horse.isDestroyed) {
+          clearStableRoute()
+          resetCaptureHorseActionState(unit, horse)
+          unit.affectNewDest?.()
+          return
+        }
+
+        const lassoOwner = getHorseLassoOwner(horse)
+        if (!horse.isLassoed && lassoOwner?.label === unit.label) {
+          horse.lassoOwner = null
+        }
+        if (horse.isLassoed && !lassoOwner) {
+          horse.isLassoed = false
+          clearStableRoute()
+          captureHorseState.lastLassoAttemptAt = 0
+          captureHorseState.lastRepathAt = 0
+          resetCaptureHorseActionState(unit, horse)
+          unit.affectNewDest?.()
+          return
+        }
+        const isLassoedByOther = Boolean(horse.isLassoed && lassoOwner && lassoOwner.label !== unit.label)
+        if (isLassoedByOther) {
+          clearStableRoute()
+          resetCaptureHorseActionState(unit)
+          unit.affectNewDest?.()
+          return
+        }
+        ensureCaptureHorseTick(unit, captureHorseState)
+
+        const heroCaptureLasso = getHeroCaptureLasso(unit)
+        const lassoTarget = (heroCaptureLasso as HeroLassoWithTarget | null)?.target
+        if (
+          heroCaptureLasso &&
+          heroCaptureLasso.state !== 'retracting' &&
+          isRuntimeEntity(lassoTarget) &&
+          lassoTarget.label !== horse.label
+        ) {
+          heroCaptureLasso.clearLasso?.({ releaseHorse: false })
+        }
+        const hasActiveCaptureLasso =
+          unit.action === ACTION_TYPES.captureHorse &&
+          Boolean(
+            heroCaptureLasso &&
+              heroCaptureLasso.state !== 'retracting' &&
+              (!isRuntimeEntity(lassoTarget)
+                ? unitDest?.label === horse.label
+                : lassoTarget.label === horse.label)
+          )
+        const isHeroLassoOwner = horse.isLassoed && horse.type === 'Horse' && lassoOwner?.label === unit.label
+        const isCapturing = isHeroLassoOwner || hasActiveCaptureLasso
+
+        if (stableTarget) {
+          if (!isCapturing || !horse.isLassoed) {
+            clearStableRoute()
+            unit.affectNewDest?.()
+            unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+            return
+          }
+          if (unit.isUnitAtDest?.(unit.action, stableTarget)) {
+            unit.setTextures?.(SHEET_TYPES.standing)
+          } else if ((unit.path?.length ?? 0) === 0) {
+            unit.sendToEvt?.(stableTarget, ACTION_TYPES.captureHorse, { forceRepath: true })
+          }
+          return
+        }
+
+        if (!isCapturing && !unit.getActionCondition?.(horse, ACTION_TYPES.captureHorse)) {
+          clearStableRoute()
+          resetCaptureHorseActionState(unit, horse)
+          unit.affectNewDest?.()
+          return
+        }
+
+        unit.setTextures?.(SHEET_TYPES.action)
+
+        if (!unit.isUnitAtDest?.(unit.action, horse)) {
+          unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+          return
+        }
+
+        if (unit.destHasMoved?.() && horse && unit.realDest) {
+          unit.realDest.i = horse.i
+          unit.realDest.j = horse.j
+          unit.realDest.x = horse.x
+          unit.realDest.y = horse.y
+          const oldDeg = unit.degree
+          unit.degree = getInstanceDegree(unit, horse.x, horse.y)
+          if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+            unit.setTextures?.(SHEET_TYPES.action)
+          }
+        }
+
+        if (!isCapturing && !hasActiveCaptureLasso && unit.context && horse) {
+          if (now - captureHorseState.lastRepathAt > CAPTURE_HORSE_REPATH_INTERVAL_MS) {
+            unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+            captureHorseState.lastRepathAt = now
+          }
+          if (now - captureHorseState.lastLassoAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return
+          captureHorseState.lastLassoAttemptAt = now
+          const lasso = new HeroLassoThrow(unit, { x: horse.x, y: horse.y }, unit.context, {
+            pullCapturedHorseToOwner: true,
+            allowStableOnRelease: false,
+            releaseHorseOnClear: false,
+            autoRouteStableWhileAttached: false,
+            showMessages: unit.owner?.isPlayed,
+          })
+          unit.context.map?.addChild(lasso)
+          return
+        }
+
+        if (!horse.isLassoed) {
+          clearStableRoute()
+          captureHorseState.lastRepathAt = now
+          return
+        }
+
+        const stable = getNearestAvailableStableForUnit(unit, horse)
+        if (!stable) {
+          clearStableRoute()
+          unit.affectNewDest?.()
+          resetCaptureHorseActionState(unit, horse)
+          return
+        }
+
+        if (captureHorseState.stableRouteHorseLabel !== horse.label) {
+          clearStableRoute()
+        }
+        if (!captureHorseState.stableRouteStop) {
+          captureHorseState.stableRouteHorseLabel = horse.label
+          captureHorseState.stableRouteStop = routeCapturedHorseToStableWithOwnerContact({
+            gameContext: unitContext,
+            owner: unit,
+            horse,
+            ownerContactTimeoutMs: getCaptureHorseOwnerStableTimeoutMs(unit, stable),
+            isRouteValid: () =>
+              Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
+            onHorseRouteStart: () => {
+              getHeroCaptureLasso(unit)?.setExternalStableRouteActive(true)
+            },
+            onStored: () => {
+              horse.isLassoed = false
+              horse.lassoOwner = null
+              clearStableRoute()
+              unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+              if (unit.action === ACTION_TYPES.captureHorse) {
+                unit.affectNewDest?.()
+              }
+            },
+            onFailure: () => {
+              clearStableRoute()
+              horse.isLassoed = false
+              horse.lassoOwner = null
+              unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+              if (unit.action === ACTION_TYPES.captureHorse) {
+                if (unit.getActionCondition?.(horse, ACTION_TYPES.captureHorse)) {
+                  unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+                } else {
+                  unit.affectNewDest?.()
+                }
+              }
+            },
+          })
+        }
+
+        const shouldMoveToStable =
+          !stableTarget &&
+          (unitDest?.label !== stable.label ||
+            ((unit.path?.length ?? 0) === 0 && !unit.isUnitAtDest?.(ACTION_TYPES.captureHorse, stable)))
+        if (shouldMoveToStable) {
+          unit.sendToEvt?.(stable, ACTION_TYPES.captureHorse, { forceRepath: true })
         }
         break
       }

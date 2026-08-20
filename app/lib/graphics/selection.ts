@@ -88,9 +88,11 @@ function getSelectionOffsetForEvenFootprint({ i, j, x = 0, y = 0, size = 1 }: Ro
   if (!Number.isFinite(i ?? NaN) || !Number.isFinite(j ?? NaN) || footprintSize % 2 !== 0) {
     return { x: 0, y: 0 }
   }
+  const safeI = Number(i)
+  const safeJ = Number(j)
 
   const offset = (footprintSize - 1) / 2
-  const [centerX, centerY] = cartesianToIsometric(i + offset, j + offset)
+  const [centerX, centerY] = cartesianToIsometric(safeI + offset, safeJ + offset)
   return { x: centerX - x, y: centerY - y }
 }
 
@@ -107,10 +109,14 @@ export function getRoundedIsoFootprintPoints<TCell extends GridCell = GridCell>(
   const fallbackY = entity.y ?? 0
 
   if (size % 2 === 0 && Number.isFinite(entity.i ?? NaN) && Number.isFinite(entity.j ?? NaN) && grid) {
-    const cells = getBuildingFootprintCells(entity.i, entity.j, grid, size)
+    const entityI = entity.i
+    const entityJ = entity.j
+    if (entityI == null || entityJ == null) return getRoundedIsoShapePoints({ x: fallbackX, y: fallbackY, factor: size })
+
+    const cells = getBuildingFootprintCells(entityI, entityJ, grid, size)
     if (cells.length === size ** 2) {
       const offset = (size - 1) / 2
-      const [x, y] = cartesianToIsometric(entity.i + offset, entity.j + offset)
+      const [x, y] = cartesianToIsometric(entityI + offset, entityJ + offset)
       return getRoundedIsoShapePoints({ x, y, factor: size })
     }
   }

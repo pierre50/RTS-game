@@ -13,6 +13,7 @@ function loadUnitEnergy() {
   })
   const module = { exports: {} }
   const fatigueFeedbackCalls = []
+  const combatBehaviorCalls = []
   const mocks = {
     '../constants': {
       ACTION_TYPES: {
@@ -33,12 +34,26 @@ function loadUnitEnergy() {
       STEP_TIME: 100,
     },
     './combatFeedback': { showFatigueFeedback: unit => fatigueFeedbackCalls.push(unit) },
+    './combatBehavior': {
+      enterCombatRecovery: (unit, target) => {
+        combatBehaviorCalls.push(['enter', unit, target])
+        unit.combatMode = 'recover'
+        unit.action = null
+      },
+      exitCombatRecovery: unit => {
+        combatBehaviorCalls.push(['exit', unit])
+        unit.combatMode = null
+      },
+      isCombatRecoveryReadyToReengage: unit => (unit.energy ?? 0) >= (unit.totalEnergy ?? 0),
+      updateCombatRecoveryMovement: unit => combatBehaviorCalls.push(['update', unit]),
+    },
     './lang': { t: key => key },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'arpg' },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.__fatigueFeedbackCalls = fatigueFeedbackCalls
+  module.exports.__combatBehaviorCalls = combatBehaviorCalls
   return module.exports
 }
 
@@ -140,7 +155,7 @@ test('npc waits for full energy before resuming an action', () => {
 })
 
 test('npc attack fatigue resumes after retreat movement stops the unit interval', () => {
-  const { __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
+  const { __combatBehaviorCalls, __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
   const calls = []
   const schedulerTasks = new Map()
   const target = { family: 'unit', isDestroyed: false, isDead: false, solid: true, i: 0, j: 0, x: 0, y: 0 }
@@ -185,17 +200,71 @@ test('npc attack fatigue resumes after retreat movement stops the unit interval'
   assert.equal(unit.waitingForEnergyAction, 'attack')
   assert.deepEqual(__fatigueFeedbackCalls, [unit])
   assert.equal(schedulerTasks.size, 1)
-  assert.deepEqual(calls, [
-    ['stopInterval'],
-    ['sendTo', retreatCell],
-    ['stopInterval'],
-    ['scheduler.add', 'unit.energyWait'],
-  ])
+  assert.deepEqual(calls, [['stopInterval'], ['scheduler.add', 'unit.energyWait']])
+  assert.deepEqual(__combatBehaviorCalls[0], ['enter', unit, target])
 
   unit.context.scheduler.elapsedMs = 100
   schedulerTasks.get(1).callback()
   assert.equal(unit.waitingForEnergyAction, null)
   assert.equal(unit.energyWaitTaskId, null)
+  assert.deepEqual(__combatBehaviorCalls.at(-1), ['exit', unit])
+  assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'attack', { forceRepath: true }])
+})
+
+test('npc attack fatigue keeps repositioning while waiting for full energy', () => {
+  const { __combatBehaviorCalls, waitForEnergy } = loadUnitEnergy()
+  const calls = []
+  const schedulerTasks = new Map()
+  const target = { family: 'unit', isDestroyed: false, isDead: false, solid: true, i: 0, j: 0, x: 0, y: 0 }
+  const recoveryCell = { solid: false, border: false, i: 1, j: 1, x: 72, y: 72 }
+  const unit = {
+    action: 'attack',
+    context: {
+      map: {
+        grid: [
+          [target, { solid: false, border: false, i: 0, j: 1, x: 0, y: 96 }],
+          [{ solid: false, border: false, i: 1, j: 0, x: 96, y: 0 }, recoveryCell],
+        ],
+      },
+      scheduler: {
+        elapsedMs: 0,
+        add(callback, _time, name) {
+          const id = schedulerTasks.size + 1
+          schedulerTasks.set(id, { callback, name })
+          calls.push(['scheduler.add', name])
+          return id
+        },
+        remove(id) {
+          schedulerTasks.delete(id)
+        },
+      },
+    },
+    dest: target,
+    energy: 0,
+    totalEnergy: 1,
+    energyRegenRate: 5,
+    energyRegenDelay: 0,
+    i: 0,
+    j: 0,
+    x: 0,
+    y: 0,
+    path: [],
+    sendTo: destination => calls.push(['sendTo', destination]),
+    sendToEvt: (resumeTarget, action, options) => calls.push(['sendToEvt', resumeTarget, action, options]),
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+
+  assert.equal(waitForEnergy(unit, 'attack', target), false)
+  assert.deepEqual(__combatBehaviorCalls[0], ['enter', unit, target])
+
+  unit.context.scheduler.elapsedMs = 800
+  schedulerTasks.get(1).callback()
+  assert.equal(unit.waitingForEnergyAction, 'attack')
+  assert.deepEqual(__combatBehaviorCalls.at(-1), ['update', unit])
+
+  unit.context.scheduler.elapsedMs = 1600
+  schedulerTasks.get(1).callback()
+  assert.equal(unit.waitingForEnergyAction, null)
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'attack', { forceRepath: true }])
 })
 

@@ -21,7 +21,7 @@ type EquipmentEntityLike = {
   equipment?: string[]
   experience?: UnitEntity['experience']
   family?: string
-  owner?: Pick<PlayerLike, 'age' | 'config'> | null
+  owner?: Pick<PlayerLike, 'age' | 'civ' | 'config'> | null
   type?: string
   work?: string | null
 }
@@ -82,6 +82,24 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   helmet_barbuta_copper: { armor: { melee: 2, pierce: 1 } },
   helmet_barbuta_bronze: { armor: { melee: 2, pierce: 2 } },
   helmet_barbuta_iron: { armor: { melee: 3, pierce: 2 } },
+  helmet_legion_ceramic: { armor: { melee: 1, pierce: 1 } },
+  helmet_legion_copper: { armor: { melee: 2, pierce: 1 } },
+  helmet_legion_bronze: { armor: { melee: 2, pierce: 2 } },
+  helmet_legion_iron: { armor: { melee: 3, pierce: 2 } },
+  helmet_nasal_ceramic: { armor: { melee: 1, pierce: 1 } },
+  helmet_nasal_copper: { armor: { melee: 2, pierce: 1 } },
+  helmet_nasal_bronze: { armor: { melee: 2, pierce: 2 } },
+  helmet_nasal_iron: { armor: { melee: 3, pierce: 2 } },
+  helmet_bascinet_round_ceramic: { armor: { melee: 1, pierce: 1 } },
+  helmet_bascinet_round_copper: { armor: { melee: 2, pierce: 1 } },
+  helmet_bascinet_round_bronze: { armor: { melee: 2, pierce: 2 } },
+  helmet_bascinet_round_iron: { armor: { melee: 3, pierce: 2 } },
+  helmet_norman_ceramic: { armor: { melee: 1, pierce: 1 } },
+  helmet_norman_copper: { armor: { melee: 2, pierce: 1 } },
+  helmet_norman_bronze: { armor: { melee: 2, pierce: 2 } },
+  helmet_norman_iron: { armor: { melee: 3, pierce: 2 } },
+  helmet_barbarian_ceramic: { armor: { melee: 1, pierce: 1 } },
+  helmet_barbarian_nasal_ceramic: { armor: { melee: 1, pierce: 1 } },
   shoulder_legion_ceramic: { armor: { melee: 1 } },
   shoulder_legion_copper: { armor: { melee: 1 } },
   shoulder_legion_bronze: { armor: { melee: 2, pierce: 1 } },
@@ -149,8 +167,14 @@ export function getEquipmentCombatStats(
   return stats
 }
 
-export function getUnitEquipment(unitType: string, config?: Pick<UnitConfig, 'equipment'>, age = 0, level = 0): string[] {
-  return config?.equipment ? [...config.equipment] : dynamicEquipmentForUnit(unitType, age, level)
+export function getUnitEquipment(
+  unitType: string,
+  config?: Pick<UnitConfig, 'equipment'>,
+  age = 0,
+  level = 0,
+  civilization?: string
+): string[] {
+  return config?.equipment ? [...config.equipment] : dynamicEquipmentForUnit(unitType, age, level, civilization)
 }
 
 export function getUnitWorkEquipment(work: string | null | undefined, age = 0): string[] {
@@ -162,10 +186,11 @@ export function getUnitEffectiveCombatStats(
   config: Pick<UnitConfig, 'category' | 'equipment' | CombatStatKey>,
   work?: string | null,
   age = 0,
-  level = 0
+  level = 0,
+  civilization?: string
 ): EquipmentCombatStats {
   const workEquipment = work ? getUnitWorkEquipment(work, age) : []
-  const equipment = workEquipment.length ? workEquipment : getUnitEquipment(unitType, config, age, level)
+  const equipment = workEquipment.length ? workEquipment : getUnitEquipment(unitType, config, age, level, civilization)
   if (equipment.length) return getEquipmentCombatStats(equipment)
 
   return {
@@ -189,7 +214,13 @@ export function applyEquipmentStatsToUnitConfig(unitType: string, config: UnitCo
 export function isUnitMeleeWeaponEquipped(unit: UnitEntity): boolean {
   if (unit.projectile || unit.type === UNIT_TYPES.villager) return false
   const config = unit.owner?.config.units[unit.type]
-  const equipment = getUnitEquipment(unit.type, config, unit.owner?.age, getUnitEquipmentLevel(unit, config?.category))
+  const equipment = getUnitEquipment(
+    unit.type,
+    config,
+    unit.owner?.age,
+    getUnitEquipmentLevel(unit, config?.category),
+    unit.owner?.civ
+  )
   return equipment.some(key => MELEE_WEAPON_EQUIPMENT_KEYS.has(key))
 }
 
@@ -202,7 +233,8 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
     config,
     useWorkEquipment ? unit.work : undefined,
     unit.owner?.age,
-    getUnitEquipmentLevel(unit, config.category)
+    getUnitEquipmentLevel(unit, config.category),
+    unit.owner?.civ
   )
   for (const stat of COMBAT_STAT_KEYS) {
     unit[stat] = stats[stat]
@@ -224,7 +256,7 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   }
 
   const level = getUnitEquipmentLevel(unit, config?.category)
-  const unitEquipment = getUnitEquipment(unit.type, config, age, level)
+  const unitEquipment = getUnitEquipment(unit.type, config, age, level, unit.owner?.civ)
   return getWeaponRangeFromEquipment(unitEquipment)
 }
 
@@ -244,12 +276,20 @@ function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
     return [...(configuredEquipment as string[])]
   }
   return entity.type
-    ? dynamicEquipmentForUnit(entity.type, entity.owner?.age, getUnitEquipmentLevel(entity as UnitEntity, config?.category))
+    ? dynamicEquipmentForUnit(
+        entity.type,
+        entity.owner?.age,
+        getUnitEquipmentLevel(entity as UnitEntity, config?.category),
+        entity.owner?.civ
+      )
     : []
 }
 
 export function getEntityWeaponPower(entity?: EquipmentEntityLike | null): number {
   if (!entity) return 0
-  const weaponPower = getEquipmentCombatStats(getConfiguredEntityEquipment(entity), entity.owner?.config.equipment).weaponPower
+  const weaponPower = getEquipmentCombatStats(
+    getConfiguredEntityEquipment(entity),
+    entity.owner?.config.equipment
+  ).weaponPower
   return weaponPower > 0 ? weaponPower : entity.family === FAMILY_TYPES.unit ? UNARMED_UNIT_WEAPON_POWER : 0
 }

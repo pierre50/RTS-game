@@ -20,6 +20,9 @@ function loadSpawnActions(sharedOverrides = {}) {
           const wanted = String(value || '').toLowerCase()
           return Object.keys(source).find(key => key.toLowerCase() === wanted)
         },
+        normalize(value) {
+          return String(value || '').toLowerCase()
+        },
         getAmount(value, fallback = 1) {
           const amount = Number(value ?? fallback)
           return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
@@ -38,10 +41,48 @@ function loadSpawnActions(sharedOverrides = {}) {
         },
       }
     }
+    if (request === '../../classes/players/Player') {
+      return {
+        Player: class {
+          constructor(options, context) {
+            Object.assign(this, options)
+            this.label = 'bandit-owner'
+            this.config = context.player.config
+            this.units = []
+            this.buildings = []
+            this.corpses = []
+            this.techs = {}
+            this.population = 0
+            this.populationMax = Number.POSITIVE_INFINITY
+            this.age = 0
+            this.cellViewed = 0
+            this.wood = 0
+            this.food = 0
+            this.stone = 0
+            this.gold = 0
+            this.copper = 0
+            this.iron = 0
+            this.colorHex = '#ff0000'
+          }
+
+          createUnit(unit) {
+            const created = { ...unit, owner: this }
+            this.units.push(created)
+            return created
+          }
+        },
+      }
+    }
     if (request === '../../constants') {
       return {
         BUILDING_TYPES: { farm: 'Farm' },
+        PLAYER_TYPES: { ai: 'AI' },
         RESOURCE_TYPES: { gold: 'Gold', wheat: 'Wheat' },
+        UNIT_TYPES: {
+          banditChief: 'BanditChief',
+          banditSword: 'BanditSword',
+          banditArcher: 'BanditArcher',
+        },
       }
     }
     if (request === '../../lib') {
@@ -95,6 +136,48 @@ test('spawn can target another player by index', () => {
     { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
     { owner: 'enemy', unit: { i: 12, j: 34, type: 'Trebuchet' } },
   ])
+})
+
+test('bandit aliases spawn on a hidden hostile owner', () => {
+  const { spawnUnits } = loadSpawnActions()
+  const currentPlayer = {
+    label: 'player',
+    civ: 'Greek',
+    config: { units: { BanditChief: { category: 'Bandit' } } },
+    population: 0,
+    isEnemy: () => false,
+    enemyPlayers: () => [],
+  }
+  const context = {
+    player: currentPlayer,
+    players: [currentPlayer],
+    menu: {
+      updateTopbar: () => {},
+      updatePlayerMiniMapEvt: () => {},
+    },
+  }
+
+  const result = spawnUnits(context, 'bandit1', 2)
+  const banditOwner = context.players[1]
+
+  assert.deepEqual(result, { ok: true, message: 'Spawned 2 BanditChief for bandits' })
+  assert.equal(banditOwner.devConsoleBanditOwner, true)
+  assert.equal(banditOwner.isEnemy(currentPlayer), true)
+  assert.equal(banditOwner.isEnemy(banditOwner), false)
+  assert.equal(currentPlayer.isEnemy(banditOwner), true)
+  assert.deepEqual(currentPlayer.enemyPlayers(), [banditOwner])
+  assert.equal(banditOwner.population, 2)
+  assert.deepEqual(
+    banditOwner.units.map(unit => ({
+      type: unit.type,
+      gender: unit.gender,
+      appearanceVariants: unit.appearanceVariants,
+    })),
+    [
+      { type: 'BanditChief', gender: 'male', appearanceVariants: { gender: 'male' } },
+      { type: 'BanditChief', gender: 'male', appearanceVariants: { gender: 'male' } },
+    ]
+  )
 })
 
 test('building farm spawns a mature wheat field instead of a building entity', () => {

@@ -23,6 +23,7 @@ export class UnitLifecycle {
     const sprite = unit.sprite as AnimatedSprite
     sprite.loop = false
     unit.syncShadow?.()
+    unit.syncAppearanceLayers?.(SHEET_TYPES.corpse)
     sprite.animationSpeed = sprite.textures.length / (CORPSE_TIME * 60)
     sprite.onComplete = () => fadeOutThenClear(unit, FADE_DURATION_MS)
     if (map) {
@@ -56,6 +57,7 @@ export class UnitLifecycle {
         this.decompose()
       }),
     })
+    unit.syncAppearanceLayers?.(SHEET_TYPES.dying)
   }
 
   die() {
@@ -103,7 +105,6 @@ export class UnitLifecycle {
     }
     this.death()
     canUpdateMinimap(unit, player) && unit.owner && menu?.updatePlayerMiniMapEvt?.(unit.owner)
-    unit.context?.checkVictory?.()
     unit.context?.checkDefeat?.()
   }
 

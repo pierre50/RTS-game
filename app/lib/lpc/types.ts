@@ -32,6 +32,7 @@ export type LpcSheetRuntime = LpcSheetSource & {
 export type LpcAppearanceLayer = {
   zIndex: number
   workTypes?: string[]
+  civilizations?: string[]
   minLevel?: number
   maxLevel?: number
   ageSheetOverrides?: Record<string, Partial<Record<LpcSpriteSheetKey, string>>>
