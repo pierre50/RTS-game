@@ -361,8 +361,30 @@ const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
 type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
+type BanditOwnerLike = UnitEntity['owner'] & { devConsoleBanditOwner?: boolean }
 let lastDirectMoveDebugAt = 0
 const lastCombatMoveDebugAt = new Map<string, number>()
+
+function isBanditDebugUnit(unit: UnitEntity): boolean {
+  const owner = unit.owner as BanditOwnerLike | undefined
+  const type = unit.type?.toLowerCase() ?? ''
+  const name = unit.name?.toLowerCase() ?? ''
+  const category = unit.category?.toLowerCase() ?? ''
+  const ownerName = owner?.name?.toLowerCase() ?? ''
+  const ownerLabel = owner?.label?.toLowerCase() ?? ''
+  return Boolean(
+    category.includes('bandit') ||
+      type.includes('bandit') ||
+      name.includes('bandit') ||
+      ownerName.includes('bandit') ||
+      ownerLabel.includes('bandit') ||
+      (typeof UNIT_TYPES.banditChief === 'string' && unit.type === UNIT_TYPES.banditChief) ||
+      (typeof UNIT_TYPES.banditSword === 'string' && unit.type === UNIT_TYPES.banditSword) ||
+      (typeof UNIT_TYPES.banditArcher === 'string' && unit.type === UNIT_TYPES.banditArcher) ||
+      owner?.devConsoleBanditOwner ||
+      (owner?.isPlayed !== true && owner?.name?.trim().toLowerCase() === 'bandits')
+  )
+}
 
 function isUnitCellOccupant(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
   return Boolean(cell?.has && (cell.has === unit || cell.has.label === unit.label))
@@ -385,12 +407,27 @@ function placeUnitOnCell(unit: UnitEntity, cell: RuntimeCell): void {
   }
 }
 
+function cellOccupantIsDest(cell: RuntimeCell, dest: RuntimeEntity | RuntimeCell): boolean {
+  return isRuntimeEntity(dest) && Boolean(cell.has?.label && cell.has.label === dest.label)
+}
+
+function startActionIfAlreadyInRange(unit: UnitEntity, dest: RuntimeEntity | RuntimeCell, reason: string): boolean {
+  if (!unit.action || !unit.isUnitAtDest?.(unit.action, dest)) return false
+  unit.path = []
+  unit.stopInterval?.()
+  unit.degree = getInstanceDegree(unit, dest.x, dest.y)
+  debugCombatMove(unit, reason, unit.currentCell ?? (dest as RuntimeCell), { stage: 'path-step' })
+  unit.getAction?.(unit.action)
+  return true
+}
+
 function shouldDebugCombatMove(unit: UnitEntity): boolean {
   return Boolean(
-    unit.combatMode ||
+    isBanditDebugUnit(unit) ||
+      unit.combatMode ||
       unit.action === ACTION_TYPES.attack ||
       unit.waitingForEnergyAction === ACTION_TYPES.attack ||
-      unit.work === WORK_TYPES.attacker
+      (typeof WORK_TYPES.attacker === 'string' && unit.work === WORK_TYPES.attacker)
   )
 }
 
@@ -403,15 +440,22 @@ function debugCombatMove(unit: UnitEntity, reason: string, cell: RuntimeCell, de
   lastCombatMoveDebugAt.set(key, now)
   const occupant = cell.has
   const dest = unit.dest as Partial<RuntimeEntity | RuntimeCell> | null | undefined
-  console.warn('[combat-move]', reason, {
+  console.warn(isBanditDebugUnit(unit) ? '[bandit-move]' : '[combat-move]', reason, {
     unit: {
       label: unit.label,
       type: unit.type,
+      category: unit.category,
+      owner: unit.owner?.label,
+      ownerName: unit.owner?.name,
       action: unit.action,
       combatMode: unit.combatMode,
       waitingForEnergyAction: unit.waitingForEnergyAction,
+      currentSheet: unit.currentSheet,
+      spritePlaying: unit.sprite?.playing,
       i: unit.i,
       j: unit.j,
+      x: Math.round((unit.x ?? 0) * 100) / 100,
+      y: Math.round((unit.y ?? 0) * 100) / 100,
     },
     cell: {
       i: cell.i,
@@ -424,6 +468,7 @@ function debugCombatMove(unit: UnitEntity, reason: string, cell: RuntimeCell, de
             type: occupant.type,
             family: occupant.family,
             isDestroyed: occupant.isDestroyed,
+            isDead: occupant.isDead,
             sameLabel: occupant.label === unit.label,
             sameObject: occupant === unit,
           }
@@ -436,6 +481,7 @@ function debugCombatMove(unit: UnitEntity, reason: string, cell: RuntimeCell, de
           family: 'family' in dest ? dest.family : undefined,
           i: dest.i,
           j: dest.j,
+          solid: 'solid' in dest ? dest.solid : undefined,
         }
       : null,
     pathLength: unit.path?.length ?? 0,
@@ -660,6 +706,11 @@ export class UnitMovement {
             this.approachBlockedGatherTarget(dest, action ?? '')
           )
             return
+          debugCombatMove(unit, 'send-to-solid-dest-no-path', destCell, {
+            stage: 'send-to',
+            action,
+            destSolid: destCell.solid,
+          })
           if (action === ACTION_TYPES.delivery) {
             unit.stop?.()
           } else if (resumeAutonomyBeforeStopping(unit)) {
@@ -709,6 +760,13 @@ export class UnitMovement {
       unit.setPath?.(path)
     } else {
       unit.action = action
+      const blockedCell = map.grid[dest.i]?.[dest.j] ?? unit.currentCell
+      if (blockedCell) {
+        debugCombatMove(unit, 'send-to-no-path', blockedCell, {
+          stage: 'send-to',
+          action,
+        })
+      }
       if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
         return
       if (action === ACTION_TYPES.delivery) {
@@ -823,6 +881,9 @@ export class UnitMovement {
     if (isCellBlockedForUnit(unit, nextCell) && unit.dest) {
       unit.context?.performance?.record?.('unit.blockedPath', 0)
       debugCombatMove(unit, 'blocked-solid-cell', nextCell, { stage: 'path-step' })
+      if (cellOccupantIsDest(nextCell, dest) && startActionIfAlreadyInRange(unit, dest, 'blocked-target-cell-in-range')) {
+        return
+      }
       if (isRecoveringAttack(unit)) {
         pauseCombatRecoveryMove(unit)
         return
@@ -1078,6 +1139,13 @@ export class UnitMovement {
         return false
       }
       if (!isHeroControlled(unit) && isCellBlockedForUnit(unit, targetCell)) {
+        debugCombatMove(unit, 'direct-target-solid', targetCell, {
+          stage: 'direct-move',
+          rawI,
+          rawJ,
+          newI,
+          newJ,
+        })
         return false
       }
       const categoryAllowed = targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
@@ -1336,9 +1404,20 @@ export class UnitMovement {
       range: unit.sight ?? 0,
     })
     if (cell) {
+      debugCombatMove(unit, 'flee-cell-selected', cell, {
+        stage: 'runaway',
+        threat: { label: instance.label, type: instance.type },
+      })
       markCombatFlee(unit)
       unit.sendTo?.(cell)
       return
+    }
+    const currentCell = unit.currentCell ?? map.grid[unit.i]?.[unit.j]
+    if (currentCell) {
+      debugCombatMove(unit, 'no-flee-cell', currentCell, {
+        stage: 'runaway',
+        threat: { label: instance.label, type: instance.type, i: instance.i, j: instance.j },
+      })
     }
     unit.stop?.()
   }

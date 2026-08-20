@@ -66,7 +66,7 @@ const TOOL_ACTION_RANGE = 3
 const HERO_BOW_CHARGE_ENERGY_ACTION = 'heroBowCharge'
 const HERO_DEFENSE_ENERGY_ACTION = 'heroDefense'
 const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
-const HERO_PARRY_SOUND_CUES = ['sword-attack', 'sword-attack-2']
+const HERO_PARRY_SOUND_CUES = SOUND_CUES.unit.swordAttack
 const HERO_BOW_CHARGE_MS = 700
 const HERO_BOW_MIN_POWER = 0.2
 const HERO_DEFENSE_HOLD_FRAME = 2
@@ -1255,7 +1255,7 @@ function playEmptyHandWhiff(hero: UnitEntity): boolean {
 
 function playMeleeWeaponWhiff(hero: UnitEntity): boolean {
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
-  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), SLASH_IMPACT_FRAME)
+  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.unit.swordAttack), SLASH_IMPACT_FRAME)
   return true
 }
 
@@ -1289,7 +1289,7 @@ function strikeHeroMeleeTarget(hero: UnitEntity, target: RuntimeEntity, tool: He
         xpUnit: hero,
       })
       if (damageDealt > 0) {
-        playAudibleSoundCue(hero, hero.sounds?.hit)
+        playAudibleSoundCue(hero, tool === 'sword' ? SOUND_CUES.unit.swordAttack : hero.sounds?.hit)
       }
     },
     SLASH_IMPACT_FRAME

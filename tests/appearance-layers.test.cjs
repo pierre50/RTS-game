@@ -361,6 +361,7 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   assert.deepEqual(dynamicEquipmentForUnit('BanditChief'), [
     'axe_ceramic',
     'armor_leather',
+    'cape_solid',
     'helmet_barbarian_ceramic',
     'upward_horns_ceramic',
     'round_shield_ceramic_slash',
@@ -382,6 +383,7 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   const helmet = chiefLayers.find(
     layer => layer.walkingSheet === 'lpc-equipment/helmet_barbarian_ceramic/front/walking'
   )
+  const capeFront = chiefLayers.find(layer => layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking')
   const shield = chiefLayers.find(
     layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking'
   )
@@ -391,6 +393,10 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   assert.equal(helmet?.zIndex, 11)
   assert.equal(helmet?.dyingSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/dying')
   assert.equal(helmet?.corpseSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/corpse')
+  assert.equal(capeFront?.zIndex, 12)
+  assert.equal(capeFront?.palette, 'player')
+  assert.equal(capeFront?.dyingSheet, 'lpc-equipment/cape_solid/front/dying')
+  assert.equal(capeFront?.corpseSheet, 'lpc-equipment/cape_solid/front/corpse')
   assert.equal(shield?.dyingSheet, undefined)
   assert.equal(shield?.corpseSheet, undefined)
 

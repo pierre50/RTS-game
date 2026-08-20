@@ -18,6 +18,7 @@ export const SOUND_CUES = {
     fallbackCreate: 'human-unit-completed',
     horseMoving: 'horse-moving',
     militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],
+    swordAttack: ['sword-attack', 'sword-attack-2'],
   },
   surface: {
     bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'],

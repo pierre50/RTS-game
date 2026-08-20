@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadMovement() {
+function loadMovement(overrides = {}) {
   const filename = path.join(__dirname, '../app/lib/grid/movement.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -14,7 +14,7 @@ function loadMovement() {
   const module = { exports: {} }
   const mocks = {
     '../../services/Pathfinding': {
-      findInstancePath: () => [],
+      findInstancePath: overrides.findInstancePath ?? (() => []),
     },
     '../maths': {
       getInstanceDegree: () => 0,
@@ -24,7 +24,7 @@ function loadMovement() {
     },
     './cells': {
       getBuildingContactDistance: size => Math.floor(((size ?? 1) - 1) / 2) + 1,
-      getCellsAroundPoint: (startX, startY, grid, dist, callback = () => true) => {
+      getCellsAroundPoint: overrides.getCellsAroundPoint ?? ((startX, startY, grid, dist, callback = () => true) => {
         const cells = []
         for (let i = Math.max(startX - dist, 0); i <= Math.min(startX + dist, grid.length - 1); i++) {
           for (let j = Math.max(startY - dist, 0); j <= Math.min(startY + dist, grid[i].length - 1); j++) {
@@ -34,7 +34,7 @@ function loadMovement() {
           }
         }
         return cells
-      },
+      }),
     },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
@@ -70,4 +70,25 @@ test('free land spawn around instance skips blocked terrain classes', () => {
   const cell = getFreeLandCellAroundInstance({ i: 2, j: 2, size: 1 }, grid, cells => cells[0])
 
   assert.deepEqual({ i: cell.i, j: cell.j }, { i: 3, j: 2 })
+})
+
+test('closest free cell path skips occupied solid target-adjacent cells', () => {
+  const calls = []
+  const grid = makeGrid(3)
+  const occupied = { i: 0, j: 1, category: 'Land', solid: true, has: { label: 'hero-1' } }
+  const free = { i: 1, j: 0, category: 'Land', solid: false }
+  grid[0][1] = occupied
+  grid[1][0] = free
+  const { getInstanceClosestFreeCellPath } = loadMovement({
+    getCellsAroundPoint: () => [occupied, free],
+    findInstancePath: (_instance, x, y, map) => {
+      calls.push([x, y])
+      return [map.grid[x][y]]
+    },
+  })
+
+  const path = getInstanceClosestFreeCellPath({ i: 0, j: 0, label: 'bandit-1' }, { i: 1, j: 1, size: 1 }, { grid })
+
+  assert.deepEqual(calls, [[1, 0]])
+  assert.deepEqual(path, [free])
 })

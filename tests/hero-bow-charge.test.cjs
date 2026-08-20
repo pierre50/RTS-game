@@ -84,6 +84,7 @@ function loadHeroTools(overrides = {}) {
       SOUND_CUES: {
         hero: { meleeWhiff: 'meleeWhiff' },
         projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
+        unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
       },
       WORK_FOOD_TYPES: ['hunter', 'farmer', 'forager'],
       WORK_TYPES: {
@@ -1265,6 +1266,8 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
   Object.assign(hero, {
     energy: 10,
     equipment: [],
+    i: 0,
+    j: 0,
     owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
     isUnitAtDest: () => true,
     setDest: target => {
@@ -1278,6 +1281,56 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
 
   assert.equal(animal.hitPoints, 16)
   assert.deepEqual(damageFeedback, [['enemy-animal', 4]])
+})
+
+test('sword attacks use sword attack cues on the slash impact frame', () => {
+  const animal = {
+    family: 'animal',
+    hitPoints: 20,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy-animal',
+    owner: { label: 'gaia' },
+    totalHitPoints: 20,
+    x: 10,
+    y: 0,
+  }
+  const soundCues = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (source, target, action) =>
+        action === 'attack' &&
+        target === animal &&
+        (source.equipment?.length ?? 0) > 0 &&
+        source.owner?.isEnemy?.(target.owner) &&
+        target.hitPoints > 0 &&
+        !target.isDead,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
+    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    equipment: [],
+    i: 0,
+    j: 0,
+    owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
+    isUnitAtDest: () => true,
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+  assert.deepEqual(soundCues, [])
+  hero.sprite.currentFrame = 1
+  hero.sprite.onFrameChange(1)
+
+  assert.deepEqual(soundCues, [['sword-attack', 'sword-attack-2']])
 })
 
 test('sword damages berry bushes with weapon damage', () => {

@@ -57,6 +57,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     equipment: [
       'axe_ceramic',
       'armor_leather',
+      'cape_solid',
       'helmet_barbarian_ceramic',
       'upward_horns_ceramic',
       'round_shield_ceramic_slash',
@@ -73,6 +74,9 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     trainingTime: 0,
     equipment: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
     combatBehaviorPreset: 'meleeAggressive',
+    sounds: {
+      hit: SOUND_CUES.unit.swordAttack,
+    },
     cost: {},
   },
   [UNIT_TYPES.banditArcher]: {

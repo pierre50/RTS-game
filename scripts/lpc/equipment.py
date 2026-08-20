@@ -181,6 +181,10 @@ def cape_solid_equipment() -> dict[str, Equipment]:
             background=(LayerSpec("cape/solid/bg/slash.png", "player_blue"),),
             foreground=(LayerSpec("cape/solid/fg/slash.png", "player_blue"),),
         ),
+        "hurt": Equipment(
+            background=(LayerSpec("cape/solid/bg/hurt.png", "player_blue"),),
+            foreground=(LayerSpec("cape/solid/fg/hurt.png", "player_blue"),),
+        ),
     }
 
 

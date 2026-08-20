@@ -1,10 +1,19 @@
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, SHEET_TYPES } from '../../constants'
-import { getPercentage, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+import {
+  cartesianToIsometric,
+  getGroundReliefLevel,
+  getInstanceZIndex,
+  getPercentage,
+  isometricToCartesian,
+  playAudibleSoundCue,
+  updateInstanceVisibility,
+} from '../../lib'
 import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
+import type { RuntimeCell } from '../../types/map'
 import type { Animal } from './index'
 
 const DEATH_FALL_STEPS = 8
@@ -27,6 +36,63 @@ export class AnimalLifecycle {
     sprite.currentFrame = Math.min(frame, lastFrame)
   }
 
+  canSettleCorpseOnCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
+    if (!cell || cell.border || cell.category === 'Water') return false
+    const occupant = cell.has
+    return !occupant || occupant === this.animal || Boolean(occupant.isDestroyed)
+  }
+
+  snapCorpseToCell(cell: RuntimeCell | null | undefined): void {
+    const animal = this.animal
+    if (!cell) return
+    const oldI = animal.i
+    const oldJ = animal.j
+    const [x, y] = cartesianToIsometric(cell.i, cell.j)
+    animal.x = x
+    animal.y = y
+    animal.z = cell.z
+    animal.i = cell.i
+    animal.j = cell.j
+    animal.currentCell = cell
+    animal.zIndex = getInstanceZIndex(animal)
+    if (this.canSettleCorpseOnCell(cell)) {
+      cell.place(animal)
+      cell.solid = true
+    }
+    animal.context.map.updateInstanceBucket(animal, oldI, oldJ)
+    animal.applyReliefLift(getGroundReliefLevel(cell), true)
+  }
+
+  settleCorpseCell(): void {
+    const animal = this.animal
+    const map = animal.context.map
+    const currentCell = animal.currentCell ?? map.grid[animal.i]?.[animal.j]
+    const [targetI, targetJ] = isometricToCartesian(animal.x, animal.y)
+    const targetCell = map.grid[targetI]?.[targetJ]
+
+    if (!this.canSettleCorpseOnCell(targetCell)) {
+      this.snapCorpseToCell(currentCell)
+      return
+    }
+
+    const oldI = animal.i
+    const oldJ = animal.j
+    if (currentCell && currentCell !== targetCell && currentCell.has === animal) {
+      currentCell.has = null
+      currentCell.solid = false
+    }
+
+    animal.i = targetCell.i
+    animal.j = targetCell.j
+    animal.z = targetCell.z
+    animal.currentCell = targetCell
+    animal.zIndex = getInstanceZIndex(animal)
+    targetCell.place(animal)
+    targetCell.solid = true
+    map.updateInstanceBucket(animal, oldI, oldJ)
+    animal.applyReliefLift(getGroundReliefLevel(targetCell), true)
+  }
+
   die(): void {
     const animal = this.animal
     if (animal.isDead) return
@@ -45,6 +111,7 @@ export class AnimalLifecycle {
       animal.companionOwner = null
       animal.companionHitCount = 0
     }
+    this.settleCorpseCell()
     animal.isDead = true
     animal.zIndex--
     animal.path = []

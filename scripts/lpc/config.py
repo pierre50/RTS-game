@@ -341,7 +341,6 @@ UNIT_LOOKS: dict[str, UnitLook] = {
         skin_palette="olive",
         beard="beard/winter/male",
         beard_palette="black",
-        cape=CAPE_SOLID_GRAY,
         dress=(BASIC_SHOES_LEATHER, STRIPED_PANTS_RED),
         fixed_civ=BANDIT_CIV,
         variants=("male",),

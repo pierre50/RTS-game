@@ -7,7 +7,8 @@ export type GameMap<TCell extends GridCell = GridCell> = {
   grid: Grid<TCell>
 }
 
-type PathInstanceLike = GridPosition & Partial<Point> & { category?: string }
+type PathInstanceLike = GridPosition & Partial<Point> & { category?: string; label?: string }
+type PathCellOccupant = { has?: (InstanceLike & { label?: string }) | null }
 
 export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boolean {
   return Math.floor(instancesDistance(a, b)) <= getBuildingContactDistance(b.size ?? 1) && !b.isDestroyed
@@ -82,6 +83,9 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
 
   let best: TCell[] = []
   for (const cell of candidates) {
+    const occupantLabel = (cell as TCell & PathCellOccupant).has?.label
+    if (cell.solid && (!instance.label || occupantLabel !== instance.label)) continue
+    if (cell.category === 'Water' || cell.waterBorder || cell.border) continue
     if (best.length && Math.abs(cell.i - instance.i) + Math.abs(cell.j - instance.j) >= best.length) break
     const path = getInstancePath(instance, cell.i, cell.j, map)
     if (path.length && (!best.length || path.length < best.length)) best = path

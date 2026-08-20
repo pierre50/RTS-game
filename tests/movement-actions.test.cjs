@@ -1099,6 +1099,86 @@ test('path movement treats a same-label solid cell as its own stale occupancy', 
   assert.equal(calls.some(([name]) => name === 'sendToEvt'), false)
 })
 
+test('path movement starts the action when the target occupies the next blocked cell in range', () => {
+  const calls = []
+  const cell0 = {
+    has: null,
+    i: 0,
+    j: 0,
+    solid: true,
+    z: 0,
+  }
+  const hero = {
+    family: constants.FAMILY_TYPES.unit,
+    i: 1,
+    j: 0,
+    label: 'hero-1',
+    type: 'Hero',
+    x: 10,
+    y: 0,
+  }
+  const cell1 = {
+    has: hero,
+    i: 1,
+    j: 0,
+    solid: true,
+    z: 0,
+  }
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i * 10, j * 10],
+    degreeToDirection: () => 'east',
+    getGroundReliefLevel: () => 0,
+    getInstanceDegree: () => 90,
+    getInstanceZIndex: () => 0,
+    instancesDistance: (a, b, useCartesian = true) =>
+      useCartesian ? Math.hypot(a.i - b.i, a.j - b.j) : Math.hypot((a.x ?? 0) - b.x, (a.y ?? 0) - b.y),
+    moveTowardPoint: () => {},
+    playMovementSurfaceAudio: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    context: {
+      map: {
+        grid: [[cell0], [cell1]],
+        updateInstanceBucket: () => calls.push(['updateInstanceBucket']),
+      },
+    },
+    currentCell: cell0,
+    dest: hero,
+    i: 0,
+    isUnitAtDest: (action, dest) => action === constants.ACTION_TYPES.attack && dest === hero,
+    j: 0,
+    label: 'bandit-1',
+    path: [{ i: 1, j: 0 }],
+    sendToEvt: () => calls.push(['sendToEvt']),
+    stopInterval: () => calls.push(['stopInterval']),
+    getAction: action => calls.push(['getAction', action]),
+    x: 0,
+    y: 0,
+  }
+  cell0.has = unit
+  const warn = console.warn
+  console.warn = () => {}
+  try {
+    new UnitMovement(unit)._moveToPath()
+  } finally {
+    console.warn = warn
+  }
+
+  assert.deepEqual(unit.path, [])
+  assert.equal(unit.degree, 90)
+  assert.deepEqual(calls, [
+    ['stopInterval'],
+    ['getAction', constants.ACTION_TYPES.attack],
+  ])
+})
+
 test('combat recovery with no active action pauses instead of using the generic stop flow', () => {
   const calls = []
   const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {

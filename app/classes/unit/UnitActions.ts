@@ -1227,8 +1227,8 @@ export class UnitActions {
 
         if (!isCapturing && !hasActiveCaptureLasso && unit.context && horse) {
           if (now - captureHorseState.lastRepathAt > CAPTURE_HORSE_REPATH_INTERVAL_MS) {
-            unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
             captureHorseState.lastRepathAt = now
+            unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
           }
           if (now - captureHorseState.lastLassoAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return
           captureHorseState.lastLassoAttemptAt = now

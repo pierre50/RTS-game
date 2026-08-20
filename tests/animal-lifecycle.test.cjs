@@ -25,7 +25,11 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
     SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
   },
   '../../lib': {
+    cartesianToIsometric: (i, j) => [i * 10, j * 10],
+    getGroundReliefLevel: cell => cell.z ?? 0,
+    getInstanceZIndex: instance => instance.i + instance.j,
     getPercentage: (quantity, totalQuantity) => (quantity / totalQuantity) * 100,
+    isometricToCartesian: (x, y) => [Math.round(x / 10), Math.round(y / 10)],
     playAudibleSoundCue: () => {},
     updateInstanceVisibility: () => {},
   },
@@ -138,4 +142,93 @@ test('animal death always starts the dying animation from the first frame', () =
   assert.equal(sprite.onLoop, undefined)
   assert.equal(typeof sprite.onComplete, 'function')
   assert.equal(sprite.currentFrame, 0)
+})
+
+test('animal death settles a moving corpse onto its visual cell', () => {
+  const oldCell = {
+    has: null,
+    i: 0,
+    j: 0,
+    place(entity) {
+      this.has = entity
+    },
+    solid: true,
+    z: 0,
+  }
+  const visualCell = {
+    has: null,
+    i: 1,
+    j: 0,
+    place(entity) {
+      this.has = entity
+    },
+    solid: false,
+    z: 2,
+  }
+  const buckets = []
+  const calls = []
+  const sprite = {
+    loop: true,
+    onComplete: undefined,
+    onLoop: () => {},
+    currentFrame: 2,
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+  }
+  const animal = {
+    action: 'flee',
+    altitude: 0,
+    animalBehavior: { stop: () => calls.push(['behavior.stop']) },
+    companionOwner: null,
+    context: {
+      controls: { instanceIsAudible: () => false },
+      map: {
+        grid: [[oldCell], [visualCell]],
+        updateInstanceBucket: (instance, oldI, oldJ) => buckets.push([oldI, oldJ, instance.i, instance.j]),
+      },
+    },
+    currentCell: oldCell,
+    i: 0,
+    isDead: false,
+    j: 0,
+    owner: { population: 1 },
+    path: [{ i: 1, j: 0 }],
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite,
+    stopInterval: () => calls.push(['stopInterval']),
+    stopTimeout: () => calls.push(['stopTimeout']),
+    syncShadow: () => calls.push(['syncShadow']),
+    x: 9,
+    y: 0,
+    zIndex: 0,
+    applyReliefLift: (level, immediate) => calls.push(['applyReliefLift', level, immediate]),
+  }
+  oldCell.has = animal
+  const lifecycle = new AnimalLifecycle(animal)
+  animal.death = () => lifecycle.death()
+
+  lifecycle.die()
+
+  assert.equal(oldCell.has, null)
+  assert.equal(oldCell.solid, false)
+  assert.equal(visualCell.has, animal)
+  assert.equal(visualCell.solid, true)
+  assert.equal(animal.currentCell, visualCell)
+  assert.equal(animal.i, 1)
+  assert.equal(animal.j, 0)
+  assert.equal(animal.z, 2)
+  assert.deepEqual(buckets, [[0, 0, 1, 0]])
+  assert.deepEqual(calls.slice(0, 6), [
+    ['stopInterval'],
+    ['stopTimeout'],
+    ['behavior.stop'],
+    ['applyReliefLift', 2, true],
+    ['setTextures', 'dyingSheet'],
+    ['syncShadow'],
+  ])
+  assert.equal(animal.isDead, true)
+  assert.deepEqual(animal.path, [])
+  assert.equal(animal.action, null)
 })

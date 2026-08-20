@@ -25,6 +25,7 @@ import {
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   degreeToDirection,
+  getInstanceDegree,
   getAnimationFrames,
   playSoundCue,
   evaluateCombatMorale,
@@ -110,6 +111,172 @@ const MOUNTED_HORSE_DIRECTIONS_IN_FRONT = new Set(['south', 'southwest', 'southe
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
+const BANDIT_STOP_DEBUG_THROTTLE_MS = 600
+let lastBanditStopDebugAt = 0
+const banditStepDebugState = new WeakMap<UnitEntity, { stillTicks: number; x: number; y: number; lastReason?: string }>()
+
+function isBanditDebugUnit(unit: UnitEntity): boolean {
+  const owner = unit.owner as (PlayerLike & { devConsoleBanditOwner?: boolean }) | undefined
+  const type = unit.type?.toLowerCase() ?? ''
+  const name = unit.name?.toLowerCase() ?? ''
+  const category = unit.category?.toLowerCase() ?? ''
+  const ownerName = owner?.name?.toLowerCase() ?? ''
+  const ownerLabel = owner?.label?.toLowerCase() ?? ''
+  return Boolean(
+    category.includes('bandit') ||
+      type.includes('bandit') ||
+      name.includes('bandit') ||
+      ownerName.includes('bandit') ||
+      ownerLabel.includes('bandit') ||
+      (typeof UNIT_TYPES.banditChief === 'string' && unit.type === UNIT_TYPES.banditChief) ||
+      (typeof UNIT_TYPES.banditSword === 'string' && unit.type === UNIT_TYPES.banditSword) ||
+      (typeof UNIT_TYPES.banditArcher === 'string' && unit.type === UNIT_TYPES.banditArcher) ||
+      owner?.devConsoleBanditOwner ||
+      (owner?.isPlayed !== true && owner?.name?.trim().toLowerCase() === 'bandits')
+  )
+}
+
+function debugBanditStop(unit: UnitEntity, reason: string): void {
+  if (!isBanditDebugUnit(unit)) return
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  if (now - lastBanditStopDebugAt < BANDIT_STOP_DEBUG_THROTTLE_MS) return
+  lastBanditStopDebugAt = now
+  const cell = unit.currentCell
+  const occupant = cell?.has
+  console.warn('[bandit-move]', reason, {
+    unit: {
+      label: unit.label,
+      type: unit.type,
+      action: unit.action,
+      combatMode: unit.combatMode,
+      currentSheet: unit.currentSheet,
+      spritePlaying: unit.sprite?.playing,
+      i: unit.i,
+      j: unit.j,
+      pathLength: unit.path?.length ?? 0,
+    },
+    currentCell: cell
+      ? {
+          i: cell.i,
+          j: cell.j,
+          solid: cell.solid,
+          has: occupant
+            ? {
+                label: occupant.label,
+                type: occupant.type,
+                family: occupant.family,
+                isDead: occupant.isDead,
+                isDestroyed: occupant.isDestroyed,
+                sameLabel: occupant.label === unit.label,
+                sameObject: occupant === unit,
+              }
+            : null,
+        }
+      : null,
+  })
+}
+
+function debugBanditStep(unit: UnitEntity, reason: string): void {
+  if (!isBanditDebugUnit(unit)) return
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+  if (now - lastBanditStopDebugAt < BANDIT_STOP_DEBUG_THROTTLE_MS) return
+  lastBanditStopDebugAt = now
+  const cell = unit.currentCell
+  const next = unit.path?.at(-1)
+  const nextCell = next ? unit.context?.map?.grid[next.i]?.[next.j] : null
+  console.warn('[bandit-stuck]', reason, {
+    unit: {
+      label: unit.label,
+      type: unit.type,
+      name: unit.name,
+      category: unit.category,
+      owner: unit.owner?.label,
+      ownerName: unit.owner?.name,
+      action: unit.action,
+      work: unit.work,
+      combatMode: unit.combatMode,
+      currentSheet: unit.currentSheet,
+      spritePlaying: unit.sprite?.playing,
+      inactif: unit.inactif,
+      interval: (unit as { interval?: unknown }).interval,
+      i: unit.i,
+      j: unit.j,
+      x: Math.round((unit.x ?? 0) * 100) / 100,
+      y: Math.round((unit.y ?? 0) * 100) / 100,
+      pathLength: unit.path?.length ?? 0,
+    },
+    currentCell: cell
+      ? {
+          i: cell.i,
+          j: cell.j,
+          solid: cell.solid,
+          has: cell.has
+            ? {
+                label: cell.has.label,
+                type: cell.has.type,
+                family: cell.has.family,
+                sameLabel: cell.has.label === unit.label,
+                sameObject: cell.has === unit,
+              }
+            : null,
+        }
+      : null,
+    nextCell: nextCell
+      ? {
+          i: nextCell.i,
+          j: nextCell.j,
+          solid: nextCell.solid,
+          has: nextCell.has
+            ? {
+                label: nextCell.has.label,
+                type: nextCell.has.type,
+                family: nextCell.has.family,
+                sameLabel: nextCell.has.label === unit.label,
+                sameObject: nextCell.has === unit,
+              }
+            : null,
+        }
+      : null,
+  })
+}
+
+function watchBanditStep(unit: UnitEntity, beforeX: number, beforeY: number): void {
+  if (!isBanditDebugUnit(unit)) {
+    banditStepDebugState.delete(unit)
+    return
+  }
+  const walking = unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.sprite?.playing && (unit.path?.length ?? 0) > 0)
+  if (!walking || unit.isDead || unit.isDestroyed) {
+    banditStepDebugState.delete(unit)
+    return
+  }
+  const pathLength = unit.path?.length ?? 0
+  if (pathLength <= 0) {
+    debugBanditStep(unit, 'walking-without-path')
+    const dest = unit.dest
+    if (unit.action && dest && unit.isUnitAtDest?.(unit.action, dest)) {
+      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
+      unit.getAction?.(unit.action)
+    } else {
+      unit.stopInterval?.()
+      unit.setTextures?.(SHEET_TYPES.standing)
+      unit.sprite?.stop()
+      unit.inactif = true
+    }
+    banditStepDebugState.delete(unit)
+    return
+  }
+  const state = banditStepDebugState.get(unit) ?? { stillTicks: 0, x: beforeX, y: beforeY }
+  const moved = Math.hypot((unit.x ?? 0) - beforeX, (unit.y ?? 0) - beforeY) > 0.01
+  state.stillTicks = moved ? 0 : state.stillTicks + 1
+  state.x = unit.x ?? beforeX
+  state.y = unit.y ?? beforeY
+  banditStepDebugState.set(unit, state)
+  if (state.stillTicks >= 8) {
+    debugBanditStep(unit, 'walking-no-position-progress')
+    state.stillTicks = 0
+  }
+}
 
 function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
   return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
@@ -267,6 +434,7 @@ export class Unit extends Instance implements UnitEntity {
 
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
     super(context)
+    this.sortableChildren = true
     this.selectionFactor = 0.5
 
     const {
@@ -714,10 +882,8 @@ export class Unit extends Instance implements UnitEntity {
       this.horseSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
     }
 
-    // This container has sortableChildren enabled (any child's zIndex assignment turns it on, and
-    // the health/power bars already do), so Pixi re-sorts children by zIndex on every render —
-    // addChild/addChildAt insertion order gets silently discarded. The horse must therefore be
-    // ordered via its own zIndex, not by moving it around in the children array.
+    // This container has sortableChildren enabled, so Pixi re-sorts children by zIndex on every render.
+    // The horse must therefore be ordered via its own zIndex, not by moving it around in the children array.
     const direction = degreeToDirection(this.degree) ?? 'south'
     const horseInFront = MOUNTED_HORSE_DIRECTIONS_IN_FRONT.has(direction)
     this.horseSprite.zIndex = horseInFront ? MOUNTED_HORSE_FRONT_Z_INDEX : MOUNTED_HORSE_BEHIND_Z_INDEX
@@ -1164,10 +1330,16 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   override step(): void {
+    const beforeX = this.x
+    const beforeY = this.y
     updateUnitEnergy(this)
     updateUnitHealthRegen(this)
-    if (resumeEnergyWaitIfReady(this)) return
+    if (resumeEnergyWaitIfReady(this)) {
+      watchBanditStep(this, beforeX, beforeY)
+      return
+    }
     super.step()
+    watchBanditStep(this, beforeX, beforeY)
   }
 
   moveDirect(
@@ -1232,9 +1404,20 @@ export class Unit extends Instance implements UnitEntity {
   stop() {
     if (this.isDead || this.isDestroyed) return
     const heroControlled = isHeroControlled(this)
-    if (!heroControlled && this.currentCell.has?.label !== this.label && this.currentCell.solid) {
-      this.sendTo(this.currentCell)
-      return
+    const currentCellOccupant = this.currentCell.has
+    const currentCellHasBlockingOccupant = Boolean(
+      !heroControlled &&
+        this.currentCell.solid &&
+        currentCellOccupant &&
+        currentCellOccupant.label !== this.label &&
+        !currentCellOccupant.isDestroyed
+    )
+    if (currentCellHasBlockingOccupant) {
+      debugBanditStop(this, 'stop-current-cell-occupied')
+    } else if (!heroControlled && this.currentCell.solid && currentCellOccupant?.label !== this.label) {
+      debugBanditStop(this, 'stop-repairing-stale-current-cell')
+      this.currentCell.place(this)
+      this.currentCell.solid = true
     }
     if (!heroControlled && resumeVillagerAutonomy?.(this)) return
     this.handleChangeDest()
@@ -1264,7 +1447,7 @@ export class Unit extends Instance implements UnitEntity {
       // equipped tool actually implies.
       this.contextAction = null
       applyToolAppearance(this, this.context?.controls?.equippedTool ?? 'interact')
-    } else if (!this.currentCell.has || this.currentCell.has === this || this.currentCell.has.isDestroyed) {
+    } else if (!this.currentCell.has || this.currentCell.has.label === this.label || this.currentCell.has.isDestroyed) {
       this.currentCell.place(this)
       this.currentCell.solid = true
     }

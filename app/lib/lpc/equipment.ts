@@ -373,6 +373,7 @@ const EQUIPMENT_SHEET_OVERRIDES: Partial<
   bow: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   bow_great: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   bow_recurve: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  cape_solid: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_nasal_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
   quiver: { back: EQUIPMENT_DEATH_SHEETS },
@@ -650,6 +651,7 @@ const UNIT_EQUIPMENT: Partial<Record<string, readonly UnitEquipmentDefinition[]>
   [UNIT_TYPES.banditChief]: [
     'axe_ceramic',
     'armor_leather',
+    'cape_solid',
     'helmet_barbarian_ceramic',
     'upward_horns_ceramic',
     'round_shield_ceramic_slash',

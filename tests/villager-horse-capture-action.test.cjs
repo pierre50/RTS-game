@@ -204,6 +204,63 @@ test('villager horse capture resumes after the lasso and routes the owner to the
   ])
 })
 
+test('villager horse capture repath throttle survives synchronous action reentry', () => {
+  const calls = []
+  const horse = {
+    family: 'animal',
+    type: 'Horse',
+    label: 'horse-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    isDead: false,
+    isDestroyed: false,
+  }
+  const scheduler = {
+    elapsedMs: 500,
+    tasks: [],
+    add(callback) {
+      this.tasks.push(callback)
+      return this.tasks.length
+    },
+    remove: id => calls.push(['removeTask', id]),
+  }
+  const unit = {
+    family: 'unit',
+    type: 'Villager',
+    label: 'villager-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    action: 'captureHorse',
+    dest: horse,
+    owner: { buildings: [] },
+    context: { scheduler, map: { addChild: () => calls.push(['addChild']) } },
+    sprite: {},
+    path: [{ i: 3, j: 3 }],
+    getActionCondition: target => target === horse,
+    isUnitAtDest: (_action, target) => target === horse,
+    destHasMoved: () => false,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sendToEvt: (target, action, options) => {
+      calls.push(['sendToEvt', target.label, action, options])
+      unit.dest = target
+      unit.getAction?.(action)
+    },
+    affectNewDest: () => calls.push(['affectNewDest']),
+  }
+
+  const UnitActions = loadUnitActions(calls, horse)
+  const actions = new UnitActions(unit)
+  unit.getAction = name => actions.getAction(name)
+  actions.getAction('captureHorse')
+
+  assert.equal(calls.filter(call => call[0] === 'sendToEvt').length, 1)
+  assert.equal(calls.some(call => call[0] === 'lasso'), false)
+})
+
 test('villager horse capture cleanup releases the attached horse when the order changes', () => {
   const calls = []
   const horse = {
