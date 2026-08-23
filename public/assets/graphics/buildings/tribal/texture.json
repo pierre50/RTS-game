@@ -8,12 +8,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 11,
-        "y": 13,
-        "w": 121,
-        "h": 70
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -21,7 +21,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.3
       }
     },
     "000_graphics_buildings_totem_plain.png": {
@@ -32,12 +32,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 62,
-        "y": 15,
-        "w": 19,
-        "h": 65
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -56,12 +56,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 58,
-        "y": 12,
-        "w": 28,
-        "h": 71
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -80,12 +80,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 62,
-        "y": 14,
-        "w": 19,
-        "h": 67
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -104,12 +104,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 49,
-        "y": 14,
-        "w": 45,
-        "h": 67
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -117,7 +117,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.7
       }
     },
     "000_graphics_buildings_bone_small.png": {
@@ -128,12 +128,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 58,
-        "y": 35,
-        "w": 27,
-        "h": 25
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -141,7 +141,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.5
       }
     },
     "000_graphics_buildings_rock_pile.png": {
@@ -152,12 +152,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 55,
-        "y": 36,
-        "w": 34,
-        "h": 23
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -165,7 +165,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.5
       }
     },
     "000_graphics_buildings_skull.png": {
@@ -176,12 +176,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 61,
-        "y": 37,
-        "w": 21,
-        "h": 22
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -189,7 +189,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.5
       }
     },
     "000_graphics_buildings_animal_bones.png": {
@@ -200,12 +200,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 50,
-        "y": 33,
-        "w": 44,
-        "h": 30
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -213,7 +213,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.5
       }
     },
     "000_graphics_buildings_meat_rack.png": {
@@ -224,12 +224,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 46,
-        "y": 23,
-        "w": 51,
-        "h": 50
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -237,7 +237,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.7
       }
     },
     "000_graphics_buildings_drying_rack.png": {
@@ -248,12 +248,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 43,
-        "y": 11,
-        "w": 57,
-        "h": 74
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -261,7 +261,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.7
       }
     },
     "000_graphics_buildings_bucket.png": {
@@ -272,12 +272,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 59,
-        "y": 29,
-        "w": 25,
-        "h": 37
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -285,7 +285,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.6
       }
     },
     "000_graphics_buildings_crate.png": {
@@ -296,12 +296,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 49,
-        "y": 27,
-        "w": 46,
-        "h": 41
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -309,7 +309,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.6
       }
     },
     "000_graphics_buildings_jar_small.png": {
@@ -320,12 +320,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 60,
-        "y": 32,
-        "w": 23,
-        "h": 31
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -333,7 +333,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.6
       }
     },
     "000_graphics_buildings_jar_large.png": {
@@ -344,12 +344,12 @@
         "h": 96
       },
       "rotated": false,
-      "trimmed": true,
+      "trimmed": false,
       "spriteSourceSize": {
-        "x": 56,
-        "y": 29,
-        "w": 32,
-        "h": 37
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
       },
       "sourceSize": {
         "w": 144,
@@ -357,7 +357,7 @@
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.83
+        "y": 0.6
       }
     }
   },

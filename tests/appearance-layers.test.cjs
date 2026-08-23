@@ -27,6 +27,8 @@ const constants = {
   },
   SHEET_TYPES: {
     action: 'actionSheet',
+    corpse: 'corpseSheet',
+    dying: 'dyingSheet',
     standing: 'standingSheet',
     walking: 'walkingSheet',
   },
@@ -139,6 +141,92 @@ test('unit portraits never render carried-resource layers', () => {
   assert.equal(shouldRenderUnitPortraitLayer({ showWhenLoading: true }), false)
   assert.equal(shouldRenderUnitPortraitLayer({ hideWhenLoading: true }), true)
   assert.equal(shouldRenderUnitPortraitLayer({}), true)
+})
+
+test('helmet decor renders above head and helmet on death sheets', () => {
+  const { getAppearanceLayerZIndex } = loadModule('app/lib/lpc/appearanceLayers.ts', {
+    '../../constants': constants,
+  })
+  const { dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
+    '../../constants': constants,
+  })
+
+  const chiefLayers = dynamicEquipmentLayersForUnit('BanditChief')
+  const helmet = chiefLayers.find(layer => layer.equipmentKey === 'helmet_barbarian_ceramic')
+  const hornBack = chiefLayers.find(
+    layer =>
+      layer.equipmentKey === 'upward_horns_ceramic' &&
+      layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/back/walking'
+  )
+  const hornFront = chiefLayers.find(
+    layer =>
+      layer.equipmentKey === 'upward_horns_ceramic' &&
+      layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/front/walking'
+  )
+
+  assert.equal(helmet?.zIndex, 11)
+  assert.equal(hornBack?.zIndex, 8)
+  assert.equal(hornFront?.zIndex, 12)
+  assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.walking }), 8)
+  assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.dying }), 13)
+  assert.equal(getAppearanceLayerZIndex({ layer: hornFront, sheet: constants.SHEET_TYPES.corpse }), 13)
+})
+
+test('helmet decor with hurt art exposes death sheets', () => {
+  const { dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
+    '../../constants': constants,
+  })
+
+  const romanLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Roman')
+  const romanPlumage = romanLayers.find(layer => layer.equipmentKey === 'centurion_plumage')
+  assert.equal(romanPlumage?.dyingSheet, 'lpc-equipment/centurion_plumage/front/dying')
+  assert.equal(romanPlumage?.corpseSheet, 'lpc-equipment/centurion_plumage/front/corpse')
+
+  const babylonianLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Babylonian')
+  const legionPlumage = babylonianLayers.find(layer => layer.equipmentKey === 'legion_plumage')
+  assert.equal(legionPlumage?.dyingSheet, 'lpc-equipment/legion_plumage/front/dying')
+  assert.equal(legionPlumage?.corpseSheet, 'lpc-equipment/legion_plumage/front/corpse')
+
+  const nordicLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nordic')
+  const hornBack = nordicLayers.find(
+    layer =>
+      layer.equipmentKey === 'upward_horns_white' &&
+      layer.walkingSheet === 'lpc-equipment/upward_horns_white/back/walking'
+  )
+  const hornFront = nordicLayers.find(
+    layer =>
+      layer.equipmentKey === 'upward_horns_white' &&
+      layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'
+  )
+  assert.equal(hornBack?.dyingSheet, 'lpc-equipment/upward_horns_white/back/dying')
+  assert.equal(hornBack?.corpseSheet, 'lpc-equipment/upward_horns_white/back/corpse')
+  assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_white/front/dying')
+  assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_white/front/corpse')
+})
+
+test('back-worn equipment lifts above body on death sheets', () => {
+  const { getAppearanceLayerZIndex } = loadModule('app/lib/lpc/appearanceLayers.ts', {
+    '../../constants': constants,
+  })
+  const { dynamicEquipmentLayersForUnit } = loadModule('app/lib/lpc/equipment.ts', {
+    '../../constants': constants,
+  })
+
+  const archerLayers = dynamicEquipmentLayersForUnit('Bowman')
+  const quiver = archerLayers.find(layer => layer.equipmentKey === 'quiver')
+  assert.equal(quiver?.zIndex, 8)
+  assert.equal(getAppearanceLayerZIndex({ layer: quiver, sheet: constants.SHEET_TYPES.walking }), 8)
+  assert.equal(getAppearanceLayerZIndex({ layer: quiver, sheet: constants.SHEET_TYPES.dying }), 11)
+
+  const infantryLayers = dynamicEquipmentLayersForUnit('Fantassin')
+  const capeBack = infantryLayers.find(
+    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'lpc-equipment/cape_solid/back/walking'
+  )
+  const capeFront = infantryLayers.find(
+    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking'
+  )
+  assert.equal(getAppearanceLayerZIndex({ layer: capeBack, sheet: constants.SHEET_TYPES.corpse }), 11)
+  assert.equal(getAppearanceLayerZIndex({ layer: capeFront, sheet: constants.SHEET_TYPES.corpse }), 12)
 })
 
 test('villager and hero work tools follow civilization metal age', () => {
@@ -421,12 +509,9 @@ test('archer equipment follows soldier armor progression without shield', () => 
   assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/armor_mail_iron/front/walking')
   assert.equal(shield, undefined)
 
-  const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/arrow_'))
+  const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/weapon/arrow'))
   assert.deepEqual(arrowAssets.map(asset => asset.alias).sort(), [
-    'lpc-equipment/arrow_bronze/front/action',
-    'lpc-equipment/arrow_ceramic/front/action',
-    'lpc-equipment/arrow_copper/front/action',
-    'lpc-equipment/arrow_iron/front/action',
+    'lpc-equipment/weapon/arrow',
   ])
 })
 

@@ -65,7 +65,7 @@ export function applyCombatHit(
 ): CombatHitResult {
   const beforeHitPoints = target.hitPoints ?? 0
   const parried = isMelee && attemptAutomaticParry(target)
-  target.hitPoints = parried
+  target.hitPoints = parried || target.devInvincible
     ? beforeHitPoints
     : getHitPointsWithDamage(source, target, defaultDamage, bonusDamage, damageType)
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)

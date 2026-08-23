@@ -18,6 +18,7 @@ import { MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE, MAX_ARCHER_BY_AGE } from '../
 import { getBestUnitFromTechs, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
+import { getUnitOverallLevel } from '../../lib/unitExperience'
 import {
   BUILDING_TYPES,
   FAMILY_TYPES,
@@ -25,6 +26,7 @@ import {
   POPULATION_MAX,
   RESOURCE_TYPES,
   UNIT_TYPES,
+  WORK_TYPES,
   ANIMAL_PLAYER_SAFE_DIST,
   AMBIENT_ANIMAL_CHANCE,
   WATER_BORDER_PLACEMENT_CLEARANCE,
@@ -69,22 +71,28 @@ const PORTAL_RESOURCE_TYPE = 'Portal'
 const PORTAL_FOOTPRINT_SIZE = 3
 const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
 const BANDIT_CAMP_OWNER_NAME = 'Bandits'
-const BANDIT_CAMP_DECORATION_TYPES = [
-  'BanditCampTotemPlain',
-  'BanditCampTotemHorns',
-  'BanditCampTotemSkull',
-  'BanditCampFencePost',
-  'BanditCampBoneSmall',
-  'BanditCampRockPile',
-  'BanditCampSkull',
-  'BanditCampAnimalBones',
-  'BanditCampMeatRack',
-  'BanditCampDryingRack',
-  'BanditCampBucket',
-  'BanditCampCrate',
-  'BanditCampJarSmall',
-  'BanditCampJarLarge',
-] as const
+const BANDIT_CAMP_BED_OFFSETS: GridPosition[] = [
+  { i: 0, j: 0 },
+  { i: -3, j: 1 },
+  { i: 2, j: -3 },
+  { i: 3, j: 2 },
+]
+const BANDIT_CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
+  { type: 'BanditCampMeatRack', offset: { i: -4, j: 3 } },
+  { type: 'BanditCampDryingRack', offset: { i: 3, j: -4 } },
+  { type: 'BanditCampTotemSkull', offset: { i: 0, j: -5 } },
+  { type: 'BanditCampTotemHorns', offset: { i: 4, j: -2 } },
+  { type: 'BanditCampFencePost', offset: { i: -2, j: 4 } },
+  { type: 'BanditCampCrate', offset: { i: 4, j: 1 } },
+  { type: 'BanditCampBucket', offset: { i: -3, j: -2 } },
+  { type: 'BanditCampRockPile', offset: { i: 1, j: 4 } },
+  { type: 'BanditCampAnimalBones', offset: { i: -5, j: 0 } },
+  { type: 'BanditCampJarLarge', offset: { i: 5, j: -1 } },
+  { type: 'BanditCampBoneSmall', offset: { i: -1, j: 5 } },
+  { type: 'BanditCampSkull', offset: { i: 2, j: 4 } },
+  { type: 'BanditCampTotemPlain', offset: { i: -4, j: -1 } },
+  { type: 'BanditCampJarSmall', offset: { i: 5, j: 2 } },
+]
 
 type BanditCampOwner = PlayerLike & { banditCampOwner?: true }
 
@@ -1055,6 +1063,27 @@ export class MapGeneration {
     return canPlaceBuildingAt(this.map.grid, i, j, { ...config, type })
   }
 
+  placeCampBuildingNear(
+    owner: PlayerLike,
+    anchor: RuntimeCell,
+    type: string,
+    offset: GridPosition,
+    searchRadius = 1
+  ): RuntimeCell | null {
+    const targetI = anchor.i + offset.i
+    const targetJ = anchor.j + offset.j
+    for (let distance = 0; distance <= searchRadius; distance++) {
+      const cells = getPlainCellsAroundPoint(targetI, targetJ, this.map.grid, distance, cell =>
+        this.canPlaceCampBuildingAt(owner, cell.i, cell.j, type)
+      )
+      if (!cells.length) continue
+      const cell = distance === 0 ? cells[0] : this.map.randomItem(cells)
+      owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
+      return cell
+    }
+    return null
+  }
+
   findBanditCampAnchor(position: GridPosition, owner: PlayerLike): RuntimeCell | null {
     for (let distance = 0; distance <= 8; distance++) {
       const cells = getPlainCellsAroundPoint(position.i, position.j, this.map.grid, distance, cell =>
@@ -1065,33 +1094,37 @@ export class MapGeneration {
     return null
   }
 
-  placeBanditCampDecorations(owner: PlayerLike, anchor: RuntimeCell): void {
-    const targetCount = this.map.randomRange(3, 5)
-    const candidates: RuntimeCell[] = []
-    for (let distance = 2; distance <= 4; distance++) {
-      candidates.push(
-        ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
-          this.canPlaceCampBuildingAt(owner, cell.i, cell.j, BUILDING_TYPES.banditCampDecoration)
-        )
-      )
-    }
+  getHeroLevel(): number {
+    const hero = this.map.context.controls?.heroUnit ?? this.map.context.player?.units?.find(unit => unit.type === UNIT_TYPES.hero)
+    return hero ? getUnitOverallLevel(hero) : 0
+  }
 
-    for (let placed = 0; placed < targetCount && candidates.length; placed++) {
-      const type = this.map.randomItem([...BANDIT_CAMP_DECORATION_TYPES])
-      const cell = candidates.splice(this.map.randomRange(0, candidates.length - 1), 1)[0]
-      if (!this.canPlaceCampBuildingAt(owner, cell.i, cell.j, type)) continue
-      owner.createBuilding({
-        i: cell.i,
-        j: cell.j,
-        type,
-        isBuilt: true,
-      })
+  getBanditCampBedCount(unitCount: number, heroLevel: number): number {
+    return Math.max(1, Math.min(BANDIT_CAMP_BED_OFFSETS.length, Math.ceil(unitCount / 3) + Math.floor(heroLevel / 8)))
+  }
+
+  placeBanditCampBeds(owner: PlayerLike, anchor: RuntimeCell, bedCount: number): RuntimeCell[] {
+    const beds: RuntimeCell[] = []
+    for (let index = 0; index < bedCount; index++) {
+      const offset = BANDIT_CAMP_BED_OFFSETS[index]
+      const cell = this.placeCampBuildingNear(owner, anchor, BUILDING_TYPES.banditCamp, offset, index === 0 ? 0 : 1)
+      if (cell) beds.push(cell)
+    }
+    return beds
+  }
+
+  placeBanditCampDecorations(owner: PlayerLike, anchor: RuntimeCell, unitCount: number, heroLevel: number): void {
+    const targetCount = Math.max(4, Math.min(BANDIT_CAMP_DECORATION_LAYOUT.length, 3 + Math.ceil(unitCount / 2) + Math.floor(heroLevel / 5)))
+    let placed = 0
+    for (const entry of BANDIT_CAMP_DECORATION_LAYOUT) {
+      if (placed >= targetCount) break
+      if (this.placeCampBuildingNear(owner, anchor, entry.type, entry.offset, 1)) placed++
     }
   }
 
-  getBanditCampUnitTypes(campIndex: number): string[] {
-    const extra = Math.min(4, Math.max(0, campIndex))
-    const count = this.map.randomRange(3, 4 + extra)
+  getBanditCampUnitTypes(campIndex: number, heroLevel: number): string[] {
+    const extra = Math.min(4, Math.max(0, campIndex)) + Math.floor(heroLevel / 4)
+    const count = Math.min(10, this.map.randomRange(3, 4 + extra))
     const types = [UNIT_TYPES.banditChief]
     for (let index = 1; index < count; index++) {
       types.push(index % 3 === 0 ? UNIT_TYPES.banditArcher : UNIT_TYPES.banditSword)
@@ -1099,17 +1132,21 @@ export class MapGeneration {
     return types
   }
 
-  placeBanditCampUnits(owner: PlayerLike, anchor: RuntimeCell, campIndex: number): void {
+  placeBanditCampUnits(owner: PlayerLike, anchors: RuntimeCell[], unitTypes: string[]): void {
+    const primaryAnchor = anchors[0]
+    if (!primaryAnchor) return
     const candidates: RuntimeCell[] = []
-    for (let distance = 2; distance <= 7; distance++) {
-      candidates.push(
-        ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
-          Boolean(!cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
+    for (const anchor of anchors) {
+      for (let distance = 2; distance <= 5; distance++) {
+        candidates.push(
+          ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
+            Boolean(!cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
+          )
         )
-      )
+      }
     }
 
-    for (const type of this.getBanditCampUnitTypes(campIndex)) {
+    for (const type of unitTypes) {
       if (!candidates.length) break
       const cell = candidates.splice(this.map.randomRange(0, candidates.length - 1), 1)[0]
       if (cell.solid || cell.has) continue
@@ -1118,28 +1155,32 @@ export class MapGeneration {
         j: cell.j,
         type,
         gender: 'male',
+        work: WORK_TYPES.attacker,
         appearanceVariants: { gender: 'male' },
         suppressCreateSound: true,
       })
-      if (unit) owner.population = (owner.population ?? 0) + 1
+      if (unit) {
+        const patrolAnchor = this.map.randomItem(anchors) ?? primaryAnchor
+        unit.campPatrolAnchor = { i: patrolAnchor.i, j: patrolAnchor.j }
+        unit.banditCampAnchor = unit.campPatrolAnchor
+        owner.population = (owner.population ?? 0) + 1
+      }
     }
   }
 
   placeBanditCamps(): void {
     if (this.map.noAI || !this.map.banditCampPositions.length) return
     const owner = this.getOrCreateBanditCampOwner(this.map.banditCampPositions[0])
+    const heroLevel = this.getHeroLevel()
     for (let index = 0; index < this.map.banditCampPositions.length; index++) {
       const position = this.map.banditCampPositions[index]
       const anchor = this.findBanditCampAnchor(position, owner)
       if (!anchor) continue
-      owner.createBuilding({
-        i: anchor.i,
-        j: anchor.j,
-        type: BUILDING_TYPES.banditCamp,
-        isBuilt: true,
-      })
-      this.placeBanditCampDecorations(owner, anchor)
-      this.placeBanditCampUnits(owner, anchor, index)
+      const unitTypes = this.getBanditCampUnitTypes(index, heroLevel)
+      const beds = this.placeBanditCampBeds(owner, anchor, this.getBanditCampBedCount(unitTypes.length, heroLevel))
+      if (!beds.length) continue
+      this.placeBanditCampDecorations(owner, anchor, unitTypes.length, heroLevel)
+      this.placeBanditCampUnits(owner, beds, unitTypes)
     }
   }
 
@@ -1261,8 +1302,12 @@ export class MapGeneration {
       for (let n = 0; n < count; n++) {
         const position = getPositionInGridAroundInstance(townCenter, map.grid, [2, 10], 0)
         if (!position) continue
-        player.createUnit?.({ i: position.i, j: position.j, type, owner: player })
-        player.population = (player.population ?? 0) + 1
+        const unit = player.createUnit?.({ i: position.i, j: position.j, type, owner: player })
+        if (unit) {
+          unit.campPatrolAnchor = { i: position.i, j: position.j }
+          unit.work = WORK_TYPES.attacker
+          player.population = (player.population ?? 0) + 1
+        }
       }
     }
   }

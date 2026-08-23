@@ -40,6 +40,8 @@ type SerializableEntity = RuntimeEntityBase & {
   lastHealthDamagedAt?: number
   horseColor?: string
   companionHorseColor?: string | null
+  campPatrolAnchor?: GridPoint | null
+  banditCampAnchor?: GridPoint | null
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
   followingHero?: boolean
@@ -130,7 +132,7 @@ function referenceData(dest?: Destination | null): SaveReference | null | undefi
 }
 
 function resourceData(resource: SerializableEntity): SaveEntityState {
-  return {
+  const data: SaveEntityState = {
     ...filterObject(resource, [
       'label',
       'i',
@@ -143,10 +145,11 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
       'size',
       'hitPoints',
     ]),
-    currentFrame: resource.sprite?.currentFrame,
     textureName: (resource.textureName || '').split('.')[0],
-    berrybushFullTextureName: resource.berrybushFullTextureName,
   }
+  if (resource.sprite?.currentFrame != null) data.currentFrame = resource.sprite.currentFrame
+  if (resource.berrybushFullTextureName != null) data.berrybushFullTextureName = resource.berrybushFullTextureName
+  return data
 }
 
 function animalData(animal: SerializableEntity): SaveEntityState {
@@ -230,6 +233,8 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'mountedOnHorse',
       'horseColor',
       'companionHorseColor',
+      'campPatrolAnchor',
+      'banditCampAnchor',
       'experience',
     ]),
     currentFrame: unit.sprite?.currentFrame,
@@ -381,7 +386,9 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     players: (context.players ?? []).map(player => playerData(player)),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),
     naturalResourceRespawnSlots: (context.map.naturalResourceRespawnSlots ?? []).map(slot => ({ ...slot })),
-    animals: getGaiaAnimals(context.map.gaia).map(animal => animalData(animal as SerializableEntity)),
+    animals: getGaiaAnimals(context.map.gaia)
+      .filter(animal => !animal.isDestroyed)
+      .map(animal => animalData(animal as SerializableEntity)),
   }
 
   return data

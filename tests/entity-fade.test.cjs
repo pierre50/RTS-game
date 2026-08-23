@@ -122,3 +122,40 @@ test('fadeIn restores final alpha immediately without a scheduler', () => {
   assert.equal(entity.alpha, 0.8)
   assert.equal(entity.shadow.alpha, 0.5)
 })
+
+test('fadeIn cancels a pending fadeOut for the same entity', () => {
+  const callbacks = []
+  const removed = []
+  const { fadeIn, fadeOut } = loadModule('app/lib/entityFade.ts')
+  const entity = {
+    alpha: 1,
+    context: {
+      scheduler: {
+        add(callback) {
+          callbacks.push(callback)
+          return callbacks.length
+        },
+        remove(taskId) {
+          removed.push(taskId)
+        },
+      },
+    },
+  }
+  let completed = false
+
+  fadeOut(entity, 80, () => {
+    completed = true
+  })
+  fadeIn(entity, 80)
+
+  assert.deepEqual(removed, [1])
+
+  callbacks[0]()
+  assert.equal(completed, false)
+
+  callbacks[1]()
+  callbacks[1]()
+  assert.equal(entity.alpha, 1)
+  assert.equal(completed, false)
+  assert.deepEqual(removed, [1, 2])
+})

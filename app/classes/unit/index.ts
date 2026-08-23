@@ -35,10 +35,11 @@ import {
   showAggressionFeedback,
   updateInstanceRenderVisibility,
   resumeVillagerAutonomy,
+  isBanditUnit,
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
-import { isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
+import { getAppearanceLayerZIndex, isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import { Instance } from '../Instance'
@@ -120,24 +121,7 @@ const banditStepDebugState = new WeakMap<
 >()
 
 function isBanditDebugUnit(unit: UnitEntity): boolean {
-  const owner = unit.owner as (PlayerLike & { devConsoleBanditOwner?: boolean }) | undefined
-  const type = unit.type?.toLowerCase() ?? ''
-  const name = unit.name?.toLowerCase() ?? ''
-  const category = unit.category?.toLowerCase() ?? ''
-  const ownerName = owner?.name?.toLowerCase() ?? ''
-  const ownerLabel = owner?.label?.toLowerCase() ?? ''
-  return Boolean(
-    category.includes('bandit') ||
-      type.includes('bandit') ||
-      name.includes('bandit') ||
-      ownerName.includes('bandit') ||
-      ownerLabel.includes('bandit') ||
-      (typeof UNIT_TYPES.banditChief === 'string' && unit.type === UNIT_TYPES.banditChief) ||
-      (typeof UNIT_TYPES.banditSword === 'string' && unit.type === UNIT_TYPES.banditSword) ||
-      (typeof UNIT_TYPES.banditArcher === 'string' && unit.type === UNIT_TYPES.banditArcher) ||
-      owner?.devConsoleBanditOwner ||
-      (owner?.isPlayed !== true && owner?.name?.trim().toLowerCase() === 'bandits')
-  )
+  return isBanditUnit(unit)
 }
 
 function debugBanditStop(unit: UnitEntity, reason: string): void {
@@ -1039,6 +1023,7 @@ export class Unit extends Instance implements UnitEntity {
       const sheetId = variantSheetId && Assets.cache.has(variantSheetId) ? variantSheetId : basePlayerColorSheetId
       const spritesheet = sheetId ? getCachedSpritesheet(sheetId) : undefined
       const spriteKey = i
+      const layerZIndex = getAppearanceLayerZIndex({ layer, sheet: mountedRiderSheet })
       liveLayers.add(spriteKey)
 
       if (
@@ -1089,8 +1074,8 @@ export class Unit extends Instance implements UnitEntity {
         layerSprite.roundPixels = true
         layerSprite.loop = this.loop ?? true
         layerSprite.updateAnchor = true
-        layerSprite.zIndex = layer.zIndex
-        if (layer.zIndex < MAIN_SPRITE_LAYER_Z_INDEX) {
+        layerSprite.zIndex = layerZIndex
+        if (layerZIndex < MAIN_SPRITE_LAYER_Z_INDEX) {
           this.addChildAt(layerSprite, Math.max(0, this.getChildIndex(this.sprite)))
         } else {
           this.addChild(layerSprite)
@@ -1102,7 +1087,7 @@ export class Unit extends Instance implements UnitEntity {
       layerSprite.loop = this.sprite.loop
       layerSprite.position.x = this.getMountedRiderX()
       layerSprite.position.y = this.getMountedRiderY()
-      layerSprite.zIndex = layer.zIndex
+      layerSprite.zIndex = layerZIndex
       layerSprite.textures = textures as Texture[]
       if (layer.palette === 'player') {
         changeSpriteColor(layerSprite, this.owner.color ?? '')

@@ -13,6 +13,7 @@ export type ConfigValue =
 
 export type UnitAppearanceLayerConfig = {
   zIndex: number
+  deathZIndex?: number
   hideWhenLoading?: boolean
   showWhenLoading?: boolean
   hideForActions?: string[]

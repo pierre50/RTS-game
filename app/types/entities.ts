@@ -91,6 +91,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   color?: string
   hitPoints?: number
   totalHitPoints?: number
+  devInvincible?: boolean
   sight?: number
   quantity?: number
   totalQuantity?: number
@@ -213,6 +214,10 @@ export interface UnitEntity extends EnergyEntity {
   work?: string | null
   autonomousJob?: VillagerAutonomyJob | null
   assigningAutonomousJob?: boolean
+  campPatrolAnchor?: GridPosition | null
+  campPatrolTaskId?: number | null
+  banditCampAnchor?: GridPosition | null
+  banditCampPatrolTaskId?: number | null
   shelterState?: VillagerShelterState | null
   loading?: number | null
   loadingType?: string | null

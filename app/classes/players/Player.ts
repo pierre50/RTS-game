@@ -607,6 +607,10 @@ export class Player implements PlayerLike {
       )
     )
     canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
+    if (!options.suppressCreateSound) {
+      updateInstanceVisibility(unit)
+      fadeIn(unit, FADE_DURATION_MS)
+    }
     return unit
   }
 

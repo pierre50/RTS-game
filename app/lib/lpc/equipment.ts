@@ -10,6 +10,13 @@ type EquipmentSheet = (typeof EQUIPMENT_DEATH_SHEETS)[number]
 type EquipmentLoadSheet = EquipmentSheet | typeof EQUIPMENT_SHOOTING_SHEET
 const EQUIPMENT_SHEETS = ['walking', 'action'] as const satisfies readonly EquipmentSheet[]
 type EquipmentLayer = 'back' | 'front'
+type DynamicEquipmentAsset = { alias: string; src: string }
+export type DynamicEquipmentAlias = {
+  alias: string
+  atlasAlias: string
+  animationSpeed: number
+  frameSuffix: string
+}
 export type DynamicEquipmentKey =
   | 'axe_copper'
   | 'axe_ceramic'
@@ -128,6 +135,8 @@ const EQUIPMENT_LAYER_Z_INDEX: Record<EquipmentLayer, number> = {
 }
 
 const WEARABLE_EQUIPMENT_Z_INDEX = 11
+const BACK_WORN_DEATH_Z_INDEX = 11
+const HELMET_DECOR_DEATH_Z_INDEX = 13
 
 const EQUIPMENT_LAYERS = ['back', 'front'] as const satisfies readonly EquipmentLayer[]
 
@@ -334,6 +343,19 @@ const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'plumage',
 ])
 
+const HELMET_DECOR_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
+  'crest',
+  'centurion_crest',
+  'centurion_plumage',
+  'legion_plumage',
+  'plumage',
+  'helmet_wings',
+  'upward_horns_white',
+  'upward_horns_ceramic',
+])
+
+const BACK_WORN_DEATH_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>(['cape_solid', 'quiver'])
+
 const MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'crest',
   'centurion_crest',
@@ -426,14 +448,17 @@ const EQUIPMENT_SHEET_OVERRIDES: Partial<
   bow_great: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   bow_recurve: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   cape_solid: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  centurion_plumage: { front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
   helmet_barbarian_nasal_ceramic: { front: EQUIPMENT_DEATH_SHEETS },
+  legion_plumage: { front: EQUIPMENT_DEATH_SHEETS },
   quiver: { back: EQUIPMENT_DEATH_SHEETS },
   sack_cloth_hood_leather: { front: EQUIPMENT_DEATH_SHEETS },
   sword_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_copper: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_bronze: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   sword_iron: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
+  upward_horns_white: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   upward_horns_ceramic: { back: EQUIPMENT_DEATH_SHEETS, front: EQUIPMENT_DEATH_SHEETS },
   cane: { front: ['walking'] },
   arrow_ceramic: { front: ['action'] },
@@ -789,10 +814,6 @@ function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, s
   return `${EQUIPMENT_BASE_ALIAS}/${equipment}/${layer}/${sheet}`
 }
 
-function equipmentSrc(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
-  return `${EQUIPMENT_BASE_URL}/${equipment}/${layer}/${sheet}/texture.json`
-}
-
 function equipmentVariantAlias(
   equipment: DynamicEquipmentKey,
   layer: EquipmentLayer,
@@ -802,13 +823,63 @@ function equipmentVariantAlias(
   return `${equipmentAlias(equipment, layer, sheet)}/${variant}`
 }
 
-function equipmentVariantSrc(
-  equipment: DynamicEquipmentKey,
-  layer: EquipmentLayer,
-  sheet: EquipmentLoadSheet,
-  variant: string
-): string {
-  return `${EQUIPMENT_BASE_URL}/${equipment}/${layer}/${sheet}/${variant}/texture.json`
+function equipmentFamilyPath(equipment: DynamicEquipmentKey): string {
+  if (equipment.startsWith('armor_mail_')) return 'armor/armor_mail'
+  if (equipment.startsWith('armor_legion_')) return 'armor/armor_legion'
+  if (equipment === 'armor_leather') return 'armor/armor_leather'
+  if (equipment.startsWith('helmet_pointed_')) return 'helmet/helmet_pointed'
+  if (equipment.startsWith('helmet_barbuta_')) return 'helmet/helmet_barbuta'
+  if (equipment.startsWith('helmet_legion_')) return 'helmet/helmet_legion'
+  if (equipment.startsWith('helmet_nasal_')) return 'helmet/helmet_nasal'
+  if (equipment.startsWith('helmet_bascinet_round_')) return 'helmet/helmet_bascinet_round'
+  if (equipment.startsWith('helmet_norman_')) return 'helmet/helmet_norman'
+  if (equipment.startsWith('helmet_barbarian_nasal_')) return 'helmet/helmet_barbarian_nasal'
+  if (equipment.startsWith('helmet_barbarian_')) return 'helmet/helmet_barbarian'
+  if (equipment.startsWith('shoulder_legion_')) return 'armor/shoulder_legion'
+  if (equipment.startsWith('bracers_')) return 'armor/bracers'
+  if (equipment.startsWith('leg_armor_')) return 'armor/leg_armor'
+  if (equipment.startsWith('axe_')) return 'weapon/axe'
+  if (equipment.startsWith('pickaxe_')) return 'tool/pickaxe'
+  if (equipment.startsWith('hammer_')) return 'tool/hammer'
+  if (equipment.startsWith('scythe_')) return 'tool/scythe'
+  if (equipment === 'bow' || equipment === 'bow_great' || equipment === 'bow_recurve') return 'weapon/bow'
+  if (equipment.startsWith('arrow_')) return 'weapon/arrow'
+  if (equipment === 'halberd') return 'weapon/halberd'
+  if (equipment.startsWith('sword_') || equipment === 'longsword') return 'weapon/sword'
+  if (equipment.startsWith('round_shield_')) return 'weapon/round_shield'
+  if (equipment === 'meat' || equipment === 'stone' || equipment === 'gold') return 'resource/carried'
+  if (equipment === 'cape_solid') return 'accessory/cape'
+  if (
+    equipment === 'crest' ||
+    equipment === 'centurion_crest' ||
+    equipment === 'centurion_plumage' ||
+    equipment === 'legion_plumage' ||
+    equipment === 'plumage'
+  ) {
+    return 'accessory/plumage'
+  }
+  if (equipment.startsWith('upward_horns_')) return 'accessory/upward_horns'
+  if (equipment === 'helmet_wings') return 'accessory/helmet_wings'
+  if (equipment === 'sack_cloth_hood_leather') return 'helmet/sack_cloth_hood'
+  if (equipment === 'cane') return 'weapon/cane'
+  if (equipment === 'quiver') return 'weapon/quiver'
+  return `misc/${equipment}`
+}
+
+function equipmentFamilyAlias(equipment: DynamicEquipmentKey): string {
+  return `${EQUIPMENT_BASE_ALIAS}/${equipmentFamilyPath(equipment)}`
+}
+
+function equipmentFamilySrc(equipment: DynamicEquipmentKey): string {
+  return `${EQUIPMENT_BASE_URL}/${equipmentFamilyPath(equipment)}/texture.json`
+}
+
+function frameSuffixForAlias(alias: string): string {
+  return `_graphics_${alias.split('/').join('_')}.png`
+}
+
+function animationSpeedForEquipmentSheet(sheet: EquipmentLoadSheet): number {
+  return sheet === 'corpse' ? 0 : 0.2
 }
 
 function equipmentSheets(equipment: DynamicEquipmentKey, layer: EquipmentLayer): readonly EquipmentSheet[] {
@@ -880,6 +951,11 @@ function layerConfig(
       layer === 'front' && WEARABLE_EQUIPMENT_KEYS.has(equipment)
         ? WEARABLE_EQUIPMENT_Z_INDEX
         : EQUIPMENT_LAYER_Z_INDEX[layer],
+    deathZIndex: HELMET_DECOR_EQUIPMENT_KEYS.has(equipment)
+      ? HELMET_DECOR_DEATH_Z_INDEX
+      : layer === 'back' && BACK_WORN_DEATH_EQUIPMENT_KEYS.has(equipment)
+        ? BACK_WORN_DEATH_Z_INDEX
+        : undefined,
     ...options,
     ageSheetOverrides: ageSheetOverrides(layer, ageEquipment),
     appearanceVariantKey: GENDERED_EQUIPMENT_KEYS.has(equipment) ? 'gender' : undefined,
@@ -912,27 +988,49 @@ function equipmentLayerConfigs(
   return layers.map(layer => layerConfig(equipment, layer, options, ageEquipment))
 }
 
-export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
+function dynamicEquipmentLogicalAliases(): DynamicEquipmentAlias[] {
   return DYNAMIC_EQUIPMENT_KEYS.flatMap(equipment =>
     (EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS).flatMap(layer => {
       const sheetsToLoad: EquipmentLoadSheet[] = [...equipmentSheets(equipment, layer)]
       if (WEARABLE_SHOOTING_EQUIPMENT_KEYS.has(equipment)) sheetsToLoad.push(EQUIPMENT_SHOOTING_SHEET)
       return sheetsToLoad.flatMap(sheet => {
         if (GENDERED_EQUIPMENT_KEYS.has(equipment)) {
-          return ['male', 'female'].map(variant => ({
-            alias: equipmentVariantAlias(equipment, layer, sheet, variant),
-            src: equipmentVariantSrc(equipment, layer, sheet, variant),
-          }))
+          return ['male', 'female'].map(variant => {
+            const alias = equipmentVariantAlias(equipment, layer, sheet, variant)
+            return {
+              alias,
+              atlasAlias: equipmentFamilyAlias(equipment),
+              animationSpeed: animationSpeedForEquipmentSheet(sheet),
+              frameSuffix: frameSuffixForAlias(alias),
+            }
+          })
         }
+        const alias = equipmentAlias(equipment, layer, sheet)
         return [
           {
-            alias: equipmentAlias(equipment, layer, sheet),
-            src: equipmentSrc(equipment, layer, sheet),
+            alias,
+            atlasAlias: equipmentFamilyAlias(equipment),
+            animationSpeed: animationSpeedForEquipmentSheet(sheet),
+            frameSuffix: frameSuffixForAlias(alias),
           },
         ]
       })
     })
   )
+}
+
+export function dynamicEquipmentAssets(): DynamicEquipmentAsset[] {
+  const seen = new Set<string>()
+  return DYNAMIC_EQUIPMENT_KEYS.flatMap(equipment => {
+    const alias = equipmentFamilyAlias(equipment)
+    if (seen.has(alias)) return []
+    seen.add(alias)
+    return [{ alias, src: equipmentFamilySrc(equipment) }]
+  })
+}
+
+export function dynamicEquipmentAliases(): DynamicEquipmentAlias[] {
+  return dynamicEquipmentLogicalAliases()
 }
 
 export function dynamicEquipmentLayersForUnit(unitType: string, civilization?: string): UnitAppearanceLayerConfig[] {

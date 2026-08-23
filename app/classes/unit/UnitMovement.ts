@@ -33,6 +33,7 @@ import {
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
   clearVillagerAutonomy,
+  isBanditUnit,
   resumeVillagerAutonomy,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
@@ -366,29 +367,11 @@ const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 
 type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
 type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
-type BanditOwnerLike = UnitEntity['owner'] & { devConsoleBanditOwner?: boolean }
 let lastDirectMoveDebugAt = 0
 const lastCombatMoveDebugAt = new Map<string, number>()
 
 function isBanditDebugUnit(unit: UnitEntity): boolean {
-  const owner = unit.owner as BanditOwnerLike | undefined
-  const type = unit.type?.toLowerCase() ?? ''
-  const name = unit.name?.toLowerCase() ?? ''
-  const category = unit.category?.toLowerCase() ?? ''
-  const ownerName = owner?.name?.toLowerCase() ?? ''
-  const ownerLabel = owner?.label?.toLowerCase() ?? ''
-  return Boolean(
-    category.includes('bandit') ||
-      type.includes('bandit') ||
-      name.includes('bandit') ||
-      ownerName.includes('bandit') ||
-      ownerLabel.includes('bandit') ||
-      (typeof UNIT_TYPES.banditChief === 'string' && unit.type === UNIT_TYPES.banditChief) ||
-      (typeof UNIT_TYPES.banditSword === 'string' && unit.type === UNIT_TYPES.banditSword) ||
-      (typeof UNIT_TYPES.banditArcher === 'string' && unit.type === UNIT_TYPES.banditArcher) ||
-      owner?.devConsoleBanditOwner ||
-      (owner?.isPlayed !== true && owner?.name?.trim().toLowerCase() === 'bandits')
-  )
+  return isBanditUnit(unit)
 }
 
 function isUnitCellOccupant(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {

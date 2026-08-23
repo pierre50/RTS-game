@@ -31,6 +31,8 @@ export type SaveEntityState = {
   hitPoints?: number
   horseColor?: string
   companionHorseColor?: string | null
+  campPatrolAnchor?: SaveGridPoint | null
+  banditCampAnchor?: SaveGridPoint | null
   healthRegenRate?: number
   healthRegenDelay?: number
   healthRegenMultiplier?: number

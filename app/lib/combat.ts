@@ -11,6 +11,7 @@ import { getEntityWeaponPower, UNARMED_UNIT_WEAPON_POWER } from './equipmentStat
 import { getCombatBehavior, getCombatMoraleRoll } from './combatBehavior'
 import { angleDelta, getPointsDegree } from './maths'
 import { canUpgradeUnitAtBuilding } from './unitUpgrades'
+import { isBanditOwner, isBanditUnitType } from './bandits'
 import type { CombatBehaviorConfig, ConfigValue } from '../types/config'
 import type { PlayerLike } from '../types/player'
 
@@ -23,6 +24,7 @@ export type CombatEntity = {
   degree?: number
   family?: string
   hitPoints?: number
+  devInvincible?: boolean
   isBuilt?: boolean
   isDead?: boolean
   isDestroyed?: boolean
@@ -266,20 +268,6 @@ export function evaluateCombatMorale(
 
 export function shouldFleeWhenAttacked(source?: CombatEntity | null, attacker?: CombatEntity | null): boolean {
   return evaluateCombatMorale(source, attacker) === 'flee'
-}
-
-function isBanditUnitType(type?: string): boolean {
-  if (!type) return false
-  return type === UNIT_TYPES.banditChief || type === UNIT_TYPES.banditSword || type === UNIT_TYPES.banditArcher
-}
-
-type BanditOwnerLike = PlayerLike & { devConsoleBanditOwner?: boolean }
-const BANDIT_OWNER_NAME = 'bandits'
-
-export function isBanditOwner(owner?: PlayerLike | null): boolean {
-  if (!owner) return false
-  if ((owner as BanditOwnerLike).devConsoleBanditOwner) return true
-  return owner.isPlayed !== true && owner.name?.trim().toLowerCase() === BANDIT_OWNER_NAME
 }
 
 function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {

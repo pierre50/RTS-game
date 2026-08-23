@@ -1,11 +1,11 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { HERO_STEALTH_ANIMAL_DETECTION_FACTOR } from '../../constants/heroControls'
-import { findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
+import { AmbientMovementController, findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
 import { showAlertFeedback } from '../../lib/combatFeedback'
 import { updateUnitEnergy } from '../../lib/unitEnergy'
 import { isAirborne } from './locomotion'
-import type { SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeCell } from '../../types/map'
 import type { Animal } from './index'
 
 type AnimalThreat = UnitEntity | BuildingEntity
@@ -17,13 +17,17 @@ const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
   animal: Animal
-  taskId: SchedulerTaskId | null
-  nextAmbientWalkAt: number
+  ambientMovement: AmbientMovementController<Animal>
 
   constructor(animal: Animal) {
     this.animal = animal
-    this.taskId = null
-    this.nextAmbientWalkAt = 0
+    this.ambientMovement = new AmbientMovementController(animal, {
+      delayMaxMs: target => target.ambientWalkDelayMax ?? AMBIENT_WALK_DELAY_MAX,
+      delayMinMs: target => target.ambientWalkDelayMin ?? AMBIENT_WALK_DELAY_MIN,
+      move: (target, destination) => target.sendTo(destination),
+      pickDestination: target => this.findAmbientDestination(target),
+      taskName: 'animal.behavior',
+    })
   }
 
   start(): void {
@@ -33,27 +37,15 @@ export class AnimalBehavior {
       animal.isDead ||
       animal.isDestroyed ||
       animal.context.editor ||
-      this.taskId != null
+      this.ambientMovement.taskId != null
     ) {
       return
     }
-    this.scheduleAmbientWalk()
-    this.taskId = animal.context.scheduler.add(() => this.update(), BEHAVIOR_CHECK_INTERVAL, 'animal.behavior')
+    this.ambientMovement.start(BEHAVIOR_CHECK_INTERVAL, () => this.update())
   }
 
   stop(): void {
-    if (this.taskId == null) return
-    this.animal.context.scheduler.remove(this.taskId)
-    this.taskId = null
-  }
-
-  scheduleAmbientWalk(): void {
-    const {
-      context: { map, scheduler },
-    } = this.animal
-    const minDelay = this.animal.ambientWalkDelayMin ?? AMBIENT_WALK_DELAY_MIN
-    const maxDelay = Math.max(minDelay, this.animal.ambientWalkDelayMax ?? AMBIENT_WALK_DELAY_MAX)
-    this.nextAmbientWalkAt = scheduler.elapsedMs + map.randomRange(minDelay, maxDelay)
+    this.ambientMovement.stop()
   }
 
   // Runaway animals spook at any human-owned presence: units of any kind
@@ -115,17 +107,15 @@ export class AnimalBehavior {
       // Still in the air (e.g. mid-landing): starting an ambient walk now would
       // kill the landing interval and strand the animal at a partial altitude.
       isAirborne(animal) ||
-      animal.context.scheduler.elapsedMs < this.nextAmbientWalkAt
+      !this.ambientMovement.ready
     ) {
       return
     }
 
-    this.walkNearby()
-    this.scheduleAmbientWalk()
+    this.ambientMovement.tryMove()
   }
 
-  walkNearby(): void {
-    const animal = this.animal
+  findAmbientDestination(animal: Animal): RuntimeCell | null {
     const {
       context: { map },
     } = animal
@@ -136,7 +126,6 @@ export class AnimalBehavior {
       animal.ambientWalkRange ?? AMBIENT_WALK_RANGE,
       cell => !cell.solid && (cell.i !== animal.i || cell.j !== animal.j)
     )
-    const destination = map.randomItem(cells)
-    if (destination) animal.sendTo(destination)
+    return cells.length ? map.randomItem(cells) : null
   }
 }

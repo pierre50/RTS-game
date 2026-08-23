@@ -39,8 +39,8 @@ const MAX_PLAYERS = MAX_BOTS + 1
 const MIN_PLAYERS = 1
 const HERO_PREVIEW_SIZE = 96
 const HERO_FRAME_SIZE = 64
-const HERO_DIRECTION_COUNT = 3
-const HERO_SOUTH_DIRECTION_INDEX = 2
+const HERO_ATLAS_FRAME_STRIDE = HERO_FRAME_SIZE + 1
+const HERO_BODY_WALKING_SOUTH_FRAME_X = 18 * HERO_ATLAS_FRAME_STRIDE
 
 const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
 
@@ -321,7 +321,7 @@ export class PlayerSetupPanel {
   _heroPreviewSrc(player: PlayerSetupConfigWithAge): string {
     const civ = (player.civ || 'Greek').toLowerCase()
     const gender = player.gender === 'female' ? 'female' : 'male'
-    return `assets/graphics/lpc-baked/hero/${civ}/${gender}/body/walking/texture.png`
+    return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
   }
 
   _renderHeroPreview(canvas: HTMLCanvasElement, player: PlayerSetupConfigWithAge): void {
@@ -342,12 +342,9 @@ export class PlayerSetupPanel {
       if (!frameCtx) return
       frameCtx.imageSmoothingEnabled = false
 
-      const totalFrames = Math.max(1, Math.floor(img.width / HERO_FRAME_SIZE))
-      const framesPerDirection = Math.max(1, Math.floor(totalFrames / HERO_DIRECTION_COUNT))
-      const southFrameIndex = framesPerDirection * HERO_SOUTH_DIRECTION_INDEX
       frameCtx.drawImage(
         img,
-        southFrameIndex * HERO_FRAME_SIZE,
+        HERO_BODY_WALKING_SOUTH_FRAME_X,
         0,
         HERO_FRAME_SIZE,
         HERO_FRAME_SIZE,
@@ -366,7 +363,7 @@ export class PlayerSetupPanel {
       if (!ctx) return
       ctx.imageSmoothingEnabled = false
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      img.src = `assets/graphics/lpc-baked/hero/greek/male/body/walking/texture.png`
+      img.src = `assets/graphics/lpc-baked/hero/greek/male/texture.png`
     }
     img.src = this._heroPreviewSrc(player)
   }

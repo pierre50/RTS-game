@@ -17,12 +17,14 @@ import {
   setAge,
   setCiv,
   setGameSpeed,
+  toggleHeroInvincible,
   setPopMax,
   setWeatherPhase,
   showTimeState,
   spawnAnimal,
   spawnBuilding,
   spawnUnits,
+  TRIBAL_BUILDING_COMPLETIONS,
   toggleEntityBars,
   toggleCoordsDebug,
   toggleFog,
@@ -110,10 +112,23 @@ export function createDevCommands(): DevCommandRegistry {
     usage: 'bandit-raid',
     describe: 'Trigger a bandit tribute raid near the portal',
     run: (_args, context) => {
-      const started = context.banditRaids?.triggerRaid({ source: 'dev-console' }) ?? false
+      const started = context.tributeRaids?.triggerRaid({ source: 'dev-console' }) ?? false
       return started
         ? { ok: true, message: 'Bandit raid triggered' }
         : { ok: false, message: 'Unable to trigger bandit raid' }
+    },
+  })
+
+  registry.register({
+    name: 'faction-raid',
+    aliases: ['frraid', 'envoy'],
+    usage: 'faction-raid',
+    describe: 'Trigger a hostile known faction tribute raid near the portal',
+    run: (_args, context) => {
+      const started = context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }) ?? false
+      return started
+        ? { ok: true, message: 'Faction raid triggered' }
+        : { ok: false, message: 'Unable to trigger faction raid' }
     },
   })
 
@@ -133,7 +148,7 @@ export function createDevCommands(): DevCommandRegistry {
     aliases: ['build'],
     usage: 'building <type> [playerIndex]',
     describe: 'Spawn a building near cursor',
-    complete: (_args, { player }) => Object.keys(player?.config?.buildings || {}),
+    complete: (_args, { player }) => [...Object.keys(player?.config?.buildings || {}), ...TRIBAL_BUILDING_COMPLETIONS],
     run: ([type, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
       return spawnBuilding(context, type, playerIndex)
@@ -228,6 +243,15 @@ export function createDevCommands(): DevCommandRegistry {
     name: 'heal',
     describe: 'Restore all your units and buildings to full HP',
     run: (_args, context) => healAll(context),
+  })
+
+  registry.register({
+    name: 'hero-invincible',
+    aliases: ['hinvincible', 'invincible', 'hero-invinsible'],
+    usage: 'hero-invincible [on|off]',
+    describe: 'Toggle hero debug invincibility while still receiving hits',
+    complete: () => ['on', 'off'],
+    run: ([value], context) => toggleHeroInvincible(context, value),
   })
 
   registry.register({

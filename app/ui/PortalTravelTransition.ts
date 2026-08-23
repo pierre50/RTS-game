@@ -3,8 +3,8 @@ import { t } from '../lib/lang'
 const FINISH_MS = 520
 const FIRST_FLASH_MS = 120
 const HERO_FRAME_SIZE = 64
-const HERO_DIRECTION_COUNT = 3
-const HERO_SOUTH_DIRECTION_INDEX = 2
+const HERO_ATLAS_FRAME_STRIDE = HERO_FRAME_SIZE + 1
+const HERO_BODY_WALKING_SOUTH_FRAME_X = 18 * HERO_ATLAS_FRAME_STRIDE
 
 type PortalTravelTransitionOptions = {
   heroImageSrc?: string | null
@@ -69,11 +69,8 @@ export class PortalTravelTransition {
       img.className = 'portal-travel__hero-image'
       img.alt = ''
       img.onload = () => {
-        const totalFrames = Math.max(1, Math.floor(img.naturalWidth / HERO_FRAME_SIZE))
-        const framesPerDirection = Math.max(1, Math.floor(totalFrames / HERO_DIRECTION_COUNT))
-        const southFrameIndex = framesPerDirection * HERO_SOUTH_DIRECTION_INDEX
-        img.style.transform = `translateX(-${southFrameIndex * HERO_FRAME_SIZE}px)`
-        frame.style.setProperty('--portal-hero-frame-x', `-${southFrameIndex * HERO_FRAME_SIZE}px`)
+        img.style.transform = `translateX(-${HERO_BODY_WALKING_SOUTH_FRAME_X}px)`
+        frame.style.setProperty('--portal-hero-frame-x', `-${HERO_BODY_WALKING_SOUTH_FRAME_X}px`)
       }
       img.src = src
       frame.appendChild(img)

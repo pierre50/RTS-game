@@ -50,6 +50,7 @@ function loadPlayerActions() {
         RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold'],
         findKey: (object, query) =>
           Object.keys(object || {}).find(key => key.toLowerCase() === String(query).toLowerCase()),
+        normalizeToggle: (value, current) => (value === 'on' ? true : value === 'off' ? false : !current),
       }
     }
     return require(request)
@@ -103,6 +104,26 @@ test('tech all unlocks only technologies available at the current age', () => {
   assert.equal(player.autoTechnologyByAge, true)
   assert.equal(editorPanelUpdates, 2)
   assert.equal(topbarUpdates, 2)
+})
+
+test('hero invincible command toggles the active hero dev damage immunity', () => {
+  const { toggleHeroInvincible } = loadPlayerActions()
+  const hero = { hitPoints: 7 }
+  const context = { controls: { heroUnit: hero } }
+
+  assert.deepEqual(toggleHeroInvincible(context, 'on'), { ok: true, message: 'Hero invincible: on' })
+  assert.equal(hero.devInvincible, true)
+  assert.deepEqual(toggleHeroInvincible(context, 'off'), { ok: true, message: 'Hero invincible: off' })
+  assert.equal(hero.devInvincible, false)
+})
+
+test('hero invincible command reports when no active hero exists', () => {
+  const { toggleHeroInvincible } = loadPlayerActions()
+
+  assert.deepEqual(toggleHeroInvincible({ controls: { heroUnit: null } }), {
+    ok: false,
+    message: 'No active hero found',
+  })
 })
 
 test('tech all auto-unlocks the next age tier when age increases', () => {

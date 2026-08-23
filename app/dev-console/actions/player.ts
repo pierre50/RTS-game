@@ -4,7 +4,7 @@ import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/settings'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
-import { RESOURCE_NAMES, findKey } from './shared'
+import { RESOURCE_NAMES, findKey, normalizeToggle } from './shared'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { ResourceAmount } from '../../types/common'
 import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
@@ -217,6 +217,13 @@ export function healAll(context: DevConsoleContext): CommandResult {
   })
   const count = player.units.length + player.buildings.length
   return { ok: true, message: `Healed ${count} entities to full HP` }
+}
+
+export function toggleHeroInvincible(context: DevConsoleContext, value?: string): CommandResult {
+  const hero = context.controls?.heroUnit
+  if (!hero || hero.isDead || hero.isDestroyed) return { ok: false, message: 'No active hero found' }
+  hero.devInvincible = normalizeToggle(value, Boolean(hero.devInvincible))
+  return { ok: true, message: `Hero invincible: ${hero.devInvincible ? 'on' : 'off'}` }
 }
 
 export function setGameSpeed(context: DevConsoleContext, value: number | string = 1): CommandResult {

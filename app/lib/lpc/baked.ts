@@ -1,6 +1,7 @@
 import { Assets } from 'pixi.js'
 import { hashLpcAppearanceSeed } from './appearance'
 import {
+  dynamicEquipmentAliases,
   dynamicEquipmentAssets,
   dynamicEquipmentLayersForEquipment,
   dynamicEquipmentLayersForUnit,
@@ -12,6 +13,7 @@ import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
+import type { SpritesheetLike } from '../../types/pixi'
 
 const BAKED_LPC_BASE_URL = 'assets/graphics/lpc-baked'
 const BAKED_LPC_ALIAS_PREFIX = 'lpc-baked'
@@ -148,24 +150,20 @@ function bakedAlias(unit: BakedUnitType, variant: string, job: string, sheet: st
   return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}/${job}/${sheet}`
 }
 
-function bakedSrc(unit: BakedUnitType, variant: string, job: string, sheet: string): string {
-  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${job}/${sheet}/texture.json`
+function bakedVariantAtlasAlias(unit: BakedUnitType, variant: string): string {
+  return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}`
+}
+
+function bakedVariantAtlasSrc(unit: BakedUnitType, variant: string): string {
+  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/texture.json`
 }
 
 function bakedUnitAlias(unit: BakedUnitType, variant: string, sheet: string): string {
   return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}/${sheet}`
 }
 
-function bakedUnitSrc(unit: BakedUnitType, variant: string, sheet: string): string {
-  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/${sheet}/texture.json`
-}
-
 function bakedUnitActionAlias(unit: BakedUnitType, variant: string, animation: string): string {
   return `${bakedUnitAlias(unit, variant, 'action')}/${animation}`
-}
-
-function bakedUnitActionSrc(unit: BakedUnitType, variant: string, animation: string): string {
-  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/action/${animation}/texture.json`
 }
 
 function villagerBodyAlias(variant: string, sheet: string): string {
@@ -208,44 +206,96 @@ function isAssetCached(alias: string): boolean {
   return Assets.cache.has(alias)
 }
 
-async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
+function bakedFrameSuffix(alias: string): string {
+  return `_graphics_${alias.split('/').join('_')}.png`
+}
+
+function bakedSheetAnimationSpeed(alias: string): number {
+  return alias.endsWith('/corpse') ? 0 : 0.2
+}
+
+function registerAliasFromAtlas(alias: string, atlasAlias: string): void {
+  if (isAssetCached(alias)) return
+  const atlas = Assets.cache.get(atlasAlias) as SpritesheetLike | undefined
+  if (!atlas?.textures) return
+  const frameSuffix = bakedFrameSuffix(alias)
+  const textures = Object.fromEntries(
+    Object.entries(atlas.textures).filter(([frameName]) => frameName.endsWith(frameSuffix))
+  )
+  if (!Object.keys(textures).length) return
+  const frames = Object.fromEntries(
+    Object.entries(atlas.data?.frames ?? {}).filter(([frameName]) => frameName.endsWith(frameSuffix))
+  )
+  Assets.cache.set(alias, {
+    ...atlas,
+    data: {
+      ...atlas.data,
+      animationSpeed: bakedSheetAnimationSpeed(alias),
+      frames,
+    },
+    textures,
+  })
+}
+
+function bakedLogicalAliases(unit: BakedUnitType, variant: string): string[] {
   if (unit === 'villager' || unit === 'hero') {
     const bodyAlias = unit === 'hero' ? heroBodyAlias : villagerBodyAlias
     const actionAlias = unit === 'hero' ? heroActionAlias : villagerActionAlias
     const actionSheets: readonly string[] = unit === 'hero' ? HERO_BASE_ACTION_SHEETS : VILLAGER_ACTION_SHEETS
-    const assets = [
-      ...VILLAGER_BODY_SHEETS.map(sheet => ({
-        alias: bodyAlias(variant, sheet),
-        src: bakedSrc(unit, variant, 'body', sheet),
-      })),
-      ...actionSheets.map(sheet => ({
-        alias: actionAlias(variant, sheet),
-        src: bakedSrc(unit, variant, 'action', sheet),
-      })),
-    ].filter(asset => !isAssetCached(asset.alias))
-
-    if (assets.length) {
-      await Assets.load(assets)
-    }
-    return
+    return [
+      ...VILLAGER_BODY_SHEETS.map(sheet => bodyAlias(variant, sheet)),
+      ...actionSheets.map(sheet => actionAlias(variant, sheet)),
+    ]
   }
 
-  const assets = [
-    ...UNIT_SHEETS.map(sheet => ({
-      alias: bakedUnitAlias(unit, variant, sheet),
-      src: bakedUnitSrc(unit, variant, sheet),
-    })),
+  return [
+    ...UNIT_SHEETS.map(sheet => bakedUnitAlias(unit, variant, sheet)),
     ...(unit === 'infantry' || unit === 'infantry_nohair'
-      ? RANGED_INFANTRY_ACTION_SHEETS.map(sheet => ({
-          alias: bakedUnitActionAlias(unit, variant, sheet),
-          src: bakedUnitActionSrc(unit, variant, sheet),
-        }))
+      ? RANGED_INFANTRY_ACTION_SHEETS.map(sheet => bakedUnitActionAlias(unit, variant, sheet))
       : []),
-  ].filter(asset => !isAssetCached(asset.alias))
+  ]
+}
 
-  if (assets.length) {
-    await Assets.load(assets)
+function registerBakedUnitVariantAliases(unit: BakedUnitType, variant: string): void {
+  const atlasAlias = bakedVariantAtlasAlias(unit, variant)
+  for (const alias of bakedLogicalAliases(unit, variant)) {
+    registerAliasFromAtlas(alias, atlasAlias)
   }
+}
+
+function registerDynamicEquipmentAliases(): void {
+  for (const { alias, atlasAlias, animationSpeed, frameSuffix } of dynamicEquipmentAliases()) {
+    if (isAssetCached(alias)) continue
+    const atlas = Assets.cache.get(atlasAlias) as SpritesheetLike | undefined
+    if (!atlas?.textures) continue
+    const textures = Object.fromEntries(
+      Object.entries(atlas.textures).filter(([frameName]) => frameName.endsWith(frameSuffix))
+    )
+    if (!Object.keys(textures).length) continue
+    const frames = Object.fromEntries(
+      Object.entries(atlas.data?.frames ?? {}).filter(([frameName]) => frameName.endsWith(frameSuffix))
+    )
+    Assets.cache.set(alias, {
+      ...atlas,
+      data: {
+        ...atlas.data,
+        animationSpeed,
+        frames,
+      },
+      textures,
+    })
+  }
+}
+
+async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {
+  const atlasAlias = bakedVariantAtlasAlias(unit, variant)
+  if (!isAssetCached(atlasAlias)) {
+    await Assets.load({
+      alias: atlasAlias,
+      src: bakedVariantAtlasSrc(unit, variant),
+    })
+  }
+  registerBakedUnitVariantAliases(unit, variant)
 }
 
 // 'hero' isn't in UNIT_TYPE_TO_BAKED_UNIT (it's not selected by unit.type — see
@@ -305,6 +355,7 @@ export async function preloadBakedLpcUnitsForPlayers(
   if (equipmentAssets.length) {
     await Assets.load(equipmentAssets)
   }
+  registerDynamicEquipmentAliases()
 }
 
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {

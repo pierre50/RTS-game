@@ -34,10 +34,11 @@ export {
   setCiv,
   setGameSpeed,
   setPopMax,
+  toggleHeroInvincible,
   toggleInstantMode,
 } from './actions/player'
 
-export { spawnAnimal, spawnBuilding, spawnUnits } from './actions/spawn'
+export { spawnAnimal, spawnBuilding, spawnUnits, TRIBAL_BUILDING_COMPLETIONS } from './actions/spawn'
 
 export { addAllHeroInventoryEquipment, addHeroInventoryEquipment } from './actions/heroInventory'
 

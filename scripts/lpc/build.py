@@ -26,6 +26,7 @@ from config import (
 )
 from jobs import Job, UNIT_JOBS
 from image_pipeline import compose_frame, layer_paths, open_layer, source_frames, write_sheet
+from PIL import Image
 
 RETRO_PALETTE_ROOT = PROJECT_ROOT / "scripts" / "retro_palette"
 SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
@@ -156,9 +157,13 @@ def sheet_signature(
     return hashlib.sha256(encoded).hexdigest()
 
 
-def sheet_outputs_exist(output_root: Path, relative_path: str) -> bool:
+def variant_atlas_outputs_exist(output_root: Path, relative_path: str) -> bool:
     output_dir = output_root / relative_path
     return (output_dir / "texture.png").exists() and (output_dir / "texture.json").exists()
+
+
+def variant_cache_key(relative_path: str) -> str:
+    return f"atlas:{relative_path}"
 
 
 def bake_sheet(output_dir: Path, frames: list, animation_speed: float, retro_palette, anchor_override: dict[str, float] | None = None) -> None:
@@ -193,6 +198,70 @@ def resolve_layer_paths(source_root: Path, paths: list, animation: str) -> list:
 def prune_stale_outputs(output_root: Path, previous_assets: set[str], current_assets: set[str]) -> None:
     for relative_path in sorted(previous_assets - current_assets):
         shutil.rmtree(output_root / relative_path, ignore_errors=True)
+
+
+def write_variant_atlas(output_dir: Path, source_dirs: list[Path]) -> None:
+    frames = {}
+    placements = []
+    x = 0
+    y = 0
+    row_height = 0
+    atlas_width = 0
+    atlas_height = 0
+
+    for source_dir in source_dirs:
+        json_path = source_dir / "texture.json"
+        png_path = source_dir / "texture.png"
+        if not json_path.exists() or not png_path.exists():
+            continue
+        with json_path.open(encoding="utf8") as file:
+            sheet = json.load(file)
+        image = Image.open(png_path).convert("RGBA")
+        for frame_name, frame_data in sorted(sheet.get("frames", {}).items()):
+            frame = frame_data["frame"]
+            frame_width = int(frame["w"])
+            frame_height = int(frame["h"])
+            if x and x + frame_width > 4096:
+                x = 0
+                y += row_height + 1
+                row_height = 0
+            crop = image.crop((int(frame["x"]), int(frame["y"]), int(frame["x"]) + frame_width, int(frame["y"]) + frame_height))
+            placements.append((frame_name, crop, frame_data, x, y))
+            atlas_width = max(atlas_width, x + frame_width)
+            atlas_height = max(atlas_height, y + frame_height)
+            row_height = max(row_height, frame_height)
+            x += frame_width + 1
+
+    if not placements:
+        return
+
+    atlas = Image.new("RGBA", (atlas_width, atlas_height), (0, 0, 0, 0))
+    for frame_name, crop, frame_data, frame_x, frame_y in placements:
+        atlas.alpha_composite(crop, (frame_x, frame_y))
+        copied_frame_data = json.loads(json.dumps(frame_data))
+        copied_frame_data["frame"]["x"] = frame_x
+        copied_frame_data["frame"]["y"] = frame_y
+        frames[frame_name] = copied_frame_data
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    atlas.save(output_dir / "texture.png", optimize=True)
+    with (output_dir / "texture.json").open("w", encoding="utf8") as file:
+        json.dump(
+            {
+                "frames": frames,
+                "meta": {
+                    "app": "build.py",
+                    "version": "2.0.0",
+                    "image": "texture.png",
+                    "format": "RGBA8888",
+                    "size": {"w": atlas_width, "h": atlas_height},
+                    "scale": 1,
+                },
+            },
+            file,
+            indent=2,
+        )
+        file.write("\n")
 
 
 def build_sheet_plan(unit: str, job: Job) -> SheetPlan:
@@ -297,6 +366,11 @@ def build(
                     tasks = hero_build_tasks()
                 else:
                     tasks = unit_build_tasks(unit)
+                variant_asset_path = f"{unit}/{variant_key}"
+                if variant_asset_path not in generated_set:
+                    generated.append(variant_asset_path)
+                    generated_set.add(variant_asset_path)
+                variant_task_data = []
                 for relative_suffix, source_sheet, animation in tasks:
                     # "neutral" isn't a real player color, so this always resolves to the
                     # "blue" team-color convention (image_pipeline.layer_paths) — every
@@ -317,21 +391,48 @@ def build(
                         animation_speed=animation_speed,
                         dependencies=dependencies,
                     )
-                    if relative_path not in generated_set:
-                        generated.append(relative_path)
-                        generated_set.add(relative_path)
                     next_cache[relative_path] = signature
-                    if previous_cache.get(relative_path) == signature and sheet_outputs_exist(output_root, relative_path):
-                        skipped += 1
-                        continue
+                    variant_task_data.append(
+                        {
+                            "relative_suffix": relative_suffix,
+                            "relative_path": relative_path,
+                            "source_sheet": source_sheet,
+                            "paths": paths,
+                            "animation_speed": animation_speed,
+                            "signature": signature,
+                        }
+                    )
 
-                    layers = [open_layer(source_root, layer) for layer in paths]
+                atlas_signature = hashlib.sha256(
+                    json.dumps(
+                        [task["signature"] for task in variant_task_data],
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode("utf8")
+                ).hexdigest()
+                next_cache[variant_cache_key(variant_asset_path)] = atlas_signature
+                if (
+                    previous_cache.get(variant_cache_key(variant_asset_path)) == atlas_signature
+                    and variant_atlas_outputs_exist(output_root, variant_asset_path)
+                ):
+                    skipped += len(variant_task_data)
+                    print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
+                    continue
+
+                variant_output_dirs = []
+                for task in variant_task_data:
+                    layers = [open_layer(source_root, layer) for layer in task["paths"]]
                     frames = [
-                        compose_frame(layers, frame_index, source_sheet.columns)
-                        for frame_index in source_frames(source_sheet)
+                        compose_frame(layers, frame_index, task["source_sheet"].columns)
+                        for frame_index in source_frames(task["source_sheet"])
                     ]
-                    bake_sheet(output_root / relative_path, frames, animation_speed, retro_palette)
+                    output_dir = output_root / task["relative_path"]
+                    bake_sheet(output_dir, frames, task["animation_speed"], retro_palette)
+                    variant_output_dirs.append(output_dir)
                     rebuilt += 1
+                write_variant_atlas(output_root / variant_asset_path, variant_output_dirs)
+                for task in variant_task_data:
+                    shutil.rmtree(output_root / task["relative_path"], ignore_errors=True)
                 print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")
 

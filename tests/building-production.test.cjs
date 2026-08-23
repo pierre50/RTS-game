@@ -31,6 +31,14 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
+    if (request === '../../lib/entityFade') {
+      return {
+        fadeOut: (entity, _duration, onComplete) => {
+          entity.alpha = 0
+          onComplete?.()
+        },
+      }
+    }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

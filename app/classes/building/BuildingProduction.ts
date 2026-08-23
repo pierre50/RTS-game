@@ -2,6 +2,7 @@ import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
+  FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
@@ -19,6 +20,7 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
+import { fadeOut } from '../../lib/entityFade'
 import { canUnitTrainInto, getMissingResourceNames, isTraineeTrainingType } from '../../lib/buildingTraining'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { t } from '../../lib/lang'
@@ -210,8 +212,10 @@ export class BuildingProduction {
     map?.removeFromInstanceBucket?.(trainee)
     const index = owner?.units.indexOf(trainee) ?? -1
     if (index >= 0) owner?.units.splice(index, 1)
-    map?.removeChild?.(trainee)
-    trainee.destroy?.({ children: true, texture: false })
+    fadeOut(trainee, FADE_DURATION_MS, () => {
+      map?.removeChild?.(trainee)
+      trainee.destroy?.({ children: true, texture: false })
+    })
   }
 
   findTrainingUnit(type: string): UnitEntity | null {

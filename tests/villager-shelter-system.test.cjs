@@ -47,6 +47,15 @@ function loadShelterSystem(calls) {
       clearUnitOverheadIndicator: unit => calls.push(['clearIndicator', unit.label]),
       setUnitOverheadIndicator: (unit, type) => calls.push(['indicator', unit.label, type]),
     },
+    '../lib/entityFade': {
+      fadeOut: (entity, _duration, onComplete) => {
+        entity.alpha = 0
+        onComplete?.()
+      },
+      fadeIn: entity => {
+        entity.alpha = 1
+      },
+    },
     '../lib/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
     },

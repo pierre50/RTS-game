@@ -1,4 +1,4 @@
-import { BUILDING_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
+import { BUILDING_TYPES, FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import {
   cartesianToIsometric,
   getFreeLandCellAroundInstance,
@@ -7,6 +7,7 @@ import {
   resumeVillagerAutonomy,
   updateInstanceVisibility,
 } from '../lib'
+import { fadeIn, fadeOut } from '../lib/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../lib/overheadIndicator'
 import { isHeroControlled } from '../lib/unitControl'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -153,6 +154,17 @@ function setDetachedShadowsVisible(unit: UnitEntity, visible: boolean): void {
   if (shadowed.horseShadow) shadowed.horseShadow.visible = visible
 }
 
+function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void {
+  const state = unit.shelterState
+  if (state?.status !== 'inside' || state.shelter !== shelter) return
+  const map = unit.context?.map as RuntimeMapWithBuckets | undefined
+  clearUnitCell(unit)
+  map?.removeFromInstanceBucket?.(unit)
+  setDetachedShadowsVisible(unit, false)
+  unit.alpha = 0
+  unit.visible = false
+}
+
 function sleepOutside(unit: UnitEntity, reason: VillagerShelterReason = unit.shelterState?.reason ?? 'sleep'): void {
   rememberShelterState(unit, { status: 'outside', reason, location: 'outside', shelter: null, targetCell: null })
   stopUnitForShelter(unit)
@@ -172,7 +184,6 @@ function markShelterEnteredAt(unit: UnitEntity): void {
 }
 
 function enterShelter(unit: UnitEntity, shelter: BuildingEntity): void {
-  const map = unit.context?.map as RuntimeMapWithBuckets | undefined
   rememberShelterState(unit, {
     status: 'inside',
     reason: unit.shelterState?.reason ?? 'sleep',
@@ -186,11 +197,7 @@ function enterShelter(unit: UnitEntity, shelter: BuildingEntity): void {
   unit.action = null
   unit.actionLocked = true
   clearUnitOverheadIndicator(unit)
-  clearUnitCell(unit)
-  map?.removeFromInstanceBucket?.(unit)
-  setDetachedShadowsVisible(unit, false)
-  unit.alpha = 0
-  unit.visible = false
+  fadeOut(unit, FADE_DURATION_MS, () => hideUnitInsideShelter(unit, shelter))
 }
 
 function placeUnitAtCell(unit: UnitEntity, cell: RuntimeCell): void {
@@ -219,11 +226,13 @@ function resumePreviousActivity(unit: UnitEntity, state: VillagerShelterState): 
   unit.shelterState = null
   unit.actionLocked = false
   unit.alpha = 1
+  setDetachedShadowsVisible(unit, true)
   clearUnitOverheadIndicator(unit)
   unit.setTextures?.(SHEET_TYPES.standing)
   unit.sprite?.stop?.()
   unit.inactif = true
   unit.syncShadow?.()
+  fadeIn(unit, FADE_DURATION_MS)
 
   unit.autonomousJob = state.previousAutonomousJob ?? null
   if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return

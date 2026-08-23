@@ -42,8 +42,9 @@ export interface WeatherSystemLike {
   phase?: string
 }
 
-export interface BanditRaidSystemLike {
+export interface TributeRaidSystemLike {
   triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
+  triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
 }
 
 export interface VillagerShelterSystemLike {
@@ -231,7 +232,7 @@ export interface GameContextLike {
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
-  banditRaids?: BanditRaidSystemLike | null
+  tributeRaids?: TributeRaidSystemLike | null
   villagerShelter?: VillagerShelterSystemLike | null
   editor?: EditorInteractionTarget
   paused?: boolean

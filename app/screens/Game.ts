@@ -16,9 +16,11 @@ import {
   updateInstanceVisibility,
 } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
+import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
 import { adjustFactionRelation, createFactionSave, FACTION_SCORE } from '../lib/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
+import { syncHeroResourceLoadState } from '../lib/resourceCarry'
 import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
@@ -41,7 +43,8 @@ import { LightSystem } from '../services/LightSystem'
 import { ShadowSystem } from '../services/ShadowSystem'
 import { DayNightSystem } from '../services/DayNightSystem'
 import { DailyWorldEventSystem } from '../services/DailyWorldEventSystem'
-import { BanditRaidSystem } from '../services/BanditRaidSystem'
+import { TributeRaidSystem } from '../services/TributeRaidSystem'
+import { CampPatrolSystem } from '../services/CampPatrolSystem'
 import { VillagerShelterSystem } from '../services/VillagerShelterSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
@@ -137,12 +140,26 @@ function assignDefined(target: Record<string, unknown>, values: Record<string, u
   }
 }
 
+function cloneRecord<T>(record: T | undefined): T | undefined {
+  return record ? { ...record } : record
+}
+
+function cloneHeroInventory(inventory: SaveEntityState['inventory']): SaveEntityState['inventory'] {
+  if (!inventory) return inventory
+  return {
+    equipment: inventory.equipment ? [...inventory.equipment] : inventory.equipment,
+    equipped: cloneRecord(inventory.equipped),
+    equippedCounts: cloneRecord(inventory.equippedCounts),
+    activeWeapons: cloneRecord(inventory.activeWeapons),
+  }
+}
+
 const PORTAL_RESOURCE_TYPE = 'Portal'
 
 function heroTravelImageSrc(player: PlayerLike | null | undefined): string {
   const civ = (player?.civ || 'Greek').toLowerCase()
   const gender = player?.gender === 'female' ? 'female' : 'male'
-  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/body/walking/texture.png`
+  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
 }
 
 function addPausableInstance(instances: Set<RuntimeEntity>, instance: RuntimeEntity | null | undefined): void {
@@ -195,6 +212,7 @@ export default class Game extends Container {
   _dayNight?: DayNightSystem | null
   _dailyWorldEvents?: DailyWorldEventSystem | null
   _villagerShelter?: VillagerShelterSystem | null
+  _campPatrols?: CampPatrolSystem | null
 
   constructor(
     app: Application,
@@ -212,6 +230,7 @@ export default class Game extends Container {
     this._lights = null
     this._dayNight = null
     this._dailyWorldEvents = null
+    this._campPatrols = null
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -224,7 +243,7 @@ export default class Game extends Container {
       controls: null,
       dayNight: null,
       weather: null,
-      banditRaids: null,
+      tributeRaids: null,
       villagerShelter: null,
       devConsole: null,
       devConsoleOpen: false,
@@ -434,6 +453,7 @@ export default class Game extends Container {
       controls: null,
       dayNight: null,
       weather: null,
+      tributeRaids: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -464,9 +484,10 @@ export default class Game extends Container {
     this._dailyWorldEvents = new DailyWorldEventSystem(this._gameContext())
     this._villagerShelter = new VillagerShelterSystem(this._gameContext())
     this.context.villagerShelter = this._villagerShelter
-    const banditRaids = new BanditRaidSystem(this._gameContext())
-    this.context.banditRaids = banditRaids
-    this._dailyWorldEvents.register(banditRaids)
+    const tributeRaids = new TributeRaidSystem(this._gameContext())
+    this.context.tributeRaids = tributeRaids
+    this._dailyWorldEvents.register(tributeRaids)
+    this._campPatrols = new CampPatrolSystem(this._gameContext())
     this._shadows = new ShadowSystem(this._gameContext(), map)
     this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
     this.context.weather = this._weather
@@ -535,13 +556,15 @@ export default class Game extends Container {
     this._dailyWorldEvents = null
     this._villagerShelter?.destroy()
     this._villagerShelter = null
+    this._campPatrols?.destroy()
+    this._campPatrols = null
     this._dayNight?.destroy()
     this._dayNight = null
     this.context.dayNight = null
     this._weather?.destroy()
     this._weather = null
     this.context.weather = null
-    this.context.banditRaids = null
+    this.context.tributeRaids = null
     this.context.villagerShelter = null
     ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = null
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null
@@ -821,7 +844,7 @@ export default class Game extends Container {
       assetCiv: source.assetCiv,
       controlMode: source.controlMode,
       energy: source.energy,
-      experience: source.experience,
+      experience: cloneRecord(source.experience),
       followingHero: source.followingHero,
       gender: (source as { gender?: unknown }).gender,
       healthRegenDelay: source.healthRegenDelay,
@@ -830,14 +853,19 @@ export default class Game extends Container {
       hitPoints: source.hitPoints,
       horseColor: source.horseColor,
       companionHorseColor: source.companionHorseColor,
+      inventory: cloneHeroInventory(source.inventory),
       isChief: source.isChief,
+      lastEnergySpentAt: source.lastEnergySpentAt,
       lastHealthDamagedAt: source.lastHealthDamagedAt,
       loading: source.loading,
       loadingType: source.loadingType,
+      lootEquipment: source.lootEquipment ? [...source.lootEquipment] : source.lootEquipment,
       mountedOnHorse: source.mountedOnHorse,
       name: source.name,
+      resourceLoads: cloneRecord(source.resourceLoads),
       totalEnergy: source.totalEnergy,
       totalHitPoints: source.totalHitPoints,
+      work: source.work,
     })
     const totalHitPoints = Number((target as SaveEntityState).totalHitPoints)
     const hitPoints = Number((target as SaveEntityState).hitPoints)
@@ -996,6 +1024,8 @@ export default class Game extends Container {
     if (freshWorld) this._resetPlayedFogForFreshWorld()
     this._clearTravelUnitFogViewers([hero, ...player.units.filter(unit => unit !== hero && unit.followingHero)])
     if (party.hero) this._applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero, { keepAlive: true })
+    syncHeroResourceLoadState(hero)
+    refreshUnitEquipmentStats(hero)
     if (arrivalCell) this._teleportRuntimeUnitToCell(hero, arrivalCell)
     this._removeExistingTravelFollowers()
 
@@ -1012,6 +1042,8 @@ export default class Game extends Container {
       if (!follower) continue
       this._applyPortableUnitState(follower as Partial<SaveEntityState>, followerState, { keepAlive: true })
       follower.followingHero = true
+      syncHeroResourceLoadState(follower)
+      refreshUnitEquipmentStats(follower)
       travelUnits.push(follower)
     }
 

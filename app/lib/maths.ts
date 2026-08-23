@@ -10,7 +10,7 @@ type ArcTrajectory = {
   maxArcHeight?: number
 }
 
-export type PositionLike = GridPosition & Partial<Point>
+export type PositionLike = GridPosition & Partial<Point> & { zIndexOffset?: number }
 
 const HALF_CELL_WIDTH = CELL_WIDTH / 2
 const HALF_CELL_HEIGHT = CELL_HEIGHT / 2
@@ -149,9 +149,9 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
  * render-only offset applied to child sprites, never to x/y) so this is a pure i+j sort key.
  * @param {object} instance
  */
-export function getInstanceZIndex(instance: Point): number {
+export function getInstanceZIndex(instance: Point & { zIndexOffset?: number }): number {
   const pos = isometricToCartesian(instance.x, instance.y)
-  return pos[0] + pos[1]
+  return pos[0] + pos[1] + (instance.zIndexOffset ?? 0)
 }
 
 /**

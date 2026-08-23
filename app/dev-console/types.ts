@@ -165,8 +165,9 @@ export type DevConsoleContext = {
   } | null
   dayNight?: DevDayNightLike | null
   weather?: DevWeatherLike | null
-  banditRaids?: {
+  tributeRaids?: {
     triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
+    triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
   } | null
   app?: {
     ticker: {

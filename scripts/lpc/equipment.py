@@ -192,11 +192,14 @@ def cape_solid_equipment() -> dict[str, Equipment]:
     }
 
 
-def hat_accessory_equipment(path: str) -> dict[str, Equipment]:
-    return {
+def hat_accessory_equipment(path: str, include_hurt: bool = False) -> dict[str, Equipment]:
+    equipment = {
         "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk.png", "player_blue"),)),
         "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash.png", "player_blue"),)),
     }
+    if include_hurt:
+        equipment["hurt"] = Equipment(foreground=(LayerSpec(f"{path}/adult/hurt.png", "player_blue"),))
+    return equipment
 
 
 def split_hat_accessory_equipment(
@@ -422,11 +425,11 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "cape_solid": cape_solid_equipment(),
     "crest": hat_accessory_equipment("hat/accessory/crest"),
     "centurion_crest": hat_accessory_equipment("hat/accessory/crest_centurion"),
-    "centurion_plumage": hat_accessory_equipment("hat/accessory/plumage_centurion"),
-    "legion_plumage": hat_accessory_equipment("hat/accessory/plumage_legion"),
+    "centurion_plumage": hat_accessory_equipment("hat/accessory/plumage_centurion", include_hurt=True),
+    "legion_plumage": hat_accessory_equipment("hat/accessory/plumage_legion", include_hurt=True),
     "plumage": hat_accessory_equipment("hat/accessory/plumage"),
     "helmet_wings": split_hat_accessory_equipment("hat/accessory/wings", palette=None),
-    "upward_horns_white": split_hat_accessory_equipment("hat/accessory/horns_upward", palette=None),
+    "upward_horns_white": split_hat_accessory_equipment("hat/accessory/horns_upward", palette=None, include_hurt=True),
     "upward_horns_ceramic": split_hat_accessory_equipment(
         "hat/accessory/horns_upward",
         palette="ceramic",
