@@ -2,6 +2,7 @@ import { Assets, AnimatedSprite, Container } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
   ACTION_TYPES,
+  BUILDING_TYPES,
   LABEL_TYPES,
   MENU_INFO_IDS,
   PLAYER_TYPES,
@@ -44,6 +45,7 @@ const BUILDING_FIRE_SHEETS = {
   medium: 'effects/fire/medium',
   heavy: 'effects/fire/heavy',
 } as const
+const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
 
 export class BuildingLifecycle {
   building: Building
@@ -142,7 +144,40 @@ export class BuildingLifecycle {
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
+    this.syncCampfireDecoration()
     if (isWall(building)) updateWallAndNeighbours(building)
+  }
+
+  syncCampfireDecoration(): void {
+    const building = this.building
+    const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
+
+    if (building.type !== BUILDING_TYPES.banditCamp) {
+      existing?.destroy({ children: true })
+      return
+    }
+
+    const spritesheetFire = Assets.cache.get(BUILDING_FIRE_SHEETS.light)
+    if (!spritesheetFire?.textures) return
+    const textures = getAnimationFrames(spritesheetFire.textures) as Texture[]
+    if (!textures.length) return
+
+    if (existing instanceof AnimatedSprite) {
+      existing.textures = textures
+      existing.gotoAndPlay(0)
+      return
+    }
+
+    existing?.destroy({ children: true })
+    const fire = new AnimatedSprite(textures) as RuntimeAnimatedSprite
+    bindAnimatedSpriteToTicker(fire, building.context.app)
+    fire.label = CAMPFIRE_DECORATION_LABEL
+    fire.eventMode = 'none'
+    fire.roundPixels = true
+    fire.position.set(0, 10)
+    fire.animationSpeed = 0.2
+    fire.gotoAndPlay(0)
+    building.addChild(fire)
   }
 
   generateFire(spriteId: string): void {
@@ -255,6 +290,8 @@ export class BuildingLifecycle {
     if (this.spriteWasPlayingBeforePause && sprite instanceof AnimatedSprite) sprite.stop()
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
+    const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
+    campfireDecoration?.stop()
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const stoppableDeco = deco as { stop?: () => void } | null
     stoppableDeco?.stop?.()
@@ -268,6 +305,8 @@ export class BuildingLifecycle {
     this.spriteWasPlayingBeforePause = false
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
+    const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
+    campfireDecoration?.play()
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const playableDeco = deco as { play?: () => void } | null
     playableDeco?.play?.()
@@ -322,6 +361,8 @@ export class BuildingLifecycle {
     deco && deco.destroy()
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     fire && fire.destroy()
+    const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
+    campfireDecoration && campfireDecoration.destroy()
 
     const rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
     building.textureName = textureRefToString(rubbleSheet!)
