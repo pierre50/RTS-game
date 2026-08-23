@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { FAMILY_TYPES, UNIT_TYPES } from '../constants'
+import { FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { dynamicEquipmentForUnit, dynamicEquipmentForWork } from './lpc/equipment'
 import { getUnitEquipmentLevel } from './unitExperience'
 import type { EquipmentStats, UnitConfig } from '../types/config'
@@ -19,10 +19,16 @@ export type EquipmentCombatStats = {
   pierceArmor: number
 }
 
+export type HeroInventoryWeaponCombatStats = {
+  meleeWeaponPower: number
+  rangedWeaponPower: number
+}
+
 type EquipmentEntityLike = {
   equipment?: string[]
   experience?: UnitEntity['experience']
   family?: string
+  inventory?: UnitEntity['inventory']
   owner?: Pick<PlayerLike, 'age' | 'civ' | 'config'> | null
   type?: string
   work?: string | null
@@ -123,9 +129,6 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   boar_tusks: { weapon: { power: 3 } },
   wolf_bite: { weapon: { power: 4 } },
   watch_tower_arrow: { weapon: { power: 3 } },
-  stone_thrower_stone: { weapon: { power: 50 } },
-  catapult_stone: { weapon: { power: 50 } },
-  ballista_bolt: { weapon: { power: 40 } },
 }
 
 function loadedEquipmentStats(): Record<string, EquipmentStats> {
@@ -160,6 +163,37 @@ function getWeaponRangeFromEquipment(
     }
   }
   return bestRange > 0 ? bestRange : undefined
+}
+
+function usesHeroInventoryEquipment(entity: EquipmentEntityLike): boolean {
+  return Boolean(entity.inventory && (entity.type === UNIT_TYPES.hero || (entity as UnitEntity).controlMode === 'hero'))
+}
+
+function getHeroInventoryArmorEquipment(entity: EquipmentEntityLike): string[] {
+  const { arrow, ...equippedWithoutArrow } = entity.inventory?.equipped ?? {}
+  void arrow
+  return Object.values(equippedWithoutArrow).filter((item): item is string => typeof item === 'string')
+}
+
+function getHeroInventoryActiveWeaponEquipment(entity: EquipmentEntityLike): string[] {
+  const activeWeapons = entity.inventory?.activeWeapons ?? {}
+  if (entity.work === 'heroSword') {
+    return [activeWeapons.melee, activeWeapons.offhand].filter((item): item is string => typeof item === 'string')
+  }
+  if (entity.work === WORK_TYPES.hunter) {
+    return [activeWeapons.ranged, activeWeapons.quiver, entity.inventory?.equipped?.arrow].filter(
+      (item): item is string => typeof item === 'string'
+    )
+  }
+  return [activeWeapons.lasso].filter((item): item is string => typeof item === 'string')
+}
+
+function getHeroInventoryCombatEquipment(entity: EquipmentEntityLike): string[] {
+  return [...getHeroInventoryArmorEquipment(entity), ...getHeroInventoryActiveWeaponEquipment(entity)]
+}
+
+export function hasHeroInventoryEquipment(entity: EquipmentEntityLike): boolean {
+  return usesHeroInventoryEquipment(entity)
 }
 
 export function getEquipmentCombatStats(
@@ -210,6 +244,47 @@ export function getUnitEffectiveCombatStats(
   }
 }
 
+export function getHeroInventoryEffectiveCombatStats(
+  hero: EquipmentEntityLike,
+  config?: Pick<UnitConfig, 'meleeArmor' | 'pierceArmor'>
+): EquipmentCombatStats {
+  const equipmentStats = getEquipmentCombatStats(getHeroInventoryCombatEquipment(hero), hero.owner?.config.equipment)
+  return {
+    weaponPower: equipmentStats.weaponPower || UNARMED_UNIT_WEAPON_POWER,
+    meleeArmor: (config?.meleeArmor ?? 0) + equipmentStats.meleeArmor,
+    pierceArmor: (config?.pierceArmor ?? 0) + equipmentStats.pierceArmor,
+  }
+}
+
+export function getHeroInventoryWeaponCombatStats(hero: EquipmentEntityLike): HeroInventoryWeaponCombatStats {
+  const activeWeapons = hero.inventory?.activeWeapons ?? {}
+  return {
+    meleeWeaponPower: activeWeapons.melee
+      ? getEquipmentCombatStats([activeWeapons.melee], hero.owner?.config.equipment).weaponPower
+      : 0,
+    rangedWeaponPower: activeWeapons.ranged
+      ? getEquipmentCombatStats(
+          [activeWeapons.ranged, hero.inventory?.equipped?.arrow].filter(
+            (item): item is string => typeof item === 'string'
+          ),
+          hero.owner?.config.equipment
+        ).weaponPower
+      : 0,
+  }
+}
+
+export function getUnitRuntimeCombatStats(unit: UnitEntity, config: UnitConfig): EquipmentCombatStats {
+  if (usesHeroInventoryEquipment(unit)) return getHeroInventoryEffectiveCombatStats(unit, config)
+  return getUnitEffectiveCombatStats(
+    unit.type,
+    config,
+    unit.work,
+    unit.owner?.age,
+    getUnitEquipmentLevel(unit, config.category),
+    unit.owner?.civ
+  )
+}
+
 export function applyEquipmentStatsToUnitConfig(unitType: string, config: UnitConfig): void {
   const equipment = Array.isArray(config.equipment) ? [...config.equipment] : []
   if (!equipment.length) return
@@ -237,6 +312,14 @@ export function isUnitMeleeWeaponEquipped(unit: UnitEntity): boolean {
 export function refreshUnitEquipmentStats(unit: UnitEntity): void {
   const config = unit.owner?.config.units[unit.type]
   if (!config) return
+  if (usesHeroInventoryEquipment(unit)) {
+    const stats = getHeroInventoryEffectiveCombatStats(unit, config)
+    unit.weaponPower = stats.weaponPower
+    for (const stat of COMBAT_STAT_KEYS) {
+      unit[stat] = stats[stat]
+    }
+    return
+  }
   const useWorkEquipment = unit.type === UNIT_TYPES.villager && Boolean(unit.work)
   const stats = getUnitEffectiveCombatStats(
     unit.type,
@@ -255,6 +338,10 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   const age = unit.owner?.age ?? 0
   const config = unit.owner?.config.units[unit.type]
 
+  if (usesHeroInventoryEquipment(unit)) {
+    return getWeaponRangeFromEquipment(getHeroInventoryActiveWeaponEquipment(unit), unit.owner?.config.equipment)
+  }
+
   const explicitEquipment = Array.isArray(unit.equipment) && unit.equipment.length ? unit.equipment : []
   const explicitRange = getWeaponRangeFromEquipment(explicitEquipment)
   if (explicitRange != null) return explicitRange
@@ -271,6 +358,7 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
 }
 
 function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
+  if (usesHeroInventoryEquipment(entity)) return getHeroInventoryCombatEquipment(entity)
   if (entity.type === UNIT_TYPES.villager && entity.work) return getUnitWorkEquipment(entity.work, entity.owner?.age)
   if (Array.isArray(entity.equipment)) return [...entity.equipment]
 

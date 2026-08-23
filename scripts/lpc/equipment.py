@@ -132,6 +132,7 @@ def torso_armor_equipment(path: str, color: str, include_hurt: bool = False) -> 
     equipment = {
         "walk": Equipment(foreground=(variant_layer(f"{path}/{{variant}}/walk/{color}.png", color),)),
         "slash": Equipment(foreground=(variant_layer(f"{path}/{{variant}}/slash/{color}.png", color),)),
+        "shoot": Equipment(foreground=(variant_layer(f"{path}/{{variant}}/shoot/{color}.png", color),)),
     }
     if include_hurt:
         equipment["hurt"] = Equipment(foreground=(variant_layer(f"{path}/{{variant}}/hurt/{color}.png", color),))
@@ -143,6 +144,7 @@ def recolored_torso_armor_equipment(path: str, source_color: str, color: str) ->
     return {
         "walk": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/walk/{source_color}.png", color, source_palette),)),
         "slash": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/slash/{source_color}.png", color, source_palette),)),
+        "shoot": Equipment(foreground=(LayerSpec(f"{path}/{{variant}}/shoot/{source_color}.png", color, source_palette),)),
     }
 
 
@@ -150,6 +152,7 @@ def helmet_equipment(path: str, color: str, include_hurt: bool = False) -> dict[
     equipment = {
         "walk": Equipment(foreground=(variant_layer(f"{path}/adult/walk/{color}.png", color),)),
         "slash": Equipment(foreground=(variant_layer(f"{path}/adult/slash/{color}.png", color),)),
+        "shoot": Equipment(foreground=(variant_layer(f"{path}/adult/shoot/{color}.png", color),)),
     }
     if include_hurt:
         equipment["hurt"] = Equipment(foreground=(variant_layer(f"{path}/adult/hurt/{color}.png", color),))
@@ -168,6 +171,7 @@ def bracers_equipment(color: str) -> dict[str, Equipment]:
     return {
         "walk": Equipment(foreground=(LayerSpec("arms/bracers/male/walk.png", color),)),
         "slash": Equipment(foreground=(LayerSpec("arms/bracers/male/slash.png", color),)),
+        "shoot": Equipment(foreground=(LayerSpec("arms/bracers/male/shoot.png", color),)),
     }
 
 
@@ -579,6 +583,8 @@ def dynamic_equipment_for(key: str, action_animation: str) -> DynamicEquipment:
         "walk": dynamic_layers_for(key, "walk"),
         action_animation: dynamic_layers_for(key, action_animation),
     }
+    if action_animation != "shoot" and "shoot" in EQUIPMENT[key]:
+        layers_by_animation["shoot"] = dynamic_layers_for(key, "shoot")
     if "hurt" in EQUIPMENT[key]:
         layers_by_animation["hurt"] = dynamic_layers_for(key, "hurt")
     return DynamicEquipment(

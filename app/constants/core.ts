@@ -39,13 +39,11 @@ export const FADE_DURATION_MS = 2000
 export const ARROW_GROUND_TIME = 3
 export const POPULATION_MAX = 200
 
-// Kill-switch temporaire : passage à l'âge suivant désactivé (joueur + IA)
-export const AGE_UP_ENABLED = false
+// Active le passage d'âge joueur + IA. Les bâtiments utilisent le meilleur asset d'âge disponible
+// et retombent sur l'âge précédent quand l'âge suivant n'a pas encore d'art dédié.
+export const AGE_UP_ENABLED = true
 export const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
-// Tant que AGE_UP_ENABLED est false, l'IA reste bloquée à l'âge 0 : les conditions "age >= N"
-// atteignables (N <= 1) sont considérées comme remplies pour elle (WatchTower/SmallWall, qui ont un
-// asset dans buildings/age-0/ et restent affichables à l'âge 0). On s'arrête à 1 et pas plus haut :
-// le jeu ne compte que 2 âges (0 et 1) - SiegeWorkshop (age >= 2) n'a plus d'asset atteignable et
-// reste bloqué comme les valeurs sentinelles (ex: "age > 99", bâtiments non implémentés).
+// Fallback conservé pour les tests/configs qui désactivent AGE_UP_ENABLED : les conditions
+// atteignables (N <= 1) restent considérées comme remplies, les sentinelles restent bloquantes.
 export const AGE_GATE_MAX_UNLOCKABLE_VALUE = 1

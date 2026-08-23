@@ -279,6 +279,9 @@ export default class Menu implements MenuLike {
   isInventoryOpen(): boolean {
     return this.inventoryManager.isOpen()
   }
+  refreshInventory(): void {
+    return this.inventoryManager.refresh()
+  }
   setEquippedItem(item: HeroEquippedItem | null): void {
     return this.inventoryManager.render(item)
   }

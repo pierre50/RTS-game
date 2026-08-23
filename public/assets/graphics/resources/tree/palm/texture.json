@@ -1,0 +1,111 @@
+{
+  "frames": {
+    "000_graphics_resources_tree_palm_1.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 130
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 130
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 130
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "001_graphics_resources_tree_palm_2.png": {
+      "frame": {
+        "x": 96,
+        "y": 0,
+        "w": 113,
+        "h": 158
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 113,
+        "h": 158
+      },
+      "sourceSize": {
+        "w": 113,
+        "h": 158
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "002_graphics_resources_tree_palm_3.png": {
+      "frame": {
+        "x": 209,
+        "y": 0,
+        "w": 133,
+        "h": 149
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 133,
+        "h": 149
+      },
+      "sourceSize": {
+        "w": 133,
+        "h": 149
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "003_graphics_resources_tree_palm_4.png": {
+      "frame": {
+        "x": 342,
+        "y": 0,
+        "w": 125,
+        "h": 115
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 125,
+        "h": 115
+      },
+      "sourceSize": {
+        "w": 125,
+        "h": 115
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    }
+  },
+  "meta": {
+    "app": "merge_resource_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 467,
+      "h": 158
+    },
+    "scale": 1
+  }
+}

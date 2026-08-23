@@ -29,80 +29,86 @@
     "assets": {
       "Grass": [
         {
-          "sheet": "resources/tree/grass-1",
+          "sheet": "resources/tree/grass",
           "frame": 0
         },
         {
-          "sheet": "resources/tree/grass-2",
-          "frame": 0
+          "sheet": "resources/tree/grass",
+          "frame": 1
         },
         {
-          "sheet": "resources/tree/grass-3",
-          "frame": 0
+          "sheet": "resources/tree/grass",
+          "frame": 2
         },
         {
-          "sheet": "resources/tree/grass-4",
-          "frame": 0
+          "sheet": "resources/tree/grass",
+          "frame": 3
         }
       ],
       "Desert": [
         {
-          "sheet": "resources/tree/palm-1",
+          "sheet": "resources/tree/palm",
           "frame": 0
         },
         {
-          "sheet": "resources/tree/palm-2",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 1
         },
         {
-          "sheet": "resources/tree/palm-3",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 2
         },
         {
-          "sheet": "resources/tree/palm-4",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 3
         }
       ],
       "Jungle": [
         {
-          "sheet": "resources/tree/palm-1",
+          "sheet": "resources/tree/palm",
           "frame": 0
         },
         {
-          "sheet": "resources/tree/palm-2",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 1
         },
         {
-          "sheet": "resources/tree/palm-3",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 2
         },
         {
-          "sheet": "resources/tree/palm-4",
-          "frame": 0
+          "sheet": "resources/tree/palm",
+          "frame": 3
         }
       ],
       "DarkForest": [
         {
-          "sheet": "resources/tree/dark-forest-1",
+          "sheet": "resources/tree/dark-forest",
           "frame": 0
         },
         {
-          "sheet": "resources/tree/dark-forest-2",
-          "frame": 0
+          "sheet": "resources/tree/dark-forest",
+          "frame": 1
         },
         {
-          "sheet": "resources/tree/dark-forest-3",
-          "frame": 0
+          "sheet": "resources/tree/dark-forest",
+          "frame": 2
         },
         {
-          "sheet": "resources/tree/dark-forest-4",
-          "frame": 0
+          "sheet": "resources/tree/dark-forest",
+          "frame": 3
         }
       ]
     },
     "lifecycleAssets": {
-      "fallen": "resources/tree/fallen",
-      "cut": "resources/tree/stump"
+      "fallen": {
+        "sheet": "resources/tree/dead",
+        "frames": [0, 1, 2, 3]
+      },
+      "cut": {
+        "sheet": "resources/tree/dead",
+        "frames": [4, 5, 6, 7, 8]
+      }
     }
   },
   "Gold": {
@@ -111,15 +117,15 @@
     "color": "#DECF10",
     "assets": [
       {
-        "sheet": "resources/gold",
+        "sheet": "resources/minerals",
         "frame": 0
       },
       {
-        "sheet": "resources/gold",
+        "sheet": "resources/minerals",
         "frame": 1
       },
       {
-        "sheet": "resources/gold",
+        "sheet": "resources/minerals",
         "frame": 2
       }
     ]
@@ -130,16 +136,16 @@
     "color": "#B3B3B3",
     "assets": [
       {
-        "sheet": "resources/stone",
-        "frame": 0
+        "sheet": "resources/minerals",
+        "frame": 3
       },
       {
-        "sheet": "resources/stone",
-        "frame": 1
+        "sheet": "resources/minerals",
+        "frame": 4
       },
       {
-        "sheet": "resources/stone",
-        "frame": 2
+        "sheet": "resources/minerals",
+        "frame": 5
       }
     ]
   },
@@ -149,16 +155,16 @@
     "color": "#B87333",
     "assets": [
       {
-        "sheet": "resources/copper",
-        "frame": 0
+        "sheet": "resources/minerals",
+        "frame": 6
       },
       {
-        "sheet": "resources/copper",
-        "frame": 1
+        "sheet": "resources/minerals",
+        "frame": 7
       },
       {
-        "sheet": "resources/copper",
-        "frame": 2
+        "sheet": "resources/minerals",
+        "frame": 8
       }
     ]
   },
@@ -168,16 +174,16 @@
     "color": "#6F7378",
     "assets": [
       {
-        "sheet": "resources/iron",
-        "frame": 0
+        "sheet": "resources/minerals",
+        "frame": 9
       },
       {
-        "sheet": "resources/iron",
-        "frame": 1
+        "sheet": "resources/minerals",
+        "frame": 10
       },
       {
-        "sheet": "resources/iron",
-        "frame": 2
+        "sheet": "resources/minerals",
+        "frame": 11
       }
     ]
   },

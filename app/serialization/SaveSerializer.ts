@@ -60,6 +60,13 @@ type SerializableEntity = RuntimeEntityBase & {
   realDest?: Destination | null
   isFleeing?: boolean
   isChief?: boolean
+  inventory?: {
+    equipment?: string[]
+    equipped?: NonNullable<SaveEntityState['inventory']>['equipped']
+    equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
+    activeWeapons?: NonNullable<SaveEntityState['inventory']>['activeWeapons']
+  }
+  lootEquipment?: string[]
   sprite?: SpriteState | null
   technology?: SaveTechnologyState
   textureName?: string
@@ -215,6 +222,8 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'isDead',
       'isDestroyed',
       'isChief',
+      'inventory',
+      'lootEquipment',
       'followingHero',
       'assetCiv',
       'assetAge',

@@ -9,8 +9,6 @@ function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value))
 }
 
-const STONE_START_SOUND = null
-
 function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConfig> = {}): ProjectileConfig {
   return {
     size: 3,
@@ -94,119 +92,6 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     combatBehaviorPreset: 'rangedKite',
     cost: {},
   },
-  StoneThrower: {
-    category: 'Siege',
-    selectionFactor: 2,
-    totalHitPoints: 75,
-    sight: 8,
-    speed: 0.8,
-    trainingTime: 60,
-    equipment: ['stone_thrower_stone'],
-    meleeArmor: 0,
-    pierceArmor: 0,
-    range: 10,
-    projectile: 'Stone',
-    cost: {
-      wood: 180,
-      stone: 80,
-    },
-    conditions: [
-      {
-        key: 'age',
-        op: '>=',
-        value: 2,
-      },
-    ],
-    assets: {
-      standingSheet: 'units/stone-thrower/standing',
-      walkingSheet: 'units/stone-thrower/walking',
-      actionSheet: 'units/stone-thrower/action',
-      dyingSheet: 'units/stone-thrower/dying',
-      corpseSheet: 'units/stone-thrower/corpse',
-    },
-    sounds: {
-      create: 'catapult-weapon-completed-selected',
-      command: 'siege-weapon-moving',
-      move: 'siege-weapon-moving',
-      die: 'siege-weapon-destroyed',
-      attack: ['catapult-stone-shot', 'catapult-stone-shot-2', 'catapult-stone-shot-3'],
-    },
-  },
-  Catapult: {
-    category: 'Siege',
-    selectionFactor: 2,
-    totalHitPoints: 75,
-    sight: 8,
-    speed: 0.8,
-    trainingTime: 60,
-    equipment: ['catapult_stone'],
-    meleeArmor: 0,
-    pierceArmor: 0,
-    range: 12,
-    projectile: 'Stone',
-    cost: {
-      wood: 180,
-      stone: 80,
-    },
-    conditions: [
-      {
-        key: 'age',
-        op: '>=',
-        value: 2,
-      },
-    ],
-    assets: {
-      standingSheet: 'units/catapult/standing',
-      walkingSheet: 'units/catapult/walking',
-      actionSheet: 'units/catapult/action',
-      dyingSheet: 'units/catapult/dying',
-      corpseSheet: 'units/catapult/corpse',
-    },
-    sounds: {
-      create: 'catapult-weapon-completed-selected',
-      command: 'siege-weapon-moving',
-      move: 'siege-weapon-moving',
-      die: 'siege-weapon-destroyed',
-      attack: ['catapult-stone-shot', 'catapult-stone-shot-2', 'catapult-stone-shot-3'],
-    },
-  },
-  Ballista: {
-    category: 'Archer',
-    selectionFactor: 2,
-    totalHitPoints: 55,
-    sight: 8,
-    speed: 0.8,
-    trainingTime: 50,
-    equipment: ['ballista_bolt'],
-    meleeArmor: 0,
-    pierceArmor: 0,
-    range: 9,
-    projectile: 'Arrow',
-    cost: {
-      wood: 100,
-      stone: 80,
-    },
-    conditions: [
-      {
-        key: 'age',
-        op: '>=',
-        value: 3,
-      },
-    ],
-    assets: {
-      standingSheet: 'units/ballista/standing',
-      walkingSheet: 'units/ballista/walking',
-      actionSheet: 'units/ballista/action',
-      dyingSheet: 'units/ballista/dying',
-      corpseSheet: 'units/ballista/corpse',
-    },
-    sounds: {
-      create: 'ballista-weapon-completed-selected',
-      command: 'siege-weapon-moving',
-      move: 'siege-weapon-moving',
-      die: 'catapult-weapon-destroyed',
-    },
-  },
 }
 
 const UNIT_OVERRIDES: Record<string, Partial<UnitConfig>> = {}
@@ -234,46 +119,9 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
     units: ['Fantassin', 'Bowman'],
     mountingTime: 20,
   },
-  SiegeWorkshop: {
-    units: ['StoneThrower', 'Catapult', 'Ballista'],
-  },
 }
 
 const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
-  Stone: {
-    size: 8,
-    speed: 5,
-    assets: 'projectiles/stone',
-    isAnimated: true,
-    animationSpeed: 0.35,
-    trajectory: {
-      kind: 'arc',
-      minArcHeight: 26,
-      arcHeightFactor: 0.35,
-      maxArcHeight: 90,
-    },
-    sounds: {
-      launch: STONE_START_SOUND,
-      impact: 'target-hit-2',
-    },
-  },
-  FireStone: {
-    size: 10,
-    speed: 10,
-    assets: 'projectiles/fire-stone',
-    isAnimated: true,
-    animationSpeed: 0.35,
-    trajectory: {
-      kind: 'arc',
-      minArcHeight: 26,
-      arcHeightFactor: 0.35,
-      maxArcHeight: 90,
-    },
-    sounds: {
-      launch: STONE_START_SOUND,
-      impact: 'target-hit-2',
-    },
-  },
   Arrow: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowCopper: arrowProjectileConfig('projectiles/arrow_copper', LPC_ARROW_PROJECTILE_CONFIG),

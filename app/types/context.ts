@@ -42,6 +42,16 @@ export interface WeatherSystemLike {
   phase?: string
 }
 
+export interface BanditRaidSystemLike {
+  triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
+}
+
+export interface VillagerShelterSystemLike {
+  handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
+  evacuateVillagersFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
+  evacuateVillagersIfShelterUnsafe(building: BuildingEntity): void
+}
+
 export type SchedulerTaskId = number
 
 export type NpcOrdersOpenOptions = { chatterLine?: string; ordersEnabled?: boolean }
@@ -95,6 +105,7 @@ export interface MenuLike {
   toggleInventory?(): void
   closeInventory?(): void
   isInventoryOpen?(): boolean
+  refreshInventory?(): void
   syncTechnologyProgress?(): void
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
@@ -220,6 +231,8 @@ export interface GameContextLike {
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
+  banditRaids?: BanditRaidSystemLike | null
+  villagerShelter?: VillagerShelterSystemLike | null
   editor?: EditorInteractionTarget
   paused?: boolean
   devConsoleOpen?: boolean

@@ -4,63 +4,63 @@
       "TownCenter": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/town-center",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 8
           }
         }
       },
       "Barracks": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/barracks",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 1
           }
         }
       },
       "House": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/house",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 3
           }
         }
       },
       "Granary": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/granary",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 2
           }
         }
       },
       "StoragePit": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/storage-pit",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 6
           }
         }
       },
       "Temple": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/temple",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 7
           }
         }
       },
       "Stable": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/stable",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 5
           }
         }
       },
       "ArcheryRange": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/archery-range",
+            "sheet": "buildings/age-0",
             "frame": 0
           }
         }
@@ -68,16 +68,16 @@
       "Market": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/market",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 4
           }
         }
       },
       "WatchTower": {
         "images": {
           "final": {
-            "sheet": "buildings/age-0/watch-tower",
-            "frame": 0
+            "sheet": "buildings/age-0",
+            "frame": 9
           }
         }
       }
@@ -86,31 +86,31 @@
       "WatchTower": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/watch-tower",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 9
           }
         }
       },
       "Market": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/market",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 4
           }
         }
       },
       "Stable": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/stable",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 5
           }
         }
       },
       "ArcheryRange": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/archery-range",
+            "sheet": "buildings/age-1",
             "frame": 0
           }
         }
@@ -118,48 +118,48 @@
       "Barracks": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/barracks",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 1
           }
         }
       },
       "TownCenter": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/town-center",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 8
           }
         }
       },
       "Granary": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/granary",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 2
           }
         }
       },
       "House": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/house",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 3
           }
         }
       },
       "StoragePit": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/storage-pit",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 6
           }
         }
       },
       "Temple": {
         "images": {
           "final": {
-            "sheet": "buildings/age-1/temple",
-            "frame": 0
+            "sheet": "buildings/age-1",
+            "frame": 7
           }
         }
       }

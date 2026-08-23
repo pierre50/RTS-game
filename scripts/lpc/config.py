@@ -158,8 +158,8 @@ class DressItem:
     palette: str | None = None
 
 
-SHORTS = DressItem("legs/shorts/shorts/male/{animation}/{color}.png", team_colored=True)
-SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/{color}.png", team_colored=True)
+SHORTS = DressItem("legs/shorts/shorts/male/{animation}/walnut.png")
+SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/tan.png")
 SANDALS = DressItem("feet/sandals/male/{animation}.png", palette="cloth_brown")
 SANDALS_FEMALE = DressItem("feet/sandals/female/{animation}.png", palette="cloth_brown")
 BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
@@ -176,43 +176,49 @@ SASH_WHITE = DressItem("torso/waist/sash_narrow/male/{animation}/white.png")
 SASH_WHITE_FEMALE = DressItem("torso/waist/sash_narrow/female/{animation}/white.png")
 SASH = DressItem("torso/waist/sash_narrow/male/{animation}/{color}.png", team_colored=True)
 SASH_FEMALE = DressItem("torso/waist/sash_narrow/female/{animation}/{color}.png", team_colored=True)
+OBI = DressItem("torso/waist/obi/male/{animation}.png", team_colored=True)
+OBI_THIN = DressItem("torso/waist/obi/thin/{animation}.png", team_colored=True)
 # plain/legion skirts have no pre-made color variants, so they're pixel-recolored to
-# the player palette instead of picking a hand-colored file.
-SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", team_colored=True)
-SKIRT_PLAIN_FEMALE = DressItem("legs/skirts/plain/female/{animation}.png", team_colored=True)
-SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", team_colored=True)
-SKIRT_LEGION_TEAM_FEMALE = DressItem("legs/skirts/legion/female/{animation}.png", team_colored=True)
-SKIRT_SHORT = DressItem("legs/skirts/short/male/{animation}.png", team_colored=True)
-PANTS_TEAM = DressItem("legs/pants/male/{animation}/{color}.png", team_colored=True)
-STRIPED_PANTS = DressItem("legs/formal_striped/male/{animation}.png", team_colored=True)
+# a fixed cloth palette instead of picking a hand-colored file.
+SKIRT_PLAIN = DressItem("legs/skirts/plain/male/{animation}.png", palette="cloth_brown")
+SKIRT_PLAIN_FEMALE = DressItem("legs/skirts/plain/female/{animation}.png", palette="cloth_brown")
+SKIRT_LEGION_TEAM = DressItem("legs/skirts/legion/male/{animation}.png", palette="cloth_brown")
+SKIRT_LEGION_TEAM_FEMALE = DressItem("legs/skirts/legion/female/{animation}.png", palette="cloth_brown")
+SKIRT_SHORT = DressItem("legs/skirts/short/male/{animation}.png", palette="cloth_brown")
+PANTS_TEAM = DressItem("legs/pants/male/{animation}/walnut.png")
+STRIPED_PANTS = DressItem("legs/formal_striped/male/{animation}/forest.png")
 STRIPED_PANTS_RED = DressItem("legs/formal_striped/male/{animation}/red.png")
 STRIPED_PANTS_FOREST = DressItem("legs/formal_striped/male/{animation}/forest.png")
 BASIC_SHOES_LEATHER = DressItem("feet/shoes/male/{animation}/leather.png")
 BASIC_SHOES_LEATHER_FEMALE = DressItem("feet/shoes/female/{animation}/leather.png")
 SLEEVELESS_SHIRT = DressItem("torso/clothes/sleeveless/sleeveless/male/{animation}/{color}.png", team_colored=True)
-KIMONO = DressItem("dress/kimono/normal/universal/female/{animation}/{color}.png", team_colored=True)
-KIMONO_LONGSLEEVE = DressItem("dress/kimono/sleeves/universal/female/{animation}/{color}.png", team_colored=True)
+KIMONO = DressItem("dress/kimono/normal/universal/female/{animation}/walnut.png")
+KIMONO_LONGSLEEVE = DressItem("dress/kimono/sleeves/universal/female/{animation}/walnut.png")
 KIMONO_LONGSLEEVE_FRONT = DressItem(
-    "dress/kimono/sleeves/universal/female_front/{animation}/{color}.png",
-    team_colored=True,
+    "dress/kimono/sleeves/universal/female_front/{animation}/walnut.png",
 )
-SLIT_DRESS = DressItem("dress/slit/female/{animation}/{color}.png", team_colored=True)
+SLIT_DRESS = DressItem("dress/slit/female/{animation}/walnut.png")
 
 MALE_SHORT_SKIRT_SLEEVELESS = (SANDALS, SKIRT_SHORT, SLEEVELESS_SHIRT)
 MALE_LONG_SKIRT_SLEEVELESS = (SANDALS, SKIRT_PLAIN, SLEEVELESS_SHIRT)
 MALE_SLIT_SKIRT_NO_SHIRT = (SANDALS, SLIT_SKIRT)
 MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT = (SLIT_SKIRT,)
+MALE_SLIT_SKIRT_OBI = (SANDALS, SLIT_SKIRT, OBI)
+MALE_NUBIAN_SLIT_SKIRT_OBI = (SLIT_SKIRT, OBI)
 
-FEMALE_KIMONO_SANDALS = (SANDALS_FEMALE, KIMONO)
-FEMALE_KIMONO_LONGSLEEVE_SANDALS = (SANDALS_FEMALE, KIMONO, KIMONO_LONGSLEEVE, KIMONO_LONGSLEEVE_FRONT)
-FEMALE_SLIT_DRESS_SANDALS = (SANDALS_FEMALE, SLIT_DRESS)
+FEMALE_KIMONO_SANDALS = (SANDALS_FEMALE, KIMONO, OBI_THIN)
+FEMALE_KIMONO_LONGSLEEVE_SANDALS = (SANDALS_FEMALE, KIMONO, KIMONO_LONGSLEEVE, KIMONO_LONGSLEEVE_FRONT, OBI_THIN)
+FEMALE_SLIT_DRESS_SANDALS = (SANDALS_FEMALE, SLIT_DRESS, OBI_THIN)
 FEMALE_KIMONO_LONGSLEEVE_SHOES = (
     BASIC_SHOES_LEATHER_FEMALE,
     KIMONO,
     KIMONO_LONGSLEEVE,
     KIMONO_LONGSLEEVE_FRONT,
+    OBI_THIN,
 )
-FEMALE_NUBIAN_SLIT_DRESS = (SLIT_DRESS,)
+FEMALE_NUBIAN_SLIT_DRESS = (SLIT_DRESS, OBI_THIN)
+FEMALE_SLIT_DRESS_OBI = (SANDALS_FEMALE, SLIT_DRESS, OBI_THIN)
+FEMALE_NUBIAN_SLIT_DRESS_OBI = (SLIT_DRESS, OBI_THIN)
 
 # Hero outfit pieces. Unlike SHORTS/APRON_BROWN (pre-colored files picked by name),
 # shortsleeve/pantaloons/shoes only ship one colorless template per animation
@@ -414,14 +420,14 @@ CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "egyptian": {
-        "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_NO_SHIRT},
-        "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_NO_SHIRT},
+        "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_OBI},
+        "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_OBI},
         "hero": {"hair": "bob"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nubian": {
-        "villager": {"hair": "cornrows", "dress": MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT},
-        "infantry": {"hair": "dreadlocks_short", "dress": MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT},
+        "villager": {"hair": "cornrows", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
+        "infantry": {"hair": "dreadlocks_short", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
         "hero": {"hair": "cornrows", "beard": None},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
@@ -445,8 +451,8 @@ FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
     "egyptian": {
-        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_SANDALS},
-        "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_SANDALS},
+        "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
+        "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
         "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": None, "hair_palette": None},
     },
@@ -481,8 +487,8 @@ FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nubian": {
-        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS},
-        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS},
+        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
+        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
         "hero": {"hair": "xlong", "hair_body_type": "female"},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
     },

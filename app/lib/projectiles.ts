@@ -11,8 +11,6 @@ const BALLISTICS_PROJECTILES = new Set([
   'ArrowCopper',
   'ArrowBronze',
   'ArrowIron',
-  'Stone',
-  'FireStone',
 ])
 
 function getAgeArrowProjectile(player?: PlayerTechnologyState | null): string {

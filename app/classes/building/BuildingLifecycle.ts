@@ -101,7 +101,8 @@ export class BuildingLifecycle {
     const finalTextureRef = assets.images!.final!
     const finalSheetId = getTextureSheet(finalTextureRef)
     const spritesheet = Assets.cache.get(finalSheetId)
-    const frames = spritesheet?.textures ? (getAnimationFrames(spritesheet.textures) as Texture[]) : []
+    const shouldAnimate = assets.animated === true
+    const frames = shouldAnimate && spritesheet?.textures ? (getAnimationFrames(spritesheet.textures) as Texture[]) : []
     const texture = getTexture(finalTextureRef, Assets) as BuildingTexture
     building.textureName = textureRefToString(finalTextureRef)
 
@@ -213,6 +214,7 @@ export class BuildingLifecycle {
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
 
     if (building.hitPoints <= 0) {
+      building.context.villagerShelter?.evacuateVillagersFromShelter(building, { force: true })
       building.die()
     }
     if (action === ACTION_TYPES.build && !building.isBuilt) {
@@ -222,6 +224,7 @@ export class BuildingLifecycle {
       (action === ACTION_TYPES.build && building.isBuilt)
     ) {
       if (percentage > 0 && percentage < 25) {
+        building.context.villagerShelter?.evacuateVillagersIfShelterUnsafe(building)
         this.playBurningSound()
         building.generateFire(BUILDING_FIRE_SHEETS.heavy)
       } else if (percentage >= 25 && percentage < 50) {

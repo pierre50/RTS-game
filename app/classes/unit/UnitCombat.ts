@@ -4,6 +4,7 @@ import {
   CELL_WIDTH,
   FAMILY_TYPES,
   SHEET_TYPES,
+  SOUND_CUES,
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../constants'
@@ -22,18 +23,34 @@ import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
 import { showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
 import { canAutoAcquireTarget } from '../../lib/unitControl'
-import { getUnitCombatRange } from '../../lib/equipmentStats'
+import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipmentStats'
 import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
-import type { RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
 const PROJECTILE_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
 
 function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
+}
+
+function isSlashingMeleeEquipment(item: string): boolean {
+  return item === 'longsword' || item.startsWith('sword_') || item === 'axe' || item.startsWith('axe_')
+}
+
+function getMeleeImpactEquipment(unit: UnitEntity): string[] {
+  if (Array.isArray(unit.equipment) && unit.equipment.length) return unit.equipment
+  return unit.work && typeof getUnitWorkEquipment === 'function' ? getUnitWorkEquipment(unit.work, unit.owner?.age) : []
+}
+
+function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): CommandSound {
+  if (target?.family === FAMILY_TYPES.unit && getMeleeImpactEquipment(unit).some(isSlashingMeleeEquipment)) {
+    return SOUND_CUES?.unit?.swordAttack ?? unit.sounds?.hit
+  }
+  return unit.sounds?.hit
 }
 
 type AttackLoopVisualOptions = {
@@ -224,9 +241,7 @@ export class UnitCombat {
       this.runAttackLoop(
         SLASH_IMPACT_FRAME,
         dest => {
-          if (unit.sounds?.hit) {
-            playAudibleSoundCue(unit, unit.sounds.hit)
-          }
+          playAudibleSoundCue(unit, getMeleeImpactSound(unit, dest))
           if (dest && (dest.hitPoints ?? 0) > 0) {
             const { killed } = applyCombatHit(unit, dest, {
               bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),

@@ -7,7 +7,6 @@ import { getTexture } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getUnitEquipmentLevel } from './unitExperience'
 import type { Application, Sprite } from 'pixi.js'
-import type { DynamicEquipmentKey } from './lpc/equipment'
 import type { UnitAppearanceLayerConfig } from '../types/config'
 import type { AnimalEntity, RuntimeEntityBase, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -219,6 +218,10 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   return frames[0] ?? null
 }
 
+export function shouldRenderUnitPortraitLayer(layer: Pick<UnitAppearanceLayerConfig, 'showWhenLoading'>): boolean {
+  return !layer.showWhenLoading
+}
+
 function renderLayeredUnitHeadAvatar(
   app: Application,
   unit: PortraitSource,
@@ -226,6 +229,7 @@ function renderLayeredUnitHeadAvatar(
   canvas: HTMLCanvasElement
 ): boolean {
   const layers = unit.appearance?.layers
+    ?.filter(shouldRenderUnitPortraitLayer)
     ?.map((layer, index) => ({ layer, index, texture: getPortraitLayerTexture(unit, layer) }))
     .filter((entry): entry is { layer: UnitAppearanceLayerConfig; index: number; texture: Texture } => Boolean(entry.texture))
     .sort((a, b) => a.layer.zIndex - b.layer.zIndex || a.index - b.index)
@@ -373,11 +377,16 @@ export function renderResourceAvatar(app: Application, resource: ResourcePortrai
 // assuming 'walking' always has visible art the way unit/building sheets do.
 const EQUIPMENT_LAYERS = ['back', 'front'] as const
 const EQUIPMENT_SHEETS = ['walking', 'action'] as const
+const EQUIPMENT_VARIANTS = ['', 'male', 'female'] as const
 const MIN_EQUIPMENT_OPAQUE_PIXELS = 30
 
 function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
-  const sheetId = `lpc-equipment/${equipment}/${layer}/${sheet}`
-  const sheetData = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
+  let sheetData: SpritesheetLike | undefined
+  for (const variant of EQUIPMENT_VARIANTS) {
+    const sheetId = `lpc-equipment/${equipment}/${layer}/${sheet}${variant ? `/${variant}` : ''}`
+    sheetData = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
+    if (sheetData?.textures) break
+  }
   if (!sheetData?.textures) return null
 
   const frames = getAnimationFrames(sheetData.textures, 'south', 3, null) as Texture[]
@@ -396,7 +405,7 @@ function countOpaquePixels(pixels: Uint8ClampedArray): number {
 // its back+front layers (both drawn at once; some equipment splits its shape
 // across both, e.g. a halberd's shaft going behind the arm), then crops
 // tightly to whatever's actually drawn.
-export function renderEquipmentAvatar(app: Application, equipment: DynamicEquipmentKey, canvas: HTMLCanvasElement): boolean {
+export function renderEquipmentAvatar(app: Application, equipment: string, canvas: HTMLCanvasElement): boolean {
   for (const sheet of EQUIPMENT_SHEETS) {
     const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(equipment, layer, sheet)).filter(
       (texture): texture is Texture => Boolean(texture)

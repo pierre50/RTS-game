@@ -1,0 +1,303 @@
+{
+  "frames": {
+    "000_graphics_resources_minerals_gold_000.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "001_graphics_resources_minerals_gold_001.png": {
+      "frame": {
+        "x": 87,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6607142857
+      }
+    },
+    "002_graphics_resources_minerals_gold_002.png": {
+      "frame": {
+        "x": 174,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6964285714
+      }
+    },
+    "003_graphics_resources_minerals_stone_000.png": {
+      "frame": {
+        "x": 261,
+        "y": 0,
+        "w": 70,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5192307692
+      }
+    },
+    "004_graphics_resources_minerals_stone_001.png": {
+      "frame": {
+        "x": 349,
+        "y": 0,
+        "w": 62,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6346153846
+      }
+    },
+    "005_graphics_resources_minerals_stone_002.png": {
+      "frame": {
+        "x": 429,
+        "y": 0,
+        "w": 70,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 70,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 70,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6538461539
+      }
+    },
+    "006_graphics_resources_minerals_copper_000.png": {
+      "frame": {
+        "x": 517,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "007_graphics_resources_minerals_copper_001.png": {
+      "frame": {
+        "x": 604,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6607142857
+      }
+    },
+    "008_graphics_resources_minerals_copper_002.png": {
+      "frame": {
+        "x": 691,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6964285714
+      }
+    },
+    "009_graphics_resources_minerals_iron_000.png": {
+      "frame": {
+        "x": 778,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6071428571
+      }
+    },
+    "010_graphics_resources_minerals_iron_001.png": {
+      "frame": {
+        "x": 865,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6607142857
+      }
+    },
+    "011_graphics_resources_minerals_iron_002.png": {
+      "frame": {
+        "x": 952,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 56
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6964285714
+      }
+    }
+  },
+  "meta": {
+    "app": "merge_resource_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1021,
+      "h": 56
+    },
+    "scale": 1
+  }
+}

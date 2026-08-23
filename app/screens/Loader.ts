@@ -2,6 +2,7 @@ import { Assets, Container } from 'pixi.js'
 import { t } from '../lib/lang'
 import { ASSET_BUNDLES, ASSET_LOAD_SEQUENCE } from '../config/assetManifest'
 import type { UnitConfig } from '../types/config'
+import type { SpritesheetLike } from '../types/pixi'
 
 /**
  * Loading Screen
@@ -30,6 +31,9 @@ export default class LoaderScreen extends Container {
     for (const { bundle, messageKey } of ASSET_LOAD_SEQUENCE) {
       this.loadingDiv.innerHTML = t(messageKey)
       await Assets.loadBundle(bundle)
+      if (bundle === 'graphics') {
+        registerProjectileSheetAliases()
+      }
     }
 
     const gameConfig: {
@@ -53,5 +57,33 @@ export default class LoaderScreen extends Container {
     Assets.cache.set('config', gameConfig)
 
     this.loadingDiv.remove()
+  }
+}
+
+const PROJECTILE_ATLAS_ALIAS = 'projectiles'
+const PROJECTILE_VARIANTS = ['ceramic', 'copper', 'bronze', 'iron'] as const
+
+function registerProjectileSheetAliases(): void {
+  const atlas = Assets.cache.get(PROJECTILE_ATLAS_ALIAS) as SpritesheetLike | undefined
+  if (!atlas?.textures) return
+
+  for (const variant of PROJECTILE_VARIANTS) {
+    const alias = `${PROJECTILE_ATLAS_ALIAS}/arrow_${variant}`
+    const framePattern = `_graphics_projectiles_arrow_${variant}.png`
+    const textures = Object.fromEntries(
+      Object.entries(atlas.textures).filter(([frameName]) => frameName.endsWith(framePattern))
+    )
+    const frames = Object.fromEntries(
+      Object.entries(atlas.data?.frames ?? {}).filter(([frameName]) => frameName.endsWith(framePattern))
+    )
+
+    Assets.cache.set(alias, {
+      ...atlas,
+      data: {
+        ...atlas.data,
+        frames,
+      },
+      textures,
+    })
   }
 }

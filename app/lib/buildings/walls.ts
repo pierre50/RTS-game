@@ -8,35 +8,25 @@ import { getWallFrame } from '../grid/wallPath'
 import type { Grid, GridCell } from '../../types/grid'
 import type { RecolorableSprite } from '../graphics/colors'
 
+const SHARED_WALL_SHEET = 'buildings/wall/level-1'
+
 const WALL_SHEETS = {
   1: {
-    default: 'buildings/age-0/wall/level-1',
+    default: SHARED_WALL_SHEET,
   },
   2: {
-    Egyptian: 'buildings/age-0/wall/level-1',
-    Greek: 'buildings/age-0/wall/level-1',
-    Roman: 'buildings/age-0/wall/level-1',
-    Asian: 'buildings/age-0/wall/level-1',
-    Babylonian: 'buildings/age-0/wall/level-1',
-    Celtic: 'buildings/age-0/wall/level-1',
-    Nubian: 'buildings/age-0/wall/level-1',
+    default: SHARED_WALL_SHEET,
   },
   3: {
-    Egyptian: 'buildings/age-0/wall/level-1',
-    Greek: 'buildings/age-0/wall/level-1',
-    Roman: 'buildings/age-0/wall/level-1',
-    Asian: 'buildings/age-0/wall/level-1',
-    Babylonian: 'buildings/age-0/wall/level-1',
-    Celtic: 'buildings/age-0/wall/level-1',
-    Nubian: 'buildings/age-0/wall/level-1',
+    default: SHARED_WALL_SHEET,
   },
 } as const
 
-export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/age-0/wall/construction-flag'
+export const WALL_CONSTRUCTION_FLAG_SHEET_ID = 'buildings/wall/construction-flag'
 
 export type WallOwner = {
   age?: number
-  civ?: keyof (typeof WALL_SHEETS)[2] | keyof (typeof WALL_SHEETS)[3] | string
+  civ?: string
   color?: string
   technologies?: string[]
   buildings?: Array<{ owner?: WallOwner; type?: string }>

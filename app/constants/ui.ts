@@ -29,6 +29,7 @@ export const LABEL_TYPES = {
   fogOverlay: 'fogOverlay',
   commRadius: 'commRadius',
   commSelection: 'commSelection',
+  overheadIndicator: 'overheadIndicator',
 }
 
 export const COLOR_WHITE = 0xffffff

@@ -23,6 +23,22 @@ export const BUILDING_TYPES = {
   stable: 'Stable',
   watchTower: 'WatchTower',
   smallWall: 'SmallWall',
+  banditCamp: 'BanditCamp',
+  banditCampDecoration: 'BanditCampDecoration',
+  banditCampTotemPlain: 'BanditCampTotemPlain',
+  banditCampTotemHorns: 'BanditCampTotemHorns',
+  banditCampTotemSkull: 'BanditCampTotemSkull',
+  banditCampFencePost: 'BanditCampFencePost',
+  banditCampBoneSmall: 'BanditCampBoneSmall',
+  banditCampRockPile: 'BanditCampRockPile',
+  banditCampSkull: 'BanditCampSkull',
+  banditCampAnimalBones: 'BanditCampAnimalBones',
+  banditCampMeatRack: 'BanditCampMeatRack',
+  banditCampDryingRack: 'BanditCampDryingRack',
+  banditCampBucket: 'BanditCampBucket',
+  banditCampCrate: 'BanditCampCrate',
+  banditCampJarSmall: 'BanditCampJarSmall',
+  banditCampJarLarge: 'BanditCampJarLarge',
 }
 
 export const UNIT_TYPES = {
@@ -43,6 +59,7 @@ export const MOUNTED_HORSE_SPEED_BONUS = 0.45
 export const PLAYER_TYPES = {
   human: 'Human',
   ai: 'AI',
+  bandits: 'Bandits',
   gaia: 'Gaia',
 }
 

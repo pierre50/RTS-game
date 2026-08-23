@@ -13,8 +13,10 @@ const constants = {
   UNIT_TYPES: {
     villager: 'Villager',
     infantry: 'Fantassin',
+    hero: 'Hero',
   },
   WORK_TYPES: {
+    hunter: 'hunter',
     attacker: 'attacker',
   },
 }
@@ -106,16 +108,13 @@ test('combat equipment data declares weapon and armor stats by role', () => {
   const equipment = loadGameplayEquipmentJson()
   const visualOnly = new Set(VISUAL_ONLY_EQUIPMENT)
   const explicitWeapons = new Set([
-    'ballista_bolt',
     'boar_tusks',
     'bow',
     'bow_great',
     'bow_recurve',
     'cane',
-    'catapult_stone',
     'halberd',
     'longsword',
-    'stone_thrower_stone',
     'watch_tower_arrow',
     'wolf_bite',
   ])
@@ -266,4 +265,70 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
     }),
     8
   )
+})
+
+test('hero inventory equipment drives runtime attack armor and range', () => {
+  const {
+    getEntityWeaponPower,
+    getHeroInventoryWeaponCombatStats,
+    getUnitCombatRange,
+    getUnitRuntimeCombatStats,
+    refreshUnitEquipmentStats,
+    UNARMED_UNIT_WEAPON_POWER,
+  } = loadEquipmentStats()
+  const heroConfig = { category: 'Hero', meleeArmor: 1, pierceArmor: 0 }
+  const owner = {
+    age: 0,
+    civ: 'demo',
+    config: {
+      units: { Hero: heroConfig },
+    },
+  }
+  const hero = {
+    family: 'unit',
+    type: 'Hero',
+    controlMode: 'hero',
+    work: 'heroSword',
+    owner,
+    inventory: {
+      equipped: {
+        helmet: 'helmet_barbuta_ceramic',
+        offhand: 'round_shield_ceramic_slash',
+      },
+      activeWeapons: {
+        melee: 'axe_ceramic',
+        ranged: 'bow_great',
+      },
+    },
+  }
+
+  assert.deepEqual(getUnitRuntimeCombatStats(hero, heroConfig), {
+    weaponPower: 5,
+    meleeArmor: 3,
+    pierceArmor: 2,
+  })
+  assert.deepEqual(getHeroInventoryWeaponCombatStats(hero), {
+    meleeWeaponPower: 5,
+    rangedWeaponPower: 7,
+  })
+  assert.equal(getEntityWeaponPower(hero), 5)
+  assert.equal(getUnitCombatRange(hero), undefined)
+
+  refreshUnitEquipmentStats(hero)
+  assert.equal(hero.weaponPower, 5)
+  assert.equal(hero.meleeArmor, 3)
+  assert.equal(hero.pierceArmor, 2)
+
+  hero.work = 'hunter'
+  assert.deepEqual(getUnitRuntimeCombatStats(hero, heroConfig), {
+    weaponPower: 7,
+    meleeArmor: 3,
+    pierceArmor: 2,
+  })
+  assert.equal(getEntityWeaponPower(hero), 7)
+  assert.equal(getUnitCombatRange(hero), 5)
+
+  delete hero.inventory.activeWeapons.ranged
+  assert.equal(getUnitRuntimeCombatStats(hero, heroConfig).weaponPower, UNARMED_UNIT_WEAPON_POWER)
+  assert.equal(getUnitCombatRange(hero), undefined)
 })

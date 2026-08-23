@@ -19,13 +19,12 @@ function loadProjectileHelpers() {
 
 const technologies = require('../public/assets/data/technologies/technologies.json')
 
-test('Alchemy keeps arrow family by age while still using stone enhancements', () => {
+test('Alchemy keeps arrow family by age', () => {
   const { getEffectiveProjectileType } = loadProjectileHelpers()
   const player = { technologies: ['Alchemy'] }
 
   assert.equal(getEffectiveProjectileType('Arrow', player), 'ArrowCeramic')
   assert.equal(getEffectiveProjectileType('ArrowCopper', player), 'ArrowCopper')
-  assert.equal(getEffectiveProjectileType('Stone', player), 'FireStone')
   assert.equal(getEffectiveProjectileType('Arrow', { age: 1, technologies: ['Alchemy'] }), 'ArrowCopper')
   assert.equal(getEffectiveProjectileType('Arrow', { age: 2, technologies: ['Alchemy'] }), 'ArrowBronze')
   assert.equal(getEffectiveProjectileType('Arrow', { age: 3, technologies: ['Alchemy'] }), 'ArrowIron')
@@ -36,16 +35,16 @@ test('Ballistics tracks standard military projectiles', () => {
   const { projectileTracksTarget } = loadProjectileHelpers()
   const player = { technologies: ['Ballistics'] }
 
-  for (const type of ['Arrow', 'ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron', 'Stone', 'FireStone']) {
+  for (const type of ['Arrow', 'ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron']) {
     assert.equal(projectileTracksTarget(type, player), true)
   }
   assert.equal(projectileTracksTarget('Arrow', { technologies: [] }), false)
 })
 
-test('Alchemy improves siege attack without retaining the old Ballistics fire-rate bonus', () => {
+test('Alchemy improves arrow attack without retaining the old Ballistics fire-rate bonus', () => {
   const alchemyTypes = technologies.Alchemy.action.operations[0].type
 
-  for (const type of ['stone_thrower_stone', 'catapult_stone', 'ballista_bolt']) {
+  for (const type of ['bow', 'bow_great', 'bow_recurve', 'watch_tower_arrow']) {
     assert.ok(alchemyTypes.includes(type))
   }
   assert.equal(technologies.Ballistics.action, undefined)

@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from build import RETRO_PALETTE_ROOT, animation_speed_for, bake_sheet
+from build_arrow_projectiles import ARROW_VARIANTS, build_arrow_projectiles
 from config import DEFAULT_OUTPUT_ROOT, DEFAULT_SOURCE_ROOT, PROJECT_ROOT, SHEETS
 
 from equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_keys, has_animation_content
@@ -16,6 +17,8 @@ from retro_palette import find_hex_palette, load_hex_palette
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
 OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "lpc-equipment"
+PROJECTILE_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/projectiles"
+PROJECTILE_EQUIPMENT_KEYS = {f"arrow_{variant}" for variant in ARROW_VARIANTS}
 
 
 def display_path(path: Path) -> Path:
@@ -30,6 +33,8 @@ def sheet_plan(equipment) -> dict[str, tuple[str, object]]:
         "walking": ("walk", SHEET_BY_KEY["walking"]),
         "action": (equipment.action_animation, SHEET_BY_ANIMATION[equipment.action_animation]),
     }
+    if equipment.action_animation != "shoot" and has_animation_content(equipment, "shoot"):
+        plan["shooting"] = ("shoot", SHEET_BY_ANIMATION["shoot"])
     if has_animation_content(equipment, "hurt"):
         plan["dying"] = ("hurt", SHEET_BY_KEY["dying"])
         plan["corpse"] = ("hurt", SHEET_BY_KEY["corpse"])
@@ -103,6 +108,9 @@ def build_equipment(source_root: Path, output_root: Path, only: set[str] | None 
                     bake_sheet(output_dir, frames, animation_speed_for(output_sheet), retro_palette)
                     built += 1
         print(f"  baked {equipment.key} ({built - before_equipment} sheets, {built} total)")
+
+    if only is None or PROJECTILE_EQUIPMENT_KEYS.intersection(only):
+        build_arrow_projectiles(output_root=PROJECTILE_OUTPUT_ROOT)
 
     print(f"Generated {built} dynamic LPC equipment sheets into {display_path(output_root)}")
 

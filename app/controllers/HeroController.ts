@@ -32,6 +32,7 @@ import {
   cancelHeroLasso,
   cancelHeroDefense,
   isHeroPowerChargeActiveForTool,
+  isHeroToolAvailable,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
   releaseHeroPowerCharge,
@@ -291,6 +292,7 @@ export class HeroController {
   shiftMoveLockedDegree: number | null
   companionHorse: CompanionHorse | null
   mountTransitionTaskId: number | null
+  keyboardInteractHeld: boolean
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -309,8 +311,13 @@ export class HeroController {
     this.shiftMoveLockedDegree = null
     this.companionHorse = null
     this.mountTransitionTaskId = null
+    this.keyboardInteractHeld = false
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
+  }
+
+  isHeroActionHeld(): boolean {
+    return this.mouseHeld || this.keyboardInteractHeld
   }
 
   facePoint(point: HeroAimPoint): void {
@@ -347,6 +354,7 @@ export class HeroController {
     }
 
     if (action === 'heroInteract') {
+      this.keyboardInteractHeld = true
       // Pressing the key again closes whichever panel it can open, instead of starting a new
       // charge or re-resolving a target.
       if (this.controls.closeAnyHeroPanel()) return true
@@ -669,7 +677,10 @@ export class HeroController {
 
   handleKeyUp(action: ControlBindingAction): void {
     if (HERO_MOVE_DIRECTIONS[action]) this.keysPressed.delete(action)
-    if (action === 'heroInteract' && this.commCharging) this.endCommCharge()
+    if (action === 'heroInteract') {
+      this.keyboardInteractHeld = false
+      if (this.commCharging) this.endCommCharge()
+    }
     if (action === 'heroDefense' && this.heroUnit && releaseHeroDefense(this.heroUnit)) this.mouseHeld = false
   }
 
@@ -933,6 +944,7 @@ export class HeroController {
 
   setEquippedItem(item: HeroEquippedItem | null): void {
     const unit = this.heroUnit
+    if (item && unit && !isHeroToolAvailable(unit, item)) return
     if (unit?.heroDefenseActive) cancelHeroDefense(unit)
     if (unit && item !== 'lasso') cancelHeroLasso(unit)
     if (unit && !isHeroPowerChargeActiveForTool(unit, item)) {
@@ -966,6 +978,7 @@ export class HeroController {
   cancelActiveInteraction(): void {
     this.stopKeyboardMove()
     this.mouseHeld = false
+    this.keyboardInteractHeld = false
     this.primaryClickPoint = null
     this.cancelMountTransition()
     if (this.heroUnit) cancelHeroPowerCharge(this.heroUnit)

@@ -865,6 +865,125 @@
   background: var(--surface-black-solid);
 }
 
+.inventory-weapon-section,
+.inventory-equipped-section,
+.inventory-loot-section {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+  margin-top: var(--ui-gap-8);
+}
+
+.inventory-loot-title,
+.corpse-loot-title {
+  flex: 1 1 100%;
+  color: var(--text-color-inverse);
+  font-weight: bold;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
+.inventory-equipped-grid,
+.inventory-loot-grid,
+.corpse-loot-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-gap-8);
+}
+
+.inventory-equipment-slot {
+  width: 108px;
+  min-width: 108px;
+  min-height: 112px;
+}
+
+.inventory-weapon-slot {
+  min-height: 128px;
+}
+
+.inventory-equipment-slot.empty {
+  opacity: 0.78;
+}
+
+.inventory-equipped-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
+.inventory-equipment-slot.empty .inventory-equipped-icon-wrap {
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.inventory-slot-type {
+  width: 100%;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-slot-companion {
+  width: 100%;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-loot-slot:disabled {
+  opacity: 1;
+}
+
+.corpse-loot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+  width: 100%;
+  margin-top: var(--ui-gap-10);
+}
+
+.corpse-loot-grid {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.corpse-loot-take-all,
+.corpse-loot-button {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-8);
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 4px 10px;
+}
+
+.corpse-loot-take-all {
+  justify-content: center;
+  min-height: 42px;
+}
+
+.corpse-loot-icon {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+}
+
+.corpse-loot-label {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .action-menu-technologies-page > .ui-action-row {
   position: relative;
   gap: 2px var(--ui-gap-8);

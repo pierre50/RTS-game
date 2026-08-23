@@ -3,7 +3,7 @@ import type { AnimalConfig, BuildingConfig, ResourceConfig, TechnologyConfig, Un
 import type { FogSpriteMemory } from './map'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
-import type { UnitControlMode } from './entities'
+import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './entities'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
@@ -44,6 +44,12 @@ export type SaveEntityState = {
   isDestroyed?: boolean
   isNaturalResource?: boolean
   isChief?: boolean
+  inventory?: {
+    equipment?: string[]
+    equipped?: Partial<Record<HeroEquipmentSlot, string>>
+    equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>
+    activeWeapons?: Partial<Record<HeroWeaponSlot, string>>
+  }
   followingHero?: boolean
   isFleeing?: boolean
   isUsedBy?: string | null
@@ -53,6 +59,7 @@ export type SaveEntityState = {
   loadingType?: string | null
   resourceLoads?: Record<string, number>
   loop?: boolean
+  lootEquipment?: string[]
   mountedOnHorse?: boolean
   name?: string
   path?: SaveGridPoint[]

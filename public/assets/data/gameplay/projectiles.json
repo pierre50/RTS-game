@@ -62,19 +62,5 @@
         "archer-attack-4"
       ]
     }
-  },
-  "Bolt": {
-    "size": 12,
-    "speed": 12,
-    "sounds": {
-      "launch": [
-        "ballista-bolt-shot",
-        "ballista-bolt-shot-2",
-        "ballista-bolt-shot-3",
-        "ballista-bolt-shot-4",
-        "ballista-bolt-shot-5"
-      ],
-      "impact": "target-hit"
-    }
   }
 }

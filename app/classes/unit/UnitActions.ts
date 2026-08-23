@@ -47,7 +47,7 @@ import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitCont
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
-import { playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
+import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import {
   addCarriedResource,
   clearCarriedResource,
@@ -285,6 +285,7 @@ function finishManualHeroWorkRecovery(unit: UnitEntity, releaseFrame: number): b
         unit.affectNewDest?.()
         return
       }
+      logHeroSlashFrame(unit, 'manual:resume-action', { actionAtRelease })
       unit.getAction?.(actionAtRelease)
     },
     releaseFrame,
@@ -683,6 +684,7 @@ export class UnitActions {
       addCarriedResource(unit, loadingType, gain)
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       unit.updateInterfaceLoading?.()
+      if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
@@ -816,6 +818,7 @@ export class UnitActions {
           addCarriedResource(unit, LOADING_TYPES.wheat, gain)
           grantUnitXp(unit, XP_CATEGORIES.farming, gain)
           unit.updateInterfaceLoading?.()
+          if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
           this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
           d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
           showResourceGainFeedback(unit, gain)
@@ -884,6 +887,7 @@ export class UnitActions {
             addCarriedResource(unit, LOADING_TYPES.wood, gain)
             grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
             unit.updateInterfaceLoading?.()
+            if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
             dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
             showResourceGainFeedback(unit, gain)
             if (dest.selected) {

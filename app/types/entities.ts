@@ -10,9 +10,36 @@ import type { TextureRef } from '../lib'
 import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
 import type { ActionProps } from '../lib/combat'
 
+export type HeroEquipmentSlot =
+  | 'helmet'
+  | 'helmetDecor'
+  | 'cape'
+  | 'armor'
+  | 'legs'
+  | 'shoulders'
+  | 'bracers'
+  | 'offhand'
+  | 'arrow'
+
+export type HeroWeaponSlot = 'melee' | 'ranged' | 'lasso' | 'offhand' | 'quiver'
+
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
+export type VillagerShelterLocation = 'shelter' | 'outside'
+export type VillagerShelterStatus = 'movingToShelter' | 'inside' | 'outside'
+export type VillagerShelterReason = 'sleep' | 'danger'
+export type VillagerShelterState = {
+  status: VillagerShelterStatus
+  reason?: VillagerShelterReason
+  location: VillagerShelterLocation
+  shelter?: BuildingEntity | null
+  targetCell?: RuntimeCell | null
+  previousDest?: RuntimeEntity | RuntimeCell | null
+  previousWork?: string | null
+  previousAction?: string | null
+  previousAutonomousJob?: VillagerAutonomyJob | null
+}
 export type UnitCreationExtra = {
   name?: string
   gender?: 'male' | 'female'
@@ -80,6 +107,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   pause?: () => void
   resume?: () => void
   getChildByLabel?: (label: string) => Container | Sprite | AnimatedSprite | null
+  addChild?: Container['addChild']
   addChildAt: Container['addChildAt']
   removeChild: Container['removeChild']
   updateTexture?: () => void
@@ -185,6 +213,7 @@ export interface UnitEntity extends EnergyEntity {
   work?: string | null
   autonomousJob?: VillagerAutonomyJob | null
   assigningAutonomousJob?: boolean
+  shelterState?: VillagerShelterState | null
   loading?: number | null
   loadingType?: string | null
   resourceLoads?: Record<string, number>
@@ -246,6 +275,13 @@ export interface UnitEntity extends EnergyEntity {
   lastParrySuccessAt?: number
   parryStreak?: number
   contextAction?: HeroContextAction | null
+  inventory?: {
+    equipment?: string[]
+    equipped?: Partial<Record<HeroEquipmentSlot, string>>
+    equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>
+    activeWeapons?: Partial<Record<HeroWeaponSlot, string>>
+  }
+  lootEquipment?: string[]
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   actionSheet?: SpritesheetLike | null
@@ -260,6 +296,7 @@ export interface UnitEntity extends EnergyEntity {
 
   // Combat
   equipment?: string[]
+  weaponPower?: number
   meleeArmor?: number
   pierceArmor?: number
   range?: number

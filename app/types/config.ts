@@ -31,10 +31,12 @@ export type UnitAppearanceLayerConfig = {
   sheetDirectionOrders?: Record<string, string[]>
   palette?: string
   paletteSize?: number
+  equipmentKey?: string
   standingSheet?: string
   walkingSheet?: string
   mountedSheet?: string
   actionSheet?: string
+  shootingSheet?: string
   harvestSheet?: string
   loadedSheet?: string
   dyingSheet?: string

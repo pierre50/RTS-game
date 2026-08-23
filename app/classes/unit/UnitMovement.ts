@@ -129,11 +129,12 @@ function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity 
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
-  // Animal corpses stay solid (and thus keep blocking regular NPC pathing) until fully
-  // picked clean, so the hero must keep colliding with them too — same small soft-body
-  // circle as a live animal, just no longer gated on isDead.
+  // Corpses stay tangible until clear() destroys them. Animals usually remain in cell.has
+  // while units move to cell.corpses, so both families share the same soft-body blocker here.
   if (entity.family === FAMILY_TYPES.animal) return true
-  if (entity.family === FAMILY_TYPES.unit) return !entity.isDead
+  if (entity.family === FAMILY_TYPES.unit) {
+    return !entity.isDead || (entity as UnitEntity).currentSheet === SHEET_TYPES.corpse
+  }
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 
@@ -265,8 +266,12 @@ function getNearbyHeroCollisionEntities(
     const row = map.grid[i]
     if (!row) continue
     for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
-      const entity = row[j]?.has
+      const scanCell = row[j]
+      const entity = scanCell?.has
       if (entity && blocksHeroDirectMove(entity)) entities.add(entity)
+      for (const corpse of scanCell?.corpses ?? []) {
+        if (blocksHeroDirectMove(corpse)) entities.add(corpse)
+      }
     }
   }
 

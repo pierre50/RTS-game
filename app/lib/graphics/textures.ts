@@ -1,4 +1,4 @@
-import { Texture } from 'pixi.js'
+import type { Texture } from 'pixi.js'
 import type { HitAreaLike, SpritesheetLike } from '../../types/pixi'
 
 type TextureWithHitArea = Texture & { hitArea?: HitAreaLike; textureCacheIds?: string[] }
@@ -35,7 +35,10 @@ export function getTextureByFrame(
     throw new Error(`Spritesheet for ID "${sheetId}" not found in assets.`)
   }
 
-  const textureName = getSortedTextureNames(spritesheet.textures).find(name => getFrameIndex(name) === normalizedFrameIndex)
+  const sortedTextureNames = getSortedTextureNames(spritesheet.textures)
+  const textureName =
+    sortedTextureNames.find(name => getFrameIndex(name) === normalizedFrameIndex) ??
+    sortedTextureNames[normalizedFrameIndex]
   const texture = textureName ? spritesheet.textures[textureName] : undefined
 
   if (!texture || !textureName) {

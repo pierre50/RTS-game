@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
-import { isometricToCartesian, pointsDistance } from '../lib'
+import { getReliefOffset, isometricToCartesian, pointsDistance } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
@@ -205,7 +205,13 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   get heroActionHeld(): boolean {
-    return this.heroController.mouseHeld
+    return this.heroController.isHeroActionHeld()
+  }
+
+  getHeroCameraCenter(): { x: number; y: number } | null {
+    const hero = this.heroUnit
+    if (!hero) return null
+    return { x: hero.x, y: hero.y + getReliefOffset(hero) }
   }
 
   getViewportMetrics(): {
@@ -415,7 +421,8 @@ export default class Controls extends Container implements ControlsLike {
       if (this.freeCameraActive) {
         this.panCameraWithArrowKeys(frameScale)
       } else {
-        this.cameraController.set(this.heroUnit!.x, this.heroUnit!.y, false, false)
+        const cameraCenter = this.getHeroCameraCenter()
+        if (cameraCenter) this.cameraController.set(cameraCenter.x, cameraCenter.y, false, false)
       }
       if (this.mouseBuilding || this.rallyPointController.active) {
         this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
@@ -881,7 +888,8 @@ export default class Controls extends Container implements ControlsLike {
     this.keyPressedCount = 0
     this.keySpeed = 0
     if (!enabled && this.heroUnit) {
-      this.cameraController.set(this.heroUnit.x, this.heroUnit.y)
+      const cameraCenter = this.getHeroCameraCenter()
+      if (cameraCenter) this.cameraController.set(cameraCenter.x, cameraCenter.y)
     }
   }
 

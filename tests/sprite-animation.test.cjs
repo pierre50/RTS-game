@@ -107,13 +107,13 @@ test('unit death starts the dying animation through the shared helper', () => {
       playAudibleSoundCue: () => {},
       updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
     },
-    '../../lib/combatFeedback': { clearDamageFeedback: () => {} },
     '../../lib/deathFlash': {
       runAfterDeathFlash: (sprite, onComplete) => {
         sprite.onFrameChange = () => calls.push(['deathFlashFrame'])
         return onComplete
       },
     },
+    '../../lib/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
     '../../lib/entityFade': { fadeOutThenClear: () => {} },
     '../../lib/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
     '../../lib/spriteAnimation': {

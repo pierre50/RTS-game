@@ -41,6 +41,8 @@ import { LightSystem } from '../services/LightSystem'
 import { ShadowSystem } from '../services/ShadowSystem'
 import { DayNightSystem } from '../services/DayNightSystem'
 import { DailyWorldEventSystem } from '../services/DailyWorldEventSystem'
+import { BanditRaidSystem } from '../services/BanditRaidSystem'
+import { VillagerShelterSystem } from '../services/VillagerShelterSystem'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
@@ -192,6 +194,7 @@ export default class Game extends Container {
   _shadows?: ShadowSystem | null
   _dayNight?: DayNightSystem | null
   _dailyWorldEvents?: DailyWorldEventSystem | null
+  _villagerShelter?: VillagerShelterSystem | null
 
   constructor(
     app: Application,
@@ -221,6 +224,8 @@ export default class Game extends Container {
       controls: null,
       dayNight: null,
       weather: null,
+      banditRaids: null,
+      villagerShelter: null,
       devConsole: null,
       devConsoleOpen: false,
       paused: false,
@@ -457,6 +462,11 @@ export default class Game extends Container {
     this._dayNight = new DayNightSystem(this._gameContext(), { elapsedMs: dayNightElapsedMs })
     this.context.dayNight = this._dayNight
     this._dailyWorldEvents = new DailyWorldEventSystem(this._gameContext())
+    this._villagerShelter = new VillagerShelterSystem(this._gameContext())
+    this.context.villagerShelter = this._villagerShelter
+    const banditRaids = new BanditRaidSystem(this._gameContext())
+    this.context.banditRaids = banditRaids
+    this._dailyWorldEvents.register(banditRaids)
     this._shadows = new ShadowSystem(this._gameContext(), map)
     this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
     this.context.weather = this._weather
@@ -523,12 +533,16 @@ export default class Game extends Container {
     this._shadows = null
     this._dailyWorldEvents?.destroy()
     this._dailyWorldEvents = null
+    this._villagerShelter?.destroy()
+    this._villagerShelter = null
     this._dayNight?.destroy()
     this._dayNight = null
     this.context.dayNight = null
     this._weather?.destroy()
     this._weather = null
     this.context.weather = null
+    this.context.banditRaids = null
+    this.context.villagerShelter = null
     ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = null
     ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null
     ;(window as unknown as { __lightSystem?: LightSystem | null }).__lightSystem = null

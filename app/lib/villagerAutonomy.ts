@@ -229,6 +229,7 @@ export function resumeVillagerAutonomy(unit: UnitEntity): boolean {
   if (
     !unit.autonomousJob ||
     unit.type !== UNIT_TYPES.villager ||
+    unit.shelterState ||
     unit.lookingAtHero ||
     unit.followingHero ||
     unit.assigningAutonomousJob

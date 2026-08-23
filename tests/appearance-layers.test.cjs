@@ -120,6 +120,27 @@ test('tools hidden while carrying come back during action', () => {
   )
 })
 
+test('unit portraits never render carried-resource layers', () => {
+  const { shouldRenderUnitPortraitLayer } = loadModule('app/lib/avatar.ts', {
+    'pixi.js': {
+      Assets: { cache: { has: () => false, get: () => undefined } },
+      Rectangle: class Rectangle {},
+      Texture: class Texture {},
+    },
+    '../constants': constants,
+    './extra': { getAnimationFrames: () => [] },
+    './graphics/assets': { getBuildingAsset: () => ({}) },
+    './graphics/colors': { recolorCanvasPixels: () => {}, SOURCE_COLORS: [] },
+    './graphics/textures': { getTexture: () => null },
+    './lpc/baked': { getBakedUnitStandingSheetAlias: () => null },
+    './unitExperience': { getUnitEquipmentLevel: () => 0 },
+  })
+
+  assert.equal(shouldRenderUnitPortraitLayer({ showWhenLoading: true }), false)
+  assert.equal(shouldRenderUnitPortraitLayer({ hideWhenLoading: true }), true)
+  assert.equal(shouldRenderUnitPortraitLayer({}), true)
+})
+
 test('villager and hero work tools follow civilization metal age', () => {
   const { dynamicEquipmentForWork, dynamicEquipmentLayersForVillager } = loadModule('app/lib/lpc/equipment.ts', {
     '../../constants': constants,
@@ -146,6 +167,62 @@ test('villager and hero work tools follow civilization metal age', () => {
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_copper'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 2), ['sword_bronze'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 3), ['sword_iron'])
+})
+
+test('hero baked appearance includes inventory equipped layers', () => {
+  const cachedAliases = new Set(['lpc-baked/hero/greek/male/body/walking'])
+  const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './equipment': {
+      dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: equipment => equipment.map(item => ({ equipmentKey: item })),
+      dynamicEquipmentLayersForUnit: () => [],
+      dynamicEquipmentLayersForVillager: () => [
+        { workTypes: ['heroSword'], equipmentKey: 'sword_ceramic' },
+        { workTypes: ['hunter'], equipmentKey: 'bow' },
+        { workTypes: ['hunter'], equipmentKey: 'quiver' },
+      ],
+    },
+    '../chief': { isChiefUnit: unit => Boolean(unit.isChief) },
+    '../unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
+  })
+  const hero = {
+    type: 'Villager',
+    isChief: true,
+    controlMode: 'hero',
+    work: 'heroSword',
+    owner: { civ: 'Greek', label: 'P1', gender: 'male' },
+    inventory: {
+      equipped: {
+        helmet: 'helmet_barbuta_ceramic',
+        cape: 'cape_solid',
+        offhand: 'round_shield_ceramic_slash',
+        arrow: 'arrow_copper',
+      },
+      activeWeapons: {
+        melee: 'sword_bronze',
+        ranged: 'bow',
+      },
+    },
+    label: 'hero',
+    i: 1,
+    j: 1,
+  }
+
+  assert.equal(applyBakedLpcUnitAssets(hero), true)
+  assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'sword_ceramic'), false)
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'sword_bronze'))
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'))
+
+  hero.work = constants.WORK_TYPES.hunter
+  assert.equal(applyBakedLpcUnitAssets(hero), true)
+  assert.equal(hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'bow'), false)
+  assert.equal(hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'quiver'), false)
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'bow'))
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'arrow_copper'))
+  assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'), false)
 })
 
 test('infantry equipment layers unlock by level and switch metal by civilization age', () => {
@@ -421,6 +498,7 @@ test('unique bandit baked units do not include civilization in asset paths', () 
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './equipment': {
       dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: () => [],
       dynamicEquipmentLayersForUnit: type => [{ unitType: type }],
       dynamicEquipmentLayersForVillager: () => [],
     },
@@ -455,6 +533,7 @@ test('helmeted infantry swaps to no-hair baked base', () => {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './equipment': {
       dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: () => [],
       dynamicEquipmentLayersForUnit: () => [],
       dynamicEquipmentLayersForVillager: () => [],
     },
@@ -490,6 +569,7 @@ test('helmeted archer swaps to no-hair baked base', () => {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './equipment': {
       dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: () => [],
       dynamicEquipmentLayersForUnit: () => [],
       dynamicEquipmentLayersForVillager: () => [],
     },
@@ -514,4 +594,43 @@ test('helmeted archer swaps to no-hair baked base', () => {
   assert.equal(applyBakedLpcUnitAssets(helmetedUnit), true)
   assert.equal(helmetedUnit.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
   assert.equal(helmetedUnit.assets.actionSheet, 'lpc-baked/infantry_nohair/greek/male/action/shoot')
+})
+
+test('looted corpse swaps back to hair baked base when helmet is removed', () => {
+  const cachedAliases = new Set([
+    'lpc-baked/infantry/greek/male/walking',
+    'lpc-baked/infantry_nohair/greek/male/walking',
+  ])
+  const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './equipment': {
+      dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: equipment => equipment.map(item => ({ equipmentKey: item })),
+      dynamicEquipmentLayersForUnit: () => [],
+      dynamicEquipmentLayersForVillager: () => [],
+    },
+    '../chief': { isChiefUnit: () => false },
+    '../unitExperience': { getUnitEquipmentLevel: unit => unit.level ?? 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
+  })
+  const corpse = {
+    type: 'Fantassin',
+    owner: { civ: 'Greek', label: 'P1' },
+    label: 'unit',
+    i: 1,
+    j: 1,
+    isDead: true,
+    level: 6,
+    lootEquipment: ['sword_ceramic', 'helmet_pointed_ceramic'],
+  }
+
+  assert.equal(applyBakedLpcUnitAssets(corpse), true)
+  assert.equal(corpse.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
+  assert.ok(corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'))
+
+  corpse.lootEquipment = ['sword_ceramic']
+  assert.equal(applyBakedLpcUnitAssets(corpse), true)
+  assert.equal(corpse.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
+  assert.equal(corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'), false)
 })

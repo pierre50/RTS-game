@@ -10,7 +10,6 @@ import {
   getDeterministicCellVariant,
   getTexture,
   getTextureSheet,
-  getTextureByFrame,
   parseTextureRef,
   textureRefToString,
 } from '../lib'
@@ -37,11 +36,17 @@ import type { TextureRef } from '../lib'
 type ResourceAssetList = TextureRef[]
 type ResourceAssetsByTerrain = Record<string, ResourceAssetList>
 type ResourceAssets = string | TextureRef | ResourceAssetList | ResourceAssetsByTerrain
+type ResourceLifecycleAsset =
+  | string
+  | {
+      sheet: string
+      frames?: number[]
+    }
 type ResourceDefinition = ResourceConfig & {
   assets: ResourceAssets
   lifecycleAssets?: {
-    fallen?: string
-    cut?: string
+    fallen?: ResourceLifecycleAsset
+    cut?: ResourceLifecycleAsset
   }
   isAnimated?: boolean
   sounds?: UnitSounds
@@ -68,6 +73,26 @@ const WIND_ROTATION = 0.006
 const WIND_SPEED = 0.0018
 const BERRYBUSH_SHEET_ID = 'resources/berrybush'
 const EMPTY_BERRYBUSH_FRAME = 0
+const RESOURCE_TEXTURE_MIGRATIONS: Record<string, { sheet: string; frameOffset: number }> = {
+  'resources/tree/grass-1': { sheet: 'resources/tree/grass', frameOffset: 0 },
+  'resources/tree/grass-2': { sheet: 'resources/tree/grass', frameOffset: 1 },
+  'resources/tree/grass-3': { sheet: 'resources/tree/grass', frameOffset: 2 },
+  'resources/tree/grass-4': { sheet: 'resources/tree/grass', frameOffset: 3 },
+  'resources/tree/palm-1': { sheet: 'resources/tree/palm', frameOffset: 0 },
+  'resources/tree/palm-2': { sheet: 'resources/tree/palm', frameOffset: 1 },
+  'resources/tree/palm-3': { sheet: 'resources/tree/palm', frameOffset: 2 },
+  'resources/tree/palm-4': { sheet: 'resources/tree/palm', frameOffset: 3 },
+  'resources/tree/dark-forest-1': { sheet: 'resources/tree/dark-forest', frameOffset: 0 },
+  'resources/tree/dark-forest-2': { sheet: 'resources/tree/dark-forest', frameOffset: 1 },
+  'resources/tree/dark-forest-3': { sheet: 'resources/tree/dark-forest', frameOffset: 2 },
+  'resources/tree/dark-forest-4': { sheet: 'resources/tree/dark-forest', frameOffset: 3 },
+  'resources/tree/fallen': { sheet: 'resources/tree/dead', frameOffset: 0 },
+  'resources/tree/stump': { sheet: 'resources/tree/dead', frameOffset: 4 },
+  'resources/gold': { sheet: 'resources/minerals', frameOffset: 0 },
+  'resources/stone': { sheet: 'resources/minerals', frameOffset: 3 },
+  'resources/copper': { sheet: 'resources/minerals', frameOffset: 6 },
+  'resources/iron': { sheet: 'resources/minerals', frameOffset: 9 },
+}
 
 export type ResourceOptions = Partial<ResourceDefinition> & {
   currentFrame?: number
@@ -93,6 +118,32 @@ function getTerrainAssets(
   if ('sheet' in assets) return assets as TextureRef
   const terrainAssets = assets as ResourceAssetsByTerrain
   return terrainAssets[terrainType] || Object.values(terrainAssets).find(value => Array.isArray(value))
+}
+
+function normalizeResourceTextureRef(ref: TextureRef): TextureRef {
+  const parsed = parseTextureRef(ref)
+  const migration = RESOURCE_TEXTURE_MIGRATIONS[parsed.sheet]
+  if (!migration) return ref
+  return {
+    sheet: migration.sheet,
+    frame: migration.frameOffset + Math.max(0, parsed.frame),
+  }
+}
+
+function getLifecycleSheetId(asset: ResourceLifecycleAsset | undefined): string | undefined {
+  return typeof asset === 'string' ? asset : asset?.sheet
+}
+
+function pickLifecycleTextureRef(asset: ResourceLifecycleAsset | undefined): TextureRef | null {
+  if (!asset) return null
+  if (typeof asset === 'string') {
+    return normalizeResourceTextureRef({ sheet: asset, frame: randomRange(0, 3) })
+  }
+  const frames = asset.frames?.length ? asset.frames : [0]
+  return {
+    sheet: asset.sheet,
+    frame: frames[randomRange(0, frames.length - 1)],
+  }
 }
 
 function getShadowTexture(sheet: string, spriteTexture: Texture, spriteAnchor: { x: number; y: number }): Texture | null {
@@ -233,11 +284,12 @@ export class Resource extends Instance implements ResourceEntity {
       if (!textureRef) {
         throw new Error(`Missing texture for resource ${this.type} on ${cell.type}`)
       }
-      const texture = getTexture(textureRef, Assets)
+      const normalizedTextureRef = normalizeResourceTextureRef(textureRef)
+      const texture = getTexture(normalizedTextureRef, Assets)
       const textureFile =
-        (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(textureRef)}.png`
-      const spritesheet = Assets.cache.get(getTextureSheet(textureRef))
-      this.textureName = textureRefToString(textureRef)
+        (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(normalizedTextureRef)}.png`
+      const spritesheet = Assets.cache.get(getTextureSheet(normalizedTextureRef))
+      this.textureName = textureRefToString(normalizedTextureRef)
       this.sprite = Sprite.from(texture)
       if (this.type === RESOURCE_TYPES.berrybush && this.berrybushFullTextureName == null) {
         const berrybushTextureRef = parseTextureRef(this.textureName)
@@ -314,11 +366,10 @@ export class Resource extends Instance implements ResourceEntity {
 
   setCuttedTreeTexture() {
     const { sprite } = this
-    const sheetId = this.lifecycleAssets?.cut
-    if (!sheetId) return
-    const frameIndex = randomRange(0, 3)
-    const texture = getTextureByFrame(sheetId, frameIndex, Assets)
-    this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
+    const textureRef = pickLifecycleTextureRef(this.lifecycleAssets?.cut)
+    if (!textureRef) return
+    const texture = getTexture(textureRef, Assets)
+    this.textureName = textureRefToString(textureRef)
     sprite.texture = texture
     const points = [-CELL_WIDTH / 2, 0, 0, -CELL_HEIGHT / 2, CELL_WIDTH / 2, 0, 0, CELL_HEIGHT / 2]
     sprite.hitArea = new Polygon(points)
@@ -384,11 +435,10 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   onTreeDie() {
-    const sheetId = this.lifecycleAssets?.fallen
-    if (sheetId) {
-      const frameIndex = randomRange(0, 3)
-      const texture = getTextureByFrame(sheetId, frameIndex, Assets)
-      this.textureName = textureRefToString({ sheet: sheetId, frame: frameIndex })
+    const textureRef = pickLifecycleTextureRef(this.lifecycleAssets?.fallen)
+    if (textureRef) {
+      const texture = getTexture(textureRef, Assets)
+      this.textureName = textureRefToString(textureRef)
       this.sprite.texture = texture
       this.zIndex--
       this.syncShadow()
@@ -494,7 +544,7 @@ export class Resource extends Instance implements ResourceEntity {
   isCutOrFallenTree(): boolean {
     if (this.type !== RESOURCE_TYPES.tree || !this.textureName) return false
     const sheet = getTextureSheet(this.textureName)
-    return sheet === this.lifecycleAssets?.cut || sheet === this.lifecycleAssets?.fallen
+    return sheet === getLifecycleSheetId(this.lifecycleAssets?.cut) || sheet === getLifecycleSheetId(this.lifecycleAssets?.fallen)
   }
 
   startWindMotion(): void {

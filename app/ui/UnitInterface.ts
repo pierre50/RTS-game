@@ -1,11 +1,22 @@
 import { MENU_INFO_IDS, UNIT_TYPES } from '../constants'
 import { getIconPath } from '../lib'
-import { getUnitEffectiveCombatStats } from '../lib/equipmentStats'
+import { renderEquipmentAvatar } from '../lib/avatar'
+import {
+  formatEquipmentStackLabel,
+  getEquipmentStacks,
+  getUnitCorpseLootEquipment,
+  pickupCorpseEquipment,
+} from '../lib/equipmentLoot'
+import {
+  getHeroInventoryWeaponCombatStats,
+  getUnitCombatRange,
+  getUnitRuntimeCombatStats,
+  hasHeroInventoryEquipment,
+} from '../lib/equipmentStats'
 import type { EquipmentCombatStats } from '../lib/equipmentStats'
 import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import {
   formatXpProgressText,
-  getUnitEquipmentLevel,
   getUnitExperienceEntries,
   getUnitOverallLevel,
   getXpInfoId,
@@ -52,6 +63,92 @@ function renderLoadingEntries(element: HTMLElement, unit: UnitEntity, menu: Menu
     item.appendChild(createInfoText(MENU_INFO_IDS.loadingText, amount))
     element.appendChild(item)
   }
+}
+
+function createCorpseEquipmentLootButton(
+  unit: UnitEntity,
+  equipment: string,
+  count: number,
+  menu: MenuLike
+): HTMLButtonElement {
+  const button = document.createElement('button')
+  const label = formatEquipmentStackLabel(equipment, count)
+  button.type = 'button'
+  button.className = 'corpse-loot-button ui-btn'
+  button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
+
+  const icon = document.createElement('canvas')
+  icon.className = 'unit-avatar-frame corpse-loot-icon'
+  icon.width = 56
+  icon.height = 56
+  if (unit.context?.app) renderEquipmentAvatar(unit.context.app, equipment, icon)
+
+  const text = document.createElement('span')
+  text.className = 'corpse-loot-label'
+  text.textContent = label
+
+  button.appendChild(icon)
+  button.appendChild(text)
+  button.addEventListener('click', evt => {
+    evt.preventDefault()
+    evt.stopPropagation()
+    const hero = unit.context?.controls?.heroUnit
+    if (!pickupCorpseEquipment(unit, hero, equipment)) return
+    menu.playUiClick?.()
+    menu.showMessage(t('corpseLootPickedItem', { item: label }), 'success')
+    menu.syncEntityInfoModal?.()
+    menu.refreshInventory?.()
+  })
+
+  return button
+}
+
+function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[], menu: MenuLike): HTMLButtonElement {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'corpse-loot-take-all ui-btn'
+  button.textContent = t('corpseLootTakeAll')
+  button.addEventListener('click', evt => {
+    evt.preventDefault()
+    evt.stopPropagation()
+    const hero = unit.context?.controls?.heroUnit
+    if (!hero) return
+
+    let pickedCount = 0
+    for (const item of [...equipment]) {
+      if (pickupCorpseEquipment(unit, hero, item)) pickedCount += 1
+    }
+    if (!pickedCount) return
+
+    menu.playUiClick?.()
+    menu.showMessage(t('corpseLootPickedAll', { count: pickedCount }), 'success')
+    menu.syncEntityInfoModal?.()
+    menu.refreshInventory?.()
+  })
+  return button
+}
+
+function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
+  const equipment = getUnitCorpseLootEquipment(unit)
+  if (!equipment.length) return
+  const stacks = getEquipmentStacks(equipment)
+
+  const loot = document.createElement('div')
+  loot.className = 'corpse-loot'
+
+  const title = document.createElement('div')
+  title.className = 'corpse-loot-title'
+  title.textContent = t('corpseLootEquipment')
+  loot.appendChild(title)
+  loot.appendChild(createCorpseTakeAllButton(unit, equipment, menu))
+
+  const grid = document.createElement('div')
+  grid.className = 'corpse-loot-grid'
+  for (const stack of stacks) {
+    grid.appendChild(createCorpseEquipmentLootButton(unit, stack.equipment, stack.count, menu))
+  }
+  loot.appendChild(grid)
+  element.appendChild(loot)
 }
 
 export class UnitInterface {
@@ -101,30 +198,49 @@ export class UnitInterface {
     const infosDiv = document.createElement('div')
     infosDiv.classList.add('infos')
 
-    const infos: [keyof EquipmentCombatStats, string, string][] = [
-      ['weaponPower', '007_50731', 'combatAttackStat'],
-      ['meleeArmor', '008_50731', 'combatMeleeArmorStat'],
-      ['pierceArmor', '010_50731', 'combatPierceArmorStat'],
-    ]
-    const combatStats = getUnitEffectiveCombatStats(
-      unit.type,
-      data,
-      unit.work,
-      unit.owner?.age,
-      getUnitEquipmentLevel(unit, data.category),
-      unit.owner?.civ
-    )
+    const infos: { key: keyof EquipmentCombatStats | string; icon: string; title: string; value: number }[] = []
+    const combatStats = getUnitRuntimeCombatStats(unit, data)
+    if (hasHeroInventoryEquipment(unit)) {
+      const weaponStats = getHeroInventoryWeaponCombatStats(unit)
+      if (weaponStats.meleeWeaponPower) {
+        infos.push({
+          key: 'meleeWeaponPower',
+          icon: '007_50731',
+          title: 'combatMeleeAttackStat',
+          value: weaponStats.meleeWeaponPower,
+        })
+      }
+      if (weaponStats.rangedWeaponPower) {
+        infos.push({
+          key: 'rangedWeaponPower',
+          icon: '006_50731',
+          title: 'combatRangedAttackStat',
+          value: weaponStats.rangedWeaponPower,
+        })
+      }
+    } else if (combatStats.weaponPower) {
+      infos.push({
+        key: 'weaponPower',
+        icon: getUnitCombatRange(unit) != null ? '006_50731' : '007_50731',
+        title: 'combatAttackStat',
+        value: combatStats.weaponPower,
+      })
+    }
+    if (combatStats.meleeArmor) {
+      infos.push({ key: 'meleeArmor', icon: '008_50731', title: 'combatMeleeArmorStat', value: combatStats.meleeArmor })
+    }
+    if (combatStats.pierceArmor) {
+      infos.push({ key: 'pierceArmor', icon: '010_50731', title: 'combatPierceArmorStat', value: combatStats.pierceArmor })
+    }
 
     for (let i = 0; i < infos.length; i++) {
       const info = infos[i]
-      const value = combatStats[info[0]]
-      if (!value) continue
       const infoDiv = document.createElement('div')
       infoDiv.classList.add('info')
-      infoDiv.title = t(info[2])
+      infoDiv.title = t(info.title)
 
-      infoDiv.appendChild(createInfoImage('', getIconPath(info[1])))
-      infoDiv.appendChild(createInfoText(String(info[0]), value))
+      infoDiv.appendChild(createInfoImage('', getIconPath(info.icon)))
+      infoDiv.appendChild(createInfoText(String(info.key), info.value))
       infosDiv.appendChild(infoDiv)
     }
 
@@ -154,5 +270,7 @@ export class UnitInterface {
       }
       element.appendChild(xpDiv)
     }
+
+    if (unit.isDead) appendCorpseEquipmentLoot(element, unit, (unit.context as { menu: MenuLike }).menu)
   }
 }

@@ -132,6 +132,7 @@ function loadHeroTools(overrides = {}) {
         for (const item of equipment) {
           if (item === 'sword_ceramic') stats.weaponPower += 4
           if (item === 'sword_copper') stats.weaponPower += 6
+          if (item === 'axe_ceramic') stats.weaponPower += 5
           if (item === 'bow') stats.weaponPower += 4
         }
         return stats
@@ -139,10 +140,25 @@ function loadHeroTools(overrides = {}) {
       getUnitWorkEquipment: work =>
         ({
           heroSword: ['sword_ceramic'],
+          woodcutter: ['axe_ceramic'],
           hunter: ['bow'],
         })[work] ?? [],
       getUnitCombatRange: unit => unit.range ?? 4,
       refreshUnitEquipmentStats: () => {},
+    },
+    './equipmentLoot': {
+      consumeHeroEquippedItem: (hero, slot) => {
+        if (!hero.inventory?.equipped?.[slot]) return false
+        const currentCount = Math.max(1, Math.floor(hero.inventory.equippedCounts?.[slot] ?? 1))
+        const nextCount = currentCount - 1
+        if (nextCount > 0) {
+          hero.inventory.equippedCounts[slot] = nextCount
+        } else {
+          delete hero.inventory.equipped[slot]
+          delete hero.inventory.equippedCounts[slot]
+        }
+        return true
+      },
     },
     './grid/cells': { getBuildingContactDistance: () => 1 },
     './grid/visibility': { findInstancesInSight: () => [] },
@@ -169,7 +185,8 @@ function loadHeroTools(overrides = {}) {
     },
     './lang': { t: key => (key === 'heroDefenseMissed' ? 'Loupé !' : key) },
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
-    './slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+    './lpc/baked': { applyBakedLpcUnitAssets: () => true },
+    './slashRecoveryAnimation': { logHeroSlashFrame: () => {}, playReverseSlashRecovery: () => false },
     './resourceCarry': {
       buildingAcceptsCarriedResources: (hero, target) => {
         const entries = hero.resourceLoads
@@ -343,6 +360,16 @@ function makeHero() {
     degree: 0,
     height: 0,
     hitPoints: 10,
+    inventory: {
+      activeWeapons: {
+        melee: 'sword_ceramic',
+        ranged: 'bow',
+        lasso: 'lasso',
+      },
+      equipped: { arrow: 'arrow_ceramic' },
+      equippedCounts: { arrow: 1 },
+      equipment: [],
+    },
     isDead: false,
     isDestroyed: false,
     label: 'hero',
@@ -376,9 +403,9 @@ function playImpactFrame(hero, frame = 5) {
   hero.sprite.onFrameChange?.(frame)
 }
 
-function releaseChargedSword(tools, hero, now = performance.now()) {
+function releaseChargedSword(tools, hero, now = performance.now(), impactFrame = 5) {
   assert.equal(tools.releaseHeroPowerCharge(hero, now), true)
-  playImpactFrame(hero)
+  playImpactFrame(hero, impactFrame)
 }
 
 test('directional targeting prefers a much closer nearby resource over a perfectly aligned far one', () => {
@@ -400,6 +427,32 @@ test('directional targeting prefers a much closer nearby resource over a perfect
   assert.equal(target, nearWheat)
 })
 
+test('directional targeting includes unit corpses stored on cells', () => {
+  const corpse = { family: 'unit', i: 1, isDead: true, isDestroyed: false, j: 0, label: 'fallen-1', x: 32, y: 0 }
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      corpses: new Set(),
+    }))
+  )
+  grid[1][0].corpses.add(corpse)
+  const { findFacingEntity } = loadHeroTools({
+    './grid/visibility': {
+      findInstancesInSight: () => [],
+    },
+    './heroActionRange': {
+      getHeroInteractionTargetPoint: (_hero, target) => target,
+      isHeroActionInRange: () => false,
+      isHeroInteractionTargetReachable: () => true,
+    },
+  })
+
+  const target = findFacingEntity({ context: { map: { grid } }, i: 0, j: 0, x: 0, y: 0, degree: 180 }, () => true)
+
+  assert.equal(target, corpse)
+})
+
 test('hero aim degree gives horizontal screen aim more room on isometric terrain', () => {
   const { getHeroAimDegree } = loadHeroTools()
   const hero = { x: 0, y: 0 }
@@ -407,6 +460,24 @@ test('hero aim degree gives horizontal screen aim more room on isometric terrain
   assert.equal(getHeroAimDegree(hero, { x: 10, y: 0 }), 180)
   assert.equal(getHeroAimDegree(hero, { x: 0, y: 10 }), 270)
   assert.equal(getHeroAimDegree(hero, { x: 10, y: 10 }), 207)
+})
+
+test('weapon tools require assigned inventory items instead of bag-only debug items', () => {
+  const { getEquippedItemWeapon, isHeroToolAvailable, triggerToolAttackAt } = loadHeroTools()
+  const { hero } = makeHero()
+  hero.inventory = {
+    equipment: ['sword_ceramic'],
+    equipped: {},
+    activeWeapons: {},
+  }
+
+  assert.equal(getEquippedItemWeapon('sword', 0, hero), undefined)
+  assert.equal(isHeroToolAvailable(hero, 'sword'), false)
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), false)
+
+  hero.inventory.activeWeapons.melee = 'sword_ceramic'
+  assert.equal(getEquippedItemWeapon('sword', 0, hero), 'sword_ceramic')
+  assert.equal(isHeroToolAvailable(hero, 'sword'), true)
 })
 
 test('bow charge plays the action animation once while power keeps charging', () => {
@@ -478,6 +549,7 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
   const soundCalls = []
   const tools = loadHeroTools({
     './slashRecoveryAnimation': {
+      logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (hero, options) => {
         reverseCalls.push([hero, options.releaseFrame])
         options.onComplete()
@@ -512,6 +584,7 @@ test('free-hand whiff rewinds the slash recovery through the shared helper', () 
   const soundCalls = []
   const { triggerEquippedItemActionAt } = loadHeroTools({
     './slashRecoveryAnimation': {
+      logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (hero, options) => {
         reverseCalls.push([hero, options.releaseFrame])
         options.onComplete()
@@ -790,6 +863,70 @@ test('mounted bow release spawns the arrow from the rider height', () => {
 
     assert.equal(projectiles.length, 1)
     assert.deepEqual(projectiles[0].spawnPoint, { x: 70, y: 57 })
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('bow release without equipped arrows plays the shot but does not spawn a projectile', () => {
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero, projectiles } = makeHero()
+  const messages = []
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+  hero.inventory.equipped = {}
+  hero.context.menu = { showMessage: (message, level) => messages.push([message, level]) }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
+    now += 700
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
+
+    assert.equal(projectiles.length, 0)
+    assert.deepEqual(messages, [['heroNoArrowsEquipped', 'warning']])
+    assert.equal(hero.currentSheet, 'actionSheet')
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('bow release consumes equipped arrows until the slot is empty', () => {
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero, projectiles } = makeHero()
+  let inventoryRefreshes = 0
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+  hero.inventory.equippedCounts.arrow = 2
+  hero.context.menu = { refreshInventory: () => inventoryRefreshes++ }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
+    now += 700
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
+
+    assert.equal(projectiles.length, 1)
+    assert.equal(hero.inventory.equipped.arrow, 'arrow_ceramic')
+    assert.equal(hero.inventory.equippedCounts.arrow, 1)
+    assert.equal(inventoryRefreshes, 1)
+
+    hero.actionLocked = false
+    hero.sprite = makeSprite()
+    assert.equal(triggerToolAttackAt(hero, 'bow', { x: 170, y: 100 }), true)
+    now += 700
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
+    hero.sprite.currentFrame = 8
+    hero.sprite.onFrameChange?.(8)
+
+    assert.equal(projectiles.length, 2)
+    assert.equal(hero.inventory.equipped.arrow, undefined)
+    assert.equal(hero.inventory.equippedCounts.arrow, undefined)
+    assert.equal(inventoryRefreshes, 2)
   } finally {
     global.performance = originalPerformance
   }
@@ -1252,6 +1389,66 @@ test('sword whiffs use the generic melee whiff sound', () => {
   assert.deepEqual(soundCues, ['meleeWhiff'])
 })
 
+test('axe whiffs use the generic melee whiff sound', () => {
+  const soundCues = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    work: 'woodcutter',
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.deepEqual(soundCues, [])
+  playImpactFrame(hero)
+
+  assert.deepEqual(soundCues, ['meleeWhiff'])
+})
+
+test('axe attacks against units use sword attack cues on the slash impact frame', () => {
+  const enemy = {
+    family: 'unit',
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy',
+    totalHitPoints: 10,
+    x: 10,
+    y: 0,
+  }
+  const soundCues = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
+      getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 3),
+    },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
+    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    i: 0,
+    isUnitAtDest: () => true,
+    j: 0,
+    sounds: { hit: 'hero-hit' },
+    work: 'woodcutter',
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.deepEqual(soundCues, [])
+  playImpactFrame(hero)
+
+  assert.deepEqual(soundCues, [['sword-attack', 'sword-attack-2']])
+})
+
 test('free-hand interact damages an aimed enemy unit on the slash impact frame', () => {
   const enemy = {
     family: 'unit',
@@ -1414,7 +1611,67 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
   assert.deepEqual(damageFeedback, [['enemy-animal', 4]])
 })
 
-test('fully charged sword releases on the backslash damage tier', () => {
+test('half charged sword releases on the slash impact frame with scaled damage', () => {
+  const animal = {
+    family: 'animal',
+    hitPoints: 20,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'enemy-animal',
+    owner: { label: 'gaia' },
+    totalHitPoints: 20,
+    x: 10,
+    y: 0,
+  }
+  const damageFeedback = []
+  const tools = loadHeroTools({
+    './combat': {
+      getActionCondition: (source, target, action) =>
+        action === 'attack' &&
+        target === animal &&
+        (source.equipment?.length ?? 0) > 0 &&
+        source.owner?.isEnemy?.(target.owner) &&
+        target.hitPoints > 0 &&
+        !target.isDead,
+      getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
+  })
+  const { triggerToolAttackAt } = tools
+  const { hero } = makeHero()
+  let now = 3000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    Object.assign(hero, {
+      energy: 10,
+      equipment: [],
+      i: 0,
+      j: 0,
+      owner: { isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'gaia' },
+      isUnitAtDest: () => true,
+      setDest: target => {
+        hero.dest = target
+      },
+    })
+
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+    now += 350
+    releaseChargedSword(tools, hero, now)
+
+    assert.equal(animal.hitPoints, 15)
+    assert.deepEqual(damageFeedback, [['enemy-animal', 5]])
+    assert.equal(hero.powerBarRemoved, true)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('fully charged sword releases on the slash impact frame with full scaled damage', () => {
   const animal = {
     family: 'animal',
     hitPoints: 20,
@@ -1469,6 +1726,79 @@ test('fully charged sword releases on the backslash damage tier', () => {
     assert.equal(animal.hitPoints, 14)
     assert.deepEqual(damageFeedback, [['enemy-animal', 6]])
     assert.equal(hero.powerBarRemoved, true)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('fully charged sword release keeps the slash sheets and flashes the sword layer', () => {
+  let restoreFlash = null
+  const { triggerToolAttackAt, releaseHeroPowerCharge } = loadHeroTools({
+    'pixi.js': {
+      Assets: {
+        cache: {
+          get: id => ({ id, textures: [], data: {} }),
+          has: () => true,
+        },
+      },
+      Graphics: class {},
+    },
+  })
+  const { hero } = makeHero()
+  let now = 3000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    Object.assign(hero, {
+      appearance: {
+        layers: [
+          {
+            equipmentKey: 'sword_ceramic',
+            actionSheet: 'lpc-equipment/sword_ceramic/front/action',
+          },
+        ],
+      },
+      appearanceLayerSprites: new Map([[0, { tint: 0x123456, alpha: 0.5, blendMode: 'normal', visible: true }]]),
+      assets: { actionSheet: 'lpc-baked/hero/greek/male/action/slash' },
+      actionSheet: { id: 'hero-slash' },
+      context: {
+        scheduler: {
+          addOneShot(callback) {
+            restoreFlash = callback
+          },
+        },
+      },
+      energy: 10,
+      setTextures(sheet) {
+        this.currentSheet = sheet
+        this.actionSheetUsedForAttack = this.actionSheet?.id
+        this.swordLayerUsedForAttack = this.appearance.layers[0].actionSheet
+        this.sprite.play()
+      },
+    })
+
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
+    now += 700
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
+
+    const swordLayerSprite = hero.appearanceLayerSprites.get(0)
+    assert.equal(hero.actionSheetUsedForAttack, 'hero-slash')
+    assert.equal(hero.swordLayerUsedForAttack, 'lpc-equipment/sword_ceramic/front/action')
+    assert.equal(swordLayerSprite.tint, 0xfff06a)
+    assert.equal(swordLayerSprite.alpha, 1)
+    assert.equal(swordLayerSprite.blendMode, 'add')
+
+    restoreFlash()
+    assert.equal(swordLayerSprite.tint, 0x123456)
+    assert.equal(swordLayerSprite.alpha, 0.5)
+    assert.equal(swordLayerSprite.blendMode, 'normal')
+
+    hero.sprite.onComplete()
+
+    assert.equal(hero.actionSheet.id, 'hero-slash')
+    assert.equal(hero.assets.actionSheet, 'lpc-baked/hero/greek/male/action/slash')
+    assert.equal(hero.appearance.layers[0].actionSheet, 'lpc-equipment/sword_ceramic/front/action')
   } finally {
     global.performance = originalPerformance
   }

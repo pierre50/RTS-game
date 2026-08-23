@@ -1369,6 +1369,59 @@ test('melee unit attacks damage targets with weapon damage', () => {
   assert.deepEqual(applyCalls, [{ target: enemyUnit, defaultDamage: undefined }])
 })
 
+test('axe melee units use sword attack cues when hitting units', () => {
+  let impactCallback = null
+  const soundCues = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': {
+      ...constants,
+      SOUND_CUES: { unit: { swordAttack: ['sword-attack', 'sword-attack-2'] } },
+    },
+    '../../lib': {
+      applyCombatHit: (_source, target) => {
+        target.hitPoints -= 4
+        return { damageDealt: 4, killed: false }
+      },
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => true,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => {
+        impactCallback = callback
+      },
+      playAudibleSoundCue: (_unit, cue) => soundCues.push(cue),
+      BOW_SHOOT_RELEASE_FRAME: 8,
+      SLASH_IMPACT_FRAME: 5,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+  })
+  const enemyUnit = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 40,
+    isDead: false,
+    owner: { label: 'enemy' },
+    type: 'Fantassin',
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    dest: enemyUnit,
+    equipment: ['axe_ceramic'],
+    getActionCondition: instance => instance === enemyUnit && enemyUnit.hitPoints > 0,
+    isUnitAtDest: () => true,
+    setTextures: () => {},
+    sprite: { loop: false, onComplete: null, onFrameChange: null, onLoop: null },
+  }
+
+  new UnitCombat(unit).handleAttackAction()
+  impactCallback()
+
+  assert.deepEqual(soundCues, [['sword-attack', 'sword-attack-2']])
+})
+
 test('melee slash recovery rewinds Pixi frames before completing', () => {
   const calls = []
   const scheduled = new Map()
@@ -1408,11 +1461,11 @@ test('melee slash recovery rewinds Pixi frames before completing', () => {
 
   assert.equal(handled, true)
   assert.equal(unit.attackRecoveryAnimationTaskId, 7)
-  for (let i = 0; i < 3; i++) scheduled.get(7)()
+  for (let i = 0; i < 2; i++) scheduled.get(7)()
 
   assert.deepEqual(
     calls.filter(call => call[0] === 'gotoAndStop').map(([, frame]) => frame),
-    [3, 2, 1, 0]
+    [3, 2, 1]
   )
   assert.deepEqual(
     calls.filter(call => call[0] === 'add'),

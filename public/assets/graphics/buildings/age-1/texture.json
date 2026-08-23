@@ -1,0 +1,255 @@
+{
+  "frames": {
+    "000_graphics_buildings_age-1_archery-range.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 178,
+        "h": 133
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 178,
+        "h": 133
+      },
+      "sourceSize": {
+        "w": 178,
+        "h": 133
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "001_graphics_buildings_age-1_barracks.png": {
+      "frame": {
+        "x": 196,
+        "y": 0,
+        "w": 184,
+        "h": 135
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 184,
+        "h": 135
+      },
+      "sourceSize": {
+        "w": 184,
+        "h": 135
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "002_graphics_buildings_age-1_granary.png": {
+      "frame": {
+        "x": 398,
+        "y": 0,
+        "w": 146,
+        "h": 115
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 146,
+        "h": 115
+      },
+      "sourceSize": {
+        "w": 146,
+        "h": 115
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "003_graphics_buildings_age-1_house.png": {
+      "frame": {
+        "x": 562,
+        "y": 0,
+        "w": 135,
+        "h": 107
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 135,
+        "h": 107
+      },
+      "sourceSize": {
+        "w": 135,
+        "h": 107
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.6
+      }
+    },
+    "004_graphics_buildings_age-1_market.png": {
+      "frame": {
+        "x": 715,
+        "y": 0,
+        "w": 186,
+        "h": 115
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 186,
+        "h": 115
+      },
+      "sourceSize": {
+        "w": 186,
+        "h": 115
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      }
+    },
+    "005_graphics_buildings_age-1_stable.png": {
+      "frame": {
+        "x": 919,
+        "y": 0,
+        "w": 164,
+        "h": 133
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 164,
+        "h": 133
+      },
+      "sourceSize": {
+        "w": 164,
+        "h": 133
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "006_graphics_buildings_age-1_storage-pit.png": {
+      "frame": {
+        "x": 1101,
+        "y": 0,
+        "w": 134,
+        "h": 113
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 134,
+        "h": 113
+      },
+      "sourceSize": {
+        "w": 134,
+        "h": 113
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.65
+      }
+    },
+    "007_graphics_buildings_age-1_temple.png": {
+      "frame": {
+        "x": 1253,
+        "y": 0,
+        "w": 136,
+        "h": 149
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 136,
+        "h": 149
+      },
+      "sourceSize": {
+        "w": 136,
+        "h": 149
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "008_graphics_buildings_age-1_town-center.png": {
+      "frame": {
+        "x": 1407,
+        "y": 0,
+        "w": 168,
+        "h": 136
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 168,
+        "h": 136
+      },
+      "sourceSize": {
+        "w": 168,
+        "h": 136
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    },
+    "009_graphics_buildings_age-1_watch-tower.png": {
+      "frame": {
+        "x": 1593,
+        "y": 0,
+        "w": 103,
+        "h": 141
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 141
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 141
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7
+      }
+    }
+  },
+  "meta": {
+    "app": "merge_building_age_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1696,
+      "h": 149
+    },
+    "scale": 1
+  }
+}

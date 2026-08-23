@@ -23,6 +23,7 @@ import {
   UNARMED_UNIT_WEAPON_POWER,
 } from './equipmentStats'
 import { applyUnitWorkAssets } from './unitWorkAppearance'
+import { consumeHeroEquippedItem } from './equipmentLoot'
 import { findInstancesInSight } from './grid/visibility'
 import { getClosestInstanceWithPath } from './grid/queries'
 import { BOW_SHOOT_RELEASE_FRAME, LASSO_SHOOT_RELEASE_FRAME, onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } from './graphics'
@@ -30,8 +31,9 @@ import { t } from './lang'
 import { angleDelta, degreeToDirection, getReliefOffset, instancesDistance } from './maths'
 import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
-import { playReverseSlashRecovery } from './slashRecoveryAnimation'
+import { logHeroSlashFrame, playReverseSlashRecovery } from './slashRecoveryAnimation'
 import { buildingAcceptsCarriedResources, getCarriedResourceSpace, getTotalCarriedResources } from './resourceCarry'
+import { applyBakedLpcUnitAssets } from './lpc/baked'
 import {
   drainEnergyAmount,
   ensureUnitEnergy,
@@ -42,7 +44,7 @@ import {
 import { Projectile } from '../classes/Projectile'
 import { HeroLassoThrow } from '../classes/HeroLassoThrow'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, CommandSound, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
 import type { DynamicEquipmentKey } from './lpc/equipment'
@@ -52,9 +54,12 @@ export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
 export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
 export type HeroEquippedItem = 'interact' | 'sword' | 'bow' | 'lasso'
 type HeroPowerChargeTool = 'bow' | 'lasso' | 'sword'
-type HeroSwordChargeTier = 'slash' | 'halfslash' | 'backslash'
 export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
 export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
+
+function isEquipmentKey(value: string | null | undefined): value is string {
+  return typeof value === 'string' && value.length > 0
+}
 
 const TOOL_ACTION_RANGE = 3
 const HERO_POWER_CHARGE_ENERGY_ACTION = 'heroPowerCharge'
@@ -63,17 +68,9 @@ const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
 const HERO_PARRY_SOUND_CUES = SOUND_CUES.unit.swordAttack
 const HERO_POWER_CHARGE_MS = 700
 const HERO_BOW_MIN_POWER = 0.2
+const HERO_SWORD_FULL_CHARGE_DAMAGE_BONUS = 0.5
 const HERO_SWORD_CHARGE_HOLD_FRAME = 0
-const HERO_SWORD_CHARGE_DAMAGE_MULTIPLIER: Record<HeroSwordChargeTier, number> = {
-  slash: 1,
-  halfslash: 1.25,
-  backslash: 1.5,
-}
-const HERO_SWORD_CHARGE_IMPACT_FRAME: Record<HeroSwordChargeTier, number> = {
-  slash: SLASH_IMPACT_FRAME,
-  halfslash: SLASH_IMPACT_FRAME,
-  backslash: SLASH_IMPACT_FRAME,
-}
+const HERO_SWORD_POWER_FLASH_MS = 180
 const HERO_DEFENSE_HOLD_FRAME = 2
 const HERO_DEFENSE_REVERSE_FRAME_MS = 45
 const HERO_DEFENSE_RELEASE_FALLBACK_MS = 260
@@ -132,18 +129,9 @@ function getHeroPowerChargeHoldFrame(tool: HeroPowerChargeTool | null | undefine
   return tool === 'sword' ? HERO_SWORD_CHARGE_HOLD_FRAME : getHeroShootHoldFrame(tool)
 }
 
-function getHeroSwordChargeTier(power: number): HeroSwordChargeTier {
-  if (power >= 2 / 3) return 'backslash'
-  if (power >= 1 / 3) return 'halfslash'
-  return 'slash'
-}
-
-function getHeroSwordChargeImpactFrame(tier: HeroSwordChargeTier): number {
-  return HERO_SWORD_CHARGE_IMPACT_FRAME[tier]
-}
-
-function getHeroSwordChargeDamageMultiplier(tier: HeroSwordChargeTier): number {
-  return HERO_SWORD_CHARGE_DAMAGE_MULTIPLIER[tier]
+function getHeroSwordChargeDamageMultiplier(power: number): number {
+  const clampedPower = Math.max(0, Math.min(1, power))
+  return 1 + clampedPower * HERO_SWORD_FULL_CHARGE_DAMAGE_BONUS
 }
 
 function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['sprite']): void {
@@ -174,13 +162,38 @@ export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquip
   bow: 'bow',
 }
 
-export function getEquippedItemWeapon(tool: HeroEquippedItem, age = 0): DynamicEquipmentKey | undefined {
-  if (tool === 'sword') return age >= 1 ? 'sword_copper' : 'sword_ceramic'
-  if (tool === 'bow') {
-    const bowEquipment = getUnitWorkEquipment(WORK_TYPES.hunter, age)
-    return bowEquipment.find(key => key.includes('bow')) as DynamicEquipmentKey | undefined
-  }
+export function getEquippedItemWeapon(
+  tool: HeroEquippedItem,
+  age = 0,
+  hero?: UnitEntity | null
+): string | undefined {
+  void age
+  if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
+  if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
+  if (tool === 'lasso') return hero?.inventory?.activeWeapons?.lasso
   return EQUIPPED_ITEM_WEAPON[tool]
+}
+
+export function isHeroToolAvailable(hero: UnitEntity | null | undefined, tool: HeroEquippedItem | null | undefined): boolean {
+  if (!tool || tool === 'interact') return true
+  return Boolean(getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
+}
+
+function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {
+  const fallback = getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age)
+  const activeWeapons = hero.inventory?.activeWeapons ?? {}
+  if (tool === 'sword') {
+    return [
+      activeWeapons.melee,
+      hero.inventory?.equipped?.offhand,
+      activeWeapons.offhand,
+    ].filter(isEquipmentKey)
+  }
+  if (tool === 'bow') {
+    return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(isEquipmentKey)
+  }
+  if (tool === 'lasso') return [activeWeapons.lasso].filter(isEquipmentKey)
+  return fallback
 }
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
@@ -192,7 +205,7 @@ type FlashableLayer = {
   tint?: number | string
   visible?: boolean
 }
-type HeroDefenseFlashState = {
+type HeroLayerFlashState = {
   alpha?: number
   blendMode?: unknown
   tint?: number | string
@@ -201,7 +214,51 @@ type HeroDefenseFlashState = {
 type ParryEffectHost = UnitEntity & {
   addChild?: (child: Graphics) => Graphics
 }
-const heroDefenseFlashStates = new WeakMap<FlashableLayer, HeroDefenseFlashState>()
+const heroLayerFlashStates = new WeakMap<FlashableLayer, HeroLayerFlashState>()
+
+function flashHeroLayers(
+  hero: UnitEntity,
+  targets: FlashableLayer[],
+  {
+    alpha,
+    blendMode,
+    durationMs,
+    taskLabel,
+    tint,
+  }: { alpha: number; blendMode: unknown; durationMs: number; taskLabel: string; tint: number }
+): void {
+  if (!targets.length) return
+  const states = targets.map(target => {
+    const previous = heroLayerFlashStates.get(target)
+    const state = {
+      target,
+      alpha: previous?.alpha ?? target.alpha,
+      blendMode: previous?.blendMode ?? target.blendMode,
+      tint: previous?.tint ?? target.tint,
+      token: (previous?.token ?? 0) + 1,
+    }
+    heroLayerFlashStates.set(target, state)
+    return state
+  })
+  for (const target of targets) {
+    target.tint = tint
+    target.alpha = alpha
+    target.blendMode = blendMode
+  }
+  hero.context?.scheduler?.addOneShot(
+    () => {
+      for (const state of states) {
+        if (heroLayerFlashStates.get(state.target)?.token !== state.token) continue
+        state.target.tint = state.tint
+        state.target.alpha = state.alpha
+        state.target.blendMode = state.blendMode
+        heroLayerFlashStates.delete(state.target)
+      }
+    },
+    durationMs,
+    taskLabel
+  )
+}
 
 function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
@@ -494,10 +551,13 @@ function runContextAction(
 export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
   const work = EQUIPPED_ITEM_WORK[tool]
   if (hero.work === work) {
+    applyBakedLpcUnitAssets(hero)
     refreshUnitEquipmentStats(hero)
+    hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
     return
   }
   hero.work = work
+  applyBakedLpcUnitAssets(hero)
   applyUnitWorkAssets(hero, work, { loading: getTotalCarriedResources(hero) > 0, refreshEquipmentStats: true })
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
@@ -506,11 +566,41 @@ export const applyToolAppearance = applyEquippedItemAppearance
 
 type HeroToolAnimationOptions = {
   recoveryAnimation?: 'reverseSlash'
+  swordChargePower?: number
 }
 
 type HeroMeleeAttackOptions = {
   damageMultiplier?: number
   impactFrame?: number
+  swordChargePower?: number
+}
+
+type SwordPowerFlashHost = UnitEntity & {
+  appearance?: { layers?: Array<{ equipmentKey?: string }> }
+  appearanceLayerSprites?: Map<number, FlashableLayer>
+}
+
+function getHeroSwordPowerFlashLayers(hero: UnitEntity): FlashableLayer[] {
+  const host = hero as SwordPowerFlashHost
+  const sprites = host.appearanceLayerSprites
+  if (!sprites) return []
+  return (host.appearance?.layers ?? [])
+    .map((layer, index) => (layer.equipmentKey?.startsWith('sword_') ? sprites.get(index) : null))
+    .filter((layer): layer is FlashableLayer => Boolean(layer && layer.visible !== false))
+}
+
+function showHeroSwordPowerFlash(hero: UnitEntity, power: number | undefined): void {
+  const clampedPower = Math.max(0, Math.min(1, power ?? 0))
+  if (clampedPower <= 0) return
+  const targets = getHeroSwordPowerFlashLayers(hero)
+  const tint = clampedPower >= 0.66 ? 0xfff06a : 0xffc857
+  flashHeroLayers(hero, targets, {
+    alpha: Math.min(1, 0.72 + clampedPower * 0.28),
+    blendMode: 'add',
+    durationMs: HERO_SWORD_POWER_FLASH_MS,
+    taskLabel: 'hero.swordPowerFlash',
+    tint,
+  })
 }
 
 function playHeroToolAnimation(
@@ -524,12 +614,16 @@ function playHeroToolAnimation(
 
   hero.actionLocked = true
   sprite.loop = false
+  const finishAnimation = () => finishHeroToolAnimation(hero)
   hero.setTextures?.(SHEET_TYPES.action)
   hero.syncMountedHorseSprite?.()
+  showHeroSwordPowerFlash(hero, options.swordChargePower)
+  logHeroSlashFrame(hero, 'tool:start', { impactFrame, recoveryAnimation: options.recoveryAnimation ?? null })
   sprite.gotoAndPlay(0)
+  logHeroSlashFrame(hero, 'tool:gotoAndPlay:0')
   hero.syncShadow?.()
 
-  sprite.onComplete = () => finishHeroToolAnimation(hero)
+  sprite.onComplete = finishAnimation
 
   if (!onImpact) return
   if (impactFrame == null) {
@@ -537,11 +631,13 @@ function playHeroToolAnimation(
     return
   }
   onSpriteLoopAtFrame(sprite, impactFrame, () => {
+    logHeroSlashFrame(hero, 'tool:impact', { impactFrame })
     onImpact()
     if (options.recoveryAnimation !== 'reverseSlash') return
     const handled = playReverseSlashRecovery(hero, {
-      onComplete: () => finishHeroToolAnimation(hero),
+      onComplete: finishAnimation,
       releaseFrame: impactFrame,
+      stopFrame: impactFrame - 1,
     })
     if (!handled) return
     sprite.onComplete = undefined
@@ -551,6 +647,7 @@ function playHeroToolAnimation(
 
 function finishHeroToolAnimation(hero: UnitEntity): void {
   const sprite = hero.sprite
+  logHeroSlashFrame(hero, 'tool:finish:start')
   if (hero.attackRecoveryAnimationTaskId != null) {
     hero.context?.scheduler?.remove?.(hero.attackRecoveryAnimationTaskId)
     hero.attackRecoveryAnimationTaskId = null
@@ -564,6 +661,7 @@ function finishHeroToolAnimation(hero: UnitEntity): void {
   hero.contextAction = null
   const hadPendingOrder = hero.flushPendingOrder?.()
   if (!hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
+  logHeroSlashFrame(hero, 'tool:finish:end', { hadPendingOrder: Boolean(hadPendingOrder) })
   hero.syncShadow?.()
 }
 
@@ -616,6 +714,31 @@ export function findFacingEntity(
   range = CLICK_TARGET_SEARCH_RANGE
 ): RuntimeEntity | null {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, matches, range)
+  const seen = new Set<RuntimeEntity>(candidates)
+  const grid = hero.context?.map?.grid
+  if (grid) {
+    const centerI = hero.i ?? 0
+    const centerJ = hero.j ?? 0
+    const scanRadius = Math.ceil(range)
+    const rangeSq = range * range
+    for (let i = centerI - scanRadius; i <= centerI + scanRadius; i++) {
+      const row = grid[i]
+      if (!row) continue
+      for (let j = centerJ - scanRadius; j <= centerJ + scanRadius; j++) {
+        const cell = row[j]
+        if (!cell) continue
+        const di = i - centerI
+        const dj = j - centerJ
+        if (di * di + dj * dj > rangeSq) continue
+        for (const corpse of cell.corpses ?? []) {
+          if (!seen.has(corpse) && matches(corpse)) {
+            candidates.push(corpse)
+            seen.add(corpse)
+          }
+        }
+      }
+    }
+  }
   return getDirectionalTarget(hero, candidates)
 }
 
@@ -687,14 +810,14 @@ function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
 }
 
 function getHeroWeaponDamage(hero: UnitEntity, tool: HeroEquippedItem): number {
-  const stats = getEquipmentCombatStats(getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age))
+  const stats = getEquipmentCombatStats(getHeroToolEquipment(hero, tool))
   return stats.weaponPower || (tool === 'interact' ? UNARMED_UNIT_WEAPON_POWER : 0)
 }
 
 function getHeroWeaponCombatSource(hero: UnitEntity, tool: HeroEquippedItem): CombatEntity {
   return {
     ...hero,
-    equipment: getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age),
+    equipment: getHeroToolEquipment(hero, tool),
   }
 }
 
@@ -787,6 +910,19 @@ function fireBlindArrow(hero: UnitEntity): void {
   })
 }
 
+function hasHeroEquippedArrow(hero: UnitEntity): boolean {
+  return Boolean(hero.inventory?.equipped?.arrow)
+}
+
+function warnHeroNoArrowEquipped(hero: UnitEntity): void {
+  if (hero.owner?.isPlayed) hero.context?.menu?.showMessage(t('heroNoArrowsEquipped'), 'warning')
+}
+
+function consumeHeroArrow(hero: UnitEntity): void {
+  consumeHeroEquippedItem(hero, 'arrow')
+  hero.context?.menu?.refreshInventory?.()
+}
+
 function getHeroArrowVisualY(hero: UnitEntity): number {
   const mountedRiderY = hero.getMountedRiderY?.()
   return typeof mountedRiderY === 'number' && Number.isFinite(mountedRiderY) ? mountedRiderY : getReliefOffset(hero)
@@ -808,6 +944,10 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
   playHeroToolAnimation(
     hero,
     () => {
+      if (!hasHeroEquippedArrow(hero)) {
+        warnHeroNoArrowEquipped(hero)
+        return
+      }
       const projectile = new Projectile(
         {
           owner: hero,
@@ -821,6 +961,7 @@ function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntit
         hero.context!
       )
       map.addChild(projectile)
+      consumeHeroArrow(hero)
     },
     BOW_SHOOT_RELEASE_FRAME
   )
@@ -1011,36 +1152,13 @@ export function showHeroDefenseFlash(hero: UnitEntity): void {
   playAudibleSoundCue(hero, HERO_PARRY_SOUND_CUES)
   showHeroDefenseParryEffect(hero)
   showParryFeedback(hero, t('heroDefenseMissed'))
-  const states = targets.map(target => {
-    const previous = heroDefenseFlashStates.get(target)
-    const state = {
-      target,
-      alpha: previous?.alpha ?? target.alpha,
-      blendMode: previous?.blendMode ?? target.blendMode,
-      tint: previous?.tint ?? target.tint,
-      token: (previous?.token ?? 0) + 1,
-    }
-    heroDefenseFlashStates.set(target, state)
-    return state
+  flashHeroLayers(hero, targets, {
+    alpha: 1,
+    blendMode: 'add',
+    durationMs: HERO_DEFENSE_FLASH_MS,
+    taskLabel: 'hero.defenseFlash',
+    tint: 0xfff06a,
   })
-  for (const target of targets) {
-    target.tint = 0xfff06a
-    target.alpha = 1
-    target.blendMode = 'add'
-  }
-  hero.context?.scheduler?.addOneShot(
-    () => {
-      for (const state of states) {
-        if (heroDefenseFlashStates.get(state.target)?.token !== state.token) continue
-        state.target.tint = state.tint
-        state.target.alpha = state.alpha
-        state.target.blendMode = state.blendMode
-        heroDefenseFlashStates.delete(state.target)
-      }
-    },
-    HERO_DEFENSE_FLASH_MS,
-    'hero.defenseFlash'
-  )
 }
 
 export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
@@ -1199,7 +1317,6 @@ export function cancelHeroLasso(hero: UnitEntity): void {
 }
 
 function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power: number): boolean {
-  const tier = getHeroSwordChargeTier(power)
   const sprite = hero.sprite
   clearHeroPowerCharge(hero)
   if (sprite) {
@@ -1209,8 +1326,9 @@ function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power
   }
   hero.actionLocked = false
   const triggered = triggerSwordAttackAt(hero, destination, {
-    damageMultiplier: getHeroSwordChargeDamageMultiplier(tier),
-    impactFrame: getHeroSwordChargeImpactFrame(tier),
+    damageMultiplier: getHeroSwordChargeDamageMultiplier(power),
+    impactFrame: SLASH_IMPACT_FRAME,
+    swordChargePower: power,
   })
   if (!triggered) finishHeroToolAnimation(hero)
   return triggered
@@ -1231,19 +1349,24 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
   if (tool === 'lasso') {
     throwLassoAt(hero, destination, power)
   } else if (map) {
-    const projectile = new Projectile(
-      {
-        owner: hero,
-        type: 'Arrow',
-        target,
-        destination,
-        spawnPoint: getHeroArrowSpawnPoint(hero),
-        weaponPower: getHeroWeaponDamage(hero, 'bow'),
-        maxDistance: getHeroMaxArrowDistance(hero, power),
-      },
-      hero.context!
-    )
-    map.addChild(projectile)
+    if (!hasHeroEquippedArrow(hero)) {
+      warnHeroNoArrowEquipped(hero)
+    } else {
+      const projectile = new Projectile(
+        {
+          owner: hero,
+          type: 'Arrow',
+          target,
+          destination,
+          spawnPoint: getHeroArrowSpawnPoint(hero),
+          weaponPower: getHeroWeaponDamage(hero, 'bow'),
+          maxDistance: getHeroMaxArrowDistance(hero, power),
+        },
+        hero.context!
+      )
+      map.addChild(projectile)
+      consumeHeroArrow(hero)
+    }
   }
   if (!sprite) {
     finishHeroToolAnimation(hero)
@@ -1336,6 +1459,7 @@ function playMeleeWeaponWhiff(hero: UnitEntity, options: HeroMeleeAttackOptions 
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
   playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), options.impactFrame ?? SLASH_IMPACT_FRAME, {
     recoveryAnimation: 'reverseSlash',
+    swordChargePower: options.swordChargePower,
   })
   return true
 }
@@ -1344,6 +1468,18 @@ function getHeroMeleeDefaultDamage(hero: UnitEntity, tool: HeroEquippedItem, opt
   const damage = getHeroWeaponDamage(hero, tool)
   if (options.damageMultiplier == null) return damage
   return Math.max(0, Math.round(damage * options.damageMultiplier))
+}
+
+function hasAxeEquipment(equipment: readonly string[]): boolean {
+  return equipment.some(item => item === 'axe' || item.startsWith('axe_'))
+}
+
+function getHeroMeleeImpactSound(hero: UnitEntity, target: RuntimeEntity, tool: HeroEquippedItem): CommandSound {
+  if (tool === 'sword') return SOUND_CUES.unit.swordAttack
+  if (target.family === FAMILY_TYPES.unit && hasAxeEquipment(getUnitWorkEquipment(hero.work, hero.owner?.age))) {
+    return SOUND_CUES.unit.swordAttack
+  }
+  return hero.sounds?.hit
 }
 
 function strikeHeroMeleeTarget(
@@ -1380,11 +1516,11 @@ function strikeHeroMeleeTarget(
         xpUnit: hero,
       })
       if (damageDealt > 0) {
-        playAudibleSoundCue(hero, tool === 'sword' ? SOUND_CUES.unit.swordAttack : hero.sounds?.hit)
+        playAudibleSoundCue(hero, getHeroMeleeImpactSound(hero, resolvedTarget, tool))
       }
     },
     options.impactFrame ?? SLASH_IMPACT_FRAME,
-    { recoveryAnimation: 'reverseSlash' }
+    { recoveryAnimation: 'reverseSlash', swordChargePower: options.swordChargePower }
   )
   return 'triggered'
 }
@@ -1410,6 +1546,7 @@ export function triggerEquippedItemActionAt(
   destination: Point
 ): boolean {
   if (!tool || hero.actionLocked) return false
+  if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)
   const deliveryResult = tryDeliverAt(hero)
   if (deliveryResult === 'delivered') return true
@@ -1451,6 +1588,7 @@ function performNearestContextAction(hero: UnitEntity): ToolActionResult {
 }
 
 export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
+  if (!isHeroToolAvailable(hero, tool)) return false
   if (tool === 'sword') {
     return triggerSwordAttackAt(hero)
   }

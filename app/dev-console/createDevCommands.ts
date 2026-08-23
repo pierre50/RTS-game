@@ -4,6 +4,7 @@ import { POPULATION_MAX, RESOURCE_NAMES as PLAYER_RESOURCE_NAMES } from '../cons
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
 import {
   addResources,
+  addHeroInventoryEquipment,
   aiInfo,
   applyAllTechnologies,
   applyTechnology,
@@ -40,6 +41,7 @@ import {
   WEATHER_PHASES,
 } from './DevCommandActions'
 import { toggleHeroCollisionDebug } from './actions/debug'
+import { getAllHeroInventoryItems } from './actions/heroInventory'
 import type { DevEntity, DevPlayer } from './types'
 
 const RESOURCE_NAMES = ['all', ...PLAYER_RESOURCE_NAMES]
@@ -68,9 +70,9 @@ export function createDevCommands(): DevCommandRegistry {
   registry.register({
     name: 'list',
     aliases: ['ls'],
-    usage: 'list <units|buildings|techs|resources>',
+    usage: 'list <units|buildings|techs|resources|inventories>',
     describe: 'List available items for a category',
-    complete: () => ['units', 'buildings', 'techs', 'resources'],
+    complete: () => ['units', 'buildings', 'techs', 'resources', 'inventories'],
     run: ([category], { player }) => {
       switch (category?.toLowerCase()) {
         case 'units':
@@ -81,8 +83,11 @@ export function createDevCommands(): DevCommandRegistry {
           return { ok: true, message: Object.keys(player.techs).join('  ') }
         case 'resources':
           return { ok: true, message: RESOURCE_NAMES.join('  ') }
+        case 'inventories':
+        case 'inventory':
+          return { ok: true, message: getAllHeroInventoryItems().join('  ') }
         default:
-          return { ok: false, message: 'Usage: list <units|buildings|techs|resources>' }
+          return { ok: false, message: 'Usage: list <units|buildings|techs|resources|inventories>' }
       }
     },
   })
@@ -96,6 +101,19 @@ export function createDevCommands(): DevCommandRegistry {
     run: ([type, count, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: spawn <unit> [count] [playerIndex]' }
       return spawnUnits(context, type, count, playerIndex)
+    },
+  })
+
+  registry.register({
+    name: 'bandit-raid',
+    aliases: ['raid', 'bandits'],
+    usage: 'bandit-raid',
+    describe: 'Trigger a bandit tribute raid near the portal',
+    run: (_args, context) => {
+      const started = context.banditRaids?.triggerRaid({ source: 'dev-console' }) ?? false
+      return started
+        ? { ok: true, message: 'Bandit raid triggered' }
+        : { ok: false, message: 'Unable to trigger bandit raid' }
     },
   })
 
@@ -135,6 +153,15 @@ export function createDevCommands(): DevCommandRegistry {
       context.menu.updateTopbar()
       return { ok: !message.startsWith('Unknown'), message }
     },
+  })
+
+  registry.register({
+    name: 'hero-inventory',
+    aliases: ['hinv', 'hero-items'],
+    usage: 'hero-inventory [item|all] [quantity]',
+    describe: 'Add assignable/equippable hero items to the hero bag',
+    complete: () => ['all', ...getAllHeroInventoryItems()],
+    run: ([item = 'all', quantity], context) => addHeroInventoryEquipment(context, item, quantity),
   })
 
   registry.register({

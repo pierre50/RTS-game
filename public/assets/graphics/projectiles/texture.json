@@ -1,0 +1,111 @@
+{
+  "frames": {
+    "000_graphics_projectiles_arrow_ceramic.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 31,
+        "h": 5
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 39,
+        "w": 31,
+        "h": 5
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "000_graphics_projectiles_arrow_copper.png": {
+      "frame": {
+        "x": 32,
+        "y": 0,
+        "w": 31,
+        "h": 5
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 39,
+        "w": 31,
+        "h": 5
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "000_graphics_projectiles_arrow_bronze.png": {
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 31,
+        "h": 5
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 39,
+        "w": 31,
+        "h": 5
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    },
+    "000_graphics_projectiles_arrow_iron.png": {
+      "frame": {
+        "x": 96,
+        "y": 0,
+        "w": 31,
+        "h": 5
+      },
+      "rotated": false,
+      "trimmed": true,
+      "spriteSourceSize": {
+        "x": 25,
+        "y": 39,
+        "w": 31,
+        "h": 5
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  },
+  "meta": {
+    "app": "build_arrow_projectiles.py",
+    "version": "2.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 127,
+      "h": 5
+    },
+    "scale": 1
+  }
+}

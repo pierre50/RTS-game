@@ -3,6 +3,7 @@ import type { ConfigValue } from '../../types/config'
 import type { TextureRef } from './textures'
 
 export type BuildingAsset = {
+  animated?: boolean
   images?: {
     final?: TextureRef
     [key: string]: TextureRef | undefined
@@ -18,6 +19,28 @@ type AssetCacheLike = {
   cache: {
     get: (id: string) => CivAssets
   }
+}
+
+function staticTribalBuildingAsset(frame: number): BuildingAsset {
+  return { animated: false, images: { final: { sheet: 'buildings/tribal', frame } } }
+}
+
+const TRIBAL_BUILDING_ASSETS: Record<string, BuildingAsset> = {
+  BanditCamp: staticTribalBuildingAsset(0),
+  BanditCampTotemPlain: staticTribalBuildingAsset(1),
+  BanditCampTotemHorns: staticTribalBuildingAsset(2),
+  BanditCampTotemSkull: staticTribalBuildingAsset(3),
+  BanditCampFencePost: staticTribalBuildingAsset(4),
+  BanditCampBoneSmall: staticTribalBuildingAsset(5),
+  BanditCampRockPile: staticTribalBuildingAsset(6),
+  BanditCampSkull: staticTribalBuildingAsset(7),
+  BanditCampAnimalBones: staticTribalBuildingAsset(8),
+  BanditCampMeatRack: staticTribalBuildingAsset(9),
+  BanditCampDryingRack: staticTribalBuildingAsset(10),
+  BanditCampBucket: staticTribalBuildingAsset(11),
+  BanditCampCrate: staticTribalBuildingAsset(12),
+  BanditCampJarSmall: staticTribalBuildingAsset(13),
+  BanditCampJarLarge: staticTribalBuildingAsset(14),
 }
 
 export type AssetOwner = {
@@ -77,6 +100,9 @@ export function getBuildingRubbleTextureNameWithSize(size: number): TextureRef |
 }
 
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
+  const tribalAsset = TRIBAL_BUILDING_ASSETS[type]
+  if (tribalAsset) return tribalAsset
+
   const path = assets.cache.get((owner.civ || '').toLowerCase())?.buildings ?? assets.cache.get('greek').buildings
   const assetAt = (age: number) => path[age]?.[type]
   const fallbackAges = [owner.age, owner.age - 1, owner.age - 2, 0, owner.age + 1, owner.age + 2, owner.age + 3]

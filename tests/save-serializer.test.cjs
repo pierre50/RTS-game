@@ -197,6 +197,13 @@ test('serializes unit work orders, carried resources, equipment state and build 
       assetCiv: 'franks',
       assetAge: 2,
       experience: { woodcutting: 15 },
+      inventory: {
+        equipment: ['round_shield_ceramic_slash'],
+        equipped: { helmet: 'helmet_barbarian_ceramic' },
+        equippedCounts: { arrow: 12 },
+        activeWeapons: { melee: 'sword_ceramic' },
+      },
+      lootEquipment: ['helmet_barbarian_ceramic'],
       dest: { i: 12, j: 13, label: 'tree-1' },
       previousDest: { i: 9, j: 9, label: 'tc-1' },
       realDest: { i: 12, j: 13, x: 350, y: 175, label: 'tree-1' },
@@ -224,6 +231,13 @@ test('serializes unit work orders, carried resources, equipment state and build 
   assert.equal(save.players[0].units[0].mountedOnHorse, true)
   assert.equal(save.players[0].units[0].companionHorseColor, 'dark')
   assert.deepEqual(save.players[0].units[0].experience, { woodcutting: 15 })
+  assert.deepEqual(save.players[0].units[0].inventory, {
+    equipment: ['round_shield_ceramic_slash'],
+    equipped: { helmet: 'helmet_barbarian_ceramic' },
+    equippedCounts: { arrow: 12 },
+    activeWeapons: { melee: 'sword_ceramic' },
+  })
+  assert.deepEqual(save.players[0].units[0].lootEquipment, ['helmet_barbarian_ceramic'])
 })
 
 test('serializes building production, research, rally points and active user links', () => {

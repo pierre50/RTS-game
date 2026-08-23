@@ -282,6 +282,7 @@ const constants = {
     type: 'type',
   },
   SHEET_TYPES: {
+    corpse: 'corpseSheet',
     standing: 'standingSheet',
     walking: 'walking',
   },
@@ -1967,6 +1968,94 @@ test('hero direct movement collides softly with units and animals', () => {
   }
 })
 
+test('hero direct movement collides softly with unit corpses until they clear', () => {
+  const corpse = {
+    currentSheet: 'corpseSheet',
+    family: constants.FAMILY_TYPES.unit,
+    isDead: true,
+    isDestroyed: false,
+    label: 'fallen-1',
+    size: 1,
+    type: 'Fantassin',
+    x: 10,
+    y: 0,
+  }
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      has: null,
+      corpses: new Set(),
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  grid[1][0].corpses.add(corpse)
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: (x, y) => [
+      Math.max(0, Math.min(2, Math.floor(x / 8))),
+      Math.max(0, Math.min(2, Math.floor(Math.abs(y) / 8))),
+    ],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Fantassin',
+    context: {
+      map: {
+        grid,
+        size: 2,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+
+  const blocked = new UnitMovement(unit).attemptMoveDirect(9, 0, 1)
+
+  assert.equal(blocked, false)
+  assert.equal(unit.x, 0)
+})
+
 test('a blocked gather target sends the villager near it before retrying', () => {
   const target = { label: 'berries-1', i: 3, j: 3, isDestroyed: false }
   const approachCell = { i: 1, j: 3, solid: false, border: false, category: 'Grass' }
@@ -3193,6 +3282,99 @@ test('hero keeps existing carried resources when gathering another resource type
   assert.equal(unit.loadingType, 'wheat')
   assert.equal(wheat.quantity, 19)
   assert.deepEqual(calls, [['setTextures', 'action'], ['updateInterfaceLoading'], ['feedback', 'hero', 1]])
+})
+
+test('hero mining stores stone in carried resource loads and refreshes the hero HUD', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      ACTION_TYPES: {
+        ...constants.ACTION_TYPES,
+        minestone: 'minestone',
+      },
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { stone: 'stone' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      MINING_RESOURCE_CONFIG: {
+        Stone: {
+          action: 'minestone',
+          loadingType: 'stone',
+          work: constants.WORK_TYPES.stoneminer,
+          sound: 'mineStone',
+          gatherEvery: 1,
+          dieOnEmpty: true,
+        },
+      },
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, stone: 'Stone' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { mineOre: 'mine-ore' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: cue => calls.push(['sound', cue]),
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      SLASH_IMPACT_FRAME: 5,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const rock = {
+    family: constants.FAMILY_TYPES.resource,
+    label: 'stone-1',
+    quantity: 20,
+    selected: true,
+    type: 'Stone',
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.minestone,
+    context: {
+      controls: { instanceIsAudible: () => true },
+      menu: {
+        updateHeroStatus: hero => calls.push(['updateHeroStatus', hero.loading, hero.loadingType]),
+        updateInfo: (id, value) => calls.push(['updateInfo', id, value]),
+      },
+    },
+    controlMode: 'hero',
+    dest: rock,
+    label: 'hero',
+    loading: 0,
+    loadingType: null,
+    owner: { isPlayed: true },
+    resourceLoads: {},
+    sprite: {},
+    work: constants.WORK_TYPES.stoneminer,
+    getActionCondition: target => target === rock && rock.quantity > 0,
+    getWorkSound: () => 'mine-stone',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.minestone)
+
+  assert.deepEqual(unit.resourceLoads, { stone: 1 })
+  assert.equal(unit.loading, 1)
+  assert.equal(unit.loadingType, 'stone')
+  assert.equal(rock.quantity, 19)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['updateInterfaceLoading'],
+    ['updateHeroStatus', 1, 'stone'],
+    ['sound', 'mine-ore'],
+    ['feedback', 'hero', 1],
+    ['updateInfo', 'quantityText', 19],
+  ])
 })
 
 test('depleted berrybushes stay on the map as empty bushes', () => {

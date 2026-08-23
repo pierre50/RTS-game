@@ -428,6 +428,8 @@ export class Unit extends Instance implements UnitEntity {
   lastCombatRecoveryMoveAt?: UnitEntity['lastCombatRecoveryMoveAt']
   contextActionEnergyCosts?: UnitEntity['contextActionEnergyCosts']
   toolLevels?: UnitEntity['toolLevels']
+  inventory?: UnitEntity['inventory']
+  lootEquipment?: UnitEntity['lootEquipment']
   appearance?: UnitEntity['appearance']
   appearanceVariants?: UnitEntity['appearanceVariants']
 
@@ -991,6 +993,12 @@ export class Unit extends Instance implements UnitEntity {
         sheet === SHEET_TYPES.action &&
         typeof layer.hideOnOrAfterFrame === 'number' &&
         this.sprite.currentFrame >= layer.hideOnOrAfterFrame
+      const equipmentKey = layer.equipmentKey
+      const isLootedCorpseEquipment =
+        this.isDead &&
+        Array.isArray(this.lootEquipment) &&
+        equipmentKey != null &&
+        !this.lootEquipment.includes(equipmentKey)
       const loadedSheetOverride =
         !this.mountedOnHorse && this.loading && sheet === SHEET_TYPES.walking
           ? (layer.loadedSheet as string | undefined)
@@ -1001,12 +1009,18 @@ export class Unit extends Instance implements UnitEntity {
       const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
       const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
       const ageSheetOverride = getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
+      const isRangedActionSheet =
+        sheet === SHEET_TYPES.action && (this.type === UNIT_TYPES.bowman || this.work === WORK_TYPES.hunter)
+      const shootingSheetOverride = isRangedActionSheet
+        ? getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet
+        : undefined
       const mountedSheetOverride =
         this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
           ? layer.mountedSheet
           : undefined
       const baseSheetId =
         loadedSheetOverride ??
+        shootingSheetOverride ??
         actionWorkSheetOverride ??
         workSheetOverride ??
         mountedSheetOverride ??
@@ -1034,6 +1048,7 @@ export class Unit extends Instance implements UnitEntity {
         isLayerHiddenByLoading ||
         isLayerHiddenByAction ||
         isLayerHiddenByFrame ||
+        isLootedCorpseEquipment ||
         !sheetId ||
         !spritesheet?.textures
       ) {
@@ -1388,15 +1403,19 @@ export class Unit extends Instance implements UnitEntity {
     if (shouldSuppressAggroDuringCombatRecovery(this)) {
       return
     }
+    if (this.handleIsAttacked?.(instance, this)) return
     if (!this.getActionCondition(instance, ACTION_TYPES.attack)) {
       return
     }
     if (this.dest === instance) {
       return
     }
-    if (this.handleIsAttacked?.(instance, this)) return
     const currentDest = this.dest
     showAggressionFeedback(this)
+    if (this.context.villagerShelter?.handleVillagerDangerShelter(this, instance)) {
+      this.previousDest = currentDest
+      return
+    }
     if (this.type === UNIT_TYPES.villager) {
       if (instance.family === FAMILY_TYPES.animal) {
         this.sendToHunt(instance)

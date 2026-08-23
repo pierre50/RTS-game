@@ -247,29 +247,164 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "SiegeWorkshop": {
-    "size": 3,
-    "sight": 10,
-    "totalHitPoints": 350,
-    "constructionTime": 60,
-    "cost": {
-      "wood": 200
-    },
-    "conditions": [
-      {
-        "key": "age",
-        "op": ">=",
-        "value": 2
-      },
-      {
-        "key": "hasBuilt",
-        "op": "includes",
-        "value": "ArcheryRange"
-      }
-    ],
+  "BanditCamp": {
+    "size": 2,
+    "sight": 9,
+    "totalHitPoints": 180,
+    "constructionTime": 0,
+    "cost": {},
     "sounds": {
-      "create": "siege-workshop-selected",
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampDecoration": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampTotemPlain": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampTotemHorns": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampTotemSkull": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampFencePost": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampBoneSmall": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampRockPile": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampSkull": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampAnimalBones": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampMeatRack": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampDryingRack": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampBucket": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampCrate": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampJarSmall": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
+      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+    }
+  },
+  "BanditCampJarLarge": {
+    "size": 1,
+    "sight": 3,
+    "totalHitPoints": 35,
+    "constructionTime": 0,
+    "cost": {},
+    "sounds": {
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   }

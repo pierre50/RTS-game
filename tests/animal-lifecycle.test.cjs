@@ -33,15 +33,15 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
     playAudibleSoundCue: () => {},
     updateInstanceVisibility: () => {},
   },
-  '../../lib/combatFeedback': {
-    clearDamageFeedback: () => {},
-  },
   '../../lib/deathFlash': {
     startDeathFlash: () => () => {},
     runAfterDeathFlash: (sprite, onComplete) => {
       sprite.onFrameChange = () => {}
       return onComplete
     },
+  },
+  '../../lib/entityVisualFeedback': {
+    clearEntityVisualFeedback: () => {},
   },
   '../../lib/entityFade': {
     fadeOutThenClear: () => {},

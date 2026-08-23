@@ -134,21 +134,6 @@
       "power": 3
     }
   },
-  "stone_thrower_stone": {
-    "weapon": {
-      "power": 50
-    }
-  },
-  "catapult_stone": {
-    "weapon": {
-      "power": 50
-    }
-  },
-  "ballista_bolt": {
-    "weapon": {
-      "power": 40
-    }
-  },
   "sword_ceramic": {
     "weapon": {
       "power": 6

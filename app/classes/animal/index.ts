@@ -8,6 +8,7 @@ import {
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
+  setSpriteFiltersPreservingDamageFeedback,
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { AnimalInterface } from '../../ui/AnimalInterface'
@@ -349,6 +350,7 @@ export class Animal extends Instance implements AnimalEntity {
 
   override setTextures(sheet: string): void {
     super.setTextures(sheet)
+    setSpriteFiltersPreservingDamageFeedback(this.sprite, null)
     if (this.type === 'Horse' && this.horseColor) {
       this.sprite.textures = recolorHorseTextures(this.sprite.textures as Texture[], this.horseColor)
     }

@@ -39,4 +39,6 @@ export {
 
 export { spawnAnimal, spawnBuilding, spawnUnits } from './actions/spawn'
 
+export { addAllHeroInventoryEquipment, addHeroInventoryEquipment } from './actions/heroInventory'
+
 export { forceNextDay, setWeatherPhase, showTimeState, WEATHER_PHASES } from './actions/world'

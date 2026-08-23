@@ -234,6 +234,7 @@ function createController({
     HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
     isHeroPowerChargeActiveForTool: (hero, tool) =>
       hero.heroPowerChargeStart != null && hero.heroPowerChargeTool === tool && !hero.heroPowerReleaseQueued,
+    isHeroToolAvailable: () => true,
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
     releaseHeroPowerCharge: () => false,
@@ -758,10 +759,12 @@ test('E owns villager communication and opens orders on key release', () => {
 
   assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, true)
+  assert.equal(controller.isHeroActionHeld(), true)
 
   controller.handleKeyUp('heroInteract')
 
   assert.equal(controller.commCharging, false)
+  assert.equal(controller.isHeroActionHeld(), false)
   assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
 })
 

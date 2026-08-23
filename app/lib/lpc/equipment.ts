@@ -4,8 +4,10 @@ import type { UnitAppearanceLayerConfig } from '../../types/config'
 const EQUIPMENT_BASE_ALIAS = 'lpc-equipment'
 const EQUIPMENT_BASE_URL = 'assets/graphics/lpc-equipment'
 const EQUIPMENT_DEATH_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
+const EQUIPMENT_SHOOTING_SHEET = 'shooting'
 
 type EquipmentSheet = (typeof EQUIPMENT_DEATH_SHEETS)[number]
+type EquipmentLoadSheet = EquipmentSheet | typeof EQUIPMENT_SHOOTING_SHEET
 const EQUIPMENT_SHEETS = ['walking', 'action'] as const satisfies readonly EquipmentSheet[]
 type EquipmentLayer = 'back' | 'front'
 export type DynamicEquipmentKey =
@@ -273,6 +275,56 @@ const WEARABLE_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'leg_armor_iron',
 ])
 
+const WEARABLE_SHOOTING_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
+  'armor_leather',
+  'armor_mail_ceramic',
+  'armor_mail_copper',
+  'armor_mail_bronze',
+  'armor_mail_iron',
+  'armor_legion_ceramic',
+  'armor_legion_copper',
+  'armor_legion_bronze',
+  'armor_legion_iron',
+  'helmet_pointed_ceramic',
+  'helmet_pointed_copper',
+  'helmet_pointed_bronze',
+  'helmet_pointed_iron',
+  'helmet_barbuta_ceramic',
+  'helmet_barbuta_copper',
+  'helmet_barbuta_bronze',
+  'helmet_barbuta_iron',
+  'helmet_legion_ceramic',
+  'helmet_legion_copper',
+  'helmet_legion_bronze',
+  'helmet_legion_iron',
+  'helmet_nasal_ceramic',
+  'helmet_nasal_copper',
+  'helmet_nasal_bronze',
+  'helmet_nasal_iron',
+  'helmet_bascinet_round_ceramic',
+  'helmet_bascinet_round_copper',
+  'helmet_bascinet_round_bronze',
+  'helmet_bascinet_round_iron',
+  'helmet_norman_ceramic',
+  'helmet_norman_copper',
+  'helmet_norman_bronze',
+  'helmet_norman_iron',
+  'helmet_barbarian_ceramic',
+  'helmet_barbarian_nasal_ceramic',
+  'shoulder_legion_ceramic',
+  'shoulder_legion_copper',
+  'shoulder_legion_bronze',
+  'shoulder_legion_iron',
+  'bracers_ceramic',
+  'bracers_copper',
+  'bracers_bronze',
+  'bracers_iron',
+  'leg_armor_ceramic',
+  'leg_armor_copper',
+  'leg_armor_bronze',
+  'leg_armor_iron',
+])
+
 const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'cape_solid',
   'crest',
@@ -390,7 +442,7 @@ const EQUIPMENT_SHEET_OVERRIDES: Partial<
   arrow_iron: { front: ['action'] },
 }
 
-const DYNAMIC_EQUIPMENT_KEYS = [
+export const DYNAMIC_EQUIPMENT_KEYS = [
   'axe_copper',
   'axe_ceramic',
   'axe_bronze',
@@ -733,18 +785,18 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   { workType: WORK_TYPES.goldminer, equipment: 'gold', options: { showWhenLoading: true } },
 ]
 
-function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentSheet): string {
+function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
   return `${EQUIPMENT_BASE_ALIAS}/${equipment}/${layer}/${sheet}`
 }
 
-function equipmentSrc(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentSheet): string {
+function equipmentSrc(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
   return `${EQUIPMENT_BASE_URL}/${equipment}/${layer}/${sheet}/texture.json`
 }
 
 function equipmentVariantAlias(
   equipment: DynamicEquipmentKey,
   layer: EquipmentLayer,
-  sheet: EquipmentSheet,
+  sheet: EquipmentLoadSheet,
   variant: string
 ): string {
   return `${equipmentAlias(equipment, layer, sheet)}/${variant}`
@@ -753,7 +805,7 @@ function equipmentVariantAlias(
 function equipmentVariantSrc(
   equipment: DynamicEquipmentKey,
   layer: EquipmentLayer,
-  sheet: EquipmentSheet,
+  sheet: EquipmentLoadSheet,
   variant: string
 ): string {
   return `${EQUIPMENT_BASE_URL}/${equipment}/${layer}/${sheet}/${variant}/texture.json`
@@ -796,6 +848,9 @@ function ageSheetOverrides(layer: EquipmentLayer, ageEquipment?: AgeEquipmentOve
             ...(sheets.includes('walking') ? { standingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
             ...(sheets.includes('walking') ? { walkingSheet: equipmentAlias(equipment, layer, 'walking') } : {}),
             ...(sheets.includes('action') ? { actionSheet: equipmentAlias(equipment, layer, 'action') } : {}),
+            ...(WEARABLE_SHOOTING_EQUIPMENT_KEYS.has(equipment)
+              ? { shootingSheet: equipmentAlias(equipment, layer, EQUIPMENT_SHOOTING_SHEET) }
+              : {}),
             ...(sheets.includes('dying') ? { dyingSheet: equipmentAlias(equipment, layer, 'dying') } : {}),
             ...(sheets.includes('corpse') ? { corpseSheet: equipmentAlias(equipment, layer, 'corpse') } : {}),
           },
@@ -814,6 +869,9 @@ function layerConfig(
   const sheets = equipmentSheets(equipment, layer)
   const walkingSheet = sheets.includes('walking') ? equipmentAlias(equipment, layer, 'walking') : undefined
   const actionSheet = sheets.includes('action') ? equipmentAlias(equipment, layer, 'action') : undefined
+  const shootingSheet = WEARABLE_SHOOTING_EQUIPMENT_KEYS.has(equipment)
+    ? equipmentAlias(equipment, layer, EQUIPMENT_SHOOTING_SHEET)
+    : undefined
   const dyingSheet = sheets.includes('dying') ? equipmentAlias(equipment, layer, 'dying') : undefined
   const corpseSheet = sheets.includes('corpse') ? equipmentAlias(equipment, layer, 'corpse') : undefined
 
@@ -827,10 +885,12 @@ function layerConfig(
     appearanceVariantKey: GENDERED_EQUIPMENT_KEYS.has(equipment) ? 'gender' : undefined,
     palette: PLAYER_COLORED_EQUIPMENT_KEYS.has(equipment) ? 'player' : undefined,
     mountedCut: MOUNTED_UNCUT_EQUIPMENT_KEYS.has(equipment) ? false : options.mountedCut,
+    equipmentKey: equipment,
     standingSheet: walkingSheet,
     walkingSheet,
     mountedSheet: MOUNTED_WALKING_SHEET_EQUIPMENT_KEYS.has(equipment) ? walkingSheet : undefined,
     actionSheet,
+    shootingSheet,
     dyingSheet,
     corpseSheet,
     sheetDirectionCounts: {
@@ -854,8 +914,10 @@ function equipmentLayerConfigs(
 
 export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
   return DYNAMIC_EQUIPMENT_KEYS.flatMap(equipment =>
-    (EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS).flatMap(layer =>
-      equipmentSheets(equipment, layer).flatMap(sheet => {
+    (EQUIPMENT_LAYER_OVERRIDES[equipment] ?? EQUIPMENT_LAYERS).flatMap(layer => {
+      const sheetsToLoad: EquipmentLoadSheet[] = [...equipmentSheets(equipment, layer)]
+      if (WEARABLE_SHOOTING_EQUIPMENT_KEYS.has(equipment)) sheetsToLoad.push(EQUIPMENT_SHOOTING_SHEET)
+      return sheetsToLoad.flatMap(sheet => {
         if (GENDERED_EQUIPMENT_KEYS.has(equipment)) {
           return ['male', 'female'].map(variant => ({
             alias: equipmentVariantAlias(equipment, layer, sheet, variant),
@@ -869,7 +931,7 @@ export function dynamicEquipmentAssets(): { alias: string; src: string }[] {
           },
         ]
       })
-    )
+    })
   )
 }
 
@@ -885,6 +947,13 @@ export function dynamicEquipmentLayersForVillager(): UnitAppearanceLayerConfig[]
   return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, ageEquipment, options }) =>
     equipmentLayerConfigs(equipment, { ...options, workTypes: [workType] }, ageEquipment)
   )
+}
+
+export function dynamicEquipmentLayersForEquipment(equipment: readonly string[]): UnitAppearanceLayerConfig[] {
+  return equipment.flatMap(item => {
+    if (!DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey)) return []
+    return equipmentLayerConfigs(item as DynamicEquipmentKey)
+  })
 }
 
 export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0, civilization?: string): string[] {

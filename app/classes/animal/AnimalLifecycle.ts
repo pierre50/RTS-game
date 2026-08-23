@@ -8,8 +8,8 @@ import {
   playAudibleSoundCue,
   updateInstanceVisibility,
 } from '../../lib'
-import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
+import { clearEntityVisualFeedback } from '../../lib/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
@@ -105,7 +105,7 @@ export class AnimalLifecycle {
     animal.stopInterval()
     animal.stopTimeout()
     animal.animalBehavior.stop()
-    clearDamageFeedback(animal)
+    clearEntityVisualFeedback(animal)
     if (animal.companionOwner) {
       animal.companionOwner.companionHorseColor = null
       animal.companionOwner = null
@@ -121,12 +121,13 @@ export class AnimalLifecycle {
 
   death(): void {
     const animal = this.animal
-    clearDamageFeedback(animal)
+    clearEntityVisualFeedback(animal)
     if (animal.altitude) this.startDeathFall()
     animal.setTextures(SHEET_TYPES.dying)
     animal.zIndex--
     animal.syncShadow()
     playSpriteAnimationFromStart(animal.sprite, {
+      clearFrameChange: true,
       loop: false,
     })
     animal.sprite.onComplete = runAfterDeathFlash(animal.sprite, () => {
@@ -163,7 +164,7 @@ export class AnimalLifecycle {
 
   decompose(): void {
     const animal = this.animal
-    clearDamageFeedback(animal)
+    clearEntityVisualFeedback(animal)
     const {
       context: { player, menu },
     } = animal
@@ -216,6 +217,7 @@ export class AnimalLifecycle {
   clear(): void {
     const animal = this.animal
     if (animal.isDestroyed) return
+    clearEntityVisualFeedback(animal)
     const {
       context: { map },
     } = animal

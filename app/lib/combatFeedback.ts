@@ -1,16 +1,18 @@
 import { ColorMatrixFilter, Graphics, Text } from 'pixi.js'
 import { FAMILY_TYPES } from '../constants'
 import { getReliefOffset } from './maths'
+import {
+  clearAllSpriteFilterEffects,
+  clearSpriteFilterEffect,
+  hasSpriteFilterEffect,
+  setSpriteFiltersPreservingTransientEffect,
+  startSpriteFilterEffect,
+} from './spriteTransientEffects'
 import type { RuntimeEntity } from '../types/entities'
 import type { SchedulerTaskId } from '../types/context'
 import type { AnimatedSprite, Container, Filter, Sprite } from 'pixi.js'
 
 type DamageSprite = Sprite | AnimatedSprite
-type FlashState = {
-  baseFilters: readonly Filter[] | null
-  flash: Filter
-  token: number
-}
 type FloatingTextOptions = {
   text: string
   fill: number
@@ -37,8 +39,6 @@ const ALERT_TO_AGGRESSION_DELAY_MS = 350
 const CONVERSION_FLASH_DURATION_MS = 170
 const CONVERSION_FLASH_STEP_MS = 16
 const CONVERSION_FLASH_MAX_ALPHA = 0.45
-const flashStates = new WeakMap<DamageSprite, FlashState>()
-const flashSprites = new Set<DamageSprite>()
 type ConversionFlashState = {
   overlay: Graphics
   scheduler: NonNullable<RuntimeEntity['context']>['scheduler']
@@ -91,14 +91,7 @@ export function setSpriteFiltersPreservingDamageFeedback(
   sprite: DamageSprite,
   filters: readonly Filter[] | null
 ): void {
-  const state = flashStates.get(sprite)
-  if (!state) {
-    sprite.filters = filters ? [...filters] : null
-    return
-  }
-
-  state.baseFilters = filters ? [...filters] : null
-  sprite.filters = [...(state.baseFilters ?? []), state.flash]
+  setSpriteFiltersPreservingTransientEffect(sprite, filters)
 }
 
 function parseFlashColor(color: string | null | undefined): [number, number, number] {
@@ -192,28 +185,16 @@ function flashColor(target: RuntimeEntity, color?: string | null): void {
   const scheduler = target.context?.scheduler
   if (!sprite || !scheduler) return
 
-  const previous = flashStates.get(sprite)
-  const token = (previous?.token ?? 0) + 1
-  const baseFilters = previous?.baseFilters ?? sprite.filters ?? null
   const [r, g, b] = parseFlashColor(color)
   const flash = new ColorMatrixFilter()
   flash.matrix = [0, 0, 0, 0, r, 0, 0, 0, 0, g, 0, 0, 0, 0, b, 0, 0, 0, 1, 0]
 
-  flashStates.set(sprite, { baseFilters, flash, token })
-  flashSprites.add(sprite)
-  sprite.filters = [...(baseFilters ?? []), flash]
-  scheduler.addOneShot(
-    () => {
-      if (sprite.destroyed) return
-      const state = flashStates.get(sprite)
-      if (state?.token !== token) return
-      sprite.filters = state.baseFilters ? [...state.baseFilters] : null
-      flashStates.delete(sprite)
-      flashSprites.delete(sprite)
-    },
-    FLASH_MS,
-    'combat.flash'
-  )
+  startSpriteFilterEffect(sprite, {
+    durationMs: FLASH_MS,
+    filter: flash,
+    scheduler,
+    taskName: 'combat.flash',
+  })
 }
 
 function flashWhite(target: RuntimeEntity): void {
@@ -235,20 +216,11 @@ export function clearDamageFeedback(target: RuntimeEntity): void {
 
   if (!sprite) return
 
-  const state = flashStates.get(sprite)
   const conversionState = conversionFlashStates.get(sprite)
-  if (state) {
-    sprite.filters = state.baseFilters ? [...state.baseFilters] : null
-    flashStates.delete(sprite)
-    flashSprites.delete(sprite)
-  }
+  const hadFlashState = hasSpriteFilterEffect(sprite)
+  if (hadFlashState) clearSpriteFilterEffect(sprite)
   if (conversionState) {
     stopConversionFlash(sprite, conversionState.token)
-  }
-  if (state || conversionState) return
-
-  if (sprite.filters?.length) {
-    sprite.filters = null
   }
 }
 
@@ -257,17 +229,7 @@ export function clearAllCombatFeedback(): void {
     clearDamageFeedback(target)
   }
 
-  for (const sprite of [...flashSprites]) {
-    if (sprite.destroyed) {
-      flashStates.delete(sprite)
-      flashSprites.delete(sprite)
-      continue
-    }
-    const state = flashStates.get(sprite)
-    sprite.filters = state?.baseFilters ? [...state.baseFilters] : null
-    flashStates.delete(sprite)
-    flashSprites.delete(sprite)
-  }
+  clearAllSpriteFilterEffects()
 
   for (const sprite of [...conversionFlashSprites]) {
     stopConversionFlash(sprite)

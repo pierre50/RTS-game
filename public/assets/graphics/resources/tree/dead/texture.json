@@ -1,0 +1,231 @@
+{
+  "frames": {
+    "000_graphics_resources_tree_fallen_000.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 13
+      },
+      "anchor": {
+        "x": 0.8,
+        "y": 1.1538461538461537
+      }
+    },
+    "001_graphics_resources_tree_fallen_001.png": {
+      "frame": {
+        "x": 10,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 13
+      },
+      "anchor": {
+        "x": 0,
+        "y": 1.1538461538461537
+      }
+    },
+    "002_graphics_resources_tree_fallen_002.png": {
+      "frame": {
+        "x": 20,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 13
+      },
+      "anchor": {
+        "x": 1.6,
+        "y": 0.07692307692307693
+      }
+    },
+    "003_graphics_resources_tree_fallen_003.png": {
+      "frame": {
+        "x": 30,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 10,
+        "h": 13
+      },
+      "sourceSize": {
+        "w": 10,
+        "h": 13
+      },
+      "anchor": {
+        "x": -1.2,
+        "y": 0.8461538461538461
+      }
+    },
+    "004_graphics_resources_tree_stump_000.png": {
+      "frame": {
+        "x": 40,
+        "y": 0,
+        "w": 52,
+        "h": 35
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 35
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 35
+      },
+      "anchor": {
+        "x": 0.5192307692307693,
+        "y": 0.5714285714285714
+      }
+    },
+    "005_graphics_resources_tree_stump_001.png": {
+      "frame": {
+        "x": 92,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 30
+      },
+      "anchor": {
+        "x": 0.5384615384615384,
+        "y": 0.4666666666666667
+      }
+    },
+    "006_graphics_resources_tree_stump_002.png": {
+      "frame": {
+        "x": 144,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 30
+      },
+      "anchor": {
+        "x": 0.4807692307692308,
+        "y": 0.5666666666666667
+      }
+    },
+    "007_graphics_resources_tree_stump_003.png": {
+      "frame": {
+        "x": 196,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 30
+      },
+      "anchor": {
+        "x": 0.5384615384615384,
+        "y": 0.5333333333333333
+      }
+    },
+    "008_graphics_resources_tree_stump_004.png": {
+      "frame": {
+        "x": 248,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 52,
+        "h": 30
+      },
+      "sourceSize": {
+        "w": 52,
+        "h": 30
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.4666666666666667
+      }
+    }
+  },
+  "meta": {
+    "app": "merge_resource_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 300,
+      "h": 35
+    },
+    "scale": 1
+  }
+}

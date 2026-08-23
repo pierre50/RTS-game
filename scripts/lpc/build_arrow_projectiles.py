@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 from PIL import Image
@@ -104,6 +105,10 @@ def trim_frame(frame: Image.Image) -> tuple[Image.Image, tuple[int, int, int, in
     return frame.crop(bbox), bbox
 
 
+def projectile_frame_name(index: int, variant: str) -> str:
+    return f"{index:03d}_graphics_projectiles_arrow_{variant}.png"
+
+
 def write_projectile_sheet(output_dir: Path, variant: str, frames: list[Image.Image]) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     trimmed_frames = [trim_frame(frame) for frame in frames]
@@ -116,7 +121,7 @@ def write_projectile_sheet(output_dir: Path, variant: str, frames: list[Image.Im
         left, top, right, bottom = bbox
         atlas.alpha_composite(frame, (x, 0))
         frame_width, frame_height = frame.size
-        name = f"{index:03d}_graphics_projectiles_arrow_{variant}.png"
+        name = projectile_frame_name(index, variant)
         frame_data[name] = {
             "frame": {"x": x, "y": 0, "w": frame_width, "h": frame_height},
             "rotated": False,
@@ -142,13 +147,66 @@ def write_projectile_sheet(output_dir: Path, variant: str, frames: list[Image.Im
     (output_dir / "texture.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf8")
 
 
-def build_arrow_projectiles(source_path: Path, output_root: Path) -> None:
+def write_projectile_atlas(output_root: Path, frames_by_variant: dict[str, list[Image.Image]]) -> None:
+    output_root.mkdir(parents=True, exist_ok=True)
+    trimmed_frames_by_variant = {
+        variant: [trim_frame(frame) for frame in frames]
+        for variant, frames in frames_by_variant.items()
+    }
+    ordered_frames = [
+        (variant, index, frame, bbox)
+        for variant in ARROW_VARIANTS
+        for index, (frame, bbox) in enumerate(trimmed_frames_by_variant[variant])
+    ]
+    width = sum(frame.width for _variant, _index, frame, _bbox in ordered_frames) + max(0, len(ordered_frames) - 1)
+    height = max(frame.height for _variant, _index, frame, _bbox in ordered_frames)
+    atlas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    frame_data = {}
+    x = 0
+
+    for variant, index, frame, bbox in ordered_frames:
+        left, top, _right, _bottom = bbox
+        atlas.alpha_composite(frame, (x, 0))
+        frame_width, frame_height = frame.size
+        frame_data[projectile_frame_name(index, variant)] = {
+            "frame": {"x": x, "y": 0, "w": frame_width, "h": frame_height},
+            "rotated": False,
+            "trimmed": True,
+            "spriteSourceSize": {"x": left, "y": top, "w": frame_width, "h": frame_height},
+            "sourceSize": {"w": FRAME_SIZE, "h": FRAME_SIZE},
+            "anchor": {"x": 0.5, "y": 0.5},
+        }
+        x += frame_width + 1
+
+    atlas.save(output_root / "texture.png")
+    metadata = {
+        "frames": frame_data,
+        "meta": {
+            "app": "build_arrow_projectiles.py",
+            "version": "2.0.0",
+            "image": "texture.png",
+            "format": "RGBA8888",
+            "size": {"w": width, "h": height},
+            "scale": 1,
+        },
+    }
+    (output_root / "texture.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf8")
+
+
+def remove_legacy_projectile_sheets(output_root: Path) -> None:
+    for variant in ARROW_VARIANTS:
+        shutil.rmtree(output_root / f"arrow_{variant}", ignore_errors=True)
+
+
+def build_arrow_projectiles(source_path: Path = SOURCE_ARROW, output_root: Path = OUTPUT_ROOT) -> None:
     source = Image.open(source_path).convert("RGBA")
     base_frame = crop_source_frame(source, PROJECTILE_BASE_ROW, PROJECTILE_BASE_COLUMN)
+    frames_by_variant = {}
     for variant in ARROW_VARIANTS:
-        frames = [close_small_horizontal_gaps(recolor_arrow(base_frame, variant))]
-        write_projectile_sheet(output_root / f"arrow_{variant}", variant, frames)
-    print(f"Generated {len(ARROW_VARIANTS)} LPC arrow projectile sheets into {output_root.relative_to(PROJECT_ROOT)}")
+        frames_by_variant[variant] = [close_small_horizontal_gaps(recolor_arrow(base_frame, variant))]
+    write_projectile_atlas(output_root, frames_by_variant)
+    remove_legacy_projectile_sheets(output_root)
+    print(f"Generated {len(ARROW_VARIANTS)} LPC arrow projectiles into {output_root.relative_to(PROJECT_ROOT)}")
 
 
 def main() -> None:

@@ -1,0 +1,111 @@
+{
+  "frames": {
+    "000_graphics_resources_tree_grass_1.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 137
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 103,
+        "h": 137
+      },
+      "sourceSize": {
+        "w": 103,
+        "h": 137
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "001_graphics_resources_tree_grass_2.png": {
+      "frame": {
+        "x": 103,
+        "y": 0,
+        "w": 115,
+        "h": 140
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 115,
+        "h": 140
+      },
+      "sourceSize": {
+        "w": 115,
+        "h": 140
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "002_graphics_resources_tree_grass_3.png": {
+      "frame": {
+        "x": 218,
+        "y": 0,
+        "w": 134,
+        "h": 139
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 134,
+        "h": 139
+      },
+      "sourceSize": {
+        "w": 134,
+        "h": 139
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    },
+    "003_graphics_resources_tree_grass_4.png": {
+      "frame": {
+        "x": 352,
+        "y": 0,
+        "w": 82,
+        "h": 202
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 82,
+        "h": 202
+      },
+      "sourceSize": {
+        "w": 82,
+        "h": 202
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.95
+      }
+    }
+  },
+  "meta": {
+    "app": "merge_resource_atlases.py",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 434,
+      "h": 202
+    },
+    "scale": 1
+  }
+}

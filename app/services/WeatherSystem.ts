@@ -6,7 +6,16 @@ import { playSoundCue } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 
-type WeatherPhase = 'sunny' | 'clouding' | 'stormBuildUp' | 'rainLight' | 'rainHeavy' | 'clearing' | 'snow' | 'night'
+type WeatherPhase =
+  | 'sunny'
+  | 'clouding'
+  | 'stormBuildUp'
+  | 'rainLight'
+  | 'rainHeavy'
+  | 'clearing'
+  | 'snow'
+  | 'sandstorm'
+  | 'night'
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type RandomFn = () => number
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
@@ -34,10 +43,13 @@ type WeatherColor = {
 const TARGET_FRAME_MS = 1000 / 60
 const MAX_RAIN_DROPS = 620
 const MAX_SNOW_FLAKES = 420
+const MAX_SAND_GRAINS = 760
 const RAIN_TEXTURE_WIDTH = 3
 const RAIN_TEXTURE_HEIGHT = 32
 const SNOW_TEXTURE_WIDTH = 6
 const SNOW_TEXTURE_HEIGHT = 6
+const SAND_TEXTURE_WIDTH = 18
+const SAND_TEXTURE_HEIGHT = 3
 const COLOR_LERP_PER_SECOND = 1.7
 const RAIN_LERP_PER_SECOND = 1.4
 const FIRST_SUNNY_MIN_SECONDS = 18
@@ -59,6 +71,7 @@ const VEIL_TARGETS: Record<WeatherPhase, number> = {
   rainHeavy: 0.14,
   clearing: 0.035,
   snow: 0.1,
+  sandstorm: 0.18,
   night: 0,
 }
 
@@ -117,6 +130,15 @@ const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
     green: 0.98,
     blue: 1.1,
   },
+  sandstorm: {
+    gamma: 0.94,
+    contrast: 1.08,
+    saturation: 0.58,
+    brightness: 0.72,
+    red: 1.16,
+    green: 0.93,
+    blue: 0.62,
+  },
   clearing: {
     gamma: 0.99,
     contrast: 0.98,
@@ -144,6 +166,7 @@ const PRECIPITATION_TARGETS: Record<WeatherPhase, number> = {
   rainLight: 0.34,
   rainHeavy: 1,
   snow: 1,
+  sandstorm: 0.92,
   clearing: 0.08,
   night: 0,
 }
@@ -155,6 +178,7 @@ const WIND_TARGETS: Record<WeatherPhase, number> = {
   rainLight: 0.3,
   rainHeavy: 0.85,
   snow: 0.26,
+  sandstorm: 1,
   clearing: 0.15,
   night: 0.1,
 }
@@ -166,6 +190,7 @@ const BASE_PHASE_DURATIONS_SECONDS: Record<WeatherPhase, [number, number]> = {
   rainLight: [90, 260],
   rainHeavy: [45, 180],
   snow: [100, 280],
+  sandstorm: [45, 135],
   clearing: [60, 150],
   night: [1800, 1800],
 }
@@ -180,6 +205,7 @@ const BIOME_DURATION_OVERRIDES: Record<EnvironmentId, Partial<Record<WeatherPhas
     rainHeavy: [35, 150],
     clearing: [45, 110],
     snow: [80, 190],
+    sandstorm: [35, 90],
   },
   BlackForest: {
     sunny: [260, 560],
@@ -189,6 +215,7 @@ const BIOME_DURATION_OVERRIDES: Record<EnvironmentId, Partial<Record<WeatherPhas
     rainHeavy: [45, 190],
     clearing: [55, 140],
     snow: [110, 260],
+    sandstorm: [35, 90],
   },
   Desert: {
     sunny: [420, 820],
@@ -198,6 +225,7 @@ const BIOME_DURATION_OVERRIDES: Record<EnvironmentId, Partial<Record<WeatherPhas
     rainHeavy: [30, 100],
     clearing: [70, 165],
     snow: [80, 160],
+    sandstorm: [65, 180],
   },
 }
 
@@ -260,6 +288,10 @@ const BASE_WEATHER_TRANSITIONS: TransitionMap = {
     { chance: 0.5, phase: 'rainLight' },
     { chance: 0.8, phase: 'clearing' },
     { chance: 1, phase: 'snow' },
+  ],
+  sandstorm: [
+    { chance: 0.72, phase: 'clearing' },
+    { chance: 1, phase: 'sunny' },
   ],
 }
 
@@ -347,13 +379,15 @@ const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = {
   },
   Desert: {
     sunny: [
-      { chance: 0.06, phase: 'clouding' },
+      { chance: 0.05, phase: 'clouding' },
+      { chance: 0.14, phase: 'sandstorm' },
       { chance: 1, phase: 'sunny' },
     ],
     clouding: [
       { chance: 0.24, phase: 'clearing' },
       { chance: 0.6, phase: 'clouding' },
       { chance: 0.62, phase: 'rainLight' },
+      { chance: 0.8, phase: 'sandstorm' },
       { chance: 1, phase: 'sunny' },
     ],
     stormBuildUp: [
@@ -381,6 +415,11 @@ const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = {
       { chance: 0.6, phase: 'snow' },
       { chance: 0.95, phase: 'clearing' },
       { chance: 1, phase: 'sunny' },
+    ],
+    sandstorm: [
+      { chance: 0.56, phase: 'clearing' },
+      { chance: 0.78, phase: 'sunny' },
+      { chance: 1, phase: 'sandstorm' },
     ],
   },
 }
@@ -470,6 +509,13 @@ class Snowflake extends Particle {
   wobble = 0
 }
 
+class SandGrain extends Particle {
+  baseAlpha = 0
+  baseScale = 0
+  speed = 0
+  wobble = 0
+}
+
 // Drawn on a plain <canvas> rather than a Pixi RenderTexture from renderer.generateTexture,
 // since a one-off rendered RenderTexture has no CPU-side backing to re-upload from after a
 // WebGL context loss. ImageSource (what Texture.from(canvas) creates) also defaults
@@ -523,6 +569,23 @@ function createSnowTexture(): Texture {
   return texture
 }
 
+function createSandTexture(): Texture {
+  const canvas = document.createElement('canvas')
+  canvas.width = SAND_TEXTURE_WIDTH
+  canvas.height = SAND_TEXTURE_HEIGHT
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2D canvas context unavailable for sand texture')
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0)
+  gradient.addColorStop(0, 'rgba(235,198,123,0)')
+  gradient.addColorStop(0.45, 'rgba(246,218,153,0.82)')
+  gradient.addColorStop(1, 'rgba(171,124,55,0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  const texture = Texture.from(canvas)
+  texture.source.autoGarbageCollect = false
+  return texture
+}
+
 export class WeatherSystem {
   context: GameContextLike
   currentColor: WeatherColor
@@ -544,9 +607,12 @@ export class WeatherSystem {
   rainTexture: Texture
   snow: ParticleContainer
   snowTexture: Texture
+  sand: ParticleContainer
+  sandTexture: Texture
   rainVeil: Graphics
   raindrops: Raindrop[]
   snowflakes: Snowflake[]
+  sandGrains: SandGrain[]
   precipIntensity: number
   rainLoopHeavy: IMediaInstance | null
   rainLoopLight: IMediaInstance | null
@@ -591,8 +657,10 @@ export class WeatherSystem {
     this.lastMapY = this.map.y
     this.rainTexture = createRainTexture()
     this.snowTexture = createSnowTexture()
+    this.sandTexture = createSandTexture()
     this.raindrops = Array.from({ length: MAX_RAIN_DROPS }, () => this.createRaindrop(true))
     this.snowflakes = Array.from({ length: MAX_SNOW_FLAKES }, () => this.createSnowflake(true))
+    this.sandGrains = Array.from({ length: MAX_SAND_GRAINS }, () => this.createSandGrain(true))
 
     this.tintFilter = new AdjustmentFilter(this.currentColor)
     this.mapFilters = map.filters ?? null
@@ -612,8 +680,13 @@ export class WeatherSystem {
       dynamicProperties: { position: true, rotation: true, vertex: true, color: true },
     })
     this.snow.addParticle(...this.snowflakes)
+    this.sand = new ParticleContainer({
+      texture: this.sandTexture,
+      dynamicProperties: { position: true, rotation: true, vertex: true, color: true },
+    })
+    this.sand.addParticle(...this.sandGrains)
     this.flashOverlay = new Graphics()
-    this.layer.addChild(this.rainVeil, this.rain, this.snow, this.flashOverlay)
+    this.layer.addChild(this.rainVeil, this.rain, this.snow, this.sand, this.flashOverlay)
 
     this.rainLoopLight = null
     this.rainLoopHeavy = null
@@ -644,6 +717,12 @@ export class WeatherSystem {
     return flake
   }
 
+  createSandGrain(anywhere = false): SandGrain {
+    const grain = new SandGrain({ texture: this.sandTexture, anchorX: 0.5, anchorY: 0.5, alpha: 0 })
+    this.resetSandGrain(grain, anywhere)
+    return grain
+  }
+
   resetRaindrop(drop: Raindrop, anywhere = false): void {
     const margin = 160
     drop.x = randomBetween(-margin, this.screenRect.width + margin, this.random)
@@ -668,6 +747,19 @@ export class WeatherSystem {
     flake.wobble = randomBetween(-0.7, 0.7, this.random)
     flake.rotationSpeed = randomBetween(-0.7, 0.7, this.random)
     flake.rotation = randomBetween(0, Math.PI * 2, this.random)
+  }
+
+  resetSandGrain(grain: SandGrain, anywhere = false): void {
+    const margin = 220
+    grain.x = anywhere
+      ? randomBetween(-margin, this.screenRect.width + margin, this.random)
+      : randomBetween(this.screenRect.width, this.screenRect.width + margin * 2, this.random)
+    grain.y = randomBetween(-margin, this.screenRect.height + margin, this.random)
+    grain.speed = randomBetween(360, 880, this.random)
+    grain.baseScale = randomBetween(0.45, 1.35, this.random)
+    grain.baseAlpha = randomBetween(0.08, 0.36, this.random)
+    grain.wobble = randomBetween(-1, 1, this.random)
+    grain.rotation = randomBetween(-0.18, 0.08, this.random)
   }
 
   forcePhase(phase: WeatherPhase): void {
@@ -704,6 +796,7 @@ export class WeatherSystem {
     this.layer.position.set(this.screenRect.x, this.screenRect.y)
     this.windTargetX += Math.sin(this.elapsedMs * 0.00019) * 0.006
     this.windTargetX = Math.max(-12, Math.min(12, this.windTargetX))
+    if (this.phase === 'sandstorm') this.windTargetX = Math.min(this.windTargetX, -7)
     this.windX = lerp(this.windX, this.windTargetX, elapsedSeconds * 0.45)
     this.windIntensity = lerp(
       this.windIntensity,
@@ -721,7 +814,7 @@ export class WeatherSystem {
 
   updateAmbientSound(): void {
     const rainVolumes =
-      this.phase === 'snow'
+      this.phase === 'snow' || this.phase === 'sandstorm'
         ? { high: 0, low: 0 }
         : crossfadeVolumes(this.precipIntensity, AMBIENT_CROSSFADE_MID)
     const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
@@ -788,7 +881,7 @@ export class WeatherSystem {
     )
     if (veilAlpha < 0.01) return
     this.rainVeil.rect(0, 0, this.screenRect.width, this.screenRect.height)
-    this.rainVeil.fill({ alpha: veilAlpha, color: this.phase === 'snow' ? 0xdce8f5 : 0x9fb2c4 })
+    this.rainVeil.fill({ alpha: veilAlpha, color: this.phase === 'sandstorm' ? 0xc9974a : this.phase === 'snow' ? 0xdce8f5 : 0x9fb2c4 })
   }
 
   getDarknessLevel(): number {
@@ -797,16 +890,18 @@ export class WeatherSystem {
 
   updatePrecipitation(elapsedSeconds: number, mapShiftX = 0, mapShiftY = 0): void {
     const baseTarget = PRECIPITATION_TARGETS[this.phase]
+    const intensityMultiplier = this.phase === 'sandstorm' ? 1 : this.biomeProfile.precipMultiplier
     const noisyTarget =
       baseTarget > 0
         ? Math.max(
             0,
-            Math.min(1, baseTarget * this.biomeProfile.precipMultiplier + Math.sin(this.elapsedMs * 0.0009) * 0.045)
+            Math.min(1, baseTarget * intensityMultiplier + Math.sin(this.elapsedMs * 0.0009) * 0.045)
           )
         : 0
     this.precipIntensity = lerp(this.precipIntensity, noisyTarget, elapsedSeconds * RAIN_LERP_PER_SECOND)
 
-    const maxParticles = this.phase === 'snow' ? MAX_SNOW_FLAKES : MAX_RAIN_DROPS
+    const maxParticles =
+      this.phase === 'snow' ? MAX_SNOW_FLAKES : this.phase === 'sandstorm' ? MAX_SAND_GRAINS : MAX_RAIN_DROPS
     const activeParticles =
       this.precipIntensity < 0.015 ? 0 : Math.round(maxParticles * this.precipIntensity)
 
@@ -815,13 +910,34 @@ export class WeatherSystem {
         const drop = this.raindrops[i]
         if (drop.alpha !== 0) drop.alpha = 0
       }
+      for (let i = 0; i < this.sandGrains.length; i++) {
+        const grain = this.sandGrains[i]
+        if (grain.alpha !== 0) grain.alpha = 0
+      }
       this.updateSnow(elapsedSeconds, activeParticles, mapShiftX, mapShiftY)
+      return
+    }
+
+    if (this.phase === 'sandstorm') {
+      for (let i = 0; i < this.raindrops.length; i++) {
+        const drop = this.raindrops[i]
+        if (drop.alpha !== 0) drop.alpha = 0
+      }
+      for (let i = 0; i < this.snowflakes.length; i++) {
+        const flake = this.snowflakes[i]
+        if (flake.alpha !== 0) flake.alpha = 0
+      }
+      this.updateSandstorm(elapsedSeconds, activeParticles, mapShiftX, mapShiftY)
       return
     }
 
     for (let i = 0; i < this.snowflakes.length; i++) {
       const flake = this.snowflakes[i]
       if (flake.alpha !== 0) flake.alpha = 0
+    }
+    for (let i = 0; i < this.sandGrains.length; i++) {
+      const grain = this.sandGrains[i]
+      if (grain.alpha !== 0) grain.alpha = 0
     }
     this.updateRain(elapsedSeconds, activeParticles)
   }
@@ -890,6 +1006,36 @@ export class WeatherSystem {
     }
   }
 
+  updateSandstorm(elapsedSeconds: number, activeGrains: number, mapShiftX = 0, mapShiftY = 0): void {
+    const drift = -Math.max(520, Math.abs(this.windX) * 92)
+    const margin = 220
+
+    for (let i = 0; i < MAX_SAND_GRAINS; i++) {
+      const grain = this.sandGrains[i]
+      if (i >= activeGrains) {
+        if (grain.alpha !== 0) grain.alpha = 0
+        continue
+      }
+
+      grain.x += mapShiftX + (drift + grain.wobble * 42) * elapsedSeconds
+      grain.y += mapShiftY + Math.sin(this.elapsedMs * 0.004 + i) * elapsedSeconds * 34
+      if (
+        grain.x < -margin * 2 ||
+        grain.x > this.screenRect.width + margin * 2 ||
+        grain.y < -margin * 2 ||
+        grain.y > this.screenRect.height + margin * 2
+      ) {
+        this.resetSandGrain(grain, false)
+      }
+
+      const scale = grain.baseScale * (0.9 + this.precipIntensity * 0.55)
+      grain.scaleX = scale * (1.2 + this.precipIntensity * 0.8)
+      grain.scaleY = scale
+      grain.tint = this.precipIntensity > 0.72 ? 0xf1c979 : 0xd8a953
+      grain.alpha = grain.baseAlpha * (0.5 + this.precipIntensity * 0.78)
+    }
+  }
+
   drawFlash(): void {
     this.flashOverlay.clear()
     if (this.flashAlpha < 0.01) return
@@ -899,7 +1045,10 @@ export class WeatherSystem {
 
   debugState(): object {
     return {
-      activeDrops: Math.round((this.phase === 'snow' ? MAX_SNOW_FLAKES : MAX_RAIN_DROPS) * this.precipIntensity),
+      activeDrops: Math.round(
+        (this.phase === 'snow' ? MAX_SNOW_FLAKES : this.phase === 'sandstorm' ? MAX_SAND_GRAINS : MAX_RAIN_DROPS) *
+          this.precipIntensity
+      ),
       nextPhaseInSeconds: Math.max(0, seconds(this.phaseEndsAt - this.elapsedMs)),
       phase: this.phase,
       biome: this.biome,
@@ -930,6 +1079,7 @@ export class WeatherSystem {
     // Keeping source textures alive as tiny canvas-backed resources is harmless and avoids regressions.
     this.rainTexture.destroy()
     this.snowTexture.destroy()
+    this.sandTexture.destroy()
     this.rainLoopLight?.stop()
     this.rainLoopHeavy?.stop()
     this.windLoopLight?.stop()

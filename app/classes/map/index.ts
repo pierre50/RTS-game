@@ -102,6 +102,7 @@ export default class Map extends Container {
   debugEntityBarsVisible: boolean
   startingUnits: number
   playersPos: GeneratedPosition[]
+  banditCampPositions: GridPosition[]
   positionsCount: number
   gaia: PlayerLike | null
   resources: Set<ResourceEntity>
@@ -160,6 +161,7 @@ export default class Map extends Container {
     this.startingUnits = 3
 
     this.playersPos = []
+    this.banditCampPositions = []
     this.positionsCount = 2
     this.gaia = null
     this.resources = new Set()
@@ -409,6 +411,10 @@ export default class Map extends Container {
 
   generatePlayers(playersConfig?: Array<Partial<PlayerLike> & PlayerSetupConfig> | null): PlayerLike[] {
     return this.mapGeneration.generatePlayers(playersConfig)
+  }
+
+  placeBanditCamps(): void {
+    return this.mapGeneration.placeBanditCamps()
   }
 
   placePlayers(): void {

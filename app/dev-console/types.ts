@@ -13,6 +13,7 @@ export type DevWeatherPhase =
   | 'rainLight'
   | 'rainHeavy'
   | 'snow'
+  | 'sandstorm'
   | 'clearing'
   | 'night'
 
@@ -101,6 +102,7 @@ type DevMenuLike = {
   updateCameraMiniMapEvt?(): void
   revealTerrainMinimap?(): void
   rebuildTerrainMiniMapFromViews?(): void
+  refreshInventory?(): void
   showMessage?(message: string, type?: string): void
 }
 
@@ -163,6 +165,9 @@ export type DevConsoleContext = {
   } | null
   dayNight?: DevDayNightLike | null
   weather?: DevWeatherLike | null
+  banditRaids?: {
+    triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
+  } | null
   app?: {
     ticker: {
       FPS?: number

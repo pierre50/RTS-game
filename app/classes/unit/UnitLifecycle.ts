@@ -1,7 +1,7 @@
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { canUpdateMinimap, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
-import { clearDamageFeedback } from '../../lib/combatFeedback'
 import { runAfterDeathFlash } from '../../lib/deathFlash'
+import { clearEntityVisualFeedback } from '../../lib/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entityFade'
 import { getEntityHitPointsText } from '../../lib/entityHealthDisplay'
 import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
@@ -18,9 +18,9 @@ export class UnitLifecycle {
   decompose() {
     const unit = this.unit
     const map = unit.context?.map
-    clearDamageFeedback(unit)
-    unit.setTextures?.(SHEET_TYPES.corpse)
     const sprite = unit.sprite as AnimatedSprite
+    clearEntityVisualFeedback(unit)
+    unit.setTextures?.(SHEET_TYPES.corpse)
     sprite.loop = false
     unit.syncShadow?.()
     unit.syncAppearanceLayers?.(SHEET_TYPES.corpse)
@@ -38,7 +38,7 @@ export class UnitLifecycle {
 
   death() {
     const unit = this.unit
-    clearDamageFeedback(unit)
+    clearEntityVisualFeedback(unit)
     // dying/corpse are exempt from setUnitTexture's onFrameChange reset (kept for mid-attack direction changes), so a stale attack/gather callback must be cleared here or it hijacks the death animation back to standing.
     const sprite = unit.sprite as AnimatedSprite
     unit.setTextures?.(SHEET_TYPES.dying)
@@ -72,7 +72,7 @@ export class UnitLifecycle {
 
     unit.stopInterval?.()
     clearTimeout(unit.visibilityTimeout as number | undefined)
-    clearDamageFeedback(unit)
+    clearEntityVisualFeedback(unit)
     if (unit.selected && unit.owner?.isPlayed) {
       player?.unselectUnit?.(unit)
     }
@@ -111,6 +111,7 @@ export class UnitLifecycle {
   clear() {
     const unit = this.unit
     const map = unit.context?.map
+    clearEntityVisualFeedback(unit)
     unit.isDestroyed = true
     const corpses = unit.owner?.corpses
     const index = corpses?.indexOf(unit) ?? -1

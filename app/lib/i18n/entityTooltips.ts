@@ -29,7 +29,6 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     TempleDescription: 'Forme les prêtres capables de soigner et de convertir.',
     TownCenterDescription:
       'Bâtiment principal : forme les villageois, reçoit les ressources et permet de changer d’âge.',
-    SiegeWorkshopDescription: 'Construit les armes de siège.',
     HeroDescription: 'Chef jouable capable de combattre, récolter, construire et commander votre civilisation.',
     VillagerDescription: 'Unité civile polyvalente qui récolte, construit et répare vos bâtiments.',
     ChiefDescription: 'Chef de village armé d’une épée, indispensable au commandement et au développement.',
@@ -114,7 +113,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     Aristocracy: 'Aristocratie',
     AristocracyDescription: 'Augmente de 0,25 la vitesse des unités montées.',
     Ballistics: 'Balistique',
-    BallisticsDescription: 'Améliore la précision des projectiles et permet de rechercher les tours à baliste.',
+    BallisticsDescription: 'Améliore la précision des projectiles.',
     Alchemy: 'Alchimie',
     AlchemyDescription: "Augmente de 1 l'attaque des unités à projectiles et des tours, et enflamme leurs tirs.",
     TowerShield: 'Pavois',
@@ -127,7 +126,6 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     CoinageDescription: "Accélère l'extraction d'or de 25 % et augmente la capacité de transport de 2.",
 
     Temple: 'Temple',
-    SiegeWorkshop: 'Atelier de siège',
   },
   en: {
     tooltipCost: 'Cost: {cost}',
@@ -158,7 +156,6 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     MarketDescription: 'Improves the economy, farming and mounted units.',
     TempleDescription: 'Trains priests who can heal and convert.',
     TownCenterDescription: 'Main building: trains villagers, receives resources and advances to new ages.',
-    SiegeWorkshopDescription: 'Builds siege weapons.',
     HeroDescription: 'Playable leader able to fight, gather, build and command your civilization.',
     VillagerDescription: 'Versatile civilian unit that gathers resources, builds and repairs structures.',
     ChiefDescription: 'Village leader armed with a sword, required for command and development.',
@@ -236,7 +233,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     Aristocracy: 'Aristocracy',
     AristocracyDescription: 'Adds 0.25 movement speed to mounted units.',
     Ballistics: 'Ballistics',
-    BallisticsDescription: 'Improves projectile accuracy and enables Ballista Tower research.',
+    BallisticsDescription: 'Improves projectile accuracy.',
     Alchemy: 'Alchemy',
     AlchemyDescription: 'Adds 1 attack to missile units and towers, and sets their projectiles ablaze.',
     TowerShield: 'Tower Shield',
@@ -253,6 +250,5 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     MonotheismDescription: 'Allows priests to convert enemy buildings and priests.',
 
     Temple: 'Temple',
-    SiegeWorkshop: 'Siege Workshop',
   },
 }

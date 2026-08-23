@@ -1,12 +1,11 @@
 import { Assets, type ContainerChild } from 'pixi.js'
 import { Resource } from '../Resource'
-import { Human, AI, Gaia } from '../players'
+import { Human, AI, Gaia, Player } from '../players'
 import {
   colors,
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   getGaiaAnimals,
-  getTextureByFrame,
   getPositionInGridAroundInstance,
   canPlaceBuildingAt,
   hasWaterBorderWithin,
@@ -22,7 +21,6 @@ import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
 import {
   BUILDING_TYPES,
   FAMILY_TYPES,
-  LABEL_TYPES,
   PLAYER_TYPES,
   POPULATION_MAX,
   RESOURCE_TYPES,
@@ -70,6 +68,25 @@ type GaiaRespawnSlot = SaveEntityState & {
 const PORTAL_RESOURCE_TYPE = 'Portal'
 const PORTAL_FOOTPRINT_SIZE = 3
 const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
+const BANDIT_CAMP_OWNER_NAME = 'Bandits'
+const BANDIT_CAMP_DECORATION_TYPES = [
+  'BanditCampTotemPlain',
+  'BanditCampTotemHorns',
+  'BanditCampTotemSkull',
+  'BanditCampFencePost',
+  'BanditCampBoneSmall',
+  'BanditCampRockPile',
+  'BanditCampSkull',
+  'BanditCampAnimalBones',
+  'BanditCampMeatRack',
+  'BanditCampDryingRack',
+  'BanditCampBucket',
+  'BanditCampCrate',
+  'BanditCampJarSmall',
+  'BanditCampJarLarge',
+] as const
+
+type BanditCampOwner = PlayerLike & { banditCampOwner?: true }
 
 // Outline (not filled) cells of a diamond at exactly `radius` tiles from the origin - used to lay a
 // one-tile-wide wall perimeter around a Town Center without a full path-finding/drafting system.
@@ -113,6 +130,7 @@ export type MapGenerationContext = Omit<
 export type MapGenerationMap = RuntimeMap & {
   context: MapGenerationContext
   playersPos: GeneratedPosition[]
+  banditCampPositions: GridPosition[]
   positionsCount: number
   noAI?: boolean
   humanStartsWithoutBase?: boolean
@@ -482,7 +500,11 @@ export class MapGeneration {
 
   generateFromJSON(data: SavedGameData): void {
     const { map, players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
-    const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
+    const classMap: Record<string, typeof Human | typeof AI | typeof Player> = {
+      Human,
+      AI,
+      [PLAYER_TYPES.bandits]: Player,
+    }
     const context = runtimeContext(this.map.context)
     const { menu, controls } = context
     this.map.removeChildren()
@@ -492,7 +514,8 @@ export class MapGeneration {
     this.map.invalidateReliefCoastDistances()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type](
+      const PlayerClass = classMap[player.type] ?? Player
+      const p = new PlayerClass(
         {
           ...player,
           corpses: [],
@@ -608,14 +631,19 @@ export class MapGeneration {
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
     const { players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
-    const classMap: Record<string, typeof Human | typeof AI> = { Human, AI }
+    const classMap: Record<string, typeof Human | typeof AI | typeof Player> = {
+      Human,
+      AI,
+      [PLAYER_TYPES.bandits]: Player,
+    }
     const context = runtimeContext(this.map.context)
     const { menu, controls } = context
 
     this.clearGeneratedGameplayState()
 
     this.map.context.players = players.map((player: SavedPlayer) => {
-      const p = new classMap[player.type](
+      const PlayerClass = classMap[player.type] ?? Player
+      const p = new PlayerClass(
         {
           ...player,
           corpses: [],
@@ -751,6 +779,7 @@ export class MapGeneration {
       await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
       await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
     }
+    measure('banditCampPlacement', () => this.placeBanditCamps())
     measure('portalPlacement', () => this.placePortal())
     await onProgress('generatingDecorations', 0.74)
     await measureAsync('decorations', () => this.generateSetsAsync())
@@ -858,6 +887,7 @@ export class MapGeneration {
     const context = runtimeContext(this.map.context)
 
     const players: PlayerLike[] = []
+    this.map.banditCampPositions = []
     const poses: number[] = []
     const randoms = Array.from(Array(this.map.playersPos.length).keys())
 
@@ -879,7 +909,6 @@ export class MapGeneration {
         const team = playersConfig?.[i]?.team ?? null
         const diplomacy = playersConfig?.[i]?.diplomacy ?? null
         const name = playersConfig?.[i]?.name
-        const difficulty = this.map.difficulty
         const civilizationLevel = Math.max(0, Math.min(Number(playersConfig?.[i]?.civilizationLevel) || 0, 3))
         if (!i) {
           players.push(
@@ -902,35 +931,48 @@ export class MapGeneration {
             )
           )
         } else if (!this.map.noAI) {
-          players.push(
-            new AI(
-              {
-                i: posI,
-                j: posJ,
-                age: 0,
-                civ,
-                color,
-                diplomacy,
-                factionId,
-                gender,
-                team,
-                name,
-                difficulty,
-                civilizationLevel,
-              },
-              context
-            )
-          )
+          this.map.banditCampPositions.push({ i: posI, j: posJ })
         }
       }
     }
 
-    players.forEach((player, index) =>
-      this.applyStartingBonuses(
-        player,
-        playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null
+    if (!this.map.noAI && this.map.banditCampPositions.length) {
+      const anchor = this.map.banditCampPositions[0]
+      const human = players.find(player => player.isPlayed)
+      const owner = new Player(
+        {
+          i: anchor.i,
+          j: anchor.j,
+          name: BANDIT_CAMP_OWNER_NAME,
+          type: PLAYER_TYPES.bandits,
+          isPlayed: false,
+          color: 'red',
+          civ: human?.civ ?? 'Greek',
+          gender: 'male',
+          team: null,
+          diplomacy: null,
+          populationMax: Number.POSITIVE_INFINITY,
+          autoTechnologyByAge: false,
+        },
+        context
+      ) as BanditCampOwner
+      owner.banditCampOwner = true
+      owner.selectedUnits = []
+      owner.selectedUnit = null
+      owner.selectedBuilding = null
+      owner.selectedOther = null
+      owner.hasBuilt = []
+      players.push(owner)
+    }
+
+    players
+      .filter(player => player.type !== PLAYER_TYPES.bandits)
+      .forEach((player, index) =>
+        this.applyStartingBonuses(
+          player,
+          playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null
+        )
       )
-    )
 
     return players
   }
@@ -942,6 +984,7 @@ export class MapGeneration {
 
     for (let i = 0; i < players.length; i++) {
       const player = players[i]
+      if (player.type === PLAYER_TYPES.bandits) continue
       if (player.isPlayed && this.map.humanStartsWithoutBase) {
         player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero })
         continue
@@ -969,6 +1012,134 @@ export class MapGeneration {
       if (player.civilizationLevel) {
         this.applyCivilizationLevelStartingKit(player, player.civilizationLevel, towncenter)
       }
+    }
+  }
+
+  getOrCreateBanditCampOwner(anchor: GridPosition): BanditCampOwner {
+    const existing = this.map.context.players.find(player => player.type === PLAYER_TYPES.bandits) as
+      | BanditCampOwner
+      | undefined
+    if (existing) return existing
+
+    const context = runtimeContext(this.map.context)
+    const owner = new Player(
+      {
+        i: anchor.i,
+        j: anchor.j,
+        name: BANDIT_CAMP_OWNER_NAME,
+        type: PLAYER_TYPES.bandits,
+        isPlayed: false,
+        color: 'red',
+        civ: context.player?.civ ?? 'Greek',
+        gender: 'male',
+        team: null,
+        diplomacy: null,
+        populationMax: Number.POSITIVE_INFINITY,
+        autoTechnologyByAge: false,
+      },
+      context
+    ) as BanditCampOwner
+    owner.banditCampOwner = true
+    owner.selectedUnits = []
+    owner.selectedUnit = null
+    owner.selectedBuilding = null
+    owner.selectedOther = null
+    owner.hasBuilt = []
+    this.map.context.players.push(owner)
+    return owner
+  }
+
+  canPlaceCampBuildingAt(owner: PlayerLike, i: number, j: number, type: string): boolean {
+    const config = owner.config.buildings[type]
+    if (!config) return false
+    return canPlaceBuildingAt(this.map.grid, i, j, { ...config, type })
+  }
+
+  findBanditCampAnchor(position: GridPosition, owner: PlayerLike): RuntimeCell | null {
+    for (let distance = 0; distance <= 8; distance++) {
+      const cells = getPlainCellsAroundPoint(position.i, position.j, this.map.grid, distance, cell =>
+        this.canPlaceCampBuildingAt(owner, cell.i, cell.j, BUILDING_TYPES.banditCamp)
+      )
+      if (cells.length) return this.map.randomItem(cells)
+    }
+    return null
+  }
+
+  placeBanditCampDecorations(owner: PlayerLike, anchor: RuntimeCell): void {
+    const targetCount = this.map.randomRange(3, 5)
+    const candidates: RuntimeCell[] = []
+    for (let distance = 2; distance <= 4; distance++) {
+      candidates.push(
+        ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
+          this.canPlaceCampBuildingAt(owner, cell.i, cell.j, BUILDING_TYPES.banditCampDecoration)
+        )
+      )
+    }
+
+    for (let placed = 0; placed < targetCount && candidates.length; placed++) {
+      const type = this.map.randomItem([...BANDIT_CAMP_DECORATION_TYPES])
+      const cell = candidates.splice(this.map.randomRange(0, candidates.length - 1), 1)[0]
+      if (!this.canPlaceCampBuildingAt(owner, cell.i, cell.j, type)) continue
+      owner.createBuilding({
+        i: cell.i,
+        j: cell.j,
+        type,
+        isBuilt: true,
+      })
+    }
+  }
+
+  getBanditCampUnitTypes(campIndex: number): string[] {
+    const extra = Math.min(4, Math.max(0, campIndex))
+    const count = this.map.randomRange(3, 4 + extra)
+    const types = [UNIT_TYPES.banditChief]
+    for (let index = 1; index < count; index++) {
+      types.push(index % 3 === 0 ? UNIT_TYPES.banditArcher : UNIT_TYPES.banditSword)
+    }
+    return types
+  }
+
+  placeBanditCampUnits(owner: PlayerLike, anchor: RuntimeCell, campIndex: number): void {
+    const candidates: RuntimeCell[] = []
+    for (let distance = 2; distance <= 7; distance++) {
+      candidates.push(
+        ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
+          Boolean(!cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
+        )
+      )
+    }
+
+    for (const type of this.getBanditCampUnitTypes(campIndex)) {
+      if (!candidates.length) break
+      const cell = candidates.splice(this.map.randomRange(0, candidates.length - 1), 1)[0]
+      if (cell.solid || cell.has) continue
+      const unit = owner.createUnit?.({
+        i: cell.i,
+        j: cell.j,
+        type,
+        gender: 'male',
+        appearanceVariants: { gender: 'male' },
+        suppressCreateSound: true,
+      })
+      if (unit) owner.population = (owner.population ?? 0) + 1
+    }
+  }
+
+  placeBanditCamps(): void {
+    if (this.map.noAI || !this.map.banditCampPositions.length) return
+    const owner = this.getOrCreateBanditCampOwner(this.map.banditCampPositions[0])
+    for (let index = 0; index < this.map.banditCampPositions.length; index++) {
+      const position = this.map.banditCampPositions[index]
+      const anchor = this.findBanditCampAnchor(position, owner)
+      if (!anchor) continue
+      owner.createBuilding({
+        i: anchor.i,
+        j: anchor.j,
+        type: BUILDING_TYPES.banditCamp,
+        isBuilt: true,
+      })
+      this.placeBanditCampDecorations(owner, anchor)
+      this.placeBanditCampUnits(owner, anchor, index)
     }
   }
 

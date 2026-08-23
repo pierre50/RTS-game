@@ -1,6 +1,7 @@
 import { SHEET_TYPES } from '../constants'
 import type { UnitEntity } from '../types/entities'
 import { buildFrameRange, playSpriteFrameSequence } from './spriteAnimation'
+import { isHeroControlled } from './unitControl'
 
 const SLASH_REVERSE_RECOVERY_FRAME_MS = 45
 const SLASH_REVERSE_RECOVERY_STOP_FRAME = 0
@@ -11,6 +12,16 @@ type ReverseSlashRecoveryOptions = {
   onComplete: () => void
   releaseFrame: number
   stopFrame?: number
+}
+
+export function logHeroSlashFrame(unit: UnitEntity, event: string, details: Record<string, unknown> = {}): void {
+  if (!isHeroControlled(unit)) return
+  console.log('[hero slash frames]', event, {
+    action: unit.action ?? null,
+    currentFrame: unit.sprite?.currentFrame ?? null,
+    sheet: unit.currentSheet ?? null,
+    ...details,
+  })
 }
 
 export function playReverseSlashRecovery(
@@ -28,12 +39,14 @@ export function playReverseSlashRecovery(
 
   const latestFrame = Math.min(Math.floor(sprite.currentFrame), releaseFrame)
   const startFrame = Math.max(stopFrame, latestFrame - SLASH_REVERSE_RECOVERY_SKIP_FRAMES)
-  const frames = buildFrameRange(startFrame, stopFrame)
+  const frames = buildFrameRange(startFrame, stopFrame).slice(0, -1)
+  logHeroSlashFrame(unit, 'recovery:start', { frames, latestFrame, releaseFrame, startFrame, stopFrame })
   let completed = false
   const finish = (): void => {
     if (completed) return
     completed = true
     unit.attackRecoveryAnimationTaskId = null
+    logHeroSlashFrame(unit, 'recovery:complete')
     onComplete()
   }
 
@@ -41,7 +54,8 @@ export function playReverseSlashRecovery(
     frameMs,
     frames,
     onComplete: finish,
-    onFrame: () => {
+    onFrame: (frame, index) => {
+      logHeroSlashFrame(unit, 'recovery:frame', { frame, index })
       unit.syncShadow?.()
       unit.syncAppearanceLayers?.(SHEET_TYPES.action)
     },

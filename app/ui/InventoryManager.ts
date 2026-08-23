@@ -1,11 +1,29 @@
 import { Modal } from '../lib'
 import { renderBuildingAvatar, renderEquipmentAvatar } from '../lib/avatar'
+import {
+  equipHeroInventoryItem,
+  formatEquipmentLootLabel,
+  formatEquipmentStackLabel,
+  getEquipmentSlot,
+  getEquipmentStacks,
+  getHeroEquipmentSlotLabelKey,
+  getHeroEquippedItemCount,
+  getWeaponSlot,
+  HERO_EQUIPMENT_SLOTS,
+  unequipHeroInventorySlot,
+} from '../lib/equipmentLoot'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
 import type Menu from '../classes/Menu'
 import { createEntityInfoContent } from './EntityInfoModalManager'
-import { EQUIPPED_ITEM_WEAPON, getEquippedItemWeapon, HERO_TOOL_ORDER, type HeroEquippedItem } from '../lib/heroTools'
+import {
+  EQUIPPED_ITEM_WEAPON,
+  getEquippedItemWeapon,
+  HERO_TOOL_ORDER,
+  isHeroToolAvailable,
+  type HeroEquippedItem,
+} from '../lib/heroTools'
 import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
@@ -31,6 +49,9 @@ export class InventoryManager {
   worldMapPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   technologiesPanel: HTMLDivElement
+  weaponPanel: HTMLDivElement
+  equippedPanel: HTMLDivElement
+  lootedEquipmentPanel: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLButtonElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -63,6 +84,12 @@ export class InventoryManager {
     this.technologiesPanel.className = 'action-menu-page action-menu-technologies-page'
     this.constructionPanel = document.createElement('div')
     this.constructionPanel.className = 'action-menu-page action-menu-construction-page'
+    this.weaponPanel = document.createElement('div')
+    this.weaponPanel.className = 'inventory-weapon-section'
+    this.equippedPanel = document.createElement('div')
+    this.equippedPanel.className = 'inventory-equipped-section'
+    this.lootedEquipmentPanel = document.createElement('div')
+    this.lootedEquipmentPanel.className = 'inventory-loot-section'
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
@@ -80,6 +107,7 @@ export class InventoryManager {
       }
     )
 
+    this.toolsPanel.appendChild(this.weaponPanel)
     for (const tool of HERO_TOOL_ORDER) {
       const slot = document.createElement('button')
       slot.type = 'button'
@@ -103,6 +131,8 @@ export class InventoryManager {
       this.slots.set(tool, slot)
       this.toolsPanel.appendChild(slot)
     }
+    this.toolsPanel.appendChild(this.equippedPanel)
+    this.toolsPanel.appendChild(this.lootedEquipmentPanel)
 
     this.panel.appendChild(this.modalTabs.element)
     this.minimapPanel.appendChild(menu.minimapWrap)
@@ -172,7 +202,7 @@ export class InventoryManager {
     } else if (tab === 'worldmap') {
       this.renderWorldMap()
     } else {
-      if (tab === 'tools') this.renderToolIcons()
+      if (tab === 'tools') this.renderTools()
       else if (tab === 'info') this.renderInfo()
       this.menu.clearActionHotkeys()
     }
@@ -340,17 +370,143 @@ export class InventoryManager {
     this.worldMapPanel.appendChild(tree)
   }
 
-  // Equipment art is global (no civ/player variation, unlike unit/building
-  // avatars), so unlike renderTechnologies()/renderConstruction() this only
-  // needs to run once — not rebuilt every time the tab is shown.
   renderToolIcons(): void {
-    if (this.toolIconsRendered) return
-    this.toolIconsRendered = true
     const { app } = this.menu.context
-    for (const [tool, canvas] of this.toolIcons) {
-      const equipment = getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0)
-      if (equipment) renderEquipmentAvatar(app, equipment, canvas)
+    const hero = this.menu.context.controls.heroUnit
+    for (const [tool, slot] of this.slots) {
+      const available = isHeroToolAvailable(hero, tool)
+      slot.disabled = !available
+      slot.classList.toggle('empty', !available && tool !== 'interact')
     }
+    for (const [tool, canvas] of this.toolIcons) {
+      const equipment = getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
+      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
+      if (equipment) renderEquipmentAvatar(app, equipment, canvas)
+
+      const label = this.slots.get(tool)?.querySelector<HTMLDivElement>('.inventory-slot-label')
+      if (label) label.textContent = equipment ? formatEquipmentLootLabel(equipment) : t(TOOL_LABEL_KEYS[tool])
+    }
+  }
+
+  renderLootedEquipment(): void {
+    this.lootedEquipmentPanel.replaceChildren()
+    const hero = this.menu.context.controls.heroUnit
+    const equipment = hero?.inventory?.equipment ?? []
+    if (!equipment.length) return
+
+    const title = document.createElement('div')
+    title.className = 'inventory-loot-title'
+    title.textContent = t('inventoryBag')
+    this.lootedEquipmentPanel.appendChild(title)
+
+    const grid = document.createElement('div')
+    grid.className = 'inventory-loot-grid'
+    for (const stack of getEquipmentStacks(equipment)) {
+      const item = stack.equipment
+      const slot = document.createElement('button')
+      const equipmentSlot = getEquipmentSlot(item)
+      const weaponSlot = getWeaponSlot(item)
+      const canEquip = Boolean(
+        (equipmentSlot && (equipmentSlot !== 'helmetDecor' || hero?.inventory?.equipped?.helmet)) || weaponSlot
+      )
+      slot.type = 'button'
+      slot.className = 'inventory-slot ui-btn inventory-loot-slot'
+      slot.disabled = !canEquip
+      if (canEquip) {
+        slot.addEventListener('click', () => {
+          if (!equipHeroInventoryItem(hero, item)) return
+          this.menu.playUiClick()
+          this.renderTools()
+        })
+      }
+
+      const icon = document.createElement('canvas')
+      icon.className = 'unit-avatar-frame inventory-slot-icon'
+      icon.width = 64
+      icon.height = 64
+      renderEquipmentAvatar(this.menu.context.app, item, icon)
+
+      const label = document.createElement('div')
+      label.className = 'inventory-slot-label'
+      label.textContent = formatEquipmentStackLabel(item, stack.count)
+
+      slot.appendChild(icon)
+      slot.appendChild(label)
+      grid.appendChild(slot)
+    }
+    this.lootedEquipmentPanel.appendChild(grid)
+  }
+
+  renderEquippedEquipment(): void {
+    this.equippedPanel.replaceChildren()
+    const hero = this.menu.context.controls.heroUnit
+    if (!hero) return
+
+    const title = document.createElement('div')
+    title.className = 'inventory-loot-title'
+    title.textContent = t('inventoryEquippedEquipment')
+    this.equippedPanel.appendChild(title)
+
+    const grid = document.createElement('div')
+    grid.className = 'inventory-equipped-grid'
+    for (const slotId of HERO_EQUIPMENT_SLOTS) {
+      const equipment = hero.inventory?.equipped?.[slotId]
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'inventory-slot ui-btn inventory-equipment-slot'
+      button.classList.toggle('empty', !equipment)
+      button.disabled = !equipment
+      if (equipment) {
+        button.addEventListener('click', () => {
+          if (!unequipHeroInventorySlot(hero, slotId)) return
+          this.menu.playUiClick()
+          this.renderTools()
+        })
+      }
+
+      const iconWrap = document.createElement('span')
+      iconWrap.className = 'inventory-equipped-icon-wrap'
+      if (equipment) {
+        const icon = document.createElement('canvas')
+        icon.className = 'unit-avatar-frame inventory-slot-icon'
+        icon.width = 64
+        icon.height = 64
+        renderEquipmentAvatar(this.menu.context.app, equipment, icon)
+        iconWrap.appendChild(icon)
+      }
+
+      const slotLabel = document.createElement('div')
+      slotLabel.className = 'inventory-slot-type'
+      slotLabel.textContent = t(getHeroEquipmentSlotLabelKey(slotId))
+
+      const label = document.createElement('div')
+      label.className = 'inventory-slot-label'
+      label.textContent = equipment
+        ? formatEquipmentStackLabel(equipment, getHeroEquippedItemCount(hero, slotId))
+        : t('inventoryEmptySlot')
+
+      button.appendChild(iconWrap)
+      button.appendChild(slotLabel)
+      button.appendChild(label)
+      grid.appendChild(button)
+    }
+    this.equippedPanel.appendChild(grid)
+  }
+
+  renderActiveWeapons(): void {
+    this.weaponPanel.replaceChildren()
+
+    const title = document.createElement('div')
+    title.className = 'inventory-loot-title'
+    title.textContent = t('inventoryActiveWeapons')
+    this.weaponPanel.appendChild(title)
+  }
+
+  renderTools(): void {
+    this.renderActiveWeapons()
+    this.renderToolIcons()
+    this.renderEquippedEquipment()
+    this.renderLootedEquipment()
   }
 
   restoreMinimap(): void {
@@ -490,6 +646,7 @@ export class InventoryManager {
   }
 
   selectTool(tool: HeroEquippedItem): void {
+    if (!isHeroToolAvailable(this.menu.context.controls.heroUnit, tool)) return
     playUiSound(SOUND_CUES.ui.menuClick)
     this.menu.context.controls.setEquippedItem?.(tool)
     this.menu.context.controls.setEquippedTool?.(tool)
@@ -500,6 +657,13 @@ export class InventoryManager {
     for (const [tool, slot] of this.slots) {
       slot.classList.toggle('active', tool === equippedTool)
     }
+    if (this.activeTab === 'tools') this.renderLootedEquipment()
+  }
+
+  refresh(): void {
+    if (!this.opened) return
+    if (this.activeTab === 'tools') this.renderTools()
+    if (this.activeTab === 'info') this.renderInfo()
   }
 
   destroy(): void {
