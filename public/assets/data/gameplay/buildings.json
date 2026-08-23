@@ -250,6 +250,7 @@
   "BanditCamp": {
     "size": 2,
     "zIndexOffset": -0.5,
+    "occlusionFade": false,
     "sight": 9,
     "totalHitPoints": 180,
     "constructionTime": 0,

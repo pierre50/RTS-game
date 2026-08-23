@@ -56,6 +56,16 @@ export type UnitCreationExtra = {
 }
 export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
 
+export type EntityLightSourceConfig = {
+  color?: string
+  flicker?: number
+  intensity?: number
+  offsetX?: number
+  offsetY?: number
+  radius?: number
+  verticalScale?: number
+}
+
 export type EntityInfoRenderOptions = {
   // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
   // at level 0; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
@@ -87,6 +97,8 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   height: number
   visible?: boolean
   alpha?: number
+  occlusionFade?: boolean
+  lightSource?: EntityLightSourceConfig | null
   selected?: boolean
   color?: string
   hitPoints?: number

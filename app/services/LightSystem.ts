@@ -1,5 +1,7 @@
 import { Container, Sprite, Texture } from 'pixi.js'
+import { getInstanceScreenBounds } from '../lib/grid/visibility'
 import type { GameContextLike } from '../types/context'
+import type { EntityLightSourceConfig, RuntimeEntity } from '../types/entities'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
@@ -7,19 +9,35 @@ type LightSource = {
   color: string
   intensity: number
   radius: number
+  verticalScale: number
   x: number
   y: number
 }
 type ViewportLightMetrics = {
+  visibleHeight: number
   visibleLeft: number
   visibleTop: number
+  visibleWidth: number
   zoom?: number
+}
+type DisplayLightSourceTarget = {
+  children?: DisplayLightSourceTarget[]
+  destroyed?: boolean
+  lightSource?: EntityLightSourceConfig | null
+  visible?: boolean
+  x?: number
+  y?: number
 }
 
 const TARGET_FRAME_MS = 1000 / 60
 const HERO_LIGHT_RADIUS = 250
 const HERO_LIGHT_CENTER_OFFSET_Y = -22
 const HERO_LIGHT_VERTICAL_SCALE = 0.76
+const DEFAULT_ENTITY_LIGHT_COLOR = '255,172,76'
+const DEFAULT_ENTITY_LIGHT_FLICKER = 0.08
+const DEFAULT_ENTITY_LIGHT_INTENSITY = 0.86
+const DEFAULT_ENTITY_LIGHT_RADIUS = 160
+const DEFAULT_ENTITY_LIGHT_VERTICAL_SCALE = 0.7
 const DARKNESS_LERP_PER_SECOND = 5
 const MAX_DARKNESS_ALPHA = 0.96
 const GLOW_ALPHA = 0.08
@@ -30,6 +48,18 @@ function clamp(value: number, min: number, max: number): number {
 
 function lerp(current: number, target: number, amount: number): number {
   return current + (target - current) * clamp(amount, 0, 1)
+}
+
+function normalizeLightColor(color?: string): string {
+  if (!color) return DEFAULT_ENTITY_LIGHT_COLOR
+  const hex = color.trim().match(/^#?([0-9a-f]{6})$/i)
+  if (!hex) return color
+  const value = Number.parseInt(hex[1], 16)
+  return `${(value >> 16) & 255},${(value >> 8) & 255},${value & 255}`
+}
+
+function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
+  return Boolean(value && typeof value === 'object')
 }
 
 export class LightSystem {
@@ -107,19 +137,136 @@ export class LightSystem {
   updateLights(): void {
     this.lights.length = 0
     const hero = this.context.controls?.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed) return
     const viewport = this.context.controls?.getViewportMetrics?.() as ViewportLightMetrics | undefined
+    if (!viewport) return
     const visibleLeft = viewport?.visibleLeft ?? this.context.controls.camera.x
     const visibleTop = viewport?.visibleTop ?? this.context.controls.camera.y
     const zoom = Math.max(0.1, viewport?.zoom ?? 1)
-    const flicker = 0.97 + Math.sin(performance.now() * 0.006) * 0.025 + Math.sin(performance.now() * 0.013) * 0.012
+    const now = performance.now()
+    const heroFlicker = 0.97 + Math.sin(now * 0.006) * 0.025 + Math.sin(now * 0.013) * 0.012
+
+    if (hero && !hero.isDead && !hero.isDestroyed) {
+      this.lights.push({
+        x: hero.x - visibleLeft,
+        y: hero.y - visibleTop + HERO_LIGHT_CENTER_OFFSET_Y / zoom,
+        radius: HERO_LIGHT_RADIUS / zoom,
+        intensity: clamp(heroFlicker, 0.88, 1),
+        verticalScale: HERO_LIGHT_VERTICAL_SCALE,
+        color: '255,198,96',
+      })
+    }
+
+    this.collectEntityLights(visibleLeft, visibleTop, zoom, now)
+  }
+
+  collectEntityLights(
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number
+  ): void {
+    const buckets = this.context.map?.instanceBuckets
+    const controls = this.context.controls
+    if (!buckets || !controls) return
+
+    const seen = new Set<RuntimeEntity>()
+    for (const column of buckets) {
+      for (const bucket of column) {
+        for (const instance of bucket as Set<RuntimeEntity>) {
+          if (seen.has(instance)) continue
+          seen.add(instance)
+          this.addEntityLights(instance, visibleLeft, visibleTop, zoom, now)
+        }
+      }
+    }
+  }
+
+  addEntityLights(
+    instance: RuntimeEntity,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number
+  ): void {
+    if (
+      instance.isDead ||
+      instance.isDestroyed ||
+      instance.visible === false ||
+      !this.context.controls?.instanceInCamera(instance, getInstanceScreenBounds(instance))
+    ) {
+      return
+    }
+
+    this.addLightSource(instance, instance, 0, 0, visibleLeft, visibleTop, zoom, now)
+    const children = (instance as RuntimeEntity & { children?: DisplayLightSourceTarget[] }).children ?? []
+    for (const child of children) {
+      this.addChildLightSources(
+        instance,
+        child,
+        typeof child.x === 'number' ? child.x : 0,
+        typeof child.y === 'number' ? child.y : 0,
+        visibleLeft,
+        visibleTop,
+        zoom,
+        now
+      )
+    }
+  }
+
+  addChildLightSources(
+    instance: RuntimeEntity,
+    source: DisplayLightSourceTarget,
+    localX: number,
+    localY: number,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number
+  ): void {
+    this.addLightSource(instance, source, localX, localY, visibleLeft, visibleTop, zoom, now)
+
+    const children = source.children ?? []
+    for (const child of children) {
+      this.addChildLightSources(
+        instance,
+        child,
+        localX + (typeof child.x === 'number' ? child.x : 0),
+        localY + (typeof child.y === 'number' ? child.y : 0),
+        visibleLeft,
+        visibleTop,
+        zoom,
+        now
+      )
+    }
+  }
+
+  addLightSource(
+    instance: RuntimeEntity,
+    source: DisplayLightSourceTarget,
+    localX: number,
+    localY: number,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number
+  ): void {
+    const config = source.lightSource
+    if (!isLightSourceConfig(config) || source.destroyed || source.visible === false) return
+
+    const flicker = clamp(config.flicker ?? DEFAULT_ENTITY_LIGHT_FLICKER, 0, 0.5)
+    const flickerRatio = flicker
+      ? 1 + Math.sin(now * 0.007 + instance.i * 0.37 + instance.j * 0.19) * flicker
+      : 1
+    const offsetX = (config.offsetX ?? 0) / zoom
+    const offsetY = (config.offsetY ?? 0) / zoom
 
     this.lights.push({
-      x: hero.x - visibleLeft,
-      y: hero.y - visibleTop + HERO_LIGHT_CENTER_OFFSET_Y / zoom,
-      radius: HERO_LIGHT_RADIUS / zoom,
-      intensity: clamp(flicker, 0.88, 1),
-      color: '255,198,96',
+      x: instance.x - visibleLeft + localX / zoom + offsetX,
+      y: instance.y - visibleTop + localY / zoom + offsetY,
+      radius: Math.max(1, (config.radius ?? DEFAULT_ENTITY_LIGHT_RADIUS) / zoom),
+      intensity: clamp((config.intensity ?? DEFAULT_ENTITY_LIGHT_INTENSITY) * flickerRatio, 0, 1.4),
+      verticalScale: clamp(config.verticalScale ?? DEFAULT_ENTITY_LIGHT_VERTICAL_SCALE, 0.2, 1.4),
+      color: normalizeLightColor(config.color),
     })
   }
 
@@ -146,7 +293,7 @@ export class LightSystem {
     const radius = light.radius * light.intensity
     ctx.save()
     ctx.translate(light.x, light.y)
-    ctx.scale(1, HERO_LIGHT_VERTICAL_SCALE)
+    ctx.scale(1, light.verticalScale)
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius)
     gradient.addColorStop(0, 'rgba(0,0,0,0.96)')
     gradient.addColorStop(0.32, 'rgba(0,0,0,0.9)')
@@ -164,7 +311,7 @@ export class LightSystem {
     const radius = light.radius * 0.86 * light.intensity
     ctx.save()
     ctx.translate(light.x, light.y)
-    ctx.scale(1, HERO_LIGHT_VERTICAL_SCALE)
+    ctx.scale(1, light.verticalScale)
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius)
     gradient.addColorStop(0, `rgba(${light.color}, ${GLOW_ALPHA * this.currentDarkness})`)
     gradient.addColorStop(0.45, `rgba(${light.color}, ${GLOW_ALPHA * 0.42 * this.currentDarkness})`)

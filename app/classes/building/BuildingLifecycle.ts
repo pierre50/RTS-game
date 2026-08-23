@@ -32,10 +32,12 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import type { RuntimeCell } from '../../types/map'
+import type { EntityLightSourceConfig } from '../../types/entities'
 import type { Building } from './index'
 import type { Texture } from 'pixi.js'
 
 type RuntimeAnimatedSprite = AnimatedSprite
+type LightedAnimatedSprite = RuntimeAnimatedSprite & { lightSource?: EntityLightSourceConfig }
 type RuntimeContainer = Container
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 type BuildingSpritesheetData = { animationSpeed?: number; loop?: boolean }
@@ -46,6 +48,26 @@ const BUILDING_FIRE_SHEETS = {
   heavy: 'effects/fire/heavy',
 } as const
 const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
+const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
+  color: '#ffad4f',
+  flicker: 0.09,
+  intensity: 0.82,
+  radius: 150,
+  offsetY: -8,
+  verticalScale: 0.68,
+}
+const BUILDING_FIRE_LIGHT: EntityLightSourceConfig = {
+  color: '#ff9d45',
+  flicker: 0.12,
+  intensity: 0.72,
+  radius: 120,
+  offsetY: -12,
+  verticalScale: 0.72,
+}
+
+function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourceConfig = BUILDING_FIRE_LIGHT): void {
+  sprite.lightSource = config
+}
 
 export class BuildingLifecycle {
   building: Building
@@ -164,14 +186,16 @@ export class BuildingLifecycle {
 
     if (existing instanceof AnimatedSprite) {
       existing.textures = textures
+      attachFireLight(existing as LightedAnimatedSprite, CAMPFIRE_DECORATION_LIGHT)
       existing.gotoAndPlay(0)
       return
     }
 
     existing?.destroy({ children: true })
-    const fire = new AnimatedSprite(textures) as RuntimeAnimatedSprite
+    const fire = new AnimatedSprite(textures) as LightedAnimatedSprite
     bindAnimatedSpriteToTicker(fire, building.context.app)
     fire.label = CAMPFIRE_DECORATION_LABEL
+    attachFireLight(fire, CAMPFIRE_DECORATION_LIGHT)
     fire.eventMode = 'none'
     fire.roundPixels = true
     fire.position.set(0, 10)
@@ -186,8 +210,9 @@ export class BuildingLifecycle {
     const spritesheetFire = Assets.cache.get(spriteId)
     if (fire) {
       for (let i = 0; i < fire.children.length; i++) {
-        const child = fire.children[i] as AnimatedSprite
+        const child = fire.children[i] as LightedAnimatedSprite
         child.textures = getAnimationFrames(spritesheetFire.textures) as Texture[]
+        attachFireLight(child)
         child.play()
       }
     } else {
@@ -207,8 +232,9 @@ export class BuildingLifecycle {
       for (let i = 0; i < poses.length; i++) {
         const spriteFire = new AnimatedSprite(
           getAnimationFrames(spritesheetFire.textures) as Texture[]
-        ) as RuntimeAnimatedSprite
+        ) as LightedAnimatedSprite
         bindAnimatedSpriteToTicker(spriteFire, building.context.app)
+        attachFireLight(spriteFire)
         spriteFire.eventMode = 'none'
         spriteFire.roundPixels = true
         spriteFire.x = poses[i][0]

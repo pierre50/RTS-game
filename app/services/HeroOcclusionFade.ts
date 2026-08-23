@@ -1,9 +1,9 @@
-import { FAMILY_TYPES, RESOURCE_TYPES } from '../constants'
+import { FAMILY_TYPES } from '../constants'
 import { getInstanceZIndex } from '../lib/maths'
 import { texturesHaveOpaqueOverlap } from '../lib/graphics/alphaMask'
 import { boundsIntersect } from '../lib/graphics/chunkCulling'
 import { findInstancesInSight, getInstanceScreenBounds, type RenderableInstance } from '../lib/grid/visibility'
-import type { RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 
 const FADE_ALPHA = 0.35
 const FADE_SPEED_PER_MS = 1 / 150
@@ -12,14 +12,18 @@ const ZINDEX_EPSILON = 0.01
 
 function isFadeableOccluder(target: RuntimeEntity): boolean {
   if (!target || target.isDead || target.isDestroyed || !target.sprite) return false
-  if (target.family === FAMILY_TYPES.building) return true
-  return (
-    target.family === FAMILY_TYPES.resource &&
-    [RESOURCE_TYPES.tree, RESOURCE_TYPES.berrybush, RESOURCE_TYPES.wheat].includes(target.type)
-  )
+  if (target.occlusionFade === false) return false
+  if (target.family === FAMILY_TYPES.building) return (target as BuildingEntity).isBuilt === true
+  return target.family === FAMILY_TYPES.resource
 }
 
-// Fades trees/buildings that visually overlap the hero on screen while drawing in front of it
+function drawsInFrontOfHero(entity: RuntimeEntity, hero: UnitEntity): boolean {
+  const heroZIndex = hero.zIndex ?? getInstanceZIndex(hero)
+  const entityZIndex = entity.zIndex ?? getInstanceZIndex(entity)
+  return entityZIndex > heroZIndex + ZINDEX_EPSILON
+}
+
+// Fades entities that visually overlap the hero on screen while drawing in front of it
 // (higher iso zIndex), so the player doesn't lose sight of the hero behind foliage/walls.
 export class HeroOcclusionFade {
   faded: Set<RuntimeEntity>
@@ -55,7 +59,6 @@ export class HeroOcclusionFade {
 
     const heroBounds = getInstanceScreenBounds(hero)
     if (!heroBounds) return occluding
-    const heroZIndex = hero.zIndex ?? getInstanceZIndex(hero)
 
     const sightOrigin: RenderableInstance = {
       i: hero.i,
@@ -72,8 +75,7 @@ export class HeroOcclusionFade {
     ) as RuntimeEntity[]
 
     for (const candidate of candidates) {
-      const candidateZIndex = candidate.zIndex ?? getInstanceZIndex(candidate)
-      if (candidateZIndex <= heroZIndex + ZINDEX_EPSILON) continue
+      if (candidate === hero || !drawsInFrontOfHero(candidate, hero)) continue
       const candidateBounds = getInstanceScreenBounds(candidate)
       if (
         candidateBounds &&
