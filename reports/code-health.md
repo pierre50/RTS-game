@@ -1,27 +1,31 @@
 # Code Health Report
 
-Generated: 2026-08-24T16:02:36.855Z
+Generated: 2026-08-24T22:31:54.704Z
 
 ## Global Score
 
-**73/100 (C)**
+**90/100 (A)**
 
 | Component | Score |
 | --- | --- |
-| Gates | 30/30 |
-| Duplication | 25/25 |
-| Structure | 8/25 |
+| Gates | 25/25 |
+| Duplication | 20/20 |
+| Structure | 20/20 |
+| Architecture | 15/15 |
 | Hotspots | 0/10 |
 | Type/Lint confidence | 10/10 |
 
+> Architecture is scored separately from the baseline gate: staying at or below the baseline keeps the check green, but existing cycles still reduce the global quality score.
+
 ## Summary
 
-- Files analyzed: 282
-- Total lines: 60620
-- Code lines: 53915
-- Approx branches: 8777
-- Approx functions/methods: 6733
+- Files analyzed: 351
+- Total lines: 63623
+- Code lines: 56558
+- Approx branches: 8785
+- Approx functions/methods: 7244
 - Duplication: 0 clones, 0%
+- Import cycles: 0 cycles / baseline 0
 
 ## Checks
 
@@ -31,77 +35,97 @@ Generated: 2026-08-24T16:02:36.855Z
 | TypeScript | OK |  |
 | Duplication | OK | 0 clones, 0% |
 | Dead code | OK |  |
+| Import cycles | OK | 0 cycles / baseline gate 0 |
 
 ## Top Priorities
 
 | File | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- |
-| app/classes/unit/UnitMovement.ts | 587 | 993 | 258 | 134 | 44 | beaucoup de branches, souvent modifie |
-| app/classes/map/MapTerrain.ts | 586.4 | 997 | 321 | 120 | 16 | beaucoup de branches, souvent modifie |
-| app/classes/unit/UnitActions.ts | 496.9 | 995 | 232 | 85 | 40 | beaucoup de branches, souvent modifie |
-| app/controllers/HeroController.ts | 431.5 | 843 | 182 | 113 | 37 | beaucoup de branches, souvent modifie |
-| app/classes/players/AIPlayer.ts | 427.4 | 970 | 209 | 147 | 12 | beaucoup de branches, souvent modifie |
-| app/ai/AIEconomy.ts | 410.2 | 869 | 227 | 59 | 16 | beaucoup de branches, souvent modifie |
-| app/lib/combat.ts | 394.2 | 528 | 194 | 40 | 30 | beaucoup de branches, souvent modifie |
-| app/classes/Controls.ts | 382.6 | 965 | 189 | 74 | 25 | beaucoup de branches, souvent modifie |
-| app/lib/heroTools.ts | 382.1 | 991 | 153 | 49 | 41 | complexite elevee, souvent modifie |
-| app/classes/map/MapGeneration.ts | 373.7 | 981 | 140 | 70 | 44 | complexite elevee, souvent modifie, beaucoup de dependances |
-| app/dev-console/createDevCommands.ts | 360.1 | 449 | 27 | 398 | 18 | gros bloc/fonction, souvent modifie |
-| app/classes/building/BuildingProduction.ts | 347.4 | 575 | 170 | 37 | 26 | beaucoup de branches, souvent modifie |
+| app/classes/building/BuildingProduction.ts | 230.1 | 384 | 95 | 37 | 26 | souvent modifie |
+| app/classes/building/index.ts | 229.5 | 468 | 36 | 131 | 41 | souvent modifie |
+| app/controllers/HeroController.ts | 229.5 | 478 | 69 | 48 | 38 | souvent modifie |
+| app/classes/unit/UnitActions.ts | 229.2 | 348 | 65 | 65 | 41 | souvent modifie |
+| app/lib/heroTools.ts | 227.5 | 339 | 62 | 49 | 42 | souvent modifie |
+| app/classes/map/MapGeneration.ts | 227.3 | 477 | 52 | 19 | 45 | souvent modifie |
+| app/classes/Projectile.ts | 226.4 | 566 | 68 | 124 | 25 | souvent modifie |
+| app/classes/unit/index.ts | 218 | 571 | 13 | 18 | 59 | souvent modifie, beaucoup de dependances |
+| app/classes/players/AIPlayer.ts | 213.3 | 559 | 87 | 121 | 12 | souvent modifie |
+| app/classes/unit/UnitMovement.ts | 212.8 | 292 | 47 | 45 | 45 | souvent modifie |
+| app/classes/animal/index.ts | 211.5 | 436 | 30 | 114 | 42 | souvent modifie |
+| app/classes/Resource.ts | 210 | 564 | 63 | 128 | 21 | souvent modifie |
 
 ## Largest Files
 
 | File | LOC | Branches | Imports |
 | --- | --- | --- | --- |
-| app/classes/map/MapTerrain.ts | 997 | 321 | 8 |
-| app/classes/unit/UnitActions.ts | 995 | 232 | 15 |
-| app/classes/unit/UnitMovement.ts | 993 | 258 | 12 |
-| app/lib/heroTools.ts | 991 | 153 | 24 |
 | app/lib/lpc/equipment.ts | 984 | 58 | 2 |
-| app/classes/map/MapGeneration.ts | 981 | 140 | 26 |
-| app/classes/unit/index.ts | 975 | 83 | 32 |
-| app/classes/players/AIPlayer.ts | 970 | 209 | 14 |
-| app/classes/Controls.ts | 965 | 189 | 18 |
-| app/screens/Game.ts | 962 | 116 | 37 |
-| app/ai/AIEconomy.ts | 869 | 227 | 6 |
-| app/dev-console/actions/debug.ts | 867 | 113 | 9 |
+| app/lib/i18n/translations.ts | 769 | 7 | 1 |
+| app/services/WeatherSystem.ts | 712 | 67 | 8 |
+| app/ui/InventoryManager.ts | 675 | 86 | 14 |
+| app/screens/Game.ts | 665 | 43 | 33 |
+| app/ui/PlayerSetupPanel.ts | 629 | 56 | 6 |
+| app/classes/map/index.ts | 609 | 36 | 20 |
+| app/services/TributeRaidSystem.ts | 580 | 97 | 16 |
+| app/classes/Controls.ts | 574 | 50 | 21 |
+| app/classes/unit/index.ts | 571 | 13 | 26 |
+| app/classes/Projectile.ts | 566 | 68 | 18 |
+| app/classes/Resource.ts | 564 | 63 | 14 |
 
 ## Complexity Signals
 
 | File | Branches | Max Block | LOC |
 | --- | --- | --- | --- |
-| app/classes/map/MapTerrain.ts | 321 | 120 | 997 |
-| app/classes/unit/UnitMovement.ts | 258 | 134 | 993 |
-| app/classes/unit/UnitActions.ts | 232 | 85 | 995 |
-| app/ai/AIEconomy.ts | 227 | 59 | 869 |
-| app/classes/players/AIPlayer.ts | 209 | 147 | 970 |
-| app/lib/combat.ts | 194 | 40 | 528 |
-| app/classes/Controls.ts | 189 | 74 | 965 |
-| app/controllers/HeroController.ts | 182 | 113 | 843 |
-| app/classes/building/BuildingProduction.ts | 170 | 37 | 575 |
-| app/classes/map/MapResources.ts | 157 | 48 | 746 |
-| app/lib/heroTools.ts | 153 | 49 | 991 |
-| app/lib/npcInteraction.ts | 151 | 67 | 612 |
+| app/serialization/SaveValidator.ts | 116 | 66 | 361 |
+| app/services/VillagerShelterSystem.ts | 104 | 21 | 462 |
+| app/lib/combatActionConditions.ts | 103 | 24 | 216 |
+| app/ai/AIEconomyFoodManager.ts | 100 | 19 | 396 |
+| app/services/TributeRaidSystem.ts | 97 | 62 | 580 |
+| app/classes/map/MapTerrainGeneration.ts | 96 | 63 | 391 |
+| app/classes/unit/UnitResourceActions.ts | 96 | 67 | 448 |
+| app/classes/building/BuildingProduction.ts | 95 | 37 | 384 |
+| app/classes/map/MapTerrainReliefAppearance.ts | 87 | 64 | 137 |
+| app/classes/players/AIPlayer.ts | 87 | 121 | 559 |
+| app/ui/InventoryManager.ts | 86 | 77 | 675 |
+| app/classes/players/PlayerTechnologies.ts | 84 | 48 | 298 |
 
 ## Git Hotspots
 
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
-| app/types/entities.ts | 62 | 199.9 | 494 |
-| app/classes/unit/index.ts | 58 | 337.3 | 975 |
+| app/types/entities.ts | 62 | 199.2 | 469 |
+| app/classes/unit/index.ts | 59 | 218 | 571 |
+| app/classes/map/MapGeneration.ts | 45 | 227.3 | 477 |
+| app/classes/unit/UnitMovement.ts | 45 | 212.8 | 292 |
 | app/lib/i18n/translations.ts | 45 | 164.7 | 769 |
-| app/classes/unit/UnitMovement.ts | 44 | 587 | 993 |
-| app/classes/map/MapGeneration.ts | 44 | 373.7 | 981 |
-| app/lib/heroTools.ts | 41 | 382.1 | 991 |
-| app/classes/building/index.ts | 41 | 255.7 | 556 |
-| app/classes/animal/index.ts | 41 | 207.4 | 440 |
+| app/lib/heroTools.ts | 42 | 227.5 | 339 |
+| app/classes/animal/index.ts | 42 | 211.5 | 436 |
+| app/classes/building/index.ts | 41 | 229.5 | 468 |
+| app/classes/unit/UnitActions.ts | 41 | 229.2 | 348 |
 | app/config/assetManifest.ts | 41 | 129.9 | 275 |
-| app/classes/unit/UnitActions.ts | 40 | 496.9 | 995 |
-| app/controllers/HeroController.ts | 37 | 431.5 | 843 |
-| app/screens/Game.ts | 36 | 329.7 | 962 |
+| app/controllers/HeroController.ts | 38 | 229.5 | 478 |
+| app/screens/Game.ts | 37 | 207.7 | 665 |
+
+## Dependency Cycles
+
+Madge found **0 circular dependencies**. Architecture score: **15/15**. Baseline gate: **0**.
+
+Fix priority:
+
+1. Break barrel/helper cycles around `lib/index.ts`, `types/entities.ts`, and projectile helpers.
+2. Then handle local two-way feature splits such as AI, map generation, controls, menu, building, and unit modules.
+3. Keep the baseline gate so new cycles cannot sneak in while old ones are being removed.
+
+### Cycle Hubs
+
+No cycle hubs measured.
+
+### Sample Cycles
+
+
 
 ## Notes
 
 - Complexity is an approximation based on branch keywords/operators; use it as a prioritization signal.
 - Churn is based on Git commits from the last 90 days.
+- Import-cycle baseline avoids making existing architecture debt fail the audit, while preventing regressions.
 - The score is intentionally project-local: it rewards passing checks, low duplication, smaller modules, and lower-risk hotspots.

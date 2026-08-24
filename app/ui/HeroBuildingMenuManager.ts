@@ -6,10 +6,10 @@ import { playUiSound } from '../lib/uiSound'
 import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
 import { getBuildingDisplayName } from './entityDisplayName'
-import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
+import type { MenuHost } from './MenuHost'
 
 function isBuildingEntity(value: unknown): value is BuildingEntity {
   return Boolean(value && (value as BuildingEntity).family === FAMILY_TYPES.building)
@@ -33,7 +33,7 @@ function getPendingTrainingCount(building: BuildingEntity, type: string): number
 }
 
 export class HeroBuildingMenuManager {
-  menu: Menu
+  menu: MenuHost
   panel: HTMLDivElement
   header: HTMLDivElement
   infoAvatarWrap: HTMLDivElement
@@ -47,7 +47,7 @@ export class HeroBuildingMenuManager {
   opened: boolean
   structureSignature: string
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.building = null
     this.stack = []

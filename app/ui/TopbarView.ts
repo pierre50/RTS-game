@@ -1,17 +1,17 @@
 import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
 import { createResourceIconMaps } from './resourceIcons'
-import type Menu from '../classes/Menu'
+import type { MenuHost } from './MenuHost'
 
 const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
 type ResourceName = (typeof RESOURCE_NAMES)[number]
 type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number }
 
 export class TopbarView {
-  menu: Menu
+  menu: MenuHost
   resourceEls: Record<string, HTMLDivElement>
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.resourceEls = {}
   }

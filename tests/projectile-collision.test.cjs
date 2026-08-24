@@ -83,6 +83,14 @@ function loadProjectile(libOverrides = {}) {
       uuidv4: () => 'projectile-1',
       ...libOverrides,
     },
+    '../lib/combat': {
+      isFriendlyTarget: (source, target) => source.owner?.label === target.owner?.label,
+      ...libOverrides,
+    },
+    '../lib/combatHit': {
+      applyCombatHit: () => ({ damageDealt: 0, killed: false }),
+      ...libOverrides,
+    },
     '../lib/combatFeedback': { showDamageFeedback: () => {} },
     '../lib/diplomaticAggression': {
       applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
@@ -92,9 +100,39 @@ function loadProjectile(libOverrides = {}) {
     },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
     '../lib/equipmentStats': { getEntityWeaponPower: () => 0, getUnitCombatRange: unit => unit.range },
+    '../lib/grid/movement': { moveTowardPoint: () => {} },
+    '../lib/maths': {
+      average: (a, b) => (a + b) / 2,
+      degreeToDirection: () => 'south',
+      degreesToRadians: degrees => degrees,
+      getArcHeightForDistance: () => 0,
+      getArcProgressOffset: () => 0,
+      getInstanceZIndex: () => 0,
+      getPointsDegree: () => 0,
+      getReliefOffset: () => 0,
+      getTerrainSetZIndex: () => 0,
+      isometricToCartesian: () => [0, 0],
+      pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
+      randomRange: () => 0,
+      uuidv4: () => 'projectile-1',
+      ...libOverrides,
+    },
+    '../lib/projectiles': {
+      getEffectiveProjectileType: type => type,
+      projectileTracksTarget: () => false,
+      ...libOverrides,
+    },
     '../lib/debug': { debugLog: () => {} },
     '../lib/settings': { getShadowsEnabled: () => false },
+    '../lib/sound': { playAudibleSoundCue: () => {}, ...libOverrides },
+    '../lib/spriteTextures': {
+      bindAnimatedSpriteToTicker: () => {},
+      getAnimationFrames: () => [],
+      getMirroredHalfArcFrameIndex: () => ({ frameIndex: 0, mirrored: false }),
+      ...libOverrides,
+    },
     '../lib/treeCollision': { findTreeSegmentCollision: () => null },
+    '../lib/unitControl': { isHeroControlled: () => false, ...libOverrides },
     '../lib/unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
@@ -103,18 +141,24 @@ function loadProjectile(libOverrides = {}) {
     },
   }
   const module = { exports: {} }
+  const loadLocalTs = modulePath => {
+    const localFilename = path.join(__dirname, '../app/classes', modulePath)
+    const localSource = fs.readFileSync(localFilename, 'utf8')
+    const { code: localCode } = babel.transformSync(localSource, {
+      filename: localFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const localModule = { exports: {} }
+    new Function('module', 'exports', 'require', localCode)(localModule, localModule.exports, localRequire)
+    return localModule.exports
+  }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === './ProjectileGeometry') {
-      const geometryFilename = path.join(__dirname, '../app/classes/ProjectileGeometry.ts')
-      const geometrySource = fs.readFileSync(geometryFilename, 'utf8')
-      const { code: geometryCode } = babel.transformSync(geometrySource, {
-        filename: geometryFilename,
-        presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-      })
-      const geometryModule = { exports: {} }
-      new Function('module', 'exports', 'require', geometryCode)(geometryModule, geometryModule.exports, localRequire)
-      return geometryModule.exports
+      return loadLocalTs('ProjectileGeometry.ts')
+    }
+    if (request === './ProjectileVisuals') {
+      return loadLocalTs('ProjectileVisuals.ts')
     }
     return require(request)
   }

@@ -6,25 +6,12 @@ import type { RuntimeCell } from './map'
 import type { GameContextLike } from './context'
 import type { CombatBehaviorConfig, ConfigValue, TechnologyConfig, UnitAppearanceConfig } from './config'
 import type { MenuButtonSpec } from './ui'
-import type { TextureRef } from '../lib'
-import type { HeroCivilTool, HeroContextAction } from '../lib/heroTools'
-import type { ActionProps } from '../lib/combat'
+import type { ActionProps } from './combat'
+import type { HeroCivilTool, HeroContextAction } from './heroTools'
+import type { UnitSounds } from './sounds'
+import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
+import type { TextureRef } from '../lib/graphics/textures'
 
-export type HeroEquipmentSlot =
-  | 'helmet'
-  | 'helmetDecor'
-  | 'cape'
-  | 'armor'
-  | 'legs'
-  | 'shoulders'
-  | 'bracers'
-  | 'offhand'
-  | 'arrow'
-
-export type HeroWeaponSlot = 'melee' | 'ranged' | 'lasso' | 'offhand' | 'quiver'
-
-export type CommandSound = string | number | (string | number)[] | null | undefined
-export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
 type VillagerShelterLocation = 'shelter' | 'outside'
 type VillagerShelterStatus = 'movingToShelter' | 'inside' | 'outside'
@@ -163,20 +150,8 @@ interface UnitRealDest {
   label: string
 }
 
-export interface UnitSounds {
-  command?: CommandSound
-  buildCommand?: CommandSound
-  huntCommand?: CommandSound
-  move?: CommandSound
-  work?: Record<string, CommandSound>
-  heal?: CommandSound
-  convert?: CommandSound
-  attack?: CommandSound
-  hit?: CommandSound
-  die?: CommandSound
-  create?: CommandSound
-  fall?: CommandSound
-}
+export type { CommandSound, UnitSounds } from './sounds'
+export type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 
 export interface EnergyEntity extends RuntimeEntityBase {
   action?: string | null

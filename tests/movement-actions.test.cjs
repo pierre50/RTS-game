@@ -305,6 +305,21 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
     }
+    if (request === './UnitResourceActions') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
+    }
+    if (request === './UnitConversionAction') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitConversionAction.ts'))
+    }
+    if (request === './UnitDirectMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectMovement.ts'))
+    }
+    if (request === './UnitMovementRouting') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementRouting.ts'))
+    }
+    if (request === './UnitPathMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPathMovement.ts'))
+    }
     if (request === './UnitHeroDirectMovementCollision') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitHeroDirectMovementCollision.ts'))
     }
@@ -313,6 +328,12 @@ function loadModule(relativePath, mocks) {
     }
     if (request === './UnitMovementHelpers') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
+    }
+    if (request === './UnitAffectNewDest') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitAffectNewDest.ts'))
+    }
+    if (request === './UnitPreviousWork') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
     return require(request)

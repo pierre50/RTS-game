@@ -3,21 +3,11 @@ import { FAMILY_TYPES, PLAYER_TYPES } from '../../constants'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
-import type { SaveEntityState, SaveReference, SavedAIState, SavedEnemyMemoryState } from '../../types/save'
-import type { MapGenerationMap } from './MapGeneration'
+import type { SaveEntityState, SaveReference, SavedEnemyMemoryState } from '../../types/save'
+import type { MapGenerationMap } from './MapGenerationTypes'
+import type { SavedPlayer } from './MapSaveRestoreTypes'
 
-export type SavedPlayer = {
-  type: string
-  isPlayed?: boolean
-  buildings?: SaveEntityState[]
-  units?: SaveEntityState[]
-  corpses?: SaveEntityState[]
-  aiState?: SavedAIState
-  selectedUnitLabels?: string[]
-  selectedUnitLabel?: string | null
-  selectedBuildingLabel?: string | null
-  selectedOtherLabel?: string | null
-}
+export type { SavedPlayer } from './MapSaveRestoreTypes'
 
 type AIEnemyMemoryRuntime = {
   instance: RuntimeEntity

@@ -1,7 +1,19 @@
 import { GAMEPAD_AXIS, GAMEPAD_BUTTON, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/gamepad'
 import { setVirtualCursorPosition, setVirtualCursorVisible } from '../lib/heroCursor'
 import { getGamepadEnabled, type ControlBindingAction } from '../lib/settings'
-import type Controls from '../classes/Controls'
+
+type GamepadControlsHost = {
+  context: { gamebox: HTMLElement }
+  heroController: {
+    cycleTool(direction: -1 | 1): void
+    handleKeyDown(action: ControlBindingAction): boolean | void
+    handleKeyUp(action: ControlBindingAction): void
+    handlePointerUp(): void
+    handlePrimaryPointerDown(): void
+  }
+  mouse: { x: number; y: number }
+  openHeroEntityInteraction(): boolean
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -23,7 +35,7 @@ const HERO_ACTION_BUTTONS: [number, ControlBindingAction][] = [
  * the left/right stick vectors for Controls to blend into movement and aim.
  */
 export class GamepadHeroInput {
-  controls: Controls
+  controls: GamepadControlsHost
   moveVector: { dx: number; dy: number }
   aimVector: { x: number; y: number } | null
   directionLockActive: boolean
@@ -31,7 +43,7 @@ export class GamepadHeroInput {
   private pressedButtons: Set<number>
   private cursorActive: boolean
 
-  constructor(controls: Controls) {
+  constructor(controls: GamepadControlsHost) {
     this.controls = controls
     this.moveVector = { dx: 0, dy: 0 }
     this.aimVector = null

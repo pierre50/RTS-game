@@ -5,7 +5,7 @@ import { canPlaceBuildingAt, getPositionInGridAroundInstance } from '../../lib'
 import { BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
-import type { MapGenerationMap } from './MapGeneration'
+import type { MapGenerationMap } from './MapGenerationTypes'
 
 function getDiamondRingOffsets(radius: number): Array<[number, number]> {
   const offsets: Array<[number, number]> = []

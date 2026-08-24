@@ -1,5 +1,4 @@
 import type { Container, ContainerChild } from 'pixi.js'
-import type { Command } from './DevCommandRegistry'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
@@ -16,6 +15,20 @@ export type DevWeatherPhase =
   | 'sandstorm'
   | 'clearing'
   | 'night'
+
+export interface CommandResult {
+  ok: boolean
+  message: string
+}
+
+export interface Command {
+  name: string
+  aliases?: string[]
+  usage?: string
+  describe?: string
+  complete?: (args: string[], context: DevConsoleContext) => string[]
+  run: (args: string[], context: DevConsoleContext) => CommandResult
+}
 
 type DevDayNightLike = {
   debugState?(): object

@@ -15,13 +15,13 @@ import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_C
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/uiSound'
-import type Menu from '../classes/Menu'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { Condition } from '../lib/combat'
+import type { MenuHost } from './MenuHost'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
   return selection?.family === FAMILY_TYPES.building
@@ -40,9 +40,9 @@ const AGE_REQUIREMENT_KEYS: Record<number, string> = {
 }
 
 export class ActionSpecFactory {
-  menu: Menu
+  menu: MenuHost
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
   }
 

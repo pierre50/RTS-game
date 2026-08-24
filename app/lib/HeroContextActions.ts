@@ -8,8 +8,8 @@ import { buildingAcceptsCarriedResources, getCarriedResourceSpace, getTotalCarri
 import { hasEnergyForAction } from './unitEnergy'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { HeroContextAction } from '../types/heroTools'
 import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTarget, getDirectionalTargets, getHeroAimDegree } from './heroTargeting'
-import type { HeroContextAction } from './heroToolEquipment'
 
 type DeliveryAimResult = 'delivered' | 'blocked' | 'none'
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'

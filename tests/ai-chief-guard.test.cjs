@@ -15,9 +15,23 @@ function loadAI() {
     ],
   })
   const module = { exports: {} }
+  const loadAiTsModule = modulePath => {
+    const moduleFilename = path.join(__dirname, `../app/ai/${modulePath}.ts`)
+    const moduleSource = fs.readFileSync(moduleFilename, 'utf8')
+    const { code: moduleCode } = babel.transformSync(moduleSource, {
+      filename: moduleFilename,
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        ['@babel/preset-typescript', { allowDeclareFields: true }],
+      ],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
   const localRequire = request => {
     if (request === './Player') return { Player: class {} }
-    if (request === '../../lib') {
+    if (request === '../../lib' || request === '../lib') {
       return {
         canAfford: () => true,
         findInstancesInSight: () => [],
@@ -27,7 +41,7 @@ function loadAI() {
         isPlayerEliminated: () => false,
       }
     }
-    if (request === '../../constants') {
+    if (request === '../../constants' || request === '../constants') {
       return {
         ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: { townCenter: 'TownCenter' },
@@ -40,8 +54,13 @@ function loadAI() {
     }
     if (request === '../../ai/AIStrategy') return { AIStrategy: class {} }
     if (request === '../../ai/AIEconomy') return { AIEconomy: class {} }
+    if (request === '../../ai/AIThreatManager') {
+      return loadAiTsModule('AIThreatManager')
+    }
+    if (request === './AIThreatProfiles') return loadAiTsModule('AIThreatProfiles')
+    if (request === './AIThreatResponses') return loadAiTsModule('AIThreatResponses')
     if (request === '../../ai/unitGroups') return { classifyMilitaryUnits: () => ({ infantry: [], archers: [], cavalry: [] }), isAliveUnit: () => true }
-    if (request === '../../lib/chief') {
+    if (request === '../../lib/chief' || request === '../lib/chief') {
       return {
         AI_CHIEF_SUCCESSION_DELAY_MS: 180000,
         isChiefUnit: unit => Boolean(unit?.isChief || unit?.type === 'Chief'),

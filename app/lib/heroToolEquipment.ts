@@ -8,10 +8,9 @@ import {
 } from './equipmentStats'
 import { applyUnitWorkAssets } from './unitWorkAppearance'
 import type { UnitEntity } from '../types/entities'
+import type { HeroEquippedItem } from '../types/heroTools'
 
-export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
-export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
-export type HeroEquippedItem = 'interact' | 'sword' | 'bow' | 'lasso'
+export type { HeroEquippedItem } from '../types/heroTools'
 
 export const HERO_TOOL_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
 

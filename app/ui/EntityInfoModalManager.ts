@@ -5,7 +5,6 @@ import { t } from '../lib/lang'
 import { createInspectionModal } from './InspectionPanel'
 import { getEntityDisplayName } from './entityDisplayName'
 import type { Application } from 'pixi.js'
-import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
 import type {
   AnimalEntity,
@@ -16,6 +15,7 @@ import type {
   UnitEntity,
 } from '../types/entities'
 import type { RecolorableSprite } from '../lib'
+import type { MenuHost } from './MenuHost'
 
 const PORTAL_RESOURCE_TYPE = 'Portal'
 const PORTAL_COLOR_CHOICES = ['blue', 'yellow', 'red'] as const
@@ -96,7 +96,7 @@ export function createTitledEntityInfoContent(
   return createEntityInfoContent(app, entity, { ...options, ...TITLED_ENTITY_INFO_OPTIONS })
 }
 
-function createPortalColorOptions(menu: Menu, portal: ResourceEntity): HTMLDivElement {
+function createPortalColorOptions(menu: MenuHost, portal: ResourceEntity): HTMLDivElement {
   const currentColor = portal.color || 'blue'
   const group = document.createElement('div')
   group.className = 'portal-color-options npc-orders-options'
@@ -123,7 +123,7 @@ function createPortalColorOptions(menu: Menu, portal: ResourceEntity): HTMLDivEl
   return group
 }
 
-function createPortalInfoModalContent(menu: Menu, portal: ResourceEntity): HTMLElement {
+function createPortalInfoModalContent(menu: MenuHost, portal: ResourceEntity): HTMLElement {
   const content = document.createElement('div')
   content.className = 'portal-info-modal-content'
   const infoContent = createTitledEntityInfoContent(menu.context.app, portal)
@@ -149,12 +149,12 @@ function appendPortalDescription(infoContent: HTMLElement): void {
 }
 
 export class EntityInfoModalManager {
-  menu: Menu
+  menu: MenuHost
   modal?: Modal
   entity: RuntimeEntity | null
   infoPanel: HTMLElement | null
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.entity = null
     this.infoPanel = null

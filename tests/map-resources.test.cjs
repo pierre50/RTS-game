@@ -48,7 +48,23 @@ function loadMapResources() {
       hasWaterBorderWithin: () => false,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const loadLocalTs = modulePath => {
+    const localFilename = path.join(__dirname, '../app/classes/map', modulePath)
+    const localSource = fs.readFileSync(localFilename, 'utf8')
+    const { code: localCode } = babel.transformSync(localSource, {
+      filename: localFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const localModule = { exports: {} }
+    new Function('module', 'exports', 'require', localCode)(localModule, localModule.exports, localRequire)
+    return localModule.exports
+  }
+  const localRequire = request => {
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './MapForestResources') return loadLocalTs('MapForestResources.ts')
+    if (request === './MapResourceSpacing') return loadLocalTs('MapResourceSpacing.ts')
+    return require(request)
+  }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

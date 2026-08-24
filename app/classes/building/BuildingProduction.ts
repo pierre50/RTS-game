@@ -1,11 +1,8 @@
 import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
-  FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
-  MOUNTED_HORSE_SPEED_BONUS,
   PLAYER_TYPES,
   POPULATION_MAX,
   UNIT_TYPES,
@@ -20,93 +17,30 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
-import { fadeOut } from '../../lib/entityFade'
-import { canUnitTrainInto, getMissingResourceNames, isTraineeTrainingType } from '../../lib/buildingTraining'
+import { isTraineeTrainingType } from '../../lib/buildingTraining'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { t } from '../../lib/lang'
-import { consumeStableHorse, returnStableHorse, type StableHorse } from '../../lib/stableHorses'
+import {
+  cancelPendingTraining,
+  cancelTrainingForUnit,
+  clearActiveTraining,
+  failTraineeEntry,
+  findTrainingUnit,
+  getProductionTime,
+  getTrainingBuilding,
+  isBlockedByMissingChief,
+  removeTraineeForTraining as removeTrainingUnitFromMap,
+  requestUnitTraining,
+  startTrainingWithUnit,
+} from './BuildingTraineeTraining'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ConfigValue } from '../../types/config'
 import type { RuntimeCell } from '../../types/map'
-import type { ResourceAmount } from '../../types/common'
-import type { Building } from './index'
+import type { BuildingControllerHost } from './BuildingTypes'
 
 type DynamicUnitCommand = (target: RuntimeEntity) => void
-type DynamicBuildingState = Building & Record<string, ConfigValue | object | undefined>
+type DynamicBuildingState = BuildingControllerHost & Record<string, ConfigValue | object | undefined>
 type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | undefined>
-type TrainingBuilding = Building & {
-  trainingUnit?: UnitEntity | null
-  trainingType?: string | null
-  mountingTime?: number
-}
-
-function getTrainingBuilding(building: Building): TrainingBuilding {
-  return building as TrainingBuilding
-}
-
-function isAvailableTrainingUnit(unit: UnitEntity): boolean {
-  return Boolean(
-    !unit.isDead && !unit.isDestroyed && !unit.actionLocked && unit.controlMode !== 'hero' && !unit.trainingTargetType
-  )
-}
-
-function isExpectedTrainingUnit(unit: UnitEntity, type: string): boolean {
-  return Boolean(
-    unit.trainingTargetType === type && !unit.isDead && !unit.isDestroyed && unit.controlMode !== 'hero'
-  )
-}
-
-function isStableMountTraining(building: Building, trainee: UnitEntity | null | undefined, type: string): boolean {
-  return Boolean(building.type === BUILDING_TYPES.stable && trainee && trainee.type === type && !trainee.mountedOnHorse)
-}
-
-function getTrainingCost(
-  building: Building,
-  unit: { cost?: ResourceAmount },
-  trainee: UnitEntity,
-  type: string
-): ResourceAmount {
-  return isStableMountTraining(building, trainee, type) ? {} : (unit.cost ?? {})
-}
-
-function getProductionTime(
-  building: TrainingBuilding,
-  unit: { trainingTime?: number },
-  trainee: UnitEntity | null | undefined,
-  type: string
-): number {
-  return isStableMountTraining(building, trainee, type)
-    ? (building.mountingTime ?? unit.trainingTime ?? 0)
-    : (unit.trainingTime ?? 0)
-}
-
-function getTrainingExtra(
-  building: Building,
-  trainee: UnitEntity,
-  type: string,
-  stableHorse?: StableHorse | null
-): UnitCreationExtra | undefined {
-  const baseExtra: UnitCreationExtra = {}
-  if (trainee.name) baseExtra.name = trainee.name
-  if (trainee.appearanceVariants) baseExtra.appearanceVariants = { ...trainee.appearanceVariants }
-  if (trainee.mountedOnHorse) {
-    baseExtra.mountedOnHorse = true
-    if (trainee.horseColor) baseExtra.horseColor = trainee.horseColor
-    const traineeSpeed = Number(trainee.speed)
-    if (Number.isFinite(traineeSpeed)) baseExtra.speed = traineeSpeed
-  }
-  if (!isStableMountTraining(building, trainee, type)) return { ...baseExtra, experience: {} }
-  const traineeSpeed = Number(trainee.speed)
-  const mountedExtra: UnitCreationExtra = {
-    ...baseExtra,
-    mountedOnHorse: true,
-    hitPoints: trainee.hitPoints,
-    speed: Number.isFinite(traineeSpeed) ? traineeSpeed + MOUNTED_HORSE_SPEED_BONUS : undefined,
-    experience: trainee.experience ? { ...trainee.experience } : undefined,
-  }
-  mountedExtra.horseColor = stableHorse?.horseColor ?? trainee.horseColor
-  return mountedExtra
-}
 
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   if (target.family === FAMILY_TYPES.resource) {
@@ -131,29 +65,17 @@ function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
   unit.sendTo(target)
 }
 
-function formatMissingResources(owner: Building['owner'], cost: ResourceAmount = {}): string {
-  const missing = getMissingResourceNames(owner, cost)
-  return missing.map(resource => t(resource)).join(', ')
-}
-
-function refreshOpenBuildingMenu(building: Building): void {
+function refreshOpenBuildingMenu(building: BuildingControllerHost): void {
   const menu = building.context.menu
   if (menu.getHeroBuildingMenuTarget?.() === building) {
     menu.refreshHeroBuildingMenu?.()
   }
 }
 
-function isBlockedByMissingChief(building: Building, type: string): boolean {
-  if (!playerNeedsChiefForCommand(building.owner)) return false
-  if (type === UNIT_TYPES.villager) return !hasLivingChief(building.owner)
-  if (isTraineeTrainingType(building, type)) return !hasLivingChief(building.owner)
-  return false
-}
-
 export class BuildingProduction {
-  building: Building
+  building: BuildingControllerHost
 
-  constructor(building: Building) {
+  constructor(building: BuildingControllerHost) {
     this.building = building
   }
 
@@ -190,85 +112,23 @@ export class BuildingProduction {
   }
 
   removeTraineeForTraining(trainee: UnitEntity): void {
-    const map = trainee.context?.map
-    const owner = trainee.owner
-    trainee.stopInterval?.()
-    trainee.stopTimeout?.()
-    trainee.path = []
-    trainee.dest = null
-    trainee.realDest = null
-    trainee.previousDest = null
-    trainee.previousWork = null
-    trainee.pendingOrder = null
-    trainee.blockedGatherApproach = null
-    trainee.inactif = false
-    trainee.trainingTargetType = null
-    if (trainee.selected && owner?.isPlayed) owner.unselectUnit?.(trainee)
-    trainee.unselect?.()
-    if (trainee.currentCell?.has === trainee) {
-      trainee.currentCell.has = null
-      trainee.currentCell.solid = false
-    }
-    map?.removeFromInstanceBucket?.(trainee)
-    const index = owner?.units.indexOf(trainee) ?? -1
-    if (index >= 0) owner?.units.splice(index, 1)
-    fadeOut(trainee, FADE_DURATION_MS, () => {
-      map?.removeChild?.(trainee)
-      trainee.destroy?.({ children: true, texture: false })
-    })
+    removeTrainingUnitFromMap(trainee)
   }
 
   findTrainingUnit(type: string): UnitEntity | null {
-    const { owner } = this.building
-    const isEligible = (unit: UnitEntity) =>
-      isAvailableTrainingUnit(unit) && canUnitTrainInto(this.building, unit, type)
-    const selectedUnit = owner.selectedUnits?.find(isEligible)
-    if (selectedUnit) return selectedUnit
-    return owner.units.find(unit => isEligible(unit) && unit.inactif) || owner.units.find(isEligible) || null
+    return findTrainingUnit(this.building, type)
   }
 
   clearActiveTraining(trainee?: UnitEntity | null): void {
-    const building = getTrainingBuilding(this.building)
-    if (trainee && building.trainingUnit && building.trainingUnit !== trainee) return
-    building.trainingUnit = null
-    building.trainingType = null
-    if (!trainee || building.isUsedBy === trainee) building.isUsedBy = null
+    clearActiveTraining(this.building, trainee)
   }
 
   cancelTrainingForUnit(trainee: UnitEntity): boolean {
-    const building = getTrainingBuilding(this.building)
-    const type = trainee.trainingTargetType
-    if (!type || !canUnitTrainInto(building, trainee, type)) return false
-    trainee.trainingTargetType = null
-    if (building.trainingUnit === trainee) this.clearActiveTraining(trainee)
-    if (building.owner.isPlayed) refreshOpenBuildingMenu(building)
-    return true
+    return cancelTrainingForUnit(this.building, trainee)
   }
 
   cancelPendingTraining(type?: string): boolean {
-    const building = getTrainingBuilding(this.building)
-    if (building.loading !== null || building.queue.length) return false
-    const candidates = building.owner.units.filter(
-      unit =>
-        unit.dest === building &&
-        !!unit.trainingTargetType &&
-        (!type || unit.trainingTargetType === type) &&
-        canUnitTrainInto(building, unit, unit.trainingTargetType)
-    )
-    if (!candidates.length) return false
-    for (const unit of candidates) {
-      unit.trainingTargetType = null
-      unit.affectNewDest?.()
-    }
-    if (building.owner.isPlayed) {
-      const { menu } = building.context
-      if (type) {
-        menu.updateButtonContent(type, '')
-        menu.toggleQueuedActionCancel(type, false)
-      }
-      refreshOpenBuildingMenu(building)
-    }
-    return true
+    return cancelPendingTraining(this.building, type)
   }
 
   ejectTrainee(): void {
@@ -308,69 +168,18 @@ export class BuildingProduction {
   }
 
   failTraineeEntry(trainee: UnitEntity, message?: string, updateTopbar = false): false {
-    const building = getTrainingBuilding(this.building)
-    if (message && building.owner.isPlayed) building.context.menu.showMessage(message, 'warning')
-    if (updateTopbar && building.owner.isPlayed) building.context.menu.updateTopbar?.()
-    trainee.trainingTargetType = null
-    this.clearActiveTraining(trainee)
-    return false
+    return failTraineeEntry(this.building, trainee, message, updateTopbar)
   }
 
   startTrainingWithUnit(trainee: UnitEntity): boolean {
-    const building = getTrainingBuilding(this.building)
-    const type = trainee.trainingTargetType
-    if (!type || !isTraineeTrainingType(building, type)) return false
-    if (building.loading !== null || building.queue.length || building.technology) return false
-    if (!isExpectedTrainingUnit(trainee, type) || !canUnitTrainInto(building, trainee, type)) return false
-    if (isBlockedByMissingChief(building, type)) {
-      return this.failTraineeEntry(trainee, t('requiresChief'))
-    }
-    const unit = building.owner.config.units[type]
-    const stableHorse = isStableMountTraining(building, trainee, type) ? consumeStableHorse(building) : null
-    if (isStableMountTraining(building, trainee, type) && !stableHorse) {
-      return this.failTraineeEntry(trainee, t('stableNeedsHorse'))
-    }
-    const cost = getTrainingCost(building, unit, trainee, type)
-    if (!canAfford(building.owner, cost)) {
-      returnStableHorse(building, stableHorse)
-      return this.failTraineeEntry(trainee, t('needMore', { resource: formatMissingResources(building.owner, cost) }), true)
-    }
-    payCost(building.owner, cost)
-    if (building.owner.isPlayed) building.context.menu.updateTopbar()
-    building.trainingUnit = trainee
-    building.trainingType = type
-    building.isUsedBy = trainee
-    this.removeTraineeForTraining(trainee)
-    const started = Boolean(this.buyUnit(type, true, false, getTrainingExtra(building, trainee, type, stableHorse), trainee))
-    if (!started) returnStableHorse(building, stableHorse)
-    return started
+    return startTrainingWithUnit(this.building, trainee, (type, alreadyPaid, force, extra, unit) =>
+      this.buyUnit(type, alreadyPaid, force, extra, unit)
+    )
   }
 
   requestUnitTraining(type: string, extra?: UnitCreationExtra, traineeOverride?: UnitEntity | null): boolean {
-    const building = getTrainingBuilding(this.building)
-    const {
-      context: { menu },
-    } = building
-    const unit = building.owner.config.units[type]
-    if (!unit || !building.units?.includes(type)) return false
-    if (!building.isBuilt || building.isDead) return false
-    const trainee = traineeOverride || this.findTrainingUnit(type)
-    if (!trainee) {
-      if (building.owner.isPlayed) menu.showMessage(t('noTrainingUnitAvailable'), 'warning')
-      return false
-    }
-    if (!isAvailableTrainingUnit(trainee) || !canUnitTrainInto(building, trainee, type)) {
-      if (building.owner.isPlayed) menu.showMessage(t('onlyEligibleUnitsCanTrain'), 'warning')
-      return false
-    }
-    trainee.trainingTargetType = type
-    if (building.owner.isPlayed) {
-      menu.updateButtonContent(type, '')
-      menu.toggleQueuedActionCancel(type, true)
-      refreshOpenBuildingMenu(building)
-    }
-    trainee.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
-    return true
+    void extra
+    return requestUnitTraining(this.building, type, traineeOverride)
   }
 
   buyUnit(

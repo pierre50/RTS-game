@@ -2,7 +2,7 @@ import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getActionCondition, instancesDistance } from '../../lib'
 import { Projectile } from '../Projectile'
 import type { RuntimeEntity } from '../../types/entities'
-import type { Building } from './index'
+import type { BuildingControllerHost } from './BuildingTypes'
 
 type BuildingCombatRangeByAge = Partial<Record<number, number>>
 
@@ -12,7 +12,7 @@ const BUILDING_RANGED_ATTACK_RANGES_BY_AGE: Record<string, BuildingCombatRangeBy
   },
 }
 
-function getBuildingCombatRange(building: Building): number | undefined {
+function getBuildingCombatRange(building: BuildingControllerHost): number | undefined {
   const map = BUILDING_RANGED_ATTACK_RANGES_BY_AGE[building.type]
   if (!map) return building.range
 
@@ -25,9 +25,9 @@ function getBuildingCombatRange(building: Building): number | undefined {
 }
 
 export class BuildingCombat {
-  building: Building
+  building: BuildingControllerHost
 
-  constructor(building: Building) {
+  constructor(building: BuildingControllerHost) {
     this.building = building
   }
 
@@ -96,7 +96,7 @@ export class BuildingCombat {
     const building = this.building
     const range = getBuildingCombatRange(building)
     if (!range || !building.projectile) return
-    const candidates = findInstancesInSight<Building, RuntimeEntity>(
+    const candidates = findInstancesInSight<BuildingControllerHost, RuntimeEntity>(
       building,
       candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
       range

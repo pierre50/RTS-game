@@ -125,6 +125,15 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
     }
+    if (request === './UnitResourceActions') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
+    }
+    if (request === './UnitConversionAction') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitConversionAction.ts'))
+    }
+    if (request === './UnitPreviousWork') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
+    }
     return require(request)
   }
 

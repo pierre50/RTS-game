@@ -1,5 +1,5 @@
 import type { EnvironmentTerrainParams } from '../../constants'
-import type { TerrainGrid } from './MapGeneration'
+import type { TerrainGrid } from './MapGenerationTypes'
 
 export type GeneratedTerrainData = {
   seed: number

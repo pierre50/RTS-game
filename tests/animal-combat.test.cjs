@@ -94,6 +94,7 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
         animal.combatMode === 'recover' && animal.waitingForEnergyAction === 'attack',
     },
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    './AnimalTypes': { FLYING_ALTITUDE: 20 },
     './index': { FLYING_ALTITUDE: 20 },
     './locomotion': { isAirborne: () => false, resolveMovementSheet: (_animal, sheet) => sheet },
   })

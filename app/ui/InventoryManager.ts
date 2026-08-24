@@ -15,7 +15,6 @@ import {
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { SOUND_CUES } from '../constants'
-import type Menu from '../classes/Menu'
 import { createEntityInfoContent } from './EntityInfoModalManager'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -29,6 +28,7 @@ import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
 import type { FactionRelationState, FactionSave, WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
 import type { MenuButtonSpec } from '../types/ui'
+import type { MenuHost } from './MenuHost'
 
 type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
 
@@ -40,7 +40,7 @@ const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
 }
 
 export class InventoryManager {
-  menu: Menu
+  menu: MenuHost
   panel: HTMLDivElement
   modalTabs: ModalTabs<ActionMenuTab>
   infoPanel: HTMLDivElement
@@ -60,7 +60,7 @@ export class InventoryManager {
   opened: boolean
   pausedByMenu: boolean
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.opened = false
     this.pausedByMenu = false

@@ -17,12 +17,9 @@ function loadModule(relativePath, mocks = {}) {
   return module.exports
 }
 
-const { bindAnimatedSpriteToTicker } = loadModule('app/lib/extra.ts', {
+const { bindAnimatedSpriteToTicker } = loadModule('app/lib/spriteTextures.ts', {
   '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
-  './grid': { instanceIsInPlayerSight: () => false },
   './maths': {},
-  './uiSound': {},
-  './lang': {},
 })
 
 function bindSprite(sprite) {

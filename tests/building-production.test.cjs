@@ -14,6 +14,9 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './BuildingTraineeTraining') {
+      return loadModule('app/classes/building/BuildingTraineeTraining.ts', mocks)
+    }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,

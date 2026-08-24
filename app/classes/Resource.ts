@@ -1,4 +1,4 @@
-import { Sprite, Assets, Polygon, AnimatedSprite, Rectangle, Texture } from 'pixi.js'
+import { Sprite, Assets, Polygon, AnimatedSprite, type Texture } from 'pixi.js'
 import {
   cartesianToIsometric,
   getGroundReliefLevel,
@@ -25,7 +25,24 @@ import {
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/ResourceInterface'
 import { fadeOutThenClear } from '../lib/entityFade'
-import { getResourceWindAnimationEnabled, getShadowsEnabled, onVisualSettingsChange } from '../lib/settings'
+import { onVisualSettingsChange } from '../lib/settings'
+import {
+  canApplyWindMotion,
+  createShadow,
+  isCutOrFallenTree,
+  isWindAnimatedWheat,
+  isWindMotionEligible,
+  resetWindMotion,
+  shouldUseWindMotion,
+  startWindMotion,
+  stopWindMotion,
+  syncShadow,
+  syncVisualSettings,
+  updateWindMotion,
+  type ResourceShadow,
+  type TextureWithCacheIds,
+  type WindTick,
+} from './ResourceVisuals'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceConfig } from '../types/config'
@@ -60,17 +77,6 @@ type ResourceConfigCache = {
   }
 }
 type PlayerWithResourceMemory = PlayerLike & Record<string, Set<RuntimeEntity> | undefined>
-type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
-type ResourceShadow = Sprite | AnimatedSprite
-type WindTick = (ticker: { deltaMS?: number; elapsedMS?: number }) => void
-const resourceShadowTextureFrameCache = new Map<string, Texture>()
-
-const SHADOW_MASK_ALPHA = 1
-const SHADOW_SCALE_X = 1.02
-const SHADOW_SCALE_Y = -0.5
-const WIND_AMPLITUDE = 0.018
-const WIND_ROTATION = 0.006
-const WIND_SPEED = 0.0018
 const BERRYBUSH_SHEET_ID = 'resources/berrybush'
 const EMPTY_BERRYBUSH_FRAME = 0
 const RESOURCE_TEXTURE_MIGRATIONS: Record<string, { sheet: string; frameOffset: number }> = {
@@ -130,10 +136,6 @@ function normalizeResourceTextureRef(ref: TextureRef): TextureRef {
   }
 }
 
-function getLifecycleSheetId(asset: ResourceLifecycleAsset | undefined): string | undefined {
-  return typeof asset === 'string' ? asset : asset?.sheet
-}
-
 function pickLifecycleTextureRef(asset: ResourceLifecycleAsset | undefined): TextureRef | null {
   if (!asset) return null
   if (typeof asset === 'string') {
@@ -144,40 +146,6 @@ function pickLifecycleTextureRef(asset: ResourceLifecycleAsset | undefined): Tex
     sheet: asset.sheet,
     frame: frames[randomRange(0, frames.length - 1)],
   }
-}
-
-function getShadowTexture(sheet: string, spriteTexture: Texture, spriteAnchor: { x: number; y: number }): Texture | null {
-  const shadowAtlasId = `${sheet}/shadow`
-  const shadowAtlas = Assets.cache.has(shadowAtlasId)
-    ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null)
-    : null
-  if (!shadowAtlas) return null
-
-  const { frame, rotate } = spriteTexture
-  const source = shadowAtlas.source
-  const atlasExtraWidth = Math.max(0, source.width - spriteTexture.source.width)
-  const atlasExtraHeight = Math.max(0, source.height - spriteTexture.source.height)
-  const atlasPadX = atlasExtraWidth / 2
-  const shadowFrameWidth = frame.width + atlasExtraWidth
-  const shadowFrameHeight = frame.height + atlasExtraHeight
-
-  if (frame.x + shadowFrameWidth > source.width || frame.y + shadowFrameHeight > source.height) return null
-
-  const cacheKey = `${sheet}/shadow:${frame.x}:${frame.y}:${shadowFrameWidth}:${shadowFrameHeight}`
-  let shadowTexture = resourceShadowTextureFrameCache.get(cacheKey)
-  if (!shadowTexture) {
-    const anchorX = (spriteAnchor.x * frame.width + atlasPadX) / shadowFrameWidth
-    const anchorY = (spriteAnchor.y * frame.height) / shadowFrameHeight
-    shadowTexture = new Texture({
-      source,
-      frame: new Rectangle(frame.x, frame.y, shadowFrameWidth, shadowFrameHeight),
-      orig: new Rectangle(0, 0, shadowFrameWidth, shadowFrameHeight),
-      rotate,
-      defaultAnchor: { x: anchorX, y: anchorY },
-    })
-    resourceShadowTextureFrameCache.set(cacheKey, shadowTexture)
-  }
-  return shadowTexture
 }
 
 export class Resource extends Instance implements ResourceEntity {
@@ -522,157 +490,51 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   shouldUseWindMotion(): boolean {
-    return !this.isDestroyed && !this.destroyed && this.isWindMotionEligible() && getResourceWindAnimationEnabled()
+    return shouldUseWindMotion(this)
   }
 
   isWindMotionEligible(): boolean {
-    return (
-      !this.isDead &&
-      !this.isCutOrFallenTree() &&
-      (this.type === RESOURCE_TYPES.tree || this.type === RESOURCE_TYPES.berrybush || this.isWindAnimatedWheat())
-    )
+    return isWindMotionEligible(this)
   }
 
   isWindAnimatedWheat(): boolean {
-    if (this.type !== RESOURCE_TYPES.wheat || !(this.sprite instanceof AnimatedSprite)) return false
-    return (
-      this.sprite.currentFrame > 0 ||
-      (!this.sprite.playing && this.sprite.currentFrame >= this.sprite.textures.length - 1)
-    )
+    return isWindAnimatedWheat(this)
   }
 
   isCutOrFallenTree(): boolean {
-    if (this.type !== RESOURCE_TYPES.tree || !this.textureName) return false
-    const sheet = getTextureSheet(this.textureName)
-    return sheet === getLifecycleSheetId(this.lifecycleAssets?.cut) || sheet === getLifecycleSheetId(this.lifecycleAssets?.fallen)
+    return isCutOrFallenTree(this)
   }
 
   startWindMotion(): void {
-    if (!this.shouldUseWindMotion() || this.windTick || !this.canApplyWindMotion(this.sprite)) return
-    this.windPhase = ((this.i * 37 + this.j * 17) % 360) * (Math.PI / 180)
-    this.windTick = ticker => this.updateWindMotion(ticker.deltaMS ?? ticker.elapsedMS ?? 16.67)
-    this.context.app.ticker.add(this.windTick)
+    startWindMotion(this)
   }
 
   stopWindMotion(): void {
-    if (this.windTick) {
-      this.context.app.ticker.remove(this.windTick)
-      this.windTick = null
-    }
-    this.resetWindMotion()
+    stopWindMotion(this)
   }
 
   resetWindMotion(): void {
-    const sprite = this.sprite
-    if (!this.canApplyWindMotion(sprite)) return
-    sprite.skew.x = 0
-    sprite.rotation = 0
-    if (this.canApplyWindMotion(this.shadow)) {
-      this.shadow.skew.x = 0
-      this.shadow.rotation = 0
-    }
+    resetWindMotion(this)
   }
 
   updateWindMotion(deltaMS: number): void {
-    const sprite = this.sprite
-    if (!this.canApplyWindMotion(sprite)) {
-      this.stopWindMotion()
-      return
-    }
-    if (this.context.paused) return
-    if (!this.shouldUseWindMotion()) {
-      this.resetWindMotion()
-      return
-    }
-    this.windTime += deltaMS
-    const sway = Math.sin(this.windPhase + this.windTime * WIND_SPEED)
-    const secondary = Math.sin(this.windPhase * 0.7 + this.windTime * WIND_SPEED * 0.47)
-    sprite.skew.x = sway * WIND_AMPLITUDE
-    sprite.rotation = secondary * WIND_ROTATION
-    if (this.canApplyWindMotion(this.shadow)) {
-      this.shadow.skew.x = sprite.skew.x * 0.45
-    }
+    updateWindMotion(this, deltaMS)
   }
 
   canApplyWindMotion(displayObject: ResourceShadow | null | undefined): displayObject is ResourceShadow {
-    return Boolean(displayObject && !displayObject.destroyed && displayObject.skew)
+    return canApplyWindMotion(displayObject)
   }
 
   createShadow(): ResourceShadow | null {
-    const shadowTexture =
-      this.sprite && this.textureName ? getShadowTexture(getTextureSheet(this.textureName), this.sprite.texture, this.sprite.anchor) : null
-    this.usesTextureShadow = Boolean(shadowTexture)
-    const shadow = shadowTexture
-      ? new Sprite(shadowTexture)
-      : this.sprite instanceof AnimatedSprite
-        ? new AnimatedSprite(this.sprite.textures as Texture[])
-        : new Sprite(this.sprite.texture)
-    if (!shadowTexture && shadow instanceof AnimatedSprite) {
-      bindAnimatedSpriteToTicker(shadow, this.context.app)
-    }
-    shadow.label = LABEL_TYPES.shadow
-    shadow.eventMode = 'none'
-    shadow.roundPixels = true
-    if (!shadowTexture) {
-      shadow.tint = 0x000000
-      shadow.alpha = SHADOW_MASK_ALPHA
-    }
-    shadow.zIndex = -2
-    this.syncShadow(shadow)
-    return shadow
+    return createShadow(this)
   }
 
   syncShadow(shadow = this.shadow): void {
-    if (!shadow || !this.sprite) return
-    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
-    if (this.usesTextureShadow && shadow instanceof Sprite) {
-      const shadowTexture = this.textureName ? getShadowTexture(getTextureSheet(this.textureName), this.sprite.texture, this.sprite.anchor) : null
-      if (shadowTexture) {
-        shadow.texture = shadowTexture
-        if (shadowTexture.defaultAnchor) {
-          shadow.anchor.set(shadowTexture.defaultAnchor.x, shadowTexture.defaultAnchor.y)
-        } else {
-          shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
-        }
-        shadow.alpha = SHADOW_MASK_ALPHA
-        shadow.rotation = 0
-        shadow.scale.set(this.sprite.scale.x, this.sprite.scale.y)
-        shadow.position.set(this.x, this.y + (this.reliefLift ?? 0))
-        shadow.tint = 0xffffff
-        return
-      }
-      this.usesTextureShadow = false
-    }
-    if (this.sprite instanceof AnimatedSprite && shadow instanceof AnimatedSprite) {
-      const frame = Math.min(this.sprite.currentFrame, Math.max(this.sprite.textures.length - 1, 0))
-      shadow.textures = this.sprite.textures
-      shadow.animationSpeed = this.sprite.animationSpeed
-      shadow.loop = this.sprite.loop
-      shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
-      if (this.sprite.playing) {
-        shadow.gotoAndPlay(frame)
-      } else {
-        shadow.gotoAndStop(frame)
-      }
-    } else if (this.sprite instanceof Sprite && shadow instanceof Sprite) {
-      shadow.texture = this.sprite.texture
-      shadow.anchor.set(this.sprite.anchor.x, this.sprite.anchor.y)
-    }
-    shadow.alpha = SHADOW_MASK_ALPHA
-    shadow.rotation = 0
-    shadow.scale.set(Math.abs(this.sprite.scale.x) * SHADOW_SCALE_X, Math.abs(this.sprite.scale.y) * SHADOW_SCALE_Y)
-    shadow.position.set(this.x, this.y + (this.reliefLift ?? 0))
+    syncShadow(this, shadow)
   }
 
   syncVisualSettings(): void {
-    if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
-    }
-    if (getResourceWindAnimationEnabled()) {
-      this.startWindMotion()
-    } else {
-      this.stopWindMotion()
-    }
+    syncVisualSettings(this)
   }
 
   override pause(): void {

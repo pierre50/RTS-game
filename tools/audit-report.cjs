@@ -9,12 +9,15 @@ const APP_DIR = path.join(ROOT, 'app')
 const REPORT_DIR = path.join(ROOT, 'reports')
 const MD_REPORT = path.join(REPORT_DIR, 'code-health.md')
 const JSON_REPORT = path.join(REPORT_DIR, 'code-health.json')
+const ARCHITECTURE_CYCLE_BASELINE = 0
+const ARCHITECTURE_TOP_CYCLE_LIMIT = 20
 
 const CHECKS = [
   { id: 'lint', label: 'ESLint', command: 'pnpm lint' },
   { id: 'typecheck', label: 'TypeScript', command: 'pnpm typecheck' },
   { id: 'duplication', label: 'Duplication', command: 'pnpm duplication' },
   { id: 'deadcode', label: 'Dead code', command: 'pnpm deadcode' },
+  { id: 'architecture', label: 'Import cycles', command: 'pnpm architecture:json' },
 ]
 
 const skipChecks = process.argv.includes('--skip-checks')
@@ -146,17 +149,40 @@ function parseDuplication(output) {
   return { clones, percent }
 }
 
+function parseCircularDependencies(output) {
+  const source = output.trim()
+  const start = source.startsWith('[') ? 0 : source.lastIndexOf('\n[') + 1
+  const lifecycleIndex = source.indexOf('\n[ELIFECYCLE]')
+  const searchEnd = lifecycleIndex === -1 ? source.length : lifecycleIndex
+  const end = source.lastIndexOf(']', searchEnd)
+  if (start === -1 || end === -1 || end < start) {
+    return { cycles: null, baseline: ARCHITECTURE_CYCLE_BASELINE, topCycles: [] }
+  }
+
+  try {
+    const cycles = JSON.parse(source.slice(start, end + 1))
+    return {
+      cycles: Array.isArray(cycles) ? cycles.length : null,
+      baseline: ARCHITECTURE_CYCLE_BASELINE,
+      cycleList: Array.isArray(cycles) ? cycles : [],
+      topCycles: Array.isArray(cycles) ? cycles.slice(0, ARCHITECTURE_TOP_CYCLE_LIMIT) : [],
+    }
+  } catch {
+    return { cycles: null, baseline: ARCHITECTURE_CYCLE_BASELINE, cycleList: [], topCycles: [] }
+  }
+}
+
 function scoreChecks(checks) {
-  if (checks.length === 0) return 30
-  const qualityChecks = checks.filter(check => check.id !== 'duplication')
+  if (checks.length === 0) return 25
+  const qualityChecks = checks.filter(check => check.id !== 'duplication' && check.id !== 'architecture')
   const passed = qualityChecks.filter(check => check.ok).length
-  return (passed / Math.max(1, qualityChecks.length)) * 30
+  return (passed / Math.max(1, qualityChecks.length)) * 25
 }
 
 function scoreDuplication(duplication) {
-  if (duplication.clones == null) return 15
-  const penalty = Math.min(25, duplication.clones * 2 + duplication.percent * 30)
-  return Math.max(0, 25 - penalty)
+  if (duplication.clones == null) return 12
+  const penalty = Math.min(20, duplication.clones * 2 + duplication.percent * 30)
+  return Math.max(0, 20 - penalty)
 }
 
 function scoreStructure(files) {
@@ -164,7 +190,13 @@ function scoreStructure(files) {
   const hugeFiles = files.filter(file => file.loc >= 1500).length
   const complexFiles = files.filter(file => file.branchCount >= 120 || file.maxBlockLines >= 160).length
   const penalty = largeFiles * 0.9 + hugeFiles * 1.3 + complexFiles * 0.8
-  return Math.max(0, 25 - penalty)
+  return Math.max(0, 20 - penalty)
+}
+
+function scoreArchitecture(architecture) {
+  if (architecture.cycles == null) return 5
+  const penalty = Math.min(15, architecture.cycles * 0.12)
+  return Math.max(0, 15 - penalty)
 }
 
 function scoreHotspots(files) {
@@ -205,6 +237,23 @@ function markdownTable(rows, columns) {
   return [header, divider, ...body].join('\n')
 }
 
+function cycleArea(cycle) {
+  const areas = new Set(cycle.map(file => file.split('/')[0] ?? 'app'))
+  return [...areas].join(', ')
+}
+
+function countCycleFiles(cycles) {
+  const counts = new Map()
+  for (const cycle of cycles) {
+    for (const file of cycle) {
+      counts.set(file, (counts.get(file) ?? 0) + 1)
+    }
+  }
+  return [...counts.entries()]
+    .map(([file, count]) => ({ file, count }))
+    .sort((a, b) => b.count - a.count || a.file.localeCompare(b.file))
+}
+
 function main() {
   const churn = getChurn90d()
   const files = walk(APP_DIR).map(file => analyzeFile(file, churn))
@@ -220,24 +269,38 @@ function main() {
     ? []
     : CHECKS.map(check => {
         const result = run(check.command)
+        const architecture = check.id === 'architecture' ? parseCircularDependencies(result.output) : undefined
+        const ok =
+          check.id === 'architecture' && architecture?.cycles != null
+            ? architecture.cycles <= architecture.baseline
+            : result.ok
         return {
           ...check,
-          ok: result.ok,
+          ok,
           output: result.output.slice(-4000),
           duplication: check.id === 'duplication' ? parseDuplication(result.output) : undefined,
+          architecture,
         }
       })
   const duplication = checks.find(check => check.id === 'duplication')?.duplication ?? { clones: null, percent: null }
+  const architecture = checks.find(check => check.id === 'architecture')?.architecture ?? {
+    cycles: null,
+    baseline: ARCHITECTURE_CYCLE_BASELINE,
+    cycleList: [],
+    topCycles: [],
+  }
 
   const topRisk = [...files].sort((a, b) => b.risk - a.risk).slice(0, maxFiles)
   const largest = [...files].sort((a, b) => b.loc - a.loc).slice(0, maxFiles)
   const complex = [...files].sort((a, b) => b.branchCount - a.branchCount).slice(0, maxFiles)
   const hotspots = [...files].sort((a, b) => b.churn90d - a.churn90d || b.risk - a.risk).slice(0, maxFiles)
+  const cycleHubs = countCycleFiles(architecture.cycleList).slice(0, maxFiles)
 
   const componentScores = {
     gates: Math.round(scoreChecks(checks)),
     duplication: Math.round(scoreDuplication(duplication)),
     structure: Math.round(scoreStructure(files)),
+    architecture: Math.round(scoreArchitecture(architecture)),
     hotspots: Math.round(scoreHotspots(files)),
     typeAndLintConfidence: Math.round(scoreTests(checks)),
   }
@@ -251,10 +314,12 @@ function main() {
     checks: checks.map(({ output: _output, ...check }) => check),
     componentScores,
     duplication,
+    architecture,
     topRisk,
     largest,
     complex,
     hotspots,
+    cycleHubs,
   }
 
   const checkRows = checks.map(check => ({
@@ -263,6 +328,8 @@ function main() {
     detail:
       check.id === 'duplication' && check.duplication
         ? `${check.duplication.clones} clones, ${check.duplication.percent}%`
+        : check.id === 'architecture' && check.architecture
+          ? `${check.architecture.cycles ?? 'unknown'} cycles / baseline gate ${check.architecture.baseline}`
         : '',
   }))
 
@@ -276,11 +343,14 @@ Generated: ${generatedAt}
 
 | Component | Score |
 | --- | --- |
-| Gates | ${componentScores.gates}/30 |
-| Duplication | ${componentScores.duplication}/25 |
-| Structure | ${componentScores.structure}/25 |
+| Gates | ${componentScores.gates}/25 |
+| Duplication | ${componentScores.duplication}/20 |
+| Structure | ${componentScores.structure}/20 |
+| Architecture | ${componentScores.architecture}/15 |
 | Hotspots | ${componentScores.hotspots}/10 |
 | Type/Lint confidence | ${componentScores.typeAndLintConfidence}/10 |
+
+> Architecture is scored separately from the baseline gate: staying at or below the baseline keeps the check green, but existing cycles still reduce the global quality score.
 
 ## Summary
 
@@ -291,6 +361,9 @@ Generated: ${generatedAt}
 - Approx functions/methods: ${totals.functions}
 - Duplication: ${
     duplication.clones == null ? 'not measured' : `${duplication.clones} clones, ${duplication.percent}%`
+  }
+- Import cycles: ${
+    architecture.cycles == null ? 'not measured' : `${architecture.cycles} cycles / baseline ${architecture.baseline}`
   }
 
 ## Checks
@@ -344,10 +417,57 @@ ${markdownTable(hotspots, [
   { label: 'LOC', value: row => row.loc },
 ])}
 
+## Dependency Cycles
+
+${
+  architecture.cycles == null
+    ? 'Import cycles were not measured.'
+    : `Madge found **${architecture.cycles} circular dependencies**. Architecture score: **${componentScores.architecture}/15**. Baseline gate: **${architecture.baseline}**.`
+}
+
+Fix priority:
+
+1. Break barrel/helper cycles around \`lib/index.ts\`, \`types/entities.ts\`, and projectile helpers.
+2. Then handle local two-way feature splits such as AI, map generation, controls, menu, building, and unit modules.
+3. Keep the baseline gate so new cycles cannot sneak in while old ones are being removed.
+
+### Cycle Hubs
+
+${
+  cycleHubs.length
+    ? markdownTable(cycleHubs, [
+        { label: 'File', value: row => row.file },
+        { label: 'Cycles', value: row => row.count },
+      ])
+    : 'No cycle hubs measured.'
+}
+
+### Sample Cycles
+
+${
+  architecture.topCycles.length
+    ? markdownTable(
+        architecture.topCycles.map((cycle, index) => ({
+          index: index + 1,
+          length: cycle.length,
+          area: cycleArea(cycle),
+          path: cycle.join(' -> '),
+        })),
+        [
+          { label: '#', value: row => row.index },
+          { label: 'Len', value: row => row.length },
+          { label: 'Area', value: row => row.area },
+          { label: 'Cycle', value: row => row.path },
+        ]
+      )
+    : ''
+}
+
 ## Notes
 
 - Complexity is an approximation based on branch keywords/operators; use it as a prioritization signal.
 - Churn is based on Git commits from the last 90 days.
+- Import-cycle baseline avoids making existing architecture debt fail the audit, while preventing regressions.
 - The score is intentionally project-local: it rewards passing checks, low duplication, smaller modules, and lower-risk hotspots.
 `
 
@@ -359,6 +479,9 @@ ${markdownTable(hotspots, [
   console.log(`Markdown: ${relative(MD_REPORT)}`)
   console.log(`JSON: ${relative(JSON_REPORT)}`)
   if (duplication.clones != null) console.log(`Duplication: ${duplication.clones} clones, ${duplication.percent}%`)
+  if (architecture.cycles != null) {
+    console.log(`Import cycles: ${architecture.cycles} / baseline ${architecture.baseline}`)
+  }
   if (topRisk.length) {
     console.log('Top priorities:')
     topRisk.slice(0, 5).forEach((file, index) => {

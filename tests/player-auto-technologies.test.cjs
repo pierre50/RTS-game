@@ -6,13 +6,22 @@ const babel = require('@babel/core')
 
 function loadPlayer(overrides = {}) {
   const filename = path.join(__dirname, '../app/classes/players/Player.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
+  const compileTs = tsFilename => {
+    const source = fs.readFileSync(tsFilename, 'utf8')
+    return babel.transformSync(source, {
+      filename: tsFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    }).code
+  }
 
-  const module = { exports: {} }
+  const moduleCache = new Map()
+  const loadTsFile = tsFilename => {
+    if (moduleCache.has(tsFilename)) return moduleCache.get(tsFilename).exports
+    const loadedModule = { exports: {} }
+    moduleCache.set(tsFilename, loadedModule)
+    new Function('module', 'exports', 'require', compileTs(tsFilename))(loadedModule, loadedModule.exports, localRequire)
+    return loadedModule.exports
+  }
   const localRequire = request => {
     if (request === 'pixi.js') return { Assets: { cache: { get: () => ({}) } } }
     if (request === '../../lib') {
@@ -98,11 +107,13 @@ function loadPlayer(overrides = {}) {
         updateWallAndNeighbours: () => {},
       }
     }
+    if (request === './PlayerTechnologies') {
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerTechnologies.ts'))
+    }
     return require(request)
   }
 
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports.Player
+  return loadTsFile(filename).Player
 }
 
 test('unit creation passes unit gender to random civilization names', () => {

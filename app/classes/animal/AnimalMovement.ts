@@ -20,12 +20,12 @@ import {
 } from '../../lib/unitEnergy'
 import type { RuntimeCell } from '../../types/map'
 import { isAirborne, resolveMovementSheet } from './locomotion'
-import type { Animal, AnimalDestination, AnimalMoveOptions } from './index'
+import type { AnimalControllerHost, AnimalDestination, AnimalMoveOptions } from './AnimalTypes'
 
 export class AnimalMovement {
-  animal: Animal
+  animal: AnimalControllerHost
 
-  constructor(animal: Animal) {
+  constructor(animal: AnimalControllerHost) {
     this.animal = animal
   }
 

@@ -142,6 +142,16 @@ type AIEconomyLike = {
   isLocationSafe(pos: AIGridPosition): boolean
 }
 
+export type AIEconomyBuildingContext = {
+  ai: AIStrategyPlayerLike
+}
+
+export type AIEconomyHorseCaptureContext = {
+  ai: AIStrategyPlayerLike
+  getBuildingAsRuntimeEntity(building: AIBuildingLike): RuntimeEntity
+  isLocationSafe(pos: AIEntityLike): boolean
+}
+
 export type AIStrategyPlayerLike = {
   label?: string
   i: number

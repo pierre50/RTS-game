@@ -1,97 +1,19 @@
-import { Assets, Container, Sprite } from 'pixi.js'
-import {
-  cartesianToIsometric,
-  getCellsAroundPoint,
-  getDeterministicCellVariant,
-  getPlainCellsAroundPoint,
-  getTexture,
-} from '../../lib'
+import { getCellsAroundPoint, getPlainCellsAroundPoint } from '../../lib'
 import { CELL_DEPTH, RELIEF_WATER_BUFFER_RADIUS, getEnvironmentTerrainParams } from '../../constants'
 import {
-  EIGHT_NEIGHBOR_OFFSETS,
-  getCyclicGroups,
-  getNeighborFlags,
-  getNeighborFlagsFromRing,
-  getNeighborRing,
-  getWaterBorderFrame,
-  hasUnsupportedTransition,
-} from '../../lib/terrain/topology'
-import { debugLog } from '../../lib/debug'
+  formatTerrainPatchBorders,
+  formatTerrainRelief,
+  formatTerrainWaterBorder,
+  formatTerrainWaterBorderOverlays,
+  rebuildTerrainAppearance,
+  rebuildTerrainBackfill,
+} from './MapTerrainAppearance'
+import { enforceReliefStepContinuity as enforceTerrainReliefStepContinuity } from './MapTerrainReliefContinuity'
+import { normalizeWaterTopology as normalizeTerrainWaterTopology } from './MapTerrainWaterTopology'
 import type { GridPosition } from '../../types/grid'
-import type * as MapTypes from '../../types/map'
-import type { TextureRef } from '../../lib'
+import type { ReliefLevelBounds, TerrainCell, TerrainMap } from './MapTerrainTypes'
 
-type TerrainDefinition = {
-  category?: string
-  color?: string | number
-  assets?: TextureRef[]
-  [key: string]: string | TextureRef[] | number | boolean | undefined
-}
-
-type TerrainConfig = {
-  cells?: Record<string, TerrainDefinition>
-}
-
-const BORDER_SHEETS = {
-  waterDesertSand: 'desert-sand-water-border',
-} as const
-const TERRAIN_RELIEF_DEBUG = false
-
-type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
-
-type TerrainCell = MapTypes.RuntimeCell & {
-  category?: string
-  color?: string | number
-  assets?: TextureRef[]
-  terrainTextureName?: string
-  has?: MapTypes.RuntimeCell['has']
-  sprite?: Sprite | null
-  setTerrainType?(type: string): void
-  setWater?(): void
-  setWaterBorder?(resourceName: string, frame: string): void
-  setReliefBorder?(frame: string, elevation?: number): void
-  setPatchBorder?(direction: string, groundType?: PatchBorderGroundType): void
-  resetTerrainAppearance?(options?: { preserveWaterBorder?: boolean }): void
-}
-
-type TerrainMap = Container & {
-  size: number
-  seed?: string | number
-  environment?: string
-  grid: TerrainCell[][]
-  playersPos: Array<GridPosition | null>
-  terrainBackfill?: Container | null
-  generationTimings?: Record<string, number>
-  blueprintWaterBorderReady?: boolean
-  pregeneratedBlueprintId?: string | number | null
-  getReliefCoastDistances(): Int16Array
-  getMaxReliefLevelFromCoastDistance(distance: number): number
-  getMinReliefLevelFromCoastDistance(distance: number): number
-  setCellReliefLevelDirect(cell: TerrainCell, level: number): void
-  clampReliefAroundWater(dist?: Int16Array): void
-  flattenPlayerStartZones(radius?: number): void
-  formatCellsWaterBorder(): void
-  clampReliefAroundWaterLevels(): ReliefLevelBounds
-  enforceReliefStepContinuity(
-    dist?: Int16Array,
-    protectedCells?: Set<TerrainCell>,
-    levelBounds?: ReliefLevelBounds
-  ): void
-  formatCellsRelief(): void
-  formatCellsWaterBorderOverlays(): void
-  formatCellsPatchBorders(): void
-}
-
-export type ReliefLevelBounds = {
-  minLevels: Int16Array
-  maxLevels: Int16Array
-}
-
-type TerrainLandChange = [cell: TerrainCell, type: string]
-type TerrainLevelAdjustment = [cell: TerrainCell, targetLevel: number]
-type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
-type NeighborFlags = Record<NeighborName, boolean>
-type ReliefBounds = { min: number; max: number }
+export type { ReliefLevelBounds, TerrainCell, TerrainMap } from './MapTerrainTypes'
 
 function isGridPosition(value: unknown): value is GridPosition {
   return (
@@ -362,98 +284,14 @@ export class MapTerrain {
     protectedCells: Set<TerrainCell> = new Set(),
     pass: number = 0
   ): Set<TerrainCell> {
-    const cellsToFill: TerrainCell[] = []
-    const cellsToLand: TerrainLandChange[] = []
-    const candidates = new Set<TerrainCell>()
-
-    if (seeds?.size) {
-      for (const seed of seeds) {
-        if (!isGridPosition(seed)) continue
-        for (let di = -1; di <= 1; di++) {
-          for (let dj = -1; dj <= 1; dj++) {
-            const candidate = this.map.grid[seed.i + di]?.[seed.j + dj]
-            if (candidate) candidates.add(candidate)
-          }
-        }
-      }
-    } else {
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) candidates.add(this.map.grid[i][j])
-      }
-    }
-
-    for (const cell of candidates) {
-      if (cell.category === 'Water') continue
-      const { i, j } = cell
-      const waterRing = getNeighborRing(this.map.grid, i, j, neighbor => neighbor?.category === 'Water')
-      if (waterRing.filter(Boolean).length < 2) continue
-      const waterNeighbors = getNeighborFlagsFromRing(waterRing)
-      if (!hasUnsupportedTransition(waterNeighbors)) continue
-
-      if (protectedCells.has(cell)) {
-        for (let index = 0; index < waterRing.length; index++) {
-          if (!waterRing[index]) continue
-          const [di, dj] = EIGHT_NEIGHBOR_OFFSETS[index]
-          const neighbor = this.map.grid[i + di]?.[j + dj]
-          if (neighbor && !protectedCells.has(neighbor)) cellsToLand.push([neighbor, cell.type])
-        }
-        continue
-      }
-
-      const hasProtectedWaterNeighbor = EIGHT_NEIGHBOR_OFFSETS.some(([di, dj]) =>
-        protectedCells.has(this.map.grid[i + di]?.[j + dj])
-      )
-      if (hasProtectedWaterNeighbor) {
-        cellsToFill.push(cell)
-        continue
-      }
-
-      const groups = getCyclicGroups(waterRing)
-      if (groups.length < 2) continue
-
-      const largestGroup = groups.reduce((largest, group) => (group.length > largest.length ? group : largest))
-      const removalCost = waterRing.filter(Boolean).length - largestGroup.length
-
-      // Prefer the smallest local edit. Ties favour removing a stray water
-      // fragment, so deleting water is never silently undone by this pass.
-      if (removalCost <= 1) {
-        for (const group of groups) {
-          if (group === largestGroup) continue
-          for (const index of group) {
-            const [di, dj] = EIGHT_NEIGHBOR_OFFSETS[index]
-            const neighbor = this.map.grid[i + di]?.[j + dj]
-            if (neighbor?.category === 'Water' && !protectedCells.has(neighbor)) cellsToLand.push([neighbor, cell.type])
-          }
-        }
-      } else if (!protectedCells.has(cell)) {
-        cellsToFill.push(cell)
-      }
-    }
-
-    const changedCells = new Set<TerrainCell>()
-    for (const [cell, type] of cellsToLand) {
-      if (cell.category !== 'Water' || !cell.setTerrainType) continue
-      cell.setTerrainType(type)
-      changedCells.add(cell)
-    }
-    for (const cell of cellsToFill) {
-      if (cell.category === 'Water' || !cell.setWater) continue
-      if (level != null) this.map.setCellReliefLevelDirect(cell, level)
-      cell.setWater()
-      changedCells.add(cell)
-    }
-    if (changedCells.size) this.invalidateReliefCoastDistances()
-
-    // A correction can expose an invalid neighbour one ring farther out. Run
-    // to a bounded fixed point now, instead of waiting for the next stroke to
-    // incidentally repair it.
-    const maxPasses = Math.max(4, Math.min(24, this.map.size + 1))
-    if (changedCells.size && pass < maxPasses) {
-      const subsequentChanges = this.normalizeWaterTopology(level, changedCells, protectedCells, pass + 1)
-      for (const cell of subsequentChanges) changedCells.add(cell)
-    }
-
-    return changedCells
+    return normalizeTerrainWaterTopology(
+      this.map,
+      () => this.invalidateReliefCoastDistances(),
+      level,
+      seeds,
+      protectedCells,
+      pass
+    )
   }
 
   clampReliefAroundWaterLevels(): ReliefLevelBounds {
@@ -515,58 +353,7 @@ export class MapTerrain {
   }
 
   rebuildTerrainBackfill(): void {
-    let layer = this.map.terrainBackfill
-    if (!layer) {
-      layer = new Container()
-      layer.label = 'terrainBackfill'
-      layer.eventMode = 'none'
-      layer.zIndex = -2
-      layer.sortableChildren = true
-      this.map.terrainBackfill = layer
-    }
-
-    if (layer.parent !== this.map) this.map.addChild(layer)
-    for (const child of layer.removeChildren()) child.destroy()
-    layer.visible = true
-
-    const config = Assets.cache.get('config') as TerrainConfig
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        const isMapEdge = i === 0 || j === 0 || i === this.map.size || j === this.map.size
-        if (!isMapEdge || cell.z === 0) continue
-
-        const assets = config?.cells?.[cell.type]?.assets || []
-        if (!assets.length) continue
-
-        const textureRef = getDeterministicCellVariant(assets, i, j, this.map.seed)
-        if (!textureRef) continue
-        const texture = getTexture(textureRef, Assets)
-        if (!texture) continue
-
-        const [x, y] = cartesianToIsometric(i, j)
-        const addBackfillSprite = (level: number) => {
-          const sprite = new Sprite(texture)
-          sprite.x = x
-          sprite.y = y - level * CELL_DEPTH
-          sprite.zIndex = i + j + level / 10
-          sprite.anchor.set(
-            Math.floor(texture.width / 2) / texture.width,
-            Math.floor(texture.height / 2) / texture.height
-          )
-          sprite.roundPixels = true
-          sprite.eventMode = 'none'
-          layer.addChild(sprite)
-        }
-
-        // At the map perimeter there is no neighboring tile behind the relief.
-        addBackfillSprite(0)
-        const direction = Math.sign(cell.z)
-        for (let level = direction; level !== cell.z + direction; level += direction) {
-          addBackfillSprite(level)
-        }
-      }
-    }
+    rebuildTerrainBackfill(this.map)
   }
 
   clampReliefAroundWater(dist: Int16Array = this.map.getReliefCoastDistances()): void {
@@ -587,386 +374,23 @@ export class MapTerrain {
     protectedCells: Set<TerrainCell> = new Set(),
     levelBounds: ReliefLevelBounds | null = null
   ): void {
-    const n = this.map.size + 1
-    const diagonalDirections = EIGHT_NEIGHBOR_OFFSETS
-    const getLevelBounds = (cell: TerrainCell): ReliefBounds => {
-      const index = cell.i * n + cell.j
-      if (levelBounds) {
-        return {
-          min: levelBounds.minLevels[index],
-          max: levelBounds.maxLevels[index],
-        }
-      }
-      return {
-        min: this.map.getMinReliefLevelFromCoastDistance(dist[index]),
-        max: this.map.getMaxReliefLevelFromCoastDistance(dist[index]),
-      }
-    }
-    let deepestLevel = 0
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        deepestLevel = Math.min(deepestLevel, this.map.grid[i][j].z)
-      }
-    }
-
-    // The slope atlas cannot represent checkerboard-like concave contours.
-    // Close one-cell gaps at each negative depth while preserving the basin outline.
-    for (let level = deepestLevel; level < 0; level++) {
-      const depthMask = new Uint8Array(n * n)
-      const expandedMask = new Uint8Array(n * n)
-
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const cell = this.map.grid[i][j]
-          if (cell.category !== 'Water' && !cell.waterBorder && cell.z <= level) {
-            depthMask[i * n + j] = 1
-          }
-        }
-      }
-
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const index = i * n + j
-          if (depthMask[index]) {
-            expandedMask[index] = 1
-            continue
-          }
-
-          expandedMask[index] = Number(
-            diagonalDirections.some(([di, dj]) => {
-              const ni = i + di
-              const nj = j + dj
-              return ni >= 0 && ni <= this.map.size && nj >= 0 && nj <= this.map.size && depthMask[ni * n + nj] === 1
-            })
-          )
-        }
-      }
-
-      const adjustments = []
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const cell = this.map.grid[i][j]
-          if (cell.category === 'Water' || cell.waterBorder || cell.has || protectedCells.has(cell) || cell.z <= level)
-            continue
-
-          const closesGap = diagonalDirections.every(([di, dj]) => {
-            const ni = i + di
-            const nj = j + dj
-            return ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size || expandedMask[ni * n + nj] === 1
-          })
-          if (expandedMask[i * n + j] && closesGap) adjustments.push(cell)
-        }
-      }
-
-      for (const cell of adjustments) {
-        this.map.setCellReliefLevelDirect(cell, level)
-      }
-    }
-
-    const noDepressionLimit = 32767
-    const depressionUpperBounds = new Int16Array(n * n).fill(noDepressionLimit)
-    const queue: TerrainCell[] = []
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category === 'Water' || cell.waterBorder || cell.z >= 0) continue
-        depressionUpperBounds[i * n + j] = cell.z
-        queue.push(cell)
-      }
-    }
-
-    for (let index = 0; index < queue.length; index++) {
-      const cell = queue[index]
-      const nextBound = depressionUpperBounds[cell.i * n + cell.j] + 1
-
-      for (const [di, dj] of diagonalDirections) {
-        const neighbor = this.map.grid[cell.i + di]?.[cell.j + dj]
-        if (!neighbor || neighbor.category === 'Water' || neighbor.waterBorder) continue
-        const neighborIndex = neighbor.i * n + neighbor.j
-        if (depressionUpperBounds[neighborIndex] <= nextBound) continue
-        depressionUpperBounds[neighborIndex] = nextBound
-        queue.push(neighbor)
-      }
-    }
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category === 'Water' || cell.waterBorder) continue
-        const upperBound = depressionUpperBounds[i * n + j]
-        if (!protectedCells.has(cell) && upperBound < cell.z) {
-          this.map.setCellReliefLevelDirect(cell, upperBound)
-        }
-      }
-    }
-
-    const getHigherNeighbors = (cell: TerrainCell) =>
-      getNeighborFlags(this.map.grid, cell.i, cell.j, (neighbor: TerrainCell | undefined) =>
-        Boolean(neighbor && neighbor.z > cell.z)
-      )
-
-    const enforceHeightSteps = (): boolean => {
-      let changed = false
-
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const cell = this.map.grid[i][j]
-          const neighbors = [
-            this.map.grid[i]?.[j + 1],
-            this.map.grid[i + 1]?.[j - 1],
-            this.map.grid[i + 1]?.[j],
-            this.map.grid[i + 1]?.[j + 1],
-          ]
-
-          for (const neighbor of neighbors) {
-            if (!neighbor) continue
-            if (cell.category === 'Water' || neighbor.category === 'Water' || cell.waterBorder || neighbor.waterBorder)
-              continue
-
-            const high = cell.z >= neighbor.z ? cell : neighbor
-            const low = high === cell ? neighbor : cell
-            if (high.z - low.z <= 1) continue
-
-            const lowBounds = getLevelBounds(low)
-            const highBounds = getLevelBounds(high)
-            const lowMaxAllowed = lowBounds.max
-            const lowMinAllowed = lowBounds.min
-            const highMaxAllowed = highBounds.max
-            const highMinAllowed = highBounds.min
-            const targetLowLevel = high.z - 1
-            const targetHighLevel = Math.max(highMinAllowed, Math.min(highMaxAllowed, low.z + 1))
-            const lowDepressionLimit = depressionUpperBounds[low.i * n + low.j]
-            const boundedTargetLowLevel = Math.min(targetLowLevel, lowDepressionLimit)
-            const highProtected = protectedCells.has(high)
-            const lowProtected = protectedCells.has(low)
-            const previousHighLevel = high.z
-            const previousLowLevel = low.z
-
-            if (highProtected && lowProtected) continue
-            if (lowProtected) {
-              this.map.setCellReliefLevelDirect(high, targetHighLevel)
-            } else {
-              const target = highProtected ? targetLowLevel : boundedTargetLowLevel
-              if (!low.has && target > low.z && target >= lowMinAllowed && target <= lowMaxAllowed) {
-                this.map.setCellReliefLevelDirect(low, target)
-              } else if (!highProtected) {
-                this.map.setCellReliefLevelDirect(high, targetHighLevel)
-              }
-            }
-
-            if (high.z !== previousHighLevel || low.z !== previousLowLevel) changed = true
-          }
-        }
-      }
-
-      return changed
-    }
-
-    const raiseUnsupportedTransitions = (isUnsupported: (flags: NeighborFlags) => boolean): boolean => {
-      const adjustments: TerrainLevelAdjustment[] = []
-
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const cell = this.map.grid[i][j]
-          if (cell.category === 'Water' || cell.waterBorder || protectedCells.has(cell)) continue
-          if (!isUnsupported(getHigherNeighbors(cell))) continue
-
-          const higherLevels = diagonalDirections
-            .map(([di, dj]) => this.map.grid[i + di]?.[j + dj])
-            .filter(neighbor => neighbor && neighbor.z > cell.z)
-            .map(neighbor => neighbor.z)
-          if (!higherLevels.length) continue
-
-          const maxAllowed = getLevelBounds(cell).max
-          // Preserving the exact bottom of a depression is less important than
-          // producing a contour the sprite atlas can represent. Keeping the
-          // depression bound here left enclosed negative cells permanently invalid.
-          const targetLevel = Math.min(Math.min(...higherLevels), maxAllowed)
-          if (targetLevel > cell.z) adjustments.push([cell, targetLevel])
-        }
-      }
-
-      for (const [cell, targetLevel] of adjustments) {
-        this.map.setCellReliefLevelDirect(cell, targetLevel)
-      }
-      return adjustments.length > 0
-    }
-
-    let changed = true
-    let pass = 0
-    const maxPasses = Math.max(12, Math.min(64, this.map.size + 1))
-    while (changed && pass++ < maxPasses) {
-      changed = enforceHeightSteps()
-      changed = raiseUnsupportedTransitions(hasUnsupportedTransition) || changed
-    }
+    enforceTerrainReliefStepContinuity(this.map, dist, protectedCells, levelBounds)
   }
 
   formatCellsRelief(): void {
-    // Cell-local underlays cover transparent relief frames. This layer only closes
-    // the exposed vertical stack at the outer perimeter of the map.
-    this.rebuildTerrainBackfill()
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category === 'Water' || cell.waterBorder) continue
-
-        const { n, s, w, e, nw, ne, sw, se } = getNeighborFlags(
-          this.map.grid,
-          i,
-          j,
-          (neighbor: TerrainCell | undefined) => (neighbor?.z ?? cell.z) > cell.z
-        )
-
-        // Cardinal singles
-        if (n && !s && !w && !e) {
-          cell.setReliefBorder?.('014', CELL_DEPTH / 2)
-        } else if (s && !n && !w && !e) {
-          cell.setReliefBorder?.('015', CELL_DEPTH / 2)
-        } else if (w && !n && !s && !e) {
-          cell.setReliefBorder?.('016', CELL_DEPTH / 2)
-        } else if (e && !n && !s && !w) {
-          cell.setReliefBorder?.('013', CELL_DEPTH / 2)
-          // Diagonal singles — only fire when adjacent cardinals are not higher
-        } else if (nw && !n && !w) {
-          cell.setReliefBorder?.('010', CELL_DEPTH / 2)
-        } else if (sw && !s && !w) {
-          cell.setReliefBorder?.('012')
-        } else if (ne && !n && !e) {
-          cell.setReliefBorder?.('011')
-        } else if (se && !s && !e) {
-          cell.setReliefBorder?.('009', CELL_DEPTH / 2)
-          // Cardinal pairs (exact) — guards on opposite directions fix the z=2 corner bug
-        } else if (w && n && !s && !e) {
-          cell.setReliefBorder?.('022', CELL_DEPTH / 2)
-        } else if (e && s && !n && !w) {
-          cell.setReliefBorder?.('021', CELL_DEPTH / 2)
-        } else if (w && s && !n && !e) {
-          cell.setReliefBorder?.('023', CELL_DEPTH)
-        } else if (e && n && !s && !w) {
-          cell.setReliefBorder?.('024', CELL_DEPTH)
-        } else if (n && s && !w && !e) {
-          cell.setReliefBorder?.('017', CELL_DEPTH / 2)
-        } else if (w && e && !n && !s) {
-          cell.setReliefBorder?.('018', CELL_DEPTH / 2)
-          // 3+ cardinals higher — approximate with the most visually dominant pair
-        } else if (n && w) {
-          cell.setReliefBorder?.('022', CELL_DEPTH / 2)
-        } else if (s && e) {
-          cell.setReliefBorder?.('021', CELL_DEPTH / 2)
-        } else if (w && s) {
-          cell.setReliefBorder?.('023', CELL_DEPTH)
-        } else if (e && n) {
-          cell.setReliefBorder?.('024', CELL_DEPTH)
-        } else if (n || s) {
-          cell.setReliefBorder?.('017', CELL_DEPTH / 2)
-        } else if (w || e) {
-          cell.setReliefBorder?.('018', CELL_DEPTH / 2)
-        } else if (nw || ne || sw || se) {
-          debugLog(
-            TERRAIN_RELIEF_DEBUG,
-            `[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nw} NE=${ne} SW=${sw} SE=${se}`
-          )
-        }
-      }
-    }
+    formatTerrainRelief(this.map)
   }
 
   formatCellsWaterBorder(): void {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.category === 'Water') continue
-        const flags = getNeighborFlags(
-          this.map.grid,
-          i,
-          j,
-          (neighbor: TerrainCell | undefined) => neighbor?.category === 'Water'
-        )
-        const frame = getWaterBorderFrame(flags)
-        if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesertSand, frame)
-      }
-    }
+    formatTerrainWaterBorder(this.map)
   }
 
   formatCellsWaterBorderOverlays(): void {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (!cell.waterBorder) continue
-
-        const overlay = (neighbor: TerrainCell | undefined, direction: string) => {
-          // Desert and Dirt both get their own border sheet from formatCellsPatchBorders
-          // (run earlier in the pipeline) — excluded here so this generic pass, which
-          // always defaults to the desert sheet, never overwrites a Dirt cell's correct
-          // border with the wrong texture if it ever ends up beside a waterBorder cell
-          // (e.g. via normalizeWaterTopology turning a nearby land cell into water after
-          // generation, outside patchwork's own water-clearance check).
-          if (
-            neighbor &&
-            !neighbor.waterBorder &&
-            neighbor.category !== 'Water' &&
-            neighbor.type !== 'Desert' &&
-            neighbor.type !== 'Dirt' &&
-            neighbor.type !== 'Snow'
-          ) {
-            neighbor.setPatchBorder?.(direction)
-          }
-        }
-
-        overlay(this.map.grid[i - 1]?.[j], 'east')
-        overlay(this.map.grid[i + 1]?.[j], 'west')
-        overlay(this.map.grid[i]?.[j - 1], 'south')
-        overlay(this.map.grid[i]?.[j + 1], 'north')
-      }
-    }
+    formatTerrainWaterBorderOverlays(this.map)
   }
 
   rebuildTerrainAppearance(protectedReliefCells: Set<TerrainCell> = new Set()): void {
-    const timings = this.map.generationTimings
-    const measure = <T>(name: string, callback: () => T): T => {
-      if (!timings) return callback()
-      const startedAt = performance.now()
-      const result = callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    }
-
-    measure('terrainResetAppearance', () => {
-      const preserveWaterBorder = Boolean(this.map.blueprintWaterBorderReady)
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          this.map.grid[i][j].resetTerrainAppearance?.({ preserveWaterBorder })
-        }
-      }
-    })
-
-    if (this.map.blueprintWaterBorderReady) {
-      if (timings) timings.terrainWaterBorder = 0
-    } else {
-      measure('terrainWaterBorder', () => this.map.formatCellsWaterBorder())
-    }
-    if (this.map.pregeneratedBlueprintId) {
-      if (timings) {
-        timings.terrainClampWaterLevels = 0
-        timings.terrainReliefContinuity = 0
-      }
-    } else {
-      const waterLevelBounds = measure('terrainClampWaterLevels', () => this.map.clampReliefAroundWaterLevels())
-      const unrestrictedReliefDistances = new Int16Array((this.map.size + 1) ** 2).fill(this.map.size + 4)
-      measure('terrainReliefContinuity', () =>
-        this.map.enforceReliefStepContinuity(unrestrictedReliefDistances, protectedReliefCells, waterLevelBounds)
-      )
-    }
-    measure('terrainReliefBorders', () => this.map.formatCellsRelief())
-    // Runs before the water-border overlay so a cell right next to a Desert/Dirt/Snow patch
-    // always gets that patch's own relief sheet — setPatchBorder's "already set" guard
-    // then makes the water overlay (which defaults to the desert sheet) a no-op there,
-    // instead of the reverse where the generic water overlay would win first.
-    measure('terrainPatchBorders', () => this.map.formatCellsPatchBorders())
-    measure('terrainWaterBorderOverlays', () => this.map.formatCellsWaterBorderOverlays())
+    rebuildTerrainAppearance(this.map, protectedReliefCells)
   }
 
   // Also covers Dirt/Snow (the water-patch ground for Temperate/BlackForest/Jungle, see
@@ -974,23 +398,6 @@ export class MapTerrain {
   // Desert patches get the desert relief sheet and Dirt/Snow patches get their own relief sheet,
   // regardless of which environment/map they're on.
   formatCellsPatchBorders(): void {
-    const typeToFormat = ['Grass', 'Jungle', 'DarkForest']
-
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (cell.type === 'Desert' || cell.type === 'Dirt' || cell.type === 'Snow') {
-          const groundType = cell.type as PatchBorderGroundType
-          const n = this.map.grid[i - 1]?.[j]
-          const s = this.map.grid[i + 1]?.[j]
-          const w = this.map.grid[i]?.[j - 1]
-          const e = this.map.grid[i]?.[j + 1]
-          if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setPatchBorder?.('east', groundType)
-          if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setPatchBorder?.('west', groundType)
-          if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setPatchBorder?.('south', groundType)
-          if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setPatchBorder?.('north', groundType)
-        }
-      }
-    }
+    formatTerrainPatchBorders(this.map)
   }
 }

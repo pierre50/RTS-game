@@ -6,7 +6,7 @@ import type { GridPosition } from '../../types/grid'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
-import type { MapGenerationMap } from './MapGeneration'
+import type { MapGenerationMap } from './MapGenerationTypes'
 
 const BANDIT_CAMP_OWNER_NAME = 'Bandits'
 const BANDIT_CAMP_BED_OFFSETS: GridPosition[] = [

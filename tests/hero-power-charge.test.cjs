@@ -411,6 +411,18 @@ function loadHeroTools(overrides = {}) {
     if (request === './HeroProjectileTools') {
       return loadTsFile(path.join(__dirname, '../app/lib/HeroProjectileTools.ts'))
     }
+    if (request === './HeroMeleeTools') {
+      return loadTsFile(path.join(__dirname, '../app/lib/HeroMeleeTools.ts'))
+    }
+    if (request === './heroToolAnimation') {
+      return loadTsFile(path.join(__dirname, '../app/lib/heroToolAnimation.ts'))
+    }
+    if (request === './heroEnergy') {
+      return loadTsFile(path.join(__dirname, '../app/lib/heroEnergy.ts'))
+    }
+    if (request === './heroDefense') {
+      return loadTsFile(path.join(__dirname, '../app/lib/heroDefense.ts'))
+    }
     if (request === './unitWorkAppearance') {
       return {
         applyUnitWorkAssets: (unit, work) => {

@@ -13,7 +13,6 @@ import {
 import { getCommCellsInRadius } from '../lib/npcInteraction'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import type { ControlBindingAction } from '../lib/settings'
-import type Controls from '../classes/Controls'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 
@@ -44,6 +43,10 @@ export type CompanionHorse = AnimalEntity & {
   ) => void
 }
 export type ViewportMetrics = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
+type HeroDirectionLockHost = {
+  shiftKeyActive?: boolean
+  isHeroDirectionLockActive?: () => boolean
+}
 
 const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, MoveVector>> = {
   heroUp: { dx: 0, dy: -1 },
@@ -108,8 +111,8 @@ export function easeInOut(t: number): number {
   return clamped * clamped * (3 - 2 * clamped)
 }
 
-export function isHeroDirectionLockActive(controls: Controls): boolean {
-  return controls.isHeroDirectionLockActive?.() ?? controls.shiftKeyActive
+export function isHeroDirectionLockActive(controls: HeroDirectionLockHost): boolean {
+  return controls.isHeroDirectionLockActive?.() ?? Boolean(controls.shiftKeyActive)
 }
 
 export function getVectorFromDegree(degree: number): MoveVector {

@@ -3,12 +3,12 @@ import { playClickSound } from '../lib/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from './settingsPanel'
 import { openSaveListModal } from './saveListModal'
-import type Menu from '../classes/Menu'
+import type { MenuHost } from './MenuHost'
 
 export class PauseMenu {
-  menu: Menu
+  menu: MenuHost
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
   }
 

@@ -17,10 +17,10 @@ import {
 import { createTitledEntityInfoContent } from './EntityInfoModalManager'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
 import { pickForeignNpcChatterLine, pickNpcGreetingLine } from '../lib/npcChatter'
-import type Menu from '../classes/Menu'
 import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
+import type { MenuHost } from './MenuHost'
 
 type NpcOrderId = 'stockpile' | 'stay' | 'follow' | 'goto' | VillagerAutonomyJob
 
@@ -44,7 +44,7 @@ const NPC_ORDER_SPECS: {
 ]
 
 export class NpcOrdersManager {
-  menu: Menu
+  menu: MenuHost
   panel: HTMLDivElement
   infoContainer: HTMLDivElement
   chatterContainer: HTMLDivElement
@@ -56,7 +56,7 @@ export class NpcOrdersManager {
   opened: boolean
   npcs: UnitEntity[]
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.opened = false
     this.npcs = []

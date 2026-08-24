@@ -120,6 +120,98 @@ function resetCaptureHorseActionState(unit: UnitEntity, horse: AnimalEntity | nu
   captureHorseActionStateByUnit.delete(unit)
 }
 
+function clearCaptureHorseStableRoute(unit: UnitEntity, state: CaptureHorseActionState): void {
+  getHeroCaptureLasso(unit)?.setExternalStableRouteActive(false)
+  if (state.stableRouteStop) {
+    state.stableRouteStop()
+    state.stableRouteStop = null
+  }
+  state.stableRouteHorseLabel = null
+}
+
+function syncCaptureHorseMovingDest(unit: UnitEntity, horse: AnimalEntity): void {
+  if (!unit.destHasMoved?.() || !unit.realDest) return
+  unit.realDest.i = horse.i
+  unit.realDest.j = horse.j
+  unit.realDest.x = horse.x
+  unit.realDest.y = horse.y
+  const oldDeg = unit.degree
+  unit.degree = getInstanceDegree(unit, horse.x, horse.y)
+  if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+    unit.setTextures?.(SHEET_TYPES.action)
+  }
+}
+
+function tryStartCaptureHorseLasso(
+  unit: UnitEntity,
+  horse: AnimalEntity,
+  state: CaptureHorseActionState,
+  now: number,
+  hasActiveCaptureLasso: boolean,
+  isCapturing: boolean
+): boolean {
+  if (isCapturing || hasActiveCaptureLasso || !unit.context) return false
+  if (now - state.lastRepathAt > CAPTURE_HORSE_REPATH_INTERVAL_MS) {
+    state.lastRepathAt = now
+    unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+  }
+  if (now - state.lastLassoAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return true
+  state.lastLassoAttemptAt = now
+  const lasso = new HeroLassoThrow(unit, { x: horse.x, y: horse.y }, unit.context, {
+    pullCapturedHorseToOwner: true,
+    allowStableOnRelease: false,
+    releaseHorseOnClear: false,
+    autoRouteStableWhileAttached: false,
+    showMessages: unit.owner?.isPlayed,
+  })
+  unit.context.map?.addChild(lasso)
+  return true
+}
+
+function routeCapturedHorseToStable(
+  unit: UnitEntity,
+  horse: AnimalEntity,
+  stable: BuildingEntity,
+  state: CaptureHorseActionState,
+  clearStableRoute: () => void
+): void {
+  const unitContext = unit.context
+  if (!unitContext) return
+  if (state.stableRouteHorseLabel !== horse.label) clearStableRoute()
+  if (!state.stableRouteStop) {
+    state.stableRouteHorseLabel = horse.label
+    state.stableRouteStop = routeCapturedHorseToStableWithOwnerContact({
+      gameContext: unitContext,
+      owner: unit,
+      horse,
+      ownerContactTimeoutMs: getCaptureHorseOwnerStableTimeoutMs(unit, stable),
+      isRouteValid: () => Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
+      onHorseRouteStart: () => {
+        getHeroCaptureLasso(unit)?.setExternalStableRouteActive(true)
+      },
+      onStored: () => {
+        horse.isLassoed = false
+        horse.lassoOwner = null
+        clearStableRoute()
+        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+        if (unit.action === ACTION_TYPES.captureHorse) unit.affectNewDest?.()
+      },
+      onFailure: () => {
+        clearStableRoute()
+        horse.isLassoed = false
+        horse.lassoOwner = null
+        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+        if (unit.action !== ACTION_TYPES.captureHorse) return
+        if (unit.getActionCondition?.(horse, ACTION_TYPES.captureHorse)) {
+          unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+        } else {
+          unit.affectNewDest?.()
+        }
+      },
+    })
+  }
+}
+
 export function handleCaptureHorseAction(unit: UnitEntity): void {
   const unitContext = unit.context
   if (!unitContext) {
@@ -130,14 +222,7 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
   const heroLassoTarget = getHeroLassoTarget(unit)
   const now = unitContext.scheduler?.elapsedMs ?? Date.now()
   const captureHorseState = getCaptureHorseActionState(unit)
-  const clearStableRoute = () => {
-    getHeroCaptureLasso(unit)?.setExternalStableRouteActive(false)
-    if (captureHorseState.stableRouteStop) {
-      captureHorseState.stableRouteStop()
-      captureHorseState.stableRouteStop = null
-    }
-    captureHorseState.stableRouteHorseLabel = null
-  }
+  const clearStableRoute = () => clearCaptureHorseStableRoute(unit, captureHorseState)
   const stableTarget = unitDest?.family === FAMILY_TYPES.building ? (unitDest as BuildingEntity) : null
   const horse = isHorseEntity(unitDest) ? unitDest : isHorseEntity(heroLassoTarget) ? heroLassoTarget : null
   if (!horse || horse.isDead || horse.isDestroyed) {
@@ -218,35 +303,9 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
     return
   }
 
-  if (unit.destHasMoved?.() && horse && unit.realDest) {
-    unit.realDest.i = horse.i
-    unit.realDest.j = horse.j
-    unit.realDest.x = horse.x
-    unit.realDest.y = horse.y
-    const oldDeg = unit.degree
-    unit.degree = getInstanceDegree(unit, horse.x, horse.y)
-    if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
-      unit.setTextures?.(SHEET_TYPES.action)
-    }
-  }
+  syncCaptureHorseMovingDest(unit, horse)
 
-  if (!isCapturing && !hasActiveCaptureLasso && unit.context && horse) {
-    if (now - captureHorseState.lastRepathAt > CAPTURE_HORSE_REPATH_INTERVAL_MS) {
-      captureHorseState.lastRepathAt = now
-      unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
-    }
-    if (now - captureHorseState.lastLassoAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return
-    captureHorseState.lastLassoAttemptAt = now
-    const lasso = new HeroLassoThrow(unit, { x: horse.x, y: horse.y }, unit.context, {
-      pullCapturedHorseToOwner: true,
-      allowStableOnRelease: false,
-      releaseHorseOnClear: false,
-      autoRouteStableWhileAttached: false,
-      showMessages: unit.owner?.isPlayed,
-    })
-    unit.context.map?.addChild(lasso)
-    return
-  }
+  if (tryStartCaptureHorseLasso(unit, horse, captureHorseState, now, hasActiveCaptureLasso, isCapturing)) return
 
   if (!horse.isLassoed) {
     clearStableRoute()
@@ -262,44 +321,7 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
     return
   }
 
-  if (captureHorseState.stableRouteHorseLabel !== horse.label) {
-    clearStableRoute()
-  }
-  if (!captureHorseState.stableRouteStop) {
-    captureHorseState.stableRouteHorseLabel = horse.label
-    captureHorseState.stableRouteStop = routeCapturedHorseToStableWithOwnerContact({
-      gameContext: unitContext,
-      owner: unit,
-      horse,
-      ownerContactTimeoutMs: getCaptureHorseOwnerStableTimeoutMs(unit, stable),
-      isRouteValid: () => Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
-      onHorseRouteStart: () => {
-        getHeroCaptureLasso(unit)?.setExternalStableRouteActive(true)
-      },
-      onStored: () => {
-        horse.isLassoed = false
-        horse.lassoOwner = null
-        clearStableRoute()
-        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
-        if (unit.action === ACTION_TYPES.captureHorse) {
-          unit.affectNewDest?.()
-        }
-      },
-      onFailure: () => {
-        clearStableRoute()
-        horse.isLassoed = false
-        horse.lassoOwner = null
-        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
-        if (unit.action === ACTION_TYPES.captureHorse) {
-          if (unit.getActionCondition?.(horse, ACTION_TYPES.captureHorse)) {
-            unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
-          } else {
-            unit.affectNewDest?.()
-          }
-        }
-      },
-    })
-  }
+  routeCapturedHorseToStable(unit, horse, stable, captureHorseState, clearStableRoute)
 
   const shouldMoveToStable =
     !stableTarget &&

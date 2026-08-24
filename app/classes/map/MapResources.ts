@@ -1,13 +1,14 @@
 import { Resource } from '../Resource'
 import {
   RESOURCE_TYPES,
-  SPACED_RESOURCE_TYPES,
   BIOME_TREE_CHANCE,
   BIOME_TREE_PLAYER_SAFE_DIST,
   WATER_BORDER_PLACEMENT_CLEARANCE,
   getEnvironmentTerrainParams,
 } from '../../constants'
 import { hasWaterBorderWithin } from '../../lib'
+import { generateForestAroundPlayer as generateForestAroundPlayerResources } from './MapForestResources'
+import { hasSpacedResourceAround } from './MapResourceSpacing'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -66,8 +67,6 @@ type MapResourcesMap = {
   ): GridPosition | null
 }
 
-const SPACED_RESOURCE_TYPE_SET = new Set<string>(SPACED_RESOURCE_TYPES)
-
 const PLAYER_RESOURCE_GROUPS: Array<[type: ResourceType, quantity: number, range: ResourceRange]> = [
   [RESOURCE_TYPES.berrybush, 8, [7, 14]],
   [RESOURCE_TYPES.berrybush, 8, [14, 22]],
@@ -124,21 +123,6 @@ const NEUTRAL_RESOURCE_GROUPS: NeutralResourceGroup[] = [
     minNeutralDistance: 26,
   },
 ]
-
-function hasSpacedResourceAround(grid: RuntimeCell[][], i: number, j: number, radius: number = 3): boolean {
-  const minI = Math.max(0, i - radius)
-  const maxI = Math.min(grid.length - 1, i + radius)
-
-  for (let ni = minI; ni <= maxI; ni++) {
-    const row = grid[ni]
-    const minJ = Math.max(0, j - radius)
-    const maxJ = Math.min(row.length - 1, j + radius)
-    for (let nj = minJ; nj <= maxJ; nj++) {
-      if (SPACED_RESOURCE_TYPE_SET.has(row[nj]?.has?.type ?? '')) return true
-    }
-  }
-  return false
-}
 
 function createResource(
   map: MapResourcesMap,
@@ -295,198 +279,16 @@ export class MapResources {
     safeDistance: number = 20,
     clearingProbability: number = 0.6
   ): void {
-    const { grid } = this.map
-    const random = () => this.map.random()
-    const { i: playerI, j: playerJ } = player
-    const gridWidth = grid.length
-    const gridHeight = grid[0].length
-    let forestCells: ResourceCenter[] = []
-    const pathCells = new Set<string>()
-
-    const rangeFactor = 0.4
-    const forestRange = Math.max(30, Math.floor(this.map.size * rangeFactor))
-
-    function distSq(x1: number, y1: number, x2: number, y2: number): number {
-      return (x1 - x2) ** 2 + (y1 - y2) ** 2
-    }
-    const safeDistanceSq = safeDistance ** 2
-
-    function createCircle(
-      centerI: number,
-      centerJ: number,
-      radius: number,
-      density: number = 0.7,
-      edgeNoise: number = 0
-    ): ResourceCenter[] {
-      const circleCells: ResourceCenter[] = []
-      for (let x = -radius; x <= radius; x++) {
-        for (let y = -radius; y <= radius; y++) {
-          const noise = random() * edgeNoise - edgeNoise / 2
-          const effectiveRadius = radius - noise
-          if (effectiveRadius > 0 && x * x + y * y <= effectiveRadius * effectiveRadius) {
-            const cellI = centerI + x
-            const cellJ = centerJ + y
-            if (
-              cellI >= 0 &&
-              cellI < gridWidth &&
-              cellJ >= 0 &&
-              cellJ < gridHeight &&
-              !grid[cellI][cellJ].solid &&
-              grid[cellI][cellJ].category !== 'Water' &&
-              !hasWaterBorderWithin(grid, cellI, cellJ, WATER_BORDER_PLACEMENT_CLEARANCE) &&
-              grid[cellI][cellJ].type !== 'Border' &&
-              grid[cellI][cellJ].type !== 'Dirt' &&
-              grid[cellI][cellJ].type !== 'Snow' &&
-              !grid[cellI][cellJ].inclined &&
-              random() < density
-            ) {
-              circleCells.push({ i: cellI, j: cellJ })
-            }
-          }
-        }
-      }
-      return circleCells
-    }
-
-    for (let cluster = 0; cluster < clusterCount; cluster++) {
-      let clusterCenterI, clusterCenterJ
-      let tries = 0
-      const clusterRadius = Math.floor(random() * (maxClusterRadius - minClusterRadius + 1)) + minClusterRadius
-      const clusterDensity = random() * 0.5 + 0.5
-      const edgeNoise = random() * 2
-
-      do {
-        clusterCenterI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
-        clusterCenterJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
-        tries++
-        if (tries > 100) break
-      } while (
-        distSq(clusterCenterI, clusterCenterJ, playerI, playerJ) < safeDistanceSq ||
-        clusterCenterI < 0 ||
-        clusterCenterI >= gridWidth ||
-        clusterCenterJ < 0 ||
-        clusterCenterJ >= gridHeight ||
-        grid[clusterCenterI][clusterCenterJ].category === 'Water' ||
-        hasWaterBorderWithin(grid, clusterCenterI, clusterCenterJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
-        grid[clusterCenterI][clusterCenterJ].solid ||
-        grid[clusterCenterI][clusterCenterJ].inclined
-      )
-
-      if (tries <= 100) {
-        const treeCluster = createCircle(clusterCenterI, clusterCenterJ, clusterRadius, clusterDensity, edgeNoise)
-        treeCluster.forEach(cell => forestCells.push(cell))
-      }
-    }
-
-    const scatteredTreeCount = Math.floor(treeCount * 0.2)
-    for (let i = 0; i < scatteredTreeCount; i++) {
-      let soloI, soloJ
-      let tries = 0
-
-      do {
-        soloI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
-        soloJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
-        tries++
-        if (tries > 50) break
-      } while (
-        distSq(soloI, soloJ, playerI, playerJ) < safeDistanceSq ||
-        soloI < 0 ||
-        soloI >= gridWidth ||
-        soloJ < 0 ||
-        soloJ >= gridHeight ||
-        grid[soloI][soloJ].category === 'Water' ||
-        hasWaterBorderWithin(grid, soloI, soloJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
-        grid[soloI][soloJ].solid ||
-        grid[soloI][soloJ].inclined ||
-        grid[soloI][soloJ].type === 'Dirt' ||
-        grid[soloI][soloJ].type === 'Snow'
-      )
-
-      if (tries <= 50) {
-        forestCells.push({ i: soloI, j: soloJ })
-      }
-    }
-
-    for (let clearing = 0; clearing < clusterCount; clearing++) {
-      if (random() < clearingProbability) {
-        let clearingCenterI, clearingCenterJ
-        let tries = 0
-        const clearingRadius = Math.floor(random() * 8) + 5
-        const edgeNoise = random() * 1.5
-
-        do {
-          clearingCenterI = playerI + Math.floor(random() * forestRange * 2 - forestRange)
-          clearingCenterJ = playerJ + Math.floor(random() * forestRange * 2 - forestRange)
-          tries++
-          if (tries > 100) break
-        } while (
-          distSq(clearingCenterI, clearingCenterJ, playerI, playerJ) < safeDistanceSq ||
-          clearingCenterI < 0 ||
-          clearingCenterI >= gridWidth ||
-          clearingCenterJ < 0 ||
-          clearingCenterJ >= gridHeight ||
-          grid[clearingCenterI][clearingCenterJ].category === 'Water' ||
-          hasWaterBorderWithin(grid, clearingCenterI, clearingCenterJ, WATER_BORDER_PLACEMENT_CLEARANCE) ||
-          grid[clearingCenterI][clearingCenterJ].solid ||
-          grid[clearingCenterI][clearingCenterJ].inclined
-        )
-
-        if (tries <= 100) {
-          const clearingCells = createCircle(clearingCenterI, clearingCenterJ, clearingRadius, 0, edgeNoise)
-          const clearingSet = new Set(clearingCells.map(c => `${c.i},${c.j}`))
-          forestCells = forestCells.filter(c => !clearingSet.has(`${c.i},${c.j}`))
-        }
-      }
-    }
-
-    const pathLength = 20
-    const pathDirection = random() > 0.5 ? 1 : -1
-
-    for (let step = 0; step < pathLength; step++) {
-      const offsetX = step * pathDirection
-      const offsetY = step
-      const ni = playerI + offsetX
-      const nj = playerJ + offsetY
-      if (
-        ni >= 0 &&
-        ni < gridWidth &&
-        nj >= 0 &&
-        nj < gridHeight &&
-        distSq(ni, nj, playerI, playerJ) >= safeDistanceSq
-      ) {
-        const randOffsetX = random() > 0.5 ? 1 : -1
-        const randOffsetY = random() > 0.5 ? 1 : -1
-        pathCells.add(`${ni + randOffsetX},${nj + randOffsetY}`)
-      }
-    }
-
-    for (let idx = forestCells.length - 1; idx >= 0; idx--) {
-      if (pathCells.has(`${forestCells[idx].i},${forestCells[idx].j}`)) {
-        forestCells.splice(idx, 1)
-      }
-    }
-
-    const cellsToPlace: ResourceCenter[] = []
-    for (let i = 0; i < treeCount; i++) {
-      if (forestCells.length === 0) break
-      const itemIndex = Math.floor(random() * forestCells.length)
-      const cell = forestCells[itemIndex]
-      cellsToPlace.push(cell)
-      forestCells.splice(itemIndex, 1)
-    }
-
-    for (const cell of cellsToPlace) {
-      if (
-        grid[cell.i][cell.j].category !== 'Water' &&
-        !grid[cell.i][cell.j].waterBorder &&
-        !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
-        !grid[cell.i][cell.j].solid &&
-        !grid[cell.i][cell.j].inclined
-      ) {
-        !hasSpacedResourceAround(grid, cell.i, cell.j) &&
-          this.map.resources.add(createResource(this.map, cell.i, cell.j, RESOURCE_TYPES.tree))
-      }
-    }
+    generateForestAroundPlayerResources(
+      this.map,
+      player,
+      treeCount,
+      clusterCount,
+      minClusterRadius,
+      maxClusterRadius,
+      safeDistance,
+      clearingProbability
+    )
   }
 
   async generateResourcesAroundPlayersAsync(playersPos: GridPosition[]): Promise<void> {

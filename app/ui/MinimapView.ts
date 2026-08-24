@@ -1,8 +1,8 @@
-import type Menu from '../classes/Menu'
 import type { MinimapPlayerCanvas } from '../types/ui'
+import type { MenuHost } from './MenuHost'
 
 export class MinimapView {
-  menu: Menu
+  menu: MenuHost
   wrap: HTMLDivElement
   element: HTMLDivElement
   terrain: HTMLCanvasElement
@@ -10,7 +10,7 @@ export class MinimapView {
   resources: HTMLCanvasElement
   camera: HTMLCanvasElement
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.wrap = document.createElement('div')
     this.wrap.className = 'minimap-wrap'

@@ -36,6 +36,22 @@ function loadDebugActions(overrides = {}) {
       parseTextureRef: texture => texture,
     },
     '../../lib/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
+    './DebugMapRenderers': {
+      drawCoordsDebug: () => {},
+      drawGridDebug: () => {},
+      drawHeroAimDebug: () => {},
+      drawHeroCollisionDebug: () => {},
+      drawPathDebug: () => {},
+      drawSolidDebug: () => {},
+      drawTerrainFrameDebug: () => {},
+      drawVisionDebug: () => {},
+    },
+    './DebugOverlayRenderers': {
+      ensureAiInfoOverlay: () => {},
+      ensurePerfOverlay: () => {},
+      ensurePlayerStatsOverlay: () => {},
+      isAiDebugPlayer: player => player.type === 'ai',
+    },
     './shared': {
       DEBUG_COORDS_LAYER: 'debug-coords',
       DEBUG_GRID_LAYER: 'debug-grid',

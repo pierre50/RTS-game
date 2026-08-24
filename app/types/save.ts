@@ -1,9 +1,9 @@
 import type { ResourceAmount } from './common'
 import type { AnimalConfig, BuildingConfig, ResourceConfig, TechnologyConfig, UnitConfig } from './config'
-import type { FogSpriteMemory } from './map'
+import type { FogSpriteMemory } from './fog'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
-import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './entities'
+import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }

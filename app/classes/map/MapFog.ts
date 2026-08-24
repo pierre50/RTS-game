@@ -131,6 +131,13 @@ type BackfillSpriteSource = ContainerChild & {
   roundPixels: boolean
 }
 
+type TerrainBakeContainers = {
+  terrainContainer: Container
+  backfillContainer: Container
+  backfillSprites: Sprite[]
+  terrainSets: ContainerChild[]
+}
+
 function isBackfillSpriteSource(source: ContainerChild): source is BackfillSpriteSource {
   return 'texture' in source && 'anchor' in source && 'roundPixels' in source
 }
@@ -154,24 +161,7 @@ export class MapFog {
     this.viewportRenderer = new ViewportFogRenderer(map)
   }
 
-  bakeTerrainToChunks(): void {
-    if (this.map.grid[0]?.[0]?.isGenerationCell) {
-      this._materializeGenerationCells()
-    }
-
-    const renderer = this.map.context.app?.renderer
-    if (!renderer) return
-    const bakeStartedAt = performance.now()
-
-    const { minX, minY, totalW, totalH } = this._getFogMapBounds()
-
-    const gl = renderer.gl
-    const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
-    const chunksX = Math.ceil(totalW / maxTex)
-    const chunksY = Math.ceil(totalH / maxTex)
-    const chunkW = totalW / chunksX
-    const chunkH = totalH / chunksY
-
+  _markTerrainCellsVisible(): void {
     const visibleStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -179,7 +169,9 @@ export class MapFog {
       }
     }
     this.map.context.performance?.record?.('terrainBake.markVisible', performance.now() - visibleStartedAt)
+  }
 
+  _createTerrainBakeContainers(): TerrainBakeContainers {
     const terrainContainer = new Container()
     terrainContainer.sortableChildren = true
     const backfillContainer = new Container()
@@ -187,8 +179,10 @@ export class MapFog {
     backfillContainer.zIndex = -2
     backfillContainer.sortableChildren = true
     terrainContainer.addChild(backfillContainer)
-    const backfillSprites: Sprite[] = []
-    const terrainSets: ContainerChild[] = []
+    return { terrainContainer, backfillContainer, backfillSprites: [], terrainSets: [] }
+  }
+
+  _copyTerrainBackfill({ backfillContainer, backfillSprites }: TerrainBakeContainers): void {
     const backfillStartedAt = performance.now()
     for (const source of this.map.terrainBackfill?.children || []) {
       if (!isBackfillSpriteSource(source)) continue
@@ -202,7 +196,9 @@ export class MapFog {
       backfillSprites.push(sprite)
     }
     this.map.context.performance?.record?.('terrainBake.backfill', performance.now() - backfillStartedAt)
+  }
 
+  _collectTerrainBakeCells({ terrainContainer, terrainSets }: TerrainBakeContainers): void {
     const collectStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
@@ -220,15 +216,26 @@ export class MapFog {
       }
     }
     this.map.context.performance?.record?.('terrainBake.collectCells', performance.now() - collectStartedAt)
+  }
 
+  _renderTerrainChunks(
+    renderer: PixiRendererLike,
+    terrainContainer: Container,
+    bounds: Pick<FogMapBounds, 'minX' | 'minY' | 'totalW' | 'totalH'>,
+    maxTex: number
+  ): void {
+    const chunksX = Math.ceil(bounds.totalW / maxTex)
+    const chunksY = Math.ceil(bounds.totalH / maxTex)
+    const chunkW = bounds.totalW / chunksX
+    const chunkH = bounds.totalH / chunksY
     const renderStartedAt = performance.now()
+
     for (let cx = 0; cx < chunksX; cx++) {
       for (let cy = 0; cy < chunksY; cy++) {
-        const cMinX = minX + cx * chunkW
-        const cMinY = minY + cy * chunkH
-        const cW = Math.ceil(cx === chunksX - 1 ? totalW - cx * chunkW : chunkW)
-        const cH = Math.ceil(cy === chunksY - 1 ? totalH - cy * chunkH : chunkH)
-
+        const cMinX = bounds.minX + cx * chunkW
+        const cMinY = bounds.minY + cy * chunkH
+        const cW = Math.ceil(cx === chunksX - 1 ? bounds.totalW - cx * chunkW : chunkW)
+        const cH = Math.ceil(cy === chunksY - 1 ? bounds.totalH - cy * chunkH : chunkH)
         const rt = RenderTexture.create({ width: cW, height: cH })
         const transform = new Matrix().translate(-cMinX, -cMinY)
         renderer.render({ container: terrainContainer, target: rt, transform, clear: true })
@@ -241,82 +248,102 @@ export class MapFog {
         sprite.label = 'terrainChunk'
         sprite.roundPixels = true
         this.map.addChild(sprite)
-        this.map.registerRenderChunk(sprite, {
-          minX: cMinX,
-          minY: cMinY,
-          width: cW,
-          height: cH,
-        })
+        this.map.registerRenderChunk(sprite, { minX: cMinX, minY: cMinY, width: cW, height: cH })
       }
     }
     this.map.context.performance?.record?.('terrainBake.renderTextures', performance.now() - renderStartedAt)
+  }
 
+  _cleanupTerrainBakeContainers({ terrainContainer, backfillContainer, backfillSprites, terrainSets }: TerrainBakeContainers): void {
     const cleanupStartedAt = performance.now()
     for (const sprite of backfillSprites) sprite.destroy()
     backfillContainer.destroy()
     if (this.map.terrainBackfill) this.map.terrainBackfill.visible = false
     terrainSets.forEach(set => this.map.addChild(set))
     this.map.context.performance?.record?.('terrainBake.cleanup', performance.now() - cleanupStartedAt)
+    if (this.map.context.editor) return
 
-    if (!this.map.context.editor) {
-      const compactStartedAt = performance.now()
-      const replacements = new globalThis.Map<FogGridCell, RuntimeCell>()
-      const runtimeCellsStartedAt = performance.now()
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          const cell = this.map.grid[i][j]
-          if (!isRuntimeCellSource(cell)) continue
-          const runtimeCell = new RuntimeCell(cell)
-          replacements.set(cell, runtimeCell)
-          this.map.grid[i][j] = runtimeCell
-        }
+    const compactStartedAt = performance.now()
+    this._compactTerrainCells(terrainContainer)
+    this.map.context.performance?.record?.('cellCompaction', performance.now() - compactStartedAt)
+  }
+
+  _compactTerrainCells(terrainContainer: Container): void {
+    const replacements = new globalThis.Map<FogGridCell, RuntimeCell>()
+    const runtimeCellsStartedAt = performance.now()
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i][j]
+        if (!isRuntimeCellSource(cell)) continue
+        const runtimeCell = new RuntimeCell(cell)
+        replacements.set(cell, runtimeCell)
+        this.map.grid[i][j] = runtimeCell
       }
-      this.map.context.performance?.record?.('cellCompaction.runtimeCells', performance.now() - runtimeCellsStartedAt)
-
-      const destroyStartedAt = performance.now()
-      terrainContainer.destroy({ children: true, texture: false, textureSource: false })
-      this.map.context.performance?.record?.(
-        'cellCompaction.destroyTerrainContainer',
-        performance.now() - destroyStartedAt
-      )
-
-      const instances = [
-        ...getGaiaAnimals(this.map.gaia),
-        ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
-        ...this.map.resources,
-      ] as RelinkableInstance[]
-      const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
-      const relinkStartedAt = performance.now()
-      for (const instance of instances) {
-        if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
-        if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as FogGridCell)
-        if (instance.previousDest?.family === FAMILY_TYPES.cell)
-          instance.previousDest = replaceCell(instance.previousDest as FogGridCell)
-        if (instance.path?.length) instance.path = instance.path.map(replaceCell)
-      }
-      this.map.context.performance?.record?.('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
-
-      const indexStartedAt = performance.now()
-      getFogCameraController(this.map.context.controls)?.visibleCells?.clear()
-      this._indexFogChunkCells()
-      this.map.context.performance?.record?.('cellCompaction.reindexFog', performance.now() - indexStartedAt)
-      this.map.context.performance?.record?.('cellCompaction', performance.now() - compactStartedAt)
-      this.map.terrainChunkManager?.initialize(getFogCameraController(this.map.context.controls)?.getViewportRect())
     }
+    this.map.context.performance?.record?.('cellCompaction.runtimeCells', performance.now() - runtimeCellsStartedAt)
 
+    const destroyStartedAt = performance.now()
+    terrainContainer.destroy({ children: true, texture: false, textureSource: false })
+    this.map.context.performance?.record?.('cellCompaction.destroyTerrainContainer', performance.now() - destroyStartedAt)
+
+    this._relinkCompactedCells(replacements)
+    const indexStartedAt = performance.now()
+    getFogCameraController(this.map.context.controls)?.visibleCells?.clear()
+    this._indexFogChunkCells()
+    this.map.context.performance?.record?.('cellCompaction.reindexFog', performance.now() - indexStartedAt)
+    this.map.terrainChunkManager?.initialize(getFogCameraController(this.map.context.controls)?.getViewportRect())
+  }
+
+  _relinkCompactedCells(replacements: Map<FogGridCell, RuntimeCell>): void {
+    const instances = [
+      ...getGaiaAnimals(this.map.gaia),
+      ...(this.map.context.players ?? []).flatMap(owner => [...owner.units, ...owner.buildings, ...owner.corpses]),
+      ...this.map.resources,
+    ] as RelinkableInstance[]
+    const replaceCell = (cell: FogGridCell): FogGridCell => replacements.get(cell) || cell
+    const relinkStartedAt = performance.now()
+    for (const instance of instances) {
+      if (instance.currentCell) instance.currentCell = replaceCell(instance.currentCell)
+      if (instance.dest?.family === FAMILY_TYPES.cell) instance.dest = replaceCell(instance.dest as FogGridCell)
+      if (instance.previousDest?.family === FAMILY_TYPES.cell)
+        instance.previousDest = replaceCell(instance.previousDest as FogGridCell)
+      if (instance.path?.length) instance.path = instance.path.map(replaceCell)
+    }
+    this.map.context.performance?.record?.('cellCompaction.instanceRelinks', performance.now() - relinkStartedAt)
+  }
+
+  _updateViewedCellsAfterTerrainBake(): void {
     const { player } = this.map.context
     if (!player) return
     const updateViewedStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
-        if (player.views.isViewed(i, j)) {
-          cell.updateVisible()
-        }
+        if (player.views.isViewed(i, j)) cell.updateVisible()
       }
     }
     this.map.context.performance?.record?.('terrainBake.updateViewedCells', performance.now() - updateViewedStartedAt)
+  }
 
+  bakeTerrainToChunks(): void {
+    if (this.map.grid[0]?.[0]?.isGenerationCell) {
+      this._materializeGenerationCells()
+    }
+
+    const renderer = this.map.context.app?.renderer
+    if (!renderer) return
+    const bakeStartedAt = performance.now()
+    const bounds = this._getFogMapBounds()
+    const gl = renderer.gl
+    const maxTex = gl ? Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), 4096) : 4096
+
+    this._markTerrainCellsVisible()
+    const containers = this._createTerrainBakeContainers()
+    this._copyTerrainBackfill(containers)
+    this._collectTerrainBakeCells(containers)
+    this._renderTerrainChunks(renderer, containers.terrainContainer, bounds, maxTex)
+    this._cleanupTerrainBakeContainers(containers)
+    this._updateViewedCellsAfterTerrainBake()
     this.map.context.performance?.record?.('terrainBake', performance.now() - bakeStartedAt)
   }
 

@@ -1,36 +1,21 @@
 import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
-import { sound } from '@pixi/sound'
 import { t } from '../lib/lang'
 import Map from '../classes/map'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
-import {
-  Modal,
-  debounce,
-  getFreeLandCellAroundInstance,
-  isPlayedHeroDefeated,
-  teleportRuntimeUnitToCell,
-  updateInstanceVisibility,
-} from '../lib'
+import { Modal } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
-import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
 import { adjustFactionRelation } from '../lib/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
-import { syncHeroResourceLoadState } from '../lib/resourceCarry'
-import { stopAllUiSounds } from '../lib/uiSound'
 import { validateSaveData } from '../serialization/SaveValidator'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { serializeGame } from '../serialization/SaveSerializer'
 import {
-  addChildWorldToCampaign,
   createInitialCampaignSave,
-  enterCampaignWorld,
   getCurrentWorldState,
   isCampaignSave,
-  returnToParentWorld,
-  updateCurrentWorldState,
 } from '../serialization/CampaignSave'
 import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
@@ -43,28 +28,47 @@ import {
   destroyRuntimeServices,
   type RuntimeServices,
 } from './game/runtimeServices'
-import { collectPausableInstances } from './game/pausableRuntime'
 import {
-  PORTAL_RESOURCE_TYPE,
   applyMapConfig,
-  applyPortableUnitState,
-  configForPortalWorld,
-  extractPortalParty,
   getGameScreenRect,
   getMapWorldBounds,
   hasSerializedGrid,
-  heroTravelImageSrc,
   saveConfig,
   savedRuntimeState,
-  portalWorldId,
-  withFogEnabledState,
   worldStateWithCampaignClock,
   type PortalPartyState,
   type PortalWorldConfig,
 } from './game/GameStateHelpers'
-import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
+import {
+  applyFogStateToCell,
+  applyPortalPartyToRuntime,
+  applyRuntimePortableUnitState,
+  clearTravelUnitFogViewers,
+  configForRuntimePortalWorld,
+  findPartyFollowerArrivalCell,
+  findPortalArrivalCell,
+  refreshPortalPartyFog,
+  removeExistingTravelFollowers,
+  resetPlayedFogForFreshWorld,
+  runtimeHeroUnit,
+  teleportRuntimeUnit,
+  travelThroughPortal as travelThroughPortalRuntime,
+  type PortalTravelGame,
+} from './game/GamePortalTravel'
+import {
+  acquireGameWakeLock,
+  applyGameZoom,
+  attachGameWindowListeners,
+  checkGameDefeat,
+  handleGameDocumentHidden,
+  handleGameDocumentVisible,
+  removeGameWindowListeners,
+  setGameOrientationBlocked,
+  toggleGamePause,
+} from './game/GameRuntimeLifecycle'
+import { getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
-import { PortalTravelTransition } from '../ui/PortalTravelTransition'
+import type { PortalTravelTransition } from '../ui/PortalTravelTransition'
 import { PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
@@ -79,7 +83,6 @@ import type { PlayerLike } from '../types/player'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { ResourceEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
-import type { Viewport } from '../types/geometry'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
   RuntimeMap & {
@@ -247,94 +250,27 @@ export default class Game extends Container {
   }
 
   async _acquireWakeLock(): Promise<void> {
-    if (!navigator.wakeLock) return
-    try {
-      this._wakeLock = await navigator.wakeLock.request('screen')
-      document.addEventListener(
-        'visibilitychange',
-        (this._onVisibilityChange = async () => {
-          if (this._wakeLock && document.visibilityState === 'visible') {
-            this._wakeLock = await navigator.wakeLock.request('screen').catch(() => null)
-          }
-        })
-      )
-    } catch {
-      // silently ignored — wake lock is a hint, not a requirement
-    }
+    return acquireGameWakeLock(this)
   }
 
   _attachWindowListeners(): void {
-    this._onKeydown = evt => {
-      if (evt.defaultPrevented) return
-      if (this.context.devConsoleOpen) return
-      if (evt.key === 'Escape') {
-        if (this.context.defeat) return
-        if (document.querySelector('.modal')) return
-        evt.preventDefault()
-        this.context.menu?.pauseMenu?.open()
-        return
-      }
-      if (getControlActionForKeyboardEvent(evt) === 'pause') {
-        if (this.context.defeat) return
-        if (document.querySelector('.modal')) return
-        this.context.paused ? this.context.resume() : this.context.pause()
-      }
-    }
-    this._onResize = debounce(() => {
-      this.applyZoom()
-      if (this.context.controls) this.context.controls.updateVisibleCells?.()
-      if (this.context.menu) this.context.menu.updateCameraMiniMap?.()
-    }, 100)
-    this._onDocumentVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        this._handleDocumentHidden()
-        return
-      }
-      this._handleDocumentVisible()
-    }
-    window.addEventListener('keydown', this._onKeydown)
-    window.addEventListener('resize', this._onResize)
-    document.addEventListener('visibilitychange', this._onDocumentVisibilityChange)
+    attachGameWindowListeners(this)
   }
 
   _removeWindowListeners(): void {
-    window.removeEventListener('keydown', this._onKeydown as EventListener)
-    window.removeEventListener('resize', this._onResize as EventListener)
-    document.removeEventListener('visibilitychange', this._onDocumentVisibilityChange as EventListener)
+    removeGameWindowListeners(this)
   }
 
   _handleDocumentHidden(): void {
-    if (!this.context.paused && !this.context.defeat) {
-      this._pausedByVisibility = true
-      this.togglePause(true, { silent: true })
-    }
-    sound.stopAll()
-    stopAllUiSounds()
+    handleGameDocumentHidden(this)
   }
 
   _handleDocumentVisible(): void {
-    if (!this._pausedByVisibility) return
-    if (this._pausedByOrientation) return
-    this._pausedByVisibility = false
-    if (!this.context.defeat) {
-      this.togglePause(false, { silent: true })
-    }
+    handleGameDocumentVisible(this)
   }
 
   setOrientationBlocked(blocked: boolean): void {
-    if (blocked) {
-      if (!this.context.paused && !this.context.defeat) {
-        this._pausedByOrientation = true
-        this.togglePause(true, { silent: true })
-      }
-      return
-    }
-
-    if (!this._pausedByOrientation) return
-    this._pausedByOrientation = false
-    if (!this._pausedByVisibility && !this.context.defeat) {
-      this.togglePause(false, { silent: true })
-    }
+    setGameOrientationBlocked(this, blocked)
   }
 
   _applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
@@ -573,126 +509,43 @@ export default class Game extends Container {
   }
 
   _configForPortalWorld(color: 'blue' | 'yellow' | 'red', worldId: string, now: number): PortalWorldConfig {
-    const { player, map } = this._gameContext()
-    return configForPortalWorld({ color, map, now, player, worldId })
+    return configForRuntimePortalWorld(this as PortalTravelGame, color, worldId, now)
   }
 
   _runtimeHeroUnit(): UnitEntity | null {
-    const { player, controls } = this._gameContext()
-    return (
-      controls.heroUnit ||
-      player.units.find(unit => unit.controlMode === 'hero' || unit.type === 'Hero') ||
-      player.units.find(unit => unit.isChief) ||
-      player.units[0] ||
-      null
-    )
+    return runtimeHeroUnit(this as PortalTravelGame)
   }
 
   _removeExistingTravelFollowers(): void {
-    const { map, player } = this._gameContext()
-    const hero = this._runtimeHeroUnit()
-    const followers = player.units.filter(unit => unit !== hero && unit.followingHero)
-    for (const follower of followers) {
-      follower.path = []
-      follower.action = null
-      follower.isDestroyed = true
-      const currentCell = follower.currentCell || map.grid[follower.i]?.[follower.j]
-      if (currentCell?.has === follower) {
-        currentCell.has = null
-        currentCell.solid = false
-      }
-      map.removeFromInstanceBucket(follower)
-      map.removeChild(follower)
-      follower.destroy?.({ children: true, texture: false, textureSource: false })
-    }
-    player.units = player.units.filter(unit => !followers.includes(unit))
+    removeExistingTravelFollowers(this as PortalTravelGame)
   }
 
   _findPortalArrivalCell(): RuntimeCell | null {
-    const { map } = this._gameContext()
-    const portal = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
-    if (!portal) return null
-
-    return getFreeLandCellAroundInstance(
-      portal,
-      map.grid,
-      cells => cells[Math.floor(map.random() * cells.length)]
-    )
+    return findPortalArrivalCell(this as PortalTravelGame)
   }
 
   _findPartyFollowerArrivalCell(anchor: UnitEntity): RuntimeCell | null {
-    const { map } = this._gameContext()
-    return getFreeLandCellAroundInstance(
-      { i: anchor.i, j: anchor.j, size: 1 },
-      map.grid,
-      cells => cells[Math.floor(map.random() * cells.length)]
-    )
+    return findPartyFollowerArrivalCell(this as PortalTravelGame, anchor)
   }
 
   _teleportRuntimeUnitToCell(unit: UnitEntity, cell: RuntimeCell): void {
-    const { map } = this._gameContext()
-    teleportRuntimeUnitToCell(map, unit, cell)
+    teleportRuntimeUnit(this as PortalTravelGame, unit, cell)
   }
 
   _refreshPortalPartyFog(units: UnitEntity[]): void {
-    const { map, controls, menu } = this._gameContext()
-    if (map.revealEverything) return
-    const runtimeMap = map as RuntimeMapInstance
-    const viewport = (controls as { cameraController?: { getViewportRect?: () => Viewport } }).cameraController?.getViewportRect?.()
-
-    for (const unit of units) {
-      unit.visibleCells = unit.visibleCells ?? new Set()
-      updateInstanceVisibility(unit)
-    }
-
-    runtimeMap._flushFogQueue()
-    if (viewport) {
-      runtimeMap.mapFog.viewportRenderer.invalidate()
-      runtimeMap.mapFog.viewportRenderer.update(viewport, true)
-      runtimeMap.updateRenderChunks(viewport)
-    }
-    menu.updateResourcesMiniMap?.()
+    refreshPortalPartyFog(this as PortalTravelGame, units)
   }
 
   _applyFogStateToCell(i: number, j: number): void {
-    const { map, player } = this._gameContext()
-    const cell = map.grid[i]?.[j]
-    if (!cell) return
-    cell.viewBy = new Set(player.views.getViewers(i, j))
-    if (map.revealEverything) {
-      cell.removeFog()
-    } else if (player.views.isVisible(i, j)) {
-      cell.removeFog()
-    } else {
-      cell.setFog()
-    }
+    applyFogStateToCell(this as PortalTravelGame, i, j)
   }
 
   _clearTravelUnitFogViewers(units: UnitEntity[]): void {
-    const { player } = this._gameContext()
-    const changed = new Set<number>()
-    for (const unit of units) {
-      for (const index of player.views.removeViewerEverywhere(unit)) changed.add(index)
-      unit.visibleCells = new Set()
-    }
-    for (const index of changed) {
-      const [i, j] = player.views.coordinates(index)
-      this._applyFogStateToCell(i, j)
-    }
+    clearTravelUnitFogViewers(this as PortalTravelGame, units)
   }
 
   _resetPlayedFogForFreshWorld(): void {
-    const { map, player, menu } = this._gameContext()
-    player.views.clearVisibility()
-    player.views.clearExploration()
-    player.cellViewed = 0
-    for (const row of map.grid) {
-      for (const cell of row) {
-        cell.viewBy = new Set()
-        if (!map.revealEverything) cell.setFog()
-      }
-    }
-    menu.rebuildTerrainMiniMapFromViews?.()
+    resetPlayedFogForFreshWorld(this as PortalTravelGame)
   }
 
   _applyPortalPartyToRuntime(
@@ -700,41 +553,7 @@ export default class Game extends Container {
     arrivalCell: RuntimeCell | null = null,
     { freshWorld = false }: { freshWorld?: boolean } = {}
   ): void {
-    const { player, controls } = this._gameContext()
-    const hero = this._runtimeHeroUnit()
-    if (!hero) return
-
-    if (freshWorld) this._resetPlayedFogForFreshWorld()
-    this._clearTravelUnitFogViewers([hero, ...player.units.filter(unit => unit !== hero && unit.followingHero)])
-    if (party.hero) applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero, { keepAlive: true })
-    syncHeroResourceLoadState(hero)
-    refreshUnitEquipmentStats(hero)
-    if (arrivalCell) this._teleportRuntimeUnitToCell(hero, arrivalCell)
-    this._removeExistingTravelFollowers()
-
-    const travelUnits: UnitEntity[] = [hero]
-    for (const followerState of party.followers) {
-      const cell = this._findPartyFollowerArrivalCell(hero)
-      if (!cell) continue
-      const follower = player.createUnit?.({
-        i: cell.i,
-        j: cell.j,
-        name: followerState.name,
-        type: followerState.type,
-      })
-      if (!follower) continue
-      applyPortableUnitState(follower as Partial<SaveEntityState>, followerState, { keepAlive: true })
-      follower.followingHero = true
-      syncHeroResourceLoadState(follower)
-      refreshUnitEquipmentStats(follower)
-      travelUnits.push(follower)
-    }
-
-    this._refreshPortalPartyFog(travelUnits)
-    controls.init?.()
-    controls.context?.menu?.updateHeroStatus?.(hero)
-    controls.context?.menu?.updatePlayerMiniMapEvt?.(player)
-    controls.context?.menu?.updateCameraMiniMap?.()
+    applyPortalPartyToRuntime(this as PortalTravelGame, party, arrivalCell, { freshWorld })
   }
 
   _applyPortableUnitState(
@@ -742,92 +561,11 @@ export default class Game extends Container {
     source: SaveEntityState,
     options?: { keepAlive?: boolean }
   ): void {
-    applyPortableUnitState(target, source, options)
+    applyRuntimePortableUnitState(target, source, options)
   }
 
   async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {
-    if (this._isRestarting) return
-    this._isRestarting = true
-    const now = Date.now()
-    const currentWorldState = withFogEnabledState(serializeGame(this._gameContext()))
-    const party = extractPortalParty(currentWorldState)
-    const campaign = this._campaignSave
-      ? updateCurrentWorldState(this._campaignSave, currentWorldState, now)
-      : createInitialCampaignSave(currentWorldState, { now })
-    const currentCampaignWorld = campaign.worlds[campaign.currentWorldId]
-    const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
-    const targetWorldId = portalWorldId(this._campaignSave?.currentWorldId, portal, color)
-    const existingTarget = campaign.worlds[targetWorldId]
-    const portalTransition = new PortalTravelTransition(color, { heroImageSrc: heroTravelImageSrc(this.context.player) })
-    this._loadingScreen = portalTransition
-    portalTransition.update('generatingWorld', 0.02)
-    await portalTransition.waitForFlash()
-
-    try {
-      if (shouldReturnToParent) {
-        const nextCampaign = returnToParentWorld(campaign, now)
-        this._campaignSave = structuredClone(nextCampaign)
-        this._restartSaveData = structuredClone(nextCampaign)
-        const parentState = worldStateWithCampaignClock(
-          getCurrentWorldState(nextCampaign),
-          this._campaignSave?.clock?.dayNightElapsedMs
-        )
-        this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromSave(withFogEnabledState(structuredClone(parentState)))
-        this._map().revealEverything = false
-        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
-        const targetState = withFogEnabledState(serializeGame(this._gameContext()))
-        const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
-        this._campaignSave = structuredClone(committedCampaign)
-        this._restartSaveData = structuredClone(committedCampaign)
-        this._autosaveCampaign()
-      } else if (existingTarget) {
-        const nextCampaign = enterCampaignWorld(campaign, targetWorldId, now)
-        this._campaignSave = structuredClone(nextCampaign)
-        this._restartSaveData = structuredClone(nextCampaign)
-        this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromSave(
-          withFogEnabledState(
-            worldStateWithCampaignClock(structuredClone(existingTarget.state), this._campaignSave?.clock?.dayNightElapsedMs)
-          )
-        )
-        this._map().revealEverything = false
-        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
-        const targetState = withFogEnabledState(serializeGame(this._gameContext()))
-        const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
-        this._campaignSave = structuredClone(committedCampaign)
-        this._restartSaveData = structuredClone(committedCampaign)
-        this._autosaveCampaign()
-      } else {
-        const parentWorldId = campaign.currentWorldId
-        const portalWorld = this._configForPortalWorld(color, targetWorldId, now)
-        this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromConfig(portalWorld.config, { dayNightElapsedMs: campaign.clock?.dayNightElapsedMs })
-        this._map().revealEverything = false
-        this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell(), { freshWorld: true })
-        const childState = withFogEnabledState(serializeGame(this._gameContext()))
-        const nextCampaign = addChildWorldToCampaign(campaign, childState, {
-          color,
-          entryPortalId: portal.label || `${portal.i},${portal.j}`,
-          factionIds: [portalWorld.factionId],
-          factions: { [portalWorld.factionId]: portalWorld.faction },
-          name: `Monde ${color}`,
-          now,
-          parentWorldId,
-          worldId: targetWorldId,
-        })
-        this._campaignSave = structuredClone(nextCampaign)
-        this._restartSaveData = structuredClone(nextCampaign)
-        this._autosaveCampaign()
-      }
-      this.context.menu?.show?.()
-    } finally {
-      const loadingScreen = this._loadingScreen as GameLoadingScreen | PortalTravelTransition | null | undefined
-      if (loadingScreen instanceof PortalTravelTransition) await loadingScreen.finish()
-      else loadingScreen?.destroy()
-      this._loadingScreen = null
-      this._isRestarting = false
-    }
+    await travelThroughPortalRuntime(this as PortalTravelGame, portal, color)
   }
 
   async load(json: SaveRecord): Promise<void> {
@@ -870,12 +608,7 @@ export default class Game extends Container {
   }
 
   applyZoom(): void {
-    const zoom = getCameraZoom()
-    this.scale.set(zoom)
-    this.position.set(
-      (this.context.app.screen.width * (1 - zoom)) / 2,
-      (this.context.app.screen.height * (1 - zoom)) / 2
-    )
+    applyGameZoom(this)
   }
 
   async restart(): Promise<void> {
@@ -922,40 +655,10 @@ export default class Game extends Container {
   }
 
   checkDefeat(): boolean {
-    const { player } = this.context
-    if (this.context.defeat || !player) return false
-
-    if (!isPlayedHeroDefeated(player, this.context.controls?.heroUnit)) return false
-
-    this.context.defeat = true
-    clearAllCombatFeedback()
-    const div = document.createElement('div')
-    div.id = 'defeat'
-    div.className = 'game-overlay'
-    div.innerText = t('defeat')
-    document.body.appendChild(div)
-    return true
+    return checkGameDefeat(this)
   }
 
   togglePause(pause: boolean, options: { silent?: boolean } = {}): void {
-    if (this.context.defeat && !pause) return
-    const { map, players = [] } = this.context
-    if (!map) return
-    if (pause) {
-      document.getElementById('pause')?.remove()
-      if (!options.silent && !this.context.defeat) {
-        const div = document.createElement('div')
-        div.id = 'pause'
-        div.className = 'game-overlay'
-        div.innerText = t('pause')
-        document.body.appendChild(div)
-      }
-    } else {
-      document.getElementById('pause')?.remove()
-    }
-    for (const instance of collectPausableInstances(map, players)) {
-      pause ? instance.pause?.() : instance.resume?.()
-    }
-    this.context.paused = pause
+    toggleGamePause(this, pause, options)
   }
 }

@@ -12,6 +12,17 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
+  const loadControllerTsModule = modulePath => {
+    const moduleFilename = path.join(__dirname, `../app/controllers/${modulePath}.ts`)
+    const moduleSource = fs.readFileSync(moduleFilename, 'utf8')
+    const { code: moduleCode } = babel.transformSync(moduleSource, {
+      filename: moduleFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
   const mocks = {
     'pixi.js': {
       Graphics: class {
@@ -116,16 +127,15 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === './HeroControllerSupport') {
-      const supportFilename = path.join(__dirname, '../app/controllers/HeroControllerSupport.ts')
-      const supportSource = fs.readFileSync(supportFilename, 'utf8')
-      const { code: supportCode } = babel.transformSync(supportSource, {
-        filename: supportFilename,
-        presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-      })
-      const supportModule = { exports: {} }
-      new Function('module', 'exports', 'require', supportCode)(supportModule, supportModule.exports, localRequire)
-      return supportModule.exports
+      return loadControllerTsModule('HeroControllerSupport')
     }
+    if (request === './HeroControllerUpdate') {
+      return loadControllerTsModule('HeroControllerUpdate')
+    }
+    if (request === './HeroCompanionHorseController') {
+      return loadControllerTsModule('HeroCompanionHorseController')
+    }
+    if (request === './HeroCommunicationController') return loadControllerTsModule('HeroCommunicationController')
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

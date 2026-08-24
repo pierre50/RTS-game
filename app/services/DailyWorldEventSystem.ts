@@ -1,15 +1,8 @@
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
 import type { GameContextLike } from '../types/context'
+import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
-export type DailyWorldEvent = {
-  day: number
-  previousDay: number
-}
-
-export interface DailyWorldEventHandler {
-  handleDailyWorldEvent(event: DailyWorldEvent): void
-  destroy?(): void
-}
+export type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
 export class DailyWorldEventSystem {
   context: GameContextLike

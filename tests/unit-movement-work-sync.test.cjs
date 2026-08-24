@@ -82,6 +82,15 @@ function loadUnitMovement(calls) {
         },
       }
     }
+    if (request === './UnitDirectMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectMovement.ts'))
+    }
+    if (request === './UnitMovementRouting') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementRouting.ts'))
+    }
+    if (request === './UnitPathMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPathMovement.ts'))
+    }
     if (request === './UnitHeroDirectMovementCollision') {
       return {
         blocksHeroDirectMoveWithRoundedFootprint: () => false,
@@ -101,6 +110,9 @@ function loadUnitMovement(calls) {
     }
     if (request === './UnitMovementHelpers') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
+    }
+    if (request === './UnitAffectNewDest') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitAffectNewDest.ts'))
     }
     return require(request)
   }

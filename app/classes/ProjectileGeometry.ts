@@ -1,11 +1,7 @@
 import type { AnimatedSprite } from 'pixi.js'
-import {
-  degreeToDirection,
-  getMirroredHalfArcFrameIndex,
-  getReliefOffset,
-  isHeroControlled,
-  pointsDistance,
-} from '../lib'
+import { degreeToDirection, getReliefOffset, pointsDistance } from '../lib/maths'
+import { getMirroredHalfArcFrameIndex } from '../lib/spriteTextures'
+import { isHeroControlled } from '../lib/unitControl'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../constants'
 import { debugLog } from '../lib/debug'
 import type { Texture } from 'pixi.js'

@@ -5,13 +5,6 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadControls() {
-  const filename = path.join(__dirname, '../app/classes/Controls.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
   const mocks = {
     'pixi.js': {
       Container: class {
@@ -144,9 +137,29 @@ function loadControls() {
       TOUCH_DRAG_THRESHOLD: 10,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports.default
+  const localRequire = request => {
+    if (request === '../controllers/TouchInputController') {
+      return loadTsFile(path.join(__dirname, '../app/controllers/TouchInputController.ts'))
+    }
+    if (request === '../controllers/PointerInputController') {
+      return loadTsFile(path.join(__dirname, '../app/controllers/PointerInputController.ts'))
+    }
+    if (request === './ControlsKeyboard') {
+      return loadTsFile(path.join(__dirname, '../app/classes/ControlsKeyboard.ts'))
+    }
+    return Object.hasOwn(mocks, request) ? mocks[request] : require(request)
+  }
+  const loadTsFile = filename => {
+    const source = fs.readFileSync(filename, 'utf8')
+    const { code } = babel.transformSync(source, {
+      filename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const module = { exports: {} }
+    new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+    return module.exports
+  }
+  return loadTsFile(path.join(__dirname, '../app/classes/Controls.ts')).default
 }
 
 class MockElement {

@@ -42,6 +42,17 @@ function loadAIEconomy() {
     },
   }
   const module = { exports: {} }
+  const loadTsModule = modulePath => {
+    const moduleFilename = path.join(__dirname, `../app/ai/${modulePath}.ts`)
+    const moduleSource = fs.readFileSync(moduleFilename, 'utf8')
+    const { code: moduleCode } = babel.transformSync(moduleSource, {
+      filename: moduleFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', moduleCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
   const localRequire = request => {
     if (request === '../constants') return constants
     if (request === '../lib') {
@@ -61,6 +72,7 @@ function loadAIEconomy() {
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
         getInstancePath: (unit, i, j) => (unit.reachableCells?.has(`${i}:${j}`) ? [{ i, j }] : []),
         instancesDistance: () => 100,
+        isWheatMature: farm => farm?.mature !== false,
       }
     }
     if (request === '../lib/stableHorses') {
@@ -70,6 +82,16 @@ function loadAIEconomy() {
         STABLE_HORSE_CAPACITY: 5,
       }
     }
+    if (request === '../lib/grid/queries') {
+      return {
+        getClosestInstance: (_source, targets) => [...targets][0] || false,
+      }
+    }
+    if (request === './AIEconomyFoodManager') {
+      return loadTsModule('AIEconomyFoodManager')
+    }
+    if (request === './AIEconomyBuilders') return loadTsModule('AIEconomyBuilders')
+    if (request === './AIEconomyHorseCapture') return loadTsModule('AIEconomyHorseCapture')
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

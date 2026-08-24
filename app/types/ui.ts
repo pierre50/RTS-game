@@ -1,5 +1,3 @@
-import type { RuntimeEntity } from './entities'
-
 export interface TooltipContent {
   title: string
   description?: string
@@ -8,6 +6,17 @@ export interface TooltipContent {
 
 export type TooltipSource = TooltipContent | (() => TooltipContent)
 
+type MenuSelectionLike = {
+  label?: string
+  family?: string
+  type?: string
+  owner?: unknown
+}
+
+type MenuSelectionHandler<TArgs extends unknown[] = []> = {
+  bivarianceHack(selection: MenuSelectionLike, ...args: TArgs): void
+}['bivarianceHack']
+
 export interface MenuButtonSpec {
   id?: string
   icon?: string | (() => string)
@@ -15,8 +24,8 @@ export interface MenuButtonSpec {
   acquired?: () => boolean
   hide?: () => boolean
   disabled?: () => boolean
-  onClick?: (selection: RuntimeEntity, evt?: Event | null) => void
-  onCreate?: (selection: RuntimeEntity, element: HTMLElement) => void
+  onClick?: MenuSelectionHandler<[evt?: Event | null]>
+  onCreate?: MenuSelectionHandler<[element: HTMLElement]>
   children?: MenuButtonSpec[]
 }
 

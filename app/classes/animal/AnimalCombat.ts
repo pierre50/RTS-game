@@ -17,11 +17,10 @@ import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedb
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
-import { FLYING_ALTITUDE } from './index'
+import { FLYING_ALTITUDE, type AnimalControllerHost } from './AnimalTypes'
 import { isAirborne, resolveMovementSheet } from './locomotion'
-import type { Animal } from './index'
 
-function getAnimalAttackImpactFrame(animal: Animal): number {
+function getAnimalAttackImpactFrame(animal: AnimalControllerHost): number {
   const configuredFrame = animal.attackImpactFrame
   const fallbackFrame =
     typeof configuredFrame === 'number' && Number.isFinite(configuredFrame) && configuredFrame >= 0
@@ -33,9 +32,9 @@ function getAnimalAttackImpactFrame(animal: Animal): number {
 }
 
 export class AnimalCombat {
-  animal: Animal
+  animal: AnimalControllerHost
 
-  constructor(animal: Animal) {
+  constructor(animal: AnimalControllerHost) {
     this.animal = animal
   }
 
@@ -116,7 +115,7 @@ export class AnimalCombat {
       animal.stop()
       return
     }
-    const targets = findInstancesInSight<Animal, RuntimeEntity>(animal, (instance: RuntimeEntity) =>
+    const targets = findInstancesInSight<AnimalControllerHost, RuntimeEntity>(animal, (instance: RuntimeEntity) =>
       animal.getActionCondition(instance)
     )
     if (targets.length) {

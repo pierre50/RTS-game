@@ -48,9 +48,7 @@ import type { DevEntity, DevPlayer } from './types'
 
 const RESOURCE_NAMES = ['all', ...PLAYER_RESOURCE_NAMES]
 
-export function createDevCommands(): DevCommandRegistry {
-  const registry = new DevCommandRegistry()
-
+function registerCoreCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'help',
     aliases: ['?'],
@@ -93,7 +91,9 @@ export function createDevCommands(): DevCommandRegistry {
       }
     },
   })
+}
 
+function registerSpawnCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'spawn',
     aliases: ['unit'],
@@ -178,7 +178,9 @@ export function createDevCommands(): DevCommandRegistry {
     complete: () => ['all', ...getAllHeroInventoryItems()],
     run: ([item = 'all', quantity], context) => addHeroInventoryEquipment(context, item, quantity),
   })
+}
 
+function registerGameplayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'tech',
     aliases: ['technology'],
@@ -294,7 +296,9 @@ export function createDevCommands(): DevCommandRegistry {
     describe: 'Teleport the hero next to the current world portal',
     run: (_args, context) => teleportHeroToPortal(context),
   })
+}
 
+function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'solid',
     usage: 'solid [on|off]',
@@ -378,7 +382,9 @@ export function createDevCommands(): DevCommandRegistry {
     complete: () => ['reset'],
     run: ([value], context) => performanceReport(context, value),
   })
+}
 
+function registerDebugInfoCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'player-stats',
     aliases: ['pstats'],
@@ -444,5 +450,14 @@ export function createDevCommands(): DevCommandRegistry {
     run: (_args, context) => toggleEntityBars(context, _args[0] || ''),
   })
 
+}
+
+export function createDevCommands(): DevCommandRegistry {
+  const registry = new DevCommandRegistry()
+  registerCoreCommands(registry)
+  registerSpawnCommands(registry)
+  registerGameplayCommands(registry)
+  registerDebugOverlayCommands(registry)
+  registerDebugInfoCommands(registry)
   return registry
 }

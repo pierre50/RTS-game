@@ -6,7 +6,6 @@ import {
   getClosestInstance,
   instancesDistance,
   canAfford,
-  findInstancesInSight,
   isPlayerEliminated,
 } from '../../lib'
 import {
@@ -20,6 +19,7 @@ import {
 } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
+import { AIThreatManager, type EnemyMemory, type StoredThreat, type ThreatProfile } from '../../ai/AIThreatManager'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
 import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../lib/chief'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
@@ -31,56 +31,9 @@ import type {
   AIStrategySnapshot,
   EnemyMemoryOptions,
 } from '../../ai/types'
-import type { RenderableInstance } from '../../lib/grid/visibility'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-
-type EnemyMemory = {
-  instance: AIEntityLike
-  label: string
-  ownerLabel?: string
-  family?: string
-  type: string
-  i: number
-  j: number
-  hitPoints?: number
-  totalHitPoints?: number
-  lastSeenAt: number
-  visible: boolean
-}
-
-type ThreatProfile = {
-  hostileUnits: AIEntityLike[]
-  hostileMilitary: AIEntityLike[]
-  hostileVillagers: AIEntityLike[]
-  hostileAnimals: AIEntityLike[]
-  hostilePower: number
-  isNearHome: boolean
-  isInVillageCore: boolean
-  isRemoteVillagerIncident: boolean
-  isDirectVillageAssault: boolean
-  isSeriousMilitaryThreat: boolean
-  targetDistanceToHome: number
-  isCriticalBuilding: boolean
-  isChief: boolean
-  isBuilding: boolean
-  priority: number
-}
-
-type StoredThreat = {
-  target: AIEntityLike
-  lastSeenAt: number
-  attacker: AIEntityLike
-  attackerFamily?: string
-  attackerType: string
-  count: number
-}
-
-type ActiveThreat = StoredThreat & {
-  hostiles: AIEntityLike[]
-  profile: ThreatProfile
-}
 
 type StrategySnapshotState = {
   map: AIStrategySnapshot['map']
@@ -124,6 +77,7 @@ export class AI extends Player {
   scout!: AIEntityLike | null
   phase!: AIStrategyPlayerLike['phase']
   threatenedTargets!: Map<string, StoredThreat>
+  threatManager!: AIThreatManager
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
@@ -174,6 +128,7 @@ export class AI extends Player {
     this.scout = null
     this.phase = 'economy'
     this.threatenedTargets = new Map()
+    this.threatManager = new AIThreatManager(this)
     this.chiefLossDetectedAt = null
     this.chiefWanderReadyAt = new Map()
   }
@@ -183,82 +138,23 @@ export class AI extends Player {
   }
 
   rememberEnemy(enemy: AIEntityLike) {
-    if (!enemy?.label || !this.isEnemy(enemy.owner)) return
-    const memoryMap = enemy.family === FAMILY_TYPES.building ? this.enemyBuildingMemory : this.enemyUnitMemory
-    const visible = this.views.isVisible(enemy.i, enemy.j)
-    memoryMap.set(enemy.label, {
-      instance: enemy,
-      label: enemy.label,
-      ownerLabel: enemy.owner?.label,
-      family: enemy.family,
-      type: enemy.type,
-      i: enemy.i,
-      j: enemy.j,
-      hitPoints: enemy.hitPoints,
-      totalHitPoints: enemy.totalHitPoints,
-      lastSeenAt: this.getNow(),
-      visible,
-    })
+    this.threatManager.rememberEnemy(enemy)
   }
 
   _refreshEnemyMemory(memoryMap: Map<string, EnemyMemory>) {
-    const now = this.getNow()
-    for (const [label, memory] of memoryMap) {
-      const enemy = memory.instance
-      if (!enemy || enemy.isDead || enemy.isDestroyed || (enemy.hitPoints ?? 0) <= 0 || !this.isEnemy(enemy.owner)) {
-        memoryMap.delete(label)
-        continue
-      }
-      const visible = this.views.isVisible(enemy.i, enemy.j)
-      if (visible) {
-        memory.i = enemy.i
-        memory.j = enemy.j
-        memory.hitPoints = enemy.hitPoints
-        memory.totalHitPoints = enemy.totalHitPoints
-        memory.lastSeenAt = now
-      } else if (now - memory.lastSeenAt > 90000) {
-        memoryMap.delete(label)
-        continue
-      }
-      memory.visible = visible
-    }
+    this.threatManager.refreshEnemyMemory(memoryMap)
   }
 
   getEnemyMemories({ family = null, freshWithin = Infinity, visibleOnly = false }: EnemyMemoryOptions = {}) {
-    const now = this.getNow()
-    const sources = []
-    if (!family || family === FAMILY_TYPES.unit) sources.push(...this.enemyUnitMemory.values())
-    if (!family || family === FAMILY_TYPES.building) sources.push(...this.enemyBuildingMemory.values())
-    return sources.filter(memory => {
-      if (!memory?.instance) return false
-      if (visibleOnly && !memory.visible) return false
-      return now - memory.lastSeenAt <= freshWithin
-    })
+    return this.threatManager.getEnemyMemories({ family, freshWithin, visibleOnly })
   }
 
   getFreshEnemyInstances(options = {}) {
-    return this.getEnemyMemories(options).map(memory => memory.instance)
+    return this.threatManager.getFreshEnemyInstances(options)
   }
 
   override reportThreat(target: RuntimeEntity, attacker: RuntimeEntity) {
-    if (!target || target.owner?.label !== this.label || !attacker || attacker.isDead || attacker.isDestroyed) return
-
-    const now = this.getNow()
-    const key = target.label
-    const existing = this.threatenedTargets.get(key)
-
-    this.threatenedTargets.set(key, {
-      target,
-      lastSeenAt: now,
-      attacker,
-      attackerFamily: attacker.family,
-      attackerType: attacker.type,
-      count: (existing?.count || 0) + 1,
-    })
-
-    if (attacker.owner && this.isEnemy(attacker.owner)) {
-      this.rememberEnemy(attacker)
-    }
+    this.threatManager.reportThreat(target, attacker)
 
     if (this._stepTaskId && this.stepDelay !== this.difficultyConfig.stepDelayBase) {
       this.stepDelay = this.difficultyConfig.stepDelayBase
@@ -267,183 +163,31 @@ export class AI extends Player {
   }
 
   cleanupThreats() {
-    const now = this.getNow()
-    for (const [key, threat] of this.threatenedTargets) {
-      const target = threat.target
-      if (!target || target.isDead || target.isDestroyed || target.owner?.label !== this.label) {
-        this.threatenedTargets.delete(key)
-        continue
-      }
-
-      const hostiles = this.getVisibleHostilesNear(target)
-      if (hostiles.length > 0) {
-        threat.lastSeenAt = now
-        threat.attacker = hostiles[0]
-        threat.attackerFamily = hostiles[0].family
-        threat.attackerType = (hostiles[0].type as string) ?? ''
-        continue
-      }
-
-      if (now - threat.lastSeenAt > 8000) {
-        this.threatenedTargets.delete(key)
-      }
-    }
+    this.threatManager.cleanupThreats()
   }
 
   getVisibleHostilesNear(target: AIEntityLike, radius = 10): AIEntityLike[] {
-    const sightOrigin: RenderableInstance = {
-      i: target.i,
-      j: target.j,
-      x: target.x ?? target.i,
-      y: target.y ?? target.j,
-      label: target.label,
-      sight: radius,
-      context: this.context,
-    }
-    return findInstancesInSight(sightOrigin, instance => {
-      const candidate = instance as AIEntityLike
-      if (
-        !candidate ||
-        candidate === target ||
-        candidate.isDead ||
-        candidate.isDestroyed ||
-        (candidate.hitPoints ?? 0) <= 0
-      ) {
-        return false
-      }
-      if (candidate.family === FAMILY_TYPES.animal) {
-        return Boolean(
-          candidate.strategy === 'attack' ||
-            candidate.action === ACTION_TYPES.attack ||
-            (candidate.dest && 'owner' in candidate.dest && candidate.dest.owner?.label === this.label)
-        )
-      }
-      return this.isEnemy(candidate.owner)
-    }) as AIEntityLike[]
+    return this.threatManager.getVisibleHostilesNear(target, radius)
   }
 
   isBuildingThreatened(building: AIEntityLike) {
-    const threat = this.threatenedTargets.get(building?.label)
-    if (!threat) return false
-    if (!building || building.isDead || building.isDestroyed) return false
-    return this.getNow() - threat.lastSeenAt <= 8000
+    return this.threatManager.isBuildingThreatened(building)
   }
 
   getActiveThreats() {
-    this.cleanupThreats()
-    return [...this.threatenedTargets.values()]
-      .filter((threat: StoredThreat) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
-      .map((threat: StoredThreat): ActiveThreat => {
-        const hostiles = this.getVisibleHostilesNear(threat.target)
-        const profile = this.getThreatProfile({ ...threat, hostiles })
-        return { ...threat, hostiles, profile }
-      })
-      .filter((threat: ActiveThreat) => threat.target && threat.hostiles.length > 0)
-      .sort((a: ActiveThreat, b: ActiveThreat) => b.profile.priority - a.profile.priority)
+    return this.threatManager.getActiveThreats()
   }
 
   getHomeAnchor() {
-    const townCenters = this.buildingsByTypes([BUILDING_TYPES.townCenter]).filter(
-      building => !building.isDead && !building.isDestroyed
-    )
-    if (townCenters.length > 0) return townCenters[0]
-
-    const fallbackBuilding = this.buildings.find(building => !building.isDead && !building.isDestroyed)
-    if (fallbackBuilding) return fallbackBuilding
-
-    const fallbackVillager = this.units.find(unit => unit.type === UNIT_TYPES.villager && !unit.isDead)
-    return fallbackVillager || null
+    return this.threatManager.getHomeAnchor()
   }
 
   getThreatProfile(threat: StoredThreat & { hostiles: AIEntityLike[] }): ThreatProfile {
-    const military = this.strategy.military
-    const homeAnchor = this.getHomeAnchor()
-    const hostileUnits = threat.hostiles.filter((hostile: AIEntityLike) => hostile.family === FAMILY_TYPES.unit)
-    const hostileMilitary = hostileUnits.filter((hostile: AIEntityLike) => hostile.type !== UNIT_TYPES.villager)
-    const hostileVillagers = hostileUnits.filter((hostile: AIEntityLike) => hostile.type === UNIT_TYPES.villager)
-    const hostileAnimals = threat.hostiles.filter((hostile: AIEntityLike) => hostile.family === FAMILY_TYPES.animal)
-    const hostilePower = military.getGroupCombatPower(threat.hostiles)
-    const targetDistanceToHome = homeAnchor
-      ? Math.abs(threat.target.i - homeAnchor.i) + Math.abs(threat.target.j - homeAnchor.j)
-      : Infinity
-    const targetIsTownCenter = threat.target.type === BUILDING_TYPES.townCenter
-    const targetIsBuilding = threat.target.family === FAMILY_TYPES.building
-    const targetIsVillager = threat.target.type === UNIT_TYPES.villager
-    const targetIsChief = isChiefUnit(threat.target)
-    const homeThreatRadius = this.difficultyConfig.homeThreatRadius || 15
-    const villageCoreRadius = Math.min(homeThreatRadius, this.difficultyConfig.villageCoreRadius || 10)
-    const isNearHome = targetDistanceToHome <= homeThreatRadius
-    const isInVillageCore = targetDistanceToHome <= villageCoreRadius
-    const isRemoteVillagerIncident = targetIsVillager && !isNearHome
-    const isDirectVillageAssault =
-      hostileMilitary.length > 0 && (targetIsTownCenter || targetIsBuilding || isInVillageCore)
-    const isSeriousMilitaryThreat =
-      hostileMilitary.length > 0 &&
-      (isNearHome || hostilePower >= (this.difficultyConfig.defenseRecallThreshold || 16) * 0.85)
-
-    let priority = hostilePower + threat.hostiles.length * 2 + threat.count
-    if (targetIsTownCenter) priority += 16
-    else if (targetIsChief) priority += 22
-    else if (targetIsBuilding) priority += 9
-    else if (targetIsVillager) priority += 2
-
-    if (isNearHome) priority += 10
-    if (isInVillageCore) priority += 7
-    if (hostileMilitary.length > 0) priority += 12 + hostileMilitary.length * 4
-    else if (hostileVillagers.length > 0) priority += 4 + hostileVillagers.length * 2
-    else if (hostileAnimals.length > 0) priority -= 4
-    if (isRemoteVillagerIncident && hostileMilitary.length === 0) priority -= 6
-
-    return {
-      hostileUnits,
-      hostileMilitary,
-      hostileVillagers,
-      hostileAnimals,
-      hostilePower,
-      isNearHome,
-      isInVillageCore,
-      isRemoteVillagerIncident,
-      isDirectVillageAssault,
-      isSeriousMilitaryThreat,
-      targetDistanceToHome,
-      isCriticalBuilding: targetIsTownCenter,
-      isChief: targetIsChief,
-      isBuilding: targetIsBuilding,
-      priority,
-    }
+    return this.threatManager.getThreatProfile(threat)
   }
 
   getDefensePowerNeed(profile: ThreatProfile) {
-    if (!profile) return 0
-
-    if (profile.hostileMilitary.length > 0) {
-      const powerRatio = this.difficultyConfig.defensePowerRatio || 0.85
-      const baseNeed = Math.max(6, profile.hostilePower * powerRatio)
-      if (profile.isChief) return baseNeed * 1.35
-      if (profile.isDirectVillageAssault) return baseNeed * 1.15
-      if (profile.isRemoteVillagerIncident) return baseNeed * 0.75
-      return profile.isCriticalBuilding ? baseNeed * 1.15 : baseNeed
-    }
-
-    if (profile.hostileVillagers.length > 0) {
-      if (profile.isRemoteVillagerIncident) {
-        if (profile.isChief) return Math.max(5, profile.hostileVillagers.length * 3)
-        return Math.max(2, profile.hostileVillagers.length * 1.5)
-      }
-      return profile.isChief
-        ? Math.max(6, profile.hostileVillagers.length * 3)
-        : Math.max(3, profile.hostileVillagers.length * 2.5)
-    }
-
-    if (profile.hostileAnimals.length > 0) {
-      if (profile.isRemoteVillagerIncident) {
-        if (profile.isChief) return Math.min(5, Math.max(2, profile.hostileAnimals.length * 2))
-        return Math.min(3, Math.max(1, profile.hostileAnimals.length))
-      }
-      return Math.min(5, Math.max(1.5, profile.hostileAnimals.length * 1.25))
-    }
-
-    return 0
+    return this.threatManager.getDefensePowerNeed(profile)
   }
 
   handleThreatResponses({
@@ -455,162 +199,7 @@ export class AI extends Player {
     waitingMilitary: AIEntityLike[]
     debug?: boolean
   }) {
-    const threats = this.getActiveThreats()
-    if (!threats.length) return 0
-
-    let actions = 0
-    const assignedMilitary = new Set<string>()
-    const assignedVillagers = new Set<string>()
-
-    for (const threat of threats) {
-      if (!threat.target) continue
-
-      const primaryHostile = threat.hostiles[0]
-      if (!primaryHostile) continue
-
-      const profile = threat.profile || this.getThreatProfile(threat)
-      const hostileVillagers = profile.hostileVillagers
-      const hostileMilitary = profile.hostileMilitary
-      const hostileAnimals = profile.hostileAnimals
-      const lethalThreat = hostileMilitary.length > 0
-      const responseRadius = profile.isCriticalBuilding
-        ? 18
-        : profile.isDirectVillageAssault
-          ? 14
-          : profile.isRemoteVillagerIncident
-            ? hostileAnimals.length > 0
-              ? 4
-              : 6
-            : profile.isNearHome
-              ? 12
-              : 10
-
-      const nearbyMilitary = waitingMilitary
-        .filter((unit: AIEntityLike) => unit.label && !assignedMilitary.has(unit.label))
-        .sort(
-          (a: AIEntityLike, b: AIEntityLike) =>
-            Math.abs(a.i - threat.target.i) +
-            Math.abs(a.j - threat.target.j) -
-            (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
-        )
-
-      const desiredDefensePower = this.getDefensePowerNeed(profile)
-      const chosenMilitary: AIEntityLike[] = []
-      let defensePower = 0
-
-      for (const soldier of nearbyMilitary) {
-        chosenMilitary.push(soldier)
-        defensePower += this.strategy.military.getCombatPower(soldier)
-        if (defensePower >= desiredDefensePower) break
-      }
-
-      for (const soldier of chosenMilitary) {
-        assignedMilitary.add(soldier.label)
-        soldier.sendTo?.(primaryHostile, ACTION_TYPES.attack)
-      }
-
-      const nearbyVillagers = villagers
-        .filter((villager: AIEntityLike) => {
-          if (assignedVillagers.has(villager.label) || villager === this.scout || villager.isDead) return false
-          if ((villager.hitPoints ?? 0) <= (villager.totalHitPoints ?? 1) * 0.35) return false
-          const distance = Math.abs(villager.i - threat.target.i) + Math.abs(villager.j - threat.target.j)
-          return distance <= responseRadius
-        })
-        .sort(
-          (a: AIEntityLike, b: AIEntityLike) =>
-            Math.abs(a.i - threat.target.i) +
-            Math.abs(a.j - threat.target.j) -
-            (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
-        )
-
-      const buildersOnSite = nearbyVillagers.filter(
-        (villager: AIEntityLike) =>
-          villager.dest && 'label' in villager.dest && villager.dest.label === threat.target.label
-      )
-      let villagerDefenseCount = 0
-
-      if (profile.isChief) {
-        villagerDefenseCount = Math.min(nearbyVillagers.length, Math.max(4, threat.hostiles.length + 3))
-      } else if (!lethalThreat) {
-        if (hostileAnimals.length > 0) {
-          villagerDefenseCount =
-            hostileAnimals.length === 1
-              ? 1
-              : Math.min(
-                  profile.isCriticalBuilding ? 4 : profile.isRemoteVillagerIncident ? 2 : 3,
-                  hostileAnimals.length
-                )
-        }
-        if (hostileVillagers.length > 0) {
-          const criticalBonus = profile.isCriticalBuilding ? 2 : 0
-          const remotePenalty = profile.isRemoteVillagerIncident ? 2 : 0
-          const maxDefense = profile.isCriticalBuilding ? 8 : Math.max(2, 6 - remotePenalty)
-          villagerDefenseCount = Math.max(
-            villagerDefenseCount,
-            Math.min(maxDefense, hostileVillagers.length + criticalBonus)
-          )
-        }
-      }
-
-      const alreadyCovered = chosenMilitary.length
-      const missingDefenders = Math.max(0, villagerDefenseCount - alreadyCovered)
-      const chosenVillagers = nearbyVillagers.slice(0, missingDefenders)
-
-      for (const villager of chosenVillagers) {
-        assignedVillagers.add(villager.label)
-        if (primaryHostile.family === FAMILY_TYPES.animal) {
-          villager.sendToHunt?.(primaryHostile)
-        } else {
-          villager.sendToAttack?.(primaryHostile)
-        }
-      }
-
-      const evacVillagers = buildersOnSite.filter(
-        (villager: AIEntityLike) => villager.label && !assignedVillagers.has(villager.label)
-      )
-      const shouldEvacuateNearbyVillagers = lethalThreat && (profile.isNearHome || profile.isDirectVillageAssault)
-      const nearbyWorkersToEvacuate = shouldEvacuateNearbyVillagers
-        ? nearbyVillagers.filter(
-            (villager: AIEntityLike) =>
-              villager.label &&
-              !assignedVillagers.has(villager.label) &&
-              (!villager.dest || !('label' in villager.dest) || villager.dest.label !== threat.target.label)
-          )
-        : []
-      for (const villager of nearbyWorkersToEvacuate) {
-        assignedVillagers.add(villager.label)
-        villager.runaway?.(primaryHostile)
-      }
-      for (const villager of evacVillagers) {
-        assignedVillagers.add(villager.label)
-        villager.runaway?.(primaryHostile)
-      }
-
-      if (debug) {
-        console.log(
-          'Threat response:',
-          threat.target.type,
-          'hostiles=',
-          threat.hostiles.length,
-          'priority=',
-          Math.round(profile.priority),
-          'military=',
-          chosenMilitary.length,
-          'villagers=',
-          chosenVillagers.length,
-          'fallback=',
-          nearbyWorkersToEvacuate.length,
-          'evac=',
-          evacVillagers.length
-        )
-      }
-
-      if (chosenMilitary.length || chosenVillagers.length || nearbyWorkersToEvacuate.length || evacVillagers.length) {
-        actions++
-      }
-    }
-
-    return actions
+    return this.threatManager.handleThreatResponses({ villagers, waitingMilitary, debug })
   }
 
   _scheduleStep() {

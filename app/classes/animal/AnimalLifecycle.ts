@@ -14,19 +14,19 @@ import { fadeOutThenClear } from '../../lib/entityFade'
 import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
-import type { Animal } from './index'
+import type { AnimalControllerHost } from './AnimalTypes'
 
 const DEATH_FALL_STEPS = 8
 const DEATH_FALL_STEP_MS = 40
 
 export class AnimalLifecycle {
-  animal: Animal
+  animal: AnimalControllerHost
   // Runs on its own scheduler task (not animal.interval): decompose() starts the
   // corpse interval via startInterval, which would kill a fall stored there and
   // strand the corpse mid-air.
   fallTaskId: SchedulerTaskId | null = null
 
-  constructor(animal: Animal) {
+  constructor(animal: AnimalControllerHost) {
     this.animal = animal
   }
 

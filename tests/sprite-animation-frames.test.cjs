@@ -21,12 +21,9 @@ function loadModule(relativePath, mocks) {
 }
 
 test('direction count 1 keeps every wreck frame instead of slicing it as a 5-direction sheet', () => {
-  const { getAnimationFrames } = loadModule('app/lib/extra.ts', {
+  const { getAnimationFrames } = loadModule('app/lib/spriteTextures.ts', {
     '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
-    './grid': { instanceIsInPlayerSight: () => false },
     './maths': {},
-    './uiSound': {},
-    './lang': {},
   })
 
   const textures = {
@@ -46,7 +43,7 @@ test('direction count 1 keeps every wreck frame instead of slicing it as a 5-dir
 })
 
 test('missing standing sheet idles on the first walking frame from the current direction', () => {
-  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+  const { setUnitTexture } = loadModule('app/lib/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
         action: 'actionSheet',
@@ -57,12 +54,9 @@ test('missing standing sheet idles on the first walking frame from the current d
       },
       WORK_TYPES: {},
     },
-    './grid': { instanceIsInPlayerSight: () => false },
     './maths': {
       degreeToDirection: degree => (degree === 0 ? 'north' : 'south'),
     },
-    './uiSound': {},
-    './lang': {},
   })
 
   const textures = {
@@ -103,7 +97,7 @@ test('missing standing sheet idles on the first walking frame from the current d
 })
 
 test('missing animal corpse sheet freezes on the last dying frame', () => {
-  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+  const { setUnitTexture } = loadModule('app/lib/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
         action: 'actionSheet',
@@ -114,12 +108,9 @@ test('missing animal corpse sheet freezes on the last dying frame', () => {
       },
       WORK_TYPES: {},
     },
-    './grid': { instanceIsInPlayerSight: () => false },
     './maths': {
       degreeToDirection: () => 'south',
     },
-    './uiSound': {},
-    './lang': {},
   })
 
   const sprite = {
@@ -159,7 +150,7 @@ test('missing animal corpse sheet freezes on the last dying frame', () => {
 })
 
 test('single-direction dying sheets always use south-facing frames', () => {
-  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+  const { setUnitTexture } = loadModule('app/lib/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
         action: 'actionSheet',
@@ -170,12 +161,9 @@ test('single-direction dying sheets always use south-facing frames', () => {
       },
       WORK_TYPES: {},
     },
-    './grid': { instanceIsInPlayerSight: () => false },
     './maths': {
       degreeToDirection: () => 'north',
     },
-    './uiSound': {},
-    './lang': {},
   })
 
   const sprite = {
@@ -210,7 +198,7 @@ test('single-direction dying sheets always use south-facing frames', () => {
 })
 
 test('mounted units use action art for idle, walking and animated attack actions', () => {
-  const { setUnitTexture } = loadModule('app/lib/extra.ts', {
+  const { setUnitTexture } = loadModule('app/lib/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
         action: 'actionSheet',
@@ -221,12 +209,9 @@ test('mounted units use action art for idle, walking and animated attack actions
       },
       WORK_TYPES: {},
     },
-    './grid': { instanceIsInPlayerSight: () => false },
     './maths': {
       degreeToDirection: () => 'south',
     },
-    './uiSound': {},
-    './lang': {},
   })
 
   const sprite = {

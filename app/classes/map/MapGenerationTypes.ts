@@ -8,7 +8,7 @@ import type { PlayerLike } from '../../types/player'
 import type { AnimalConfig } from '../../types/config'
 import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
 import type { TextureRef } from '../../lib'
-import type { SavedPlayer } from './MapSaveRestore'
+import type { SavedPlayer } from './MapSaveRestoreTypes'
 
 export type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
 type BlueprintTerrainValue = TerrainValue | string

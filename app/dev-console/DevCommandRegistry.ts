@@ -1,18 +1,6 @@
-import type { DevConsoleContext } from './types'
+import type { Command, CommandResult, DevConsoleContext } from './types'
 
-export interface CommandResult {
-  ok: boolean
-  message: string
-}
-
-export interface Command {
-  name: string
-  aliases?: string[]
-  usage?: string
-  describe?: string
-  complete?: (args: string[], context: DevConsoleContext) => string[]
-  run: (args: string[], context: DevConsoleContext) => CommandResult
-}
+export type { Command, CommandResult } from './types'
 
 export class DevCommandRegistry {
   commands: Map<string, Command>

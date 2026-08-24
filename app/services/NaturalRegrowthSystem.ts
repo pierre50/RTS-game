@@ -5,7 +5,7 @@ import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entit
 import type { PlayerLike } from '../types/player'
 import type { SaveEntityState } from '../types/save'
 import { NATURAL_REGROWTH_CONFIG } from '../config/gameplay'
-import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventSystem'
+import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
 type AnimalSlot = Partial<AnimalEntity> & {
   horseColor?: string

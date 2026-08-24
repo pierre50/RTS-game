@@ -3,7 +3,7 @@ import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
 import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity, ResourceEntity } from './entities'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
-import type { HeroEquippedItem } from '../lib/heroTools'
+import type { HeroEquippedItem } from './heroTools'
 import type { FactionSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
@@ -171,9 +171,12 @@ export interface ControlsLike extends Container {
   screenToLocal(x: number, y: number): { x: number; y: number }
   localToScreen(x: number, y: number): { x: number; y: number }
   getViewportMetrics(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }
+  getWorldPointUnderCursor(): { x: number; y: number }
+  getCellUnderCursor(): RuntimeCell | null
+  getGamepadMoveVector(): { dx: number; dy: number }
   removeMouseBuilding(): void
   setMouseBuilding?(building: PlaceableBuildingConfig): void
-  setCamera?(x: number, y: number, direct?: boolean): void
+  setCamera(x: number, y: number, direct?: boolean): void
   updateVisibleCells?(): void
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean
   instanceIsAudible(instance: AudibleInstanceLike): boolean
@@ -185,12 +188,15 @@ export interface ControlsLike extends Container {
   equippedItem?: HeroEquippedItem | null
   equippedTool?: HeroEquippedItem | null
   heroActionHeld?: boolean
+  shiftKeyActive?: boolean
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
   isHeroControlActive?(): boolean
+  isHeroDirectionLockActive?(): boolean
   isHeroStealthMode?(): boolean
+  closeAnyHeroPanel(): boolean
   beginNpcGoTo?(npcs: UnitEntity[]): void
-  openHeroEntityInteraction?(target?: RuntimeEntity | null): boolean
+  openHeroEntityInteraction(target?: RuntimeEntity | null): boolean
   freeCameraActive?: boolean
   setFreeCamera?(enabled: boolean): void
 }

@@ -1,51 +1,35 @@
 import { Container, Graphics } from 'pixi.js'
-import { getReliefOffset, isometricToCartesian, pointsDistance } from '../lib'
+import { getReliefOffset, isometricToCartesian } from '../lib'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
 import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
-import { getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
-import { setHeroGameCursorEnabled, setVirtualCursorVisible } from '../lib/heroCursor'
+import { TouchInputController, type TouchInteraction } from '../controllers/TouchInputController'
+import { PointerInputController, type PointerPageEvent } from '../controllers/PointerInputController'
+import type { ControlBindingAction } from '../lib/settings'
+import { setHeroGameCursorEnabled } from '../lib/heroCursor'
 import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
-import { FAMILY_TYPES, IS_MOBILE, TOUCH_DRAG_THRESHOLD } from '../constants'
+import { FAMILY_TYPES } from '../constants'
 import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
 import { isTalkableNpc } from '../lib/npcInteraction'
 import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npcChatter'
-import type { AudibleInstanceLike, ControlPointerEvent, ControlsLike, GameContextLike } from '../types/context'
+import type { AudibleInstanceLike, ControlsLike, GameContextLike } from '../types/context'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
+import {
+  handleControlsEscapeKey,
+  handleControlsKeyDown,
+  handleControlsKeyUp,
+  panControlsCameraWithArrowKeys,
+} from './ControlsKeyboard'
 
 type PointerPoint = { x: number; y: number }
-type PointerPageEvent = ControlPointerEvent & {
-  pageX: number
-  pageY: number
-  button?: number
-  ctrlKey?: boolean
-  preventDefault?: () => void
-}
-type TouchInteraction = {
-  mode: 'pan' | 'tap' | 'select'
-  startX: number
-  startY: number
-  lastX: number
-  lastY: number
-  moved: boolean
-}
 type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
-const CAMERA_ACTIONS = new Set<ControlBindingAction>(['cameraLeft', 'cameraRight', 'cameraDown', 'cameraUp'])
-const KEYBOARD_CAMERA_INITIAL_SPEED = 7
-const KEYBOARD_CAMERA_MAX_SPEED = 14
-const KEYBOARD_CAMERA_ACCELERATION = 0.24
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
-const COMPATIBILITY_MOUSE_EVENT_DELAY = 800
-
-function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
-  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
-}
 
 export default class Controls extends Container implements ControlsLike {
   context: GameContextLike
@@ -61,6 +45,8 @@ export default class Controls extends Container implements ControlsLike {
   freeCameraActive: boolean
   heroController: HeroController
   gamepadInput: GamepadHeroInput
+  touchInputController: TouchInputController
+  pointerInputController: PointerInputController
   mouseBuilding: ControlsLike['mouseBuilding']
   mouseTouch: PointerPoint | null | undefined
   mouseDrag: boolean
@@ -115,6 +101,8 @@ export default class Controls extends Container implements ControlsLike {
     this.freeCameraActive = false
     this.heroController = new HeroController(this)
     this.gamepadInput = new GamepadHeroInput(this)
+    this.touchInputController = new TouchInputController(this)
+    this.pointerInputController = new PointerInputController(this)
     this.eventMode = 'auto'
     this.mouseTouch = undefined
     this.mouseDrag = false
@@ -277,127 +265,15 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   handleEscapeKey(evt: KeyboardEvent): boolean {
-    if (this.buildingPlacer.cancelWallDraft()) {
-      evt.preventDefault()
-      return true
-    }
-    if (this.mouseBuilding) {
-      evt.preventDefault()
-      this.removeMouseBuilding()
-      this.context.menu?.updateActionTarget?.()
-      return true
-    }
-    if (this.rallyPointController.active) {
-      evt.preventDefault()
-      this.rallyPointController.cancel()
-      return true
-    }
-    if (this.isHeroControlActive() && this.heroController.pendingGoToNpcs) {
-      evt.preventDefault()
-      this.heroController.cancelGoToPicking()
-      return true
-    }
-    if (this.isHeroControlActive() && this.context.menu?.isInventoryOpen?.()) {
-      evt.preventDefault()
-      this.context.menu.closeInventory?.()
-      return true
-    }
-    if (this.isHeroControlActive() && this.closeAnyHeroPanel()) {
-      evt.preventDefault()
-      return true
-    }
-    return false
+    return handleControlsEscapeKey(this, evt)
   }
 
   onKeyDown(evt: KeyboardEvent): void {
-    if (this.isEditableTarget(evt.target)) return
-    if (evt.key === 'Alt' || evt.altKey) {
-      this.stopKeyboardMove()
-      return
-    }
-    if (evt.key === 'Escape' && this.handleEscapeKey(evt)) return
-    const action = getControlActionForKeyboardEvent(evt)
-    if (action === 'heroDirectionLock') {
-      if (evt.code) this.keyActionsByCode[evt.code] = action
-      this.heroDirectionLockActive = true
-      if (evt.key === 'Shift') this.shiftKeyActive = true
-      evt.preventDefault()
-      return
-    }
-    if (evt.key === 'Shift') {
-      this.shiftKeyActive = true
-      evt.preventDefault()
-      return
-    }
-    if (
-      action === 'inventory' &&
-      this.isHeroControlActive() &&
-      this.context.menu?.isInventoryOpen?.()
-    ) {
-      evt.preventDefault()
-      this.context.menu.closeInventory?.()
-      return
-    }
-    if (this.isInteractionBlocked()) return
-    const isCameraAction = Boolean(action && CAMERA_ACTIONS.has(action))
-    if (evt.repeat && !isCameraAction) return
-
-    if (action && isCameraAction) {
-      if (evt.code) this.keyActionsByCode[evt.code] = action
-      if (!evt.repeat) {
-        this.keysPressed[action] = true
-        this.keyPressedCount++
-        if (this.keyPressedCount === 1) {
-          this.keySpeed = KEYBOARD_CAMERA_INITIAL_SPEED
-        }
-      }
-      return
-    }
-
-    if (action && this.heroController.handleKeyDown(action)) {
-      if (evt.code) this.keyActionsByCode[evt.code] = action
-      return
-    }
-
-    this.context.menu?.handleHotkey?.(evt.key.toLowerCase())
+    handleControlsKeyDown(this, evt)
   }
 
   onKeyUp(evt: KeyboardEvent): void {
-    if (this.isInteractionBlocked()) {
-      this.stopKeyboardMove()
-      return
-    }
-
-    if (evt.key === 'Alt') {
-      this.stopKeyboardMove()
-      return
-    }
-
-    const action = getControlActionForKeyboardEvent(evt) || (evt.code ? this.keyActionsByCode[evt.code] : null)
-    if (evt.code) delete this.keyActionsByCode[evt.code]
-    if (action === 'heroDirectionLock') {
-      this.heroDirectionLockActive = false
-      if (evt.key === 'Shift') this.shiftKeyActive = false
-      evt.preventDefault()
-      return
-    }
-    if (evt.key === 'Shift') {
-      this.shiftKeyActive = false
-      evt.preventDefault()
-      return
-    }
-    if (action) this.heroController.handleKeyUp(action)
-
-    if (!action || !CAMERA_ACTIONS.has(action)) return
-
-    if (!evt.repeat && this.keysPressed[action]) {
-      delete this.keysPressed[action]
-      this.keyPressedCount--
-    }
-    if (this.keyPressedCount <= 0) {
-      this.keyPressedCount = 0
-      this.keySpeed = 0
-    }
+    handleControlsKeyUp(this, evt)
   }
 
   onTick(ticker: TickerLike): void {
@@ -437,289 +313,39 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   panCameraWithArrowKeys(frameScale: number): void {
-    if (this.keyPressedCount <= 0) return
-    const double = this.keyPressedCount > 1
-    if (this.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-      this.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, this.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
-    }
-    if (this.keysPressed.cameraLeft) this.moveCamera('left', this.keySpeed, double, frameScale)
-    if (this.keysPressed.cameraUp) this.moveCamera('up', this.keySpeed, double, frameScale)
-    if (this.keysPressed.cameraDown) this.moveCamera('down', this.keySpeed, double, frameScale)
-    if (this.keysPressed.cameraRight) this.moveCamera('right', this.keySpeed, double, frameScale)
+    panControlsCameraWithArrowKeys(this, frameScale)
   }
 
   onTouchStart(evt: TouchEvent): void {
-    if (this.isInteractionBlocked()) return
-    this.ignoreMouseEventsUntil = performance.now() + COMPATIBILITY_MOUSE_EVENT_DELAY
-
-    const touch = evt.touches[0]
-    if (evt.touches.length >= 2) {
-      this.touchInteraction = {
-        mode: 'pan',
-        startX: touch.pageX,
-        startY: touch.pageY,
-        lastX: touch.pageX,
-        lastY: touch.pageY,
-        moved: false,
-      }
-      this.touchPanActive = true
-      this.mouseDrag = false
-      this.mouseTouch = { x: touch.pageX, y: touch.pageY }
-    } else {
-      this.mouse.x = touch.pageX
-      this.mouse.y = touch.pageY
-      if (!this.isMouseInApp(touch)) return
-
-      this.mouseDrag = false
-      this.touchInteraction = {
-        mode: this.mouseBuilding || this.rallyPointController.active || !IS_MOBILE ? 'tap' : 'select',
-        startX: touch.pageX,
-        startY: touch.pageY,
-        lastX: touch.pageX,
-        lastY: touch.pageY,
-        moved: false,
-      }
-
-      if (this.mouseBuilding || this.rallyPointController.active) {
-        this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
-        return
-      }
-
-      if (!IS_MOBILE) {
-        this.onMouseDown(touch)
-        return
-      }
-    }
+    this.touchInputController.onTouchStart(evt)
   }
 
   onTouchMove(evt: TouchEvent): void {
-    if (this.isInteractionBlocked()) return
-
-    const touch = evt.touches[0]
-    if (this.touchPanActive) {
-      this.mouse.x = touch.pageX
-      this.mouse.y = touch.pageY
-
-      if (this.mouseTouch) {
-        const speedX = Math.abs(this.mouse.x - this.mouseTouch.x) * 2
-        const speedY = Math.abs(this.mouse.y - this.mouseTouch.y) * 2
-        if (this.mouse.x > this.mouseTouch.x) this.moveCamera('left', speedX, false)
-        if (this.mouse.y > this.mouseTouch.y) this.moveCamera('up', speedY, false)
-        if (this.mouse.y < this.mouseTouch.y) this.moveCamera('down', speedY, false)
-        if (this.mouse.x < this.mouseTouch.x) this.moveCamera('right', speedX, false)
-      }
-      this.mouseTouch = { x: this.mouse.x, y: this.mouse.y }
-      return
-    }
-
-    this.mouse.x = touch.pageX
-    this.mouse.y = touch.pageY
-
-    if (this.mouseBuilding || this.rallyPointController.active) {
-      const interaction = this.touchInteraction
-      const hasMoved =
-        interaction &&
-        pointsDistance(this.mouse.x, this.mouse.y, interaction.startX, interaction.startY) > TOUCH_DRAG_THRESHOLD
-      if (hasMoved) {
-        this.mouseDrag = true
-        interaction.moved = true
-      }
-      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
-      return
-    }
-
-    if (!this.touchInteraction) {
-      this.onMouseMove(touch)
-      return
-    }
-
-    const movedEnough =
-      pointsDistance(this.mouse.x, this.mouse.y, this.touchInteraction.startX, this.touchInteraction.startY) >
-      TOUCH_DRAG_THRESHOLD
-
-    if (this.touchInteraction.mode === 'select') {
-      if (movedEnough) {
-        this.touchInteraction.moved = true
-      }
-      this.onMouseMove(touch)
-    } else if (movedEnough) {
-      this.touchInteraction.moved = true
-      this.mouseDrag = true
-      const speedX = Math.abs(this.mouse.x - this.touchInteraction.lastX) * 2
-      const speedY = Math.abs(this.mouse.y - this.touchInteraction.lastY) * 2
-      if (this.mouse.x > this.touchInteraction.lastX) this.moveCamera('left', speedX, false)
-      if (this.mouse.y > this.touchInteraction.lastY) this.moveCamera('up', speedY, false)
-      if (this.mouse.y < this.touchInteraction.lastY) this.moveCamera('down', speedY, false)
-      if (this.mouse.x < this.touchInteraction.lastX) this.moveCamera('right', speedX, false)
-    }
-
-    this.touchInteraction.lastX = this.mouse.x
-    this.touchInteraction.lastY = this.mouse.y
+    this.touchInputController.onTouchMove(evt)
   }
 
   onTouchEnd(evt: TouchEvent): void {
-    this.ignoreMouseEventsUntil = performance.now() + COMPATIBILITY_MOUSE_EVENT_DELAY
-    const touch = evt.changedTouches[0]
-    if (this.touchPanActive || this.touchInteraction?.mode === 'pan') {
-      this.mouseDrag = true
-      if (evt.touches.length) {
-        const remainingTouch = evt.touches[0]
-        this.mouseTouch = { x: remainingTouch.pageX, y: remainingTouch.pageY }
-        this.touchInteraction = {
-          mode: 'pan',
-          startX: remainingTouch.pageX,
-          startY: remainingTouch.pageY,
-          lastX: remainingTouch.pageX,
-          lastY: remainingTouch.pageY,
-          moved: true,
-        }
-        return
-      }
-      this.touchPanActive = false
-      this.touchInteraction = null
-      this.mouseTouch = null
-      this.mouseDrag = false
-      return
-    }
-
-    if (this.isInteractionBlocked()) {
-      this.cancelActiveInteraction()
-      return
-    }
-
-    if (evt.changedTouches.length === 1) {
-      const mode = this.touchInteraction?.mode
-      const moved = this.touchInteraction?.moved
-
-      if (this.mouseBuilding || this.rallyPointController.active) {
-        if (!moved) {
-          this.onMouseUp(touch)
-        }
-      } else if (mode === 'select') {
-        this.onMouseUp(touch)
-      } else if (!moved) {
-        this.onMouseUp(touch)
-      }
-    }
-    this.touchInteraction = null
-    this.mouseTouch = null
-    this.mouseDrag = false
+    this.touchInputController.onTouchEnd(evt)
   }
 
   onMouseDown(evt: PointerPageEvent): void {
-    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
-    if (this.isInteractionBlocked()) return
-    if (evt.altKey) this.stopKeyboardMove()
-
-    this.mouse.x = evt.pageX
-    this.mouse.y = evt.pageY
-    setVirtualCursorVisible(false)
-    if (!this.isMouseInApp(evt)) return
-
-    if (this.mouseBuilding || this.rallyPointController.active) {
-      this.mouse.prevent = false
-      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
-      return
-    }
-
-    if (this.isHeroControlActive() && isSecondaryPointerButton(evt)) {
-      evt.preventDefault?.()
-      this.heroController.handleSecondaryPointerDown()
-      this.mouse.prevent = true
-      return
-    }
-
-    if (this.isHeroControlActive() && evt.button === 0) {
-      evt.preventDefault?.()
-      this.heroController.handlePrimaryPointerDown()
-      this.mouse.prevent = true
-      return
-    }
+    this.pointerInputController.onMouseDown(evt)
   }
 
   onMouseMove(evt: PointerPageEvent): void {
-    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
-    this.mouse.x = evt.pageX
-    this.mouse.y = evt.pageY
-    setVirtualCursorVisible(false)
-
-    if (this.isInteractionBlocked()) return
-
-    if (this.mouseBuilding || this.rallyPointController.active) {
-      this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
-      return
-    }
+    this.pointerInputController.onMouseMove(evt)
   }
 
   onWheel(evt: WheelEvent): void {
-    if (this.isEditableTarget(evt.target)) return
-    if (this.isInteractionBlocked() || !this.isHeroControlActive() || this.isInGameMenuOpen()) return
-
-    this.mouse.x = evt.pageX
-    this.mouse.y = evt.pageY
-    setVirtualCursorVisible(false)
-    if (!this.isMouseInApp(evt)) return
-
-    const delta = evt.deltaY || evt.deltaX
-    if (delta === 0) return
-
-    if (this.heroController.cycleTool(delta > 0 ? 1 : -1)) {
-      evt.preventDefault()
-      evt.stopPropagation()
-    }
+    this.pointerInputController.onWheel(evt)
   }
 
   onContextMenu(evt: MouseEvent): void {
-    const shouldSuppress =
-      performance.now() < this.suppressContextMenuUntil ||
-      (this.isHeroControlActive() && (this.isMouseInApp(evt) || Boolean(document.querySelector?.('.modal'))))
-    if (!shouldSuppress) return
-    evt.preventDefault()
-    evt.stopPropagation()
-    evt.stopImmediatePropagation?.()
+    this.pointerInputController.onContextMenu(evt)
   }
 
   onMouseUp(evt: PointerPageEvent): void {
-    if (this.shouldIgnoreCompatibilityMouseEvent(evt)) return
-    this.heroController.handlePointerUp(isSecondaryPointerButton(evt) ? 2 : (evt.button ?? 0))
-    if (this.isInteractionBlocked()) {
-      this.cancelActiveInteraction()
-      return
-    }
-
-    const {
-      context: { map, player },
-    } = this
-    this.mouse.x = evt.pageX
-    this.mouse.y = evt.pageY
-    setVirtualCursorVisible(false)
-    clearTimeout(this.mouseHoldTimeout)
-    if (!this.isMouseInApp(evt)) {
-      this.mouse.prevent = false
-      return
-    }
-    if (this.mouse.prevent || this.mouseDrag) {
-      this.mouse.prevent = false
-      return
-    }
-    if (!this.rallyPointController.active) {
-      !this.isHeroControlActive() && player?.selectedBuilding && player.unselectAll()
-    }
-
-    if (this.isMouseInApp(evt)) {
-      const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
-      const pos = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
-      const i = Math.min(Math.max(pos[0], 0), map.size)
-      const j = Math.min(Math.max(pos[1], 0), map.size)
-      if (map.grid[i] && map.grid[i][j]) {
-        const cell = map.grid[i][j]
-        if (this.mouseBuilding) {
-          this.buildingPlacer.handleMouseUp(cell)
-        } else if (this.rallyPointController.active) {
-          this.rallyPointController.handleMouseUp(cell)
-        }
-      }
-    }
+    this.pointerInputController.onMouseUp(evt)
   }
 
   getWorldPointUnderCursor(): PointerPoint {
@@ -818,25 +444,11 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   isMouseInApp(evt: PointerPageEvent): boolean {
-    if (this.isInteractionBlocked()) return false
-
-    const target = evt.target instanceof Element ? evt.target : evt.nativeEvent?.target
-    if (target instanceof Element) {
-      return !target.tagName || Boolean(target.closest('#game'))
-    }
-
-    const clientX = evt.clientX ?? evt.nativeEvent?.clientX
-    const clientY = evt.clientY ?? evt.nativeEvent?.clientY
-    if (typeof clientX === 'number' && typeof clientY === 'number') {
-      const rect = this.context.gamebox.getBoundingClientRect()
-      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
-    }
-
-    return false
+    return this.pointerInputController.isMouseInApp(evt)
   }
 
   shouldIgnoreCompatibilityMouseEvent(evt: PointerPageEvent): boolean {
-    return Boolean(evt?.type?.startsWith('mouse') && performance.now() < this.ignoreMouseEventsUntil)
+    return this.touchInputController.shouldIgnoreCompatibilityMouseEvent(evt)
   }
 
   removeMouseBuilding(): void {
@@ -908,10 +520,7 @@ export default class Controls extends Container implements ControlsLike {
   cancelActiveInteraction(): void {
     this.stopKeyboardMove()
     this.stopMouseCameraMove()
-    this.mouseTouch = null
-    this.mouseDrag = false
-    this.touchInteraction = null
-    this.touchPanActive = false
+    this.touchInputController.cancel()
     this.heroController.cancelActiveInteraction()
     this.mouse.prevent = false
     this.rallyPointController.cancel()

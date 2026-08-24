@@ -1,5 +1,6 @@
-import { AnimatedSprite, Assets, Rectangle, Sprite, Texture } from 'pixi.js'
+import { Assets, Sprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
+import type { AnimatedSprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
@@ -13,13 +14,9 @@ import {
   getBuildingAsset,
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
-  getTextureSheet,
   canUpdateMinimap,
   updateInstanceVisibility,
   playSoundCue,
-  bindAnimatedSpriteToTicker,
-  getRallyPointFrames,
-  RALLY_POINT_SHEET_ID,
   STABLE_HORSE_CAPACITY,
   textureRefToString,
 } from '../../lib'
@@ -29,7 +26,17 @@ import { BuildingProduction } from './BuildingProduction'
 import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
-import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
+import { onVisualSettingsChange } from '../../lib/settings'
+import {
+  clearBuildingRallyPoint,
+  createBuildingShadow,
+  destroyBuildingVisuals,
+  getBuildingShadowTexture,
+  setBuildingRallyPoint,
+  syncBuildingVisualSettings,
+  updateBuildingShadow,
+  type BuildingShadow,
+} from './BuildingVisuals'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type {
   BuildingEntity,
@@ -46,13 +53,8 @@ import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
 type BuildingSprite = Sprite | AnimatedSprite
-type BuildingShadow = Sprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
-
-const SHADOW_MASK_ALPHA = 1
-const SHADOW_OFFSET_Y = 0
-const shadowTextureFrameCache = new Map<string, Texture>()
 
 export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
@@ -341,107 +343,23 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   setRallyPoint(cell: RuntimeCell | undefined, direction: number = this.context.map.randomRange(0, 1)): boolean {
-    if (!cell) return false
-    this.clearRallyPoint()
-    this.rallyPoint = { i: cell.i, j: cell.j, direction }
-    const sheet = Assets.cache.get(RALLY_POINT_SHEET_ID)
-    const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction) as Texture[])
-    bindAnimatedSpriteToTicker(flag, this.context.app)
-    flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
-    flag.anchor.set(flag.texture.defaultAnchor!.x, flag.texture.defaultAnchor!.y)
-    flag.x = cell.x
-    flag.y = cell.y
-    flag.zIndex = cell.i + cell.j
-    flag.visible = this.selected
-    flag.eventMode = 'none'
-    flag.roundPixels = true
-    flag.play()
-    this.context.map.addChild(flag)
-    this.rallyPointFlag = flag
-    return true
+    return setBuildingRallyPoint(this, cell, direction)
   }
 
   clearRallyPoint(): void {
-    this.rallyPointFlag?.destroy()
-    this.rallyPointFlag = null
-    this.rallyPoint = null
+    clearBuildingRallyPoint(this)
   }
 
   getShadowTexture(): Texture | null {
-    if (!this.textureName) return null
-    const sheet = getTextureSheet(this.textureName)
-    const shadowAtlasId = `${sheet}/shadow`
-    const shadowAtlas = Assets.cache.has(shadowAtlasId)
-      ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null)
-      : null
-    if (!shadowAtlas || !this.sprite?.texture) return null
-
-    const { frame, rotate } = this.sprite.texture
-    const source = shadowAtlas.source
-    const atlasExtraWidth = Math.max(0, source.width - this.sprite.texture.source.width)
-    const atlasExtraHeight = Math.max(0, source.height - this.sprite.texture.source.height)
-    const atlasPadX = atlasExtraWidth / 2
-    const shadowFrameWidth = frame.width + atlasExtraWidth
-    const shadowFrameHeight = frame.height + atlasExtraHeight
-
-    if (frame.x + shadowFrameWidth > source.width || frame.y + shadowFrameHeight > source.height) return null
-
-    const cacheKey = `${sheet}/shadow:${frame.x}:${frame.y}:${shadowFrameWidth}:${shadowFrameHeight}`
-    let shadowTexture = shadowTextureFrameCache.get(cacheKey)
-    if (!shadowTexture) {
-      const anchorX = (this.sprite.anchor.x * frame.width + atlasPadX) / shadowFrameWidth
-      const anchorY = (this.sprite.anchor.y * frame.height) / shadowFrameHeight
-      shadowTexture = new Texture({
-        source,
-        frame: new Rectangle(frame.x, frame.y, shadowFrameWidth, shadowFrameHeight),
-        orig: new Rectangle(0, 0, shadowFrameWidth, shadowFrameHeight),
-        rotate,
-        defaultAnchor: { x: anchorX, y: anchorY },
-      })
-      shadowTextureFrameCache.set(cacheKey, shadowTexture)
-    }
-    return shadowTexture
+    return getBuildingShadowTexture(this)
   }
 
   createShadow(): BuildingShadow | null {
-    const texture = this.getShadowTexture()
-    if (!texture) return null
-    const shadow = new Sprite(texture)
-    shadow.label = LABEL_TYPES.shadow
-    shadow.eventMode = 'none'
-    shadow.roundPixels = true
-    this.updateShadow(shadow)
-    return shadow
+    return createBuildingShadow(this)
   }
 
   updateShadow(shadow: BuildingShadow | null = this.shadow): void {
-    const texture = this.getShadowTexture()
-    if (!texture) {
-      this.shadow?.parent?.removeChild(this.shadow)
-      this.shadow?.destroy()
-      this.shadow = null
-      return
-    }
-    if (!shadow) {
-      shadow = new Sprite(texture)
-      shadow.label = LABEL_TYPES.shadow
-      shadow.eventMode = 'none'
-      shadow.roundPixels = true
-      this.shadow = shadow
-      this.context.map.shadowLayer?.addChild(shadow)
-    }
-    const sprite = this.sprite
-    shadow.texture = texture
-    if (texture.defaultAnchor) {
-      shadow.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
-    }
-    shadow.zIndex = -2
-    shadow.alpha = SHADOW_MASK_ALPHA
-    shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
-    shadow.rotation = 0
-    shadow.tint = 0xffffff
-    shadow.scale.set(sprite.scale.x, sprite.scale.y)
-    shadow.position.set(this.x, this.y + (this.reliefLift ?? 0) + SHADOW_OFFSET_Y)
+    updateBuildingShadow(this, shadow)
   }
 
   syncShadow(): void {
@@ -449,19 +367,13 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   syncVisualSettings(): void {
-    if (this.shadow) {
-      this.shadow.visible = getShadowsEnabled() && this.visible && !this.isDestroyed
-    }
+    syncBuildingVisualSettings(this)
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
     this.buildingTrainingPreview?.destroy()
     this.buildingTrainingPreview = null
-    this.visualSettingsCleanup?.()
-    this.visualSettingsCleanup = null
-    this.shadow?.parent?.removeChild(this.shadow)
-    this.shadow?.destroy({ children: true, texture: false })
-    this.shadow = null
+    destroyBuildingVisuals(this)
     super.destroy(options)
   }
 

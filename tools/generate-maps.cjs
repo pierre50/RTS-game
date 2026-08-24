@@ -148,6 +148,27 @@ function getCellsAroundPoint(i, j, grid, radius, predicate) {
   return cells
 }
 
+function getPlainCellsAroundPoint(i, j, grid, radius) {
+  return getCellsAroundPoint(i, j, grid, radius, cell => !cell.solid && cell.category !== 'Water')
+}
+
+function getBuildingFootprintRadius(size) {
+  return Math.max(0, Math.floor((Math.max(1, size) - 1) / 2))
+}
+
+function getBuildingFootprintCells(i, j, grid, size, predicate) {
+  const radius = getBuildingFootprintRadius(size)
+  const cells = []
+  for (let x = i - radius; x <= i + radius; x++) {
+    for (let y = j - radius; y <= j + radius; y++) {
+      const cell = grid[x]?.[y]
+      if (!cell) continue
+      if (!predicate || predicate(cell)) cells.push(cell)
+    }
+  }
+  return cells
+}
+
 function hasWaterBorderWithin(grid, i, j, radius) {
   if (radius <= 0) return Boolean(grid[i]?.[j]?.waterBorder)
 
@@ -244,15 +265,52 @@ function loadRuntimeGenerators() {
   const originalExtension = require.extensions['.ts']
   const isMapRuntime = filename =>
     filename.endsWith('/MapGeneration.ts') ||
+    filename.endsWith('/MapCellGeneration.ts') ||
+    filename.endsWith('/MapSavedStateGeneration.ts') ||
+    filename.endsWith('/MapPortalPlacement.ts') ||
+    filename.endsWith('/MapSpawnPlacement.ts') ||
     filename.endsWith('/MapTerrainGeneration.ts') ||
+    filename.endsWith('/MapTerrainAppearance.ts') ||
+    filename.endsWith('/MapTerrainReliefAppearance.ts') ||
+    filename.endsWith('/MapTerrainReliefContinuity.ts') ||
+    filename.endsWith('/MapTerrainWaterTopology.ts') ||
     filename.endsWith('/MapTerrain.ts') ||
+    filename.endsWith('/MapForestResources.ts') ||
+    filename.endsWith('/MapResourceSpacing.ts') ||
     filename.endsWith('/MapResources.ts')
-  const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: class {}, Container: class {} }
+  class HeadlessContainer {
+    constructor() {
+      this.children = []
+      this.parent = null
+      this.position = { copyFrom() {} }
+      this.anchor = { copyFrom() {}, set() {} }
+    }
+    addChild(child) {
+      child.parent = this
+      this.children.push(child)
+      return child
+    }
+    removeChildren() {
+      const children = this.children
+      this.children = []
+      for (const child of children) child.parent = null
+      return children
+    }
+    destroy() {}
+  }
+  class HeadlessSprite extends HeadlessContainer {
+    constructor(texture = null) {
+      super()
+      this.texture = texture
+      this.roundPixels = false
+    }
+  }
+  const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: HeadlessSprite, Container: HeadlessContainer }
   class HeadlessResource {
     constructor(options, context) {
       Object.assign(this, options)
       this.context = context
-      this.size = 1
+      this.size = options.size ?? 1
       const cell = context.map.grid[this.i]?.[this.j]
       if (cell) {
         cell.has = this
@@ -271,6 +329,7 @@ function loadRuntimeGenerators() {
       iron: 'Iron',
       salmon: 'Salmon',
     },
+    SPACED_RESOURCE_TYPES: ['Berrybush', 'Wheat', 'Stone', 'Copper', 'Iron', 'Gold', 'Tree'],
     // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since
     // EnvironmentTerrainParams.groundTreeChance/patchwork.treeChance/lakes.shoreTreeChance
     // always override them.
@@ -290,12 +349,47 @@ function loadRuntimeGenerators() {
       if (request === './MapTerrainGeneration') {
         return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainGeneration.ts'), parent, isMain)
       }
+      if (request === './MapCellGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapCellGeneration.ts'), parent, isMain)
+      }
+      if (request === './MapSavedStateGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapSavedStateGeneration.ts'), parent, isMain)
+      }
+      if (request === './MapPortalPlacement') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapPortalPlacement.ts'), parent, isMain)
+      }
+      if (request === './MapSpawnPlacement') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapSpawnPlacement.ts'), parent, isMain)
+      }
+      if (request === './MapTerrainAppearance') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainAppearance.ts'), parent, isMain)
+      }
+      if (request === './MapTerrainReliefAppearance') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainReliefAppearance.ts'), parent, isMain)
+      }
+      if (request === './MapTerrainReliefContinuity') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainReliefContinuity.ts'), parent, isMain)
+      }
+      if (request === './MapTerrainWaterTopology') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainWaterTopology.ts'), parent, isMain)
+      }
+      if (request === './MapForestResources') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapForestResources.ts'), parent, isMain)
+      }
+      if (request === './MapResourceSpacing') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapResourceSpacing.ts'), parent, isMain)
+      }
       if (request === 'pixi.js') return pixi
       if (request === '../Resource') return { Resource: HeadlessResource }
       if (request === '../../lib') {
         return {
           getCellsAroundPoint,
+          cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
           getDeterministicCellVariant,
+          getBuildingFootprintCells,
+          getBuildingFootprintRadius,
+          getPlainCellsAroundPoint,
+          getTexture: () => null,
           getZoneInGridWithCondition,
           hasWaterBorderWithin,
         }

@@ -6,7 +6,7 @@ import { updateUnitEnergy } from '../../lib/unitEnergy'
 import { isAirborne } from './locomotion'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-import type { Animal } from './index'
+import type { AnimalControllerHost } from './AnimalTypes'
 
 type AnimalThreat = UnitEntity | BuildingEntity
 
@@ -16,10 +16,10 @@ const AMBIENT_WALK_DELAY_MAX = 9000
 const AMBIENT_WALK_RANGE = 2
 
 export class AnimalBehavior {
-  animal: Animal
-  ambientMovement: AmbientMovementController<Animal>
+  animal: AnimalControllerHost
+  ambientMovement: AmbientMovementController<AnimalControllerHost>
 
-  constructor(animal: Animal) {
+  constructor(animal: AnimalControllerHost) {
     this.animal = animal
     this.ambientMovement = new AmbientMovementController(animal, {
       delayMaxMs: target => target.ambientWalkDelayMax ?? AMBIENT_WALK_DELAY_MAX,
@@ -65,7 +65,7 @@ export class AnimalBehavior {
     const isStealthMode = Boolean(controlsHeroUnit && controls?.isHeroStealthMode?.())
     const stealthRangeSq =
       isStealthMode && animal.sight ? (animal.sight * HERO_STEALTH_ANIMAL_DETECTION_FACTOR) ** 2 : Number.POSITIVE_INFINITY
-    const threats = findInstancesInSight<Animal, AnimalThreat>(
+    const threats = findInstancesInSight<AnimalControllerHost, AnimalThreat>(
       animal,
       (instance: AnimalThreat) =>
         !instance.isDead &&
@@ -123,7 +123,7 @@ export class AnimalBehavior {
     this.ambientMovement.tryMove()
   }
 
-  findAmbientDestination(animal: Animal): RuntimeCell | null {
+  findAmbientDestination(animal: AnimalControllerHost): RuntimeCell | null {
     const {
       context: { map },
     } = animal

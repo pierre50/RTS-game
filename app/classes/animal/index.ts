@@ -18,6 +18,7 @@ import type { AnimalEntity, EntityInfoRenderOptions, UnitSounds } from '../../ty
 import { AnimalMovement } from './AnimalMovement'
 import { AnimalCombat } from './AnimalCombat'
 import { AnimalBehavior } from './AnimalBehavior'
+import { FLYING_ALTITUDE, type AnimalDestination, type AnimalMoveOptions } from './AnimalTypes'
 import type { Texture } from 'pixi.js'
 import type { GameContextLike } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
@@ -30,18 +31,13 @@ import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseCo
 import { ensureUnitEnergy } from '../../lib/unitEnergy'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
-export type AnimalDestination = RuntimeEntity | RuntimeCell
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
 type AnimalShadow = AnimatedSprite
-export type AnimalMoveOptions = {
-  forceRepath?: boolean
-  movementSheet?: string
-}
+export type { AnimalDestination, AnimalMoveOptions } from './AnimalTypes'
 
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
-export const FLYING_ALTITUDE = 20
 const LANDING_STEPS = 8
 const LANDING_STEP_MS = 40
 

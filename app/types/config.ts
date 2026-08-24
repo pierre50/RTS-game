@@ -1,6 +1,5 @@
 import type { ResourceAmount } from './common'
-import type { Condition } from '../lib/combat'
-import type { CommandSound, UnitSounds } from './entities'
+import type { CommandSound, UnitSounds } from './sounds'
 
 export type ConfigValue =
   | string
@@ -10,6 +9,12 @@ export type ConfigValue =
   | undefined
   | ConfigValue[]
   | { [key: string]: ConfigValue | TechnologyConfig }
+
+export type Condition = {
+  key: string
+  op: '=' | '!=' | '<' | '<=' | '>=' | '>' | 'includes' | 'notincludes'
+  value: ConfigValue
+}
 
 export type UnitAppearanceLayerConfig = {
   zIndex: number

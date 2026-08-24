@@ -3,11 +3,11 @@ import { t } from '../lib/lang'
 import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
 import { getUnitOverallLevel } from '../lib/unitExperience'
-import type Menu from '../classes/Menu'
 import type { UnitEntity } from '../types/entities'
+import type { MenuHost } from './MenuHost'
 
 export class HeroStatusHud {
-  menu: Menu
+  menu: MenuHost
   element: HTMLDivElement
   avatarCanvas: HTMLCanvasElement
   title: HTMLDivElement
@@ -22,7 +22,7 @@ export class HeroStatusHud {
   displayedHitPoints: number | null
   lastHealthDisplayUpdateAt: number | null
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.hero = null
     this.displayedHitPoints = null

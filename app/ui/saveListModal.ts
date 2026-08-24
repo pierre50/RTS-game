@@ -11,128 +11,165 @@ type SaveListModalOptions = {
   onClose?: () => void
 }
 
-export function openSaveListModal({ onLoad, onError, onChange, onClose }: SaveListModalOptions): void {
-  let saves: SaveIndexEntry[] = listSaves()
+type SaveListState = SaveListModalOptions & {
+  saves: SaveIndexEntry[]
+  listEl: HTMLDivElement
+  getModal: () => Modal
+  setSaves: (saves: SaveIndexEntry[]) => void
+}
 
-  const wrapper = document.createElement('div')
-  wrapper.className = 'save-list-wrapper'
+function reportError(importStatus: HTMLSpanElement, onError: SaveListModalOptions['onError'], message: string): void {
+  importStatus.textContent = message
+  importStatus.className = 'save-list-import-status save-list-import-status--err'
+  onError?.(message)
+}
 
-  const listEl = document.createElement('div')
-  listEl.className = 'save-list'
+function confirmDeleteSave(state: SaveListState, key: string, name: string): void {
+  const content = document.createElement('div')
+  content.className = 'modal-menu'
 
-  let modal: Modal
-  let importStatus: HTMLSpanElement
+  const message = document.createElement('p')
+  message.className = 'save-list-confirm-message'
+  message.textContent = t('confirmDeleteSave', { name })
+  content.appendChild(message)
 
-  function reportError(message: string): void {
-    importStatus.textContent = message
-    importStatus.className = 'save-list-import-status save-list-import-status--err'
-    onError?.(message)
-  }
+  const confirmBtn = document.createElement('button')
+  confirmBtn.type = 'button'
+  confirmBtn.className = 'ui-btn'
+  confirmBtn.textContent = t('deleteSave')
 
-  function confirmDeleteSave(key: string, name: string): void {
-    const content = document.createElement('div')
-    content.className = 'modal-menu'
+  const cancelBtn = document.createElement('button')
+  cancelBtn.type = 'button'
+  cancelBtn.className = 'ui-btn'
+  cancelBtn.textContent = t('cancel')
 
-    const message = document.createElement('p')
-    message.className = 'save-list-confirm-message'
-    message.textContent = t('confirmDeleteSave', { name })
-    content.appendChild(message)
+  const confirmModal = new Modal({
+    title: t('deleteSave'),
+    content,
+  })
 
-    const confirmBtn = document.createElement('button')
-    confirmBtn.type = 'button'
-    confirmBtn.className = 'ui-btn'
-    confirmBtn.textContent = t('deleteSave')
+  confirmBtn.addEventListener('pointerdown', playClickSound)
+  confirmBtn.addEventListener('click', () => {
+    confirmModal.close()
+    deleteSave(key)
+    state.setSaves(state.saves.filter(save => save.key !== key))
+    renderList(state)
+    state.onChange?.()
+  })
+  cancelBtn.addEventListener('pointerdown', playClickSound)
+  cancelBtn.addEventListener('click', () => confirmModal.close())
 
-    const cancelBtn = document.createElement('button')
-    cancelBtn.type = 'button'
-    cancelBtn.className = 'ui-btn'
-    cancelBtn.textContent = t('cancel')
+  content.appendChild(confirmBtn)
+  content.appendChild(cancelBtn)
+}
 
-    const confirmModal = new Modal({
-      title: t('deleteSave'),
-      content,
-    })
+function createSaveRow(
+  state: SaveListState,
+  importStatus: HTMLSpanElement | null,
+  { key, name }: SaveIndexEntry,
+): HTMLDivElement {
+  const row = document.createElement('div')
+  row.className = 'save-list-row'
 
-    confirmBtn.addEventListener('pointerdown', playClickSound)
-    confirmBtn.addEventListener('click', () => {
-      confirmModal.close()
-      deleteSave(key)
-      saves = saves.filter(save => save.key !== key)
-      renderList()
-      onChange?.()
-    })
-    cancelBtn.addEventListener('pointerdown', playClickSound)
-    cancelBtn.addEventListener('click', () => confirmModal.close())
+  const nameEl = document.createElement('span')
+  nameEl.className = 'save-list-name'
+  nameEl.textContent = name
 
-    content.appendChild(confirmBtn)
-    content.appendChild(cancelBtn)
-  }
+  const loadBtn = createLoadButton(state, importStatus, key)
+  const exportBtn = createExportButton(state, importStatus, key, name)
+  const deleteBtn = createDeleteButton(state, key, name)
 
-  function renderList(): void {
-    listEl.innerHTML = ''
-    if (saves.length === 0) {
-      const empty = document.createElement('div')
-      empty.className = 'save-list-empty'
-      empty.textContent = t('noSaves')
-      listEl.appendChild(empty)
-    } else {
-      saves.forEach(({ key, name }) => {
-        const row = document.createElement('div')
-        row.className = 'save-list-row'
+  row.appendChild(nameEl)
+  row.appendChild(loadBtn)
+  row.appendChild(exportBtn)
+  row.appendChild(deleteBtn)
+  return row
+}
 
-        const nameEl = document.createElement('span')
-        nameEl.className = 'save-list-name'
-        nameEl.textContent = name
-
-        const loadBtn = document.createElement('button')
-        loadBtn.className = 'ui-btn'
-        loadBtn.textContent = t('load')
-        loadBtn.addEventListener('pointerdown', playClickSound)
-        loadBtn.addEventListener('click', () => {
-          try {
-            const saveData = loadSave(key)
-            modal.close()
-            onLoad(saveData)
-          } catch {
-            reportError(t('corruptSave'))
-          }
-        })
-
-        const exportBtn = document.createElement('button')
-        exportBtn.className = 'ui-btn save-list-export-btn'
-        exportBtn.title = t('exportSave')
-        exportBtn.setAttribute('aria-label', `${t('exportSave')} : ${name}`)
-        exportBtn.textContent = '⬇'
-        exportBtn.addEventListener('pointerdown', playClickSound)
-        exportBtn.addEventListener('click', () => {
-          try {
-            exportSave(key)
-          } catch {
-            reportError(t('exportError'))
-          }
-        })
-
-        const deleteBtn = document.createElement('button')
-        deleteBtn.className = 'ui-btn'
-        deleteBtn.textContent = '✕'
-        deleteBtn.title = t('deleteSave')
-        deleteBtn.setAttribute('aria-label', `${t('deleteSave')} : ${name}`)
-        deleteBtn.addEventListener('pointerdown', playClickSound)
-        deleteBtn.addEventListener('click', () => confirmDeleteSave(key, name))
-
-        row.appendChild(nameEl)
-        row.appendChild(loadBtn)
-        row.appendChild(exportBtn)
-        row.appendChild(deleteBtn)
-        listEl.appendChild(row)
-      })
+function createLoadButton(state: SaveListState, importStatus: HTMLSpanElement | null, key: string): HTMLButtonElement {
+  const loadBtn = document.createElement('button')
+  loadBtn.className = 'ui-btn'
+  loadBtn.textContent = t('load')
+  loadBtn.addEventListener('pointerdown', playClickSound)
+  loadBtn.addEventListener('click', () => {
+    try {
+      const saveData = loadSave(key)
+      state.getModal().close()
+      state.onLoad(saveData)
+    } catch {
+      reportMaybeVisibleError(state, importStatus, t('corruptSave'))
     }
+  })
+  return loadBtn
+}
+
+function createExportButton(
+  state: SaveListState,
+  importStatus: HTMLSpanElement | null,
+  key: string,
+  name: string,
+): HTMLButtonElement {
+  const exportBtn = document.createElement('button')
+  exportBtn.className = 'ui-btn save-list-export-btn'
+  exportBtn.title = t('exportSave')
+  exportBtn.setAttribute('aria-label', `${t('exportSave')} : ${name}`)
+  exportBtn.textContent = '⬇'
+  exportBtn.addEventListener('pointerdown', playClickSound)
+  exportBtn.addEventListener('click', () => {
+    try {
+      exportSave(key)
+    } catch {
+      reportMaybeVisibleError(state, importStatus, t('exportError'))
+    }
+  })
+  return exportBtn
+}
+
+function createDeleteButton(state: SaveListState, key: string, name: string): HTMLButtonElement {
+  const deleteBtn = document.createElement('button')
+  deleteBtn.className = 'ui-btn'
+  deleteBtn.textContent = '✕'
+  deleteBtn.title = t('deleteSave')
+  deleteBtn.setAttribute('aria-label', `${t('deleteSave')} : ${name}`)
+  deleteBtn.addEventListener('pointerdown', playClickSound)
+  deleteBtn.addEventListener('click', () => confirmDeleteSave(state, key, name))
+  return deleteBtn
+}
+
+function reportMaybeVisibleError(
+  state: SaveListState,
+  importStatus: HTMLSpanElement | null,
+  message: string,
+): void {
+  if (importStatus) {
+    reportError(importStatus, state.onError, message)
+    return
   }
 
-  renderList()
-  wrapper.appendChild(listEl)
+  state.onError?.(message)
+}
 
-  // --- Import footer ---
+function renderList(state: SaveListState, importStatus: HTMLSpanElement | null = null): void {
+  state.listEl.innerHTML = ''
+  if (state.saves.length === 0) {
+    const empty = document.createElement('div')
+    empty.className = 'save-list-empty'
+    empty.textContent = t('noSaves')
+    state.listEl.appendChild(empty)
+    return
+  }
+
+  state.saves.forEach(save => {
+    state.listEl.appendChild(createSaveRow(state, importStatus, save))
+  })
+}
+
+function getImportErrorKey(err: unknown): string {
+  const message = err instanceof Error ? err.message : ''
+  return message === 'MAX_SAVES_REACHED' ? 'maxSavesReached' : message === 'STORAGE_FULL' ? 'storageFull' : 'importError'
+}
+
+function createImportFooter(state: SaveListState): HTMLDivElement {
   const footer = document.createElement('div')
   footer.className = 'save-list-footer'
 
@@ -147,40 +184,77 @@ export function openSaveListModal({ onLoad, onError, onChange, onClose }: SaveLi
   importBtn.addEventListener('pointerdown', playClickSound)
   importBtn.addEventListener('click', () => fileInput.click())
 
-  importStatus = document.createElement('span')
-  importStatus.className = 'save-list-import-status'
-  importStatus.setAttribute('role', 'status')
-  importStatus.setAttribute('aria-live', 'polite')
-
-  fileInput.addEventListener('change', async () => {
-    const file = fileInput.files?.[0]
-    if (!file) return
-    fileInput.value = ''
-    importBtn.disabled = true
-    importStatus.textContent = ''
-    importStatus.className = 'save-list-import-status'
-    try {
-      const { name } = await importSaveFile(file)
-      saves = listSaves()
-      renderList()
-      onChange?.()
-      importStatus.textContent = t('importSuccess', { name })
-      importStatus.classList.add('save-list-import-status--ok')
-    } catch (err) {
-      const message = err instanceof Error ? err.message : ''
-      const msgKey =
-        message === 'MAX_SAVES_REACHED' ? 'maxSavesReached' : message === 'STORAGE_FULL' ? 'storageFull' : 'importError'
-      importStatus.textContent = t(msgKey)
-      importStatus.classList.add('save-list-import-status--err')
-    } finally {
-      importBtn.disabled = false
-    }
+  const importStatus = createImportStatus()
+  fileInput.addEventListener('change', () => {
+    void handleSaveImport(state, fileInput, importBtn, importStatus)
   })
 
   footer.appendChild(fileInput)
   footer.appendChild(importBtn)
   footer.appendChild(importStatus)
-  wrapper.appendChild(footer)
+  return footer
+}
+
+function createImportStatus(): HTMLSpanElement {
+  const importStatus = document.createElement('span')
+  importStatus.className = 'save-list-import-status'
+  importStatus.setAttribute('role', 'status')
+  importStatus.setAttribute('aria-live', 'polite')
+  return importStatus
+}
+
+async function handleSaveImport(
+  state: SaveListState,
+  fileInput: HTMLInputElement,
+  importBtn: HTMLButtonElement,
+  importStatus: HTMLSpanElement,
+): Promise<void> {
+  const file = fileInput.files?.[0]
+  if (!file) return
+
+  fileInput.value = ''
+  importBtn.disabled = true
+  importStatus.textContent = ''
+  importStatus.className = 'save-list-import-status'
+  try {
+    const { name } = await importSaveFile(file)
+    state.setSaves(listSaves())
+    renderList(state, importStatus)
+    state.onChange?.()
+    importStatus.textContent = t('importSuccess', { name })
+    importStatus.classList.add('save-list-import-status--ok')
+  } catch (err) {
+    importStatus.textContent = t(getImportErrorKey(err))
+    importStatus.classList.add('save-list-import-status--err')
+  } finally {
+    importBtn.disabled = false
+  }
+}
+
+export function openSaveListModal({ onLoad, onError, onChange, onClose }: SaveListModalOptions): void {
+  let modal: Modal
+  const wrapper = document.createElement('div')
+  wrapper.className = 'save-list-wrapper'
+
+  const listEl = document.createElement('div')
+  listEl.className = 'save-list'
+
+  const state: SaveListState = {
+    saves: listSaves(),
+    listEl,
+    onLoad,
+    onError,
+    onChange,
+    onClose,
+    getModal: () => modal,
+    setSaves: saves => {
+      state.saves = saves
+    },
+  }
+
+  renderList(state)
+  wrapper.appendChild(listEl)
+  wrapper.appendChild(createImportFooter(state))
 
   modal = new Modal({ title: t('loadGame'), content: wrapper, onClose })
 }

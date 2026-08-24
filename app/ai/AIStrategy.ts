@@ -1,7 +1,9 @@
-import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED, BUILDING_TYPES, UNIT_TYPES } from '../constants'
-import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED, BUILDING_TYPES } from '../constants'
 import { hasLivingChief } from '../lib/chief'
 import { AIMilitary } from './AIMilitary'
+import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions } from './AIStrategyBuilding'
+import { handleAIProductionActions } from './AIStrategyProduction'
+import { canResearchTechForAI } from './AIStrategyTech'
 import {
   AGE_UP_BUFFERS,
   AGE_UP_COSTS,
@@ -29,7 +31,6 @@ import type {
   AIResourceName,
   AIStrategyPlayerLike,
   AIStrategySnapshot,
-  AITechCondition,
 } from './types'
 
 type AgeMap<T> = Record<AIAge, T>
@@ -37,25 +38,13 @@ type NextAgeMap = Partial<Record<1 | 2 | 3, string>>
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type MilitaryOptions = Parameters<AIMilitary['handleActions']>[0]
 type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
-type ResourceLedger = Record<string, number | undefined>
 
 const RESOURCE_NAMES: AIResourceName[] = ['wood', 'food', 'gold', 'stone']
-const WHEAT_TILES_PER_FIELD = 16
-const MAX_AI_WHEAT_FIELDS = 4
 
 function resourceEntries(cost: AIResourceAmount = {}): [AIResourceName, number][] {
   return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AIResourceName, number | undefined]).filter(
     (entry): entry is [AIResourceName, number] => typeof entry[1] === 'number'
   )
-}
-
-function asResourceLedger(player: AIStrategyPlayerLike): ResourceLedger {
-  return {
-    wood: player.wood,
-    food: player.food,
-    gold: player.gold,
-    stone: player.stone,
-  }
 }
 
 export class AIStrategy {
@@ -111,22 +100,7 @@ export class AIStrategy {
   }
 
   canResearchTech(techKey: string): boolean {
-    const { ai } = this
-    const tech = ai.techs[techKey]
-    if (!tech?.conditions) return true
-    return tech.conditions.every((cond: AITechCondition) => {
-      if (cond.key === 'age') {
-        const ageValue = typeof cond.value === 'number' ? cond.value : Number(cond.value)
-        if (cond.op === '>=') return this.hasReachedAge(ageValue)
-        if (cond.op === '=') return ai.age === ageValue
-      }
-      if (cond.key === 'technologies') {
-        const technology = String(cond.value)
-        if (cond.op === 'includes') return ai.technologies.includes(technology)
-        if (cond.op === 'notincludes') return !ai.technologies.includes(technology)
-      }
-      return true
-    })
+    return canResearchTechForAI(this.ai, techKey, requiredAge => this.hasReachedAge(requiredAge))
   }
 
   getBestInfantryUnit(): string {
@@ -267,38 +241,7 @@ export class AIStrategy {
   }
 
   handleProductionActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
-    const {
-      villagers,
-      maxVillagers,
-      towncenters,
-      infantry,
-      maxInfantry,
-      barracks,
-      infantryUnit,
-      archers,
-      maxArcher,
-      archeryRanges,
-      archerUnit,
-    } = snapshot
-
-    let actions = 0
-    const reserve = this.getEconomicDemand()
-    const chiefAlive = hasLivingChief(this.ai)
-
-    if (chiefAlive) {
-      actions += this.buyUnits(
-        villagers.length,
-        maxVillagers,
-        towncenters,
-        UNIT_TYPES.villager,
-        undefined,
-        reserve,
-        debug
-      )
-    }
-    actions += this.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
-    actions += this.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
-    return actions
+    return handleAIProductionActions(this, snapshot, debug)
   }
 
   getViableBerryBushCount(): number {
@@ -335,21 +278,7 @@ export class AIStrategy {
     reserve: AIResourceAmount = {},
     debug: boolean = false
   ): boolean {
-    const { ai } = this
-    const building = ai.config.buildings[buildingType]
-    if (
-      condition &&
-      canAfford(asResourceLedger(ai), building.cost) &&
-      this.canSpendWithReserve(building.cost || {}, reserve) &&
-      ai.hasNotReachBuildingLimit(buildingType, buildingsByType[buildingType])
-    ) {
-      const pos = positionCallback()
-      if (pos && ai.buyBuilding(pos.i, pos.j, buildingType)) {
-        if (debug) console.log(`Buying building: ${buildingType} at position:`, pos)
-        return true
-      }
-    }
-    return false
+    return buyAIBuildingIfNeeded(this, condition, buildingType, buildingsByType, positionCallback, reserve, debug)
   }
 
   buyWheatFieldIfNeeded(
@@ -359,142 +288,11 @@ export class AIStrategy {
     reserve: AIResourceAmount = {},
     debug: boolean = false
   ): boolean {
-    const { ai } = this
-    const field = ai.config.buildings[BUILDING_TYPES.farm]
-    if (
-      condition &&
-      field &&
-      canAfford(asResourceLedger(ai), field.cost) &&
-      this.canSpendWithReserve(field.cost || {}, reserve)
-    ) {
-      const pos = positionCallback()
-      if (pos && ai.buyBuilding(pos.i, pos.j, BUILDING_TYPES.farm)) {
-        if (debug) {
-          const fieldCount = Math.ceil(currentWheatTiles.length / WHEAT_TILES_PER_FIELD)
-          console.log(`Planting wheat field ${fieldCount + 1} at position:`, pos)
-        }
-        return true
-      }
-    }
-    return false
+    return buyAIWheatFieldIfNeeded(this, condition, currentWheatTiles, positionCallback, reserve, debug)
   }
 
   handleBuildingActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {
-    const { ai } = this
-    const {
-      map,
-      otherPlayers,
-      towncenters,
-      maxVillagers,
-      houses,
-      farms,
-      barracks,
-      granarys,
-      storagepits,
-      markets,
-      archeryRanges,
-      stables,
-      watchTowers,
-      notBuiltHouses,
-    } = snapshot
-
-    const anchor = towncenters[0] || ai.getHomeAnchor()
-    if (!anchor) return 0
-
-    const buildingsByType = {
-      [BUILDING_TYPES.townCenter]: towncenters,
-      [BUILDING_TYPES.house]: houses,
-      [BUILDING_TYPES.barracks]: barracks,
-      [BUILDING_TYPES.granary]: granarys,
-      [BUILDING_TYPES.storagePit]: storagepits,
-      [BUILDING_TYPES.market]: markets,
-      [BUILDING_TYPES.archeryRange]: archeryRanges,
-      [BUILDING_TYPES.stable]: stables,
-      [BUILDING_TYPES.watchTower]: watchTowers,
-    }
-
-    const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
-      otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
-    const ageUpReserve = this.getAgeUpReserve()
-    const buy = (
-      condition: boolean,
-      buildingType: string,
-      positionCallback: () => AIGridPosition | null,
-      preserveAgeReserve: boolean = true
-    ) =>
-      this.buyBuildingIfNeeded(
-        condition,
-        buildingType,
-        buildingsByType,
-        positionCallback,
-        preserveAgeReserve ? ageUpReserve : {},
-        debug
-      )
-
-    let actions = 0
-    const desiredBarracks = this.getDesiredBarracksCount(snapshot)
-
-    if (
-      buy(
-        ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
-        BUILDING_TYPES.house,
-        () => getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0),
-        false
-      )
-    )
-      actions++
-
-    if (
-      buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(markets.length === 0, BUILDING_TYPES.market, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    if (
-      buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
-        getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
-      )
-    )
-      actions++
-
-    const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)
-    const currentWheatFields = Math.ceil(livingWheatTiles.length / WHEAT_TILES_PER_FIELD)
-    const desiredWheatFields = Math.min(MAX_AI_WHEAT_FIELDS, Math.max(1, Math.ceil(maxVillagers / 10)))
-    const wheatAnchor = granarys.find(granary => granary.isBuilt && !granary.isDead && !granary.isDestroyed) || anchor
-    if (
-      this.buyWheatFieldIfNeeded(
-        ai.technologies.includes('Farming') && granarys.length > 0 && currentWheatFields < desiredWheatFields,
-        livingWheatTiles,
-        () => getPositionInGridAroundInstance(wheatAnchor, map.grid, [4, 14], 4, false),
-        ageUpReserve,
-        debug
-      )
-    )
-      actions++
-
-    return actions
+    return handleAIBuildingActions(this, snapshot, debug)
   }
 
   buyTechnology(

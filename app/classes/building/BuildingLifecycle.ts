@@ -33,7 +33,7 @@ import {
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import type { RuntimeCell } from '../../types/map'
 import type { EntityLightSourceConfig } from '../../types/entities'
-import type { Building } from './index'
+import type { BuildingControllerHost } from './BuildingTypes'
 import type { Texture } from 'pixi.js'
 
 type RuntimeAnimatedSprite = AnimatedSprite
@@ -70,10 +70,10 @@ function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourc
 }
 
 export class BuildingLifecycle {
-  building: Building
+  building: BuildingControllerHost
   private spriteWasPlayingBeforePause = false
 
-  constructor(building: Building) {
+  constructor(building: BuildingControllerHost) {
     this.building = building
   }
 

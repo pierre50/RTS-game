@@ -1,17 +1,14 @@
 import type { Container, ContainerChild } from 'pixi.js'
 import type { GridCell, Grid } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
-import type { PlayerLike } from './player'
 import type { ResourceAmount } from './common'
+import type { FogSpriteMemory } from './fog'
 import type { SaveEntityState } from './save'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
-import type { TextureRef } from '../lib'
+import type { TextureRef } from '../lib/graphics/textures'
 
-export interface FogSpriteMemory {
-  textureSheet: string
-  colorName?: string
-}
+export type { FogSpriteMemory } from './fog'
 
 export interface RuntimeCell extends GridCell {
   map?: object
@@ -52,6 +49,12 @@ export interface RenderChunk {
   renderable: boolean
 }
 
+type GaiaPlayerLike = {
+  animals?: RuntimeEntity[]
+  units?: RuntimeEntity[]
+  createAnimal?: (options: { i: number; j: number; type: string; horseColor?: string }) => RuntimeEntity
+}
+
 export interface RuntimeMap {
   grid: Grid<RuntimeCell>
   size: number
@@ -79,7 +82,7 @@ export interface RuntimeMap {
   // Coarse spatial grid of BUCKET_SIZE-cell buckets, keyed [floor(i/BUCKET_SIZE)][floor(j/BUCKET_SIZE)].
   // Populated by addToInstanceBucket() lazily on first use — null until then.
   instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
-  gaia?: PlayerLike | null
+  gaia?: GaiaPlayerLike | null
   fogMemoryLayer?: Container
   shadowLayer?: Container
   randomRange(min: number, max: number): number

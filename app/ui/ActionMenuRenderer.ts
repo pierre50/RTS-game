@@ -1,13 +1,13 @@
 import { getReservedGameplayHotkeys } from '../lib/settings'
-import type Menu from '../classes/Menu'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
+import type { MenuHost } from './MenuHost'
 
 export class ActionMenuRenderer {
-  menu: Menu
+  menu: MenuHost
   activeHotkeys: Map<string, () => void>
 
-  constructor(menu: Menu) {
+  constructor(menu: MenuHost) {
     this.menu = menu
     this.activeHotkeys = new Map()
   }

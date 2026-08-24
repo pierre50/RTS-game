@@ -32,6 +32,16 @@ function loadAIStrategy(options = {}) {
     WORK_TYPES: {},
   }
   const module = { exports: {} }
+  function loadTsFile(tsFilename) {
+    const tsSource = fs.readFileSync(tsFilename, 'utf8')
+    const { code: tsCode } = babel.transformSync(tsSource, {
+      filename: tsFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
   const localRequire = request => {
     if (request === '../constants') return constants
     if (request === '../lib') {
@@ -51,6 +61,9 @@ function loadAIStrategy(options = {}) {
       }
     }
     if (request === './AIMilitary') return { AIMilitary: class {} }
+    if (request === './AIStrategyBuilding') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyBuilding.ts'))
+    if (request === './AIStrategyProduction') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyProduction.ts'))
+    if (request === './AIStrategyTech') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTech.ts'))
     if (request === './config') {
       return {
         AGE_UP_BUFFERS: {},

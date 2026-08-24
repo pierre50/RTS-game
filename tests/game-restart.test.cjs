@@ -164,6 +164,11 @@ function loadGame() {
   }
   Object.assign(mocks, {
     '../../lib': mocks['../lib'],
+    '../../lib/equipmentStats': mocks['../lib/equipmentStats'],
+    '../../lib/resourceCarry': mocks['../lib/resourceCarry'],
+    '../../serialization/CampaignSave': mocks['../serialization/CampaignSave'],
+    '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
+    '../../ui/PortalTravelTransition': mocks['../ui/PortalTravelTransition'],
     '../../services/WeatherSystem': mocks['../services/WeatherSystem'],
     '../../services/LightSystem': mocks['../services/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],

@@ -4,7 +4,7 @@ import { Cell, GenerationCell } from '../cell'
 import type { RuntimeCell } from '../../types/map'
 import type { ResourceEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
-import type { CellDefinition, MapBlueprint, MapGenerationContext, MapGenerationMap } from './MapGeneration'
+import type { CellDefinition, MapBlueprint, MapGenerationContext, MapGenerationMap } from './MapGenerationTypes'
 
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
 type ResourceAssets = string | string[] | Record<string, string[]>
