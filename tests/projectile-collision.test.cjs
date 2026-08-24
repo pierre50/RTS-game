@@ -103,7 +103,21 @@ function loadProjectile(libOverrides = {}) {
     },
   }
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => {
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './ProjectileGeometry') {
+      const geometryFilename = path.join(__dirname, '../app/classes/ProjectileGeometry.ts')
+      const geometrySource = fs.readFileSync(geometryFilename, 'utf8')
+      const { code: geometryCode } = babel.transformSync(geometrySource, {
+        filename: geometryFilename,
+        presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      })
+      const geometryModule = { exports: {} }
+      new Function('module', 'exports', 'require', geometryCode)(geometryModule, geometryModule.exports, localRequire)
+      return geometryModule.exports
+    }
+    return require(request)
+  }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.Projectile
 }

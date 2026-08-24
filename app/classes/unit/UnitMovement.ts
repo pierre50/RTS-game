@@ -1,8 +1,6 @@
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   FAMILY_TYPES,
-  MINING_RESOURCE_CONFIG,
   RELIEF_CLIMB_SPEED_MULTIPLIER,
   RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
@@ -32,16 +30,38 @@ import {
   updateInstanceRenderVisibility,
   updateInstanceVisibility,
   clearVillagerAutonomy,
-  isBanditUnit,
   resumeVillagerAutonomy,
-  getMiningActions,
 } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { isHeroActionInRange } from '../../lib/heroActionRange'
 import { markCombatFlee } from '../../lib/combatBehavior'
 import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
 import { getUnitCombatRange } from '../../lib/equipmentStats'
-import { applyWorkForAction } from './UnitCommands'
+import { debugBlockedDirectMove, debugCombatMove, debugHuntRangeCheck } from './UnitMovementDebug'
+import {
+  BLOCKED_GATHER_APPROACH_ACTIONS,
+  CAPTURE_HORSE_TRIGGER_RANGE,
+  GATHER_SEND_TO_BY_ACTION,
+  MAX_BLOCKED_GATHER_APPROACH_DISTANCE,
+  POST_BUILD_GATHER_ACTIONS,
+  SLIDE_PROBE_ANGLES,
+  cellOccupantIsDest,
+  clearCellForUnit,
+  getPathMoveSpeed,
+  isCellBlockedForUnit,
+  isDestroyedEntity,
+  isMovingUnitEntity,
+  isRecoveringAttack,
+  isRuntimeEntity,
+  isUnitCellOccupant,
+  placeUnitOnCell,
+  pauseCombatRecoveryMove,
+  resumeAutonomyBeforeStopping,
+  startActionIfAlreadyInRange,
+  syncVillagerWorkForAction,
+  type DirectMoveOptions,
+  type SendToOptions,
+} from './UnitMovementHelpers'
 import {
   blocksHeroDirectMoveWithRoundedFootprint,
   blocksHeroDirectMoveWithSoftBody,
@@ -53,282 +73,6 @@ import {
 } from './UnitHeroDirectMovementCollision'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
-
-const CAPTURE_HORSE_TRIGGER_RANGE = 4
-const HUNT_RANGE_DEBUG_THROTTLE_MS = 250
-let lastHuntRangeDebugAt = 0
-
-function debugHuntRangeCheck(
-  unit: UnitEntity,
-  action: string | null | undefined,
-  dest: RuntimeEntity | RuntimeCell,
-  effectiveRange: number | undefined,
-  distance: number
-): void {
-  if (action !== ACTION_TYPES.hunt || !effectiveRange) return
-  const now = Date.now()
-  if (now - lastHuntRangeDebugAt < HUNT_RANGE_DEBUG_THROTTLE_MS) return
-  lastHuntRangeDebugAt = now
-  console.debug('[villager-hunt-range]', {
-    unitLabel: unit.label,
-    action,
-    work: unit.work,
-    ownerAge: unit.owner?.age ?? 0,
-    targetType: isRuntimeEntity(dest) ? dest.type : 'cell',
-    targetLabel: isRuntimeEntity(dest) ? dest.label : undefined,
-    rangeCells: effectiveRange,
-    distanceToTarget: Number(distance.toFixed(2)),
-    inRange: distance <= effectiveRange,
-  })
-}
-
-function getVillagerWorkForAction(action: string | null | undefined): string | null {
-  if (!action) return null
-  const miningConfig = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(config => config.action === action)
-  if (miningConfig?.work) return miningConfig.work
-  switch (action) {
-    case ACTION_TYPES.chopwood:
-      return WORK_TYPES.woodcutter
-    case ACTION_TYPES.forageberry:
-      return WORK_TYPES.forager
-    case ACTION_TYPES.farm:
-      return WORK_TYPES.farmer
-    case ACTION_TYPES.hunt:
-    case ACTION_TYPES.takemeat:
-      return WORK_TYPES.hunter
-    case ACTION_TYPES.captureHorse:
-      return WORK_TYPES.horseCapture
-    case ACTION_TYPES.build:
-      return WORK_TYPES.builder
-    default:
-      return null
-  }
-}
-
-function syncVillagerWorkForAction(unit: UnitEntity, action: string | null | undefined): void {
-  if (unit.type !== UNIT_TYPES.villager) return
-  const work = getVillagerWorkForAction(action)
-  if (!work) return
-  applyWorkForAction(unit, work, action ?? null)
-}
-
-function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
-  return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function isDestroyedEntity(value: RuntimeEntity | RuntimeCell | null | undefined): boolean {
-  return isRuntimeEntity(value) && Boolean(value.isDestroyed)
-}
-
-function isMovingUnitEntity(entity: RuntimeEntity | null): entity is UnitEntity {
-  return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
-}
-
-
-function shouldApplyLoadingMovePenalty(unit: UnitEntity): boolean {
-  return Boolean(!unit.mountedOnHorse && (unit.loading ?? 0) > 0)
-}
-
-function getPathMoveSpeed(unit: UnitEntity, nextCell: RuntimeCell): number {
-  let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit)
-  if (shouldApplyLoadingMovePenalty(unit)) speed *= 0.8
-  if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
-  return speed
-}
-
-const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
-  [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
-  [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ...getMiningActions()],
-  [BUILDING_TYPES.townCenter]: [
-    ACTION_TYPES.chopwood,
-    ACTION_TYPES.forageberry,
-    ...getMiningActions(),
-    ACTION_TYPES.farm,
-    ACTION_TYPES.hunt,
-    ACTION_TYPES.takemeat,
-  ],
-}
-
-const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: RuntimeEntity) => boolean> = {
-  [ACTION_TYPES.chopwood]: (unit, target) => (unit.sendToTree ? (unit.sendToTree(target, true), true) : false),
-  [ACTION_TYPES.farm]: (unit, target) => (unit.sendToFarm(target, true), true),
-  [ACTION_TYPES.forageberry]: (unit, target) =>
-    unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
-  [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
-  [ACTION_TYPES.captureHorse]: (unit, target) =>
-    unit.sendToCaptureHorse ? unit.sendToCaptureHorse(target, true) !== false : false,
-  ...Object.fromEntries(
-    getMiningActions().map(action => [
-      action,
-      (unit: UnitEntity, target: RuntimeEntity) =>
-        unit.sendToMineResource ? (unit.sendToMineResource(target, true), true) : false,
-    ])
-  ),
-  [ACTION_TYPES.takemeat]: (unit, target) => (unit.sendToTakeMeat(target, true), true),
-}
-
-const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
-  ACTION_TYPES.chopwood,
-  ACTION_TYPES.farm,
-  ACTION_TYPES.forageberry,
-  ACTION_TYPES.hunt,
-  ACTION_TYPES.captureHorse,
-  ...getMiningActions(),
-  ACTION_TYPES.takemeat,
-])
-
-const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
-const DIRECT_MOVE_DEBUG_THROTTLE_MS = 250
-// Deflections probed on each side of a blocked direct move, nearest first. Capped
-// below 90° so a slide never moves the unit against the player's intent — fully
-// cornered (e.g. a U-shaped pocket) is a legitimate full stop.
-const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
-
-type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
-type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
-let lastDirectMoveDebugAt = 0
-const lastCombatMoveDebugAt = new Map<string, number>()
-
-function isBanditDebugUnit(unit: UnitEntity): boolean {
-  return isBanditUnit(unit)
-}
-
-function isUnitCellOccupant(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
-  return Boolean(cell?.has && (cell.has === unit || cell.has.label === unit.label))
-}
-
-function isCellBlockedForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
-  return Boolean(cell?.solid && !isUnitCellOccupant(unit, cell))
-}
-
-function clearCellForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): void {
-  if (!isUnitCellOccupant(unit, cell)) return
-  cell!.has = null
-  cell!.solid = false
-}
-
-function placeUnitOnCell(unit: UnitEntity, cell: RuntimeCell): void {
-  if (cell.has === null || cell.has?.isDestroyed || isUnitCellOccupant(unit, cell)) {
-    cell.place(unit)
-    cell.solid = true
-  }
-}
-
-function cellOccupantIsDest(cell: RuntimeCell, dest: RuntimeEntity | RuntimeCell): boolean {
-  return isRuntimeEntity(dest) && Boolean(cell.has?.label && cell.has.label === dest.label)
-}
-
-function startActionIfAlreadyInRange(unit: UnitEntity, dest: RuntimeEntity | RuntimeCell, reason: string): boolean {
-  if (!unit.action || !unit.isUnitAtDest?.(unit.action, dest)) return false
-  unit.path = []
-  unit.stopInterval?.()
-  unit.degree = getInstanceDegree(unit, dest.x, dest.y)
-  debugCombatMove(unit, reason, unit.currentCell ?? (dest as RuntimeCell), { stage: 'path-step' })
-  unit.getAction?.(unit.action)
-  return true
-}
-
-function shouldDebugCombatMove(unit: UnitEntity): boolean {
-  return Boolean(
-    isBanditDebugUnit(unit) ||
-      unit.combatMode ||
-      unit.action === ACTION_TYPES.attack ||
-      unit.waitingForEnergyAction === ACTION_TYPES.attack ||
-      (typeof WORK_TYPES.attacker === 'string' && unit.work === WORK_TYPES.attacker)
-  )
-}
-
-function debugCombatMove(unit: UnitEntity, reason: string, cell: RuntimeCell, details: Record<string, unknown> = {}): void {
-  if (!shouldDebugCombatMove(unit)) return
-  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
-  const key = unit.label ?? `${unit.type ?? 'unit'}:${unit.i},${unit.j}`
-  const last = lastCombatMoveDebugAt.get(key) ?? 0
-  if (now - last < 600) return
-  lastCombatMoveDebugAt.set(key, now)
-  const occupant = cell.has
-  const dest = unit.dest as Partial<RuntimeEntity | RuntimeCell> | null | undefined
-  console.warn(isBanditDebugUnit(unit) ? '[bandit-move]' : '[combat-move]', reason, {
-    unit: {
-      label: unit.label,
-      type: unit.type,
-      category: unit.category,
-      owner: unit.owner?.label,
-      ownerName: unit.owner?.name,
-      action: unit.action,
-      combatMode: unit.combatMode,
-      waitingForEnergyAction: unit.waitingForEnergyAction,
-      currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
-      i: unit.i,
-      j: unit.j,
-      x: Math.round((unit.x ?? 0) * 100) / 100,
-      y: Math.round((unit.y ?? 0) * 100) / 100,
-    },
-    cell: {
-      i: cell.i,
-      j: cell.j,
-      solid: cell.solid,
-      category: cell.category,
-      has: occupant
-        ? {
-            label: occupant.label,
-            type: occupant.type,
-            family: occupant.family,
-            isDestroyed: occupant.isDestroyed,
-            isDead: occupant.isDead,
-            sameLabel: occupant.label === unit.label,
-            sameObject: occupant === unit,
-          }
-        : null,
-    },
-    dest: dest
-      ? {
-          label: 'label' in dest ? dest.label : undefined,
-          type: 'type' in dest ? dest.type : undefined,
-          family: 'family' in dest ? dest.family : undefined,
-          i: dest.i,
-          j: dest.j,
-          solid: 'solid' in dest ? dest.solid : undefined,
-        }
-      : null,
-    pathLength: unit.path?.length ?? 0,
-    ...details,
-  })
-}
-
-function resumeAutonomyBeforeStopping(unit: UnitEntity): boolean {
-  if (!unit.autonomousJob || isHeroControlled(unit)) return false
-  unit.action = null
-  unit.dest = null
-  unit.realDest = null
-  unit.path = []
-  return Boolean(resumeVillagerAutonomy?.(unit))
-}
-
-function isRecoveringAttack(unit: UnitEntity): boolean {
-  return unit.combatMode === 'recover' && unit.waitingForEnergyAction === ACTION_TYPES.attack
-}
-
-function pauseCombatRecoveryMove(unit: UnitEntity): void {
-  unit.path = []
-  unit.action = null
-  unit.stopInterval?.()
-  unit.setTextures?.(SHEET_TYPES.standing)
-  unit.sprite?.stop()
-}
-
-function debugBlockedDirectMove(
-  unit: UnitEntity,
-  _reason: string,
-  _details: Record<string, unknown>,
-  _dirX: number,
-  _dirY: number
-): void {
-  if (!isHeroControlled(unit)) return
-  const now = performance.now()
-  if (now - lastDirectMoveDebugAt < DIRECT_MOVE_DEBUG_THROTTLE_MS) return
-  lastDirectMoveDebugAt = now
-}
 
 export class UnitMovement {
   unit: UnitEntity
@@ -439,6 +183,61 @@ export class UnitMovement {
     return true
   }
 
+  handleUnreachableDestination(action: string | null): void {
+    const unit = this.unit
+    if (action === ACTION_TYPES.delivery) {
+      unit.stop?.()
+    } else if (resumeAutonomyBeforeStopping(unit)) {
+      return
+    } else {
+      showBlockedFeedback(unit)
+      unit.affectNewDest?.()
+    }
+  }
+
+  handleBlockedApproachFailure(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    allowBlockedGatherApproach: boolean
+  ): void {
+    const unit = this.unit
+    if (
+      allowBlockedGatherApproach &&
+      this.approachBlockedGatherTarget(isRuntimeEntity(dest) ? dest : null, action ?? '')
+    ) {
+      return
+    }
+    showBlockedFeedback(unit)
+    if (action) unit.affectNewDest?.()
+    else if (!resumeAutonomyBeforeStopping(unit)) unit.stop?.()
+  }
+
+  routeToReachableWaterApproach(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    allowBlockedGatherApproach: boolean
+  ): boolean {
+    const unit = this.unit
+    const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
+    if (!approach) {
+      this.handleBlockedApproachFailure(dest, action, allowBlockedGatherApproach)
+      return true
+    }
+    if (!action) {
+      unit.sendToEvt?.(approach.cell, null)
+      return true
+    }
+    unit.setDest?.(dest)
+    unit.action = action
+    if (approach.path.length) {
+      unit.setPath?.(approach.path)
+    } else {
+      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
+      unit.getAction?.(action)
+    }
+    return true
+  }
+
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
@@ -518,43 +317,12 @@ export class UnitMovement {
             action,
             destSolid: destCell.solid,
           })
-          if (action === ACTION_TYPES.delivery) {
-            unit.stop?.()
-          } else if (resumeAutonomyBeforeStopping(unit)) {
-            return
-          } else {
-            showBlockedFeedback(unit)
-            unit.affectNewDest?.()
-          }
+          this.handleUnreachableDestination(action)
           return
         }
       } else if (destCell.category === 'Water') {
-        const approach = this.findClosestReachableCellNearTarget(dest, 1, true)
-        if (!approach) {
-          unit.action = action
-          if (
-            allowBlockedGatherApproach &&
-            isRuntimeEntity(dest) &&
-            this.approachBlockedGatherTarget(dest, action ?? '')
-          )
-            return
-          showBlockedFeedback(unit)
-          if (action) unit.affectNewDest?.()
-          else if (!resumeAutonomyBeforeStopping(unit)) unit.stop?.()
-          return
-        }
-        if (!action) {
-          unit.sendToEvt?.(approach.cell, null)
-          return
-        }
-        unit.setDest?.(dest)
         unit.action = action
-        if (approach.path.length) {
-          unit.setPath?.(approach.path)
-        } else {
-          unit.degree = getInstanceDegree(unit, dest.x, dest.y)
-          unit.getAction?.(action)
-        }
+        this.routeToReachableWaterApproach(dest, action, allowBlockedGatherApproach)
         return
       }
     }
@@ -576,14 +344,7 @@ export class UnitMovement {
       }
       if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
         return
-      if (action === ACTION_TYPES.delivery) {
-        unit.stop?.()
-      } else if (resumeAutonomyBeforeStopping(unit)) {
-        return
-      } else {
-        showBlockedFeedback(unit)
-        unit.affectNewDest?.()
-      }
+      this.handleUnreachableDestination(action)
     }
   }
 

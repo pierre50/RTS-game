@@ -1,9 +1,8 @@
-import { Assets, AnimatedSprite, Graphics } from 'pixi.js'
+import { Assets, AnimatedSprite, type Graphics } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import {
   STEP_TIME,
   WORK_TYPES,
-  ACTION_TYPES,
   FAMILY_TYPES,
   RELIEF_LIFT_SMOOTHING,
   SHEET_TYPES,
@@ -18,34 +17,17 @@ import {
   getGroundReliefLevel,
   getReliefLiftPixels,
   changeSpriteTexturesColorDirectly,
-  changeSpriteColor,
   throttle,
   canUpdateMinimap,
   getWorkWithLoadingType,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
-  degreeToDirection,
-  getInstanceDegree,
   getAnimationFrames,
   playSoundCue,
-  evaluateCombatMorale,
   getIconPath,
-  getSpriteFrameSelection,
   setSpriteFiltersPreservingDamageFeedback,
-  showAggressionFeedback,
-  updateInstanceRenderVisibility,
-  resumeVillagerAutonomy,
-  isBanditUnit,
 } from '../../lib'
-import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
-import {
-  getAppearanceAgeSheetOverride,
-  getAppearanceLayerZIndex,
-  isAppearanceLayerHiddenByLoading,
-} from '../../lib/lpc/appearanceLayers'
-import { civilizationKey } from '../../lib/lpc/equipment'
-import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import { Instance } from '../Instance'
 import { UnitInterface } from '../../ui/UnitInterface'
 import { UnitCommands } from './UnitCommands'
@@ -54,26 +36,33 @@ import { UnitCombat } from './UnitCombat'
 import { UnitActions } from './UnitActions'
 import { UnitMovement } from './UnitMovement'
 import { t } from '../../lib/lang'
-import { applyToolAppearance } from '../../lib/heroTools'
 import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { getUnitWorkActionSheet } from '../../lib/unitWorkAppearance'
 import { ensureUnitEnergy, resumeEnergyWaitIfReady, updateUnitEnergy } from '../../lib/unitEnergy'
-import { ensureUnitHealthRegen, markUnitHealthDamaged, updateUnitHealthRegen } from '../../lib/unitHealth'
-import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
+import { ensureUnitHealthRegen, updateUnitHealthRegen } from '../../lib/unitHealth'
 import { syncHeroResourceLoadState } from '../../lib/resourceCarry'
 import { getShadowsEnabled, onVisualSettingsChange } from '../../lib/settings'
-import { getHorseColorFromSeed, isHorseColor, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
-import { canAutoReactToAttack, isHeroControlled } from '../../lib/unitControl'
+import { getHorseColorFromSeed, isHorseColor, type HorseColor } from '../../lib/horseColors'
 import { heroCanCommand } from '../../lib/chief'
+import { watchBanditStep } from './UnitBanditDebug'
+import { syncUnitAppearanceLayers } from './UnitAppearanceLayers'
+import { handleUnitIsAttacked, stopUnit } from './UnitStateHandlers'
 import {
-  MOUNTED_HORSE_BOB,
-  MOUNTED_RIDER_CUT_Y,
-  MOUNTED_RIDER_LEGS_SHEET,
-  MOUNTED_RIDER_Y_OFFSET,
-  mountedRiderBaseDirection,
-  mountedRiderLegOffset,
-  mountedRiderXOffset,
-} from '../../lib/mountedRider'
+  clearMountedRiderMask as clearMountedRiderMaskVisual,
+  getMountedHorseBob as getMountedHorseBobVisual,
+  getMountedRiderBodyTopLeft as getMountedRiderBodyTopLeftVisual,
+  getMountedRiderX as getMountedRiderXVisual,
+  getMountedRiderY as getMountedRiderYVisual,
+  removeMountedHorseSprite as removeMountedHorseSpriteVisual,
+  removeMountedRiderLegsSprite as removeMountedRiderLegsSpriteVisual,
+  setupMountedHorseSprite as setupMountedHorseSpriteVisual,
+  setupMountedRiderLegsSprite as setupMountedRiderLegsSpriteVisual,
+  shouldUseMountedRiderCut as shouldUseMountedRiderCutVisual,
+  syncMountedHorseSprite as syncMountedHorseSpriteVisual,
+  syncMountedRiderLegsSprite as syncMountedRiderLegsSpriteVisual,
+  syncMountedRiderPosition as syncMountedRiderPositionVisual,
+  updateMountedRiderMask as updateMountedRiderMaskVisual,
+} from './UnitMountedVisuals'
 import type {
   BuildingEntity,
   EntityInfoRenderOptions,
@@ -86,179 +75,15 @@ import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike, UnitRestoreReferences } from '../../types/player'
 import type { SpritesheetLike } from '../../types/pixi'
-import type { UnitAppearanceLayerConfig, UnitConfig } from '../../types/config'
+import type { UnitConfig } from '../../types/config'
 import type { ActionProps } from '../../lib/combat'
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
 
-type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
-  sprite?: AnimatedSprite
-}
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
-// Equipment layers sit at zIndex 8 (back) / 12 (front, see EQUIPMENT_LAYER_Z_INDEX in lpc/equipment.ts).
-// "Behind" keeps the horse under the back layer; "front" clears the front layer too, so the horse
-// covers the rider's whole stack (body + weapon) for south-facing directions.
-const MOUNTED_HORSE_BEHIND_Z_INDEX = 0
-const MOUNTED_HORSE_FRONT_Z_INDEX = 13
-const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
-const MOUNTED_HORSE_WALKING_SHEET = 'animals/horse/walking'
-const MOUNTED_HORSE_DIRECTIONS_IN_FRONT = new Set(['south', 'southwest', 'southeast'])
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
-const BANDIT_STOP_DEBUG_THROTTLE_MS = 600
-let lastBanditStopDebugAt = 0
-const banditStepDebugState = new WeakMap<
-  UnitEntity,
-  { stillTicks: number; x: number; y: number; lastReason?: string }
->()
-
-function isBanditDebugUnit(unit: UnitEntity): boolean {
-  return isBanditUnit(unit)
-}
-
-function debugBanditStop(unit: UnitEntity, reason: string): void {
-  if (!isBanditDebugUnit(unit)) return
-  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
-  if (now - lastBanditStopDebugAt < BANDIT_STOP_DEBUG_THROTTLE_MS) return
-  lastBanditStopDebugAt = now
-  const cell = unit.currentCell
-  const occupant = cell?.has
-  console.warn('[bandit-move]', reason, {
-    unit: {
-      label: unit.label,
-      type: unit.type,
-      action: unit.action,
-      combatMode: unit.combatMode,
-      currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
-      i: unit.i,
-      j: unit.j,
-      pathLength: unit.path?.length ?? 0,
-    },
-    currentCell: cell
-      ? {
-          i: cell.i,
-          j: cell.j,
-          solid: cell.solid,
-          has: occupant
-            ? {
-                label: occupant.label,
-                type: occupant.type,
-                family: occupant.family,
-                isDead: occupant.isDead,
-                isDestroyed: occupant.isDestroyed,
-                sameLabel: occupant.label === unit.label,
-                sameObject: occupant === unit,
-              }
-            : null,
-        }
-      : null,
-  })
-}
-
-function debugBanditStep(unit: UnitEntity, reason: string): void {
-  if (!isBanditDebugUnit(unit)) return
-  const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
-  if (now - lastBanditStopDebugAt < BANDIT_STOP_DEBUG_THROTTLE_MS) return
-  lastBanditStopDebugAt = now
-  const cell = unit.currentCell
-  const next = unit.path?.at(-1)
-  const nextCell = next ? unit.context?.map?.grid[next.i]?.[next.j] : null
-  console.warn('[bandit-stuck]', reason, {
-    unit: {
-      label: unit.label,
-      type: unit.type,
-      name: unit.name,
-      category: unit.category,
-      owner: unit.owner?.label,
-      ownerName: unit.owner?.name,
-      action: unit.action,
-      work: unit.work,
-      combatMode: unit.combatMode,
-      currentSheet: unit.currentSheet,
-      spritePlaying: unit.sprite?.playing,
-      inactif: unit.inactif,
-      interval: (unit as { interval?: unknown }).interval,
-      i: unit.i,
-      j: unit.j,
-      x: Math.round((unit.x ?? 0) * 100) / 100,
-      y: Math.round((unit.y ?? 0) * 100) / 100,
-      pathLength: unit.path?.length ?? 0,
-    },
-    currentCell: cell
-      ? {
-          i: cell.i,
-          j: cell.j,
-          solid: cell.solid,
-          has: cell.has
-            ? {
-                label: cell.has.label,
-                type: cell.has.type,
-                family: cell.has.family,
-                sameLabel: cell.has.label === unit.label,
-                sameObject: cell.has === unit,
-              }
-            : null,
-        }
-      : null,
-    nextCell: nextCell
-      ? {
-          i: nextCell.i,
-          j: nextCell.j,
-          solid: nextCell.solid,
-          has: nextCell.has
-            ? {
-                label: nextCell.has.label,
-                type: nextCell.has.type,
-                family: nextCell.has.family,
-                sameLabel: nextCell.has.label === unit.label,
-                sameObject: nextCell.has === unit,
-              }
-            : null,
-        }
-      : null,
-  })
-}
-
-function watchBanditStep(unit: UnitEntity, beforeX: number, beforeY: number): void {
-  if (!isBanditDebugUnit(unit)) {
-    banditStepDebugState.delete(unit)
-    return
-  }
-  const walking =
-    unit.currentSheet === SHEET_TYPES.walking || Boolean(unit.sprite?.playing && (unit.path?.length ?? 0) > 0)
-  if (!walking || unit.isDead || unit.isDestroyed) {
-    banditStepDebugState.delete(unit)
-    return
-  }
-  const pathLength = unit.path?.length ?? 0
-  if (pathLength <= 0) {
-    debugBanditStep(unit, 'walking-without-path')
-    const dest = unit.dest
-    if (unit.action && dest && unit.isUnitAtDest?.(unit.action, dest)) {
-      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
-      unit.getAction?.(unit.action)
-    } else {
-      unit.stopInterval?.()
-      unit.setTextures?.(SHEET_TYPES.standing)
-      unit.sprite?.stop()
-      unit.inactif = true
-    }
-    banditStepDebugState.delete(unit)
-    return
-  }
-  const state = banditStepDebugState.get(unit) ?? { stillTicks: 0, x: beforeX, y: beforeY }
-  const moved = Math.hypot((unit.x ?? 0) - beforeX, (unit.y ?? 0) - beforeY) > 0.01
-  state.stillTicks = moved ? 0 : state.stillTicks + 1
-  state.x = unit.x ?? beforeX
-  state.y = unit.y ?? beforeY
-  banditStepDebugState.set(unit, state)
-  if (state.stillTicks >= 8) {
-    debugBanditStep(unit, 'walking-no-position-progress')
-    state.stillTicks = 0
-  }
-}
 
 function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
   return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
@@ -313,21 +138,21 @@ function isDestroyedDestination(dest: RuntimeEntity | RuntimeCell | null | undef
 }
 
 export class Unit extends Instance implements UnitEntity {
-  unitInterface: UnitInterface
-  unitCommands: UnitCommands
-  unitLifecycle: UnitLifecycle
-  unitCombat: UnitCombat
-  unitActions: UnitActions
-  unitMovement: UnitMovement
+  unitInterface!: UnitInterface
+  unitCommands!: UnitCommands
+  unitLifecycle!: UnitLifecycle
+  unitCombat!: UnitCombat
+  unitActions!: UnitActions
+  unitMovement!: UnitMovement
   sendTo!: (target: RuntimeCell | RuntimeEntity, action?: string) => void
 
   declare sprite: AnimatedSprite
-  shadow: AnimatedSprite | null
-  horseSprite: AnimatedSprite | null
-  horseShadow: AnimatedSprite | null
-  mountedRiderLegsSprite: AnimatedSprite | null
-  mountedRiderMask: Graphics | null
-  appearanceLayerSprites: Map<number, AnimatedSprite>
+  shadow!: AnimatedSprite | null
+  horseSprite!: AnimatedSprite | null
+  horseShadow!: AnimatedSprite | null
+  mountedRiderLegsSprite!: AnimatedSprite | null
+  mountedRiderMask!: Graphics | null
+  appearanceLayerSprites!: Map<number, AnimatedSprite>
   declare reliefLift: number
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
@@ -367,7 +192,7 @@ export class Unit extends Instance implements UnitEntity {
   visibilityTimeout?: UnitEntity['visibilityTimeout']
   showLoading?: UnitEntity['showLoading']
   showBuildings?: UnitEntity['showBuildings']
-  visualSettingsCleanup: (() => void) | null
+  visualSettingsCleanup!: (() => void) | null
 
   assets?: UnitEntity['assets']
   allAssets?: UnitEntity['allAssets']
@@ -410,9 +235,23 @@ export class Unit extends Instance implements UnitEntity {
     this.sortableChildren = true
     this.selectionFactor = 0.5
 
-    const {
-      context: { map, menu },
-    } = this
+    this.initializeServices()
+    this.initializeRuntimeState()
+    const spawnCell = this.applySpawnConfiguration(options)
+    this.registerInitialMapPresence()
+    this.initializeWorkRole()
+    this.loadConfiguredSpritesheets()
+    this.playCreateSound(options)
+    this.setupInterface()
+    this.setupPrimarySprite(spawnCell)
+    this.setupCommandDispatch()
+    this.setupPointerInteraction()
+    this.visibilityTimeout = setTimeout(() => {
+      if (!this.isDestroyed) updateInstanceVisibility(this)
+    })
+  }
+
+  initializeServices(): void {
     this.family = FAMILY_TYPES.unit
     this.unitInterface = new UnitInterface(this)
     this.unitCommands = new UnitCommands(this)
@@ -428,7 +267,10 @@ export class Unit extends Instance implements UnitEntity {
     this.visualSettingsCleanup = null
     this.appearanceLayerSprites = new Map()
     this.reliefLift = 0
+  }
 
+  initializeRuntimeState(): void {
+    const { map } = this.context
     this.dest = null
     this.realDest = null
     this.previousDest = null
@@ -447,6 +289,10 @@ export class Unit extends Instance implements UnitEntity {
     this.currentSheet = SHEET_TYPES.standing
     this.inactif = true
     this.experience = {}
+  }
+
+  applySpawnConfiguration(options: UnitSpawnOptions): RuntimeCell {
+    const { map } = this.context
     this.assignProperties(options)
     const unitConfig = this.owner.config.units[this.type] as (typeof this.owner.config.units)[string] & PositionedConfig
     this.assignProperties(unitConfig)
@@ -485,7 +331,11 @@ export class Unit extends Instance implements UnitEntity {
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     ensureUnitEnergy(this)
     ensureUnitHealthRegen(this)
+    return spawnCell
+  }
 
+  registerInitialMapPresence(): void {
+    const { map } = this.context
     this.currentCell = map.grid[this.i][this.j]
     if (this.currentSheet === SHEET_TYPES.corpse) {
       this.owner.corpses.push(this)
@@ -496,6 +346,9 @@ export class Unit extends Instance implements UnitEntity {
       this.owner.units.push(this)
       map.addToInstanceBucket(this)
     }
+  }
+
+  initializeWorkRole(): void {
     switch (this.type) {
       case UNIT_TYPES.villager:
         this.work = this.work || null
@@ -507,25 +360,29 @@ export class Unit extends Instance implements UnitEntity {
         this.work = WORK_TYPES.attacker
     }
     refreshUnitEquipmentStats(this)
+  }
 
-    if (this.assets) {
-      for (const [key, value] of Object.entries(this.assets)) {
-        Object.assign(this, { [key]: getCachedSpritesheet(value) })
-      }
-    } else if (this.allAssets) {
-      for (const [key, value] of Object.entries(this.allAssets.default)) {
-        Object.assign(this, { [key]: getCachedSpritesheet(value) })
-      }
+  loadConfiguredSpritesheets(): void {
+    const assets = this.assets ?? this.allAssets?.default
+    if (!assets) return
+    for (const [key, value] of Object.entries(assets)) {
+      Object.assign(this, { [key]: getCachedSpritesheet(value) })
     }
+  }
+
+  playCreateSound(options: UnitSpawnOptions): void {
     if (
       !options.suppressCreateSound &&
       this.owner.isPlayed &&
-      map.ready &&
+      this.context.map.ready &&
       this.context.controls.instanceIsAudible?.(this)
     ) {
       playSoundCue((this.sounds && this.sounds.create) || SOUND_CUES.unit.fallbackCreate)
     }
+  }
 
+  setupInterface(): void {
+    const { menu } = this.context
     this.interface = {
       info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
         const data = this.owner.config.units[this.type]
@@ -557,7 +414,9 @@ export class Unit extends Instance implements UnitEntity {
             ]
           : [],
     }
+  }
 
+  setupPrimarySprite(spawnCell: RuntimeCell): void {
     this.eventMode = 'static'
     this.actionSheet = this.actionSheet || getUnitWorkActionSheet(this, this.work, this.action)
     this.sprite = new AnimatedSprite(
@@ -594,7 +453,9 @@ export class Unit extends Instance implements UnitEntity {
       this.drawHealthBar()
       this.drawEnergyBar()
     }
+  }
 
+  setupCommandDispatch(): void {
     this.sendTo = this.owner.isPlayed
       ? throttle(
           (target: RuntimeCell | RuntimeEntity, action?: string) => {
@@ -606,7 +467,9 @@ export class Unit extends Instance implements UnitEntity {
       : (target: RuntimeCell | RuntimeEntity, action?: string) => {
           this.sendToEvt(target, action)
         }
+  }
 
+  setupPointerInteraction(): void {
     this.on('pointerup', () => {
       const {
         context: { controls, editor },
@@ -616,10 +479,6 @@ export class Unit extends Instance implements UnitEntity {
         controls.mouse.prevent = true
         controls.rallyPointController.handleMouseUpOnEntity(this)
       }
-    })
-
-    this.visibilityTimeout = setTimeout(() => {
-      if (!this.isDestroyed) updateInstanceVisibility(this)
     })
   }
 
@@ -659,229 +518,59 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   getMountedHorseBob(): number {
-    if (!this.mountedOnHorse || !this.horseSprite) return 0
-    const direction = degreeToDirection(this.degree) ?? 'south'
-    const bobDirection = mountedRiderBaseDirection(direction)
-    const bob = MOUNTED_HORSE_BOB[bobDirection]
-    return bob[this.horseSprite.currentFrame % bob.length] ?? 0
+    return getMountedHorseBobVisual(this)
   }
 
   getMountedRiderY(): number {
-    if (!this.mountedOnHorse) return this.reliefLift
-    return this.reliefLift + MOUNTED_RIDER_Y_OFFSET + this.getMountedHorseBob()
+    return getMountedRiderYVisual(this)
   }
 
   getMountedRiderX(): number {
-    if (!this.mountedOnHorse) return 0
-    const direction = degreeToDirection(this.degree) ?? 'south'
-    return mountedRiderXOffset(direction)
+    return getMountedRiderXVisual(this)
   }
 
   setupMountedHorseSprite() {
-    if (!this.mountedOnHorse || this.horseSprite) return
-    const horseSheet = getCachedSpritesheet(MOUNTED_HORSE_STANDING_SHEET)
-    if (!horseSheet?.textures) return
-
-    const { textures } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
-    this.horseSprite = new AnimatedSprite(recolorHorseTextures(textures as Texture[], this.horseColor))
-    bindAnimatedSpriteToTicker(this.horseSprite, this.context.app)
-    this.horseSprite.label = `${LABEL_TYPES.sprite}-horse`
-    this.horseSprite.eventMode = 'none'
-    this.horseSprite.roundPixels = true
-    this.horseSprite.loop = true
-    this.horseSprite.updateAnchor = true
-    this.horseSprite.onFrameChange = () => this.syncMountedRiderPosition()
-    this.addChild(this.horseSprite)
-    this.horseShadow = this.createShadow(this.horseSprite, `${LABEL_TYPES.shadow}-horse`)
-    this.context.map.shadowLayer?.addChild(this.horseShadow)
-    this.setupMountedRiderLegsSprite()
-    this.syncMountedHorseSprite()
+    setupMountedHorseSpriteVisual(this, getCachedSpritesheet)
   }
 
   setupMountedRiderLegsSprite() {
-    if (!this.mountedOnHorse || this.mountedRiderLegsSprite) return
-    const legsSheet = getCachedSpritesheet(MOUNTED_RIDER_LEGS_SHEET)
-    if (!legsSheet?.textures) return
-
-    const { textures } = getSpriteFrameSelection(legsSheet.textures, this.degree, 3, null)
-    this.mountedRiderLegsSprite = new AnimatedSprite(textures as Texture[])
-    bindAnimatedSpriteToTicker(this.mountedRiderLegsSprite, this.context.app)
-    this.mountedRiderLegsSprite.label = `${LABEL_TYPES.sprite}-mounted-rider-legs`
-    this.mountedRiderLegsSprite.eventMode = 'none'
-    this.mountedRiderLegsSprite.roundPixels = true
-    this.mountedRiderLegsSprite.loop = false
-    this.mountedRiderLegsSprite.updateAnchor = true
-    this.mountedRiderLegsSprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX - 1
-    this.addChild(this.mountedRiderLegsSprite)
-    this.syncMountedRiderLegsSprite()
+    setupMountedRiderLegsSpriteVisual(this, getCachedSpritesheet)
   }
 
   syncMountedRiderPosition() {
-    if (!this.sprite) return
-    const riderX = this.getMountedRiderX()
-    const riderY = this.getMountedRiderY()
-    this.sprite.position.x = riderX
-    this.sprite.position.y = riderY
-    for (const layerSprite of this.appearanceLayerSprites.values()) {
-      layerSprite.position.x = riderX
-      layerSprite.position.y = riderY
-    }
-    this.syncMountedRiderLegsSprite()
-    this.updateMountedRiderMask(this.currentSheet)
-    const healthBar = this.getChildByLabel(LABEL_TYPES.healthBar)
-    if (healthBar) healthBar.position.y = riderY
-    const powerBar = this.getChildByLabel(LABEL_TYPES.powerBar)
-    if (powerBar) powerBar.position.y = riderY
-    const energyBar = this.getChildByLabel(LABEL_TYPES.energyBar)
-    if (energyBar) energyBar.position.y = riderY
+    syncMountedRiderPositionVisual(this, getCachedSpritesheet)
   }
 
   shouldUseMountedRiderCut(sheet = this.currentSheet): boolean {
-    return Boolean(
-      this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
-    )
+    return shouldUseMountedRiderCutVisual(this, sheet)
   }
 
   updateMountedRiderMask(sheet = this.currentSheet) {
-    if (!this.shouldUseMountedRiderCut(sheet) || !this.sprite?.textures?.length) {
-      this.clearMountedRiderMask()
-      return
-    }
-
-    const texture = this.sprite.textures[0] as Texture
-    const frameHeight = texture.height || 64
-    const scaleY = Math.max(0.001, Math.abs(this.sprite.scale.y || 1))
-    const topY = this.sprite.position.y - this.sprite.anchor.y * frameHeight * scaleY
-    const cutHeight = Math.min(MOUNTED_RIDER_CUT_Y, frameHeight) * scaleY
-
-    if (!this.mountedRiderMask) {
-      this.mountedRiderMask = new Graphics()
-      this.mountedRiderMask.label = `${LABEL_TYPES.sprite}-mounted-rider-mask`
-      this.mountedRiderMask.eventMode = 'none'
-      this.addChild(this.mountedRiderMask)
-    }
-
-    this.mountedRiderMask.clear()
-    this.mountedRiderMask.rect(-512, topY, 1024, cutHeight).fill({ color: 0xffffff })
-    this.sprite.mask = this.mountedRiderMask
-    for (const [spriteKey, layerSprite] of this.appearanceLayerSprites.entries()) {
-      const layer = this.appearance?.layers[spriteKey]
-      layerSprite.mask = layer?.mountedCut === false ? null : this.mountedRiderMask
-    }
+    updateMountedRiderMaskVisual(this, sheet)
   }
 
   clearMountedRiderMask() {
-    if (this.sprite) this.sprite.mask = null
-    for (const layerSprite of this.appearanceLayerSprites.values()) {
-      layerSprite.mask = null
-    }
-    if (!this.mountedRiderMask) return
-    this.mountedRiderMask.parent?.removeChild(this.mountedRiderMask)
-    this.mountedRiderMask.destroy()
-    this.mountedRiderMask = null
+    clearMountedRiderMaskVisual(this)
   }
 
   getMountedRiderBodyTopLeft(): { x: number; y: number; width: number; scale: number } {
-    const texture = (this.sprite.textures[0] as Texture | undefined) ?? null
-    const width = texture?.width || 64
-    const height = texture?.height || 64
-    const scale = Math.max(0.001, Math.abs(this.sprite.scale.y || this.spriteScale || 1))
-    const mirrored = this.sprite.scale.x < 0
-    const x = mirrored
-      ? this.sprite.position.x - (1 - this.sprite.anchor.x) * width * scale
-      : this.sprite.position.x - this.sprite.anchor.x * width * scale
-    const y = this.sprite.position.y - this.sprite.anchor.y * height * scale
-    return { x, y, width, scale }
+    return getMountedRiderBodyTopLeftVisual(this)
   }
 
   syncMountedRiderLegsSprite() {
-    if (!this.mountedOnHorse) {
-      this.removeMountedRiderLegsSprite()
-      return
-    }
-    if (!this.mountedRiderLegsSprite) this.setupMountedRiderLegsSprite()
-    if (!this.mountedRiderLegsSprite) return
-
-    const legsSheet = getCachedSpritesheet(MOUNTED_RIDER_LEGS_SHEET)
-    if (!legsSheet?.textures) return
-
-    const { textures, mirrored } = getSpriteFrameSelection(legsSheet.textures, this.degree, 3, null)
-    const body = this.getMountedRiderBodyTopLeft()
-    const direction = degreeToDirection(this.degree) ?? 'south'
-    const legOffset = mountedRiderLegOffset(direction, body.scale)
-
-    this.mountedRiderLegsSprite.textures = textures as Texture[]
-    this.mountedRiderLegsSprite.anchor.set(0, 0)
-    this.mountedRiderLegsSprite.scale.x = mirrored ? -body.scale : body.scale
-    this.mountedRiderLegsSprite.scale.y = body.scale
-    this.mountedRiderLegsSprite.position.x = body.x + (mirrored ? body.width * body.scale - legOffset.x : legOffset.x)
-    this.mountedRiderLegsSprite.position.y = body.y + legOffset.y
-    this.mountedRiderLegsSprite.animationSpeed = 0
-    this.mountedRiderLegsSprite.gotoAndStop(0)
+    syncMountedRiderLegsSpriteVisual(this, getCachedSpritesheet)
   }
 
   removeMountedRiderLegsSprite() {
-    if (!this.mountedRiderLegsSprite) return
-    this.mountedRiderLegsSprite.parent?.removeChild(this.mountedRiderLegsSprite)
-    this.mountedRiderLegsSprite.destroy({ children: true, texture: false })
-    this.mountedRiderLegsSprite = null
+    removeMountedRiderLegsSpriteVisual(this)
   }
 
   syncMountedHorseSprite() {
-    if (!this.mountedOnHorse) {
-      this.removeMountedHorseSprite()
-      return
-    }
-    if (!this.horseSprite) this.setupMountedHorseSprite()
-    if (!this.mountedRiderLegsSprite) this.setupMountedRiderLegsSprite()
-    if (!this.horseSprite) return
-
-    const horseShouldMove = this.currentSheet === SHEET_TYPES.walking || this.isDirectMoving
-    const sheetId = horseShouldMove ? MOUNTED_HORSE_WALKING_SHEET : MOUNTED_HORSE_STANDING_SHEET
-    const horseSheet = getCachedSpritesheet(sheetId)
-    if (!horseSheet?.textures) return
-
-    const frame = Math.min(this.horseSprite.currentFrame, Math.max(this.horseSprite.textures.length - 1, 0))
-    const { textures, mirrored } = getSpriteFrameSelection(horseSheet.textures, this.degree, 3, null)
-    const spriteScale = this.spriteScale ?? 1
-    this.horseSprite.textures = recolorHorseTextures(textures as Texture[], this.horseColor)
-    this.horseSprite.scale.x = mirrored ? -spriteScale : spriteScale
-    this.horseSprite.scale.y = spriteScale
-    this.horseSprite.animationSpeed = horseSheet.data?.animationSpeed ?? 0.2
-    this.horseSprite.position.y = this.reliefLift
-    const defaultAnchor = (this.horseSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
-      .defaultAnchor
-    if (defaultAnchor) {
-      this.horseSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-    }
-
-    // This container has sortableChildren enabled, so Pixi re-sorts children by zIndex on every render.
-    // The horse must therefore be ordered via its own zIndex, not by moving it around in the children array.
-    const direction = degreeToDirection(this.degree) ?? 'south'
-    const horseInFront = MOUNTED_HORSE_DIRECTIONS_IN_FRONT.has(direction)
-    this.horseSprite.zIndex = horseInFront ? MOUNTED_HORSE_FRONT_Z_INDEX : MOUNTED_HORSE_BEHIND_Z_INDEX
-
-    if (this.context.paused) {
-      this.horseSprite.gotoAndStop(Math.min(frame, this.horseSprite.textures.length - 1))
-    } else {
-      this.horseSprite.gotoAndPlay(Math.min(frame, this.horseSprite.textures.length - 1))
-    }
-    this.syncMountedRiderLegsSprite()
-    this.syncShadow(this.horseShadow, this.horseSprite)
+    syncMountedHorseSpriteVisual(this, getCachedSpritesheet)
   }
 
   removeMountedHorseSprite() {
-    this.clearMountedRiderMask()
-    this.removeMountedRiderLegsSprite()
-    if (this.horseShadow) {
-      this.horseShadow.parent?.removeChild(this.horseShadow)
-      this.horseShadow.destroy({ children: true, texture: false })
-      this.horseShadow = null
-    }
-    if (!this.horseSprite) return
-    this.horseSprite.parent?.removeChild(this.horseSprite)
-    this.horseSprite.destroy({ children: true, texture: false })
-    this.horseSprite = null
+    removeMountedHorseSpriteVisual(this)
   }
 
   syncVisualSettings(): void {
@@ -915,199 +604,7 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   syncAppearanceLayers(sheet: string) {
-    const layers = this.appearance?.layers
-    const mountedRiderSheet =
-      this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
-    if (!layers?.length) {
-      for (const sprite of this.appearanceLayerSprites.values()) {
-        sprite.parent?.removeChild(sprite)
-        sprite.destroy({ children: true, texture: false })
-      }
-      this.appearanceLayerSprites.clear()
-      return
-    }
-
-    const heroControlled = isHeroControlled(this)
-    const liveLayers = new Set<number>()
-    for (let i = 0; i < layers.length; i++) {
-      const layer = layers[i] as RuntimeAppearanceLayer
-      const actionWorkKey = this.work && this.action ? `${this.work}:${this.action}` : undefined
-      const hasActionWorkSheetOverride = Boolean(actionWorkKey && layer.actionWorkSheetOverrides?.[actionWorkKey])
-      const isLayerEnabledForWork =
-        !layer.workTypes?.length ||
-        (this.work ? layer.workTypes.includes(this.work) : false) ||
-        hasActionWorkSheetOverride
-      const isLayerEnabledForCivilization =
-        !layer.civilizations?.length || layer.civilizations.includes(civilizationKey(this.owner?.civ))
-      const unitLevel = getUnitEquipmentLevel(this)
-      const isLayerEnabledForLevel =
-        unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
-      const isLoading = (this.loading ?? 0) > 0
-      // Carried resources are hidden while the action animation plays, then restored
-      // automatically when the unit returns to standing/walking.
-      const isLayerHiddenByLoading = isAppearanceLayerHiddenByLoading({
-        layer,
-        isLoading,
-        sheet,
-        heroControlled,
-      })
-      const isLayerHiddenByAction = Boolean(this.action && layer.hideForActions?.includes(this.action))
-      const isLayerHiddenByFrame =
-        sheet === SHEET_TYPES.action &&
-        typeof layer.hideOnOrAfterFrame === 'number' &&
-        this.sprite.currentFrame >= layer.hideOnOrAfterFrame
-      const equipmentKey = layer.equipmentKey
-      const isLootedCorpseEquipment =
-        this.isDead &&
-        Array.isArray(this.lootEquipment) &&
-        equipmentKey != null &&
-        !this.lootEquipment.includes(equipmentKey)
-      const loadedSheetOverride =
-        !this.mountedOnHorse && this.loading && sheet === SHEET_TYPES.walking
-          ? (layer.loadedSheet as string | undefined)
-          : undefined
-      const actionWorkSheetOverride = actionWorkKey
-        ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet]
-        : undefined
-      const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
-      const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
-      const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
-      const isRangedActionSheet =
-        sheet === SHEET_TYPES.action && (this.type === UNIT_TYPES.bowman || this.work === WORK_TYPES.hunter)
-      const shootingSheetOverride = isRangedActionSheet
-        ? getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet
-        : undefined
-      const mountedSheetOverride =
-        this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
-          ? layer.mountedSheet
-          : undefined
-      const baseSheetId =
-        loadedSheetOverride ??
-        shootingSheetOverride ??
-        actionWorkSheetOverride ??
-        workSheetOverride ??
-        mountedSheetOverride ??
-        ageSheetOverride ??
-        (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
-      const playerColorVariant = this.owner.color ? layer.playerColorVariants?.[this.owner.color] : undefined
-      const appearanceVariant = layer.appearanceVariantKey
-        ? this.appearanceVariants?.[layer.appearanceVariantKey]
-        : undefined
-      const variantSheetId =
-        baseSheetId && appearanceVariant
-          ? `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
-          : null
-      const basePlayerColorSheetId =
-        baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
-      const sheetId = variantSheetId && Assets.cache.has(variantSheetId) ? variantSheetId : basePlayerColorSheetId
-      const spritesheet = sheetId ? getCachedSpritesheet(sheetId) : undefined
-      const spriteKey = i
-      const layerZIndex = getAppearanceLayerZIndex({ layer, sheet: mountedRiderSheet })
-      liveLayers.add(spriteKey)
-
-      if (
-        !isLayerEnabledForWork ||
-        !isLayerEnabledForCivilization ||
-        !isLayerEnabledForLevel ||
-        isLayerHiddenByLoading ||
-        isLayerHiddenByAction ||
-        isLayerHiddenByFrame ||
-        isLootedCorpseEquipment ||
-        !sheetId ||
-        !spritesheet?.textures
-      ) {
-        const existing = this.appearanceLayerSprites.get(spriteKey)
-        if (existing) {
-          existing.parent?.removeChild(existing)
-          existing.destroy({ children: true, texture: false })
-          this.appearanceLayerSprites.delete(spriteKey)
-        }
-        continue
-      }
-
-      const directionCount =
-        layer.sheetDirectionCounts?.[mountedRiderSheet] ?? this.sheetDirectionCounts?.[mountedRiderSheet] ?? null
-      const directionOrderOverride = (layer.sheetDirectionOrders?.[mountedRiderSheet] ??
-        this.sheetDirectionOrders?.[mountedRiderSheet] ??
-        null) as string[] | null
-      const { textures, mirrored } = getSpriteFrameSelection(
-        spritesheet.textures,
-        this.degree,
-        directionCount,
-        directionOrderOverride
-      )
-
-      let layerSprite = this.appearanceLayerSprites.get(spriteKey)
-      const frameIndex =
-        mountedSheetOverride || (this.mountedOnHorse && sheet !== SHEET_TYPES.action)
-          ? 0
-          : Math.min(this.sprite.currentFrame, Math.max(textures.length - 1, 0))
-
-      if (!layerSprite) {
-        layerSprite = new AnimatedSprite(textures as Texture[])
-        bindAnimatedSpriteToTicker(layerSprite, this.context.app)
-        layerSprite.label = `${LABEL_TYPES.sprite}-layer-${spriteKey}`
-        layerSprite.eventMode = 'none'
-        layerSprite.position.x = this.getMountedRiderX()
-        layerSprite.position.y = this.getMountedRiderY()
-        layerSprite.roundPixels = true
-        layerSprite.loop = this.loop ?? true
-        layerSprite.updateAnchor = true
-        layerSprite.zIndex = layerZIndex
-        if (layerZIndex < MAIN_SPRITE_LAYER_Z_INDEX) {
-          this.addChildAt(layerSprite, Math.max(0, this.getChildIndex(this.sprite)))
-        } else {
-          this.addChild(layerSprite)
-        }
-        this.appearanceLayerSprites.set(spriteKey, layerSprite)
-      }
-
-      layerSprite.visible = true
-      layerSprite.loop = this.sprite.loop
-      layerSprite.position.x = this.getMountedRiderX()
-      layerSprite.position.y = this.getMountedRiderY()
-      layerSprite.zIndex = layerZIndex
-      layerSprite.textures = textures as Texture[]
-      if (layer.palette === 'player') {
-        changeSpriteColor(layerSprite, this.owner.color ?? '')
-      } else {
-        layerSprite.filters = null
-      }
-      const spriteScale = this.spriteScale ?? 1
-      layerSprite.scale.x = mirrored ? -spriteScale : spriteScale
-      layerSprite.scale.y = spriteScale
-      const defaultAnchor = (layerSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
-        .defaultAnchor
-      if (defaultAnchor) {
-        layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-      }
-      layerSprite.animationSpeed = spritesheet.data?.animationSpeed ?? 0.18
-      layerSprite.onFrameChange =
-        sheet === SHEET_TYPES.action && typeof layer.hideOnOrAfterFrame === 'number'
-          ? currentFrame => {
-              layerSprite.visible = currentFrame < layer.hideOnOrAfterFrame!
-            }
-          : undefined
-      layerSprite.currentFrame = frameIndex
-      layerSprite.visible =
-        sheet === SHEET_TYPES.action && typeof layer.hideOnOrAfterFrame === 'number'
-          ? frameIndex < layer.hideOnOrAfterFrame
-          : true
-      if (mountedSheetOverride || (this.mountedOnHorse && sheet !== SHEET_TYPES.action)) {
-        layerSprite.gotoAndStop(frameIndex)
-      } else if (this.sprite.playing) {
-        layerSprite.gotoAndPlay(frameIndex)
-      } else {
-        layerSprite.gotoAndStop(frameIndex)
-      }
-    }
-
-    for (const [spriteKey, sprite] of this.appearanceLayerSprites.entries()) {
-      if (liveLayers.has(spriteKey)) continue
-      sprite.parent?.removeChild(sprite)
-      sprite.destroy({ children: true, texture: false })
-      this.appearanceLayerSprites.delete(spriteKey)
-    }
+    syncUnitAppearanceLayers(this, sheet)
   }
 
   override setTextures(sheet: string) {
@@ -1339,120 +836,11 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   isAttacked(instance: RuntimeEntity | null) {
-    if (this.context.editor) {
-      return
-    }
-    if (!instance || this.isDead) {
-      return
-    }
-    markUnitHealthDamaged(this)
-    if (!canAutoReactToAttack(this)) {
-      return
-    }
-    this.owner.reportThreat?.(this, instance)
-    const moraleDecision = evaluateCombatMorale(this, instance)
-    if (moraleDecision === 'surrender') {
-      if (instance.family === FAMILY_TYPES.unit) {
-        showAggressionFeedback(this)
-        if (new UnitActions(instance as UnitEntity).convertTarget(this, { grantXp: false, stopConverter: false }))
-          return
-      }
-      this.runaway(instance)
-      return
-    }
-    if (moraleDecision === 'flee') {
-      this.runaway(instance)
-      return
-    }
-    if (shouldSuppressAggroDuringCombatRecovery(this)) {
-      return
-    }
-    if (this.handleIsAttacked?.(instance, this)) return
-    if (!this.getActionCondition(instance, ACTION_TYPES.attack)) {
-      return
-    }
-    if (this.dest === instance) {
-      return
-    }
-    const currentDest = this.dest
-    showAggressionFeedback(this)
-    if (this.context.villagerShelter?.handleVillagerDangerShelter(this, instance)) {
-      this.previousDest = currentDest
-      return
-    }
-    if (this.type === UNIT_TYPES.villager) {
-      if (instance.family === FAMILY_TYPES.animal) {
-        this.sendToHunt(instance)
-      } else {
-        this.sendToAttack(instance)
-      }
-    } else {
-      this.sendTo(instance, ACTION_TYPES.attack)
-    }
-    this.previousDest = currentDest
+    return handleUnitIsAttacked(this, instance)
   }
 
   stop() {
-    if (this.isDead || this.isDestroyed) return
-    const heroControlled = isHeroControlled(this)
-    const currentCellOccupant = this.currentCell.has
-    const currentCellHasBlockingOccupant = Boolean(
-      !heroControlled &&
-        this.currentCell.solid &&
-        currentCellOccupant &&
-        currentCellOccupant.label !== this.label &&
-        !currentCellOccupant.isDestroyed
-    )
-    if (currentCellHasBlockingOccupant) {
-      debugBanditStop(this, 'stop-current-cell-occupied')
-    } else if (!heroControlled && this.currentCell.solid && currentCellOccupant?.label !== this.label) {
-      debugBanditStop(this, 'stop-repairing-stale-current-cell')
-      this.currentCell.place(this)
-      this.currentCell.solid = true
-    }
-    if (!heroControlled && resumeVillagerAutonomy?.(this)) return
-    clearCombatAttackRecovery(this)
-    this.handleChangeDest()
-    this.actionLocked = false
-    this.pendingOrder = null
-    this.blockedGatherApproach = null
-    this.inactif = true
-    this.action = null
-    this.dest = null
-    this.realDest = null
-    this.sprite.loop = this.loop ?? true
-    if (this.shadow) this.shadow.loop = this.sprite.loop
-    for (const sprite of this.appearanceLayerSprites.values()) {
-      sprite.loop = this.loop ?? true
-    }
-    if (heroControlled) {
-      if (this.currentCell.has === this) {
-        this.currentCell.has = null
-        this.currentCell.solid = false
-      }
-      updateInstanceRenderVisibility(this)
-      this.visible = true
-      // Gather-style actions (takemeat, hunt, chopwood, ...) reassign `work` to a
-      // fixed economy bucket while running, e.g. bare-handed meat pickup goes through
-      // the hunter bucket. Nothing else restores it afterward, so the hero would keep
-      // showing that bucket's equipment (a bow) once idle. Snap back to whatever the
-      // equipped tool actually implies.
-      this.contextAction = null
-      applyToolAppearance(this, this.context?.controls?.equippedTool ?? 'interact')
-    } else if (!this.currentCell.has || this.currentCell.has.label === this.label || this.currentCell.has.isDestroyed) {
-      this.currentCell.place(this)
-      this.currentCell.solid = true
-    }
-    this.path = []
-    this.stopInterval()
-    if (this.shelterState?.status === 'outside') {
-      this.setTextures(SHEET_TYPES.dying)
-      this.sprite?.gotoAndStop?.(0)
-      this.sprite?.stop?.()
-      this.actionLocked = true
-      return
-    }
-    this.setTextures(SHEET_TYPES.standing)
+    return stopUnit(this)
   }
 
   override startInterval(callback: () => void, time: number, immediate = true, name = 'unit.interval') {

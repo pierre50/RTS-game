@@ -302,8 +302,17 @@ function loadModule(relativePath, mocks) {
       }
     }
     if (request === './UnitCaptureHorseAction') return { handleCaptureHorseAction: () => {} }
+    if (request === './UnitManualHeroWork') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
+    }
     if (request === './UnitHeroDirectMovementCollision') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitHeroDirectMovementCollision.ts'))
+    }
+    if (request === './UnitMovementDebug') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementDebug.ts'))
+    }
+    if (request === './UnitMovementHelpers') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
     }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
     return require(request)

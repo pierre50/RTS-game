@@ -1,20 +1,11 @@
-import { Assets, Graphics } from 'pixi.js'
+import { Graphics } from 'pixi.js'
 import {
-  cartesianToIsometric,
-  drawRoundedIsoShape,
   getReliefOffset,
-  getRoundedIsoShapePoints,
   playSoundCue,
   updateInstanceRenderVisibility,
 } from '../lib'
 import {
-  COLOR_GOLD,
-  COMM_INDICATOR_FILL_ALPHA,
-  COMM_INDICATOR_STROKE_ALPHA,
-  COMM_INDICATOR_STROKE_WIDTH,
   HERO_ACTION_MOVE_SPEED_FACTOR,
-  HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR,
-  HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
   HERO_STEALTH_SPEED_FACTOR,
@@ -44,11 +35,9 @@ import {
   type HeroEquippedItem,
 } from '../lib/heroTools'
 import { updateHeroCursor } from '../lib/heroCursor'
-import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import { heroCanCommand } from '../lib/chief'
 import {
   COMM_INDICATOR_DELAY_MS,
-  getCommCellsInRadius,
   getCommRadiusForHold,
   releaseIfStillLooking,
   resolveCommGroup,
@@ -65,215 +54,38 @@ import { t } from '../lib/lang'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type Controls from '../classes/Controls'
-import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
+import {
+  COMPANION_HORSE_CALL_MAX_RADIUS,
+  COMPANION_HORSE_CALL_MIN_RADIUS,
+  MOUNT_TRANSITION_CAMERA_MS,
+  MOUNT_TRANSITION_FADE_IN_MS,
+  MOUNT_TRANSITION_FADE_OUT_MS,
+  MOUNT_TRANSITION_HIDDEN_ALPHA,
+  MOUNT_TRANSITION_TICK_MS,
+  TARGET_FRAME_MS,
+  debugHeroMove,
+  drawCommIndicatorCells,
+  easeInOut,
+  findCompanionHorseSpawnCell,
+  getKeyboardMoveVector,
+  getLockedMoveSpeedFactor,
+  getPointInDirection,
+  getVectorFromDegree,
+  isHeroDirectionLockActive,
+  isHeroMoveAction,
+  refreshBakedAppearance,
+  type CompanionHorse,
+  type HeroAimPoint,
+  type ViewportMetrics,
+} from './HeroControllerSupport'
 
-const TARGET_FRAME_MS = 1000 / 60
-const HERO_MOVE_DEBUG_THROTTLE_MS = 250
-type HeroAimPoint = { x: number; y: number }
-const HERO_MOVE_DIRECTIONS: Partial<Record<ControlBindingAction, { dx: number; dy: number }>> = {
-  heroUp: { dx: 0, dy: -1 },
-  heroDown: { dx: 0, dy: 1 },
-  heroLeft: { dx: -1, dy: 0 },
-  heroRight: { dx: 1, dy: 0 },
-}
 const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool1: 0,
   heroTool2: 1,
   heroTool3: 2,
   heroTool4: 3,
-}
-const COMPANION_HORSE_CALL_MIN_RADIUS = 10
-const COMPANION_HORSE_CALL_MAX_RADIUS = 36
-const MOUNT_TRANSITION_FADE_OUT_MS = 120
-const MOUNT_TRANSITION_FADE_IN_MS = 140
-const MOUNT_TRANSITION_CAMERA_MS = 180
-const MOUNT_TRANSITION_TICK_MS = 40
-const MOUNT_TRANSITION_HIDDEN_ALPHA = 0.05
-type MoveVector = { dx: number; dy: number }
-type HorseCallDestination = Pick<RuntimeCell, 'i' | 'j' | 'x' | 'y' | 'z'>
-type CompanionHorse = AnimalEntity & {
-  degree?: number
-  companionOwner?: UnitEntity | null
-  companionHitCount?: number
-  strategy?: string
-  ambientMovement?: boolean
-  stop?: () => void
-  sendTo?: (
-    target: RuntimeEntity | RuntimeCell | HorseCallDestination | null,
-    action?: string | null,
-    options?: { forceRepath?: boolean }
-  ) => void
-}
-
-let lastHeroMoveDebugAt = 0
-
-function debugHeroMove(message: string, unit: UnitEntity, details: Record<string, unknown>): void {
-  const now = performance.now()
-  if (now - lastHeroMoveDebugAt < HERO_MOVE_DEBUG_THROTTLE_MS) return
-  lastHeroMoveDebugAt = now
-  console.debug('[hero-controlled unit move]', {
-    message,
-    details,
-    unit: {
-      controlMode: unit.controlMode,
-      actionLocked: unit.actionLocked,
-      isDead: unit.isDead,
-      isDestroyed: unit.isDestroyed,
-      currentSheet: unit.currentSheet,
-      speed: unit.speed,
-      i: unit.i,
-      j: unit.j,
-      x: Math.round(unit.x),
-      y: Math.round(unit.y),
-      visible: unit.visible,
-      currentCell: {
-        i: unit.currentCell?.i,
-        j: unit.currentCell?.j,
-        solid: unit.currentCell?.solid,
-        border: unit.currentCell?.border,
-        category: unit.currentCell?.category,
-        has: unit.currentCell?.has
-          ? { type: unit.currentCell.has.type, family: unit.currentCell.has.family, label: unit.currentCell.has.label }
-          : null,
-      },
-    },
-  })
-}
-
-function getKeyboardMoveVector(keysPressed: Set<ControlBindingAction>): MoveVector {
-  let dx = 0
-  let dy = 0
-  for (const action of keysPressed) {
-    const dir = HERO_MOVE_DIRECTIONS[action]
-    if (!dir) continue
-    dx += dir.dx
-    dy += dir.dy
-  }
-  return { dx, dy }
-}
-
-function easeInOut(t: number): number {
-  const clamped = Math.max(0, Math.min(1, t))
-  return clamped * clamped * (3 - 2 * clamped)
-}
-
-function isHeroDirectionLockActive(controls: Controls): boolean {
-  return controls.isHeroDirectionLockActive?.() ?? controls.shiftKeyActive
-}
-
-function getVectorFromDegree(degree: number): MoveVector {
-  const radians = ((degree - 180) * Math.PI) / 180
-  return { dx: Math.cos(radians), dy: Math.sin(radians) }
-}
-
-function getPointInDirection(unit: UnitEntity, degree: number, distance = 100): HeroAimPoint {
-  const vector = getVectorFromDegree(degree)
-  return {
-    x: unit.x + vector.dx * distance,
-    y: unit.y + vector.dy * distance,
-  }
-}
-
-function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): number {
-  const moveLength = Math.hypot(move.dx, move.dy)
-  const facingLength = Math.hypot(facing.dx, facing.dy)
-  if (moveLength <= 0 || facingLength <= 0) return 1
-
-  const alignment = (move.dx * facing.dx + move.dy * facing.dy) / (moveLength * facingLength)
-  if (alignment >= 0) {
-    return HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR + (1 - HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR) * alignment
-  }
-  return (
-    HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR +
-    (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR) * alignment
-  )
-}
-
-// controlMode determines the baked look (see applyBakedLpcUnitAssets), and this
-// runs after the unit's initial spawn-time bake, so the sheet aliases must be
-// re-resolved into actual textures here too — same pattern as UnitActions.upgrade().
-function refreshBakedAppearance(unit: UnitEntity): void {
-  applyBakedLpcUnitAssets(unit)
-  Object.assign(
-    unit,
-    Object.fromEntries(Object.entries(unit.assets ?? {}).map(([key, value]) => [key, Assets.cache.get(value)]))
-  )
-  unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
-}
-
-function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: number): void {
-  const cells = getCommCellsInRadius(hero, radius)
-  for (const cell of cells) {
-    const [cellX, cellY] = cartesianToIsometric(cell.i, cell.j)
-    drawRoundedIsoShape(
-      indicator,
-      getRoundedIsoShapePoints({
-        x: cellX - hero.x,
-        y: cellY - hero.y,
-        factor: 1,
-      })
-    )
-  }
-  if (!cells.length) return
-  indicator.fill({ color: COLOR_GOLD, alpha: COMM_INDICATOR_FILL_ALPHA })
-  indicator.stroke({
-    color: COLOR_GOLD,
-    width: COMM_INDICATOR_STROKE_WIDTH,
-    alpha: COMM_INDICATOR_STROKE_ALPHA,
-  })
-}
-
-function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
-  return Boolean(cell && !cell.solid && !cell.has && cell.category !== 'Water' && !cell.waterBorder && !cell.border)
-}
-
-type ViewportMetrics = { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
-
-function cellIsOutsideViewport(cell: RuntimeCell, viewport: ViewportMetrics, margin = 48): boolean {
-  return (
-    cell.x < viewport.visibleLeft - margin ||
-    cell.x > viewport.visibleLeft + viewport.visibleWidth + margin ||
-    cell.y < viewport.visibleTop - margin ||
-    cell.y > viewport.visibleTop + viewport.visibleHeight + margin
-  )
-}
-
-function findCompanionHorseSpawnCell(
-  hero: UnitEntity,
-  radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
-  options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
-): RuntimeCell | null {
-  const grid = hero.context?.map?.grid
-  if (!grid) return null
-  const minRadius = Math.max(1, Math.min(options.minRadius ?? 1, radiusLimit))
-  const viewport = options.viewport ?? null
-  if (radiusLimit > 1 && !viewport) {
-    const preferred: Array<[number, number]> = [
-      [0, radiusLimit],
-      [-radiusLimit, 0],
-      [radiusLimit, 0],
-      [0, -radiusLimit],
-    ]
-    for (const [di, dj] of preferred) {
-      const cell = grid[hero.i + di]?.[hero.j + dj]
-      if (isFreeHorseCell(cell)) return cell
-    }
-  }
-  let firstFreeCell: RuntimeCell | null = null
-  for (let radius = minRadius; radius <= radiusLimit; radius++) {
-    for (let di = -radius; di <= radius; di++) {
-      const djAbs = radius - Math.abs(di)
-      const offsets: Array<[number, number]> = djAbs === 0 ? [[di, 0]] : [[di, djAbs], [di, -djAbs]]
-      for (const [oi, oj] of offsets) {
-        const cell = grid[hero.i + oi]?.[hero.j + oj]
-        if (!isFreeHorseCell(cell)) continue
-        if (!firstFreeCell) firstFreeCell = cell
-        if (!viewport || cellIsOutsideViewport(cell, viewport)) return cell
-      }
-    }
-  }
-  return firstFreeCell
 }
 
 export class HeroController {
@@ -379,7 +191,7 @@ export class HeroController {
       return true
     }
 
-    if (HERO_MOVE_DIRECTIONS[action]) {
+    if (isHeroMoveAction(action)) {
       if (this.keysPressed.size === 0 && !this.heroUnit?.actionLocked) this.heroUnit?.stop?.()
       this.keysPressed.add(action)
       return true
@@ -675,7 +487,7 @@ export class HeroController {
   }
 
   handleKeyUp(action: ControlBindingAction): void {
-    if (HERO_MOVE_DIRECTIONS[action]) this.keysPressed.delete(action)
+    if (isHeroMoveAction(action)) this.keysPressed.delete(action)
     if (action === 'heroInteract') {
       this.keyboardInteractHeld = false
       if (this.commCharging) this.endCommCharge()

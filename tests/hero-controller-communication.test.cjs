@@ -113,7 +113,21 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => {
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './HeroControllerSupport') {
+      const supportFilename = path.join(__dirname, '../app/controllers/HeroControllerSupport.ts')
+      const supportSource = fs.readFileSync(supportFilename, 'utf8')
+      const { code: supportCode } = babel.transformSync(supportSource, {
+        filename: supportFilename,
+        presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      })
+      const supportModule = { exports: {} }
+      new Function('module', 'exports', 'require', supportCode)(supportModule, supportModule.exports, localRequire)
+      return supportModule.exports
+    }
+    return require(request)
+  }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.HeroController
 }

@@ -392,8 +392,25 @@ function loadHeroTools(overrides = {}) {
       },
     }
   }
+  function loadTsFile(tsFilename) {
+    const tsSource = fs.readFileSync(tsFilename, 'utf8')
+    const { code: tsCode } = babel.transformSync(tsSource, {
+      filename: tsFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
+
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './HeroContextActions') {
+      return loadTsFile(path.join(__dirname, '../app/lib/HeroContextActions.ts'))
+    }
+    if (request === './HeroProjectileTools') {
+      return loadTsFile(path.join(__dirname, '../app/lib/HeroProjectileTools.ts'))
+    }
     if (request === './unitWorkAppearance') {
       return {
         applyUnitWorkAssets: (unit, work) => {

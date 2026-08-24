@@ -3,12 +3,10 @@ import { Container, type ContainerChild } from 'pixi.js'
 import { sound } from '@pixi/sound'
 import { t } from '../lib/lang'
 import Map from '../classes/map'
-import type { SavedGameData } from '../classes/map/MapGeneration'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
 import {
   Modal,
-  colors,
   debounce,
   getFreeLandCellAroundInstance,
   isPlayedHeroDefeated,
@@ -17,7 +15,7 @@ import {
 } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
 import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
-import { adjustFactionRelation, createFactionSave, FACTION_SCORE } from '../lib/factions'
+import { adjustFactionRelation } from '../lib/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
 import { ActionScheduler } from '../lib/ActionScheduler'
 import { syncHeroResourceLoadState } from '../lib/resourceCarry'
@@ -46,17 +44,31 @@ import {
   type RuntimeServices,
 } from './game/runtimeServices'
 import { collectPausableInstances } from './game/pausableRuntime'
+import {
+  PORTAL_RESOURCE_TYPE,
+  applyMapConfig,
+  applyPortableUnitState,
+  configForPortalWorld,
+  extractPortalParty,
+  getGameScreenRect,
+  getMapWorldBounds,
+  hasSerializedGrid,
+  heroTravelImageSrc,
+  saveConfig,
+  savedRuntimeState,
+  portalWorldId,
+  withFogEnabledState,
+  worldStateWithCampaignClock,
+  type PortalPartyState,
+  type PortalWorldConfig,
+} from './game/GameStateHelpers'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
-import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
-import { CIVILIZATIONS } from '../config/civilizations'
-import { getEnvironmentForCiv } from '../config/environments'
-import { CELL_WIDTH, CELL_HEIGHT, ENVIRONMENT_IDS, PLAYER_TYPES } from '../constants'
+import { PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
   CampaignSave,
-  FactionSave,
   GameConfig,
   PlayerSetupConfig,
   SaveEntityState,
@@ -67,7 +79,6 @@ import type { PlayerLike } from '../types/player'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { ResourceEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
-import type { EnvironmentId } from '../constants'
 import type { Viewport } from '../types/geometry'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -99,66 +110,6 @@ type GameRuntimeContext = Omit<
   performance: PerformanceMonitorLike | null
   devConsole: DevConsole | null
   checkDefeat: () => boolean
-}
-
-function saveConfig(config: SerializedSave['config'] | SerializedSave['world'] | undefined): GameConfig {
-  return config || {}
-}
-
-function hasSerializedGrid(save: SerializedSave): boolean {
-  return Array.isArray(save.map)
-}
-
-function savedRuntimeState(save: SerializedSave): SavedGameData {
-  return save as SavedGameData
-}
-
-function withFogEnabledState(state: SerializedSave): SerializedSave {
-  return {
-    ...state,
-    config: state.config ? { ...state.config, revealEverything: false } : state.config,
-  }
-}
-
-type PortalPartyState = {
-  followers: SaveEntityState[]
-  hero: SaveEntityState | null
-}
-
-type PortalEncounterRelation = 'hostile' | 'neutral' | 'ally'
-
-type PortalWorldConfig = {
-  config: GameConfig
-  faction: FactionSave
-  factionId: string
-}
-
-function assignDefined(target: Record<string, unknown>, values: Record<string, unknown>): void {
-  for (const [key, value] of Object.entries(values)) {
-    if (value !== undefined) target[key] = value
-  }
-}
-
-function cloneRecord<T>(record: T | undefined): T | undefined {
-  return record ? { ...record } : record
-}
-
-function cloneHeroInventory(inventory: SaveEntityState['inventory']): SaveEntityState['inventory'] {
-  if (!inventory) return inventory
-  return {
-    equipment: inventory.equipment ? [...inventory.equipment] : inventory.equipment,
-    equipped: cloneRecord(inventory.equipped),
-    equippedCounts: cloneRecord(inventory.equippedCounts),
-    activeWeapons: cloneRecord(inventory.activeWeapons),
-  }
-}
-
-const PORTAL_RESOURCE_TYPE = 'Portal'
-
-function heroTravelImageSrc(player: PlayerLike | null | undefined): string {
-  const civ = (player?.civ || 'Greek').toLowerCase()
-  const gender = player?.gender === 'female' ? 'female' : 'male'
-  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
 }
 
 /**
@@ -387,20 +338,7 @@ export default class Game extends Container {
   }
 
   _applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
-    if (config.size) map.size = config.size
-    if (Number.isFinite(config.seed)) map.seed = config.seed
-    map.mapType = DEFAULT_MAP_TYPE
-    const humanCiv = config.players?.find(player => player.isHuman)?.civ ?? config.players?.[0]?.civ
-    map.environment = (config.environment as EnvironmentId | undefined) || getEnvironmentForCiv(humanCiv)
-    if (config.instantMode) map.instantMode = true
-    map.humanStartsWithoutBase = Boolean(config.humanStartsWithoutBase)
-    if (config.startingAge != null) map.startingAge = Number(config.startingAge)
-    if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
-    if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
-    if (config.revealTerrain !== undefined) map.revealTerrain = config.revealTerrain
-    if (config.startingResources) map.startingResources = config.startingResources
-    if (config.resourceDensity) map.resourceDensity = config.resourceDensity
-    if (config.difficulty) map.difficulty = config.difficulty
+    applyMapConfig(map, config)
   }
 
   _resetOverlayDom(): void {
@@ -453,36 +391,11 @@ export default class Game extends Container {
   }
 
   _getScreenRect(): { x: number; y: number; width: number; height: number } {
-    const scaleX = this.scale.x || 1
-    const scaleY = this.scale.y || 1
-    return {
-      x: -this.position.x / scaleX,
-      y: -this.position.y / scaleY,
-      width: this.context.app.screen.width / scaleX,
-      height: this.context.app.screen.height / scaleY,
-    }
+    return getGameScreenRect(this, this.context.app)
   }
 
   _getMapWorldBounds(): { x: number; y: number; width: number; height: number } {
-    const size = this.context.map?.size ?? 0
-    return {
-      x: -(size * CELL_WIDTH) / 2,
-      y: 0,
-      width: size * CELL_WIDTH,
-      height: size * CELL_HEIGHT,
-    }
-  }
-
-  _worldStateWithCampaignClock(state: SerializedSave): SerializedSave {
-    const elapsedMs = this._campaignSave?.clock?.dayNightElapsedMs
-    if (!Number.isFinite(elapsedMs)) return state
-    return {
-      ...state,
-      runtime: {
-        ...(state.runtime ?? {}),
-        dayNightElapsedMs: Math.max(0, elapsedMs ?? 0),
-      },
-    }
+    return getMapWorldBounds(this.context.map?.size ?? 0)
   }
 
   _destroyRuntime({ preserveLoadingScreen = false }: { preserveLoadingScreen?: boolean } = {}): void {
@@ -659,98 +572,9 @@ export default class Game extends Container {
     this._restartSaveData = structuredClone(this._campaignSave)
   }
 
-  _portalWorldId(portal: ResourceEntity, color: string): string {
-    const currentWorldId = this._campaignSave?.currentWorldId || 'world'
-    const portalId = portal.label || `${portal.i}-${portal.j}`
-    return `${currentWorldId}-${portalId}-${color}`.replace(/[^a-zA-Z0-9_-]/g, '-')
-  }
-
   _configForPortalWorld(color: 'blue' | 'yellow' | 'red', worldId: string, now: number): PortalWorldConfig {
     const { player, map } = this._gameContext()
-    const relation = this._randomPortalEncounterRelation()
-    const playerTeam = relation === 'ally' ? player.team ?? 1 : player.team ?? null
-    const aiTeam = relation === 'ally' ? playerTeam : null
-    const playerColor = player.color || color
-    const aiColor = this._randomPlayerColorExcept(playerColor)
-    const aiCiv = this._randomAICiv()
-    const factionId = `${worldId}-tribe`
-    const faction = createFactionSave({
-      civilization: aiCiv,
-      homeWorldId: worldId,
-      id: factionId,
-      initialScore:
-        relation === 'ally' ? FACTION_SCORE.allied : relation === 'neutral' ? FACTION_SCORE.neutral : FACTION_SCORE.hostile,
-      now,
-    })
-    return {
-      config: {
-        size: map.size,
-        mapType: DEFAULT_MAP_TYPE,
-        environment: this._randomPortalEnvironment(map.environment),
-        seed: Math.random() * 9999,
-        startingAge: map.startingAge,
-        allTechnologies: map.allTechnologies,
-        revealEverything: false,
-        revealTerrain: map.revealTerrain,
-        instantMode: map.instantMode,
-        humanStartsWithoutBase: true,
-        startingResources: map.startingResources,
-        resourceDensity: map.resourceDensity,
-        difficulty: map.difficulty,
-        players: [
-          {
-            civ: player.civ,
-            color: playerColor,
-            factionId: player.factionId ?? null,
-            gender: player.gender,
-            isHuman: true,
-            name: player.name,
-            team: playerTeam,
-          },
-          {
-            civ: aiCiv,
-            color: aiColor,
-            diplomacy: relation === 'neutral' ? 'neutral' : null,
-            factionId,
-            gender: 'male',
-            isHuman: false,
-            name: faction.name,
-            team: aiTeam,
-          },
-        ],
-      },
-      faction,
-      factionId,
-    }
-  }
-
-  _randomAICiv(): string {
-    return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
-  }
-
-  _randomPlayerColorExcept(excludedColor?: string | null): string {
-    const pool = colors.filter(playerColor => playerColor !== excludedColor)
-    return pool[Math.floor(Math.random() * pool.length)] || 'red'
-  }
-
-  _randomPortalEnvironment(currentEnvironment?: string | null): EnvironmentId {
-    const choices = ENVIRONMENT_IDS.filter(environment => environment !== currentEnvironment)
-    const pool = choices.length ? choices : ENVIRONMENT_IDS
-    return pool[Math.floor(Math.random() * pool.length)] || 'Temperate'
-  }
-
-  _randomPortalEncounterRelation(): PortalEncounterRelation {
-    const relations: PortalEncounterRelation[] = ['hostile', 'neutral', 'ally']
-    return relations[Math.floor(Math.random() * relations.length)] || 'hostile'
-  }
-
-  _extractPortalParty(state: SerializedSave): PortalPartyState {
-    const played = state.players.find(player => player.isPlayed)
-    const hero = played?.units?.find(unit => unit.controlMode === 'hero' || unit.type === 'Hero' || unit.isChief) ?? null
-    return {
-      hero,
-      followers: (played?.units || []).filter(unit => unit !== hero && unit.followingHero === true),
-    }
+    return configForPortalWorld({ color, map, now, player, worldId })
   }
 
   _runtimeHeroUnit(): UnitEntity | null {
@@ -762,57 +586,6 @@ export default class Game extends Container {
       player.units[0] ||
       null
     )
-  }
-
-  _applyPortableUnitState(
-    target: Partial<SaveEntityState>,
-    source: SaveEntityState,
-    { keepAlive = false }: { keepAlive?: boolean } = {}
-  ): void {
-    assignDefined(target, {
-      assetAge: source.assetAge,
-      assetCiv: source.assetCiv,
-      controlMode: source.controlMode,
-      energy: source.energy,
-      experience: cloneRecord(source.experience),
-      followingHero: source.followingHero,
-      gender: (source as { gender?: unknown }).gender,
-      healthRegenDelay: source.healthRegenDelay,
-      healthRegenMultiplier: source.healthRegenMultiplier,
-      healthRegenRate: source.healthRegenRate,
-      hitPoints: source.hitPoints,
-      horseColor: source.horseColor,
-      companionHorseColor: source.companionHorseColor,
-      inventory: cloneHeroInventory(source.inventory),
-      isChief: source.isChief,
-      lastEnergySpentAt: source.lastEnergySpentAt,
-      lastHealthDamagedAt: source.lastHealthDamagedAt,
-      loading: source.loading,
-      loadingType: source.loadingType,
-      lootEquipment: source.lootEquipment ? [...source.lootEquipment] : source.lootEquipment,
-      mountedOnHorse: source.mountedOnHorse,
-      name: source.name,
-      resourceLoads: cloneRecord(source.resourceLoads),
-      totalEnergy: source.totalEnergy,
-      totalHitPoints: source.totalHitPoints,
-      work: source.work,
-    })
-    const totalHitPoints = Number((target as SaveEntityState).totalHitPoints)
-    const hitPoints = Number((target as SaveEntityState).hitPoints)
-    if (Number.isFinite(totalHitPoints) && totalHitPoints > 0) {
-      const minimumHitPoints = keepAlive ? 1 : 0
-      ;(target as SaveEntityState).hitPoints = Number.isFinite(hitPoints)
-        ? Math.max(minimumHitPoints, Math.min(totalHitPoints, hitPoints))
-        : totalHitPoints
-    }
-    const schedulerNow = (target as UnitEntity).context?.scheduler?.elapsedMs
-    if (
-      Number.isFinite(schedulerNow) &&
-      Number.isFinite((target as SaveEntityState).lastHealthDamagedAt) &&
-      ((target as SaveEntityState).lastHealthDamagedAt ?? 0) > (schedulerNow ?? 0)
-    ) {
-      ;(target as SaveEntityState).lastHealthDamagedAt = schedulerNow
-    }
   }
 
   _removeExistingTravelFollowers(): void {
@@ -933,7 +706,7 @@ export default class Game extends Container {
 
     if (freshWorld) this._resetPlayedFogForFreshWorld()
     this._clearTravelUnitFogViewers([hero, ...player.units.filter(unit => unit !== hero && unit.followingHero)])
-    if (party.hero) this._applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero, { keepAlive: true })
+    if (party.hero) applyPortableUnitState(hero as Partial<SaveEntityState>, party.hero, { keepAlive: true })
     syncHeroResourceLoadState(hero)
     refreshUnitEquipmentStats(hero)
     if (arrivalCell) this._teleportRuntimeUnitToCell(hero, arrivalCell)
@@ -950,7 +723,7 @@ export default class Game extends Container {
         type: followerState.type,
       })
       if (!follower) continue
-      this._applyPortableUnitState(follower as Partial<SaveEntityState>, followerState, { keepAlive: true })
+      applyPortableUnitState(follower as Partial<SaveEntityState>, followerState, { keepAlive: true })
       follower.followingHero = true
       syncHeroResourceLoadState(follower)
       refreshUnitEquipmentStats(follower)
@@ -964,18 +737,26 @@ export default class Game extends Container {
     controls.context?.menu?.updateCameraMiniMap?.()
   }
 
+  _applyPortableUnitState(
+    target: Partial<SaveEntityState>,
+    source: SaveEntityState,
+    options?: { keepAlive?: boolean }
+  ): void {
+    applyPortableUnitState(target, source, options)
+  }
+
   async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {
     if (this._isRestarting) return
     this._isRestarting = true
     const now = Date.now()
     const currentWorldState = withFogEnabledState(serializeGame(this._gameContext()))
-    const party = this._extractPortalParty(currentWorldState)
+    const party = extractPortalParty(currentWorldState)
     const campaign = this._campaignSave
       ? updateCurrentWorldState(this._campaignSave, currentWorldState, now)
       : createInitialCampaignSave(currentWorldState, { now })
     const currentCampaignWorld = campaign.worlds[campaign.currentWorldId]
     const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
-    const targetWorldId = this._portalWorldId(portal, color)
+    const targetWorldId = portalWorldId(this._campaignSave?.currentWorldId, portal, color)
     const existingTarget = campaign.worlds[targetWorldId]
     const portalTransition = new PortalTravelTransition(color, { heroImageSrc: heroTravelImageSrc(this.context.player) })
     this._loadingScreen = portalTransition
@@ -987,7 +768,10 @@ export default class Game extends Container {
         const nextCampaign = returnToParentWorld(campaign, now)
         this._campaignSave = structuredClone(nextCampaign)
         this._restartSaveData = structuredClone(nextCampaign)
-        const parentState = this._worldStateWithCampaignClock(getCurrentWorldState(nextCampaign))
+        const parentState = worldStateWithCampaignClock(
+          getCurrentWorldState(nextCampaign),
+          this._campaignSave?.clock?.dayNightElapsedMs
+        )
         this._destroyRuntime({ preserveLoadingScreen: true })
         await this._bootFromSave(withFogEnabledState(structuredClone(parentState)))
         this._map().revealEverything = false
@@ -1002,7 +786,11 @@ export default class Game extends Container {
         this._campaignSave = structuredClone(nextCampaign)
         this._restartSaveData = structuredClone(nextCampaign)
         this._destroyRuntime({ preserveLoadingScreen: true })
-        await this._bootFromSave(withFogEnabledState(this._worldStateWithCampaignClock(structuredClone(existingTarget.state))))
+        await this._bootFromSave(
+          withFogEnabledState(
+            worldStateWithCampaignClock(structuredClone(existingTarget.state), this._campaignSave?.clock?.dayNightElapsedMs)
+          )
+        )
         this._map().revealEverything = false
         this._applyPortalPartyToRuntime(party, this._findPortalArrivalCell())
         const targetState = withFogEnabledState(serializeGame(this._gameContext()))
@@ -1057,7 +845,12 @@ export default class Game extends Container {
       this._loadingScreen = new GameLoadingScreen()
       this._loadingScreen.update('generatingTerrain', 0.02)
       await this._yieldToBrowser()
-      await this._bootFromSave(this._worldStateWithCampaignClock(structuredClone(getCurrentWorldState(this._restartSaveData))))
+      await this._bootFromSave(
+        worldStateWithCampaignClock(
+          structuredClone(getCurrentWorldState(this._restartSaveData)),
+          this._campaignSave?.clock?.dayNightElapsedMs
+        )
+      )
       booted = true
     } catch (error) {
       const message = error instanceof Error ? error.message : t('corruptSave')
@@ -1097,7 +890,12 @@ export default class Game extends Container {
     await this._yieldToBrowser()
     let booted = false
     try {
-      await this._bootFromSave(this._worldStateWithCampaignClock(structuredClone(getCurrentWorldState(this._restartSaveData!))))
+      await this._bootFromSave(
+        worldStateWithCampaignClock(
+          structuredClone(getCurrentWorldState(this._restartSaveData!)),
+          this._campaignSave?.clock?.dayNightElapsedMs
+        )
+      )
       booted = true
     } finally {
       this._loadingScreen?.destroy()

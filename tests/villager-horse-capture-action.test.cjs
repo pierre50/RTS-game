@@ -122,6 +122,9 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitCaptureHorseAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))
     }
+    if (request === './UnitManualHeroWork') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
+    }
     return require(request)
   }
 

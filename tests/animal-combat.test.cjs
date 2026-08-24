@@ -220,6 +220,25 @@ test('animal attacks fall back to the shared slash impact frame', () => {
   assert.equal(attackLoopCalls[0][1].releaseFrame, 5)
 })
 
+test('animal attacks clamp impact to short action animations', () => {
+  const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
+  const { combat, attackLoopCalls } = createAnimalCombat({
+    animalOverrides: {
+      action: 'attack',
+      dest: target,
+      getActionCondition: () => true,
+      setTextures: () => {},
+      sprite: { textures: [1, 2, 3] },
+      strategy: 'attack',
+    },
+  })
+
+  combat.getAction('attack')
+
+  assert.equal(attackLoopCalls.length, 1)
+  assert.equal(attackLoopCalls[0][1].releaseFrame, 2)
+})
+
 test('runaway flees along the projectile direction instead of away from the shooter position', () => {
   // Pretend the shot travelled purely along the grid i-axis (towards higher i).
   const { combat, animal, calls, getCellsAroundPointCalls } = createAnimalCombat({

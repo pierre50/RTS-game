@@ -1,4 +1,4 @@
-import { Assets, type ContainerChild } from 'pixi.js'
+import { Assets } from 'pixi.js'
 import { Resource } from '../Resource'
 import { Human, AI, Gaia, Player } from '../players'
 import {
@@ -21,19 +21,16 @@ import {
   UNIT_TYPES,
   getEnvironmentTerrainParams,
 } from '../../constants'
-import type { EnvironmentTerrainParams } from '../../constants'
 import { Cell, GenerationCell } from '../cell'
 import { MapBlueprintGeneration } from './MapBlueprintGeneration'
 import type { GridPosition } from '../../types/grid'
-import type { RuntimeCell, RuntimeMap } from '../../types/map'
+import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
 import type { ResourceOptions } from '../Resource'
 import type { AnimalOptions } from '../animal'
-import type { RuntimeEntity, ResourceEntity, BuildingEntity } from '../../types/entities'
-import type { GameContextLike, MapRuntimeContext } from '../../types/context'
-import type { AnimalConfig } from '../../types/config'
-import type { TextureRef } from '../../lib'
+import type { ResourceEntity, BuildingEntity } from '../../types/entities'
+import type { GameContextLike } from '../../types/context'
 import {
   processUnit,
   restoreAIState,
@@ -41,8 +38,8 @@ import {
   restorePlayerEntitiesFromSave,
   restorePlayerViewsAndFog,
   restoreSelection,
-  type SavedPlayer,
 } from './MapSaveRestore'
+import { generateTerrainMap } from './MapTerrainGeneration'
 import { ensureBanditCampOwner, placeBanditCamps } from './BanditCampGeneration'
 import { applyCivilizationLevelStartingKit } from './CivilizationStartingKit'
 import {
@@ -55,17 +52,33 @@ import {
   placeAmbientAnimalGroup,
   type AmbientAnimalProfile,
 } from './AmbientAnimalGeneration'
-import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
-
-type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
-type BlueprintTerrainValue = TerrainValue | string
-export type TerrainGrid = TerrainValue[][]
-type GeneratedPosition = GridPosition | null
-type GaiaRespawnSlot = SaveEntityState & {
-  context: GameContextLike
-  family: typeof FAMILY_TYPES.animal
-  owner: PlayerLike
-}
+import type { SaveEntityState } from '../../types/save'
+import {
+  createGenerationTimer,
+  type GaiaRespawnSlot,
+  type GameConfig,
+  type GenerateMapOptions,
+  type GenerationTimer,
+  type MapBlueprint,
+  type MapGenerationContext,
+  type MapGenerationMap,
+  type ProgressCallback,
+  type SavedGameData,
+  type TerrainValue,
+  type TerrainGrid,
+} from './MapGenerationTypes'
+import type { EnvironmentTerrainParams } from '../../constants'
+import type { SavedPlayer } from './MapSaveRestore'
+export type {
+  CellDefinition,
+  GenerateMapOptions,
+  MapBlueprint,
+  MapGenerationContext,
+  MapGenerationMap,
+  ProgressCallback,
+  SavedGameData,
+  TerrainGrid,
+} from './MapGenerationTypes'
 
 // Unowned, indestructible landmark: exactly one is placed per map, never tied to any player.
 const PORTAL_RESOURCE_TYPE = 'Portal'
@@ -81,131 +94,6 @@ function createGaiaRespawnSlot(animal: SaveEntityState, context: GameContextLike
   }
 }
 
-function createGenerationTimer(timings: Record<string, number>) {
-  return {
-    timings,
-    measure<T>(name: string, callback: () => T): T {
-      const startedAt = performance.now()
-      const result = callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    },
-    async measureAsync<T>(name: string, callback: () => Promise<T> | T): Promise<T> {
-      const startedAt = performance.now()
-      const result = await callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    },
-  }
-}
-export type MapGenerationContext = MapRuntimeContext
-// Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
-// that MapGeneration relies on. Map can't be imported directly here: it imports
-// MapGeneration itself, so importing it back would create a circular dependency.
-export type MapGenerationMap = RuntimeMap & {
-  context: MapGenerationContext
-  playersPos: GeneratedPosition[]
-  banditCampPositions: GridPosition[]
-  positionsCount: number
-  noAI?: boolean
-  humanStartsWithoutBase?: boolean
-  startingUnits: number
-  generationTimings?: Record<string, number>
-  difficulty: string
-  chanceOfSets: number
-  allTechnologies: boolean
-  startingAge: number
-  instanceBuckets: Array<Array<Set<RuntimeEntity>>> | null
-  pregeneratedBlueprintId?: string | null
-  pregeneratedResourcesLoaded?: boolean
-  naturalResourceRespawnSlots?: SaveEntityState[]
-  blueprintDestroyMs?: number
-  blueprintCellCreationMs?: number
-  blueprintFillWaterGapsMs?: number
-  blueprintNormalizeWaterMs?: number
-  blueprintInitialWaterBorderMs?: number
-  blueprintWaterBorderReady?: boolean
-  blueprintResourceLoadMs?: number
-  _fogInitComplete?: boolean
-  terrainChunkManager?: { destroy(): void }
-  mapFog?: { destroyFogResources(): void }
-  children: GeneratedMapChild[]
-  removeChildren(): GeneratedMapChild[]
-  getChildByLabel(label: string): ContainerChild | null
-  clearRenderChunks(): void
-  resetRandom(stream?: number | string): void
-  findPlayerPlaces(): GeneratedPosition[]
-  generateCells(): void
-  generateTerrain(gridSize?: number, seed?: number, params?: Partial<EnvironmentTerrainParams>): TerrainGrid
-  fillWaterGaps(level?: number | null): Set<RuntimeCell>
-  normalizeWaterTopology(
-    level?: number | null,
-    seeds?: Set<RuntimeCell> | null,
-    protectedCells?: Set<RuntimeCell>
-  ): Set<RuntimeCell>
-  formatCellsWaterBorder(): void
-  rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
-  generateMapRelief(): void
-  generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
-  generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
-  generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void>
-  placePlayers(): void
-  _initFogChunks(): void
-  _indexFogChunkCells(): void
-  _flushFogQueue(): void
-  bakeTerrainToChunks(): void
-  getChildByLabel(label: string): ContainerChild | null
-  removeChild(child: ContainerChild): ContainerChild
-}
-type ResourceDefinition = {
-  category?: string
-  habitat?: string
-}
-type GameConfig = {
-  animals: Record<string, AnimalConfig>
-  resources: Record<string, ResourceDefinition>
-  cells: Record<string, CellDefinition>
-}
-export type CellDefinition = {
-  assets: TextureRef[]
-  [key: string]: string | TextureRef[] | number | boolean | undefined
-}
-export type GenerateMapOptions = {
-  onProgress?: ProgressCallback
-  terrain?: TerrainGrid | null
-}
-type BlueprintResource = {
-  i: number
-  j: number
-  type: string
-  quantity?: number
-  textureName?: string
-  startsMature?: boolean
-}
-export type MapBlueprint = {
-  seed?: string | number
-  size: number
-  mapType?: string
-  spawns?: GeneratedPosition[]
-  terrain: BlueprintTerrainValue[][]
-  relief?: number[][]
-  resources?: BlueprintResource[]
-}
-export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources' | 'animals' | 'naturalResourceRespawnSlots'> & {
-  map: SaveCellState[][]
-  players: SavedPlayer[]
-  camera: { x: number; y: number }
-  resources: SaveEntityState[]
-  naturalResourceRespawnSlots?: SaveEntityState[]
-  animals: SaveEntityState[]
-}
-type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
-type GenerationTimer = ReturnType<typeof createGenerationTimer>
-// Local view of the AI-only bookkeeping fields used while restoring saved games.
-// These live on the concrete AI player instance but are not part of the shared
-// PlayerLike contract, so we narrow to this shape only where we know (via the
-// `player.type === PLAYER_TYPES.ai` guard) that we are dealing with an AI player.
-type GeneratedMapChild = ContainerChild & Partial<RuntimeEntity>
 
 function gameContext(context: MapGenerationContext): GameContextLike {
   if (!context.app || !context.gamebox || !context.map || !context.menu || !context.controls || !context.scheduler) {
@@ -289,15 +177,13 @@ export class MapGeneration {
     if (typeof Worker === 'undefined') {
       return Promise.resolve(this.generateTerrain(gridSize, seed, params))
     }
-    const source = this.generateTerrain.toString()
+    const source = generateTerrainMap.toString()
     const functionSource = source.startsWith('function') ? `(${source})` : `(function ${source})`
     const workerSource = `
       const generateTerrain = ${functionSource};
       self.onmessage = ({ data }) => {
         try {
-          const scope = { map: { seed: data.seed, positionsCount: data.positionsCount } };
-          const terrain = generateTerrain.call(scope, data.gridSize, data.seed, data.params);
-          self.postMessage({ terrain, seed: scope.map.seed });
+          self.postMessage(generateTerrain(data.gridSize, data.seed, data.params));
         } catch (error) {
           self.postMessage({ error: error?.stack || error?.message || String(error) });
         }
@@ -922,395 +808,9 @@ export class MapGeneration {
   }
 
   generateTerrain(gridSize: number = 120, seed?: number, params: Partial<EnvironmentTerrainParams> = {}): TerrainGrid {
-    let resolvedSeed = seed
-    if (resolvedSeed == null) resolvedSeed = Math.random() * 9999
+    const { seed: resolvedSeed, terrain } = generateTerrainMap(gridSize, seed, params)
     this.map.seed = resolvedSeed
-
-    function hash(x: number, y: number): number {
-      const n = Math.sin(x * 127.1 + y * 311.7 + resolvedSeed! * 3.7) * 43758.5453
-      return n - Math.floor(n)
-    }
-
-    function noise(x: number, y: number): number {
-      const xi = Math.floor(x),
-        yi = Math.floor(y)
-      const xf = x - xi,
-        yf = y - yi
-      const smooth = (t: number) => t * t * (3 - 2 * t)
-      const u = smooth(xf),
-        v = smooth(yf)
-      const a = hash(xi, yi),
-        b = hash(xi + 1, yi)
-      const c = hash(xi, yi + 1),
-        d = hash(xi + 1, yi + 1)
-      return a + (b - a) * u + (c - a) * v + (d + a - b - c) * u * v
-    }
-
-    function fbm(x: number, y: number, octaves: number = 5): number {
-      let val = 0,
-        amp = 0.5,
-        freq = 1,
-        sum = 0
-      for (let o = 0; o < octaves; o++) {
-        val += noise(x * freq, y * freq) * amp
-        sum += amp
-        amp *= 0.5
-        freq *= 2
-      }
-      return val / sum
-    }
-
-    const scale = 4 / gridSize
-    const half = gridSize / 2
-
-    // Plateau + narrow falloff: the inner 85% radius (~72% of the map's area) is fully
-    // land-biased and untouched by edge proximity, so the coastline forms from a thin band
-    // near the border instead of eating into the interior. There are no boats to reach
-    // stray islands, so the map should read as one big landmass, not a natural archipelago.
-    const falloffPlateau = 0.85
-    function radialFalloff(i: number, j: number): number {
-      const dx = (i - half) / half
-      const dy = (j - half) / half
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist <= falloffPlateau) return 1
-      const t = Math.min(1, (dist - falloffPlateau) / (1 - falloffPlateau))
-      return 1 - t * t * (3 - 2 * t)
-    }
-
-    // One map = one environment: `groundType` is the single ground type covering this
-    // environment's non-water land (see EnvironmentTerrainParams) — water sparsity,
-    // patchwork shapes and lakes come from `params` too. The default below (used only if
-    // a caller omits `params` entirely) matches Temperate.
-    const terrainValueByType = {
-      Grass: 0,
-      Desert: 1,
-      Jungle: 3,
-      DarkForest: 4,
-      Dirt: 5,
-      Snow: 7,
-    } satisfies Record<'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | 'Dirt' | 'Snow', TerrainValue>
-    const groundTypeValue = terrainValueByType[params.groundType ?? 'Grass']
-    const height = new Float32Array(gridSize * gridSize)
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        height[i * gridSize + j] = fbm(i * scale, j * scale)
-      }
-    }
-
-    const waterThreshold = 0.28
-
-    const terrainMap: TerrainGrid = []
-    const borderWaterWidth = Math.max(4, Math.floor(gridSize * 0.04))
-    for (let i = 0; i < gridSize; i++) {
-      terrainMap[i] = []
-      for (let j = 0; j < gridSize; j++) {
-        let h = height[i * gridSize + j]
-        const fo = radialFalloff(i, j)
-
-        h += (fo - 0.5) * 0.75
-
-        terrainMap[i][j] = h < waterThreshold ? 2 : groundTypeValue
-      }
-    }
-
-    for (let pass = 0; pass < 2; pass++) {
-      for (let i = 1; i < gridSize - 1; i++) {
-        for (let j = 1; j < gridSize - 1; j++) {
-          const wn =
-            (terrainMap[i - 1][j] === 2 ? 1 : 0) +
-            (terrainMap[i + 1][j] === 2 ? 1 : 0) +
-            (terrainMap[i][j - 1] === 2 ? 1 : 0) +
-            (terrainMap[i][j + 1] === 2 ? 1 : 0)
-          if (terrainMap[i][j] !== 2 && wn >= 3) terrainMap[i][j] = 2
-          if (terrainMap[i][j] === 2 && wn <= 1) terrainMap[i][j] = groundTypeValue
-        }
-      }
-    }
-
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        if (
-          i < borderWaterWidth ||
-          j < borderWaterWidth ||
-          i >= gridSize - borderWaterWidth ||
-          j >= gridSize - borderWaterWidth
-        ) {
-          terrainMap[i][j] = 2
-        }
-      }
-    }
-
-    // There are no boats: drown every land component except the largest one so the map
-    // is a single reachable landmass instead of a mainland dotted with useless islets.
-    function removeDisconnectedLand(): void {
-      const visited = new Uint8Array(gridSize * gridSize)
-      let bestComponent: number[] | null = null
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          const start = i * gridSize + j
-          if (terrainMap[i][j] === 2 || visited[start]) continue
-          visited[start] = 1
-          const component = [start]
-          const stack = [start]
-          while (stack.length) {
-            const idx = stack.pop()!
-            const ci = Math.floor(idx / gridSize)
-            const cj = idx % gridSize
-            // Plain index access, not array destructuring: this method's compiled body is
-            // extracted via .toString() and run inside a Web Worker in total isolation
-            // (see generateTerrainInWorker) — destructuring a tuple here compiles to a
-            // call to Babel's `_slicedToArray` helper, which only exists in the surrounding
-            // bundle and is undefined inside the worker, throwing a ReferenceError there.
-            const neighbors: [number, number][] = [
-              [ci - 1, cj],
-              [ci + 1, cj],
-              [ci, cj - 1],
-              [ci, cj + 1],
-            ]
-            for (let neighborIndex = 0; neighborIndex < neighbors.length; neighborIndex++) {
-              const ni = neighbors[neighborIndex][0]
-              const nj = neighbors[neighborIndex][1]
-              if (ni < 0 || nj < 0 || ni >= gridSize || nj >= gridSize) continue
-              const nIdx = ni * gridSize + nj
-              if (visited[nIdx] || terrainMap[ni][nj] === 2) continue
-              visited[nIdx] = 1
-              component.push(nIdx)
-              stack.push(nIdx)
-            }
-          }
-          if (!bestComponent || component.length > bestComponent.length) bestComponent = component
-        }
-      }
-      if (!bestComponent) return
-      const mainland = new Uint8Array(gridSize * gridSize)
-      // Plain indexed loop, not for...of: same worker-isolation constraint as above —
-      // Babel can compile even a guaranteed-array for...of down to a call to its
-      // `_createForOfIteratorHelper` runtime helper, which is equally undefined inside
-      // the isolated worker scope.
-      for (let componentIndex = 0; componentIndex < bestComponent.length; componentIndex++) {
-        mainland[bestComponent[componentIndex]] = 1
-      }
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          if (terrainMap[i][j] !== 2 && !mainland[i * gridSize + j]) terrainMap[i][j] = 2
-        }
-      }
-    }
-    removeDisconnectedLand()
-
-    function forceOuterWater(): void {
-      for (let i = 0; i < gridSize; i++) {
-        for (let j = 0; j < gridSize; j++) {
-          if (
-            i < borderWaterWidth ||
-            j < borderWaterWidth ||
-            i >= gridSize - borderWaterWidth ||
-            j >= gridSize - borderWaterWidth
-          ) {
-            terrainMap[i][j] = 2
-          }
-        }
-      }
-    }
-
-    function featureCount(baseCount: number): number {
-      return Math.max(0, Math.round(baseCount * Math.max(1, gridSize / 144)))
-    }
-
-    function randomRange(min: number, max: number, salt: number): number {
-      return min + hash(salt * 12.9898 + 78.233, salt * 37.719 + 11.17) * (max - min)
-    }
-
-    function randomInt(min: number, max: number, salt: number): number {
-      return Math.floor(randomRange(min, max + 1, salt))
-    }
-
-    function normalizedShapeDistance(di: number, dj: number, radius: number, shapeIndex: number): number {
-      const angle = Math.atan2(dj, di)
-      const rx = radius * (shapeIndex === 1 ? 1.35 : shapeIndex === 2 ? 0.85 : 1.05)
-      const ry = radius * (shapeIndex === 1 ? 0.85 : shapeIndex === 2 ? 1.25 : 0.95)
-      const bend = shapeIndex === 3 ? Math.sin(angle * 2) * radius * 0.18 : 0
-      const x = (di + bend) / rx
-      const y = (dj - (shapeIndex === 2 ? Math.cos(angle) * radius * 0.12 : 0)) / ry
-      return Math.sqrt(x * x + y * y)
-    }
-
-    function isInteriorNonWaterTerrainCell(i: number, j: number, margin = 2): boolean {
-      return (
-        i >= borderWaterWidth + margin &&
-        j >= borderWaterWidth + margin &&
-        i < gridSize - borderWaterWidth - margin &&
-        j < gridSize - borderWaterWidth - margin &&
-        terrainMap[i]?.[j] !== 2
-      )
-    }
-
-    function applyGroundPatch(
-      centerI: number,
-      centerJ: number,
-      radius: number,
-      terrainValue: TerrainValue,
-      salt: number
-    ): void {
-      const shapeIndex = randomInt(0, 3, salt + 17)
-      const lobeCount = randomInt(1, 3, salt + 23)
-      const lobeAngles = [randomRange(0, Math.PI * 2, salt + 31), randomRange(0, Math.PI * 2, salt + 37)]
-      const lobeOffsets = [
-        randomRange(radius * 0.18, radius * 0.42, salt + 41),
-        randomRange(radius * 0.16, radius * 0.36, salt + 43),
-      ]
-      const lobeRadii = [
-        randomRange(radius * 0.42, radius * 0.72, salt + 47),
-        randomRange(radius * 0.34, radius * 0.58, salt + 53),
-      ]
-      const maxRadius = Math.ceil(radius * 2)
-      const patchCells: Array<[number, number]> = []
-      for (let di = -maxRadius; di <= maxRadius; di++) {
-        for (let dj = -maxRadius; dj <= maxRadius; dj++) {
-          const ni = centerI + di
-          const nj = centerJ + dj
-          if (!isInteriorNonWaterTerrainCell(ni, nj)) continue
-          let edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
-          for (let lobeIndex = 0; lobeIndex < lobeCount - 1; lobeIndex++) {
-            const angle = lobeAngles[lobeIndex]
-            const li = Math.cos(angle) * lobeOffsets[lobeIndex]
-            const lj = Math.sin(angle) * lobeOffsets[lobeIndex]
-            edge = Math.min(edge, normalizedShapeDistance(di - li, dj - lj, lobeRadii[lobeIndex], shapeIndex))
-          }
-          const angle = Math.atan2(dj, di)
-          const contour =
-            Math.sin(angle * 2 + randomRange(-Math.PI, Math.PI, salt + 59)) * 0.1 +
-            Math.sin(angle * 5 + randomRange(-Math.PI, Math.PI, salt + 61)) * 0.06
-          const coarseNoise = (hash(ni * 0.37 + salt, nj * 0.37 - salt) - 0.5) * 0.28
-          const fineNoise = (hash(ni * 1.17 - salt, nj * 1.17 + salt) - 0.5) * 0.16
-          const porousEdge = edge > 0.72 && hash(ni * 2.19 + salt, nj * 2.19 - salt) < (edge - 0.72) * 0.45
-          if (edge + contour + coarseNoise + fineNoise <= 1 && !porousEdge) {
-            patchCells.push([ni, nj])
-          }
-        }
-      }
-      const shouldKeep = (i: number, j: number): boolean => {
-        let neighbours = 0
-        for (let ai = -1; ai <= 1; ai++) {
-          for (let aj = -1; aj <= 1; aj++) {
-            if (ai === 0 && aj === 0) continue
-            if (terrainMap[i + ai]?.[j + aj] === terrainValue) neighbours++
-          }
-        }
-        return neighbours >= 2
-      }
-      for (let index = 0; index < patchCells.length; index++) {
-        const cell = patchCells[index]
-        terrainMap[cell[0]][cell[1]] = terrainValue
-      }
-      for (let index = 0; index < patchCells.length; index++) {
-        const cell = patchCells[index]
-        if (!shouldKeep(cell[0], cell[1])) terrainMap[cell[0]][cell[1]] = groundTypeValue
-      }
-    }
-
-    function applyLake(
-      centerI: number,
-      centerJ: number,
-      radius: number,
-      shoreRadius: number,
-      shoreValue: TerrainValue | null,
-      salt: number
-    ): void {
-      const shapeIndex = randomInt(0, 3, salt + 29)
-      const maxRadius = Math.ceil(radius + shoreRadius + 2)
-      const lakeCells: Array<[number, number]> = []
-      for (let di = -maxRadius; di <= maxRadius; di++) {
-        for (let dj = -maxRadius; dj <= maxRadius; dj++) {
-          const ni = centerI + di
-          const nj = centerJ + dj
-          if (
-            ni < borderWaterWidth + maxRadius ||
-            nj < borderWaterWidth + maxRadius ||
-            ni >= gridSize - borderWaterWidth - maxRadius ||
-            nj >= gridSize - borderWaterWidth - maxRadius
-          ) {
-            continue
-          }
-          const edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
-          const roughness = (hash(ni * 0.51 + salt, nj * 0.51 - salt) - 0.5) * 0.28
-          if (edge + roughness <= 1) {
-            lakeCells.push([ni, nj])
-            terrainMap[ni][nj] = 2
-          }
-        }
-      }
-      if (!lakeCells.length || shoreValue == null || shoreRadius <= 0) return
-      for (let di = -maxRadius; di <= maxRadius; di++) {
-        for (let dj = -maxRadius; dj <= maxRadius; dj++) {
-          const ni = centerI + di
-          const nj = centerJ + dj
-          if (!isInteriorNonWaterTerrainCell(ni, nj)) continue
-          const edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
-          const roughness = (hash(ni * 0.61 + salt, nj * 0.61 - salt) - 0.5) * 0.35
-          if (edge > 1 && edge <= 1 + shoreRadius / Math.max(radius, 1) + roughness) terrainMap[ni][nj] = shoreValue
-        }
-      }
-    }
-
-    // Lakes are carved first so patchwork (right below) can see them and steer Dirt
-    // clear of any shoreline — Dirt and Desert relief borders look fine on their own,
-    // but the two don't compose where they'd have to meet at the same cell.
-    const lakes = params.lakes
-    if (lakes && lakes.count > 0) {
-      const shoreValue = lakes.shoreType ? terrainValueByType[lakes.shoreType] : null
-      for (let index = 0; index < featureCount(lakes.count); index++) {
-        const salt = 5000 + index * 43
-        const margin = borderWaterWidth + Math.ceil(lakes.maxRadius + lakes.shoreRadius) + 5
-        const centerI = randomInt(margin, gridSize - margin - 1, salt)
-        const centerJ = randomInt(margin, gridSize - margin - 1, salt + 11)
-        const radius = randomRange(lakes.minRadius, lakes.maxRadius, salt + 19)
-        applyLake(centerI, centerJ, radius, lakes.shoreRadius, shoreValue, salt)
-      }
-    }
-
-    function hasWaterWithin(centerI: number, centerJ: number, distance: number): boolean {
-      const r = Math.ceil(distance)
-      const distanceSq = distance * distance
-      for (let di = -r; di <= r; di++) {
-        for (let dj = -r; dj <= r; dj++) {
-          if (di * di + dj * dj > distanceSq) continue
-          if (terrainMap[centerI + di]?.[centerJ + dj] === 2) return true
-        }
-      }
-      return false
-    }
-
-    const patchwork = params.patchwork
-    if (patchwork && patchwork.count > 0) {
-      const terrainValue = terrainValueByType[patchwork.terrainType]
-      // Desert's own patchwork/lakes use Jungle and are meant to hug water (the oasis
-      // look); Dirt/Snow need to stay clear of the desert-styled water border.
-      const requireWaterClearance = patchwork.terrainType === 'Dirt' || patchwork.terrainType === 'Snow'
-      for (let index = 0; index < featureCount(patchwork.count); index++) {
-        const salt = 1000 + index * 31
-        const margin = borderWaterWidth + Math.ceil(patchwork.maxRadius) + 4
-        const radius = randomRange(patchwork.minRadius, patchwork.maxRadius, salt + 13)
-        const waterClearance = Math.ceil(radius * 1.5) + 3
-        let centerI = 0
-        let centerJ = 0
-        let placed = false
-        for (let attempt = 0; attempt < 12; attempt++) {
-          const attemptSalt = salt + attempt * 101
-          centerI = randomInt(margin, gridSize - margin - 1, attemptSalt)
-          centerJ = randomInt(margin, gridSize - margin - 1, attemptSalt + 7)
-          if (!requireWaterClearance || !hasWaterWithin(centerI, centerJ, waterClearance)) {
-            placed = true
-            break
-          }
-        }
-        if (placed) applyGroundPatch(centerI, centerJ, radius, terrainValue, salt)
-      }
-    }
-
-    forceOuterWater()
-
-    return terrainMap
+    return terrain
   }
 
   _hasSolidNeighbor(i: number, j: number): boolean {

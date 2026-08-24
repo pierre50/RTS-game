@@ -40,11 +40,9 @@ import {
 } from '../../lib/unitExperience'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { t } from '../../lib/lang'
-import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
+import { isHeroControlled } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
-import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
-import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import {
   addCarriedResource,
   clearCarriedResource,
@@ -55,6 +53,14 @@ import {
   getTotalCarriedResources,
 } from '../../lib/resourceCarry'
 import { handleCaptureHorseAction } from './UnitCaptureHorseAction'
+import {
+  applyLoadingWorkAssets,
+  applyUnloadedWorkAssets,
+  finishManualHeroWorkSwing,
+  lockManualHeroAction,
+  setActionSpriteLoop,
+  stopManualHeroAction,
+} from './UnitManualHeroWork'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CommandSound } from '../../types/entities'
@@ -117,91 +123,6 @@ function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): valu
 const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined => {
   if (!owner) return undefined
   return key === 'units' ? owner.units : owner.buildings
-}
-
-function stopManualHeroAction(unit: UnitEntity): void {
-  unit.previousDest = null
-  unit.stop?.()
-}
-
-function stopManualHeroActionAfterLoop(unit: UnitEntity): void {
-  const sprite = unit.sprite
-  if (!sprite) {
-    stopManualHeroAction(unit)
-    return
-  }
-  sprite.onLoop = () => {
-    sprite.onLoop = undefined
-    unit.actionLocked = false
-    stopManualHeroAction(unit)
-  }
-}
-
-// Stays locked for the whole ongoing action (every swing loop), not just the
-// first one — release is explicit, via stopManualHeroAction/AfterLoop once
-// the target is gone or the player releases the action key/button.
-function lockManualHeroAction(unit: UnitEntity): void {
-  if (!isHeroControlled(unit)) return
-  unit.actionLocked = true
-}
-
-function finishManualHeroWorkRecovery(unit: UnitEntity, releaseFrame: number): boolean {
-  if (!isHeroControlled(unit)) return false
-  const actionAtRelease = unit.action ?? null
-  const destAtRelease = unit.dest
-  const sprite = unit.sprite
-  if (sprite) {
-    sprite.onFrameChange = undefined
-    sprite.onLoop = undefined
-  }
-  setActionSpriteLoop(unit, false)
-  const handled = playReverseSlashRecovery(unit, {
-    onComplete: () => {
-      setActionSpriteLoop(unit, true)
-      unit.actionLocked = false
-      if (!actionAtRelease || unit.isDead || unit.isDestroyed) return
-      if (isManualHeroActionReleased(unit)) {
-        stopManualHeroAction(unit)
-        return
-      }
-      if (unit.action !== actionAtRelease || unit.dest !== destAtRelease) return
-      if (!unit.getActionCondition?.(destAtRelease, actionAtRelease)) {
-        unit.affectNewDest?.()
-        return
-      }
-      logHeroSlashFrame(unit, 'manual:resume-action', { actionAtRelease })
-      unit.getAction?.(actionAtRelease)
-    },
-    releaseFrame,
-  })
-  if (!handled) setActionSpriteLoop(unit, true)
-  return handled
-}
-
-function finishManualHeroWorkSwing(unit: UnitEntity, releaseFrame: number): void {
-  if (finishManualHeroWorkRecovery(unit, releaseFrame)) return
-  if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
-}
-
-function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
-  if (unit.sprite) unit.sprite.loop = loop
-  if (unit.shadow) unit.shadow.loop = loop
-  const layers = (unit as UnitEntity & { appearanceLayerSprites?: Map<number, { loop: boolean }> })
-    .appearanceLayerSprites
-  for (const sprite of layers?.values() ?? []) {
-    sprite.loop = loop
-  }
-}
-
-function applyLoadingWorkAssets(unit: UnitEntity): void {
-  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: true })
-  if (unit.currentSheet && (unit.currentSheet === SHEET_TYPES.standing || unit.currentSheet === SHEET_TYPES.walking)) {
-    unit.setTextures?.(unit.currentSheet)
-  }
-}
-
-function applyUnloadedWorkAssets(unit: UnitEntity): void {
-  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: false })
 }
 
 function resumeAutonomyOrStop(unit: UnitEntity): void {
@@ -611,184 +532,419 @@ export class UnitActions {
     }
   }
 
-  getAction(name: string) {
+  prepareLoopingWorkAction(): boolean {
+    const unit = this.unit
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
+      return false
+    }
+    unit.setTextures?.(SHEET_TYPES.action)
+    if (!unit.sprite) return false
+    lockManualHeroAction(unit)
+    return true
+  }
+
+  handleDeliveryAction() {
+    const unit = this.unit
+    const menu = unit.context?.menu
+    if (isHeroControlled(unit)) getTotalCarriedResources(unit)
+    if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
+      unit.stop?.()
+      return
+    }
+    const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+    const entries = dest ? getDeliverableResourceEntries(unit, dest) : []
+    const deliveredAmount = entries.reduce((total, [, amount]) => total + amount, 0)
+    if (deliveredAmount <= 0) {
+      unit.stop?.()
+      return
+    }
+    for (const [loadingType, amount] of entries) {
+      const resourceKey = getPlayerResourceKey(loadingType)
+      if (resourceKey && unit.owner) {
+        unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
+      }
+      clearCarriedResource(unit, loadingType)
+    }
+    showResourceGainFeedback(unit, deliveredAmount)
+    unit.owner?.isPlayed && menu?.updateTopbar()
+    unit.updateInterfaceLoading?.()
+    if (getTotalCarriedResources(unit) > 0) {
+      applyLoadingWorkAssets(unit)
+    } else {
+      clearCarriedResources(unit)
+      applyUnloadedWorkAssets(unit)
+    }
+    unit.setTextures?.(SHEET_TYPES.standing)
+    if (unit.previousDest) {
+      unit.goBackToPrevious?.()
+    } else {
+      resumeAutonomyOrStop(unit)
+    }
+  }
+
+  handleFarmAction() {
+    const unit = this.unit
+    const menu = unit.context?.menu
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
+      return
+    }
+    const dest = isFarmHarvestTarget(unit.dest) ? unit.dest : null
+    if (!dest) return
+    if (!isHeroControlled(unit)) dest.isUsedBy = unit
+    if (!this.prepareLoopingWorkAction()) return
+    const sprite = unit.sprite
+    if (!sprite) return
+    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+      const d = isFarmHarvestTarget(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(d)) {
+        if ((d?.quantity ?? 0) <= 0) {
+          d?.die?.()
+        }
+        unit.affectNewDest?.()
+        return
+      }
+      if (d && !isHeroControlled(unit)) d.isUsedBy = unit
+      const wasEmpty = getTotalCarriedResources(unit) === 0
+      const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, LOADING_TYPES.wheat))
+      if (!d || gain <= 0) {
+        if (isHeroControlled(unit)) {
+          if (d) {
+            d.isUsedBy = null
+            menu?.showMessage(t('heroInventoryFull'), 'warning')
+          }
+          stopManualHeroAction(unit)
+          return
+        }
+        unit.sendToDelivery?.()
+        if (d) d.isUsedBy = null
+        return
+      }
+      if (!spendOrWaitForEnergy(unit, unit.action, d)) {
+        if (isHeroControlled(unit)) stopManualHeroAction(unit)
+        return
+      }
+      addCarriedResource(unit, LOADING_TYPES.wheat, gain)
+      grantUnitXp(unit, XP_CATEGORIES.farming, gain)
+      unit.updateInterfaceLoading?.()
+      if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
+      this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
+      d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
+      showResourceGainFeedback(unit, gain)
+      if (d.selected) {
+        menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
+      }
+      if ((d.quantity ?? 0) <= 0) {
+        d.die?.()
+        unit.affectNewDest?.()
+      }
+      if (wasEmpty) {
+        applyLoadingWorkAssets(unit)
+      }
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+    })
+  }
+
+  handleChopWoodAction() {
     const unit = this.unit
     const menu = unit.context?.menu
     const player = unit.owner
+    if (!this.prepareLoopingWorkAction()) return
+    const sprite = unit.sprite
+    if (!sprite) return
+    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+      const dest = isResourceEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if ((dest?.quantity ?? 0) <= 0) {
+          dest?.die?.()
+        }
+        unit.affectNewDest?.()
+        return
+      }
+      if (!dest) return
+      const woodSpace = getCarriedResourceSpace(unit, LOADING_TYPES.wood)
+      if (woodSpace <= 0) {
+        if (isHeroControlled(unit)) {
+          menu?.showMessage(t('heroInventoryFull'), 'warning')
+          stopManualHeroAction(unit)
+          return
+        }
+        unit.sendToDelivery?.()
+        return
+      }
+      if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+        if (isHeroControlled(unit)) stopManualHeroAction(unit)
+        return
+      }
+      this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
+      if ((dest.hitPoints ?? 0) > 0) {
+        const previousHitPoints = dest.hitPoints ?? 0
+        dest.hitPoints = Math.max(previousHitPoints - 1, 0)
+        showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
+        grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
+        if (dest.selected) {
+          syncEntityHealthDisplay(dest, { menu, player, emptyWhenDepleted: true })
+        }
+        if ((dest.hitPoints ?? 0) <= 0) {
+          dest.hitPoints = 0
+          dest.setCuttedTreeTexture?.()
+        }
+      } else {
+        const wasEmpty = getTotalCarriedResources(unit) === 0
+        const gain = Math.min(getGatherAmount(unit), woodSpace)
+        addCarriedResource(unit, LOADING_TYPES.wood, gain)
+        grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
+        unit.updateInterfaceLoading?.()
+        if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
+        dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
+        showResourceGainFeedback(unit, gain)
+        if (dest.selected) {
+          menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
+        }
+        if ((dest.quantity ?? 0) <= 0) {
+          dest.die?.()
+          unit.affectNewDest?.()
+        }
+        if (wasEmpty) {
+          applyLoadingWorkAssets(unit)
+        }
+      }
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+    })
+  }
+
+  handleBuildAction() {
+    const unit = this.unit
+    const menu = unit.context?.menu
+    const player = unit.owner
+    if (!this.prepareLoopingWorkAction()) return
+    const sprite = unit.sprite
+    if (!sprite) return
+    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+      const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
+        unit.affectNewDest?.()
+        return
+      }
+      if (!dest) return
+      if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+        if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+          if (isHeroControlled(unit)) stopManualHeroAction(unit)
+          return
+        }
+        this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
+        dest.hitPoints = Math.min(
+          Math.round(
+            (dest.hitPoints ?? 0) +
+              ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
+          ),
+          dest.totalHitPoints ?? 0
+        )
+        grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
+        if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
+          syncEntityHealthDisplay(dest, { menu, player, forceInfo: unit.owner?.isPlayed })
+        }
+        dest.updateHitPoints?.(unit.action ?? '')
+      } else {
+        if (!dest.isBuilt) {
+          dest.updateHitPoints?.(unit.action ?? '')
+          dest.isBuilt = true
+        }
+        if (unit.continueBuildingQueue?.()) return
+        unit.affectNewDest?.()
+      }
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+    })
+  }
+
+  handleTrainAction() {
+    const unit = this.unit
+    const menu = unit.context?.menu
+    const dest = isBuildingEntity(unit.dest) ? unit.dest : null
+    const trainingType = unit.trainingTargetType ?? ''
+    if (!trainingType || !dest || !unit.getActionCondition?.(dest, ACTION_TYPES.train, { trainingType })) {
+      unit.trainingTargetType = null
+      unit.stop?.()
+      return
+    }
+    if (!dest?.startTrainingWithUnit?.(unit)) {
+      const buildingBusy = Boolean(
+        dest && (dest.loading !== null || dest.queue?.length || dest.technology || dest.trainingUnit)
+      )
+      if (buildingBusy) {
+        unit.trainingTargetType = null
+        if (unit.owner?.isPlayed) {
+          menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
+        }
+        unit.stop?.()
+        return
+      }
+      unit.trainingTargetType = null
+      unit.stop?.()
+    }
+  }
+
+  handleHealAction() {
+    const unit = this.unit
+    const menu = unit.context?.menu
+    const player = unit.owner
+    const sprite = unit.sprite
+    if (!sprite) return
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
+      return
+    }
+    unit.setTextures?.(SHEET_TYPES.action)
+    sprite.onLoop = () => {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        unit.affectNewDest?.()
+        return
+      }
+      syncMovedActionTarget(unit, dest)
+      if (!unit.isUnitAtDest?.(unit.action, dest)) {
+        unit.sendToEvt?.(dest ?? null, ACTION_TYPES.heal, { forceRepath: true })
+        return
+      }
+      if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
+        if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
+        this.playSound(unit.sounds?.heal)
+        const beforeHitPoints = dest.hitPoints ?? 0
+        dest.hitPoints = Math.min(
+          beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit),
+          dest.totalHitPoints ?? 0
+        )
+        const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
+        if (healedAmount > 0) showHealingFeedback(dest)
+        grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
+        if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
+          syncEntityHealthDisplay(dest, { menu, player })
+        }
+      }
+    }
+  }
+
+  handleConvertAction() {
+    const unit = this.unit
     const map = unit.context?.map
+    const sprite = unit.sprite
+    if (!sprite) return
+    if (!unit.getActionCondition?.(unit.dest)) {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'start' })
+      unit.affectNewDest?.()
+      return
+    }
+    unit.conversionChants = 0
+    unit.setTextures?.(SHEET_TYPES.action)
+    sprite.onLoop = () => {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'loop' })
+        unit.affectNewDest?.()
+        return
+      }
+      syncMovedActionTarget(unit, dest)
+      if (!unit.isUnitAtDest?.(unit.action, dest)) {
+        unit.sendToEvt?.(dest ?? null, ACTION_TYPES.convert, { forceRepath: true })
+        return
+      }
+
+      if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
+      this.playSound(unit.sounds?.convert)
+      unit.conversionChants = (unit.conversionChants || 0) + 1
+      const { minChants, chance } = this.getConversionRules()
+      if (unit.conversionChants >= minChants && map && map.random() < chance && dest) {
+        this.convertTarget(dest)
+      }
+    }
+  }
+
+  handleHuntAction() {
+    const unit = this.unit
+    const map = unit.context?.map
+    const player = unit.owner
+    const sprite = unit.sprite
+    if (!sprite) return
+    if (!unit.getActionCondition?.(unit.dest)) {
+      unit.affectNewDest?.()
+      return
+    }
+    const huntDest = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (!huntDest) {
+      unit.affectNewDest?.()
+      return
+    }
+    if (huntDest.isDead) {
+      if (isHeroControlled(unit)) {
+        stopManualHeroAction(unit)
+        return
+      }
+      unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
+      return
+    }
+    unit.setTextures?.(SHEET_TYPES.action)
+    sprite.onLoop = () => {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!unit.getActionCondition?.(dest)) {
+        if (dest && (dest.hitPoints ?? 0) <= 0) {
+          dest.die?.()
+          if (isHeroControlled(unit)) {
+            stopManualHeroAction(unit)
+            return
+          }
+          unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)
+          return
+        }
+        unit.affectNewDest?.()
+        return
+      }
+      if (!unit.isUnitAtDest?.(unit.action, dest)) {
+        if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest, player))) {
+          unit.sendToEvt?.(dest ?? null, ACTION_TYPES.hunt, { forceRepath: true })
+        } else {
+          unit.stop?.()
+        }
+        return
+      }
+      syncMovedActionTarget(unit, dest)
+    }
+    onSpriteLoopAtFrame(sprite, BOW_SHOOT_RELEASE_FRAME, () => {
+      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+      if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
+      if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
+      const projectile = new Projectile(
+        {
+          owner: unit,
+          target: dest,
+          type: HUNTING_PROJECTILE,
+          destination: unit.realDest,
+        },
+        unit.context!
+      )
+      map.addChild(projectile)
+    })
+  }
+
+  getAction(name: string) {
+    const unit = this.unit
     const sprite = unit.sprite
     if (!sprite) return
     setActionSpriteLoop(unit, true)
     sprite.onLoop = undefined
     sprite.onFrameChange = undefined
     switch (name) {
-      case ACTION_TYPES.delivery: {
-        if (isHeroControlled(unit)) getTotalCarriedResources(unit)
-        if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
-          unit.stop?.()
-          return
-        }
-        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-        const entries = dest ? getDeliverableResourceEntries(unit, dest) : []
-        const deliveredAmount = entries.reduce((total, [, amount]) => total + amount, 0)
-        if (deliveredAmount <= 0) {
-          unit.stop?.()
-          return
-        }
-        for (const [loadingType, amount] of entries) {
-          const resourceKey = getPlayerResourceKey(loadingType)
-          if (resourceKey && unit.owner) {
-            unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
-          }
-          clearCarriedResource(unit, loadingType)
-        }
-        showResourceGainFeedback(unit, deliveredAmount)
-        unit.owner?.isPlayed && menu?.updateTopbar()
-        unit.updateInterfaceLoading?.()
-        if (getTotalCarriedResources(unit) > 0) {
-          applyLoadingWorkAssets(unit)
-        } else {
-          clearCarriedResources(unit)
-          applyUnloadedWorkAssets(unit)
-        }
-        unit.setTextures?.(SHEET_TYPES.standing)
-        if (unit.previousDest) {
-          unit.goBackToPrevious?.()
-        } else {
-          resumeAutonomyOrStop(unit)
-        }
+      case ACTION_TYPES.delivery:
+        this.handleDeliveryAction()
         break
-      }
-      case ACTION_TYPES.farm: {
-        if (!unit.getActionCondition?.(unit.dest)) {
-          unit.affectNewDest?.()
-          return
-        }
-        const dest = isFarmHarvestTarget(unit.dest) ? unit.dest : null
-        if (!dest) return
-        if (!isHeroControlled(unit)) dest.isUsedBy = unit
-        unit.setTextures?.(SHEET_TYPES.action)
-        if (!unit.sprite) return
-        lockManualHeroAction(unit)
-        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
-          const d = isFarmHarvestTarget(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(d)) {
-            if ((d?.quantity ?? 0) <= 0) {
-              d?.die?.()
-            }
-            unit.affectNewDest?.()
-            return
-          }
-          if (d && !isHeroControlled(unit)) d.isUsedBy = unit
-          const wasEmpty = getTotalCarriedResources(unit) === 0
-          const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, LOADING_TYPES.wheat))
-          if (!d || gain <= 0) {
-            if (isHeroControlled(unit)) {
-              if (d) {
-                d.isUsedBy = null
-                menu?.showMessage(t('heroInventoryFull'), 'warning')
-              }
-              stopManualHeroAction(unit)
-              return
-            }
-            unit.sendToDelivery?.()
-            if (d) d.isUsedBy = null
-            return
-          }
-          if (!spendOrWaitForEnergy(unit, unit.action, d)) {
-            if (isHeroControlled(unit)) stopManualHeroAction(unit)
-            return
-          }
-          addCarriedResource(unit, LOADING_TYPES.wheat, gain)
-          grantUnitXp(unit, XP_CATEGORIES.farming, gain)
-          unit.updateInterfaceLoading?.()
-          if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
-          this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
-          d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
-          showResourceGainFeedback(unit, gain)
-          if (d.selected) {
-            menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
-          }
-          if ((d.quantity ?? 0) <= 0) {
-            d.die?.()
-            unit.affectNewDest?.()
-          }
-          if (wasEmpty) {
-            applyLoadingWorkAssets(unit)
-          }
-          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
-        })
+      case ACTION_TYPES.farm:
+        this.handleFarmAction()
         break
-      }
-      case ACTION_TYPES.chopwood: {
-        if (!unit.getActionCondition?.(unit.dest)) {
-          unit.affectNewDest?.()
-          return
-        }
-        unit.setTextures?.(SHEET_TYPES.action)
-        if (!unit.sprite) return
-        lockManualHeroAction(unit)
-        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
-          const dest = isResourceEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            if ((dest?.quantity ?? 0) <= 0) {
-              dest?.die?.()
-            }
-            unit.affectNewDest?.()
-            return
-          }
-          if (!dest) return
-          const woodSpace = getCarriedResourceSpace(unit, LOADING_TYPES.wood)
-          if (woodSpace <= 0) {
-            if (isHeroControlled(unit)) {
-              menu?.showMessage(t('heroInventoryFull'), 'warning')
-              stopManualHeroAction(unit)
-              return
-            }
-            unit.sendToDelivery?.()
-            return
-          }
-          if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
-            if (isHeroControlled(unit)) stopManualHeroAction(unit)
-            return
-          }
-          this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
-          if ((dest.hitPoints ?? 0) > 0) {
-            const previousHitPoints = dest.hitPoints ?? 0
-            dest.hitPoints = Math.max(previousHitPoints - 1, 0)
-            showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
-            grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
-            if (dest.selected) {
-              syncEntityHealthDisplay(dest, { menu, player, emptyWhenDepleted: true })
-            }
-            if ((dest.hitPoints ?? 0) <= 0) {
-              dest.hitPoints = 0
-              dest.setCuttedTreeTexture?.()
-            }
-          } else {
-            const wasEmpty = getTotalCarriedResources(unit) === 0
-            const gain = Math.min(getGatherAmount(unit), woodSpace)
-            addCarriedResource(unit, LOADING_TYPES.wood, gain)
-            grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
-            unit.updateInterfaceLoading?.()
-            if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
-            dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
-            showResourceGainFeedback(unit, gain)
-            if (dest.selected) {
-              menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
-            }
-            if ((dest.quantity ?? 0) <= 0) {
-              dest.die?.()
-              unit.affectNewDest?.()
-            }
-            if (wasEmpty) {
-              applyLoadingWorkAssets(unit)
-            }
-          }
-          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
-        })
+      case ACTION_TYPES.chopwood:
+        this.handleChopWoodAction()
         break
-      }
       case ACTION_TYPES.forageberry:
         this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
           onDepleted: dest => {
@@ -803,148 +959,20 @@ export class UnitActions {
       case ACTION_TYPES.mineiron:
         this.startMiningResource(unit.action)
         break
-      case ACTION_TYPES.build: {
-        if (!unit.getActionCondition?.(unit.dest)) {
-          unit.affectNewDest?.()
-          return
-        }
-        unit.setTextures?.(SHEET_TYPES.action)
-        if (!unit.sprite) return
-        lockManualHeroAction(unit)
-        onSpriteLoopAtFrame(unit.sprite, SLASH_IMPACT_FRAME, () => {
-          const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
-            unit.affectNewDest?.()
-            return
-          }
-          if (!dest) return
-          if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
-            if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
-              if (isHeroControlled(unit)) stopManualHeroAction(unit)
-              return
-            }
-            this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-            dest.hitPoints = Math.min(
-              Math.round(
-                (dest.hitPoints ?? 0) +
-                  ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
-              ),
-              dest.totalHitPoints ?? 0
-            )
-            grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
-            if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-              syncEntityHealthDisplay(dest, { menu, player, forceInfo: unit.owner?.isPlayed })
-            }
-            dest.updateHitPoints?.(unit.action ?? '')
-          } else {
-            if (!dest.isBuilt) {
-              dest.updateHitPoints?.(unit.action ?? '')
-              dest.isBuilt = true
-            }
-            if (unit.continueBuildingQueue?.()) return
-            unit.affectNewDest?.()
-          }
-          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
-        })
+      case ACTION_TYPES.build:
+        this.handleBuildAction()
         break
-      }
       case ACTION_TYPES.attack:
         unit.unitCombat?.handleAttackAction()
         break
-      case ACTION_TYPES.train: {
-        const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-        const trainingType = unit.trainingTargetType ?? ''
-        if (
-          !trainingType ||
-          !dest ||
-          !unit.getActionCondition?.(dest, ACTION_TYPES.train, { trainingType })
-        ) {
-          unit.trainingTargetType = null
-          unit.stop?.()
-          return
-        }
-        if (!dest?.startTrainingWithUnit?.(unit)) {
-          const buildingBusy = Boolean(
-            dest && (dest.loading !== null || dest.queue?.length || dest.technology || dest.trainingUnit)
-          )
-          if (buildingBusy) {
-            unit.trainingTargetType = null
-            if (unit.owner?.isPlayed) {
-              menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
-            }
-            unit.stop?.()
-            return
-          }
-          unit.trainingTargetType = null
-          unit.stop?.()
-        }
+      case ACTION_TYPES.train:
+        this.handleTrainAction()
         break
-      }
       case ACTION_TYPES.heal:
-        if (!unit.getActionCondition?.(unit.dest)) {
-          unit.affectNewDest?.()
-          return
-        }
-        unit.setTextures?.(SHEET_TYPES.action)
-        sprite.onLoop = () => {
-          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            unit.affectNewDest?.()
-            return
-          }
-          syncMovedActionTarget(unit, dest)
-          if (!unit.isUnitAtDest?.(unit.action, dest)) {
-            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.heal, { forceRepath: true })
-            return
-          }
-          if (dest && (dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
-            if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
-            this.playSound(unit.sounds?.heal)
-            const beforeHitPoints = dest.hitPoints ?? 0
-            dest.hitPoints = Math.min(
-              beforeHitPoints + (unit.healing ?? 0) + getHealingXpBonus(unit),
-              dest.totalHitPoints ?? 0
-            )
-            const healedAmount = (dest.hitPoints ?? 0) - beforeHitPoints
-            if (healedAmount > 0) showHealingFeedback(dest)
-            grantUnitXp(unit, XP_CATEGORIES.healing, healedAmount)
-            if (dest.selected || dest.shouldKeepHealthBarVisible?.()) {
-              syncEntityHealthDisplay(dest, { menu, player })
-            }
-          }
-        }
+        this.handleHealAction()
         break
       case ACTION_TYPES.convert:
-        if (!unit.getActionCondition?.(unit.dest)) {
-          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-          if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'start' })
-          unit.affectNewDest?.()
-          return
-        }
-        unit.conversionChants = 0
-        unit.setTextures?.(SHEET_TYPES.action)
-        sprite.onLoop = () => {
-          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            if (dest) debugConversionFailure(unit, dest, 'action-condition-failed', { stage: 'loop' })
-            unit.affectNewDest?.()
-            return
-          }
-          syncMovedActionTarget(unit, dest)
-          if (!unit.isUnitAtDest?.(unit.action, dest)) {
-            unit.sendToEvt?.(dest ?? null, ACTION_TYPES.convert, { forceRepath: true })
-            return
-          }
-
-          if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
-          this.playSound(unit.sounds?.convert)
-          unit.conversionChants = (unit.conversionChants || 0) + 1
-          const { minChants, chance } = this.getConversionRules()
-          if (unit.conversionChants >= minChants && map && map.random() < chance && dest) {
-            this.convertTarget(dest)
-          }
-        }
+        this.handleConvertAction()
         break
       case ACTION_TYPES.takemeat:
         this.startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat), {
@@ -952,69 +980,9 @@ export class UnitActions {
           updateTexture: true,
         })
         break
-      case ACTION_TYPES.hunt: {
-        if (!unit.getActionCondition?.(unit.dest)) {
-          unit.affectNewDest?.()
-          return
-        }
-        const huntDest = isRuntimeEntity(unit.dest) ? unit.dest : null
-        if (!huntDest) {
-          unit.affectNewDest?.()
-          return
-        }
-        if (huntDest.isDead) {
-          if (isHeroControlled(unit)) {
-            stopManualHeroAction(unit)
-            return
-          }
-          unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
-          return
-        }
-        unit.setTextures?.(SHEET_TYPES.action)
-        sprite.onLoop = () => {
-          const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-          if (!unit.getActionCondition?.(dest)) {
-            if (dest && (dest.hitPoints ?? 0) <= 0) {
-              dest.die?.()
-              if (isHeroControlled(unit)) {
-                stopManualHeroAction(unit)
-                return
-              }
-              unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)
-              return
-            }
-            unit.affectNewDest?.()
-            return
-          }
-          if (!unit.isUnitAtDest?.(unit.action, dest)) {
-            if (unit.context?.map?.revealEverything || (dest && playerCanSeeInstance(dest, unit.owner))) {
-              unit.sendToEvt?.(dest ?? null, ACTION_TYPES.hunt, { forceRepath: true })
-            } else {
-              unit.stop?.()
-            }
-            return
-          }
-          syncMovedActionTarget(unit, dest)
-        }
-        if (unit.sprite) {
-          onSpriteLoopAtFrame(unit.sprite, BOW_SHOOT_RELEASE_FRAME, () => {
-            const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-            if (!dest || !unit.getActionCondition?.(dest) || !unit.realDest || !map) return
-            if (!spendOrWaitForEnergy(unit, unit.action, dest)) return
-            const projectile = new Projectile(
-              {
-                owner: unit,
-                target: dest,
-                type: HUNTING_PROJECTILE,
-                destination: unit.realDest,
-              },
-              unit.context!
-            )
-            map.addChild(projectile)
-          })
-        }
+      case ACTION_TYPES.hunt:
+        this.handleHuntAction()
         break
-      }
       case ACTION_TYPES.captureHorse: {
         handleCaptureHorseAction(unit)
         break

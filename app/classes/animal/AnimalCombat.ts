@@ -21,6 +21,17 @@ import { FLYING_ALTITUDE } from './index'
 import { isAirborne, resolveMovementSheet } from './locomotion'
 import type { Animal } from './index'
 
+function getAnimalAttackImpactFrame(animal: Animal): number {
+  const configuredFrame = animal.attackImpactFrame
+  const fallbackFrame =
+    typeof configuredFrame === 'number' && Number.isFinite(configuredFrame) && configuredFrame >= 0
+      ? configuredFrame
+      : SLASH_IMPACT_FRAME
+  const frameCount = animal.sprite?.textures?.length ?? 0
+  if (frameCount <= 0) return fallbackFrame
+  return Math.min(fallbackFrame, frameCount - 1)
+}
+
 export class AnimalCombat {
   animal: Animal
 
@@ -197,7 +208,7 @@ export class AnimalCombat {
           return
         }
         runAttackLoopOnFrame(animal, {
-          releaseFrame: SLASH_IMPACT_FRAME,
+          releaseFrame: getAnimalAttackImpactFrame(animal),
           prepareAttackSheet: () => {
             animal.setTextures(SHEET_TYPES.action)
             animal.sprite.gotoAndPlay(0)

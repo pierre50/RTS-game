@@ -111,6 +111,7 @@ export class Animal extends Instance implements AnimalEntity {
   waitingForEnergyTarget?: AnimalEntity['waitingForEnergyTarget']
   energyWaitTaskId?: AnimalEntity['energyWaitTaskId']
   attackRecoveryMs?: AnimalEntity['attackRecoveryMs']
+  attackImpactFrame?: number
   attackRecoveryTaskId?: AnimalEntity['attackRecoveryTaskId']
   attackRecoveryAnimationTaskId?: AnimalEntity['attackRecoveryAnimationTaskId']
   combatBehavior?: AnimalEntity['combatBehavior']

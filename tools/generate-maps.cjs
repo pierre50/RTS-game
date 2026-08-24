@@ -244,6 +244,7 @@ function loadRuntimeGenerators() {
   const originalExtension = require.extensions['.ts']
   const isMapRuntime = filename =>
     filename.endsWith('/MapGeneration.ts') ||
+    filename.endsWith('/MapTerrainGeneration.ts') ||
     filename.endsWith('/MapTerrain.ts') ||
     filename.endsWith('/MapResources.ts')
   const pixi = { Assets: { cache: { get: () => ({}) } }, Sprite: class {}, Container: class {} }
@@ -286,6 +287,9 @@ function loadRuntimeGenerators() {
   }
   Module._load = function (request, parent, isMain) {
     if (parent && isMapRuntime(parent.filename)) {
+      if (request === './MapTerrainGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainGeneration.ts'), parent, isMain)
+      }
       if (request === 'pixi.js') return pixi
       if (request === '../Resource') return { Resource: HeadlessResource }
       if (request === '../../lib') {

@@ -27,6 +27,16 @@ function loadUnitMovement(calls) {
     UNIT_TYPES: { villager: 'Villager' },
     WORK_TYPES: { horseCapture: 'horseCapture', hunter: 'hunter' },
   }
+  function loadTsFile(tsFilename) {
+    const tsSource = fs.readFileSync(tsFilename, 'utf8')
+    const { code: tsCode } = babel.transformSync(tsSource, {
+      filename: tsFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const tsModule = { exports: {} }
+    new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
+    return tsModule.exports
+  }
   const localRequire = request => {
     if (request === '../../constants') return constants
     if (request === '../../lib') {
@@ -81,6 +91,16 @@ function loadUnitMovement(calls) {
         getHeroDirectMoveBlockerAtPoint: () => null,
         isHeroLandTerrainBlockedCell: () => false,
       }
+    }
+    if (request === './UnitMovementDebug') {
+      return {
+        debugBlockedDirectMove: () => {},
+        debugCombatMove: () => {},
+        debugHuntRangeCheck: () => {},
+      }
+    }
+    if (request === './UnitMovementHelpers') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
     }
     return require(request)
   }
