@@ -17,6 +17,7 @@ function loadMaths() {
       CELL_WIDTH: 64,
       CELL_HEIGHT: 32,
       CELL_DEPTH: 16,
+      RELIEF_SPRITE_LIFT_PER_STEP: 16,
       FAMILY_TYPES: {
         animal: 'animal',
         building: 'building',

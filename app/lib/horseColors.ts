@@ -1,7 +1,7 @@
 import type { Texture } from 'pixi.js'
 import { recolorTextureByMap, type RecolorableTexture } from './graphics/colors'
 
-export const HORSE_SOURCE_COLORS = [0xad6e51, 0x9a624c, 0x885041, 0x733d3b, 0x583126] as const
+const HORSE_SOURCE_COLORS = [0xad6e51, 0x9a624c, 0x885041, 0x733d3b, 0x583126] as const
 
 export const HORSE_COLOR_PALETTES = {
   brown: HORSE_SOURCE_COLORS,
@@ -14,7 +14,7 @@ export const HORSE_COLOR_PALETTES = {
 
 export type HorseColor = keyof typeof HORSE_COLOR_PALETTES
 
-export const HORSE_COLOR_NAMES = Object.keys(HORSE_COLOR_PALETTES) as HorseColor[]
+const HORSE_COLOR_NAMES = Object.keys(HORSE_COLOR_PALETTES) as HorseColor[]
 
 const HORSE_COLOR_REPLACEMENTS = Object.fromEntries(
   HORSE_COLOR_NAMES.map(color => [

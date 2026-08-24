@@ -1,7 +1,7 @@
 import {
   ACTION_TYPES,
   CELL_WIDTH,
-  COMM_SELECTION_COLOR,
+  COLOR_WHITE,
   FAMILY_TYPES,
   LABEL_TYPES,
   PLAYER_TYPES,
@@ -17,6 +17,7 @@ import {
   getSelectionMarkerOffset,
 } from './graphics/selection'
 import type { SelectableInstance } from './graphics/selection'
+import { getCellsInCellRadius } from './grid/cells'
 import { angleDelta, getInstanceDegree, isometricToCartesian } from './maths'
 import { playSelectionSound, playSoundCue } from './sound'
 import { getTrainingTargetForUnit } from './buildingTraining'
@@ -32,18 +33,13 @@ import type { Point } from '../types/grid'
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_TARGET_TOLERANCE_PX = 60
 
-// Cell-unit ranges, matching TOOL_ACTION_RANGE's scale (app/lib/heroTools.ts).
-const NPC_INTERACT_RANGE = 2.5
-// How far the hero can wander from an open orders panel's targets before it auto-closes.
-const NPC_MENU_KEEP_RANGE = 10
-
 // Hold-to-charge "communication zone" (left click): starts at 0 and grows the longer the
 // button is held, up to the max range. While still inside the precision zone (base range),
 // a release resolves to whichever ally the hero is actually facing rather than an area sweep —
 // a quick tap talks precisely to the unit standing face-to-face with the hero.
-export const COMM_BASE_RANGE = 0
-export const COMM_MAX_RANGE = 7
-export const COMM_CHARGE_MS = 2200
+const COMM_BASE_RANGE = 0
+const COMM_MAX_RANGE = 7
+const COMM_CHARGE_MS = 2200
 export const COMM_INDICATOR_DELAY_MS = 250
 const COMM_CHARGE_EXPONENT: number = 2.2
 const COMM_PRECISION_RANGE = Math.SQRT2 + 0.01
@@ -127,7 +123,7 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
   const factor = target.selectionFactor ?? target.size ?? 1
   const markerOffset = getSelectionMarkerOffset(target)
   const marker = createIsoSelectionMarker({
-    color: COMM_SELECTION_COLOR,
+    color: COLOR_WHITE,
     factor,
     label: LABEL_TYPES.commSelection,
     zIndex: -1,
@@ -212,7 +208,7 @@ export function releaseIfStillLooking(npcs: UnitEntity[]): void {
 
 // Whether the hero is still close enough to any of these npcs to keep their orders panel open.
 // All villagers eligible for the hold-to-charge "communication zone", within the given radius.
-export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
+function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
   const candidates = findInstancesInSight<UnitEntity, UnitEntity>(hero, target => isCommEligible(hero, target), radius)
   const radiusSq = radius * radius
   return candidates.filter(target => {
@@ -225,25 +221,7 @@ export function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
 export function getCommCellsInRadius(hero: UnitEntity, radius: number): RuntimeCell[] {
   const grid = hero.context?.map?.grid
   if (!grid) return []
-  const centerI = hero.i ?? 0
-  const centerJ = hero.j ?? 0
-  const scanRadius = Math.ceil(Math.max(0, radius))
-  const radiusSq = radius * radius
-  const cells: RuntimeCell[] = []
-
-  for (let i = centerI - scanRadius; i <= centerI + scanRadius; i++) {
-    const row = grid[i]
-    if (!row) continue
-    for (let j = centerJ - scanRadius; j <= centerJ + scanRadius; j++) {
-      const cell = row[j]
-      if (!cell) continue
-      const di = i - centerI
-      const dj = j - centerJ
-      if (di * di + dj * dj <= radiusSq) cells.push(cell)
-    }
-  }
-
-  return cells
+  return getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, radius)
 }
 
 export function getCommRadiusForHold(elapsedMs: number): number {

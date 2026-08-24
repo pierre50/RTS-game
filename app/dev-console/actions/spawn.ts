@@ -15,7 +15,7 @@ function canSpawnUnitOnCell(cell: DevCell): boolean {
 
 const BANDIT_OWNER_NAME = 'Bandits'
 const BANDIT_UNIT_TYPES = new Set<string>([UNIT_TYPES.banditChief, UNIT_TYPES.banditSword, UNIT_TYPES.banditArcher])
-export const TRIBAL_BUILDING_ALIASES: Record<string, string> = {
+const TRIBAL_BUILDING_ALIASES: Record<string, string> = {
   campfire: BUILDING_TYPES.banditCamp,
   totemplain: BUILDING_TYPES.banditCampTotemPlain,
   totemhorns: BUILDING_TYPES.banditCampTotemHorns,

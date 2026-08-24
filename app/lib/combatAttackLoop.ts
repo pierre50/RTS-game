@@ -6,7 +6,9 @@ import type { ActionProps } from './combat'
 import { instancesDistance } from './maths'
 import { onSpriteLoopAtFrame } from './graphics'
 import { hasEnergyForAction, spendOrWaitForEnergy, waitForEnergy } from './unitEnergy'
+import { debugLog } from './debug'
 
+const ATTACK_LOOP_DEBUG = false
 const ATTACK_LOOP_DEBUG_THROTTLE_MS = 250
 const lastAttackLoopDebugAt = new WeakMap<object, number>()
 
@@ -23,6 +25,7 @@ function getTargetLabel(target: RuntimeEntity | null): string {
 }
 
 function debugAttackLoop(attacker: AttackFrameActor, stage: string, details: Record<string, unknown> = {}): void {
+  if (!ATTACK_LOOP_DEBUG) return
   const actor = attacker as {
     action?: string | null
     label?: string
@@ -41,7 +44,8 @@ function debugAttackLoop(attacker: AttackFrameActor, stage: string, details: Rec
   if (now - last < ATTACK_LOOP_DEBUG_THROTTLE_MS) return
   lastAttackLoopDebugAt.set(attacker as object, now)
 
-  console.log(
+  debugLog(
+    ATTACK_LOOP_DEBUG,
     `[combat-loop] ${getActorLabel(attacker)} ${stage}`,
     Object.assign(
       {

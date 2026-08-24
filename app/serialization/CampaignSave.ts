@@ -117,6 +117,26 @@ export function getCurrentWorldState(save: SaveRecord): SerializedSave {
   return currentWorld.state
 }
 
+export function getWorldTreePath(campaign: CampaignSave): WorldGraphNode[] {
+  const path: WorldGraphNode[] = []
+  let node: WorldGraphNode | undefined = campaign.worldGraph.nodes[campaign.currentWorldId]
+  const seen = new Set<string>()
+
+  while (node && !seen.has(node.id)) {
+    seen.add(node.id)
+    path.unshift(node)
+    node = node.parentId ? campaign.worldGraph.nodes[node.parentId] : undefined
+  }
+
+  return path
+}
+
+export function getVisitedWorldNodes(campaign: CampaignSave): WorldGraphNode[] {
+  return Object.values(campaign.worldGraph.nodes)
+    .filter(node => node.visitedAt != null)
+    .sort((a, b) => (a.discoveredAt ?? 0) - (b.discoveredAt ?? 0))
+}
+
 export function updateCurrentWorldState(campaign: CampaignSave, state: SerializedSave, now: number = Date.now()): CampaignSave {
   const currentWorld = campaign.worlds[campaign.currentWorldId]
   if (!currentWorld) throw new Error('Invalid save file: current campaign world is missing.')

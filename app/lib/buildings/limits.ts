@@ -5,11 +5,11 @@ const BUILDING_LIMITS: Partial<Record<string, number>> = {
   [BUILDING_TYPES.townCenter]: 1,
 }
 
-export function getBuildingLimit(type: string): number | null {
+function getBuildingLimit(type: string): number | null {
   return BUILDING_LIMITS[type] ?? null
 }
 
-export function getLivingBuildingCount(owner: PlayerLike | null | undefined, type: string): number {
+function getLivingBuildingCount(owner: PlayerLike | null | undefined, type: string): number {
   return (owner?.buildings ?? []).filter(
     building => building.type === type && !building.isDead && !building.isDestroyed
   ).length

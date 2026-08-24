@@ -36,7 +36,7 @@ export function getTrainingTargetForUnit(building: BuildingEntity, unit: UnitEnt
   return getDefaultTraineeTrainingType(building)
 }
 
-export function getDefaultTraineeTrainingType(building: BuildingEntity): string | null {
+function getDefaultTraineeTrainingType(building: BuildingEntity): string | null {
   for (const type of building.units || []) {
     if (!isTraineeTrainingType(building, type)) continue
     const config = building.owner?.config.units[type]

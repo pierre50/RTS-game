@@ -60,7 +60,7 @@ function loadHeroInventoryAction() {
 }
 
 test('hero inventory dev command fills the hero bag with assignable equipment only', () => {
-  const { addAllHeroInventoryEquipment } = loadHeroInventoryAction()
+  const { addHeroInventoryEquipment } = loadHeroInventoryAction()
   let inventoryRefreshes = 0
   const hero = {
     controlMode: 'hero',
@@ -70,14 +70,17 @@ test('hero inventory dev command fills the hero bag with assignable equipment on
       activeWeapons: {},
     },
   }
-  const result = addAllHeroInventoryEquipment({
-    controls: { heroUnit: hero },
-    player: { units: [hero] },
-    menu: {
-      refreshInventory: () => inventoryRefreshes++,
-      updateActionTarget: () => {},
+  const result = addHeroInventoryEquipment(
+    {
+      controls: { heroUnit: hero },
+      player: { units: [hero] },
+      menu: {
+        refreshInventory: () => inventoryRefreshes++,
+        updateActionTarget: () => {},
+      },
     },
-  })
+    'all'
+  )
 
   assert.deepEqual(result, { ok: true, message: 'Added 9 hero inventory items' })
   assert.deepEqual(hero.inventory.equipment, [

@@ -4,6 +4,38 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
+function closestPointOnSegment(point, a, b) {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const lengthSq = dx * dx + dy * dy
+  if (lengthSq === 0) return a
+  const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSq))
+  return { x: a.x + t * dx, y: a.y + t * dy }
+}
+
+function pointIsInsidePolygon(points, point) {
+  let inside = false
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const xi = points[i].x
+    const yi = points[i].y
+    const xj = points[j].x
+    const yj = points[j].y
+    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
+    if (intersects) inside = !inside
+  }
+  return inside
+}
+
+function distanceToPolygon(points, point) {
+  if (pointIsInsidePolygon(points, point)) return 0
+  let minDistance = Infinity
+  for (let index = 0; index < points.length; index++) {
+    const closest = closestPointOnSegment(point, points[index], points[(index + 1) % points.length])
+    minDistance = Math.min(minDistance, Math.hypot(point.x - closest.x, point.y - closest.y))
+  }
+  return minDistance
+}
+
 function loadHeroActionRange({ contact = () => false, heroControlled = () => true } = {}) {
   const filename = path.join(__dirname, '../app/lib/heroActionRange.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -31,6 +63,11 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
         { x, y: y + 16 * factor },
         { x: x - 32 * factor, y },
       ],
+    },
+    './geometry/polygon': {
+      closestPointOnSegment,
+      distanceToPolygon,
+      pointIsInsidePolygon,
     },
     './maths': {
       instancesDistance: (a, b) => Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0)),

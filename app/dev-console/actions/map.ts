@@ -1,10 +1,8 @@
 import {
-  cartesianToIsometric,
   drawInstanceBlinkingSelection,
   getFreeLandCellAroundInstance,
   getGaiaAnimals,
-  getGroundReliefLevel,
-  getInstanceZIndex,
+  teleportRuntimeUnitToCell,
   updateInstanceVisibility,
 } from '../../lib'
 import type { CommandResult } from '../DevCommandRegistry'
@@ -54,28 +52,7 @@ function getCurrentWorldPortal(context: DevConsoleContext): DevEntity | null {
 }
 
 function teleportUnitToCell(context: DevConsoleContext, unit: DevEntity, cell: DevCell): void {
-  const { map } = context
-  const currentCell = unit.currentCell || map.grid[unit.i]?.[unit.j]
-  if (currentCell?.has === unit) {
-    currentCell.has = null
-    currentCell.solid = false
-  }
-  map.removeFromInstanceBucket?.(unit)
-
-  const [x, y] = cartesianToIsometric(cell.i, cell.j)
-  unit.i = cell.i
-  unit.j = cell.j
-  unit.x = x
-  unit.y = y
-  unit.z = cell.z
-  unit.zIndex = getInstanceZIndex(unit)
-  unit.currentCell = cell
-  unit.path = []
-  unit.action = null
-  cell.place(unit)
-  cell.solid = true
-  map.addToInstanceBucket?.(unit)
-  unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
+  teleportRuntimeUnitToCell(context.map, unit, cell)
 }
 
 function findPortalArrivalCell(context: DevConsoleContext, portal: DevEntity): DevCell | null {

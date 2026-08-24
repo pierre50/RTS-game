@@ -1,26 +1,15 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadFogOfWar() {
-  const filename = path.join(__dirname, '../app/services/FogOfWar.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
       PLAYER_TYPES: { ai: 'ai' },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule('app/services/FogOfWar.ts', { mocks })
 }
 
 function createViews(size = 2) {

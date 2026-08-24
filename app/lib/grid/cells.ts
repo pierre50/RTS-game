@@ -1,6 +1,7 @@
 import type { Grid, GridCell, GridPosition, GridZone } from '../../types/grid'
 
-type CellCondition<TCell extends GridCell> = (cell: TCell) => boolean
+type CellCondition<TCell extends GridCell> = (cell: TCell) => boolean | void
+type SparseGrid<TCell extends GridCell> = Array<Array<TCell | undefined> | undefined>
 
 function zoneMatchesCondition<TCell extends GridCell>(
   i: number,
@@ -61,6 +62,17 @@ export function getPlainCellsAroundPoint<TCell extends GridCell>(
   dist = 0,
   callback?: CellCondition<TCell>
 ): TCell[] {
+  return getSquareCellsAroundPoint(startX, startY, grid, dist, callback)
+}
+
+export function getSquareCellsAroundPoint<TCell extends GridCell>(
+  startX: number,
+  startY: number,
+  grid: SparseGrid<TCell>,
+  dist = 0,
+  callback?: CellCondition<TCell>,
+  includeCenter = true
+): TCell[] {
   const result: TCell[] = []
 
   if (dist === 0) {
@@ -82,12 +94,39 @@ export function getPlainCellsAroundPoint<TCell extends GridCell>(
     const maxY = Math.min(startY + dist, row.length - 1)
 
     for (let j = minY; j <= maxY; j++) {
+      if (!includeCenter && i === startX && j === startY) continue
       const cell = row[j]
       if (cell && (!callback || callback(cell))) result.push(cell)
     }
   }
 
   return result
+}
+
+export function getCellsInCellRadius<TCell extends GridCell>(
+  startX: number,
+  startY: number,
+  grid: SparseGrid<TCell>,
+  radius: number,
+  callback?: CellCondition<TCell>
+): TCell[] {
+  const scanRadius = Math.ceil(Math.max(0, radius))
+  const radiusSq = radius * radius
+  const cells: TCell[] = []
+
+  for (let i = startX - scanRadius; i <= startX + scanRadius; i++) {
+    const row = grid[i]
+    if (!row) continue
+    for (let j = startY - scanRadius; j <= startY + scanRadius; j++) {
+      const cell = row[j]
+      if (!cell) continue
+      const di = i - startX
+      const dj = j - startY
+      if (di * di + dj * dj <= radiusSq && (!callback || callback(cell))) cells.push(cell)
+    }
+  }
+
+  return cells
 }
 
 export function getBuildingFootprintCells<TCell extends GridCell>(

@@ -10,7 +10,7 @@ import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'
 import type { PlayerLike } from '../types/player'
 
-export type CombatHitNotifyMode = 'always' | 'survived' | false
+type CombatHitNotifyMode = 'always' | 'survived' | false
 
 export type CombatHitOptions = {
   attacker?: RuntimeEntity

@@ -10,7 +10,6 @@ import {
 } from '../../constants'
 import {
   applyCombatHit,
-  degreeToDirection,
   findInstancesInSight,
   getClosestInstanceWithPath,
   getInstanceDegree,
@@ -18,6 +17,7 @@ import {
   playAudibleSoundCue,
   BOW_SHOOT_RELEASE_FRAME,
   SLASH_IMPACT_FRAME,
+  syncMovedActionTarget,
 } from '../../lib'
 import { Projectile } from '../Projectile'
 import { getCombatXpBonus, XP_CATEGORIES } from '../../lib/unitExperience'
@@ -147,66 +147,37 @@ export class UnitCombat {
     }
   }
 
-  handleAffectNewDestHunter(): boolean {
+  tryHunterTarget(action: string): boolean {
     const unit = this.unit
     const unitAsInstance = unit
-    const firstTargets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance, ACTION_TYPES.takemeat))
+    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
+      Boolean(unit.getActionCondition?.(instance, action))
     )
-    if (firstTargets.length) {
-      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, firstTargets)
-      if (target) {
-        if (unit.action !== ACTION_TYPES.takemeat) {
-          unit.action = ACTION_TYPES.takemeat
-          unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
-        }
-        unit.setDest?.(target.instance)
-        if (instanceContactInstance(unitAsInstance, target.instance)) {
-          unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
-          unit.getAction?.(unit.action)
-          return true
-        }
-        unit.setPath?.(target.path)
-        return true
-      }
+    if (!targets.length) return false
+    const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
+    if (!target) return false
+    if (unit.action !== action) {
+      unit.action = action
+      unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
     }
-    const secondTargets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance, ACTION_TYPES.hunt))
-    )
-    if (secondTargets.length) {
-      const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, secondTargets)
-      if (target) {
-        if (unit.action !== ACTION_TYPES.hunt) {
-          unit.action = ACTION_TYPES.hunt
-          unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
-        }
-        unit.setDest?.(target.instance)
-        if (instanceContactInstance(unitAsInstance, target.instance)) {
-          unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
-          unit.getAction?.(unit.action)
-          return true
-        }
-        unit.setPath?.(target.path)
-        return true
-      }
+    unit.setDest?.(target.instance)
+    if (instanceContactInstance(unitAsInstance, target.instance)) {
+      unit.degree = getInstanceDegree(unitAsInstance, target.instance.x, target.instance.y)
+      unit.getAction?.(unit.action)
+      return true
     }
-    return false
+    unit.setPath?.(target.path)
+    return true
+  }
+
+  handleAffectNewDestHunter(): boolean {
+    return this.tryHunterTarget(ACTION_TYPES.takemeat) || this.tryHunterTarget(ACTION_TYPES.hunt)
   }
 
   syncMovingTargetDirection() {
     const unit = this.unit
     const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-    if (unit.destHasMoved?.() && dest && unit.realDest) {
-      unit.realDest.i = dest.i
-      unit.realDest.j = dest.j
-      unit.realDest.x = dest.x
-      unit.realDest.y = dest.y
-      const oldDeg = unit.degree
-      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
-      if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
-        unit.setTextures?.(SHEET_TYPES.action)
-      }
-    }
+    syncMovedActionTarget(unit, dest)
   }
 
   handleAttackAction() {

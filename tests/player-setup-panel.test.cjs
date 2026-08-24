@@ -1,22 +1,16 @@
-const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const assert = require('node:assert/strict')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(filename, mocks = {}) {
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const localRequire = request => mocks[request] || require(request)
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule(filename, { mocks })
 }
 
 const { PlayerSetupPanel } = loadModule(path.join(__dirname, '../app/ui/PlayerSetupPanel.ts'), {
+  '../lib/avatar': {
+    getUnitFacePortraitTexture: () => null,
+  },
   '../lib/uiSound': { playClickSound: () => {} },
   '../lib/lang': { t: key => key },
   '../config/civilizations': {

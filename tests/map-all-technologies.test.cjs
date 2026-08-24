@@ -1,34 +1,22 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadMapGeneration() {
-  const filename = path.join(__dirname, '../app/classes/map/MapGeneration.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-
-  const module = { exports: {} }
-  const localRequire = request => {
-    if (request === 'pixi.js') return { Assets: {}, Sprite: class {} }
-    if (request === '../Resource') return { Resource: class {} }
-    if (request === '../players') return { Human: class {}, AI: class {}, Gaia: class {} }
-    if (request === './MapBlueprintGeneration') {
-      return {
+  return loadTsModule('app/classes/map/MapGeneration.ts', {
+    mocks: {
+      'pixi.js': { Assets: {}, Sprite: class {} },
+      '../Resource': { Resource: class {} },
+      '../players': { Human: class {}, AI: class {}, Gaia: class {} },
+      './MapBlueprintGeneration': {
         MapBlueprintGeneration: class {
           generateFromBlueprint() {}
           generateEditableFromBlueprint() {}
           applyBlueprintMetadata() {}
           loadBlueprintResources() {}
         },
-      }
-    }
-    if (request === './MapSaveRestore') {
-      return {
+      },
+      './MapSaveRestore': {
         processUnit: () => {},
         restoreAIState: () => {},
         restoreBuildingAssignments: () => {},
@@ -36,34 +24,26 @@ function loadMapGeneration() {
         restorePlayerViewsAndFog: () => {},
         restoreSelection: () => {},
         restoreTransportCargo: () => {},
-      }
-    }
-    if (request === '../../lib') {
-      return {
+      },
+      '../../lib': {
         colors: [],
         getCellsAroundPoint: () => [],
         getZoneInGridWithCondition: () => [],
         updateInstanceVisibility: () => {},
-      }
-    }
-    if (request === '../../services/FogOfWar') return { rehydrateAIKnowledge: () => {} }
-    if (request === '../../constants') {
-      return {
+      },
+      '../../services/FogOfWar': { rehydrateAIKnowledge: () => {} },
+      '../../constants': {
         BUILDING_TYPES: {},
         FAMILY_TYPES: {},
         LABEL_TYPES: {},
         PLAYER_TYPES: {},
         RESOURCE_TYPES: {},
         UNIT_TYPES: {},
-      }
-    }
-    if (request === '../cell') return { Cell: class {} }
-    if (request === '../../lib/buildings/walls') return { refreshOwnerWalls: () => {} }
-    return require(request)
-  }
-
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports.MapGeneration
+      },
+      '../cell': { Cell: class {} },
+      '../../lib/buildings/walls': { refreshOwnerWalls: () => {} },
+    },
+  }).MapGeneration
 }
 
 test('all technologies keeps the configured starting age and enables age-based auto techs', () => {

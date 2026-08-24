@@ -175,14 +175,21 @@ test('dynamic unit equipment is not frozen into config during base stat normaliz
 })
 
 test('villager work equipment resolves material-specific stats by owner age', () => {
-  const { getUnitEffectiveCombatStats, getEntityWeaponPower } = loadEquipmentStats({
+  const { getEntityWeaponPower } = loadEquipmentStats({
     workEquipment: {
       woodcutter: age => (age >= 1 ? ['axe_copper'] : ['axe_ceramic']),
     },
   })
 
-  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 0).weaponPower, 5)
-  assert.equal(getUnitEffectiveCombatStats('Villager', {}, 'woodcutter', 1).weaponPower, 7)
+  assert.equal(
+    getEntityWeaponPower({
+      family: 'unit',
+      type: 'Villager',
+      work: 'woodcutter',
+      owner: { age: 0, config: {} },
+    }),
+    5
+  )
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -195,14 +202,20 @@ test('villager work equipment resolves material-specific stats by owner age', ()
 })
 
 test('infantry equipment resolves its sword material by owner age', () => {
-  const { getUnitEffectiveCombatStats, getEntityWeaponPower } = loadEquipmentStats({
+  const { getEntityWeaponPower } = loadEquipmentStats({
     unitEquipment: {
       Fantassin: age => (age >= 1 ? ['sword_copper'] : ['sword_ceramic']),
     },
   })
 
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 0).weaponPower, 6)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 1).weaponPower, 8)
+  assert.equal(
+    getEntityWeaponPower({
+      family: 'unit',
+      type: 'Fantassin',
+      owner: { age: 0, config: {} },
+    }),
+    6
+  )
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',
@@ -214,20 +227,32 @@ test('infantry equipment resolves its sword material by owner age', () => {
 })
 
 test('unit combat stats ignore non-work roles and still use unit equipment', () => {
-  const { getUnitEffectiveCombatStats } = loadEquipmentStats({
+  const { getUnitRuntimeCombatStats } = loadEquipmentStats({
     unitEquipment: { Fantassin: ['sword_ceramic', 'armor_leather'] },
     workEquipment: { woodcutter: ['axe_ceramic'] },
   })
+  const config = {}
 
-  assert.deepEqual(getUnitEffectiveCombatStats('Fantassin', {}, 'attacker', 0, 2), {
-    weaponPower: 6,
-    meleeArmor: 1,
-    pierceArmor: 0,
-  })
+  assert.deepEqual(
+    getUnitRuntimeCombatStats(
+      {
+        type: 'Fantassin',
+        work: 'attacker',
+        level: 2,
+        owner: { age: 0, config: { units: { Fantassin: config } } },
+      },
+      config
+    ),
+    {
+      weaponPower: 6,
+      meleeArmor: 1,
+      pierceArmor: 0,
+    }
+  )
 })
 
 test('infantry equipment stats unlock armor by level and cap effective combat armor', () => {
-  const { getUnitEffectiveCombatStats, getEntityWeaponPower } = loadEquipmentStats({
+  const { getEntityWeaponPower, getUnitRuntimeCombatStats } = loadEquipmentStats({
     unitEquipment: {
       Fantassin: (age, level) => {
         const material = age >= 2 ? 'bronze' : age >= 1 ? 'copper' : 'ceramic'
@@ -246,16 +271,22 @@ test('infantry equipment stats unlock armor by level and cap effective combat ar
       },
     },
   })
+  const config = {}
+  const makeUnit = (age, level) => ({
+    type: 'Fantassin',
+    level,
+    owner: { age, config: { units: { Fantassin: config } } },
+  })
 
-  assert.deepEqual(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 0, 0), {
+  assert.deepEqual(getUnitRuntimeCombatStats(makeUnit(0, 0), config), {
     weaponPower: 6,
     meleeArmor: 0,
     pierceArmor: 0,
   })
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).meleeArmor, 3)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 15).pierceArmor, 2)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).meleeArmor, 3)
-  assert.equal(getUnitEffectiveCombatStats('Fantassin', {}, undefined, 2, 18).pierceArmor, 2)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).meleeArmor, 3)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 15), config).pierceArmor, 2)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).meleeArmor, 3)
+  assert.equal(getUnitRuntimeCombatStats(makeUnit(2, 18), config).pierceArmor, 2)
   assert.equal(
     getEntityWeaponPower({
       family: 'unit',

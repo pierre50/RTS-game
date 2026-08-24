@@ -144,6 +144,55 @@ function mockRoundedIsoShapePoints({ x, y }) {
   ]
 }
 
+function mockPointIsInsidePolygon(points, point) {
+  let inside = false
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const xi = points[i].x
+    const yi = points[i].y
+    const xj = points[j].x
+    const yj = points[j].y
+    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
+    if (intersects) inside = !inside
+  }
+  return inside
+}
+
+function mockDegreeToDirection(degree) {
+  const normalized = ((degree % 360) + 360) % 360
+  if (normalized >= 337.5 || normalized < 22.5) return 'east'
+  if (normalized < 67.5) return 'south-east'
+  if (normalized < 112.5) return 'south'
+  if (normalized < 157.5) return 'south-west'
+  if (normalized < 202.5) return 'west'
+  if (normalized < 247.5) return 'north-west'
+  if (normalized < 292.5) return 'north'
+  return 'north-east'
+}
+
+function mockGetInstanceDegree(instance, x, y) {
+  return (Math.atan2(y - instance.y, x - instance.x) * 180) / Math.PI
+}
+
+function mockGetMiningActions() {
+  const configured = Object.values(constants.MINING_RESOURCE_CONFIG ?? {})
+    .map(config => config.action)
+    .filter(Boolean)
+  return configured.length ? configured : [constants.ACTION_TYPES.minestone, constants.ACTION_TYPES.minegold].filter(Boolean)
+}
+
+function mockSyncMovedActionTarget(unit, dest) {
+  if (!unit.destHasMoved?.() || !dest || !unit.realDest) return
+  unit.realDest.i = dest.i
+  unit.realDest.j = dest.j
+  unit.realDest.x = dest.x
+  unit.realDest.y = dest.y
+  const oldDeg = unit.degree
+  unit.degree = mockGetInstanceDegree(unit, dest.x, dest.y)
+  if (mockDegreeToDirection(oldDeg ?? 0) !== mockDegreeToDirection(unit.degree ?? 0)) {
+    unit.setTextures?.(constants.SHEET_TYPES.action)
+  }
+}
+
 function mockBuildingFootprintCells(startX, startY, grid, size = 1) {
   const result = []
   const footprintSize = Math.max(1, Math.floor(size))
@@ -159,12 +208,16 @@ function mockBuildingFootprintCells(startX, startY, grid, size = 1) {
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
+  function loadTsFile(tsFilename) {
+    const source = fs.readFileSync(tsFilename, 'utf8')
+    const { code } = babel.transformSync(source, {
+      filename: tsFilename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const module = { exports: {} }
+    new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+    return module.exports
+  }
   const localRequire = request => {
     if (request === '../../types/runtime') return runtimeTypesMock
     if (request === '../../lib') {
@@ -172,8 +225,13 @@ function loadModule(relativePath, mocks) {
       return {
         getRoundedIsoFootprintPoints:
           libMock.getRoundedIsoFootprintPoints ?? libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
+        pointIsInsidePolygon: libMock.pointIsInsidePolygon ?? mockPointIsInsidePolygon,
+        getMiningActions: libMock.getMiningActions ?? mockGetMiningActions,
+        syncMovedActionTarget: libMock.syncMovedActionTarget ?? mockSyncMovedActionTarget,
         isBanditOwner: owner =>
           Boolean(owner?.devConsoleBanditOwner || (owner?.isPlayed !== true && owner?.name === 'Bandits')),
+        isBanditUnit: unit =>
+          Boolean(unit?.category === 'Bandit' || unit?.type?.includes?.('Bandit') || unit?.owner?.name === 'Bandits'),
         playMovementSurfaceAudio: () => {},
         ...libMock,
       }
@@ -243,11 +301,14 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
+    if (request === './UnitCaptureHorseAction') return { handleCaptureHorseAction: () => {} }
+    if (request === './UnitHeroDirectMovementCollision') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitHeroDirectMovementCollision.ts'))
+    }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
     return require(request)
   }
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsFile(filename)
 }
 
 const constants = {
@@ -264,6 +325,7 @@ const constants = {
     minegold: 'minegold',
     minestone: 'minestone',
     takemeat: 'takemeat',
+    train: 'train',
   },
   BUILDING_TYPES: {
     farm: 'Farm',
@@ -319,6 +381,103 @@ test('switching a recolored sprite back to blue clears its color filter', () => 
   changeSpriteColor(sprite, 'blue')
 
   assert.equal(sprite.filters, null)
+})
+
+test('train action without a target type stops cleanly without confusion fallback', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    isBuilt: true,
+    label: 'barracks',
+    owner: { label: 'p1' },
+    type: 'Barracks',
+    units: ['Fantassin'],
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.train,
+    context: { menu: { showMessage: (...args) => calls.push(['message', ...args]) } },
+    dest: building,
+    owner: { isPlayed: true, label: 'p1' },
+    sprite: {},
+    trainingTargetType: null,
+    getActionCondition: () => {
+      calls.push(['condition'])
+      return false
+    },
+    affectNewDest: () => calls.push(['affectNewDest']),
+    stop: () => calls.push(['stop']),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.train)
+
+  assert.equal(unit.trainingTargetType, null)
+  assert.deepEqual(calls, [['stop']])
+})
+
+test('failed train entry after building cleanup stops without confusion fallback', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.train,
+    context: { menu: { showMessage: (...args) => calls.push(['message', ...args]) } },
+    owner: { isPlayed: true, label: 'p1' },
+    sprite: {},
+    trainingTargetType: 'Fantassin',
+    getActionCondition: () => true,
+    affectNewDest: () => calls.push(['affectNewDest']),
+    stop: () => calls.push(['stop']),
+  }
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    isBuilt: true,
+    label: 'barracks',
+    loading: null,
+    owner: unit.owner,
+    queue: [],
+    technology: null,
+    trainingUnit: null,
+    type: 'Barracks',
+    units: ['Fantassin'],
+    startTrainingWithUnit: trainee => {
+      trainee.trainingTargetType = null
+      return false
+    },
+  }
+  unit.dest = building
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.train)
+
+  assert.equal(unit.trainingTargetType, null)
+  assert.deepEqual(calls, [['stop']])
 })
 
 test('direct texture recoloring bakes and caches animation frames', () => {

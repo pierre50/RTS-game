@@ -1,4 +1,4 @@
-import { ACTION_TYPES, MINING_RESOURCE_CONFIG, SHEET_TYPES, STEP_TIME } from '../constants'
+import { ACTION_TYPES, SHEET_TYPES, STEP_TIME } from '../constants'
 import { getGameDifficultyCombatBalance } from '../config/gameDifficultyBalance'
 import {
   enterCombatRecovery,
@@ -8,24 +8,17 @@ import {
 } from './combatBehavior'
 import { showFatigueFeedback } from './combatFeedback'
 import { t } from './lang'
+import { getMiningActions } from './miningActions'
 import { isHeroControlled } from './unitControl'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 
 export const HERO_ENERGY_COLOR = '#2f8cff'
-export const DEFAULT_UNIT_TOTAL_ENERGY = 10
-export const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
-export const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650
-export const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
-export const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
-
-function getMiningActions(): string[] {
-  const configured = Object.values(MINING_RESOURCE_CONFIG ?? {})
-    .map(config => config.action)
-    .filter((action): action is string => Boolean(action))
-  if (configured.length) return configured
-  return [ACTION_TYPES.minestone, ACTION_TYPES.minegold].filter((action): action is string => Boolean(action))
-}
+const DEFAULT_UNIT_TOTAL_ENERGY = 10
+const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
+const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650
+const LOW_ENERGY_MOVE_PENALTY_THRESHOLD = 0.5
+const LOW_ENERGY_MOVE_MIN_MULTIPLIER = 0.55
 
 const DEFAULT_ACTION_ENERGY_COST: Record<string, number> = {
   [ACTION_TYPES.attack]: 2,
@@ -107,7 +100,7 @@ export function spendEnergyForAction(unit: EnergyEntity, action: string | null |
   return spendEnergyAmount(unit, cost)
 }
 
-export function spendEnergyAmount(unit: EnergyEntity, amount: number): boolean {
+function spendEnergyAmount(unit: EnergyEntity, amount: number): boolean {
   const cost = Math.max(0, amount)
   if (cost <= 0) return true
   ensureUnitEnergy(unit)
@@ -146,7 +139,7 @@ export function updateUnitEnergy(unit: EnergyEntity, elapsedMs = STEP_TIME): voi
   if (unit.energy !== previousEnergy) notifyHeroEnergyChanged(unit)
 }
 
-export function isUnitEnergyFull(unit: EnergyEntity): boolean {
+function isUnitEnergyFull(unit: EnergyEntity): boolean {
   ensureUnitEnergy(unit)
   return (unit.energy ?? 0) >= (unit.totalEnergy ?? 0)
 }

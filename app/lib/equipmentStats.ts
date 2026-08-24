@@ -225,7 +225,7 @@ export function getUnitWorkEquipment(work: string | null | undefined, age = 0): 
   return dynamicEquipmentForWork(work, age)
 }
 
-export function getUnitEffectiveCombatStats(
+function getUnitEffectiveCombatStats(
   unitType: string,
   config: Pick<UnitConfig, 'category' | 'equipment' | CombatStatKey>,
   work?: string | null,
@@ -244,7 +244,7 @@ export function getUnitEffectiveCombatStats(
   }
 }
 
-export function getHeroInventoryEffectiveCombatStats(
+function getHeroInventoryEffectiveCombatStats(
   hero: EquipmentEntityLike,
   config?: Pick<UnitConfig, 'meleeArmor' | 'pierceArmor'>
 ): EquipmentCombatStats {

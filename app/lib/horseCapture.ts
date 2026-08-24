@@ -8,7 +8,7 @@ import type { GameContextLike, SchedulerTaskId } from '../types/context'
 export const HORSE_CAPTURE_STABLE_MAX_DISTANCE = 7
 export const HORSE_CAPTURE_STABLE_TIMEOUT_MS = 12000
 
-export type LassoedHorseForCapture = AnimalEntity
+type LassoedHorseForCapture = AnimalEntity
 
 export function getNearestAvailableStableForUnit(
   unit: UnitEntity,
@@ -39,7 +39,7 @@ export function getNearestAvailableStableForUnit(
   return stable
 }
 
-export function routeCapturedHorseToStable({
+function routeCapturedHorseToStable({
   gameContext,
   horse,
   stable,
@@ -132,7 +132,7 @@ type OwnerStableRoutingContext = {
   onFailure: () => void
 }
 
-export function routeCapturedHorseWithOwnerToStable({
+function routeCapturedHorseWithOwnerToStable({
   gameContext,
   owner,
   horse,

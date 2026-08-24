@@ -82,7 +82,3 @@ export function addHeroInventoryEquipment(
         : `Added ${items.length} hero inventory items`,
   }
 }
-
-export function addAllHeroInventoryEquipment(context: DevConsoleContext): CommandResult {
-  return addHeroInventoryEquipment(context, 'all')
-}

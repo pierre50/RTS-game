@@ -122,27 +122,6 @@ test('tools hidden while carrying come back during action', () => {
   )
 })
 
-test('unit portraits never render carried-resource layers', () => {
-  const { shouldRenderUnitPortraitLayer } = loadModule('app/lib/avatar.ts', {
-    'pixi.js': {
-      Assets: { cache: { has: () => false, get: () => undefined } },
-      Rectangle: class Rectangle {},
-      Texture: class Texture {},
-    },
-    '../constants': constants,
-    './extra': { getAnimationFrames: () => [] },
-    './graphics/assets': { getBuildingAsset: () => ({}) },
-    './graphics/colors': { recolorCanvasPixels: () => {}, SOURCE_COLORS: [] },
-    './graphics/textures': { getTexture: () => null },
-    './lpc/baked': { getBakedUnitStandingSheetAlias: () => null },
-    './unitExperience': { getUnitEquipmentLevel: () => 0 },
-  })
-
-  assert.equal(shouldRenderUnitPortraitLayer({ showWhenLoading: true }), false)
-  assert.equal(shouldRenderUnitPortraitLayer({ hideWhenLoading: true }), true)
-  assert.equal(shouldRenderUnitPortraitLayer({}), true)
-})
-
 test('helmet decor renders above head and helmet on death sheets', () => {
   const { getAppearanceLayerZIndex } = loadModule('app/lib/lpc/appearanceLayers.ts', {
     '../../constants': constants,

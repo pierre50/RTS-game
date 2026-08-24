@@ -26,6 +26,10 @@
     "format": "prettier --write \"app/**/*.{ts,css}\" \"*.{js,json}\"",
     "test": "node --test tests/*.test.cjs",
     "typecheck": "tsc --noEmit",
+    "deadcode": "knip",
+    "duplication": "jscpd app --pattern \"**/*.ts\" --ignore \"**/*.d.ts\" --min-lines 8 --min-tokens 80",
+    "audit:code": "pnpm lint && pnpm typecheck && pnpm duplication && pnpm deadcode",
+    "audit:report": "node tools/audit-report.cjs",
     "precommit": "lint-staged",
     "lint": "eslint \"app/**/*.ts\""
   },
@@ -73,6 +77,8 @@
     "eslint": "^9.39.4",
     "gh-pages": "^6.3.0",
     "html-webpack-plugin": "^5.6.7",
+    "jscpd": "^5.0.16",
+    "knip": "^6.32.2",
     "lint-staged": "^16.4.0",
     "prettier": "3.6.2",
     "raw-loader": "^4.0.2",
@@ -83,19 +89,6 @@
     "webpack": "^5.107.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.4"
-  },
-  "pnpm": {
-    "overrides": {
-      "tar": ">=7.5.8",
-      "serialize-javascript": ">=7.0.3",
-      "uuid": ">=11.1.1",
-      "electron-builder-squirrel-windows": "26.14.0",
-      "form-data": "^4.0.6",
-      "undici": "^7.28.0",
-      "node-gyp>undici": "^6.27.0",
-      "http-proxy-middleware": "^2.0.10",
-      "webpack-dev-server": "^5.2.5"
-    }
   },
   "engines": {
     "node": ">=20.0.0"

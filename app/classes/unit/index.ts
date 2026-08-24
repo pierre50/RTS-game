@@ -39,7 +39,11 @@ import {
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combatAttackLoop'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
-import { getAppearanceLayerZIndex, isAppearanceLayerHiddenByLoading } from '../../lib/lpc/appearanceLayers'
+import {
+  getAppearanceAgeSheetOverride,
+  getAppearanceLayerZIndex,
+  isAppearanceLayerHiddenByLoading,
+} from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import { Instance } from '../Instance'
@@ -80,21 +84,10 @@ import type {
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
-import type { PlayerLike } from '../../types/player'
-import type { AssetAge, SpritesheetLike } from '../../types/pixi'
+import type { PlayerLike, UnitRestoreReferences } from '../../types/player'
+import type { SpritesheetLike } from '../../types/pixi'
 import type { UnitAppearanceLayerConfig, UnitConfig } from '../../types/config'
-import type { SaveDestination, SaveGridPoint, SaveReference } from '../../types/save'
 import type { ActionProps } from '../../lib/combat'
-
-type UnitRestoreReferences = {
-  assetAge?: AssetAge
-  dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
-  previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
-  realDest?: UnitEntity['realDest'] | SaveDestination | null
-  path?: RuntimeCell[] | SaveGridPoint[]
-  buildQueue?: BuildingEntity[] | string[]
-  blockedGatherApproach?: UnitEntity['blockedGatherApproach'] | { target: SaveReference; action: string } | null
-}
 
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
 
@@ -308,21 +301,6 @@ function applyAppearanceVariantsToAssets(
   )
 }
 
-function getLevelSheetOverride(
-  overrides: RuntimeAppearanceLayer['ageSheetOverrides'] | undefined,
-  ownerAge: number,
-  sheet: string
-): string | undefined {
-  if (!overrides) return undefined
-  const exact = overrides[String(ownerAge)]?.[sheet]
-  if (exact) return exact
-  const fallbackAge = Object.keys(overrides)
-    .map(Number)
-    .filter(age => age <= ownerAge)
-    .sort((a, b) => b - a)[0]
-  return fallbackAge == null ? undefined : overrides[String(fallbackAge)]?.[sheet]
-}
-
 export type UnitSpawnOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
 
@@ -358,6 +336,7 @@ export class Unit extends Instance implements UnitEntity {
   inactif!: boolean
   sounds?: UnitEntity['sounds']
   work: UnitEntity['work']
+  shelterState?: UnitEntity['shelterState']
   loading!: UnitEntity['loading']
   loadingType: UnitEntity['loadingType']
   resourceLoads: UnitEntity['resourceLoads']
@@ -992,11 +971,11 @@ export class Unit extends Instance implements UnitEntity {
         : undefined
       const workSheetOverride = this.work ? layer.workSheetOverrides?.[this.work]?.[mountedRiderSheet] : undefined
       const ownerAge = Math.max(0, Math.floor(this.owner?.age ?? 0))
-      const ageSheetOverride = getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
+      const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
       const isRangedActionSheet =
         sheet === SHEET_TYPES.action && (this.type === UNIT_TYPES.bowman || this.work === WORK_TYPES.hunter)
       const shootingSheetOverride = isRangedActionSheet
-        ? getLevelSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet
+        ? getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet
         : undefined
       const mountedSheetOverride =
         this.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
@@ -1466,6 +1445,13 @@ export class Unit extends Instance implements UnitEntity {
     }
     this.path = []
     this.stopInterval()
+    if (this.shelterState?.status === 'outside') {
+      this.setTextures(SHEET_TYPES.dying)
+      this.sprite?.gotoAndStop?.(0)
+      this.sprite?.stop?.()
+      this.actionLocked = true
+      return
+    }
     this.setTextures(SHEET_TYPES.standing)
   }
 

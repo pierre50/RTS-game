@@ -50,7 +50,7 @@ test('hero equipped item slots follow the physical digit row across keyboard lay
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Numpad1', key: '1' }), 'heroTool1')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit4', key: "'" }), 'heroTool4')
 
-    settings.setKeyBinding('heroTool1', '1')
+    settings.setKeyBindingFromKeyboardEvent('heroTool1', { code: 'Digit1', key: '1' })
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit1', key: '&' }), 'heroTool1')
   } finally {
     restore()
@@ -75,7 +75,7 @@ test('E is the default hero interaction key', () => {
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyE', key: 'e' }), 'heroInteract')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyE', key: 'E' }), 'heroInteract')
 
-    settings.setKeyBinding('heroInteract', 'r')
+    settings.setKeyBindingFromKeyboardEvent('heroInteract', { code: 'KeyR', key: 'r' })
     assert.equal(settings.getKeyBindings().heroInteract, 'r')
   } finally {
     restore()
@@ -100,7 +100,7 @@ test('Control is the default hero direction lock key and can be rebound', () => 
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
     assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDirectionLock), 'Control')
 
-    settings.setKeyBinding('heroDirectionLock', 'Control')
+    settings.setKeyBindingFromKeyboardEvent('heroDirectionLock', { code: 'ControlLeft', key: 'Control' })
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), null)
   } finally {

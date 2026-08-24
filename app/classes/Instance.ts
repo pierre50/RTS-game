@@ -123,17 +123,18 @@ function removeHudBarNow(host: HudBarHost, bar: Container, stopFade = true): voi
   if (isChildOf(host, bar)) host.removeChild(bar)
 }
 
-function fadeInHudBar(host: HudBarHost, bar: Container, fromAlpha = 0): void {
+function scheduleHudBarFade(
+  host: HudBarHost,
+  bar: Container,
+  mode: HudBarFadeState['mode'],
+  onStep: (bar: Container, step: number, steps: number) => boolean | void,
+  initialStep = 0
+): void {
   const scheduler = host.context?.scheduler
-  const startAlpha = Math.max(0, Math.min(1, fromAlpha))
-  bar.alpha = startAlpha
-  if (!scheduler || startAlpha >= 1) {
-    bar.alpha = 1
-    return
-  }
+  if (!scheduler) return
   const steps = Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS))
-  let step = Math.round(startAlpha * steps)
-  const state: HudBarFadeState = { bar, mode: 'in', taskId: -1 as SchedulerTaskId }
+  let step = initialStep
+  const state: HudBarFadeState = { bar, mode, taskId: -1 as SchedulerTaskId }
   let taskId: SchedulerTaskId | null = null
   taskId = scheduler.add(
     () => {
@@ -144,17 +145,36 @@ function fadeInHudBar(host: HudBarHost, bar: Container, fromAlpha = 0): void {
         return
       }
       step += 1
-      activeBar.alpha = Math.min(1, step / steps)
-      if (step >= steps) {
-        if (taskId != null) scheduler.remove(taskId)
+      const shouldStop = onStep(activeBar, step, steps) === true
+      if (shouldStop || step >= steps) {
+        if (taskId != null && mode === 'in') scheduler.remove(taskId)
         hudBarFadeStates.delete(activeBar)
       }
     },
     HUD_BAR_FADE_STEP_MS,
-    'hud.barFadeIn'
+    `hud.barFade${mode === 'in' ? 'In' : 'Out'}`
   )
   state.taskId = taskId
   hudBarFadeStates.set(bar, state)
+}
+
+function fadeInHudBar(host: HudBarHost, bar: Container, fromAlpha = 0): void {
+  const scheduler = host.context?.scheduler
+  const startAlpha = Math.max(0, Math.min(1, fromAlpha))
+  bar.alpha = startAlpha
+  if (!scheduler || startAlpha >= 1) {
+    bar.alpha = 1
+    return
+  }
+  scheduleHudBarFade(
+    host,
+    bar,
+    'in',
+    (activeBar, step, steps) => {
+      activeBar.alpha = Math.min(1, step / steps)
+    },
+    Math.round(startAlpha * Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS)))
+  )
 }
 
 function fadeOutHudBar(host: HudBarHost, bar: Container): void {
@@ -169,29 +189,13 @@ function fadeOutHudBar(host: HudBarHost, bar: Container): void {
     removeHudBarNow(host, bar)
     return
   }
-  const steps = Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS))
-  let step = 0
-  const state: HudBarFadeState = { bar, mode: 'out', taskId: -1 as SchedulerTaskId }
-  let taskId: SchedulerTaskId | null = null
-  taskId = scheduler.add(
-    () => {
-      const activeBar = state.bar
-      if ((activeBar as { destroyed?: boolean }).destroyed || !isChildOf(host, activeBar)) {
-        if (taskId != null) scheduler.remove(taskId)
-        hudBarFadeStates.delete(activeBar)
-        return
-      }
-      step += 1
+  scheduleHudBarFade(host, bar, 'out', (activeBar, step, steps) => {
       activeBar.alpha = startAlpha * Math.max(0, 1 - step / steps)
       if (step >= steps) {
         removeHudBarNow(host, activeBar)
+        return true
       }
-    },
-    HUD_BAR_FADE_STEP_MS,
-    'hud.barFadeOut'
-  )
-  state.taskId = taskId
-  hudBarFadeStates.set(bar, state)
+  })
 }
 
 function replaceHudBar(host: HudBarHost, bar: Container, previous: Container | null): void {

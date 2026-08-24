@@ -16,8 +16,6 @@ export const HERO_EQUIPMENT_SLOTS: readonly HeroEquipmentSlot[] = [
   'arrow',
 ]
 
-export const HERO_WEAPON_SLOTS: readonly HeroWeaponSlot[] = ['melee', 'ranged']
-
 const SLOT_LABEL_KEYS: Record<HeroEquipmentSlot, string> = {
   helmet: 'heroEquipmentSlotHelmet',
   helmetDecor: 'heroEquipmentSlotHelmetDecor',
@@ -28,14 +26,6 @@ const SLOT_LABEL_KEYS: Record<HeroEquipmentSlot, string> = {
   bracers: 'heroEquipmentSlotBracers',
   offhand: 'heroEquipmentSlotOffhand',
   arrow: 'heroEquipmentSlotArrow',
-}
-
-const WEAPON_SLOT_LABEL_KEYS: Record<HeroWeaponSlot, string> = {
-  melee: 'heroWeaponSlotMelee',
-  ranged: 'heroWeaponSlotRanged',
-  lasso: 'heroWeaponSlotLasso',
-  offhand: 'heroWeaponSlotOffhand',
-  quiver: 'heroWeaponSlotQuiver',
 }
 
 const HELMET_DECOR_PREFIXES = ['upward_horns', 'helmet_wings', 'plumage', 'centurion_crest', 'centurion_plumage', 'legion_plumage', 'crest']
@@ -52,10 +42,6 @@ export type EquipmentStack = {
 
 export function getHeroEquipmentSlotLabelKey(slot: HeroEquipmentSlot): string {
   return SLOT_LABEL_KEYS[slot]
-}
-
-export function getHeroWeaponSlotLabelKey(slot: HeroWeaponSlot): string {
-  return WEAPON_SLOT_LABEL_KEYS[slot]
 }
 
 export function getEquipmentSlot(equipment: string): HeroEquipmentSlot | null {
@@ -217,7 +203,7 @@ export function equipHeroInventoryItem(hero: UnitEntity | null | undefined, equi
   return true
 }
 
-export function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equipment: string): boolean {
+function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equipment: string): boolean {
   if (!hero) return false
   const slot = getWeaponSlot(equipment)
   if (!slot) return false
@@ -270,17 +256,5 @@ export function consumeHeroEquippedItem(hero: UnitEntity | null | undefined, slo
   }
   refreshUnitEquipmentStats(hero)
   applyBakedLpcUnitAssets(hero)
-  return true
-}
-
-export function unequipHeroWeaponSlot(hero: UnitEntity | null | undefined, slot: HeroWeaponSlot): boolean {
-  if (!hero?.inventory?.activeWeapons?.[slot]) return false
-  const inventory = getHeroInventory(hero)
-  const equipment = inventory.activeWeapons![slot]
-  delete inventory.activeWeapons![slot]
-  if (equipment) inventory.equipment!.push(equipment)
-  refreshUnitEquipmentStats(hero)
-  applyBakedLpcUnitAssets(hero)
-  hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
   return true
 }

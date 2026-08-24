@@ -1,4 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "project": ["app/**/*.ts", "tools/**/*.cjs", "*.js"]
+  "entry": ["preload.js", "webpack.env.js", "tools/**/*.cjs", "tests/**/*.cjs"],
+  "project": ["app/**/*.ts", "tools/**/*.cjs", "*.js", "tests/**/*.cjs"],
+  "ignoreIssues": {
+    "app/classes/map/MapResources.ts": ["exports"],
+    "app/classes/map/ViewportFogRenderer.ts": ["exports"],
+    "app/constants/environments.ts": ["exports"],
+    "app/lib/parry.ts": ["exports"],
+    "app/lib/unitExperience.ts": ["exports"],
+    "app/serialization/CampaignSave.ts": ["exports"]
+  }
 }

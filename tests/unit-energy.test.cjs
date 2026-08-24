@@ -58,6 +58,7 @@ function loadUnitEnergy() {
       },
     },
     './lang': { t: key => key },
+    './miningActions': { getMiningActions: () => ['minestone', 'minegold'] },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'arpg' },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))

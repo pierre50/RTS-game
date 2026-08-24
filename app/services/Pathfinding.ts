@@ -1,4 +1,5 @@
 import { cellIsDiag, instancesDistance } from '../lib/maths'
+import { getSquareCellsAroundPoint } from '../lib/grid/cells'
 
 let pathStamp = 0
 
@@ -26,29 +27,7 @@ function getNeighbourCells(
   dist: number,
   callback?: (cell: PathCell) => boolean | void
 ): PathCell[] {
-  const result: PathCell[] = []
-  const startCell = grid[startX]?.[startY]
-  if (dist === 0) {
-    if (startCell && (!callback || callback(startCell))) result.push(startCell)
-    return result
-  }
-
-  for (let dx = -dist; dx <= dist; dx++) {
-    const x = startX + dx
-    const row = grid[x]
-    if (!row) continue
-
-    for (let dy = -dist; dy <= dist; dy++) {
-      if (dx === 0 && dy === 0) continue
-      const y = startY + dy
-      const cell = row[y]
-      if (!cell) continue
-
-      if (!callback || callback(cell)) result.push(cell)
-    }
-  }
-
-  return result
+  return getSquareCellsAroundPoint(startX, startY, grid, dist, callback, dist === 0)
 }
 
 function heapPush(heapData: HeapEntry[], f: number, node: PathCell): void {

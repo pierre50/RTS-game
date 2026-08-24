@@ -17,7 +17,7 @@ function loadModule(relativePath, mocks = {}) {
   return module.exports
 }
 
-const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.ts', {
+const { bindAnimatedSpriteToTicker } = loadModule('app/lib/extra.ts', {
   '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
   './grid': { instanceIsInPlayerSight: () => false },
   './maths': {},
@@ -25,7 +25,29 @@ const { displayObjectCanUpdateAnimation } = loadModule('app/lib/extra.ts', {
   './lang': {},
 })
 
-const { instanceShouldRender } = loadModule('app/lib/grid/visibility.ts', {
+function bindSprite(sprite) {
+  let tick
+  const ticker = {
+    add: handler => {
+      tick = handler
+    },
+    remove: () => {},
+  }
+  bindAnimatedSpriteToTicker(
+    {
+      autoUpdate: true,
+      destroy: () => {},
+      update: () => {
+        sprite.updates += 1
+      },
+      ...sprite,
+    },
+    { ticker }
+  )
+  return () => tick?.({})
+}
+
+const { updateInstanceRenderVisibility } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
   './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
@@ -33,11 +55,14 @@ const { instanceShouldRender } = loadModule('app/lib/grid/visibility.ts', {
 
 test('skips animation updates when the entity container is hidden', () => {
   const entity = { visible: false, renderable: true, parent: null }
-  const sprite = { playing: true, visible: true, renderable: true, destroyed: false, parent: entity }
+  const sprite = { playing: true, visible: true, renderable: true, destroyed: false, parent: entity, updates: 0 }
+  const tick = bindSprite(sprite)
 
-  assert.equal(displayObjectCanUpdateAnimation(sprite), false)
+  tick()
+  assert.equal(sprite.updates, 0)
   entity.visible = true
-  assert.equal(displayObjectCanUpdateAnimation(sprite), true)
+  tick()
+  assert.equal(sprite.updates, 1)
 })
 
 test('keeps hidden gameplay animations running when they have callbacks', () => {
@@ -49,9 +74,12 @@ test('keeps hidden gameplay animations running when they have callbacks', () => 
     destroyed: false,
     parent: entity,
     onComplete: () => {},
+    updates: 0,
   }
+  const tick = bindSprite(sprite)
 
-  assert.equal(displayObjectCanUpdateAnimation(sprite), true)
+  tick()
+  assert.equal(sprite.updates, 1)
 })
 
 test('renders an explored resource only while it is inside the camera', () => {
@@ -67,9 +95,11 @@ test('renders an explored resource only while it is inside the camera', () => {
     },
   }
 
-  assert.equal(instanceShouldRender(resource), false)
+  assert.equal(updateInstanceRenderVisibility(resource), false)
+  assert.equal(resource.visible, false)
   inCamera = true
-  assert.equal(instanceShouldRender(resource), true)
+  assert.equal(updateInstanceRenderVisibility(resource), true)
+  assert.equal(resource.visible, true)
 })
 
 test('culls a sprite-based entity by its full bounding box, not just its anchor point', () => {
@@ -91,6 +121,7 @@ test('culls a sprite-based entity by its full bounding box, not just its anchor 
     },
   }
 
-  assert.equal(instanceShouldRender(building), true)
+  assert.equal(updateInstanceRenderVisibility(building), true)
+  assert.equal(building.visible, true)
   assert.deepEqual(receivedBounds, { minX: 60, minY: 80, width: 80, height: 120 })
 })

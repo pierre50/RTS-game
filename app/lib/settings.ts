@@ -49,7 +49,7 @@ export type ControlBindingAction =
 
 export type ControlKeyBindings = Record<ControlBindingAction, string>
 
-export const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
+const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   cameraUp: 'ArrowUp',
   cameraDown: 'ArrowDown',
   cameraLeft: 'ArrowLeft',
@@ -230,7 +230,7 @@ export function onVisualSettingsChange(callback: () => void): () => void {
   return () => window.removeEventListener(SETTINGS_CHANGE_EVENT, callback)
 }
 
-export function normalizeControlKey(key: string): string {
+function normalizeControlKey(key: string): string {
   if (key === ' ') return 'Space'
   if (key.length === 1) return key.toLowerCase()
   return key
@@ -248,7 +248,7 @@ export function getKeyBindings(): ControlKeyBindings {
   return { ..._keyBindings }
 }
 
-export function setKeyBinding(action: ControlBindingAction, key: string): void {
+function setKeyBinding(action: ControlBindingAction, key: string): void {
   const normalizedKey = normalizeControlKey(key)
   _keyBindings = { ..._keyBindings, [action]: normalizedKey }
   localStorage.setItem(KEY_BINDINGS_KEY, JSON.stringify(_keyBindings))
@@ -264,7 +264,7 @@ export function resetKeyBindings(): ControlKeyBindings {
   return getKeyBindings()
 }
 
-export function getControlActionForKey(key: string): ControlBindingAction | null {
+function getControlActionForKey(key: string): ControlBindingAction | null {
   const normalized = normalizeControlKey(key)
   return CONTROL_BINDING_ACTIONS.find(action => areControlKeysEquivalent(_keyBindings[action], normalized)) ?? null
 }

@@ -1,5 +1,5 @@
 import { Container, Assets, Sprite, Texture } from 'pixi.js'
-import { cartesianToIsometric, getTexture, textureRefToString, updateInstanceRenderVisibility } from '../../lib'
+import { cartesianToIsometric, getTexture, textureRefToString } from '../../lib'
 import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
@@ -7,6 +7,7 @@ import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
 import { CellFog, type FogCellLike } from './CellFog'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
+import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 export { GenerationCell } from './GenerationCell'
 
 type CellMap = {
@@ -167,31 +168,15 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   }
 
   _updateChild(instance: RuntimeEntity): void {
-    if (!updateInstanceRenderVisibility(instance) && instance.isDestroyed && this.has === instance) {
-      this.has = null
-      this.solid = false
-    }
+    updateCellChildVisibility(this, instance)
   }
 
   updateVisible(): void {
-    const { player } = this.context
-    const { map } = this
-    if (!player?.views) return
-    if (!map.revealEverything && !player.views.isViewed(this.i, this.j)) {
-      return
-    }
-    this.visible = true
-    if (this.has) {
-      this._updateChild(this.has)
-    }
-    for (const corpse of this.corpses) {
-      this._updateChild(corpse)
-    }
+    updateCellVisible(this)
   }
 
   place(entity: RuntimeEntity): void {
-    this.has = entity
-    this.updateVisible()
+    placeCellEntity(this, entity)
   }
 
   releaseTerrainRenderResources(): void {
@@ -218,19 +203,24 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
 
   // Fog delegates
   setFog(init: boolean): void {
-    return this._ensureCellFog().setFog(init)
+    const fog = this._ensureCellFog()
+    fog.setFog(init)
   }
   removeFog(): void {
-    return this._ensureCellFog().removeFog()
+    const fog = this._ensureCellFog()
+    fog.removeFog()
   }
   addFogBuilding(textureSheet: string, colorName?: string): void {
-    return this._ensureCellFog().addFogBuilding(textureSheet, colorName)
+    const fog = this._ensureCellFog()
+    fog.addFogBuilding(textureSheet, colorName)
   }
   removeFogBuilding(instance?: RuntimeEntity): void {
-    return this._ensureCellFog().removeFogBuilding(instance)
+    const fog = this._ensureCellFog()
+    fog.removeFogBuilding(instance)
   }
   setFogChildren(instance: RuntimeEntity, init: boolean): void {
-    return this._ensureCellFog().setFogChildren(instance, init)
+    const fog = this._ensureCellFog()
+    fog.setFogChildren(instance, init)
   }
 
   // Terrain delegates

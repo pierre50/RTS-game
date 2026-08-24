@@ -95,7 +95,7 @@ export type SaveCellState = {
   z?: number
 }
 
-export type SavedThreatState = {
+type SavedThreatState = {
   target?: SaveReference | null
   attacker?: SaveReference | null
   lastSeenAgo?: number
@@ -112,8 +112,6 @@ export type SavedEnemyMemoryState = {
 
 export type SavedAIState = {
   phase?: string
-  lastAttackWaveAgo?: number | null
-  lastAttackWaveAt?: number
   savedAt?: number
   enemyUnits?: SavedEnemyMemoryState[]
   enemyBuildings?: SavedEnemyMemoryState[]
@@ -150,13 +148,13 @@ export type SavePlayerState = PlayerSetupConfig & {
   aiState?: SavedAIState
 }
 
-export type SaveRuntimeState = {
+type SaveRuntimeState = {
   dayNightElapsedMs?: number
   elapsedMs?: number
   savedAt?: number
 }
 
-export type SaveWorldState = {
+type SaveWorldState = {
   environment?: string
   seed?: string | number
   size?: number
@@ -167,7 +165,7 @@ export type SaveWorldState = {
 
 export type WorldColor = 'blue' | 'yellow' | 'red' | 'neutral'
 
-export type HeroPartySave = {
+type HeroPartySave = {
   playerLabel?: string
   followerLabels: string[]
 }
@@ -217,7 +215,7 @@ export type CampaignWorldSave = {
   state: SerializedSave
 }
 
-export type CampaignClockSave = {
+type CampaignClockSave = {
   dayNightElapsedMs?: number
   savedAt?: number
 }

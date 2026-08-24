@@ -9,11 +9,11 @@ export type AssetAge = number | string | null | undefined
 
 export type HitAreaLike = object | null
 
-export type TextureFrameData = {
+type TextureFrameData = {
   hitArea?: HitAreaLike
 }
 
-export type TextureMapLike<TTexture = Texture> = Record<string, TTexture>
+type TextureMapLike<TTexture = Texture> = Record<string, TTexture>
 
 export type SpritesheetLike<TTexture = Texture> = {
   data?: {

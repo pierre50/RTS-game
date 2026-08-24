@@ -52,7 +52,7 @@ function pickStable<T>(items: T[], seed: string, salt: string): T {
   return items[hashString(`${seed}:${salt}`) % items.length]
 }
 
-export function getFactionRelationState(score: number): FactionRelationState {
+function getFactionRelationState(score: number): FactionRelationState {
   if (score <= -50) return 'hostile'
   if (score < -10) return 'wary'
   if (score < 25) return 'neutral'
@@ -60,7 +60,7 @@ export function getFactionRelationState(score: number): FactionRelationState {
   return 'allied'
 }
 
-export function createFactionName(civilization: string | undefined, seed: string): string {
+function createFactionName(civilization: string | undefined, seed: string): string {
   const names = CIV_TRIBE_NAMES[civilization || ''] ?? CIV_TRIBE_NAMES.Greek
   return `${t(pickStable(names.prefixes, seed, 'prefix'))} ${pickStable(names.roots, seed, 'root')}`
 }

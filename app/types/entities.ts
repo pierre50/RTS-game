@@ -26,8 +26,8 @@ export type HeroWeaponSlot = 'melee' | 'ranged' | 'lasso' | 'offhand' | 'quiver'
 export type CommandSound = string | number | (string | number)[] | null | undefined
 export type UnitControlMode = 'standard' | 'hero' | 'ai'
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
-export type VillagerShelterLocation = 'shelter' | 'outside'
-export type VillagerShelterStatus = 'movingToShelter' | 'inside' | 'outside'
+type VillagerShelterLocation = 'shelter' | 'outside'
+type VillagerShelterStatus = 'movingToShelter' | 'inside' | 'outside'
 export type VillagerShelterReason = 'sleep' | 'danger'
 export type VillagerShelterState = {
   status: VillagerShelterStatus
@@ -35,6 +35,8 @@ export type VillagerShelterState = {
   location: VillagerShelterLocation
   shelter?: BuildingEntity | null
   targetCell?: RuntimeCell | null
+  startedAtMs?: number
+  retryCount?: number
   previousDest?: RuntimeEntity | RuntimeCell | null
   previousWork?: string | null
   previousAction?: string | null
@@ -142,18 +144,18 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   setTextures?: (sheet: string) => void
 }
 
-export interface UnitPendingOrder {
+interface UnitPendingOrder {
   execute?: () => void
   dest?: RuntimeEntity | RuntimeCell | null
   action?: string | null
 }
 
-export interface UnitBlockedGatherApproach {
+interface UnitBlockedGatherApproach {
   target: RuntimeEntity
   action: string
 }
 
-export interface UnitRealDest {
+interface UnitRealDest {
   i: number
   j: number
   x: number

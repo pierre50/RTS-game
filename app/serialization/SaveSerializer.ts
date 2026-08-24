@@ -80,7 +80,6 @@ type SerializablePlayer = PlayerLike & {
   enemyUnitMemory?: Map<string, ThreatMemory>
   getNow?: () => number
   hasBuilt?: string[]
-  lastAttackWaveAt?: number
   phase?: string
   population?: number
   populationMax?: number
@@ -330,10 +329,6 @@ function playerData(player: SerializablePlayer) {
     data.aiState = {
       phase: player.phase,
       savedAt,
-      lastAttackWaveAgo:
-        typeof player.lastAttackWaveAt === 'number' && Number.isFinite(player.lastAttackWaveAt)
-          ? Math.max(0, savedAt - player.lastAttackWaveAt)
-          : null,
       enemyUnits: [...(player.enemyUnitMemory?.values?.() || [])].map(serializeMemory),
       enemyBuildings: [...(player.enemyBuildingMemory?.values?.() || [])].map(serializeMemory),
       threatenedTargets: [...(player.threatenedTargets?.values() || [])].map(threat => ({

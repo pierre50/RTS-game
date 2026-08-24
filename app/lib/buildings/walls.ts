@@ -81,7 +81,7 @@ export function getWallLevel(owner?: WallOwner | null): 1 | 2 | 3 {
   return 1
 }
 
-export function getWallSheet(owner?: WallOwner | null): string {
+function getWallSheet(owner?: WallOwner | null): string {
   const level = getWallLevel(owner)
   const sheets = WALL_SHEETS[level] as Record<string, string>
   return sheets[owner?.civ ?? ''] || sheets.default || WALL_SHEETS[1].default
@@ -91,7 +91,7 @@ export function getWallTexture(owner: WallOwner | null, frame: number, assets = 
   return getTexture({ sheet: getWallSheet(owner), frame }, assets)
 }
 
-export function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): number {
+function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallOwner): number {
   const north = grid[i - 1]?.[j]?.has
   const south = grid[i + 1]?.[j]?.has
   const west = grid[i]?.[j - 1]?.has

@@ -7,8 +7,8 @@ import nordic from './nordic'
 import nubian from './nubian'
 import roman from './roman'
 
-export type UnitNameGender = 'male' | 'female'
-export type UnitNamesByGender = Record<UnitNameGender, string[]>
+type UnitNameGender = 'male' | 'female'
+type UnitNamesByGender = Record<UnitNameGender, string[]>
 
 const NAMES_BY_CIV: Record<string, UnitNamesByGender> = {
   Asian: asian,

@@ -11,6 +11,7 @@ import {
   parseTextureRef,
   textureRefToString,
 } from '../../lib'
+import { debugLog } from '../../lib/debug'
 import { CELL_DEPTH, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { TextureRef } from '../../lib'
@@ -25,6 +26,7 @@ const BORDER_SHEETS = {
   dirtRelief: 'dirt-relief',
   snowRelief: 'snow-relief',
 } as const
+const TERRAIN_TEXTURE_DEBUG = false
 
 type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
 
@@ -48,7 +50,7 @@ type TerrainChild = ContainerChild & {
   type?: string
 }
 
-export type TerrainParentLike = {
+type TerrainParentLike = {
   size?: number
   grid?: TerrainCellLike[][]
   randomRange?(min: number, max: number): number
@@ -265,7 +267,8 @@ export class CellTerrain {
     const textureName = formatNumber(index) + '.png'
     const texture = getTextureByFrame(resourceName, index, Assets)
     if (!texture) {
-      console.log(
+      debugLog(
+        TERRAIN_TEXTURE_DEBUG,
         `[ground-relief-border] Missing texture "${textureName}" for tile ${cellSpriteTextureName} at [${cell.i},${cell.j}]`
       )
       return
@@ -314,7 +317,7 @@ export class CellTerrain {
     const baseTexture = sprite.texture
     const label = cell.terrainTextureName
     if (!label) {
-      console.log(`[relief] BAD TERRAIN TEXTURE REF at [${cell.i},${cell.j}]: "${label}"`)
+      debugLog(TERRAIN_TEXTURE_DEBUG, `[relief] BAD TERRAIN TEXTURE REF at [${cell.i},${cell.j}]: "${label}"`)
       return
     }
     const resourceName = parseTextureRef(label).sheet

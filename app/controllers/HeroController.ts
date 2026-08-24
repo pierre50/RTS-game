@@ -8,10 +8,9 @@ import {
   updateInstanceRenderVisibility,
 } from '../lib'
 import {
+  COLOR_GOLD,
   COMM_INDICATOR_FILL_ALPHA,
-  COMM_INDICATOR_FILL_COLOR,
   COMM_INDICATOR_STROKE_ALPHA,
-  COMM_INDICATOR_STROKE_COLOR,
   COMM_INDICATOR_STROKE_WIDTH,
   HERO_ACTION_MOVE_SPEED_FACTOR,
   HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR,
@@ -217,9 +216,9 @@ function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, radius: n
     )
   }
   if (!cells.length) return
-  indicator.fill({ color: COMM_INDICATOR_FILL_COLOR, alpha: COMM_INDICATOR_FILL_ALPHA })
+  indicator.fill({ color: COLOR_GOLD, alpha: COMM_INDICATOR_FILL_ALPHA })
   indicator.stroke({
-    color: COMM_INDICATOR_STROKE_COLOR,
+    color: COLOR_GOLD,
     width: COMM_INDICATOR_STROKE_WIDTH,
     alpha: COMM_INDICATOR_STROKE_ALPHA,
   })

@@ -42,7 +42,7 @@ export interface PlayerConfigLike {
   equipment?: Record<string, EquipmentStats>
 }
 
-type UnitRestoreReferences = {
+export type UnitRestoreReferences = {
   assetAge?: AssetAge
   dest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
   previousDest?: RuntimeEntity | RuntimeCell | SaveReference | SaveDestination | null
@@ -55,7 +55,7 @@ type UnitRestoreReferences = {
 export type PlayerUnitCreationOptions = Omit<Partial<UnitEntity>, keyof UnitRestoreReferences> &
   UnitRestoreReferences & { i: number; j: number; type: string; owner?: PlayerLike; suppressCreateSound?: boolean }
 
-export type PlayerDiplomacy = 'neutral'
+type PlayerDiplomacy = 'neutral'
 
 export interface PlayerLike {
   label: string

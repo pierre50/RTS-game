@@ -173,22 +173,14 @@ export function recolorCanvasPixels(
   ctx.putImageData(imageData, 0, 0)
 }
 
-function recolorTextureDirectly(
+function createRecoloredTexture(
   texture: RecolorableTexture,
-  color: PlayerColor,
-  sourceColors: readonly number[] = SOURCE_COLORS
+  cacheKey: string,
+  recolorCanvas: (canvas: HTMLCanvasElement) => void
 ): Texture {
-  if (color === 'blue') return texture
-
-  if (!COLOR_PALETTES[color]) throw new Error('Invalid color selected.')
+  if (recoloredTextureCache.has(cacheKey)) return recoloredTextureCache.get(cacheKey)!
 
   const frame = texture.frame
-  const cacheKey = `${getTextureColorKey(texture)}_${color}_${sourceColors.join('-')}`
-
-  if (recoloredTextureCache.has(cacheKey)) {
-    return recoloredTextureCache.get(cacheKey)!
-  }
-
   const baseTexture = texture.source.resource
   const canvas = document.createElement('canvas')
   canvas.width = frame.width
@@ -198,7 +190,7 @@ function recolorTextureDirectly(
   if (!baseTexture || !ctx) return texture
 
   ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)
-  recolorCanvasPixels(canvas, color, sourceColors)
+  recolorCanvas(canvas)
 
   const newTexture = Texture.from(canvas)
   ;(newTexture as Texture & { defaultAnchor?: unknown }).defaultAnchor = (
@@ -209,6 +201,19 @@ function recolorTextureDirectly(
   return newTexture
 }
 
+function recolorTextureDirectly(
+  texture: RecolorableTexture,
+  color: PlayerColor,
+  sourceColors: readonly number[] = SOURCE_COLORS
+): Texture {
+  if (color === 'blue') return texture
+
+  if (!COLOR_PALETTES[color]) throw new Error('Invalid color selected.')
+
+  const cacheKey = `${getTextureColorKey(texture)}_${color}_${sourceColors.join('-')}`
+  return createRecoloredTexture(texture, cacheKey, canvas => recolorCanvasPixels(canvas, color, sourceColors))
+}
+
 export function recolorTextureByMap<TTexture extends RecolorableTexture>(
   texture: TTexture,
   colorMap: readonly [number, number][],
@@ -216,28 +221,8 @@ export function recolorTextureByMap<TTexture extends RecolorableTexture>(
 ): Texture {
   if (!colorMap.length) return texture
 
-  const frame = texture.frame
   const cacheKey = `${cacheNamespace}_${getTextureColorKey(texture)}_${normalizeColorMapKey(colorMap)}`
-  if (recoloredTextureCache.has(cacheKey)) return recoloredTextureCache.get(cacheKey)!
-
-  const baseTexture = texture.source.resource
-  const canvas = document.createElement('canvas')
-  canvas.width = frame.width
-  canvas.height = frame.height
-
-  const ctx = canvas.getContext('2d')
-  if (!baseTexture || !ctx) return texture
-
-  ctx.drawImage(baseTexture, frame.x, frame.y, frame.width, frame.height, 0, 0, frame.width, frame.height)
-  applyColorMapToCanvas(canvas, colorMap)
-
-  const newTexture = Texture.from(canvas)
-  ;(newTexture as Texture & { defaultAnchor?: unknown }).defaultAnchor = (
-    texture as Texture & { defaultAnchor?: unknown }
-  ).defaultAnchor
-  ;(newTexture as Texture & { hitArea?: unknown }).hitArea = (texture as Texture & { hitArea?: unknown }).hitArea
-  recoloredTextureCache.set(cacheKey, newTexture)
-  return newTexture
+  return createRecoloredTexture(texture, cacheKey, canvas => applyColorMapToCanvas(canvas, colorMap))
 }
 
 export function getHexColor(name: string): string {

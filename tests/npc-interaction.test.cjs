@@ -1,21 +1,13 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
   const defaultMocks = {
     './graphics/selection': {
       createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
       drawInstanceBlinkingSelection: () => {},
+      getSelectionMarkerOffset: () => 0,
     },
     './sound': {
       playSelectionSound: () => {},
@@ -36,13 +28,7 @@ function loadModule(relativePath, mocks) {
       getUnitUpgradeTargetForBuilding: () => null,
     },
   }
-  const localRequire = request => {
-    if (Object.hasOwn(mocks, request)) return mocks[request]
-    if (Object.hasOwn(defaultMocks, request)) return defaultMocks[request]
-    return require(request)
-  }
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })
 }
 
 const constants = {
@@ -792,14 +778,16 @@ test('a quick tap finds nothing when no ally is within the facing cone', () => {
 })
 
 test('communication radius grows exponentially while staying capped at max range', () => {
-  const { COMM_CHARGE_MS, COMM_MAX_RANGE, getCommRadiusForHold } = loadNpcInteraction(null)
+  const { getCommRadiusForHold } = loadNpcInteraction(null)
+  const commChargeMs = 2200
+  const commMaxRange = 7
 
   assert.equal(getCommRadiusForHold(-100), 0)
   assert.equal(getCommRadiusForHold(0), 0)
   assert.ok(getCommRadiusForHold(250) < 1)
-  assert.ok(getCommRadiusForHold(COMM_CHARGE_MS / 2) < COMM_MAX_RANGE / 2)
-  assert.equal(getCommRadiusForHold(COMM_CHARGE_MS), COMM_MAX_RANGE)
-  assert.equal(getCommRadiusForHold(COMM_CHARGE_MS * 2), COMM_MAX_RANGE)
+  assert.ok(getCommRadiusForHold(commChargeMs / 2) < commMaxRange / 2)
+  assert.equal(getCommRadiusForHold(commChargeMs), commMaxRange)
+  assert.equal(getCommRadiusForHold(commChargeMs * 2), commMaxRange)
 })
 
 test('holding past the precision zone nets every eligible ally in the charged radius', () => {
@@ -821,9 +809,9 @@ test('communication indicator cells use the same grid radius as group selection'
   const hero = { owner, degree: 0, x: 0, y: 0, i: 2, j: 2, context: { map: { grid } } }
   const inside = makeCommAlly({ owner, i: 4, j: 2, x: 64, y: 32 })
   const diagonalOutside = makeCommAlly({ owner, i: 4, j: 4, x: 0, y: 64 })
-  const { findCommGroup, getCommCellsInRadius } = loadCommModule([inside, diagonalOutside], () => 0)
+  const { getCommCellsInRadius, resolveCommGroup } = loadCommModule([inside, diagonalOutside], () => 0)
 
-  const group = findCommGroup(hero, 2)
+  const group = resolveCommGroup(hero, 2)
   const cells = getCommCellsInRadius(hero, 2).map(cell => `${cell.i}:${cell.j}`)
 
   assert.deepEqual(group, [inside])

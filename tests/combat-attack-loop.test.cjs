@@ -19,6 +19,7 @@ function loadCombatAttackLoop(unitEnergyOverrides = {}) {
       },
     },
     './maths': { instancesDistance: () => 1 },
+    './debug': { debugLog: () => {} },
     './unitEnergy': {
       hasEnergyForAction: () => true,
       spendOrWaitForEnergy: () => true,

@@ -32,17 +32,6 @@ const EIGHT_DIRECTION_ORDER: DirectionOrder = [
   'east',
   'southeast',
 ]
-const EAST_FIRST_EIGHT_DIRECTION_ORDER: DirectionOrder = [
-  'east',
-  'southeast',
-  'south',
-  'southwest',
-  'west',
-  'northwest',
-  'north',
-  'northeast',
-]
-
 function getSheetDirectionOrder<TTexture>(
   textures: TextureMap<TTexture>,
   directionCount: number | null,
@@ -420,7 +409,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
 }
 
-export function displayObjectCanUpdateAnimation(displayObject?: DisplayObjectLike | null): boolean {
+function displayObjectCanUpdateAnimation(displayObject?: DisplayObjectLike | null): boolean {
   if (!displayObject?.playing || displayObject.destroyed) return false
   if (displayObject.onLoop || displayObject.onFrameChange || displayObject.onComplete) return true
   let current: DisplayObjectLike | null | undefined = displayObject
@@ -806,12 +795,12 @@ type PlayerLike = {
   }
 }
 
-export const playerOwnsInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
+const playerOwnsInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
   if (!instance || !player) return false
   return instance.owner?.label === player.label
 }
 
-export const playerHasVisionOfInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
+const playerHasVisionOfInstance = (instance?: VisibleInstance | null, player?: PlayerLike | null): boolean => {
   if (!instance || !player) return false
   return instanceIsInPlayerSight(instance as RenderableInstance, player)
 }

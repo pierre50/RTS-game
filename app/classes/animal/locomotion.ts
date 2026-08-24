@@ -1,10 +1,10 @@
 import { SHEET_TYPES } from '../../constants'
 
-// Locomotion categories: an animal whose current sheet belongs to
-// AIRBORNE_SHEETS, or that still has altitude, is airborne. Airborne animals
+// Locomotion categories: an animal whose current sheet is airborne, or that
+// still has altitude, is airborne. Airborne animals
 // must never freeze their animation and must never fall back to a ground
 // movement sheet until they have actually landed (altitude back to 0).
-export const AIRBORNE_SHEETS: ReadonlySet<string> = new Set([SHEET_TYPES.flying])
+const AIRBORNE_SHEETS: ReadonlySet<string> = new Set([SHEET_TYPES.flying])
 
 type LocomotionState = {
   altitude?: number

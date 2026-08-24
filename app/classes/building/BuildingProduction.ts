@@ -394,6 +394,13 @@ export class BuildingProduction {
       if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
       return false
     }
+    const updatePlayedQueueInterface = () => {
+      if (!building.owner.isPlayed) return
+      const still = building.queue.filter((q: string) => q === type).length
+      menu.updateButtonContent(type, still || '')
+      if (still === 0) menu.toggleQueuedActionCancel(type, false)
+      building.updateInterfaceLoading?.()
+    }
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (building.owner.type === PLAYER_TYPES.ai) {
@@ -430,24 +437,14 @@ export class BuildingProduction {
                 building.buyUnit(building.queue[0], true)
               }
               hasShowedMessage = false
-              if (building.owner.isPlayed) {
-                const still = building.queue.filter((q: string) => q === type).length
-                menu.updateButtonContent(type, still || '')
-                if (still === 0) menu.toggleQueuedActionCancel(type, false)
-                building.updateInterfaceLoading?.()
-              }
+              updatePlayedQueueInterface()
             } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
               if (!this.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
                 building.stopInterval()
                 building.loading = null
                 if (building.queue[0] === type) building.queue.shift()
                 if (trainee) this.clearActiveTraining(trainee)
-                if (building.owner.isPlayed) {
-                  const still = building.queue.filter((q: string) => q === type).length
-                  menu.updateButtonContent(type, still || '')
-                  if (still === 0) menu.toggleQueuedActionCancel(type, false)
-                  building.updateInterfaceLoading?.()
-                }
+                updatePlayedQueueInterface()
                 return
               }
               building.stopInterval()
@@ -458,12 +455,7 @@ export class BuildingProduction {
                 building.buyUnit(building.queue[0], true)
               }
               hasShowedMessage = false
-              if (building.owner.isPlayed) {
-                const still = building.queue.filter((q: string) => q === type).length
-                menu.updateButtonContent(type, still || '')
-                if (still === 0) menu.toggleQueuedActionCancel(type, false)
-                building.updateInterfaceLoading?.()
-              }
+              updatePlayedQueueInterface()
             } else if ((building.loading ?? 0) < 100) {
               if (trainee || building.owner.population < Math.min(POPULATION_MAX, building.owner.populationMax)) {
                 building.loading = (building.loading ?? 0) + 1

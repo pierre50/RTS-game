@@ -1,4 +1,4 @@
-export type GameDifficultyId = 'easy' | 'medium' | 'hard'
+type GameDifficultyId = 'easy' | 'medium' | 'hard'
 
 export type GameDifficultyCombatBalance = {
   enemyAttackEnergyCostMultiplier: number
@@ -6,7 +6,7 @@ export type GameDifficultyCombatBalance = {
   playerDamageReceivedMultiplier: number
 }
 
-export const GAME_DIFFICULTY_COMBAT_BALANCE: Record<GameDifficultyId, GameDifficultyCombatBalance> = {
+const GAME_DIFFICULTY_COMBAT_BALANCE: Record<GameDifficultyId, GameDifficultyCombatBalance> = {
   easy: {
     enemyAttackEnergyCostMultiplier: 2,
     playerDamageDealtMultiplier: 2,

@@ -23,7 +23,7 @@ const deathFlashMocks = {
 }
 
 test('death flash restores tint if the sprite textures change before completion', () => {
-  const { startDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
   const originalTextures = ['dying-0', 'dying-1']
   const corpseTextures = ['corpse']
   const sprite = {
@@ -33,7 +33,7 @@ test('death flash restores tint if the sprite textures change before completion'
     tint: 0xabcdef,
   }
 
-  startDeathFlash(sprite)
+  runAfterDeathFlash(sprite, () => {})
   assert.equal(sprite.tint, 0xff3030)
 
   sprite.textures = corpseTextures
@@ -44,7 +44,7 @@ test('death flash restores tint if the sprite textures change before completion'
 })
 
 test('death flash can be cleared even if sprite callbacks were replaced', () => {
-  const { clearDeathFlash, startDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { clearDeathFlash, runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
   const replacementFrameChange = () => {}
   const sprite = {
     currentFrame: 0,
@@ -54,7 +54,7 @@ test('death flash can be cleared even if sprite callbacks were replaced', () => 
     tint: 0xabcdef,
   }
 
-  startDeathFlash(sprite)
+  runAfterDeathFlash(sprite, () => {})
   assert.equal(sprite.tint, 0xff3030)
 
   sprite.onFrameChange = replacementFrameChange
@@ -65,7 +65,7 @@ test('death flash can be cleared even if sprite callbacks were replaced', () => 
 })
 
 test('starting a new death flash restores the previous flash tint first', () => {
-  const { startDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
   const sprite = {
     currentFrame: 0,
     destroyed: false,
@@ -74,9 +74,9 @@ test('starting a new death flash restores the previous flash tint first', () => 
     tint: 0xabcdef,
   }
 
-  const stopFirst = startDeathFlash(sprite)
+  const stopFirst = runAfterDeathFlash(sprite, () => {})
   sprite.tint = 0x123456
-  const stopSecond = startDeathFlash(sprite)
+  const stopSecond = runAfterDeathFlash(sprite, () => {})
 
   stopFirst()
   assert.equal(sprite.tint, 0xff3030)

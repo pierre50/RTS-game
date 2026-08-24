@@ -1,6 +1,6 @@
 import { getLpcCivilizationProfile, pickLpcProfileValue } from './civilizationProfiles'
 
-export type LpcVisualIdentity = {
+type LpcVisualIdentity = {
   skinPalette: string
   hairPalette: string
   hairstyle: string
@@ -23,7 +23,7 @@ export function hashLpcAppearanceSeed(value: string): number {
   return hash
 }
 
-export function resolveLpcVisualIdentity(civilization: string | null | undefined, seed: number): LpcVisualIdentity {
+function resolveLpcVisualIdentity(civilization: string | null | undefined, seed: number): LpcVisualIdentity {
   const profile = getLpcCivilizationProfile(civilization)
   return {
     skinPalette: pickLpcProfileValue(profile.skinPalettes, seed),

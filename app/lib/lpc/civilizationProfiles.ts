@@ -5,14 +5,14 @@ export type LpcCivilizationVisualProfile = {
   beardStyles: string[]
 }
 
-export const DEFAULT_LPC_CIVILIZATION_PROFILE: LpcCivilizationVisualProfile = {
+const DEFAULT_LPC_CIVILIZATION_PROFILE: LpcCivilizationVisualProfile = {
   skinPalettes: ['olive'],
   hairPalettes: ['dark_brown'],
   hairstyles: ['messy3', 'plain', 'parted'],
   beardStyles: ['beard/basic', 'beard/trimmed', 'mustache/basic'],
 }
 
-export const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProfile> = {
+const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProfile> = {
   Greek: {
     skinPalettes: ['olive'],
     hairPalettes: ['dark_brown'],

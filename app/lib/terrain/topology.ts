@@ -1,7 +1,7 @@
 import type { Grid, GridCell } from '../../types/grid'
 
 type NeighborOffset = readonly [number, number]
-export type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
+type NeighborName = 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'nw'
 type NeighborRing = boolean[]
 export type NeighborFlags = Record<NeighborName, boolean>
 

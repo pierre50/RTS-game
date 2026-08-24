@@ -9,7 +9,7 @@ type DiplomaticAggressor = {
   owner?: PlayerLike | null
 }
 
-export type DiplomaticAggressionRelation = 'unchanged' | 'hostile' | 'neutral'
+type DiplomaticAggressionRelation = 'unchanged' | 'hostile' | 'neutral'
 
 export type DiplomaticAggressionResult = {
   changed: boolean

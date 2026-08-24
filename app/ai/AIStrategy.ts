@@ -137,10 +137,8 @@ export class AIStrategy {
     return getBestUnitFromTechs(this.ai.technologies, ARCHER_TECH_UPGRADES, 'Bowman')
   }
 
-  updatePhase(villagersCount: number, militaryCount: number, militaryPower: number = 0): string {
+  updatePhase(villagersCount: number): string {
     const { ai, difficultyConfig } = this
-    const attackPowerThreshold = this.military.getDesiredAttackPower()
-    const fallbackPowerThreshold = attackPowerThreshold * 0.4
     if (ai.phase === 'economy' && villagersCount >= difficultyConfig.econToMilVillagers) {
       ai.phase = 'military_build'
       return 'military_build'
@@ -149,18 +147,7 @@ export class AIStrategy {
       ai.phase = 'economy'
       return 'economy'
     }
-    if (
-      ai.phase === 'military_build' &&
-      militaryCount >= Math.max(2, Math.ceil(difficultyConfig.attackThreshold * 0.5)) &&
-      militaryPower >= attackPowerThreshold
-    ) {
-      ai.phase = 'attack'
-      return 'attack'
-    }
-    if (
-      ai.phase === 'attack' &&
-      (militaryCount < Math.ceil(difficultyConfig.attackThreshold * 0.4) || militaryPower < fallbackPowerThreshold)
-    ) {
+    if ((ai.phase as string) === 'attack') {
       ai.phase = 'military_build'
       return 'military_build'
     }
@@ -183,43 +170,23 @@ export class AIStrategy {
   }
 
   getDesiredBarracksCount(snapshot: Partial<AIStrategySnapshot> | null = null): number {
-    const { ai, difficultyConfig } = this
+    const { ai } = this
     const barracks: AIBuildingLike[] =
       snapshot?.barracks || ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.barracks)
-    const archeryRanges: AIBuildingLike[] =
-      snapshot?.archeryRanges ||
-      ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.archeryRange)
-    const stables: AIBuildingLike[] =
-      snapshot?.stables || ai.buildings.filter((building: AIBuildingLike) => building.type === BUILDING_TYPES.stable)
     const builtBarracks = barracks.filter(
       (building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed
     )
     const totalMilitary =
       (snapshot?.infantry?.length || 0) + (snapshot?.archers?.length || 0) + (snapshot?.cavalry?.length || 0)
-    const militaryProductionBuildings =
-      archeryRanges.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed)
-        .length +
-      stables.filter((building: AIBuildingLike) => building.isBuilt && !building.isDead && !building.isDestroyed).length
 
     let desired = ai.phase !== 'economy' ? 1 : 0
 
     if (
       this.hasReachedAge(2) &&
       ai.phase !== 'economy' &&
-      (totalMilitary >= Math.max(8, difficultyConfig.attackThreshold * 2) ||
-        this.getTrainingLoad(builtBarracks) >= Math.max(2, builtBarracks.length * 2))
+      (totalMilitary >= 8 || this.getTrainingLoad(builtBarracks) >= Math.max(2, builtBarracks.length * 2))
     ) {
       desired = 2
-    }
-
-    if (
-      ai.age >= 3 &&
-      ai.phase === 'attack' &&
-      totalMilitary >= Math.max(12, difficultyConfig.attackThreshold * 3) &&
-      this.getTrainingLoad(builtBarracks) >= Math.max(3, builtBarracks.length * 2) &&
-      militaryProductionBuildings >= 2
-    ) {
-      desired = 3
     }
 
     return desired

@@ -17,7 +17,7 @@ type FogMemorySprite = FogSpriteMemory & {
   sprite?: Sprite
 }
 
-export type FogMapLike = {
+type FogMapLike = {
   revealTerrain?: boolean
   revealEverything?: boolean
   fogMemoryLayer?: { addChild(child: Sprite): Sprite } | null
@@ -26,7 +26,7 @@ export type FogMapLike = {
   _fogInitComplete?: boolean
 }
 
-export type FogCellContext = {
+type FogCellContext = {
   map: FogMapLike
   player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
 }

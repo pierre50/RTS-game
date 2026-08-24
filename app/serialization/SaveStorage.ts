@@ -1,6 +1,7 @@
 import LZString from 'lz-string'
 import { serializeGame } from './SaveSerializer'
 import { createInitialCampaignSave, updateCurrentWorldState } from './CampaignSave'
+import { debugLog } from '../lib/debug'
 import type { GameContextLike } from '../types/context'
 import type { CampaignSave, SaveIndexEntry, SaveRecord } from '../types/save'
 
@@ -24,6 +25,7 @@ const INDEX_KEY = 'saves_index'
 const AUTOSAVE_KEY = 'save_0'
 const MAX_SAVES = 10
 const EXPORT_FORMAT = 'save-v1'
+const SAVE_BACKEND_DEBUG = false
 export const EXPORT_EXT = '.save'
 
 function assertSaveWrite(result: SaveWriteResult, fallbackMessage = 'STORAGE_FULL'): void {
@@ -38,7 +40,7 @@ function assertSaveWrite(result: SaveWriteResult, fallbackMessage = 'STORAGE_FUL
 }
 
 const saveBackendName = window.electronSaves ? 'electron-file' : 'browser-localStorage'
-console.info(`[save] Using ${saveBackendName} backend`)
+debugLog(SAVE_BACKEND_DEBUG, `[save] Using ${saveBackendName} backend`)
 
 const backend = window.electronSaves
   ? {

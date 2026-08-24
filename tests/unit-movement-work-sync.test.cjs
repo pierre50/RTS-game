@@ -39,6 +39,7 @@ function loadUnitMovement(calls) {
         findReachableFleeCell: () => null,
         getCellsAroundPoint: () => [],
         getClosestInstanceWithPath: () => null,
+        getMiningActions: () => ['minestone', 'minegold'],
         getGroundReliefLevel: () => 0,
         getInstanceClosestFreeCellPath: () => [],
         getInstanceDegree: () => 0,
@@ -69,6 +70,16 @@ function loadUnitMovement(calls) {
           unit.work = work
           unit.action = action
         },
+      }
+    }
+    if (request === './UnitHeroDirectMovementCollision') {
+      return {
+        blocksHeroDirectMoveWithRoundedFootprint: () => false,
+        blocksHeroDirectMoveWithSoftBody: () => false,
+        createHeroTerrainMoveBlocker: () => null,
+        getHeroCollisionFootprintPoints: () => [],
+        getHeroDirectMoveBlockerAtPoint: () => null,
+        isHeroLandTerrainBlockedCell: () => false,
       }
     }
     return require(request)

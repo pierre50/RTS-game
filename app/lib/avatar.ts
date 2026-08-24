@@ -5,6 +5,7 @@ import { getBuildingAsset, type AssetOwner } from './graphics/assets'
 import { recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
 import { getTexture } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
+import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
 import { getUnitEquipmentLevel } from './unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
@@ -35,7 +36,7 @@ type PortraitSource = Pick<
   | 'work'
 >
 
-export function getUnitFacePortraitTexture(unit: PortraitSource): Texture | null {
+function getUnitFacePortraitTexture(unit: PortraitSource): Texture | null {
   const sheet = unit.standingSheet ?? unit.walkingSheet
   if (!sheet?.textures) return null
 
@@ -176,21 +177,6 @@ function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
   return Assets.cache.has(id) ? (Assets.cache.get(id) as SpritesheetLike | undefined) : undefined
 }
 
-function getAgeSheetOverride(
-  overrides: UnitAppearanceLayerConfig['ageSheetOverrides'] | undefined,
-  ownerAge: number,
-  sheet: string
-): string | undefined {
-  if (!overrides) return undefined
-  const exact = overrides[String(ownerAge)]?.[sheet]
-  if (exact) return exact
-  const fallbackAge = Object.keys(overrides)
-    .map(Number)
-    .filter(age => age <= ownerAge)
-    .sort((a, b) => b - a)[0]
-  return fallbackAge == null ? undefined : overrides[String(fallbackAge)]?.[sheet]
-}
-
 function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLayerConfig): Texture | null {
   const level = getUnitEquipmentLevel(unit as UnitEntity)
   if (level < (layer.minLevel ?? 0) || level > (layer.maxLevel ?? Number.POSITIVE_INFINITY)) return null
@@ -199,7 +185,7 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   const sheetKey = SHEET_TYPES.walking
   const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
   const baseSheetId =
-    getAgeSheetOverride(layer.ageSheetOverrides, ownerAge, sheetKey) ??
+    getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, sheetKey) ??
     (layer[sheetKey as keyof UnitAppearanceLayerConfig] as string | undefined)
   if (!baseSheetId) return null
 
@@ -218,7 +204,7 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   return frames[0] ?? null
 }
 
-export function shouldRenderUnitPortraitLayer(layer: Pick<UnitAppearanceLayerConfig, 'showWhenLoading'>): boolean {
+function shouldRenderUnitPortraitLayer(layer: Pick<UnitAppearanceLayerConfig, 'showWhenLoading'>): boolean {
   return !layer.showWhenLoading
 }
 
@@ -299,7 +285,7 @@ export function renderBuildingAvatar(
 // Same idea as getUnitFacePortraitTexture, but for a unit TYPE with no live
 // instance yet (e.g. a training-button preview) — resolves the baked sheet
 // straight from the civ, rather than reading a UnitEntity's own appearance.
-export function getUnitTypePortraitTexture(type: string, owner: Pick<PlayerLike, 'civ' | 'label'>): Texture | null {
+function getUnitTypePortraitTexture(type: string, owner: Pick<PlayerLike, 'civ' | 'label'>): Texture | null {
   const alias = getBakedUnitStandingSheetAlias(type, owner)
   if (!alias) return null
 
@@ -334,7 +320,7 @@ type AnimalPortraitSource = Pick<AnimalEntity, 'standingSheet' | 'walkingSheet'>
 // direction-count-guessing heuristic never recognizes them on its own and
 // directionCount must be passed explicitly or it defaults to the back-facing
 // first frame.
-export function getAnimalPortraitTexture(animal: AnimalPortraitSource): Texture | null {
+function getAnimalPortraitTexture(animal: AnimalPortraitSource): Texture | null {
   const sheet = animal.standingSheet ?? animal.walkingSheet
   if (!sheet?.textures) return null
 
@@ -354,7 +340,7 @@ export function renderAnimalAvatar(app: Application, animal: AnimalPortraitSourc
 
 type ResourcePortraitSource = Pick<RuntimeEntityBase, 'sprite'>
 
-export function getResourcePortraitTexture(resource: ResourcePortraitSource): Texture | null {
+function getResourcePortraitTexture(resource: ResourcePortraitSource): Texture | null {
   return (resource.sprite as Sprite | undefined)?.texture ?? null
 }
 

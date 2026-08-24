@@ -1,4 +1,4 @@
-export const GAMEPAD_DEADZONE = 0.2
+const GAMEPAD_DEADZONE = 0.2
 export const GAMEPAD_CURSOR_SPEED = 18 // screen pixels per frame at full stick tilt
 
 // Standard Gamepad API mapping (https://w3c.github.io/gamepad/#remapping) — matches

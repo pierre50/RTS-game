@@ -7,7 +7,7 @@ import {
   resumeVillagerAutonomy,
   updateInstanceVisibility,
 } from '../lib'
-import { fadeIn, fadeOut } from '../lib/entityFade'
+import { cancelFade, fadeIn, fadeOut } from '../lib/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../lib/overheadIndicator'
 import { isHeroControlled } from '../lib/unitControl'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
@@ -25,6 +25,8 @@ const SLEEP_START_HOUR = 22
 const WAKE_HOUR = 6
 const DANGER_SHELTER_MIN_MS = 8000
 const CRITICAL_SHELTER_HITPOINT_RATIO = 0.25
+const SHELTER_ORDER_GRACE_MS = 2500
+const SHELTER_MAX_RETRIES = 3
 const SHELTER_TYPES = new Set<string>([BUILDING_TYPES.house, BUILDING_TYPES.townCenter])
 
 type RuntimeMapWithBuckets = RuntimeMap & {
@@ -167,6 +169,10 @@ function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void 
 
 function sleepOutside(unit: UnitEntity, reason: VillagerShelterReason = unit.shelterState?.reason ?? 'sleep'): void {
   rememberShelterState(unit, { status: 'outside', reason, location: 'outside', shelter: null, targetCell: null })
+  cancelFade(unit)
+  unit.alpha = 1
+  unit.visible = true
+  setDetachedShadowsVisible(unit, true)
   stopUnitForShelter(unit)
   unit.dest = null
   unit.action = null
@@ -175,6 +181,17 @@ function sleepOutside(unit: UnitEntity, reason: VillagerShelterReason = unit.she
   unit.sprite?.gotoAndStop?.(0)
   unit.sprite?.stop?.()
   setUnitOverheadIndicator(unit, 'sleep')
+}
+
+function keepSleepingOutsideVisual(unit: UnitEntity): void {
+  if (unit.shelterState?.status !== 'outside') return
+  cancelFade(unit)
+  unit.alpha = 1
+  unit.visible = true
+  setDetachedShadowsVisible(unit, true)
+  unit.setTextures?.(SHEET_TYPES.dying)
+  unit.sprite?.gotoAndStop?.(0)
+  unit.sprite?.stop?.()
 }
 
 function markShelterEnteredAt(unit: UnitEntity): void {
@@ -291,8 +308,30 @@ function sendUnitToShelter(unit: UnitEntity, reason: VillagerShelterReason): boo
     location: 'shelter',
     shelter: shelter.shelter,
     targetCell: shelter.targetCell,
+    startedAtMs: unit.context?.scheduler?.elapsedMs ?? 0,
+    retryCount: 0,
   })
   unit.sendToEvt?.(shelter.targetCell, null, { forceRepath: true, preserveAutonomy: true })
+  return true
+}
+
+function hasPendingShelterOrder(unit: UnitEntity, targetCell: RuntimeCell | null | undefined): boolean {
+  const pending = unit.pendingOrder
+  if (!pending || !targetCell) return false
+  if (pending.execute) return true
+  return pending.dest === targetCell || (pending.dest?.i === targetCell.i && pending.dest?.j === targetCell.j)
+}
+
+function retryShelterPath(unit: UnitEntity, state: VillagerShelterState): boolean {
+  if (!state.shelter || !isUsableShelter(state.shelter, unit.owner)) return false
+  const retryCount = state.retryCount ?? 0
+  if (retryCount >= SHELTER_MAX_RETRIES) return false
+  const nextCell = getShelterEntryCell(unit, state.shelter)
+  if (!nextCell) return false
+  state.targetCell = nextCell
+  state.retryCount = retryCount + 1
+  state.startedAtMs = unit.context?.scheduler?.elapsedMs ?? state.startedAtMs ?? 0
+  unit.sendToEvt?.(nextCell, null, { forceRepath: true, preserveAutonomy: true })
   return true
 }
 
@@ -344,6 +383,7 @@ export class VillagerShelterSystem {
     if (isSleepTime(this.context)) this.sendVillagersToSleep()
     if (isWakeTime(this.context)) this.wakeVillagers()
     this.updateAllDangerShelters()
+    this.updateSleepingOutsideVisuals()
   }
 
   handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
@@ -373,6 +413,7 @@ export class VillagerShelterSystem {
   updateShelteringUnit(unit: UnitEntity): void {
     const state = unit.shelterState
     if (!state || state.status !== 'movingToShelter') return
+    keepSleepingOutsideVisual(unit)
     if (!isUsableShelter(state.shelter, unit.owner)) {
       if (state.reason === 'sleep') sleepOutside(unit, state.reason)
       else wakeUnit(unit, { force: true })
@@ -380,9 +421,12 @@ export class VillagerShelterSystem {
     }
     const targetCell = state.targetCell
     const arrived = Boolean(targetCell && unit.i === targetCell.i && unit.j === targetCell.j)
-    const failedPath = !unit.path?.length && unit.dest !== targetCell
+    const elapsed = (unit.context?.scheduler?.elapsedMs ?? 0) - (state.startedAtMs ?? 0)
+    const orderStillPending = hasPendingShelterOrder(unit, targetCell)
+    const failedPath = !orderStillPending && elapsed >= SHELTER_ORDER_GRACE_MS && !unit.path?.length && unit.dest !== targetCell
     if (arrived) enterShelter(unit, state.shelter)
     else if (failedPath) {
+      if (retryShelterPath(unit, state)) return
       if (state.reason === 'sleep') sleepOutside(unit, state.reason)
       else wakeUnit(unit, { force: true })
     }
@@ -391,6 +435,12 @@ export class VillagerShelterSystem {
   updateAllDangerShelters(): void {
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) updateDangerShelter(unit)
+    }
+  }
+
+  updateSleepingOutsideVisuals(): void {
+    for (const player of this.context.players ?? []) {
+      for (const unit of player.units ?? []) keepSleepingOutsideVisual(unit)
     }
   }
 

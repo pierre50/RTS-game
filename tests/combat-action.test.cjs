@@ -1,8 +1,6 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const unitExperienceMock = {
   XP_CATEGORIES: {},
@@ -20,17 +18,9 @@ const unitWorkAppearanceMock = {
 }
 
 function loadModule(relativePath, mocks) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const localRequire = request => {
-    if (Object.hasOwn(mocks, request)) return mocks[request]
-    if (request === '../../lib/unitExperience') return unitExperienceMock
-    if (request === '../config/gameDifficultyBalance') {
+  const defaultMocks = {
+    '../../lib/unitExperience': unitExperienceMock,
+    '../config/gameDifficultyBalance': (() => {
       const balances = {
         easy: {
           enemyAttackEnergyCostMultiplier: 2,
@@ -52,80 +42,69 @@ function loadModule(relativePath, mocks) {
         GAME_DIFFICULTY_COMBAT_BALANCE: balances,
         getGameDifficultyCombatBalance: difficulty => balances[difficulty] ?? balances.medium,
       }
-    }
-    if (request === './equipmentStats')
-      return { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 }
-    if (request === '../../lib/equipmentStats') return { getUnitCombatRange: unit => unit?.combatRange ?? 0 }
-    if (request === '../../lib/horseCapture') return { getNearestAvailableStableForUnit: () => null }
-    if (request === '../../lib/combatAttackLoop') {
-      return {
-        runAttackLoopOnFrame: (attacker, callbacks) => {
-          const sprite = attacker.sprite
-          if (!sprite) return
-          sprite.loop = true
-          callbacks.prepareAttackSheet()
-          mocks['../../lib']?.onSpriteLoopAtFrame?.(sprite, callbacks.releaseFrame, () => {
-            const target = attacker.dest?.family ? attacker.dest : null
-            if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
-              callbacks.onTargetUnavailable(target)
-              return
-            }
-            if (!target) return
-            if (!attacker.isUnitAtDest?.(attacker.action, target)) {
-              callbacks.onOutOfRange(target)
-              return
-            }
-            callbacks.onReadyToAttack(target)
-          })
-        },
-      }
-    }
-    if (request === './combatBehavior') {
-      return {
-        getCombatBehavior: unit => ({
-          recoveryMode: 'orbit',
-          reengageEnergyRatio: 1,
-          recoveryMinDistance: 1.1,
-          recoveryMaxDistance: 2.7,
-          recoveryStrafeDistance: 1,
-          recoveryRepositionMs: 750,
-          recoverySearchRadius: 5,
-          fleeHealthRatio: unit?.combatBehavior?.fleeHealthRatio ?? 0.3,
-          aggression: unit?.combatBehavior?.aggression ?? 0.5,
-          bravery: unit?.combatBehavior?.bravery ?? 0.35,
-        }),
-        getCombatMoraleRoll: unit =>
-          typeof unit?.combatMoraleRoll === 'number' ? unit.combatMoraleRoll : unit?.label ? 0.5 : 1,
-      }
-    }
-    if (request === './unitUpgrades') return { canUpgradeUnitAtBuilding: () => false }
-    if (request === '../../lib/combatBehavior') {
-      return {
-        markCombatAttack: unit => {
-          unit.combatMode = 'attack'
-        },
-        shouldSuppressAggroDuringCombatRecovery: unit =>
-          unit.combatMode === 'recover' && unit.waitingForEnergyAction === constants.ACTION_TYPES.attack,
-      }
-    }
-    if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
-    if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
-    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
-    if (request === '../../lib/resourceCarry') {
-      return {
-        clearCarriedResources: unit => {
-          unit.loading = 0
-          unit.loadingType = null
-        },
-        getCarriedResourceEntries: unit =>
-          unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : [],
-      }
-    }
-    if (request === './maths') return { getReliefOffset: () => 0 }
-    return require(request)
+    })(),
+    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    '../../lib/equipmentStats': { getUnitCombatRange: unit => unit?.combatRange ?? 0 },
+    '../../lib/horseCapture': { getNearestAvailableStableForUnit: () => null },
+    '../../lib/combatAttackLoop': {
+      runAttackLoopOnFrame: (attacker, callbacks) => {
+        const sprite = attacker.sprite
+        if (!sprite) return
+        sprite.loop = true
+        callbacks.prepareAttackSheet()
+        ;(mocks['../../lib'] ?? defaultMocks['../../lib'])?.onSpriteLoopAtFrame?.(sprite, callbacks.releaseFrame, () => {
+          const target = attacker.dest?.family ? attacker.dest : null
+          if (!attacker.getActionCondition?.(target, attacker.action ?? undefined)) {
+            callbacks.onTargetUnavailable(target)
+            return
+          }
+          if (!target) return
+          if (!attacker.isUnitAtDest?.(attacker.action, target)) {
+            callbacks.onOutOfRange(target)
+            return
+          }
+          callbacks.onReadyToAttack(target)
+        })
+      },
+    },
+    './combatBehavior': {
+      getCombatBehavior: unit => ({
+        recoveryMode: 'orbit',
+        reengageEnergyRatio: 1,
+        recoveryMinDistance: 1.1,
+        recoveryMaxDistance: 2.7,
+        recoveryStrafeDistance: 1,
+        recoveryRepositionMs: 750,
+        recoverySearchRadius: 5,
+        fleeHealthRatio: unit?.combatBehavior?.fleeHealthRatio ?? 0.3,
+        aggression: unit?.combatBehavior?.aggression ?? 0.5,
+        bravery: unit?.combatBehavior?.bravery ?? 0.35,
+      }),
+      getCombatMoraleRoll: unit =>
+        typeof unit?.combatMoraleRoll === 'number' ? unit.combatMoraleRoll : unit?.label ? 0.5 : 1,
+    },
+    './unitUpgrades': { canUpgradeUnitAtBuilding: () => false },
+    '../../lib/combatBehavior': {
+      markCombatAttack: unit => {
+        unit.combatMode = 'attack'
+      },
+      shouldSuppressAggroDuringCombatRecovery: unit =>
+        unit.combatMode === 'recover' && unit.waitingForEnergyAction === constants.ACTION_TYPES.attack,
+    },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/unitWorkAppearance': unitWorkAppearanceMock,
+    '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+    '../../lib/resourceCarry': {
+      clearCarriedResources: unit => {
+        unit.loading = 0
+        unit.loadingType = null
+      },
+      getCarriedResourceEntries: unit =>
+        unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : [],
+    },
+    './maths': { getReliefOffset: () => 0 },
   }
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })
 }
 
 const constants = {
@@ -144,7 +123,12 @@ const constants = {
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
   },
+  PLAYER_TYPES: {
+    bandits: 'Bandits',
+  },
   UNIT_TYPES: {
+    banditArcher: 'BanditArcher',
+    banditChief: 'BanditChief',
     banditSword: 'BanditSword',
     chief: 'Chief',
     hero: 'Hero',
@@ -319,40 +303,40 @@ test('villagers can still forage neutral berry bushes', () => {
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(shouldFleeWhenAttacked(villager, enemySoldier), true)
+  assert.equal(evaluateCombatMorale(villager, enemySoldier), 'flee')
 })
 
 test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const woundedDeer = { family: 'animal', hitPoints: 2, weaponPower: 1, totalHitPoints: 20, type: 'Deer' }
 
-  assert.equal(shouldFleeWhenAttacked(villager, woundedDeer), false)
+  assert.equal(evaluateCombatMorale(villager, woundedDeer), 'fight')
 })
 
 test('villagers retreat from a healthy animal once critically hurt themselves', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const woundedVillager = { category: 'Civilian', hitPoints: 5, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const healthyBoar = { family: 'animal', hitPoints: 40, weaponPower: 6, totalHitPoints: 40, type: 'Boar' }
 
-  assert.equal(shouldFleeWhenAttacked(woundedVillager, healthyBoar), true)
+  assert.equal(evaluateCombatMorale(woundedVillager, healthyBoar), 'flee')
 })
 
 test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
@@ -360,8 +344,8 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
   const chief = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Chief' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(shouldFleeWhenAttacked(healthyHero, enemySoldier), false)
-  assert.equal(shouldFleeWhenAttacked(chief, enemySoldier), false)
+  assert.equal(evaluateCombatMorale(healthyHero, enemySoldier), 'fight')
+  assert.equal(evaluateCombatMorale(chief, enemySoldier), 'fight')
 })
 
 test('priests cannot convert bandit units', () => {
@@ -506,7 +490,7 @@ test('early resource actions require only their remaining unlocking technologies
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
@@ -515,14 +499,14 @@ test('military units fight on until critically wounded, then retreat from a real
   const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
   const nearlyDeadEnemy = { family: 'unit', hitPoints: 2, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(shouldFleeWhenAttacked(healthySoldier, healthyEnemy), false)
-  assert.equal(shouldFleeWhenAttacked(criticalSoldier, healthyEnemy), true)
+  assert.equal(evaluateCombatMorale(healthySoldier, healthyEnemy), 'fight')
+  assert.equal(evaluateCombatMorale(criticalSoldier, healthyEnemy), 'flee')
   // Even critically wounded, finishing off a nearly-dead enemy beats running from it.
-  assert.equal(shouldFleeWhenAttacked(criticalSoldier, nearlyDeadEnemy), false)
+  assert.equal(evaluateCombatMorale(criticalSoldier, nearlyDeadEnemy), 'fight')
 })
 
 test('brave combatants can hold their ground when critically wounded', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
@@ -537,11 +521,11 @@ test('brave combatants can hold their ground when critically wounded', () => {
   }
   const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(shouldFleeWhenAttacked(braveSoldier, healthyEnemy), false)
+  assert.equal(evaluateCombatMorale(braveSoldier, healthyEnemy), 'fight')
 })
 
 test('low-bravery combatants still flee when critically wounded', () => {
-  const { shouldFleeWhenAttacked } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
     '../constants': constants,
     './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
@@ -556,7 +540,7 @@ test('low-bravery combatants still flee when critically wounded', () => {
   }
   const healthyEnemy = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(shouldFleeWhenAttacked(cautiousSoldier, healthyEnemy), true)
+  assert.equal(evaluateCombatMorale(cautiousSoldier, healthyEnemy), 'flee')
 })
 
 function makeMoraleMap(entities, { escape = true } = {}) {

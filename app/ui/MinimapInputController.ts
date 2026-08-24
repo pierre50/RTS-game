@@ -126,7 +126,7 @@ export class MinimapInputController {
   }
 
   canMoveCamera(controls: ControlsLike): boolean {
-    return Boolean(controls.freeCameraActive)
+    return Boolean(controls.freeCameraActive || this.menu.editorPanelMap)
   }
 
   destroy(): void {

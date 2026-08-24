@@ -9,6 +9,7 @@ import {
   getReliefOffset,
   isPlayerEliminated,
   parseTextureRef,
+  pointIsInsidePolygon,
 } from '../../lib'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import type { TerrainSourceCell } from '../../classes/map/TerrainChunkManager'
@@ -68,12 +69,11 @@ type AiDebugPlayer = DevPlayer & {
   maxInfantryByAge: Record<number, number>
   maxArcherByAge: Record<number, number>
   maxCavalryByAge: Record<number, number>
-  difficultyConfig: { popCapMultiplier: number; attackCooldownMs: number; attackThreshold: number }
-  lastAttackWaveAt: number
+  difficultyConfig: { popCapMultiplier: number; defenseRecallThreshold: number; defensePowerRatio: number }
   enemyUnitMemory: { size: number }
   enemyBuildingMemory: { size: number }
   strategy: {
-    military: { getGroupCombatPower(units: DevEntity[]): number; getDesiredAttackPower(): number }
+    military: { getGroupCombatPower(units: DevEntity[]): number }
     getEconomicDemand(): Record<string, number>
   }
   economy: {
@@ -282,23 +282,9 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
   return [...entities]
 }
 
-function pointIsInsidePolygon(points: Array<{ x: number; y: number }>, x: number, y: number): boolean {
-  let inside = false
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const a = points[i]
-    const b = points[j]
-    const cross = (x - a.x) * (b.y - a.y) - (y - a.y) * (b.x - a.x)
-    const dot = (x - a.x) * (b.x - a.x) + (y - a.y) * (b.y - a.y)
-    const lenSq = (b.x - a.x) ** 2 + (b.y - a.y) ** 2
-    if (Math.abs(cross) < 0.001 && dot >= 0 && dot <= lenSq) return true
-    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside
-  }
-  return inside
-}
-
 function getEntityCollisionInfo(context: DevConsoleContext, hero: DevEntity, entity: DevEntity) {
   const points = getRoundedIsoFootprintPoints(entity, context.map.grid)
-  const inside = pointIsInsidePolygon(points, hero.x, hero.y)
+  const inside = pointIsInsidePolygon(points, hero)
   const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }
 }
@@ -472,7 +458,6 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const { infantry, archers, cavalry } = classifyMilitaryUnits(aliveUnits)
     const military = [...infantry, ...archers, ...cavalry]
     const militaryPower = Math.round(ai.strategy.military.getGroupCombatPower(military))
-    const desiredPower = Math.round(ai.strategy.military.getDesiredAttackPower())
     const threats = ai.getActiveThreats()
     const enemyUnits = ai.enemyUnitMemory.size
     const enemyBuildings = ai.enemyBuildingMemory.size
@@ -480,10 +465,6 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
     const maxInf = ai.maxInfantryByAge[ai.age]
     const maxArc = ai.maxArcherByAge[ai.age]
     const maxCav = ai.maxCavalryByAge[ai.age]
-    const cooldownLeft = Math.max(
-      0,
-      Math.round((ai.lastAttackWaveAt + ai.difficultyConfig.attackCooldownMs - ai.getNow()) / 1000)
-    )
     const workerSnapshot = ai.economy.getWorkerSnapshot(villagers)
     const workerTargets = ai.economy.getResourceTargets(villagers.length)
     const demand = ai.strategy.getEconomicDemand()
@@ -509,7 +490,7 @@ function getAiDebugLines(aiPlayers: AiDebugPlayer[], targetIndex: number | null 
       `Army inf ${infantry.length}/${maxInf} | arc ${archers.length}/${maxArc} | cav ${cavalry.length}/${maxCav}`
     )
     lines.push(
-      `Power ${militaryPower}/${desiredPower} | Attack ${cooldownLeft > 0 ? `${cooldownLeft}s` : 'ready'} | Threshold ${ai.difficultyConfig.attackThreshold}`
+      `Power ${militaryPower} | Defense recall ${ai.difficultyConfig.defenseRecallThreshold} | Ratio ${ai.difficultyConfig.defensePowerRatio}`
     )
     lines.push(
       `Intel mem u:${enemyUnits} b:${enemyBuildings} | known trees:${ai.foundedTrees?.size ?? 0} berries:${ai.foundedBerrybushs?.size ?? 0} hunt:${ai.foundedAnimals?.size ?? 0} gold:${ai.foundedGolds?.size ?? 0} stone:${ai.foundedStones?.size ?? 0}`
@@ -754,7 +735,7 @@ function hideEntityBars(entities: Set<DevEntity>): void {
   }
 }
 
-export function refreshEntityBars(context: DevConsoleContext): CommandResult {
+function refreshEntityBars(context: DevConsoleContext): CommandResult {
   const refreshed = applyEntityBars(context, getVisibleEntities(context))
   return { ok: true, message: `Entity bars refreshed on ${refreshed} entities` }
 }

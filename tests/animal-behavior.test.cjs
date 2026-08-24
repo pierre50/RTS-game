@@ -1,20 +1,9 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule(relativePath, { mocks })
 }
 
 const constants = {
@@ -73,6 +62,29 @@ function createBehavior({
     sendTo: cell => calls.push(['sendTo', cell.i, cell.j]),
   }
   const lib = {
+    AmbientMovementController: class {
+      constructor(target, options) {
+        this.target = target
+        this.options = options
+        this.nextMoveAt = 0
+        this.taskId = null
+      }
+      get ready() {
+        return this.target.context.scheduler.elapsedMs >= this.nextMoveAt
+      }
+      schedule() {
+        const minDelay = this.options.delayMinMs(this.target)
+        const maxDelay = this.options.delayMaxMs(this.target)
+        this.nextMoveAt = this.target.context.scheduler.elapsedMs + this.target.context.map.randomRange(minDelay, maxDelay)
+      }
+      start() {}
+      stop() {}
+      tryMove() {
+        const destination = this.options.pickDestination(this.target)
+        if (destination) this.options.move(this.target, destination)
+        this.schedule()
+      }
+    },
     findInstancesInSight: () => nearby,
     getCellsAroundPoint: (_i, _j, _grid, range, condition) =>
       cells.filter(

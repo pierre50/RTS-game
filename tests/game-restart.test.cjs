@@ -1,17 +1,8 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadGame() {
-  const filename = path.join(__dirname, '../app/screens/Game.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-
   class Container {
     constructor() {
       this.children = []
@@ -49,6 +40,8 @@ function loadGame() {
       FACTION_SCORE: {},
     },
     '../lib/combatFeedback': { clearAllCombatFeedback() {} },
+    '../lib/equipmentStats': { refreshUnitEquipmentStats() {} },
+    '../lib/resourceCarry': { syncHeroResourceLoadState() {} },
     '../lib/ActionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
@@ -84,9 +77,17 @@ function loadGame() {
         destroy() {}
       },
     },
-    '../services/WeatherSystem': class WeatherSystem {},
+    '../services/WeatherSystem': class WeatherSystem {
+      constructor() {
+        this.layer = {}
+      }
+      destroy() {}
+    },
     '../services/LightSystem': {
       LightSystem: class LightSystem {
+        constructor() {
+          this.layer = {}
+        }
         destroy() {}
       },
     },
@@ -97,11 +98,30 @@ function loadGame() {
     },
     '../services/DayNightSystem': {
       DayNightSystem: class DayNightSystem {
+        getDarknessLevel() {
+          return 0
+        }
         destroy() {}
       },
     },
     '../services/DailyWorldEventSystem': {
       DailyWorldEventSystem: class DailyWorldEventSystem {
+        register() {}
+        destroy() {}
+      },
+    },
+    '../services/TributeRaidSystem': {
+      TributeRaidSystem: class TributeRaidSystem {
+        destroy() {}
+      },
+    },
+    '../services/CampPatrolSystem': {
+      CampPatrolSystem: class CampPatrolSystem {
+        destroy() {}
+      },
+    },
+    '../services/VillagerShelterSystem': {
+      VillagerShelterSystem: class VillagerShelterSystem {
         destroy() {}
       },
     },
@@ -122,6 +142,11 @@ function loadGame() {
         destroy() {}
       },
     },
+    '../ui/OrientationGuard': {
+      OrientationGuard: class OrientationGuard {
+        destroy() {}
+      },
+    },
     '../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
     '../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
     '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
@@ -137,15 +162,23 @@ function loadGame() {
       PLAYER_TYPES: { human: 'human', computer: 'computer' },
     },
   }
+  Object.assign(mocks, {
+    '../../lib': mocks['../lib'],
+    '../../services/WeatherSystem': mocks['../services/WeatherSystem'],
+    '../../services/LightSystem': mocks['../services/LightSystem'],
+    '../../services/ShadowSystem': mocks['../services/ShadowSystem'],
+    '../../services/DayNightSystem': mocks['../services/DayNightSystem'],
+    '../../services/DailyWorldEventSystem': mocks['../services/DailyWorldEventSystem'],
+    '../../services/TributeRaidSystem': mocks['../services/TributeRaidSystem'],
+    '../../services/CampPatrolSystem': mocks['../services/CampPatrolSystem'],
+    '../../services/VillagerShelterSystem': mocks['../services/VillagerShelterSystem'],
+  })
 
-  const module = { exports: {} }
-  const localRequire = request => {
-    if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
-  }
   global.window = global.window || {}
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports.default
+  global.window.matchMedia = global.window.matchMedia || (() => ({ matches: false }))
+  global.window.addEventListener = global.window.addEventListener || (() => {})
+  global.window.removeEventListener = global.window.removeEventListener || (() => {})
+  return loadTsModule('app/screens/Game.ts', { mocks }).default
 }
 
 test('restart ignores clicks before the initial restart snapshot exists', async () => {

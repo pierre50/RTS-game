@@ -116,7 +116,7 @@ export function updateInstanceVisibility(instance: RenderableInstance): void {
   return updateVisibility(instance)
 }
 
-export function instanceShouldRender(instance?: RenderableInstance | null): boolean {
+function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   const { map, player, controls } = instance?.context || {}
   if (!map || !controls || !instance || instance.isDestroyed) return false
   if (!getRenderablePosition(instance)) return false

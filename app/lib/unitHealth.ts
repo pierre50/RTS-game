@@ -3,8 +3,8 @@ import { showHealingFeedback } from './combatFeedback'
 import { isHeroControlled } from './unitControl'
 import type { UnitEntity } from '../types/entities'
 
-export const DEFAULT_HERO_HEALTH_REGEN_PER_SECOND = 1
-export const DEFAULT_HERO_HEALTH_REGEN_DELAY_MS = 2500
+const DEFAULT_HERO_HEALTH_REGEN_PER_SECOND = 1
+const DEFAULT_HERO_HEALTH_REGEN_DELAY_MS = 2500
 
 function notifyHeroHealthChanged(unit: UnitEntity): void {
   const controls = unit.context?.controls

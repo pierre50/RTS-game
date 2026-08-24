@@ -9,3 +9,4 @@ tools/
 !tools/
 tools/*
 !tools/generate-maps.cjs
+!tools/audit-report.cjs

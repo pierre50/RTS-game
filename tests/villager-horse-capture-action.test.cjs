@@ -5,14 +5,6 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadUnitActions(calls, captureHorse) {
-  const filename = path.join(__dirname, '../app/classes/unit/UnitActions.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-
   class HeroLassoThrow {
     constructor(unit, _destination, _context, options) {
       this.state = 'attached'
@@ -32,6 +24,17 @@ function loadUnitActions(calls, captureHorse) {
       captureHorse.lassoOwner = unit
       calls.push(['lasso', options.autoRouteStableWhileAttached])
     }
+  }
+
+  function loadTsFile(filename) {
+    const source = fs.readFileSync(filename, 'utf8')
+    const { code } = babel.transformSync(source, {
+      filename,
+      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    })
+    const module = { exports: {} }
+    new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+    return module.exports
   }
 
   const localRequire = request => {
@@ -116,11 +119,13 @@ function loadUnitActions(calls, captureHorse) {
         getTotalCarriedResources: () => 0,
       }
     }
+    if (request === './UnitCaptureHorseAction') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))
+    }
     return require(request)
   }
 
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports.UnitActions
+  return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitActions.ts')).UnitActions
 }
 
 test('villager horse capture resumes after the lasso and routes the owner to the stable', () => {

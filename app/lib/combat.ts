@@ -266,10 +266,6 @@ export function evaluateCombatMorale(
   return canAttack(source) && isCriticallyOutmatched(source, attacker) ? 'flee' : 'fight'
 }
 
-export function shouldFleeWhenAttacked(source?: CombatEntity | null, attacker?: CombatEntity | null): boolean {
-  return evaluateCombatMorale(source, attacker) === 'flee'
-}
-
 function canConvert(source?: CombatEntity | null, target?: CombatEntity | null): boolean {
   if (!source || source.type !== UNIT_TYPES.priest || !target) return false
   const sourceOwner = source.owner

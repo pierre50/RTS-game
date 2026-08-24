@@ -1,11 +1,11 @@
 import type { ContainerChild } from 'pixi.js'
-import { updateInstanceRenderVisibility } from '../../lib'
 import { FAMILY_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
 import { CellFog } from './CellFog'
+import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 
 export type RuntimeCellContext = {
   map: {
@@ -118,24 +118,15 @@ export class RuntimeCell {
   }
 
   _updateChild(instance: RuntimeEntity): void {
-    if (!updateInstanceRenderVisibility(instance) && instance.isDestroyed && this.has === instance) {
-      this.has = null
-      this.solid = false
-    }
+    updateCellChildVisibility(this, instance)
   }
 
   updateVisible(): void {
-    const { map, player } = this.context
-    if (!player?.views) return
-    if (!map.revealEverything && !player.views.isViewed(this.i, this.j)) return
-    this.visible = true
-    if (this.has) this._updateChild(this.has)
-    for (const corpse of this.corpses) this._updateChild(corpse)
+    updateCellVisible(this)
   }
 
   place(entity: RuntimeEntity): void {
-    this.has = entity
-    this.updateVisible()
+    placeCellEntity(this, entity)
   }
 
   getChildByLabel(): null {
@@ -154,23 +145,9 @@ export class RuntimeCell {
     return this.cellFog
   }
 
-  setFog(init: boolean): void {
-    return this._ensureCellFog().setFog(init)
-  }
-
-  removeFog(): void {
-    return this._ensureCellFog().removeFog()
-  }
-
-  addFogBuilding(textureSheet: string, colorName?: string): void {
-    return this._ensureCellFog().addFogBuilding(textureSheet, colorName)
-  }
-
-  removeFogBuilding(instance?: RuntimeEntity): void {
-    return this._ensureCellFog().removeFogBuilding(instance)
-  }
-
-  setFogChildren(instance: RuntimeEntity, init: boolean): void {
-    return this._ensureCellFog().setFogChildren(instance, init)
-  }
+  setFog(init: boolean): void { return this._ensureCellFog().setFog(init) }
+  removeFog(): void { return this._ensureCellFog().removeFog() }
+  addFogBuilding(textureSheet: string, colorName?: string): void { return this._ensureCellFog().addFogBuilding(textureSheet, colorName) }
+  removeFogBuilding(instance?: RuntimeEntity): void { return this._ensureCellFog().removeFogBuilding(instance) }
+  setFogChildren(instance: RuntimeEntity, init: boolean): void { return this._ensureCellFog().setFogChildren(instance, init) }
 }

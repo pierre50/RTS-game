@@ -65,7 +65,6 @@ type ThreatProfile = {
   isCriticalBuilding: boolean
   isChief: boolean
   isBuilding: boolean
-  shouldRecallAssaultUnits: boolean
   priority: number
 }
 
@@ -125,7 +124,6 @@ export class AI extends Player {
   scout!: AIEntityLike | null
   phase!: AIStrategyPlayerLike['phase']
   threatenedTargets!: Map<string, StoredThreat>
-  lastAttackWaveAt!: number
   difficultyConfig!: AIStrategyPlayerLike['difficultyConfig']
   chiefLossDetectedAt!: number | null
   chiefWanderReadyAt!: Map<string, number>
@@ -174,9 +172,8 @@ export class AI extends Player {
     this.selectedBuilding = null
     this.selectedOther = null
     this.scout = null
-    this.phase = 'economy' // economy | military_build | attack
+    this.phase = 'economy'
     this.threatenedTargets = new Map()
-    this.lastAttackWaveAt = -Infinity
     this.chiefLossDetectedAt = null
     this.chiefWanderReadyAt = new Map()
   }
@@ -382,7 +379,7 @@ export class AI extends Player {
       hostileMilitary.length > 0 && (targetIsTownCenter || targetIsBuilding || isInVillageCore)
     const isSeriousMilitaryThreat =
       hostileMilitary.length > 0 &&
-      (isNearHome || hostilePower >= (this.difficultyConfig.assaultRecallThreshold || 16) * 0.85)
+      (isNearHome || hostilePower >= (this.difficultyConfig.defenseRecallThreshold || 16) * 0.85)
 
     let priority = hostilePower + threat.hostiles.length * 2 + threat.count
     if (targetIsTownCenter) priority += 16
@@ -396,13 +393,6 @@ export class AI extends Player {
     else if (hostileVillagers.length > 0) priority += 4 + hostileVillagers.length * 2
     else if (hostileAnimals.length > 0) priority -= 4
     if (isRemoteVillagerIncident && hostileMilitary.length === 0) priority -= 6
-
-    const shouldRecallAssaultUnits =
-      targetIsChief ||
-      isDirectVillageAssault ||
-      (isSeriousMilitaryThreat &&
-        hostilePower >= (this.difficultyConfig.assaultRecallThreshold || 16) &&
-        !isRemoteVillagerIncident)
 
     return {
       hostileUnits,
@@ -419,7 +409,6 @@ export class AI extends Player {
       isCriticalBuilding: targetIsTownCenter,
       isChief: targetIsChief,
       isBuilding: targetIsBuilding,
-      shouldRecallAssaultUnits,
       priority,
     }
   }
@@ -428,7 +417,7 @@ export class AI extends Player {
     if (!profile) return 0
 
     if (profile.hostileMilitary.length > 0) {
-      const powerRatio = this.difficultyConfig.assaultRecallPowerRatio || 0.85
+      const powerRatio = this.difficultyConfig.defensePowerRatio || 0.85
       const baseNeed = Math.max(6, profile.hostilePower * powerRatio)
       if (profile.isChief) return baseNeed * 1.35
       if (profile.isDirectVillageAssault) return baseNeed * 1.15
@@ -457,35 +446,13 @@ export class AI extends Player {
     return 0
   }
 
-  getRecallableAssaultMilitary(assaultMilitary: AIEntityLike[], assignedMilitary: Set<string>, threat: ActiveThreat) {
-    const recallMaxRatio = this.difficultyConfig.assaultRecallMaxRatio || 0.5
-    const minAssaultGroup = Math.max(2, Math.ceil(this.difficultyConfig.attackThreshold * 0.6))
-    const availableAssault = assaultMilitary
-      .filter((unit: AIEntityLike) => unit.label && !assignedMilitary.has(unit.label))
-      .sort(
-        (a: AIEntityLike, b: AIEntityLike) =>
-          Math.abs(a.i - threat.target.i) +
-          Math.abs(a.j - threat.target.j) -
-          (Math.abs(b.i - threat.target.i) + Math.abs(b.j - threat.target.j))
-      )
-
-    if (availableAssault.length <= minAssaultGroup) return []
-
-    const maxRecallByRatio = Math.max(1, Math.floor(availableAssault.length * recallMaxRatio))
-    const maxRecallKeepingPressure = Math.max(0, availableAssault.length - minAssaultGroup)
-    const maxRecall = Math.min(maxRecallByRatio, maxRecallKeepingPressure)
-    return maxRecall > 0 ? availableAssault.slice(0, maxRecall) : []
-  }
-
   handleThreatResponses({
     villagers,
     waitingMilitary,
-    assaultMilitary,
     debug = false,
   }: {
     villagers: AIEntityLike[]
     waitingMilitary: AIEntityLike[]
-    assaultMilitary: AIEntityLike[]
     debug?: boolean
   }) {
     const threats = this.getActiveThreats()
@@ -535,15 +502,6 @@ export class AI extends Player {
         chosenMilitary.push(soldier)
         defensePower += this.strategy.military.getCombatPower(soldier)
         if (defensePower >= desiredDefensePower) break
-      }
-
-      if (profile.shouldRecallAssaultUnits && defensePower < desiredDefensePower) {
-        const recallCandidates = this.getRecallableAssaultMilitary(assaultMilitary, assignedMilitary, threat)
-        for (const soldier of recallCandidates) {
-          chosenMilitary.push(soldier)
-          defensePower += this.strategy.military.getCombatPower(soldier)
-          if (defensePower >= desiredDefensePower) break
-        }
       }
 
       for (const soldier of chosenMilitary) {
@@ -770,7 +728,7 @@ export class AI extends Player {
         }
       },
     }
-    // Villager flee-vs-fight-back reactions live in the shared shouldFleeWhenAttacked()
+    // Villager flee-vs-fight-back reactions live in the shared evaluateCombatMorale()
     // (app/lib/combat.ts), which Unit.isAttacked() applies to every player alike — no
     // AI-specific override needed here.
     return options
@@ -890,7 +848,6 @@ export class AI extends Player {
     const maxCavalry = this.maxCavalryByAge[this.age as AIAge]
     const infantryUnit = this.getBestInfantryUnit()
     const archerUnit = this.getBestArcherUnit()
-    const howManySoldiersBeforeAttack = this.difficultyConfig.attackThreshold
 
     if (DEBUG) {
       console.log('----Step started')
@@ -912,7 +869,7 @@ export class AI extends Player {
       )
 
     const previousPhase = this.phase
-    this.strategy.updatePhase(villagers.length, military.length, militaryPower)
+    this.strategy.updatePhase(villagers.length)
     if (DEBUG && previousPhase !== this.phase) console.log(`Phase: ${previousPhase} → ${this.phase}`)
     if (DEBUG) console.log(`Phase: ${this.phase}`)
 
@@ -933,35 +890,15 @@ export class AI extends Player {
       .sort((a, b) => (a.type === BUILDING_TYPES.house ? -1 : b.type === BUILDING_TYPES.house ? 1 : 0))
     const notBuiltHouses = notBuiltBuildings.filter(b => b.type === BUILDING_TYPES.house)
 
-    // Retreat: critically injured assault soldiers fall back and stop attacking
     const RETREAT_HP_RATIO = 0.3
-    military
-      .filter(u => u.assault && (u.hitPoints ?? 0) < (u.totalHitPoints ?? 1) * RETREAT_HP_RATIO)
-      .forEach(u => {
-        u.assault = false
-        u.stop?.()
-      })
-
-    // Soldiers: those already on assault vs those waiting at base (exclude low-HP from attack pool)
-    const inactifMilitary = military.filter(c => c.inactif && c.action !== ACTION_TYPES.attack && c.assault)
     const waitingMilitary = military.filter(
       c =>
         c.inactif &&
         c.action !== ACTION_TYPES.attack &&
-        !c.assault &&
         (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO
     )
-    const assaultMilitary = military.filter(
-      c =>
-        c.assault &&
-        (c.hitPoints ?? 0) >= (c.totalHitPoints ?? 1) * RETREAT_HP_RATIO &&
-        c.action === ACTION_TYPES.attack
-    )
 
-    if (DEBUG)
-      console.log(
-        `Inactif Military: ${inactifMilitary.length}, Waiting Military: ${waitingMilitary.length}, Assault Military: ${assaultMilitary.length}`
-      )
+    if (DEBUG) console.log(`Waiting Military: ${waitingMilitary.length}`)
 
     // Player losing condition
     if (isPlayerEliminated(this)) {
@@ -977,13 +914,10 @@ export class AI extends Player {
     actions += this.handleThreatResponses({
       villagers,
       waitingMilitary,
-      assaultMilitary,
       debug: DEBUG,
     })
     actions += this.handleChiefGuard(towncenters)
 
-    // Re-filter from the already-small arrays rather than scanning all military again
-    const refreshedInactifMilitary = inactifMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)
     const refreshedWaitingMilitary = waitingMilitary.filter(u => u.inactif && u.action !== ACTION_TYPES.attack)
 
     actions += this.economy.handleVillagerActions({
@@ -998,8 +932,6 @@ export class AI extends Player {
 
     actions += this.strategy.handleMilitaryActions({
       waitingMilitary: refreshedWaitingMilitary,
-      inactifMilitary: refreshedInactifMilitary,
-      howManySoldiersBeforeAttack,
       debug: DEBUG,
     })
 

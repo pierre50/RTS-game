@@ -30,6 +30,14 @@ export class AnimalBehavior {
     })
   }
 
+  get nextAmbientWalkAt(): number {
+    return this.ambientMovement.nextMoveAt
+  }
+
+  set nextAmbientWalkAt(value: number) {
+    this.ambientMovement.nextMoveAt = value
+  }
+
   start(): void {
     const animal = this.animal
     if (

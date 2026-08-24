@@ -19,13 +19,10 @@ import {
   getEquipmentCombatStats,
   getUnitCombatRange,
   getUnitWorkEquipment,
-  refreshUnitEquipmentStats,
   UNARMED_UNIT_WEAPON_POWER,
 } from './equipmentStats'
-import { applyUnitWorkAssets } from './unitWorkAppearance'
 import { consumeHeroEquippedItem } from './equipmentLoot'
 import { findInstancesInSight } from './grid/visibility'
-import { getClosestInstanceWithPath } from './grid/queries'
 import { BOW_SHOOT_RELEASE_FRAME, LASSO_SHOOT_RELEASE_FRAME, onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } from './graphics'
 import { t } from './lang'
 import { angleDelta, degreeToDirection, getReliefOffset, instancesDistance } from './maths'
@@ -33,7 +30,6 @@ import { playAudibleSoundCue, playSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
 import { logHeroSlashFrame, playReverseSlashRecovery } from './slashRecoveryAnimation'
 import { buildingAcceptsCarriedResources, getCarriedResourceSpace, getTotalCarriedResources } from './resourceCarry'
-import { applyBakedLpcUnitAssets } from './lpc/baked'
 import {
   drainEnergyAmount,
   ensureUnitEnergy,
@@ -45,23 +41,39 @@ import { Projectile } from '../classes/Projectile'
 import { HeroLassoThrow } from '../classes/HeroLassoThrow'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, CommandSound, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
 import type { Point } from '../types/grid'
-import type { DynamicEquipmentKey } from './lpc/equipment'
 import { getBuildingContactDistance } from './grid/cells'
+import { debugLog } from './debug'
+import {
+  getHeroToolEquipment,
+  isHeroToolAvailable,
+  type HeroContextAction,
+  type HeroEquippedItem,
+} from './heroToolEquipment'
+import {
+  CLICK_TARGET_SEARCH_RANGE,
+  MOUNTED_ATTACK_HALF_ANGLE,
+  getDirectionalTarget,
+  getDirectionalTargets,
+  getHeroAimDegree,
+  getHeroAimDelta,
+} from './heroTargeting'
 
-export type HeroCivilTool = 'axe' | 'pickaxe' | 'hammer'
-export type HeroContextAction = 'chop' | 'mine' | 'build' | 'gather' | 'pickup' | 'interact'
-export type HeroEquippedItem = 'interact' | 'sword' | 'bow' | 'lasso'
+export {
+  applyToolAppearance,
+  EQUIPPED_ITEM_WEAPON,
+  getEquippedItemWeapon,
+  isHeroToolAvailable,
+  type HeroCivilTool,
+  type HeroContextAction,
+  type HeroEquippedItem,
+  HERO_TOOL_ORDER,
+} from './heroToolEquipment'
+export { findFacingEntity, getHeroAimDegree, isMountedAttackAimBlocked } from './heroTargeting'
+
 type HeroPowerChargeTool = 'bow' | 'lasso' | 'sword'
-export const HERO_EQUIPPED_ITEM_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
-export const HERO_TOOL_ORDER = HERO_EQUIPPED_ITEM_ORDER
 
-function isEquipmentKey(value: string | null | undefined): value is string {
-  return typeof value === 'string' && value.length > 0
-}
-
-const TOOL_ACTION_RANGE = 3
+const HERO_BOW_RANGE_DEBUG = false
 const HERO_POWER_CHARGE_ENERGY_ACTION = 'heroPowerCharge'
 const HERO_DEFENSE_ENERGY_ACTION = 'heroDefense'
 const HERO_WHIFF_ENERGY_ACTION = 'heroWhiff'
@@ -77,14 +89,8 @@ const HERO_DEFENSE_RELEASE_FALLBACK_MS = 260
 const HERO_DEFENSE_FLASH_MS = 120
 const HERO_DEFENSE_SPARK_MS = 180
 const HERO_DEFENSE_SPARK_STEP_MS = 30
-const BLIND_SHOT_DISTANCE = 200
-const CLICK_TARGET_SEARCH_RANGE = 15
-const CLICK_DIRECTION_HALF_ANGLE = 25
-const LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE = 45
 const HERO_MELEE_STRIKE_HALF_ANGLE = 45
 const HERO_MELEE_DISTANCE_TOLERANCE = 0.9
-const DIRECTIONAL_TARGET_MAX_ANGLE_PENALTY = CELL_WIDTH
-const MOUNTED_ATTACK_HALF_ANGLE = 45
 const HERO_ARROW_FORWARD_OFFSET = 16
 const HERO_ARROW_HEIGHT_OFFSET = 18
 const HERO_ARROW_DIRECTION_OFFSETS: Record<string, Partial<Point>> = {
@@ -96,7 +102,6 @@ const HERO_ARROW_DIRECTION_OFFSETS: Record<string, Partial<Point>> = {
   southwest: { y: 4 },
 }
 const HERO_ARROW_CELL_DISTANCE = Math.hypot(CELL_WIDTH, CELL_HEIGHT)
-const HERO_AIM_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
 
 function getHeroBowRange(hero: UnitEntity): number {
   return getUnitCombatRange(hero) ?? 0
@@ -106,7 +111,7 @@ function getHeroMaxArrowDistance(hero: UnitEntity, power = 1): number {
   const rangePower = Math.max(HERO_BOW_MIN_POWER, Math.min(1, power))
   const baseRange = getHeroBowRange(hero)
   const maxDistance = baseRange * HERO_ARROW_CELL_DISTANCE * rangePower
-  console.debug('[hero-bow-range]', {
+  debugLog(HERO_BOW_RANGE_DEBUG, '[hero-bow-range]', {
     unitLabel: hero.label,
     work: hero.work,
     ownerAge: hero.owner?.age ?? 0,
@@ -139,61 +144,6 @@ function hideReleasedBowArrowLayer(hero: UnitEntity, sprite: UnitEntity['sprite'
   const nextFrame = Math.min(Math.floor(sprite.currentFrame) + 1, Math.max(0, sprite.textures.length - 1))
   sprite.gotoAndStop?.(nextFrame)
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
-}
-
-export function getHeroAimDegree(hero: Point, destination: Point): number {
-  const dx = destination.x - hero.x
-  const dy = (destination.y - hero.y) * HERO_AIM_Y_SCALE
-  return Math.round((Math.atan2(dy, dx) * 180) / Math.PI + 180)
-}
-
-const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
-  interact: WORK_TYPES.attacker,
-  sword: 'heroSword',
-  bow: WORK_TYPES.hunter,
-  lasso: WORK_TYPES.attacker,
-}
-
-// Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
-// in lpc/equipment.ts: heroSword→age-scaled sword, hunter→bow) — used to render
-// an icon for the inventory tool slots. No entry for 'interact': bare hands.
-export const EQUIPPED_ITEM_WEAPON: Partial<Record<HeroEquippedItem, DynamicEquipmentKey>> = {
-  sword: 'sword_ceramic',
-  bow: 'bow',
-}
-
-export function getEquippedItemWeapon(
-  tool: HeroEquippedItem,
-  age = 0,
-  hero?: UnitEntity | null
-): string | undefined {
-  void age
-  if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
-  if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
-  if (tool === 'lasso') return hero?.inventory?.activeWeapons?.lasso
-  return EQUIPPED_ITEM_WEAPON[tool]
-}
-
-export function isHeroToolAvailable(hero: UnitEntity | null | undefined, tool: HeroEquippedItem | null | undefined): boolean {
-  if (!tool || tool === 'interact') return true
-  return Boolean(getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
-}
-
-function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {
-  const fallback = getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age)
-  const activeWeapons = hero.inventory?.activeWeapons ?? {}
-  if (tool === 'sword') {
-    return [
-      activeWeapons.melee,
-      hero.inventory?.equipped?.offhand,
-      activeWeapons.offhand,
-    ].filter(isEquipmentKey)
-  }
-  if (tool === 'bow') {
-    return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(isEquipmentKey)
-  }
-  if (tool === 'lasso') return [activeWeapons.lasso].filter(isEquipmentKey)
-  return fallback
 }
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
@@ -264,7 +214,7 @@ function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
 }
 
-export function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
+function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
   return buildingAcceptsCarriedResources(hero, target)
 }
 
@@ -548,22 +498,6 @@ function runContextAction(
   return true
 }
 
-export function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {
-  const work = EQUIPPED_ITEM_WORK[tool]
-  if (hero.work === work) {
-    applyBakedLpcUnitAssets(hero)
-    refreshUnitEquipmentStats(hero)
-    hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)
-    return
-  }
-  hero.work = work
-  applyBakedLpcUnitAssets(hero)
-  applyUnitWorkAssets(hero, work, { loading: getTotalCarriedResources(hero) > 0, refreshEquipmentStats: true })
-  hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
-}
-
-export const applyToolAppearance = applyEquippedItemAppearance
-
 type HeroToolAnimationOptions = {
   recoveryAnimation?: 'reverseSlash'
   swordChargePower?: number
@@ -665,7 +599,7 @@ function finishHeroToolAnimation(hero: UnitEntity): void {
   hero.syncShadow?.()
 }
 
-export function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
+function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (getTotalCarriedResources(hero) <= 0) return false
   if (!buildingAcceptsCarriedResource(hero, target)) return false
   if (!getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })) return false
@@ -673,7 +607,7 @@ export function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): b
   return true
 }
 
-export function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
+function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (!canDeliverToBuilding(hero, target)) return false
   runHeroAction(hero, target, ACTION_TYPES.delivery)
   return true
@@ -685,91 +619,6 @@ function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): bool
   return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
 }
 
-function getAimDelta(hero: UnitEntity, target: Point): number {
-  return angleDelta(getHeroAimDegree(hero, target), hero.degree ?? 0)
-}
-
-// A mounted hero can't snap-turn the horse to face an attack the way an unmounted hero can, so
-// any click outside a frontal cone around the horse's current heading is ignored (no turn, no
-// swing/shot) until the player physically re-orients the horse via movement.
-export function isMountedAttackAimBlocked(hero: UnitEntity, point: Point): boolean {
-  if (!hero.mountedOnHorse) return false
-  return angleDelta(getHeroAimDegree(hero, point), hero.degree ?? 0) > MOUNTED_ATTACK_HALF_ANGLE
-}
-
-function getDirectionalTarget<T extends RuntimeEntity>(
-  hero: UnitEntity,
-  candidates: T[],
-  halfAngle = CLICK_DIRECTION_HALF_ANGLE
-): T | null {
-  return getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null
-}
-
-// Whatever the hero is currently facing, within the same aim cone every other hands-on hero
-// action (gather/chop/mine/build/melee) already resolves against — used to make key-triggered
-// interactions (e.g. hero entity inspection) direction-based instead of mouse-position-based.
-export function findFacingEntity(
-  hero: UnitEntity,
-  matches: (target: RuntimeEntity) => boolean,
-  range = CLICK_TARGET_SEARCH_RANGE
-): RuntimeEntity | null {
-  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, matches, range)
-  const seen = new Set<RuntimeEntity>(candidates)
-  const grid = hero.context?.map?.grid
-  if (grid) {
-    const centerI = hero.i ?? 0
-    const centerJ = hero.j ?? 0
-    const scanRadius = Math.ceil(range)
-    const rangeSq = range * range
-    for (let i = centerI - scanRadius; i <= centerI + scanRadius; i++) {
-      const row = grid[i]
-      if (!row) continue
-      for (let j = centerJ - scanRadius; j <= centerJ + scanRadius; j++) {
-        const cell = row[j]
-        if (!cell) continue
-        const di = i - centerI
-        const dj = j - centerJ
-        if (di * di + dj * dj > rangeSq) continue
-        for (const corpse of cell.corpses ?? []) {
-          if (!seen.has(corpse) && matches(corpse)) {
-            candidates.push(corpse)
-            seen.add(corpse)
-          }
-        }
-      }
-    }
-  }
-  return getDirectionalTarget(hero, candidates)
-}
-
-function getDirectionalTargets<T extends RuntimeEntity>(
-  hero: UnitEntity,
-  candidates: T[],
-  halfAngle = CLICK_DIRECTION_HALF_ANGLE
-): T[] {
-  return candidates
-    .map(target => {
-      const aimPoint = getHeroInteractionTargetPoint(hero, target)
-      const targetHalfAngle = [FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')
-        ? LARGE_FOOTPRINT_DIRECTION_HALF_ANGLE
-        : halfAngle
-      return {
-        target,
-        angle: getAimDelta(hero, aimPoint),
-        dist: Math.hypot(aimPoint.x - hero.x, aimPoint.y - hero.y),
-        halfAngle: targetHalfAngle,
-      }
-    })
-    .filter(candidate => candidate.angle <= candidate.halfAngle)
-    .map(candidate => ({
-      ...candidate,
-      score:
-        candidate.dist + (candidate.angle / Math.max(candidate.halfAngle, 1)) * DIRECTIONAL_TARGET_MAX_ANGLE_PENALTY,
-    }))
-    .sort((a, b) => a.score - b.score || a.dist - b.dist || a.angle - b.angle)
-    .map(candidate => candidate.target)
-}
-
 function isHeroMeleeTargetInRange(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (isHeroActionInRange(hero, ACTION_TYPES.attack, target)) return true
   const targetSize = Math.max(1, target.size ?? target.selectionFactor ?? 1)
@@ -779,21 +628,8 @@ function isHeroMeleeTargetInRange(hero: UnitEntity, target: RuntimeEntity): bool
 
 function isHeroMeleeTargetInAttackZone(hero: UnitEntity, target: RuntimeEntity): boolean {
   const aimPoint = getHeroInteractionTargetPoint(hero, target)
-  if (getAimDelta(hero, aimPoint) > HERO_MELEE_STRIKE_HALF_ANGLE) return false
+  if (getHeroAimDelta(hero, aimPoint) > HERO_MELEE_STRIKE_HALF_ANGLE) return false
   return isHeroMeleeTargetInRange(hero, target)
-}
-
-function tryDeliver(hero: UnitEntity): boolean {
-  if (getTotalCarriedResources(hero) <= 0) return false
-  const nearBuilding = findInstancesInSight<UnitEntity, RuntimeEntity>(
-    hero,
-    target => buildingAcceptsCarriedResource(hero, target),
-    TOOL_ACTION_RANGE
-  )
-  const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, nearBuilding)
-  if (!closest || !hero.isUnitAtDest?.(ACTION_TYPES.delivery, closest.instance)) return false
-  runHeroAction(hero, closest.instance, ACTION_TYPES.delivery)
-  return true
 }
 
 function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
@@ -902,14 +738,6 @@ function performContextActionAt(hero: UnitEntity): ToolActionResult {
   return 'miss'
 }
 
-function fireBlindArrow(hero: UnitEntity): void {
-  const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
-  fireArrowAt(hero, {
-    x: hero.x + Math.cos(rad) * BLIND_SHOT_DISTANCE,
-    y: hero.y + Math.sin(rad) * BLIND_SHOT_DISTANCE,
-  })
-}
-
 function hasHeroEquippedArrow(hero: UnitEntity): boolean {
   return Boolean(hero.inventory?.equipped?.arrow)
 }
@@ -936,35 +764,6 @@ function getHeroArrowSpawnPoint(hero: UnitEntity): Point {
     x: hero.x + Math.cos(rad) * HERO_ARROW_FORWARD_OFFSET + (directionOffset.x ?? 0),
     y: hero.y + getHeroArrowVisualY(hero) - HERO_ARROW_HEIGHT_OFFSET + (directionOffset.y ?? 0),
   }
-}
-
-function fireArrowAt(hero: UnitEntity, destination: Point, target?: RuntimeEntity | null, power = 1): void {
-  const map = hero.context?.map
-  if (!map) return
-  playHeroToolAnimation(
-    hero,
-    () => {
-      if (!hasHeroEquippedArrow(hero)) {
-        warnHeroNoArrowEquipped(hero)
-        return
-      }
-      const projectile = new Projectile(
-        {
-          owner: hero,
-          type: 'Arrow',
-          target: target ?? undefined,
-          destination,
-          spawnPoint: getHeroArrowSpawnPoint(hero),
-          weaponPower: getHeroWeaponDamage(hero, 'bow'),
-          maxDistance: getHeroMaxArrowDistance(hero, power),
-        },
-        hero.context!
-      )
-      map.addChild(projectile)
-      consumeHeroArrow(hero)
-    },
-    BOW_SHOOT_RELEASE_FRAME
-  )
 }
 
 function throwLassoAt(hero: UnitEntity, destination: Point, power = 1): void {
@@ -1031,7 +830,7 @@ function continueHeroPowerChargeAnimation(hero: UnitEntity): void {
   hero.syncAppearanceLayers?.(SHEET_TYPES.action)
 }
 
-export function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
+function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
   return tool === 'sword'
 }
 
@@ -1146,7 +945,7 @@ function reverseHeroDefenseAnimation(hero: UnitEntity): void {
   hero.heroDefenseReverseTaskId = hero.context.scheduler.add(step, HERO_DEFENSE_REVERSE_FRAME_MS, 'hero.defenseReverse')
 }
 
-export function showHeroDefenseFlash(hero: UnitEntity): void {
+function showHeroDefenseFlash(hero: UnitEntity): void {
   const targets = getHeroDefenseFlashLayers(hero)
   if (!targets.length) return
   playAudibleSoundCue(hero, HERO_PARRY_SOUND_CUES)
@@ -1540,7 +1339,7 @@ function triggerSwordAttackAt(
   return playMeleeWeaponWhiff(hero, options)
 }
 
-export function triggerEquippedItemActionAt(
+export function triggerToolAttackAt(
   hero: UnitEntity,
   tool: HeroEquippedItem | null,
   destination: Point
@@ -1568,45 +1367,3 @@ export function triggerEquippedItemActionAt(
   }
   return false
 }
-
-function performNearestContextAction(hero: UnitEntity): ToolActionResult {
-  for (const config of HERO_CONTEXT_ACTIONS) {
-    const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, config.matches, TOOL_ACTION_RANGE)
-    const closest = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(hero, candidates)
-    if (closest) {
-      const action = config.resolve(hero, closest.instance)
-      if (action && isContextActionTargetReachable(hero, config.action, closest.instance)) {
-        const unitAction = getContextActionForTarget(config.action, closest.instance)
-        if (!unitAction) return 'blocked'
-        return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
-      }
-      return 'blocked'
-    }
-  }
-  if (tryDeliver(hero)) return 'triggered'
-  return 'miss'
-}
-
-export function triggerEquippedItemAction(hero: UnitEntity, tool: HeroEquippedItem | null): boolean {
-  if (!isHeroToolAvailable(hero, tool)) return false
-  if (tool === 'sword') {
-    return triggerSwordAttackAt(hero)
-  }
-  if (tool === 'interact') {
-    const actionResult = performNearestContextAction(hero)
-    if (actionResult === 'triggered') return true
-    if (actionResult === 'miss') {
-      return playEmptyHandWhiff(hero)
-    }
-    return false
-  }
-  if (tool === 'bow') {
-    fireBlindArrow(hero)
-    return true
-  }
-  if (tool === 'lasso') return false
-  return false
-}
-
-export const triggerToolAttackAt = triggerEquippedItemActionAt
-export const triggerToolAction = triggerEquippedItemAction

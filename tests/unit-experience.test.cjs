@@ -1,29 +1,17 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const localRequire = request => {
-    if (Object.hasOwn(mocks, request)) return mocks[request]
-    if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
-    if (request === '../../lib/horseCapture') {
-      return {
+  return loadTsModule(relativePath, {
+    mocks: {
+      '../HeroLassoThrow': { HeroLassoThrow: class {} },
+      '../../lib/horseCapture': {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
-      }
-    }
-    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
-    if (request === '../../lib/resourceCarry') {
-      return {
+      },
+      '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+      '../../lib/resourceCarry': {
         addCarriedResource: (unit, loadingType, amount) => {
           unit.loading = (unit.loading ?? 0) + amount
           unit.loadingType = loadingType
@@ -41,12 +29,10 @@ function loadModule(relativePath, mocks) {
         getDeliverableResourceEntries: () => [],
         getPlayerResourceKey: loadingType => (loadingType === 'berry' ? 'food' : loadingType),
         getTotalCarriedResources: unit => unit.loading ?? 0,
-      }
-    }
-    return require(request)
-  }
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+      },
+      ...mocks,
+    },
+  })
 }
 
 const constants = {
@@ -72,6 +58,9 @@ const constants = {
     hunter: 'hunter',
     stoneminer: 'stoneminer',
     woodcutter: 'woodcutter',
+  },
+  UNIT_TYPES: {
+    villager: 'Villager',
   },
 }
 

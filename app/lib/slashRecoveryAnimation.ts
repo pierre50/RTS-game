@@ -1,8 +1,10 @@
 import { SHEET_TYPES } from '../constants'
 import type { UnitEntity } from '../types/entities'
+import { debugLog } from './debug'
 import { buildFrameRange, playSpriteFrameSequence } from './spriteAnimation'
 import { isHeroControlled } from './unitControl'
 
+const HERO_SLASH_FRAME_DEBUG = false
 const SLASH_REVERSE_RECOVERY_FRAME_MS = 45
 const SLASH_REVERSE_RECOVERY_STOP_FRAME = 0
 const SLASH_REVERSE_RECOVERY_SKIP_FRAMES = 2
@@ -16,7 +18,7 @@ type ReverseSlashRecoveryOptions = {
 
 export function logHeroSlashFrame(unit: UnitEntity, event: string, details: Record<string, unknown> = {}): void {
   if (!isHeroControlled(unit)) return
-  console.log('[hero slash frames]', event, {
+  debugLog(HERO_SLASH_FRAME_DEBUG, '[hero slash frames]', event, {
     action: unit.action ?? null,
     currentFrame: unit.sprite?.currentFrame ?? null,
     sheet: unit.currentSheet ?? null,

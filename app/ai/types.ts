@@ -9,7 +9,7 @@ export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
 export type AIResourceAmount = Partial<Record<AIResourceName, number>>
 
-type AIPhase = 'economy' | 'military_build' | 'attack'
+type AIPhase = 'economy' | 'military_build'
 
 export type AIAge = 0 | 1 | 2 | 3
 
@@ -54,7 +54,6 @@ export type AIEntityLike = {
   isUsedBy?: AIEntityLike | RuntimeEntity | null
   isLassoed?: boolean
   lassoOwner?: AIEntityLike | null
-  assault?: boolean
   realDest?: (GridInstanceLike & Partial<Point>) | RuntimeCell | RuntimeEntity | AIEntityLike | null
   eventMode?: string
   selected?: boolean
@@ -131,15 +130,10 @@ type AITechConfig = {
 export type AIDifficultyConfig = {
   stepDelayBase: number
   popCapMultiplier: number
-  attackThreshold: number
   defenderRatio: number
   econToMilVillagers: number
-  raidThreshold: number
-  raidSize: number
-  attackCooldownMs: number
-  assaultRecallThreshold: number
-  assaultRecallPowerRatio: number
-  assaultRecallMaxRatio: number
+  defenseRecallThreshold: number
+  defensePowerRatio: number
   homeThreatRadius: number
   villageCoreRadius: number
 }
@@ -205,7 +199,6 @@ export type AIStrategyPlayerLike = {
   foundedBerrybushs: Set<RuntimeEntity>
   foundedWheats: Set<RuntimeEntity>
   foundedResources: Record<string, Set<RuntimeEntity>>
-  lastAttackWaveAt?: number
   scout?: AIEntityLike | null
   strategy: {
     getEconomicDemand(): AIResourceAmount
@@ -225,7 +218,7 @@ export type AIStrategyPlayerLike = {
   isBuildingThreatened?(building: AIEntityLike): boolean
 }
 
-export type AIEnemyPlayerLike = AIGridPosition & {
+type AIEnemyPlayerLike = AIGridPosition & {
   buildings: AIBuildingLike[]
 }
 
@@ -246,8 +239,6 @@ export type AIDefenseTarget = {
 
 export type AIMilitaryActionOptions = {
   waitingMilitary: AIEntityLike[]
-  inactifMilitary: AIEntityLike[]
-  howManySoldiersBeforeAttack: number
   debug?: boolean
 }
 

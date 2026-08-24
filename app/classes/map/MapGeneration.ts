@@ -6,19 +6,12 @@ import {
   getZoneInGridWithCondition,
   updateInstanceVisibility,
   getGaiaAnimals,
-  getPositionInGridAroundInstance,
-  canPlaceBuildingAt,
-  hasWaterBorderWithin,
   getBuildingFootprintCells,
   getBuildingFootprintRadius,
   getPlainCellsAroundPoint,
 } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
-import { MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE, MAX_ARCHER_BY_AGE } from '../../ai/config'
-import { getBestUnitFromTechs, ARCHER_TECH_UPGRADES } from '../../ai/unitGroups'
-import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
-import { getUnitOverallLevel } from '../../lib/unitExperience'
 import {
   BUILDING_TYPES,
   FAMILY_TYPES,
@@ -26,10 +19,6 @@ import {
   POPULATION_MAX,
   RESOURCE_TYPES,
   UNIT_TYPES,
-  WORK_TYPES,
-  ANIMAL_PLAYER_SAFE_DIST,
-  AMBIENT_ANIMAL_CHANCE,
-  WATER_BORDER_PLACEMENT_CLEARANCE,
   getEnvironmentTerrainParams,
 } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
@@ -42,7 +31,7 @@ import type { PlayerOptions } from '../players/Player'
 import type { ResourceOptions } from '../Resource'
 import type { AnimalOptions } from '../animal'
 import type { RuntimeEntity, ResourceEntity, BuildingEntity } from '../../types/entities'
-import type { GameContextLike } from '../../types/context'
+import type { GameContextLike, MapRuntimeContext } from '../../types/context'
 import type { AnimalConfig } from '../../types/config'
 import type { TextureRef } from '../../lib'
 import {
@@ -54,6 +43,18 @@ import {
   restoreSelection,
   type SavedPlayer,
 } from './MapSaveRestore'
+import { ensureBanditCampOwner, placeBanditCamps } from './BanditCampGeneration'
+import { applyCivilizationLevelStartingKit } from './CivilizationStartingKit'
+import {
+  canPlaceAmbientAnimalAt,
+  createSpawnSearchCell,
+  generateAmbientAnimalSets,
+  generateAmbientAnimalSetsAsync,
+  getAmbientAnimalProfile,
+  pickAmbientAnimalType,
+  placeAmbientAnimalGroup,
+  type AmbientAnimalProfile,
+} from './AmbientAnimalGeneration'
 import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
 
 type TerrainValue = 0 | 1 | 2 | 3 | 4 | 5 | 7
@@ -70,47 +71,6 @@ type GaiaRespawnSlot = SaveEntityState & {
 const PORTAL_RESOURCE_TYPE = 'Portal'
 const PORTAL_FOOTPRINT_SIZE = 3
 const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
-const BANDIT_CAMP_OWNER_NAME = 'Bandits'
-const BANDIT_CAMP_BED_OFFSETS: GridPosition[] = [
-  { i: 0, j: 0 },
-  { i: -3, j: 1 },
-  { i: 2, j: -3 },
-  { i: 3, j: 2 },
-]
-const BANDIT_CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
-  { type: 'BanditCampMeatRack', offset: { i: -4, j: 3 } },
-  { type: 'BanditCampDryingRack', offset: { i: 3, j: -4 } },
-  { type: 'BanditCampTotemSkull', offset: { i: 0, j: -5 } },
-  { type: 'BanditCampTotemHorns', offset: { i: 4, j: -2 } },
-  { type: 'BanditCampFencePost', offset: { i: -2, j: 4 } },
-  { type: 'BanditCampCrate', offset: { i: 4, j: 1 } },
-  { type: 'BanditCampBucket', offset: { i: -3, j: -2 } },
-  { type: 'BanditCampRockPile', offset: { i: 1, j: 4 } },
-  { type: 'BanditCampAnimalBones', offset: { i: -5, j: 0 } },
-  { type: 'BanditCampJarLarge', offset: { i: 5, j: -1 } },
-  { type: 'BanditCampBoneSmall', offset: { i: -1, j: 5 } },
-  { type: 'BanditCampSkull', offset: { i: 2, j: 4 } },
-  { type: 'BanditCampTotemPlain', offset: { i: -4, j: -1 } },
-  { type: 'BanditCampJarSmall', offset: { i: 5, j: 2 } },
-]
-
-type BanditCampOwner = PlayerLike & { banditCampOwner?: true }
-
-// Outline (not filled) cells of a diamond at exactly `radius` tiles from the origin - used to lay a
-// one-tile-wide wall perimeter around a Town Center without a full path-finding/drafting system.
-function getDiamondRingOffsets(radius: number): Array<[number, number]> {
-  const offsets: Array<[number, number]> = []
-  for (let di = -radius; di <= radius; di++) {
-    const djAbs = radius - Math.abs(di)
-    if (djAbs === 0) {
-      offsets.push([di, 0])
-    } else {
-      offsets.push([di, djAbs], [di, -djAbs])
-    }
-  }
-  return offsets
-}
-
 function createGaiaRespawnSlot(animal: SaveEntityState, context: GameContextLike, owner: PlayerLike): GaiaRespawnSlot {
   return {
     ...animal,
@@ -120,18 +80,25 @@ function createGaiaRespawnSlot(animal: SaveEntityState, context: GameContextLike
     owner,
   }
 }
-export type MapGenerationContext = Omit<
-  Partial<GameContextLike>,
-  'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
-> & {
-  controls?: GameContextLike['controls'] | null
-  map?: GameContextLike['map'] | null
-  menu?: GameContextLike['menu'] | null
-  performance?: GameContextLike['performance'] | null
-  player?: PlayerLike | null
-  players: PlayerLike[]
-  scheduler?: GameContextLike['scheduler'] | null
+
+function createGenerationTimer(timings: Record<string, number>) {
+  return {
+    timings,
+    measure<T>(name: string, callback: () => T): T {
+      const startedAt = performance.now()
+      const result = callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    },
+    async measureAsync<T>(name: string, callback: () => Promise<T> | T): Promise<T> {
+      const startedAt = performance.now()
+      const result = await callback()
+      timings[name] = performance.now() - startedAt
+      return result
+    },
+  }
 }
+export type MapGenerationContext = MapRuntimeContext
 // Mirrors the subset of the concrete `Map` class (app/classes/map/index.ts) API
 // that MapGeneration relies on. Map can't be imported directly here: it imports
 // MapGeneration itself, so importing it back would create a circular dependency.
@@ -190,12 +157,6 @@ export type MapGenerationMap = RuntimeMap & {
   getChildByLabel(label: string): ContainerChild | null
   removeChild(child: ContainerChild): ContainerChild
 }
-type AmbientAnimalProfile = {
-  weight: number
-  groupChance: number
-  groupSize: [min: number, max: number]
-  radius: number
-}
 type ResourceDefinition = {
   category?: string
   habitat?: string
@@ -239,66 +200,7 @@ export type SavedGameData = Omit<SerializedSave, 'map' | 'players' | 'resources'
   animals: SaveEntityState[]
 }
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
-const DEFAULT_AMBIENT_ANIMAL_PROFILE: AmbientAnimalProfile = {
-  weight: 1,
-  groupChance: 0.35,
-  groupSize: [1, 2],
-  radius: 2,
-}
-const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
-  Deer: { weight: 4, groupChance: 0.9, groupSize: [3, 6], radius: 3 },
-  Hare: { weight: 3, groupChance: 0.55, groupSize: [1, 4], radius: 2 },
-  BlackGrouse: { weight: 3, groupChance: 0.75, groupSize: [2, 5], radius: 2 },
-  Fox: { weight: 1, groupChance: 0.2, groupSize: [1, 2], radius: 3 },
-  Boar: { weight: 0.7, groupChance: 0.15, groupSize: [1, 2], radius: 2 },
-  Horse: { weight: 1.4, groupChance: 0.65, groupSize: [2, 4], radius: 3 },
-}
-// Multipliers applied on top of the base weight above, per terrain biome (cell.type).
-// Biome patches can be smaller than a camp's ambient-spawn radius, so multipliers are kept
-// close to 1 (never below ~0.45) - a lean per biome, never a hard species cutoff at the border.
-const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
-  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Horse: 1.25 },
-  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Horse: 0.75 },
-  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Horse: 0.65 },
-  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Horse: 0.9 },
-}
-function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {
-  const total = entries.reduce((sum, [, weight]) => sum + Math.max(weight, 0), 0)
-  if (total <= 0) return entries[0][0]
-  let roll = random() * total
-  for (const [item, weight] of entries) {
-    roll -= Math.max(weight, 0)
-    if (roll <= 0) return item
-  }
-  return entries[entries.length - 1][0]
-}
-function createSpawnSearchCell(i: number, j: number, terrainType: TerrainValue): RuntimeCell {
-  return {
-    i,
-    j,
-    x: 0,
-    y: 0,
-    z: 0,
-    type: terrainType === 2 ? 'Water' : 'Land',
-    category: terrainType === 2 ? 'Water' : 'Land',
-    border: false,
-    waterBorder: false,
-    solid: false,
-    visible: false,
-    inclined: false,
-    has: null,
-    corpses: new Set(),
-    fogSprites: [],
-    viewBy: new Set(),
-    updateVisible() {},
-    place(entity: RuntimeEntity) {
-      this.has = entity
-    },
-    setFog() {},
-    removeFog() {},
-  }
-}
-
+type GenerationTimer = ReturnType<typeof createGenerationTimer>
 // Local view of the AI-only bookkeeping fields used while restoring saved games.
 // These live on the concrete AI player instance but are not part of the shared
 // PlayerLike contract, so we narrow to this shape only where we know (via the
@@ -436,69 +338,30 @@ export class MapGeneration {
   }
 
   pickAmbientAnimalType(i: number, j: number): string {
-    const animals = gameConfig().animals
-    const excludedGeneratedAnimalTypes = new Set(['Wolf'])
-    const dangerousAnimalTypes = new Set(['Boar'])
-    const safeZoneRadius = 20
-    const availableTypes = Object.keys(animals).filter(type => {
-      if (excludedGeneratedAnimalTypes.has(type)) return false
-      return !dangerousAnimalTypes.has(type) || !this.isInPlayerStartSafeZone(i, j, safeZoneRadius)
+    return pickAmbientAnimalType({
+      animals: gameConfig().animals,
+      biome: this.map.grid[i]?.[j]?.type ?? '',
+      isInPlayerStartSafeZone: radius => this.isInPlayerStartSafeZone(i, j, radius),
+      random: () => this.map.random(),
     })
-    const types = availableTypes.length ? availableTypes : Object.keys(animals)
-    const biome = this.map.grid[i]?.[j]?.type ?? ''
-    const habitatMultipliers = ANIMAL_HABITAT_WEIGHTS[biome] ?? {}
-    const weightedEntries: Array<[string, number]> = types.map(type => [
-      type,
-      (AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE).weight * (habitatMultipliers[type] ?? 1),
-    ])
-
-    return pickWeightedItem(() => this.map.random(), weightedEntries)
   }
 
   getAmbientAnimalProfile(type: string): AmbientAnimalProfile {
-    return AMBIENT_ANIMAL_PROFILES[type] ?? DEFAULT_AMBIENT_ANIMAL_PROFILE
+    return getAmbientAnimalProfile(type)
   }
 
   canPlaceAmbientAnimalAt(i: number, j: number): boolean {
-    const cell = this.map.grid[i]?.[j]
-    return Boolean(
-      cell &&
-        !cell.solid &&
-        !cell.has &&
-        !cell.border &&
-        !cell.waterBorder &&
-        !hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
-        !cell.inclined &&
-        cell.category !== 'Water' &&
-        !this._hasWaterNeighbor(i, j) &&
-        !this.isInPlayerStartSafeZone(i, j, ANIMAL_PLAYER_SAFE_DIST)
-    )
+    return canPlaceAmbientAnimalAt(this.map, i, j, {
+      hasWaterNeighbor: () => this._hasWaterNeighbor(i, j),
+      isInPlayerStartSafeZone: radius => this.isInPlayerStartSafeZone(i, j, radius),
+    })
   }
 
   placeAmbientAnimalGroup(i: number, j: number, type: string): void {
-    if (!this.canPlaceAmbientAnimalAt(i, j)) return
-
-    const profile = this.getAmbientAnimalProfile(type)
-    const shouldGroup = this.map.random() < profile.groupChance
-    const targetSize = shouldGroup ? this.map.randomRange(profile.groupSize[0], profile.groupSize[1]) : 1
-    const candidates: GridPosition[] = [{ i, j }]
-
-    for (let di = -profile.radius; di <= profile.radius; di++) {
-      for (let dj = -profile.radius; dj <= profile.radius; dj++) {
-        if (di === 0 && dj === 0) continue
-        if (di * di + dj * dj > profile.radius * profile.radius) continue
-        const ni = i + di
-        const nj = j + dj
-        if (this.canPlaceAmbientAnimalAt(ni, nj)) candidates.push({ i: ni, j: nj })
-      }
-    }
-
-    const toPlace = Math.min(targetSize, candidates.length)
-    for (let index = 0; index < toPlace; index++) {
-      const candidateIndex = index === 0 ? 0 : this.map.randomRange(0, candidates.length - 1)
-      const cell = candidates.splice(candidateIndex, 1)[0]
-      this._gaiaCreateAnimal({ i: cell.i, j: cell.j, type })
-    }
+    placeAmbientAnimalGroup(this.map, i, j, type, {
+      canPlace: (i, j) => this.canPlaceAmbientAnimalAt(i, j),
+      createAnimal: options => this._gaiaCreateAnimal(options),
+    })
   }
 
   isShoreWaterCell(i: number, j: number): boolean {
@@ -506,24 +369,16 @@ export class MapGeneration {
     return Boolean(cell?.category === 'Water' && this._hasLandNeighborInRange(i, j, 1))
   }
 
-  generateFromJSON(data: SavedGameData): void {
-    const { map, players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
+  restoreSavedPlayers(players: SavedPlayer[], runtime?: SavedGameData['runtime']): void {
     const classMap: Record<string, typeof Human | typeof AI | typeof Player> = {
       Human,
       AI,
       [PLAYER_TYPES.bandits]: Player,
     }
     const context = runtimeContext(this.map.context)
-    const { menu, controls } = context
-    this.map.removeChildren()
-    this.map.clearRenderChunks()
-    this.map.resetRandom()
-    this.map.size = map.length - 1
-    this.map.invalidateReliefCoastDistances()
-
     this.map.context.players = players.map((player: SavedPlayer) => {
       const PlayerClass = classMap[player.type] ?? Player
-      const p = new PlayerClass(
+      const restoredPlayer = new PlayerClass(
         {
           ...player,
           corpses: [],
@@ -533,14 +388,72 @@ export class MapGeneration {
         },
         context
       )
-      if (player.isPlayed) {
-        this.map.context.player = p
-      }
-      return p
+      if (player.isPlayed) this.map.context.player = restoredPlayer
+      return restoredPlayer
     })
     if (Number.isFinite(runtime?.elapsedMs) && this.map.context.scheduler) {
       this.map.context.scheduler.elapsedMs = Math.max(0, runtime?.elapsedMs ?? 0)
     }
+  }
+
+  restoreSavedResources(resources: SaveEntityState[], naturalResourceRespawnSlots?: SaveEntityState[]): void {
+    this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
+    this.map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
+  }
+
+  restoreSavedEntities(players: SavedPlayer[], animals: SaveEntityState[], context: GameContextLike): void {
+    this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
+    const gaia = this.map.gaia instanceof Gaia ? this.map.gaia : null
+    animals.forEach(animal => {
+      if (!gaia) return
+      if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
+      else gaia.createAnimal(animal)
+    })
+
+    getGaiaAnimals(gaia)
+      .filter(animal => !animal.isDestroyed)
+      .forEach(animal => processUnit(animal, this.map))
+
+    this.map.context.players.forEach((player, index) => {
+      const savedPlayer = players[index]
+      restorePlayerViewsAndFog(player, this.map)
+      restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
+      rehydrateAIKnowledge(player, this.map)
+      restoreAIState(player, savedPlayer, this.map)
+      player.units.forEach(unit => processUnit(unit, this.map))
+      restoreSelection(player, savedPlayer, this.map)
+    })
+  }
+
+  finishSavedStateRestore({ bakeTerrain = false }: { bakeTerrain?: boolean } = {}): void {
+    this.map._fogInitComplete = true
+    this.map._flushFogQueue()
+    if (bakeTerrain) this.map.bakeTerrainToChunks()
+    this.map.ready = true
+  }
+
+  async setInitialFogCells(yieldEvery: number): Promise<number> {
+    const fogCellsStartedAt = performance.now()
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        this.map.grid[i][j].setFog()
+      }
+      if (i % yieldEvery === 0) await this.yieldToBrowser()
+    }
+    return performance.now() - fogCellsStartedAt
+  }
+
+  generateFromJSON(data: SavedGameData): void {
+    const { map, players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
+    const context = runtimeContext(this.map.context)
+    const { menu, controls } = context
+    this.map.removeChildren()
+    this.map.clearRenderChunks()
+    this.map.resetRandom()
+    this.map.size = map.length - 1
+    this.map.invalidateReliefCoastDistances()
+
+    this.restoreSavedPlayers(players, runtime)
 
     this.map._initFogChunks()
     const gaia = new Gaia(context)
@@ -562,8 +475,7 @@ export class MapGeneration {
 
     this.map.fillWaterGaps()
     this.map.normalizeWaterTopology()
-    this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
-    this.map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
+    this.restoreSavedResources(resources, naturalResourceRespawnSlots)
 
     this.map.rebuildTerrainAppearance()
 
@@ -579,30 +491,8 @@ export class MapGeneration {
     menu?.init?.()
     menu?.updateResourcesMiniMap()
 
-    this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
-    animals.forEach(animal => {
-      if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
-      else gaia.createAnimal(animal)
-    })
-
-    getGaiaAnimals(gaia)
-      .filter(animal => !animal.isDestroyed)
-      .forEach(animal => processUnit(animal, this.map))
-
-    this.map.context.players.forEach((player, index) => {
-      const savedPlayer = players[index]
-      restorePlayerViewsAndFog(player, this.map)
-      restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
-      rehydrateAIKnowledge(player, this.map)
-      restoreAIState(player, savedPlayer, this.map)
-      player.units.forEach(unit => processUnit(unit, this.map))
-      restoreSelection(player, savedPlayer, this.map)
-    })
-
-    this.map._fogInitComplete = true
-    this.map._flushFogQueue()
-    this.map.bakeTerrainToChunks()
-    this.map.ready = true
+    this.restoreSavedEntities(players, animals, context)
+    this.finishSavedStateRestore({ bakeTerrain: true })
   }
 
   clearGeneratedGameplayState(): void {
@@ -639,69 +529,20 @@ export class MapGeneration {
 
   applySavedStateToGeneratedMap(data: SavedGameData): void {
     const { players, camera, resources, naturalResourceRespawnSlots, animals, runtime } = data
-    const classMap: Record<string, typeof Human | typeof AI | typeof Player> = {
-      Human,
-      AI,
-      [PLAYER_TYPES.bandits]: Player,
-    }
     const context = runtimeContext(this.map.context)
     const { menu, controls } = context
 
     this.clearGeneratedGameplayState()
+    this.restoreSavedPlayers(players, runtime)
 
-    this.map.context.players = players.map((player: SavedPlayer) => {
-      const PlayerClass = classMap[player.type] ?? Player
-      const p = new PlayerClass(
-        {
-          ...player,
-          corpses: [],
-          buildings: [],
-          units: [],
-          ...(player.type === PLAYER_TYPES.ai ? { difficulty: this.map.difficulty } : {}),
-        },
-        context
-      )
-      if (player.isPlayed) {
-        this.map.context.player = p
-      }
-      return p
-    })
-    if (Number.isFinite(runtime?.elapsedMs) && this.map.context.scheduler) {
-      this.map.context.scheduler.elapsedMs = Math.max(0, runtime?.elapsedMs ?? 0)
-    }
-
-    this.map.resources = new Set(resources.map(resource => createResourceFromState(resource, this.map)))
-    this.map.naturalResourceRespawnSlots = [...(naturalResourceRespawnSlots ?? [])]
+    this.restoreSavedResources(resources, naturalResourceRespawnSlots)
 
     controls?.setCamera?.(camera.x, camera.y, true)
     menu?.init?.()
     menu?.updateResourcesMiniMap()
 
-    this.map.context.players.forEach((player, index) => restorePlayerEntitiesFromSave(player, players[index]))
-    const gaia = this.map.gaia instanceof Gaia ? this.map.gaia : null
-    animals.forEach(animal => {
-      if (!gaia) return
-      if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
-      else gaia.createAnimal(animal)
-    })
-
-    getGaiaAnimals(gaia)
-      .filter(animal => !animal.isDestroyed)
-      .forEach(animal => processUnit(animal, this.map))
-
-    this.map.context.players.forEach((player, index) => {
-      const savedPlayer = players[index]
-      restorePlayerViewsAndFog(player, this.map)
-      restoreBuildingAssignments(player, savedPlayer?.buildings || [], this.map)
-      rehydrateAIKnowledge(player, this.map)
-      restoreAIState(player, savedPlayer, this.map)
-      player.units.forEach(unit => processUnit(unit, this.map))
-      restoreSelection(player, savedPlayer, this.map)
-    })
-
-    this.map._fogInitComplete = true
-    this.map._flushFogQueue()
-    this.map.ready = true
+    this.restoreSavedEntities(players, animals, context)
+    this.finishSavedStateRestore()
   }
 
   async generateMapAsync(
@@ -752,29 +593,9 @@ export class MapGeneration {
     const context = gameContext(this.map.context)
     const { menu, player } = context
 
-    const timings: Record<string, number> = this.map.generationTimings || {}
-    const measure = <T>(name: string, callback: () => T): T => {
-      const startedAt = performance.now()
-      const result = callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    }
-    const measureAsync = async <T>(name: string, callback: () => Promise<T> | T): Promise<T> => {
-      const startedAt = performance.now()
-      const result = await callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    }
+    const { timings, measure, measureAsync } = createGenerationTimer(this.map.generationTimings || {})
 
-    this.map.gaia = new Gaia(context)
-    if (this.map.pregeneratedBlueprintId) {
-      timings.relief = 0
-    } else {
-      await onProgress('generatingRelief', 0.28)
-      measure('relief', () => this.map.generateMapRelief())
-    }
-    await this.yieldToBrowser()
-    measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
+    await this.prepareBaseTerrain(context, { timings, measure }, onProgress)
     await onProgress('generatingPlayers', 0.48)
     measure('playerPlacement', () => this.map.placePlayers())
     await onProgress('generatingResources', 0.58)
@@ -798,14 +619,8 @@ export class MapGeneration {
     measure('fogInit', () => this.map._initFogChunks())
 
     if (!this.map.revealEverything) {
-      const fogCellsStartedAt = performance.now()
       const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 12
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          this.map.grid[i][j].setFog()
-        }
-        if (i % yieldEvery === 0) await this.yieldToBrowser()
-      }
+      timings.fogCells = await this.setInitialFogCells(yieldEvery)
       for (let i = 0; i < player.buildings.length; i++) {
         const building = player.buildings[i]
         building.visibleCells = new Set()
@@ -816,7 +631,6 @@ export class MapGeneration {
         unit.visibleCells = new Set()
         updateInstanceVisibility(unit)
       }
-      timings.fogCells = performance.now() - fogCellsStartedAt
     }
 
     this.map._fogInitComplete = true
@@ -835,41 +649,14 @@ export class MapGeneration {
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = runtimeContext(this.map.context)
-    const timings: Record<string, number> = this.map.generationTimings || {}
-    const measure = <T>(name: string, callback: () => T): T => {
-      const startedAt = performance.now()
-      const result = callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    }
-    const measureAsync = async <T>(name: string, callback: () => Promise<T> | T): Promise<T> => {
-      const startedAt = performance.now()
-      const result = await callback()
-      timings[name] = performance.now() - startedAt
-      return result
-    }
+    const { timings, measure, measureAsync } = createGenerationTimer(this.map.generationTimings || {})
 
-    this.map.gaia = new Gaia(context)
-    if (this.map.pregeneratedBlueprintId) {
-      timings.relief = 0
-    } else {
-      await onProgress('generatingRelief', 0.28)
-      measure('relief', () => this.map.generateMapRelief())
-    }
-    await this.yieldToBrowser()
-    measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
+    await this.prepareBaseTerrain(context, { timings, measure }, onProgress)
     await onProgress('generatingFog', 0.72)
     measure('fogInit', () => this.map._initFogChunks())
 
     if (!this.map.revealEverything) {
-      const fogCellsStartedAt = performance.now()
-      for (let i = 0; i <= this.map.size; i++) {
-        for (let j = 0; j <= this.map.size; j++) {
-          this.map.grid[i][j].setFog()
-        }
-        if (i % 16 === 0) await this.yieldToBrowser()
-      }
-      timings.fogCells = performance.now() - fogCellsStartedAt
+      timings.fogCells = await this.setInitialFogCells(16)
     }
 
     this.map._fogInitComplete = true
@@ -880,9 +667,25 @@ export class MapGeneration {
     this.map.generationTimings = timings
   }
 
+  async prepareBaseTerrain(
+    context: GameContextLike,
+    timer: Pick<GenerationTimer, 'measure' | 'timings'>,
+    onProgress: ProgressCallback
+  ): Promise<void> {
+    this.map.gaia = new Gaia(context)
+    if (this.map.pregeneratedBlueprintId) {
+      timer.timings.relief = 0
+    } else {
+      await onProgress('generatingRelief', 0.28)
+      timer.measure('relief', () => this.map.generateMapRelief())
+    }
+    await this.yieldToBrowser()
+    timer.measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
+  }
+
   applyStartingBonuses(player: PlayerLike, configuredAge: number | null = null): void {
     const age = configuredAge == null ? this.map.startingAge : configuredAge
-    const startingAge = Math.max(0, Math.min(Number(age) || 0, 1))
+    const startingAge = Math.max(0, Math.min(Number(age) || 0, 3))
     player.age = startingAge
 
     if (!this.map.allTechnologies) return
@@ -947,30 +750,7 @@ export class MapGeneration {
     if (!this.map.noAI && this.map.banditCampPositions.length) {
       const anchor = this.map.banditCampPositions[0]
       const human = players.find(player => player.isPlayed)
-      const owner = new Player(
-        {
-          i: anchor.i,
-          j: anchor.j,
-          name: BANDIT_CAMP_OWNER_NAME,
-          type: PLAYER_TYPES.bandits,
-          isPlayed: false,
-          color: 'red',
-          civ: human?.civ ?? 'Greek',
-          gender: 'male',
-          team: null,
-          diplomacy: null,
-          populationMax: Number.POSITIVE_INFINITY,
-          autoTechnologyByAge: false,
-        },
-        context
-      ) as BanditCampOwner
-      owner.banditCampOwner = true
-      owner.selectedUnits = []
-      owner.selectedUnit = null
-      owner.selectedBuilding = null
-      owner.selectedOther = null
-      owner.hasBuilt = []
-      players.push(owner)
+      ensureBanditCampOwner(this.map, context, anchor, human?.civ ?? 'Greek', players)
     }
 
     players
@@ -1023,165 +803,8 @@ export class MapGeneration {
     }
   }
 
-  getOrCreateBanditCampOwner(anchor: GridPosition): BanditCampOwner {
-    const existing = this.map.context.players.find(player => player.type === PLAYER_TYPES.bandits) as
-      | BanditCampOwner
-      | undefined
-    if (existing) return existing
-
-    const context = runtimeContext(this.map.context)
-    const owner = new Player(
-      {
-        i: anchor.i,
-        j: anchor.j,
-        name: BANDIT_CAMP_OWNER_NAME,
-        type: PLAYER_TYPES.bandits,
-        isPlayed: false,
-        color: 'red',
-        civ: context.player?.civ ?? 'Greek',
-        gender: 'male',
-        team: null,
-        diplomacy: null,
-        populationMax: Number.POSITIVE_INFINITY,
-        autoTechnologyByAge: false,
-      },
-      context
-    ) as BanditCampOwner
-    owner.banditCampOwner = true
-    owner.selectedUnits = []
-    owner.selectedUnit = null
-    owner.selectedBuilding = null
-    owner.selectedOther = null
-    owner.hasBuilt = []
-    this.map.context.players.push(owner)
-    return owner
-  }
-
-  canPlaceCampBuildingAt(owner: PlayerLike, i: number, j: number, type: string): boolean {
-    const config = owner.config.buildings[type]
-    if (!config) return false
-    return canPlaceBuildingAt(this.map.grid, i, j, { ...config, type })
-  }
-
-  placeCampBuildingNear(
-    owner: PlayerLike,
-    anchor: RuntimeCell,
-    type: string,
-    offset: GridPosition,
-    searchRadius = 1
-  ): RuntimeCell | null {
-    const targetI = anchor.i + offset.i
-    const targetJ = anchor.j + offset.j
-    for (let distance = 0; distance <= searchRadius; distance++) {
-      const cells = getPlainCellsAroundPoint(targetI, targetJ, this.map.grid, distance, cell =>
-        this.canPlaceCampBuildingAt(owner, cell.i, cell.j, type)
-      )
-      if (!cells.length) continue
-      const cell = distance === 0 ? cells[0] : this.map.randomItem(cells)
-      owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
-      return cell
-    }
-    return null
-  }
-
-  findBanditCampAnchor(position: GridPosition, owner: PlayerLike): RuntimeCell | null {
-    for (let distance = 0; distance <= 8; distance++) {
-      const cells = getPlainCellsAroundPoint(position.i, position.j, this.map.grid, distance, cell =>
-        this.canPlaceCampBuildingAt(owner, cell.i, cell.j, BUILDING_TYPES.banditCamp)
-      )
-      if (cells.length) return this.map.randomItem(cells)
-    }
-    return null
-  }
-
-  getHeroLevel(): number {
-    const hero = this.map.context.controls?.heroUnit ?? this.map.context.player?.units?.find(unit => unit.type === UNIT_TYPES.hero)
-    return hero ? getUnitOverallLevel(hero) : 0
-  }
-
-  getBanditCampBedCount(unitCount: number, heroLevel: number): number {
-    return Math.max(1, Math.min(BANDIT_CAMP_BED_OFFSETS.length, Math.ceil(unitCount / 3) + Math.floor(heroLevel / 8)))
-  }
-
-  placeBanditCampBeds(owner: PlayerLike, anchor: RuntimeCell, bedCount: number): RuntimeCell[] {
-    const beds: RuntimeCell[] = []
-    for (let index = 0; index < bedCount; index++) {
-      const offset = BANDIT_CAMP_BED_OFFSETS[index]
-      const cell = this.placeCampBuildingNear(owner, anchor, BUILDING_TYPES.banditCamp, offset, index === 0 ? 0 : 1)
-      if (cell) beds.push(cell)
-    }
-    return beds
-  }
-
-  placeBanditCampDecorations(owner: PlayerLike, anchor: RuntimeCell, unitCount: number, heroLevel: number): void {
-    const targetCount = Math.max(4, Math.min(BANDIT_CAMP_DECORATION_LAYOUT.length, 3 + Math.ceil(unitCount / 2) + Math.floor(heroLevel / 5)))
-    let placed = 0
-    for (const entry of BANDIT_CAMP_DECORATION_LAYOUT) {
-      if (placed >= targetCount) break
-      if (this.placeCampBuildingNear(owner, anchor, entry.type, entry.offset, 1)) placed++
-    }
-  }
-
-  getBanditCampUnitTypes(campIndex: number, heroLevel: number): string[] {
-    const extra = Math.min(4, Math.max(0, campIndex)) + Math.floor(heroLevel / 4)
-    const count = Math.min(10, this.map.randomRange(3, 4 + extra))
-    const types = [UNIT_TYPES.banditChief]
-    for (let index = 1; index < count; index++) {
-      types.push(index % 3 === 0 ? UNIT_TYPES.banditArcher : UNIT_TYPES.banditSword)
-    }
-    return types
-  }
-
-  placeBanditCampUnits(owner: PlayerLike, anchors: RuntimeCell[], unitTypes: string[]): void {
-    const primaryAnchor = anchors[0]
-    if (!primaryAnchor) return
-    const candidates: RuntimeCell[] = []
-    for (const anchor of anchors) {
-      for (let distance = 2; distance <= 5; distance++) {
-        candidates.push(
-          ...getPlainCellsAroundPoint(anchor.i, anchor.j, this.map.grid, distance, cell =>
-            Boolean(!cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
-          )
-        )
-      }
-    }
-
-    for (const type of unitTypes) {
-      if (!candidates.length) break
-      const cell = candidates.splice(this.map.randomRange(0, candidates.length - 1), 1)[0]
-      if (cell.solid || cell.has) continue
-      const unit = owner.createUnit?.({
-        i: cell.i,
-        j: cell.j,
-        type,
-        gender: 'male',
-        work: WORK_TYPES.attacker,
-        appearanceVariants: { gender: 'male' },
-        suppressCreateSound: true,
-      })
-      if (unit) {
-        const patrolAnchor = this.map.randomItem(anchors) ?? primaryAnchor
-        unit.campPatrolAnchor = { i: patrolAnchor.i, j: patrolAnchor.j }
-        unit.banditCampAnchor = unit.campPatrolAnchor
-        owner.population = (owner.population ?? 0) + 1
-      }
-    }
-  }
-
   placeBanditCamps(): void {
-    if (this.map.noAI || !this.map.banditCampPositions.length) return
-    const owner = this.getOrCreateBanditCampOwner(this.map.banditCampPositions[0])
-    const heroLevel = this.getHeroLevel()
-    for (let index = 0; index < this.map.banditCampPositions.length; index++) {
-      const position = this.map.banditCampPositions[index]
-      const anchor = this.findBanditCampAnchor(position, owner)
-      if (!anchor) continue
-      const unitTypes = this.getBanditCampUnitTypes(index, heroLevel)
-      const beds = this.placeBanditCampBeds(owner, anchor, this.getBanditCampBedCount(unitTypes.length, heroLevel))
-      if (!beds.length) continue
-      this.placeBanditCampDecorations(owner, anchor, unitTypes.length, heroLevel)
-      this.placeBanditCampUnits(owner, beds, unitTypes)
-    }
+    placeBanditCamps(this.map, runtimeContext(this.map.context))
   }
 
   // Spawns a player already at an advanced stage: extra economy/military buildings, a static wall
@@ -1189,127 +812,7 @@ export class MapGeneration {
   // Building/unit counts are read straight from the AI's own long-term per-age targets
   // (MAX_BUILDING_BY_AGE, MAX_*_BY_AGE) so no new tuning numbers are invented here.
   applyCivilizationLevelStartingKit(player: PlayerLike, level: number, townCenter: BuildingEntity): void {
-    const { map } = this
-    player.hasBuilt = player.hasBuilt || []
-
-    const markBuilt = (type: string) => {
-      if (!player.hasBuilt!.includes(type)) player.hasBuilt!.push(type)
-    }
-
-    const placementSpaceFor = (type: string): [number, number] => {
-      if (type === BUILDING_TYPES.townCenter) return [14, 32]
-      if (type === BUILDING_TYPES.house) return [6, 12]
-      return [6, 22]
-    }
-    const placementSizeFor = (type: string): number => {
-      if (type === BUILDING_TYPES.townCenter) return 2
-      if (type === BUILDING_TYPES.house) return 0
-      return 1
-    }
-
-    // Buildings placed earlier by this method reduce free space for the ones that come after, so a
-    // single search attempt can spuriously fail once the base gets crowded - retry progressively
-    // further out before giving up, instead of undershooting the target (e.g. too few Houses).
-    const placeExtraBuilding = (type: string): boolean => {
-      const config = player.config.buildings[type]
-      if (!config) return false
-      // MAX_BUILDING_BY_AGE can still list buildings gated behind unavailable techs - skip those
-      // instead of crashing on a missing asset.
-      if (player.isBuildingEligible && !player.isBuildingEligible(type)) return false
-      const placementConfig = { ...config, type }
-      const [minSpace, maxSpace] = placementSpaceFor(type)
-      const size = placementSizeFor(type)
-      for (const spaceMultiplier of [1, 2, 3, 4]) {
-        const position = getPositionInGridAroundInstance(
-          townCenter,
-          map.grid,
-          [minSpace, maxSpace * spaceMultiplier],
-          size
-        )
-        if (position && canPlaceBuildingAt(map.grid, position.i, position.j, placementConfig)) {
-          player.createBuilding({ i: position.i, j: position.j, type, isBuilt: true })
-          markBuilt(type)
-          return true
-        }
-      }
-      return false
-    }
-
-    // 1. Houses first, sized for the population this kit is about to reach - placed before the base
-    // gets crowded by everything else below so population capacity isn't left short by congestion.
-    const infantryType = UNIT_TYPES.infantry
-    const archerType = getBestUnitFromTechs(player.technologies, ARCHER_TECH_UPGRADES, UNIT_TYPES.bowman)
-    const maxByAge = (table: Record<number, number>) => table[level] || 0
-    const unitTargets: Array<[string, number]> = [
-      [infantryType, maxByAge(MAX_INFANTRY_BY_AGE)],
-      [archerType, maxByAge(MAX_ARCHER_BY_AGE)],
-    ]
-
-    let populationTarget = player.population
-    for (const [, count] of unitTargets) populationTarget += count
-
-    const houseConfig = player.config.buildings[BUILDING_TYPES.house]
-    const houseCapacity = Number(houseConfig?.increasePopulation) || 0
-    if (houseCapacity > 0) {
-      let guard = 0
-      while (player.populationMax < populationTarget && guard++ < 20) {
-        if (!placeExtraBuilding(BUILDING_TYPES.house)) break
-      }
-    }
-
-    // 2. Economy/military buildings up to this level's own long-term targets.
-    const buildingTargets = (MAX_BUILDING_BY_AGE as Record<number, Record<string, number>>)[level] || {}
-    for (const [type, targetCount] of Object.entries(buildingTargets)) {
-      const existing = player.buildings.filter(building => building.type === type).length
-      for (let n = existing; n < targetCount; n++) {
-        if (!placeExtraBuilding(type)) break
-      }
-    }
-
-    // 3. Wall perimeter for established/imperial levels only - static, never repaired/extended by the AI.
-    if (level >= 2) {
-      const wallConfig = player.config.buildings[BUILDING_TYPES.smallWall]
-      if (wallConfig) {
-        for (const [di, dj] of getDiamondRingOffsets(22)) {
-          const i = townCenter.i + di
-          const j = townCenter.j + dj
-          const placementConfig = { ...wallConfig, type: BUILDING_TYPES.smallWall }
-          if (!canPlaceBuildingAt(map.grid, i, j, placementConfig)) continue
-          player.createBuilding({ i, j, type: BUILDING_TYPES.smallWall, isBuilt: true })
-          markBuilt(BUILDING_TYPES.smallWall)
-        }
-      }
-    }
-
-    // 4. Technologies consistent with the age/buildings just granted - also retextures the walls
-    // above to the right tier via the 'refreshWalls' action already wired on unlock.
-    player.applyEligibleTechnologies?.()
-
-    // 5. Resource cushion.
-    const resourceBonus = CIVILIZATION_LEVEL_RESOURCE_BONUS[level]
-    if (resourceBonus) {
-      player.wood += resourceBonus.wood ?? 0
-      player.food += resourceBonus.food ?? 0
-      player.gold += resourceBonus.gold ?? 0
-      player.stone += resourceBonus.stone ?? 0
-      player.copper += resourceBonus.copper ?? 0
-      player.iron += resourceBonus.iron ?? 0
-    }
-
-    // 6. Military units, stationed near the Town Center (the game has no true garrison mechanic).
-    for (const [type, count] of unitTargets) {
-      if (!type || !count || !player.config.units[type]) continue
-      for (let n = 0; n < count; n++) {
-        const position = getPositionInGridAroundInstance(townCenter, map.grid, [2, 10], 0)
-        if (!position) continue
-        const unit = player.createUnit?.({ i: position.i, j: position.j, type, owner: player })
-        if (unit) {
-          unit.campPatrolAnchor = { i: position.i, j: position.j }
-          unit.work = WORK_TYPES.attacker
-          player.population = (player.population ?? 0) + 1
-        }
-      }
-    }
+    applyCivilizationLevelStartingKit(this.map, player, level, townCenter)
   }
 
   generateCells(): void {
@@ -1632,6 +1135,16 @@ export class MapGeneration {
       return Math.sqrt(x * x + y * y)
     }
 
+    function isInteriorNonWaterTerrainCell(i: number, j: number, margin = 2): boolean {
+      return (
+        i >= borderWaterWidth + margin &&
+        j >= borderWaterWidth + margin &&
+        i < gridSize - borderWaterWidth - margin &&
+        j < gridSize - borderWaterWidth - margin &&
+        terrainMap[i]?.[j] !== 2
+      )
+    }
+
     function applyGroundPatch(
       centerI: number,
       centerJ: number,
@@ -1656,15 +1169,7 @@ export class MapGeneration {
         for (let dj = -maxRadius; dj <= maxRadius; dj++) {
           const ni = centerI + di
           const nj = centerJ + dj
-          if (
-            ni < borderWaterWidth + 2 ||
-            nj < borderWaterWidth + 2 ||
-            ni >= gridSize - borderWaterWidth - 2 ||
-            nj >= gridSize - borderWaterWidth - 2 ||
-            terrainMap[ni]?.[nj] === 2
-          ) {
-            continue
-          }
+          if (!isInteriorNonWaterTerrainCell(ni, nj)) continue
           let edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
           for (let lobeIndex = 0; lobeIndex < lobeCount - 1; lobeIndex++) {
             const angle = lobeAngles[lobeIndex]
@@ -1740,15 +1245,7 @@ export class MapGeneration {
         for (let dj = -maxRadius; dj <= maxRadius; dj++) {
           const ni = centerI + di
           const nj = centerJ + dj
-          if (
-            ni < borderWaterWidth + 2 ||
-            nj < borderWaterWidth + 2 ||
-            ni >= gridSize - borderWaterWidth - 2 ||
-            nj >= gridSize - borderWaterWidth - 2 ||
-            terrainMap[ni]?.[nj] === 2
-          ) {
-            continue
-          }
+          if (!isInteriorNonWaterTerrainCell(ni, nj)) continue
           const edge = normalizedShapeDistance(di, dj, radius, shapeIndex)
           const roughness = (hash(ni * 0.61 + salt, nj * 0.61 - salt) - 0.5) * 0.35
           if (edge > 1 && edge <= 1 + shoreRadius / Math.max(radius, 1) + roughness) terrainMap[ni][nj] = shoreValue
@@ -1854,45 +1351,22 @@ export class MapGeneration {
   }
 
   generateSets() {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (this._hasSolidNeighbor(i, j)) continue
-        if (!cell.has && !cell.solid && !cell.border && !cell.inclined) {
-          const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
-          const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
-          if (
-            !hasWaterNeighbour &&
-            !hasWaterBorderClearance &&
-            cell.category !== 'Water' &&
-            this.map.random() < AMBIENT_ANIMAL_CHANCE
-          ) {
-            this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
-          }
-        }
-      }
-    }
+    generateAmbientAnimalSets(this.map, {
+      hasSolidNeighbor: (i, j) => this._hasSolidNeighbor(i, j),
+      hasWaterNeighbor: (i, j) => this._hasWaterNeighbor(i, j),
+      pickType: (i, j) => this.pickAmbientAnimalType(i, j),
+      placeGroup: (i, j, type) => this.placeAmbientAnimalGroup(i, j, type),
+    })
   }
 
   async generateSetsAsync() {
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        const cell = this.map.grid[i][j]
-        if (this._hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) continue
-        const hasWaterNeighbour = this._hasWaterNeighbor(i, j)
-        const hasWaterBorderClearance = hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
-        if (
-          !hasWaterNeighbour &&
-          !hasWaterBorderClearance &&
-          cell.category !== 'Water' &&
-          this.map.random() < AMBIENT_ANIMAL_CHANCE
-        ) {
-          this.placeAmbientAnimalGroup(i, j, this.pickAmbientAnimalType(i, j))
-        }
-      }
-      const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 8
-      if (i % yieldEvery === 0) await this.yieldToBrowser()
-    }
+    await generateAmbientAnimalSetsAsync(this.map, {
+      hasSolidNeighbor: (i, j) => this._hasSolidNeighbor(i, j),
+      hasWaterNeighbor: (i, j) => this._hasWaterNeighbor(i, j),
+      pickType: (i, j) => this.pickAmbientAnimalType(i, j),
+      placeGroup: (i, j, type) => this.placeAmbientAnimalGroup(i, j, type),
+      yieldToBrowser: () => this.yieldToBrowser(),
+    })
   }
 
   placePortal(): void {

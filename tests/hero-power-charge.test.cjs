@@ -249,6 +249,95 @@ function loadHeroTools(overrides = {}) {
       getActionEnergyCost: (_unit, action) => ({ heroPowerCharge: 2, heroDefense: 2, heroWhiff: 1 })[action] ?? 0,
     },
     './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
+    './debug': { debugLog: () => {} },
+    './heroToolEquipment': {
+      HERO_EQUIPPED_ITEM_ORDER: ['interact', 'sword', 'bow', 'lasso'],
+      HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
+      EQUIPPED_ITEM_WEAPON: { sword: 'sword_ceramic', bow: 'bow' },
+      getEquippedItemWeapon: (tool, _age = 0, hero) => {
+        if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
+        if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
+        if (tool === 'lasso') return hero?.inventory?.activeWeapons?.lasso
+        return { sword: 'sword_ceramic', bow: 'bow' }[tool]
+      },
+      isHeroToolAvailable: (hero, tool) => {
+        if (!tool || tool === 'interact') return true
+        return Boolean(mocks['./heroToolEquipment'].getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
+      },
+      getHeroToolEquipment: (hero, tool) => {
+        const activeWeapons = hero.inventory?.activeWeapons ?? {}
+        if (tool === 'sword') return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(Boolean)
+        if (tool === 'bow') return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(Boolean)
+        if (tool === 'lasso') return [activeWeapons.lasso].filter(Boolean)
+        return mocks['./equipmentStats'].getUnitWorkEquipment('attacker')
+      },
+      applyEquippedItemAppearance: (hero, tool) => {
+        const work = { interact: 'attacker', sword: 'heroSword', bow: 'hunter', lasso: 'attacker' }[tool]
+        hero.work = work
+      },
+      applyToolAppearance: (hero, tool) => mocks['./heroToolEquipment'].applyEquippedItemAppearance(hero, tool),
+    },
+    './heroTargeting': {
+      CLICK_TARGET_SEARCH_RANGE: 15,
+      MOUNTED_ATTACK_HALF_ANGLE: 45,
+      getHeroAimDegree: (hero, destination) => {
+        const dx = destination.x - hero.x
+        const dy = (destination.y - hero.y) * (32 / 64)
+        return Math.round((Math.atan2(dy, dx) * 180) / Math.PI + 180)
+      },
+      getHeroAimDelta: (hero, target) =>
+        mocks['./maths'].angleDelta(mocks['./heroTargeting'].getHeroAimDegree(hero, target), hero.degree ?? 0),
+      isMountedAttackAimBlocked: (hero, point) =>
+        Boolean(hero.mountedOnHorse) &&
+        mocks['./maths'].angleDelta(mocks['./heroTargeting'].getHeroAimDegree(hero, point), hero.degree ?? 0) > 45,
+      getDirectionalTarget: (hero, candidates, halfAngle = 25) =>
+        mocks['./heroTargeting'].getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null,
+      getDirectionalTargets: (hero, candidates, halfAngle = 25) =>
+        candidates
+          .map(target => {
+            const aimPoint = mocks['./heroActionRange'].getHeroInteractionTargetPoint(hero, target)
+            const targetHalfAngle = ['building', 'resource'].includes(target.family ?? '') ? 45 : halfAngle
+            const angle = mocks['./heroTargeting'].getHeroAimDelta(hero, aimPoint)
+            const dist = Math.hypot(aimPoint.x - hero.x, aimPoint.y - hero.y)
+            return { target, angle, dist, halfAngle: targetHalfAngle }
+          })
+          .filter(candidate => candidate.angle <= candidate.halfAngle)
+          .map(candidate => ({
+            ...candidate,
+            score: candidate.dist + (candidate.angle / Math.max(candidate.halfAngle, 1)) * 64,
+          }))
+          .sort((a, b) => a.score - b.score || a.dist - b.dist || a.angle - b.angle)
+          .map(candidate => candidate.target),
+      findFacingEntity: (hero, matches, range = 15) => {
+        const candidates = mocks['./grid/visibility'].findInstancesInSight(hero, matches, range)
+        const seen = new Set(candidates)
+        const grid = hero.context?.map?.grid
+        if (grid) {
+          const centerI = hero.i ?? 0
+          const centerJ = hero.j ?? 0
+          const scanRadius = Math.ceil(range)
+          const rangeSq = range * range
+          for (let i = centerI - scanRadius; i <= centerI + scanRadius; i++) {
+            const row = grid[i]
+            if (!row) continue
+            for (let j = centerJ - scanRadius; j <= centerJ + scanRadius; j++) {
+              const cell = row[j]
+              if (!cell) continue
+              const di = i - centerI
+              const dj = j - centerJ
+              if (di * di + dj * dj > rangeSq) continue
+              for (const corpse of cell.corpses ?? []) {
+                if (!seen.has(corpse) && matches(corpse)) {
+                  candidates.push(corpse)
+                  seen.add(corpse)
+                }
+              }
+            }
+          }
+        }
+        return mocks['./heroTargeting'].getDirectionalTarget(hero, candidates)
+      },
+    },
     './unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
@@ -561,10 +650,10 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
       playSoundCue: cue => soundCalls.push(cue),
     },
   })
-  const { releaseHeroPowerCharge, triggerEquippedItemActionAt } = tools
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = tools
   const { hero } = makeHero()
 
-  assert.equal(triggerEquippedItemActionAt(hero, 'sword', { x: 10, y: 0 }), true)
+  assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 0 }), true)
   assert.equal(hero.actionLocked, true)
   assert.equal(releaseHeroPowerCharge(hero), true)
   assert.equal(typeof hero.sprite.onFrameChange, 'function')
@@ -582,7 +671,7 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
 test('free-hand whiff rewinds the slash recovery through the shared helper', () => {
   const reverseCalls = []
   const soundCalls = []
-  const { triggerEquippedItemActionAt } = loadHeroTools({
+  const { triggerToolAttackAt } = loadHeroTools({
     './slashRecoveryAnimation': {
       logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (hero, options) => {
@@ -598,7 +687,7 @@ test('free-hand whiff rewinds the slash recovery through the shared helper', () 
   })
   const { hero } = makeHero()
 
-  assert.equal(triggerEquippedItemActionAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
   assert.equal(hero.actionLocked, true)
   assert.equal(typeof hero.sprite.onFrameChange, 'function')
 
@@ -741,7 +830,7 @@ test('hero defense only starts with point weapons', () => {
 
 test('hero defense flash targets weapon layers without flashing the body sprite', () => {
   const parryFeedback = []
-  const { showHeroDefenseFlash } = loadHeroTools({
+  const { beginHeroDefense } = loadHeroTools({
     './combatFeedback': {
       showDamageFeedback: () => {},
       showParryFeedback: (target, text) => parryFeedback.push([target.label, text]),
@@ -764,7 +853,9 @@ test('hero defense flash targets weapon layers without flashing the body sprite'
   hero.sprite.tint = 0x222222
   hero.sprite.alpha = 0.75
 
-  showHeroDefenseFlash(hero)
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
+  assert.equal(typeof hero.showHeroDefenseFlash, 'function')
+  hero.showHeroDefenseFlash()
 
   assert.equal(weaponLayer.tint, 0xfff06a)
   assert.equal(weaponLayer.alpha, 1)
@@ -782,7 +873,7 @@ test('hero defense flash targets weapon layers without flashing the body sprite'
 })
 
 test('overlapping hero defense flashes restore the original weapon color', () => {
-  const { showHeroDefenseFlash } = loadHeroTools()
+  const { beginHeroDefense } = loadHeroTools()
   const { hero } = makeHero()
   const weaponLayer = { tint: 0x123456, alpha: 0.5, blendMode: 'normal', visible: true }
   const scheduled = []
@@ -794,9 +885,11 @@ test('overlapping hero defense flashes restore the original weapon color', () =>
     },
   }
 
-  showHeroDefenseFlash(hero)
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
+  assert.equal(typeof hero.showHeroDefenseFlash, 'function')
+  hero.showHeroDefenseFlash()
   assert.equal(weaponLayer.tint, 0xfff06a)
-  showHeroDefenseFlash(hero)
+  hero.showHeroDefenseFlash()
   assert.equal(weaponLayer.tint, 0xfff06a)
 
   scheduled[0]()
@@ -1038,86 +1131,6 @@ test('bow release drains energy up to the mouse-up instant', () => {
   }
 })
 
-test('hero resource tools get a small hero contact forgiveness band', () => {
-  const carcass = {
-    family: 'animal',
-    i: 2.4,
-    isDead: true,
-    isDestroyed: false,
-    j: 0,
-    quantity: 100,
-    x: 10,
-    y: 0,
-  }
-  const calls = []
-  const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    i: 0,
-    j: 0,
-    isUnitAtDest: () => false,
-    getAction: action => calls.push(['getAction', action]),
-    setDest: target => calls.push(['setDest', target]),
-  })
-
-  assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.deepEqual(calls, [
-    ['setDest', carcass],
-    ['getAction', 'takemeat'],
-  ])
-})
-
-test('free-hand interact starts farming aimed wheat instead of whiffing', () => {
-  const wheat = {
-    family: 'resource',
-    i: 1,
-    isDead: false,
-    isDestroyed: false,
-    isUsedBy: { label: 'villager-1' },
-    j: 0,
-    quantity: 10,
-    type: 'Wheat',
-    x: 10,
-    y: 0,
-  }
-  const calls = []
-  const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === wheat && action === 'farm' },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [wheat].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    i: 0,
-    j: 0,
-    loading: 0,
-    loadingMax: { wheat: 10 },
-    loadingType: null,
-    owner: { label: 'player' },
-    isUnitAtDest: () => true,
-    getAction: action => calls.push(['getAction', action]),
-    setDest: target => calls.push(['setDest', target]),
-  })
-
-  assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.equal(hero.work, 'farmer')
-  assert.equal(hero.action, 'farm')
-  assert.deepEqual(calls, [
-    ['setDest', wheat],
-    ['getAction', 'farm'],
-  ])
-})
-
 test('hero resource inventory never blocks gathering another load', () => {
   const carcass = {
     family: 'animal',
@@ -1220,139 +1233,6 @@ test('civil tools are no longer equipped combat weapons', () => {
   assert.equal(triggerToolAttackAt(hero, 'hammer', { x: 10, y: 0 }), false)
   assert.equal(enemy.hitPoints, 10)
   assert.equal(hero.actionLocked, false)
-})
-
-test('context actions check energy from the action, not an equipped tool', () => {
-  const tree = {
-    category: 'Tree',
-    family: 'resource',
-    i: 1,
-    isDestroyed: false,
-    j: 0,
-    quantity: 100,
-    x: 10,
-    y: 0,
-  }
-  const calls = []
-  const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === tree && action === 'chopwood' },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [tree].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    energy: 2,
-    i: 0,
-    j: 0,
-    isUnitAtDest: () => true,
-    getAction: action => calls.push(['getAction', action]),
-    setDest: target => calls.push(['setDest', target]),
-  })
-
-  assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.equal(hero.energy, 2)
-  assert.equal(hero.contextAction, 'chop')
-  assert.deepEqual(calls, [
-    ['setDest', tree],
-    ['getAction', 'chopwood'],
-  ])
-})
-
-test('context build refreshes the action sheet before starting the locked action', () => {
-  const foundation = {
-    family: 'building',
-    hitPoints: 10,
-    i: 1,
-    isBuilt: false,
-    isDestroyed: false,
-    j: 0,
-    totalHitPoints: 100,
-    x: 10,
-    y: 0,
-  }
-  const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === foundation && action === 'build' },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [foundation].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-    '../classes/unit/UnitCommands': {
-      applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    action: 'build',
-    allAssets: {
-      builder: {
-        actionSheet: 'hero-builder-action',
-      },
-    },
-    i: 0,
-    j: 0,
-    work: 'builder',
-    isUnitAtDest: () => true,
-    getAction: action => {
-      hero.startedAction = action
-      hero.setTextures(hero.actionSheet ? 'actionSheet' : 'walkingSheet')
-      hero.actionLocked = true
-    },
-    setDest: target => {
-      hero.dest = target
-    },
-  })
-  hero.actionSheet = undefined
-
-  assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.equal(hero.startedAction, 'build')
-  assert.deepEqual(hero.actionSheet, { id: 'hero-builder-action', textures: [], data: {} })
-  assert.equal(hero.currentSheet, 'actionSheet')
-  assert.equal(hero.actionLocked, true)
-})
-
-test('context actions are blocked when hero energy is too low', () => {
-  const rock = {
-    category: 'Stone',
-    family: 'resource',
-    i: 1,
-    isDestroyed: false,
-    j: 0,
-    quantity: 100,
-    x: 10,
-    y: 0,
-  }
-  const messages = []
-  const { triggerToolAction } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === rock && action === 'minestone' },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [rock].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    context: {
-      map: { addChild: () => {} },
-      menu: { showMessage: (message, level) => messages.push([message, level]) },
-    },
-    energy: 0,
-    i: 0,
-    j: 0,
-    isUnitAtDest: () => true,
-    getAction: action => {
-      hero.startedAction = action
-    },
-  })
-
-  assert.equal(triggerToolAction(hero, 'interact'), false)
-  assert.equal(hero.startedAction, undefined)
-  assert.equal(hero.contextAction, undefined)
-  assert.deepEqual(messages, [['heroNotEnoughEnergy', 'warning']])
 })
 
 test('free-hand interact plays an empty swing when no target is aimed', () => {
@@ -2017,44 +1897,4 @@ test('free-hand interact still whiffs when a contextual target is aimed but out 
   assert.equal(hero.startedAction, undefined)
   assert.equal(hero.actionLocked, true)
   assert.equal(hero.currentSheet, 'actionSheet')
-})
-
-test('hero free-hand context action can take meat with the hero food forgiveness band', () => {
-  const carcass = {
-    family: 'animal',
-    hitPoints: 0,
-    i: 2.4,
-    isDead: true,
-    isDestroyed: false,
-    j: 0,
-    quantity: 100,
-    x: 5,
-    y: 0,
-  }
-  const calls = []
-  const { triggerToolAction } = loadHeroTools({
-    './combat': {
-      getActionCondition: (_hero, target, action) => target === carcass && action === 'takemeat',
-      getHitPointsWithDamage: () => 0,
-    },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
-    './grid/queries': {
-      getClosestInstanceWithPath: (_hero, candidates) =>
-        candidates.length ? { instance: candidates[0], path: [] } : null,
-    },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    i: 0,
-    j: 0,
-    isUnitAtDest: () => false,
-    getAction: action => calls.push(['getAction', action]),
-    setDest: target => calls.push(['setDest', target]),
-  })
-
-  assert.equal(triggerToolAction(hero, 'interact'), true)
-  assert.deepEqual(calls, [
-    ['setDest', carcass],
-    ['getAction', 'takemeat'],
-  ])
 })

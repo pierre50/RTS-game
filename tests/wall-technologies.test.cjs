@@ -13,11 +13,19 @@ function loadWalls() {
   })
   const module = { exports: {} }
   const mocks = {
-    'pixi.js': { Assets: {} },
-    '../../constants': { BUILDING_TYPES: { smallWall: 'SmallWall' } },
+    'pixi.js': {
+      AnimatedSprite: class AnimatedSprite {
+        constructor() {
+          this.anchor = { copyFrom: () => {} }
+        }
+        play() {}
+      },
+      Assets: {},
+    },
+    '../../constants': { BUILDING_TYPES: { smallWall: 'SmallWall' }, LABEL_TYPES: { deco: 'deco' } },
     '../extra': { bindAnimatedSpriteToTicker: () => {} },
     '../graphics/colors': { changeSpriteColor: () => {} },
-    '../graphics/textures': { getTexture: name => name },
+    '../graphics/textures': { getTexture: name => name, getTextureByFrame: () => ({}) },
     '../grid/wallPath': {
       getWallFrame: (vertical, horizontal, endpoint) => (endpoint || (vertical && horizontal) ? 2 : vertical ? 1 : 0),
     },
@@ -27,42 +35,58 @@ function loadWalls() {
   return module.exports
 }
 
-const { getWallFrameAt, getWallLevel, getWallSheet } = loadWalls()
+const { getWallLevel, getWallTexture, updateWallTexture } = loadWalls()
 
 test('wall technology levels progress independently from player age', () => {
   const owner = { age: 3, civ: 'Greek', technologies: [] }
   assert.equal(getWallLevel(owner), 1)
-  assert.equal(getWallSheet(owner), 'buildings/wall/level-1')
+  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 
   owner.technologies.push('UpgradeMediumWall')
   assert.equal(getWallLevel(owner), 2)
-  assert.equal(getWallSheet(owner), 'buildings/wall/level-1')
+  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 
   owner.technologies.push('UpgradeFortification')
   assert.equal(getWallLevel(owner), 3)
-  assert.equal(getWallSheet(owner), 'buildings/wall/level-1')
+  assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 })
 
 test('all architectures reuse the shared wall sheet until wall age art is added', () => {
   const technologies = ['UpgradeMediumWall']
-  assert.equal(getWallSheet({ civ: 'Egyptian', technologies }), 'buildings/wall/level-1')
-  assert.equal(getWallSheet({ civ: 'Asian', technologies }), 'buildings/wall/level-1')
-  assert.equal(getWallSheet({ civ: 'Babylonian', technologies }), 'buildings/wall/level-1')
+  assert.deepEqual(getWallTexture({ civ: 'Egyptian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
+  assert.deepEqual(getWallTexture({ civ: 'Asian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
+  assert.deepEqual(getWallTexture({ civ: 'Babylonian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 })
 
 test('isolated walls and wall endpoints use the tower block frame', () => {
   const owner = {}
   const wall = { type: 'SmallWall', owner }
   const grid = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({ has: null })))
+  const makeWall = () => ({
+    ...wall,
+    addChild: () => {},
+    context: { map: { grid } },
+    getChildByLabel: () => null,
+    i: 1,
+    isBuilt: true,
+    j: 1,
+    sprite: { anchor: { copyFrom: () => {} }, texture: null },
+  })
 
   grid[1][1].has = wall
-  assert.equal(getWallFrameAt(grid, 1, 1, owner), 2)
+  const isolated = makeWall()
+  updateWallTexture(isolated)
+  assert.deepEqual(isolated.sprite.texture, { sheet: 'buildings/wall/level-1', frame: 2 })
 
   grid[0][1].has = { ...wall }
-  assert.equal(getWallFrameAt(grid, 1, 1, owner), 2)
+  const endpoint = makeWall()
+  updateWallTexture(endpoint)
+  assert.deepEqual(endpoint.sprite.texture, { sheet: 'buildings/wall/level-1', frame: 2 })
 
   grid[2][1].has = { ...wall }
-  assert.equal(getWallFrameAt(grid, 1, 1, owner), 1)
+  const vertical = makeWall()
+  updateWallTexture(vertical)
+  assert.deepEqual(vertical.sprite.texture, { sheet: 'buildings/wall/level-1', frame: 1 })
 })
 
 test('granary exposes the complete wall technology chain', () => {

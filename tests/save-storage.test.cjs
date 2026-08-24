@@ -23,6 +23,7 @@ function loadSaveStorage(storage) {
         updateCurrentWorldState: (_campaign, data) => data,
       }
     }
+    if (id === '../lib/debug') return { debugLog: () => {} }
     return require(id)
   }
 

@@ -159,3 +159,33 @@ test('fadeIn cancels a pending fadeOut for the same entity', () => {
   assert.equal(completed, false)
   assert.deepEqual(removed, [1, 2])
 })
+
+test('cancelFade stops a pending fadeOut without calling completion', () => {
+  const callbacks = []
+  const removed = []
+  const { cancelFade, fadeOut } = loadModule('app/lib/entityFade.ts')
+  const entity = {
+    alpha: 1,
+    context: {
+      scheduler: {
+        add(callback) {
+          callbacks.push(callback)
+          return callbacks.length
+        },
+        remove(taskId) {
+          removed.push(taskId)
+        },
+      },
+    },
+  }
+  let completed = false
+
+  fadeOut(entity, 80, () => {
+    completed = true
+  })
+  cancelFade(entity)
+  callbacks[0]()
+
+  assert.equal(completed, false)
+  assert.deepEqual(removed, [1])
+})

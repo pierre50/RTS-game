@@ -8,7 +8,7 @@ export function clearDeathFlash(sprite: AnimatedSprite | null | undefined): void
   clearSpriteTintFrameEffect(sprite)
 }
 
-export function startDeathFlash(sprite: AnimatedSprite | null | undefined): () => void {
+function startDeathFlash(sprite: AnimatedSprite | null | undefined): () => void {
   if (!sprite) return () => {}
 
   const originalTextures = sprite.textures

@@ -30,7 +30,7 @@ export function moveTowardPoint(instance: MovableInstance, x: number, y: number,
   instance.y += velY
 }
 
-export function getFreeCellAroundPoint<TCell extends GridCell>(
+function getFreeCellAroundPoint<TCell extends GridCell>(
   x: number,
   y: number,
   size: number,

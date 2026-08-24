@@ -17,6 +17,21 @@ function loadPathfinding() {
       cellIsDiag: (a, b) => a.i !== b.i && a.j !== b.j,
       instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
     },
+    '../lib/grid/cells': {
+      getSquareCellsAroundPoint: (startX, startY, grid, dist, callback, includeCenter = true) => {
+        const result = []
+        for (let i = Math.max(0, startX - dist); i <= Math.min(grid.length - 1, startX + dist); i++) {
+          const row = grid[i]
+          if (!row) continue
+          for (let j = Math.max(0, startY - dist); j <= Math.min(row.length - 1, startY + dist); j++) {
+            if (!includeCenter && i === startX && j === startY) continue
+            const cell = row[j]
+            if (cell && (!callback || callback(cell))) result.push(cell)
+          }
+        }
+        return result
+      },
+    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

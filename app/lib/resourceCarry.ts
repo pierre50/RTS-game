@@ -4,7 +4,7 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entitie
 
 export type PlayerResourceKey = (typeof RESOURCE_STOCKPILE_TYPES)[keyof typeof RESOURCE_STOCKPILE_TYPES]
 
-export type ResourceLoadMap = Record<string, number>
+type ResourceLoadMap = Record<string, number>
 
 const CARRIED_RESOURCE_DISPLAY_ORDER: PlayerResourceKey[] = ['food', 'wood', 'stone', 'gold', 'copper', 'iron']
 
@@ -51,12 +51,6 @@ export function getTotalCarriedResources(unit: UnitEntity): number {
   return getCarriedResourceEntries(unit).reduce((total, [, amount]) => total + amount, 0)
 }
 
-export function getPrimaryCarriedResourceType(unit: UnitEntity): string | null {
-  const entries = getCarriedResourceEntries(unit)
-  if (unit.loadingType && entries.some(([type]) => type === unit.loadingType)) return unit.loadingType
-  return entries[0]?.[0] ?? null
-}
-
 export function getDisplayedCarriedResourceEntries(unit: UnitEntity): [PlayerResourceKey, number][] {
   const totals = new Map<PlayerResourceKey, number>()
   for (const [loadingType, amount] of getCarriedResourceEntries(unit)) {
@@ -69,11 +63,6 @@ export function getDisplayedCarriedResourceEntries(unit: UnitEntity): [PlayerRes
     const amount = totals.get(resourceKey) ?? 0
     return amount > 0 ? [[resourceKey, amount] as [PlayerResourceKey, number]] : []
   })
-}
-
-export function getCarriedResourceAmount(unit: UnitEntity, loadingType: string): number {
-  if (isHeroControlled(unit)) return ensureHeroResourceLoads(unit)[loadingType] ?? 0
-  return unit.loadingType === loadingType ? (unit.loading ?? 0) : 0
 }
 
 export function getCarriedResourceSpace(unit: UnitEntity, loadingType: string): number {
@@ -118,7 +107,7 @@ export function getPlayerResourceKey(loadingType: string | null | undefined): Pl
   return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
 }
 
-export function buildingAcceptsResourceType(building: BuildingEntity, loadingType: string): boolean {
+function buildingAcceptsResourceType(building: BuildingEntity, loadingType: string): boolean {
   return building.type === BUILDING_TYPES.townCenter || Boolean(building.accept?.includes(loadingType))
 }
 

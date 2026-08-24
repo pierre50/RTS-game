@@ -1,4 +1,4 @@
-import type { Application, Container, Graphics } from 'pixi.js'
+import type { Application, Container } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
 import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity, ResourceEntity } from './entities'
@@ -25,7 +25,7 @@ export type DayNightColorAdjustment = {
   saturation: number
 }
 
-export interface DayNightSystemLike {
+interface DayNightSystemLike {
   getColorAdjustment(): DayNightColorAdjustment
   getDarknessLevel(): number
   getElapsedMs(): number
@@ -35,19 +35,19 @@ export interface DayNightSystemLike {
   state: DayNightStateLike
 }
 
-export interface WeatherSystemLike {
+interface WeatherSystemLike {
   debugState?(): object
   forcePhase?(phase: string): void
   getDarknessLevel?(): number
   phase?: string
 }
 
-export interface TributeRaidSystemLike {
+interface TributeRaidSystemLike {
   triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
   triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
 }
 
-export interface VillagerShelterSystemLike {
+interface VillagerShelterSystemLike {
   handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
   evacuateVillagersFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
   evacuateVillagersIfShelterUnsafe(building: BuildingEntity): void
@@ -140,6 +140,7 @@ interface MinimapManagerLike {
 export interface MinimapHostLike {
   context: GameContextLike
   gameHud: HTMLDivElement
+  editorPanelMap?: HTMLDivElement
   minimapMap?: HTMLDivElement
   terrainMinimap: HTMLCanvasElement
   resourcesMinimap: HTMLCanvasElement
@@ -194,14 +195,6 @@ export interface ControlsLike extends Container {
   setFreeCamera?(enabled: boolean): void
 }
 
-export interface SelectionRectangle {
-  x: number
-  y: number
-  width: number
-  height: number
-  graph: Graphics
-}
-
 export type ControlPointerEvent = {
   clientX?: number
   clientY?: number
@@ -251,6 +244,19 @@ export interface GameContextLike {
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
   getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
+}
+
+export type MapRuntimeContext = Omit<
+  Partial<GameContextLike>,
+  'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
+> & {
+  controls?: GameContextLike['controls'] | null
+  map?: GameContextLike['map'] | null
+  menu?: GameContextLike['menu'] | null
+  performance?: GameContextLike['performance'] | null
+  player?: PlayerLike | null
+  players: PlayerLike[]
+  scheduler?: GameContextLike['scheduler'] | null
 }
 
 export type AudibleInstanceLike = {

@@ -114,8 +114,6 @@ function validateAIState(aiState: unknown, playerIndex: number): void {
     fail(`Invalid save file: player ${playerIndex} AI phase is invalid.`)
   }
   validateOptionalFiniteNumber(aiState.savedAt, `player ${playerIndex} AI savedAt`)
-  validateOptionalFiniteNumber(aiState.lastAttackWaveAgo, `player ${playerIndex} AI lastAttackWaveAgo`)
-  validateOptionalFiniteNumber(aiState.lastAttackWaveAt, `player ${playerIndex} AI lastAttackWaveAt`)
   validateArray(aiState.enemyUnits ?? [], `player ${playerIndex} AI enemyUnits`)
   validateArray(aiState.enemyBuildings ?? [], `player ${playerIndex} AI enemyBuildings`)
   validateArray(aiState.threatenedTargets ?? [], `player ${playerIndex} AI threatenedTargets`)

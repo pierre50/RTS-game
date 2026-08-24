@@ -11,8 +11,8 @@ import {
   colors,
   debounce,
   getFreeLandCellAroundInstance,
-  getGaiaAnimals,
   isPlayedHeroDefeated,
+  teleportRuntimeUnitToCell,
   updateInstanceVisibility,
 } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
@@ -38,21 +38,20 @@ import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoade
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
-import { WeatherSystem } from '../services/WeatherSystem'
-import { LightSystem } from '../services/LightSystem'
-import { ShadowSystem } from '../services/ShadowSystem'
-import { DayNightSystem } from '../services/DayNightSystem'
-import { DailyWorldEventSystem } from '../services/DailyWorldEventSystem'
-import { TributeRaidSystem } from '../services/TributeRaidSystem'
-import { CampPatrolSystem } from '../services/CampPatrolSystem'
-import { VillagerShelterSystem } from '../services/VillagerShelterSystem'
+import {
+  addRuntimeServiceLayers,
+  createEmptyRuntimeServices,
+  createRuntimeServices,
+  destroyRuntimeServices,
+  type RuntimeServices,
+} from './game/runtimeServices'
+import { collectPausableInstances } from './game/pausableRuntime'
 import { getCameraZoom, getControlActionForKeyboardEvent, getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { PortalTravelTransition } from '../ui/PortalTravelTransition'
 import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
 import { CIVILIZATIONS } from '../config/civilizations'
 import { getEnvironmentForCiv } from '../config/environments'
-import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from '../lib/maths'
 import { CELL_WIDTH, CELL_HEIGHT, ENVIRONMENT_IDS, PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
@@ -66,7 +65,7 @@ import type {
 } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { ResourceEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 import type { EnvironmentId } from '../constants'
 import type { Viewport } from '../types/geometry'
@@ -162,29 +161,6 @@ function heroTravelImageSrc(player: PlayerLike | null | undefined): string {
   return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
 }
 
-function addPausableInstance(instances: Set<RuntimeEntity>, instance: RuntimeEntity | null | undefined): void {
-  if (!instance || instance.isDestroyed) return
-  if (!instance.pause && !instance.resume) return
-  instances.add(instance)
-}
-
-function collectPausableInstances(map: RuntimeMapInstance, players: PlayerLike[]): Set<RuntimeEntity> {
-  const instances = new Set<RuntimeEntity>()
-  for (const animal of getGaiaAnimals(map.gaia)) addPausableInstance(instances, animal)
-  for (const player of players) {
-    for (const unit of player.units ?? []) addPausableInstance(instances, unit)
-    for (const animal of player.animals ?? []) addPausableInstance(instances, animal)
-    for (const building of player.buildings ?? []) addPausableInstance(instances, building)
-    for (const corpse of player.corpses ?? []) addPausableInstance(instances, corpse)
-  }
-  for (const row of map.grid ?? []) {
-    for (const cell of row ?? []) {
-      for (const corpse of cell.corpses ?? []) addPausableInstance(instances, corpse)
-    }
-  }
-  return instances
-}
-
 /**
  * Main Display Object
  * @exports Game
@@ -206,13 +182,7 @@ export default class Game extends Container {
   _onKeydown?: (evt: KeyboardEvent) => void
   _onResize?: () => void
   _onDocumentVisibilityChange?: () => void
-  _weather?: WeatherSystem | null
-  _lights?: LightSystem | null
-  _shadows?: ShadowSystem | null
-  _dayNight?: DayNightSystem | null
-  _dailyWorldEvents?: DailyWorldEventSystem | null
-  _villagerShelter?: VillagerShelterSystem | null
-  _campPatrols?: CampPatrolSystem | null
+  _runtimeServices: RuntimeServices
 
   constructor(
     app: Application,
@@ -226,11 +196,7 @@ export default class Game extends Container {
     this._restartSaveData = null
     this._campaignSave = null
     this._isRestarting = false
-    this._weather = null
-    this._lights = null
-    this._dayNight = null
-    this._dailyWorldEvents = null
-    this._campPatrols = null
+    this._runtimeServices = createEmptyRuntimeServices()
     this.config = config
     this.onQuit = onQuit
     this.context = {
@@ -479,24 +445,8 @@ export default class Game extends Container {
     const { map, controls } = this.context
     if (!map || !controls) return
     this.addChild(map as ContainerChild)
-    this._dayNight = new DayNightSystem(this._gameContext(), { elapsedMs: dayNightElapsedMs })
-    this.context.dayNight = this._dayNight
-    this._dailyWorldEvents = new DailyWorldEventSystem(this._gameContext())
-    this._villagerShelter = new VillagerShelterSystem(this._gameContext())
-    this.context.villagerShelter = this._villagerShelter
-    const tributeRaids = new TributeRaidSystem(this._gameContext())
-    this.context.tributeRaids = tributeRaids
-    this._dailyWorldEvents.register(tributeRaids)
-    this._campPatrols = new CampPatrolSystem(this._gameContext())
-    this._shadows = new ShadowSystem(this._gameContext(), map)
-    this._weather = new WeatherSystem(this._gameContext(), map, () => this._getScreenRect())
-    this.context.weather = this._weather
-    this._lights = new LightSystem(this._gameContext(), () => this._getScreenRect(), () => this._dayNight?.getDarknessLevel() ?? 0)
-    ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = this._dayNight
-    ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = this._weather
-    ;(window as unknown as { __lightSystem?: LightSystem | null }).__lightSystem = this._lights
-    this.addChild(this._lights.layer)
-    this.addChild(this._weather.layer)
+    this._runtimeServices = createRuntimeServices(this._gameContext(), map, () => this._getScreenRect(), dayNightElapsedMs)
+    addRuntimeServiceLayers(this, this._runtimeServices)
     this.addChild(controls)
     this.applyZoom()
     this._attachWindowListeners()
@@ -548,27 +498,7 @@ export default class Game extends Container {
     clearAllCombatFeedback()
     this.context.scheduler?.clear?.()
     this.context.performance?.reset?.()
-    this._lights?.destroy()
-    this._lights = null
-    this._shadows?.destroy()
-    this._shadows = null
-    this._dailyWorldEvents?.destroy()
-    this._dailyWorldEvents = null
-    this._villagerShelter?.destroy()
-    this._villagerShelter = null
-    this._campPatrols?.destroy()
-    this._campPatrols = null
-    this._dayNight?.destroy()
-    this._dayNight = null
-    this.context.dayNight = null
-    this._weather?.destroy()
-    this._weather = null
-    this.context.weather = null
-    this.context.tributeRaids = null
-    this.context.villagerShelter = null
-    ;(window as unknown as { __dayNightSystem?: DayNightSystem | null }).__dayNightSystem = null
-    ;(window as unknown as { __weatherSystem?: WeatherSystem | null }).__weatherSystem = null
-    ;(window as unknown as { __lightSystem?: LightSystem | null }).__lightSystem = null
+    this._runtimeServices = destroyRuntimeServices(this._runtimeServices, this.context)
     this.context.controls?.destroy({ children: true })
     this.context.devConsole?.destroy()
     this.context.menu?.destroy?.()
@@ -928,27 +858,7 @@ export default class Game extends Container {
 
   _teleportRuntimeUnitToCell(unit: UnitEntity, cell: RuntimeCell): void {
     const { map } = this._gameContext()
-    const currentCell = unit.currentCell || map.grid[unit.i]?.[unit.j]
-    if (currentCell?.has === unit) {
-      currentCell.has = null
-      currentCell.solid = false
-    }
-    map.removeFromInstanceBucket(unit)
-
-    const [x, y] = cartesianToIsometric(cell.i, cell.j)
-    unit.i = cell.i
-    unit.j = cell.j
-    unit.x = x
-    unit.y = y
-    unit.z = cell.z
-    unit.zIndex = getInstanceZIndex(unit)
-    unit.currentCell = cell
-    unit.path = []
-    unit.action = null
-    cell.place(unit)
-    cell.solid = true
-    map.addToInstanceBucket(unit)
-    unit.applyReliefLift?.(getGroundReliefLevel(cell), true)
+    teleportRuntimeUnitToCell(map, unit, cell)
   }
 
   _refreshPortalPartyFog(units: UnitEntity[]): void {

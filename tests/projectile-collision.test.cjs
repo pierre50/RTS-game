@@ -92,6 +92,7 @@ function loadProjectile(libOverrides = {}) {
     },
     '../lib/entityFade': { fadeOutThenClear: () => {} },
     '../lib/equipmentStats': { getEntityWeaponPower: () => 0, getUnitCombatRange: unit => unit.range },
+    '../lib/debug': { debugLog: () => {} },
     '../lib/settings': { getShadowsEnabled: () => false },
     '../lib/treeCollision': { findTreeSegmentCollision: () => null },
     '../lib/unitExperience': {

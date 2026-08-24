@@ -1,4 +1,4 @@
-import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH, RELIEF_SPRITE_LIFT_PER_STEP } from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, CELL_DEPTH } from '../constants'
 import type { GridPosition, Point } from '../types/grid'
 
 type Direction = 'north' | 'south' | 'west' | 'northwest' | 'southwest' | 'east' | 'northeast' | 'southeast'
@@ -149,8 +149,8 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
  * render-only offset applied to child sprites, never to x/y) so this is a pure i+j sort key.
  * @param {object} instance
  */
-export function getInstanceZIndex(instance: Point & { zIndexOffset?: number }): number {
-  const pos = isometricToCartesian(instance.x, instance.y)
+export function getInstanceZIndex(instance: Point & { z?: number | null; zIndexOffset?: number }): number {
+  const pos = isometricToCartesian(instance.x, instance.y + getReliefLiftPixels(instance.z))
   return pos[0] + pos[1] + (instance.zIndexOffset ?? 0)
 }
 
@@ -159,7 +159,7 @@ export function getInstanceZIndex(instance: Point & { zIndexOffset?: number }): 
  * @param {number} level
  */
 export function getReliefLiftPixels(level: number | null | undefined): number {
-  return (level ?? 0) * RELIEF_SPRITE_LIFT_PER_STEP
+  return (level ?? 0) * CELL_DEPTH
 }
 
 /**

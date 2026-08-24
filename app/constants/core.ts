@@ -2,13 +2,9 @@ export const CELL_WIDTH = 64
 export const CELL_HEIGHT = 32
 export const CELL_DEPTH = 16
 
-// Sole visual elevation offset per relief step. Entity x/y are always flat (relief never affects
-// pathing/collision/zIndex) — this is the only place relief becomes visible, applied to sprite/
-// shadow/equipment layers only. Matches the terrain border art (checking terrain/*/texture.png:
-// the lighter/darker riser band between the flat top and the ground in front of it is a full
-// CELL_DEPTH-tall cliff face, not a gradual ramp), so the lift reads as "climbing that cliff"
-// instead of a faint nudge.
-export const RELIEF_SPRITE_LIFT_PER_STEP = CELL_DEPTH
+// CELL_DEPTH is also the sole visual elevation offset per relief step. Entity x/y are always flat
+// (relief never affects pathing/collision/zIndex); this is where relief becomes visible, applied
+// to sprite/shadow/equipment layers only.
 export const RELIEF_CLIMB_SPEED_MULTIPLIER = 0.8
 // Per-update easing toward the target lift (and the hero's slope slowdown). Path movement
 // feeds a continuous target (blended along the walk), so easing there only filters jitter.

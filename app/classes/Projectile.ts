@@ -29,6 +29,7 @@ import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomat
 import { fadeOutThenClear } from '../lib/entityFade'
 import { getEntityWeaponPower, getUnitCombatRange } from '../lib/equipmentStats'
 import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
+import { debugLog } from '../lib/debug'
 import {
   ARROW_GROUND_TIME,
   CELL_DEPTH,
@@ -106,6 +107,7 @@ const TREE_EMBED_DEPTH = 4
 const EMBED_DEPTH_JITTER = 3
 const EMBEDDED_TIP_DEPTH = 9
 const EMBEDDED_PARALLEL_CUT_THRESHOLD = 0.35
+const PROJECTILE_GEOMETRY_DEBUG = false
 
 type HalfPlane = {
   normalX: number
@@ -169,6 +171,7 @@ function getSortedTextureNames(textures: Record<string, Texture>) {
 }
 
 function debugProjectileGeometry(projectile: Projectile, destinationPoint: Point): void {
+  if (!PROJECTILE_GEOMETRY_DEBUG) return
   if (!projectile.type.includes('Arrow')) return
   const now = Date.now()
   if (now - lastProjectileGeometryLogAt < PROJECTILE_GEOMETRY_DEBUG_THROTTLE_MS) return
@@ -185,7 +188,7 @@ function debugProjectileGeometry(projectile: Projectile, destinationPoint: Point
   const targetPoint = projectile.target ?? projectile.destination
   const targetLabel = targetPoint && 'label' in targetPoint ? targetPoint.label : undefined
   const targetType = targetPoint && 'type' in targetPoint ? targetPoint.type : undefined
-  console.debug('[projectile-arrow-geometry]', {
+  debugLog(PROJECTILE_GEOMETRY_DEBUG, '[projectile-arrow-geometry]', {
     ownerLabel: projectile.owner.label,
     ownerType: projectile.owner.type,
     ownerWork: (projectile.owner as UnitEntity).work,

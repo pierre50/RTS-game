@@ -2,7 +2,7 @@ import { PLAYER_TYPES, UNIT_TYPES } from '../constants'
 import type { PlayerLike } from '../types/player'
 import type { UnitEntity } from '../types/entities'
 
-export const BANDIT_UNIT_TYPES = new Set<string>([
+const BANDIT_UNIT_TYPES = new Set<string>([
   UNIT_TYPES.banditChief,
   UNIT_TYPES.banditSword,
   UNIT_TYPES.banditArcher,
@@ -47,8 +47,4 @@ export function isBanditUnit(unit?: UnitEntity | null): boolean {
       ownerName.includes('bandit') ||
       ownerLabel.includes('bandit')
   )
-}
-
-export function isCampBanditUnit(unit?: UnitEntity | null): boolean {
-  return Boolean(unit && isBanditUnitType(unit.type) && isBanditOwner(unit.owner) && (unit.campPatrolAnchor || unit.banditCampAnchor))
 }

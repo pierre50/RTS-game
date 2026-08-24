@@ -35,7 +35,6 @@ type AIThreatRuntime = {
 }
 type AIPlayerMemoryState = PlayerLike & {
   phase: string
-  lastAttackWaveAt: number
   getNow(): number
   enemyUnitMemory: Map<string, AIEnemyMemoryRuntime>
   enemyBuildingMemory: Map<string, AIEnemyMemoryRuntime>
@@ -181,13 +180,7 @@ export function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, con
   const now = aiPlayer.getNow()
   const validPhases = new Set(['economy', 'military_build', 'attack'])
   if (state.phase && validPhases.has(state.phase)) {
-    aiPlayer.phase = state.phase
-  }
-
-  if (Number.isFinite(state.lastAttackWaveAgo)) {
-    aiPlayer.lastAttackWaveAt = now - Math.max(0, state.lastAttackWaveAgo ?? 0)
-  } else if (Number.isFinite(state.lastAttackWaveAt) && Number.isFinite(state.savedAt)) {
-    aiPlayer.lastAttackWaveAt = now - Math.max(0, (state.savedAt ?? 0) - (state.lastAttackWaveAt ?? 0))
+    aiPlayer.phase = state.phase === 'attack' ? 'military_build' : state.phase
   }
 
   const restoreMemories = (

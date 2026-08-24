@@ -11,11 +11,11 @@ export type EntityHealthDisplayOptions = {
   player?: PlayerLike | null
 }
 
-export function shouldShowEntityHealthBar(entity: RuntimeEntity): boolean {
+function shouldShowEntityHealthBar(entity: RuntimeEntity): boolean {
   return Boolean(entity.selected || entity.shouldKeepHealthBarVisible?.())
 }
 
-export function isEntitySelectedForInfo(entity: RuntimeEntity, player?: PlayerLike | null): boolean {
+function isEntitySelectedForInfo(entity: RuntimeEntity, player?: PlayerLike | null): boolean {
   return Boolean(
     player?.selectedUnit === entity || player?.selectedBuilding === entity || player?.selectedOther === entity
   )

@@ -1,17 +1,8 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadSelection() {
-  const filename = path.join(__dirname, '../app/lib/graphics/selection.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
   const mocks = {
     'pixi.js': {
       Graphics: class {
@@ -30,10 +21,11 @@ function loadSelection() {
       COLOR_GREEN: 0x00ff00,
       LABEL_TYPES: { selection: 'selection' },
     },
+    '../grid/cells': {
+      getBuildingFootprintCells: () => [],
+    },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
+  return loadTsModule('app/lib/graphics/selection.ts', { mocks })
 }
 
 test('blinking selection marker tracks visual relief lift', () => {

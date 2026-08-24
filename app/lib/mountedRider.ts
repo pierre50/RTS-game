@@ -1,18 +1,18 @@
 export const MOUNTED_RIDER_LEGS_SHEET = 'units/rider-legs'
 export const MOUNTED_RIDER_Y_OFFSET = -25
-export const MOUNTED_RIDER_VERTICAL_VIEW_X_OFFSET = 1
+const MOUNTED_RIDER_VERTICAL_VIEW_X_OFFSET = 1
 export const MOUNTED_RIDER_CUT_Y = 51
-export const MOUNTED_RIDER_LEGS_ATTACH_Y = 47
+const MOUNTED_RIDER_LEGS_ATTACH_Y = 47
 
 export type MountedRiderBaseDirection = 'north' | 'west' | 'south'
 
-export const MOUNTED_RIDER_LEG_TOP_BY_DIRECTION: Record<MountedRiderBaseDirection, number> = {
+const MOUNTED_RIDER_LEG_TOP_BY_DIRECTION: Record<MountedRiderBaseDirection, number> = {
   north: 24,
   west: 19,
   south: 24,
 }
 
-export const MOUNTED_RIDER_LEG_ALIGNMENT_BY_DIRECTION: Record<
+const MOUNTED_RIDER_LEG_ALIGNMENT_BY_DIRECTION: Record<
   MountedRiderBaseDirection,
   { riderCx: number; legsCx: number; extraX: number }
 > = {

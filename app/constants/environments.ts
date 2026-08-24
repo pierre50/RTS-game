@@ -7,12 +7,12 @@ export const DEFAULT_ENVIRONMENT_ID: EnvironmentId = 'Temperate'
 export const ENVIRONMENT_IDS: EnvironmentId[] = ['Temperate', 'BlackForest', 'Jungle', 'Desert']
 
 // Palette source: scripts/retro_palette/duel.hex.
-export const TEMPERATE_WATER_BACKGROUND_COLOR = 0x006b6d
-export const BLACK_FOREST_WATER_BACKGROUND_COLOR = 0x07487c
-export const JUNGLE_WATER_BACKGROUND_COLOR = 0x008279
-export const DESERT_WATER_BACKGROUND_COLOR = 0x328ca7
+const TEMPERATE_WATER_BACKGROUND_COLOR = 0x006b6d
+const BLACK_FOREST_WATER_BACKGROUND_COLOR = 0x07487c
+const JUNGLE_WATER_BACKGROUND_COLOR = 0x008279
+const DESERT_WATER_BACKGROUND_COLOR = 0x328ca7
 
-export const WATER_BACKGROUND_COLORS_BY_ENVIRONMENT: Record<EnvironmentId, number> = {
+const WATER_BACKGROUND_COLORS_BY_ENVIRONMENT: Record<EnvironmentId, number> = {
   Temperate: TEMPERATE_WATER_BACKGROUND_COLOR,
   BlackForest: BLACK_FOREST_WATER_BACKGROUND_COLOR,
   Jungle: JUNGLE_WATER_BACKGROUND_COLOR,

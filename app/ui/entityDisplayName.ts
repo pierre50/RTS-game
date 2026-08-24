@@ -18,7 +18,7 @@ function translateTypeKey(key: string | undefined): string {
   return translated === key ? humanizeTypeKey(key) : translated
 }
 
-export function getBuildingDisplayType(building: BuildingEntity): string {
+function getBuildingDisplayType(building: BuildingEntity): string {
   return building.type || building.assetType || ''
 }
 

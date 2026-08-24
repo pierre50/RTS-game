@@ -104,6 +104,7 @@ function loadControls() {
     },
     '../lib': {
       isometricToCartesian: () => [0, 0],
+      getReliefOffset: () => 0,
       pointsDistance: () => 0,
       instanceContactInstance: () => true,
     },

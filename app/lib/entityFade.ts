@@ -38,6 +38,13 @@ function nextFadeToken(entity: FadeableEntity): number {
   return (previous?.token ?? 0) + 1
 }
 
+export function cancelFade(entity: FadeableEntity): void {
+  const previous = fadeTaskStates.get(entity)
+  if (!previous) return
+  previous.scheduler.remove(previous.taskId)
+  fadeTaskStates.delete(entity)
+}
+
 export function fadeOut(entity: FadeableEntity, durationMs: number, onComplete?: () => void): void {
   const token = nextFadeToken(entity)
   const scheduler = entity.context?.scheduler

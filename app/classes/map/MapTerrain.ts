@@ -16,6 +16,7 @@ import {
   getWaterBorderFrame,
   hasUnsupportedTransition,
 } from '../../lib/terrain/topology'
+import { debugLog } from '../../lib/debug'
 import type { GridPosition } from '../../types/grid'
 import type * as MapTypes from '../../types/map'
 import type { TextureRef } from '../../lib'
@@ -34,6 +35,7 @@ type TerrainConfig = {
 const BORDER_SHEETS = {
   waterDesertSand: 'desert-sand-water-border',
 } as const
+const TERRAIN_RELIEF_DEBUG = false
 
 type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
 
@@ -863,7 +865,10 @@ export class MapTerrain {
         } else if (w || e) {
           cell.setReliefBorder?.('018', CELL_DEPTH / 2)
         } else if (nw || ne || sw || se) {
-          console.log(`[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nw} NE=${ne} SW=${sw} SE=${se}`)
+          debugLog(
+            TERRAIN_RELIEF_DEBUG,
+            `[relief] UNHANDLED diagonal at [${i},${j}] z=${cell.z} NW=${nw} NE=${ne} SW=${sw} SE=${se}`
+          )
         }
       }
     }

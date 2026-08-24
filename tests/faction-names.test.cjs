@@ -44,14 +44,29 @@ test.afterEach(() => {
 })
 
 test('faction name prefixes are translated in French', () => {
-  const { createFactionName } = loadFactionsWithLang('fr')
+  const { createFactionSave } = loadFactionsWithLang('fr')
 
-  assert.match(createFactionName('Greek', 'seed2'), /^Maison /)
+  assert.match(
+    createFactionSave({
+      civilization: 'Greek',
+      homeWorldId: 'world',
+      id: 'seed2',
+      initialScore: 0,
+      now: 0,
+    }).name,
+    /^Maison /
+  )
 })
 
 test('faction name prefixes are translated in English', () => {
-  const { createFactionName } = loadFactionsWithLang('en')
-  const name = createFactionName('Greek', 'seed2')
+  const { createFactionSave } = loadFactionsWithLang('en')
+  const name = createFactionSave({
+    civilization: 'Greek',
+    homeWorldId: 'world',
+    id: 'seed2',
+    initialScore: 0,
+    now: 0,
+  }).name
 
   assert.match(name, /^House /)
   assert.doesNotMatch(name, /^Maison /)

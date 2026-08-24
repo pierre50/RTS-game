@@ -17,7 +17,7 @@ export type DevWeatherPhase =
   | 'clearing'
   | 'night'
 
-export type DevDayNightLike = {
+type DevDayNightLike = {
   debugState?(): object
   forceNextDay?(): void
   getColorAdjustment?(): DayNightColorAdjustment
@@ -28,14 +28,14 @@ export type DevDayNightLike = {
   state?: DayNightStateLike
 }
 
-export type DevWeatherLike = {
+type DevWeatherLike = {
   debugState?(): object
   forcePhase?(phase: DevWeatherPhase): void
   getDarknessLevel?(): number
   phase?: DevWeatherPhase
 }
 
-export type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
+type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
 export type DevMapLike = {
   size: number

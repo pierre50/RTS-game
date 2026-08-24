@@ -1,4 +1,4 @@
-export type PlayerNameGender = 'male' | 'female'
+type PlayerNameGender = 'male' | 'female'
 
 const CIVILIZATION_PLAYER_NAMES: Record<string, Record<PlayerNameGender, string[]>> = {
   Greek: {

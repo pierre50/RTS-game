@@ -23,20 +23,9 @@ import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
 import type { PlayerSetupConfig } from '../../types/save'
 import type { SaveEntityState } from '../../types/save'
-import type { GameContextLike } from '../../types/context'
+import type { MapRuntimeContext } from '../../types/context'
 
-export type MapContext = Omit<
-  Partial<GameContextLike>,
-  'controls' | 'map' | 'menu' | 'performance' | 'player' | 'players' | 'scheduler'
-> & {
-  controls?: GameContextLike['controls'] | null
-  map?: GameContextLike['map'] | null
-  menu?: GameContextLike['menu'] | null
-  performance?: GameContextLike['performance'] | null
-  player?: PlayerLike | null
-  players: PlayerLike[]
-  scheduler?: GameContextLike['scheduler'] | null
-}
+export type MapContext = MapRuntimeContext
 type InstanceBuckets = Array<Array<Set<RuntimeEntity>>>
 type GeneratedPosition = GridPosition | null
 type WaterOverlayTicker = {
@@ -47,7 +36,7 @@ type WaterBorderSurface = { sprite: { texture: Texture; destroyed?: boolean }; f
 
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
 const WATER_OVERLAY_FRAME_COUNT = 4
-const WATER_OVERLAY_FRAME_SPEED = 0.03
+const WATER_OVERLAY_FRAME_SPEED = 1 / 17
 const WATER_OVERLAY_ALPHA = 0.32
 const WATER_OVERLAY_MARGIN = CELL_WIDTH * 2
 const WATER_BACKGROUND_Z_INDEX = -3

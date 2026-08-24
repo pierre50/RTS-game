@@ -35,7 +35,7 @@ function parseHitPoints(value: string | number, totalHitPoints: string | number)
   }
 }
 
-export function syncHitPointsInfo(
+function syncHitPointsInfo(
   element: HitPointsFillElement,
   value: string | number,
   totalHitPoints?: string | number
@@ -58,7 +58,7 @@ export function syncHitPointsInfo(
   display?.style.setProperty('--entity-hit-points-percent', `${ratio * 100}%`)
 }
 
-export function createHitPointsInfo(
+function createHitPointsInfo(
   className: string,
   hitPoints: string | number,
   totalHitPoints: string | number

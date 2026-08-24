@@ -33,7 +33,7 @@ const DEFAULT_COMBAT_BEHAVIOR: Required<
   bravery: 0.35,
 }
 
-export const COMBAT_BEHAVIOR_PRESETS: Record<string, CombatBehaviorConfig> = {
+const COMBAT_BEHAVIOR_PRESETS: Record<string, CombatBehaviorConfig> = {
   animalAggressive: {
     recoveryMode: 'orbit',
     reengageEnergyRatio: 1,

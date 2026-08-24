@@ -99,8 +99,10 @@ function withMockDocument(callback) {
 
 test('hit point info syncs the display after it is attached to its wrapper', () => {
   withMockDocument(() => {
-    const { createHitPointsInfo } = loadBaseEntityInterface()
-    const wrapper = createHitPointsInfo('hit-points', 1, 300)
+    const { appendBaseEntityInfo } = loadBaseEntityInterface()
+    const element = new MockElement('div')
+    appendBaseEntityInfo(element, '', '', 1, 300, { hideType: true })
+    const wrapper = element.querySelector('.hit-points-display')
 
     assert.equal(wrapper.styles.get('--entity-hit-points-percent'), `${(1 / 300) * 100}%`)
     assert.equal(wrapper.querySelector('.hit-points').textContent, '1/300')
@@ -109,8 +111,10 @@ test('hit point info syncs the display after it is attached to its wrapper', () 
 
 test('hit point info syncs full health to a full bar', () => {
   withMockDocument(() => {
-    const { createHitPointsInfo } = loadBaseEntityInterface()
-    const wrapper = createHitPointsInfo('hit-points', 300, 300)
+    const { appendBaseEntityInfo } = loadBaseEntityInterface()
+    const element = new MockElement('div')
+    appendBaseEntityInfo(element, '', '', 300, 300, { hideType: true })
+    const wrapper = element.querySelector('.hit-points-display')
 
     assert.equal(wrapper.styles.get('--entity-hit-points-percent'), '100%')
   })
@@ -118,8 +122,10 @@ test('hit point info syncs full health to a full bar', () => {
 
 test('hit point info rounds decimal health for display', () => {
   withMockDocument(() => {
-    const { createHitPointsInfo } = loadBaseEntityInterface()
-    const wrapper = createHitPointsInfo('hit-points', 1.5, 100)
+    const { appendBaseEntityInfo } = loadBaseEntityInterface()
+    const element = new MockElement('div')
+    appendBaseEntityInfo(element, '', '', 1.5, 100, { hideType: true })
+    const wrapper = element.querySelector('.hit-points-display')
 
     assert.equal(wrapper.querySelector('.hit-points').textContent, '2/100')
   })
