@@ -3,6 +3,8 @@ import { AdjustmentFilter } from 'pixi-filters'
 import { sound, type IMediaInstance } from '@pixi/sound'
 import { DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS, SOUND_CUES, type EnvironmentId } from '../constants'
 import { playSoundCue } from '../lib'
+import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../lib/nightAmbience'
+import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../lib/oceanAmbience'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 
@@ -238,6 +240,10 @@ export class WeatherSystem {
   precipIntensity: number
   rainLoopHeavy: IMediaInstance | null
   rainLoopLight: IMediaInstance | null
+  nightLoop: IMediaInstance | null
+  nightVolume: number
+  oceanLoop: IMediaInstance | null
+  oceanVolume: number
   random: RandomFn
   screenRect: ScreenRect
   tintFilter: AdjustmentFilter
@@ -312,12 +318,18 @@ export class WeatherSystem {
 
     this.rainLoopLight = null
     this.rainLoopHeavy = null
+    this.nightLoop = null
+    this.nightVolume = 0
+    this.oceanLoop = null
+    this.oceanVolume = 0
     this.windLoopLight = null
     this.windLoopHeavy = null
     startAmbientLoop(SOUND_CUES.weather.rainLight, instance => (this.rainLoopLight = instance))
     startAmbientLoop(SOUND_CUES.weather.rainHeavy, instance => (this.rainLoopHeavy = instance))
     startAmbientLoop(SOUND_CUES.weather.windLight, instance => (this.windLoopLight = instance))
     startAmbientLoop(SOUND_CUES.weather.windHeavy, instance => (this.windLoopHeavy = instance))
+    startAmbientLoop(SOUND_CUES.weather.night, instance => (this.nightLoop = instance))
+    startAmbientLoop(SOUND_CUES.weather.ocean, instance => (this.oceanLoop = instance))
 
     this._onTick = ticker => {
       const update = () => this.update(ticker.deltaMS ?? ticker.elapsedMS ?? TARGET_FRAME_MS)
@@ -430,20 +442,28 @@ export class WeatherSystem {
     this.drawRainVeil()
     this.updateLightning(safeElapsedMs)
     this.updatePrecipitation(elapsedSeconds, mapShiftX, mapShiftY)
-    this.updateAmbientSound()
+    this.updateAmbientSound(elapsedSeconds)
     this.drawFlash()
   }
 
-  updateAmbientSound(): void {
+  updateAmbientSound(elapsedSeconds: number): void {
     const rainVolumes =
       this.phase === 'snow' || this.phase === 'sandstorm'
         ? { high: 0, low: 0 }
         : crossfadeVolumes(this.precipIntensity, AMBIENT_CROSSFADE_MID)
     const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
+    const nightTargetVolume = getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
+    const hero = this.context.controls?.heroUnit
+    const oceanTargetVolume =
+      hero && !hero.isDead && !hero.isDestroyed ? getOceanAmbienceTargetVolume(this.map.grid, hero) : 0
+    this.nightVolume = lerp(this.nightVolume, nightTargetVolume, elapsedSeconds * NIGHT_AMBIENCE_LERP_PER_SECOND)
+    this.oceanVolume = lerp(this.oceanVolume, oceanTargetVolume, elapsedSeconds * OCEAN_AMBIENCE_LERP_PER_SECOND)
     if (this.rainLoopLight) this.rainLoopLight.volume = rainVolumes.low * RAIN_LOOP_MAX_VOLUME
     if (this.rainLoopHeavy) this.rainLoopHeavy.volume = rainVolumes.high * RAIN_LOOP_MAX_VOLUME
     if (this.windLoopLight) this.windLoopLight.volume = windVolumes.low * WIND_LOOP_MAX_VOLUME
     if (this.windLoopHeavy) this.windLoopHeavy.volume = windVolumes.high * WIND_LOOP_MAX_VOLUME
+    if (this.nightLoop) this.nightLoop.volume = this.nightVolume
+    if (this.oceanLoop) this.oceanLoop.volume = this.oceanVolume
   }
 
   updateColor(elapsedSeconds: number): void {
@@ -684,6 +704,8 @@ export class WeatherSystem {
         y: Math.round(this.screenRect.y),
       },
       windX: Number(this.windX.toFixed(2)),
+      nightVolume: Number(this.nightVolume.toFixed(2)),
+      oceanVolume: Number(this.oceanVolume.toFixed(2)),
     }
   }
 
@@ -706,6 +728,8 @@ export class WeatherSystem {
     this.rainLoopHeavy?.stop()
     this.windLoopLight?.stop()
     this.windLoopHeavy?.stop()
+    this.nightLoop?.stop()
+    this.oceanLoop?.stop()
     this.log('destroyed')
   }
 }

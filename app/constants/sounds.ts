@@ -42,6 +42,8 @@ export const SOUND_CUES = {
     rainHeavy: 'weather/heavy-rain',
     windLight: 'weather/light-wind',
     windHeavy: 'weather/heavy-wind',
+    night: 'weather/night-ambience',
+    ocean: 'weather/ocean-ambience',
     thunder: ['weather/thunder-1', 'weather/thunder-2', 'weather/thunder-3'],
   },
 }
