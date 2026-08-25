@@ -17,7 +17,7 @@ import {
   getCurrentWorldState,
   isCampaignSave,
 } from '../serialization/CampaignSave'
-import { loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
+import { MapBlueprintLoadError, loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import { PerformanceMonitor } from '../services/PerformanceMonitor'
@@ -99,6 +99,8 @@ type MapInstance = RuntimeMapInstance & {
   blueprintInitialWaterBorderMs?: number
   blueprintResourceLoadMs?: number
 }
+
+type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
 
 type GameRuntimeContext = Omit<
   GameContextLike,
@@ -277,6 +279,18 @@ export default class Game extends Container {
     await this._yieldToBrowser()
   }
 
+  async _loadRequiredMapBlueprint(options: RequiredBlueprintOptions = {}) {
+    try {
+      return await loadPregeneratedMapBlueprint(options)
+    } catch (error) {
+      if (error instanceof MapBlueprintLoadError) {
+        console.error(`[maps] ${error.reason}: ${error.message}`)
+        throw new Error(t('mapBlueprintUnavailable'))
+      }
+      throw error
+    }
+  }
+
   async _acquireWakeLock(): Promise<void> {
     return acquireGameWakeLock(this)
   }
@@ -392,22 +406,22 @@ export default class Game extends Container {
     this._createUiRuntime()
 
     const mapGenerationStartedAt = performance.now()
-    const blueprint = await loadPregeneratedMapBlueprint({
+    const blueprint = await this._loadRequiredMapBlueprint({
       size: map.size,
       environment: map.environment,
     })
-    if (blueprint) {
-      await map.generateFromBlueprint(blueprint, {
-        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-      })
-      map.pregeneratedBlueprintId = blueprint.id
-      console.info(`[maps] Loaded pregenerated blueprint: ${blueprint.id}`)
-    } else {
-      await map.generateMapAsync(null, 0, {
-        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-      })
-      map.pregeneratedBlueprintId = null
-    }
+    await map.generateFromBlueprint(blueprint, {
+      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+    })
+    map.pregeneratedBlueprintId = blueprint.id
+    console.info('[maps] Loaded map', {
+      source: 'pregenerated-blueprint',
+      id: blueprint.id,
+      size: map.size,
+      environment: map.environment,
+      seed: map.seed,
+      spawns: blueprint.spawns?.length ?? map.playersPos?.length ?? 0,
+    })
     map.generationTimings = {
       terrainAndSpawns: performance.now() - mapGenerationStartedAt,
       ...(blueprint?.timings || {}),
@@ -466,24 +480,24 @@ export default class Game extends Container {
         : savedPlayers.length || null
 
     const blueprintId = world.pregeneratedBlueprintId
-    const blueprint = blueprintId
-      ? await loadPregeneratedMapBlueprint({
-          size: map.size,
-          id: String(blueprintId),
-        })
-      : null
-    if (blueprint) {
-      await map.generateFromBlueprint(blueprint, {
-        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-      })
-      map.pregeneratedBlueprintId = blueprint.id
-    } else {
-      if (blueprintId) console.warn(`[maps] Unable to reload pregenerated blueprint: ${blueprintId}`)
-      await map.generateMapAsync(positionsCount, 0, {
-        onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-      })
-      map.pregeneratedBlueprintId = null
-    }
+    if (!blueprintId) throw new Error(t('mapBlueprintUnavailable'))
+    const blueprint = await this._loadRequiredMapBlueprint({
+      size: map.size,
+      id: String(blueprintId),
+      positionsCount: positionsCount ?? undefined,
+    })
+    await map.generateFromBlueprint(blueprint, {
+      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
+    })
+    map.pregeneratedBlueprintId = blueprint.id
+    console.info('[maps] Loaded map', {
+      source: 'save-pregenerated-blueprint',
+      id: blueprint.id,
+      size: map.size,
+      environment: map.environment,
+      seed: map.seed,
+      spawns: blueprint.spawns?.length ?? map.playersPos?.length ?? 0,
+    })
     await map.prepareTerrainForSavedState({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })

@@ -1,16 +1,8 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
-import {
-  bindAnimatedSpriteToTicker,
-  changeSpritePalette,
-  changeSpriteColor,
-  getSpriteFrameSelection,
-} from '../../lib'
-import {
-  getAppearanceAgeSheetOverride,
-  getAppearanceLayerZIndex,
-} from '../../lib/lpc/appearanceLayers'
+import { bindAnimatedSpriteToTicker, changeSpritePalette, changeSpriteColor, getSpriteFrameSelection } from '../../lib'
+import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
@@ -80,15 +72,20 @@ function getLayerRenderState(
     unit.sprite.currentFrame >= layer.hideOnOrAfterFrame
   const equipmentKey = layer.equipmentKey
   const isLootedCorpseEquipment =
-    unit.isDead && Array.isArray(unit.lootEquipment) && equipmentKey != null && !unit.lootEquipment.includes(equipmentKey)
-  const actionWorkSheetOverride = actionWorkKey ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet] : undefined
+    unit.isDead &&
+    Array.isArray(unit.lootEquipment) &&
+    equipmentKey != null &&
+    !unit.lootEquipment.includes(equipmentKey)
+  const actionWorkSheetOverride = actionWorkKey
+    ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet]
+    : undefined
   const workSheetOverride = unit.work ? layer.workSheetOverrides?.[unit.work]?.[mountedRiderSheet] : undefined
   const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
   const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
   const isRangedActionSheet =
     sheet === SHEET_TYPES.action && (unit.type === UNIT_TYPES.bowman || unit.work === WORK_TYPES.hunter)
   const shootingSheetOverride = isRangedActionSheet
-    ? getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet
+    ? (getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet)
     : undefined
   const mountedSheetOverride =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
@@ -102,12 +99,15 @@ function getLayerRenderState(
     ageSheetOverride ??
     (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
   const playerColorVariant = unit.owner.color ? layer.playerColorVariants?.[unit.owner.color] : undefined
-  const appearanceVariant = layer.appearanceVariantKey ? unit.appearanceVariants?.[layer.appearanceVariantKey] : undefined
+  const appearanceVariant = layer.appearanceVariantKey
+    ? unit.appearanceVariants?.[layer.appearanceVariantKey]
+    : undefined
   const variantSheetId =
     baseSheetId && appearanceVariant
       ? `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
       : null
-  const basePlayerColorSheetId = baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
+  const basePlayerColorSheetId =
+    baseSheetId && playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
   const sheetId = variantSheetId && Assets.cache.has(variantSheetId) ? variantSheetId : basePlayerColorSheetId
   const spritesheet = sheetId ? getCachedSpritesheet(sheetId) : undefined
 
@@ -141,7 +141,16 @@ function getLayerRenderState(
       ? 0
       : Math.min(unit.sprite.currentFrame, Math.max(textures.length - 1, 0))
 
-  return { layer, mountedRiderSheet, mountedSheetOverride, textures, mirrored, frameIndex, layerZIndex: getAppearanceLayerZIndex({ layer, sheet: mountedRiderSheet }), spritesheet }
+  return {
+    layer,
+    mountedRiderSheet,
+    mountedSheetOverride,
+    textures,
+    mirrored,
+    frameIndex,
+    layerZIndex: getAppearanceLayerZIndex({ layer, sheet: mountedRiderSheet }),
+    spritesheet,
+  }
 }
 
 function syncAppearanceLayerSprite(
@@ -179,16 +188,21 @@ function syncAppearanceLayerSprite(
   if (state.layer.palette === 'player') {
     changeSpriteColor(layerSprite, unit.owner.color ?? '')
   } else if (state.layer.palette?.startsWith('hair:')) {
-    changeSpritePalette(layerSprite, state.layer.paletteSource ?? 'brown_hair', state.layer.palette.slice('hair:'.length))
+    changeSpritePalette(
+      layerSprite,
+      state.layer.paletteSource ?? 'brown_hair',
+      state.layer.palette.slice('hair:'.length)
+    )
   } else {
     layerSprite.filters = null
   }
   const spriteScale = unit.spriteScale ?? 1
   layerSprite.scale.x = state.mirrored ? -spriteScale : spriteScale
   layerSprite.scale.y = spriteScale
-  const defaultAnchor = (layerSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } }).defaultAnchor
+  const defaultAnchor = (layerSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
+    .defaultAnchor
   if (defaultAnchor) layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-  layerSprite.animationSpeed = state.spritesheet.data?.animationSpeed ?? 0.18
+  layerSprite.animationSpeed = state.spritesheet.data?.animationSpeed ?? 0.2
   layerSprite.onFrameChange =
     sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number'
       ? currentFrame => {

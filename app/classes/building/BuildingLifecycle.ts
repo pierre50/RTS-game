@@ -152,7 +152,7 @@ export class BuildingLifecycle {
       const data = (spritesheet?.data ?? {}) as BuildingSpritesheetData
       building.sprite.textures = frames
       building.sprite.loop = data.loop ?? true
-      building.sprite.animationSpeed = data.animationSpeed ?? 0.12
+      building.sprite.animationSpeed = data.animationSpeed ?? 0.2
       building.sprite.gotoAndPlay(0)
     }
 
@@ -199,7 +199,7 @@ export class BuildingLifecycle {
     fire.eventMode = 'none'
     fire.roundPixels = true
     fire.position.set(0, 10)
-    fire.animationSpeed = 0.2
+    fire.animationSpeed = 0.3
     fire.gotoAndPlay(0)
     building.addChild(fire)
   }
@@ -240,7 +240,7 @@ export class BuildingLifecycle {
         spriteFire.x = poses[i][0]
         spriteFire.y = poses[i][1]
         spriteFire.play()
-        spriteFire.animationSpeed = 0.2
+        spriteFire.animationSpeed = 0.3
         newFire.addChild(spriteFire)
       }
       building.addChild(newFire)

@@ -12,6 +12,13 @@ import {
   HERO_EQUIPMENT_SLOTS,
   unequipHeroInventorySlot,
 } from '../lib/equipmentLoot'
+import {
+  HERO_ARROW_CRAFT_RECIPES,
+  canCraftHeroRecipe,
+  craftHeroRecipe,
+  getMissingCraftResources,
+  type HeroCraftRecipe,
+} from '../lib/heroCrafting'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
 import { BUILDING_TYPES, SOUND_CUES } from '../constants'
@@ -27,10 +34,11 @@ import { getReservedGameplayHotkeys } from '../lib/settings'
 import { ModalTabs } from './Tabs'
 import type { RuntimeEntity } from '../types/entities'
 import type { FactionRelationState, FactionSave, WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
+import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
-type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
+type ActionMenuTab = 'info' | 'tools' | 'craft' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
 
 const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
 
@@ -53,6 +61,7 @@ export class InventoryManager {
   toolsPanel: HTMLDivElement
   minimapPanel: HTMLDivElement
   worldMapPanel: HTMLDivElement
+  craftPanel: HTMLDivElement
   constructionPanel: HTMLDivElement
   technologiesPanel: HTMLDivElement
   weaponPanel: HTMLDivElement
@@ -86,6 +95,8 @@ export class InventoryManager {
     this.minimapPanel.className = 'action-menu-page action-menu-minimap-page'
     this.worldMapPanel = document.createElement('div')
     this.worldMapPanel.className = 'action-menu-page action-menu-worldmap-page'
+    this.craftPanel = document.createElement('div')
+    this.craftPanel.className = 'action-menu-page action-menu-craft-page'
     this.technologiesPanel = document.createElement('div')
     this.technologiesPanel.className = 'action-menu-page action-menu-technologies-page'
     this.constructionPanel = document.createElement('div')
@@ -101,6 +112,7 @@ export class InventoryManager {
       [
         { id: 'info', label: t('inventoryTabInfo'), page: this.infoPanel },
         { id: 'tools', label: t('inventoryTabTools'), page: this.toolsPanel },
+        { id: 'craft', label: t('inventoryTabCraft'), page: this.craftPanel },
         { id: 'technologies', label: t('inventoryTabTechnologies'), page: this.technologiesPanel },
         { id: 'minimap', label: t('inventoryTabMinimap'), page: this.minimapPanel },
         { id: 'worldmap', label: t('inventoryTabWorldmap'), page: this.worldMapPanel },
@@ -203,6 +215,8 @@ export class InventoryManager {
 
     if (tab === 'technologies') {
       this.renderTechnologies()
+    } else if (tab === 'craft') {
+      this.renderCraft()
     } else if (tab === 'construction') {
       this.renderConstruction()
     } else if (tab === 'worldmap') {
@@ -618,6 +632,84 @@ export class InventoryManager {
       })
   }
 
+  formatResourceAmount(cost: ResourceAmount): string {
+    return Object.entries(cost)
+      .map(([resource, amount]) => `${amount} ${t(resource)}`)
+      .join(', ')
+  }
+
+  getCraftMissingResourceMessage(cost: ResourceAmount): string {
+    const { player } = this.menu.context
+    const missing = getMissingCraftResources(player, cost)
+    const resource = Object.keys(missing)
+      .map(key => t(key))
+      .join(', ')
+    return t('needMore', { resource })
+  }
+
+  createCraftButton(recipe: HeroCraftRecipe): HTMLButtonElement {
+    const { app, player } = this.menu.context
+    const hero = this.menu.context.controls.heroUnit
+    const disabled = !hero || !canCraftHeroRecipe(player, recipe)
+    const element = document.createElement('button')
+    element.type = 'button'
+    element.className = 'ui-btn ui-action-row inventory-craft-row'
+    element.disabled = disabled
+    element.setAttribute('aria-disabled', String(disabled))
+
+    const icon = document.createElement('span')
+    icon.className = 'technology-menu-icon inventory-craft-icon'
+    const canvas = document.createElement('canvas')
+    canvas.className = 'unit-avatar-frame inventory-slot-icon'
+    canvas.width = 64
+    canvas.height = 64
+    renderEquipmentAvatar(app, recipe.outputEquipment, canvas)
+    icon.appendChild(canvas)
+
+    const label = document.createElement('span')
+    label.className = 'technology-menu-label'
+    label.textContent = t(recipe.labelKey)
+
+    const meta = document.createElement('span')
+    meta.className = 'technology-menu-meta'
+    meta.textContent = t('craftRecipeMeta', {
+      count: recipe.outputCount,
+      cost: this.formatResourceAmount(recipe.cost),
+    })
+
+    element.appendChild(icon)
+    element.appendChild(label)
+    element.appendChild(meta)
+    this.menu.menuTooltip.bind(element, {
+      title: t(recipe.labelKey),
+      description: t('craftArrowDescription'),
+      meta: [t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) })],
+    })
+    element.addEventListener('pointerup', evt => {
+      evt.preventDefault()
+      evt.stopPropagation()
+      if (!hero) return
+      if (!craftHeroRecipe(player, hero, recipe)) {
+        this.menu.showMessage(this.getCraftMissingResourceMessage(recipe.cost), 'warning')
+        this.renderCraft()
+        return
+      }
+      this.menu.playUiClick()
+      this.menu.updateTopbar?.()
+      this.menu.showMessage(t('craftRecipeSuccess', { item: t(recipe.labelKey), count: recipe.outputCount }), 'success')
+      this.renderCraft()
+    })
+    return element
+  }
+
+  renderCraft(): void {
+    this.craftPanel.textContent = ''
+    this.menu.clearActionHotkeys()
+    for (const recipe of HERO_ARROW_CRAFT_RECIPES) {
+      this.craftPanel.appendChild(this.createCraftButton(recipe))
+    }
+  }
+
   syncTechnologyProgress(): void {}
 
   renderConstruction(): void {
@@ -683,12 +775,14 @@ export class InventoryManager {
       slot.classList.toggle('active', tool === equippedTool)
     }
     if (this.activeTab === 'tools') this.renderLootedEquipment()
+    if (this.activeTab === 'craft') this.renderCraft()
   }
 
   refresh(): void {
     if (!this.opened) return
     if (this.activeTab === 'tools') this.renderTools()
     if (this.activeTab === 'info') this.renderInfo()
+    if (this.activeTab === 'craft') this.renderCraft()
   }
 
   destroy(): void {

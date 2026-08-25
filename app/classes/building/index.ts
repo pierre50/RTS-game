@@ -11,8 +11,6 @@ import {
   getReliefLiftPixels,
   clearCellTerrainSet,
   drawInstanceBlinkingSelection,
-  getBuildingAsset,
-  getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
   canUpdateMinimap,
   updateInstanceVisibility,
@@ -27,6 +25,7 @@ import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
 import { BuildingCombat } from './BuildingCombat'
 import { onVisualSettingsChange } from '../../lib/settings'
+import { createBuildingEntityInterface } from './BuildingInterfaceSetup'
 import {
   clearBuildingRallyPoint,
   createBuildingShadow,
@@ -174,20 +173,7 @@ export class Building extends Instance implements BuildingEntity {
       : new Polygon([-32 * this.size, 0, 0, -16 * this.size, 32 * this.size, 0, 0, 16 * this.size])
     this.sprite.position.y = this.reliefLift
     this.shadow = this.createShadow()
-    const units = context.editor
-      ? []
-      : (this.units || []).map((key: string) => context.menu.getActionUnitButton(key, this))
-    this.interface = {
-      info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
-        const displayType = this.assetType || this.type
-        const assets = getBuildingAsset(displayType, getBuildingAssetOwner(this), Assets)
-        this.buildingInterface.renderInfo(element, assets as BuildingConfig, options)
-      },
-      menu:
-        this.owner.isPlayed || map.instantMode
-          ? [...units, ...(units.length ? [context.menu.getActionRallyPointButton()] : [])]
-          : [],
-    }
+    this.interface = createBuildingEntityInterface(this)
 
     // Set solid zone
     getBuildingFootprintCells(this.i, this.j, map.grid, this.size, (cell: RuntimeCell) => {

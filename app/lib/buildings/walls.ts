@@ -119,7 +119,9 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
   if (existingFill) existingFill.destroy()
 
   if (getWallLevel(wall.owner) === 1 && frame === 2) {
-    const frames = Array.from({ length: 6 }, (_, i) => getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets))
+    const frames = Array.from({ length: 6 }, (_, i) =>
+      getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets)
+    )
     const flagSprite = new AnimatedSprite(frames)
     flagSprite.label = LABEL_TYPES.deco
     if (frames[0].defaultAnchor) {
@@ -129,7 +131,7 @@ export function updateWallTexture(wall?: WallBuilding | null): void {
     flagSprite.y = -20
     flagSprite.eventMode = 'none'
     flagSprite.roundPixels = true
-    flagSprite.animationSpeed = 0.15
+    flagSprite.animationSpeed = 0.2
     changeSpriteColor(flagSprite as RecolorableSprite, wall.owner.color ?? 'blue')
     bindAnimatedSpriteToTicker(flagSprite, wall.context.app)
     flagSprite.play()

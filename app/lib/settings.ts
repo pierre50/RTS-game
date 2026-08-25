@@ -10,7 +10,7 @@ const KEY_BINDINGS_KEY = 'controls_key_bindings'
 const GAMEPAD_ENABLED_KEY = 'controls_gamepad_enabled'
 
 const DEFAULT_VOLUME = 0.6
-const DEFAULT_SPEED = 1.5
+const DEFAULT_SPEED = 1
 const DEFAULT_CAMERA_ZOOM = 1
 const DEFAULT_SCREEN_BRIGHTNESS = 1
 export const DISPLAY_SCALE = 1
@@ -96,16 +96,22 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
 const CONTROL_BINDING_ACTIONS = Object.keys(DEFAULT_KEY_BINDINGS) as ControlBindingAction[]
 
 export const SPEED_PRESETS = [
-  { key: 'speedSlow', value: 1.25 },
-  { key: 'speedNormal', value: 1.5 },
-  { key: 'speedFast', value: 2 },
+  { key: 'speedSlow', value: 0.8 },
+  { key: 'speedNormal', value: 1 },
+  { key: 'speedFast', value: 1.5 },
 ]
 export const CAMERA_ZOOM_PRESETS = [
   { key: 'zoomVeryClose', value: 3 },
   { key: 'zoomClose', value: 2 },
   { key: 'zoomStandard', value: 1 },
 ]
-const DEV_SPEED_PRESETS = [...SPEED_PRESETS, { key: '4x', value: 4 }, { key: '8x', value: 8 }]
+const DEV_SPEED_PRESETS = [
+  ...SPEED_PRESETS,
+  { key: '0.5x', value: 0.5 },
+  { key: '2x', value: 2 },
+  { key: '4x', value: 4 },
+  { key: '8x', value: 8 },
+]
 export const SPEED_VALUES = DEV_SPEED_PRESETS.map(({ value }) => String(value))
 export const GAME_SPEED_USAGE = `speed <${SPEED_VALUES.join('|')}>`
 

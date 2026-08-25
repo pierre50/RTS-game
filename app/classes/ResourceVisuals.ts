@@ -1,5 +1,5 @@
 import { AnimatedSprite, Assets, Rectangle, Sprite, Texture, type Ticker } from 'pixi.js'
-import { bindAnimatedSpriteToTicker, getTextureSheet } from '../lib'
+import { bindAnimatedSpriteToTicker, getTextureByFrame, getTextureSheet, parseTextureRef } from '../lib'
 import { LABEL_TYPES, RESOURCE_TYPES } from '../constants'
 import { getResourceWindAnimationEnabled, getShadowsEnabled } from '../lib/settings'
 
@@ -48,15 +48,24 @@ function getLifecycleSheetId(asset: string | { sheet: string } | undefined): str
   return typeof asset === 'string' ? asset : asset?.sheet
 }
 
-function getShadowTexture(sheet: string, spriteTexture: Texture, spriteAnchor: { x: number; y: number }): Texture | null {
+function getShadowTexture(
+  textureName: string,
+  spriteTexture: Texture,
+  spriteAnchor: { x: number; y: number }
+): Texture | null {
+  const sheet = getTextureSheet(textureName)
   const shadowAtlasId = `${sheet}/shadow`
-  const shadowAtlas = Assets.cache.has(shadowAtlasId)
-    ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null)
+  const shadowAsset = Assets.cache.has(shadowAtlasId)
+    ? ((Assets.cache.get(shadowAtlasId) as (Texture & { textures?: Record<string, Texture> }) | undefined) ?? null)
     : null
-  if (!shadowAtlas) return null
+  if (!shadowAsset) return null
+
+  if (shadowAsset.textures) {
+    return getTextureByFrame(shadowAtlasId, parseTextureRef(textureName).frame, Assets)
+  }
 
   const { frame, rotate } = spriteTexture
-  const source = shadowAtlas.source
+  const source = shadowAsset.source
   const atlasExtraWidth = Math.max(0, source.width - spriteTexture.source.width)
   const atlasExtraHeight = Math.max(0, source.height - spriteTexture.source.height)
   const atlasPadX = atlasExtraWidth / 2
@@ -174,7 +183,7 @@ export function updateWindMotion(resource: ResourceVisualOwner, deltaMS: number)
 export function createShadow(resource: ResourceVisualOwner): ResourceShadow | null {
   const shadowTexture =
     resource.sprite && resource.textureName
-      ? getShadowTexture(getTextureSheet(resource.textureName), resource.sprite.texture, resource.sprite.anchor)
+      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
       : null
   resource.usesTextureShadow = Boolean(shadowTexture)
   const shadow = shadowTexture
@@ -202,7 +211,7 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
   shadow.visible = getShadowsEnabled() && resource.visible && !resource.isDestroyed
   if (resource.usesTextureShadow && shadow instanceof Sprite) {
     const shadowTexture = resource.textureName
-      ? getShadowTexture(getTextureSheet(resource.textureName), resource.sprite.texture, resource.sprite.anchor)
+      ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
       : null
     if (shadowTexture) {
       shadow.texture = shadowTexture
@@ -237,7 +246,10 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
   }
   shadow.alpha = SHADOW_MASK_ALPHA
   shadow.rotation = 0
-  shadow.scale.set(Math.abs(resource.sprite.scale.x) * SHADOW_SCALE_X, Math.abs(resource.sprite.scale.y) * SHADOW_SCALE_Y)
+  shadow.scale.set(
+    Math.abs(resource.sprite.scale.x) * SHADOW_SCALE_X,
+    Math.abs(resource.sprite.scale.y) * SHADOW_SCALE_Y
+  )
   shadow.position.set(resource.x, resource.y + (resource.reliefLift ?? 0))
 }
 

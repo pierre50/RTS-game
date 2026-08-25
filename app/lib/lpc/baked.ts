@@ -80,7 +80,9 @@ function isDefaultHeroWeaponLayer(layer: UnitAppearanceLayerConfig, unit: UnitEn
   if (!usesAssignableHeroWeapons(unit) || !layer.equipmentKey) return false
   if (layer.workTypes?.includes('heroSword')) return true
   if (!layer.workTypes?.includes(WORK_TYPES.hunter)) return false
-  return layer.equipmentKey === 'quiver' || layer.equipmentKey.startsWith('bow') || layer.equipmentKey.startsWith('arrow_')
+  return (
+    layer.equipmentKey === 'quiver' || layer.equipmentKey.startsWith('bow') || layer.equipmentKey.startsWith('arrow_')
+  )
 }
 
 const UNIT_TYPE_TO_BAKED_UNIT: Partial<Record<string, BakedUnitType>> = {
@@ -216,7 +218,7 @@ function bakedFrameSuffix(alias: string): string {
 }
 
 function bakedSheetAnimationSpeed(alias: string): number {
-  return alias.endsWith('/corpse') ? 0 : 0.2
+  return alias.endsWith('/corpse') ? 0 : 0.3
 }
 
 function registerAliasFromAtlas(alias: string, atlasAlias: string): void {

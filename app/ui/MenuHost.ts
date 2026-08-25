@@ -33,6 +33,7 @@ export interface MenuHost {
   dayTime: HTMLDivElement
   selection: RuntimeEntity | null
   showMessage(message: string, type?: string): void
+  updateTopbar?(): void
   updateActionTarget(): void
   getMessage(cost: ResourceAmount): string
   getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec

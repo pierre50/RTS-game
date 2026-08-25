@@ -287,7 +287,7 @@ function getWalkingFallbackTexture(
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   const sheets = instance as UnitTextureInstance & MutableSheetObject
   const animationSpeed: Record<string, number> = {
-    standingSheet: 0.15,
+    standingSheet: 0.2,
     corpseSheet: 0,
   }
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
@@ -359,12 +359,12 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   instance.currentSheet = sheet
   const directionCount =
     mountedActionSheet && sheet !== SHEET_TYPES.action
-      ? instance.sheetDirectionCounts?.[SHEET_TYPES.action] ?? instance.sheetDirectionCounts?.[sheet] ?? null
-      : instance.sheetDirectionCounts?.[sheet] ?? null
+      ? (instance.sheetDirectionCounts?.[SHEET_TYPES.action] ?? instance.sheetDirectionCounts?.[sheet] ?? null)
+      : (instance.sheetDirectionCounts?.[sheet] ?? null)
   const directionOrderOverride =
     mountedActionSheet && sheet !== SHEET_TYPES.action
-      ? instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null
-      : instance.sheetDirectionOrders?.[sheet] ?? null
+      ? (instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null)
+      : (instance.sheetDirectionOrders?.[sheet] ?? null)
   const { textures, mirrored } = getSpriteFrameSelection(
     selectedSheet.textures,
     instance.degree,
@@ -379,7 +379,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   if (defaultAnchor) {
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
-  instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.3
+  instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.4
   // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
   // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
   // (e.g. wildlife idle animations) is real art and should play normally.

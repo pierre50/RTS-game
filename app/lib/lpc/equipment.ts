@@ -772,7 +772,7 @@ function frameSuffixForAlias(alias: string): string {
 }
 
 function animationSpeedForEquipmentSheet(sheet: EquipmentLoadSheet): number {
-  return sheet === 'corpse' ? 0 : 0.2
+  return sheet === 'corpse' ? 0 : 0.3
 }
 
 function equipmentSheets(equipment: DynamicEquipmentKey, layer: EquipmentLayer): readonly EquipmentSheet[] {

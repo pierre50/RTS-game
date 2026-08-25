@@ -12,7 +12,7 @@ function deepClone<T>(value: T): T {
 function arrowProjectileConfig(assets: string, overrides: Partial<ProjectileConfig> = {}): ProjectileConfig {
   return {
     size: 3,
-    speed: 20,
+    speed: 25,
     assets,
     isAnimated: true,
     rotateSprite: true,
@@ -50,8 +50,8 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     selectionFactor: 0.75,
     totalHitPoints: 36,
     sight: 7,
-    speed: 0.95,
-    attackRecoveryMs: 950,
+    speed: 1.2,
+    attackRecoveryMs: 760,
     trainingTime: 0,
     equipment: [
       'axe_ceramic',
@@ -69,8 +69,8 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     selectionFactor: 0.65,
     totalHitPoints: 20,
     sight: 7,
-    speed: 1,
-    attackRecoveryMs: 800,
+    speed: 1.3,
+    attackRecoveryMs: 640,
     trainingTime: 0,
     equipment: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
     combatBehaviorPreset: 'meleeAggressive',
@@ -84,8 +84,8 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     selectionFactor: 0.6,
     totalHitPoints: 16,
     sight: 8,
-    speed: 1,
-    attackRecoveryMs: 1000,
+    speed: 1.3,
+    attackRecoveryMs: 800,
     trainingTime: 0,
     equipment: ['quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
     projectile: 'Arrow',
@@ -117,7 +117,7 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   },
   Stable: {
     units: ['Fantassin', 'Bowman'],
-    mountingTime: 20,
+    mountingTime: 16,
   },
 }
 

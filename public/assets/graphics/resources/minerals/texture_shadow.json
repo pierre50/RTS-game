@@ -1,297 +1,303 @@
 {
   "frames": {
-    "000_graphics_animals_boar_standing.png": {
+    "000_graphics_resources_minerals_gold_000_shadow.png": {
       "frame": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.48571428568
       }
     },
-    "001_graphics_animals_boar_standing.png": {
+    "001_graphics_resources_minerals_gold_001_shadow.png": {
       "frame": {
-        "x": 64,
+        "x": 87,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.52857142856
       }
     },
-    "002_graphics_animals_boar_standing.png": {
+    "002_graphics_resources_minerals_gold_002_shadow.png": {
       "frame": {
-        "x": 128,
+        "x": 174,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.55714285712
       }
     },
-    "003_graphics_animals_boar_standing.png": {
+    "003_graphics_resources_minerals_stone_000_shadow.png": {
       "frame": {
-        "x": 192,
+        "x": 261,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.4090909090666667
       }
     },
-    "004_graphics_animals_boar_standing.png": {
+    "004_graphics_resources_minerals_stone_001_shadow.png": {
       "frame": {
-        "x": 256,
+        "x": 349,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 80,
+        "h": 66
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 80,
+        "h": 66
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 80,
+        "h": 66
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.4999999999878788
       }
     },
-    "005_graphics_animals_boar_standing.png": {
+    "005_graphics_resources_minerals_stone_002_shadow.png": {
       "frame": {
-        "x": 320,
+        "x": 429,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 88,
+        "h": 66
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.5151515151939394
       }
     },
-    "006_graphics_animals_boar_standing.png": {
+    "006_graphics_resources_minerals_copper_000_shadow.png": {
       "frame": {
-        "x": 384,
+        "x": 517,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.48571428568
       }
     },
-    "007_graphics_animals_boar_standing.png": {
+    "007_graphics_resources_minerals_copper_001_shadow.png": {
       "frame": {
-        "x": 448,
+        "x": 604,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.52857142856
       }
     },
-    "008_graphics_animals_boar_standing.png": {
+    "008_graphics_resources_minerals_copper_002_shadow.png": {
       "frame": {
-        "x": 512,
+        "x": 691,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.55714285712
       }
     },
-    "009_graphics_animals_boar_standing.png": {
+    "009_graphics_resources_minerals_iron_000_shadow.png": {
       "frame": {
-        "x": 576,
+        "x": 778,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.48571428568
       }
     },
-    "010_graphics_animals_boar_standing.png": {
+    "010_graphics_resources_minerals_iron_001_shadow.png": {
       "frame": {
-        "x": 640,
+        "x": 865,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.52857142856
       }
     },
-    "011_graphics_animals_boar_standing.png": {
+    "011_graphics_resources_minerals_iron_002_shadow.png": {
       "frame": {
-        "x": 704,
+        "x": 952,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": {
         "x": 0,
         "y": 0,
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "sourceSize": {
-        "w": 64,
-        "h": 64
+        "w": 87,
+        "h": 70
       },
       "anchor": {
         "x": 0.5,
-        "y": 0.86
+        "y": 0.55714285712
       }
     }
   },
   "meta": {
-    "image": "texture.png",
-    "scale": "1"
-  },
-  "animationSpeed": 0.1
+    "app": "merge_resource_atlases.py",
+    "version": "1.0.0",
+    "image": "texture_shadow.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1039,
+      "h": 70
+    },
+    "scale": 1
+  }
 }

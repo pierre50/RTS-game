@@ -49,6 +49,6 @@
     "size": { "w": 350, "h": 77 },
     "scale": 1
   },
-  "animationSpeed": 0.00037,
+  "animationSpeed": 0,
   "loop": false
 }

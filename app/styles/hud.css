@@ -632,6 +632,7 @@
 
 .inventory-tools-page,
 .action-menu-construction-page,
+.action-menu-craft-page,
 .action-menu-technologies-page {
   display: flex;
   flex-wrap: wrap;
@@ -639,7 +640,8 @@
   align-content: flex-start;
 }
 
-.action-menu-technologies-page {
+.action-menu-technologies-page,
+.action-menu-craft-page {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
   gap: var(--ui-gap-8);
@@ -965,7 +967,8 @@
   white-space: nowrap;
 }
 
-.action-menu-technologies-page > .ui-action-row {
+.action-menu-technologies-page > .ui-action-row,
+.action-menu-craft-page > .ui-action-row {
   position: relative;
   gap: 2px var(--ui-gap-8);
 }
@@ -989,6 +992,11 @@
   width: var(--ui-slot-size);
   height: var(--ui-slot-size);
   object-fit: none;
+}
+
+.inventory-craft-icon {
+  min-width: 64px;
+  min-height: 64px;
 }
 
 .technology-menu-label {

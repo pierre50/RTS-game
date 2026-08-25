@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-08-25T15:36:28.110Z",
+  "generatedAt": "2026-08-25T19:14:27.338Z",
   "score": 90,
   "grade": "A",
   "minimumScore": 90,
   "qualityGate": "pass",
   "totals": {
-    "files": 354,
-    "loc": 64706,
-    "codeLines": 57548,
-    "branches": 8852,
-    "functions": 7347
+    "files": 358,
+    "loc": 65056,
+    "codeLines": 57861,
+    "branches": 8874,
+    "functions": 7370
   },
   "checks": [
     {
@@ -73,30 +73,6 @@
   },
   "topRisk": [
     {
-      "file": "app/classes/building/BuildingProduction.ts",
-      "loc": 384,
-      "codeLines": 356,
-      "branchCount": 95,
-      "functionCount": 50,
-      "importCount": 11,
-      "exportCount": 1,
-      "maxBlockLines": 37,
-      "churn90d": 27,
-      "risk": 233.1
-    },
-    {
-      "file": "app/classes/building/index.ts",
-      "loc": 468,
-      "codeLines": 405,
-      "branchCount": 36,
-      "functionCount": 53,
-      "importCount": 17,
-      "exportCount": 2,
-      "maxBlockLines": 131,
-      "churn90d": 42,
-      "risk": 232.5
-    },
-    {
       "file": "app/classes/unit/UnitActions.ts",
       "loc": 341,
       "codeLines": 317,
@@ -105,8 +81,32 @@
       "importCount": 16,
       "exportCount": 1,
       "maxBlockLines": 65,
-      "churn90d": 42,
-      "risk": 230.5
+      "churn90d": 43,
+      "risk": 233.5
+    },
+    {
+      "file": "app/controllers/HeroController.ts",
+      "loc": 475,
+      "codeLines": 404,
+      "branchCount": 67,
+      "functionCount": 63,
+      "importCount": 16,
+      "exportCount": 1,
+      "maxBlockLines": 48,
+      "churn90d": 40,
+      "risk": 232.4
+    },
+    {
+      "file": "app/lib/heroTools.ts",
+      "loc": 336,
+      "codeLines": 316,
+      "branchCount": 60,
+      "functionCount": 36,
+      "importCount": 13,
+      "exportCount": 10,
+      "maxBlockLines": 49,
+      "churn90d": 44,
+      "risk": 230.4
     },
     {
       "file": "app/classes/map/MapGeneration.ts",
@@ -133,40 +133,16 @@
       "risk": 229.4
     },
     {
-      "file": "app/controllers/HeroController.ts",
-      "loc": 475,
-      "codeLines": 404,
-      "branchCount": 67,
-      "functionCount": 63,
-      "importCount": 16,
-      "exportCount": 1,
-      "maxBlockLines": 48,
-      "churn90d": 39,
-      "risk": 229.4
-    },
-    {
-      "file": "app/lib/heroTools.ts",
-      "loc": 336,
-      "codeLines": 316,
-      "branchCount": 60,
-      "functionCount": 36,
-      "importCount": 13,
-      "exportCount": 10,
-      "maxBlockLines": 49,
-      "churn90d": 43,
-      "risk": 227.4
-    },
-    {
       "file": "app/screens/Game.ts",
-      "loc": 694,
-      "codeLines": 636,
+      "loc": 708,
+      "codeLines": 648,
       "branchCount": 48,
-      "functionCount": 96,
+      "functionCount": 94,
       "importCount": 33,
       "exportCount": 1,
       "maxBlockLines": 54,
-      "churn90d": 39,
-      "risk": 222
+      "churn90d": 40,
+      "risk": 225.3
     },
     {
       "file": "app/classes/unit/index.ts",
@@ -177,8 +153,32 @@
       "importCount": 26,
       "exportCount": 2,
       "maxBlockLines": 18,
-      "churn90d": 60,
-      "risk": 220.6
+      "churn90d": 61,
+      "risk": 223.6
+    },
+    {
+      "file": "app/ui/InventoryManager.ts",
+      "loc": 794,
+      "codeLines": 697,
+      "branchCount": 95,
+      "functionCount": 86,
+      "importCount": 16,
+      "exportCount": 1,
+      "maxBlockLines": 80,
+      "churn90d": 19,
+      "risk": 219.4
+    },
+    {
+      "file": "app/classes/building/index.ts",
+      "loc": 454,
+      "codeLines": 391,
+      "branchCount": 33,
+      "functionCount": 51,
+      "importCount": 18,
+      "exportCount": 2,
+      "maxBlockLines": 118,
+      "churn90d": 42,
+      "risk": 217.3
     },
     {
       "file": "app/classes/players/AIPlayer.ts",
@@ -227,8 +227,32 @@
       "importCount": 2,
       "exportCount": 11,
       "maxBlockLines": 41,
-      "churn90d": 18,
-      "risk": 159.1
+      "churn90d": 19,
+      "risk": 162.1
+    },
+    {
+      "file": "app/ui/InventoryManager.ts",
+      "loc": 794,
+      "codeLines": 697,
+      "branchCount": 95,
+      "functionCount": 86,
+      "importCount": 16,
+      "exportCount": 1,
+      "maxBlockLines": 80,
+      "churn90d": 19,
+      "risk": 219.4
+    },
+    {
+      "file": "app/lib/i18n/translations.ts",
+      "loc": 793,
+      "codeLines": 791,
+      "branchCount": 8,
+      "functionCount": 0,
+      "importCount": 1,
+      "exportCount": 1,
+      "maxBlockLines": 0,
+      "churn90d": 47,
+      "risk": 172.8
     },
     {
       "file": "app/ui/PlayerSetupPanel.ts",
@@ -239,20 +263,8 @@
       "importCount": 8,
       "exportCount": 1,
       "maxBlockLines": 107,
-      "churn90d": 13,
-      "risk": 177.6
-    },
-    {
-      "file": "app/lib/i18n/translations.ts",
-      "loc": 771,
-      "codeLines": 769,
-      "branchCount": 7,
-      "functionCount": 0,
-      "importCount": 1,
-      "exportCount": 1,
-      "maxBlockLines": 0,
-      "churn90d": 46,
-      "risk": 167.8
+      "churn90d": 14,
+      "risk": 180.6
     },
     {
       "file": "app/services/WeatherSystem.ts",
@@ -267,28 +279,16 @@
       "risk": 163.3
     },
     {
-      "file": "app/ui/InventoryManager.ts",
-      "loc": 700,
-      "codeLines": 611,
-      "branchCount": 88,
-      "functionCount": 78,
-      "importCount": 14,
-      "exportCount": 1,
-      "maxBlockLines": 77,
-      "churn90d": 18,
-      "risk": 203.5
-    },
-    {
       "file": "app/screens/Game.ts",
-      "loc": 694,
-      "codeLines": 636,
+      "loc": 708,
+      "codeLines": 648,
       "branchCount": 48,
-      "functionCount": 96,
+      "functionCount": 94,
       "importCount": 33,
       "exportCount": 1,
       "maxBlockLines": 54,
-      "churn90d": 39,
-      "risk": 222
+      "churn90d": 40,
+      "risk": 225.3
     },
     {
       "file": "app/classes/map/index.ts",
@@ -340,15 +340,15 @@
     },
     {
       "file": "app/classes/Resource.ts",
-      "loc": 564,
-      "codeLines": 514,
+      "loc": 562,
+      "codeLines": 512,
       "branchCount": 63,
       "functionCount": 60,
       "importCount": 14,
       "exportCount": 2,
-      "maxBlockLines": 128,
+      "maxBlockLines": 126,
       "churn90d": 22,
-      "risk": 213
+      "risk": 211.4
     },
     {
       "file": "app/classes/players/AIPlayer.ts",
@@ -397,8 +397,8 @@
       "importCount": 4,
       "exportCount": 1,
       "maxBlockLines": 19,
-      "churn90d": 1,
-      "risk": 161.4
+      "churn90d": 2,
+      "risk": 164.4
     },
     {
       "file": "app/lib/combatActionConditions.ts",
@@ -409,8 +409,8 @@
       "importCount": 7,
       "exportCount": 3,
       "maxBlockLines": 24,
-      "churn90d": 1,
-      "risk": 156.7
+      "churn90d": 2,
+      "risk": 159.7
     },
     {
       "file": "app/services/TributeRaidSystem.ts",
@@ -437,28 +437,16 @@
       "risk": 159.8
     },
     {
-      "file": "app/classes/building/BuildingProduction.ts",
-      "loc": 384,
-      "codeLines": 356,
-      "branchCount": 95,
-      "functionCount": 50,
-      "importCount": 11,
-      "exportCount": 1,
-      "maxBlockLines": 37,
-      "churn90d": 27,
-      "risk": 233.1
-    },
-    {
       "file": "app/ui/InventoryManager.ts",
-      "loc": 700,
-      "codeLines": 611,
-      "branchCount": 88,
-      "functionCount": 78,
-      "importCount": 14,
+      "loc": 794,
+      "codeLines": 697,
+      "branchCount": 95,
+      "functionCount": 86,
+      "importCount": 16,
       "exportCount": 1,
-      "maxBlockLines": 77,
-      "churn90d": 18,
-      "risk": 203.5
+      "maxBlockLines": 80,
+      "churn90d": 19,
+      "risk": 219.4
     },
     {
       "file": "app/classes/map/MapTerrainReliefAppearance.ts",
@@ -507,6 +495,18 @@
       "maxBlockLines": 44,
       "churn90d": 24,
       "risk": 208.3
+    },
+    {
+      "file": "app/classes/map/MapResources.ts",
+      "loc": 548,
+      "codeLines": 494,
+      "branchCount": 82,
+      "functionCount": 56,
+      "importCount": 10,
+      "exportCount": 4,
+      "maxBlockLines": 48,
+      "churn90d": 22,
+      "risk": 202.7
     }
   ],
   "hotspots": [
@@ -519,8 +519,8 @@
       "importCount": 13,
       "exportCount": 18,
       "maxBlockLines": 0,
-      "churn90d": 63,
-      "risk": 202.1
+      "churn90d": 64,
+      "risk": 205.1
     },
     {
       "file": "app/classes/unit/index.ts",
@@ -531,8 +531,20 @@
       "importCount": 26,
       "exportCount": 2,
       "maxBlockLines": 18,
-      "churn90d": 60,
-      "risk": 220.6
+      "churn90d": 61,
+      "risk": 223.6
+    },
+    {
+      "file": "app/lib/i18n/translations.ts",
+      "loc": 793,
+      "codeLines": 791,
+      "branchCount": 8,
+      "functionCount": 0,
+      "importCount": 1,
+      "exportCount": 1,
+      "maxBlockLines": 0,
+      "churn90d": 47,
+      "risk": 172.8
     },
     {
       "file": "app/classes/map/MapGeneration.ts",
@@ -559,18 +571,6 @@
       "risk": 215.8
     },
     {
-      "file": "app/lib/i18n/translations.ts",
-      "loc": 771,
-      "codeLines": 769,
-      "branchCount": 7,
-      "functionCount": 0,
-      "importCount": 1,
-      "exportCount": 1,
-      "maxBlockLines": 0,
-      "churn90d": 46,
-      "risk": 167.8
-    },
-    {
       "file": "app/lib/heroTools.ts",
       "loc": 336,
       "codeLines": 316,
@@ -579,8 +579,20 @@
       "importCount": 13,
       "exportCount": 10,
       "maxBlockLines": 49,
+      "churn90d": 44,
+      "risk": 230.4
+    },
+    {
+      "file": "app/classes/unit/UnitActions.ts",
+      "loc": 341,
+      "codeLines": 317,
+      "branchCount": 64,
+      "functionCount": 33,
+      "importCount": 16,
+      "exportCount": 1,
+      "maxBlockLines": 65,
       "churn90d": 43,
-      "risk": 227.4
+      "risk": 233.5
     },
     {
       "file": "app/classes/animal/index.ts",
@@ -596,39 +608,27 @@
     },
     {
       "file": "app/classes/building/index.ts",
-      "loc": 468,
-      "codeLines": 405,
-      "branchCount": 36,
-      "functionCount": 53,
-      "importCount": 17,
+      "loc": 454,
+      "codeLines": 391,
+      "branchCount": 33,
+      "functionCount": 51,
+      "importCount": 18,
       "exportCount": 2,
-      "maxBlockLines": 131,
+      "maxBlockLines": 118,
       "churn90d": 42,
-      "risk": 232.5
-    },
-    {
-      "file": "app/classes/unit/UnitActions.ts",
-      "loc": 341,
-      "codeLines": 317,
-      "branchCount": 64,
-      "functionCount": 33,
-      "importCount": 16,
-      "exportCount": 1,
-      "maxBlockLines": 65,
-      "churn90d": 42,
-      "risk": 230.5
+      "risk": 217.3
     },
     {
       "file": "app/config/assetManifest.ts",
-      "loc": 277,
-      "codeLines": 270,
+      "loc": 278,
+      "codeLines": 271,
       "branchCount": 0,
       "functionCount": 8,
       "importCount": 0,
       "exportCount": 2,
       "maxBlockLines": 6,
       "churn90d": 42,
-      "risk": 132.9
+      "risk": 133
     },
     {
       "file": "app/controllers/HeroController.ts",
@@ -639,20 +639,20 @@
       "importCount": 16,
       "exportCount": 1,
       "maxBlockLines": 48,
-      "churn90d": 39,
-      "risk": 229.4
+      "churn90d": 40,
+      "risk": 232.4
     },
     {
       "file": "app/screens/Game.ts",
-      "loc": 694,
-      "codeLines": 636,
+      "loc": 708,
+      "codeLines": 648,
       "branchCount": 48,
-      "functionCount": 96,
+      "functionCount": 94,
       "importCount": 33,
       "exportCount": 1,
       "maxBlockLines": 54,
-      "churn90d": 39,
-      "risk": 222
+      "churn90d": 40,
+      "risk": 225.3
     }
   ],
   "cycleHubs": []

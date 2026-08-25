@@ -218,7 +218,7 @@ export class Resource extends Instance implements ResourceEntity {
       const spritesheetJump = Assets.cache.get(this.assets as string)
       const animatedSprite = new AnimatedSprite(getAnimationFrames(spritesheetJump.textures) as Texture[])
       bindAnimatedSpriteToTicker(animatedSprite, this.context.app)
-      animatedSprite.animationSpeed = spritesheetJump.data?.animationSpeed ?? 0.2
+      animatedSprite.animationSpeed = spritesheetJump.data?.animationSpeed ?? 0.3
       animatedSprite.loop = spritesheetJump.data?.loop ?? true
       if (animatedSprite.texture.defaultAnchor) {
         animatedSprite.anchor.copyFrom(animatedSprite.texture.defaultAnchor)
@@ -232,9 +232,7 @@ export class Resource extends Instance implements ResourceEntity {
       this.sprite = animatedSprite
       if (this.type === RESOURCE_TYPES.wheat) {
         const lastFrame = Math.max(0, animatedSprite.textures.length - 1)
-        const frame = startsMature
-          ? lastFrame
-          : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
+        const frame = startsMature ? lastFrame : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
         animatedSprite.gotoAndStop(frame)
         if (this.isWindAnimatedWheat()) this.startWindMotion()
       } else {

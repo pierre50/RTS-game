@@ -36,6 +36,29 @@ type LoadBlueprintOptions = {
   environment?: string
 }
 
+export type MapBlueprintLoadFailureReason =
+  | 'manifest-fetch-failed'
+  | 'manifest-invalid'
+  | 'size-missing'
+  | 'blueprint-id-missing'
+  | 'no-compatible-map'
+  | 'map-fetch-failed'
+  | 'map-invalid'
+
+export class MapBlueprintLoadError extends Error {
+  reason: MapBlueprintLoadFailureReason
+
+  constructor(reason: MapBlueprintLoadFailureReason, message: string) {
+    super(message)
+    this.name = 'MapBlueprintLoadError'
+    this.reason = reason
+  }
+}
+
+function fail(reason: MapBlueprintLoadFailureReason, message: string): never {
+  throw new MapBlueprintLoadError(reason, message)
+}
+
 function decodeBase64Bytes(value: string, ArrayType: Uint8ArrayConstructor): Uint8Array
 function decodeBase64Bytes(value: string, ArrayType: Int8ArrayConstructor): Int8Array
 function decodeBase64Bytes(
@@ -91,44 +114,58 @@ export async function loadPregeneratedMapBlueprint({
 }: LoadBlueprintOptions = {}) {
   const timings: BlueprintTimings = {}
   let manifest: BlueprintManifest | undefined
+  let manifestResponse: Response
   try {
     const manifestStartedAt = performance.now()
-    const response = await fetch('maps/manifest.json', { cache: 'no-store' })
-    if (!response.ok) return null
+    manifestResponse = await fetch('maps/manifest.json', { cache: 'no-store' })
+    if (!manifestResponse.ok) {
+      fail('manifest-fetch-failed', `Unable to load maps/manifest.json (${manifestResponse.status})`)
+    }
     timings.blueprintManifestFetch = performance.now() - manifestStartedAt
-    const manifestParseStartedAt = performance.now()
-    manifest = await response.json()
-    timings.blueprintManifestParse = performance.now() - manifestParseStartedAt
-  } catch {
-    return null
+  } catch (error) {
+    if (error instanceof MapBlueprintLoadError) throw error
+    fail('manifest-fetch-failed', 'Unable to load maps/manifest.json')
   }
-  if (size == null) return null
+  try {
+    const manifestParseStartedAt = performance.now()
+    manifest = await manifestResponse.json()
+    timings.blueprintManifestParse = performance.now() - manifestParseStartedAt
+  } catch (error) {
+    if (error instanceof MapBlueprintLoadError) throw error
+    fail('manifest-invalid', 'maps/manifest.json is not valid JSON')
+  }
+  if (!Array.isArray(manifest?.maps)) fail('manifest-invalid', 'maps/manifest.json is invalid')
+  if (size == null) fail('size-missing', 'Cannot load a map blueprint without a size')
 
   let selected: BlueprintManifestEntry | undefined
   if (id) {
     selected = (manifest?.maps || []).find(map => map.id === id && !map.mapType)
-    if (!selected) return null
+    if (!selected) fail('blueprint-id-missing', `Map blueprint "${id}" is not listed in maps/manifest.json`)
   } else {
     const candidates = compatibleMaps(manifest, { size, positionsCount, environment })
-    if (!candidates.length) return null
+    if (!candidates.length) fail('no-compatible-map', `No map blueprint matches size ${size}`)
     selected = candidates[Math.floor(random() * candidates.length)]
   }
   try {
     const mapFetchStartedAt = performance.now()
     const response = await fetch(`maps/${selected.path}`, { cache: 'no-store' })
-    if (!response.ok) return null
+    if (!response.ok) fail('map-fetch-failed', `Unable to load maps/${selected.path} (${response.status})`)
     timings.blueprintMapFetch = performance.now() - mapFetchStartedAt
     const mapParseStartedAt = performance.now()
     const payload = await response.json()
     timings.blueprintMapParse = performance.now() - mapParseStartedAt
-    if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.size !== size) return null
+    if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.size !== size) {
+      fail('map-invalid', `Map blueprint "${selected.path}" is invalid`)
+    }
 
     const decodeStartedAt = performance.now()
     const terrainValues = decodeBase64Bytes(payload.terrain, Uint8Array)
     const reliefValues = decodeBase64Bytes(payload.relief, Int8Array)
     timings.blueprintDecode = performance.now() - decodeStartedAt
     const expectedCells = (size + 1) ** 2
-    if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) return null
+    if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) {
+      fail('map-invalid', `Map blueprint "${selected.path}" has invalid terrain data`)
+    }
 
     const gridStartedAt = performance.now()
     const terrain = toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'))
@@ -147,7 +184,7 @@ export async function loadPregeneratedMapBlueprint({
       timings,
     }
   } catch (error) {
-    console.warn('Unable to load pregenerated map blueprint', error)
-    return null
+    if (error instanceof MapBlueprintLoadError) throw error
+    throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated map blueprint')
   }
 }

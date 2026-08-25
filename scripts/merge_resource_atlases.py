@@ -32,15 +32,50 @@ def sorted_frames(data: dict) -> list[tuple[str, dict]]:
     return sorted(data["frames"].items(), key=lambda item: int(item[0].split("_")[0]))
 
 
-def atlas_meta(image: Image.Image) -> dict:
+SHADOW_PAD_X = 18
+SHADOW_PAD_Y = 14
+
+
+def atlas_meta(image: Image.Image, image_name: str = "texture.png") -> dict:
     return {
         "app": "merge_resource_atlases.py",
         "version": "1.0.0",
-        "image": "texture.png",
+        "image": image_name,
         "format": "RGBA8888",
         "size": {"w": image.width, "h": image.height},
         "scale": 1,
     }
+
+
+def make_shadow_frame_data(frame_data: dict) -> dict:
+    shadow_frame_data = json.loads(json.dumps(frame_data))
+    frame = shadow_frame_data["frame"]
+    base_width = frame["w"]
+    base_height = frame["h"]
+    frame["w"] = base_width + SHADOW_PAD_X
+    frame["h"] = base_height + SHADOW_PAD_Y
+    shadow_frame_data["spriteSourceSize"] = {"x": 0, "y": 0, "w": frame["w"], "h": frame["h"]}
+    shadow_frame_data["sourceSize"] = {"w": frame["w"], "h": frame["h"]}
+    anchor = shadow_frame_data.get("anchor", {"x": 0.5, "y": 0.5})
+    shadow_frame_data["anchor"] = {
+        "x": (anchor["x"] * base_width + SHADOW_PAD_X / 2) / frame["w"],
+        "y": (anchor["y"] * base_height) / frame["h"],
+    }
+    return shadow_frame_data
+
+
+def shadow_frame_name(frame_name: str) -> str:
+    if frame_name.endswith(".png"):
+        return f"{frame_name[:-4]}_shadow.png"
+    return f"{frame_name}_shadow"
+
+
+def write_shadow_json(output: Path, frames: dict, shadow_atlas: Image.Image) -> None:
+    shadow_frames = {shadow_frame_name(name): make_shadow_frame_data(frame_data) for name, frame_data in frames.items()}
+    write_json(
+        output / "texture_shadow.json",
+        {"frames": shadow_frames, "meta": atlas_meta(shadow_atlas, "texture_shadow.png")},
+    )
 
 
 def pack_static_atlas(output_id: str, sources: list[str], frame_name: Callable[[int, str, str], str]) -> None:
@@ -86,8 +121,16 @@ def pack_static_atlas(output_id: str, sources: list[str], frame_name: Callable[[
 
 def pack_minerals() -> None:
     sources = ["gold", "stone", "copper", "iron"]
-    shadow_pad_x = 18
-    shadow_pad_y = 14
+    output = RESOURCE_ROOT / "minerals"
+    existing_atlas = output / "texture.json"
+    first_source = RESOURCE_ROOT / sources[0] / "texture.json"
+    if existing_atlas.exists() and not first_source.exists():
+        frames = read_json(existing_atlas).get("frames", {})
+        shadow_atlas = Image.open(output / "texture_shadow.png").convert("RGBA")
+        write_shadow_json(output, frames, shadow_atlas)
+        print(f"using existing merged atlas {existing_atlas.relative_to(ROOT)}")
+        return
+
     entries = []
     x = 0
     height = 0
@@ -109,20 +152,20 @@ def pack_minerals() -> None:
                     "shadow_box": (
                         frame["x"],
                         frame["y"],
-                        frame["x"] + frame["w"] + shadow_pad_x,
-                        frame["y"] + frame["h"] + shadow_pad_y,
+                        frame["x"] + frame["w"] + SHADOW_PAD_X,
+                        frame["y"] + frame["h"] + SHADOW_PAD_Y,
                     ),
                     "x": x,
                     "y": 0,
                     "name": f'{len(entries):03d}_graphics_resources_minerals_{source_id}_{old_name.split("_")[0]}.png',
                 }
             )
-            x += frame["w"] + shadow_pad_x
+            x += frame["w"] + SHADOW_PAD_X
             height = max(height, frame["h"])
 
-    width = max(1, x - shadow_pad_x)
+    width = max(1, x - SHADOW_PAD_X)
     atlas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    shadow_atlas = Image.new("RGBA", (width + shadow_pad_x, height + shadow_pad_y), (0, 0, 0, 0))
+    shadow_atlas = Image.new("RGBA", (width + SHADOW_PAD_X, height + SHADOW_PAD_Y), (0, 0, 0, 0))
     frames = {}
     for entry in entries:
         crop = entry["image"].crop(entry["src_box"])
@@ -134,11 +177,11 @@ def pack_minerals() -> None:
         frame_data["frame"]["y"] = entry["y"]
         frames[entry["name"]] = frame_data
 
-    output = RESOURCE_ROOT / "minerals"
     output.mkdir(parents=True, exist_ok=True)
     atlas.save(output / "texture.png")
     shadow_atlas.save(output / "texture_shadow.png")
     write_json(output / "texture.json", {"frames": frames, "meta": atlas_meta(atlas)})
+    write_shadow_json(output, frames, shadow_atlas)
     print(f"wrote {output.relative_to(ROOT)}/texture.png {atlas.size} frames={len(frames)}")
     print(f"wrote {output.relative_to(ROOT)}/texture_shadow.png {shadow_atlas.size}")
 

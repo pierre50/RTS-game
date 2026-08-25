@@ -69,7 +69,11 @@ function getLayerActionSheetId(layer: UnitAppearanceLayerConfig, work: string, m
   if (layer.workTypes?.length && !layer.workTypes.includes(work)) return null
   if (layer.hideForActions?.includes(ACTION_TYPES.attack)) return null
   if (mounted && layer.mountedSheet) return layer.mountedSheet
-  return layer.actionWorkSheetOverrides?.[`${work}:${ACTION_TYPES.attack}`]?.[SHEET_TYPES.action] ?? layer.actionSheet ?? null
+  return (
+    layer.actionWorkSheetOverrides?.[`${work}:${ACTION_TYPES.attack}`]?.[SHEET_TYPES.action] ??
+    layer.actionSheet ??
+    null
+  )
 }
 
 function isHorseSheet(sheetId: string): boolean {
@@ -95,7 +99,9 @@ function getSpriteTopLeft(sprite: AnimatedSprite): { x: number; y: number; width
   const height = texture?.height || 64
   const scale = Math.max(0.001, Math.abs(sprite.scale.y || 1))
   const mirrored = sprite.scale.x < 0
-  const x = mirrored ? sprite.position.x - (1 - sprite.anchor.x) * width * scale : sprite.position.x - sprite.anchor.x * width * scale
+  const x = mirrored
+    ? sprite.position.x - (1 - sprite.anchor.x) * width * scale
+    : sprite.position.x - sprite.anchor.x * width * scale
   const y = sprite.position.y - sprite.anchor.y * height * scale
   return { x, y, width, scale }
 }
@@ -197,7 +203,7 @@ export class BuildingTrainingPreview {
     sprite.roundPixels = true
     sprite.loop = true
     sprite.zIndex = zIndex
-    sprite.animationSpeed = (sheet.data?.animationSpeed ?? 0.3) * TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR
+    sprite.animationSpeed = (sheet.data?.animationSpeed ?? 0.4) * TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR
     sprite.scale.set(scale)
     setDefaultAnchor(sprite)
     const lightFilter = new ColorMatrixFilter()

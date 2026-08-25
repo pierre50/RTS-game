@@ -365,5 +365,5 @@
     "image": "texture.png",
     "scale": "1"
   },
-  "animationSpeed": 0.04
+  "animationSpeed": 0.1
 }

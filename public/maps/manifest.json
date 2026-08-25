@@ -85,6 +85,134 @@
       "spawns": 3
     },
     {
+      "id": "map-144-desert-001",
+      "size": 144,
+      "environment": "Desert",
+      "path": "144/map-144-desert-001.map",
+      "seed": 561912793,
+      "spawns": 3
+    },
+    {
+      "id": "map-144-desert-002",
+      "size": 144,
+      "environment": "Desert",
+      "path": "144/map-144-desert-002.map",
+      "seed": 1924656439,
+      "spawns": 3
+    },
+    {
+      "id": "map-144-jungle-001",
+      "size": 144,
+      "environment": "Jungle",
+      "path": "144/map-144-jungle-001.map",
+      "seed": 1989387943,
+      "spawns": 3
+    },
+    {
+      "id": "map-144-jungle-002",
+      "size": 144,
+      "environment": "Jungle",
+      "path": "144/map-144-jungle-002.map",
+      "seed": 374977211,
+      "spawns": 3
+    },
+    {
+      "id": "map-144-temperate-001",
+      "size": 144,
+      "environment": "Temperate",
+      "path": "144/map-144-temperate-001.map",
+      "seed": 296161724,
+      "spawns": 3
+    },
+    {
+      "id": "map-144-temperate-002",
+      "size": 144,
+      "environment": "Temperate",
+      "path": "144/map-144-temperate-002.map",
+      "seed": 1635386937,
+      "spawns": 3
+    },
+    {
+      "id": "map-256-001",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-001.map",
+      "seed": 138848676,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-002",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-002.map",
+      "seed": 1347166275,
+      "spawns": 6
+    },
+    {
+      "id": "map-256-003",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-003.map",
+      "seed": 1012814583,
+      "spawns": 5
+    },
+    {
+      "id": "map-256-004",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-004.map",
+      "seed": 1425403007,
+      "spawns": 3
+    },
+    {
+      "id": "map-256-005",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-005.map",
+      "seed": 256279665,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-006",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-006.map",
+      "seed": 287240959,
+      "spawns": 5
+    },
+    {
+      "id": "map-256-007",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-007.map",
+      "seed": 1878466031,
+      "spawns": 5
+    },
+    {
+      "id": "map-256-008",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-008.map",
+      "seed": 2057800573,
+      "spawns": 5
+    },
+    {
+      "id": "map-256-009",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-009.map",
+      "seed": 1259578079,
+      "spawns": 3
+    },
+    {
+      "id": "map-256-010",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-010.map",
+      "seed": 1215286603,
+      "spawns": 6
+    },
+    {
       "id": "map-256-blackforest-001",
       "size": 256,
       "environment": "BlackForest",
@@ -163,6 +291,54 @@
       "path": "256/map-256-blackforest-010.map",
       "seed": 1672344481,
       "spawns": 5
+    },
+    {
+      "id": "map-256-desert-001",
+      "size": 256,
+      "environment": "Desert",
+      "path": "256/map-256-desert-001.map",
+      "seed": 499101924,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-desert-002",
+      "size": 256,
+      "environment": "Desert",
+      "path": "256/map-256-desert-002.map",
+      "seed": 847784630,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-jungle-001",
+      "size": 256,
+      "environment": "Jungle",
+      "path": "256/map-256-jungle-001.map",
+      "seed": 120386609,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-jungle-002",
+      "size": 256,
+      "environment": "Jungle",
+      "path": "256/map-256-jungle-002.map",
+      "seed": 2062394689,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-temperate-001",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-temperate-001.map",
+      "seed": 56166361,
+      "spawns": 4
+    },
+    {
+      "id": "map-256-temperate-002",
+      "size": 256,
+      "environment": "Temperate",
+      "path": "256/map-256-temperate-002.map",
+      "seed": 2097231051,
+      "spawns": 4
     }
   ]
 }

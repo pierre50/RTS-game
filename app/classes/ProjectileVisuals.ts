@@ -119,7 +119,7 @@ export function createSprite(projectile: RuntimeProjectileVisual, degree: number
       if (Number.isInteger(staticFrame)) {
         sprite.gotoAndStop(frameIndex)
       } else {
-        sprite.animationSpeed = projectile.animationSpeed ?? 0.3
+        sprite.animationSpeed = projectile.animationSpeed ?? 0.4
         sprite.play()
       }
     } else if (projectile.directionalFrames) {
@@ -156,7 +156,7 @@ export function createSprite(projectile: RuntimeProjectileVisual, degree: number
       sprite.rotation = degreesToRadians(degree - baseAngle)
     } else {
       applyTextureAnchor(sprite, textures[0])
-      sprite.animationSpeed = projectile.animationSpeed ?? 0.3
+      sprite.animationSpeed = projectile.animationSpeed ?? 0.4
       sprite.play()
     }
 
@@ -271,7 +271,7 @@ export function createImpactEffect(projectile: RuntimeProjectileVisual, x: numbe
   sprite.zIndex = (projectile.zIndex ?? projectile.owner?.zIndex ?? 0) + 1
   applyTextureAnchor(sprite, sprite.textures[0] as ProjectileTexture)
   sprite.scale.set(projectile.impactEffect.scale ?? 1)
-  sprite.animationSpeed = projectile.impactEffect.animationSpeed ?? 0.2
+  sprite.animationSpeed = projectile.impactEffect.animationSpeed ?? 0.3
   sprite.onComplete = () => {
     sprite.parent?.removeChild(sprite)
     sprite.destroy({ children: true, texture: false })

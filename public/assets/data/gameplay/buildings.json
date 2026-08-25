@@ -3,7 +3,7 @@
     "size": 2,
     "sight": 6,
     "totalHitPoints": 75,
-    "constructionTime": 20,
+    "constructionTime": 16,
     "displayPopulation": true,
     "increasePopulation": 4,
     "cost": {
@@ -19,7 +19,7 @@
     "size": 3,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 30,
+    "constructionTime": 24,
     "cost": {
       "wood": 125
     },
@@ -34,7 +34,7 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 30,
+    "constructionTime": 24,
     "cost": {
       "wood": 120
     },
@@ -50,7 +50,7 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 30,
+    "constructionTime": 24,
     "cost": {
       "wood": 120
     },
@@ -82,7 +82,7 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 40,
+    "constructionTime": 32,
     "cost": {
       "wood": 150
     },
@@ -99,7 +99,7 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 40,
+    "constructionTime": 32,
     "cost": {
       "wood": 150
     },
@@ -117,7 +117,7 @@
       "burning": ["building-burning", "building-burning-2", "building-burning-3"],
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     },
-    "mountingTime": 20
+    "mountingTime": 16
   },
   "Farm": {
     "size": 4,
@@ -137,11 +137,11 @@
     "size": 2,
     "sight": 16,
     "totalHitPoints": 100,
-    "constructionTime": 80,
+    "constructionTime": 64,
     "range": 6,
     "projectile": "Arrow",
     "equipment": ["watch_tower_arrow"],
-    "rateOfFire": 1.5,
+    "rateOfFire": 1.9,
     "cost": {
       "stone": 150
     },
@@ -167,7 +167,7 @@
     "size": 1,
     "sight": 6,
     "totalHitPoints": 200,
-    "constructionTime": 8,
+    "constructionTime": 6.4,
     "cost": {
       "stone": 5
     },
@@ -193,7 +193,7 @@
     "size": 3,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 40,
+    "constructionTime": 32,
     "cost": {
       "wood": 150
     },
@@ -218,7 +218,7 @@
     "size": 2,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 60,
+    "constructionTime": 48,
     "cost": {
       "wood": 200
     },
@@ -234,7 +234,7 @@
     "size": 3,
     "sight": 14,
     "totalHitPoints": 600,
-    "constructionTime": 60,
+    "constructionTime": 48,
     "increasePopulation": 4,
     "cost": {
       "wood": 200

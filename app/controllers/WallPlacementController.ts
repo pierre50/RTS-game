@@ -116,14 +116,16 @@ export class WallPlacementController {
       draft.preview.push(sprite)
 
       if (getWallLevel(draft.owner) === 1 && wallFrame === 2) {
-        const frames = Array.from({ length: 6 }, (_, i) => getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets))
+        const frames = Array.from({ length: 6 }, (_, i) =>
+          getTextureByFrame(WALL_CONSTRUCTION_FLAG_SHEET_ID, i + 12, Assets)
+        )
         const flagSprite = new AnimatedSprite(frames)
         if (frames[0].defaultAnchor) flagSprite.anchor.copyFrom(frames[0].defaultAnchor)
         flagSprite.x = position.x - 6
         flagSprite.y = position.y - 20
         flagSprite.zIndex = cell.i + cell.j + 0.5
         flagSprite.alpha = 0.55
-        flagSprite.animationSpeed = 0.15
+        flagSprite.animationSpeed = 0.2
         flagSprite.eventMode = 'none'
         flagSprite.roundPixels = true
         changeSpriteColor(flagSprite as RecolorableSprite, draft.owner.color ?? '')

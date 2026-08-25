@@ -38,6 +38,24 @@ function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   return null
 }
 
+test('map manifest lists every map file in the maps folder', () => {
+  const mapsRoot = path.join(ROOT, 'public/maps')
+  const manifest = JSON.parse(fs.readFileSync(path.join(mapsRoot, 'manifest.json'), 'utf8'))
+  const mapFiles = fs
+    .readdirSync(mapsRoot)
+    .filter(name => /^\d+$/.test(name))
+    .flatMap(sizeDir =>
+      fs
+        .readdirSync(path.join(mapsRoot, sizeDir))
+        .filter(name => name.endsWith('.map'))
+        .map(name => `${sizeDir}/${name}`)
+    )
+    .sort()
+  const manifestPaths = (manifest.maps || []).map(map => map.path).sort()
+
+  assert.deepEqual(manifestPaths, mapFiles)
+})
+
 test('pregenerated map blueprints persist water terrain', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'map-blueprint-'))
 

@@ -157,6 +157,12 @@ function loadModule(relativePath, mocks) {
       }
     }
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../lpc/generatedPalettes') {
+      return {
+        LPC_RUNTIME_PALETTES: {},
+        LPC_RUNTIME_SOURCE_PALETTES: {},
+      }
+    }
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock

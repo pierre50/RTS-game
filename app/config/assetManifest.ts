@@ -135,6 +135,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     ]),
     'buildings/age-0/shadow': 'assets/graphics/buildings/age-0/texture_shadow.json',
     'buildings/age-1/shadow': 'assets/graphics/buildings/age-1/texture_shadow.json',
+    'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {
     ...toSoundBundle([
@@ -256,6 +257,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'weather/heavy-rain',
       'weather/light-wind',
       'weather/heavy-wind',
+      'weather/ocean-ambience',
       'weather/thunder-1',
       'weather/thunder-2',
       'weather/thunder-3',

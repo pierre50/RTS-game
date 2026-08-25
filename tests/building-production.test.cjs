@@ -17,6 +17,12 @@ function loadModule(relativePath, mocks) {
     if (request === './BuildingTraineeTraining') {
       return loadModule('app/classes/building/BuildingTraineeTraining.ts', mocks)
     }
+    if (request === './BuildingProductionPlacement') {
+      return loadModule('app/classes/building/BuildingProductionPlacement.ts', mocks)
+    }
+    if (request === './BuildingTechnologyProduction') {
+      return loadModule('app/classes/building/BuildingTechnologyProduction.ts', mocks)
+    }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,

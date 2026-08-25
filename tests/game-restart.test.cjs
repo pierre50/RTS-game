@@ -2,7 +2,15 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadGame() {
+function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint } = {}) {
+  class MapBlueprintLoadError extends Error {
+    constructor(reason, message) {
+      super(message)
+      this.name = 'MapBlueprintLoadError'
+      this.reason = reason
+    }
+  }
+
   class Container {
     constructor() {
       this.children = []
@@ -67,7 +75,17 @@ function loadGame() {
       returnToParentWorld: campaign => campaign,
       updateCurrentWorldState: campaign => campaign,
     },
-    '../serialization/MapBlueprintLoader': { loadPregeneratedMapBlueprint: async () => null },
+    '../serialization/MapBlueprintLoader': {
+      MapBlueprintLoadError,
+      loadPregeneratedMapBlueprint:
+        loadPregeneratedMapBlueprint ||
+        (async () => {
+          if (blueprintFailureReason) {
+            throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test blueprint')
+          }
+          return { id: 'test-blueprint', size: 144, terrain: [], spawns: [], timings: {} }
+        }),
+    },
     '../dev-console/DevConsole': { DevConsole: class DevConsole {} },
     '../dev-console/actions/shared': { cleanupDebugArtifacts() {} },
     '../services/PerformanceMonitor': {
@@ -261,6 +279,68 @@ test('restored saves initialize hero controls before mounting runtime', async ()
   })
 
   assert.deepEqual(calls, ['createRuntime', 'createUiRuntime', 'generateFromJSON', 'controls.init', 'mountRuntime'])
+})
+
+test('new games fail when the maps folder has no compatible blueprint', async () => {
+  const previousConsoleError = console.error
+  console.error = () => {}
+
+  try {
+    const Game = loadGame({ blueprintFailureReason: 'no-compatible-map' })
+    const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+    let runtimeGenerationCalls = 0
+    const map = {
+      size: 144,
+      environment: 'temperate',
+      generateMapAsync: async () => runtimeGenerationCalls++,
+      generateFromBlueprint: async () => {},
+    }
+
+    game._createRuntime = () => {}
+    game._map = () => map
+    game._applyMapConfig = () => {}
+    game._createUiRuntime = () => {}
+
+    await assert.rejects(() => game._bootFromConfig({ size: 144 }), /mapBlueprintUnavailable/)
+
+    assert.equal(runtimeGenerationCalls, 0)
+    assert.equal(map.pregeneratedBlueprintId, undefined)
+  } finally {
+    console.error = previousConsoleError
+  }
+})
+
+test('seed saves without a blueprint id do not fall back to runtime generation', async () => {
+  const Game = loadGame()
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  let runtimeGenerationCalls = 0
+  const map = {
+    size: 144,
+    generateMapAsync: async () => runtimeGenerationCalls++,
+    generateFromBlueprint: async () => {},
+  }
+
+  game._createRuntime = () => {}
+  game._map = () => map
+  game._applyMapConfig = () => {}
+  game._createUiRuntime = () => {}
+
+  await assert.rejects(
+    () =>
+      game._bootFromSeedSave({
+        version: 2,
+        runtime: { elapsedMs: 0 },
+        world: { seed: 42, size: 144, positionsCount: 2, pregeneratedBlueprintId: null },
+        config: { seed: 42, size: 144 },
+        players: [],
+        camera: { x: 0, y: 0 },
+        resources: [],
+        animals: [],
+      }),
+    /mapBlueprintUnavailable/
+  )
+
+  assert.equal(runtimeGenerationCalls, 0)
 })
 
 test('portable hero state preserves mounted horse color across worlds', () => {

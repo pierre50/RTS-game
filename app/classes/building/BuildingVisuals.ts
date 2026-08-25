@@ -29,7 +29,7 @@ export function setBuildingRallyPoint(
   const sheet = Assets.cache.get(RALLY_POINT_SHEET_ID)
   const flag = new AnimatedSprite(getRallyPointFrames(sheet.textures, direction) as Texture[])
   bindAnimatedSpriteToTicker(flag, building.context.app)
-  flag.animationSpeed = sheet.data.animationSpeed ?? 0.2
+  flag.animationSpeed = sheet.data.animationSpeed ?? 0.3
   flag.anchor.set(flag.texture.defaultAnchor!.x, flag.texture.defaultAnchor!.y)
   flag.x = cell.x
   flag.y = cell.y

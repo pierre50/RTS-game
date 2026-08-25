@@ -106,10 +106,7 @@ export function setupMountedRiderLegsSprite(
   syncMountedRiderLegsSprite(unit, getCachedSpritesheet)
 }
 
-export function syncMountedRiderPosition(
-  unit: MountedVisualHost,
-  getCachedSpritesheet: CachedSpritesheetGetter
-): void {
+export function syncMountedRiderPosition(unit: MountedVisualHost, getCachedSpritesheet: CachedSpritesheetGetter): void {
   if (!unit.sprite) return
   const riderX = getMountedRiderX(unit)
   const riderY = getMountedRiderY(unit)
@@ -248,7 +245,7 @@ export function syncMountedHorseSprite(unit: MountedVisualHost, getCachedSprites
   unit.horseSprite.textures = recolorHorseTextures(textures as Texture[], unit.horseColor)
   unit.horseSprite.scale.x = mirrored ? -spriteScale : spriteScale
   unit.horseSprite.scale.y = spriteScale
-  unit.horseSprite.animationSpeed = horseSheet.data?.animationSpeed ?? 0.2
+  unit.horseSprite.animationSpeed = horseSheet.data?.animationSpeed ?? 0.3
   unit.horseSprite.position.y = unit.reliefLift ?? 0
   const defaultAnchor = (unit.horseSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
     .defaultAnchor

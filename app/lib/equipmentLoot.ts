@@ -75,7 +75,7 @@ export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
   return null
 }
 
-function getHeroInventory(hero: UnitEntity): NonNullable<UnitEntity['inventory']> {
+export function getHeroInventory(hero: UnitEntity): NonNullable<UnitEntity['inventory']> {
   hero.inventory = hero.inventory ?? {}
   hero.inventory.equipment = hero.inventory.equipment ?? []
   hero.inventory.equipped = hero.inventory.equipped ?? {}

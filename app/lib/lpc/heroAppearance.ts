@@ -111,7 +111,8 @@ export function normalizeHeroAppearance(
   const normalizedGender = normalizeHeroAppearanceGender(gender)
   const defaults = defaultHeroAppearance(civ, normalizedGender)
   const styles = HERO_HAIR_STYLE_OPTIONS[normalizedGender]
-  const hairStyle = appearance?.hairStyle && styles.includes(appearance.hairStyle) ? appearance.hairStyle : defaults.hairStyle
+  const hairStyle =
+    appearance?.hairStyle && styles.includes(appearance.hairStyle) ? appearance.hairStyle : defaults.hairStyle
   const hairColor =
     appearance?.hairColor && HERO_HAIR_COLOR_OPTIONS.includes(appearance.hairColor)
       ? appearance.hairColor
@@ -127,7 +128,12 @@ function hairAtlasSrc(appearance: HeroAppearanceConfig, gender: HeroAppearanceGe
   return `${HERO_APPEARANCE_BASE_URL}/hair/${appearance.hairStyle}/${gender}/texture.json`
 }
 
-function hairLayerAlias(appearance: HeroAppearanceConfig, gender: HeroAppearanceGender, layer: string, sheet: string): string {
+function hairLayerAlias(
+  appearance: HeroAppearanceConfig,
+  gender: HeroAppearanceGender,
+  layer: string,
+  sheet: string
+): string {
   return `${hairAtlasAlias(appearance, gender)}/${layer}/${sheet}`
 }
 
@@ -136,7 +142,7 @@ function frameSuffix(alias: string): string {
 }
 
 function animationSpeedForHairAlias(alias: string): number {
-  return alias.endsWith('/corpse') ? 0 : 0.2
+  return alias.endsWith('/corpse') ? 0 : 0.3
 }
 
 function isAssetCached(alias: string): boolean {
@@ -148,9 +154,13 @@ function registerAliasFromAtlas(alias: string, atlasAlias: string): void {
   const atlas = Assets.cache.get(atlasAlias) as SpritesheetLike | undefined
   if (!atlas?.textures) return
   const suffix = frameSuffix(alias)
-  const textures = Object.fromEntries(Object.entries(atlas.textures).filter(([frameName]) => frameName.endsWith(suffix)))
+  const textures = Object.fromEntries(
+    Object.entries(atlas.textures).filter(([frameName]) => frameName.endsWith(suffix))
+  )
   if (!Object.keys(textures).length) return
-  const frames = Object.fromEntries(Object.entries(atlas.data?.frames ?? {}).filter(([frameName]) => frameName.endsWith(suffix)))
+  const frames = Object.fromEntries(
+    Object.entries(atlas.data?.frames ?? {}).filter(([frameName]) => frameName.endsWith(suffix))
+  )
   Assets.cache.set(alias, {
     ...atlas,
     data: {
@@ -171,7 +181,9 @@ function registerHeroHairAliases(appearance: HeroAppearanceConfig, gender: HeroA
   }
 }
 
-export function heroAppearanceAssetsForPlayers(players: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>[]): Array<{ alias: string; src: string }> {
+export function heroAppearanceAssetsForPlayers(
+  players: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>[]
+): Array<{ alias: string; src: string }> {
   const seen = new Set<string>()
   const assets: Array<{ alias: string; src: string }> = []
   for (const player of players) {
@@ -185,14 +197,18 @@ export function heroAppearanceAssetsForPlayers(players: Pick<PlayerLike, 'civ' |
   return assets
 }
 
-export function registerHeroAppearanceAliasesForPlayers(players: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>[]): void {
+export function registerHeroAppearanceAliasesForPlayers(
+  players: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>[]
+): void {
   for (const player of players) {
     const gender = normalizeHeroAppearanceGender(player.gender)
     registerHeroHairAliases(normalizeHeroAppearance(player.heroAppearance, player.civ, gender), gender)
   }
 }
 
-export function heroAppearanceLayersForPlayer(player: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>): UnitAppearanceLayerConfig[] {
+export function heroAppearanceLayersForPlayer(
+  player: Pick<PlayerLike, 'civ' | 'gender' | 'heroAppearance'>
+): UnitAppearanceLayerConfig[] {
   const gender = normalizeHeroAppearanceGender(player.gender)
   const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
   const shared = {
