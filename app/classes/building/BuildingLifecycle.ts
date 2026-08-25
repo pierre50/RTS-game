@@ -51,16 +51,16 @@ const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
 const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
   color: '#ffad4f',
   flicker: 0.09,
-  intensity: 0.82,
-  radius: 150,
+  intensity: 1.08,
+  radius: 220,
   offsetY: -8,
   verticalScale: 0.68,
 }
 const BUILDING_FIRE_LIGHT: EntityLightSourceConfig = {
   color: '#ff9d45',
   flicker: 0.12,
-  intensity: 0.72,
-  radius: 120,
+  intensity: 0.98,
+  radius: 180,
   offsetY: -12,
   verticalScale: 0.72,
 }

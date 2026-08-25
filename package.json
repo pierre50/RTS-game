@@ -30,6 +30,8 @@
     "duplication": "jscpd app --pattern \"**/*.ts\" --ignore \"**/*.d.ts\" --min-lines 8 --min-tokens 80",
     "architecture": "madge app --extensions ts --ts-config tsconfig.json --circular || true",
     "architecture:json": "madge app --extensions ts --ts-config tsconfig.json --circular --json",
+    "check:quick": "pnpm typecheck && pnpm lint && pnpm deadcode && pnpm audit:report",
+    "check": "pnpm check:quick && pnpm test",
     "audit:code": "pnpm lint && pnpm typecheck && pnpm duplication && pnpm deadcode",
     "audit:report": "node tools/audit-report.cjs",
     "precommit": "lint-staged",

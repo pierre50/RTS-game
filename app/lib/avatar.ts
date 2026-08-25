@@ -3,7 +3,7 @@ import { SHEET_TYPES } from '../constants'
 import { getAnimationFrames } from './extra'
 import { getBuildingAsset, type AssetOwner } from './graphics/assets'
 import { recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
-import { getTexture } from './graphics/textures'
+import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
 import { getUnitEquipmentLevel } from './unitExperience'
@@ -280,6 +280,25 @@ export function renderBuildingAvatar(
 
   const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, texture.height)
   return extractSquareAvatar(app, texture, scanRect, canvas, owner.color ?? '', SOURCE_COLORS)
+}
+
+export function renderTextureRefAvatar(
+  app: Application,
+  ref: TextureRef,
+  canvas: HTMLCanvasElement,
+  color = '',
+  sourceColors: readonly number[] = []
+): boolean {
+  let texture: Texture | null = null
+  try {
+    texture = getTexture(ref, Assets)
+  } catch {
+    return false
+  }
+  if (!texture?.width || !texture.height) return false
+
+  const scanRect = new Rectangle(texture.frame.x, texture.frame.y, texture.width, texture.height)
+  return extractSquareAvatar(app, texture, scanRect, canvas, color, sourceColors)
 }
 
 // Same idea as getUnitFacePortraitTexture, but for a unit TYPE with no live

@@ -3,7 +3,7 @@ import type { GridCell, Grid } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { ResourceAmount } from './common'
 import type { FogSpriteMemory } from './fog'
-import type { SaveEntityState } from './save'
+import type { PortalEncounterKind, SaveEntityState } from './save'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib/graphics/textures'
@@ -66,6 +66,7 @@ export interface RuntimeMap {
   ready?: boolean
   instantMode: boolean
   humanStartsWithoutBase?: boolean
+  portalEncounter?: PortalEncounterKind | null
   revealEverything: boolean
   revealTerrain: boolean
   showResources?: boolean

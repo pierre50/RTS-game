@@ -3,7 +3,9 @@ import { LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   getRallyPointFrames,
+  getTextureByFrame,
   getTextureSheet,
+  parseTextureRef,
   RALLY_POINT_SHEET_ID,
 } from '../../lib'
 import { getShadowsEnabled } from '../../lib/settings'
@@ -51,13 +53,17 @@ export function getBuildingShadowTexture(building: BuildingControllerHost): Text
   if (!building.textureName) return null
   const sheet = getTextureSheet(building.textureName)
   const shadowAtlasId = `${sheet}/shadow`
-  const shadowAtlas = Assets.cache.has(shadowAtlasId)
-    ? ((Assets.cache.get(shadowAtlasId) as Texture | undefined) ?? null)
+  const shadowAsset = Assets.cache.has(shadowAtlasId)
+    ? ((Assets.cache.get(shadowAtlasId) as (Texture & { textures?: Record<string, Texture> }) | undefined) ?? null)
     : null
-  if (!shadowAtlas || !building.sprite?.texture) return null
+  if (!shadowAsset || !building.sprite?.texture) return null
+
+  if (shadowAsset.textures) {
+    return getTextureByFrame(shadowAtlasId, parseTextureRef(building.textureName).frame, Assets)
+  }
 
   const { frame, rotate } = building.sprite.texture
-  const source = shadowAtlas.source
+  const source = shadowAsset.source
   const atlasExtraWidth = Math.max(0, source.width - building.sprite.texture.source.width)
   const atlasExtraHeight = Math.max(0, source.height - building.sprite.texture.source.height)
   const atlasPadX = atlasExtraWidth / 2

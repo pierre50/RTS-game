@@ -371,6 +371,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
       humanStartsWithoutBase: context.map.humanStartsWithoutBase,
+      portalEncounter: context.map.portalEncounter ?? undefined,
       startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,

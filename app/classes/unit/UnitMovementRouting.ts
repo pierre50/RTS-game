@@ -216,7 +216,7 @@ export class UnitMovementRouting {
       (!map.grid[unit.i][unit.j].solid ||
         (map.grid[unit.i][unit.j].solid && map.grid[unit.i][unit.j].has?.label === unit.label))
     ) {
-      if (currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
+      if (!forceRepath && currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
         return
       }
       unit.setDest?.(dest)

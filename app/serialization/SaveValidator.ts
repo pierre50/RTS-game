@@ -176,7 +176,10 @@ function validatePlayers(players: unknown, size: number, config: LoadedGameConfi
   for (let index = 0; index < players.length; index++) {
     const player = players[index]
     if (!isObject(player)) fail(`Invalid save file: player ${index} is invalid.`)
-    if (typeof player.type !== 'string' || ![PLAYER_TYPES.human, PLAYER_TYPES.ai].includes(player.type)) {
+    if (
+      typeof player.type !== 'string' ||
+      ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits].includes(player.type)
+    ) {
       fail(`Invalid save file: player ${index} has an unsupported type.`)
     }
     if (typeof player.isPlayed !== 'boolean') {

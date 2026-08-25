@@ -104,6 +104,12 @@
   transition: opacity 520ms ease-out;
 }
 
+.portal-travel.is-reveal-active {
+  background: transparent;
+  opacity: 1;
+  transition: none;
+}
+
 .portal-travel--blue {
   --portal-travel-color: #66b7ff;
 }
@@ -148,6 +154,70 @@
 
 .portal-travel.is-arriving::before {
   animation-duration: 2.4s;
+}
+
+.portal-travel.is-reveal-active::before,
+.portal-travel.is-reveal-active::after {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.portal-travel__reveal-mask,
+.world-reveal {
+  --portal-reveal-x: 50vw;
+  --portal-reveal-y: 50vh;
+  --portal-reveal-radius: 0px;
+
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: none;
+  background: #020204;
+  pointer-events: auto;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  mask-image: radial-gradient(
+    circle at var(--portal-reveal-x) var(--portal-reveal-y),
+    transparent 0 var(--portal-reveal-radius),
+    #000 calc(var(--portal-reveal-radius) + 1px)
+  );
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-image: radial-gradient(
+    circle at var(--portal-reveal-x) var(--portal-reveal-y),
+    transparent 0 var(--portal-reveal-radius),
+    #000 calc(var(--portal-reveal-radius) + 1px)
+  );
+}
+
+.world-reveal {
+  position: fixed;
+  z-index: 5200;
+  display: block;
+}
+
+.portal-travel.is-reveal-active .portal-travel__reveal-mask {
+  display: block;
+}
+
+.portal-travel.is-reveal-active .portal-travel__core,
+.portal-travel.is-reveal-active .portal-travel__hero-path,
+.portal-travel.is-reveal-active .portal-travel__status,
+.portal-travel.is-reveal-active .portal-travel__progress {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.portal-travel.is-reveal-active .portal-travel__core::before,
+.portal-travel.is-reveal-active .portal-travel__core::after,
+.portal-travel.is-reveal-active .portal-travel__hero-path *,
+.portal-travel.is-reveal-active .portal-travel__hero-frame::before,
+.portal-travel.is-reveal-active .portal-travel__hero-frame::after {
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
 }
 
 .portal-travel__core {

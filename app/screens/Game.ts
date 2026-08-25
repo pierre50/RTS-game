@@ -4,7 +4,7 @@ import { t } from '../lib/lang'
 import Map from '../classes/map'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
-import { Modal } from '../lib'
+import { getReliefOffset, Modal } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combatFeedback'
 import { adjustFactionRelation } from '../lib/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
@@ -68,7 +68,7 @@ import {
 } from './game/GameRuntimeLifecycle'
 import { getGameSpeed } from '../lib/settings'
 import { GameLoadingScreen } from '../ui/GameLoadingScreen'
-import type { PortalTravelTransition } from '../ui/PortalTravelTransition'
+import { WorldRevealTransition, type PortalRevealPoint, type PortalTravelTransition } from '../ui/PortalTravelTransition'
 import { PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
@@ -221,9 +221,26 @@ export default class Game extends Container {
       await this._bootFromConfig(this.config!)
       booted = true
     } finally {
+      const revealPoint = booted ? this._getHeroRevealPoint() : null
+      const initialReveal = booted ? new WorldRevealTransition(revealPoint) : null
+      const hero = booted ? this._runtimeHeroUnit() : null
+      const previousDevInvincible = hero?.devInvincible
+      if (hero) hero.devInvincible = true
       this._loadingScreen?.destroy()
       this._loadingScreen = null
-      if (booted) this.context.menu?.show?.()
+      if (booted) {
+        this.context.menu?.show?.()
+        try {
+          await initialReveal?.revealFrom(this._getHeroRevealPoint() ?? revealPoint)
+        } finally {
+          if (hero) {
+            if (previousDevInvincible === undefined) delete hero.devInvincible
+            else hero.devInvincible = previousDevInvincible
+          }
+        }
+      } else {
+        initialReveal?.destroy()
+      }
     }
   }
 
@@ -242,6 +259,13 @@ export default class Game extends Container {
   _map(): MapInstance {
     if (!this.context.map) throw new Error('Game map is not ready')
     return this.context.map as MapInstance
+  }
+
+  _getHeroRevealPoint(): PortalRevealPoint | null {
+    const { controls } = this.context
+    const hero = this._runtimeHeroUnit()
+    if (!controls || !hero) return null
+    return controls.localToScreen(hero.x - controls.camera.x, hero.y + getReliefOffset(hero) - controls.camera.y)
   }
 
   async _updateLoading(messageKey: string, progress: number): Promise<void> {

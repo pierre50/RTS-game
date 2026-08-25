@@ -17,6 +17,7 @@ import {
   setAge,
   setCiv,
   setGameSpeed,
+  setTime,
   toggleHeroInvincible,
   setPopMax,
   setWeatherPhase,
@@ -125,7 +126,8 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     usage: 'faction-raid',
     describe: 'Trigger a hostile known faction tribute raid near the portal',
     run: (_args, context) => {
-      const started = context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }) ?? false
+      const started =
+        context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }) ?? false
       return started
         ? { ok: true, message: 'Faction raid triggered' }
         : { ok: false, message: 'Unable to trigger faction raid' }
@@ -213,9 +215,9 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'time',
     aliases: ['clock'],
-    usage: 'time',
-    describe: 'Print day/night debug state',
-    run: (_args, context) => showTimeState(context),
+    usage: 'time [HH[:MM]]',
+    describe: 'Print or set day/night time',
+    run: ([value], context) => (value ? setTime(context, value) : showTimeState(context)),
   })
 
   registry.register({
@@ -449,7 +451,6 @@ function registerDebugInfoCommands(registry: DevCommandRegistry): void {
     complete: () => ['on', 'off'],
     run: (_args, context) => toggleEntityBars(context, _args[0] || ''),
   })
-
 }
 
 export function createDevCommands(): DevCommandRegistry {

@@ -46,11 +46,31 @@ function pad2(value: number): string {
   return String(value).padStart(2, '0')
 }
 
+function elapsedMsForDayTime(day: number, hour: number, minute: number): number {
+  const dayStartHour = DAY_NIGHT_CONFIG.newDayHour + (Math.max(1, day) - 1) * DAY_NIGHT_CONFIG.hoursPerDay
+  const targetHourOfDay = hour + minute / 60
+  const absoluteHour =
+    targetHourOfDay >= DAY_NIGHT_CONFIG.newDayHour
+      ? dayStartHour + targetHourOfDay - DAY_NIGHT_CONFIG.newDayHour
+      : dayStartHour + DAY_NIGHT_CONFIG.hoursPerDay - DAY_NIGHT_CONFIG.newDayHour + targetHourOfDay
+  return ((absoluteHour - DAY_NIGHT_CONFIG.startHour) / DAY_NIGHT_CONFIG.hoursPerDay) * DAY_NIGHT_CONFIG.dayLengthMs
+}
+
+function nextElapsedMsForTime(currentElapsedMs: number, day: number, hour: number, minute: number): number {
+  let targetElapsedMs = elapsedMsForDayTime(day, hour, minute)
+  while (targetElapsedMs <= currentElapsedMs) targetElapsedMs += DAY_NIGHT_CONFIG.dayLengthMs
+  return Math.max(0, targetElapsedMs)
+}
+
 function lerp(current: number, target: number, amount: number): number {
   return current + (target - current) * amount
 }
 
-function lerpColor(from: DayNightColorAdjustment, to: DayNightColorAdjustment, amount: number): DayNightColorAdjustment {
+function lerpColor(
+  from: DayNightColorAdjustment,
+  to: DayNightColorAdjustment,
+  amount: number
+): DayNightColorAdjustment {
   return {
     gamma: lerp(from.gamma, to.gamma, amount),
     contrast: lerp(from.contrast, to.contrast, amount),
@@ -63,7 +83,8 @@ function lerpColor(from: DayNightColorAdjustment, to: DayNightColorAdjustment, a
 }
 
 function colorForHour(hour: number): DayNightColorAdjustment {
-  const normalizedHour = ((hour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) % DAY_NIGHT_CONFIG.hoursPerDay
+  const normalizedHour =
+    ((hour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) % DAY_NIGHT_CONFIG.hoursPerDay
   for (let index = 0; index < DAY_NIGHT_COLOR_TIMELINE.length - 1; index++) {
     const current = DAY_NIGHT_COLOR_TIMELINE[index]
     const next = DAY_NIGHT_COLOR_TIMELINE[index + 1]
@@ -113,8 +134,7 @@ export class DayNightSystem {
     const gameHoursElapsed = (this.elapsedMs / DAY_NIGHT_CONFIG.dayLengthMs) * DAY_NIGHT_CONFIG.hoursPerDay
     const absoluteHour = DAY_NIGHT_CONFIG.startHour + gameHoursElapsed
     const hourOfDay =
-      ((absoluteHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) %
-      DAY_NIGHT_CONFIG.hoursPerDay
+      ((absoluteHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) % DAY_NIGHT_CONFIG.hoursPerDay
     const dayBoundaryIndex = Math.floor((absoluteHour - DAY_NIGHT_CONFIG.newDayHour) / DAY_NIGHT_CONFIG.hoursPerDay)
     const hour = Math.floor(hourOfDay)
     const minute = Math.floor((hourOfDay - hour) * 60)
@@ -145,6 +165,22 @@ export class DayNightSystem {
     this.elapsedMs += DAY_NIGHT_CONFIG.dayLengthMs
     this.state = this.computeState()
     for (const listener of this.dayChangeListeners) listener(this.state.day, previousDay)
+    this.context.menu?.updateTopbar?.()
+  }
+
+  setTime(hour: number, minute = 0): void {
+    const previousDay = this.state.day
+    this.elapsedMs = nextElapsedMsForTime(
+      this.elapsedMs,
+      this.state.day,
+      clamp(Math.floor(hour), 0, 23),
+      clamp(Math.floor(minute), 0, 59)
+    )
+    this.state = this.computeState()
+    if (this.state.day !== previousDay) {
+      for (const listener of this.dayChangeListeners) listener(this.state.day, previousDay)
+    }
+    this.lastTopbarMinute = -1
     this.context.menu?.updateTopbar?.()
   }
 

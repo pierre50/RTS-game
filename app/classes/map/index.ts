@@ -21,8 +21,7 @@ import type { RuntimeCell, RenderChunk } from '../../types/map'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
-import type { PlayerSetupConfig } from '../../types/save'
-import type { SaveEntityState } from '../../types/save'
+import type { PlayerSetupConfig, PortalEncounterKind, SaveEntityState } from '../../types/save'
 import type { MapRuntimeContext } from '../../types/context'
 
 export type MapContext = MapRuntimeContext
@@ -75,6 +74,7 @@ export default class Map extends Container {
   startingAge: number
   noAI: boolean
   humanStartsWithoutBase: boolean
+  portalEncounter: PortalEncounterKind | null
   instantMode: boolean
   difficulty: string
   startingResources: ResourceAmount
@@ -129,6 +129,7 @@ export default class Map extends Container {
     this.startingAge = 0
     this.noAI = false
     this.humanStartsWithoutBase = false
+    this.portalEncounter = null
 
     this.instantMode = false
     this.difficulty = 'medium'

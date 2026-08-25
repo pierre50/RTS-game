@@ -133,6 +133,8 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/wall/level-1',
       'resources/minerals',
     ]),
+    'buildings/age-0/shadow': 'assets/graphics/buildings/age-0/texture_shadow.json',
+    'buildings/age-1/shadow': 'assets/graphics/buildings/age-1/texture_shadow.json',
   },
   sounds: {
     ...toSoundBundle([

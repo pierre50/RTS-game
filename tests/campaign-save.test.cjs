@@ -94,6 +94,44 @@ test('adds a child world and records the portal tree path', () => {
   assert.equal(getCurrentWorldState(next), childState)
 })
 
+test('records bandit portal encounters without faction labels while bandits are alive', () => {
+  const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
+  const childState = worldSave(456)
+  childState.config.portalEncounter = 'bandit'
+  childState.players.push({
+    label: 'bandits',
+    type: 'Bandits',
+    isPlayed: false,
+    buildings: [],
+    units: [{ i: 1, j: 1, label: 'bandit-1', type: 'BanditSword', hitPoints: 20 }],
+    corpses: [],
+    views: [[{}]],
+  })
+
+  const next = addChildWorldToCampaign(campaign, childState, {
+    factionIds: ['wrong-faction'],
+    now: 2000,
+    worldId: 'bandit-world',
+  })
+
+  assert.equal(next.worldGraph.nodes['bandit-world'].encounter, 'bandit')
+  assert.equal(next.worldGraph.nodes['bandit-world'].banditsCleared, false)
+  assert.deepEqual(next.worldGraph.nodes['bandit-world'].factionIds, [])
+})
+
+test('marks bandit portal worlds cleared once saved without living bandits', () => {
+  const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
+  const childState = worldSave(456)
+  childState.config.portalEncounter = 'bandit'
+  const next = addChildWorldToCampaign(campaign, childState, { now: 2000, worldId: 'bandit-world' })
+  next.worldGraph.nodes['bandit-world'].factionIds = ['old-faction']
+  const updated = updateCurrentWorldState(next, childState, 3000)
+
+  assert.equal(updated.worldGraph.nodes['bandit-world'].encounter, 'bandit')
+  assert.equal(updated.worldGraph.nodes['bandit-world'].banditsCleared, true)
+  assert.deepEqual(updated.worldGraph.nodes['bandit-world'].factionIds, [])
+})
+
 test('returns to the parent world without deleting the child state', () => {
   const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
   const child = addChildWorldToCampaign(campaign, worldSave(456), { now: 2000, worldId: 'child' })

@@ -5,7 +5,7 @@ import { DEFAULT_MAP_TYPE } from '../../config/mapTypes'
 import { CELL_HEIGHT, CELL_WIDTH, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
 import { colors } from '../../lib'
 import { createFactionSave, FACTION_SCORE } from '../../lib/factions'
-import type { FactionSave, GameConfig, SaveEntityState, SerializedSave } from '../../types/save'
+import type { FactionSave, GameConfig, PortalEncounterKind, SaveEntityState, SerializedSave } from '../../types/save'
 import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
@@ -91,6 +91,11 @@ function randomPortalEncounterRelation(): PortalEncounterRelation {
   return relations[Math.floor(Math.random() * relations.length)] || 'hostile'
 }
 
+function randomPortalEncounterKind(): PortalEncounterKind {
+  const encounters: PortalEncounterKind[] = ['village', 'bandit']
+  return encounters[Math.floor(Math.random() * encounters.length)] || 'village'
+}
+
 export function extractPortalParty(state: SerializedSave): PortalPartyState {
   const played = state.players.find(player => player.isPlayed)
   const hero = played?.units?.find(unit => unit.controlMode === 'hero' || unit.type === 'Hero' || unit.isChief) ?? null
@@ -159,6 +164,7 @@ export function applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
   map.environment = (config.environment as EnvironmentId | undefined) || getEnvironmentForCiv(humanCiv)
   if (config.instantMode) map.instantMode = true
   map.humanStartsWithoutBase = Boolean(config.humanStartsWithoutBase)
+  map.portalEncounter = config.portalEncounter ?? null
   if (config.startingAge != null) map.startingAge = Number(config.startingAge)
   if (config.allTechnologies !== undefined) map.allTechnologies = config.allTechnologies
   if (config.revealEverything !== undefined) map.revealEverything = config.revealEverything
@@ -255,6 +261,7 @@ export function configForPortalWorld({
       revealTerrain: map.revealTerrain,
       instantMode: map.instantMode,
       humanStartsWithoutBase: true,
+      portalEncounter: randomPortalEncounterKind(),
       startingResources: map.startingResources,
       resourceDensity: map.resourceDensity,
       difficulty: map.difficulty,

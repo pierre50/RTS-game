@@ -1,6 +1,6 @@
 # Code Health Report
 
-Generated: 2026-08-24T22:31:54.704Z
+Generated: 2026-08-24T22:35:28.711Z
 
 ## Global Score
 
@@ -41,18 +41,18 @@ Generated: 2026-08-24T22:31:54.704Z
 
 | File | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- |
-| app/classes/building/BuildingProduction.ts | 230.1 | 384 | 95 | 37 | 26 | souvent modifie |
-| app/classes/building/index.ts | 229.5 | 468 | 36 | 131 | 41 | souvent modifie |
-| app/controllers/HeroController.ts | 229.5 | 478 | 69 | 48 | 38 | souvent modifie |
-| app/classes/unit/UnitActions.ts | 229.2 | 348 | 65 | 65 | 41 | souvent modifie |
-| app/lib/heroTools.ts | 227.5 | 339 | 62 | 49 | 42 | souvent modifie |
-| app/classes/map/MapGeneration.ts | 227.3 | 477 | 52 | 19 | 45 | souvent modifie |
-| app/classes/Projectile.ts | 226.4 | 566 | 68 | 124 | 25 | souvent modifie |
-| app/classes/unit/index.ts | 218 | 571 | 13 | 18 | 59 | souvent modifie, beaucoup de dependances |
-| app/classes/players/AIPlayer.ts | 213.3 | 559 | 87 | 121 | 12 | souvent modifie |
-| app/classes/unit/UnitMovement.ts | 212.8 | 292 | 47 | 45 | 45 | souvent modifie |
-| app/classes/animal/index.ts | 211.5 | 436 | 30 | 114 | 42 | souvent modifie |
-| app/classes/Resource.ts | 210 | 564 | 63 | 128 | 21 | souvent modifie |
+| app/classes/building/BuildingProduction.ts | 233.1 | 384 | 95 | 37 | 27 | souvent modifie |
+| app/classes/building/index.ts | 232.5 | 468 | 36 | 131 | 42 | souvent modifie |
+| app/controllers/HeroController.ts | 232.5 | 478 | 69 | 48 | 39 | souvent modifie |
+| app/classes/unit/UnitActions.ts | 232.2 | 348 | 65 | 65 | 42 | souvent modifie |
+| app/lib/heroTools.ts | 230.5 | 339 | 62 | 49 | 43 | souvent modifie |
+| app/classes/map/MapGeneration.ts | 230.3 | 477 | 52 | 19 | 46 | souvent modifie |
+| app/classes/Projectile.ts | 229.4 | 566 | 68 | 124 | 26 | souvent modifie |
+| app/classes/unit/index.ts | 221 | 571 | 13 | 18 | 60 | souvent modifie, beaucoup de dependances |
+| app/classes/players/AIPlayer.ts | 216.3 | 559 | 87 | 121 | 13 | souvent modifie |
+| app/classes/unit/UnitMovement.ts | 215.8 | 292 | 47 | 45 | 46 | souvent modifie |
+| app/classes/animal/index.ts | 214.5 | 436 | 30 | 114 | 43 | souvent modifie |
+| app/classes/Resource.ts | 213 | 564 | 63 | 128 | 22 | souvent modifie |
 
 ## Largest Files
 
@@ -92,18 +92,18 @@ Generated: 2026-08-24T22:31:54.704Z
 
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
-| app/types/entities.ts | 62 | 199.2 | 469 |
-| app/classes/unit/index.ts | 59 | 218 | 571 |
-| app/classes/map/MapGeneration.ts | 45 | 227.3 | 477 |
-| app/classes/unit/UnitMovement.ts | 45 | 212.8 | 292 |
+| app/types/entities.ts | 63 | 202.2 | 469 |
+| app/classes/unit/index.ts | 60 | 221 | 571 |
+| app/classes/map/MapGeneration.ts | 46 | 230.3 | 477 |
+| app/classes/unit/UnitMovement.ts | 46 | 215.8 | 292 |
 | app/lib/i18n/translations.ts | 45 | 164.7 | 769 |
-| app/lib/heroTools.ts | 42 | 227.5 | 339 |
-| app/classes/animal/index.ts | 42 | 211.5 | 436 |
-| app/classes/building/index.ts | 41 | 229.5 | 468 |
-| app/classes/unit/UnitActions.ts | 41 | 229.2 | 348 |
+| app/lib/heroTools.ts | 43 | 230.5 | 339 |
+| app/classes/animal/index.ts | 43 | 214.5 | 436 |
+| app/classes/building/index.ts | 42 | 232.5 | 468 |
+| app/classes/unit/UnitActions.ts | 42 | 232.2 | 348 |
 | app/config/assetManifest.ts | 41 | 129.9 | 275 |
-| app/controllers/HeroController.ts | 38 | 229.5 | 478 |
-| app/screens/Game.ts | 37 | 207.7 | 665 |
+| app/controllers/HeroController.ts | 39 | 232.5 | 478 |
+| app/screens/Game.ts | 38 | 210.7 | 665 |
 
 ## Dependency Cycles
 

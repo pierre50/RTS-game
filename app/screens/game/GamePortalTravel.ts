@@ -1,4 +1,4 @@
-import { getFreeLandCellAroundInstance, teleportRuntimeUnitToCell, updateInstanceVisibility } from '../../lib'
+import { getFreeLandCellAroundInstance, getReliefOffset, teleportRuntimeUnitToCell, updateInstanceVisibility } from '../../lib'
 import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { syncHeroResourceLoadState } from '../../lib/resourceCarry'
 import {
@@ -10,7 +10,7 @@ import {
   updateCurrentWorldState,
 } from '../../serialization/CampaignSave'
 import { serializeGame } from '../../serialization/SaveSerializer'
-import { PortalTravelTransition } from '../../ui/PortalTravelTransition'
+import { PortalTravelTransition, type PortalRevealPoint } from '../../ui/PortalTravelTransition'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceEntity, UnitEntity } from '../../types/entities'
 import type { Viewport } from '../../types/geometry'
@@ -40,6 +40,11 @@ type PortalRuntimeMap = RuntimeMap & {
   updateRenderChunks(viewport: Viewport): void
 }
 
+type PortalHeroInvincibility = {
+  hero: UnitEntity
+  previousDevInvincible?: boolean
+}
+
 export type PortalTravelGame = {
   _campaignSave: CampaignSave | null
   _isRestarting: boolean
@@ -55,6 +60,28 @@ export type PortalTravelGame = {
   _destroyRuntime(options?: { preserveLoadingScreen?: boolean }): void
   _gameContext(): GameContextLike
   _map(): RuntimeMap & { revealEverything: boolean }
+}
+
+function protectPortalHero(hero: UnitEntity | null): PortalHeroInvincibility | null {
+  if (!hero) return null
+  const previousDevInvincible = hero.devInvincible
+  hero.devInvincible = true
+  return { hero, previousDevInvincible }
+}
+
+function restorePortalHeroProtection(protection: PortalHeroInvincibility | null): void {
+  if (!protection) return
+  if (protection.previousDevInvincible === undefined) {
+    delete protection.hero.devInvincible
+  } else {
+    protection.hero.devInvincible = protection.previousDevInvincible
+  }
+}
+
+function getPortalRevealPoint(game: PortalTravelGame, hero: UnitEntity | null): PortalRevealPoint | null {
+  if (!hero) return null
+  const { controls } = game._gameContext()
+  return controls.localToScreen(hero.x - controls.camera.x, hero.y + getReliefOffset(hero) - controls.camera.y)
 }
 
 export function configForRuntimePortalWorld(
@@ -243,9 +270,13 @@ export async function travelThroughPortal(
 ): Promise<void> {
   if (game._isRestarting) return
   game._isRestarting = true
+  let departureHeroProtection: PortalHeroInvincibility | null = null
+  let arrivalHeroProtection: PortalHeroInvincibility | null = null
+  let arrivalRevealPoint: PortalRevealPoint | null = null
   const now = Date.now()
   const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
   const party = extractPortalParty(currentWorldState)
+  const departureHero = runtimeHeroUnit(game)
   const campaign = game._campaignSave
     ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
     : createInitialCampaignSave(currentWorldState, { now })
@@ -255,10 +286,12 @@ export async function travelThroughPortal(
   const existingTarget = campaign.worlds[targetWorldId]
   const portalTransition = new PortalTravelTransition(color, { heroImageSrc: heroTravelImageSrc(game.context.player) })
   game._loadingScreen = portalTransition
-  portalTransition.update('generatingWorld', 0.02)
-  await portalTransition.waitForFlash()
 
   try {
+    departureHeroProtection = protectPortalHero(departureHero)
+    await portalTransition.playDeparture(getPortalRevealPoint(game, departureHero))
+    portalTransition.update('generatingWorld', 0.02)
+
     if (shouldReturnToParent) {
       const nextCampaign = returnToParentWorld(campaign, now)
       game._campaignSave = structuredClone(nextCampaign)
@@ -271,6 +304,9 @@ export async function travelThroughPortal(
       await game._bootFromSave(withFogEnabledState(structuredClone(parentState)))
       game._map().revealEverything = false
       applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game))
+      const arrivalHero = runtimeHeroUnit(game)
+      arrivalHeroProtection = protectPortalHero(arrivalHero)
+      arrivalRevealPoint = getPortalRevealPoint(game, arrivalHero)
       const targetState = withFogEnabledState(serializeGame(game._gameContext()))
       const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
       game._campaignSave = structuredClone(committedCampaign)
@@ -288,6 +324,9 @@ export async function travelThroughPortal(
       )
       game._map().revealEverything = false
       applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game))
+      const arrivalHero = runtimeHeroUnit(game)
+      arrivalHeroProtection = protectPortalHero(arrivalHero)
+      arrivalRevealPoint = getPortalRevealPoint(game, arrivalHero)
       const targetState = withFogEnabledState(serializeGame(game._gameContext()))
       const committedCampaign = updateCurrentWorldState(nextCampaign, targetState, now)
       game._campaignSave = structuredClone(committedCampaign)
@@ -300,12 +339,16 @@ export async function travelThroughPortal(
       await game._bootFromConfig(portalWorld.config, { dayNightElapsedMs: campaign.clock?.dayNightElapsedMs })
       game._map().revealEverything = false
       applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game), { freshWorld: true })
+      const arrivalHero = runtimeHeroUnit(game)
+      arrivalHeroProtection = protectPortalHero(arrivalHero)
+      arrivalRevealPoint = getPortalRevealPoint(game, arrivalHero)
       const childState = withFogEnabledState(serializeGame(game._gameContext()))
+      const isBanditEncounter = portalWorld.config.portalEncounter === 'bandit'
       const nextCampaign = addChildWorldToCampaign(campaign, childState, {
         color,
         entryPortalId: portal.label || `${portal.i},${portal.j}`,
-        factionIds: [portalWorld.factionId],
-        factions: { [portalWorld.factionId]: portalWorld.faction },
+        factionIds: isBanditEncounter ? [] : [portalWorld.factionId],
+        factions: isBanditEncounter ? {} : { [portalWorld.factionId]: portalWorld.faction },
         name: `Monde ${color}`,
         now,
         parentWorldId,
@@ -318,8 +361,10 @@ export async function travelThroughPortal(
     game.context.menu?.show?.()
   } finally {
     const loadingScreen = game._loadingScreen
-    if (loadingScreen instanceof PortalTravelTransition) await loadingScreen.finish()
+    if (loadingScreen instanceof PortalTravelTransition) await loadingScreen.finish({ revealFrom: arrivalRevealPoint })
     else loadingScreen?.destroy?.()
+    restorePortalHeroProtection(arrivalHeroProtection)
+    restorePortalHeroProtection(departureHeroProtection)
     game._loadingScreen = null
     game._isRestarting = false
   }

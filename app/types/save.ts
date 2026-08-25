@@ -189,6 +189,8 @@ export type WorldGraphNode = {
   name: string
   color: WorldColor
   environment?: string | null
+  encounter?: PortalEncounterKind | null
+  banditsCleared?: boolean
   factionIds?: string[]
   parentId?: string | null
   children: string[]
@@ -242,6 +244,7 @@ export type GameConfig = {
   mapType?: string
   name?: string
   players?: PlayerSetupConfig[]
+  portalEncounter?: PortalEncounterKind
   positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
   resourceDensity?: string
@@ -252,6 +255,8 @@ export type GameConfig = {
   startingAge?: number
   startingResources?: ResourceAmount
 }
+
+export type PortalEncounterKind = 'village' | 'bandit'
 
 export type PlayerSetupConfig = {
   civ?: string

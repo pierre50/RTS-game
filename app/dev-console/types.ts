@@ -38,6 +38,7 @@ type DevDayNightLike = {
   getDayLabel?(): string
   getElapsedMs?(): number
   getTimeLabel?(): string
+  setTime?(hour: number, minute?: number): void
   state?: DayNightStateLike
 }
 

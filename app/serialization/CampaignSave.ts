@@ -2,6 +2,7 @@ import type {
   CampaignSave,
   CampaignWorldSave,
   FactionSave,
+  PortalEncounterKind,
   SaveRecord,
   SerializedSave,
   WorldColor,
@@ -37,6 +38,29 @@ function createWorldId(world: SerializedSave, now: number): string {
 
 function worldEnvironment(world: SerializedSave): string | null {
   return world.world?.environment ?? world.config?.environment ?? null
+}
+
+function worldEncounter(world: SerializedSave): PortalEncounterKind | null {
+  const encounter = world.config?.portalEncounter
+  return encounter === 'bandit' || encounter === 'village' ? encounter : null
+}
+
+function isLivingSavedEntity(entity: { hitPoints?: number; isDead?: boolean; isDestroyed?: boolean }): boolean {
+  return !entity.isDead && !entity.isDestroyed && entity.hitPoints !== 0
+}
+
+function savedWorldHasLivingBandits(world: SerializedSave): boolean {
+  return world.players.some(player => {
+    const isBanditOwner = player.type === 'Bandits' || player.label?.toLowerCase().includes('bandit')
+    return (player.units ?? []).some(unit => {
+      const isBanditUnit = unit.type?.toLowerCase().includes('bandit') || isBanditOwner
+      return isBanditUnit && isLivingSavedEntity(unit)
+    })
+  })
+}
+
+function areWorldBanditsCleared(world: SerializedSave): boolean {
+  return worldEncounter(world) === 'bandit' && !savedWorldHasLivingBandits(world)
 }
 
 function dayNightElapsedMs(world: SerializedSave): number {
@@ -98,6 +122,8 @@ export function createInitialCampaignSave(
           name: worldName,
           color,
           environment: worldEnvironment(worldState),
+          encounter: worldEncounter(worldState),
+          banditsCleared: areWorldBanditsCleared(worldState),
           factionIds: [],
           parentId: null,
           children: [],
@@ -147,6 +173,7 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
     state,
   }
   const node = campaign.worldGraph.nodes[campaign.currentWorldId]
+  const encounter = worldEncounter(state) ?? node?.encounter ?? null
 
   return {
     ...campaign,
@@ -168,6 +195,9 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
               [campaign.currentWorldId]: {
                 ...node,
                 environment: worldEnvironment(state) ?? node.environment ?? null,
+                encounter,
+                banditsCleared: areWorldBanditsCleared(state),
+                factionIds: encounter === 'bandit' ? [] : node.factionIds,
                 visitedAt: now,
               },
             }
@@ -201,7 +231,8 @@ export function addChildWorldToCampaign(
   const parentNode = campaign.worldGraph.nodes[parentWorldId]
   const existingNode = campaign.worldGraph.nodes[id]
   const nextParentChildren = parentNode?.children.includes(id) ? parentNode.children : [...(parentNode?.children ?? []), id]
-  const nextFactionIds = [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
+  const encounter = worldEncounter(childState) ?? existingNode?.encounter ?? null
+  const nextFactionIds = encounter === 'bandit' ? [] : [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
 
   return {
     ...campaign,
@@ -247,6 +278,8 @@ export function addChildWorldToCampaign(
           name: existingNode?.name ?? worldName,
           color: existingNode?.color ?? color,
           environment: worldEnvironment(childState) ?? existingNode?.environment ?? null,
+          encounter,
+          banditsCleared: areWorldBanditsCleared(childState),
           factionIds: nextFactionIds,
           parentId: parentWorldId,
           children: existingNode?.children ?? [],

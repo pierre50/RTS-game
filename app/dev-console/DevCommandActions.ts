@@ -40,4 +40,4 @@ export { spawnAnimal, spawnBuilding, spawnUnits, TRIBAL_BUILDING_COMPLETIONS } f
 
 export { addHeroInventoryEquipment } from './actions/heroInventory'
 
-export { forceNextDay, setWeatherPhase, showTimeState, WEATHER_PHASES } from './actions/world'
+export { forceNextDay, setTime, setWeatherPhase, showTimeState, WEATHER_PHASES } from './actions/world'

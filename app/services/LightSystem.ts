@@ -1,17 +1,24 @@
 import { Container, Sprite, Texture } from 'pixi.js'
+import { FADE_DURATION_MS, UNIT_TYPES } from '../constants'
 import { getInstanceScreenBounds } from '../lib/grid/visibility'
 import type { GameContextLike } from '../types/context'
-import type { EntityLightSourceConfig, RuntimeEntity } from '../types/entities'
+import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
 type LightSource = {
   color: string
+  fadeOutMs?: number
   intensity: number
   radius: number
+  shouldFadeWhenMissing?: () => boolean
   verticalScale: number
   x: number
   y: number
+}
+type FadingLightSource = LightSource & {
+  fadeElapsedMs: number
+  fadeStartIntensity: number
 }
 type ViewportLightMetrics = {
   visibleHeight: number
@@ -23,6 +30,7 @@ type ViewportLightMetrics = {
 type DisplayLightSourceTarget = {
   children?: DisplayLightSourceTarget[]
   destroyed?: boolean
+  label?: string
   lightSource?: EntityLightSourceConfig | null
   visible?: boolean
   x?: number
@@ -30,17 +38,27 @@ type DisplayLightSourceTarget = {
 }
 
 const TARGET_FRAME_MS = 1000 / 60
-const HERO_LIGHT_RADIUS = 250
+const LIGHT_FADE_IN_MS = FADE_DURATION_MS * 0.25
+const LIGHT_FADE_OUT_MS = FADE_DURATION_MS * 0.35
+const HERO_LIGHT_RADIUS = 320
 const HERO_LIGHT_CENTER_OFFSET_Y = -22
 const HERO_LIGHT_VERTICAL_SCALE = 0.76
+const VILLAGER_LIGHT: EntityLightSourceConfig = {
+  color: '#ffc06f',
+  flicker: 0.05,
+  intensity: 0.82,
+  offsetY: -16,
+  radius: 210,
+  verticalScale: 0.7,
+}
 const DEFAULT_ENTITY_LIGHT_COLOR = '255,172,76'
 const DEFAULT_ENTITY_LIGHT_FLICKER = 0.08
-const DEFAULT_ENTITY_LIGHT_INTENSITY = 0.86
-const DEFAULT_ENTITY_LIGHT_RADIUS = 160
+const DEFAULT_ENTITY_LIGHT_INTENSITY = 1.02
+const DEFAULT_ENTITY_LIGHT_RADIUS = 190
 const DEFAULT_ENTITY_LIGHT_VERTICAL_SCALE = 0.7
 const DARKNESS_LERP_PER_SECOND = 5
 const MAX_DARKNESS_ALPHA = 0.96
-const GLOW_ALPHA = 0.08
+const GLOW_ALPHA = 0.11
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -62,14 +80,32 @@ function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
   return Boolean(value && typeof value === 'object')
 }
 
+function isPlayedVillager(unit: RuntimeEntity): unit is UnitEntity {
+  return unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
+}
+
+function shouldUseVillagerLight(unit: RuntimeEntity): boolean {
+  if (!isPlayedVillager(unit)) return false
+  return !(unit.shelterState?.status === 'outside' && unit.shelterState.reason === 'sleep')
+}
+
+function shouldFadeMissingVillagerLight(unit: UnitEntity): boolean {
+  return unit.shelterState?.location !== 'shelter'
+}
+
 export class LightSystem {
   canvas: HTMLCanvasElement
   context: GameContextLike
+  activeLightElapsedMs: number | null
   currentDarkness: number
   getDarknessLevel: () => number
   getScreenRect: () => ScreenRect
   layer: Container
+  fadingLights: Map<string, FadingLightSource>
+  lightFadeRatios: Map<string, number>
   lights: LightSource[]
+  previousLightFadeRatios: Map<string, number>
+  trackedLights: Map<string, LightSource>
   screenRect: ScreenRect
   sprite: Sprite
   texture: Texture
@@ -77,11 +113,16 @@ export class LightSystem {
 
   constructor(context: GameContextLike, getScreenRect: () => ScreenRect, getDarknessLevel: () => number) {
     this.context = context
+    this.activeLightElapsedMs = null
     this.getScreenRect = getScreenRect
     this.getDarknessLevel = getDarknessLevel
     this.screenRect = this.getScreenRect()
     this.currentDarkness = 0
+    this.fadingLights = new Map()
+    this.lightFadeRatios = new Map()
     this.lights = []
+    this.previousLightFadeRatios = new Map()
+    this.trackedLights = new Map()
 
     this.canvas = document.createElement('canvas')
     this.resizeCanvas(this.screenRect)
@@ -119,7 +160,7 @@ export class LightSystem {
     }
 
     this.layer.visible = true
-    this.updateLights()
+    this.updateLights(elapsedMs)
     this.draw()
   }
 
@@ -134,37 +175,44 @@ export class LightSystem {
     }
   }
 
-  updateLights(): void {
+  updateLights(elapsedMs: number = TARGET_FRAME_MS): void {
+    const previousTrackedLights = this.trackedLights
+    this.previousLightFadeRatios = this.lightFadeRatios
+    this.activeLightElapsedMs = elapsedMs
+    this.lightFadeRatios = new Map()
+    this.trackedLights = new Map()
     this.lights.length = 0
     const hero = this.context.controls?.heroUnit
     const viewport = this.context.controls?.getViewportMetrics?.() as ViewportLightMetrics | undefined
-    if (!viewport) return
+    if (!viewport) {
+      this.activeLightElapsedMs = null
+      return
+    }
     const visibleLeft = viewport?.visibleLeft ?? this.context.controls.camera.x
     const visibleTop = viewport?.visibleTop ?? this.context.controls.camera.y
     const zoom = Math.max(0.1, viewport?.zoom ?? 1)
     const now = performance.now()
-    const heroFlicker = 0.97 + Math.sin(now * 0.006) * 0.025 + Math.sin(now * 0.013) * 0.012
+    const heroFlicker = 1.08 + Math.sin(now * 0.006) * 0.025 + Math.sin(now * 0.013) * 0.012
 
     if (hero && !hero.isDead && !hero.isDestroyed) {
-      this.lights.push({
+      this.addTrackedLightSource('hero', {
+        color: '255,198,96',
+        fadeOutMs: LIGHT_FADE_OUT_MS,
+        intensity: clamp(heroFlicker, 1, 1.16),
+        radius: HERO_LIGHT_RADIUS / zoom,
+        verticalScale: HERO_LIGHT_VERTICAL_SCALE,
         x: hero.x - visibleLeft,
         y: hero.y - visibleTop + HERO_LIGHT_CENTER_OFFSET_Y / zoom,
-        radius: HERO_LIGHT_RADIUS / zoom,
-        intensity: clamp(heroFlicker, 0.88, 1),
-        verticalScale: HERO_LIGHT_VERTICAL_SCALE,
-        color: '255,198,96',
       })
     }
 
     this.collectEntityLights(visibleLeft, visibleTop, zoom, now)
+    this.fadeMissingLights(previousTrackedLights)
+    this.updateFadingLights(elapsedMs)
+    this.activeLightElapsedMs = null
   }
 
-  collectEntityLights(
-    visibleLeft: number,
-    visibleTop: number,
-    zoom: number,
-    now: number
-  ): void {
+  collectEntityLights(visibleLeft: number, visibleTop: number, zoom: number, now: number): void {
     const buckets = this.context.map?.instanceBuckets
     const controls = this.context.controls
     if (!buckets || !controls) return
@@ -181,13 +229,7 @@ export class LightSystem {
     }
   }
 
-  addEntityLights(
-    instance: RuntimeEntity,
-    visibleLeft: number,
-    visibleTop: number,
-    zoom: number,
-    now: number
-  ): void {
+  addEntityLights(instance: RuntimeEntity, visibleLeft: number, visibleTop: number, zoom: number, now: number): void {
     if (
       instance.isDead ||
       instance.isDestroyed ||
@@ -198,6 +240,7 @@ export class LightSystem {
     }
 
     this.addLightSource(instance, instance, 0, 0, visibleLeft, visibleTop, zoom, now)
+    this.addImplicitUnitLightSource(instance, visibleLeft, visibleTop, zoom, now)
     const children = (instance as RuntimeEntity & { children?: DisplayLightSourceTarget[] }).children ?? []
     for (const child of children) {
       this.addChildLightSources(
@@ -211,6 +254,22 @@ export class LightSystem {
         now
       )
     }
+  }
+
+  addImplicitUnitLightSource(
+    instance: RuntimeEntity,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number
+  ): void {
+    if (!isPlayedVillager(instance) || !shouldUseVillagerLight(instance) || isLightSourceConfig(instance.lightSource))
+      return
+    const unit = instance
+    this.addConfiguredLightSource(unit, VILLAGER_LIGHT, 0, 0, visibleLeft, visibleTop, zoom, now, {
+      key: `villager:${unit.label}`,
+      shouldFadeWhenMissing: () => shouldFadeMissingVillagerLight(unit),
+    })
   }
 
   addChildLightSources(
@@ -253,21 +312,83 @@ export class LightSystem {
     const config = source.lightSource
     if (!isLightSourceConfig(config) || source.destroyed || source.visible === false) return
 
+    this.addConfiguredLightSource(instance, config, localX, localY, visibleLeft, visibleTop, zoom, now, {
+      key: `entity:${instance.label}:${source === instance ? 'root' : source.label || `${localX}:${localY}`}`,
+    })
+  }
+
+  addConfiguredLightSource(
+    instance: RuntimeEntity,
+    config: EntityLightSourceConfig,
+    localX: number,
+    localY: number,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number,
+    tracking?: { key?: string; shouldFadeWhenMissing?: () => boolean }
+  ): void {
     const flicker = clamp(config.flicker ?? DEFAULT_ENTITY_LIGHT_FLICKER, 0, 0.5)
-    const flickerRatio = flicker
-      ? 1 + Math.sin(now * 0.007 + instance.i * 0.37 + instance.j * 0.19) * flicker
-      : 1
+    const flickerRatio = flicker ? 1 + Math.sin(now * 0.007 + instance.i * 0.37 + instance.j * 0.19) * flicker : 1
     const offsetX = (config.offsetX ?? 0) / zoom
     const offsetY = (config.offsetY ?? 0) / zoom
 
-    this.lights.push({
+    this.addTrackedLightSource(tracking?.key, {
       x: instance.x - visibleLeft + localX / zoom + offsetX,
       y: instance.y - visibleTop + localY / zoom + offsetY,
+      fadeOutMs: LIGHT_FADE_OUT_MS,
       radius: Math.max(1, (config.radius ?? DEFAULT_ENTITY_LIGHT_RADIUS) / zoom),
       intensity: clamp((config.intensity ?? DEFAULT_ENTITY_LIGHT_INTENSITY) * flickerRatio, 0, 1.4),
+      shouldFadeWhenMissing: tracking?.shouldFadeWhenMissing,
       verticalScale: clamp(config.verticalScale ?? DEFAULT_ENTITY_LIGHT_VERTICAL_SCALE, 0.2, 1.4),
       color: normalizeLightColor(config.color),
     })
+  }
+
+  addTrackedLightSource(key: string | undefined, light: LightSource): void {
+    let renderedLight = light
+    if (key) {
+      const resumedFade = this.fadingLights.get(key)
+      const previousRatio =
+        this.previousLightFadeRatios.get(key) ??
+        (resumedFade ? clamp(resumedFade.intensity / Math.max(0.001, light.intensity), 0, 1) : null)
+      const fadeRatio =
+        this.activeLightElapsedMs == null
+          ? 1
+          : clamp((previousRatio ?? 0) + this.activeLightElapsedMs / LIGHT_FADE_IN_MS, 0, 1)
+      renderedLight = { ...light, intensity: light.intensity * fadeRatio }
+      this.lightFadeRatios.set(key, fadeRatio)
+      this.trackedLights.set(key, renderedLight)
+      this.fadingLights.delete(key)
+    }
+    this.lights.push(renderedLight)
+  }
+
+  fadeMissingLights(previousTrackedLights: Map<string, LightSource>): void {
+    for (const [key, light] of previousTrackedLights) {
+      if (this.trackedLights.has(key) || this.fadingLights.has(key)) continue
+      if (light.shouldFadeWhenMissing && !light.shouldFadeWhenMissing()) continue
+      this.fadingLights.set(key, {
+        ...light,
+        fadeElapsedMs: 0,
+        fadeStartIntensity: light.intensity,
+      })
+    }
+  }
+
+  updateFadingLights(elapsedMs: number): void {
+    for (const [key, light] of this.fadingLights) {
+      light.fadeElapsedMs += elapsedMs
+      const fadeRatio = 1 - clamp(light.fadeElapsedMs / (light.fadeOutMs ?? LIGHT_FADE_OUT_MS), 0, 1)
+      if (fadeRatio <= 0) {
+        this.fadingLights.delete(key)
+        continue
+      }
+      this.lights.push({
+        ...light,
+        intensity: light.fadeStartIntensity * fadeRatio,
+      })
+    }
   }
 
   draw(): void {

@@ -1,6 +1,6 @@
 import { colors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
-import { Human } from '../players'
+import { AI, Human } from '../players'
 import { ensureBanditCampOwner } from './BanditCampGeneration'
 import { applyCivilizationLevelStartingKit as applyCivilizationLevelStartingKitToMap } from './CivilizationStartingKit'
 import type { GameContextLike } from '../../types/context'
@@ -50,7 +50,11 @@ export function generatePlayers(
     if (!i) {
       players.push(createHumanPlayer(context, position.i, position.j, i, playersConfig?.[i]))
     } else if (!map.noAI) {
-      map.banditCampPositions.push({ i: position.i, j: position.j })
+      if (map.portalEncounter === 'bandit') {
+        map.banditCampPositions.push({ i: position.i, j: position.j })
+      } else {
+        players.push(createAIPlayer(map, context, position.i, position.j, i, playersConfig?.[i]))
+      }
     }
   }
 
@@ -135,6 +139,34 @@ function createHumanPlayer(
       team: config?.team ?? null,
       name: config?.name,
       isPlayed: true,
+      civilizationLevel,
+    },
+    context
+  )
+}
+
+function createAIPlayer(
+  map: MapGenerationMap,
+  context: GameContextLike,
+  i: number,
+  j: number,
+  playerIndex: number,
+  config: PlayerOptions | undefined
+): PlayerLike {
+  const civilizationLevel = Math.max(0, Math.min(Number(config?.civilizationLevel) || 0, 3))
+  return new AI(
+    {
+      i,
+      j,
+      age: 0,
+      civ: config?.civ ?? 'Greek',
+      color: config?.color ?? colors[playerIndex],
+      diplomacy: config?.diplomacy ?? null,
+      factionId: config?.factionId ?? null,
+      gender: config?.gender,
+      team: config?.team ?? null,
+      name: config?.name,
+      difficulty: map.difficulty,
       civilizationLevel,
     },
     context

@@ -138,7 +138,13 @@ function loadGame() {
     },
     '../ui/PortalTravelTransition': {
       PortalTravelTransition: class PortalTravelTransition {
+        async playDeparture() {}
+        async finish() {}
         play() {}
+        destroy() {}
+      },
+      WorldRevealTransition: class WorldRevealTransition {
+        async revealFrom() {}
         destroy() {}
       },
     },

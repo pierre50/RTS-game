@@ -2356,6 +2356,84 @@ test('a villager retries the original gather order after approaching a blocked t
   ])
 })
 
+test('force repath restarts a build action when the villager is already in range', () => {
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    i: 2,
+    isDestroyed: false,
+    j: 0,
+    label: 'house-1',
+    size: 2,
+    x: 20,
+    y: 0,
+  }
+  const grid = [
+    [{ has: null, i: 0, j: 0, solid: false }],
+    [{ has: null, i: 1, j: 0, solid: false }],
+    [{ has: building, i: 2, j: 0, solid: true }],
+  ]
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 90,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => true,
+      instancesDistance: () => 1,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    './UnitCommands': {
+      applyWorkForAction: (unit, work, action) => {
+        unit.work = work
+        unit.action = action
+      },
+    },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.build,
+    actionLocked: false,
+    blockedGatherApproach: null,
+    context: { map: { grid }, performance: { record: () => {} } },
+    dest: building,
+    getAction: action => calls.push(['getAction', action]),
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    i: 1,
+    isDead: false,
+    isUnitAtDest: (_action, target) => target === building,
+    j: 0,
+    label: 'villager-1',
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: target => {
+      calls.push(['setDest', target.label])
+      unit.dest = target
+    },
+    stopInterval: () => calls.push(['stopInterval']),
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.builder,
+  }
+
+  new UnitMovement(unit).sendToEvt(building, constants.ACTION_TYPES.build, { forceRepath: true })
+
+  assert.deepEqual(calls, [
+    ['handleChangeDest'],
+    ['stopInterval'],
+    ['setDest', 'house-1'],
+    ['getAction', constants.ACTION_TYPES.build],
+  ])
+})
+
 test('an autonomous villager retries its job instead of stopping when pathing fails', () => {
   const target = {
     family: constants.FAMILY_TYPES.resource,

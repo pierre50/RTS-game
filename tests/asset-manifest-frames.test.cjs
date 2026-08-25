@@ -21,7 +21,7 @@ test('bundled spritesheet frame cache ids are unique', () => {
 
   for (const [bundleName, bundle] of Object.entries(loadAssetManifest())) {
     for (const [alias, assetPath] of Object.entries(bundle)) {
-      if (!assetPath.endsWith('/texture.json')) continue
+      if (!/\/texture(?:_shadow)?\.json$/.test(assetPath)) continue
 
       const atlasPath = path.join(__dirname, '..', 'public', assetPath)
       assert.ok(fs.existsSync(atlasPath), `Manifest spritesheet is missing: ${assetPath}`)

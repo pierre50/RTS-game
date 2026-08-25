@@ -5,6 +5,7 @@ import { DayNightSystem } from '../../services/DayNightSystem'
 import { LightSystem } from '../../services/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TributeRaidSystem } from '../../services/TributeRaidSystem'
+import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { VillagerShelterSystem } from '../../services/VillagerShelterSystem'
 import { WeatherSystem } from '../../services/WeatherSystem'
 import type { GameContextLike } from '../../types/context'
@@ -21,6 +22,7 @@ export type RuntimeServices = {
   lights: LightSystem | null
   shadows: ShadowSystem | null
   tributeRaids: TributeRaidSystem | null
+  unitEnergyRegen: UnitEnergyRegenSystem | null
   villagerShelter: VillagerShelterSystem | null
   weather: WeatherSystem | null
 }
@@ -33,6 +35,7 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     lights: null,
     shadows: null,
     tributeRaids: null,
+    unitEnergyRegen: null,
     villagerShelter: null,
     weather: null,
   }
@@ -56,6 +59,7 @@ export function createRuntimeServices(
   dailyWorldEvents.register(tributeRaids)
 
   const campPatrols = new CampPatrolSystem(context)
+  const unitEnergyRegen = new UnitEnergyRegenSystem(context)
   const shadows = new ShadowSystem(context, map)
   const weather = new WeatherSystem(context, map, getScreenRect)
   context.weather = weather
@@ -68,6 +72,7 @@ export function createRuntimeServices(
     lights,
     shadows,
     tributeRaids,
+    unitEnergyRegen,
     villagerShelter,
     weather,
   }
@@ -90,6 +95,7 @@ export function destroyRuntimeServices(
   services.dailyWorldEvents?.destroy()
   services.villagerShelter?.destroy()
   services.campPatrols?.destroy()
+  services.unitEnergyRegen?.destroy()
   services.dayNight?.destroy()
   services.weather?.destroy()
 

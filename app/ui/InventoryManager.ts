@@ -1,5 +1,5 @@
 import { Modal } from '../lib'
-import { renderBuildingAvatar, renderEquipmentAvatar } from '../lib/avatar'
+import { renderBuildingAvatar, renderEquipmentAvatar, renderTextureRefAvatar } from '../lib/avatar'
 import {
   equipHeroInventoryItem,
   formatEquipmentLootLabel,
@@ -14,7 +14,7 @@ import {
 } from '../lib/equipmentLoot'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/uiSound'
-import { SOUND_CUES } from '../constants'
+import { BUILDING_TYPES, SOUND_CUES } from '../constants'
 import { createEntityInfoContent } from './EntityInfoModalManager'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -31,6 +31,12 @@ import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
 type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
+
+const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
+
+export function isHeroConstructionBuildingType(type: string): boolean {
+  return !type.startsWith(BUILDING_TYPES.banditCamp)
+}
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -281,6 +287,10 @@ export class InventoryManager {
     return `${this.getFactionRelationIcon(faction.relationState)} ${this.getFactionRelationText(faction.relationState)} ${faction.relationScore}`
   }
 
+  shouldShowBanditEncounter(node: WorldGraphNode): boolean {
+    return node.encounter === 'bandit' && !node.banditsCleared
+  }
+
   renderWorldMapNode(
     graph: WorldGraphSave,
     node: WorldGraphNode,
@@ -319,7 +329,7 @@ export class InventoryManager {
     body.appendChild(name)
     body.appendChild(meta)
 
-    const factions = (node.factionIds ?? [])
+    const factions = (this.shouldShowBanditEncounter(node) ? [] : (node.factionIds ?? []))
       .map(id => this.menu.context.getCampaignFactions?.()?.[id])
       .filter(Boolean) as FactionSave[]
     if (factions.length) {
@@ -332,6 +342,15 @@ export class InventoryManager {
         badge.textContent = `${this.getFactionRelationLabel(faction)} | ${faction.name}${civ}`
         factionList.appendChild(badge)
       }
+      body.appendChild(factionList)
+    }
+    if (this.shouldShowBanditEncounter(node)) {
+      const factionList = document.createElement('span')
+      factionList.className = 'worldmap-node-factions'
+      const badge = document.createElement('span')
+      badge.className = 'worldmap-faction worldmap-faction-hostile'
+      badge.textContent = `⚔ ${t('worldMapBandits')}`
+      factionList.appendChild(badge)
       body.appendChild(factionList)
     }
 
@@ -515,7 +534,9 @@ export class InventoryManager {
 
   getConstructionButtons(): MenuButtonSpec[] {
     const { player } = this.menu.context
-    return Object.keys(player.config.buildings).map(type => this.menu.getActionBuildingButton(type))
+    return Object.keys(player.config.buildings)
+      .filter(isHeroConstructionBuildingType)
+      .map(type => this.menu.getActionBuildingButton(type))
   }
 
   getTechnologyButtons(): MenuButtonSpec[] {
@@ -630,7 +651,11 @@ export class InventoryManager {
           const canvas = document.createElement('canvas')
           canvas.width = 120
           canvas.height = 120
-          if (icon && renderBuildingAvatar(app, button.id, player, canvas)) {
+          const rendered =
+            button.id === BUILDING_TYPES.farm
+              ? renderTextureRefAvatar(app, WHEAT_FARM_AVATAR_REF, canvas)
+              : renderBuildingAvatar(app, button.id, player, canvas)
+          if (icon && rendered) {
             icon.src = canvas.toDataURL()
           }
         }

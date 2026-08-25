@@ -6,7 +6,7 @@ import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { AnimalConfig } from '../../types/config'
-import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
+import type { PortalEncounterKind, SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
 import type { TextureRef } from '../../lib'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
 
@@ -28,6 +28,7 @@ export type MapGenerationMap = RuntimeMap & {
   positionsCount: number
   noAI?: boolean
   humanStartsWithoutBase?: boolean
+  portalEncounter?: PortalEncounterKind | null
   startingUnits: number
   generationTimings?: Record<string, number>
   difficulty: string
