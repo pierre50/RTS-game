@@ -7,7 +7,7 @@ import { getEquipmentCombatStats, getUnitWorkEquipment, UNARMED_UNIT_WEAPON_POWE
 import { findInstancesInSight } from './grid/visibility'
 import { SLASH_IMPACT_FRAME } from './graphics'
 import { instancesDistance } from './maths'
-import { playAudibleSoundCue, playSoundCue } from './sound'
+import { playAudibleSoundCue } from './sound'
 import { getCombatXpBonus, XP_CATEGORIES } from './unitExperience'
 import { spendHeroEnergy } from './heroEnergy'
 import { playHeroToolAnimation } from './heroToolAnimation'
@@ -86,7 +86,7 @@ function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): Run
 
 export function playEmptyHandWhiff(hero: UnitEntity): boolean {
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
-  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), SLASH_IMPACT_FRAME, {
+  playHeroToolAnimation(hero, () => playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' }), SLASH_IMPACT_FRAME, {
     recoveryAnimation: 'reverseSlash',
   })
   return true
@@ -94,10 +94,15 @@ export function playEmptyHandWhiff(hero: UnitEntity): boolean {
 
 function playMeleeWeaponWhiff(hero: UnitEntity, options: HeroMeleeAttackOptions = {}): boolean {
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
-  playHeroToolAnimation(hero, () => playSoundCue(SOUND_CUES.hero.meleeWhiff), options.impactFrame ?? SLASH_IMPACT_FRAME, {
-    recoveryAnimation: 'reverseSlash',
-    swordChargePower: options.swordChargePower,
-  })
+  playHeroToolAnimation(
+    hero,
+    () => playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' }),
+    options.impactFrame ?? SLASH_IMPACT_FRAME,
+    {
+      recoveryAnimation: 'reverseSlash',
+      swordChargePower: options.swordChargePower,
+    }
+  )
   return true
 }
 
@@ -153,7 +158,7 @@ function strikeHeroMeleeTarget(
         xpUnit: hero,
       })
       if (damageDealt > 0) {
-        playAudibleSoundCue(hero, getHeroMeleeImpactSound(hero, resolvedTarget, tool))
+        playAudibleSoundCue(hero, getHeroMeleeImpactSound(hero, resolvedTarget, tool), { profile: 'combat' })
       }
     },
     options.impactFrame ?? SLASH_IMPACT_FRAME,

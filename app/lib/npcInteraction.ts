@@ -16,7 +16,7 @@ import {
 } from './graphics/selection'
 import { getCellsInCellRadius } from './grid/cells'
 import { angleDelta, getInstanceDegree } from './maths'
-import { playSelectionSound, playSoundCue } from './sound'
+import { playAudibleSoundCue, playSelectionSound } from './sound'
 import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToDispatch'
 export { updateNpcFollow } from './npcFollow'
 export {
@@ -139,14 +139,17 @@ export function playNpcOrderSound(npcs: UnitEntity[]): void {
   const sameCommandSound =
     commandSound != null && npcs.every(npc => JSON.stringify(npc.sounds?.command) === JSON.stringify(commandSound))
   if (sameCommandSound) {
-    playSoundCue(commandSound)
+    playAudibleSoundCue(npcs[0], commandSound, { profile: 'voice' })
     return
   }
   if (npcs.some(npc => npc.type !== UNIT_TYPES.villager)) {
-    playSoundCue(SOUND_CUES.unit.militaryCommand)
+    playAudibleSoundCue(npcs.find(npc => npc.type !== UNIT_TYPES.villager) ?? npcs[0], SOUND_CUES.unit.militaryCommand, {
+      profile: 'voice',
+    })
     return
   }
-  playSoundCue(npcs.find(npc => npc.type === UNIT_TYPES.villager)?.sounds?.command ?? SOUND_CUES.villager.command)
+  const villager = npcs.find(npc => npc.type === UNIT_TYPES.villager) ?? npcs[0]
+  playAudibleSoundCue(villager, villager.sounds?.command ?? SOUND_CUES.villager.command, { profile: 'voice' })
 }
 
 function releaseNpc(target: UnitEntity): void {

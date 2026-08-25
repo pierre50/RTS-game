@@ -14,7 +14,7 @@ import {
   getBuildingTextureNameWithSize,
   canUpdateMinimap,
   updateInstanceVisibility,
-  playSoundCue,
+  playAudibleSoundCue,
   STABLE_HORSE_CAPACITY,
   textureRefToString,
 } from '../../lib'
@@ -311,7 +311,7 @@ export class Building extends Instance implements BuildingEntity {
     const {
       context: { menu, player },
     } = this
-    if (this.owner.isPlayed && this.sounds?.create) playSoundCue(this.sounds.create)
+    if (this.owner.isPlayed && this.sounds?.create) playAudibleSoundCue(this, this.sounds.create, { profile: 'building' })
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading !== null && this.owner.isPlayed) this.updateInterfaceLoading()

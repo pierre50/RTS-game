@@ -47,6 +47,7 @@ function bindSprite(sprite) {
 const { updateInstanceRenderVisibility } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
+  '../insightDetection': { getInsightDetectionRange: (_instance, _target, range) => range },
   './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
 })
 

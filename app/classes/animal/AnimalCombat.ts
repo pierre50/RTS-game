@@ -115,8 +115,10 @@ export class AnimalCombat {
       animal.stop()
       return
     }
-    const targets = findInstancesInSight<AnimalControllerHost, RuntimeEntity>(animal, (instance: RuntimeEntity) =>
-      animal.getActionCondition(instance)
+    const targets = findInstancesInSight<AnimalControllerHost, RuntimeEntity>(
+      animal,
+      (instance: RuntimeEntity) => animal.getActionCondition(instance),
+      { useInsightRange: true }
     )
     if (targets.length) {
       const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(animal, targets)
@@ -239,7 +241,7 @@ export class AnimalCombat {
             animal.sounds &&
               animal.sounds.hit &&
               animal.context.controls.instanceIsAudible(animal) &&
-              playAudibleSoundCue(animal, animal.sounds.hit)
+              playAudibleSoundCue(animal, animal.sounds.hit, { profile: 'combat' })
             const { killed } = applyCombatHit(animal, target, { isMelee: true, menu, player })
             if (killed) {
               animal.affectNewDest()

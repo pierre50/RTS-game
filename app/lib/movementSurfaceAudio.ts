@@ -1,6 +1,8 @@
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, RESOURCE_TYPES, SOUND_CUES } from '../constants'
+import type { SoundDistanceProfileId } from '../config/soundDistance'
 import { isHeroControlled } from './unitControl'
-import { playSoundCue } from './sound'
+import { isUnitWalkSpeedFactor } from './unitLocomotion'
+import { getHeroDistanceSoundVolume, playSoundCue } from './sound'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 
@@ -10,24 +12,24 @@ type SurfaceAudioRule = {
   cellTypes?: Set<string>
   cue: string[]
   cooldownMs: number
-  maxDistance: number
-  minVolume: number
-  volume: number
+  profile: SoundDistanceProfileId
 }
 type MovementSurfaceAudioOptions = {
   previousX?: number
   previousY?: number
 }
 
+const HERO_FOOTSTEP_COOLDOWN_MS = 330
+const HERO_FOOTSTEP_VOLUME = 0.16
+const UNIT_FOOTSTEP_COOLDOWN_MS = 360
+const UNIT_FOOTSTEP_VOLUME = 0.11
 const MOVEMENT_SURFACE_AUDIO_RULES: SurfaceAudioRule[] = [
   {
     key: 'bush-rustle',
     resourceTypes: new Set([RESOURCE_TYPES.wheat, RESOURCE_TYPES.berrybush]),
     cue: SOUND_CUES.surface.bushRustle,
     cooldownMs: 360,
-    maxDistance: 620,
-    minVolume: 0.06,
-    volume: 0.58,
+    profile: 'surface',
   },
 ]
 
@@ -43,21 +45,16 @@ function getHero(unit: UnitEntity): UnitEntity | null {
   return unit.context?.controls?.heroUnit ?? null
 }
 
-function getListenerDistance(unit: UnitEntity): number {
-  const hero = getHero(unit)
-  if (!hero || hero === unit) return 0
-  return Math.hypot((unit.x ?? 0) - (hero.x ?? 0), (unit.y ?? 0) - (hero.y ?? 0))
-}
-
 function getDistanceVolume(rule: SurfaceAudioRule, unit: UnitEntity): number {
-  const distance = getListenerDistance(unit)
-  if (distance >= rule.maxDistance) return 0
-  const ratio = Math.max(0, Math.min(1, 1 - distance / rule.maxDistance))
-  const faded = rule.minVolume + (rule.volume - rule.minVolume) * ratio * ratio
-  return Math.max(0, Math.min(1, faded))
+  return getHeroDistanceSoundVolume(unit, rule.profile, 1)
 }
 
-function canPlayRule(unit: UnitEntity, rule: SurfaceAudioRule): boolean {
+function getUnitFootstepVolume(unit: UnitEntity): number {
+  if (!getHero(unit)) return 0
+  return getHeroDistanceSoundVolume(unit, 'footstep', UNIT_FOOTSTEP_VOLUME)
+}
+
+function canPlayRule(unit: UnitEntity, rule: Pick<SurfaceAudioRule, 'cooldownMs' | 'key'>): boolean {
   const now = getNow(unit)
   let lastPlayedAt = lastPlayedAtByUnit.get(unit)
   if (!lastPlayedAt) {
@@ -72,6 +69,37 @@ function canPlayRule(unit: UnitEntity, rule: SurfaceAudioRule): boolean {
 
 function isAudibleMover(unit: UnitEntity): boolean {
   return Boolean(isHeroControlled(unit) || unit.visible)
+}
+
+function isHeroFootstepAllowed(unit: UnitEntity): boolean {
+  return Boolean(isHeroControlled(unit) && !unit.mountedOnHorse && unit.context?.controls?.shiftKeyActive !== true)
+}
+
+function getFootstepCue(unit: UnitEntity): string[] {
+  switch (unit.currentCell?.type) {
+    case 'Desert':
+      return SOUND_CUES.hero.footstepStone
+    case 'Dirt':
+    case 'Snow':
+      return SOUND_CUES.hero.footstepDirt
+    default:
+      return SOUND_CUES.hero.footstepGrass
+  }
+}
+
+function playHeroFootstep(unit: UnitEntity): void {
+  if (!isHeroFootstepAllowed(unit)) return
+  if (!canPlayRule(unit, { key: 'hero-footstep', cooldownMs: HERO_FOOTSTEP_COOLDOWN_MS })) return
+  playSoundCue(getFootstepCue(unit), { volume: HERO_FOOTSTEP_VOLUME })
+}
+
+function playUnitFootstep(unit: UnitEntity): void {
+  if (isHeroControlled(unit) || unit.mountedOnHorse || !unit.visible) return
+  if (isUnitWalkSpeedFactor(unit.requestedMoveSpeedFactor ?? 1)) return
+  const volume = getUnitFootstepVolume(unit)
+  if (volume <= 0) return
+  if (!canPlayRule(unit, { key: 'unit-footstep', cooldownMs: UNIT_FOOTSTEP_COOLDOWN_MS })) return
+  playSoundCue(getFootstepCue(unit), { volume })
 }
 
 function getResourceNormalizedDistance(point: { x?: number; y?: number }, entity: RuntimeEntity): number {
@@ -141,6 +169,8 @@ export function playMovementSurfaceAudio(
   options: MovementSurfaceAudioOptions = {}
 ): void {
   if (movedDistance <= 0.01 || !isAudibleMover(unit)) return
+  playHeroFootstep(unit)
+  playUnitFootstep(unit)
   const rule = findContactingRule(unit, unit.currentCell, options)
   if (!rule) return
   const volume = getDistanceVolume(rule, unit)

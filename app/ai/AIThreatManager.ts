@@ -138,26 +138,30 @@ export class AIThreatManager {
       sight: radius,
       context: this.player.context,
     }
-    return findInstancesInSight(sightOrigin, instance => {
-      const candidate = instance as AIEntityLike
-      if (
-        !candidate ||
-        candidate === target ||
-        candidate.isDead ||
-        candidate.isDestroyed ||
-        (candidate.hitPoints ?? 0) <= 0
-      ) {
-        return false
-      }
-      if (candidate.family === FAMILY_TYPES.animal) {
-        return Boolean(
-          candidate.strategy === 'attack' ||
-            candidate.action === ACTION_TYPES.attack ||
-            (candidate.dest && 'owner' in candidate.dest && candidate.dest.owner?.label === this.player.label)
-        )
-      }
-      return this.player.isEnemy(candidate.owner)
-    }) as AIEntityLike[]
+    return findInstancesInSight(
+      sightOrigin,
+      instance => {
+        const candidate = instance as AIEntityLike
+        if (
+          !candidate ||
+          candidate === target ||
+          candidate.isDead ||
+          candidate.isDestroyed ||
+          (candidate.hitPoints ?? 0) <= 0
+        ) {
+          return false
+        }
+        if (candidate.family === FAMILY_TYPES.animal) {
+          return Boolean(
+            candidate.strategy === 'attack' ||
+              candidate.action === ACTION_TYPES.attack ||
+              (candidate.dest && 'owner' in candidate.dest && candidate.dest.owner?.label === this.player.label)
+          )
+        }
+        return this.player.isEnemy(candidate.owner)
+      },
+      { useInsightRange: true }
+    ) as AIEntityLike[]
   }
 
   isBuildingThreatened(building: AIEntityLike): boolean {

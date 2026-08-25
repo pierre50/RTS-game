@@ -152,6 +152,7 @@ function loadModule(relativePath, mocks) {
           Boolean(owner?.devConsoleBanditOwner || (owner?.isPlayed !== true && owner?.name === 'Bandits')),
         isBanditUnit: unit =>
           Boolean(unit?.category === 'Bandit' || unit?.type?.includes?.('Bandit') || unit?.owner?.name === 'Bandits'),
+        playAudibleSoundCue: (_instance, cue) => libMock.playSoundCue?.(cue),
         playMovementSurfaceAudio: () => {},
         ...libMock,
       }
@@ -188,6 +189,16 @@ function loadModule(relativePath, mocks) {
           return ratio >= 0.5 ? 1 : 0.55 + 0.45 * (ratio / 0.5)
         },
         spendOrWaitForEnergy: () => true,
+      }
+    }
+    if (request === '../../lib/unitLocomotion') {
+      return loadTsFile(path.join(__dirname, '../app/lib/unitLocomotion.ts'))
+    }
+    if (request === '../../lib/unitWalkingAnimation') {
+      return {
+        applyUnitWalkingAnimationSpeed: (unit, factor) => {
+          unit.appliedWalkingAnimationFactor = factor
+        },
       }
     }
     if (request === '../../lib/equipmentStats') {
@@ -275,6 +286,7 @@ const constants = {
     farm: 'farm',
     forageberry: 'forageberry',
     hunt: 'hunt',
+    captureHorse: 'captureHorse',
     convert: 'convert',
     minegold: 'minegold',
     minestone: 'minestone',
@@ -327,6 +339,7 @@ const constants = {
     forager: 'forager',
     goldminer: 'goldminer',
     healer: 'healer',
+    horseCapture: 'horseCapture',
     stoneminer: 'stoneminer',
     woodcutter: 'woodcutter',
   },
@@ -718,6 +731,52 @@ for (const [mountedOnHorse, expectedSpeed] of [
 
     assert.equal(speeds.length, 1)
     assert.ok(Math.abs(speeds[0] - expectedSpeed) < 1e-9)
+  })
+}
+
+for (const action of [constants.ACTION_TYPES.hunt, constants.ACTION_TYPES.captureHorse]) {
+  test(`villager ${action} walks cautiously when close to an animal target`, () => {
+    const speeds = []
+    const lib = {
+      canUpdateMinimap: () => false,
+      cartesianToIsometric: (i, j) => [i * 10, j * 10],
+      degreeToDirection: () => 'south',
+      getGroundReliefLevel: () => 0,
+      getInstanceDegree: () => 0,
+      getInstanceZIndex: () => 0,
+      instancesDistance: (_a, _b, useWorld = true) => (useWorld === false ? 10 : 6),
+      moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
+      updateInstanceVisibility: () => {},
+    }
+    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+      '../../constants': constants,
+      '../../lib': lib,
+    })
+    const unit = {
+      action,
+      context: {
+        map: {
+          grid: [[{ has: null, i: 0, j: 0, solid: false, z: 0 }], [{ has: null, i: 1, j: 0, solid: false, z: 0 }]],
+          updateInstanceBucket: () => {},
+        },
+      },
+      currentCell: { has: null, i: 0, j: 0, solid: false, z: 0 },
+      currentSheet: constants.SHEET_TYPES.walking,
+      dest: { family: constants.FAMILY_TYPES.animal, i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
+      i: 0,
+      j: 0,
+      path: [{ i: 1, j: 0 }],
+      speed: 2,
+      sprite: { playing: true, play: () => {} },
+      type: constants.UNIT_TYPES.villager,
+    }
+
+    new UnitMovement(unit)._moveToPath()
+
+    assert.equal(speeds.length, 1)
+    assert.equal(speeds[0], 1)
+    assert.equal(unit.requestedMoveSpeedFactor, 0.5)
+    assert.equal(unit.appliedWalkingAnimationFactor, 0.5)
   })
 }
 

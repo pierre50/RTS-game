@@ -7,7 +7,7 @@ import {
 } from '../../constants'
 import {
   onSpriteLoopAtFrame,
-  playSoundCue,
+  playAudibleSoundCue,
   playerCanSeeInstance,
   BOW_SHOOT_RELEASE_FRAME,
   showHealingFeedback,
@@ -68,10 +68,8 @@ export class UnitActions {
   }
 
   playSound(soundId: CommandSound) {
-    const unit = this.unit
-    const controls = unit.context?.controls
-    if (!soundId || !controls?.instanceIsAudible?.(unit)) return
-    playSoundCue(soundId)
+    if (!soundId) return
+    playAudibleSoundCue(this.unit, soundId, { profile: 'work' })
   }
 
   getWorkSound(key: string, fallback: CommandSound = null): CommandSound {

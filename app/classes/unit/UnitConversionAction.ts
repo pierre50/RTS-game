@@ -2,7 +2,7 @@ import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import {
   canUpdateMinimap,
   isBanditOwner,
-  playSoundCue,
+  playAudibleSoundCue,
   showConversionFeedback,
   syncMovedActionTarget,
   updateInstanceVisibility,
@@ -128,8 +128,8 @@ export class UnitConversionAction {
 
   playConversionSound(): void {
     const unit = this.unit
-    if (!unit.sounds?.convert || !unit.context?.controls?.instanceIsAudible?.(unit)) return
-    playSoundCue(unit.sounds.convert)
+    if (!unit.sounds?.convert) return
+    playAudibleSoundCue(unit, unit.sounds.convert, { profile: 'voice' })
   }
 
   getConversionRules() {

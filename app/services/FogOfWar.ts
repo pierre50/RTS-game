@@ -1,5 +1,5 @@
 import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
-import { HERO_STEALTH_ANIMAL_DETECTION_FACTOR } from '../constants/heroControls'
+import { instanceIsInInsightRange } from '../lib/insightDetection'
 import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -190,17 +190,8 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
         globalCell.removeFog()
       }
 
-      const controls = context?.controls
       if (!context?.editor && globalCell.has && globalCell.has.sight && canDetect(globalCell.has)) {
-        const distSq = (cx - globalCell.has.i) ** 2 + (cy - globalCell.has.j) ** 2
-        const isStealthHero =
-          controls?.isHeroStealthMode?.() === true &&
-          controls.heroUnit != null &&
-          controls.heroUnit === globalCell.has
-        const detectRange = isStealthHero
-          ? globalCell.has.sight * HERO_STEALTH_ANIMAL_DETECTION_FACTOR
-          : globalCell.has.sight
-        if (distSq <= detectRange ** 2) {
+        if (instanceIsInInsightRange(globalCell.has, instance)) {
           globalCell.has.detect(instance)
         }
       }

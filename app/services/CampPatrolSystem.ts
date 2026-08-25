@@ -118,15 +118,18 @@ export class CampPatrolSystem {
   }
 
   findAggroTarget(unit: UnitEntity): RuntimeEntity | null {
-    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unit, target =>
-      Boolean(
-        target !== unit &&
-          !target.isDead &&
-          !target.isDestroyed &&
-          (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.building) &&
-          unit.owner?.isEnemy?.(target.owner) &&
-          unit.getActionCondition?.(target, ACTION_TYPES.attack)
-      )
+    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(
+      unit,
+      target =>
+        Boolean(
+          target !== unit &&
+            !target.isDead &&
+            !target.isDestroyed &&
+            (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.building) &&
+            unit.owner?.isEnemy?.(target.owner) &&
+            unit.getActionCondition?.(target, ACTION_TYPES.attack)
+        ),
+      { useInsightRange: true }
     )
 
     return targets.reduce<RuntimeEntity | null>(

@@ -1,4 +1,5 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
+import { clearRequestedMoveSpeedFactor, requestUnitWalk } from './unitLocomotion'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import { findInstancesInSight } from './grid/visibility'
@@ -43,7 +44,7 @@ function findEscortThreats(hero: UnitEntity): RuntimeEntity[] {
   return findInstancesInSight<UnitEntity, RuntimeEntity>(
     hero,
     target => isEscortThreat(hero, target),
-    ESCORT_ENGAGE_RANGE
+    { range: ESCORT_ENGAGE_RANGE, useInsightRange: true }
   )
 }
 
@@ -95,7 +96,7 @@ function getFormationSlotCell(
   return map.grid[ti]?.[tj] ?? null
 }
 
-export function updateNpcFollow(hero: UnitEntity): void {
+export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boolean } = {}): void {
   const units = hero.owner?.units
   const map = hero.context?.map
   if (!units || !map) return
@@ -105,6 +106,8 @@ export function updateNpcFollow(hero: UnitEntity): void {
   const formationUnits: UnitEntity[] = []
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
+    if (options.matchHeroWalk) requestUnitWalk(unit)
+    else clearRequestedMoveSpeedFactor(unit)
     if (unit.lookingAtHero) continue
     if (isEscortFighting(unit)) {
       if (cellDistance(hero, unit) > ESCORT_LEASH_RANGE) unit.sendTo?.(heroCell)

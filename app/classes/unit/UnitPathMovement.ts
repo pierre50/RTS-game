@@ -15,6 +15,7 @@ import { debugCombatMove } from './UnitMovementDebug'
 import {
   cellOccupantIsDest,
   clearCellForUnit,
+  getRequestedMoveSpeedFactor,
   getPathMoveSpeed,
   isCellBlockedForUnit,
   isDestroyedEntity,
@@ -24,7 +25,9 @@ import {
   placeUnitOnCell,
   pauseCombatRecoveryMove,
   startActionIfAlreadyInRange,
+  updateCautiousAnimalApproachSpeed,
 } from './UnitMovementHelpers'
+import { applyUnitWalkingAnimationSpeed } from '../../lib/unitWalkingAnimation'
 import type { UnitEntity } from '../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
@@ -41,6 +44,7 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
     unit.affectNewDest?.()
     return
   }
+  updateCautiousAnimalApproachSpeed(unit)
   if (shouldWaitForMovingBlocker(unit, nextCell)) return
   if (handleBlockedPathCell(unit, nextCell, dest)) return
 
@@ -196,4 +200,5 @@ function advanceTowardPathCell(
   if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
     unit.setTextures?.(SHEET_TYPES.walking)
   }
+  applyUnitWalkingAnimationSpeed(unit, getRequestedMoveSpeedFactor(unit))
 }

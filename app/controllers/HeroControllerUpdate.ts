@@ -17,6 +17,8 @@ import { resolveHoverTarget, updateNpcFollow } from '../lib/npcInteraction'
 import type { ControlBindingAction } from '../lib/settings'
 import { updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
+import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/unitLocomotion'
+import { applyUnitWalkingAnimationSpeed } from '../lib/unitWalkingAnimation'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import {
@@ -55,7 +57,6 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   controller.updateCriticalHealthEffects(TARGET_FRAME_MS * frameScale, !controller.controls.context.paused)
   controller.updateOcclusionFade(TARGET_FRAME_MS * frameScale, !controller.controls.context.paused)
   controller.controls.context.menu?.updateHeroStatus?.(unit)
-  updateNpcFollow(unit)
   if (controller.commCharging) controller.updateCommIndicator()
   const aimPoint = controller.controls.getWorldPointUnderCursor()
   const powerChargeAiming = isHeroPowerChargeActiveForTool(unit, controller.equippedItem)
@@ -93,6 +94,8 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   dx += gamepadMove.dx
   dy += gamepadMove.dy
   const isMoving = dx !== 0 || dy !== 0
+  const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive))
+  updateNpcFollow(unit, { matchHeroWalk: isMoving && isUnitWalkSpeedFactor(walkSpeedFactor) })
   const lockedMove = Boolean(isHeroDirectionLockActive(controller.controls) && isMoving && !unit.mountedOnHorse)
   if (lockedMove && controller.shiftMoveLockedDegree == null) {
     controller.shiftMoveLockedDegree = unit.degree ?? 0
@@ -106,21 +109,29 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   }
 
   let moved = false
+  let moveAnimationSpeedFactor = 1
   if (isMoving) {
     const len = Math.hypot(dx, dy)
     const lockedFacingVector =
       lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
     const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
     const stealthSpeedFactor = controller.controls.isHeroStealthMode?.() ? HERO_STEALTH_SPEED_FACTOR : 1
-    const lockedMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
+    const directionalMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
+    const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor, directionalMoveSpeedFactor)
+    moveAnimationSpeedFactor = moveSpeedFactor
     const distance =
-      (unit.speed ?? 0) * speedFactor * stealthSpeedFactor * (TARGET_FRAME_MS / STEP_TIME) * frameScale
+      (unit.speed ?? 0) *
+      speedFactor *
+      stealthSpeedFactor *
+      moveSpeedFactor *
+      (TARGET_FRAME_MS / STEP_TIME) *
+      frameScale
     const before = { x: unit.x, y: unit.y, i: unit.i, j: unit.j }
     const aimedDegree = powerChargeAiming || defenseAiming ? unit.degree : null
     const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
     const moveFacingVector = aimedFacingVector ?? lockedFacingVector
     const moveOptions = moveFacingVector ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy } : undefined
-    moved = unit.moveDirect?.(dx / len, dy / len, distance * lockedMoveSpeedFactor, moveOptions) ?? false
+    moved = unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false
     if (aimedDegree != null && unit.degree !== aimedDegree) {
       unit.degree = aimedDegree
       if (unit.mountedOnHorse) unit.syncMountedRiderPosition?.()
@@ -135,7 +146,9 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
         frameScale,
         speedFactor,
         stealthSpeedFactor,
-        lockedMoveSpeedFactor,
+        walkSpeedFactor,
+        directionalMoveSpeedFactor,
+        moveSpeedFactor,
         attacking,
         hasMoveDirect: Boolean(unit.moveDirect),
         before,
@@ -146,6 +159,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   }
   if (moved) {
     if (!attacking && unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
+    if (!attacking) applyUnitWalkingAnimationSpeed(unit, moveAnimationSpeedFactor)
     if (!attacking && !unit.sprite?.playing) unit.sprite?.play?.()
     controller.wasMoving = true
   } else if (controller.wasMoving) {

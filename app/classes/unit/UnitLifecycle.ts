@@ -68,7 +68,7 @@ export class UnitLifecycle {
     const player = unit.owner
     const menu = unit.context?.menu
 
-    playAudibleSoundCue(unit, unit.sounds?.die)
+    playAudibleSoundCue(unit, unit.sounds?.die, { profile: 'combat' })
 
     unit.stopInterval?.()
     clearTimeout(unit.visibilityTimeout as number | undefined)

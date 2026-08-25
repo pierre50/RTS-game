@@ -92,8 +92,10 @@ export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRoutin
     handleSuccess = Boolean(unit.handleAffectNewDestHunter?.())
   } else if (!dest || dest.family !== FAMILY_TYPES.animal) {
     const unitAsInstance = unit
-    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance))
+    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(
+      unitAsInstance,
+      instance => Boolean(unit.getActionCondition?.(instance)),
+      unit.action === ACTION_TYPES.attack ? { useInsightRange: true } : undefined
     )
     if (targets.length) {
       const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)

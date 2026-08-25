@@ -185,7 +185,7 @@
   },
   "Horse": {
     "totalHitPoints": 20,
-    "sight": 3,
+    "sight": 8,
     "speed": 1.8,
     "strategy": "runaway",
     "ambientMovement": true,

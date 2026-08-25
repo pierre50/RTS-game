@@ -5,7 +5,7 @@ import { getUnitCombatRange } from './equipmentStats'
 import { BOW_SHOOT_RELEASE_FRAME, LASSO_SHOOT_RELEASE_FRAME } from './graphics'
 import { t } from './lang'
 import { degreeToDirection, getReliefOffset } from './maths'
-import { playSoundCue } from './sound'
+import { playAudibleSoundCue } from './sound'
 import { debugLog } from './debug'
 import type { UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'
@@ -100,7 +100,7 @@ export function throwLassoAt(hero: UnitEntity, destination: Point, power = 1): v
     x: origin.x + (destination.x - origin.x) * rangePower,
     y: origin.y + (destination.y - origin.y) * rangePower,
   }
-  playSoundCue(SOUND_CUES.projectile.arrowLaunch)
+  playAudibleSoundCue(hero, SOUND_CUES.projectile.arrowLaunch, { profile: 'projectile' })
   const lasso = new HeroLassoThrow(hero, maxDestination, hero.context)
   map.addChild(lasso)
 }

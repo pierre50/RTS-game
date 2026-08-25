@@ -183,7 +183,7 @@ export class Projectile extends Container {
     this.y = baseY + (directionalSpawnOffset?.y ?? 0)
     this.z = this.owner.z ?? 0
 
-    playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch)
+    playAudibleSoundCue(this as AudibleInstance, this.sounds?.launch, { profile: 'projectile' })
 
     const sprite = this.createSprite(degree)
     this.sprite = sprite
@@ -439,7 +439,7 @@ export class Projectile extends Container {
       context: { menu, player },
     } = this
     if (instance.family === FAMILY_TYPES.building) {
-      playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact)
+      playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact, { profile: 'projectile' })
     }
     const openingAggression = applyDiplomaticAggression(this.owner, instance)
     if (openingAggression.changed && !openingAggression.hostileNow) return

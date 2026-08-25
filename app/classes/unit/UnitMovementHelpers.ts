@@ -8,9 +8,15 @@ import {
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../constants'
-import { getInstanceDegree, getMiningActions, resumeVillagerAutonomy } from '../../lib'
+import { getInstanceDegree, getMiningActions, instancesDistance, resumeVillagerAutonomy } from '../../lib'
 import { isHeroControlled } from '../../lib/unitControl'
 import { getEnergyMoveSpeedMultiplier } from '../../lib/unitEnergy'
+import {
+  CAUTIOUS_ANIMAL_APPROACH_RANGE,
+  clearRequestedMoveSpeedFactor,
+  getRequestedMoveSpeedFactor,
+  requestUnitWalk,
+} from '../../lib/unitLocomotion'
 import { applyWorkForAction } from './UnitCommands'
 import { debugCombatMove } from './UnitMovementDebug'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -66,10 +72,35 @@ export function isMovingUnitEntity(entity: RuntimeEntity | null): entity is Unit
 }
 
 export function getPathMoveSpeed(unit: UnitEntity, nextCell: RuntimeCell): number {
-  let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit)
+  let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit) * getRequestedMoveSpeedFactor(unit)
   if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
   return speed
 }
+
+export function updateCautiousAnimalApproachSpeed(unit: UnitEntity): void {
+  if (usesCautiousAnimalApproach(unit, unit.dest, unit.action)) {
+    if (instancesDistance(unit, unit.dest as RuntimeEntity) <= CAUTIOUS_ANIMAL_APPROACH_RANGE) {
+      requestUnitWalk(unit)
+    } else {
+      clearRequestedMoveSpeedFactor(unit)
+    }
+  }
+}
+
+export function usesCautiousAnimalApproach(
+  unit: UnitEntity,
+  dest: RuntimeEntity | RuntimeCell | null | undefined,
+  action: string | null | undefined
+): boolean {
+  return (
+    unit.type === UNIT_TYPES.villager &&
+    (action === ACTION_TYPES.hunt || action === ACTION_TYPES.captureHorse) &&
+    isRuntimeEntity(dest) &&
+    dest.family === FAMILY_TYPES.animal
+  )
+}
+
+export { getRequestedMoveSpeedFactor, clearRequestedMoveSpeedFactor, requestUnitWalk }
 
 export const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],

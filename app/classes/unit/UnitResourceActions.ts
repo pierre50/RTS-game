@@ -9,7 +9,7 @@ import {
 } from '../../constants'
 import {
   onSpriteLoopAtFrame,
-  playSoundCue,
+  playAudibleSoundCue,
   showDamageFeedback,
   showResourceGainFeedback,
   SLASH_IMPACT_FRAME,
@@ -98,10 +98,8 @@ export class UnitResourceActions {
   }
 
   playSound(soundId: CommandSound) {
-    const unit = this.unit
-    const controls = unit.context?.controls
-    if (!soundId || !controls?.instanceIsAudible?.(unit)) return
-    playSoundCue(soundId)
+    if (!soundId) return
+    playAudibleSoundCue(this.unit, soundId, { profile: 'work' })
   }
 
   getWorkSound(key: string, fallback: CommandSound = null): CommandSound {

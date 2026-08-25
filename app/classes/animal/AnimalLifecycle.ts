@@ -97,8 +97,8 @@ export class AnimalLifecycle {
     const animal = this.animal
     if (animal.isDead) return
     if (animal.sounds && animal.context.controls.instanceIsAudible(animal)) {
-      playAudibleSoundCue(animal, animal.sounds.die)
-      playAudibleSoundCue(animal, animal.sounds.fall)
+      playAudibleSoundCue(animal, animal.sounds.die, { profile: 'combat' })
+      playAudibleSoundCue(animal, animal.sounds.fall, { profile: 'combat' })
     }
     updateInstanceVisibility(animal)
     animal.owner.population = Math.max(0, animal.owner.population - 1)

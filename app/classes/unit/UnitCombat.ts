@@ -195,7 +195,7 @@ export class UnitCombat {
     if (rangedAttackRange && unit.projectile && unit.type !== UNIT_TYPES.villager) {
       this.runAttackLoop(BOW_SHOOT_RELEASE_FRAME, dest => {
         if (!dest || !unit.realDest || !map) return
-        playAudibleSoundCue(unit, unit.sounds?.attack)
+        playAudibleSoundCue(unit, unit.sounds?.attack, { profile: 'combat' })
         const projectile = new Projectile(
           {
             owner: unit,
@@ -212,7 +212,7 @@ export class UnitCombat {
       this.runAttackLoop(
         SLASH_IMPACT_FRAME,
         dest => {
-          playAudibleSoundCue(unit, getMeleeImpactSound(unit, dest))
+          playAudibleSoundCue(unit, getMeleeImpactSound(unit, dest), { profile: 'combat' })
           if (dest && (dest.hitPoints ?? 0) > 0) {
             const { killed } = applyCombatHit(unit, dest, {
               bonusDamage: getCombatXpBonus(unit, XP_CATEGORIES.melee),

@@ -10,6 +10,7 @@ function loadModule(relativePath, mocks) {
       getSelectionMarkerOffset: () => 0,
     },
     './sound': {
+      playAudibleSoundCue: () => {},
       playSelectionSound: () => {},
       playSoundCue: () => {},
     },
@@ -918,6 +919,25 @@ test('followers ignore idle animals and keep trailing the hero', () => {
   updateNpcFollow(hero)
 
   assert.deepEqual(calls, [['move', heroCell]])
+})
+
+test('followers match the hero walking pace while following', () => {
+  const { updateNpcFollow } = loadNpcFollowModule([])
+  const { hero, follower, heroCell, calls } = makeEscortWorld({
+    i: 4,
+    j: 0,
+    requestedMoveSpeedFactor: undefined,
+    getActionCondition: () => true,
+  })
+
+  updateNpcFollow(hero, { matchHeroWalk: true })
+
+  assert.deepEqual(calls, [['move', heroCell]])
+  assert.equal(follower.requestedMoveSpeedFactor, 0.5)
+
+  updateNpcFollow(hero, { matchHeroWalk: false })
+
+  assert.equal(follower.requestedMoveSpeedFactor, undefined)
 })
 
 test('followers defend the hero from an attacking predator', () => {

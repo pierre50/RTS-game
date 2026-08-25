@@ -99,7 +99,7 @@ export class BuildingCombat {
     const candidates = findInstancesInSight<BuildingControllerHost, RuntimeEntity>(
       building,
       candidate => getActionCondition(building, candidate, ACTION_TYPES.attack),
-      range
+      { range, useInsightRange: true }
     )
     console.debug(
       `[TowerBuilt] ${building.type}#${building.label} range=${range}: ${candidates.length} hostile candidate(s)`,

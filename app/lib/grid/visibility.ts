@@ -1,6 +1,7 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from './cells'
 import { updateVisibility } from '../../services/FogOfWar'
+import { getInsightDetectionRange } from '../insightDetection'
 import type { GridPosition, Point } from '../../types/grid'
 import type { VisibilityEntity } from '../../services/FogOfWar'
 import type { Bounds } from '../../types/geometry'
@@ -49,6 +50,11 @@ export type BoundsSource = {
   sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
 }
 
+export type FindInstancesInSightOptions = {
+  range?: number
+  useInsightRange?: boolean
+}
+
 function getRenderablePosition(instance: BoundsSource): Point | null {
   if (instance.isDestroyed || instance.destroyed || instance.position === null) return null
   const x = instance.position?.x ?? instance.x
@@ -82,13 +88,17 @@ export function getInstanceScreenBounds(instance: BoundsSource): Bounds | undefi
 export function findInstancesInSight<
   TInstance extends RenderableInstance,
   TTarget extends RenderableInstance = RenderableInstance,
->(instance: TInstance, condition: (target: TTarget) => boolean, range?: number): TTarget[] {
+>(
+  instance: TInstance,
+  condition: (target: TTarget) => boolean,
+  rangeOrOptions?: number | FindInstancesInSightOptions
+): TTarget[] {
   const { i: instX, j: instY, sight = 0 } = instance
-  const searchRadius = range ?? sight
+  const options = typeof rangeOrOptions === 'number' ? { range: rangeOrOptions } : rangeOrOptions
+  const searchRadius = options?.range ?? sight
   const { instanceBuckets } = instance.context?.map || {}
   if (!instanceBuckets) return []
 
-  const searchRadiusSq = searchRadius * searchRadius
   const instances: TTarget[] = []
 
   const minBi = Math.max(Math.floor((instX - searchRadius) / BUCKET_SIZE), 0)
@@ -102,7 +112,10 @@ export function findInstancesInSight<
         const dx = target.i - instX
         const dy = target.j - instY
         const typedTarget = target as TTarget
-        if (dx * dx + dy * dy <= searchRadiusSq && condition(typedTarget)) {
+        const detectionRadius = options?.useInsightRange
+          ? getInsightDetectionRange(instance, typedTarget, searchRadius)
+          : searchRadius
+        if (dx * dx + dy * dy <= detectionRadius * detectionRadius && condition(typedTarget)) {
           instances.push(typedTarget)
         }
       }

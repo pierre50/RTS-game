@@ -214,7 +214,7 @@ function reverseHeroDefenseAnimation(hero: UnitEntity): void {
 function showHeroDefenseFlash(hero: UnitEntity): void {
   const targets = getHeroDefenseFlashLayers(hero)
   if (!targets.length) return
-  playAudibleSoundCue(hero, HERO_PARRY_SOUND_CUES)
+  playAudibleSoundCue(hero, HERO_PARRY_SOUND_CUES, { profile: 'combat' })
   showHeroDefenseParryEffect(hero)
   showParryFeedback(hero, t('heroDefenseMissed'))
   flashHeroLayers(hero, targets, {

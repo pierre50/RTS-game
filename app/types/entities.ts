@@ -229,6 +229,7 @@ export interface UnitEntity extends EnergyEntity {
   blockedGatherApproach?: UnitBlockedGatherApproach | null
   buildQueue?: BuildingEntity[]
   isDirectMoving?: boolean
+  requestedMoveSpeedFactor?: number
   degree?: number
   speed?: number
   huntRange?: number

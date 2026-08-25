@@ -407,6 +407,13 @@ div.menu-title {
   image-rendering: pixelated;
 }
 
+.hero-appearance-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
+  width: 100%;
+}
+
 .team-cycle {
   width: 100%;
   display: flex;

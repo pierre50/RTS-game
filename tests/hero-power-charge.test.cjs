@@ -648,7 +648,7 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
       },
     },
     './sound': {
-      playAudibleSoundCue: () => {},
+      playAudibleSoundCue: (_instance, cue) => soundCalls.push(cue),
       playSoundCue: cue => soundCalls.push(cue),
     },
   })
@@ -683,7 +683,7 @@ test('free-hand whiff rewinds the slash recovery through the shared helper', () 
       },
     },
     './sound': {
-      playAudibleSoundCue: () => {},
+      playAudibleSoundCue: (_instance, cue) => soundCalls.push(cue),
       playSoundCue: cue => soundCalls.push(cue),
     },
   })
@@ -1031,7 +1031,7 @@ test('lasso charge releases a drawn lasso instead of an arrow', () => {
   const soundCues = []
   const { aimHeroPowerChargeAt, releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
     './sound': {
-      playAudibleSoundCue: () => {},
+      playAudibleSoundCue: (_instance, cue) => soundCues.push(cue),
       playSoundCue: cue => soundCues.push(cue),
     },
   })
@@ -1218,7 +1218,7 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
 test('sword whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const tools = loadHeroTools({
-    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
   })
   const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
@@ -1236,7 +1236,7 @@ test('sword whiffs use the generic melee whiff sound', () => {
 test('axe whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
   })
   const { hero } = makeHero()
   Object.assign(hero, {

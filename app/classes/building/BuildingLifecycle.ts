@@ -28,7 +28,6 @@ import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   playAudibleSoundCue,
-  playSoundCue,
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import type { RuntimeCell } from '../../types/map'
@@ -101,7 +100,7 @@ export class BuildingLifecycle {
           building.sounds?.create &&
           building.context.controls.instanceIsAudible(building)
         ) {
-          playSoundCue(building.sounds.create)
+          playAudibleSoundCue(building, building.sounds.create, { profile: 'building' })
         }
         building.onBuilt()
       }
@@ -304,9 +303,11 @@ export class BuildingLifecycle {
 
   playBurningSound(): void {
     const building = this.building
-    if (building.hasActiveBurningSound || !building.context.controls.instanceIsAudible(building)) return
-    building.hasActiveBurningSound = true
-    playSoundCue(building.sounds?.burning ?? SOUND_CUES.building.burning)
+    if (building.hasActiveBurningSound) return
+    const playedCue = playAudibleSoundCue(building, building.sounds?.burning ?? SOUND_CUES.building.burning, {
+      profile: 'building',
+    })
+    if (playedCue) building.hasActiveBurningSound = true
   }
 
   pause(): void {
@@ -365,7 +366,7 @@ export class BuildingLifecycle {
     }
     map.removeFromInstanceBucket(building)
     if (building.context.controls.instanceIsAudible(building)) {
-      playAudibleSoundCue(building, building.sounds?.collapse ?? SOUND_CUES.building.collapse)
+      playAudibleSoundCue(building, building.sounds?.collapse ?? SOUND_CUES.building.collapse, { profile: 'building' })
     }
     if (building.selected && player) {
       player.unselectAll()

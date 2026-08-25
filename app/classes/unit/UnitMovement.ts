@@ -18,10 +18,12 @@ import { moveUnitToPath } from './UnitPathMovement'
 import { debugCombatMove, debugHuntRangeCheck } from './UnitMovementDebug'
 import {
   CAPTURE_HORSE_TRIGGER_RANGE,
+  clearRequestedMoveSpeedFactor,
   isCellBlockedForUnit,
   isRuntimeEntity,
   type DirectMoveOptions,
   type SendToOptions,
+  usesCautiousAnimalApproach,
 } from './UnitMovementHelpers'
 import { affectNewDest as affectUnitNewDest } from './UnitAffectNewDest'
 import type { HeroDirectMoveBlocker } from './UnitHeroDirectMovementCollision'
@@ -122,6 +124,9 @@ export class UnitMovement {
     action: string | null,
     { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
   ) {
+    if (!this.unit.followingHero && !usesCautiousAnimalApproach(this.unit, dest, action)) {
+      clearRequestedMoveSpeedFactor(this.unit)
+    }
     return this.routing.sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach, preserveAutonomy })
   }
 

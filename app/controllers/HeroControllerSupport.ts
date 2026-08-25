@@ -6,12 +6,12 @@ import {
   COMM_INDICATOR_FILL_ALPHA,
   COMM_INDICATOR_STROKE_ALPHA,
   COMM_INDICATOR_STROKE_WIDTH,
-  HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR,
   HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   SHEET_TYPES,
 } from '../constants'
 import { getCommCellsInRadius } from '../lib/npcInteraction'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
+import { UNIT_WALK_SPEED_FACTOR } from '../lib/unitLocomotion'
 import type { ControlBindingAction } from '../lib/settings'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -139,7 +139,7 @@ export function getLockedMoveSpeedFactor(move: MoveVector, facing: MoveVector): 
   }
   return (
     HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR +
-    (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR) * alignment
+    (HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR - UNIT_WALK_SPEED_FACTOR) * alignment
   )
 }
 

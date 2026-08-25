@@ -16,7 +16,7 @@ import {
   getIconPath,
   getInstanceZIndex,
   getGroundReliefLevel,
-  playSoundCue,
+  playAudibleSoundCue,
   throttle,
   updateInstanceVisibility,
 } from '../../lib'
@@ -211,7 +211,7 @@ export function playUnitCreateSound(unit: UnitRuntimeHost, options: UnitSpawnOpt
     unit.context.map.ready &&
     unit.context.controls.instanceIsAudible?.(unit)
   ) {
-    playSoundCue((unit.sounds && unit.sounds.create) || SOUND_CUES.unit.fallbackCreate)
+    playAudibleSoundCue(unit, (unit.sounds && unit.sounds.create) || SOUND_CUES.unit.fallbackCreate, { profile: 'voice' })
   }
 }
 

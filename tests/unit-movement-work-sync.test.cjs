@@ -72,6 +72,8 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/heroActionRange') return { isHeroActionInRange: () => false }
     if (request === '../../lib/combatBehavior') return { markCombatFlee: () => {} }
     if (request === '../../lib/unitEnergy') return { getEnergyMoveSpeedMultiplier: () => 1 }
+    if (request === '../../lib/unitLocomotion') return loadTsFile(path.join(__dirname, '../app/lib/unitLocomotion.ts'))
+    if (request === '../../lib/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
     if (request === '../../lib/equipmentStats') return { getUnitCombatRange: () => 4 }
     if (request === './UnitCommands') {
       return {

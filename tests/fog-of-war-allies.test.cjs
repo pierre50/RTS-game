@@ -103,3 +103,45 @@ test('unit vision updates only its owner, not allied players', () => {
   assert.equal(ally.views.hasViewer(1, 1, instance), false)
   assert.equal(ally.cellViewed, 0)
 })
+
+test('animal detection uses slow target insight range when a unit reveals its cell', () => {
+  const { updateVisibility } = loadFogOfWar()
+
+  function detectFrom(unitI, requestedMoveSpeedFactor) {
+    const detectCalls = []
+    const owner = {
+      label: 'owner',
+      type: 'human',
+      cellViewed: 0,
+      views: createViews(8),
+    }
+    const grid = Array.from({ length: 9 }, (_, i) => Array.from({ length: 9 }, (_, j) => createCell(i, j)))
+    grid[0][0].has = {
+      i: 0,
+      j: 0,
+      label: 'deer',
+      sight: 8,
+      detect: target => detectCalls.push(target.label),
+    }
+    const unit = {
+      i: unitI,
+      j: 0,
+      label: 'scout',
+      family: 'unit',
+      owner,
+      requestedMoveSpeedFactor,
+      sight: 8,
+      context: {
+        map: { grid, revealEverything: false },
+        player: owner,
+      },
+    }
+
+    updateVisibility(unit)
+    return detectCalls
+  }
+
+  assert.deepEqual(detectFrom(5, 1), ['scout'])
+  assert.deepEqual(detectFrom(5, 0.5), [])
+  assert.deepEqual(detectFrom(4, 0.5), ['scout'])
+})

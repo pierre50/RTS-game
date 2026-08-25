@@ -9,6 +9,21 @@ export const SOUND_CUES = {
   },
   hero: {
     heartbeat: 'heartbeat',
+    footstepGrass: [
+      'surface/hero-footstep-grass-1',
+      'surface/hero-footstep-grass-2',
+      'surface/hero-footstep-grass-3',
+    ],
+    footstepDirt: [
+      'surface/hero-footstep-dirt-1',
+      'surface/hero-footstep-dirt-2',
+      'surface/hero-footstep-dirt-3',
+    ],
+    footstepStone: [
+      'surface/hero-footstep-stone-1',
+      'surface/hero-footstep-stone-2',
+      'surface/hero-footstep-stone-3',
+    ],
     meleeWhiff: 'attack-swipe',
   },
   projectile: {

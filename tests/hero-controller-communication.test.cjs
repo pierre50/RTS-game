@@ -4,6 +4,8 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
+const WALK_SPEED_FACTOR = 0.5
+
 function loadHeroController({ npcInteraction, heroTools, heroActionRange, getInstanceDegree = () => 0, playSoundCue = () => {} }) {
   const filename = path.join(__dirname, '../app/controllers/HeroController.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -62,7 +64,6 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     '../constants': {
       COLOR_GOLD: 0xf8d878,
       HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
-      HERO_LOCKED_BACKPEDAL_MOVE_SPEED_FACTOR: 0.6,
       HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR: 0.8,
       LABEL_TYPES: { commRadius: 'commRadius' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
@@ -85,6 +86,7 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
         { x: x - 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
         { x: x + 32 * factor * 0.22, y: y - 16 * factor * (1 - 0.22) },
       ],
+      playAudibleSoundCue: (_instance, cue) => playSoundCue(cue),
       playSoundCue,
       updateInstanceRenderVisibility: () => {},
     },
@@ -105,6 +107,15 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     '../lib/npcInteraction': npcInteraction,
     '../lib/unitEnergy': {
       updateUnitEnergy: () => {},
+    },
+    '../lib/unitLocomotion': {
+      UNIT_WALK_SPEED_FACTOR: WALK_SPEED_FACTOR,
+      composeMoveSpeedFactor: (...factors) => factors.reduce((value, factor) => Math.min(value, Math.max(0, factor)), 1),
+      getUnitWalkSpeedFactor: isWalking => (isWalking ? WALK_SPEED_FACTOR : 1),
+      isUnitWalkSpeedFactor: factor => factor < 1,
+    },
+    '../lib/unitWalkingAnimation': {
+      applyUnitWalkingAnimationSpeed: () => {},
     },
     '../lib/unitHealth': {
       updateUnitHealthRegen: () => {},
@@ -446,7 +457,7 @@ test('shift keyboard movement on foot keeps absolute movement and locks current 
   assert.equal(moveCalls.length, 1)
   assert.ok(Math.abs(moveCalls[0][0]) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][1] + 1) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.8) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * WALK_SPEED_FACTOR) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][3].facingDirX - 1) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][3].facingDirY) < 1e-9)
 
@@ -457,7 +468,7 @@ test('shift keyboard movement on foot keeps absolute movement and locks current 
   assert.ok(attackCall[1].x > hero.x)
 })
 
-test('shift keyboard movement slows backpedaling more than strafing', () => {
+test('shift keyboard movement keeps backpedaling on the shared walking pace', () => {
   const { controller, hero } = createController()
   const moveCalls = []
   hero.degree = 180
@@ -476,7 +487,7 @@ test('shift keyboard movement slows backpedaling more than strafing', () => {
   assert.equal(moveCalls.length, 1)
   assert.ok(Math.abs(moveCalls[0][0] + 1) < 1e-9)
   assert.ok(Math.abs(moveCalls[0][1]) < 1e-9)
-  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.6) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * WALK_SPEED_FACTOR) < 1e-9)
 })
 
 test('gamepad direction lock keeps current facing while moving with the stick', () => {

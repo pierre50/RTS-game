@@ -1,4 +1,4 @@
-import { playSoundCue } from '../lib'
+import { playAudibleSoundCue } from '../lib'
 import { MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
 import { findFacingEntity } from '../lib/heroTools'
 import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
@@ -123,7 +123,7 @@ export class HeroCompanionHorseController {
       ? { i: cell.i, j: cell.j, x: cell.x, y: cell.y, z: cell.z }
       : { i: unit.i, j: unit.j, x: unit.x, y: unit.y, z: unit.z ?? 0 }
     horse.sendTo?.(destination, null, { forceRepath: true })
-    playSoundCue(SOUND_CUES.unit.horseMoving)
+    playAudibleSoundCue(horse, SOUND_CUES.unit.horseMoving, { profile: 'voice' })
     this.controls.context.menu?.showMessage(t('companionHorseComing'), 'success')
   }
 
