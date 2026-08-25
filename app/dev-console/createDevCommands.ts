@@ -379,10 +379,10 @@ function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'perf-report',
     aliases: ['perfr'],
-    usage: 'perf-report [reset]',
-    describe: 'Print or reset frame, pathfinding, AI and fog timings',
-    complete: () => ['reset'],
-    run: ([value], context) => performanceReport(context, value),
+    usage: 'perf-report [top [limit]|spikes|metric <name>|render|json|reset]',
+    describe: 'Print, inspect, export or reset frame, pathfinding, AI and fog timings',
+    complete: () => ['top', 'spikes', 'metric', 'render', 'json', 'reset'],
+    run: (args, context) => performanceReport(context, args.join(' ')),
   })
 }
 

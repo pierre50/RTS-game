@@ -79,21 +79,23 @@ export function ensurePerfOverlay(context: DevConsoleContext): void {
   const visibility = metric('visibility.update')
   const camera = metric('camera.visibleCells')
   const viewportFog = metric('fog.viewport')
+  const maxFrame = (value: typeof unitMove) => value?.maxFrameExclusiveMs?.toFixed(2) || value?.maxFrameMs?.toFixed(2) || '0.00'
+  const maxCalls = (value: typeof unitMove) => value?.maxFrameCalls || 0
   overlay.textContent = [
     `FPS ${Math.round(app?.ticker.FPS ?? 0)}`,
-    `Frame interval ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms`,
+    `Frame interval ${perf?.frames.averageMs.toFixed(2) || '0.00'}ms | p95 ${perf?.frames.p95Ms.toFixed(2) || '0.00'}ms | slow ${perf?.frames.slowCount || 0}`,
     `Units ${units}`,
     `Buildings ${buildings}`,
     `Resources ${map.resources.size}`,
     `Tasks ${schedulerTasks}`,
     `Speed ${speed}x`,
-    `Scheduler ${schedulerTick?.averageMs.toFixed(2) || '0.00'}ms avg | ${schedulerTick?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Move ${unitMove?.averageMs.toFixed(2) || '0.00'}ms avg | ${unitMove?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Vision ${visibility?.averageMs.toFixed(2) || '0.00'}ms avg | ${visibility?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Camera ${camera?.averageMs.toFixed(2) || '0.00'}ms avg | ${camera?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Path ${pathfinding?.averageMs.toFixed(2) || '0.00'}ms avg | ${pathfinding?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `AI step ${aiStep?.averageMs.toFixed(2) || '0.00'}ms avg | ${aiStep?.maxMs.toFixed(2) || '0.00'}ms max`,
-    `Fog ${viewportFog?.averageMs.toFixed(2) || '0.00'}ms avg | ${viewportFog?.maxMs.toFixed(2) || '0.00'}ms max`,
+    `Scheduler ${schedulerTick?.averageMs.toFixed(2) || '0.00'}ms avg | ${maxFrame(schedulerTick)}ms frame`,
+    `Move ${unitMove?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(unitMove)}ms frame | ${maxCalls(unitMove)} calls`,
+    `Vision ${visibility?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(visibility)}ms frame`,
+    `Camera ${camera?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(camera)}ms frame`,
+    `Path ${pathfinding?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(pathfinding)}ms frame | ${maxCalls(pathfinding)} calls`,
+    `AI step ${aiStep?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(aiStep)}ms frame`,
+    `Fog ${viewportFog?.averageMs.toFixed(3) || '0.000'}ms avg | ${maxFrame(viewportFog)}ms frame`,
   ].join('\n')
 }
 

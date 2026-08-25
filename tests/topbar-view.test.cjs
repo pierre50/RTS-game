@@ -64,6 +64,12 @@ test('topbar displays and themes all civilization ages', () => {
     const { TopbarView } = loadModule('app/ui/TopbarView.ts', {
       '../constants': { RESOURCE_NAMES: ['wood', 'food'] },
       '../lib/lang': { t: key => key },
+      '../lib/villagerAssignments': {
+        summarizeVillagerAssignments: units => ({
+          total: units.length,
+          assigned: { wood: units.filter(unit => unit.work === 'woodcutter').length, food: 0 },
+        }),
+      },
       './resourceIcons': {
         createResourceIconMaps: () => ({
           icons: { wood: 'wood.png', food: 'food.png' },
@@ -71,7 +77,7 @@ test('topbar displays and themes all civilization ages', () => {
         }),
       },
     })
-    const player = { age: 0, wood: 12, food: 5 }
+    const player = { age: 0, wood: 12, food: 5, units: [{ work: 'woodcutter' }, { work: 'idle' }] }
     const menu = {
       context: { player },
       gameHud: makeElement(),
@@ -91,5 +97,8 @@ test('topbar displays and themes all civilization ages', () => {
       assert.equal(menu.age.textContent, label)
       assert.equal(menu.gameHud.classList.contains(`ui-age-${age}`), true)
     }
+    assert.equal(topbar.resourceEls.wood.textContent, '12')
+    assert.equal(topbar.resourceWorkerEls.wood.textContent, ' (1)')
+    assert.equal(topbar.villagerTotalEl.textContent, 'V: 2')
   })
 })

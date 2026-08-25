@@ -46,11 +46,6 @@ export function canKeepNpcHere(target: UnitEntity): boolean {
   )
 }
 
-export function sendNpcToStockpile(target: UnitEntity): void {
-  resetNpcDirectives(target)
-  target.sendToDelivery?.()
-}
-
 export function keepNpcHere(target: UnitEntity): void {
   resetNpcDirectives(target)
   target.previousDest = null

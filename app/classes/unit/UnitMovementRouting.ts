@@ -1,4 +1,4 @@
-import { ACTION_TYPES, UNIT_TYPES } from '../../constants'
+import { UNIT_TYPES } from '../../constants'
 import {
   clearVillagerAutonomy,
   findInstancesInSight,
@@ -122,11 +122,9 @@ export class UnitMovementRouting {
     return true
   }
 
-  handleUnreachableDestination(action: string | null): void {
+  handleUnreachableDestination(_action: string | null): void {
     const unit = this.unit
-    if (action === ACTION_TYPES.delivery) {
-      unit.stop?.()
-    } else if (resumeAutonomyBeforeStopping(unit)) {
+    if (resumeAutonomyBeforeStopping(unit)) {
       return
     } else {
       showBlockedFeedback(unit)

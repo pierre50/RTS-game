@@ -30,9 +30,6 @@ export type DynamicEquipmentKey =
   | 'hammer_ceramic'
   | 'hammer_bronze'
   | 'hammer_iron'
-  | 'meat'
-  | 'stone'
-  | 'gold'
   | 'scythe_copper'
   | 'scythe_ceramic'
   | 'scythe_bronze'
@@ -118,8 +115,6 @@ type EquipmentOptions = Pick<
   UnitAppearanceLayerConfig,
   | 'workTypes'
   | 'civilizations'
-  | 'hideWhenLoading'
-  | 'showWhenLoading'
   | 'hideForActions'
   | 'hideOnOrAfterFrame'
   | 'minLevel'
@@ -145,9 +140,6 @@ const EQUIPMENT_LAYERS = ['back', 'front'] as const satisfies readonly Equipment
 // would just be a fully transparent spritesheet. Keep in sync with
 // equipment.active_layer_keys() in the Python bake pipeline.
 const EQUIPMENT_LAYER_OVERRIDES: Partial<Record<DynamicEquipmentKey, readonly EquipmentLayer[]>> = {
-  meat: ['front'],
-  stone: ['front'],
-  gold: ['front'],
   cane: ['front'],
   quiver: ['back'],
   arrow_ceramic: ['front'],
@@ -437,9 +429,6 @@ export const DYNAMIC_EQUIPMENT_KEYS = [
   'hammer_ceramic',
   'hammer_bronze',
   'hammer_iron',
-  'meat',
-  'stone',
-  'gold',
   'scythe_copper',
   'scythe_ceramic',
   'scythe_bronze',
@@ -672,13 +661,11 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
     workType: WORK_TYPES.stoneminer,
     equipment: 'pickaxe_ceramic',
     ageEquipment: metalAgeEquipment('pickaxe_copper', 'pickaxe_bronze', 'pickaxe_iron'),
-    options: { hideWhenLoading: true },
   },
   {
     workType: WORK_TYPES.goldminer,
     equipment: 'pickaxe_ceramic',
     ageEquipment: metalAgeEquipment('pickaxe_copper', 'pickaxe_bronze', 'pickaxe_iron'),
-    options: { hideWhenLoading: true },
   },
   {
     workType: WORK_TYPES.builder,
@@ -698,27 +685,23 @@ const VILLAGER_WORK_EQUIPMENT: readonly {
   {
     workType: WORK_TYPES.hunter,
     equipment: 'quiver',
-    options: { hideWhenLoading: true, hideForActions: [ACTION_TYPES.takemeat] },
+    options: { hideForActions: [ACTION_TYPES.takemeat] },
   },
   {
     workType: WORK_TYPES.hunter,
     equipment: 'bow',
     ageEquipment: { 1: 'bow_great', 2: 'bow_recurve' },
-    options: { hideWhenLoading: true, hideForActions: [ACTION_TYPES.takemeat] },
+    options: { hideForActions: [ACTION_TYPES.takemeat] },
   },
   {
     workType: WORK_TYPES.hunter,
     equipment: 'arrow_ceramic',
     ageEquipment: metalAgeEquipment('arrow_copper', 'arrow_bronze', 'arrow_iron'),
     options: {
-      hideWhenLoading: true,
       hideForActions: [ACTION_TYPES.takemeat],
       hideOnOrAfterFrame: HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME,
     },
   },
-  { workType: WORK_TYPES.hunter, equipment: 'meat', options: { showWhenLoading: true } },
-  { workType: WORK_TYPES.stoneminer, equipment: 'stone', options: { showWhenLoading: true } },
-  { workType: WORK_TYPES.goldminer, equipment: 'gold', options: { showWhenLoading: true } },
 ]
 
 function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
@@ -758,7 +741,6 @@ function equipmentFamilyPath(equipment: DynamicEquipmentKey): string {
   if (equipment === 'halberd') return 'weapon/halberd'
   if (equipment.startsWith('sword_') || equipment === 'longsword') return 'weapon/sword'
   if (equipment.startsWith('round_shield_')) return 'weapon/round_shield'
-  if (equipment === 'meat' || equipment === 'stone' || equipment === 'gold') return 'resource/carried'
   if (equipment === 'cape_solid') return 'accessory/cape'
   if (
     equipment === 'crest' ||
@@ -976,8 +958,7 @@ export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0, ci
 
 export function dynamicEquipmentForWork(workType: string | null | undefined, age = 0): string[] {
   if (!workType) return []
-  return VILLAGER_WORK_EQUIPMENT.filter(({ workType: equipmentWork, options }) => {
-    if (equipmentWork !== workType) return false
-    return !options?.showWhenLoading
-  }).map(({ equipment, ageEquipment }) => equipmentForAge(equipment, ageEquipment, age))
+  return VILLAGER_WORK_EQUIPMENT.filter(({ workType: equipmentWork }) => equipmentWork === workType).map(
+    ({ equipment, ageEquipment }) => equipmentForAge(equipment, ageEquipment, age)
+  )
 }

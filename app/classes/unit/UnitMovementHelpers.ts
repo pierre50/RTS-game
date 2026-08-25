@@ -65,13 +65,8 @@ export function isMovingUnitEntity(entity: RuntimeEntity | null): entity is Unit
   return Boolean(entity && entity.family === FAMILY_TYPES.unit && 'hasPath' in entity)
 }
 
-function shouldApplyLoadingMovePenalty(unit: UnitEntity): boolean {
-  return Boolean(!unit.mountedOnHorse && (unit.loading ?? 0) > 0)
-}
-
 export function getPathMoveSpeed(unit: UnitEntity, nextCell: RuntimeCell): number {
   let speed = (unit.speed ?? 0) * getEnergyMoveSpeedMultiplier(unit)
-  if (shouldApplyLoadingMovePenalty(unit)) speed *= 0.8
   if (nextCell.inclined || (nextCell.z ?? 0) > (unit.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
   return speed
 }

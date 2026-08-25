@@ -11,7 +11,7 @@ import {
   MOUNTED_ATTACK_HALF_ANGLE,
   getHeroAimDegree,
 } from './heroTargeting'
-import { performContextActionAt, tryDeliverAt } from './HeroContextActions'
+import { performContextActionAt } from './HeroContextActions'
 import {
   consumeHeroArrow,
   getHeroArrowSpawnPoint,
@@ -319,13 +319,10 @@ export function triggerToolAttackAt(
   if (!tool || hero.actionLocked) return false
   if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)
-  const deliveryResult = tryDeliverAt(hero)
-  if (deliveryResult === 'delivered') return true
   if (tool === 'bow' || tool === 'lasso' || tool === 'sword') {
     return beginHeroPowerChargeAt(hero, destination, null, tool)
   }
   if (tool !== 'interact') return false
-  if (deliveryResult === 'blocked') return false
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
   const meleeResult = triggerInteractMeleeAt(hero)

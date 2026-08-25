@@ -15,6 +15,7 @@ from equipment import DYNAMIC_EQUIPMENT, EQUIPMENT_LAYER_ORDER, active_layer_key
 from image_pipeline import compose_frame, open_layer, source_frames
 from PIL import Image
 from retro_palette import find_hex_palette, load_hex_palette
+from simple_darken_border import DARKEN_FACTOR, darken_border
 
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
@@ -173,6 +174,7 @@ def write_equipment_family_atlas(output_dir: Path, source_dirs: list[Path]) -> N
             indent=2,
         )
         file.write("\n")
+    darken_border(output_dir / "texture.png", DARKEN_FACTOR)
 
 
 def sheet_plan(equipment) -> dict[str, tuple[str, object]]:

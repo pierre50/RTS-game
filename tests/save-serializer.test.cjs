@@ -24,6 +24,21 @@ function loadSaveSerializer() {
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
       }
     }
+    if (id === '../lib/villagerAssignments') {
+      return {
+        summarizeVillagerAssignments(units = []) {
+          const assigned = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
+          let total = 0
+          for (const unit of units) {
+            if (unit.type !== 'Villager' || unit.isDead || unit.isDestroyed) continue
+            total++
+            if (unit.work === 'woodcutter') assigned.wood++
+            if (unit.work === 'farmer' || unit.work === 'forager' || unit.work === 'hunter') assigned.food++
+          }
+          return { total, assigned, construction: 0, horseCapture: 0, idle: total - assigned.wood - assigned.food, sleeping: 0, moving: 0 }
+        },
+      }
+    }
     return require(id)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
@@ -167,7 +182,7 @@ test('serializes animal movement and corpse state while skipping destroyed anima
   assert.equal(save.animals[0].isFleeing, true)
 })
 
-test('serializes unit work orders, carried resources, equipment state and build queues', () => {
+test('serializes unit work orders, equipment state and build queues', () => {
   const context = makeContext()
   context.players[0].units = [
     {
@@ -181,10 +196,8 @@ test('serializes unit work orders, carried resources, equipment state and build 
       y: 160,
       z: 1,
       hitPoints: 18,
-      loading: 7,
-      loadingType: 'wood',
-      resourceLoads: { wood: 3, iron: 4 },
       work: 'woodcutter',
+      autonomousJob: 'wood',
       previousWork: 'builder',
       action: 'chopwood',
       degree: 90,
@@ -226,8 +239,16 @@ test('serializes unit work orders, carried resources, equipment state and build 
     target: [12, 13, 'tree-1'],
     action: 'chopwood',
   })
-  assert.equal(save.players[0].units[0].loading, 7)
-  assert.deepEqual(save.players[0].units[0].resourceLoads, { wood: 3, iron: 4 })
+  assert.equal(save.players[0].units[0].autonomousJob, 'wood')
+  assert.deepEqual(save.players[0].villagerAssignments, {
+    total: 1,
+    assigned: { wood: 1, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 },
+    construction: 0,
+    horseCapture: 0,
+    idle: 0,
+    sleeping: 0,
+    moving: 0,
+  })
   assert.equal(save.players[0].units[0].mountedOnHorse, true)
   assert.equal(save.players[0].units[0].companionHorseColor, 'dark')
   assert.deepEqual(save.players[0].units[0].experience, { woodcutting: 15 })

@@ -87,7 +87,6 @@ export const WORK_TYPES = {
 }
 
 export const ACTION_TYPES = {
-  delivery: 'delivery',
   takemeat: 'takemeat',
   hunt: 'hunt',
   captureHorse: 'captureHorse',
@@ -116,9 +115,6 @@ export const LOADING_TYPES = {
   iron: 'iron',
   wood: 'wood',
 }
-
-export const WORK_FOOD_TYPES = [WORK_TYPES.hunter, WORK_TYPES.farmer, WORK_TYPES.forager]
-export const LOADING_FOOD_TYPES = [LOADING_TYPES.meat, LOADING_TYPES.wheat, LOADING_TYPES.berry]
 
 export const TYPE_ACTION = {
   Stone: ACTION_TYPES.minestone,

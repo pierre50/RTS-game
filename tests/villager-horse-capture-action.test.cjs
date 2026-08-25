@@ -108,17 +108,6 @@ function loadUnitActions(calls, captureHorse) {
     if (request === '../../lib/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
     if (request === '../../lib/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
     if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
-    if (request === '../../lib/resourceCarry') {
-      return {
-        addCarriedResource: () => 0,
-        clearCarriedResource: () => {},
-        clearCarriedResources: () => {},
-        getCarriedResourceSpace: () => 0,
-        getDeliverableResourceEntries: () => [],
-        getPlayerResourceKey: () => null,
-        getTotalCarriedResources: () => 0,
-      }
-    }
     if (request === './UnitCaptureHorseAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))
     }

@@ -12,7 +12,7 @@ function loadAIStrategy(options = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const constants = {
-    ACTION_TYPES: { delivery: 'delivery' },
+    ACTION_TYPES: {},
     BUILDING_TYPES: {
       archeryRange: 'ArcheryRange',
       barracks: 'Barracks',

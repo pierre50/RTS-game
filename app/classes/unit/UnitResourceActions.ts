@@ -2,6 +2,7 @@ import {
   LOADING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
+  RESOURCE_STOCKPILE_TYPES,
   RESOURCE_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
@@ -9,7 +10,6 @@ import {
 import {
   onSpriteLoopAtFrame,
   playSoundCue,
-  resumeVillagerAutonomy,
   showDamageFeedback,
   showResourceGainFeedback,
   SLASH_IMPACT_FRAME,
@@ -28,23 +28,14 @@ import { isHeroControlled } from '../../lib/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import {
-  addCarriedResource,
-  clearCarriedResource,
-  clearCarriedResources,
-  getCarriedResourceSpace,
-  getDeliverableResourceEntries,
-  getPlayerResourceKey,
-  getTotalCarriedResources,
-} from '../../lib/resourceCarry'
-import {
-  applyLoadingWorkAssets,
-  applyUnloadedWorkAssets,
   finishManualHeroWorkSwing,
   lockManualHeroAction,
   stopManualHeroAction,
 } from './UnitManualHeroWork'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
+
+type PlayerResourceKey = 'wood' | 'food' | 'stone' | 'gold' | 'copper' | 'iron'
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -82,13 +73,21 @@ function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): valu
   return isResourceEntity(value) && value.type === RESOURCE_TYPES.wheat
 }
 
-function resumeAutonomyOrStop(unit: UnitEntity): void {
-  if (resumeVillagerAutonomy?.(unit)) return
-  unit.stop?.()
-}
-
 function getGatherAmount(unit: UnitEntity): number {
   return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
+}
+
+function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
+  if (!loadingType) return null
+  if ([LOADING_TYPES.berry, LOADING_TYPES.wheat, LOADING_TYPES.meat].includes(loadingType)) return 'food'
+  return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
+}
+
+function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amount: number): void {
+  const resourceKey = getPlayerResourceKey(loadingType)
+  if (!resourceKey || !unit.owner) return
+  unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
+  if (unit.owner.isPlayed) unit.context?.menu?.updateTopbar?.()
 }
 
 export class UnitResourceActions {
@@ -172,15 +171,9 @@ export class UnitResourceActions {
         unit.affectNewDest?.()
         return
       }
-      const wasEmpty = getTotalCarriedResources(unit) === 0
-      const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, loadingType))
+      const gain = getGatherAmount(unit)
       if (!dest || gain <= 0) {
-        if (isHeroControlled(unit)) {
-          if (dest) menu?.showMessage(t('heroInventoryFull'), 'warning')
-          stopManualHeroAction(unit)
-          return
-        }
-        unit.sendToDelivery?.()
+        if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
       if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
@@ -194,10 +187,8 @@ export class UnitResourceActions {
         return
       }
       gatherProgress = 0
-      addCarriedResource(unit, loadingType, gain)
+      addGatheredResourceToPlayer(unit, loadingType, gain)
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
-      unit.updateInterfaceLoading?.()
-      if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
@@ -209,9 +200,6 @@ export class UnitResourceActions {
         if (dieOnEmpty) dest.die?.()
         onDepleted?.(dest)
         unit.affectNewDest?.()
-      }
-      if (wasEmpty) {
-        applyLoadingWorkAssets(unit)
       }
       finishManualHeroWorkSwing(unit, releaseFrame)
     }
@@ -228,45 +216,6 @@ export class UnitResourceActions {
         showDepletedBerrybushMessage(this.unit, dest)
       },
     })
-  }
-
-  handleDeliveryAction() {
-    const unit = this.unit
-    const menu = unit.context?.menu
-    if (isHeroControlled(unit)) getTotalCarriedResources(unit)
-    if (!unit.getActionCondition?.(unit.dest, unit.action ?? undefined)) {
-      unit.stop?.()
-      return
-    }
-    const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-    const entries = dest ? getDeliverableResourceEntries(unit, dest) : []
-    const deliveredAmount = entries.reduce((total, [, amount]) => total + amount, 0)
-    if (deliveredAmount <= 0) {
-      unit.stop?.()
-      return
-    }
-    for (const [loadingType, amount] of entries) {
-      const resourceKey = getPlayerResourceKey(loadingType)
-      if (resourceKey && unit.owner) {
-        unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
-      }
-      clearCarriedResource(unit, loadingType)
-    }
-    showResourceGainFeedback(unit, deliveredAmount)
-    unit.owner?.isPlayed && menu?.updateTopbar()
-    unit.updateInterfaceLoading?.()
-    if (getTotalCarriedResources(unit) > 0) {
-      applyLoadingWorkAssets(unit)
-    } else {
-      clearCarriedResources(unit)
-      applyUnloadedWorkAssets(unit)
-    }
-    unit.setTextures?.(SHEET_TYPES.standing)
-    if (unit.previousDest) {
-      unit.goBackToPrevious?.()
-    } else {
-      resumeAutonomyOrStop(unit)
-    }
   }
 
   handleFarmAction() {
@@ -292,18 +241,15 @@ export class UnitResourceActions {
         return
       }
       if (d && !isHeroControlled(unit)) d.isUsedBy = unit
-      const wasEmpty = getTotalCarriedResources(unit) === 0
-      const gain = Math.min(getGatherAmount(unit), getCarriedResourceSpace(unit, LOADING_TYPES.wheat))
+      const gain = getGatherAmount(unit)
       if (!d || gain <= 0) {
         if (isHeroControlled(unit)) {
           if (d) {
             d.isUsedBy = null
-            menu?.showMessage(t('heroInventoryFull'), 'warning')
           }
           stopManualHeroAction(unit)
           return
         }
-        unit.sendToDelivery?.()
         if (d) d.isUsedBy = null
         return
       }
@@ -311,10 +257,8 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
-      addCarriedResource(unit, LOADING_TYPES.wheat, gain)
+      addGatheredResourceToPlayer(unit, LOADING_TYPES.wheat, gain)
       grantUnitXp(unit, XP_CATEGORIES.farming, gain)
-      unit.updateInterfaceLoading?.()
-      if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
       this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
       d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
       showResourceGainFeedback(unit, gain)
@@ -324,9 +268,6 @@ export class UnitResourceActions {
       if ((d.quantity ?? 0) <= 0) {
         d.die?.()
         unit.affectNewDest?.()
-      }
-      if (wasEmpty) {
-        applyLoadingWorkAssets(unit)
       }
       finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
     })
@@ -349,16 +290,6 @@ export class UnitResourceActions {
         return
       }
       if (!dest) return
-      const woodSpace = getCarriedResourceSpace(unit, LOADING_TYPES.wood)
-      if (woodSpace <= 0) {
-        if (isHeroControlled(unit)) {
-          menu?.showMessage(t('heroInventoryFull'), 'warning')
-          stopManualHeroAction(unit)
-          return
-        }
-        unit.sendToDelivery?.()
-        return
-      }
       if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
@@ -377,12 +308,9 @@ export class UnitResourceActions {
           dest.setCuttedTreeTexture?.()
         }
       } else {
-        const wasEmpty = getTotalCarriedResources(unit) === 0
-        const gain = Math.min(getGatherAmount(unit), woodSpace)
-        addCarriedResource(unit, LOADING_TYPES.wood, gain)
+        const gain = getGatherAmount(unit)
+        addGatheredResourceToPlayer(unit, LOADING_TYPES.wood, gain)
         grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
-        unit.updateInterfaceLoading?.()
-        if (isHeroControlled(unit)) menu?.updateHeroStatus?.(unit)
         dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
         showResourceGainFeedback(unit, gain)
         if (dest.selected) {
@@ -391,9 +319,6 @@ export class UnitResourceActions {
         if ((dest.quantity ?? 0) <= 0) {
           dest.die?.()
           unit.affectNewDest?.()
-        }
-        if (wasEmpty) {
-          applyLoadingWorkAssets(unit)
         }
       }
       finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)

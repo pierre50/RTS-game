@@ -54,7 +54,6 @@ function loadHeroTools(overrides = {}) {
         attack: 'attack',
         build: 'build',
         chopwood: 'chopwood',
-        delivery: 'delivery',
         farm: 'farm',
         forageberry: 'forageberry',
         hunt: 'hunt',
@@ -113,17 +112,6 @@ function loadHeroTools(overrides = {}) {
     './diplomaticAggression': {
       applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
       canTriggerDiplomaticAggression: () => false,
-    },
-    './extra': {
-      getWorkWithLoadingType: loadingType =>
-        ({
-          berry: 'forager',
-          gold: 'goldminer',
-          meat: 'hunter',
-          stone: 'stoneminer',
-          wheat: 'farmer',
-          wood: 'woodcutter',
-        })[loadingType] ?? 'default',
     },
     './equipmentStats': {
       UNARMED_UNIT_WEAPON_POWER: 0.5,
@@ -187,21 +175,6 @@ function loadHeroTools(overrides = {}) {
     './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
     './lpc/baked': { applyBakedLpcUnitAssets: () => true },
     './slashRecoveryAnimation': { logHeroSlashFrame: () => {}, playReverseSlashRecovery: () => false },
-    './resourceCarry': {
-      buildingAcceptsCarriedResources: (hero, target) => {
-        const entries = hero.resourceLoads
-          ? Object.entries(hero.resourceLoads).filter(([, amount]) => amount > 0)
-          : hero.loadingType && (hero.loading ?? 0) > 0
-            ? [[hero.loadingType, hero.loading]]
-            : []
-        return (
-          target.family === 'building' &&
-          (target.type === 'TownCenter' || entries.some(([type]) => target.accept?.includes(type)))
-        )
-      },
-      getCarriedResourceSpace: () => Number.POSITIVE_INFINITY,
-      getTotalCarriedResources: hero => hero.loading ?? 0,
-    },
     './unitEnergy': {
       hasEnergyForAction: (unit, action) => {
         const costs = {
@@ -430,7 +403,7 @@ function loadHeroTools(overrides = {}) {
           if (!assets) return
           unit.actionSheet = assets.actionSheet
           unit.standingSheet = assets.standingSheet
-          unit.walkingSheet = unit.loading && assets.loadedSheet ? assets.loadedSheet : assets.walkingSheet
+          unit.walkingSheet = assets.walkingSheet
         },
       }
     }
@@ -1160,7 +1133,7 @@ test('bow release drains energy up to the mouse-up instant', () => {
   }
 })
 
-test('hero resource inventory never blocks gathering another load', () => {
+test('hero interact can gather from an aimed resource target', () => {
   const carcass = {
     family: 'animal',
     i: 1,
@@ -1184,9 +1157,6 @@ test('hero resource inventory never blocks gathering another load', () => {
     },
     i: 0,
     j: 0,
-    loading: 10,
-    loadingMax: { meat: 10 },
-    loadingType: 'meat',
     isUnitAtDest: () => true,
     getAction: action => {
       hero.startedAction = action
@@ -1201,41 +1171,6 @@ test('hero resource inventory never blocks gathering another load', () => {
   assert.equal(hero.dest, carcass)
   assert.equal(hero.actionLocked, false)
   assert.deepEqual(messages, [])
-})
-
-test('free-hand interact does not whiff when aiming at a delivery building out of reach', () => {
-  const townCenter = {
-    family: 'building',
-    i: 4,
-    isDestroyed: false,
-    j: 0,
-    type: 'TownCenter',
-    x: 10,
-    y: 0,
-  }
-  const { triggerToolAttackAt } = loadHeroTools({
-    './combat': {
-      getActionCondition: (_hero, target, action) => target === townCenter && action === 'delivery',
-      getHitPointsWithDamage: () => 0,
-    },
-    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [townCenter].filter(predicate) },
-  })
-  const { hero } = makeHero()
-  Object.assign(hero, {
-    i: 0,
-    j: 0,
-    loading: 10,
-    loadingType: 'berry',
-    isUnitAtDest: () => false,
-    getAction: action => {
-      hero.startedAction = action
-    },
-  })
-
-  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), false)
-  assert.equal(hero.startedAction, undefined)
-  assert.equal(hero.actionLocked, false)
-  assert.equal(hero.currentSheet, 'standingSheet')
 })
 
 test('civil tools are no longer equipped combat weapons', () => {

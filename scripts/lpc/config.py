@@ -159,7 +159,7 @@ class DressItem:
 
 
 SHORTS = DressItem("legs/shorts/shorts/male/{animation}/walnut.png")
-SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/tan.png")
+SLIT_SKIRT = DressItem("legs/skirts/slit/female/{animation}/walnut.png")
 SANDALS = DressItem("feet/sandals/male/{animation}.png", palette="cloth_brown")
 SANDALS_FEMALE = DressItem("feet/sandals/female/{animation}.png", palette="cloth_brown")
 BELT = DressItem("torso/waist/belt_leather/male/{animation}/brown.png")
@@ -316,16 +316,10 @@ UNIT_LOOKS: dict[str, UnitLook] = {
     "villager": UnitLook(hair="plain", dress=(SANDALS, SLIT_SKIRT)),
     "infantry": UnitLook(hair="long", hat=HEADBAND, dress=(SANDALS, SKIRT_LEGION_TEAM)),
     "infantry_nohair": UnitLook(dress=(SANDALS, SKIRT_LEGION_TEAM)),
-    # The ARPG hero's own signature look, distinct from a plain "villager": light
-    # brown hair, a blue headband, and a white-shirt/brown-pantaloons/black-shoes
-    # outfit with black suspenders on top. Baked like "villager" (see
-    # hero_build_tasks() in build.py) for slash/shoot job-pose variety; mounted
-    # legs are composed at runtime in Pixi.
-    "hero": UnitLook(
-        hair="plain",
-        hat=HEADBAND_BLUE,
-        dress=(SANDALS, SLIT_SKIRT),
-    ),
+    # Baked like "villager" (see hero_build_tasks() in build.py) for slash/shoot
+    # job-pose variety. The resolved hero look derives from the civ villager
+    # clothing, while runtime customization owns hair/beard.
+    "hero": UnitLook(),
     "priest": UnitLook(
         hair="long",
         hair_palette="white",
@@ -390,45 +384,37 @@ CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "greek": {
         "villager": {"hair": "page2", "beard": "beard/medium", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "infantry": {"hair": "long_messy", "beard": "beard/winter/male", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
-        "hero": {"hair": "page2"},
     },
     "roman": {
         "villager": {"hair": "plain", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "infantry": {"hair": "buzzcut", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
-        "hero": {"hair": "buzzcut"},
     },
     "babylonian": {
         "villager": {"hair": "jewfro", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
         "infantry": {"hair": "curly_short", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
-        "hero": {"hair": "jewfro", "beard": "beard/winter/male"},
     },
     "asian": {
         "villager": {"hair": "ponytail", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
         "infantry": {"hair": "ponytail2", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
-        "hero": {"hair": "ponytail", "hair_split": True},
     },
     "celtic": {
         "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
         "infantry": {"hair": "bangslong", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
-        "hero": {"hair": "swoop", "beard": "beard/medium"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "nordic": {
         "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_PANTS_LONGSLEEVE},
         "infantry": {"hair": "bangslong", "beard": "beard/winter/male", "dress": MALE_PANTS_LONGSLEEVE},
-        "hero": {"hair": "bob_side_part", "beard": "beard/basic"},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
     "egyptian": {
         "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_OBI},
         "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_OBI},
-        "hero": {"hair": "bob"},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
     "nubian": {
         "villager": {"hair": "cornrows", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
         "infantry": {"hair": "dreadlocks_short", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
-        "hero": {"hair": "cornrows", "beard": None},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
 }
@@ -447,49 +433,41 @@ FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
     "babylonian": {
         "villager": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
         "infantry": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
-        "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
     "egyptian": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
-        "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": None, "hair_palette": None},
     },
     "greek": {
         "villager": {"hair": "braid", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
-        "hero": {"hair": "braid", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "roman": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
-        "hero": {"hair": "long_center_part", "hair_body_type": "female"},
         "priest": {"hair": "long_tied", "hair_body_type": "female", "hair_palette": "white"},
     },
     "asian": {
         "villager": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "ponytail", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
-        "hero": {"hair": "long_tied", "hair_body_type": "female"},
         "priest": {"hair": "single", "hair_body_type": "female", "hair_palette": "white"},
     },
     "celtic": {
         "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "bangslong2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
-        "hero": {"hair": "wavy", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nordic": {
         "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "braid2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
-        "hero": {"hair": "braid", "hair_body_type": "female"},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
     "nubian": {
         "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
         "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
-        "hero": {"hair": "xlong", "hair_body_type": "female"},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
     },
 }
@@ -506,6 +484,24 @@ def remove_hair(look: UnitLook) -> UnitLook:
     )
 
 
+def hero_base_look(look: UnitLook) -> UnitLook:
+    return replace(
+        look,
+        hair=None,
+        hair_split=False,
+        hair_body_type="adult",
+        hair_palette=None,
+        beard=None,
+        beard_palette=None,
+        hair_extension=None,
+        hat=None,
+        hat_accessory=None,
+        cape=None,
+        cape_trim=None,
+        neck=None,
+    )
+
+
 def chief_look_from_villager(look: UnitLook) -> UnitLook:
     return replace(
         look,
@@ -518,6 +514,8 @@ def chief_look_from_villager(look: UnitLook) -> UnitLook:
 def unit_look_for_civ(unit: str, civ_key: str) -> UnitLook:
     if unit == "chief":
         return chief_look_from_villager(unit_look_for_civ("villager", civ_key))
+    if unit == "hero":
+        return hero_base_look(unit_look_for_civ("villager", civ_key))
 
     base_unit = "infantry" if unit == "infantry_nohair" else unit
     look = UNIT_LOOKS[base_unit]
@@ -529,6 +527,8 @@ def unit_look_for_civ(unit: str, civ_key: str) -> UnitLook:
 def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitLook:
     if unit == "chief":
         return chief_look_from_villager(variant_look_for_civ("villager", civ_key, variant))
+    if unit == "hero":
+        return hero_base_look(variant_look_for_civ("villager", civ_key, variant))
 
     look = replace(unit_look_for_civ(unit, civ_key), body=variant.body)
     if variant.body != "female":

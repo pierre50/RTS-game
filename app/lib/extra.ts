@@ -1,4 +1,3 @@
-import { MINING_RESOURCE_CONFIG, WORK_TYPES } from '../constants'
 import { instanceIsInPlayerSight } from './grid'
 export { Modal } from './Modal'
 export {
@@ -117,18 +116,6 @@ export const debounce = <TArgs extends TimerArg[]>(
       callback.apply(this, args)
     }, wait)
   }
-}
-
-export function getWorkWithLoadingType(loadingType: string): string {
-  const miningConfig = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(config => config.loadingType === loadingType)
-  if (miningConfig) return miningConfig.work
-  const workMapping: Record<string, string> = {
-    wheat: WORK_TYPES.farmer,
-    wood: WORK_TYPES.woodcutter,
-    berry: WORK_TYPES.forager,
-    meat: WORK_TYPES.hunter,
-  }
-  return workMapping[loadingType] || 'default'
 }
 
 export function capitalizeFirstLetter(string: string): string {

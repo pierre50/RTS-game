@@ -126,7 +126,7 @@ export function updateBuildingShadow(
   }
   shadow.zIndex = -2
   shadow.alpha = SHADOW_MASK_ALPHA
-  shadow.visible = getShadowsEnabled() && building.visible && !building.isDestroyed
+  shadow.visible = getShadowsEnabled() && building.visible && !building.isDead && !building.isDestroyed
   shadow.rotation = 0
   shadow.tint = 0xffffff
   shadow.scale.set(sprite.scale.x, sprite.scale.y)
@@ -135,7 +135,7 @@ export function updateBuildingShadow(
 
 export function syncBuildingVisualSettings(building: BuildingControllerHost): void {
   if (building.shadow) {
-    building.shadow.visible = getShadowsEnabled() && building.visible && !building.isDestroyed
+    building.shadow.visible = getShadowsEnabled() && building.visible && !building.isDead && !building.isDestroyed
   }
 }
 

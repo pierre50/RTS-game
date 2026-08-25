@@ -133,10 +133,6 @@ export class UnitActions {
     return this.resourceActions.prepareLoopingWorkAction()
   }
 
-  handleDeliveryAction() {
-    this.resourceActions.handleDeliveryAction()
-  }
-
   handleFarmAction() {
     this.resourceActions.handleFarmAction()
   }
@@ -294,9 +290,6 @@ export class UnitActions {
     sprite.onLoop = undefined
     sprite.onFrameChange = undefined
     switch (name) {
-      case ACTION_TYPES.delivery:
-        this.handleDeliveryAction()
-        break
       case ACTION_TYPES.farm:
         this.handleFarmAction()
         break

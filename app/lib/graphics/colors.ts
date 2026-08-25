@@ -1,5 +1,6 @@
 import { Texture, type Filter } from 'pixi.js'
 import { MultiColorReplaceFilter } from 'pixi-filters'
+import { LPC_RUNTIME_PALETTES, LPC_RUNTIME_SOURCE_PALETTES } from '../lpc/generatedPalettes'
 
 export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'] as const
 type PlayerColor = (typeof colors)[number]
@@ -27,6 +28,9 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 
   cyan: [0x74f5fd, 0x52d2ff, 0x41b2e3, 0x318eb8, 0x366b8a, 0x25466b, 0x23324d, 0x181f2f],
 }
+
+const NAMED_SOURCE_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_SOURCE_PALETTES
+const NAMED_TARGET_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_PALETTES
 
 const HEX_COLOR_MAP: Record<PlayerColor, string> = {
   blue: '#466ac9',
@@ -62,6 +66,7 @@ export type RecolorableSprite = {
 
 const recoloredTextureCache = new Map<string, Texture>()
 const colorFilterCache = new Map<PlayerColor, Filter>()
+const paletteFilterCache = new Map<string, Filter>()
 const replacementCache = new Map<string, [number, number][]>()
 
 function isPlayerColor(color: string): color is PlayerColor {
@@ -95,7 +100,7 @@ function buildReplacements(sourceColors: readonly number[], targetColors: readon
 }
 
 function getReplacements(
-  color: PlayerColor,
+  color: string,
   sourceColors: readonly number[],
   targetColors: readonly number[]
 ): [number, number][] {
@@ -171,6 +176,14 @@ export function recolorCanvasPixels(
   }
 
   ctx.putImageData(imageData, 0, 0)
+}
+
+export function recolorCanvasByPalette(canvas: HTMLCanvasElement, sourcePalette: string, targetPalette: string): void {
+  if (sourcePalette === targetPalette) return
+  const sourceColors = NAMED_SOURCE_PALETTES[sourcePalette] ?? NAMED_TARGET_PALETTES[sourcePalette]
+  const targetColors = NAMED_TARGET_PALETTES[targetPalette]
+  if (!sourceColors || !targetColors) return
+  applyColorMapToCanvas(canvas, getReplacements(targetPalette, sourceColors, targetColors))
 }
 
 function createRecoloredTexture(
@@ -263,4 +276,22 @@ export function changeSpriteColor(sprite: RecolorableSprite, color: string): voi
   }
 
   sprite.filters = [colorFilterCache.get(color)!]
+}
+
+export function changeSpritePalette(sprite: RecolorableSprite, sourcePalette: string, targetPalette: string): void {
+  if (sourcePalette === targetPalette) {
+    sprite.filters = null
+    return
+  }
+  const sourceColors = NAMED_SOURCE_PALETTES[sourcePalette] ?? NAMED_TARGET_PALETTES[sourcePalette]
+  const targetColors = NAMED_TARGET_PALETTES[targetPalette]
+  if (!sourceColors || !targetColors) return
+
+  const cacheKey = `${sourcePalette}:${targetPalette}`
+  if (!paletteFilterCache.has(cacheKey)) {
+    const replacements = getReplacements(targetPalette, sourceColors, targetColors)
+    paletteFilterCache.set(cacheKey, new MultiColorReplaceFilter({ replacements, tolerance: 0.01 }))
+  }
+
+  sprite.filters = [paletteFilterCache.get(cacheKey)!]
 }

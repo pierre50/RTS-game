@@ -55,6 +55,7 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 import type { RuntimeMap } from '../../types/map'
 import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
+import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 
 const DEBUG_STARTING_TECHNOLOGIES = ['Pickaxe', 'Farming', 'HorseTaming']
 
@@ -112,6 +113,7 @@ export class Player implements PlayerLike {
   color?: string
   civ?: string
   gender?: 'male' | 'female'
+  heroAppearance?: HeroAppearanceConfig
   name?: string
   autoTechnologyByAge?: boolean
 

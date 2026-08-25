@@ -4,22 +4,16 @@ import { isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, isWheatMature } from './combat'
 import { findInstancesInSight } from './grid/visibility'
 import { t } from './lang'
-import { buildingAcceptsCarriedResources, getCarriedResourceSpace, getTotalCarriedResources } from './resourceCarry'
 import { hasEnergyForAction } from './unitEnergy'
 import { applyWorkForAction } from '../classes/unit/UnitCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { HeroContextAction } from '../types/heroTools'
-import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTarget, getDirectionalTargets, getHeroAimDegree } from './heroTargeting'
+import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTargets, getHeroAimDegree } from './heroTargeting'
 
-type DeliveryAimResult = 'delivered' | 'blocked' | 'none'
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
 
 function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
-}
-
-function buildingAcceptsCarriedResource(hero: UnitEntity, target: RuntimeEntity): target is BuildingEntity {
-  return buildingAcceptsCarriedResources(hero, target)
 }
 
 type HeroContextActionConfig = {
@@ -69,29 +63,6 @@ function runHeroGatherAction(hero: UnitEntity, target: RuntimeEntity, action: st
   runHeroAction(hero, target, action)
 }
 
-function getLoadingTypeForAction(action: string): string | null {
-  const miningConfig = Object.values(getMiningResourceConfigMap()).find(config => config.action === action)
-  if (miningConfig) return miningConfig.loadingType
-  switch (action) {
-    case ACTION_TYPES.chopwood:
-      return LOADING_TYPES.wood
-    case ACTION_TYPES.forageberry:
-      return LOADING_TYPES.berry
-    case ACTION_TYPES.takemeat:
-      return LOADING_TYPES.meat
-    case ACTION_TYPES.farm:
-      return LOADING_TYPES.wheat
-    default:
-      return null
-  }
-}
-
-function heroHasGatherSpace(hero: UnitEntity, action: string): boolean {
-  const loadingType = getLoadingTypeForAction(action)
-  if (!loadingType) return true
-  return getCarriedResourceSpace(hero, loadingType) > 0
-}
-
 function canShowTargetAlert(hero: UnitEntity, target: RuntimeEntity): boolean {
   return Boolean(hero.owner?.isPlayed && (hero.context?.controls?.instanceInCamera?.(target) ?? true))
 }
@@ -111,10 +82,6 @@ function resolveHeroGatherAction(
     ) {
       hero.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
     }
-    return null
-  }
-  if (!heroHasGatherSpace(hero, action)) {
-    hero.context?.menu?.showMessage(t('heroInventoryFull'), 'warning')
     return null
   }
   return () => runHeroGatherAction(hero, target, action, work)
@@ -184,39 +151,6 @@ function runContextAction(
   hero.contextAction = contextAction
   effect()
   return true
-}
-
-function canDeliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (getTotalCarriedResources(hero) <= 0) return false
-  if (!buildingAcceptsCarriedResource(hero, target)) return false
-  if (!getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })) return false
-  if (!hero.isUnitAtDest?.(ACTION_TYPES.delivery, target)) return false
-  return true
-}
-
-function deliverToBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (!canDeliverToBuilding(hero, target)) return false
-  runHeroAction(hero, target, ACTION_TYPES.delivery)
-  return true
-}
-
-function canAimDeliveryAtBuilding(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (getTotalCarriedResources(hero) <= 0) return false
-  if (!buildingAcceptsCarriedResource(hero, target)) return false
-  return getActionCondition(hero, target, ACTION_TYPES.delivery, { buildingTypes: [target.type] })
-}
-
-export function tryDeliverAt(hero: UnitEntity): DeliveryAimResult {
-  if (getTotalCarriedResources(hero) <= 0) return 'none'
-  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(
-    hero,
-    target => canAimDeliveryAtBuilding(hero, target),
-    CLICK_TARGET_SEARCH_RANGE
-  )
-
-  const target = getDirectionalTarget(hero, candidates)
-  if (!target) return 'none'
-  return deliverToBuilding(hero, target) ? 'delivered' : 'blocked'
 }
 
 function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {

@@ -216,7 +216,6 @@ export class AIEconomyFoodManager {
     let excess = Math.max(0, workers.length - target)
     if (!excess) return
     const releasable = workers
-      .filter(villager => !villager.loading && villager.action !== ACTION_TYPES.delivery)
       .sort((a, b) => {
         const aDistance = a.dest ? Math.abs(a.i - a.dest.i) + Math.abs(a.j - a.dest.j) : 0
         const bDistance = b.dest ? Math.abs(b.i - b.dest.i) + Math.abs(b.j - b.dest.j) : 0

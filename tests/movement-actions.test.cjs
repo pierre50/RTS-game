@@ -49,89 +49,9 @@ const unitWorkAppearanceMock = {
     if (!assets) return
     unit.actionSheet = unitWorkAppearanceMock.getUnitWorkActionSheet(unit, work, options.action)
     unit.standingSheet = assets.standingSheet
-    unit.walkingSheet = options.loading && assets.loadedSheet ? assets.loadedSheet : assets.walkingSheet
+    unit.walkingSheet = assets.walkingSheet
     unit.dyingSheet = assets.dyingSheet
     unit.corpseSheet = assets.corpseSheet
-  },
-}
-
-function isHeroCarrier(unit) {
-  return unit.controlMode === 'hero'
-}
-
-function ensureResourceLoads(unit) {
-  if (!unit.resourceLoads || !Object.keys(unit.resourceLoads).length) {
-    unit.resourceLoads = unit.loadingType && (unit.loading ?? 0) > 0 ? { [unit.loadingType]: unit.loading } : {}
-  }
-  return unit.resourceLoads
-}
-
-function syncHeroLoad(unit, preferredType = null) {
-  if (!isHeroCarrier(unit)) return
-  const loads = ensureResourceLoads(unit)
-  const entries = Object.entries(loads).filter(([, amount]) => amount > 0)
-  unit.resourceLoads = Object.fromEntries(entries)
-  unit.loading = entries.reduce((total, [, amount]) => total + amount, 0)
-  unit.loadingType =
-    (preferredType && unit.resourceLoads[preferredType] > 0 && preferredType) ||
-    (unit.loadingType && unit.resourceLoads[unit.loadingType] > 0 && unit.loadingType) ||
-    entries[0]?.[0] ||
-    null
-}
-
-const resourceCarryMock = {
-  addCarriedResource(unit, loadingType, amount) {
-    if (isHeroCarrier(unit)) {
-      const loads = ensureResourceLoads(unit)
-      loads[loadingType] = (loads[loadingType] ?? 0) + amount
-      syncHeroLoad(unit, loadingType)
-      return
-    }
-    unit.loading = (unit.loading ?? 0) + amount
-    unit.loadingType = loadingType
-  },
-  clearCarriedResource(unit, loadingType) {
-    if (isHeroCarrier(unit)) {
-      const loads = ensureResourceLoads(unit)
-      delete loads[loadingType]
-      syncHeroLoad(unit)
-      return
-    }
-    if (unit.loadingType === loadingType) {
-      unit.loading = 0
-      unit.loadingType = null
-    }
-  },
-  clearCarriedResources(unit) {
-    if (isHeroCarrier(unit)) unit.resourceLoads = {}
-    unit.loading = 0
-    unit.loadingType = null
-  },
-  getCarriedResourceEntries(unit) {
-    if (isHeroCarrier(unit)) {
-      syncHeroLoad(unit)
-      return Object.entries(unit.resourceLoads ?? {}).filter(([, amount]) => amount > 0)
-    }
-    return unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : []
-  },
-  getCarriedResourceSpace(unit, loadingType) {
-    if (isHeroCarrier(unit)) return Number.POSITIVE_INFINITY
-    return Math.max((unit.loadingMax?.[loadingType] ?? Number.POSITIVE_INFINITY) - (unit.loading ?? 0), 0)
-  },
-  getDeliverableResourceEntries(unit, building) {
-    return resourceCarryMock
-      .getCarriedResourceEntries(unit)
-      .filter(
-        ([loadingType]) =>
-          building.type === constants.BUILDING_TYPES.townCenter || building.accept?.includes(loadingType)
-      )
-  },
-  getPlayerResourceKey(loadingType) {
-    if (['berry', 'wheat', 'meat'].includes(loadingType)) return 'food'
-    return ['wood', 'stone', 'gold', 'copper', 'iron'].includes(loadingType) ? loadingType : null
-  },
-  getTotalCarriedResources(unit) {
-    return resourceCarryMock.getCarriedResourceEntries(unit).reduce((total, [, amount]) => total + amount, 0)
   },
 }
 
@@ -240,7 +160,6 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
     if (request === '../../lib/unitExperience') return unitExperienceMock
     if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
-    if (request === '../../lib/resourceCarry') return resourceCarryMock
     if (request === '../../lib/lang') return { t: value => value }
     if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === '../../lib/diplomaticAggression') {
@@ -347,7 +266,6 @@ const constants = {
     build: 'build',
     chopwood: 'chopwood',
     heal: 'heal',
-    delivery: 'delivery',
     farm: 'farm',
     forageberry: 'forageberry',
     hunt: 'hunt',
@@ -382,6 +300,13 @@ const constants = {
   RELIEF_LIFT_SMOOTHING: 1,
   RESOURCE_TYPES: {
     wheat: 'Wheat',
+  },
+  RESOURCE_STOCKPILE_TYPES: {
+    copper: 'copper',
+    gold: 'gold',
+    iron: 'iron',
+    stone: 'stone',
+    wood: 'wood',
   },
   STEP_TIME: 100,
   UNIT_TYPES: {
@@ -694,10 +619,10 @@ test('ranged units must contact buildings before entering them', () => {
 })
 
 for (const [mountedOnHorse, expectedSpeed] of [
-  [false, 1.6],
+  [false, 2],
   [true, 2],
 ]) {
-  test(`${mountedOnHorse ? 'mounted' : 'foot'} loaded units use the expected path movement speed`, () => {
+  test(`${mountedOnHorse ? 'mounted' : 'foot'} units use the expected path movement speed`, () => {
     const speeds = []
     const lib = {
       canUpdateMinimap: () => false,
@@ -727,7 +652,6 @@ for (const [mountedOnHorse, expectedSpeed] of [
       dest: { i: 1, isDestroyed: false, j: 0, x: 10, y: 0 },
       i: 0,
       j: 0,
-      loading: 1,
       mountedOnHorse,
       path: [{ i: 1, j: 0 }],
       speed: 2,
@@ -2615,14 +2539,12 @@ test('manual move orders cancel previous villager work when the unit arrives', (
   const unit = {
     action: null,
     dest: { label: 'empty-cell', family: 'cell' },
-    loading: 4,
     previousDest: { label: 'berry-bush', family: 'resource' },
     previousWork: 'forager',
     type: constants.UNIT_TYPES.villager,
     work: 'forager',
     stopInterval: () => calls.push(['stopInterval']),
     goBackToPrevious: () => calls.push(['goBackToPrevious']),
-    sendToDelivery: () => calls.push(['sendToDelivery']),
     stop: () => calls.push(['stop']),
   }
 
@@ -2817,8 +2739,6 @@ test('chopping wood shows damage before wood is gathered', () => {
     action: constants.ACTION_TYPES.chopwood,
     context: { menu: { updateInfo: (id, value) => calls.push(['updateInfo', id, value]) } },
     dest: tree,
-    loading: 0,
-    loadingMax: { wood: 10 },
     owner: { isPlayed: true },
     sprite: {},
     getActionCondition: target => target === tree,
@@ -2829,12 +2749,79 @@ test('chopping wood shows damage before wood is gathered', () => {
   new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
 
   assert.equal(tree.hitPoints, 2)
-  assert.equal(unit.loading, 0)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
     ['damage', 'tree-1', 1],
     ['drawHealthBar'],
     ['updateInfo', 'hitPoints', '2/5'],
+  ])
+})
+
+test('chopping a felled tree adds wood directly to player resources', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wood: 'wood' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { chopWood: 'chop-wood' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showDamageFeedback: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 0,
+    label: 'tree-1',
+    quantity: 5,
+    selected: true,
+    totalHitPoints: 5,
+    type: 'Tree',
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: {
+      menu: {
+        updateInfo: (id, value) => calls.push(['updateInfo', id, value]),
+        updateTopbar: () => calls.push(['updateTopbar']),
+      },
+    },
+    dest: tree,
+    gatherAmount: { woodcutter: 2 },
+    label: 'villager-1',
+    owner: { isPlayed: true, wood: 3 },
+    sprite: {},
+    work: constants.WORK_TYPES.woodcutter,
+    getActionCondition: target => target === tree && tree.quantity > 0,
+    getWorkSound: () => 'chop-wood',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
+
+  assert.equal(unit.owner.wood, 5)
+  assert.equal(tree.quantity, 3)
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['updateTopbar'],
+    ['feedback', 'villager-1', 2],
+    ['updateInfo', 'quantityText', 3],
   ])
 })
 
@@ -2892,8 +2879,6 @@ test('hero chopping wood rewinds the work swing after the impact frame', () => {
     action: constants.ACTION_TYPES.chopwood,
     context: { menu: {} },
     dest: tree,
-    loading: 0,
-    loadingMax: { wood: 10 },
     sprite: { loop: true },
     getActionCondition: target => target === tree,
     getWorkSound: () => 'chop-wood',
@@ -2968,7 +2953,7 @@ test('hero building health bar refreshes while construction progresses', () => {
   ])
 })
 
-test('a farmer returns to the same farm after delivering food', () => {
+test('a farmer can return to the same farm after an interrupted food job', () => {
   const farm = {
     label: 'farm-1',
     family: constants.FAMILY_TYPES.resource,
@@ -3065,102 +3050,6 @@ test('resuming previous animal work does not remember the interrupted target aga
   assert.deepEqual(unit.path, [])
 })
 
-test('delivery orders bypass the human command throttle', () => {
-  const resource = { label: 'farm-1' }
-  const granary = {
-    label: 'granary-1',
-    type: constants.BUILDING_TYPES.granary,
-  }
-  const calls = []
-  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
-    'pixi.js': { Assets: { cache: { get: () => null } } },
-    '../../constants': constants,
-    '../../lib': {
-      getActionCondition: (_unit, target, action) => action === constants.ACTION_TYPES.delivery && target === granary,
-      getClosestInstance: () => granary,
-      getInstanceDegree: () => 0,
-      getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
-    },
-    '../../lib/lang': { t: value => value },
-  })
-  const unit = {
-    category: 'Unit',
-    context: { map: { grid: [[{ label: 'current-cell' }]] } },
-    dest: resource,
-    i: 0,
-    j: 0,
-    loading: 7,
-    loadingType: 'wheat',
-    owner: {
-      buildings: [granary],
-      config: {
-        buildings: {
-          Granary: { accept: ['wheat'] },
-          StoragePit: { accept: ['wood'] },
-        },
-      },
-    },
-    sendTo: () => calls.push(['sendTo']),
-    sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
-  }
-
-  new UnitCommands(unit).sendToDelivery()
-
-  assert.deepEqual(calls, [['sendToEvt', 'granary-1', constants.ACTION_TYPES.delivery]])
-  assert.equal(unit.previousDest, resource)
-})
-
-test('hunters deliver meat to granaries instead of storage pits', () => {
-  const resource = { label: 'deer-1' }
-  const storagePit = {
-    label: 'storage-pit-1',
-    type: constants.BUILDING_TYPES.storagePit,
-  }
-  const granary = {
-    label: 'granary-1',
-    type: constants.BUILDING_TYPES.granary,
-  }
-  const calls = []
-  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
-    'pixi.js': { Assets: { cache: { get: () => null } } },
-    '../../constants': constants,
-    '../../lib': {
-      getActionCondition: (_unit, target, action, props) =>
-        action === constants.ACTION_TYPES.delivery && props?.buildingTypes?.includes(target.type),
-      getClosestInstance: (_unit, targets) => targets[0],
-      getInstanceDegree: () => 0,
-      getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
-    },
-    '../../lib/lang': { t: value => value },
-  })
-  const unit = {
-    category: 'Unit',
-    context: { map: { grid: [[{ label: 'current-cell' }]] } },
-    dest: resource,
-    i: 0,
-    j: 0,
-    loading: 7,
-    loadingType: 'meat',
-    owner: {
-      buildings: [storagePit, granary],
-      config: {
-        buildings: {
-          Granary: { accept: ['berry', 'wheat', 'meat'] },
-          StoragePit: { accept: ['wood', 'stone', 'gold'] },
-        },
-      },
-    },
-    sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
-  }
-
-  new UnitCommands(unit).sendToDelivery()
-
-  assert.deepEqual(calls, [['sendToEvt', 'granary-1', constants.ACTION_TYPES.delivery]])
-  assert.equal(unit.previousDest, resource)
-})
-
 test('exploration orders bypass the human command throttle', () => {
   const calls = []
   const grid = Array.from({ length: 3 }, (_, i) =>
@@ -3227,194 +3116,6 @@ test('runaway units use the shared reachable flee cell selection', () => {
   assert.equal(optionsSeen.isCellAllowed({ solid: false, category: 'Land', border: false }), true)
 })
 
-test('delivery shows a resource gain over the delivering unit', () => {
-  const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
-    'pixi.js': { Assets: { cache: { get: () => null } } },
-    '../../constants': {
-      ...constants,
-      LOADING_FOOD_TYPES: ['berry'],
-      LOADING_TYPES: {},
-      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
-      SOUND_CUES: { villager: {} },
-      TYPE_ACTION: {},
-    },
-    '../../lib': {
-      canUpdateMinimap: () => false,
-      degreeToDirection: () => 'south',
-      getInstanceDegree: () => 0,
-      onSpriteLoopAtFrame: () => {},
-      playerCanSeeInstance: () => false,
-      playSoundCue: () => {},
-      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      updateInstanceVisibility: () => {},
-    },
-    '../Projectile': { Projectile: class {} },
-    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
-  })
-  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1', type: constants.BUILDING_TYPES.townCenter }
-  const player = {
-    food: 10,
-    isPlayed: true,
-  }
-  const unit = {
-    action: constants.ACTION_TYPES.delivery,
-    label: 'villager-1',
-    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
-    dest: forum,
-    loading: 7,
-    loadingType: 'berry',
-    owner: player,
-    previousDest: null,
-    sprite: {},
-    getActionCondition: target => target === forum,
-    setTextures: sheet => calls.push(['setTextures', sheet]),
-    stop: () => calls.push(['stop']),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
-  }
-
-  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
-
-  assert.equal(player.food, 17)
-  assert.equal(unit.loading, 0)
-  assert.deepEqual(calls, [
-    ['feedback', 'villager-1', 7],
-    ['topbar'],
-    ['updateInterfaceLoading'],
-    ['setTextures', 'standing'],
-    ['stop'],
-  ])
-})
-
-test('delivery resumes a communication food job when there is no previous target', () => {
-  const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
-    'pixi.js': { Assets: { cache: { get: () => null } } },
-    '../../constants': {
-      ...constants,
-      LOADING_FOOD_TYPES: ['berry'],
-      LOADING_TYPES: {},
-      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
-      SOUND_CUES: { villager: {} },
-      TYPE_ACTION: {},
-    },
-    '../../lib': {
-      canUpdateMinimap: () => false,
-      degreeToDirection: () => 'south',
-      getInstanceDegree: () => 0,
-      onSpriteLoopAtFrame: () => {},
-      playerCanSeeInstance: () => false,
-      playSoundCue: () => {},
-      resumeVillagerAutonomy: unit => {
-        calls.push(['resumeVillagerAutonomy', unit.autonomousJob])
-        return true
-      },
-      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      updateInstanceVisibility: () => {},
-    },
-    '../Projectile': { Projectile: class {} },
-    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
-  })
-  const forum = { family: constants.FAMILY_TYPES.building, label: 'forum-1', type: constants.BUILDING_TYPES.townCenter }
-  const unit = {
-    action: constants.ACTION_TYPES.delivery,
-    autonomousJob: 'food',
-    label: 'villager-1',
-    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
-    dest: forum,
-    loading: 7,
-    loadingType: 'berry',
-    owner: { food: 0, isPlayed: true },
-    previousDest: null,
-    sprite: {},
-    getActionCondition: target => target === forum,
-    setTextures: sheet => calls.push(['setTextures', sheet]),
-    stop: () => calls.push(['stop']),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
-  }
-
-  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
-
-  assert.deepEqual(calls, [
-    ['feedback', 'villager-1', 7],
-    ['topbar'],
-    ['updateInterfaceLoading'],
-    ['setTextures', 'standing'],
-    ['resumeVillagerAutonomy', 'food'],
-  ])
-})
-
-test('hero delivery deposits accepted carried resources and keeps the rest', () => {
-  const calls = []
-  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
-    'pixi.js': { Assets: { cache: { get: () => null } } },
-    '../../constants': {
-      ...constants,
-      LOADING_FOOD_TYPES: ['wheat'],
-      LOADING_TYPES: {},
-      SHEET_TYPES: { ...constants.SHEET_TYPES, standing: 'standing' },
-      SOUND_CUES: { villager: {} },
-      TYPE_ACTION: {},
-    },
-    '../../lib': {
-      canUpdateMinimap: () => false,
-      degreeToDirection: () => 'south',
-      getInstanceDegree: () => 0,
-      onSpriteLoopAtFrame: () => {},
-      playerCanSeeInstance: () => false,
-      playSoundCue: () => {},
-      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
-      updateInstanceVisibility: () => {},
-    },
-    '../../lib/unitControl': {
-      isHeroControlled: () => true,
-      isManualHeroActionReleased: () => false,
-    },
-    '../Projectile': { Projectile: class {} },
-    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
-  })
-  const granary = {
-    accept: ['wheat'],
-    family: constants.FAMILY_TYPES.building,
-    label: 'granary-1',
-    type: constants.BUILDING_TYPES.granary,
-  }
-  const player = { food: 10, iron: 0, isPlayed: true }
-  const unit = {
-    action: constants.ACTION_TYPES.delivery,
-    context: { menu: { updateTopbar: () => calls.push(['topbar']) } },
-    controlMode: 'hero',
-    dest: granary,
-    label: 'hero',
-    loading: 7,
-    loadingType: 'iron',
-    owner: player,
-    previousDest: null,
-    resourceLoads: { wheat: 3, iron: 4 },
-    sprite: {},
-    work: constants.WORK_TYPES.farmer,
-    getActionCondition: target => target === granary,
-    setTextures: sheet => calls.push(['setTextures', sheet]),
-    stop: () => calls.push(['stop']),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
-  }
-
-  new UnitActions(unit).getAction(constants.ACTION_TYPES.delivery)
-
-  assert.equal(player.food, 13)
-  assert.equal(player.iron, 0)
-  assert.deepEqual(unit.resourceLoads, { iron: 4 })
-  assert.equal(unit.loading, 4)
-  assert.equal(unit.loadingType, 'iron')
-  assert.deepEqual(calls, [
-    ['feedback', 'hero', 3],
-    ['topbar'],
-    ['updateInterfaceLoading'],
-    ['setTextures', 'standing'],
-    ['stop'],
-  ])
-})
-
 test('hero farming does not claim or replace the farm worker slot', () => {
   const occupant = { label: 'villager-1' }
   const calls = []
@@ -3461,31 +3162,27 @@ test('hero farming does not claim or replace the farm worker slot', () => {
     context: { menu: { updateInfo: (id, value) => calls.push(['updateInfo', id, value]) } },
     dest: farm,
     label: 'hero',
-    loading: 0,
-    loadingMax: { wheat: 10 },
     owner: { isPlayed: true },
     sprite: {},
     work: constants.WORK_TYPES.farmer,
     getActionCondition: target => target === farm,
     getWorkSound: () => 'gather-food',
     setTextures: sheet => calls.push(['setTextures', sheet]),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
   }
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
 
   assert.equal(farm.isUsedBy, occupant)
-  assert.equal(unit.loading, 1)
+  assert.equal(unit.owner.food, 1)
   assert.equal(farm.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['updateInterfaceLoading'],
     ['feedback', 'hero', 1],
     ['updateInfo', 'quantityText', 19],
   ])
 })
 
-test('hero keeps existing carried resources when gathering another resource type', () => {
+test('hero gathering adds food globally without local resource bookkeeping', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -3529,29 +3226,22 @@ test('hero keeps existing carried resources when gathering another resource type
     controlMode: 'hero',
     dest: wheat,
     label: 'hero',
-    loading: 4,
-    loadingMax: { wheat: 1 },
-    loadingType: 'iron',
-    owner: { isPlayed: true },
-    resourceLoads: { iron: 4 },
+    owner: { food: 0, isPlayed: true },
     sprite: {},
     work: constants.WORK_TYPES.farmer,
     getActionCondition: target => target === wheat,
     getWorkSound: () => 'gather-food',
     setTextures: sheet => calls.push(['setTextures', sheet]),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
   }
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
 
-  assert.deepEqual(unit.resourceLoads, { iron: 4, wheat: 1 })
-  assert.equal(unit.loading, 5)
-  assert.equal(unit.loadingType, 'wheat')
+  assert.equal(unit.owner.food, 1)
   assert.equal(wheat.quantity, 19)
-  assert.deepEqual(calls, [['setTextures', 'action'], ['updateInterfaceLoading'], ['feedback', 'hero', 1]])
+  assert.deepEqual(calls, [['setTextures', 'action'], ['feedback', 'hero', 1]])
 })
 
-test('hero mining stores stone in carried resource loads and refreshes the hero HUD', () => {
+test('hero mining adds stone directly to player resources', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -3609,35 +3299,26 @@ test('hero mining stores stone in carried resource loads and refreshes the hero 
     context: {
       controls: { instanceIsAudible: () => true },
       menu: {
-        updateHeroStatus: hero => calls.push(['updateHeroStatus', hero.loading, hero.loadingType]),
         updateInfo: (id, value) => calls.push(['updateInfo', id, value]),
       },
     },
     controlMode: 'hero',
     dest: rock,
     label: 'hero',
-    loading: 0,
-    loadingType: null,
-    owner: { isPlayed: true },
-    resourceLoads: {},
+    owner: { isPlayed: true, stone: 0 },
     sprite: {},
     work: constants.WORK_TYPES.stoneminer,
     getActionCondition: target => target === rock && rock.quantity > 0,
     getWorkSound: () => 'mine-stone',
     setTextures: sheet => calls.push(['setTextures', sheet]),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
   }
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.minestone)
 
-  assert.deepEqual(unit.resourceLoads, { stone: 1 })
-  assert.equal(unit.loading, 1)
-  assert.equal(unit.loadingType, 'stone')
+  assert.equal(unit.owner.stone, 1)
   assert.equal(rock.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['updateInterfaceLoading'],
-    ['updateHeroStatus', 1, 'stone'],
     ['sound', 'mine-ore'],
     ['feedback', 'hero', 1],
     ['updateInfo', 'quantityText', 19],
@@ -3692,14 +3373,11 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
     },
     dest: berrybush,
     label: 'villager-1',
-    loading: 0,
-    loadingMax: { berry: 10 },
-    owner: { isPlayed: true },
+    owner: { food: 0, isPlayed: true },
     sprite: {},
     getActionCondition: target => target === berrybush && berrybush.quantity > 0,
     getWorkSound: () => 'forage-berry',
     setTextures: sheet => calls.push(['setTextures', sheet]),
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
     affectNewDest: () => calls.push(['affectNewDest']),
   }
 
@@ -3707,9 +3385,9 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
 
   assert.equal(berrybush.quantity, 0)
   assert.equal(berrybush.isDead, false)
+  assert.equal(unit.owner.food, 1)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['updateInterfaceLoading'],
     ['feedback', 'villager-1', 1],
     ['updateInfo', 'quantityText', 0],
     ['updateTexture'],
@@ -3729,7 +3407,6 @@ test('immediate farm orders bypass the human command throttle', () => {
       getClosestInstance: () => null,
       getInstanceDegree: () => 0,
       getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
     },
     '../../lib/lang': { t: value => value },
   })
@@ -3740,7 +3417,6 @@ test('immediate farm orders bypass the human command throttle', () => {
     context: { menu: { updateInfo: () => {} } },
     dest: null,
     isDead: false,
-    loading: 0,
     owner: { isPlayed: true, selectedUnit: null },
     path: [],
     previousDest: null,
@@ -3748,16 +3424,12 @@ test('immediate farm orders bypass the human command throttle', () => {
     sendTo: () => calls.push(['sendTo']),
     sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
     type: constants.UNIT_TYPES.villager,
-    updateInterfaceLoading: () => calls.push(['updateInterfaceLoading']),
     work: constants.WORK_TYPES.builder,
   }
 
   new UnitCommands(unit).sendToFarm(farm, true)
 
-  assert.deepEqual(
-    calls.filter(call => call[0] !== 'updateInterfaceLoading'),
-    [['sendToEvt', 'farm-1', constants.ACTION_TYPES.farm]]
-  )
+  assert.deepEqual(calls, [['sendToEvt', 'farm-1', constants.ACTION_TYPES.farm]])
   assert.equal(unit.work, constants.WORK_TYPES.farmer)
 })
 
@@ -3776,7 +3448,6 @@ test('farm orders warn when wheat is not mature yet', () => {
       getClosestInstance: () => null,
       getInstanceDegree: () => 0,
       getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
       isWheatMature: () => false,
     },
     '../../lib/lang': { t: value => value },
@@ -3810,7 +3481,6 @@ test('farm orders stay quiet when immature wheat is outside the camera', () => {
       getClosestInstance: () => null,
       getInstanceDegree: () => 0,
       getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
       isWheatMature: () => false,
     },
     '../../lib/lang': { t: value => value },
@@ -3853,7 +3523,6 @@ test('berry orders warn when the bush is depleted', () => {
       getClosestInstance: () => null,
       getInstanceDegree: () => 0,
       getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
       isWheatMature: () => false,
     },
     '../../lib/lang': { t: value => value },
@@ -3893,7 +3562,6 @@ test('berry orders stay quiet when the depleted bush is outside the camera', () 
       getClosestInstance: () => null,
       getInstanceDegree: () => 0,
       getInstancePath: () => [],
-      getWorkWithLoadingType: () => null,
       isWheatMature: () => false,
     },
     '../../lib/lang': { t: value => value },

@@ -1,6 +1,6 @@
 import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
 import type { CommandResult } from '../DevCommandRegistry'
-import type { DevConsoleContext, DevEntity, DevPerformanceMetric } from '../types'
+import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPerformanceSnapshot } from '../types'
 import {
   drawCoordsDebug,
   drawGridDebug,
@@ -28,23 +28,96 @@ import {
   stopDebugTicker,
 } from './shared'
 
-export function performanceReport(context: DevConsoleContext, value: string): CommandResult {
-  if (value === 'reset') {
+export function performanceReport(context: DevConsoleContext, value = ''): CommandResult {
+  const [mode = '', ...rest] = value.trim().split(/\s+/).filter(Boolean)
+  if (mode === 'reset') {
     context.performance?.reset?.()
     return { ok: true, message: 'Performance samples reset' }
   }
   const report = context.performance?.snapshot?.()
   if (!report) return { ok: false, message: 'Performance monitor unavailable' }
+  if (mode === 'json') return { ok: true, message: JSON.stringify(report, null, 2) }
+  if (mode === 'spikes') {
+    const lines = perfReportSlowFrames(report, 8)
+    if (!lines.length) return { ok: true, message: 'No slow frames captured yet' }
+    return { ok: true, message: lines.join('\n') }
+  }
+  if (mode === 'metric') {
+    const name = rest.join(' ')
+    const metric = report.metrics[name] || report.metrics[`runtime.${name}`] || report.metrics[`load.${name}`]
+    if (!name || !metric) return { ok: false, message: 'Usage: perf-report metric <metricName>' }
+    const lines = [
+      `${name}`,
+      `calls ${metric.count ?? 0} | total ${metric.totalMs.toFixed(2)}ms | avg/call ${metric.averageMs.toFixed(3)}ms`,
+      `exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | exclusive avg ${metric.averageExclusiveMs?.toFixed(3) ?? '0.000'}ms | max exclusive ${metric.maxExclusiveMs?.toFixed(2) ?? '0.00'}ms`,
+      `measured ${metric.measuredCount ?? 0} | measured avg ${metric.measuredAverageMs?.toFixed(3) ?? '0.000'}ms | measured exclusive avg ${metric.measuredAverageExclusiveMs?.toFixed(3) ?? '0.000'}ms | max call ${metric.maxMs.toFixed(2)}ms | last ${metric.lastMs?.toFixed(2) ?? '0.00'}ms`,
+      `frames ${metric.frames ?? 0} | avg/frame ${metric.averageFrameMs?.toFixed(2) ?? '0.00'}ms | avg exclusive/frame ${metric.averageFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max/frame ${metric.maxFrameMs?.toFixed(2) ?? '0.00'}ms | max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | max calls/frame ${metric.maxFrameCalls ?? 0}`,
+      `slow calls ${metric.slowCount ?? 0}`,
+    ]
+    const slowSamples = metric.slowSamples || []
+    if (slowSamples.length) {
+      lines.push('recent slow calls:')
+      for (const sample of slowSamples.slice(-6).reverse()) {
+        lines.push(`  ${sample.duration.toFixed(2)}ms at ${sample.at.toFixed(0)}ms`)
+      }
+    }
+    return { ok: true, message: lines.join('\n') }
+  }
+  if (mode === 'render') {
+    const lines = perfReportRenderStats(report, 8)
+    if (!lines.length) return { ok: true, message: 'No render stats captured yet' }
+    return { ok: true, message: lines.join('\n') }
+  }
   const lines = [
-    `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
+    `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | slow frames ${report.frames.slowCount ?? 0} | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
   ]
-  const metrics = Object.entries(report.metrics).sort(([, a], [, b]) => b.totalMs - a.totalMs)
+  lines.push(...perfReportSlowFrames(report, 3))
+  lines.push(...perfReportRenderStats(report, 3))
+  lines.push('Top metrics')
+  const limit = mode === 'top' ? Number(rest[0] || 20) : 12
+  const metrics = Object.entries(report.metrics)
+    .sort(([, a], [, b]) => b.totalMs - a.totalMs)
+    .slice(0, Number.isFinite(limit) ? limit : Infinity)
   for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
     lines.push(
-      `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | avg ${metric.averageMs.toFixed(2)}ms | max ${metric.maxMs.toFixed(2)}ms | slow ${metric.slowCount}`
+      `${name}: ${metric.count} calls | total ${metric.totalMs.toFixed(2)}ms | exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | avg ${metric.averageMs.toFixed(3)}ms | max call ${metric.maxMs.toFixed(2)}ms | max exclusive/frame ${metric.maxFrameExclusiveMs?.toFixed(2) ?? '0.00'}ms | calls/frame max ${metric.maxFrameCalls ?? 0} | slow ${metric.slowCount}`
     )
   }
   return { ok: true, message: lines.join('\n') }
+}
+
+function perfReportSlowFrames(report: DevPerformanceSnapshot, limit: number): string[] {
+  const slowFrames = report.slowFrames || []
+  if (!slowFrames.length) return []
+  const lines = ['Slow frames']
+  for (const frame of slowFrames.slice(-limit).reverse()) {
+    const phaseLabel = `${frame.phase} #${frame.phaseFrame}${frame.mixedPhases ? ' mixed' : ''}`
+    lines.push(
+      `${frame.duration.toFixed(2)}ms | exclusive ${frame.exclusiveMeasuredMs.toFixed(2)}ms | untracked ${frame.untrackedMs.toFixed(2)}ms | inclusive ${frame.measuredMs.toFixed(2)}ms | phase ${phaseLabel}`
+    )
+    if (!frame.metrics.length) {
+      lines.push('  no measured metrics on this interval')
+      continue
+    }
+    for (const metric of frame.metrics.slice(0, 4)) {
+      lines.push(
+        `  ${metric.name}: exclusive ${metric.exclusiveMs.toFixed(2)}ms | total ${metric.totalMs.toFixed(2)}ms | calls ${metric.count}`
+      )
+    }
+  }
+  return lines
+}
+
+function perfReportRenderStats(report: DevPerformanceSnapshot, limit: number): string[] {
+  const stats = report.renderStats || []
+  if (!stats.length) return []
+  const lines = ['Recent renders']
+  for (const stat of stats.slice(-limit).reverse()) {
+    lines.push(
+      `${stat.duration.toFixed(2)}ms | nodes ${stat.nodes} | visible ${stat.visible} | renderable ${stat.renderable} | depth ${stat.maxDepth}`
+    )
+  }
+  return lines
 }
 
 export function toggleSolidDebug(context: DevConsoleContext, value: string): CommandResult {

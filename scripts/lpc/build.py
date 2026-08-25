@@ -34,6 +34,7 @@ sys.path.insert(0, str(RETRO_PALETTE_ROOT))
 sys.path.insert(0, str(SCRIPTS_ROOT))
 from retro_palette import bake_retro_style, find_hex_palette, load_hex_palette
 from outline_style import OUTLINE_MODE, apply_outline_style_to_atlas
+from simple_darken_border import DARKEN_FACTOR, darken_border
 
 warnings.simplefilter("ignore", DeprecationWarning)
 
@@ -116,6 +117,7 @@ def script_dependencies(retro_palette_hex: Path) -> list[dict[str, int | str]]:
         PROJECT_ROOT / "scripts/lpc/image_pipeline.py",
         PROJECT_ROOT / "scripts/lpc/jobs.py",
         PROJECT_ROOT / "scripts/lpc/outline_style.py",
+        PROJECT_ROOT / "scripts/simple_darken_border.py",
         RETRO_PALETTE_ROOT / "retro_palette.py",
         retro_palette_hex,
     ]
@@ -150,6 +152,7 @@ def sheet_signature(
             "lightingRight": LIGHTING_RIGHT,
             "lightingContrast": LIGHTING_CONTRAST,
             "outlineMode": OUTLINE_MODE,
+            "finalDarkBorderFactor": DARKEN_FACTOR,
         },
         "dependencies": dependencies,
     }
@@ -200,7 +203,17 @@ def prune_stale_outputs(output_root: Path, previous_assets: set[str], current_as
         shutil.rmtree(output_root / relative_path, ignore_errors=True)
 
 
-def write_variant_atlas(output_dir: Path, source_dirs: list[Path]) -> None:
+def prune_empty_dirs(root: Path) -> None:
+    if not root.exists():
+        return
+    for path in sorted((candidate for candidate in root.rglob("*") if candidate.is_dir()), reverse=True):
+        try:
+            path.rmdir()
+        except OSError:
+            pass
+
+
+def write_variant_atlas(output_dir: Path, source_dirs: list[Path], postprocess=None) -> None:
     frames = {}
     placements = []
     x = 0
@@ -262,6 +275,8 @@ def write_variant_atlas(output_dir: Path, source_dirs: list[Path]) -> None:
             indent=2,
         )
         file.write("\n")
+    if postprocess:
+        postprocess(output_dir / "texture.png")
 
 
 def build_sheet_plan(unit: str, job: Job) -> SheetPlan:
@@ -415,6 +430,7 @@ def build(
                     previous_cache.get(variant_cache_key(variant_asset_path)) == atlas_signature
                     and variant_atlas_outputs_exist(output_root, variant_asset_path)
                 ):
+                    prune_empty_dirs(output_root / variant_asset_path)
                     skipped += len(variant_task_data)
                     print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
                     continue
@@ -430,9 +446,14 @@ def build(
                     bake_sheet(output_dir, frames, task["animation_speed"], retro_palette)
                     variant_output_dirs.append(output_dir)
                     rebuilt += 1
-                write_variant_atlas(output_root / variant_asset_path, variant_output_dirs)
+                write_variant_atlas(
+                    output_root / variant_asset_path,
+                    variant_output_dirs,
+                    postprocess=lambda path: darken_border(path, DARKEN_FACTOR),
+                )
                 for task in variant_task_data:
                     shutil.rmtree(output_root / task["relative_path"], ignore_errors=True)
+                prune_empty_dirs(output_root / variant_asset_path)
                 print(f"  baked {unit}/{variant_key} ({rebuilt} rebuilt, {skipped} cached)")
     print(f"Baked {len(generated)} sheets ({rebuilt} rebuilt, {skipped} cached)")
 

@@ -11,6 +11,7 @@ const MD_REPORT = path.join(REPORT_DIR, 'code-health.md')
 const JSON_REPORT = path.join(REPORT_DIR, 'code-health.json')
 const ARCHITECTURE_CYCLE_BASELINE = 0
 const ARCHITECTURE_TOP_CYCLE_LIMIT = 20
+const MINIMUM_SCORE = 90
 
 const CHECKS = [
   { id: 'lint', label: 'ESLint', command: 'pnpm lint' },
@@ -310,6 +311,8 @@ function main() {
     generatedAt,
     score,
     grade: grade(score),
+    minimumScore: MINIMUM_SCORE,
+    qualityGate: score >= MINIMUM_SCORE ? 'pass' : 'fail',
     totals,
     checks: checks.map(({ output: _output, ...check }) => check),
     componentScores,
@@ -340,6 +343,8 @@ Generated: ${generatedAt}
 ## Global Score
 
 **${score}/100 (${grade(score)})**
+
+Minimum required score: **${MINIMUM_SCORE}/100**. Quality gate: **${score >= MINIMUM_SCORE ? 'PASS' : 'FAIL'}**.
 
 | Component | Score |
 | --- | --- |
@@ -487,6 +492,10 @@ ${
     topRisk.slice(0, 5).forEach((file, index) => {
       console.log(`${index + 1}. ${file.file} - risk ${file.risk} (${priorityReason(file)})`)
     })
+  }
+  if (score < MINIMUM_SCORE) {
+    console.error(`Code health gate failed: ${score}/100 is below required ${MINIMUM_SCORE}/100.`)
+    process.exitCode = 1
   }
 }
 

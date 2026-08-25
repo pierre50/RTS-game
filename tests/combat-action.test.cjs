@@ -94,14 +94,6 @@ function loadModule(relativePath, mocks) {
     '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../../lib/unitWorkAppearance': unitWorkAppearanceMock,
     '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
-    '../../lib/resourceCarry': {
-      clearCarriedResources: unit => {
-        unit.loading = 0
-        unit.loadingType = null
-      },
-      getCarriedResourceEntries: unit =>
-        unit.loadingType && (unit.loading ?? 0) > 0 ? [[unit.loadingType, unit.loading]] : [],
-    },
     './maths': { getReliefOffset: () => 0 },
   }
   return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })

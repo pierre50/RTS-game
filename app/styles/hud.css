@@ -73,6 +73,18 @@
   transition: border-color var(--ui-transition-panel);
 }
 
+.topbar-villagers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  border-left: var(--panel-border);
+  transition: border-color var(--ui-transition-panel);
+}
+
 .topbar-resources {
   display: flex;
   flex: 1 1 auto;
@@ -263,34 +275,6 @@
   opacity: 0;
 }
 
-.hero-status-carry {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-gap-5);
-  flex-wrap: wrap;
-  margin-top: 1px;
-}
-
-.hero-status-carry.hidden {
-  display: none;
-}
-
-.hero-status-carry-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.hero-status-carry-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.hero-status-carry-value {
-  color: var(--main-text-color);
-  font-weight: 700;
-}
-
 .selection-info {
   position: relative;
   display: flex;
@@ -433,7 +417,6 @@
 }
 
 .selection-info .resource-quantity,
-.selection-info .unit-loading,
 .selection-info .building-loading,
 .selection-info .population,
 .selection-info .stable-horses {
@@ -451,7 +434,6 @@
   border: 1px solid var(--border-divider-subtle);
 }
 
-.selection-info .unit-loading:empty,
 .selection-info .building-loading:empty,
 .selection-info .info:empty,
 .selection-info .resource-quantity:empty,
@@ -461,7 +443,6 @@
 }
 
 .selection-info .resource-quantity-icon,
-.selection-info .unit-loading-icon,
 .selection-info .building-loading-icon,
 .selection-info .population img {
   width: 18px;
@@ -1380,9 +1361,14 @@ body.hero-cursor-hidden {
 }
 
 .resource > div {
-  width: 44px;
+  width: 62px;
   font-variant-numeric: tabular-nums;
   text-align: left;
+}
+
+.resource-workers {
+  color: var(--main-accent-color);
+  font-size: var(--font-size-sm);
 }
 
 .resource-content {
@@ -1442,9 +1428,15 @@ body.hero-cursor-hidden {
     font-size: var(--font-size-sm);
   }
 
+  .topbar-villagers {
+    min-width: 34px;
+    padding-left: 8px;
+    font-size: var(--font-size-sm);
+  }
+
   .resource > div {
     width: auto;
-    min-width: 36px;
+    min-width: 48px;
   }
 
   .topbar-options-menu {
@@ -1525,23 +1517,6 @@ body.hero-cursor-hidden {
   align-items: center;
   flex-direction: row;
   gap: var(--ui-gap-5);
-}
-
-.unit-loading {
-  position: absolute;
-  top: 52px;
-  left: 45%;
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  gap: var(--ui-gap-5);
-  flex-wrap: wrap;
-}
-
-.unit-loading-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
 }
 
 .building-loading,

@@ -1,19 +1,25 @@
 import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
+import { summarizeVillagerAssignments } from '../lib/villagerAssignments'
 import { createResourceIconMaps } from './resourceIcons'
+import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
 const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
 type ResourceName = (typeof RESOURCE_NAMES)[number]
-type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number }
+type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number; units?: UnitEntity[] }
 
 export class TopbarView {
   menu: MenuHost
   resourceEls: Record<string, HTMLDivElement>
+  resourceWorkerEls: Record<string, HTMLSpanElement>
+  villagerTotalEl: HTMLDivElement | null
 
   constructor(menu: MenuHost) {
     this.menu = menu
     this.resourceEls = {}
+    this.resourceWorkerEls = {}
+    this.villagerTotalEl = null
   }
 
   build(): void {
@@ -41,11 +47,16 @@ export class TopbarView {
     menu.resources.className = 'topbar-resources'
     RESOURCE_NAMES.forEach(res => this.setResourceBox(res))
 
+    this.villagerTotalEl = document.createElement('div')
+    this.villagerTotalEl.className = 'topbar-villagers'
+    this.villagerTotalEl.title = 'Villageois'
+
     const options = document.createElement('div')
     options.className = 'topbar-options'
     options.appendChild(menu.pauseMenu.createOpenButton())
 
     status.appendChild(menu.resources)
+    status.appendChild(this.villagerTotalEl)
     status.appendChild(menu.age)
     status.appendChild(menu.dayTime)
     menu.topbarStatusStack.appendChild(status)
@@ -65,7 +76,14 @@ export class TopbarView {
     img.src = icons[name]
 
     const valueEl = document.createElement('div')
+    valueEl.className = 'resource-value'
     this.resourceEls[name] = valueEl
+
+    const workerEl = document.createElement('span')
+    workerEl.className = 'resource-workers'
+    workerEl.title = 'Villageois affectes'
+    this.resourceWorkerEls[name] = workerEl
+    valueEl.appendChild(workerEl)
     box.appendChild(img)
     box.appendChild(valueEl)
     menu.resources.appendChild(box)
@@ -77,11 +95,19 @@ export class TopbarView {
         context: { player },
       },
     } = this
+    const assignments = summarizeVillagerAssignments(player?.units ?? [])
     RESOURCE_NAMES.forEach(prop => {
       const resourcePlayer = player as ResourcePlayer | null
       const val = Math.min(resourcePlayer?.[prop] || 0, 99999)
-      this.resourceEls[prop].textContent = String(val)
+      const valueEl = this.resourceEls[prop]
+      valueEl.textContent = String(val)
+      const workerEl = this.resourceWorkerEls[prop]
+      if (workerEl) {
+        workerEl.textContent = ` (${assignments.assigned[prop] ?? 0})`
+        valueEl.appendChild(workerEl)
+      }
     })
+    if (this.villagerTotalEl) this.villagerTotalEl.textContent = `V: ${assignments.total}`
     const age = this.getClampedAge()
     this.menu.age.textContent = t(AGE_LABEL_KEYS[age])
     this.updateDayTime()

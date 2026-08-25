@@ -204,10 +204,6 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   return frames[0] ?? null
 }
 
-function shouldRenderUnitPortraitLayer(layer: Pick<UnitAppearanceLayerConfig, 'showWhenLoading'>): boolean {
-  return !layer.showWhenLoading
-}
-
 function renderLayeredUnitHeadAvatar(
   app: Application,
   unit: PortraitSource,
@@ -215,7 +211,6 @@ function renderLayeredUnitHeadAvatar(
   canvas: HTMLCanvasElement
 ): boolean {
   const layers = unit.appearance?.layers
-    ?.filter(shouldRenderUnitPortraitLayer)
     ?.map((layer, index) => ({ layer, index, texture: getPortraitLayerTexture(unit, layer) }))
     .filter((entry): entry is { layer: UnitAppearanceLayerConfig; index: number; texture: Texture } => Boolean(entry.texture))
     .sort((a, b) => a.layer.zIndex - b.layer.zIndex || a.index - b.index)

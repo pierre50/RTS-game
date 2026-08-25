@@ -34,7 +34,7 @@ type ActionMenuTab = 'info' | 'tools' | 'technologies' | 'minimap' | 'worldmap' 
 
 const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
 
-export function isHeroConstructionBuildingType(type: string): boolean {
+function isHeroConstructionBuildingType(type: string): boolean {
   return !type.startsWith(BUILDING_TYPES.banditCamp)
 }
 

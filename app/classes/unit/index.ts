@@ -96,9 +96,6 @@ export class Unit extends Instance implements UnitEntity {
   sounds?: UnitEntity['sounds']
   work: UnitEntity['work']
   shelterState?: UnitEntity['shelterState']
-  loading!: UnitEntity['loading']
-  loadingType: UnitEntity['loadingType']
-  resourceLoads: UnitEntity['resourceLoads']
 
   dest: UnitEntity['dest']
   realDest: UnitEntity['realDest']
@@ -124,7 +121,6 @@ export class Unit extends Instance implements UnitEntity {
   standingSheet?: UnitEntity['standingSheet']
   loop?: UnitEntity['loop']
   visibilityTimeout?: UnitEntity['visibilityTimeout']
-  showLoading?: UnitEntity['showLoading']
   showBuildings?: UnitEntity['showBuildings']
   visualSettingsCleanup!: (() => void) | null
 
@@ -472,14 +468,6 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitLifecycle.clear()
   }
 
-  updateInterfaceLoading() {
-    this.unitInterface.updateLoading()
-  }
-
-  getLoadingElement() {
-    return this.unitInterface.getLoadingElement()
-  }
-
   commonSendTo(
     target: RuntimeEntity,
     work: string,
@@ -496,10 +484,6 @@ export class Unit extends Instance implements UnitEntity {
   // units are sent to the same solid target — each unit gets exactly one A* call.
   sendToWithCell(target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) {
     return this.unitCommands.sendToWithCell(target, arrivalCell, action)
-  }
-
-  sendToDelivery() {
-    return this.unitCommands.sendToDelivery()
   }
 
   sendToAttack(target: RuntimeEntity) {

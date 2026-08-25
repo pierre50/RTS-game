@@ -1,20 +1,16 @@
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
   SHEET_TYPES,
   UNIT_TYPES,
-  WORK_FOOD_TYPES,
   WORK_TYPES,
 } from '../../constants'
 import {
   getActionCondition,
-  getClosestInstance,
   getInstanceDegree,
   getInstancePath,
-  getWorkWithLoadingType,
   getAutonomyJobForWork,
   isWheatMature,
   setVillagerAutonomy,
@@ -24,7 +20,6 @@ import { t } from '../../lib/lang'
 import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
 import { isHeroControlled } from '../../lib/unitControl'
 import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
-import { clearCarriedResources, getCarriedResourceEntries } from '../../lib/resourceCarry'
 import type {
   BuildingEntity,
   RuntimeEntity,
@@ -54,28 +49,16 @@ function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
   return Boolean(unit.owner?.isPlayed && (unit.context?.controls?.instanceInCamera?.(target) ?? true))
 }
 
-// Applies the work/texture/cargo bookkeeping a work reassignment needs: drops mismatched
-// cargo when switching to an incompatible gather type, and swaps in the right animation
-// sheets. Extracted out of commonSendTo so hero-direct triggers (heroTools.ts) can reuse it
-// without going through the pathing/command-queue machinery meant for AI-controlled units.
+// Applies the work/texture bookkeeping a work reassignment needs. Extracted out of
+// commonSendTo so hero-direct triggers can reuse it without command-queue machinery.
 export function applyWorkForAction(unit: UnitEntity, work: string, action: string | null): void {
   const menu = unit.context?.menu
-  const workFromLoading = getWorkWithLoadingType(unit.loadingType ?? '')
-  if (
-    !isHeroControlled(unit) &&
-    work !== WORK_TYPES.builder &&
-    work !== workFromLoading &&
-    !(WORK_FOOD_TYPES.includes(work) && WORK_FOOD_TYPES.includes(workFromLoading ?? ''))
-  ) {
-    clearCarriedResources(unit)
-    unit.updateInterfaceLoading?.()
-  }
   if (unit.work === work && unit.action === action) return
   unit.work = work
   if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
     menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
   }
-  applyUnitWorkAssets(unit, work, { action, loading: Boolean(unit.loading), refreshEquipmentStats: true })
+  applyUnitWorkAssets(unit, work, { action, refreshEquipmentStats: true })
   // If the unit is already moving when AI/job assignment changes its role,
   // refresh the walking animation immediately so the sprite matches the new work.
   if (unit.path?.length) {
@@ -200,38 +183,6 @@ export class UnitCommands {
       unit.sendToEvt?.(target, action)
       return true
     }
-  }
-
-  sendToDelivery() {
-    const unit = this.unit
-    const map = unit.context?.map
-    let buildingTypes: string[] = [BUILDING_TYPES.townCenter]
-    const carriedTypes = getCarriedResourceEntries(unit).map(([loadingType]) => loadingType)
-    const buildings = {
-      Granary: unit.owner?.config.buildings.Granary,
-      StoragePit: unit.owner?.config.buildings.StoragePit,
-    }
-    for (const [key, value] of Object.entries(buildings)) {
-      const accept = (value as { accept?: string[] } | undefined)?.accept
-      if (accept?.some(loadingType => carriedTypes.includes(loadingType))) {
-        buildingTypes.push(key)
-      }
-    }
-
-    const targets = (unit.owner?.buildings ?? []).filter(building =>
-      checkActionCondition(unit, building, ACTION_TYPES.delivery, { buildingTypes })
-    )
-    const target = getClosestInstance(unit, targets)
-    if (!target) {
-      unit.stop?.()
-      return
-    }
-    if (unit.dest) {
-      unit.previousDest = unit.dest
-    } else if (map) {
-      unit.previousDest = map.grid[unit.i][unit.j]
-    }
-    unit.sendToEvt?.(target, ACTION_TYPES.delivery)
   }
 
   sendToAttack(target: RuntimeEntity) {

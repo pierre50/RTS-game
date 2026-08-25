@@ -83,7 +83,7 @@ export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRoutin
     return
   }
 
-  if (unit.previousDest && unit.action !== ACTION_TYPES.delivery) {
+  if (unit.previousDest) {
     unit.goBackToPrevious?.()
     return
   }
@@ -110,11 +110,8 @@ export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRoutin
     }
   }
   if (!handleSuccess) {
-    const notDeliveryWork = [WORK_TYPES.builder, WORK_TYPES.attacker, WORK_TYPES.healer]
-    if (unit.loading && unit.work === WORK_TYPES.builder && unit.previousWork) {
+    if (unit.work === WORK_TYPES.builder && unit.previousWork) {
       unit.goBackToPrevious?.()
-    } else if (unit.loading && unit.work && !notDeliveryWork.includes(unit.work)) {
-      unit.sendToDelivery?.()
     } else if (resumeVillagerAutonomy?.(unit)) {
       return
     } else {

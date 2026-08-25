@@ -309,11 +309,8 @@ export class HeroController {
       return
     }
     this.primaryClickPoint = this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor()
-    const beforeLoad = this.heroUnit?.loading ?? 0
     const triggered = this.attackTowardPoint(this.primaryClickPoint)
-    const unit = this.heroUnit
-    const deliveredLoad = beforeLoad > 0 && (unit?.loading ?? 0) <= 0
-    this.mouseHeld = triggered && !deliveredLoad
+    this.mouseHeld = triggered
     if (!this.mouseHeld) this.primaryClickPoint = null
   }
 

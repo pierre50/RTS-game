@@ -1,7 +1,6 @@
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { applyBakedLpcUnitAssets } from './lpc/baked'
 import type { DynamicEquipmentKey } from './lpc/equipment'
-import { getTotalCarriedResources } from './resourceCarry'
 import {
   getUnitWorkEquipment,
   refreshUnitEquipmentStats,
@@ -76,7 +75,7 @@ function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): 
   }
   hero.work = work
   applyBakedLpcUnitAssets(hero)
-  applyUnitWorkAssets(hero, work, { loading: getTotalCarriedResources(hero) > 0, refreshEquipmentStats: true })
+  applyUnitWorkAssets(hero, work, { refreshEquipmentStats: true })
   hero.setTextures?.(hero.sprite?.playing ? SHEET_TYPES.walking : SHEET_TYPES.standing)
 }
 

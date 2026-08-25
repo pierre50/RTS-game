@@ -41,7 +41,6 @@ function loadGame() {
     },
     '../lib/combatFeedback': { clearAllCombatFeedback() {} },
     '../lib/equipmentStats': { refreshUnitEquipmentStats() {} },
-    '../lib/resourceCarry': { syncHeroResourceLoadState() {} },
     '../lib/ActionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
@@ -171,7 +170,6 @@ function loadGame() {
   Object.assign(mocks, {
     '../../lib': mocks['../lib'],
     '../../lib/equipmentStats': mocks['../lib/equipmentStats'],
-    '../../lib/resourceCarry': mocks['../lib/resourceCarry'],
     '../../serialization/CampaignSave': mocks['../serialization/CampaignSave'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/PortalTravelTransition': mocks['../ui/PortalTravelTransition'],

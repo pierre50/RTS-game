@@ -1,5 +1,6 @@
 import type { ResourceAmount } from './common'
 import type { CommandSound, UnitSounds } from './sounds'
+import type { HeroEquipmentSlot } from './unitTypes'
 
 export type ConfigValue =
   | string
@@ -19,13 +20,12 @@ export type Condition = {
 export type UnitAppearanceLayerConfig = {
   zIndex: number
   deathZIndex?: number
-  hideWhenLoading?: boolean
-  showWhenLoading?: boolean
   hideForActions?: string[]
   hideOnOrAfterFrame?: number
   mountedCut?: boolean
   workTypes?: string[]
   civilizations?: string[]
+  hideWhenEquippedSlots?: readonly HeroEquipmentSlot[]
   minLevel?: number
   maxLevel?: number
   ageSheetOverrides?: Record<string, Partial<Record<string, string>>>
@@ -36,6 +36,7 @@ export type UnitAppearanceLayerConfig = {
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
   palette?: string
+  paletteSource?: string
   paletteSize?: number
   equipmentKey?: string
   standingSheet?: string
@@ -44,7 +45,6 @@ export type UnitAppearanceLayerConfig = {
   actionSheet?: string
   shootingSheet?: string
   harvestSheet?: string
-  loadedSheet?: string
   dyingSheet?: string
   corpseSheet?: string
 }

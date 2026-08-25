@@ -3,6 +3,16 @@ import { t } from '../lib/lang'
 import { CIVILIZATIONS } from '../config/civilizations'
 import { isGeneratedPlayerName, randomPlayerNameForCivilization } from '../config/playerNames'
 import { renderUnitHeadCanvasAvatar } from '../lib/avatar'
+import { recolorCanvasByPalette } from '../lib/graphics/colors'
+import {
+  defaultHeroAppearance,
+  HERO_HAIR_COLOR_OPTIONS,
+  HERO_HAIR_STYLE_OPTIONS,
+  normalizeHeroAppearance,
+  normalizeHeroAppearanceGender,
+  type HeroAppearanceConfig,
+  type HeroHairColor,
+} from '../lib/lpc/heroAppearance'
 import type { PlayerSetupConfig } from '../types/save'
 
 type PlayerSetupPanelOptions = {
@@ -17,6 +27,7 @@ type PlayerSetupConfigWithAge = PlayerSetupConfig & {
   civ: string
   color: string
   gender: 'male' | 'female'
+  heroAppearance: HeroAppearanceConfig
   isHuman: boolean
   name: string
   team: number | null
@@ -41,6 +52,8 @@ const HERO_PREVIEW_SIZE = 96
 const HERO_FRAME_SIZE = 64
 const HERO_ATLAS_FRAME_STRIDE = HERO_FRAME_SIZE + 1
 const HERO_BODY_WALKING_SOUTH_FRAME_X = 18 * HERO_ATLAS_FRAME_STRIDE
+const HERO_WALKING_SOUTH_FRAME_NAME = '018'
+const HERO_HAIR_SOURCE_PALETTE = 'brown_hair'
 
 const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
 
@@ -113,20 +126,24 @@ export class PlayerSetupPanel {
   _createDefaultPlayers(): PlayerSetupConfigWithAge[] {
     const humanCiv = this._randomCiv()
     const humanGender = 'male'
+    const aiCiv = this._randomCiv()
+    const aiGender = 'male'
     return [
       {
         name: randomPlayerNameForCivilization(humanCiv, humanGender),
         color: 'blue',
         civ: humanCiv,
         gender: humanGender,
+        heroAppearance: defaultHeroAppearance(humanCiv, humanGender),
         team: null,
         isHuman: true,
       },
       {
         name: t('computer') + ' 1',
         color: 'red',
-        civ: this._randomCiv(),
-        gender: 'male',
+        civ: aiCiv,
+        gender: aiGender,
+        heroAppearance: defaultHeroAppearance(aiCiv, aiGender),
         team: null,
         isHuman: false,
       },
@@ -142,6 +159,7 @@ export class PlayerSetupPanel {
       color: player.color || PLAYER_COLORS[0].name,
       civ,
       gender,
+      heroAppearance: normalizeHeroAppearance(player.heroAppearance, civ, gender),
       team: typeof player.team === 'number' ? player.team : null,
       isHuman: player.isHuman === true,
       ...(this.showAge ? { age: Math.max(0, Math.min(Number((player as PlayerSetupConfigWithAge).age) || 0, 1)) } : {}),
@@ -237,6 +255,7 @@ export class PlayerSetupPanel {
     const player = this.players[playerIndex]
     if (!player) return
     player.civ = civ
+    player.heroAppearance = defaultHeroAppearance(civ, player.gender)
     this._refreshGeneratedPlayerName(player)
     this._refresh()
     this._emitChange()
@@ -246,7 +265,28 @@ export class PlayerSetupPanel {
     const player = this.players[playerIndex]
     if (!player) return
     player.gender = gender === 'female' ? 'female' : 'male'
+    player.heroAppearance = defaultHeroAppearance(player.civ, player.gender)
     this._refreshGeneratedPlayerName(player)
+    this._refresh()
+    this._emitChange()
+  }
+
+  _setHeroHairStyle(playerIndex: number, hairStyle: string): void {
+    const player = this.players[playerIndex]
+    if (!player) return
+    player.heroAppearance = normalizeHeroAppearance({ ...player.heroAppearance, hairStyle }, player.civ, player.gender)
+    this._refresh()
+    this._emitChange()
+  }
+
+  _setHeroHairColor(playerIndex: number, hairColor: string): void {
+    const player = this.players[playerIndex]
+    if (!player) return
+    player.heroAppearance = normalizeHeroAppearance(
+      { ...player.heroAppearance, hairColor: hairColor as HeroHairColor },
+      player.civ,
+      player.gender
+    )
     this._refresh()
     this._emitChange()
   }
@@ -270,11 +310,14 @@ export class PlayerSetupPanel {
     if (this.players.filter(player => !player.isHuman).length >= MAX_BOTS) return
     const color = this._firstAvailableColor()
     const botNum = this.players.filter(player => !player.isHuman).length + 1
+    const civ = this._randomCiv()
+    const gender = 'male'
     this.players.push({
       name: t('computer') + ' ' + botNum,
       color,
-      civ: this._randomCiv(),
-      gender: 'male',
+      civ,
+      gender,
+      heroAppearance: defaultHeroAppearance(civ, gender),
       team: null,
       isHuman: false,
       civilizationLevel: 0,
@@ -324,6 +367,61 @@ export class PlayerSetupPanel {
     return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
   }
 
+  _heroHairPreviewSrc(player: PlayerSetupConfigWithAge): string {
+    const gender = normalizeHeroAppearanceGender(player.gender)
+    const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
+    return `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.png`
+  }
+
+  _heroHairPreviewJsonSrc(player: PlayerSetupConfigWithAge): string {
+    const gender = normalizeHeroAppearanceGender(player.gender)
+    const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
+    return `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.json`
+  }
+
+  _drawHeroPreviewFrame(ctx: CanvasRenderingContext2D, frame: HTMLCanvasElement, canvas: HTMLCanvasElement, player: PlayerSetupConfigWithAge): void {
+    renderUnitHeadCanvasAvatar(frame, canvas, player.color)
+  }
+
+  _drawHeroHairPreview(
+    frameCtx: CanvasRenderingContext2D,
+    player: PlayerSetupConfigWithAge,
+    onDone: () => void
+  ): void {
+    const img = new Image()
+    img.onload = async () => {
+      try {
+        const response = await fetch(this._heroHairPreviewJsonSrc(player))
+        const sheet = await response.json()
+        const entry = Object.entries(sheet.frames ?? {}).find(([name]) =>
+          name.startsWith(HERO_WALKING_SOUTH_FRAME_NAME) && name.includes('_front_walking')
+        ) as [string, { frame: { x: number; y: number; w: number; h: number } }] | undefined
+        const frameData = entry?.[1]?.frame
+        if (!frameData) {
+          onDone()
+          return
+        }
+        const hair = document.createElement('canvas')
+        hair.width = HERO_FRAME_SIZE
+        hair.height = HERO_FRAME_SIZE
+        const hairCtx = hair.getContext('2d')
+        if (!hairCtx) {
+          onDone()
+          return
+        }
+        hairCtx.imageSmoothingEnabled = false
+        hairCtx.drawImage(img, frameData.x, frameData.y, frameData.w, frameData.h, 0, 0, HERO_FRAME_SIZE, HERO_FRAME_SIZE)
+        recolorCanvasByPalette(hair, HERO_HAIR_SOURCE_PALETTE, player.heroAppearance.hairColor)
+        frameCtx.drawImage(hair, 0, 0)
+      } catch {
+        // The preview should still render the base hero if a custom hair atlas is missing.
+      }
+      onDone()
+    }
+    img.onerror = onDone
+    img.src = this._heroHairPreviewSrc(player)
+  }
+
   _renderHeroPreview(canvas: HTMLCanvasElement, player: PlayerSetupConfigWithAge): void {
     const requestId = ++this.heroPreviewRequestId
     const img = new Image()
@@ -353,7 +451,7 @@ export class PlayerSetupPanel {
         HERO_FRAME_SIZE,
         HERO_FRAME_SIZE
       )
-      renderUnitHeadCanvasAvatar(frame, canvas, player.color)
+      this._drawHeroHairPreview(frameCtx, player, () => this._drawHeroPreviewFrame(ctx, frame, canvas, player))
     }
     img.onerror = () => {
       if (requestId !== this.heroPreviewRequestId) return
@@ -389,6 +487,59 @@ export class PlayerSetupPanel {
     row.appendChild(preview)
     this._renderHeroPreview(canvas, player)
     return row
+  }
+
+  _humanizeAppearanceValue(value: string): string {
+    return value
+      .split('_')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+  }
+
+  _createHeroAppearanceControls(player: PlayerSetupConfigWithAge): HTMLDivElement {
+    const group = document.createElement('div')
+    group.className = 'hero-appearance-controls'
+    const gender = normalizeHeroAppearanceGender(player.gender)
+    const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
+    player.heroAppearance = appearance
+
+    const hairStyleRow = document.createElement('div')
+    hairStyleRow.className = 'config-row'
+    const hairStyleLabel = document.createElement('label')
+    hairStyleLabel.textContent = t('heroHairStyle')
+    hairStyleRow.appendChild(hairStyleLabel)
+    const hairStyleSelect = document.createElement('select')
+    hairStyleSelect.className = 'ui-select'
+    HERO_HAIR_STYLE_OPTIONS[gender].forEach(style => {
+      const opt = document.createElement('option')
+      opt.value = style
+      opt.textContent = this._humanizeAppearanceValue(style)
+      if (style === appearance.hairStyle) opt.selected = true
+      hairStyleSelect.appendChild(opt)
+    })
+    hairStyleSelect.onchange = (evt: Event) => this._setHeroHairStyle(0, (evt.target as HTMLSelectElement).value)
+    hairStyleRow.appendChild(hairStyleSelect)
+    group.appendChild(hairStyleRow)
+
+    const hairColorRow = document.createElement('div')
+    hairColorRow.className = 'config-row'
+    const hairColorLabel = document.createElement('label')
+    hairColorLabel.textContent = t('heroHairColor')
+    hairColorRow.appendChild(hairColorLabel)
+    const hairColorSelect = document.createElement('select')
+    hairColorSelect.className = 'ui-select'
+    HERO_HAIR_COLOR_OPTIONS.forEach(color => {
+      const opt = document.createElement('option')
+      opt.value = color
+      opt.textContent = this._humanizeAppearanceValue(color)
+      if (color === appearance.hairColor) opt.selected = true
+      hairColorSelect.appendChild(opt)
+    })
+    hairColorSelect.onchange = (evt: Event) => this._setHeroHairColor(0, (evt.target as HTMLSelectElement).value)
+    hairColorRow.appendChild(hairColorSelect)
+    group.appendChild(hairColorRow)
+
+    return group
   }
 
   _cycleTeam(playerIndex: number): void {
@@ -549,6 +700,7 @@ export class PlayerSetupPanel {
     this.humanControlsEl.appendChild(civRow)
 
     this.humanControlsEl.appendChild(this._createHeroPreview(human))
+    this.humanControlsEl.appendChild(this._createHeroAppearanceControls(human))
 
     const genderRow = document.createElement('div')
     genderRow.className = 'config-row'

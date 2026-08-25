@@ -14,7 +14,6 @@ import {
   hasHeroInventoryEquipment,
 } from '../lib/equipmentStats'
 import type { EquipmentCombatStats } from '../lib/equipmentStats'
-import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import {
   formatXpProgressText,
   getUnitExperienceEntries,
@@ -52,17 +51,6 @@ function getFocusedXpCategories(unit: UnitEntity, data: UnitConfig): string[] | 
 function shouldShowGenericXpCategory(unit: UnitEntity, category: string): boolean {
   if (category === XP_CATEGORIES.healing && unit.type !== UNIT_TYPES.priest) return false
   return unit.type !== UNIT_TYPES.villager || !VILLAGER_HIDDEN_XP_CATEGORIES.has(category)
-}
-
-function renderLoadingEntries(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
-  element.replaceChildren()
-  for (const [resourceKey, amount] of getDisplayedCarriedResourceEntries(unit)) {
-    const item = document.createElement('div')
-    item.className = 'unit-loading-item'
-    item.appendChild(createInfoImage('unit-loading-icon', menu.infoIcons?.[resourceKey] ?? ''))
-    item.appendChild(createInfoText(MENU_INFO_IDS.loadingText, amount))
-    element.appendChild(item)
-  }
 }
 
 function createCorpseEquipmentLootButton(
@@ -156,24 +144,6 @@ export class UnitInterface {
 
   constructor(unit: UnitEntity) {
     this.unit = unit
-  }
-
-  updateLoading(): void {
-    const unit = this.unit
-    const menu = (unit.context as { menu: MenuLike }).menu
-    if (unit.selected && unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-      menu.updateInfo!(MENU_INFO_IDS.loading, (element: HTMLElement) => renderLoadingEntries(element, unit, menu))
-    }
-  }
-
-  getLoadingElement(): HTMLDivElement {
-    const unit = this.unit
-    const menu = (unit.context as { menu: MenuLike }).menu
-    const loadingDiv = document.createElement('div')
-    loadingDiv.className = 'unit-loading'
-    loadingDiv.classList.add(MENU_INFO_IDS.loading)
-    renderLoadingEntries(loadingDiv, unit, menu)
-    return loadingDiv
   }
 
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions): void {

@@ -3,17 +3,16 @@ import type { Texture } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
+  changeSpritePalette,
   changeSpriteColor,
   getSpriteFrameSelection,
 } from '../../lib'
 import {
   getAppearanceAgeSheetOverride,
   getAppearanceLayerZIndex,
-  isAppearanceLayerHiddenByLoading,
 } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
-import { isHeroControlled } from '../../lib/unitControl'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitRuntimeHost } from './UnitTypes'
 
@@ -46,6 +45,10 @@ function getCachedSpritesheet(id: string) {
   return Assets.cache.has(id) ? Assets.cache.get(id) : undefined
 }
 
+function isLayerHiddenByEquipment(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer): boolean {
+  return Boolean(layer.hideWhenEquippedSlots?.some(slot => unit.inventory?.equipped?.[slot]))
+}
+
 function clearAppearanceLayers(unit: UnitRuntimeHost): void {
   for (const sprite of unit.appearanceLayerSprites.values()) {
     sprite.parent?.removeChild(sprite)
@@ -61,7 +64,6 @@ function getLayerRenderState(
 ): AppearanceLayerRenderState | null {
   const mountedRiderSheet =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
-  const heroControlled = isHeroControlled(unit)
   const actionWorkKey = unit.work && unit.action ? `${unit.work}:${unit.action}` : undefined
   const hasActionWorkSheetOverride = Boolean(actionWorkKey && layer.actionWorkSheetOverrides?.[actionWorkKey])
   const isLayerEnabledForWork =
@@ -71,12 +73,6 @@ function getLayerRenderState(
   const unitLevel = getUnitEquipmentLevel(unit)
   const isLayerEnabledForLevel =
     unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
-  const isLayerHiddenByLoading = isAppearanceLayerHiddenByLoading({
-    layer,
-    isLoading: (unit.loading ?? 0) > 0,
-    sheet,
-    heroControlled,
-  })
   const isLayerHiddenByAction = Boolean(unit.action && layer.hideForActions?.includes(unit.action))
   const isLayerHiddenByFrame =
     sheet === SHEET_TYPES.action &&
@@ -85,8 +81,6 @@ function getLayerRenderState(
   const equipmentKey = layer.equipmentKey
   const isLootedCorpseEquipment =
     unit.isDead && Array.isArray(unit.lootEquipment) && equipmentKey != null && !unit.lootEquipment.includes(equipmentKey)
-  const loadedSheetOverride =
-    !unit.mountedOnHorse && unit.loading && sheet === SHEET_TYPES.walking ? (layer.loadedSheet as string | undefined) : undefined
   const actionWorkSheetOverride = actionWorkKey ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet] : undefined
   const workSheetOverride = unit.work ? layer.workSheetOverrides?.[unit.work]?.[mountedRiderSheet] : undefined
   const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
@@ -101,7 +95,6 @@ function getLayerRenderState(
       ? layer.mountedSheet
       : undefined
   const baseSheetId =
-    loadedSheetOverride ??
     shootingSheetOverride ??
     actionWorkSheetOverride ??
     workSheetOverride ??
@@ -122,7 +115,7 @@ function getLayerRenderState(
     !isLayerEnabledForWork ||
     !isLayerEnabledForCivilization ||
     !isLayerEnabledForLevel ||
-    isLayerHiddenByLoading ||
+    isLayerHiddenByEquipment(unit, layer) ||
     isLayerHiddenByAction ||
     isLayerHiddenByFrame ||
     isLootedCorpseEquipment ||
@@ -185,6 +178,8 @@ function syncAppearanceLayerSprite(
   layerSprite.textures = state.textures as Texture[]
   if (state.layer.palette === 'player') {
     changeSpriteColor(layerSprite, unit.owner.color ?? '')
+  } else if (state.layer.palette?.startsWith('hair:')) {
+    changeSpritePalette(layerSprite, state.layer.paletteSource ?? 'brown_hair', state.layer.palette.slice('hair:'.length))
   } else {
     layerSprite.filters = null
   }

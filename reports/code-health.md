@@ -1,10 +1,12 @@
 # Code Health Report
 
-Generated: 2026-08-24T22:35:28.711Z
+Generated: 2026-08-25T15:36:28.110Z
 
 ## Global Score
 
 **90/100 (A)**
+
+Minimum required score: **90/100**. Quality gate: **PASS**.
 
 | Component | Score |
 | --- | --- |
@@ -19,11 +21,11 @@ Generated: 2026-08-24T22:35:28.711Z
 
 ## Summary
 
-- Files analyzed: 351
-- Total lines: 63623
-- Code lines: 56558
-- Approx branches: 8785
-- Approx functions/methods: 7244
+- Files analyzed: 354
+- Total lines: 64706
+- Code lines: 57548
+- Approx branches: 8852
+- Approx functions/methods: 7347
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -43,67 +45,67 @@ Generated: 2026-08-24T22:35:28.711Z
 | --- | --- | --- | --- | --- | --- | --- |
 | app/classes/building/BuildingProduction.ts | 233.1 | 384 | 95 | 37 | 27 | souvent modifie |
 | app/classes/building/index.ts | 232.5 | 468 | 36 | 131 | 42 | souvent modifie |
-| app/controllers/HeroController.ts | 232.5 | 478 | 69 | 48 | 39 | souvent modifie |
-| app/classes/unit/UnitActions.ts | 232.2 | 348 | 65 | 65 | 42 | souvent modifie |
-| app/lib/heroTools.ts | 230.5 | 339 | 62 | 49 | 43 | souvent modifie |
+| app/classes/unit/UnitActions.ts | 230.5 | 341 | 64 | 65 | 42 | souvent modifie |
 | app/classes/map/MapGeneration.ts | 230.3 | 477 | 52 | 19 | 46 | souvent modifie |
 | app/classes/Projectile.ts | 229.4 | 566 | 68 | 124 | 26 | souvent modifie |
-| app/classes/unit/index.ts | 221 | 571 | 13 | 18 | 60 | souvent modifie, beaucoup de dependances |
+| app/controllers/HeroController.ts | 229.4 | 475 | 67 | 48 | 39 | souvent modifie |
+| app/lib/heroTools.ts | 227.4 | 336 | 60 | 49 | 43 | souvent modifie |
+| app/screens/Game.ts | 222 | 694 | 48 | 54 | 39 | souvent modifie, beaucoup de dependances |
+| app/classes/unit/index.ts | 220.6 | 555 | 13 | 18 | 60 | souvent modifie, beaucoup de dependances |
 | app/classes/players/AIPlayer.ts | 216.3 | 559 | 87 | 121 | 13 | souvent modifie |
 | app/classes/unit/UnitMovement.ts | 215.8 | 292 | 47 | 45 | 46 | souvent modifie |
 | app/classes/animal/index.ts | 214.5 | 436 | 30 | 114 | 43 | souvent modifie |
-| app/classes/Resource.ts | 213 | 564 | 63 | 128 | 22 | souvent modifie |
 
 ## Largest Files
 
 | File | LOC | Branches | Imports |
 | --- | --- | --- | --- |
-| app/lib/lpc/equipment.ts | 984 | 58 | 2 |
-| app/lib/i18n/translations.ts | 769 | 7 | 1 |
+| app/lib/lpc/equipment.ts | 965 | 54 | 2 |
+| app/ui/PlayerSetupPanel.ts | 781 | 65 | 8 |
+| app/lib/i18n/translations.ts | 771 | 7 | 1 |
 | app/services/WeatherSystem.ts | 712 | 67 | 8 |
-| app/ui/InventoryManager.ts | 675 | 86 | 14 |
-| app/screens/Game.ts | 665 | 43 | 33 |
-| app/ui/PlayerSetupPanel.ts | 629 | 56 | 6 |
-| app/classes/map/index.ts | 609 | 36 | 20 |
+| app/ui/InventoryManager.ts | 700 | 88 | 14 |
+| app/screens/Game.ts | 694 | 48 | 33 |
+| app/classes/map/index.ts | 610 | 36 | 19 |
 | app/services/TributeRaidSystem.ts | 580 | 97 | 16 |
 | app/classes/Controls.ts | 574 | 50 | 21 |
-| app/classes/unit/index.ts | 571 | 13 | 26 |
 | app/classes/Projectile.ts | 566 | 68 | 18 |
 | app/classes/Resource.ts | 564 | 63 | 14 |
+| app/classes/players/AIPlayer.ts | 559 | 87 | 14 |
 
 ## Complexity Signals
 
 | File | Branches | Max Block | LOC |
 | --- | --- | --- | --- |
-| app/serialization/SaveValidator.ts | 116 | 66 | 361 |
+| app/serialization/SaveValidator.ts | 116 | 69 | 364 |
 | app/services/VillagerShelterSystem.ts | 104 | 21 | 462 |
-| app/lib/combatActionConditions.ts | 103 | 24 | 216 |
-| app/ai/AIEconomyFoodManager.ts | 100 | 19 | 396 |
+| app/ai/AIEconomyFoodManager.ts | 99 | 19 | 395 |
+| app/lib/combatActionConditions.ts | 99 | 24 | 209 |
 | app/services/TributeRaidSystem.ts | 97 | 62 | 580 |
 | app/classes/map/MapTerrainGeneration.ts | 96 | 63 | 391 |
-| app/classes/unit/UnitResourceActions.ts | 96 | 67 | 448 |
 | app/classes/building/BuildingProduction.ts | 95 | 37 | 384 |
+| app/ui/InventoryManager.ts | 88 | 77 | 700 |
 | app/classes/map/MapTerrainReliefAppearance.ts | 87 | 64 | 137 |
 | app/classes/players/AIPlayer.ts | 87 | 121 | 559 |
-| app/ui/InventoryManager.ts | 86 | 77 | 675 |
 | app/classes/players/PlayerTechnologies.ts | 84 | 48 | 298 |
+| app/classes/Instance.ts | 82 | 44 | 530 |
 
 ## Git Hotspots
 
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
-| app/types/entities.ts | 63 | 202.2 | 469 |
-| app/classes/unit/index.ts | 60 | 221 | 571 |
+| app/types/entities.ts | 63 | 202.1 | 462 |
+| app/classes/unit/index.ts | 60 | 220.6 | 555 |
 | app/classes/map/MapGeneration.ts | 46 | 230.3 | 477 |
 | app/classes/unit/UnitMovement.ts | 46 | 215.8 | 292 |
-| app/lib/i18n/translations.ts | 45 | 164.7 | 769 |
-| app/lib/heroTools.ts | 43 | 230.5 | 339 |
+| app/lib/i18n/translations.ts | 46 | 167.8 | 771 |
+| app/lib/heroTools.ts | 43 | 227.4 | 336 |
 | app/classes/animal/index.ts | 43 | 214.5 | 436 |
 | app/classes/building/index.ts | 42 | 232.5 | 468 |
-| app/classes/unit/UnitActions.ts | 42 | 232.2 | 348 |
-| app/config/assetManifest.ts | 41 | 129.9 | 275 |
-| app/controllers/HeroController.ts | 39 | 232.5 | 478 |
-| app/screens/Game.ts | 38 | 210.7 | 665 |
+| app/classes/unit/UnitActions.ts | 42 | 230.5 | 341 |
+| app/config/assetManifest.ts | 42 | 132.9 | 277 |
+| app/controllers/HeroController.ts | 39 | 229.4 | 475 |
+| app/screens/Game.ts | 39 | 222 | 694 |
 
 ## Dependency Cycles
 

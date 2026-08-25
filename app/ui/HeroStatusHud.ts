@@ -1,6 +1,5 @@
 import { renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
-import { getDisplayedCarriedResourceEntries } from '../lib/resourceCarry'
 import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
 import { getUnitOverallLevel } from '../lib/unitExperience'
 import type { UnitEntity } from '../types/entities'
@@ -17,7 +16,6 @@ export class HeroStatusHud {
   energyBar: HTMLDivElement
   energyValue: HTMLDivElement
   energyFill: HTMLDivElement
-  carry: HTMLDivElement
   hero: UnitEntity | null
   displayedHitPoints: number | null
   lastHealthDisplayUpdateAt: number | null
@@ -69,9 +67,6 @@ export class HeroStatusHud {
     this.energyFill.className = 'hero-status-fill hero-status-energy-fill'
     this.energyFill.style.background = HERO_ENERGY_COLOR
 
-    this.carry = document.createElement('div')
-    this.carry.className = 'hero-status-carry hidden'
-
     header.appendChild(this.title)
     header.appendChild(this.level)
     this.healthBar.appendChild(this.value)
@@ -80,7 +75,6 @@ export class HeroStatusHud {
     content.appendChild(header)
     content.appendChild(this.healthBar)
     content.appendChild(this.energyBar)
-    content.appendChild(this.carry)
     frame.appendChild(avatarWrap)
     frame.appendChild(content)
     this.element.appendChild(frame)
@@ -138,32 +132,6 @@ export class HeroStatusHud {
     this.energyBar.style.setProperty('--hero-energy-percent', energyPercent)
     this.energyFill.style.width = energyPercent
     this.element.classList.remove('hidden')
-
-    const carriedEntries = getDisplayedCarriedResourceEntries(hero)
-    if (carriedEntries.length) {
-      this.carry.replaceChildren(
-        ...carriedEntries.map(([resourceKey, amount]) => {
-          const item = document.createElement('div')
-          item.className = 'hero-status-carry-item'
-
-          const icon = document.createElement('img')
-          icon.className = 'hero-status-carry-icon'
-          icon.src = this.menu.infoIcons?.[resourceKey] ?? ''
-
-          const value = document.createElement('div')
-          value.className = 'hero-status-carry-value'
-          value.textContent = String(amount)
-
-          item.appendChild(icon)
-          item.appendChild(value)
-          return item
-        })
-      )
-      this.carry.classList.remove('hidden')
-    } else {
-      this.carry.replaceChildren()
-      this.carry.classList.add('hidden')
-    }
   }
 
   destroy(): void {

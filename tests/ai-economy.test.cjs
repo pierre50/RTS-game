@@ -16,7 +16,6 @@ function loadAIEconomy() {
       attack: 'attack',
       build: 'build',
       captureHorse: 'captureHorse',
-      delivery: 'delivery',
       hunt: 'hunt',
       takemeat: 'takemeat',
     },

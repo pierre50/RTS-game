@@ -226,10 +226,10 @@ export default class Game extends Container {
       const hero = booted ? this._runtimeHeroUnit() : null
       const previousDevInvincible = hero?.devInvincible
       if (hero) hero.devInvincible = true
-      this._loadingScreen?.destroy()
+      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
       this._loadingScreen = null
       if (booted) {
-        this.context.menu?.show?.()
+        this._measure('menu.show', () => this.context.menu?.show?.())
         try {
           await initialReveal?.revealFrom(this._getHeroRevealPoint() ?? revealPoint)
         } finally {
@@ -246,6 +246,10 @@ export default class Game extends Container {
 
   _yieldToBrowser(): Promise<void> {
     return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  _measure<T>(name: string, callback: () => T): T {
+    return this.context.performance?.measure?.(name, callback) ?? callback()
   }
 
   _gameContext(): GameContextLike {
@@ -450,6 +454,7 @@ export default class Game extends Container {
       players: savedPlayers.map(player => ({
         civ: player.civ,
         gender: player.gender,
+        heroAppearance: player.heroAppearance,
         isHuman: player.isPlayed && player.type === PLAYER_TYPES.human,
       })),
     }
@@ -625,9 +630,9 @@ export default class Game extends Container {
       content.appendChild(paragraph)
       new Modal({ title: t('invalidSaveFile'), content })
     } finally {
-      this._loadingScreen?.destroy()
+      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
       this._loadingScreen = null
-      if (booted) this.context.menu?.show?.()
+      if (booted) this._measure('menu.show', () => this.context.menu?.show?.())
     }
   }
 
@@ -655,9 +660,9 @@ export default class Game extends Container {
       )
       booted = true
     } finally {
-      this._loadingScreen?.destroy()
+      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
       this._loadingScreen = null
-      if (booted) this.context.menu?.show?.()
+      if (booted) this._measure('menu.show', () => this.context.menu?.show?.())
       this._isRestarting = false
     }
   }

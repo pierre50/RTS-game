@@ -38,8 +38,6 @@ export type UnitRuntimeHost = Omit<
     reliefLift: number
     controlMode: NonNullable<UnitEntity['controlMode']>
     inactif: boolean
-    loading: UnitEntity['loading']
-    loadingType: UnitEntity['loadingType']
     currentSheet: NonNullable<UnitEntity['currentSheet']>
     currentFrame: NonNullable<UnitEntity['currentFrame']>
     degree: number
@@ -59,7 +57,6 @@ export type UnitRuntimeHost = Omit<
     unitMovement: unknown
     sendTo(target: RuntimeCell | RuntimeEntity, action?: string): void
     setDefaultInterface?(element: HTMLElement, data: unknown, options?: unknown): void
-    getLoadingElement?(): HTMLDivElement
     createShadow?(): AnimatedSprite | null
     setupMountedHorseSprite?(): void
     syncVisualSettings?(): void

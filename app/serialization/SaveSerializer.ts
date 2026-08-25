@@ -1,4 +1,5 @@
 import { filterObject, getGaiaAnimals } from '../lib'
+import { summarizeVillagerAssignments } from '../lib/villagerAssignments'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'
@@ -49,13 +50,12 @@ type SerializableEntity = RuntimeEntityBase & {
   isBuilt?: boolean
   isUsedBy?: string | { label?: string } | null
   loading?: number | null
-  loadingType?: string | null
-  resourceLoads?: Record<string, number>
   loop?: boolean
   mountedOnHorse?: boolean
   path?: GridPoint[]
   previousDest?: Destination | null
   previousWork?: string | null
+  autonomousJob?: SaveEntityState['autonomousJob']
   berrybushFullTextureName?: string
   queue?: string[]
   rallyPoint?: SaveRallyPoint | null
@@ -210,12 +210,10 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'path',
       'work',
       'previousWork',
+      'autonomousJob',
       'realDest',
       'degree',
       'action',
-      'loading',
-      'loadingType',
-      'resourceLoads',
       'direction',
       'currentSheet',
       'controlMode',
@@ -291,6 +289,7 @@ function playerData(player: SerializablePlayer) {
       ...SERIALIZED_RESOURCE_NAMES,
       'civ',
       'gender',
+      'heroAppearance',
       'name',
       'factionId',
       'color',
@@ -308,6 +307,7 @@ function playerData(player: SerializablePlayer) {
     buildings: player.buildings.map(buildingData),
     units: player.units.map(unitData),
     corpses: player.corpses.map(unitData),
+    villagerAssignments: summarizeVillagerAssignments(player.units),
     views: player.views.toJSON(),
     selectedUnitLabels: !player.isPlayed
       ? player.selectedUnits?.length

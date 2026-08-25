@@ -16,7 +16,6 @@ import {
   getIconPath,
   getInstanceZIndex,
   getGroundReliefLevel,
-  getWorkWithLoadingType,
   playSoundCue,
   throttle,
   updateInstanceVisibility,
@@ -26,7 +25,6 @@ import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
 import { getHorseColorFromSeed, isHorseColor } from '../../lib/horseColors'
 import { t } from '../../lib/lang'
 import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib/lpc'
-import { syncHeroResourceLoadState } from '../../lib/resourceCarry'
 import { onVisualSettingsChange } from '../../lib/settings'
 import { ensureUnitEnergy } from '../../lib/unitEnergy'
 import { ensureUnitHealthRegen } from '../../lib/unitHealth'
@@ -122,8 +120,6 @@ export function initializeUnitRuntimeState(unit: UnitRuntimeHost): void {
   unit.controlMode = 'standard'
   unit.actionLocked = false
   unit.pendingOrder = null
-  unit.loading = 0
-  unit.loadingType = null
   unit.currentSheet = SHEET_TYPES.standing
   unit.inactif = true
   unit.experience = {}
@@ -146,7 +142,6 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   unit.hitPoints = options.hitPoints ?? unit.hitPoints
   unit.speed = options.speed ?? unit.speed
   if (unit.mountedOnHorse && options.speed == null) unit.speed = (unit.speed ?? 0) + MOUNTED_HORSE_SPEED_BONUS
-  syncHeroResourceLoadState(unit)
   unit.experience = options.experience ? { ...options.experience } : unit.experience
   if (unit.appearance) {
     unit.appearance = { ...unit.appearance, layers: unit.appearance.layers.map(layer => ({ ...layer })) }
@@ -226,9 +221,6 @@ export function setupUnitInterface(unit: UnitRuntimeHost): void {
     info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {
       const data = unit.owner.config.units[unit.type] as UnitConfig
       unit.setDefaultInterface?.(element, data, options)
-      if (unit.showLoading && unit.owner.isPlayed) {
-        element.appendChild(unit.getLoadingElement?.() as HTMLElement)
-      }
     },
     menu:
       unit.owner.isPlayed && !unit.context.editor
@@ -274,12 +266,6 @@ export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: Runtime
   unit.visualSettingsCleanup = onVisualSettingsChange(() => unit.syncVisualSettings?.())
   if (unit.isDead) {
     unit.currentSheet === SHEET_TYPES.corpse ? unit.decompose?.() : unit.death?.()
-  } else if ((unit.loading ?? 0) > 0) {
-    const loadingWork = getWorkWithLoadingType(unit.loadingType ?? '')
-    const loadedSheetId = unit.allAssets?.[loadingWork]?.loadedSheet
-    const standingSheetId = unit.allAssets?.[loadingWork]?.standingSheet
-    unit.walkingSheet = loadedSheetId ? getCachedUnitSpritesheet(loadedSheetId) : undefined
-    unit.standingSheet = standingSheetId ? getCachedUnitSpritesheet(standingSheetId) : undefined
   }
   unit.setTextures?.(unit.currentSheet)
 

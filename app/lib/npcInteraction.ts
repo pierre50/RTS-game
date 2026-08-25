@@ -24,7 +24,6 @@ export {
   clearNpcCommunicationFocus,
   keepNpcHere,
   resolveHoverTarget,
-  sendNpcToStockpile,
   startFollowingHero,
 } from './npcGoToDispatch'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'

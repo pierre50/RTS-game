@@ -4,6 +4,8 @@ import type { FogSpriteMemory } from './fog'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid } from './vision'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
+import type { VillagerAutonomyJob } from './entities'
+import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
@@ -16,6 +18,7 @@ export type SaveEntityState = {
   assetAge?: AssetAge
   assetCiv?: string
   assetType?: string
+  autonomousJob?: VillagerAutonomyJob | null
   blockedGatherApproach?: { target: SaveReference; action: string } | null
   buildQueue?: string[]
   currentFrame?: number
@@ -58,8 +61,6 @@ export type SaveEntityState = {
   j: number
   label?: string
   loading?: number | null
-  loadingType?: string | null
-  resourceLoads?: Record<string, number>
   loop?: boolean
   lootEquipment?: string[]
   mountedOnHorse?: boolean
@@ -143,6 +144,15 @@ export type SavePlayerState = PlayerSetupConfig & {
   technologies?: string[]
   type: string
   units?: SaveEntityState[]
+  villagerAssignments?: {
+    total: number
+    assigned: ResourceAmount
+    construction: number
+    horseCapture: number
+    idle: number
+    sleeping: number
+    moving: number
+  }
   views?: SerializedVisionGrid
   wood?: number
   aiState?: SavedAIState
@@ -265,6 +275,7 @@ export type PlayerSetupConfig = {
   diplomacy?: 'neutral' | null
   factionId?: string | null
   gender?: 'male' | 'female'
+  heroAppearance?: HeroAppearanceConfig
   isHuman?: boolean
   name?: string
   team?: number | null

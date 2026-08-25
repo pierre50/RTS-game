@@ -2,7 +2,7 @@ import { updateUnitEnergy } from '../lib'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 
-export const UNIT_ENERGY_REGEN_INTERVAL_MS = 500
+const UNIT_ENERGY_REGEN_INTERVAL_MS = 500
 
 function hasActivePath(unit: UnitEntity): boolean {
   return (unit.path?.length ?? 0) > 0
@@ -12,7 +12,7 @@ function isWaitingForEnergy(unit: UnitEntity): boolean {
   return Boolean(unit.waitingForEnergyAction)
 }
 
-export function shouldApplyPassiveUnitEnergyRegen(unit: UnitEntity): boolean {
+function shouldApplyPassiveUnitEnergyRegen(unit: UnitEntity): boolean {
   return Boolean(unit && !unit.isDead && !unit.isDestroyed && !hasActivePath(unit) && !isWaitingForEnergy(unit))
 }
 

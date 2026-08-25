@@ -7,6 +7,11 @@ import {
   dynamicEquipmentLayersForUnit,
   dynamicEquipmentLayersForVillager,
 } from './equipment'
+import {
+  heroAppearanceAssetsForPlayers,
+  heroAppearanceLayersForPlayer,
+  registerHeroAppearanceAliasesForPlayers,
+} from './heroAppearance'
 import { isChiefUnit } from '../chief'
 import { getUnitEquipmentLevel } from '../unitExperience'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
@@ -330,7 +335,7 @@ function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType):
 }
 
 export async function preloadBakedLpcUnitsForPlayers(
-  players: Pick<PlayerLike, 'civ' | 'gender' | 'label'>[]
+  players: Pick<PlayerLike, 'civ' | 'gender' | 'label' | 'heroAppearance'>[]
 ): Promise<void> {
   const variants = new Set<string>()
   for (const player of players) {
@@ -356,6 +361,12 @@ export async function preloadBakedLpcUnitsForPlayers(
     await Assets.load(equipmentAssets)
   }
   registerDynamicEquipmentAliases()
+
+  const heroAppearanceAssets = heroAppearanceAssetsForPlayers(players)
+  if (heroAppearanceAssets.length) {
+    await Assets.load(heroAppearanceAssets)
+  }
+  registerHeroAppearanceAliasesForPlayers(players)
 }
 
 export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
@@ -380,7 +391,6 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     walkingSheet: 3,
     actionSheet: 3,
     harvestSheet: 3,
-    loadedSheet: 3,
     dyingSheet: 1,
     corpseSheet: 1,
   }
@@ -400,6 +410,7 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
   ).filter(layer => !isDefaultHeroWeaponLayer(layer, unit) && !isLayerReplacedByActiveWeapon(layer, unit))
   const equippedLayers = dynamicEquipmentLayersForEquipment(getInventoryAppearanceEquipment(unit))
   const dynamicLayers = [
+    ...(resolvedBakedUnit === 'hero' && unit.owner ? heroAppearanceLayersForPlayer(unit.owner) : []),
     ...baseLayers,
     ...equippedLayers,
   ]
@@ -442,18 +453,16 @@ export function applyBakedLpcUnitAssets(unit: UnitEntity): boolean {
     hunter: {
       ...villagerSheets('shoot'),
       harvestSheet: actionAlias(variant, 'slash'),
-      loadedSheet: bodyAlias(variant, 'walking'),
     },
     horseCapture: {
       ...villagerSheets('slash'),
       harvestSheet: actionAlias(variant, 'slash'),
-      loadedSheet: bodyAlias(variant, 'walking'),
     },
-    farmer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
-    forager: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
-    stoneminer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
-    goldminer: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
-    woodcutter: { ...villagerSheets('slash'), loadedSheet: bodyAlias(variant, 'walking') },
+    farmer: villagerSheets('slash'),
+    forager: villagerSheets('slash'),
+    stoneminer: villagerSheets('slash'),
+    goldminer: villagerSheets('slash'),
+    woodcutter: villagerSheets('slash'),
     builder: villagerSheets('slash'),
   }
   unit.assets = unit.allAssets.default

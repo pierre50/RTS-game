@@ -1,6 +1,4 @@
-import { SHEET_TYPES } from '../../constants'
 import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
-import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
 import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
 import type { UnitEntity } from '../../types/entities'
 
@@ -73,15 +71,4 @@ export function setActionSpriteLoop(unit: UnitEntity, loop: boolean): void {
   for (const sprite of layers?.values() ?? []) {
     sprite.loop = loop
   }
-}
-
-export function applyLoadingWorkAssets(unit: UnitEntity): void {
-  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: true })
-  if (unit.currentSheet && (unit.currentSheet === SHEET_TYPES.standing || unit.currentSheet === SHEET_TYPES.walking)) {
-    unit.setTextures?.(unit.currentSheet)
-  }
-}
-
-export function applyUnloadedWorkAssets(unit: UnitEntity): void {
-  applyUnitWorkAssets(unit, unit.work, { action: unit.action, loading: false })
 }

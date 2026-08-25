@@ -11,6 +11,7 @@ import type {
 } from './config'
 import type { AssetAge } from './pixi'
 import type { SerializedVisionGrid, VisionViewer, VisionViewerRef } from './vision'
+import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
 
 export interface VisionGridLike {
   length: number
@@ -65,6 +66,7 @@ export interface PlayerLike {
   civ?: string
   color?: string
   gender?: 'male' | 'female'
+  heroAppearance?: HeroAppearanceConfig
   colorHex: string
   name?: string
   factionId?: string | null

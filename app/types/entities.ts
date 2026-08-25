@@ -208,9 +208,6 @@ export interface UnitEntity extends EnergyEntity {
   banditCampAnchor?: GridPosition | null
   banditCampPatrolTaskId?: number | null
   shelterState?: VillagerShelterState | null
-  loading?: number | null
-  loadingType?: string | null
-  resourceLoads?: Record<string, number>
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
@@ -285,7 +282,6 @@ export interface UnitEntity extends EnergyEntity {
   dyingSheet?: SpritesheetLike | null
   loop?: boolean
   eventMode?: string
-  showLoading?: boolean
   showBuildings?: boolean
 
   // Combat
@@ -308,7 +304,6 @@ export interface UnitEntity extends EnergyEntity {
   // Gathering
   gatheringRate?: Record<string, number>
   gatherAmount?: Record<string, number>
-  loadingMax?: Record<string, number>
   contextActionEnergyCosts?: Partial<Record<HeroContextAction, number>>
   toolLevels?: Partial<Record<HeroCivilTool, number>>
   assets?: Record<string, string>
@@ -349,7 +344,6 @@ export interface UnitEntity extends EnergyEntity {
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
-  sendToDelivery?: () => void
   sendToAttack(target: RuntimeEntity): void
   sendToConvert(target: RuntimeEntity): void
   sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
@@ -381,7 +375,6 @@ export interface UnitEntity extends EnergyEntity {
   goBackToPrevious?: () => void
   continueBuildingQueue?: () => boolean
   handleAffectNewDestHunter?: () => boolean
-  updateInterfaceLoading?: () => void
   handleSetDest?: (dest: RuntimeEntity | RuntimeCell, unit: UnitEntity) => void
   handleIsAttacked?: (instance: RuntimeEntity, unit: UnitEntity) => boolean
   clear?: () => void

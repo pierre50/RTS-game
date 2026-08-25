@@ -5,7 +5,6 @@ import type { UnitEntity } from '../types/entities'
 
 type WorkAssetOptions = {
   action?: string | null
-  loading?: boolean
   refreshEquipmentStats?: boolean
 }
 
@@ -25,15 +24,8 @@ export function applyUnitWorkAssets(unit: UnitEntity, work: string | null | unde
 
   unit.actionSheet = getUnitWorkActionSheet(unit, work, options.action)
 
-  if (options.loading) {
-    const loadedSheet = workAssets.loadedSheet
-    if (loadedSheet && Assets.cache.has(loadedSheet)) unit.walkingSheet = Assets.cache.get(loadedSheet)
-    const standingSheet = workAssets[SHEET_TYPES.standing]
-    if (standingSheet && Assets.cache.has(standingSheet)) unit.standingSheet = Assets.cache.get(standingSheet)
-  } else {
-    unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
-    unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
-  }
+  unit.standingSheet = Assets.cache.get(workAssets[SHEET_TYPES.standing])
+  unit.walkingSheet = Assets.cache.get(workAssets[SHEET_TYPES.walking])
 
   unit.dyingSheet = Assets.cache.get(workAssets[SHEET_TYPES.dying])
   unit.corpseSheet = Assets.cache.get(workAssets[SHEET_TYPES.corpse])

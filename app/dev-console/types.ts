@@ -141,12 +141,49 @@ type DevControlsLike = {
 export type DevPerformanceMetric = {
   count?: number
   totalMs: number
+  exclusiveMs?: number
   averageMs: number
+  averageExclusiveMs?: number
+  measuredCount?: number
+  measuredAverageMs?: number
+  measuredAverageExclusiveMs?: number
   maxMs: number
+  maxExclusiveMs?: number
+  frames?: number
+  averageFrameMs?: number
+  averageFrameExclusiveMs?: number
+  maxFrameMs?: number
+  maxFrameExclusiveMs?: number
+  maxFrameCalls?: number
+  lastMs?: number
+  lastExclusiveMs?: number
   slowCount?: number
+  slowSamples?: Array<{ at: number; duration: number }>
 }
 
-type DevPerformanceSnapshot = {
+type DevPerformanceSlowFrame = {
+  at: number
+  duration: number
+  estimatedExclusiveMs: number
+  estimatedMs: number
+  exclusiveMeasuredMs: number
+  measuredMs: number
+  metrics: Array<{
+    count: number
+    exclusiveMs: number
+    measuredCount: number
+    measuredMs: number
+    name: string
+    phase: string
+    totalMs: number
+  }>
+  mixedPhases: boolean
+  phase: string
+  phaseFrame: number
+  untrackedMs: number
+}
+
+export type DevPerformanceSnapshot = {
   frames: {
     samples: number
     averageMs: number
@@ -154,8 +191,19 @@ type DevPerformanceSnapshot = {
     p99Ms: number
     fps: number
     speed: number
+    slowCount?: number
   }
   metrics: Record<string, DevPerformanceMetric>
+  renderStats?: Array<{
+    at: number
+    duration: number
+    maxDepth: number
+    nodes: number
+    renderable: number
+    target: 'screen' | 'texture'
+    visible: number
+  }>
+  slowFrames?: DevPerformanceSlowFrame[]
 }
 
 export type DevConsoleContext = {

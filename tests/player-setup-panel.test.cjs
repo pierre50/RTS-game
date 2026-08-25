@@ -71,6 +71,7 @@ test('generated human name changes when civilization changes', () => {
 
   assert.equal(panel.players[0].civ, 'Roman')
   assert.equal(panel.players[0].name, 'Roman-male-name')
+  assert.deepEqual(panel.players[0].heroAppearance, { hairStyle: 'buzzcut', hairColor: 'dark_brown' })
 })
 
 test('generated human name follows female gender selection', () => {
@@ -82,6 +83,7 @@ test('generated human name follows female gender selection', () => {
 
   assert.equal(panel.players[0].gender, 'female')
   assert.equal(panel.players[0].name, 'Greek-female-name')
+  assert.deepEqual(panel.players[0].heroAppearance, { hairStyle: 'braid', hairColor: 'dark_brown' })
 })
 
 test('custom human name is preserved when civilization changes', () => {

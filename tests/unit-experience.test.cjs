@@ -11,25 +11,6 @@ function loadModule(relativePath, mocks) {
         routeCapturedHorseToStableWithOwnerContact: () => null,
       },
       '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
-      '../../lib/resourceCarry': {
-        addCarriedResource: (unit, loadingType, amount) => {
-          unit.loading = (unit.loading ?? 0) + amount
-          unit.loadingType = loadingType
-        },
-        clearCarriedResource: unit => {
-          unit.loading = 0
-          unit.loadingType = null
-        },
-        clearCarriedResources: unit => {
-          unit.loading = 0
-          unit.loadingType = null
-        },
-        getCarriedResourceSpace: (unit, loadingType) =>
-          Math.max((unit.loadingMax?.[loadingType] ?? Number.POSITIVE_INFINITY) - (unit.loading ?? 0), 0),
-        getDeliverableResourceEntries: () => [],
-        getPlayerResourceKey: loadingType => (loadingType === 'berry' ? 'food' : loadingType),
-        getTotalCarriedResources: unit => unit.loading ?? 0,
-      },
       ...mocks,
     },
   })
@@ -367,24 +348,20 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     category: 'Villager',
     action: 'forageberry',
     work: 'forager',
-    loading: 0,
-    loadingType: null,
-    loadingMax: { berry: 10 },
     gatherAmount: { forager: 1 },
     dest: berryBush,
     sprite: {},
     context: { controls: { instanceIsAudible: () => false }, menu: { updateInfo: () => {} }, player: {}, map: {} },
+    owner: { food: 0 },
     getActionCondition: () => true,
     setTextures: () => {},
-    updateInterfaceLoading: () => {},
     affectNewDest: () => {},
-    sendToDelivery: () => {},
   }
 
   new UnitActions(unit).getAction('forageberry')
 
   // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
-  assert.equal(unit.loading, 3)
+  assert.equal(unit.owner.food, 3)
   assert.equal(berryBush.quantity, 7)
   assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
 })

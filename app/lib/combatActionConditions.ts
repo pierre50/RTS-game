@@ -114,13 +114,6 @@ export const getActionCondition = (
   if (!action) return false
 
   const conditions: Record<string, (props?: ActionProps) => boolean> = {
-    delivery: props =>
-      Boolean(
-        (source.loading ?? 0) > 0 &&
-          (target.hitPoints ?? 0) > 0 &&
-          target.isBuilt &&
-          (!props || props.buildingTypes?.includes(target.type ?? ''))
-      ),
     takemeat: () =>
       Boolean(
         isVillagerOrHero(source) &&

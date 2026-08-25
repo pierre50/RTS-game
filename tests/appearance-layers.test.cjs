@@ -25,6 +25,9 @@ const constants = {
     attack: 'attack',
     takemeat: 'takemeat',
   },
+  LABEL_TYPES: {
+    sprite: 'sprite',
+  },
   SHEET_TYPES: {
     action: 'actionSheet',
     corpse: 'corpseSheet',
@@ -52,75 +55,11 @@ const constants = {
   },
 }
 
-test('carried-resource layers hide during action and return after it', () => {
-  const { isAppearanceLayerHiddenByLoading } = loadModule('app/lib/lpc/appearanceLayers.ts', {
-    '../../constants': constants,
-  })
-  const carriedResourceLayer = { showWhenLoading: true }
-
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: carriedResourceLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.action,
-      heroControlled: false,
-    }),
-    true
-  )
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: carriedResourceLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.standing,
-      heroControlled: false,
-    }),
-    false
-  )
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: carriedResourceLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.walking,
-      heroControlled: false,
-    }),
-    false
-  )
-})
-
-test('tools hidden while carrying come back during action', () => {
-  const { isAppearanceLayerHiddenByLoading } = loadModule('app/lib/lpc/appearanceLayers.ts', {
-    '../../constants': constants,
-  })
-  const toolLayer = { hideWhenLoading: true }
-
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: toolLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.action,
-      heroControlled: false,
-    }),
-    false
-  )
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: toolLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.standing,
-      heroControlled: false,
-    }),
-    true
-  )
-  assert.equal(
-    isAppearanceLayerHiddenByLoading({
-      layer: toolLayer,
-      isLoading: true,
-      sheet: constants.SHEET_TYPES.walking,
-      heroControlled: false,
-    }),
-    true
-  )
-})
+const heroAppearanceMock = {
+  heroAppearanceAssetsForPlayers: () => [],
+  heroAppearanceLayersForPlayer: () => [],
+  registerHeroAppearanceAliasesForPlayers: () => {},
+}
 
 test('helmet decor renders above head and helmet on death sheets', () => {
   const { getAppearanceLayerZIndex } = loadModule('app/lib/lpc/appearanceLayers.ts', {
@@ -240,6 +179,7 @@ test('hero baked appearance includes inventory equipped layers', () => {
   const cachedAliases = new Set(['lpc-baked/hero/greek/male/body/walking'])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAssets: () => [],
       dynamicEquipmentLayersForEquipment: equipment => equipment.map(item => ({ equipmentKey: item })),
@@ -290,6 +230,92 @@ test('hero baked appearance includes inventory equipped layers', () => {
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'bow'))
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'arrow_copper'))
   assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'), false)
+})
+
+test('hero hair appearance layer is hidden while a helmet is equipped and restored after unequip', () => {
+  class AnimatedSprite {
+    constructor(textures) {
+      this.textures = textures
+      this.label = ''
+      this.eventMode = 'none'
+      this.position = { x: 0, y: 0 }
+      this.scale = { x: 1, y: 1 }
+      this.anchor = {
+        set: (x, y) => {
+          this.anchor.x = x
+          this.anchor.y = y
+        },
+      }
+      this.roundPixels = false
+      this.loop = true
+      this.updateAnchor = false
+      this.zIndex = 0
+      this.visible = true
+      this.parent = null
+      this.playing = false
+      this.currentFrame = 0
+      this.filters = null
+    }
+    destroy() {}
+    gotoAndStop(frame) { this.currentFrame = frame }
+    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+  }
+  const spritesheet = {
+    data: { animationSpeed: 0.2 },
+    textures: { frame0: { defaultAnchor: { x: 0.5, y: 1 } } },
+  }
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          has: id => id === 'hair/walking',
+          get: id => (id === 'hair/walking' ? spritesheet : undefined),
+        },
+      },
+      AnimatedSprite,
+    },
+    '../../constants': constants,
+    '../../lib': {
+      bindAnimatedSpriteToTicker: () => {},
+      changeSpriteColor: () => {},
+      changeSpritePalette: () => {},
+      getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
+    },
+    '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
+    '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
+    '../../lib/unitExperience': { getUnitEquipmentLevel: () => 0 },
+  })
+  const unit = {
+    appearance: {
+      layers: [{ zIndex: 11, hideWhenEquippedSlots: ['helmet'], walkingSheet: 'hair/walking' }],
+    },
+    appearanceLayerSprites: new Map(),
+    inventory: { equipped: {} },
+    owner: { civ: 'Greek', color: 'blue' },
+    sprite: { currentFrame: 0, loop: true, playing: false },
+    context: { app: {} },
+    degree: 180,
+    currentSheet: constants.SHEET_TYPES.walking,
+    sheetDirectionCounts: {},
+    sheetDirectionOrders: {},
+    getMountedRiderX: () => 0,
+    getMountedRiderY: () => 0,
+    getChildIndex: () => 0,
+    addChildAt(sprite) { sprite.parent = this },
+    addChild(sprite) { sprite.parent = this },
+    removeChild(sprite) { sprite.parent = null },
+  }
+
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking)
+  assert.equal(unit.appearanceLayerSprites.size, 1)
+
+  unit.inventory.equipped.helmet = 'helmet_barbuta_ceramic'
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking)
+  assert.equal(unit.appearanceLayerSprites.size, 0)
+
+  delete unit.inventory.equipped.helmet
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking)
+  assert.equal(unit.appearanceLayerSprites.size, 1)
 })
 
 test('infantry equipment layers unlock by level and switch metal by civilization age', () => {
@@ -560,6 +586,7 @@ test('unique bandit baked units do not include civilization in asset paths', () 
   const cachedAliases = new Set(['lpc-baked/bandit_archer/male/walking'])
   const { applyBakedLpcUnitAssets, getBakedUnitStandingSheetAlias } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAssets: () => [],
       dynamicEquipmentLayersForEquipment: () => [],
@@ -595,6 +622,7 @@ test('helmeted infantry swaps to no-hair baked base', () => {
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAssets: () => [],
       dynamicEquipmentLayersForEquipment: () => [],
@@ -631,6 +659,7 @@ test('helmeted archer swaps to no-hair baked base', () => {
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAssets: () => [],
       dynamicEquipmentLayersForEquipment: () => [],
@@ -667,6 +696,7 @@ test('looted corpse swaps back to hair baked base when helmet is removed', () =>
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAssets: () => [],
       dynamicEquipmentLayersForEquipment: equipment => equipment.map(item => ({ equipmentKey: item })),

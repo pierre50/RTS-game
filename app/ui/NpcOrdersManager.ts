@@ -6,7 +6,6 @@ import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import {
-  sendNpcToStockpile,
   keepNpcHere,
   canKeepNpcHere,
   startFollowingHero,
@@ -22,7 +21,7 @@ import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
-type NpcOrderId = 'stockpile' | 'stay' | 'follow' | 'goto' | VillagerAutonomyJob
+type NpcOrderId = 'stay' | 'follow' | 'goto' | VillagerAutonomyJob
 
 const NPC_ORDER_SPECS: {
   id: NpcOrderId
@@ -40,7 +39,6 @@ const NPC_ORDER_SPECS: {
   { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
-  { id: 'stockpile', labelKey: 'npcOrderStockpile', run: sendNpcToStockpile },
 ]
 
 export class NpcOrdersManager {
@@ -168,10 +166,6 @@ export class NpcOrdersManager {
 
     this.updateDebugControls(soloTarget)
 
-    const stockpileButton = this.buttons.get('stockpile')
-    if (stockpileButton) {
-      stockpileButton.disabled = !npcs.some(npc => (npc.loading ?? 0) > 0)
-    }
     const stayButton = this.buttons.get('stay')
     if (stayButton) {
       stayButton.disabled = !npcs.some(canKeepNpcHere)
