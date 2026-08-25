@@ -1,4 +1,4 @@
-export const NIGHT_AMBIENCE_MAX_VOLUME = 0.28
+const NIGHT_AMBIENCE_MAX_VOLUME = 0.28
 export const NIGHT_AMBIENCE_LERP_PER_SECOND = 1.35
 
 function clamp(value: number, min: number, max: number): number {

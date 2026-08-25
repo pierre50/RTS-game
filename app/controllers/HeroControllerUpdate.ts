@@ -15,7 +15,7 @@ import {
 import { updateHeroCursor } from '../lib/heroCursor'
 import { resolveHoverTarget, updateNpcFollow } from '../lib/npcInteraction'
 import type { ControlBindingAction } from '../lib/settings'
-import { updateUnitEnergy } from '../lib/unitEnergy'
+import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/unitEnergy'
 import { updateUnitHealthRegen } from '../lib/unitHealth'
 import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/unitLocomotion'
 import { applyUnitWalkingAnimationSpeed } from '../lib/unitWalkingAnimation'
@@ -118,7 +118,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const stealthSpeedFactor = controller.controls.isHeroStealthMode?.() ? HERO_STEALTH_SPEED_FACTOR : 1
     const directionalMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
     const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor, directionalMoveSpeedFactor)
-    moveAnimationSpeedFactor = moveSpeedFactor
+    moveAnimationSpeedFactor = moveSpeedFactor * stealthSpeedFactor * getEnergyMoveSpeedMultiplier(unit)
     const distance =
       (unit.speed ?? 0) *
       speedFactor *

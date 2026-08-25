@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, SHEET_TYPES } from '../constants'
+import { SHEET_TYPES } from '../constants'
+import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from './actionVisualSheet'
 import { refreshUnitEquipmentStats } from './equipmentStats'
 import type { UnitEntity } from '../types/entities'
 
@@ -10,8 +11,11 @@ type WorkAssetOptions = {
 
 export function getUnitWorkActionSheet(unit: UnitEntity, work: string | null | undefined, action?: string | null) {
   if (!work) return undefined
-  const sheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
-  return Assets.cache.get(unit.allAssets?.[work]?.[sheet] ?? '')
+  const workAssets = unit.allAssets?.[work]
+  if (!workAssets) return undefined
+  const sheet = getActionVisualSheetKey(action, unit.type, work)
+  const assetId = workAssets[sheet] ?? (sheet === SHOOTING_SHEET_KEY ? workAssets[SHEET_TYPES.action] : undefined)
+  return assetId ? Assets.cache.get(assetId) : undefined
 }
 
 export function applyUnitWorkAssets(unit: UnitEntity, work: string | null | undefined, options: WorkAssetOptions = {}): void {

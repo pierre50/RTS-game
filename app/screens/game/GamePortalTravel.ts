@@ -20,13 +20,14 @@ import {
   applyPortableUnitState,
   configForPortalWorld,
   extractPortalParty,
-  heroTravelImageSrc,
+  heroTravelSpriteSources,
   portalWorldId,
   withFogEnabledState,
   worldStateWithCampaignClock,
   type PortalPartyState,
   type PortalWorldConfig,
 } from './GameStateHelpers'
+import type { HeroEquippedItem } from '../../types/heroTools'
 
 type PortalRuntimeMap = RuntimeMap & {
   _flushFogQueue(): void
@@ -215,7 +216,7 @@ export function applyPortalPartyToRuntime(
   game: PortalTravelGame,
   party: PortalPartyState,
   arrivalCell: RuntimeCell | null = null,
-  { freshWorld = false }: { freshWorld?: boolean } = {}
+  { equippedItem = null, freshWorld = false }: { equippedItem?: HeroEquippedItem | null; freshWorld?: boolean } = {}
 ): void {
   const { player, controls } = game._gameContext()
   const hero = runtimeHeroUnit(game)
@@ -247,6 +248,7 @@ export function applyPortalPartyToRuntime(
 
   refreshPortalPartyFog(game, travelUnits)
   controls.init?.()
+  if (equippedItem) controls.setEquippedItem?.(equippedItem)
   controls.context?.menu?.updateHeroStatus?.(hero)
   controls.context?.menu?.updatePlayerMiniMapEvt?.(player)
   controls.context?.menu?.updateCameraMiniMap?.()
@@ -257,14 +259,15 @@ async function bootCampaignSaveWorld(
   campaign: CampaignSave,
   worldState: SerializedSave,
   party: PortalPartyState,
-  now: number
+  now: number,
+  equippedItem: HeroEquippedItem | null = null
 ): Promise<{ heroProtection: PortalHeroInvincibility | null; revealPoint: PortalRevealPoint | null }> {
   game._campaignSave = structuredClone(campaign)
   game._restartSaveData = structuredClone(campaign)
   game._destroyRuntime({ preserveLoadingScreen: true })
   await game._bootFromSave(withFogEnabledState(structuredClone(worldState)))
   game._map().revealEverything = false
-  applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game))
+  applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game), { equippedItem })
   const arrivalHero = runtimeHeroUnit(game)
   const targetState = withFogEnabledState(serializeGame(game._gameContext()))
   const committedCampaign = updateCurrentWorldState(campaign, targetState, now)
@@ -298,6 +301,7 @@ export async function travelThroughPortal(
   const now = Date.now()
   const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
   const party = extractPortalParty(currentWorldState)
+  const previousEquippedItem = game._gameContext().controls.equippedItem ?? null
   const departureHero = runtimeHeroUnit(game)
   const campaign = game._campaignSave
     ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
@@ -306,7 +310,16 @@ export async function travelThroughPortal(
   const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
   const targetWorldId = portalWorldId(game._campaignSave?.currentWorldId, portal, color)
   const existingTarget = campaign.worlds[targetWorldId]
-  const portalTransition = new PortalTravelTransition(color, { heroImageSrc: heroTravelImageSrc(game.context.player) })
+  const heroSpriteSources = heroTravelSpriteSources(game.context.player)
+  const portalTransition = new PortalTravelTransition(color, {
+    heroAtlasSrc: heroSpriteSources.bodyAtlas,
+    heroHairColor: heroSpriteSources.hairColor,
+    heroImageSrc: heroSpriteSources.body,
+    heroHairBackAtlasSrc: heroSpriteSources.hairBackAtlas,
+    heroHairBackImageSrc: heroSpriteSources.hairBack,
+    heroHairFrontAtlasSrc: heroSpriteSources.hairFrontAtlas,
+    heroHairFrontImageSrc: heroSpriteSources.hairFront,
+  })
   game._loadingScreen = portalTransition
 
   try {
@@ -320,7 +333,7 @@ export async function travelThroughPortal(
         getCurrentWorldState(nextCampaign),
         nextCampaign.clock?.dayNightElapsedMs
       )
-      const arrival = await bootCampaignSaveWorld(game, nextCampaign, parentState, party, now)
+      const arrival = await bootCampaignSaveWorld(game, nextCampaign, parentState, party, now, previousEquippedItem)
       arrivalHeroProtection = arrival.heroProtection
       arrivalRevealPoint = arrival.revealPoint
     } else if (existingTarget) {
@@ -329,7 +342,7 @@ export async function travelThroughPortal(
         structuredClone(existingTarget.state),
         nextCampaign.clock?.dayNightElapsedMs
       )
-      const arrival = await bootCampaignSaveWorld(game, nextCampaign, targetState, party, now)
+      const arrival = await bootCampaignSaveWorld(game, nextCampaign, targetState, party, now, previousEquippedItem)
       arrivalHeroProtection = arrival.heroProtection
       arrivalRevealPoint = arrival.revealPoint
     } else {
@@ -338,7 +351,10 @@ export async function travelThroughPortal(
       game._destroyRuntime({ preserveLoadingScreen: true })
       await game._bootFromConfig(portalWorld.config, { dayNightElapsedMs: campaign.clock?.dayNightElapsedMs })
       game._map().revealEverything = false
-      applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game), { freshWorld: true })
+      applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game), {
+        equippedItem: previousEquippedItem,
+        freshWorld: true,
+      })
       const arrivalHero = runtimeHeroUnit(game)
       arrivalHeroProtection = protectPortalHero(arrivalHero)
       arrivalRevealPoint = getPortalRevealPoint(game, arrivalHero)

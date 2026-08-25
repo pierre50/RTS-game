@@ -21,7 +21,7 @@ import {
   MAX_RAIN_DROPS,
   MAX_SAND_GRAINS,
   MAX_SNOW_FLAKES,
-  PRECIPITATION_TARGETS,
+  PARTICLE_TARGETS,
   RAIN_BASE_SLANT_RATIO,
   RAIN_DRIFT_PER_SECOND,
   RAIN_LERP_PER_SECOND,
@@ -45,6 +45,7 @@ import {
   type TickerLike,
   type WeatherBiomeProfile,
   type WeatherColor,
+  type WeatherParticleTargets,
   type WeatherPhase,
 } from './WeatherProfiles'
 
@@ -74,6 +75,18 @@ function combineColor(base: WeatherColor, weather: WeatherColor): WeatherColor {
     green: base.green * weather.green,
     blue: base.blue * weather.blue,
   }
+}
+
+function scaleParticleTarget(targets: WeatherParticleTargets, multiplier: number): WeatherParticleTargets {
+  return {
+    rain: clamp(targets.rain * multiplier, 0, 1),
+    sand: clamp(targets.sand, 0, 1),
+    snow: clamp(targets.snow * multiplier, 0, 1),
+  }
+}
+
+function addParticleDrift(target: number, elapsedMs: number): number {
+  return target > 0 ? clamp(target + Math.sin(elapsedMs * 0.0009) * 0.045, 0, 1) : 0
 }
 
 // Triangular crossfade: `low` peaks at `mid` then fades out, `high` ramps in from `mid` to 1.
@@ -238,6 +251,9 @@ export class WeatherSystem {
   snowflakes: Snowflake[]
   sandGrains: SandGrain[]
   precipIntensity: number
+  rainIntensity: number
+  snowIntensity: number
+  sandIntensity: number
   rainLoopHeavy: IMediaInstance | null
   rainLoopLight: IMediaInstance | null
   nightLoop: IMediaInstance | null
@@ -273,6 +289,9 @@ export class WeatherSystem {
     this.phaseEndsAt = randomDuration(FIRST_SUNNY_MIN_SECONDS, FIRST_SUNNY_MAX_SECONDS, this.random)
     this.currentColor = { ...WEATHER_COLORS.sunny }
     this.precipIntensity = 0
+    this.rainIntensity = 0
+    this.snowIntensity = 0
+    this.sandIntensity = 0
     this.windIntensity = 0
     this.windX = randomBetween(-5, 5, this.random)
     this.windTargetX = this.windX
@@ -447,10 +466,7 @@ export class WeatherSystem {
   }
 
   updateAmbientSound(elapsedSeconds: number): void {
-    const rainVolumes =
-      this.phase === 'snow' || this.phase === 'sandstorm'
-        ? { high: 0, low: 0 }
-        : crossfadeVolumes(this.precipIntensity, AMBIENT_CROSSFADE_MID)
+    const rainVolumes = crossfadeVolumes(this.rainIntensity, AMBIENT_CROSSFADE_MID)
     const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
     const nightTargetVolume = getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
     const hero = this.context.controls?.heroUnit
@@ -467,7 +483,10 @@ export class WeatherSystem {
   }
 
   updateColor(elapsedSeconds: number): void {
-    const target = combineColor(this.context.dayNight?.getColorAdjustment?.() ?? WEATHER_COLORS.sunny, WEATHER_COLORS[this.phase])
+    const target = combineColor(
+      this.context.dayNight?.getColorAdjustment?.() ?? WEATHER_COLORS.sunny,
+      WEATHER_COLORS[this.phase]
+    )
     const amount = elapsedSeconds * COLOR_LERP_PER_SECOND
     this.currentColor.gamma = lerp(this.currentColor.gamma, target.gamma, amount)
     this.currentColor.contrast = lerp(this.currentColor.contrast, target.contrast, amount)
@@ -510,20 +529,26 @@ export class WeatherSystem {
     if (this.flashCooldownMs > 0) return
     this.lightningBursts = this.random() < 0.55 ? 2 : 1
     this.lightningNextBurstMs = 0
-    this.flashCooldownMs = randomDuration(this.phase === 'rainHeavy' ? 8 : 12, this.phase === 'rainHeavy' ? 24 : 40, this.random)
+    this.flashCooldownMs = randomDuration(
+      this.phase === 'rainHeavy' ? 8 : 12,
+      this.phase === 'rainHeavy' ? 24 : 40,
+      this.random
+    )
   }
 
   drawRainVeil(): void {
     this.rainVeil.clear()
-    const rainBoost = this.precipIntensity * 0.045
-    const veilAlpha = clamp(
-      VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier + rainBoost,
-      0,
-      0.2
-    )
+    const precipitationBoost = Math.max(this.rainIntensity, this.snowIntensity, this.sandIntensity) * 0.045
+    const veilAlpha = clamp(VEIL_TARGETS[this.phase] * this.biomeProfile.veilMultiplier + precipitationBoost, 0, 0.2)
     if (veilAlpha < 0.01) return
     this.rainVeil.rect(0, 0, this.screenRect.width, this.screenRect.height)
-    this.rainVeil.fill({ alpha: veilAlpha, color: this.phase === 'sandstorm' ? 0xc9974a : this.phase === 'snow' ? 0xdce8f5 : 0x9fb2c4 })
+    const color =
+      this.sandIntensity > Math.max(this.rainIntensity, this.snowIntensity)
+        ? 0xc9974a
+        : this.snowIntensity > this.rainIntensity
+          ? 0xdce8f5
+          : 0x9fb2c4
+    this.rainVeil.fill({ alpha: veilAlpha, color })
   }
 
   getDarknessLevel(): number {
@@ -531,64 +556,27 @@ export class WeatherSystem {
   }
 
   updatePrecipitation(elapsedSeconds: number, mapShiftX = 0, mapShiftY = 0): void {
-    const baseTarget = PRECIPITATION_TARGETS[this.phase]
-    const intensityMultiplier = this.phase === 'sandstorm' ? 1 : this.biomeProfile.precipMultiplier
-    const noisyTarget =
-      baseTarget > 0
-        ? Math.max(
-            0,
-            Math.min(1, baseTarget * intensityMultiplier + Math.sin(this.elapsedMs * 0.0009) * 0.045)
-          )
-        : 0
-    this.precipIntensity = lerp(this.precipIntensity, noisyTarget, elapsedSeconds * RAIN_LERP_PER_SECOND)
+    const targets = scaleParticleTarget(PARTICLE_TARGETS[this.phase], this.biomeProfile.precipMultiplier)
+    const amount = elapsedSeconds * RAIN_LERP_PER_SECOND
+    this.rainIntensity = lerp(this.rainIntensity, addParticleDrift(targets.rain, this.elapsedMs), amount)
+    this.snowIntensity = lerp(this.snowIntensity, addParticleDrift(targets.snow, this.elapsedMs + 900), amount)
+    this.sandIntensity = lerp(this.sandIntensity, addParticleDrift(targets.sand, this.elapsedMs + 1800), amount)
+    this.precipIntensity = Math.max(this.rainIntensity, this.snowIntensity, this.sandIntensity)
 
-    const maxParticles =
-      this.phase === 'snow' ? MAX_SNOW_FLAKES : this.phase === 'sandstorm' ? MAX_SAND_GRAINS : MAX_RAIN_DROPS
-    const activeParticles =
-      this.precipIntensity < 0.015 ? 0 : Math.round(maxParticles * this.precipIntensity)
+    const activeDrops = this.rainIntensity < 0.015 ? 0 : Math.round(MAX_RAIN_DROPS * this.rainIntensity)
+    const activeFlakes = this.snowIntensity < 0.015 ? 0 : Math.round(MAX_SNOW_FLAKES * this.snowIntensity)
+    const activeGrains = this.sandIntensity < 0.015 ? 0 : Math.round(MAX_SAND_GRAINS * this.sandIntensity)
 
-    if (this.phase === 'snow') {
-      for (let i = 0; i < this.raindrops.length; i++) {
-        const drop = this.raindrops[i]
-        if (drop.alpha !== 0) drop.alpha = 0
-      }
-      for (let i = 0; i < this.sandGrains.length; i++) {
-        const grain = this.sandGrains[i]
-        if (grain.alpha !== 0) grain.alpha = 0
-      }
-      this.updateSnow(elapsedSeconds, activeParticles, mapShiftX, mapShiftY)
-      return
-    }
-
-    if (this.phase === 'sandstorm') {
-      for (let i = 0; i < this.raindrops.length; i++) {
-        const drop = this.raindrops[i]
-        if (drop.alpha !== 0) drop.alpha = 0
-      }
-      for (let i = 0; i < this.snowflakes.length; i++) {
-        const flake = this.snowflakes[i]
-        if (flake.alpha !== 0) flake.alpha = 0
-      }
-      this.updateSandstorm(elapsedSeconds, activeParticles, mapShiftX, mapShiftY)
-      return
-    }
-
-    for (let i = 0; i < this.snowflakes.length; i++) {
-      const flake = this.snowflakes[i]
-      if (flake.alpha !== 0) flake.alpha = 0
-    }
-    for (let i = 0; i < this.sandGrains.length; i++) {
-      const grain = this.sandGrains[i]
-      if (grain.alpha !== 0) grain.alpha = 0
-    }
-    this.updateRain(elapsedSeconds, activeParticles)
+    this.updateRain(elapsedSeconds, activeDrops, this.rainIntensity)
+    this.updateSnow(elapsedSeconds, activeFlakes, this.snowIntensity, mapShiftX, mapShiftY)
+    this.updateSandstorm(elapsedSeconds, activeGrains, this.sandIntensity, mapShiftX, mapShiftY)
   }
 
-  updateRain(elapsedSeconds: number, activeDrops: number): void {
-    const rainColor = this.precipIntensity > 0.62 ? 0xf7fbff : 0xd9e8ff
+  updateRain(elapsedSeconds: number, activeDrops: number, intensity = this.rainIntensity): void {
+    const rainColor = intensity > 0.62 ? 0xf7fbff : 0xd9e8ff
     const slantRatio = clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08)
     const rotation = Math.atan2(-slantRatio, 1)
-    const widthScale = this.precipIntensity > 0.7 ? 1.4 : 1
+    const widthScale = intensity > 0.7 ? 1.4 : 1
     const drift = RAIN_DRIFT_PER_SECOND + this.windX * 4
     const margin = 180
 
@@ -600,7 +588,7 @@ export class WeatherSystem {
       }
 
       drop.x += (drift + drop.wobble * 18) * elapsedSeconds
-      drop.y += drop.speed * elapsedSeconds * (0.76 + this.precipIntensity * 0.4)
+      drop.y += drop.speed * elapsedSeconds * (0.76 + intensity * 0.4)
       if (
         drop.y > this.screenRect.height + margin ||
         drop.x < -margin * 2 ||
@@ -609,16 +597,22 @@ export class WeatherSystem {
         this.resetRaindrop(drop, false)
       }
 
-      const length = drop.baseLength * (0.8 + this.precipIntensity * 0.55)
+      const length = drop.baseLength * (0.8 + intensity * 0.55)
       drop.scaleY = length / RAIN_TEXTURE_HEIGHT
       drop.scaleX = widthScale
       drop.rotation = rotation
       drop.tint = rainColor
-      drop.alpha = drop.baseAlpha * (0.42 + this.precipIntensity * 0.68)
+      drop.alpha = drop.baseAlpha * (0.42 + intensity * 0.68)
     }
   }
 
-  updateSnow(elapsedSeconds: number, activeFlakes: number, mapShiftX = 0, mapShiftY = 0): void {
+  updateSnow(
+    elapsedSeconds: number,
+    activeFlakes: number,
+    intensity = this.snowIntensity,
+    mapShiftX = 0,
+    mapShiftY = 0
+  ): void {
     const drift = this.windX * 6
     const margin = 180
 
@@ -630,7 +624,7 @@ export class WeatherSystem {
       }
 
       flake.x += mapShiftX + (drift + flake.wobble * 12) * elapsedSeconds
-      flake.y += mapShiftY + flake.speed * elapsedSeconds * (0.5 + this.precipIntensity * 0.45)
+      flake.y += mapShiftY + flake.speed * elapsedSeconds * (0.5 + intensity * 0.45)
       if (
         flake.y > this.screenRect.height + margin ||
         flake.x < -margin * 2 ||
@@ -639,16 +633,22 @@ export class WeatherSystem {
         this.resetSnowflake(flake, false)
       }
 
-      const scale = flake.baseScale * (0.8 + this.precipIntensity * 0.55)
+      const scale = flake.baseScale * (0.8 + intensity * 0.55)
       flake.scaleX = scale
       flake.scaleY = scale
       flake.rotation += flake.rotationSpeed * elapsedSeconds
       flake.tint = SNOW_COLOR
-      flake.alpha = flake.baseAlpha * (0.45 + this.precipIntensity * 0.5)
+      flake.alpha = flake.baseAlpha * (0.45 + intensity * 0.5)
     }
   }
 
-  updateSandstorm(elapsedSeconds: number, activeGrains: number, mapShiftX = 0, mapShiftY = 0): void {
+  updateSandstorm(
+    elapsedSeconds: number,
+    activeGrains: number,
+    intensity = this.sandIntensity,
+    mapShiftX = 0,
+    mapShiftY = 0
+  ): void {
     const drift = -Math.max(520, Math.abs(this.windX) * 92)
     const margin = 220
 
@@ -670,11 +670,11 @@ export class WeatherSystem {
         this.resetSandGrain(grain, false)
       }
 
-      const scale = grain.baseScale * (0.9 + this.precipIntensity * 0.55)
-      grain.scaleX = scale * (1.2 + this.precipIntensity * 0.8)
+      const scale = grain.baseScale * (0.9 + intensity * 0.55)
+      grain.scaleX = scale * (1.2 + intensity * 0.8)
       grain.scaleY = scale
-      grain.tint = this.precipIntensity > 0.72 ? 0xf1c979 : 0xd8a953
-      grain.alpha = grain.baseAlpha * (0.5 + this.precipIntensity * 0.78)
+      grain.tint = intensity > 0.72 ? 0xf1c979 : 0xd8a953
+      grain.alpha = grain.baseAlpha * (0.5 + intensity * 0.78)
     }
   }
 
@@ -688,15 +688,20 @@ export class WeatherSystem {
   debugState(): object {
     return {
       activeDrops: Math.round(
-        (this.phase === 'snow' ? MAX_SNOW_FLAKES : this.phase === 'sandstorm' ? MAX_SAND_GRAINS : MAX_RAIN_DROPS) *
-          this.precipIntensity
+        MAX_RAIN_DROPS * this.rainIntensity +
+          MAX_SNOW_FLAKES * this.snowIntensity +
+          MAX_SAND_GRAINS * this.sandIntensity
       ),
       nextPhaseInSeconds: Math.max(0, seconds(this.phaseEndsAt - this.elapsedMs)),
       phase: this.phase,
       biome: this.biome,
-      rainIntensity: Number(this.precipIntensity.toFixed(2)),
+      rainIntensity: Number(this.rainIntensity.toFixed(2)),
+      snowIntensity: Number(this.snowIntensity.toFixed(2)),
+      sandIntensity: Number(this.sandIntensity.toFixed(2)),
       darknessLevel: Number(this.getDarknessLevel().toFixed(2)),
-      rainSlantRatio: Number(clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08).toFixed(2)),
+      rainSlantRatio: Number(
+        clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08).toFixed(2)
+      ),
       screen: {
         height: Math.round(this.screenRect.height),
         width: Math.round(this.screenRect.width),

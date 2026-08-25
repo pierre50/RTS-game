@@ -10,6 +10,7 @@ import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
 import type { Application, Container } from 'pixi.js'
+import { normalizeHeroAppearance, normalizeHeroAppearanceGender, type HeroHairColor } from '../../lib/lpc/heroAppearance'
 
 export function saveConfig(config: SerializedSave['config'] | SerializedSave['world'] | undefined): GameConfig {
   return config || {}
@@ -65,10 +66,29 @@ function cloneHeroInventory(inventory: SaveEntityState['inventory']): SaveEntity
 
 export const PORTAL_RESOURCE_TYPE = 'Portal'
 
-export function heroTravelImageSrc(player: PlayerLike | null | undefined): string {
+export type PortalTravelSpriteSources = {
+  body: string
+  bodyAtlas: string
+  hairBack?: string | null
+  hairBackAtlas?: string | null
+  hairColor: HeroHairColor
+  hairFront: string
+  hairFrontAtlas: string
+}
+
+export function heroTravelSpriteSources(player: PlayerLike | null | undefined): PortalTravelSpriteSources {
   const civ = (player?.civ || 'Greek').toLowerCase()
-  const gender = player?.gender === 'female' ? 'female' : 'male'
-  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
+  const gender = normalizeHeroAppearanceGender(player?.gender)
+  const appearance = normalizeHeroAppearance(player?.heroAppearance, player?.civ, gender)
+  return {
+    body: `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`,
+    bodyAtlas: `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.json`,
+    hairBack: null,
+    hairBackAtlas: null,
+    hairColor: appearance.hairColor,
+    hairFront: `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.png`,
+    hairFrontAtlas: `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.json`,
+  }
 }
 
 function randomAICiv(): string {

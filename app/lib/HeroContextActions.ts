@@ -1,5 +1,6 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, SHEET_TYPES, WORK_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, WORK_TYPES } from '../constants'
+import { getActionVisualSheetKey } from './actionVisualSheet'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, isWheatMature } from './combat'
 import { findInstancesInSight } from './grid/visibility'
@@ -14,6 +15,10 @@ type ToolActionResult = 'triggered' | 'blocked' | 'miss'
 
 function resourceKind(target: RuntimeEntity): string | undefined {
   return target.category || target.type
+}
+
+function isDepletedBerrybush(target: RuntimeEntity): boolean {
+  return resourceKind(target) === 'Berrybush' && (target.quantity ?? 0) <= 0
 }
 
 type HeroContextActionConfig = {
@@ -49,7 +54,7 @@ function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string):
 }
 
 function refreshHeroActionSheet(hero: UnitEntity, work: string, action: string): void {
-  const actionSheet = action === ACTION_TYPES.takemeat ? SHEET_TYPES.harvest : SHEET_TYPES.action
+  const actionSheet = getActionVisualSheetKey(action, hero.type, work)
   const asset = hero.allAssets?.[work]?.[actionSheet]
   if (!asset) return
   const sheet = Assets.cache.get(asset)
@@ -91,7 +96,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   {
     action: 'gather',
     matches: target =>
-      resourceKind(target) === 'Berrybush' ||
+      (resourceKind(target) === 'Berrybush' && !isDepletedBerrybush(target)) ||
       resourceKind(target) === 'Wheat' ||
       (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
@@ -99,6 +104,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
         return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
       }
       if (resourceKind(target) === 'Berrybush') {
+        if (isDepletedBerrybush(target)) return null
         return getActionCondition(hero, target, ACTION_TYPES.forageberry)
           ? resolveHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
           : null
@@ -108,7 +114,7 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   },
   {
     action: 'chop',
-    matches: target => resourceKind(target) === 'Tree',
+    matches: target => resourceKind(target) === 'Tree' || isDepletedBerrybush(target),
     resolve: (hero, target) => resolveHeroGatherAction(hero, target, ACTION_TYPES.chopwood, WORK_TYPES.woodcutter),
   },
   {
@@ -157,7 +163,8 @@ function getContextActionForTarget(contextAction: HeroContextAction, target: Run
   if (contextAction === 'gather' && resourceKind(target) === 'Wheat') return ACTION_TYPES.farm
   if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
   if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
-  if (contextAction === 'chop' && resourceKind(target) === 'Tree') return ACTION_TYPES.chopwood
+  if (contextAction === 'chop' && (resourceKind(target) === 'Tree' || isDepletedBerrybush(target)))
+    return ACTION_TYPES.chopwood
   if (contextAction === 'mine') return getMiningResourceConfig(target)?.action ?? null
   if (contextAction === 'build' && target.family === FAMILY_TYPES.building) return ACTION_TYPES.build
   return null
@@ -195,6 +202,7 @@ export function performContextActionAt(hero: UnitEntity): ToolActionResult {
     if (!unitAction) continue
     const action = config.resolve(hero, target)
     if (action) return runContextAction(hero, config.action, unitAction, action) ? 'triggered' : 'blocked'
+    if (isDepletedBerrybush(target)) continue
     return 'blocked'
   }
 

@@ -8,9 +8,11 @@
   --menu-panel-padding: 48px 68px;
   --menu-home-gap: var(--ui-gap-24);
   --menu-home-padding: 0 68px 48px;
-  --menu-logo-width: min(620px, 88vw);
+  --menu-logo-width: min(760px, 88vw);
   --menu-logo-max-height: none;
   --menu-logo-margin: 0;
+  --menu-logo-font-size: clamp(62px, 9vw, 118px);
+  --menu-logo-letter-gap: clamp(4px, 1.15vw, 18px);
   --menu-buttons-width: auto;
   --menu-buttons-gap: var(--ui-gap-12);
   --menu-buttons-margin: 0;
@@ -88,13 +90,6 @@
   box-shadow: none;
 }
 
-img.menu-title {
-  display: block;
-  width: min(420px, 74vw);
-  height: auto;
-  margin: 0;
-}
-
 .menu-title-shell {
   position: relative;
   width: var(--menu-logo-width);
@@ -102,28 +97,31 @@ img.menu-title {
   margin: var(--menu-logo-margin);
 }
 
-.menu-panel--home img.menu-title {
+.menu-panel--home .menu-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--menu-logo-letter-gap);
   width: 100%;
   opacity: 0;
   transform: translateY(6px);
-  filter: drop-shadow(3px 3px 0 rgba(5, 7, 18, 0.85)) drop-shadow(0 0 10px rgba(154, 167, 217, 0.16));
+  color: var(--text-color-white);
+  font-size: var(--menu-logo-font-size);
+  font-family: var(--font-family-logo);
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.48);
   transition:
     opacity 200ms steps(4, end),
     transform 200ms steps(4, end);
 }
 
-.menu-title-shell.is-loaded img.menu-title {
+.menu-title-shell.is-loaded .menu-title {
   opacity: 1;
   transform: translateY(0);
-}
-
-div.menu-title {
-  margin: 0;
-  color: var(--main-accent-color);
-  font-size: var(--font-size-title);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .button-group,
@@ -568,8 +566,8 @@ div.menu-title {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu-panel--home img.menu-title,
-  .menu-title-shell.is-loaded img.menu-title {
+  .menu-panel--home .menu-title,
+  .menu-title-shell.is-loaded .menu-title {
     animation: none;
     transition: none;
     transform: none;
@@ -590,6 +588,8 @@ div.menu-title {
     --menu-logo-width: min(100%, 420px);
     --menu-logo-max-height: min(34dvh, 280px);
     --menu-logo-margin: auto 0;
+    --menu-logo-font-size: clamp(48px, 13vw, 82px);
+    --menu-logo-letter-gap: clamp(3px, 1.3vw, 10px);
     --menu-buttons-width: 100%;
     --menu-buttons-gap: 12px;
     --menu-home-button-padding: 12px 20px;
@@ -691,6 +691,8 @@ div.menu-title {
     --menu-home-gap: 16px;
     --menu-logo-width: min(100%, 360px);
     --menu-logo-max-height: min(28dvh, 220px);
+    --menu-logo-font-size: clamp(40px, 13vw, 60px);
+    --menu-logo-letter-gap: clamp(2px, 1vw, 6px);
     --menu-home-button-font-size: var(--font-size-base);
   }
 
@@ -711,6 +713,8 @@ div.menu-title {
     --menu-logo-width: min(100%, 560px);
     --menu-logo-max-height: min(34vh, 220px);
     --menu-logo-margin: 0 auto;
+    --menu-logo-font-size: clamp(50px, 12vh, 78px);
+    --menu-logo-letter-gap: clamp(3px, 1.1vh, 10px);
     --menu-buttons-width: min(100%, 420px);
     --menu-buttons-gap: 12px;
     --menu-buttons-margin: 0 auto;
@@ -743,6 +747,8 @@ div.menu-title {
     --menu-logo-width: min(100%, 500px);
     --menu-logo-max-height: min(36vh, 220px);
     --menu-logo-margin: auto 0;
+    --menu-logo-font-size: clamp(42px, 16vh, 70px);
+    --menu-logo-letter-gap: clamp(2px, 1.2vh, 8px);
     --menu-buttons-width: min(100%, 320px);
     --menu-buttons-margin: auto 0 auto auto;
     --menu-home-button-padding: 10px 18px;

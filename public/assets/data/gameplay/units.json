@@ -181,8 +181,12 @@
     "pierceArmor": 1,
     "inventory": {
       "equipment": [],
-      "equipped": {},
-      "equippedCounts": {},
+      "equipped": {
+        "arrow": "arrow_ceramic"
+      },
+      "equippedCounts": {
+        "arrow": 10
+      },
       "activeWeapons": {
         "melee": "sword_ceramic",
         "ranged": "bow",

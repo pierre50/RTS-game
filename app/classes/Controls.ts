@@ -4,18 +4,15 @@ import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
 import { HeroController } from '../controllers/HeroController'
+import { HeroInteractionController } from '../controllers/HeroInteractionController'
 import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { TouchInputController, type TouchInteraction } from '../controllers/TouchInputController'
 import { PointerInputController, type PointerPageEvent } from '../controllers/PointerInputController'
 import type { ControlBindingAction } from '../lib/settings'
 import { setHeroGameCursorEnabled } from '../lib/heroCursor'
-import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
-import { FAMILY_TYPES } from '../constants'
-import { findFacingEntity, type HeroEquippedItem } from '../lib/heroTools'
-import { isTalkableNpc } from '../lib/npcInteraction'
-import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npcChatter'
+import type { HeroEquippedItem } from '../lib/heroTools'
 import type { AudibleInstanceLike, ControlsLike, GameContextLike } from '../types/context'
-import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
 import {
@@ -44,6 +41,7 @@ export default class Controls extends Container implements ControlsLike {
   shiftKeyActive: boolean
   freeCameraActive: boolean
   heroController: HeroController
+  heroInteractionController: HeroInteractionController
   gamepadInput: GamepadHeroInput
   touchInputController: TouchInputController
   pointerInputController: PointerInputController
@@ -100,6 +98,7 @@ export default class Controls extends Container implements ControlsLike {
     this.shiftKeyActive = false
     this.freeCameraActive = false
     this.heroController = new HeroController(this)
+    this.heroInteractionController = new HeroInteractionController(this)
     this.gamepadInput = new GamepadHeroInput(this)
     this.touchInputController = new TouchInputController(this)
     this.pointerInputController = new PointerInputController(this)
@@ -370,65 +369,16 @@ export default class Controls extends Container implements ControlsLike {
     return map.grid[i]?.[j] || null
   }
 
-  // Whatever the hero is currently facing, not whatever the mouse happens to be over — matches
-  // the direction-based resolution the "heroInteract" (E) key already uses.
   getFacingEntityTarget(): RuntimeEntity | null {
-    const hero = this.heroUnit
-    if (!hero) return null
-    return findFacingEntity(hero, target => isHeroInteractionTargetReachable(hero, null, target))
+    return this.heroInteractionController.getFacingEntityTarget()
   }
 
-  // Closes whichever hero panel (npc orders / building menu / entity info) is currently open.
-  // Shared by the Escape handler, the merged interact key, and the gamepad's dedicated inspect
-  // button (which calls openHeroEntityInteraction directly, bypassing HeroController) so the
-  // three entry points can't drift out of sync on which panels they know to close.
   closeAnyHeroPanel(): boolean {
-    const menu = this.context.menu
-    if (menu?.isNpcOrdersOpen?.()) {
-      menu.closeNpcOrders?.()
-      return true
-    }
-    if (menu?.isHeroBuildingMenuOpen?.()) {
-      menu.closeHeroBuildingMenu?.()
-      return true
-    }
-    if (menu?.isEntityInfoModalOpen?.()) {
-      menu.closeEntityInfoModal?.()
-      return true
-    }
-    return false
+    return this.heroInteractionController.closeAnyHeroPanel()
   }
 
   openHeroEntityInteraction(target: RuntimeEntity | null = this.getFacingEntityTarget()): boolean {
-    if (!this.isHeroControlActive()) return false
-    const menu = this.context.menu
-    // Pressing the same key/button again closes whichever panel it opened.
-    if (this.closeAnyHeroPanel()) return true
-    if (!target) return false
-    const hero = this.heroUnit
-    if (target === hero) return false
-    const player = this.context.player
-    if (target.family === FAMILY_TYPES.building) {
-      const building = target as BuildingEntity
-      if (menu?.openHeroBuildingMenu?.(building)) {
-        player?.unselectAll?.()
-        building.select?.()
-        player.selectedBuilding = building
-        return true
-      }
-      // Own building out of range: same rule as left-click actions — no fallback window, just require contact.
-      if (building.owner === player) return false
-    }
-    if (!hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
-    if (isTalkableNpc(hero, target)) {
-      // No order is possible here (non-chief hero, or the ally isn't commandable right now) —
-      // same orders panel as a single-target order, just with a chatter line and no buttons.
-      const unit = target as UnitEntity
-      const chatterLine = unit.owner === hero.owner ? pickNpcChatterLine() : pickForeignNpcChatterLine(unit)
-      menu?.openNpcOrders?.([unit], { chatterLine, ordersEnabled: false })
-      return true
-    }
-    return Boolean(menu?.openEntityInfoModal?.(target))
+    return this.heroInteractionController.openHeroEntityInteraction(target)
   }
 
   getGamepadMoveVector(): { dx: number; dy: number } {

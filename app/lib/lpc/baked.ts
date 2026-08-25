@@ -12,6 +12,7 @@ import {
   heroAppearanceLayersForPlayer,
   registerHeroAppearanceAliasesForPlayers,
 } from './heroAppearance'
+import { lpcAnimationSpeedForAlias, lpcAnimationSpeedForSheet } from './animationSpeeds'
 import { isChiefUnit } from '../chief'
 import { getUnitEquipmentLevel } from '../unitExperience'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
@@ -30,6 +31,7 @@ const VILLAGER_BODY_SHEETS = ['walking', 'dying', 'corpse'] as const
 const VILLAGER_ACTION_SHEETS = ['slash', 'shoot'] as const
 const HERO_BASE_ACTION_SHEETS = ['slash', 'shoot'] as const
 const RANGED_INFANTRY_ACTION_SHEETS = ['shoot'] as const
+const BAKED_MELEE_ACTION_UNITS = ['/infantry/', '/chief/', '/bandit_chief/', '/bandit_sword/'] as const
 
 type BakedUnitType =
   | 'villager'
@@ -218,7 +220,12 @@ function bakedFrameSuffix(alias: string): string {
 }
 
 function bakedSheetAnimationSpeed(alias: string): number {
-  return alias.endsWith('/corpse') ? 0 : 0.3
+  if (alias.endsWith('/action')) {
+    return lpcAnimationSpeedForSheet('action', {
+      slashAction: BAKED_MELEE_ACTION_UNITS.some(unitPath => alias.includes(unitPath)),
+    })
+  }
+  return lpcAnimationSpeedForAlias(alias)
 }
 
 function registerAliasFromAtlas(alias: string, atlasAlias: string): void {

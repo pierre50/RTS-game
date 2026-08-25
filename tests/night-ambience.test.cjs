@@ -17,12 +17,13 @@ function loadNightAmbience() {
 }
 
 test('night ambience follows darkness and clamps invalid values', () => {
-  const { NIGHT_AMBIENCE_MAX_VOLUME, getNightAmbienceTargetVolume } = loadNightAmbience()
+  const { getNightAmbienceTargetVolume } = loadNightAmbience()
+  const maxVolume = 0.28
 
   assert.equal(getNightAmbienceTargetVolume(0), 0)
   assert.equal(getNightAmbienceTargetVolume(null), 0)
   assert.equal(getNightAmbienceTargetVolume(-1), 0)
-  assert.equal(getNightAmbienceTargetVolume(2), NIGHT_AMBIENCE_MAX_VOLUME)
+  assert.equal(getNightAmbienceTargetVolume(2), maxVolume)
   assert.ok(getNightAmbienceTargetVolume(0.5) > 0)
-  assert.ok(getNightAmbienceTargetVolume(0.5) < NIGHT_AMBIENCE_MAX_VOLUME)
+  assert.ok(getNightAmbienceTargetVolume(0.5) < maxVolume)
 })

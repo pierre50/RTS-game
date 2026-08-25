@@ -2,22 +2,31 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
-  const filename = path.join(__dirname, '..', relativePath)
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+  return loadTsModule(relativePath, {
+    baseDir: path.join(__dirname, '..'),
+    mocks: {
+      './animationSpeeds': {
+        LPC_CORPSE_ANIMATION_SPEED: 0,
+        LPC_RUNTIME_ANIMATION_SPEED: 0.3,
+        LPC_SLASH_ANIMATION_SPEED: 0.25,
+        lpcAnimationSpeedForSheet: () => 0.3,
+      },
+      '../../lib/actionVisualSheet': {
+        SHOOTING_SHEET_KEY: 'shootingSheet',
+        getActionVisualSheetKey: (action, unitType, work) => {
+          if (action === constants.ACTION_TYPES.takemeat) return constants.SHEET_TYPES.harvest
+          if (unitType === constants.UNIT_TYPES.bowman || work === constants.WORK_TYPES.hunter) {
+            return 'shootingSheet'
+          }
+          return constants.SHEET_TYPES.action
+        },
+      },
+      ...mocks,
+    },
   })
-  const module = { exports: {} }
-  const localRequire = request => {
-    if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
-  }
-  new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return module.exports
 }
 
 const constants = {
@@ -500,13 +509,21 @@ test('archer equipment follows soldier armor progression without shield', () => 
   const shield = layers.find(layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking')
   assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/bow_great/front/walking')
   assert.equal(bow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/bow_recurve/front/action')
+  assert.equal(bow?.shootingSheet, 'lpc-equipment/bow/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'lpc-equipment/bow_great/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['2']?.shootingSheet, 'lpc-equipment/bow_recurve/front/action')
   assert.equal(bow?.mountedCut, false)
   assert.equal(arrow?.walkingSheet, undefined)
+  assert.equal(arrow?.shootingSheet, 'lpc-equipment/arrow_ceramic/front/action')
   assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/arrow_copper/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'lpc-equipment/arrow_copper/front/action')
   assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'lpc-equipment/arrow_bronze/front/action')
   assert.equal(arrow?.ageSheetOverrides?.['3']?.actionSheet, 'lpc-equipment/arrow_iron/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['3']?.shootingSheet, 'lpc-equipment/arrow_iron/front/action')
   assert.equal(arrow?.mountedCut, false)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
+  assert.equal(quiver?.shootingSheet, 'lpc-equipment/quiver/back/action')
   assert.equal(quiver?.mountedCut, false)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.mountedCut, undefined)

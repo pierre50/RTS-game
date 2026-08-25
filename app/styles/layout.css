@@ -355,6 +355,21 @@
   image-rendering: pixelated;
 }
 
+.portal-travel__hero-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.portal-travel__hero-layer--hair-back {
+  z-index: 0;
+}
+
+.portal-travel__hero-layer--hair-front {
+  z-index: 2;
+}
+
 .portal-travel__status {
   position: absolute;
   z-index: 3;

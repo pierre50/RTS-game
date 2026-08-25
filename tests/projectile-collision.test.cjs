@@ -160,6 +160,15 @@ function loadProjectile(libOverrides = {}) {
     if (request === './ProjectileVisuals') {
       return loadLocalTs('ProjectileVisuals.ts')
     }
+    if (request === './ProjectileCollision') {
+      return loadLocalTs('ProjectileCollision.ts')
+    }
+    if (request === './ProjectileImpact') {
+      return loadLocalTs('ProjectileImpact.ts')
+    }
+    if (request === './ProjectileLifecycle') {
+      return loadLocalTs('ProjectileLifecycle.ts')
+    }
     return require(request)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

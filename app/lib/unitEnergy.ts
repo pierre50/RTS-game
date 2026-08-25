@@ -165,6 +165,14 @@ function clearEnergyWaitTask(unit: EnergyEntity): void {
   unit.energyWaitTaskId = null
 }
 
+export function cancelEnergyWait(unit: EnergyEntity): void {
+  if (!unit.waitingForEnergyAction && unit.energyWaitTaskId == null && unit.combatMode !== 'recover') return
+  unit.waitingForEnergyAction = null
+  unit.waitingForEnergyTarget = null
+  exitCombatRecovery(unit)
+  clearEnergyWaitTask(unit)
+}
+
 function resumeWaitedEnergyAction(unit: EnergyEntity): void {
   const resumeAction = getEnergyWaitAction(unit)
   const resumeTarget = unit.waitingForEnergyTarget

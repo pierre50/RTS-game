@@ -1,4 +1,5 @@
 import { Assets } from 'pixi.js'
+import { lpcAnimationSpeedForAlias } from './animationSpeeds'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { PlayerLike } from '../../types/player'
 import type { SpritesheetLike } from '../../types/pixi'
@@ -142,7 +143,7 @@ function frameSuffix(alias: string): string {
 }
 
 function animationSpeedForHairAlias(alias: string): number {
-  return alias.endsWith('/corpse') ? 0 : 0.3
+  return lpcAnimationSpeedForAlias(alias)
 }
 
 function isAssetCached(alias: string): boolean {

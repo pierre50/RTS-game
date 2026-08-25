@@ -11,6 +11,7 @@ import {
   getTexture,
   getTextureSheet,
   parseTextureRef,
+  spawnSpriteFragmentBurst,
   textureRefToString,
 } from '../lib'
 import {
@@ -322,18 +323,26 @@ export class Resource extends Instance implements ResourceEntity {
     map.removeFromInstanceBucket(this)
     this.isDead = true
     this.stopWindMotion()
+    let clearWithoutFade = false
     if (this.type === RESOURCE_TYPES.tree && !immediate) {
       this.onTreeDie()
     } else {
+      clearWithoutFade = !immediate && this.spawnDepletedResourceFragmentBurst()
       this.prepareFadeOut()
     }
-    fadeOutThenClear(this, FADE_DURATION_MS)
+    if (clearWithoutFade) {
+      this.hideDepletedResourceSprite()
+      this.context.scheduler.addOneShot(() => this.clear(), FADE_DURATION_MS, 'resource.fragmentBurstClear')
+    } else {
+      fadeOutThenClear(this, FADE_DURATION_MS)
+    }
   }
 
   setCuttedTreeTexture() {
     const { sprite } = this
     const textureRef = pickLifecycleTextureRef(this.lifecycleAssets?.cut)
     if (!textureRef) return
+    this.spawnTreeFragmentBurst()
     const texture = getTexture(textureRef, Assets)
     this.textureName = textureRefToString(textureRef)
     sprite.texture = texture
@@ -401,6 +410,7 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   onTreeDie() {
+    this.spawnTreeFragmentBurst()
     const textureRef = pickLifecycleTextureRef(this.lifecycleAssets?.fallen)
     if (textureRef) {
       const texture = getTexture(textureRef, Assets)
@@ -410,6 +420,80 @@ export class Resource extends Instance implements ResourceEntity {
       this.syncShadow()
     }
     this.prepareFadeOut()
+  }
+
+  spawnTreeFragmentBurst() {
+    spawnSpriteFragmentBurst({
+      context: this.context,
+      host: this,
+      sprite: this.sprite,
+      layer: this.parent,
+      fragmentSize: 12,
+      maxFragments: 18,
+      durationMs: 940,
+      gravity: 0.0021,
+      minSpeed: 0.012,
+      maxSpeed: 0.07,
+      upwardVelocity: 0.035,
+      settleToBottom: true,
+      lockX: true,
+      settleSpread: 22,
+      settleStrength: 0.00007,
+      groundBounce: 0.12,
+    })
+  }
+
+  spawnDepletedResourceFragmentBurst(): boolean {
+    if (this.type === RESOURCE_TYPES.berrybush || this.type === RESOURCE_TYPES.wheat) {
+      spawnSpriteFragmentBurst({
+        context: this.context,
+        host: this,
+        sprite: this.sprite,
+        layer: this.parent,
+        fragmentSize: 12,
+        maxFragments: 12,
+        durationMs: 760,
+        gravity: 0.0017,
+        minSpeed: 0.006,
+        maxSpeed: 0.035,
+        upwardVelocity: 0.018,
+        settleToBottom: true,
+        lockX: true,
+        groundBounce: 0.08,
+      })
+      return true
+    }
+
+    if (
+      this.type === RESOURCE_TYPES.stone ||
+      this.type === RESOURCE_TYPES.gold ||
+      this.type === RESOURCE_TYPES.copper ||
+      this.type === RESOURCE_TYPES.iron
+    ) {
+      spawnSpriteFragmentBurst({
+        context: this.context,
+        host: this,
+        sprite: this.sprite,
+        layer: this.parent,
+        fragmentSize: 12,
+        maxFragments: 14,
+        durationMs: 880,
+        gravity: 0.0025,
+        minSpeed: 0.004,
+        maxSpeed: 0.026,
+        upwardVelocity: 0.01,
+        settleToBottom: true,
+        lockX: true,
+        groundBounce: 0.05,
+      })
+      return true
+    }
+    return false
+  }
+
+  hideDepletedResourceSprite() {
+    this.sprite.visible = false
+    if (this.shadow) this.shadow.visible = false
   }
 
   prepareFadeOut() {

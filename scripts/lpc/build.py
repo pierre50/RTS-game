@@ -65,8 +65,15 @@ ANIMATION_FALLBACKS = {
 }
 
 
+SLASH_ANIMATION_SPEED = LPC_ANIMATION_SPEED
+
+
 def animation_speed_for(output_sheet: str) -> float:
-    return 0 if output_sheet == "corpse" else LPC_ANIMATION_SPEED
+    if output_sheet == "corpse":
+        return 0
+    if output_sheet.endswith("slash"):
+        return SLASH_ANIMATION_SPEED
+    return LPC_ANIMATION_SPEED
 
 
 def file_fingerprint(path: Path) -> dict[str, int | str]:

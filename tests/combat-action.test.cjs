@@ -1445,7 +1445,7 @@ test('melee slash recovery rewinds Pixi frames before completing', () => {
   )
   assert.deepEqual(
     calls.filter(call => call[0] === 'add'),
-    [['add', 45, 'combat.slashReverseRecovery']]
+    [['add', 67, 'combat.slashReverseRecovery']]
   )
   assert.deepEqual(calls.slice(-1), [['remove', 7]])
   assert.equal(unit.attackRecoveryAnimationTaskId, null)

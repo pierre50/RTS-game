@@ -85,6 +85,7 @@ function loadHeroTools(overrides = {}) {
         projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
         unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
       },
+      UNIT_TYPES: { bowman: 'Bowman', hero: 'Hero', villager: 'Villager' },
       WORK_FOOD_TYPES: ['hunter', 'farmer', 'forager'],
       WORK_TYPES: {
         attacker: 'attacker',
@@ -396,12 +397,19 @@ function loadHeroTools(overrides = {}) {
     if (request === './heroDefense') {
       return loadTsFile(path.join(__dirname, '../app/lib/heroDefense.ts'))
     }
+    if (request === './heroPowerCharge') {
+      return loadTsFile(path.join(__dirname, '../app/lib/heroPowerCharge.ts'))
+    }
+    if (request === './actionVisualSheet') {
+      return loadTsFile(path.join(__dirname, '../app/lib/actionVisualSheet.ts'))
+    }
     if (request === './unitWorkAppearance') {
       return {
-        applyUnitWorkAssets: (unit, work) => {
+        applyUnitWorkAssets: (unit, work, options = {}) => {
           const assets = unit.allAssets?.[work]
           if (!assets) return
-          unit.actionSheet = assets.actionSheet
+          const actionSheet = options.action === 'takemeat' ? 'harvestSheet' : 'actionSheet'
+          unit.actionSheet = assets[actionSheet]
           unit.standingSheet = assets.standingSheet
           unit.walkingSheet = assets.walkingSheet
         },
@@ -1741,6 +1749,56 @@ test('sword damages berry bushes with weapon damage', () => {
   assert.equal(berrybush.hitPoints, 36)
   assert.equal(berrybush.quantity, 100)
   assert.deepEqual(damageFeedback, [['berrybush', 4]])
+})
+
+test('free-hand interact chops a depleted berry bush instead of blocking on gather', () => {
+  const berrybush = {
+    family: 'resource',
+    hitPoints: 3,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'empty-berrybush',
+    quantity: 0,
+    totalHitPoints: 40,
+    type: 'Berrybush',
+    x: 10,
+    y: 0,
+  }
+  const damageFeedback = []
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat': {
+      getActionCondition: (_source, target, action) => {
+        if (target !== berrybush) return false
+        return action === 'chopwood'
+      },
+      getHitPointsWithDamage: (_source, target) => Math.max(0, target.hitPoints - 4),
+    },
+    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    energy: 10,
+    i: 0,
+    isUnitAtDest: () => true,
+    j: 0,
+    getAction: action => {
+      hero.startedAction = action
+    },
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.action, 'chopwood')
+  assert.equal(hero.startedAction, 'chopwood')
+  assert.equal(hero.work, 'woodcutter')
+  assert.equal(hero.dest, berrybush)
+  assert.equal(berrybush.hitPoints, 3)
+  assert.deepEqual(damageFeedback, [])
 })
 
 test('free-hand interact does not whiff without energy', () => {

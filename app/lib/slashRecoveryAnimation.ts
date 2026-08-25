@@ -1,11 +1,12 @@
 import { SHEET_TYPES } from '../constants'
 import type { UnitEntity } from '../types/entities'
 import { debugLog } from './debug'
+import { lpcSlashFrameMs } from './lpc/animationSpeeds'
 import { buildFrameRange, playSpriteFrameSequence } from './spriteAnimation'
 import { isHeroControlled } from './unitControl'
 
 const HERO_SLASH_FRAME_DEBUG = false
-const SLASH_REVERSE_RECOVERY_FRAME_MS = 45
+const SLASH_REVERSE_RECOVERY_FRAME_MS = lpcSlashFrameMs()
 const SLASH_REVERSE_RECOVERY_STOP_FRAME = 0
 const SLASH_REVERSE_RECOVERY_SKIP_FRAMES = 2
 

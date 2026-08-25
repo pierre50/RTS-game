@@ -142,6 +142,14 @@ interface UnitBlockedGatherApproach {
   action: string
 }
 
+interface UnitGatherProgressState {
+  action?: string | null
+  gatherEvery: number
+  loadingType: string
+  progress: number
+  target: RuntimeEntity
+}
+
 interface UnitRealDest {
   i: number
   j: number
@@ -227,6 +235,7 @@ export interface UnitEntity extends EnergyEntity {
   applyReliefLift?: (level: number, immediate?: boolean) => void
   pendingOrder?: UnitPendingOrder | null
   blockedGatherApproach?: UnitBlockedGatherApproach | null
+  gatherProgressState?: UnitGatherProgressState | null
   buildQueue?: BuildingEntity[]
   isDirectMoving?: boolean
   requestedMoveSpeedFactor?: number

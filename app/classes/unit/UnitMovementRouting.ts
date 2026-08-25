@@ -21,6 +21,7 @@ import {
   syncVillagerWorkForAction,
   type SendToOptions,
 } from './UnitMovementHelpers'
+import { cancelEnergyWait } from '../../lib/unitEnergy'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -203,6 +204,7 @@ export class UnitMovementRouting {
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []
     if (!dest || isDestroyedEntity(dest) || unit.isDead || !map) return
+    cancelEnergyWait(unit)
     if (!action && !preserveAutonomy) {
       unit.previousDest = null
       unit.previousWork = null

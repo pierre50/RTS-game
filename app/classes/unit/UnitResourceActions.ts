@@ -2,6 +2,7 @@ import {
   LOADING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
+  RESOURCE_GATHER_SWINGS,
   RESOURCE_STOCKPILE_TYPES,
   RESOURCE_TYPES,
   SHEET_TYPES,
@@ -37,6 +38,8 @@ import type { CommandSound } from '../../types/entities'
 
 type PlayerResourceKey = 'wood' | 'food' | 'stone' | 'gold' | 'copper' | 'iron'
 
+const DEPLETED_BERRYBUSH_HIT_POINTS = 4
+
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
 }
@@ -50,7 +53,11 @@ function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value i
 }
 
 function isDepletedBerrybush(value: RuntimeEntity | null | undefined): value is RuntimeEntity {
-  return Boolean(value?.type === RESOURCE_TYPES.berrybush && (value.quantity ?? 0) <= 0)
+  return Boolean(RESOURCE_TYPES.berrybush && value?.type === RESOURCE_TYPES.berrybush && (value.quantity ?? 0) <= 0)
+}
+
+function isChoppableBerrybush(value: RuntimeEntity | null | undefined): boolean {
+  return isDepletedBerrybush(value) && (value.hitPoints ?? 0) > 0
 }
 
 function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
@@ -66,7 +73,14 @@ function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | 
 
 function markBerrybushDepleted(target: RuntimeEntity): void {
   if (!isDepletedBerrybush(target)) return
+  target.totalHitPoints = Math.min(target.totalHitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
+  target.hitPoints = Math.min(target.hitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
   target.updateTexture?.()
+}
+
+function clampDepletedBerrybushHitPoints(target: RuntimeEntity): void {
+  if (!isChoppableBerrybush(target)) return
+  markBerrybushDepleted(target)
 }
 
 function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity | ResourceEntity {
@@ -88,6 +102,51 @@ function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amou
   if (!resourceKey || !unit.owner) return
   unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
   if (unit.owner.isPlayed) unit.context?.menu?.updateTopbar?.()
+}
+
+function getResourceGatherSwings(loadingType: string, override?: number): number {
+  return Math.max(1, override ?? RESOURCE_GATHER_SWINGS?.[loadingType as keyof typeof RESOURCE_GATHER_SWINGS] ?? 1)
+}
+
+function getGatherProgressState(
+  unit: UnitEntity,
+  target: RuntimeEntity,
+  loadingType: string,
+  gatherEvery: number
+): NonNullable<UnitEntity['gatherProgressState']> {
+  const current = unit.gatherProgressState
+  if (
+    current &&
+    current.target === target &&
+    current.action === unit.action &&
+    current.loadingType === loadingType &&
+    current.gatherEvery === gatherEvery
+  ) {
+    return current
+  }
+  const next = {
+    action: unit.action,
+    gatherEvery,
+    loadingType,
+    progress: 0,
+    target,
+  }
+  unit.gatherProgressState = next
+  return next
+}
+
+function shouldReleaseGatheredResource(
+  unit: UnitEntity,
+  target: RuntimeEntity,
+  loadingType: string,
+  gatherEvery?: number
+): boolean {
+  const requiredSwings = getResourceGatherSwings(loadingType, gatherEvery)
+  const gatherState = getGatherProgressState(unit, target, loadingType, requiredSwings)
+  gatherState.progress++
+  if (gatherState.progress < requiredSwings) return false
+  gatherState.progress = 0
+  return true
 }
 
 export class UnitResourceActions {
@@ -123,7 +182,6 @@ export class UnitResourceActions {
     if (!config) return
     this.startGathering(config.loadingType, this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre), {
       dieOnEmpty: Boolean(config.dieOnEmpty),
-      gatherEvery: config.gatherEvery,
     })
   }
 
@@ -135,7 +193,7 @@ export class UnitResourceActions {
       checkOwner = false,
       updateTexture = false,
       releaseFrame = SLASH_IMPACT_FRAME,
-      gatherEvery = 1,
+      gatherEvery,
       onRelease,
       onDepleted,
     }: {
@@ -158,10 +216,10 @@ export class UnitResourceActions {
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
     lockManualHeroAction(unit)
-    let gatherProgress = 0
     const gatherTick = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
+        unit.gatherProgressState = null
         if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
           dest.die?.()
         }
@@ -171,6 +229,7 @@ export class UnitResourceActions {
       }
       const gain = getGatherAmount(unit)
       if (!dest || gain <= 0) {
+        unit.gatherProgressState = null
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
@@ -178,13 +237,11 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
-      gatherProgress++
-      if (gatherProgress < Math.max(1, gatherEvery)) {
+      if (!shouldReleaseGatheredResource(unit, dest, loadingType, gatherEvery)) {
         this.playSound(soundId)
         finishManualHeroWorkSwing(unit, releaseFrame)
         return
       }
-      gatherProgress = 0
       addGatheredResourceToPlayer(unit, loadingType, gain)
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       this.playSound(soundId)
@@ -255,9 +312,13 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
+      this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
+      if (!shouldReleaseGatheredResource(unit, d, LOADING_TYPES.wheat)) {
+        finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+        return
+      }
       addGatheredResourceToPlayer(unit, LOADING_TYPES.wheat, gain)
       grantUnitXp(unit, XP_CATEGORIES.farming, gain)
-      this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
       d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
       showResourceGainFeedback(unit, gain)
       if (d.selected) {
@@ -294,6 +355,7 @@ export class UnitResourceActions {
       }
       this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
       if ((dest.hitPoints ?? 0) > 0) {
+        clampDepletedBerrybushHitPoints(dest)
         const previousHitPoints = dest.hitPoints ?? 0
         dest.hitPoints = Math.max(previousHitPoints - 1, 0)
         showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
@@ -303,10 +365,19 @@ export class UnitResourceActions {
         }
         if ((dest.hitPoints ?? 0) <= 0) {
           dest.hitPoints = 0
-          dest.setCuttedTreeTexture?.()
+          if (dest.type === RESOURCE_TYPES.berrybush) {
+            dest.die?.()
+            unit.affectNewDest?.()
+          } else {
+            dest.setCuttedTreeTexture?.()
+          }
         }
-      } else {
+      } else if (!isChoppableBerrybush(dest)) {
         const gain = getGatherAmount(unit)
+        if (!shouldReleaseGatheredResource(unit, dest, LOADING_TYPES.wood)) {
+          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+          return
+        }
         addGatheredResourceToPlayer(unit, LOADING_TYPES.wood, gain)
         grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
         dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)

@@ -120,6 +120,9 @@ function loadUnitActions(calls, captureHorse) {
     if (request === './UnitConversionAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitConversionAction.ts'))
     }
+    if (request === './UnitDirectedActions') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectedActions.ts'))
+    }
     if (request === './UnitPreviousWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }

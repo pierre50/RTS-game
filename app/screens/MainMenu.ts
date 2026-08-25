@@ -63,26 +63,19 @@ export default class MainMenu {
     const logoShell = document.createElement('div')
     logoShell.className = 'menu-title-shell'
 
-    const logo = document.createElement('img')
+    const logo = document.createElement('h1')
     logo.className = 'menu-title'
-    logo.src = 'assets/logo.png'
-    logo.alt = 'Kaelor'
-    logo.decoding = 'async'
-    logo.fetchPriority = 'high'
+    for (const letter of 'KAELOR') {
+      const letterEl = document.createElement('span')
+      letterEl.textContent = letter
+      logo.appendChild(letterEl)
+    }
     logoShell.appendChild(logo)
     panel.appendChild(logoShell)
 
-    const revealLogo = () => {
-      requestAnimationFrame(() => {
-        logoShell.classList.add('is-loaded')
-      })
-    }
-
-    if (logo.complete) {
-      revealLogo()
-    } else {
-      logo.addEventListener('load', revealLogo, { once: true })
-    }
+    requestAnimationFrame(() => {
+      logoShell.classList.add('is-loaded')
+    })
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group'

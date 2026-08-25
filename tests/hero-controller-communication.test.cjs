@@ -106,6 +106,7 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     },
     '../lib/npcInteraction': npcInteraction,
     '../lib/unitEnergy': {
+      getEnergyMoveSpeedMultiplier: () => 1,
       updateUnitEnergy: () => {},
     },
     '../lib/unitLocomotion': {
@@ -145,6 +146,12 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     }
     if (request === './HeroCompanionHorseController') {
       return loadControllerTsModule('HeroCompanionHorseController')
+    }
+    if (request === './HeroActionInputController') {
+      return loadControllerTsModule('HeroActionInputController')
+    }
+    if (request === './HeroEquipmentController') {
+      return loadControllerTsModule('HeroEquipmentController')
     }
     if (request === './HeroCommunicationController') return loadControllerTsModule('HeroCommunicationController')
     return require(request)

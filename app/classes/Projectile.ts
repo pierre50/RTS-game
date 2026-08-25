@@ -1,49 +1,31 @@
 import { Container, type Graphics } from 'pixi.js'
-import { applyCombatHit } from '../lib/combatHit'
-import { isFriendlyTarget } from '../lib/combat'
 import {
   average,
   degreeToDirection,
   getInstanceZIndex,
   getPointsDegree,
   getReliefOffset,
-  getTerrainSetZIndex,
-  isometricToCartesian,
   pointsDistance,
-  randomRange,
   uuidv4,
 } from '../lib/maths'
 import { moveTowardPoint } from '../lib/grid/movement'
 import { getEffectiveProjectileType, projectileTracksTarget } from '../lib/projectiles'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/sound'
-import { findTreeSegmentCollision } from '../lib/treeCollision'
-import { applyDiplomaticAggression, canTargetBeAggressed } from '../lib/diplomaticAggression'
-import { fadeOutThenClear } from '../lib/entityFade'
-import { getEntityWeaponPower, getUnitCombatRange } from '../lib/equipmentStats'
-import { getCombatXpBonus, XP_CATEGORIES } from '../lib/unitExperience'
+import { getUnitCombatRange } from '../lib/equipmentStats'
 import {
-  ARROW_GROUND_TIME,
   CELL_DEPTH,
-  CELL_HEIGHT,
-  CELL_WIDTH,
-  FADE_DURATION_MS,
   FAMILY_TYPES,
   LABEL_TYPES,
-  WORK_TYPES,
   STEP_TIME,
-  UNIT_TYPES,
 } from '../constants'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { CommandSound, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { Point } from '../types/grid'
 import {
   PROJECTILE_CELL_DISTANCE,
-  PROJECTILE_COLLISION_SCALE,
   PROJECTILE_MIN_DAMAGE_FACTOR,
   PROJECTILE_MIN_SPEED_FACTOR,
   PROJECTILE_SLOWDOWN_START,
-  TREE_STICK_HEIGHT,
-  TREE_STICK_JITTER,
   debugProjectileGeometry,
   getProjectileDestinationVisualDelta,
   getProjectileVisualOffset,
@@ -61,6 +43,20 @@ import {
   type EmbeddedMaskKind,
   type ProjectileSprite,
 } from './ProjectileVisuals'
+import {
+  canProjectileCollideWith,
+  findProjectileCollisionTarget,
+  findProjectileTreeCollision,
+  getProjectileCollisionCandidates,
+} from './ProjectileCollision'
+import { applyProjectileHit, getProjectileXpCategory } from './ProjectileImpact'
+import {
+  clearProjectile,
+  destroyProjectile,
+  landProjectileOnGround,
+  stickProjectileInTree,
+  stopProjectileTimeout,
+} from './ProjectileLifecycle'
 
 type ProjectileOptions = {
   owner: RuntimeEntity
@@ -366,49 +362,15 @@ export class Projectile extends Container {
   }
 
   canCollideWith(instance: RuntimeEntity): boolean {
-    if (
-      instance === this.owner ||
-      (isFriendlyTarget(this.owner, instance) && !canTargetBeAggressed(this.owner, instance)) ||
-      instance.isDead ||
-      instance.isDestroyed ||
-      (instance.hitPoints ?? 0) <= 0
-    ) {
-      return false
-    }
-    return (
-      instance.family === FAMILY_TYPES.building ||
-      instance.family === FAMILY_TYPES.unit ||
-      instance.family === FAMILY_TYPES.animal
-    )
+    return canProjectileCollideWith(this, instance)
   }
 
   getCollisionCandidates(): RuntimeEntity[] {
-    const candidates = new Set<RuntimeEntity>()
-    if (this.target) candidates.add(this.target)
-    for (const player of this.context.players ?? []) {
-      for (const building of player.buildings ?? []) candidates.add(building)
-      for (const unit of player.units ?? []) candidates.add(unit)
-      for (const animal of player.animals ?? []) candidates.add(animal)
-    }
-    const gaia = this.context.map.gaia
-    for (const animal of gaia?.animals ?? []) candidates.add(animal)
-    return [...candidates].filter(instance => this.canCollideWith(instance))
+    return getProjectileCollisionCandidates(this)
   }
 
   findCollisionTarget(): RuntimeEntity | null {
-    let closest: RuntimeEntity | null = null
-    let closestDistance = Infinity
-    for (const candidate of this.getCollisionCandidates()) {
-      const collisionRadius = Math.max(
-        this.size,
-        average(candidate.width || CELL_WIDTH, candidate.height || CELL_HEIGHT) * PROJECTILE_COLLISION_SCALE
-      )
-      const distance = pointsDistance(this.x, this.y, candidate.x, candidate.y + getProjectileVisualOffset(candidate))
-      if (distance > collisionRadius || distance >= closestDistance) continue
-      closest = candidate
-      closestDistance = distance
-    }
-    return closest
+    return findProjectileCollisionTarget(this)
   }
 
   // Swept-segment test (this tick's previous position -> new position) against nearby tree
@@ -416,64 +378,22 @@ export class Projectile extends Container {
   // otherwise tunnel past a narrow trunk between two ticks. Skipped entirely once the shot is
   // flying above TREE_CANOPY_BLOCK_HEIGHT, so arced/lobbed projectiles can clear the canopy.
   findTreeCollision(previousX: number, previousY: number): ResourceEntity | null {
-    return findTreeSegmentCollision(
-      this.context.map,
-      { x: previousX, y: previousY },
-      { x: this.x, y: this.y },
-      { currentAltitude: this.currentAltitude }
-    )
+    return findProjectileTreeCollision(this, previousX, previousY)
   }
 
   // Hunting arrows train the hunting skill; every other unit-fired projectile
   // (archers, war boats, the hero-controlled unit's bow) trains the ranged-weapon skill.
   // Buildings (towers) fire projectiles too but never earn experience.
   getXpCategory(): string | null {
-    if (this.owner.family !== FAMILY_TYPES.unit) return null
-    return this.owner.type === UNIT_TYPES.villager && (this.owner as UnitEntity).work === WORK_TYPES.hunter
-      ? XP_CATEGORIES.hunting
-      : XP_CATEGORIES.ranged
+    return getProjectileXpCategory(this)
   }
 
   onHit(instance: RuntimeEntity) {
-    const {
-      context: { menu, player },
-    } = this
-    if (instance.family === FAMILY_TYPES.building) {
-      playAudibleSoundCue(this as AudibleInstance, this.sounds?.impact, { profile: 'projectile' })
-    }
-    const openingAggression = applyDiplomaticAggression(this.owner, instance)
-    if (openingAggression.changed && !openingAggression.hostileNow) return
-    const xpCategory = this.getXpCategory()
-    const xpBonusDamage = xpCategory ? getCombatXpBonus(this.owner as UnitEntity, xpCategory) : 0
-    const damageFactor = this.getDamageFactor()
-    const baseDamage = this.weaponPower ?? getEntityWeaponPower(this.owner)
-    const damage = baseDamage > 0 ? Math.max(1, Math.round(baseDamage * damageFactor)) : undefined
-    applyCombatHit(this.owner, instance, {
-      attacker: this.owner,
-      bonusDamage: xpBonusDamage,
-      damageType: 'pierce',
-      defaultDamage: damage,
-      // Direction the shot was flying (spawn -> aim point), so a hit animal can bolt
-      // continuing along that line — away from the shooter — instead of just away
-      // from wherever the shooter happens to be standing at impact time.
-      hitDirection: {
-        x: this.destinationPoint.x - this.spawnOrigin.x,
-        y: this.destinationPoint.y - this.spawnOrigin.y,
-      },
-      menu,
-      notifyTarget: 'survived',
-      player,
-      xpCategory,
-      xpUnit: xpCategory ? (this.owner as UnitEntity) : null,
-    })
+    applyProjectileHit(this, instance)
   }
 
   die() {
-    this.createImpactEffect(this.x, this.y)
-    this.isDead = true
-    if (this.interval != null) this.context.scheduler.remove(this.interval)
-    this.interval = null
-    this.destroy({ children: true, texture: false })
+    destroyProjectile(this)
   }
 
   // A shot that missed: instead of despawning immediately, stick around as a purely decorative
@@ -481,32 +401,7 @@ export class Projectile extends Container {
   // ARROW_GROUND_TIME, then fade away. Registered in cell.corpses so it also disappears instantly
   // if a building goes up on top of it, the same way unit/animal corpses and rubble do.
   landOnGround() {
-    this.isDead = true
-    if (this.interval != null) this.context.scheduler.remove(this.interval)
-    this.interval = null
-
-    const [i, j] = isometricToCartesian(this.x, this.y)
-    this.i = i
-    this.j = j
-    const cell = this.context.map.grid[i]?.[j]
-    // A shot that falls in water has nothing to stick into: skip the decorative
-    // ground-prop path entirely and destroy it right away instead of fading over ARROW_GROUND_TIME.
-    if (!cell || cell.category === 'Water' || cell.waterBorder) {
-      this.clear()
-      return
-    }
-
-    this.createImpactEffect(this.x, this.y)
-    this.sprite?.stop()
-    if (this.shadow) this.shadow.visible = false
-    this.applyEmbeddedMask('ground')
-    this.zIndex = getTerrainSetZIndex({ i, j })
-    cell.corpses.add(this as unknown as RuntimeEntity)
-    this.timeoutId = this.context.scheduler.addOneShot(
-      () => fadeOutThenClear(this, FADE_DURATION_MS),
-      ARROW_GROUND_TIME * 1000,
-      'projectile.groundFade'
-    )
+    landProjectileOnGround(this)
   }
 
   // A shot blocked by a tree trunk: freeze it and re-parent into the tree's own container (after
@@ -517,49 +412,14 @@ export class Projectile extends Container {
   // so listen for Pixi's 'destroyed' event to keep isDestroyed/the fade timer in sync regardless
   // of which path tears this down.
   stickInTree(tree: ResourceEntity) {
-    this.createImpactEffect(this.x, this.y)
-    this.isDead = true
-    if (this.interval != null) this.context.scheduler.remove(this.interval)
-    this.interval = null
-    this.sprite?.stop()
-    if (this.shadow) this.shadow.visible = false
-    this.applyEmbeddedMask('tree')
-
-    this.treeAnchor = tree
-    const jitterX = randomRange(-TREE_STICK_JITTER, TREE_STICK_JITTER)
-    this.parent?.removeChild(this)
-    this.position.set(this.x - tree.x + jitterX, this.y - tree.y + getReliefOffset(tree) - TREE_STICK_HEIGHT)
-    tree.addChild?.(this)
-    this.once('destroyed', () => {
-      this.isDestroyed = true
-      this.stopTimeout()
-    })
-
-    this.timeoutId = this.context.scheduler.addOneShot(
-      () => fadeOutThenClear(this, FADE_DURATION_MS),
-      ARROW_GROUND_TIME * 1000,
-      'projectile.treeFade'
-    )
+    stickProjectileInTree(this, tree)
   }
 
   stopTimeout() {
-    if (this.timeoutId != null) {
-      this.context.scheduler.remove(this.timeoutId)
-      this.timeoutId = null
-    }
+    stopProjectileTimeout(this)
   }
 
   clear() {
-    if (this.isDestroyed) return
-    this.isDestroyed = true
-    this.stopTimeout()
-    if (this.treeAnchor) {
-      this.treeAnchor = null
-    } else {
-      const cell = this.context.map.grid[this.i]?.[this.j]
-      cell?.corpses.delete(this as unknown as RuntimeEntity)
-    }
-    this.parent?.removeChild(this)
-    this.destroy({ children: true, texture: false })
+    clearProjectile(this)
   }
 }

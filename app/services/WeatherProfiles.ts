@@ -45,7 +45,7 @@ export const SNOW_TEXTURE_HEIGHT = 6
 export const SAND_TEXTURE_WIDTH = 18
 export const SAND_TEXTURE_HEIGHT = 3
 export const COLOR_LERP_PER_SECOND = 1.7
-export const RAIN_LERP_PER_SECOND = 1.4
+export const RAIN_LERP_PER_SECOND = 0.32
 export const FIRST_SUNNY_MIN_SECONDS = 18
 export const FIRST_SUNNY_MAX_SECONDS = 45
 export const RAIN_BASE_SLANT_RATIO = -0.16
@@ -153,16 +153,22 @@ export const WEATHER_COLORS: Record<WeatherPhase, WeatherColor> = {
   },
 }
 
-export const PRECIPITATION_TARGETS: Record<WeatherPhase, number> = {
-  sunny: 0,
-  clouding: 0,
-  stormBuildUp: 0.04,
-  rainLight: 0.34,
-  rainHeavy: 1,
-  snow: 1,
-  sandstorm: 0.92,
-  clearing: 0.08,
-  night: 0,
+export type WeatherParticleTargets = {
+  rain: number
+  sand: number
+  snow: number
+}
+
+export const PARTICLE_TARGETS: Record<WeatherPhase, WeatherParticleTargets> = {
+  sunny: { rain: 0, sand: 0, snow: 0 },
+  clouding: { rain: 0, sand: 0, snow: 0 },
+  stormBuildUp: { rain: 0.04, sand: 0, snow: 0 },
+  rainLight: { rain: 0.34, sand: 0, snow: 0 },
+  rainHeavy: { rain: 1, sand: 0, snow: 0 },
+  snow: { rain: 0, sand: 0, snow: 1 },
+  sandstorm: { rain: 0, sand: 0.92, snow: 0 },
+  clearing: { rain: 0.08, sand: 0, snow: 0 },
+  night: { rain: 0, sand: 0, snow: 0 },
 }
 
 export const WIND_TARGETS: Record<WeatherPhase, number> = {
@@ -329,8 +335,7 @@ export const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = 
   BlackForest: {
     sunny: [
       { chance: 0.45, phase: 'clouding' },
-      { chance: 0.65, phase: 'rainLight' },
-      { chance: 0.85, phase: 'snow' },
+      { chance: 0.72, phase: 'rainLight' },
       { chance: 1, phase: 'sunny' },
     ],
     clouding: [
@@ -361,7 +366,7 @@ export const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = 
     ],
     clearing: [
       { chance: 0.35, phase: 'sunny' },
-      { chance: 0.65, phase: 'snow' },
+      { chance: 0.52, phase: 'rainLight' },
       { chance: 1, phase: 'clouding' },
     ],
     snow: [
@@ -373,8 +378,7 @@ export const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = 
   },
   Desert: {
     sunny: [
-      { chance: 0.05, phase: 'clouding' },
-      { chance: 0.14, phase: 'sandstorm' },
+      { chance: 0.14, phase: 'clouding' },
       { chance: 1, phase: 'sunny' },
     ],
     clouding: [

@@ -58,6 +58,15 @@ export function isWheatMature(target?: CombatEntity | null): boolean {
   return sprite.currentFrame >= sprite.textures.length - 1
 }
 
+function isDepletedBerrybush(target?: CombatEntity | null): boolean {
+  return Boolean(
+    target?.type === RESOURCE_TYPES.berrybush &&
+      (target.quantity ?? 0) <= 0 &&
+      (target.hitPoints ?? 0) > 0 &&
+      !target.isDead
+  )
+}
+
 function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
   return Boolean(source.owner?.technologies?.includes(technology))
 }
@@ -137,7 +146,9 @@ export const getActionCondition = (
       !target.isDestroyed &&
       !(target as { isLassoed?: boolean }).isLassoed,
     chopwood: () =>
-      isVillagerOrHero(source) && target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead,
+      isVillagerOrHero(source) &&
+      ((target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead) ||
+        isDepletedBerrybush(target)),
     farm: () =>
       isVillagerOrHero(source) &&
       ownerHasTechnology(source, 'Farming') &&

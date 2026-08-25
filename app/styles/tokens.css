@@ -107,6 +107,10 @@
     'cobblestone',
     var(--font-family-ui);
 
+  --font-family-logo:
+    'marcellus-sc',
+    var(--font-family-display);
+
   --text-color-inverse: #f5f1dc;
   --text-color-white: #ffffff;
   --text-color-danger: #ff8a72;

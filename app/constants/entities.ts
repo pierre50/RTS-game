@@ -136,6 +136,17 @@ export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.iron]: 'iron',
 } as const
 
+export const RESOURCE_GATHER_SWINGS = {
+  [LOADING_TYPES.berry]: 2,
+  [LOADING_TYPES.wheat]: 2,
+  [LOADING_TYPES.wood]: 2,
+  [LOADING_TYPES.meat]: 3,
+  [LOADING_TYPES.stone]: 3,
+  [LOADING_TYPES.gold]: 4,
+  [LOADING_TYPES.copper]: 3,
+  [LOADING_TYPES.iron]: 4,
+} as const
+
 export const RESOURCE_ICON_IDS = {
   wood: { commodity: '000_50732', attribute: '000_50731' },
   food: { commodity: '002_50732', attribute: '002_50731' },
@@ -151,7 +162,6 @@ export const MINING_RESOURCE_CONFIG = {
     loadingType: LOADING_TYPES.stone,
     work: WORK_TYPES.stoneminer,
     sound: 'mineStone',
-    gatherEvery: 1,
     dieOnEmpty: true,
   },
   [RESOURCE_TYPES.gold]: {
@@ -159,21 +169,18 @@ export const MINING_RESOURCE_CONFIG = {
     loadingType: LOADING_TYPES.gold,
     work: WORK_TYPES.goldminer,
     sound: 'mineGold',
-    gatherEvery: 4,
   },
   [RESOURCE_TYPES.copper]: {
     action: ACTION_TYPES.minecopper,
     loadingType: LOADING_TYPES.copper,
     work: WORK_TYPES.goldminer,
     sound: 'mineGold',
-    gatherEvery: 2,
   },
   [RESOURCE_TYPES.iron]: {
     action: ACTION_TYPES.mineiron,
     loadingType: LOADING_TYPES.iron,
     work: WORK_TYPES.goldminer,
     sound: 'mineGold',
-    gatherEvery: 3,
   },
 } as const
 

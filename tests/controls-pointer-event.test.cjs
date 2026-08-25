@@ -144,6 +144,9 @@ function loadControls() {
     if (request === '../controllers/PointerInputController') {
       return loadTsFile(path.join(__dirname, '../app/controllers/PointerInputController.ts'))
     }
+    if (request === '../controllers/HeroInteractionController') {
+      return loadTsFile(path.join(__dirname, '../app/controllers/HeroInteractionController.ts'))
+    }
     if (request === './ControlsKeyboard') {
       return loadTsFile(path.join(__dirname, '../app/classes/ControlsKeyboard.ts'))
     }

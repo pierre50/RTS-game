@@ -1,7 +1,8 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
 import type { Texture } from 'pixi.js'
-import { LABEL_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { LABEL_TYPES, SHEET_TYPES } from '../../constants'
 import { bindAnimatedSpriteToTicker, changeSpritePalette, changeSpriteColor, getSpriteFrameSelection } from '../../lib'
+import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from '../../lib/actionVisualSheet'
 import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/unitExperience'
@@ -56,6 +57,8 @@ function getLayerRenderState(
 ): AppearanceLayerRenderState | null {
   const mountedRiderSheet =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking].includes(sheet) ? SHEET_TYPES.action : sheet
+  const visualSheet =
+    sheet === SHEET_TYPES.action ? getActionVisualSheetKey(unit.action, unit.type, unit.work) : mountedRiderSheet
   const actionWorkKey = unit.work && unit.action ? `${unit.work}:${unit.action}` : undefined
   const hasActionWorkSheetOverride = Boolean(actionWorkKey && layer.actionWorkSheetOverrides?.[actionWorkKey])
   const isLayerEnabledForWork =
@@ -77,27 +80,23 @@ function getLayerRenderState(
     equipmentKey != null &&
     !unit.lootEquipment.includes(equipmentKey)
   const actionWorkSheetOverride = actionWorkKey
-    ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[mountedRiderSheet]
+    ? layer.actionWorkSheetOverrides?.[actionWorkKey]?.[visualSheet]
     : undefined
-  const workSheetOverride = unit.work ? layer.workSheetOverrides?.[unit.work]?.[mountedRiderSheet] : undefined
+  const workSheetOverride = unit.work ? layer.workSheetOverrides?.[unit.work]?.[visualSheet] : undefined
   const ownerAge = Math.max(0, Math.floor(unit.owner?.age ?? 0))
-  const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, mountedRiderSheet)
-  const isRangedActionSheet =
-    sheet === SHEET_TYPES.action && (unit.type === UNIT_TYPES.bowman || unit.work === WORK_TYPES.hunter)
-  const shootingSheetOverride = isRangedActionSheet
-    ? (getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, 'shootingSheet') ?? layer.shootingSheet)
-    : undefined
+  const ageSheetOverride = getAppearanceAgeSheetOverride(layer.ageSheetOverrides, ownerAge, visualSheet)
   const mountedSheetOverride =
     unit.mountedOnHorse && [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
       ? layer.mountedSheet
       : undefined
   const baseSheetId =
-    shootingSheetOverride ??
     actionWorkSheetOverride ??
     workSheetOverride ??
     mountedSheetOverride ??
     ageSheetOverride ??
-    (layer[mountedRiderSheet as keyof RuntimeAppearanceLayer] as string | undefined)
+    (visualSheet === SHOOTING_SHEET_KEY
+      ? layer.shootingSheet
+      : (layer[visualSheet as keyof RuntimeAppearanceLayer] as string | undefined))
   const playerColorVariant = unit.owner.color ? layer.playerColorVariants?.[unit.owner.color] : undefined
   const appearanceVariant = layer.appearanceVariantKey
     ? unit.appearanceVariants?.[layer.appearanceVariantKey]
@@ -143,7 +142,7 @@ function getLayerRenderState(
 
   return {
     layer,
-    mountedRiderSheet,
+    mountedRiderSheet: visualSheet,
     mountedSheetOverride,
     textures,
     mirrored,

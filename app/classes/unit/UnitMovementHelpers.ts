@@ -100,7 +100,7 @@ export function usesCautiousAnimalApproach(
   )
 }
 
-export { getRequestedMoveSpeedFactor, clearRequestedMoveSpeedFactor, requestUnitWalk }
+export { getRequestedMoveSpeedFactor, clearRequestedMoveSpeedFactor }
 
 export const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
   [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],

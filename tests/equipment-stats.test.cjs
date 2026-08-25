@@ -83,7 +83,7 @@ function loadGameplayEquipmentJson() {
 }
 
 function getDynamicEquipmentKeys() {
-  const source = fs.readFileSync(path.join(__dirname, '../app/lib/lpc/equipment.ts'), 'utf8')
+  const source = fs.readFileSync(path.join(__dirname, '../app/lib/lpc/equipmentData.ts'), 'utf8')
   const match = source.match(
     /const DYNAMIC_EQUIPMENT_KEYS = \[([\s\S]*?)\] as const satisfies readonly DynamicEquipmentKey\[\]/
   )

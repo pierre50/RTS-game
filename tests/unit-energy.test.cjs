@@ -198,6 +198,27 @@ test('npc waits for full energy before resuming an action', () => {
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'chopwood'])
 })
 
+test('cancelling an energy wait clears the scheduled resume', () => {
+  const { __combatBehaviorCalls, cancelEnergyWait } = loadUnitEnergy()
+  const calls = []
+  const target = { family: 'resource', isDestroyed: false, isDead: false }
+  const unit = {
+    combatMode: 'recover',
+    context: { scheduler: { remove: id => calls.push(['remove', id]) } },
+    energyWaitTaskId: 7,
+    waitingForEnergyAction: 'chopwood',
+    waitingForEnergyTarget: target,
+  }
+
+  cancelEnergyWait(unit)
+
+  assert.equal(unit.waitingForEnergyAction, null)
+  assert.equal(unit.waitingForEnergyTarget, null)
+  assert.equal(unit.energyWaitTaskId, null)
+  assert.deepEqual(calls, [['remove', 7]])
+  assert.deepEqual(__combatBehaviorCalls, [['exit', unit]])
+})
+
 test('npc attack fatigue resumes after retreat movement stops the unit interval', () => {
   const { __combatBehaviorCalls, __fatigueFeedbackCalls, waitForEnergy } = loadUnitEnergy()
   const calls = []

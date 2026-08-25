@@ -2,19 +2,10 @@ import type { Graphics } from 'pixi.js'
 import { updateInstanceRenderVisibility } from '../lib'
 import { SHEET_TYPES } from '../constants'
 import {
-  applyToolAppearance,
-  beginHeroDefense,
   cancelHeroPowerCharge,
   cancelHeroLasso,
   cancelHeroDefense,
-  isHeroPowerChargeActiveForTool,
-  isHeroToolAvailable,
-  isMountedAttackAimBlocked,
-  releaseHeroDefense,
-  releaseHeroPowerCharge,
-  triggerToolAttackAt,
   getHeroAimDegree,
-  HERO_TOOL_ORDER,
   type HeroEquippedItem,
 } from '../lib/heroTools'
 import { heroCanCommand } from '../lib/chief'
@@ -25,6 +16,7 @@ import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
+import { HeroActionInputController } from './HeroActionInputController'
 import { HeroCompanionHorseController } from './HeroCompanionHorseController'
 import {
   beginHeroCommCharge,
@@ -36,6 +28,7 @@ import {
   updateHeroCommIndicator,
 } from './HeroCommunicationController'
 import { updateHeroControllerRuntime } from './HeroControllerUpdate'
+import { HeroEquipmentController } from './HeroEquipmentController'
 import {
   COMPANION_HORSE_CALL_MAX_RADIUS,
   TARGET_FRAME_MS,
@@ -67,7 +60,9 @@ export class HeroController {
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
   shiftMoveLockedDegree: number | null
+  actionInputController: HeroActionInputController
   companionHorseController: HeroCompanionHorseController
+  equipmentController: HeroEquipmentController
   keyboardInteractHeld: boolean
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
@@ -85,7 +80,9 @@ export class HeroController {
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
     this.shiftMoveLockedDegree = null
+    this.actionInputController = new HeroActionInputController(this)
     this.companionHorseController = new HeroCompanionHorseController(controls, () => this.heroUnit)
+    this.equipmentController = new HeroEquipmentController(this)
     this.keyboardInteractHeld = false
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
@@ -181,16 +178,11 @@ export class HeroController {
   }
 
   equipToolAt(index: number): boolean {
-    const tool = HERO_TOOL_ORDER[index]
-    if (!tool) return false
-    this.setEquippedTool(tool)
-    return true
+    return this.equipmentController.equipToolAt(index)
   }
 
   cycleTool(direction: 1 | -1): boolean {
-    const currentIndex = Math.max(0, HERO_TOOL_ORDER.indexOf(this.equippedItem ?? 'interact'))
-    const nextIndex = (currentIndex + direction + HERO_TOOL_ORDER.length) % HERO_TOOL_ORDER.length
-    return this.equipToolAt(nextIndex)
+    return this.equipmentController.cycleTool(direction)
   }
 
   setHeroMountedOnHorse(mounted: boolean): boolean {
@@ -280,7 +272,7 @@ export class HeroController {
       this.keyboardInteractHeld = false
       if (this.commCharging) this.endCommCharge()
     }
-    if (action === 'heroDefense' && this.heroUnit && releaseHeroDefense(this.heroUnit)) this.mouseHeld = false
+    if (action === 'heroDefense') this.actionInputController.handlePointerUp(2)
   }
 
   update(frameScale: number): void {
@@ -288,73 +280,23 @@ export class HeroController {
   }
 
   attackTowardPoint(point: HeroAimPoint): boolean {
-    const hero = this.heroUnit
-    if (!hero) return false
-    if (hero.actionLocked) return false
-    if (isMountedAttackAimBlocked(hero, point)) return false
-    this.facePoint(point)
-    hero.stop?.()
-    return triggerToolAttackAt(hero, this.equippedItem, point)
+    return this.actionInputController.attackTowardPoint(point)
   }
 
   handlePrimaryPointerDown(): void {
-    if (this.pendingGoToNpcs) {
-      this.resolveGoTo()
-      return
-    }
-    if (this.equippedItem === 'lasso' && this.heroUnit?.heroLasso) {
-      cancelHeroLasso(this.heroUnit)
-      this.mouseHeld = false
-      this.primaryClickPoint = null
-      return
-    }
-    this.primaryClickPoint = this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor()
-    const triggered = this.attackTowardPoint(this.primaryClickPoint)
-    this.mouseHeld = triggered
-    if (!this.mouseHeld) this.primaryClickPoint = null
+    this.actionInputController.handlePrimaryPointerDown()
   }
 
   handleDefenseKeyDown(): void {
-    const unit = this.heroUnit
-    if (!unit) return
-    this.facePoint(this.getShiftMoveLockedAimPoint() ?? this.controls.getWorldPointUnderCursor())
-    if (beginHeroDefense(unit, this.equippedItem)) {
-      this.mouseHeld = true
-    }
+    this.actionInputController.handleDefenseKeyDown()
   }
 
   handleSecondaryPointerDown(): void {
-    this.handleDefenseKeyDown()
+    this.actionInputController.handleSecondaryPointerDown()
   }
 
   handlePointerUp(button = 0): void {
-    const unit = this.heroUnit
-    if (button === 2) {
-      if (unit && releaseHeroDefense(unit)) {
-        this.mouseHeld = false
-      }
-      return
-    }
-    if (button !== 0) return
-    if (unit && isHeroPowerChargeActiveForTool(unit, this.equippedItem) && releaseHeroPowerCharge(unit)) {
-      this.mouseHeld = false
-      this.primaryClickPoint = null
-      return
-    }
-    this.mouseHeld = false
-    this.primaryClickPoint = null
-    if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
-    const sprite = unit.sprite
-    if (!sprite) {
-      unit.previousDest = null
-      unit.stop?.()
-      return
-    }
-    sprite.onLoop = () => {
-      sprite.onLoop = undefined
-      unit.previousDest = null
-      unit.stop?.()
-    }
+    this.actionInputController.handlePointerUp(button)
   }
 
   beginCommCharge(): void {
@@ -386,27 +328,7 @@ export class HeroController {
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {
-    const unit = this.heroUnit
-    if (item && unit && !isHeroToolAvailable(unit, item)) return
-    if (unit?.heroDefenseActive) cancelHeroDefense(unit)
-    if (unit && item !== 'lasso') cancelHeroLasso(unit)
-    if (unit && !isHeroPowerChargeActiveForTool(unit, item)) {
-      cancelHeroPowerCharge(unit)
-      this.mouseHeld = false
-      this.primaryClickPoint = null
-    }
-    this.equippedItem = item
-    if (unit?.actionLocked) {
-      // Mid-action (e.g. chopping wood) the sprite is looping on the action sheet;
-      // reconcile via stop() first so it resets actionLocked/sprite.loop and clears
-      // the loop callback, instead of applyToolAppearance swapping to the walking
-      // sheet mid-loop and leaving actionLocked stuck true forever.
-      unit.stop?.()
-    } else if (item && unit) {
-      applyToolAppearance(unit, item)
-    }
-    this.controls.context.menu?.setEquippedItem?.(item)
-    this.controls.context.menu?.setEquippedTool?.(item)
+    this.equipmentController.setEquippedItem(item)
   }
 
   setEquippedTool(tool: HeroEquippedItem | null): void {

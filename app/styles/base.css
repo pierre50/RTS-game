@@ -4,6 +4,12 @@
   font-display: swap;
 }
 @font-face {
+  font-family: 'marcellus-sc';
+  src: url('../../public/assets/fonts/MarcellusSC-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
   font-family: 'm6x11';
   src: url('../../public/assets/fonts/PixelOperator.ttf') format('truetype');
   font-display: swap;
@@ -42,7 +48,7 @@ img {
   user-select: text;
 }
 
-div.menu-title,
+.menu-title,
 .game-overlay,
 .orientation-guard-title {
   font-family: var(--font-family-display);

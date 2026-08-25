@@ -10,15 +10,15 @@ type OceanAmbiencePosition = {
   j: number
 }
 
-export const OCEAN_AMBIENCE_RADIUS_CELLS = 8
-export const OCEAN_AMBIENCE_MAX_VOLUME = 0.34
+const OCEAN_AMBIENCE_RADIUS_CELLS = 8
+const OCEAN_AMBIENCE_MAX_VOLUME = 0.34
 export const OCEAN_AMBIENCE_LERP_PER_SECOND = 1.8
 
-export function isOceanAmbienceCell(cell: OceanAmbienceCell | null | undefined): boolean {
+function isOceanAmbienceCell(cell: OceanAmbienceCell | null | undefined): boolean {
   return Boolean(cell?.waterBorder || cell?.category === 'Water')
 }
 
-export function getNearestOceanAmbienceDistance(
+function getNearestOceanAmbienceDistance(
   grid: OceanAmbienceGrid,
   position: OceanAmbiencePosition,
   radius = OCEAN_AMBIENCE_RADIUS_CELLS

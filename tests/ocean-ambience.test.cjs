@@ -21,29 +21,24 @@ function createGrid(size = 21) {
 }
 
 test('ocean ambience uses water border and water cells inside the proximity radius', () => {
-  const { OCEAN_AMBIENCE_MAX_VOLUME, getNearestOceanAmbienceDistance, getOceanAmbienceTargetVolume } =
-    loadOceanAmbience()
+  const { getOceanAmbienceTargetVolume } = loadOceanAmbience()
+  const maxVolume = 0.34
   const grid = createGrid()
   grid[4][4].waterBorder = true
 
-  assert.equal(getNearestOceanAmbienceDistance(grid, { i: 4, j: 4 }), 0)
-  assert.equal(getOceanAmbienceTargetVolume(grid, { i: 4, j: 4 }), OCEAN_AMBIENCE_MAX_VOLUME)
+  assert.equal(getOceanAmbienceTargetVolume(grid, { i: 4, j: 4 }), maxVolume)
 
   grid[4][4].waterBorder = false
   grid[4][4].category = 'Water'
-  assert.equal(getNearestOceanAmbienceDistance(grid, { i: 4, j: 4 }), 0)
+  assert.equal(getOceanAmbienceTargetVolume(grid, { i: 4, j: 4 }), maxVolume)
 })
 
 test('ocean ambience fades over eight cells and stops beyond that radius', () => {
-  const { OCEAN_AMBIENCE_MAX_VOLUME, getNearestOceanAmbienceDistance, getOceanAmbienceTargetVolume } =
-    loadOceanAmbience()
+  const { getOceanAmbienceTargetVolume } = loadOceanAmbience()
+  const maxVolume = 0.34
   const grid = createGrid()
   grid[4][4].waterBorder = true
 
-  assert.equal(getNearestOceanAmbienceDistance(grid, { i: 4, j: 8 }), 4)
-  assert.ok(
-    Math.abs(getOceanAmbienceTargetVolume(grid, { i: 4, j: 8 }) - OCEAN_AMBIENCE_MAX_VOLUME * (5 / 9)) < 0.001
-  )
-  assert.equal(getNearestOceanAmbienceDistance(grid, { i: 18, j: 18 }), null)
+  assert.ok(Math.abs(getOceanAmbienceTargetVolume(grid, { i: 4, j: 8 }) - maxVolume * (5 / 9)) < 0.001)
   assert.equal(getOceanAmbienceTargetVolume(grid, { i: 18, j: 18 }), 0)
 })

@@ -1,4 +1,5 @@
 import { t } from '../lib/lang'
+import { recolorCanvasByPalette } from '../lib/graphics/colors'
 
 const FALLBACK_FINISH_MS = 520
 const FIRST_FLASH_MS = 120
@@ -6,8 +7,8 @@ const DEPARTURE_REVEAL_MS = 460
 const ARRIVAL_REVEAL_MS = 780
 const REVEAL_RADIUS_PADDING = 48
 const HERO_FRAME_SIZE = 64
-const HERO_ATLAS_FRAME_STRIDE = HERO_FRAME_SIZE + 1
-const HERO_BODY_WALKING_SOUTH_FRAME_X = 18 * HERO_ATLAS_FRAME_STRIDE
+const HERO_WALKING_SOUTH_FRAME_NAME = '018'
+const HERO_HAIR_SOURCE_PALETTE = 'brown_hair'
 
 export type PortalRevealPoint = {
   x: number
@@ -15,7 +16,13 @@ export type PortalRevealPoint = {
 }
 
 type PortalTravelTransitionOptions = {
+  heroAtlasSrc?: string | null
   heroImageSrc?: string | null
+  heroHairBackAtlasSrc?: string | null
+  heroHairBackImageSrc?: string | null
+  heroHairFrontAtlasSrc?: string | null
+  heroHairFrontImageSrc?: string | null
+  heroHairColor?: string | null
 }
 
 type PortalRevealOptions = {
@@ -47,6 +54,10 @@ function maxRevealRadius(point: PortalRevealPoint): number {
   )
 }
 
+type TextureAtlasFrame = {
+  frame?: { x: number; y: number; w: number; h: number }
+}
+
 export class PortalTravelTransition {
   root: HTMLDivElement | null
   revealMask: HTMLDivElement
@@ -67,7 +78,7 @@ export class PortalTravelTransition {
     core.className = 'portal-travel__core'
     core.setAttribute('aria-hidden', 'true')
 
-    const hero = this._createHeroSprite(options.heroImageSrc)
+    const hero = this._createHeroSprite(options)
     this.status = document.createElement('div')
     this.status.className = 'portal-travel__status'
     this.status.textContent = t('generatingWorld')
@@ -80,7 +91,87 @@ export class PortalTravelTransition {
     this.root.classList.add('is-open')
   }
 
-  _createHeroSprite(src?: string | null): HTMLDivElement {
+  _recolorHeroHairLayer(canvas: HTMLCanvasElement, targetPalette: string | null | undefined): void {
+    if (!targetPalette || targetPalette === HERO_HAIR_SOURCE_PALETTE) return
+    recolorCanvasByPalette(canvas, HERO_HAIR_SOURCE_PALETTE, targetPalette)
+  }
+
+  async _drawHeroFrameToImage(
+    img: HTMLImageElement,
+    src: string,
+    atlasSrc: string | null | undefined,
+    frameIncludes: string[],
+    options: { hairPalette?: string | null; onFrameSrc?: (src: string) => void } = {}
+  ): Promise<void> {
+    const sourceImage = new Image()
+    sourceImage.decoding = 'async'
+    sourceImage.onload = async () => {
+      try {
+        const atlas = atlasSrc ? await fetch(atlasSrc).then(response => response.json()) : null
+        const entry = Object.entries(atlas?.frames ?? {}).find(
+          ([name]) => name.startsWith(HERO_WALKING_SOUTH_FRAME_NAME) && frameIncludes.every(part => name.includes(part))
+        ) as [string, TextureAtlasFrame] | undefined
+        const frame = entry?.[1]?.frame ?? {
+          x: 0,
+          y: 0,
+          w: HERO_FRAME_SIZE,
+          h: HERO_FRAME_SIZE,
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = HERO_FRAME_SIZE
+        canvas.height = HERO_FRAME_SIZE
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(
+          sourceImage,
+          frame.x,
+          frame.y,
+          frame.w,
+          frame.h,
+          0,
+          0,
+          HERO_FRAME_SIZE,
+          HERO_FRAME_SIZE
+        )
+        if (options.hairPalette) this._recolorHeroHairLayer(canvas, options.hairPalette)
+        const frameSrc = canvas.toDataURL('image/png')
+        img.src = frameSrc
+        options.onFrameSrc?.(frameSrc)
+      } catch {
+        img.src = src
+      }
+    }
+    sourceImage.onerror = () => {
+      img.remove()
+    }
+    sourceImage.src = src
+  }
+
+  _createHeroLayer(
+    src: string,
+    className: string,
+    options: {
+      atlasSrc?: string | null
+      frameIncludes?: string[]
+      hairPalette?: string | null
+      onFrameSrc?: (src: string) => void
+    } = {}
+  ): HTMLImageElement {
+    const img = document.createElement('img')
+    img.className = className
+    img.alt = ''
+    img.onerror = () => {
+      img.remove()
+    }
+    void this._drawHeroFrameToImage(img, src, options.atlasSrc, options.frameIncludes ?? [], {
+      hairPalette: options.hairPalette,
+      onFrameSrc: options.onFrameSrc,
+    })
+    return img
+  }
+
+  _createHeroSprite(options: PortalTravelTransitionOptions = {}): HTMLDivElement {
     const path = document.createElement('div')
     path.className = 'portal-travel__hero-path'
     path.setAttribute('aria-hidden', 'true')
@@ -97,17 +188,40 @@ export class PortalTravelTransition {
     const frame = document.createElement('div')
     frame.className = 'portal-travel__hero-frame'
 
-    if (src) {
-      frame.style.setProperty('--portal-hero-image', `url(${JSON.stringify(src)})`)
-      const img = document.createElement('img')
-      img.className = 'portal-travel__hero-image'
-      img.alt = ''
-      img.onload = () => {
-        img.style.transform = `translateX(-${HERO_BODY_WALKING_SOUTH_FRAME_X}px)`
-        frame.style.setProperty('--portal-hero-frame-x', `-${HERO_BODY_WALKING_SOUTH_FRAME_X}px`)
+    if (options.heroImageSrc) {
+      if (options.heroHairBackImageSrc) {
+        frame.appendChild(
+          this._createHeroLayer(
+            options.heroHairBackImageSrc,
+            'portal-travel__hero-image portal-travel__hero-layer portal-travel__hero-layer--hair-back',
+            {
+              atlasSrc: options.heroHairBackAtlasSrc,
+              frameIncludes: ['_back_walking'],
+              hairPalette: options.heroHairColor,
+            }
+          )
+        )
       }
-      img.src = src
-      frame.appendChild(img)
+      frame.appendChild(
+        this._createHeroLayer(options.heroImageSrc, 'portal-travel__hero-image', {
+          atlasSrc: options.heroAtlasSrc,
+          frameIncludes: ['_body_walking'],
+          onFrameSrc: frameSrc => frame.style.setProperty('--portal-hero-image', `url(${JSON.stringify(frameSrc)})`),
+        })
+      )
+      if (options.heroHairFrontImageSrc) {
+        frame.appendChild(
+          this._createHeroLayer(
+            options.heroHairFrontImageSrc,
+            'portal-travel__hero-image portal-travel__hero-layer portal-travel__hero-layer--hair-front',
+            {
+              atlasSrc: options.heroHairFrontAtlasSrc,
+              frameIncludes: ['_front_walking'],
+              hairPalette: options.heroHairColor,
+            }
+          )
+        )
+      }
     }
 
     spin.appendChild(frame)
