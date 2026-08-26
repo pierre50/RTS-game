@@ -23,7 +23,7 @@ function loadUnitWorkAppearance(cacheGets) {
     },
   }
 
-  return loadTsModule('app/lib/unitWorkAppearance.ts', {
+  return loadTsModule('app/lib/units/unitWorkAppearance.ts', {
     mocks: {
       'pixi.js': {
         Assets: {
@@ -36,7 +36,7 @@ function loadUnitWorkAppearance(cacheGets) {
         },
       },
       '../constants': constants,
-      './equipmentStats': {
+      './equipment/equipmentStats': {
         refreshUnitEquipmentStats: () => {},
       },
     },

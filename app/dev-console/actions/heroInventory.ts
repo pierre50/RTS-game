@@ -1,5 +1,5 @@
 import { UNIT_TYPES } from '../../constants'
-import { getEquipmentSlot, getWeaponSlot } from '../../lib/equipmentLoot'
+import { getEquipmentSlot, getWeaponSlot } from '../../lib/equipment/equipmentLoot'
 import { DYNAMIC_EQUIPMENT_KEYS } from '../../lib/lpc/equipment'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext } from '../types'

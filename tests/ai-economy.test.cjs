@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadAIEconomy() {
   const filename = path.join(__dirname, '../app/ai/AIEconomy.ts')
@@ -74,7 +75,7 @@ function loadAIEconomy() {
         isWheatMature: farm => farm?.mature !== false,
       }
     }
-    if (request === '../lib/stableHorses') {
+    if (request === '../lib/horses/stableHorses') {
       return {
         canStoreStableHorse: building => (building.stableHorses?.length ?? 0) < 5,
         getStableHorseAmount: building => building.stableHorses?.length ?? 0,
@@ -89,9 +90,10 @@ function loadAIEconomy() {
     if (request === './AIEconomyFoodManager') {
       return loadTsModule('AIEconomyFoodManager')
     }
+    if (request === './AIEconomyFoodScoring') return loadTsModule('AIEconomyFoodScoring')
     if (request === './AIEconomyBuilders') return loadTsModule('AIEconomyBuilders')
     if (request === './AIEconomyHorseCapture') return loadTsModule('AIEconomyHorseCapture')
-    return require(request)
+    return requireFromTsFile(request, filename, {})
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { AIEconomy: module.exports.AIEconomy, constants }

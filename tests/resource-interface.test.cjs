@@ -127,7 +127,7 @@ test('portal modal renders its description and color actions outside the info bl
         renderUnitHeadAvatar: () => false,
       },
       '../lib/lang': { t: key => key },
-      './entityDisplayName': { getEntityDisplayName: entity => entity.type },
+      './utils/entityDisplayName': { getEntityDisplayName: entity => entity.type },
       './InspectionPanel': {
         createInspectionModal: options => {
           capturedContent = options.content
@@ -201,7 +201,7 @@ test('resource info modal title uses translated resource type instead of technic
         renderUnitHeadAvatar: () => false,
       },
       '../lib/lang': { t: key => (key === 'Portal' ? 'Portail' : key) },
-      './entityDisplayName': {
+      './utils/entityDisplayName': {
         getEntityDisplayName: entity => (entity.type === 'Portal' ? 'Portail' : entity.type),
       },
       './InspectionPanel': {
@@ -245,7 +245,7 @@ test('entity info modal syncs live resource health without reopening', () => {
         renderUnitHeadAvatar: () => false,
       },
       '../lib/lang': { t: key => key },
-      './entityDisplayName': {
+      './utils/entityDisplayName': {
         getEntityDisplayName: entity => entity.type,
       },
       './InspectionPanel': {

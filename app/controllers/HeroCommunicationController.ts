@@ -8,7 +8,7 @@ import {
   releaseIfStillLooking,
   resolveCommGroup,
   sendNpcGroupToTarget,
-} from '../lib/npcInteraction'
+} from '../lib/npc/npcInteraction'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import { drawCommIndicatorCells } from './HeroControllerSupport'

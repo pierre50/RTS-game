@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -64,13 +65,13 @@ test('topbar displays and themes all civilization ages', () => {
     const { TopbarView } = loadModule('app/ui/TopbarView.ts', {
       '../constants': { RESOURCE_NAMES: ['wood', 'food'] },
       '../lib/lang': { t: key => key },
-      '../lib/villagerAssignments': {
+      '../lib/units/villagerAssignments': {
         summarizeVillagerAssignments: units => ({
           total: units.length,
           assigned: { wood: units.filter(unit => unit.work === 'woodcutter').length, food: 0 },
         }),
       },
-      './resourceIcons': {
+      './utils/resourceIcons': {
         createResourceIconMaps: () => ({
           icons: { wood: 'wood.png', food: 'food.png' },
           infoIcons: {},

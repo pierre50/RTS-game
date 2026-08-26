@@ -101,7 +101,7 @@ function loadControls() {
       pointsDistance: () => 0,
       instanceContactInstance: () => true,
     },
-    '../lib/settings': {
+    '../lib/audio/settings': {
       DISPLAY_SCALE: 1,
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: evt => {
@@ -113,21 +113,21 @@ function loadControls() {
         return null
       },
     },
-    '../lib/heroCursor': {
+    '../lib/hero/heroCursor': {
       setHeroGameCursorEnabled: () => {},
       setVirtualCursorVisible: () => {},
       setVirtualCursorPosition: () => {},
     },
-    '../lib/heroActionRange': {
+    '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => true,
     },
-    '../lib/heroTools': {
+    '../lib/hero/heroTools': {
       findFacingEntity: () => null,
     },
-    '../lib/npcInteraction': {
+    '../lib/npc/npcInteraction': {
       isTalkableNpc: () => false,
     },
-    '../lib/npcChatter': {
+    '../lib/npc/npcChatter': {
       pickForeignNpcChatterLine: () => '',
       pickNpcChatterLine: () => '',
     },

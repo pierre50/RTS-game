@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -12,7 +13,11 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => {
+    if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../entities/statusBubble') return { createStatusBubble: createMockStatusBubble }
+    return requireFromTsFile(request, filename, mocks)
+  }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -20,16 +25,56 @@ function loadModule(relativePath, mocks) {
 class MockText {
   constructor(options) {
     this.text = options.text
+    this.style = options.style
     this.destroyed = false
     this.anchor = { set: () => {} }
+    this.width = options.text.length * 6
+    this.height = options.style.fontSize ?? 12
   }
 
+  destroy(_options) {
+    this.destroyed = true
+  }
+}
+
+class MockContainer {
+  constructor() {
+    this.children = []
+    this.destroyed = false
+  }
+
+  addChild(...children) {
+    this.children.push(...children)
+  }
+
+  destroy(options) {
+    this.destroyed = true
+    if (options?.children) this.children.forEach(child => child.destroy?.(options))
+  }
+}
+
+class MockGraphics {
+  rect() {}
+  poly() {}
+  fill() {}
+  stroke() {}
+  clear() {}
   destroy() {
     this.destroyed = true
   }
 }
 
-const spriteTransientEffects = loadModule('app/lib/spriteTransientEffects.ts', {})
+function getAddedFeedbackText(display) {
+  return display.text ?? display.children?.find(child => typeof child.text === 'string')?.text
+}
+
+function createMockStatusBubble(options) {
+  const bubble = new MockContainer()
+  bubble.addChild(new MockGraphics(), new MockGraphics(), new MockText({ ...options, style: { fontSize: options.fontSize } }))
+  return bubble
+}
+
+const spriteTransientEffects = loadModule('app/lib/entities/spriteTransientEffects.ts', {})
 
 test('alert-then-aggression feedback sequences emotes instead of stacking them', () => {
   const scheduled = []
@@ -48,19 +93,21 @@ test('alert-then-aggression feedback sequences emotes instead of stacking them',
     context: { scheduler },
     isDead: false,
     isDestroyed: false,
-    addChild: text => addedTexts.push(text.text),
+    addChild: display => addedTexts.push(getAddedFeedbackText(display)),
   }
 
-  const { showAlertThenAggressionFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { showAlertThenAggressionFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
+      Container: MockContainer,
+      Graphics: MockGraphics,
       Text: MockText,
     },
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
   let aggressionCallbacks = 0
 
@@ -85,8 +132,59 @@ test('alert-then-aggression feedback sequences emotes instead of stacking them',
   scheduler.elapsedMs += scheduled[0].delay
   scheduled[0].callback()
 
-  assert.deepEqual(addedTexts, ['!', '💢'])
+  assert.deepEqual(addedTexts, ['!', '!!'])
   assert.equal(aggressionCallbacks, 1)
+})
+
+test('status bubble feedback fades in place and lasts longer than damage text', () => {
+  const scheduled = []
+  const scheduler = {
+    elapsedMs: 1000,
+    add: (callback, delay, name) => {
+      scheduled.push({ callback, delay, name })
+      return scheduled.length
+    },
+    remove: () => {},
+    addOneShot: () => 1,
+  }
+  const addedDisplays = []
+  const target = {
+    family: 'unit',
+    context: { scheduler },
+    isDead: false,
+    isDestroyed: false,
+    sprite: { anchor: { y: 1 }, height: 40 },
+    addChild: display => addedDisplays.push(display),
+  }
+
+  const { showFatigueFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
+    'pixi.js': {
+      ColorMatrixFilter: class {},
+      Text: MockText,
+    },
+    '../constants': {
+      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
+    },
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
+  })
+
+  showFatigueFeedback(target)
+
+  const display = addedDisplays[0]
+  const initialY = display.y
+  assert.equal(getAddedFeedbackText(display), '...')
+  assert.equal(scheduled[0].name, 'unit.fatigueText')
+
+  for (let index = 0; index < 15; index++) scheduled[0].callback()
+
+  assert.equal(display.y, initialY)
+  assert.equal(display.destroyed, false)
+
+  for (let index = 0; index < 31; index++) scheduled[0].callback()
+
+  assert.equal(display.y, initialY)
+  assert.equal(display.destroyed, true)
 })
 
 test('clearAllCombatFeedback removes active hit flashes without waiting for scheduler callbacks', () => {
@@ -112,7 +210,7 @@ test('clearAllCombatFeedback removes active hit flashes without waiting for sche
     addChild: () => {},
   }
 
-  const { clearAllCombatFeedback, showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { clearAllCombatFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
       Text: MockText,
@@ -120,8 +218,8 @@ test('clearAllCombatFeedback removes active hit flashes without waiting for sche
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
   showDamageFeedback(target, 3)
@@ -159,7 +257,7 @@ test('base filter updates preserve an active hit flash until its scheduled clean
     addChild: () => {},
   }
 
-  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
       Text: MockText,
@@ -167,8 +265,8 @@ test('base filter updates preserve an active hit flash until its scheduled clean
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
   showDamageFeedback(target, 3)
@@ -210,7 +308,7 @@ test('animal hit flash survives animation texture resets and then clears', () =>
     addChild: () => {},
   }
 
-  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
       Text: MockText,
@@ -218,8 +316,8 @@ test('animal hit flash survives animation texture resets and then clears', () =>
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
   showDamageFeedback(target, 3)
@@ -260,7 +358,7 @@ test('repeated hit flashes cancel stale cleanup tasks for the same sprite', () =
     addChild: () => {},
   }
 
-  const { showDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
       Text: MockText,
@@ -268,8 +366,8 @@ test('repeated hit flashes cancel stale cleanup tasks for the same sprite', () =
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
   showDamageFeedback(target, 3)
@@ -311,7 +409,7 @@ test('clearDamageFeedback leaves unrelated sprite filters alone', () => {
     addChild: () => {},
   }
 
-  const { clearDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { clearDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter: class {},
       Text: MockText,
@@ -319,8 +417,8 @@ test('clearDamageFeedback leaves unrelated sprite filters alone', () => {
     '../constants': {
       FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './maths': { getReliefOffset: () => 0 },
-    './spriteTransientEffects': spriteTransientEffects,
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
   })
 
   clearDamageFeedback(target)

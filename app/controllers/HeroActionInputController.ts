@@ -1,6 +1,7 @@
 import { SHEET_TYPES } from '../constants'
 import {
   beginHeroDefense,
+  cancelHeroActiveToolAction,
   cancelHeroLasso,
   isHeroPowerChargeActiveForTool,
   isMountedAttackAimBlocked,
@@ -8,7 +9,7 @@ import {
   releaseHeroPowerCharge,
   triggerToolAttackAt,
   type HeroEquippedItem,
-} from '../lib/heroTools'
+} from '../lib/hero/heroTools'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { HeroAimPoint } from './HeroControllerSupport'
@@ -16,6 +17,7 @@ import type { HeroAimPoint } from './HeroControllerSupport'
 type HeroActionInputHost = {
   controls: ControlsLike
   equippedItem: HeroEquippedItem | null
+  defenseHeld: boolean
   heroUnit: UnitEntity | null
   mouseHeld: boolean
   pendingGoToNpcs: UnitEntity[] | null
@@ -35,7 +37,8 @@ export class HeroActionInputController {
   attackTowardPoint(point: HeroAimPoint): boolean {
     const hero = this.host.heroUnit
     if (!hero) return false
-    if (hero.actionLocked) return false
+    if (hero.actionLocked && !hero.heroDefenseActive) return false
+    if (hero.heroDefenseActive) cancelHeroActiveToolAction(hero)
     if (isMountedAttackAimBlocked(hero, point)) return false
     this.host.facePoint(point)
     hero.stop?.()
@@ -60,24 +63,40 @@ export class HeroActionInputController {
   }
 
   handleDefenseKeyDown(): void {
+    this.host.defenseHeld = true
     const unit = this.host.heroUnit
     if (!unit) return
+    if (unit.actionLocked && !unit.heroDefenseActive) {
+      cancelHeroActiveToolAction(unit)
+    }
     this.host.facePoint(this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor())
     if (beginHeroDefense(unit, this.host.equippedItem)) {
       this.host.mouseHeld = true
     }
   }
 
+  handleDefenseKeyUp(): void {
+    this.host.defenseHeld = false
+    this.releaseDefense()
+  }
+
   handleSecondaryPointerDown(): void {
+    this.host.defenseHeld = true
     this.handleDefenseKeyDown()
+  }
+
+  private releaseDefense(): void {
+    const unit = this.host.heroUnit
+    if (unit && releaseHeroDefense(unit)) {
+      this.host.mouseHeld = false
+    }
   }
 
   handlePointerUp(button = 0): void {
     const unit = this.host.heroUnit
     if (button === 2) {
-      if (unit && releaseHeroDefense(unit)) {
-        this.host.mouseHeld = false
-      }
+      this.host.defenseHeld = false
+      this.releaseDefense()
       return
     }
     if (button !== 0) return

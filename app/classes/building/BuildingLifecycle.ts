@@ -1,8 +1,7 @@
-import { Assets, AnimatedSprite, Container } from 'pixi.js'
+import { Assets, AnimatedSprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   LABEL_TYPES,
   MENU_INFO_IDS,
   PLAYER_TYPES,
@@ -31,42 +30,18 @@ import {
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import type { RuntimeCell } from '../../types/map'
-import type { EntityLightSourceConfig } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
 import type { Texture } from 'pixi.js'
+import {
+  CAMPFIRE_DECORATION_LABEL,
+  generateBuildingFire,
+  playBuildingBurningSound,
+  syncBuildingCampfireDecoration,
+  updateBuildingFireDamage,
+} from './BuildingFire'
 
-type RuntimeAnimatedSprite = AnimatedSprite
-type LightedAnimatedSprite = RuntimeAnimatedSprite & { lightSource?: EntityLightSourceConfig }
-type RuntimeContainer = Container
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 type BuildingSpritesheetData = { animationSpeed?: number; loop?: boolean }
-
-const BUILDING_FIRE_SHEETS = {
-  light: 'effects/fire/light',
-  medium: 'effects/fire/medium',
-  heavy: 'effects/fire/heavy',
-} as const
-const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
-const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
-  color: '#ffad4f',
-  flicker: 0.09,
-  intensity: 1.08,
-  radius: 220,
-  offsetY: -8,
-  verticalScale: 0.68,
-}
-const BUILDING_FIRE_LIGHT: EntityLightSourceConfig = {
-  color: '#ff9d45',
-  flicker: 0.12,
-  intensity: 0.98,
-  radius: 180,
-  offsetY: -12,
-  verticalScale: 0.72,
-}
-
-function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourceConfig = BUILDING_FIRE_LIGHT): void {
-  sprite.lightSource = config
-}
 
 export class BuildingLifecycle {
   building: BuildingControllerHost
@@ -165,85 +140,16 @@ export class BuildingLifecycle {
     const color = building.getChildByLabel(LABEL_TYPES.color)
     if (color) color.destroy()
     changeSpriteColorDirectly(building.sprite, building.owner.color ?? '')
-    this.syncCampfireDecoration()
+    syncBuildingCampfireDecoration(building)
     if (isWall(building)) updateWallAndNeighbours(building)
   }
 
   syncCampfireDecoration(): void {
-    const building = this.building
-    const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
-
-    if (building.type !== BUILDING_TYPES.banditCamp) {
-      existing?.destroy({ children: true })
-      return
-    }
-
-    const spritesheetFire = Assets.cache.get(BUILDING_FIRE_SHEETS.light)
-    if (!spritesheetFire?.textures) return
-    const textures = getAnimationFrames(spritesheetFire.textures) as Texture[]
-    if (!textures.length) return
-
-    if (existing instanceof AnimatedSprite) {
-      existing.textures = textures
-      attachFireLight(existing as LightedAnimatedSprite, CAMPFIRE_DECORATION_LIGHT)
-      existing.gotoAndPlay(0)
-      return
-    }
-
-    existing?.destroy({ children: true })
-    const fire = new AnimatedSprite(textures) as LightedAnimatedSprite
-    bindAnimatedSpriteToTicker(fire, building.context.app)
-    fire.label = CAMPFIRE_DECORATION_LABEL
-    attachFireLight(fire, CAMPFIRE_DECORATION_LIGHT)
-    fire.eventMode = 'none'
-    fire.roundPixels = true
-    fire.position.set(0, 10)
-    fire.animationSpeed = 0.3
-    fire.gotoAndPlay(0)
-    building.addChild(fire)
+    syncBuildingCampfireDecoration(this.building)
   }
 
   generateFire(spriteId: string): void {
-    const building = this.building
-    const fire = building.getChildByLabel(LABEL_TYPES.fire)
-    const spritesheetFire = Assets.cache.get(spriteId)
-    if (fire) {
-      for (let i = 0; i < fire.children.length; i++) {
-        const child = fire.children[i] as LightedAnimatedSprite
-        child.textures = getAnimationFrames(spritesheetFire.textures) as Texture[]
-        attachFireLight(child)
-        child.play()
-      }
-    } else {
-      const newFire = new Container() as RuntimeContainer
-      newFire.label = LABEL_TYPES.fire
-      newFire.eventMode = 'none'
-      let poses: number[][] = [[0, 0]]
-      const radius = getBuildingFootprintRadius(building.size)
-      if (radius > 0) {
-        poses = [
-          [0, -32 * radius],
-          [-64 * radius, 0],
-          [0, 32 * radius],
-          [64 * radius, 0],
-        ]
-      }
-      for (let i = 0; i < poses.length; i++) {
-        const spriteFire = new AnimatedSprite(
-          getAnimationFrames(spritesheetFire.textures) as Texture[]
-        ) as LightedAnimatedSprite
-        bindAnimatedSpriteToTicker(spriteFire, building.context.app)
-        attachFireLight(spriteFire)
-        spriteFire.eventMode = 'none'
-        spriteFire.roundPixels = true
-        spriteFire.x = poses[i][0]
-        spriteFire.y = poses[i][1]
-        spriteFire.play()
-        spriteFire.animationSpeed = 0.3
-        newFire.addChild(spriteFire)
-      }
-      building.addChild(newFire)
-    }
+    generateBuildingFire(this.building, spriteId)
   }
 
   onBuilt(): void {
@@ -283,31 +189,12 @@ export class BuildingLifecycle {
       (action === ACTION_TYPES.attack && building.isBuilt) ||
       (action === ACTION_TYPES.build && building.isBuilt)
     ) {
-      if (percentage > 0 && percentage < 25) {
-        building.context.villagerShelter?.evacuateVillagersIfShelterUnsafe(building)
-        this.playBurningSound()
-        building.generateFire(BUILDING_FIRE_SHEETS.heavy)
-      } else if (percentage >= 25 && percentage < 50) {
-        this.playBurningSound()
-        building.generateFire(BUILDING_FIRE_SHEETS.medium)
-      } else if (percentage >= 50 && percentage < 75) {
-        this.playBurningSound()
-        building.generateFire(BUILDING_FIRE_SHEETS.light)
-      } else if (percentage >= 75) {
-        const fire = building.getChildByLabel(LABEL_TYPES.fire)
-        if (fire) building.removeChild(fire)
-        building.hasActiveBurningSound = false
-      }
+      updateBuildingFireDamage(building, percentage)
     }
   }
 
   playBurningSound(): void {
-    const building = this.building
-    if (building.hasActiveBurningSound) return
-    const playedCue = playAudibleSoundCue(building, building.sounds?.burning ?? SOUND_CUES.building.burning, {
-      profile: 'building',
-    })
-    if (playedCue) building.hasActiveBurningSound = true
+    playBuildingBurningSound(this.building)
   }
 
   pause(): void {

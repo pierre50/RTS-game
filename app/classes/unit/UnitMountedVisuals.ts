@@ -1,7 +1,7 @@
 import { AnimatedSprite, Graphics, type Texture } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES } from '../../constants'
 import { bindAnimatedSpriteToTicker, degreeToDirection, getSpriteFrameSelection } from '../../lib'
-import { recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
+import { recolorHorseTextures, type HorseColor } from '../../lib/horses/horseColors'
 import {
   MOUNTED_HORSE_BOB,
   MOUNTED_RIDER_CUT_Y,
@@ -10,7 +10,7 @@ import {
   mountedRiderBaseDirection,
   mountedRiderLegOffset,
   mountedRiderXOffset,
-} from '../../lib/mountedRider'
+} from '../../lib/hero/mountedRider'
 import type { UnitEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import type { SpritesheetLike } from '../../types/pixi'

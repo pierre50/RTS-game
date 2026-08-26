@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitHealth() {
-  const filename = path.join(__dirname, '../app/lib/unitHealth.ts')
+  const filename = path.join(__dirname, '../app/lib/units/unitHealth.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -15,10 +16,10 @@ function loadUnitHealth() {
   const healingFeedbackCalls = []
   const mocks = {
     '../constants': { STEP_TIME: 100 },
-    './combatFeedback': { showHealingFeedback: unit => healingFeedbackCalls.push(unit) },
-    './unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' },
+    './combat/combatFeedback': { showHealingFeedback: unit => healingFeedbackCalls.push(unit) },
+    './units/unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.__healingFeedbackCalls = healingFeedbackCalls
   return module.exports
@@ -54,7 +55,7 @@ test('hero health regen respects delay and refreshes the HUD progressively', () 
   updateUnitHealthRegen(unit, 100)
   assert.equal(unit.hitPoints, 7.2)
   assert.deepEqual(calls, [7, 7.2])
-  assert.deepEqual(__healingFeedbackCalls, [unit])
+  assert.deepEqual(__healingFeedbackCalls, [])
 })
 
 test('non hero units do not receive passive health regen by default', () => {

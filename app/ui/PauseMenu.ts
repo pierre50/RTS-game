@@ -1,8 +1,8 @@
 import { Modal } from '../lib'
-import { playClickSound } from '../lib/uiSound'
+import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
-import { openSettingsModal } from './settingsPanel'
-import { openSaveListModal } from './saveListModal'
+import { openSettingsModal } from './modals/settingsPanel'
+import { openSaveListModal } from './modals/saveListModal'
 import type { MenuHost } from './MenuHost'
 
 export class PauseMenu {

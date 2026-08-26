@@ -1,6 +1,6 @@
 import { Player } from '../players'
 import { canPlaceBuildingAt, getPlainCellsAroundPoint } from '../../lib'
-import { getUnitOverallLevel } from '../../lib/unitExperience'
+import { getUnitOverallLevel } from '../../lib/units/unitExperience'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { GridPosition } from '../../types/grid'
 import type { GameContextLike } from '../../types/context'

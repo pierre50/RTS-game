@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadHeroTools(overrides = {}) {
-  const filename = path.join(__dirname, '../app/lib/heroTools.ts')
+  const filename = path.join(__dirname, '../app/lib/hero/heroTools.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -97,7 +98,7 @@ function loadHeroTools(overrides = {}) {
         woodcutter: 'woodcutter',
       },
     },
-    './heroActionRange': {
+    './hero/heroActionRange': {
       getHeroInteractionTargetPoint: (_hero, target) => ({
         x: target.i ?? target.x ?? 0,
         y: target.j ?? target.y ?? 0,
@@ -109,13 +110,18 @@ function loadHeroTools(overrides = {}) {
       isHeroInteractionTargetReachable: (hero, _action, target) =>
         Math.hypot((target.i ?? 0) - (hero.i ?? 0), (target.j ?? 0) - (hero.j ?? 0)) <= 2.5,
     },
-    './combat': combatMock,
-    './diplomaticAggression': {
+    './combat/combat': combatMock,
+    './combat/diplomaticAggression': {
       applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
       canTriggerDiplomaticAggression: () => false,
     },
-    './equipmentStats': {
+    './equipment/equipmentStats': {
       UNARMED_UNIT_WEAPON_POWER: 0.5,
+      getEntityWeaponPower: entity => {
+        if (entity?.weaponPower != null) return entity.weaponPower
+        const equipment = Array.isArray(entity?.equipment) ? entity.equipment : []
+        return mocks['./equipment/equipmentStats'].getEquipmentCombatStats(equipment).weaponPower
+      },
       getEquipmentCombatStats: equipment => {
         const stats = { weaponPower: 0, meleeArmor: 0, pierceArmor: 0 }
         for (const item of equipment) {
@@ -135,7 +141,7 @@ function loadHeroTools(overrides = {}) {
       getUnitCombatRange: unit => unit.range ?? 4,
       refreshUnitEquipmentStats: () => {},
     },
-    './equipmentLoot': {
+    './equipment/equipmentLoot': {
       consumeHeroEquippedItem: (hero, slot) => {
         if (!hero.inventory?.equipped?.[slot]) return false
         const currentCount = Math.max(1, Math.floor(hero.inventory.equippedCounts?.[slot] ?? 1))
@@ -149,7 +155,26 @@ function loadHeroTools(overrides = {}) {
         return true
       },
     },
-    './grid/cells': { getBuildingContactDistance: () => 1 },
+    './grid/cells': {
+      getBuildingContactDistance: () => 1,
+      getCellsInCellRadius: (centerI, centerJ, grid, range) => {
+        const cells = []
+        const radius = Math.ceil(range)
+        const rangeSq = range * range
+        for (let i = centerI - radius; i <= centerI + radius; i++) {
+          const row = grid[i]
+          if (!row) continue
+          for (let j = centerJ - radius; j <= centerJ + radius; j++) {
+            const cell = row[j]
+            if (!cell) continue
+            const di = i - centerI
+            const dj = j - centerJ
+            if (di * di + dj * dj <= rangeSq) cells.push(cell)
+          }
+        }
+        return cells
+      },
+    },
     './grid/visibility': { findInstancesInSight: () => [] },
     './grid/queries': { getClosestInstanceWithPath: () => null },
     './graphics': {
@@ -173,10 +198,10 @@ function loadHeroTools(overrides = {}) {
       instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j),
     },
     './lang': { t: key => (key === 'heroDefenseMissed' ? 'Loupé !' : key) },
-    './sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
+    './audio/sound': { playAudibleSoundCue: () => {}, playSoundCue: () => {} },
     './lpc/baked': { applyBakedLpcUnitAssets: () => true },
-    './slashRecoveryAnimation': { logHeroSlashFrame: () => {}, playReverseSlashRecovery: () => false },
-    './unitEnergy': {
+    './entities/slashRecoveryAnimation': { logHeroSlashFrame: () => {}, playReverseSlashRecovery: () => false },
+    './units/unitEnergy': {
       hasEnergyForAction: (unit, action) => {
         const costs = {
           attack: 2,
@@ -222,9 +247,9 @@ function loadHeroTools(overrides = {}) {
       },
       getActionEnergyCost: (_unit, action) => ({ heroPowerCharge: 2, heroDefense: 2, heroWhiff: 1 })[action] ?? 0,
     },
-    './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
+    './combat/combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
     './debug': { debugLog: () => {} },
-    './heroToolEquipment': {
+    './hero/heroToolEquipment': {
       HERO_EQUIPPED_ITEM_ORDER: ['interact', 'sword', 'bow', 'lasso'],
       HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
       EQUIPPED_ITEM_WEAPON: { sword: 'sword_ceramic', bow: 'bow' },
@@ -236,22 +261,22 @@ function loadHeroTools(overrides = {}) {
       },
       isHeroToolAvailable: (hero, tool) => {
         if (!tool || tool === 'interact') return true
-        return Boolean(mocks['./heroToolEquipment'].getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
+        return Boolean(mocks['./hero/heroToolEquipment'].getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
       },
       getHeroToolEquipment: (hero, tool) => {
         const activeWeapons = hero.inventory?.activeWeapons ?? {}
         if (tool === 'sword') return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(Boolean)
         if (tool === 'bow') return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(Boolean)
         if (tool === 'lasso') return [activeWeapons.lasso].filter(Boolean)
-        return mocks['./equipmentStats'].getUnitWorkEquipment('attacker')
+        return mocks['./equipment/equipmentStats'].getUnitWorkEquipment('attacker')
       },
       applyEquippedItemAppearance: (hero, tool) => {
         const work = { interact: 'attacker', sword: 'heroSword', bow: 'hunter', lasso: 'attacker' }[tool]
         hero.work = work
       },
-      applyToolAppearance: (hero, tool) => mocks['./heroToolEquipment'].applyEquippedItemAppearance(hero, tool),
+      applyToolAppearance: (hero, tool) => mocks['./hero/heroToolEquipment'].applyEquippedItemAppearance(hero, tool),
     },
-    './heroTargeting': {
+    './hero/heroTargeting': {
       CLICK_TARGET_SEARCH_RANGE: 15,
       MOUNTED_ATTACK_HALF_ANGLE: 45,
       getHeroAimDegree: (hero, destination) => {
@@ -260,18 +285,18 @@ function loadHeroTools(overrides = {}) {
         return Math.round((Math.atan2(dy, dx) * 180) / Math.PI + 180)
       },
       getHeroAimDelta: (hero, target) =>
-        mocks['./maths'].angleDelta(mocks['./heroTargeting'].getHeroAimDegree(hero, target), hero.degree ?? 0),
+        mocks['./maths'].angleDelta(mocks['./hero/heroTargeting'].getHeroAimDegree(hero, target), hero.degree ?? 0),
       isMountedAttackAimBlocked: (hero, point) =>
         Boolean(hero.mountedOnHorse) &&
-        mocks['./maths'].angleDelta(mocks['./heroTargeting'].getHeroAimDegree(hero, point), hero.degree ?? 0) > 45,
+        mocks['./maths'].angleDelta(mocks['./hero/heroTargeting'].getHeroAimDegree(hero, point), hero.degree ?? 0) > 45,
       getDirectionalTarget: (hero, candidates, halfAngle = 25) =>
-        mocks['./heroTargeting'].getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null,
+        mocks['./hero/heroTargeting'].getDirectionalTargets(hero, candidates, halfAngle)[0] ?? null,
       getDirectionalTargets: (hero, candidates, halfAngle = 25) =>
         candidates
           .map(target => {
-            const aimPoint = mocks['./heroActionRange'].getHeroInteractionTargetPoint(hero, target)
+            const aimPoint = mocks['./hero/heroActionRange'].getHeroInteractionTargetPoint(hero, target)
             const targetHalfAngle = ['building', 'resource'].includes(target.family ?? '') ? 45 : halfAngle
-            const angle = mocks['./heroTargeting'].getHeroAimDelta(hero, aimPoint)
+            const angle = mocks['./hero/heroTargeting'].getHeroAimDelta(hero, aimPoint)
             const dist = Math.hypot(aimPoint.x - hero.x, aimPoint.y - hero.y)
             return { target, angle, dist, halfAngle: targetHalfAngle }
           })
@@ -309,10 +334,10 @@ function loadHeroTools(overrides = {}) {
             }
           }
         }
-        return mocks['./heroTargeting'].getDirectionalTarget(hero, candidates)
+        return mocks['./hero/heroTargeting'].getDirectionalTarget(hero, candidates)
       },
     },
-    './unitExperience': {
+    './units/unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
       XP_CATEGORIES: { melee: 'melee' },
@@ -331,12 +356,12 @@ function loadHeroTools(overrides = {}) {
     },
   }
   Object.assign(mocks, overrides)
-  if (overrides['./combat']) mocks['./combat'] = { ...combatMock, ...overrides['./combat'] }
-  if (!mocks['./combatHit']) {
-    mocks['./combatHit'] = {
+  if (overrides['./combat/combat']) mocks['./combat/combat'] = { ...combatMock, ...overrides['./combat/combat'] }
+  if (!mocks['./combat/combatHit']) {
+    mocks['./combat/combatHit'] = {
       applyCombatHit: (source, target, options = {}) => {
         const beforeHitPoints = target.hitPoints ?? 0
-        target.hitPoints = mocks['./combat'].getHitPointsWithDamage(
+        target.hitPoints = mocks['./combat/combat'].getHitPointsWithDamage(
           source,
           target,
           options.defaultDamage,
@@ -344,9 +369,9 @@ function loadHeroTools(overrides = {}) {
         )
         const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
         const killed = (target.hitPoints ?? 0) <= 0
-        mocks['./combatFeedback'].showDamageFeedback?.(target, damageDealt)
+        mocks['./combat/combatFeedback'].showDamageFeedback?.(target, damageDealt)
         if (options.xpUnit && options.xpCategory) {
-          mocks['./unitExperience'].grantUnitXp?.(options.xpUnit, options.xpCategory, damageDealt)
+          mocks['./units/unitExperience'].grantUnitXp?.(options.xpUnit, options.xpCategory, damageDealt)
         }
         const notifyTarget = options.notifyTarget ?? 'always'
         if (notifyTarget === 'always' || (notifyTarget === 'survived' && !killed)) {
@@ -354,10 +379,10 @@ function loadHeroTools(overrides = {}) {
         }
         if (killed) {
           if (options.grantKillXp !== false && options.xpUnit && options.xpCategory) {
-            mocks['./unitExperience'].grantUnitXp?.(
+            mocks['./units/unitExperience'].grantUnitXp?.(
               options.xpUnit,
               options.xpCategory,
-              mocks['./unitExperience'].XP_KILL_BONUS
+              mocks['./units/unitExperience'].XP_KILL_BONUS
             )
           }
           target.die?.()
@@ -379,31 +404,31 @@ function loadHeroTools(overrides = {}) {
 
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    if (request === './HeroContextActions') {
-      return loadTsFile(path.join(__dirname, '../app/lib/HeroContextActions.ts'))
+    if (request === './hero/heroContextActions') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroContextActions.ts'))
     }
-    if (request === './HeroProjectileTools') {
-      return loadTsFile(path.join(__dirname, '../app/lib/HeroProjectileTools.ts'))
+    if (request === './hero/heroProjectileTools') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroProjectileTools.ts'))
     }
-    if (request === './HeroMeleeTools') {
-      return loadTsFile(path.join(__dirname, '../app/lib/HeroMeleeTools.ts'))
+    if (request === './hero/heroMeleeTools') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroMeleeTools.ts'))
     }
-    if (request === './heroToolAnimation') {
-      return loadTsFile(path.join(__dirname, '../app/lib/heroToolAnimation.ts'))
+    if (request === './hero/heroToolAnimation') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroToolAnimation.ts'))
     }
-    if (request === './heroEnergy') {
-      return loadTsFile(path.join(__dirname, '../app/lib/heroEnergy.ts'))
+    if (request === './hero/heroEnergy') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroEnergy.ts'))
     }
-    if (request === './heroDefense') {
-      return loadTsFile(path.join(__dirname, '../app/lib/heroDefense.ts'))
+    if (request === './hero/heroDefense') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroDefense.ts'))
     }
-    if (request === './heroPowerCharge') {
-      return loadTsFile(path.join(__dirname, '../app/lib/heroPowerCharge.ts'))
+    if (request === './hero/heroPowerCharge') {
+      return loadTsFile(path.join(__dirname, '../app/lib/hero/heroPowerCharge.ts'))
     }
-    if (request === './actionVisualSheet') {
-      return loadTsFile(path.join(__dirname, '../app/lib/actionVisualSheet.ts'))
+    if (request === './units/actionVisualSheet') {
+      return loadTsFile(path.join(__dirname, '../app/lib/units/actionVisualSheet.ts'))
     }
-    if (request === './unitWorkAppearance') {
+    if (request === './units/unitWorkAppearance') {
       return {
         applyUnitWorkAssets: (unit, work, options = {}) => {
           const assets = unit.allAssets?.[work]
@@ -415,7 +440,7 @@ function loadHeroTools(overrides = {}) {
         },
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -514,7 +539,7 @@ test('directional targeting prefers a much closer nearby resource over a perfect
     './grid/visibility': {
       findInstancesInSight: (_hero, matches) => [farTree, nearWheat].filter(matches),
     },
-    './heroActionRange': {
+    './hero/heroActionRange': {
       getHeroInteractionTargetPoint: (_hero, target) => target,
       isHeroActionInRange: () => false,
       isHeroInteractionTargetReachable: () => true,
@@ -540,7 +565,7 @@ test('directional targeting includes unit corpses stored on cells', () => {
     './grid/visibility': {
       findInstancesInSight: () => [],
     },
-    './heroActionRange': {
+    './hero/heroActionRange': {
       getHeroInteractionTargetPoint: (_hero, target) => target,
       isHeroActionInRange: () => false,
       isHeroInteractionTargetReachable: () => true,
@@ -614,7 +639,7 @@ test('bow charge plays the action animation once while power keeps charging', ()
   }
 })
 
-test('sword charge freezes the action animation on frame 0 while power charges', () => {
+test('sword charge keeps the current animation while power charges', () => {
   const { triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
   const { hero } = makeHero()
   let now = 1000
@@ -625,11 +650,12 @@ test('sword charge freezes the action animation on frame 0 while power charges',
     assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 20 }), true)
 
     assert.equal(hero.actionLocked, true)
-    assert.equal(hero.currentSheet, 'actionSheet')
+    assert.equal(hero.currentSheet, 'standingSheet')
     assert.equal(hero.heroPowerChargeTool, 'sword')
-    assert.equal(hero.heroPowerChargeVisualLocked, true)
+    assert.equal(hero.heroPowerChargeVisualLocked, false)
     assert.equal(hero.sprite.currentFrame, 0)
     assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.sprite.loop, true)
     assert.deepEqual(hero.drawRatios, [0])
 
     now += 350
@@ -637,6 +663,7 @@ test('sword charge freezes the action animation on frame 0 while power charges',
 
     assert.equal(hero.sprite.currentFrame, 0)
     assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.currentSheet, 'standingSheet')
     assert.equal(hero.drawRatios.at(-1), 0.5)
   } finally {
     global.performance = originalPerformance
@@ -647,7 +674,7 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
   const reverseCalls = []
   const soundCalls = []
   const tools = loadHeroTools({
-    './slashRecoveryAnimation': {
+    './entities/slashRecoveryAnimation': {
       logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (hero, options) => {
         reverseCalls.push([hero, options.releaseFrame])
@@ -655,7 +682,7 @@ test('hero sword whiff rewinds the slash recovery through the shared helper', ()
         return true
       },
     },
-    './sound': {
+    './audio/sound': {
       playAudibleSoundCue: (_instance, cue) => soundCalls.push(cue),
       playSoundCue: cue => soundCalls.push(cue),
     },
@@ -682,7 +709,7 @@ test('free-hand whiff rewinds the slash recovery through the shared helper', () 
   const reverseCalls = []
   const soundCalls = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './slashRecoveryAnimation': {
+    './entities/slashRecoveryAnimation': {
       logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (hero, options) => {
         reverseCalls.push([hero, options.releaseFrame])
@@ -690,7 +717,7 @@ test('free-hand whiff rewinds the slash recovery through the shared helper', () 
         return true
       },
     },
-    './sound': {
+    './audio/sound': {
       playAudibleSoundCue: (_instance, cue) => soundCalls.push(cue),
       playSoundCue: cue => soundCalls.push(cue),
     },
@@ -841,7 +868,7 @@ test('hero defense only starts with point weapons', () => {
 test('hero defense flash targets weapon layers without flashing the body sprite', () => {
   const parryFeedback = []
   const { beginHeroDefense } = loadHeroTools({
-    './combatFeedback': {
+    './combat/combatFeedback': {
       showDamageFeedback: () => {},
       showParryFeedback: (target, text) => parryFeedback.push([target.label, text]),
     },
@@ -1038,7 +1065,7 @@ test('bow release consumes equipped arrows until the slot is empty', () => {
 test('lasso charge releases a drawn lasso instead of an arrow', () => {
   const soundCues = []
   const { aimHeroPowerChargeAt, releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
-    './sound': {
+    './audio/sound': {
       playAudibleSoundCue: (_instance, cue) => soundCues.push(cue),
       playSoundCue: cue => soundCues.push(cue),
     },
@@ -1154,7 +1181,7 @@ test('hero interact can gather from an aimed resource target', () => {
   }
   const messages = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
+    './combat/combat': { getActionCondition: () => true, getHitPointsWithDamage: () => 0 },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [carcass].filter(predicate) },
   })
   const { hero } = makeHero()
@@ -1193,7 +1220,7 @@ test('civil tools are no longer equipped combat weapons', () => {
     y: 0,
   }
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
       getHitPointsWithDamage: () => 0,
     },
@@ -1226,7 +1253,7 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
 test('sword whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const tools = loadHeroTools({
-    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
+    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
   })
   const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
@@ -1244,7 +1271,7 @@ test('sword whiffs use the generic melee whiff sound', () => {
 test('axe whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
+    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -1274,12 +1301,12 @@ test('axe attacks against units use sword attack cues on the slash impact frame'
   }
   const soundCues = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
       getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 3),
     },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
-    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
+    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -1321,13 +1348,13 @@ test('free-hand interact damages an aimed enemy unit on the slash impact frame',
   const damageFeedback = []
   const xp = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
       getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 3),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
-    './unitExperience': {
+    './units/unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: (_unit, category, amount) => xp.push([category, amount]),
       XP_CATEGORIES: { melee: 'melee' },
@@ -1381,13 +1408,13 @@ for (const family of ['building', 'animal']) {
     const damageFeedback = []
     const soundCues = []
     const { triggerToolAttackAt } = loadHeroTools({
-      './combat': {
+      './combat/combat': {
         getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
         getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 2),
       },
-      './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+      './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
       './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
-      './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
+      './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
     })
     const { hero } = makeHero()
     Object.assign(hero, {
@@ -1429,7 +1456,7 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
   }
   const damageFeedback = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
         target === animal &&
@@ -1439,7 +1466,7 @@ test('sword uses fixed weapon damage even when the hero has no damage stat', () 
         !target.isDead,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
   })
   const { triggerToolAttackAt } = tools
@@ -1479,7 +1506,7 @@ test('half charged sword releases on the slash impact frame with scaled damage',
   }
   const damageFeedback = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
         target === animal &&
@@ -1489,7 +1516,7 @@ test('half charged sword releases on the slash impact frame with scaled damage',
         !target.isDead,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
   })
   const { triggerToolAttackAt } = tools
@@ -1539,7 +1566,7 @@ test('fully charged sword releases on the slash impact frame with full scaled da
   }
   const damageFeedback = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
         target === animal &&
@@ -1549,7 +1576,7 @@ test('fully charged sword releases on the slash impact frame with full scaled da
         !target.isDead,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
   })
   const { triggerToolAttackAt } = tools
@@ -1672,7 +1699,7 @@ test('sword attacks use sword attack cues on the slash impact frame', () => {
   }
   const soundCues = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (source, target, action) =>
         action === 'attack' &&
         target === animal &&
@@ -1683,7 +1710,7 @@ test('sword attacks use sword attack cues on the slash impact frame', () => {
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [animal].filter(predicate) },
-    './sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
+    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
   })
   const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
@@ -1723,11 +1750,11 @@ test('sword damages berry bushes with weapon damage', () => {
   }
   const damageFeedback = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_source, target, action) => action === 'attack' && target === berrybush,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
   })
   const { triggerToolAttackAt } = tools
@@ -1768,14 +1795,14 @@ test('free-hand interact chops a depleted berry bush instead of blocking on gath
   }
   const damageFeedback = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_source, target, action) => {
         if (target !== berrybush) return false
         return action === 'chopwood'
       },
       getHitPointsWithDamage: (_source, target) => Math.max(0, target.hitPoints - 4),
     },
-    './combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+    './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [berrybush].filter(predicate) },
   })
   const { hero } = makeHero()
@@ -1835,12 +1862,12 @@ test('charged sword release does not fall back to a whiff when attack energy is 
   const messages = []
   const soundCues = []
   const tools = loadHeroTools({
-    './combat': {
+    './combat/combat': {
       getActionCondition: (_source, target, action) => action === 'attack' && target === enemy,
       getHitPointsWithDamage: (_source, target, damage) => Math.max(0, target.hitPoints - damage),
     },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
-    './sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
+    './audio/sound': { playAudibleSoundCue: () => {}, playSoundCue: cue => soundCues.push(cue) },
   })
   const { releaseHeroPowerCharge, triggerToolAttackAt } = tools
   const { hero } = makeHero()
@@ -1902,7 +1929,7 @@ test('free-hand interact still whiffs when a contextual target is aimed but out 
     y: 0,
   }
   const { triggerToolAttackAt } = loadHeroTools({
-    './combat': { getActionCondition: (_hero, target, action) => target === tree && action === 'chopwood' },
+    './combat/combat': { getActionCondition: (_hero, target, action) => target === tree && action === 'chopwood' },
     './grid/visibility': { findInstancesInSight: (_hero, predicate) => [tree].filter(predicate) },
   })
   const { hero } = makeHero()

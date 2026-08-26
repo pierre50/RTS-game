@@ -2,7 +2,7 @@ import { Application, TextureStyle } from 'pixi.js'
 import './styles.css'
 import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
-import { DISPLAY_SCALE, getScreenBrightness, onVisualSettingsChange } from './lib/settings'
+import { DISPLAY_SCALE, getScreenBrightness, onVisualSettingsChange } from './lib/audio/settings'
 
 TextureStyle.defaultOptions.scaleMode = 'nearest'
 

@@ -1,8 +1,8 @@
 import { assignVillagerAutonomy, hasVillagerAutonomyTarget } from '../lib'
 import { t } from '../lib/lang'
-import { playUiSound } from '../lib/uiSound'
-import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/unitExperience'
-import { refreshUnitEquipmentStats } from '../lib/equipmentStats'
+import { playUiSound } from '../lib/audio/uiSound'
+import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
+import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import {
@@ -12,10 +12,10 @@ import {
   releaseIfStillLooking,
   playNpcOrderSound,
   clearNpcCommunicationFocus,
-} from '../lib/npcInteraction'
+} from '../lib/npc/npcInteraction'
 import { createTitledEntityInfoContent } from './EntityInfoModalManager'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
-import { pickForeignNpcChatterLine, pickNpcGreetingLine } from '../lib/npcChatter'
+import { pickForeignNpcChatterLine, pickNpcGreetingLine } from '../lib/npc/npcChatter'
 import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'

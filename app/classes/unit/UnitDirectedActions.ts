@@ -7,12 +7,12 @@ import {
   showHealingFeedback,
   syncMovedActionTarget,
 } from '../../lib'
-import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
+import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { t } from '../../lib/lang'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
-import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/unitExperience'
-import { isHeroControlled } from '../../lib/unitControl'
-import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
+import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
+import { isHeroControlled } from '../../lib/units/unitControl'
+import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
 import { Projectile } from '../Projectile'

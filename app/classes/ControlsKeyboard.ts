@@ -1,4 +1,4 @@
-import { getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/settings'
+import { getControlActionForKeyboardEvent, type ControlBindingAction } from '../lib/audio/settings'
 
 type ControlsKeyboardHost = {
   buildingPlacer: { cancelWallDraft(): boolean }

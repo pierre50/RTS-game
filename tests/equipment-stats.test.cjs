@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const constants = {
   FAMILY_TYPES: {
@@ -52,14 +53,14 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
 function loadEquipmentStats({ unitEquipment = {}, workEquipment = {} } = {}) {
-  return loadModule('app/lib/equipmentStats.ts', {
+  return loadModule('app/lib/equipment/equipmentStats.ts', {
     'pixi.js': { Assets: { cache: { get: () => undefined } } },
     '../constants': constants,
     './lpc/equipment': {
@@ -72,7 +73,7 @@ function loadEquipmentStats({ unitEquipment = {}, workEquipment = {} } = {}) {
         return typeof equipment === 'function' ? equipment(age) : [...(equipment ?? [])]
       },
     },
-    './unitExperience': {
+    './units/unitExperience': {
       getUnitEquipmentLevel: unit => unit.level ?? 0,
     },
   })

@@ -9,23 +9,23 @@ function loadModule(relativePath, mocks) {
       drawInstanceBlinkingSelection: () => {},
       getSelectionMarkerOffset: () => 0,
     },
-    './sound': {
+    './audio/sound': {
       playAudibleSoundCue: () => {},
       playSelectionSound: () => {},
       playSoundCue: () => {},
     },
-    './combat': {
+    './combat/combat': {
       isValidCondition: () => true,
     },
     './lang': {
       t: key => key,
     },
-    './buildingFeedback': {
+    './buildings/buildingFeedback': {
       showUnitCannotEnterBuildingMessage: (unit, building) => {
         unit.context?.menu?.showMessage(`unitCannotEnterBuilding:${unit.type}:${building.type}`, 'warning')
       },
     },
-    './unitUpgrades': {
+    './units/unitUpgrades': {
       getUnitUpgradeTargetForBuilding: () => null,
     },
   }
@@ -81,9 +81,9 @@ function angleDelta(a, b) {
 }
 
 function loadNpcInteraction(target, overrides = {}) {
-  return loadModule('app/lib/npcInteraction.ts', {
+  return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: (building, unit) => {
         if (building.type === constants.BUILDING_TYPES.temple && unit.type === constants.UNIT_TYPES.villager) {
           return constants.UNIT_TYPES.priest
@@ -92,7 +92,7 @@ function loadNpcInteraction(target, overrides = {}) {
         return null
       },
     },
-    './unitUpgrades': {
+    './units/unitUpgrades': {
       getUnitUpgradeTargetForBuilding: () => null,
     },
     './grid/visibility': {
@@ -346,7 +346,7 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: () => null,
     },
     './lang': {
@@ -453,7 +453,7 @@ test('"aller vers" shows a warning when a soldier targets an empty stable', () =
     },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: (building, unit) =>
         building.type === 'Stable' && unit.type === 'Fantassin' ? 'Fantassin' : null,
     },
@@ -511,7 +511,7 @@ test('"aller vers" sends a bowman to the stable even before a horse is available
     },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: (building, unit) =>
         building.type === 'Stable' && unit.type === 'Bowman' ? 'Bowman' : null,
     },
@@ -579,7 +579,7 @@ test('"aller vers" cursor shows combat feedback over combat targets', () => {
   }
 
   try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/heroCursor.ts', {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, true)
@@ -605,7 +605,7 @@ test('"aller vers" cursor shows the resource hand over buildings', () => {
   }
 
   try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/heroCursor.ts', {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.building }, true)
@@ -631,7 +631,7 @@ test('"aller vers" cursor shows the pointer only while choosing an empty go-to t
   }
 
   try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/heroCursor.ts', {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
     updateHeroCursor(null, null, false)
@@ -659,7 +659,7 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
   }
 
   try {
-    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/heroCursor.ts', {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
     updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, false)
@@ -673,9 +673,9 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
 })
 
 function loadCommModule(instances, getInstanceDegree) {
-  return loadModule('app/lib/npcInteraction.ts', {
+  return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: () => null,
     },
     './grid/visibility': {
@@ -846,9 +846,9 @@ test('hidden communication release finds nothing when no ally is in front of the
 })
 
 function loadNpcFollowModule(instances) {
-  return loadModule('app/lib/npcInteraction.ts', {
+  return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildingTraining': {
+    './buildings/buildingTraining': {
       getTrainingTargetForUnit: () => null,
     },
     './grid/visibility': {

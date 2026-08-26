@@ -1,7 +1,7 @@
 import { pointInRectangle, pointIsBetweenTwoPoint, updateInstanceRenderVisibility } from '../lib'
 import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
-import { getCameraZoom } from '../lib/settings'
+import { getCameraZoom } from '../lib/audio/settings'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Bounds, Viewport } from '../types/geometry'
 import type { VisionGridLike } from '../types/player'

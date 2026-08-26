@@ -1,7 +1,7 @@
 import { renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
-import { HERO_ENERGY_COLOR } from '../lib/unitEnergy'
-import { getUnitOverallLevel } from '../lib/unitExperience'
+import { HERO_ENERGY_COLOR } from '../lib/units/unitEnergy'
+import { getUnitOverallLevel } from '../lib/units/unitExperience'
 import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 

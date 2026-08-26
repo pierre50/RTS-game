@@ -8,7 +8,7 @@ import {
   parseTextureRef,
   RALLY_POINT_SHEET_ID,
 } from '../../lib'
-import { getShadowsEnabled } from '../../lib/settings'
+import { getShadowsEnabled } from '../../lib/audio/settings'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 

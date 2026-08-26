@@ -1,7 +1,7 @@
 import { FAMILY_TYPES, CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { average, pointsDistance } from '../lib/maths'
 import { isFriendlyTarget } from '../lib/combat'
-import { canTargetBeAggressed } from '../lib/diplomaticAggression'
+import { canTargetBeAggressed } from '../lib/combat/diplomaticAggression'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import type { GameContextLike } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'

@@ -56,6 +56,9 @@ function loadTsModule(relativePath, { baseDir = path.join(__dirname, '..', '..')
 
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    for (const alias of mockAliasesFor(request, filename)) {
+      if (Object.hasOwn(mocks, alias)) return mocks[alias]
+    }
     const resolved = resolveLocalModule(request, filename)
     if (Object.hasOwn(mocks, resolved)) return mocks[resolved]
     if (resolved.endsWith('.ts') || resolved.endsWith('.js') || resolved.endsWith('.cjs')) {
@@ -81,4 +84,39 @@ function loadTsModule(relativePath, { baseDir = path.join(__dirname, '..', '..')
   return module.exports
 }
 
-module.exports = { loadTsModule }
+function mockAliasesFor(request, parentFilename) {
+  const aliases = [
+    request.replace('/combat/combat/', '/combat/'),
+    request.replace('/combat/', '/combat/combat/'),
+    request.replace(/^\.\.\/\.\.\//, '../'),
+    request.replace(/^\.\.\//, './'),
+    request.replace(/^\.\//, '../'),
+    request.replace(/^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//, '../$2/'),
+    request.replace(/^(\.{1,2}\/)(audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)\//, './$2/'),
+  ]
+  if (request === '../combat' || request === './combat') {
+    aliases.push('../combat/combat')
+    aliases.push('./combat/combat')
+  }
+  const domainMatch = parentFilename.match(/[\\/]app[\\/]lib[\\/](audio|buildings|combat|entities|equipment|hero|horses|input|npc|ui|units)[\\/]/)
+  if (domainMatch && request.startsWith('./')) {
+    aliases.push(`./${domainMatch[1]}/${request.slice(2)}`)
+    aliases.push(`../${domainMatch[1]}/${request.slice(2)}`)
+  }
+  return [...new Set(aliases)]
+}
+
+function requireFromTsFile(request, parentFilename, mocks = {}, moduleCache = new Map()) {
+  if (Object.hasOwn(mocks, request)) return mocks[request]
+  for (const alias of mockAliasesFor(request, parentFilename)) {
+    if (Object.hasOwn(mocks, alias)) return mocks[alias]
+  }
+  const resolved = resolveLocalModule(request, parentFilename)
+  if (Object.hasOwn(mocks, resolved)) return mocks[resolved]
+  if (resolved.endsWith('.ts') || resolved.endsWith('.js') || resolved.endsWith('.cjs')) {
+    return loadTsModule(resolved, { mocks, moduleCache })
+  }
+  return require(resolved)
+}
+
+module.exports = { loadTsModule, requireFromTsFile }

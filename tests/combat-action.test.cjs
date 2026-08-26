@@ -19,7 +19,7 @@ const unitWorkAppearanceMock = {
 
 function loadModule(relativePath, mocks) {
   const defaultMocks = {
-    '../../lib/unitExperience': unitExperienceMock,
+    '../../lib/units/unitExperience': unitExperienceMock,
     '../config/gameDifficultyBalance': (() => {
       const balances = {
         easy: {
@@ -43,10 +43,10 @@ function loadModule(relativePath, mocks) {
         getGameDifficultyCombatBalance: difficulty => balances[difficulty] ?? balances.medium,
       }
     })(),
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
-    '../../lib/equipmentStats': { getUnitCombatRange: unit => unit?.combatRange ?? 0 },
-    '../../lib/horseCapture': { getNearestAvailableStableForUnit: () => null },
-    '../../lib/combatAttackLoop': {
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    '../../lib/equipment/equipmentStats': { getUnitCombatRange: unit => unit?.combatRange ?? 0 },
+    '../../lib/horses/horseCapture': { getNearestAvailableStableForUnit: () => null },
+    '../../lib/combat/combatAttackLoop': {
       runAttackLoopOnFrame: (attacker, callbacks) => {
         const sprite = attacker.sprite
         if (!sprite) return
@@ -67,7 +67,7 @@ function loadModule(relativePath, mocks) {
         })
       },
     },
-    './combatBehavior': {
+    './combat/combatBehavior': {
       getCombatBehavior: unit => ({
         recoveryMode: 'orbit',
         reengageEnergyRatio: 1,
@@ -83,17 +83,17 @@ function loadModule(relativePath, mocks) {
       getCombatMoraleRoll: unit =>
         typeof unit?.combatMoraleRoll === 'number' ? unit.combatMoraleRoll : unit?.label ? 0.5 : 1,
     },
-    './unitUpgrades': { canUpgradeUnitAtBuilding: () => false },
-    '../../lib/combatBehavior': {
+    './units/unitUpgrades': { canUpgradeUnitAtBuilding: () => false },
+    '../../lib/combat/combatBehavior': {
       markCombatAttack: unit => {
         unit.combatMode = 'attack'
       },
       shouldSuppressAggroDuringCombatRecovery: unit =>
         unit.combatMode === 'recover' && unit.waitingForEnergyAction === constants.ACTION_TYPES.attack,
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
-    '../../lib/unitWorkAppearance': unitWorkAppearanceMock,
-    '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitWorkAppearance': unitWorkAppearanceMock,
+    '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
     './maths': { getReliefOffset: () => 0 },
   }
   return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })
@@ -148,9 +148,9 @@ const target = {
 }
 
 test('units with no weapon config can attack enemies with unarmed power', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
   const villager = {
@@ -166,9 +166,9 @@ test('units with no weapon config can attack enemies with unarmed power', () => 
 })
 
 test('combat weapons cannot attack neutral berry bushes', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
   const swordsman = {
@@ -191,9 +191,9 @@ test('combat weapons cannot attack neutral berry bushes', () => {
 })
 
 test('attack orders cannot target neutral berry bushes', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
   const swordsman = {
@@ -216,9 +216,9 @@ test('attack orders cannot target neutral berry bushes', () => {
 })
 
 test('sendToAttack does not issue an attack order against neutral berry bushes', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const sendCalls = []
   const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
@@ -233,10 +233,10 @@ test('sendToAttack does not issue an attack order against neutral berry bushes',
       isWheatMature: () => false,
       setVillagerAutonomy: () => {},
     },
-    '../../lib/diplomaticAggression': { applyDiplomaticAggression: () => ({ hostileNow: false }) },
+    '../../lib/combat/diplomaticAggression': { applyDiplomaticAggression: () => ({ hostileNow: false }) },
     '../../lib/lang': { t: key => key },
-    '../../lib/unitControl': { isHeroControlled: () => false },
-    '../../lib/unitWorkAppearance': { applyUnitWorkAssets: () => {} },
+    '../../lib/units/unitControl': { isHeroControlled: () => false },
+    '../../lib/units/unitWorkAppearance': { applyUnitWorkAssets: () => {} },
   })
 
   const berrybush = {
@@ -270,9 +270,9 @@ test('sendToAttack does not issue an attack order against neutral berry bushes',
 })
 
 test('villagers can still forage neutral berry bushes', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
 
   const villager = {
@@ -295,9 +295,9 @@ test('villagers can still forage neutral berry bushes', () => {
 })
 
 test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
@@ -306,9 +306,9 @@ test('villagers flee from anything that fights back, human or AI-controlled alik
 })
 
 test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const woundedDeer = { family: 'animal', hitPoints: 2, weaponPower: 1, totalHitPoints: 20, type: 'Deer' }
@@ -317,9 +317,9 @@ test('villagers keep hunting a nearly-dead animal instead of fleeing full health
 })
 
 test('villagers retreat from a healthy animal once critically hurt themselves', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const woundedVillager = { category: 'Civilian', hitPoints: 5, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const healthyBoar = { family: 'animal', hitPoints: 40, weaponPower: 6, totalHitPoints: 40, type: 'Boar' }
@@ -328,9 +328,9 @@ test('villagers retreat from a healthy animal once critically hurt themselves', 
 })
 
 test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const healthyHero = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Hero' }
   const chief = { category: 'Civilian', hitPoints: 45, weaponPower: 5, totalHitPoints: 45, type: 'Chief' }
@@ -341,7 +341,7 @@ test('heroes and chiefs hold their ground like combatants instead of fleeing eve
 })
 
 test('priests cannot convert bandit units', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const playerOwner = {
@@ -380,7 +380,7 @@ test('priests cannot convert bandit units', () => {
 })
 
 test('bandit-owned priests cannot convert units into the bandit team', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const banditOwner = {
@@ -425,7 +425,7 @@ test('early resource actions require only their remaining unlocking technologies
     },
     RESOURCE_TYPES: { gold: 'Gold', stone: 'Stone', wheat: 'Wheat' },
   }
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': actionConstants,
   })
   const source = {
@@ -482,9 +482,9 @@ test('early resource actions require only their remaining unlocking technologies
 })
 
 test('military units fight on until critically wounded, then retreat from a real threat', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const healthySoldier = { category: 'Fantassin', hitPoints: 40, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
   const criticalSoldier = { category: 'Fantassin', hitPoints: 5, weaponPower: 3, totalHitPoints: 40, type: 'Fantassin' }
@@ -498,9 +498,9 @@ test('military units fight on until critically wounded, then retreat from a real
 })
 
 test('brave combatants can hold their ground when critically wounded', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const braveSoldier = {
     category: 'Fantassin',
@@ -517,9 +517,9 @@ test('brave combatants can hold their ground when critically wounded', () => {
 })
 
 test('low-bravery combatants still flee when critically wounded', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
-    './equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
   })
   const cautiousSoldier = {
     category: 'Fantassin',
@@ -571,7 +571,7 @@ function makeMoraleUnit(extra = {}) {
 }
 
 test('a trapped, badly wounded villager surrenders when local enemy force is overwhelming', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const villager = makeMoraleUnit({
@@ -596,7 +596,7 @@ test('a trapped, badly wounded villager surrenders when local enemy force is ove
 })
 
 test('a badly wounded villager with an escape route flees instead of surrendering', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const villager = makeMoraleUnit({
@@ -613,7 +613,7 @@ test('a badly wounded villager with an escape route flees instead of surrenderin
 })
 
 test('a supported soldier does not surrender just because enemies are nearby', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const soldier = makeMoraleUnit({ hitPoints: 25 })
@@ -633,7 +633,7 @@ test('a supported soldier does not surrender just because enemies are nearby', (
 })
 
 test('a trapped, critically wounded soldier can surrender to an overwhelming enemy group', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const soldier = makeMoraleUnit({ hitPoints: 5 })
@@ -653,7 +653,7 @@ test('a trapped, critically wounded soldier can surrender to an overwhelming ene
 })
 
 test('a brave trapped soldier keeps fighting instead of surrendering from morale', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const soldier = makeMoraleUnit({
@@ -677,7 +677,7 @@ test('a brave trapped soldier keeps fighting instead of surrendering from morale
 })
 
 test('heroes and chiefs never auto-surrender from morale checks', () => {
-  const { evaluateCombatMorale } = loadModule('app/lib/combat.ts', {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const hero = makeMoraleUnit({
@@ -693,7 +693,7 @@ test('heroes and chiefs never auto-surrender from morale checks', () => {
 })
 
 test('units with weapon config can attack enemies', () => {
-  const { getActionCondition } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
 
@@ -709,7 +709,7 @@ test('units with weapon config can attack enemies', () => {
 })
 
 test('units cannot attack or damage friendly units', () => {
-  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const friendlyOwner = { label: 'player' }
@@ -733,7 +733,7 @@ test('units cannot attack or damage friendly units', () => {
 })
 
 test('units cannot attack or damage allied-team units', () => {
-  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat.ts', {
+  const { getActionCondition, getHitPointsWithDamage, isFriendlyTarget } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const alliedOwner = { label: 'ally', team: 1 }
@@ -757,7 +757,7 @@ test('units cannot attack or damage allied-team units', () => {
 })
 
 test('unarmed units deal half a point of damage', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const attacker = {
@@ -779,7 +779,7 @@ test('unarmed units deal half a point of damage', () => {
 })
 
 test('melee damage uses melee armor instead of the best armor value', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const attacker = {
@@ -803,7 +803,7 @@ test('melee damage uses melee armor instead of the best armor value', () => {
 })
 
 test('pierce damage uses pierce armor and still applies armor to default damage', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const attacker = {
@@ -828,7 +828,7 @@ test('pierce damage uses pierce armor and still applies armor to default damage'
 })
 
 test('easy combat difficulty increases played damage against enemies', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
@@ -853,7 +853,7 @@ test('easy combat difficulty increases played damage against enemies', () => {
 })
 
 test('easy combat difficulty reduces enemy damage against played units', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
@@ -878,7 +878,7 @@ test('easy combat difficulty reduces enemy damage against played units', () => {
 })
 
 test('combat difficulty treats armed animals as threats but leaves passive hunting unchanged', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const playedOwner = { label: 'player', isPlayed: true, isEnemy: () => false }
@@ -908,7 +908,7 @@ test('combat difficulty treats armed animals as threats but leaves passive hunti
 })
 
 test('medium combat difficulty keeps current damage unchanged', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const playedOwner = { label: 'player', isPlayed: true, isEnemy: targetOwner => targetOwner?.label === 'enemy' }
@@ -933,7 +933,7 @@ test('medium combat difficulty keeps current damage unchanged', () => {
 })
 
 test('hero defense blocks incoming damage and flashes', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const flashes = []
@@ -959,7 +959,7 @@ test('hero defense blocks incoming damage and flashes', () => {
 })
 
 test('hero defense blocks animal attack damage too', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
   })
   const flashes = []
@@ -998,7 +998,7 @@ function realGetPointsDegree(x1, y1, x2, y2) {
 const mathsMock = { angleDelta: realAngleDelta, getPointsDegree: realGetPointsDegree }
 
 test('hero defense still blocks a hit landing in front of the hero', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
     './maths': mathsMock,
   })
@@ -1022,7 +1022,7 @@ test('hero defense still blocks a hit landing in front of the hero', () => {
 })
 
 test('hero defense still blocks a hit landing exactly at the edge of the frontal arc (side hit)', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
     './maths': mathsMock,
   })
@@ -1046,7 +1046,7 @@ test('hero defense still blocks a hit landing exactly at the edge of the frontal
 })
 
 test('hero defense does not block a hit landing behind the hero, even while active', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
     './maths': mathsMock,
   })
@@ -1070,7 +1070,7 @@ test('hero defense does not block a hit landing behind the hero, even while acti
 })
 
 test('hero defense with no position data on either side fails open (still blocks)', () => {
-  const { getHitPointsWithDamage } = loadModule('app/lib/combat.ts', {
+  const { getHitPointsWithDamage } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
     './maths': mathsMock,
   })
@@ -1113,8 +1113,8 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
-    '../../lib/unitControl': { canAutoAcquireTarget: () => false },
+    '../../lib/combat/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => false },
   })
   const unit = {
     context: { editor: null },
@@ -1153,15 +1153,15 @@ test('attacker units show alert feedback when detection starts an attack', () =>
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/combatFeedback': {
+    '../../lib/combat/combatFeedback': {
       showAlertThenAggressionFeedback: (unit, onAggression) => {
         calls.push(['alertThenAggression', unit.label])
         onAggression()
       },
       showDamageFeedback: () => {},
     },
-    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
   })
   const target = { family: constants.FAMILY_TYPES.unit }
   const unit = {
@@ -1208,12 +1208,12 @@ test('melee attacks finish their current animation loop before resuming after a 
       syncAnimationSpeedToRate: () => {},
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/combatFeedback': {
+    '../../lib/combat/combatFeedback': {
       showAlertThenAggressionFeedback: () => {},
       showDamageFeedback: () => {},
     },
-    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
   })
   const target = {
     family: constants.FAMILY_TYPES.animal,
@@ -1263,7 +1263,7 @@ test('melee attacks finish their current animation loop before resuming after a 
 test('unit control policy disables automatic reactions for the active hero-controlled unit', () => {
   const hero = {}
   const { canAutoAcquireTarget, canAutoReactToAttack, isHeroControlled, setUnitControlMode } = loadModule(
-    'app/lib/unitControl.ts',
+    'app/lib/units/unitControl.ts',
     {}
   )
 
@@ -1318,9 +1318,9 @@ test('melee unit attacks damage targets with weapon damage', () => {
       SLASH_IMPACT_FRAME: 5,
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
-    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/combat/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
   })
   const enemyUnit = {
     family: constants.FAMILY_TYPES.unit,
@@ -1371,9 +1371,9 @@ test('axe melee units use sword attack cues when hitting units', () => {
       SLASH_IMPACT_FRAME: 5,
     },
     '../Projectile': { Projectile: class {} },
-    '../../lib/combatFeedback': { showDamageFeedback: () => {} },
-    '../../lib/unitControl': { canAutoAcquireTarget: () => true },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/combat/combatFeedback': { showDamageFeedback: () => {} },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
   })
   const enemyUnit = {
     family: constants.FAMILY_TYPES.unit,
@@ -1401,10 +1401,10 @@ test('axe melee units use sword attack cues when hitting units', () => {
 test('melee slash recovery rewinds Pixi frames before completing', () => {
   const calls = []
   const scheduled = new Map()
-  const spriteAnimation = loadModule('app/lib/spriteAnimation.ts')
-  const { playReverseSlashRecovery } = loadModule('app/lib/slashRecoveryAnimation.ts', {
+  const spriteAnimation = loadModule('app/lib/entities/spriteAnimation.ts')
+  const { playReverseSlashRecovery } = loadModule('app/lib/entities/slashRecoveryAnimation.ts', {
     '../constants': constants,
-    './spriteAnimation': spriteAnimation,
+    './entities/spriteAnimation': spriteAnimation,
   })
   const sprite = {
     currentFrame: 5,
@@ -1460,7 +1460,7 @@ test('damage feedback can be cleared before its timer fires', () => {
       this.matrix = []
     }
   }
-  const { showDamageFeedback, clearDamageFeedback } = loadModule('app/lib/combatFeedback.ts', {
+  const { showDamageFeedback, clearDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
       ColorMatrixFilter,
       Text: class {

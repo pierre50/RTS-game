@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadSettings() {
-  const filename = path.join(__dirname, '../app/lib/settings.ts')
+  const filename = path.join(__dirname, '../app/lib/audio/settings.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -29,7 +30,7 @@ function loadSettings() {
   const mocks = {
     '@pixi/sound': { sound: { volumeAll: 1 } },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return {
     settings: module.exports,

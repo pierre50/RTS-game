@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function closestPointOnSegment(point, a, b) {
   const dx = b.x - a.x
@@ -37,7 +38,7 @@ function distanceToPolygon(points, point) {
 }
 
 function loadHeroActionRange({ contact = () => false, heroControlled = () => true } = {}) {
-  const filename = path.join(__dirname, '../app/lib/heroActionRange.ts')
+  const filename = path.join(__dirname, '../app/lib/hero/heroActionRange.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -50,13 +51,14 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
       ACTION_TYPES: { takemeat: 'takemeat' },
       FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource' },
     },
-    './grid/cells': {
+    '../grid/cells': {
       getBuildingContactDistance: size => Math.floor(((size ?? 1) - 1) / 2) + 1,
+      getCellsInCellRadius: () => [],
     },
-    './grid/movement': {
+    '../grid/movement': {
       instanceContactInstance: contact,
     },
-    './graphics/selection': {
+    '../graphics/selection': {
       getRoundedIsoShapePoints: ({ x = 0, y = 0, factor = 1 } = {}) => [
         { x, y: y - 16 * factor },
         { x: x + 32 * factor, y },
@@ -64,19 +66,19 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
         { x: x - 32 * factor, y },
       ],
     },
-    './geometry/polygon': {
+    '../geometry/polygon': {
       closestPointOnSegment,
       distanceToPolygon,
       pointIsInsidePolygon,
     },
-    './maths': {
+    '../maths': {
       instancesDistance: (a, b) => Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0)),
     },
-    './unitControl': {
+    '../units/unitControl': {
       isHeroControlled: heroControlled,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

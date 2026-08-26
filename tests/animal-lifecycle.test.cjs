@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -12,7 +13,7 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -33,20 +34,20 @@ const { AnimalLifecycle } = loadModule('app/classes/animal/AnimalLifecycle.ts', 
     playAudibleSoundCue: () => {},
     updateInstanceVisibility: () => {},
   },
-  '../../lib/deathFlash': {
+  '../../lib/entities/deathFlash': {
     startDeathFlash: () => () => {},
     runAfterDeathFlash: (sprite, onComplete) => {
       sprite.onFrameChange = () => {}
       return onComplete
     },
   },
-  '../../lib/entityVisualFeedback': {
+  '../../lib/entities/entityVisualFeedback': {
     clearEntityVisualFeedback: () => {},
   },
-  '../../lib/entityFade': {
+  '../../lib/entities/entityFade': {
     fadeOutThenClear: () => {},
   },
-  '../../lib/spriteAnimation': {
+  '../../lib/entities/spriteAnimation': {
     playSpriteAnimationFromStart: (sprite, options = {}) => {
       if (options.clearFrameChange) sprite.onFrameChange = undefined
       if (options.clearLoop !== false) sprite.onLoop = undefined

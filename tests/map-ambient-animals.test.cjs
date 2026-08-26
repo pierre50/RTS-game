@@ -76,7 +76,7 @@ function loadMapGeneration() {
       Cell: class {},
       GenerationCell: class {},
     },
-    './MapBlueprintGeneration': {
+    './generation/MapBlueprintGeneration': {
       MapBlueprintGeneration: class {
         constructor() {}
       },

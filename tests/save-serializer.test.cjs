@@ -24,7 +24,7 @@ function loadSaveSerializer() {
         getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
       }
     }
-    if (id === '../lib/villagerAssignments') {
+    if (id === '../lib/units/villagerAssignments') {
       return {
         summarizeVillagerAssignments(units = []) {
           const assigned = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }

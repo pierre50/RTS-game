@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -12,18 +13,18 @@ function loadModule(relativePath, mocks = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
-const spriteTransientEffects = loadModule('app/lib/spriteTransientEffects.ts', {})
+const spriteTransientEffects = loadModule('app/lib/entities/spriteTransientEffects.ts', {})
 const deathFlashMocks = {
   './spriteTransientEffects': spriteTransientEffects,
 }
 
 test('death flash restores tint if the sprite textures change before completion', () => {
-  const { runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
   const originalTextures = ['dying-0', 'dying-1']
   const corpseTextures = ['corpse']
   const sprite = {
@@ -44,7 +45,7 @@ test('death flash restores tint if the sprite textures change before completion'
 })
 
 test('death flash can be cleared even if sprite callbacks were replaced', () => {
-  const { clearDeathFlash, runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { clearDeathFlash, runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
   const replacementFrameChange = () => {}
   const sprite = {
     currentFrame: 0,
@@ -65,7 +66,7 @@ test('death flash can be cleared even if sprite callbacks were replaced', () => 
 })
 
 test('starting a new death flash restores the previous flash tint first', () => {
-  const { runAfterDeathFlash } = loadModule('app/lib/deathFlash.ts', deathFlashMocks)
+  const { runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
   const sprite = {
     currentFrame: 0,
     destroyed: false,

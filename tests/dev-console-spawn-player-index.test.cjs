@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadSpawnActions(sharedOverrides = {}) {
   const filename = path.join(__dirname, '../app/dev-console/actions/spawn.ts')
@@ -13,6 +14,7 @@ function loadSpawnActions(sharedOverrides = {}) {
   })
 
   const module = { exports: {} }
+  const mocks = {}
   const localRequire = request => {
     if (request === './shared') {
       return {
@@ -97,7 +99,7 @@ function loadSpawnActions(sharedOverrides = {}) {
         },
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

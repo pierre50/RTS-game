@@ -1,8 +1,8 @@
 import { FAMILY_TYPES } from '../constants'
-import { isHeroInteractionTargetReachable } from '../lib/heroActionRange'
-import { findFacingEntity } from '../lib/heroTools'
-import { isTalkableNpc } from '../lib/npcInteraction'
-import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npcChatter'
+import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
+import { findFacingEntity } from '../lib/hero/heroTools'
+import { isTalkableNpc } from '../lib/npc/npcInteraction'
+import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npc/npcChatter'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 

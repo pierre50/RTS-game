@@ -106,13 +106,13 @@ function buildMocks(calls, context) {
       Modal: FakeModal,
     },
     '../lib/lang': { t: key => key },
-    '../lib/uiSound': { playUiSound: () => {} },
+    '../lib/audio/uiSound': { playUiSound: () => {} },
     '../constants': {
       SHEET_TYPES: { standing: 'standing' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
       UNIT_TYPES: { villager: 'Villager' },
     },
-    '../lib/unitExperience': {
+    '../lib/units/unitExperience': {
       getUnitEquipmentLevel: npc => npc.debugLevel ?? 0,
       setUnitDebugLevel: (npc, level) => {
         npc.debugLevel = level
@@ -121,7 +121,7 @@ function buildMocks(calls, context) {
       },
       XP_MAX_LEVEL: 20,
     },
-    '../lib/equipmentStats': {
+    '../lib/equipment/equipmentStats': {
       refreshUnitEquipmentStats: npc => calls.push(['refreshUnitEquipmentStats', npc.label]),
     },
     '../lib/lpc': {
@@ -130,7 +130,7 @@ function buildMocks(calls, context) {
         return true
       },
     },
-    '../lib/npcInteraction': {
+    '../lib/npc/npcInteraction': {
       sendNpcToStockpile: () => calls.push(['sendNpcToStockpile', `paused=${context.paused}`]),
       keepNpcHere: () => calls.push(['keepNpcHere', `paused=${context.paused}`]),
       canKeepNpcHere: () => false,
@@ -149,7 +149,7 @@ function buildMocks(calls, context) {
         modal.title = title
       },
     },
-    '../lib/npcChatter': { pickForeignNpcChatterLine: () => 'foreign hi', pickNpcGreetingLine: () => 'hi' },
+    '../lib/npc/npcChatter': { pickForeignNpcChatterLine: () => 'foreign hi', pickNpcGreetingLine: () => 'hi' },
   }
 }
 

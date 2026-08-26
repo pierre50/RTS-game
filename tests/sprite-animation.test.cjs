@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -12,13 +13,13 @@ function loadModule(relativePath, mocks = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
 test('playSpriteAnimationFromStart resets transient callbacks and restarts frame zero', () => {
-  const { playSpriteAnimationFromStart } = loadModule('app/lib/spriteAnimation.ts')
+  const { playSpriteAnimationFromStart } = loadModule('app/lib/entities/spriteAnimation.ts')
   const calls = []
   const complete = () => {}
   const sprite = {
@@ -47,7 +48,7 @@ test('playSpriteAnimationFromStart resets transient callbacks and restarts frame
 })
 
 test('playSpriteFrameSequence drives Pixi frames through the scheduler', () => {
-  const { playSpriteFrameSequence } = loadModule('app/lib/spriteAnimation.ts')
+  const { playSpriteFrameSequence } = loadModule('app/lib/entities/spriteAnimation.ts')
   const calls = []
   const scheduled = new Map()
   const scheduler = {
@@ -107,16 +108,16 @@ test('unit death starts the dying animation through the shared helper', () => {
       playAudibleSoundCue: () => {},
       updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
     },
-    '../../lib/deathFlash': {
+    '../../lib/entities/deathFlash': {
       runAfterDeathFlash: (sprite, onComplete) => {
         sprite.onFrameChange = () => calls.push(['deathFlashFrame'])
         return onComplete
       },
     },
-    '../../lib/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
-    '../../lib/entityFade': { fadeOutThenClear: () => {} },
-    '../../lib/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
-    '../../lib/spriteAnimation': {
+    '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
+    '../../lib/entities/entityFade': { fadeOutThenClear: () => {} },
+    '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
+    '../../lib/entities/spriteAnimation': {
       playSpriteAnimationFromStart: (sprite, options = {}) => {
         calls.push(['playSpriteAnimationFromStart', options.clearFrameChange, options.loop])
         if (options.clearFrameChange) sprite.onFrameChange = undefined

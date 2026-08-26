@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks = {}) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -23,7 +24,7 @@ function loadModule(relativePath, mocks = {}) {
 test('fadeOutThenClear fades entity and detached shadow before clearing', () => {
   const callbacks = []
   const removed = []
-  const { fadeOutThenClear } = loadModule('app/lib/entityFade.ts')
+  const { fadeOutThenClear } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     alpha: 0.8,
     shadow: { alpha: 0.5, destroyed: false },
@@ -60,7 +61,7 @@ test('fadeOutThenClear fades entity and detached shadow before clearing', () => 
 })
 
 test('fadeOutThenClear clears immediately without a scheduler', () => {
-  const { fadeOutThenClear } = loadModule('app/lib/entityFade.ts')
+  const { fadeOutThenClear } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     cleared: false,
     clear() {
@@ -76,7 +77,7 @@ test('fadeOutThenClear clears immediately without a scheduler', () => {
 test('fadeIn fades entity and detached shadow to their original alpha', () => {
   const callbacks = []
   const removed = []
-  const { fadeIn } = loadModule('app/lib/entityFade.ts')
+  const { fadeIn } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     alpha: 0.8,
     shadow: { alpha: 0.5, destroyed: false },
@@ -111,7 +112,7 @@ test('fadeIn fades entity and detached shadow to their original alpha', () => {
 })
 
 test('fadeIn restores final alpha immediately without a scheduler', () => {
-  const { fadeIn } = loadModule('app/lib/entityFade.ts')
+  const { fadeIn } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     alpha: 0.8,
     shadow: { alpha: 0.5, destroyed: false },
@@ -126,7 +127,7 @@ test('fadeIn restores final alpha immediately without a scheduler', () => {
 test('fadeIn cancels a pending fadeOut for the same entity', () => {
   const callbacks = []
   const removed = []
-  const { fadeIn, fadeOut } = loadModule('app/lib/entityFade.ts')
+  const { fadeIn, fadeOut } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     alpha: 1,
     context: {
@@ -163,7 +164,7 @@ test('fadeIn cancels a pending fadeOut for the same entity', () => {
 test('cancelFade stops a pending fadeOut without calling completion', () => {
   const callbacks = []
   const removed = []
-  const { cancelFade, fadeOut } = loadModule('app/lib/entityFade.ts')
+  const { cancelFade, fadeOut } = loadModule('app/lib/entities/entityFade.ts')
   const entity = {
     alpha: 1,
     context: {

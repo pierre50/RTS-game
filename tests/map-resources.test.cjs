@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadMapResources() {
-  const filename = path.join(__dirname, '../app/classes/map/MapResources.ts')
+  const filename = path.join(__dirname, '../app/classes/map/resources/MapResources.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -61,9 +62,9 @@ function loadMapResources() {
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    if (request === './MapForestResources') return loadLocalTs('MapForestResources.ts')
-    if (request === './MapResourceSpacing') return loadLocalTs('MapResourceSpacing.ts')
-    return require(request)
+    if (request === './resources/MapForestResources') return loadLocalTs('MapForestResources.ts')
+    if (request === './resources/MapResourceSpacing') return loadLocalTs('MapResourceSpacing.ts')
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports

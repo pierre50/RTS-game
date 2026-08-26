@@ -1,7 +1,7 @@
-import { playClickSound } from '../lib/uiSound'
+import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
-import { openSettingsModal } from '../ui/settingsPanel'
-import { openSaveListModal } from '../ui/saveListModal'
+import { openSettingsModal } from '../ui/modals/settingsPanel'
+import { openSaveListModal } from '../ui/modals/saveListModal'
 import { listSaves, loadSave } from '../serialization/SaveStorage'
 import type { SaveRecord } from '../types/save'
 

@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadBaseEntityInterface() {
-  const filename = path.join(__dirname, '../app/ui/BaseEntityInterface.ts')
+  const filename = path.join(__dirname, '../app/ui/entity/BaseEntityInterface.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -13,10 +14,10 @@ function loadBaseEntityInterface() {
   })
   const module = { exports: {} }
   const mocks = {
-    '../constants': {
+    '../../constants': {
       MENU_INFO_IDS: { hitPoints: 'hit-points' },
     },
-    '../lib/hitPointsText': {
+    '../../lib/entities/hitPointsText': {
       formatHitPointsText: (hitPoints, totalHitPoints) => {
         if (hitPoints === '') return ''
         const current = Number(hitPoints)
@@ -25,7 +26,7 @@ function loadBaseEntityInterface() {
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

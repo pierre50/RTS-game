@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadMainMenu({ saveEntries }) {
   const filename = path.join(__dirname, '../app/screens/MainMenu.ts')
@@ -14,10 +15,10 @@ function loadMainMenu({ saveEntries }) {
 
   let saveListOptions = null
   const mocks = {
-    '../lib/uiSound': { playClickSound() {} },
+    '../lib/audio/uiSound': { playClickSound() {} },
     '../lib/lang': { t: key => key },
-    '../ui/settingsPanel': { openSettingsModal() {} },
-    '../ui/saveListModal': {
+    '../ui/modals/settingsPanel': { openSettingsModal() {} },
+    '../ui/modals/saveListModal': {
       openSaveListModal(options) {
         saveListOptions = options
       },
@@ -28,7 +29,7 @@ function loadMainMenu({ saveEntries }) {
     },
   }
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { MainMenu: module.exports.default, getSaveListOptions: () => saveListOptions }
 }

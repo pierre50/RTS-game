@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
 import { POPULATION_MAX, RESOURCE_NAMES as PLAYER_RESOURCE_NAMES } from '../constants'
-import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/settings'
+import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/audio/settings'
 import {
   addResources,
   addHeroInventoryEquipment,

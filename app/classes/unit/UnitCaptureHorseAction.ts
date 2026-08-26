@@ -1,6 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { degreeToDirection, getInstanceDegree, instancesDistance } from '../../lib'
-import { getNearestAvailableStableForUnit, routeCapturedHorseToStableWithOwnerContact } from '../../lib/horseCapture'
+import { getNearestAvailableStableForUnit, routeCapturedHorseToStableWithOwnerContact } from '../../lib/horses/horseCapture'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { SchedulerTaskId } from '../../types/context'
 import { HeroLassoThrow } from '../HeroLassoThrow'

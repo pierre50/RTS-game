@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const WALK_SPEED_FACTOR = 0.5
 
@@ -63,7 +64,8 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     },
     '../constants': {
       COLOR_GOLD: 0xf8d878,
-      HERO_ACTION_MOVE_SPEED_FACTOR: 0.5,
+      HERO_ACTION_MOVE_SPEED_FACTOR: 0,
+      HERO_MELEE_CHARGE_MOVE_SPEED_FACTOR: 0.55,
       HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR: 0.8,
       LABEL_TYPES: { commRadius: 'commRadius' },
       MOUNTED_HORSE_SPEED_BONUS: 0.45,
@@ -90,11 +92,11 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
       playSoundCue,
       updateInstanceRenderVisibility: () => {},
     },
-    '../lib/heroTools': heroTools,
-    '../lib/heroCursor': {
+    '../lib/hero/heroTools': heroTools,
+    '../lib/hero/heroCursor': {
       updateHeroCursor: () => {},
     },
-    '../lib/heroActionRange': heroActionRange,
+    '../lib/hero/heroActionRange': heroActionRange,
     '../lib/chief': {
       heroCanCommand: hero => Boolean(hero?.isChief),
     },
@@ -104,24 +106,24 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
     '../lib/lpc': {
       applyBakedLpcUnitAssets: () => {},
     },
-    '../lib/npcInteraction': npcInteraction,
-    '../lib/unitEnergy': {
+    '../lib/npc/npcInteraction': npcInteraction,
+    '../lib/units/unitEnergy': {
       getEnergyMoveSpeedMultiplier: () => 1,
       updateUnitEnergy: () => {},
     },
-    '../lib/unitLocomotion': {
+    '../lib/units/unitLocomotion': {
       UNIT_WALK_SPEED_FACTOR: WALK_SPEED_FACTOR,
       composeMoveSpeedFactor: (...factors) => factors.reduce((value, factor) => Math.min(value, Math.max(0, factor)), 1),
       getUnitWalkSpeedFactor: isWalking => (isWalking ? WALK_SPEED_FACTOR : 1),
       isUnitWalkSpeedFactor: factor => factor < 1,
     },
-    '../lib/unitWalkingAnimation': {
+    '../lib/units/unitWalkingAnimation': {
       applyUnitWalkingAnimationSpeed: () => {},
     },
-    '../lib/unitHealth': {
+    '../lib/units/unitHealth': {
       updateUnitHealthRegen: () => {},
     },
-    '../lib/unitControl': {
+    '../lib/units/unitControl': {
       setUnitControlMode: () => {},
     },
     '../services/HeroCriticalHealthEffects': {
@@ -154,7 +156,7 @@ function loadHeroController({ npcInteraction, heroTools, heroActionRange, getIns
       return loadControllerTsModule('HeroEquipmentController')
     }
     if (request === './HeroCommunicationController') return loadControllerTsModule('HeroCommunicationController')
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.HeroController
@@ -268,6 +270,7 @@ function createController({
     aimHeroDefenseAt: () => false,
     applyToolAppearance: () => {},
     beginHeroDefense: () => false,
+    cancelHeroActiveToolAction: () => false,
     cancelHeroPowerCharge: () => {},
     cancelHeroLasso: hero => hero.heroLasso?.clearLasso({ releaseHorse: true }),
     cancelHeroDefense: () => {},
@@ -406,6 +409,98 @@ test('keyboard movement during bow charge restores aim without resetting action 
 
   assert.equal(hero.isDirectMoving, false)
   assert.equal(hero.syncMountedHorseSpriteCalls, 2)
+})
+
+test('keyboard movement during sword charge moves at reduced speed while aiming', () => {
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      aimHeroPowerChargeAt: unit => {
+        unit.degree = 180
+        return true
+      },
+    },
+  })
+  const moveCalls = []
+  hero.actionLocked = true
+  hero.heroPowerChargeStart = 1000
+  hero.heroPowerChargeTool = 'sword'
+  hero.currentSheet = 'action'
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.equippedItem = 'sword'
+
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.ok(Math.abs(moveCalls[0][0] - 1) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][1]) < 1e-9)
+  assert.ok(Math.abs(moveCalls[0][2] - (100 / 6) * (1000 / 60 / 100) * 0.55) < 1e-9)
+  assert.equal(calls.some(call => Array.isArray(call) && call[0] === 'setTextures' && call[1] === 'walking'), true)
+})
+
+test('sword charge returns to standing animation when movement stops', () => {
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      aimHeroPowerChargeAt: unit => {
+        unit.degree = 180
+        return true
+      },
+    },
+  })
+  hero.actionLocked = true
+  hero.heroPowerChargeStart = 1000
+  hero.heroPowerChargeTool = 'sword'
+  hero.currentSheet = 'standing'
+  hero.speed = 100 / 6
+  hero.sprite = { playing: false, play: () => (hero.sprite.playing = true), stop: () => (hero.sprite.playing = false) }
+  hero.moveDirect = (...args) => {
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.equippedItem = 'sword'
+
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.update(1)
+  controller.handleKeyUp('heroRight')
+  controller.update(1)
+
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'setTextures'),
+    [
+      ['setTextures', 'walking'],
+      ['setTextures', 'standing'],
+    ]
+  )
+})
+
+test('keyboard movement during sword release keeps the attack planted', () => {
+  const { controller, hero } = createController()
+  const moveCalls = []
+  hero.actionLocked = true
+  hero.heroPowerChargeStart = 1000
+  hero.heroPowerChargeTool = 'sword'
+  hero.heroPowerReleaseQueued = true
+  hero.currentSheet = 'action'
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+  controller.equippedItem = 'sword'
+
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 0)
 })
 
 test('switching tools during bow charge cancels the charge before pointer release', () => {
@@ -1019,4 +1114,89 @@ test('releasing held sword primary uses the shared charge release', () => {
   assert.equal(controller.mouseHeld, false)
   assert.equal(controller.primaryClickPoint, null)
   assert.equal(hero.heroPowerChargeStart, null)
+})
+
+test('left click during held defense performs one attack then resumes defense', () => {
+  const events = []
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      beginHeroDefense: unit => {
+        events.push('beginDefense')
+        if (unit.actionLocked) return false
+        unit.heroDefenseActive = true
+        unit.actionLocked = true
+        return true
+      },
+      cancelHeroActiveToolAction: unit => {
+        events.push('cancelAction')
+        unit.heroDefenseActive = false
+        unit.actionLocked = false
+        return true
+      },
+      releaseHeroPowerCharge: unit => {
+        events.push('releaseAttack')
+        unit.heroPowerChargeStart = null
+        unit.heroPowerChargeTool = undefined
+        unit.actionLocked = true
+        return true
+      },
+      triggerToolAttackAt: (unit, tool, destination) => {
+        calls.push(['attack', tool, destination])
+        unit.heroPowerChargeStart = 1000
+        unit.heroPowerChargeTool = tool
+        unit.actionLocked = true
+        return true
+      },
+    },
+  })
+
+  controller.equippedItem = 'sword'
+  controller.handleDefenseKeyDown()
+  controller.handlePrimaryPointerDown()
+  controller.handlePointerUp(0)
+
+  assert.equal(controller.defenseHeld, true)
+  assert.deepEqual(events, ['beginDefense', 'cancelAction', 'releaseAttack'])
+  assert.deepEqual(calls.filter(call => Array.isArray(call) && call[0] === 'attack'), [
+    ['attack', 'sword', { x: 10, y: 20 }],
+  ])
+
+  controller.update(1)
+  assert.deepEqual(events, ['beginDefense', 'cancelAction', 'releaseAttack'])
+
+  hero.actionLocked = false
+  controller.update(1)
+
+  assert.deepEqual(events, ['beginDefense', 'cancelAction', 'releaseAttack', 'beginDefense'])
+  assert.equal(hero.heroDefenseActive, true)
+})
+
+test('defense key interrupts an active hero attack and blocks immediately', () => {
+  const events = []
+  const { controller, hero } = createController({
+    heroToolsOverride: {
+      beginHeroDefense: unit => {
+        events.push('beginDefense')
+        if (unit.actionLocked) return false
+        unit.heroDefenseActive = true
+        unit.actionLocked = true
+        return true
+      },
+      cancelHeroActiveToolAction: unit => {
+        events.push('cancelAction')
+        unit.actionLocked = false
+        return true
+      },
+    },
+  })
+
+  controller.equippedItem = 'sword'
+  hero.actionLocked = true
+
+  controller.handleDefenseKeyDown()
+
+  assert.equal(controller.defenseHeld, true)
+  assert.deepEqual(events, ['cancelAction', 'beginDefense'])
+  assert.equal(hero.heroDefenseActive, true)
+  assert.equal(hero.actionLocked, true)
 })

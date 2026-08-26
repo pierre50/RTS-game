@@ -1,19 +1,15 @@
-import { Container, Graphics, Particle, ParticleContainer, Texture, type Filter } from 'pixi.js'
+import { Container, Graphics, ParticleContainer, type Filter, type Texture } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
 import { sound, type IMediaInstance } from '@pixi/sound'
-import { DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS, SOUND_CUES, type EnvironmentId } from '../constants'
+import { SOUND_CUES, type EnvironmentId } from '../constants'
 import { playSoundCue } from '../lib'
-import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../lib/nightAmbience'
-import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../lib/oceanAmbience'
+import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/nightAmbience'
+import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/oceanAmbience'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 
 import {
   AMBIENT_CROSSFADE_MID,
-  BASE_PHASE_DURATIONS_SECONDS,
-  BASE_WEATHER_TRANSITIONS,
-  BIOME_DURATION_OVERRIDES,
-  BIOME_TRANSITION_OVERRIDES,
   BIOME_WEATHER_PROFILES,
   COLOR_LERP_PER_SECOND,
   FIRST_SUNNY_MAX_SECONDS,
@@ -27,13 +23,8 @@ import {
   RAIN_LERP_PER_SECOND,
   RAIN_LOOP_MAX_VOLUME,
   RAIN_TEXTURE_HEIGHT,
-  RAIN_TEXTURE_WIDTH,
   RAIN_WIND_SLANT_FACTOR,
-  SAND_TEXTURE_HEIGHT,
-  SAND_TEXTURE_WIDTH,
   SNOW_COLOR,
-  SNOW_TEXTURE_HEIGHT,
-  SNOW_TEXTURE_WIDTH,
   TARGET_FRAME_MS,
   VEIL_TARGETS,
   WEATHER_COLORS,
@@ -45,56 +36,30 @@ import {
   type TickerLike,
   type WeatherBiomeProfile,
   type WeatherColor,
-  type WeatherParticleTargets,
   type WeatherPhase,
 } from './WeatherProfiles'
-
-function randomBetween(min: number, max: number, random: RandomFn): number {
-  return min + random() * (max - min)
-}
-
-function randomDuration(minSeconds: number, maxSeconds: number, random: RandomFn): number {
-  return randomBetween(minSeconds, maxSeconds, random) * 1000
-}
-
-function lerp(current: number, target: number, amount: number): number {
-  return current + (target - current) * Math.max(0, Math.min(1, amount))
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
-}
-
-function combineColor(base: WeatherColor, weather: WeatherColor): WeatherColor {
-  return {
-    gamma: base.gamma * weather.gamma,
-    contrast: base.contrast * weather.contrast,
-    saturation: base.saturation * weather.saturation,
-    brightness: base.brightness * weather.brightness,
-    red: base.red * weather.red,
-    green: base.green * weather.green,
-    blue: base.blue * weather.blue,
-  }
-}
-
-function scaleParticleTarget(targets: WeatherParticleTargets, multiplier: number): WeatherParticleTargets {
-  return {
-    rain: clamp(targets.rain * multiplier, 0, 1),
-    sand: clamp(targets.sand, 0, 1),
-    snow: clamp(targets.snow * multiplier, 0, 1),
-  }
-}
-
-function addParticleDrift(target: number, elapsedMs: number): number {
-  return target > 0 ? clamp(target + Math.sin(elapsedMs * 0.0009) * 0.045, 0, 1) : 0
-}
-
-// Triangular crossfade: `low` peaks at `mid` then fades out, `high` ramps in from `mid` to 1.
-function crossfadeVolumes(intensity: number, mid: number): { high: number; low: number } {
-  const low = intensity <= mid ? intensity / mid : 1 - (intensity - mid) / (1 - mid)
-  const high = intensity <= mid ? 0 : (intensity - mid) / (1 - mid)
-  return { low: clamp(low, 0, 1), high: clamp(high, 0, 1) }
-}
+import {
+  addParticleDrift,
+  biomeKeyFromEnvironment,
+  clamp,
+  combineColor,
+  crossfadeVolumes,
+  lerp,
+  nextPhase,
+  phaseDuration,
+  randomBetween,
+  randomDuration,
+  scaleParticleTarget,
+  seconds,
+} from './WeatherUtils'
+import {
+  createRainTexture,
+  createSandTexture,
+  createSnowTexture,
+  Raindrop,
+  SandGrain,
+  Snowflake,
+} from './WeatherParticles'
 
 function startAmbientLoop(alias: string, onReady: (instance: IMediaInstance) => void): void {
   const result = sound.play(alias, { loop: true, volume: 0 })
@@ -102,126 +67,6 @@ function startAmbientLoop(alias: string, onReady: (instance: IMediaInstance) => 
   else onReady(result)
 }
 
-function biomeKeyFromEnvironment(environment?: string | null): EnvironmentId {
-  return ENVIRONMENT_IDS.includes(environment as EnvironmentId)
-    ? (environment as EnvironmentId)
-    : DEFAULT_ENVIRONMENT_ID
-}
-
-function nextPhase(phase: WeatherPhase, random: RandomFn, biome: EnvironmentId): WeatherPhase {
-  if (phase === 'night') return 'night'
-  const overrides = BIOME_TRANSITION_OVERRIDES[biome]
-  const environmentTransitions = { ...BASE_WEATHER_TRANSITIONS, ...(overrides ?? {}) }
-  const transitions = environmentTransitions[phase]
-  if (!transitions || transitions.length === 0) return 'sunny'
-  const roll = random()
-  for (const option of transitions) {
-    if (roll < option.chance) return option.phase
-  }
-  return transitions[transitions.length - 1].phase
-}
-
-function phaseDuration(phase: WeatherPhase, random: RandomFn, biome: EnvironmentId): number {
-  const overrides = BIOME_DURATION_OVERRIDES[biome] ?? {}
-  const range = overrides[phase] ?? BASE_PHASE_DURATIONS_SECONDS[phase]
-  return randomDuration(range[0], range[1], random)
-}
-
-function seconds(ms: number): number {
-  return Math.round(ms / 1000)
-}
-
-class Raindrop extends Particle {
-  baseAlpha = 0
-  baseLength = 0
-  speed = 0
-  wobble = 0
-}
-
-class Snowflake extends Particle {
-  baseAlpha = 0
-  baseScale = 0
-  rotationSpeed = 0
-  speed = 0
-  wobble = 0
-}
-
-class SandGrain extends Particle {
-  baseAlpha = 0
-  baseScale = 0
-  speed = 0
-  wobble = 0
-}
-
-// Drawn on a plain <canvas> rather than a Pixi RenderTexture from renderer.generateTexture,
-// since a one-off rendered RenderTexture has no CPU-side backing to re-upload from after a
-// WebGL context loss. ImageSource (what Texture.from(canvas) creates) also defaults
-// `autoGarbageCollect` to true, so it's disabled below the same way RenderTexture/TexturePool
-// already do for their own temporary resources — belt-and-suspenders against Pixi's GCSystem
-// unloading it mid-game. The actual recurring "Cannot read properties of null (reading '0')"
-// crash in GlParticleContainerAdaptor was a separate, self-inflicted issue: see the comment
-// on destroy() below.
-function createRainTexture(): Texture {
-  const canvas = document.createElement('canvas')
-  canvas.width = RAIN_TEXTURE_WIDTH
-  canvas.height = RAIN_TEXTURE_HEIGHT
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('2D canvas context unavailable for rain texture')
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height)
-  gradient.addColorStop(0, 'rgba(255,255,255,1)')
-  gradient.addColorStop(1, 'rgba(255,255,255,0.1)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  const texture = Texture.from(canvas)
-  texture.source.autoGarbageCollect = false
-  return texture
-}
-
-function createSnowTexture(): Texture {
-  const canvas = document.createElement('canvas')
-  canvas.width = SNOW_TEXTURE_WIDTH
-  canvas.height = SNOW_TEXTURE_HEIGHT
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('2D canvas context unavailable for snow texture')
-  const centerX = SNOW_TEXTURE_WIDTH / 2
-  const centerY = SNOW_TEXTURE_HEIGHT / 2
-  ctx.strokeStyle = '#f4fbff'
-  ctx.fillStyle = '#ffffff'
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(centerX - 2.2, centerY)
-  ctx.lineTo(centerX + 2.2, centerY)
-  ctx.moveTo(centerX, centerY - 2.2)
-  ctx.lineTo(centerX, centerY + 2.2)
-  ctx.moveTo(centerX - 1.8, centerY - 1.8)
-  ctx.lineTo(centerX + 1.8, centerY + 1.8)
-  ctx.moveTo(centerX + 1.8, centerY - 1.8)
-  ctx.lineTo(centerX - 1.8, centerY + 1.8)
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.arc(centerX, centerY, 1, 0, Math.PI * 2)
-  ctx.fill()
-  const texture = Texture.from(canvas)
-  texture.source.autoGarbageCollect = false
-  return texture
-}
-
-function createSandTexture(): Texture {
-  const canvas = document.createElement('canvas')
-  canvas.width = SAND_TEXTURE_WIDTH
-  canvas.height = SAND_TEXTURE_HEIGHT
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('2D canvas context unavailable for sand texture')
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0)
-  gradient.addColorStop(0, 'rgba(235,198,123,0)')
-  gradient.addColorStop(0.45, 'rgba(246,218,153,0.82)')
-  gradient.addColorStop(1, 'rgba(171,124,55,0)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-  const texture = Texture.from(canvas)
-  texture.source.autoGarbageCollect = false
-  return texture
-}
 
 export class WeatherSystem {
   context: GameContextLike

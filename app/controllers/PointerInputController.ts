@@ -1,5 +1,5 @@
 import { isometricToCartesian } from '../lib'
-import { setVirtualCursorVisible } from '../lib/heroCursor'
+import { setVirtualCursorVisible } from '../lib/hero/heroCursor'
 import type { ControlPointerEvent, GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 

@@ -99,8 +99,8 @@ function createBehavior({
   const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/combatFeedback': { showAlertFeedback: target => alertCalls.push(target) },
-    '../../lib/unitEnergy': { updateUnitEnergy: () => {} },
+    '../../lib/combat/combatFeedback': { showAlertFeedback: target => alertCalls.push(target) },
+    '../../lib/units/unitEnergy': { updateUnitEnergy: () => {} },
     './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
   })
   return {

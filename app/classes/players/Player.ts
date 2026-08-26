@@ -13,11 +13,11 @@ import {
   isBuildingLimitReached,
   getBuildingFootprintCells,
 } from '../../lib'
-import { Building } from '../building'
-import type { BuildingOptions } from '../building'
+import { Building } from '../building/Building'
+import type { BuildingOptions } from '../building/Building'
 import { Resource } from '../Resource'
-import { Unit } from '../unit'
-import type { UnitSpawnOptions } from '../unit'
+import { Unit } from '../unit/Unit'
+import type { UnitSpawnOptions } from '../unit/Unit'
 import {
   ACTION_TYPES,
   BUILDING_TYPES,
@@ -32,8 +32,8 @@ import {
 } from '../../constants'
 import { createPlayerData } from '../../config/playerConfig'
 import { getRandomUnitName } from '../../config/name'
-import { playUiSound } from '../../lib/uiSound'
-import { fadeIn } from '../../lib/entityFade'
+import { playUiSound } from '../../lib/audio/uiSound'
+import { fadeIn } from '../../lib/entities/entityFade'
 import { VisionGrid } from '../../services/VisionGrid'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
 import {

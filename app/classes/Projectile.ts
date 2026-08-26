@@ -10,8 +10,8 @@ import {
 } from '../lib/maths'
 import { moveTowardPoint } from '../lib/grid/movement'
 import { getEffectiveProjectileType, projectileTracksTarget } from '../lib/projectiles'
-import { playAudibleSoundCue, type AudibleInstance } from '../lib/sound'
-import { getUnitCombatRange } from '../lib/equipmentStats'
+import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
+import { getUnitCombatRange } from '../lib/equipment/equipmentStats'
 import {
   CELL_DEPTH,
   FAMILY_TYPES,

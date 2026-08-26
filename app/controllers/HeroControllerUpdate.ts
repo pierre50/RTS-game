@@ -1,24 +1,26 @@
 import {
   HERO_ACTION_MOVE_SPEED_FACTOR,
   HERO_STEALTH_SPEED_FACTOR,
+  HERO_MELEE_CHARGE_MOVE_SPEED_FACTOR,
   SHEET_TYPES,
   STEP_TIME,
 } from '../constants'
 import {
   aimHeroDefenseAt,
   aimHeroPowerChargeAt,
+  beginHeroDefense,
   isHeroPowerChargeActiveForTool,
   updateHeroDefense,
   updateHeroPowerCharge,
   type HeroEquippedItem,
-} from '../lib/heroTools'
-import { updateHeroCursor } from '../lib/heroCursor'
-import { resolveHoverTarget, updateNpcFollow } from '../lib/npcInteraction'
-import type { ControlBindingAction } from '../lib/settings'
-import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/unitEnergy'
-import { updateUnitHealthRegen } from '../lib/unitHealth'
-import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/unitLocomotion'
-import { applyUnitWalkingAnimationSpeed } from '../lib/unitWalkingAnimation'
+} from '../lib/hero/heroTools'
+import { updateHeroCursor } from '../lib/hero/heroCursor'
+import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
+import type { ControlBindingAction } from '../lib/audio/settings'
+import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
+import { updateUnitHealthRegen } from '../lib/units/unitHealth'
+import { composeMoveSpeedFactor, getUnitWalkSpeedFactor, isUnitWalkSpeedFactor } from '../lib/units/unitLocomotion'
+import { applyUnitWalkingAnimationSpeed } from '../lib/units/unitWalkingAnimation'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import {
@@ -34,6 +36,7 @@ import {
 export type HeroControllerUpdateHost = {
   controls: ControlsLike
   commCharging: boolean
+  defenseHeld: boolean
   equippedItem: HeroEquippedItem | null
   heroUnit: UnitEntity | null
   keysPressed: Set<ControlBindingAction>
@@ -43,10 +46,26 @@ export type HeroControllerUpdateHost = {
   shiftMoveLockedDegree: number | null
   wasMoving: boolean
   attackTowardPoint(point: HeroAimPoint): boolean
+  facePoint(point: HeroAimPoint): void
   getShiftMoveLockedAimPoint(): HeroAimPoint | null
   updateCommIndicator(): void
   updateCriticalHealthEffects(elapsedMs: number, active?: boolean): void
   updateOcclusionFade(elapsedMs: number, active?: boolean): void
+}
+
+function getHeroActionMoveSpeedFactor(unit: UnitEntity): number {
+  if (isHeroMeleeChargeAiming(unit)) {
+    return HERO_MELEE_CHARGE_MOVE_SPEED_FACTOR
+  }
+  return HERO_ACTION_MOVE_SPEED_FACTOR
+}
+
+function isHeroMeleeChargeAiming(unit: UnitEntity): boolean {
+  return (
+    unit.heroPowerChargeStart != null &&
+    unit.heroPowerChargeTool === 'sword' &&
+    !unit.heroPowerReleaseQueued
+  )
 }
 
 export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost, frameScale: number): void {
@@ -72,6 +91,10 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   )
   updateHeroCursor(controller.equippedItem, hoverTarget, Boolean(controller.pendingGoToNpcs))
   const attacking = Boolean(unit.actionLocked)
+  if (controller.defenseHeld && !attacking && !unit.heroDefenseActive) {
+    controller.facePoint?.(controller.getShiftMoveLockedAimPoint() ?? aimPoint)
+    if (beginHeroDefense(unit, controller.equippedItem)) controller.mouseHeld = true
+  }
   if (
     controller.mouseHeld &&
     controller.primaryClickPoint &&
@@ -114,7 +137,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const len = Math.hypot(dx, dy)
     const lockedFacingVector =
       lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
-    const speedFactor = attacking && !unit.mountedOnHorse ? HERO_ACTION_MOVE_SPEED_FACTOR : 1
+    const speedFactor = attacking && !unit.mountedOnHorse ? getHeroActionMoveSpeedFactor(unit) : 1
     const stealthSpeedFactor = controller.controls.isHeroStealthMode?.() ? HERO_STEALTH_SPEED_FACTOR : 1
     const directionalMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
     const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor, directionalMoveSpeedFactor)
@@ -131,13 +154,13 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
     const moveFacingVector = aimedFacingVector ?? lockedFacingVector
     const moveOptions = moveFacingVector ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy } : undefined
-    moved = unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false
+    moved = distance > 0 ? (unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false) : false
     if (aimedDegree != null && unit.degree !== aimedDegree) {
       unit.degree = aimedDegree
       if (unit.mountedOnHorse) unit.syncMountedRiderPosition?.()
     }
     const delta = Math.hypot(unit.x - before.x, unit.y - before.y)
-    if (!moved || delta < 0.01) {
+    if (distance > 0 && (!moved || delta < 0.01)) {
       debugHeroMove(moved ? 'moveDirect-returned-true-without-position-change' : 'moveDirect-returned-false', unit, {
         keys: [...controller.keysPressed],
         input: { dx, dy, len },
@@ -158,13 +181,14 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     }
   }
   if (moved) {
-    if (!attacking && unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
-    if (!attacking) applyUnitWalkingAnimationSpeed(unit, moveAnimationSpeedFactor)
-    if (!attacking && !unit.sprite?.playing) unit.sprite?.play?.()
+    const canUseMoveAnimation = !attacking || isHeroMeleeChargeAiming(unit)
+    if (canUseMoveAnimation && unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
+    if (canUseMoveAnimation) applyUnitWalkingAnimationSpeed(unit, moveAnimationSpeedFactor)
+    if (canUseMoveAnimation && !unit.sprite?.playing) unit.sprite?.play?.()
     controller.wasMoving = true
   } else if (controller.wasMoving) {
     controller.wasMoving = false
-    if (!attacking) {
+    if (!attacking || isHeroMeleeChargeAiming(unit)) {
       unit.setTextures?.(SHEET_TYPES.standing)
       unit.sprite?.stop?.()
     }

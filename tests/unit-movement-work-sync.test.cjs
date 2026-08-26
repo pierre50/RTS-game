@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitMovement(calls) {
-  const filename = path.join(__dirname, '../app/classes/unit/UnitMovement.ts')
+  const filename = path.join(__dirname, '../app/classes/unit/movement/UnitMovement.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -38,6 +39,7 @@ function loadUnitMovement(calls) {
     return tsModule.exports
   }
   const localRequire = request => {
+    request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../constants') return constants
     if (request === '../../lib') {
       return {
@@ -68,14 +70,14 @@ function loadUnitMovement(calls) {
         updateInstanceVisibility: () => {},
       }
     }
-    if (request === '../../lib/unitControl') return { isHeroControlled: () => false }
-    if (request === '../../lib/heroActionRange') return { isHeroActionInRange: () => false }
-    if (request === '../../lib/combatBehavior') return { markCombatFlee: () => {} }
-    if (request === '../../lib/unitEnergy') return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
-    if (request === '../../lib/unitLocomotion') return loadTsFile(path.join(__dirname, '../app/lib/unitLocomotion.ts'))
-    if (request === '../../lib/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
-    if (request === '../../lib/equipmentStats') return { getUnitCombatRange: () => 4 }
-    if (request === './UnitCommands') {
+    if (request === '../../lib/units/unitControl') return { isHeroControlled: () => false }
+    if (request === '../../lib/hero/heroActionRange') return { isHeroActionInRange: () => false }
+    if (request === '../../lib/combat/combatBehavior') return { markCombatFlee: () => {} }
+    if (request === '../../lib/units/unitEnergy') return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
+    if (request === '../../lib/units/unitLocomotion') return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
+    if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
+    if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
+    if (request === './UnitCommands' || request === '../UnitCommands') {
       return {
         applyWorkForAction: (unit, work, action) => {
           calls.push(['applyWorkForAction', work, action])
@@ -84,16 +86,16 @@ function loadUnitMovement(calls) {
         },
       }
     }
-    if (request === './UnitDirectMovement') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectMovement.ts'))
+    if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitDirectMovement.ts'))
     }
-    if (request === './UnitMovementRouting') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementRouting.ts'))
+    if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
-    if (request === './UnitPathMovement') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPathMovement.ts'))
+    if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
     }
-    if (request === './UnitHeroDirectMovementCollision') {
+    if (request === './movement/UnitHeroDirectMovementCollision' || request === './UnitHeroDirectMovementCollision') {
       return {
         blocksHeroDirectMoveWithRoundedFootprint: () => false,
         blocksHeroDirectMoveWithSoftBody: () => false,
@@ -103,20 +105,20 @@ function loadUnitMovement(calls) {
         isHeroLandTerrainBlockedCell: () => false,
       }
     }
-    if (request === './UnitMovementDebug') {
+    if (request === './movement/UnitMovementDebug' || request === './UnitMovementDebug') {
       return {
         debugBlockedDirectMove: () => {},
         debugCombatMove: () => {},
         debugHuntRangeCheck: () => {},
       }
     }
-    if (request === './UnitMovementHelpers') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
+    if (request === './movement/UnitMovementHelpers' || request === './UnitMovementHelpers') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementHelpers.ts'))
     }
-    if (request === './UnitAffectNewDest') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitAffectNewDest.ts'))
+    if (request === './movement/UnitAffectNewDest' || request === './UnitAffectNewDest') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitAffectNewDest.ts'))
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { UnitMovement: module.exports.UnitMovement, constants }

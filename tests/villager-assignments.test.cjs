@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -38,7 +39,7 @@ const constants = {
 }
 
 test('summarizes villager resource assignments, sleep and movement', () => {
-  const { summarizeVillagerAssignments } = loadModule('app/lib/villagerAssignments.ts', {
+  const { summarizeVillagerAssignments } = loadModule('app/lib/units/villagerAssignments.ts', {
     '../constants': constants,
   })
 

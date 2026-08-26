@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -43,11 +44,11 @@ function loadShelterSystem(calls) {
       },
       updateInstanceVisibility: unit => calls.push(['updateVisibility', unit.label]),
     },
-    '../lib/overheadIndicator': {
+    '../lib/entities/overheadIndicator': {
       clearUnitOverheadIndicator: unit => calls.push(['clearIndicator', unit.label]),
       setUnitOverheadIndicator: (unit, type) => calls.push(['indicator', unit.label, type]),
     },
-    '../lib/entityFade': {
+    '../lib/entities/entityFade': {
       cancelFade: entity => calls.push(['cancelFade', entity.label]),
       fadeOut: (entity, _duration, onComplete) => {
         entity.alpha = 0
@@ -57,7 +58,7 @@ function loadShelterSystem(calls) {
         entity.alpha = 1
       },
     },
-    '../lib/unitControl': {
+    '../lib/units/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
     },
   }).VillagerShelterSystem

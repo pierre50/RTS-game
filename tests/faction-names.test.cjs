@@ -36,7 +36,7 @@ function loadFactionsWithLang(lang) {
     setItem() {},
   }
 
-  return loadTsModule(path.join(__dirname, '../app/lib/factions.ts'), new Map())
+  return loadTsModule(path.join(__dirname, '../app/lib/combat/factions.ts'), new Map())
 }
 
 test.afterEach(() => {

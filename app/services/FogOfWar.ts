@@ -1,5 +1,5 @@
 import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
-import { instanceIsInInsightRange } from '../lib/insightDetection'
+import { instanceIsInInsightRange } from '../lib/units/insightDetection'
 import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'

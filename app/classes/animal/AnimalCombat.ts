@@ -11,9 +11,9 @@ import {
   playAudibleSoundCue,
   SLASH_IMPACT_FRAME,
 } from '../../lib'
-import { runAttackLoopOnFrame } from '../../lib/combatAttackLoop'
-import { markCombatAttack, markCombatFlee, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combatBehavior'
-import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combatFeedback'
+import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
+import { markCombatAttack, markCombatFlee, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
+import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combat/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'

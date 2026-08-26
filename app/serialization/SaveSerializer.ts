@@ -1,5 +1,5 @@
 import { filterObject, getGaiaAnimals } from '../lib'
-import { summarizeVillagerAssignments } from '../lib/villagerAssignments'
+import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'

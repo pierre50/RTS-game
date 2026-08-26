@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadPauseMenu() {
   const filename = path.join(__dirname, '../app/ui/PauseMenu.ts')
@@ -14,13 +15,13 @@ function loadPauseMenu() {
 
   const mocks = {
     '../lib': { Modal: class Modal {} },
-    '../lib/uiSound': { playClickSound() {} },
+    '../lib/audio/uiSound': { playClickSound() {} },
     '../lib/lang': { t: key => key },
-    './settingsPanel': { openSettingsModal() {} },
-    './saveListModal': { openSaveListModal() {} },
+    './modals/settingsPanel': { openSettingsModal() {} },
+    './modals/saveListModal': { openSaveListModal() {} },
   }
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.PauseMenu
 }

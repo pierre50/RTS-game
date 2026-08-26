@@ -1,6 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint, getBuildingContactDistance } from '../lib'
-import { getEquipmentCombatStats, getUnitCombatRange, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipmentStats'
+import { getEquipmentCombatStats, getUnitCombatRange, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipment/equipmentStats'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type {

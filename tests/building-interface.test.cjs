@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadBuildingInterface() {
-  const filename = path.join(__dirname, '../app/ui/BuildingInterface.ts')
+  const filename = path.join(__dirname, '../app/ui/entity/BuildingInterface.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -13,7 +14,7 @@ function loadBuildingInterface() {
   })
   const module = { exports: {} }
   const mocks = {
-    '../constants': {
+    '../../constants': {
       BUILDING_TYPES: { stable: 'Stable' },
       MENU_INFO_IDS: {
         civ: 'civ',
@@ -28,16 +29,16 @@ function loadBuildingInterface() {
       },
       POPULATION_MAX: 200,
     },
-    '../lib': { getIconPath: id => id },
-    '../lib/horseColors': {
+    '../../lib': { getIconPath: id => id },
+    '../../lib/horses/horseColors': {
       HORSE_COLOR_PALETTES: {
         dark: [0, 0x73737f, 0, 0, 0x2d3136],
         light: [0, 0xeadbc9, 0, 0, 0x857565],
       },
       isHorseColor: value => ['dark', 'light'].includes(value),
     },
-    '../lib/lang': { t: key => key },
-    '../lib/stableHorses': {
+    '../../lib/lang': { t: key => key },
+    '../../lib/horses/stableHorses': {
       getStableHorseAmount: building => building.stableHorses?.length ?? 0,
       getStableHorses: building => building.stableHorses ?? [],
       STABLE_HORSE_CAPACITY: 5,
@@ -62,9 +63,9 @@ function loadBuildingInterface() {
         return div
       },
     },
-    './entityDisplayName': { getBuildingDisplayName: building => building.type },
+    '../utils/entityDisplayName': { getBuildingDisplayName: building => building.type },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

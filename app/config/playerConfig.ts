@@ -1,7 +1,7 @@
 import { getCivilizationDefinition } from './civilizations'
 import { UNIT_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
-import { applyEquipmentStatsToUnitConfig } from '../lib/equipmentStats'
+import { applyEquipmentStatsToUnitConfig } from '../lib/equipment/equipmentStats'
 import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { PlayerConfigLike } from '../types/player'
 

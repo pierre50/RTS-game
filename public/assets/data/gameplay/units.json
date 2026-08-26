@@ -128,7 +128,6 @@
       "goldminer": 1
     },
     "sounds": {
-      "create": "villager-completed",
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
@@ -137,9 +136,6 @@
         "human-unit-killed-4",
         "human-unit-killed-5"
       ],
-      "command": "olmars",
-      "buildCommand": "homis",
-      "huntCommand": "isay",
       "work": {
         "gatherFood": "farming-3",
         "chopWood": "wood-chopping",
@@ -275,12 +271,8 @@
       "goldminer": 1
     },
     "sounds": {
-      "create": "human-unit-completed",
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"],
-      "command": "olmars",
-      "buildCommand": "homis",
-      "huntCommand": "isay",
       "work": {
         "chopWood": "wood-chopping",
         "forageBerry": "berry-gathering",
@@ -337,8 +329,6 @@
       }
     },
     "sounds": {
-      "create": "human-unit-completed",
-      "command": "olmars",
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"]
     }
@@ -370,7 +360,6 @@
       "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
       "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
       "die": [
         "human-unit-killed-6",
@@ -410,7 +399,6 @@
       "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
     },
     "sounds": {
-      "command": ["eventide", "arectus", "conan", "werebus"],
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",
@@ -449,11 +437,6 @@
       "corpseSheet": "lpc-baked/priest/greek/male/corpse"
     },
     "sounds": {
-      "create": "priest-completed",
-      "command": ["ayohoyohoyo", "wololo", "hayoyo"],
-      "move": ["ayohoyohoyo", "wololo", "hayoyo"],
-      "heal": "ayohoyohoyo",
-      "convert": "wololo",
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
       "die": [
         "human-unit-killed",

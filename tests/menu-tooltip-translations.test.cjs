@@ -19,8 +19,12 @@ function loadModule(filename, mocks = {}) {
 function loadTranslations() {
   const tooltipFilename = path.join(__dirname, '../app/lib/i18n/entityTooltips.ts')
   const tooltipModule = loadModule(tooltipFilename)
+  const frFilename = path.join(__dirname, '../app/lib/i18n/fr.ts')
+  const enFilename = path.join(__dirname, '../app/lib/i18n/en.ts')
+  const frModule = loadModule(frFilename, { './entityTooltips': tooltipModule })
+  const enModule = loadModule(enFilename, { './entityTooltips': tooltipModule })
   const translationsFilename = path.join(__dirname, '../app/lib/i18n/translations.ts')
-  return loadModule(translationsFilename, { './entityTooltips': tooltipModule }).TRANSLATIONS
+  return loadModule(translationsFilename, { './fr': frModule, './en': enModule }).TRANSLATIONS
 }
 
 const translations = loadTranslations()

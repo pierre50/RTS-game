@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const WATER_BORDER_BASE_FRAME_COUNT = 12
 const WATER_BORDER_PHASES = 4
@@ -33,7 +34,7 @@ test('desert sand water borders include four animation phases for every shorelin
 })
 
 function loadMapModule() {
-  const filename = path.join(__dirname, '../app/classes/map/index.ts')
+  const filename = path.join(__dirname, '../app/classes/map/Map.ts')
   const { code } = babel.transformSync(fs.readFileSync(filename, 'utf8'), {
     filename,
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
@@ -88,14 +89,29 @@ function loadMapModule() {
       }
     }
     if (request === './MapGeneration') return { MapGeneration: class {} }
-    if (request === './MapResources') return { MapResources: class {} }
-    if (request === './MapTerrain') return { MapTerrain: class {} }
-    if (request === './MapFog') return { MapFog: class {} }
+    if (request === './resources/MapResources') return { MapResources: class {} }
+    if (request === './terrain/MapTerrain') return { MapTerrain: class {} }
+    if (request === './fog/MapFog') return { MapFog: class {} }
     if (request === '../../lib') return { getTextureByFrame: () => ({}) }
     if (request === '../../lib/random') return { createSeededRandom: () => Math.random }
     if (request === '../../lib/graphics/chunkCulling') return { rectangleIntersectsViewport: () => true }
+    if (request === './MapWaterOverlay') {
+      return requireFromTsFile(request, filename, {
+        'pixi.js': {
+          Assets: { cache: { has: () => false } },
+          Graphics,
+          TilingSprite,
+        },
+        '../../constants': {
+          CELL_HEIGHT: 32,
+          CELL_WIDTH: 64,
+          getEnvironmentTerrainParams: () => ({ waterBackgroundColor: 0 }),
+        },
+        '../../lib': { getTextureByFrame: () => ({}) },
+      })
+    }
     if (request === './TerrainChunkManager') return { TerrainChunkManager: class {} }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.default

@@ -1,6 +1,6 @@
-import { GAMEPAD_AXIS, GAMEPAD_BUTTON, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/gamepad'
-import { setVirtualCursorPosition, setVirtualCursorVisible } from '../lib/heroCursor'
-import { getGamepadEnabled, type ControlBindingAction } from '../lib/settings'
+import { GAMEPAD_AXIS, GAMEPAD_BUTTON, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/input/gamepad'
+import { setVirtualCursorPosition, setVirtualCursorVisible } from '../lib/hero/heroCursor'
+import { getGamepadEnabled, type ControlBindingAction } from '../lib/audio/settings'
 
 type GamepadControlsHost = {
   context: { gamebox: HTMLElement }

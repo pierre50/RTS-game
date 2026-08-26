@@ -1,12 +1,12 @@
 # Code Health Report
 
-Generated: 2026-08-25T23:16:46.209Z
+Generated: 2026-08-26T18:16:24.292Z
 
 ## Global Score
 
-**90/100 (A)**
+**100/100 (A)**
 
-Minimum required score: **90/100**. Quality gate: **PASS**.
+Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **PASS**.
 
 | Component | Score |
 | --- | --- |
@@ -14,18 +14,37 @@ Minimum required score: **90/100**. Quality gate: **PASS**.
 | Duplication | 20/20 |
 | Structure | 20/20 |
 | Architecture | 15/15 |
-| Hotspots | 0/10 |
+| Hotspots | 10/10 |
 | Type/Lint confidence | 10/10 |
 
 > Architecture is scored separately from the baseline gate: staying at or below the baseline keeps the check green, but existing cycles still reduce the global quality score.
 
+## Why Not Higher?
+
+| Component | Score | Lost |
+| --- | --- | --- |
+| Gates | 25/25 | 0 |
+| Duplication | 20/20 | 0 |
+| Structure | 20/20 | 0 |
+| Architecture | 15/15 | 0 |
+| Hotspots | 10/10 | 0 |
+| Type/Lint confidence | 10/10 | 0 |
+
+Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is the current ceiling.
+
+| Target Score | Max Risky Hotspots | Hotspots To Clear |
+| --- | --- | --- |
+| 91+ | 11 | 0 |
+| 95+ | 6 | 0 |
+| 100+ | 0 | 0 |
+
 ## Summary
 
-- Files analyzed: 377
-- Total lines: 66610
-- Code lines: 59263
-- Approx branches: 8982
-- Approx functions/methods: 7503
+- Files analyzed: 415
+- Total lines: 67704
+- Code lines: 60215
+- Approx branches: 8998
+- Approx functions/methods: 7648
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -41,81 +60,154 @@ Minimum required score: **90/100**. Quality gate: **PASS**.
 
 ## Top Priorities
 
-| File | Risk | LOC | Branches | Max Block | Churn 90d | Why |
-| --- | --- | --- | --- | --- | --- | --- |
-| app/classes/map/MapGeneration.ts | 230.3 | 477 | 52 | 19 | 46 | souvent modifie |
-| app/classes/Resource.ts | 230 | 646 | 72 | 126 | 23 | souvent modifie |
-| app/screens/Game.ts | 228.3 | 708 | 48 | 54 | 41 | souvent modifie, beaucoup de dependances |
-| app/classes/unit/index.ts | 223.6 | 555 | 13 | 18 | 61 | souvent modifie, beaucoup de dependances |
-| app/classes/building/index.ts | 223.3 | 454 | 33 | 118 | 44 | souvent modifie |
-| app/ui/InventoryManager.ts | 222.4 | 794 | 95 | 80 | 20 | souvent modifie |
-| app/classes/unit/UnitMovement.ts | 221.9 | 297 | 49 | 45 | 47 | souvent modifie |
-| app/classes/players/AIPlayer.ts | 216.3 | 559 | 87 | 121 | 13 | souvent modifie |
-| app/classes/building/BuildingLifecycle.ts | 214.8 | 433 | 80 | 74 | 28 | souvent modifie |
-| app/classes/animal/index.ts | 214.5 | 436 | 30 | 114 | 43 | souvent modifie |
-| app/serialization/SaveValidator.ts | 213.1 | 364 | 116 | 69 | 10 | complexite elevee, souvent modifie |
-| app/lib/lpc/baked.ts | 212.2 | 498 | 65 | 99 | 29 | souvent modifie |
+| File | Kind | Risk | LOC | Branches | Max Block | Churn 90d | Why |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| app/ai/AIStrategy.ts | app | 163.6 | 363 | 79 | 48 | 18 | souvent modifie |
+| app/services/TributeRaidSystem.ts | runtime | 163 | 580 | 97 | 62 | 1 | score de risque relatif eleve |
+| app/ui/ActionSpecFactory.ts | ui | 161.5 | 432 | 69 | 99 | 16 | souvent modifie |
+| app/lib/combat/combatActionConditions.ts | library | 160 | 220 | 103 | 24 | 0 | complexite elevee |
+| app/classes/map/terrain/MapTerrain.ts | runtime | 157.6 | 404 | 77 | 120 | 0 | score de risque relatif eleve |
+| app/classes/building/BuildingLifecycle.ts | runtime | 157 | 320 | 62 | 74 | 28 | souvent modifie |
+| app/screens/Game.ts | ui | 155.6 | 580 | 29 | 45 | 41 | souvent modifie, beaucoup de dependances |
+| app/classes/map/MapGeneration.ts | runtime | 155.2 | 381 | 35 | 19 | 46 | souvent modifie |
+| app/classes/map/terrain/MapTerrainGeneration.ts | runtime | 153.8 | 391 | 96 | 63 | 0 | score de risque relatif eleve |
+| app/classes/Projectile.ts | runtime | 151.4 | 426 | 33 | 124 | 28 | souvent modifie |
+| app/lib/lpc/baked.ts | library | 151.3 | 284 | 46 | 99 | 30 | souvent modifie |
+| app/classes/players/Player.ts | runtime | 150.6 | 429 | 65 | 62 | 20 | souvent modifie |
+
+## Score Moves
+
+These files currently count against the hotspot score. Clear a hotspot by reducing the listed exit target while keeping churn unchanged.
+
+No risky hotspots currently count against the score.
 
 ## Largest Files
 
-| File | LOC | Branches | Imports |
+| File | Kind | LOC | Branches | Imports |
+| --- | --- | --- | --- | --- |
+| app/lib/lpc/equipmentData.ts | data/config | 739 | 2 | 2 |
+| app/ui/PlayerSetupPanel.ts | ui | 592 | 51 | 7 |
+| app/services/WeatherSystem.ts | runtime | 586 | 44 | 12 |
+| app/screens/Game.ts | ui | 580 | 29 | 33 |
+| app/services/TributeRaidSystem.ts | runtime | 580 | 97 | 16 |
+| app/ui/InventoryManager.ts | ui | 580 | 59 | 17 |
+| app/classes/map/fog/MapFog.ts | runtime | 554 | 69 | 13 |
+| app/classes/map/resources/MapResources.ts | runtime | 548 | 82 | 10 |
+| app/classes/Controls.ts | runtime | 524 | 36 | 18 |
+| app/classes/map/Map.ts | runtime | 522 | 17 | 19 |
+| app/services/PerformanceMonitor.ts | runtime | 513 | 47 | 0 |
+| app/classes/Resource.ts | runtime | 502 | 50 | 13 |
+
+## Data And Config Files
+
+Large data/config/type-heavy files are useful to track, but they should not drive the same refactor decisions as gameplay/runtime files.
+
+| File | Kind | LOC | Branches |
 | --- | --- | --- | --- |
-| app/ui/InventoryManager.ts | 794 | 95 | 16 |
-| app/lib/i18n/translations.ts | 793 | 8 | 1 |
-| app/ui/PlayerSetupPanel.ts | 781 | 65 | 8 |
-| app/services/WeatherSystem.ts | 741 | 56 | 10 |
-| app/lib/lpc/equipmentData.ts | 739 | 2 | 2 |
-| app/screens/Game.ts | 708 | 48 | 33 |
-| app/classes/Resource.ts | 646 | 72 | 14 |
-| app/classes/map/index.ts | 610 | 36 | 19 |
-| app/services/TributeRaidSystem.ts | 580 | 97 | 16 |
-| app/classes/players/AIPlayer.ts | 559 | 87 | 14 |
-| app/classes/unit/index.ts | 555 | 13 | 26 |
-| app/classes/map/MapFog.ts | 554 | 69 | 13 |
+| app/lib/lpc/equipmentData.ts | data/config | 739 | 2 |
+| app/lib/i18n/en.ts | data/config | 399 | 8 |
+| app/lib/i18n/fr.ts | data/config | 399 | 0 |
+| app/config/assetManifest.ts | data/config | 289 | 0 |
+| app/lib/i18n/entityTooltips.ts | data/config | 284 | 11 |
+| app/config/playerConfig.ts | data/config | 206 | 13 |
+| app/constants/entities.ts | data/config | 195 | 0 |
+| app/constants/environments.ts | data/config | 133 | 8 |
+| app/config/name/greek.ts | data/config | 102 | 0 |
+| app/config/name/asian.ts | data/config | 94 | 0 |
+| app/config/name/roman.ts | data/config | 86 | 0 |
+| app/config/name/egyptian.ts | data/config | 79 | 0 |
 
 ## Complexity Signals
 
 | File | Branches | Max Block | LOC |
 | --- | --- | --- | --- |
-| app/serialization/SaveValidator.ts | 116 | 69 | 364 |
-| app/services/VillagerShelterSystem.ts | 104 | 21 | 462 |
-| app/lib/combatActionConditions.ts | 103 | 24 | 220 |
-| app/ai/AIEconomyFoodManager.ts | 99 | 19 | 395 |
+| app/lib/combat/combatActionConditions.ts | 103 | 24 | 220 |
 | app/services/TributeRaidSystem.ts | 97 | 62 | 580 |
-| app/classes/map/MapTerrainGeneration.ts | 96 | 63 | 391 |
-| app/ui/InventoryManager.ts | 95 | 80 | 794 |
-| app/classes/unit/UnitResourceActions.ts | 94 | 61 | 442 |
-| app/classes/map/MapTerrainReliefAppearance.ts | 87 | 64 | 137 |
-| app/classes/players/AIPlayer.ts | 87 | 121 | 559 |
+| app/classes/map/terrain/MapTerrainGeneration.ts | 96 | 63 | 391 |
+| app/classes/map/terrain/MapTerrainReliefAppearance.ts | 87 | 64 | 137 |
 | app/classes/players/PlayerTechnologies.ts | 84 | 48 | 298 |
-| app/classes/Instance.ts | 82 | 44 | 530 |
+| app/classes/map/resources/MapResources.ts | 82 | 48 | 548 |
+| app/ai/AIEconomyFoodManager.ts | 80 | 19 | 331 |
+| app/classes/map/terrain/MapTerrainReliefContinuity.ts | 80 | 35 | 252 |
+| app/lib/units/villagerAutonomy.ts | 80 | 48 | 241 |
+| app/ai/AIStrategy.ts | 79 | 48 | 363 |
+| app/classes/unit/movement/UnitMovementRouting.ts | 79 | 26 | 276 |
+| app/classes/map/terrain/MapTerrain.ts | 77 | 120 | 404 |
 
 ## Git Hotspots
 
 | File | Churn 90d | Risk | LOC |
 | --- | --- | --- | --- |
-| app/types/entities.ts | 65 | 208.3 | 472 |
-| app/classes/unit/index.ts | 61 | 223.6 | 555 |
-| app/lib/i18n/translations.ts | 48 | 175.8 | 793 |
-| app/classes/unit/UnitMovement.ts | 47 | 221.9 | 297 |
-| app/classes/map/MapGeneration.ts | 46 | 230.3 | 477 |
-| app/config/assetManifest.ts | 45 | 142.2 | 289 |
-| app/classes/building/index.ts | 44 | 223.3 | 454 |
-| app/classes/unit/UnitActions.ts | 44 | 161.8 | 173 |
-| app/lib/heroTools.ts | 44 | 150 | 59 |
-| app/classes/animal/index.ts | 43 | 214.5 | 436 |
-| app/screens/Game.ts | 41 | 228.3 | 708 |
-| app/controllers/HeroController.ts | 40 | 179.4 | 397 |
+| app/types/entities.ts | 66 | 26.8 | 17 |
+| app/lib/i18n/translations.ts | 48 | 19.4 | 8 |
+| app/classes/map/MapGeneration.ts | 46 | 155.2 | 381 |
+| app/classes/unit/UnitActions.ts | 45 | 65.8 | 173 |
+| app/config/assetManifest.ts | 45 | 25.2 | 289 |
+| app/screens/Game.ts | 41 | 155.6 | 580 |
+| app/controllers/HeroController.ts | 41 | 141.5 | 400 |
+| app/serialization/SaveSerializer.ts | 35 | 100.8 | 392 |
+| app/types/save.ts | 33 | 73.8 | 311 |
+| app/types/context.ts | 31 | 19.3 | 275 |
+| app/lib/lpc/baked.ts | 30 | 151.3 | 284 |
+| app/classes/unit/UnitCombat.ts | 29 | 131.5 | 238 |
+
+## Project Hygiene
+
+| Rule | Status | Detail |
+| --- | --- | --- |
+| Dossiers trop charges | OK | 0 dossier(s) avec plus de 24 fichiers TS |
+| Dossiers severement charges | OK | 0 dossier(s) avec plus de 48 fichiers TS |
+| Dossiers trop volumineux | OK | 0 dossier(s) avec plus de 8000 lignes |
+| Dossiers trop branches | OK | 0 dossier(s) avec plus de 1200 branches approx. |
+| Profondeur de dossiers | OK | 0 dossier(s) au-dela de 5 niveaux |
+| Index trop lourds | OK | 0 index.ts avec plus de 300 lignes |
+| Nomenclature par zone | OK | 0 fichier(s) ne suivent pas la convention attendue de leur dossier |
+
+### Structure Debt
+
+These signals now reduce the Structure score. This makes the report stricter: a folder can be technically valid but still count as architecture debt when it becomes a catch-all.
+
+| Signal | Count | Threshold | Penalty |
+| --- | --- | --- | --- |
+| Large files | 0 | LOC >= 1000 | 0 |
+| Huge files | 0 | LOC >= 1500 | 0 |
+| Complex files | 0 | branches >= 120 or max block >= 160 | 0 |
+| Crowded folders | 0 | files > 24 | 0 |
+| Severely crowded folders | 0 | files > 48 | 0 |
+| High LOC folders | 0 | LOC > 8000 | 0 |
+| High branch folders | 0 | branches > 1200 | 0 |
+| Deep folders | 0 | depth > 5 | 0 |
+| Heavy index files | 0 | index.ts LOC > 300 | 0 |
+| Naming mismatches | 0 | folder naming convention mismatch | 0 |
+
+### Folder Refactor Candidates
+
+No folder currently needs a structural split.
+
+### Crowded Folders
+
+No folder exceeds the current file-count warning.
+
+### Naming Styles
+
+| Style | Files |
+| --- | --- |
+| PascalCase | 209 |
+| camelCase | 206 |
+
+### Naming Mismatches
+
+No naming mismatch detected for folder-level conventions.
+
+### Heavy Index Files
+
+No heavy index.ts file detected.
 
 ## Dependency Cycles
 
 Madge found **0 circular dependencies**. Architecture score: **15/15**. Baseline gate: **0**.
 
-Fix priority:
-
-1. Break barrel/helper cycles around `lib/index.ts`, `types/entities.ts`, and projectile helpers.
-2. Then handle local two-way feature splits such as AI, map generation, controls, menu, building, and unit modules.
-3. Keep the baseline gate so new cycles cannot sneak in while old ones are being removed.
+No import-cycle fix needed. Keep the baseline gate so new cycles cannot sneak in.
 
 ### Cycle Hubs
 

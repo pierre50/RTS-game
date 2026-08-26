@@ -15,11 +15,11 @@ import {
   isWheatMature,
   setVillagerAutonomy,
 } from '../../lib'
-import { getNearestAvailableStableForUnit } from '../../lib/horseCapture'
+import { getNearestAvailableStableForUnit } from '../../lib/horses/horseCapture'
 import { t } from '../../lib/lang'
-import { applyDiplomaticAggression } from '../../lib/diplomaticAggression'
-import { isHeroControlled } from '../../lib/unitControl'
-import { applyUnitWorkAssets } from '../../lib/unitWorkAppearance'
+import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
+import { isHeroControlled } from '../../lib/units/unitControl'
+import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
 import type {
   BuildingEntity,
   RuntimeEntity,

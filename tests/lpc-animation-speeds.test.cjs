@@ -160,7 +160,7 @@ test('appearance layers use harvest art for taking meat instead of hunter shooti
         getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
       },
       '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
-      '../../lib/unitExperience': { getUnitEquipmentLevel: () => 0 },
+      '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
     },
   })
 
@@ -259,7 +259,7 @@ test('appearance layers use shooting art for hero bow charge even without a hunt
         getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
       },
       '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
-      '../../lib/unitExperience': { getUnitEquipmentLevel: () => 0 },
+      '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
     },
   })
 

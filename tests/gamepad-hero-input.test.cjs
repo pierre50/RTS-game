@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadGamepadHeroInput(getGamepad) {
   const filename = path.join(__dirname, '../app/controllers/GamepadHeroInput.ts')
@@ -13,7 +14,7 @@ function loadGamepadHeroInput(getGamepad) {
   })
   const module = { exports: {} }
   const mocks = {
-    '../lib/gamepad': {
+    '../lib/input/gamepad': {
       GAMEPAD_AXIS: { moveX: 0, moveY: 1, aimX: 2, aimY: 3 },
       GAMEPAD_BUTTON: {
         action: 5,
@@ -32,15 +33,15 @@ function loadGamepadHeroInput(getGamepad) {
       getActiveGamepad: getGamepad,
       readStick: () => ({ x: 0, y: 0 }),
     },
-    '../lib/heroCursor': {
+    '../lib/hero/heroCursor': {
       setVirtualCursorPosition: () => {},
       setVirtualCursorVisible: () => {},
     },
-    '../lib/settings': {
+    '../lib/audio/settings': {
       getGamepadEnabled: () => true,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.GamepadHeroInput
 }

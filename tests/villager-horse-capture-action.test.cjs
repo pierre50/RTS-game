@@ -74,7 +74,7 @@ function loadUnitActions(calls, captureHorse) {
         updateInstanceVisibility: () => {},
       }
     }
-    if (request === '../../lib/horseCapture') {
+    if (request === '../../lib/horses/horseCapture') {
       return {
         getNearestAvailableStableForUnit: unit => unit.owner.buildings[0] ?? null,
         routeCapturedHorseToStableWithOwnerContact: ({ horse, owner, onHorseRouteStart }) => {
@@ -86,7 +86,7 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow }
     if (request === '../Projectile') return { Projectile: class {} }
-    if (request === '../../lib/unitExperience') {
+    if (request === '../../lib/units/unitExperience') {
       return {
         LOADING_XP_CATEGORY: {},
         XP_BUILD_TICK: 1,
@@ -101,13 +101,13 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === '../../lib/lpc') return { refreshBakedLpcUnitAssets: () => {} }
     if (request === '../../lib/lang') return { t: key => key }
-    if (request === '../../lib/unitControl') {
+    if (request === '../../lib/units/unitControl') {
       return { isHeroControlled: () => false, isManualHeroActionReleased: () => false }
     }
-    if (request === '../../lib/unitEnergy') return { spendOrWaitForEnergy: () => true }
-    if (request === '../../lib/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
-    if (request === '../../lib/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
-    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
+    if (request === '../../lib/units/unitEnergy') return { spendOrWaitForEnergy: () => true }
+    if (request === '../../lib/units/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
+    if (request === '../../lib/entities/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
+    if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === './UnitCaptureHorseAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))
     }
@@ -116,6 +116,9 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === './UnitResourceActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
+    }
+    if (request === './UnitResourceGathering') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceGathering.ts'))
     }
     if (request === './UnitConversionAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitConversionAction.ts'))

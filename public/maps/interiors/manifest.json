@@ -1,0 +1,18 @@
+{
+  "format": "interior-map-manifest",
+  "version": 1,
+  "generatedAt": "2026-08-26T18:47:59.246Z",
+  "batchSeed": 12345,
+  "interiors": [
+    {
+      "id": "town-center-oval-001",
+      "interiorType": "TownCenter",
+      "kind": "interior",
+      "path": "town-center/town-center-oval-001.map",
+      "seed": 1563891744,
+      "size": 31,
+      "spawns": 1,
+      "exits": 1
+    }
+  ]
+}

@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const equipment = require('../public/assets/data/gameplay/equipment.json')
 const technologies = require('../public/assets/data/technologies/technologies.json')
@@ -30,9 +31,9 @@ function loadPlayerConfig() {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
     '../constants': { UNIT_TYPES: unitTypes },
     '../constants/sounds': { SOUND_CUES: soundCues },
-    '../lib/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
+    '../lib/equipment/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

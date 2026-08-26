@@ -6,9 +6,9 @@ import {
   getArcProgressOffset,
   pointsDistance,
 } from '../lib/maths'
-import { bindAnimatedSpriteToTicker, getAnimationFrames, getMirroredHalfArcFrameIndex } from '../lib/spriteTextures'
+import { bindAnimatedSpriteToTicker, getAnimationFrames, getMirroredHalfArcFrameIndex } from '../lib/entities/spriteTextures'
 import { LABEL_TYPES } from '../constants'
-import { getShadowsEnabled } from '../lib/settings'
+import { getShadowsEnabled } from '../lib/audio/settings'
 import type { GameContextLike } from '../types/context'
 import type { Point } from '../types/grid'
 import {

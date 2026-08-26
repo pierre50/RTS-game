@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadUnitEnergy() {
-  const filename = path.join(__dirname, '../app/lib/unitEnergy.ts')
+  const filename = path.join(__dirname, '../app/lib/units/unitEnergy.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -33,8 +34,8 @@ function loadUnitEnergy() {
       SHEET_TYPES: { standing: 'standingSheet' },
       STEP_TIME: 100,
     },
-    './combatFeedback': { showFatigueFeedback: unit => fatigueFeedbackCalls.push(unit) },
-    './combatBehavior': {
+    '../combat/combatFeedback': { showFatigueFeedback: unit => fatigueFeedbackCalls.push(unit) },
+    '../combat/combatBehavior': {
       enterCombatRecovery: (unit, target) => {
         combatBehaviorCalls.push(['enter', unit, target])
         unit.combatMode = 'recover'
@@ -57,11 +58,11 @@ function loadUnitEnergy() {
         return balances[difficulty] ?? balances.medium
       },
     },
-    './lang': { t: key => key },
+    '../lang': { t: key => key },
     './miningActions': { getMiningActions: () => ['minestone', 'minegold'] },
     './unitControl': { isHeroControlled: unit => unit.controlMode === 'arpg' },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.__fatigueFeedbackCalls = fatigueFeedbackCalls
   module.exports.__combatBehaviorCalls = combatBehaviorCalls

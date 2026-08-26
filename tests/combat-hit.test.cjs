@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const constants = {
   MENU_INFO_IDS: { hitPoints: 'hitPoints' },
@@ -22,25 +23,25 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
 function loadCombatHit({ rawDamage = 6, parryResult = false, grantCalls = [], feedbackCalls = [] } = {}) {
-  return loadModule('app/lib/combatHit.ts', {
+  return loadModule('app/lib/combat/combatHit.ts', {
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - rawDamage },
     './combatFeedback': {
       showDamageFeedback: (target, damage) => feedbackCalls.push({ kind: 'damage', target, damage }),
       showParryFeedback: (target, text) => feedbackCalls.push({ kind: 'parry', target, text }),
     },
-    './entityHealthDisplay': entityHealthDisplayMock,
-    './lang': { t: key => key },
+    '../entities/entityHealthDisplay': entityHealthDisplayMock,
+    '../lang': { t: key => key },
     './parry': { attemptAutomaticParry: () => parryResult },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
-    './unitExperience': {
+    '../units/unitExperience': {
       XP_KILL_BONUS: 15,
       grantUnitXp: (unit, category, amount) => grantCalls.push({ unit, category, amount }),
     },
@@ -92,12 +93,12 @@ test('a dev-invincible target receives the hit notification without losing healt
 
 test('isMelee is required to even attempt a parry — a ranged hit never rolls one', () => {
   let parryAttempts = 0
-  const { applyCombatHit } = loadModule('app/lib/combatHit.ts', {
+  const { applyCombatHit } = loadModule('app/lib/combat/combatHit.ts', {
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - 6 },
     './combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
-    './entityHealthDisplay': entityHealthDisplayMock,
-    './lang': { t: key => key },
+    '../entities/entityHealthDisplay': entityHealthDisplayMock,
+    '../lang': { t: key => key },
     './parry': {
       attemptAutomaticParry: () => {
         parryAttempts++
@@ -105,7 +106,7 @@ test('isMelee is required to even attempt a parry — a ranged hit never rolls o
       },
     },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
-    './unitExperience': { XP_KILL_BONUS: 15, grantUnitXp: () => {} },
+    '../units/unitExperience': { XP_KILL_BONUS: 15, grantUnitXp: () => {} },
   })
   const target = makeTarget()
 

@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadPlayerActions() {
   const filename = path.join(__dirname, '../app/dev-console/actions/player.ts')
@@ -33,13 +34,13 @@ function loadPlayerActions() {
         },
       }
     }
-    if (request === '../../lib/settings') {
+    if (request === '../../lib/audio/settings') {
       return {
         GAME_SPEED_USAGE: 'speed [0.5|1|1.5|2]',
         isGameSpeedPreset: () => true,
       }
     }
-    if (request === '../../lib/equipmentStats') {
+    if (request === '../../lib/equipment/equipmentStats') {
       return { refreshUnitEquipmentStats: unit => unit.calls.push(['refreshUnitEquipmentStats']) }
     }
     if (request === '../../lib/lpc') {
@@ -53,7 +54,7 @@ function loadPlayerActions() {
         normalizeToggle: (value, current) => (value === 'on' ? true : value === 'off' ? false : !current),
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

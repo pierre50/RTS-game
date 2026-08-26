@@ -1,5 +1,5 @@
 import type { AnimatedSprite, Container, Graphics } from 'pixi.js'
-import type { HorseColor } from '../../lib/horseColors'
+import type { HorseColor } from '../../lib/horses/horseColors'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'

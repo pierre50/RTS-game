@@ -7,10 +7,10 @@ import {
   cancelHeroDefense,
   getHeroAimDegree,
   type HeroEquippedItem,
-} from '../lib/heroTools'
+} from '../lib/hero/heroTools'
 import { heroCanCommand } from '../lib/chief'
-import type { ControlBindingAction } from '../lib/settings'
-import { setUnitControlMode } from '../lib/unitControl'
+import type { ControlBindingAction } from '../lib/audio/settings'
+import { setUnitControlMode } from '../lib/units/unitControl'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import type { ControlsLike } from '../types/context'
@@ -54,6 +54,7 @@ export class HeroController {
   keysPressed: Set<ControlBindingAction>
   wasMoving: boolean
   mouseHeld: boolean
+  defenseHeld: boolean
   commCharging: boolean
   commChargeStart: number
   commIndicator: Graphics | null
@@ -74,6 +75,7 @@ export class HeroController {
     this.keysPressed = new Set()
     this.wasMoving = false
     this.mouseHeld = false
+    this.defenseHeld = false
     this.commCharging = false
     this.commChargeStart = 0
     this.commIndicator = null
@@ -272,7 +274,7 @@ export class HeroController {
       this.keyboardInteractHeld = false
       if (this.commCharging) this.endCommCharge()
     }
-    if (action === 'heroDefense') this.actionInputController.handlePointerUp(2)
+    if (action === 'heroDefense') this.actionInputController.handleDefenseKeyUp()
   }
 
   update(frameScale: number): void {
@@ -343,6 +345,7 @@ export class HeroController {
   cancelActiveInteraction(): void {
     this.stopKeyboardMove()
     this.mouseHeld = false
+    this.defenseHeld = false
     this.keyboardInteractHeld = false
     this.primaryClickPoint = null
     this.cancelMountTransition()

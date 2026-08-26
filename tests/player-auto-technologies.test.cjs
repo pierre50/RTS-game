@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadPlayer(overrides = {}) {
   const filename = path.join(__dirname, '../app/classes/players/Player.ts')
@@ -54,7 +55,7 @@ function loadPlayer(overrides = {}) {
         capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
       }
     }
-    if (request === '../building') return { Building: class {} }
+    if (request === '../building/Building') return { Building: class {} }
     if (request === '../Resource') {
       return {
         Resource: class {
@@ -64,7 +65,7 @@ function loadPlayer(overrides = {}) {
         },
       }
     }
-    if (request === '../unit') {
+    if (request === '../unit/Unit') {
       return {
         Unit: class {
           constructor(options) {
@@ -92,14 +93,14 @@ function loadPlayer(overrides = {}) {
     }
     if (request === '../../config/playerConfig') return { createPlayerData: () => ({ config: {}, techs: {} }) }
     if (request === '../../config/name') return { getRandomUnitName: overrides.getRandomUnitName ?? (() => 'Unit') }
-    if (request === '../../lib/entityFade') return { fadeIn: overrides.fadeIn ?? (() => {}) }
+    if (request === '../../lib/entities/entityFade') return { fadeIn: overrides.fadeIn ?? (() => {}) }
     if (request === '../../lib/chief') {
       return {
         hasLivingChief: () => true,
         playerNeedsChiefForCommand: () => false,
       }
     }
-    if (request === '../../lib/uiSound') return { playUiSound: () => {} }
+    if (request === '../../lib/audio/uiSound') return { playUiSound: () => {} }
     if (request === '../../services/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {
       return {
@@ -110,7 +111,7 @@ function loadPlayer(overrides = {}) {
     if (request === './PlayerTechnologies') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerTechnologies.ts'))
     }
-    return require(request)
+    return requireFromTsFile(request, filename, {}, moduleCache)
   }
 
   return loadTsFile(filename).Player

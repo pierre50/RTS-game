@@ -7,9 +7,9 @@ import {
   HORSE_CAPTURE_STABLE_MAX_DISTANCE,
   HORSE_CAPTURE_STABLE_TIMEOUT_MS,
   routeCapturedHorseToStableWithOwnerContact,
-} from '../lib/horseCapture'
+} from '../lib/horses/horseCapture'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
-import { spookWildHorse } from '../lib/wildHorseBehavior'
+import { spookWildHorse } from '../lib/horses/wildHorseBehavior'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { Point } from '../types/grid'

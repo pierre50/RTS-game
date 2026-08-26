@@ -1,5 +1,5 @@
 import { Modal } from '../lib'
-import { renderBuildingAvatar, renderEquipmentAvatar, renderTextureRefAvatar } from '../lib/avatar'
+import { renderEquipmentAvatar } from '../lib/avatar'
 import {
   equipHeroInventoryItem,
   formatEquipmentLootLabel,
@@ -11,17 +11,17 @@ import {
   getWeaponSlot,
   HERO_EQUIPMENT_SLOTS,
   unequipHeroInventorySlot,
-} from '../lib/equipmentLoot'
+} from '../lib/equipment/equipmentLoot'
 import {
   HERO_ARROW_CRAFT_RECIPES,
   canCraftHeroRecipe,
   craftHeroRecipe,
   getMissingCraftResources,
   type HeroCraftRecipe,
-} from '../lib/heroCrafting'
+} from '../lib/hero/heroCrafting'
 import { t } from '../lib/lang'
-import { playUiSound } from '../lib/uiSound'
-import { BUILDING_TYPES, SOUND_CUES } from '../constants'
+import { playUiSound } from '../lib/audio/uiSound'
+import { SOUND_CUES } from '../constants'
 import { createEntityInfoContent } from './EntityInfoModalManager'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -29,22 +29,17 @@ import {
   HERO_TOOL_ORDER,
   isHeroToolAvailable,
   type HeroEquippedItem,
-} from '../lib/heroTools'
-import { getReservedGameplayHotkeys } from '../lib/settings'
+} from '../lib/hero/heroTools'
+import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { ModalTabs } from './Tabs'
+import { renderInventoryWorldMap } from './InventoryWorldMap'
+import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
 import type { RuntimeEntity } from '../types/entities'
-import type { FactionRelationState, FactionSave, WorldColor, WorldGraphNode, WorldGraphSave } from '../types/save'
 import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
 type ActionMenuTab = 'info' | 'tools' | 'craft' | 'technologies' | 'minimap' | 'worldmap' | 'construction'
-
-const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
-
-function isHeroConstructionBuildingType(type: string): boolean {
-  return !type.startsWith(BUILDING_TYPES.banditCamp)
-}
 
 const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
@@ -239,168 +234,8 @@ export class InventoryManager {
     this.infoPanel.appendChild(createEntityInfoContent(this.menu.context.app, entity, { showAllXp: true }))
   }
 
-  getWorldColorLabel(color: WorldColor): string {
-    switch (color) {
-      case 'blue':
-        return t('worldMapBluePortal')
-      case 'yellow':
-        return t('worldMapYellowPortal')
-      case 'red':
-        return t('worldMapRedPortal')
-      default:
-        return t('worldMapRoot')
-    }
-  }
-
-  getWorldEnvironmentLabel(environment?: string | null): string | null {
-    switch (environment) {
-      case 'Temperate':
-        return t('worldMapEnvironmentTemperate')
-      case 'BlackForest':
-        return t('worldMapEnvironmentBlackForest')
-      case 'Jungle':
-        return t('worldMapEnvironmentJungle')
-      case 'Desert':
-        return t('worldMapEnvironmentDesert')
-      default:
-        return null
-    }
-  }
-
-  getFactionRelationIcon(state: FactionRelationState): string {
-    switch (state) {
-      case 'hostile':
-        return '⚔'
-      case 'wary':
-        return '!'
-      case 'friendly':
-        return '♥'
-      case 'allied':
-        return '♥♥'
-      default:
-        return '○'
-    }
-  }
-
-  getFactionRelationText(state: FactionRelationState): string {
-    switch (state) {
-      case 'hostile':
-        return t('worldMapRelationHostile')
-      case 'wary':
-        return t('worldMapRelationWary')
-      case 'friendly':
-        return t('worldMapRelationFriendly')
-      case 'allied':
-        return t('worldMapRelationAllied')
-      default:
-        return t('worldMapRelationNeutral')
-    }
-  }
-
-  getFactionRelationLabel(faction: FactionSave): string {
-    return `${this.getFactionRelationIcon(faction.relationState)} ${this.getFactionRelationText(faction.relationState)} ${faction.relationScore}`
-  }
-
-  shouldShowBanditEncounter(node: WorldGraphNode): boolean {
-    return node.encounter === 'bandit' && !node.banditsCleared
-  }
-
-  renderWorldMapNode(
-    graph: WorldGraphSave,
-    node: WorldGraphNode,
-    currentWorldId: string | null,
-    depth = 0
-  ): HTMLLIElement {
-    const item = document.createElement('li')
-    item.className = 'worldmap-node'
-    item.style.setProperty('--worldmap-depth', String(depth))
-    item.classList.toggle('current', node.id === currentWorldId)
-    item.classList.add(`worldmap-node-${node.color}`)
-
-    const row = document.createElement('div')
-    row.className = 'worldmap-node-row'
-
-    const marker = document.createElement('span')
-    marker.className = 'worldmap-node-marker'
-    marker.setAttribute('aria-hidden', 'true')
-
-    const body = document.createElement('span')
-    body.className = 'worldmap-node-body'
-
-    const name = document.createElement('span')
-    name.className = 'worldmap-node-name'
-    name.textContent = node.name
-
-    const meta = document.createElement('span')
-    meta.className = 'worldmap-node-meta'
-    const parts = [this.getWorldColorLabel(node.color)]
-    const environmentLabel = this.getWorldEnvironmentLabel(node.environment)
-    if (environmentLabel) parts.push(environmentLabel)
-    if (node.id === currentWorldId) parts.push(t('worldMapCurrentWorld'))
-    if (node.canTeleport) parts.push(t('worldMapTeleportAvailable'))
-    meta.textContent = parts.join(' | ')
-
-    body.appendChild(name)
-    body.appendChild(meta)
-
-    const factions = (this.shouldShowBanditEncounter(node) ? [] : (node.factionIds ?? []))
-      .map(id => this.menu.context.getCampaignFactions?.()?.[id])
-      .filter(Boolean) as FactionSave[]
-    if (factions.length) {
-      const factionList = document.createElement('span')
-      factionList.className = 'worldmap-node-factions'
-      for (const faction of factions) {
-        const badge = document.createElement('span')
-        badge.className = `worldmap-faction worldmap-faction-${faction.relationState}`
-        const civ = faction.civilization ? ` | ${faction.civilization}` : ''
-        badge.textContent = `${this.getFactionRelationLabel(faction)} | ${faction.name}${civ}`
-        factionList.appendChild(badge)
-      }
-      body.appendChild(factionList)
-    }
-    if (this.shouldShowBanditEncounter(node)) {
-      const factionList = document.createElement('span')
-      factionList.className = 'worldmap-node-factions'
-      const badge = document.createElement('span')
-      badge.className = 'worldmap-faction worldmap-faction-hostile'
-      badge.textContent = `⚔ ${t('worldMapBandits')}`
-      factionList.appendChild(badge)
-      body.appendChild(factionList)
-    }
-
-    row.appendChild(marker)
-    row.appendChild(body)
-    item.appendChild(row)
-
-    const children = node.children.map(id => graph.nodes[id]).filter(Boolean)
-    if (children.length) {
-      const list = document.createElement('ul')
-      list.className = 'worldmap-children'
-      children.forEach(child => list.appendChild(this.renderWorldMapNode(graph, child, currentWorldId, depth + 1)))
-      item.appendChild(list)
-    }
-
-    return item
-  }
-
   renderWorldMap(): void {
-    this.worldMapPanel.replaceChildren()
-    this.menu.clearActionHotkeys()
-
-    const graph = this.menu.context.getWorldGraph?.()
-    const root = graph ? graph.nodes[graph.rootWorldId] : null
-    if (!graph || !root) {
-      const empty = document.createElement('div')
-      empty.className = 'worldmap-empty'
-      empty.textContent = t('worldMapEmpty')
-      this.worldMapPanel.appendChild(empty)
-      return
-    }
-
-    const tree = document.createElement('ul')
-    tree.className = 'worldmap-tree'
-    tree.appendChild(this.renderWorldMapNode(graph, root, this.menu.context.getCurrentWorldId?.() ?? null))
-    this.worldMapPanel.appendChild(tree)
+    renderInventoryWorldMap(this.worldMapPanel, this.menu)
   }
 
   renderToolIcons(): void {
@@ -547,10 +382,7 @@ export class InventoryManager {
   }
 
   getConstructionButtons(): MenuButtonSpec[] {
-    const { player } = this.menu.context
-    return Object.keys(player.config.buildings)
-      .filter(isHeroConstructionBuildingType)
-      .map(type => this.menu.getActionBuildingButton(type))
+    return getInventoryConstructionButtons(this.menu)
   }
 
   getTechnologyButtons(): MenuButtonSpec[] {
@@ -713,53 +545,7 @@ export class InventoryManager {
   syncTechnologyProgress(): void {}
 
   renderConstruction(): void {
-    const selection = this.menu.context.controls.heroUnit || this.menu.selection
-    this.constructionPanel.textContent = ''
-    this.menu.clearActionHotkeys()
-    if (!selection) return
-
-    const { app, player } = this.menu.context
-    const usedKeys = new Set<string>(getReservedGameplayHotkeys())
-    this.getConstructionButtons()
-      .filter(button => !button.hide || !button.hide())
-      .forEach((button, index) => {
-        const hotkey = this.menu.assignActionHotkey(button.id || '', usedKeys)
-        const actionButton: MenuButtonSpec = {
-          ...button,
-          onClick: (target, evt) => {
-            evt?.preventDefault?.()
-            evt?.stopPropagation?.()
-            button.onClick?.(target, evt)
-            if (this.menu.context.controls.mouseBuilding) this.close()
-          },
-        }
-        // createMenuButton skips its own click wiring when `onCreate` is set (it
-        // assumes a custom onCreate handles interactivity itself), so the avatar
-        // is swapped in afterward on the default icon <img> instead of replacing
-        // icon creation — that keeps the normal click/tooltip/hotkey wiring intact.
-        const element = this.menu.createActionMenuButton(selection, actionButton, index, hotkey, () => {})
-        if (button.id) {
-          const icon = element.querySelector<HTMLImageElement>('.img')
-          const canvas = document.createElement('canvas')
-          canvas.width = 120
-          canvas.height = 120
-          const rendered =
-            button.id === BUILDING_TYPES.farm
-              ? renderTextureRefAvatar(app, WHEAT_FARM_AVATAR_REF, canvas)
-              : renderBuildingAvatar(app, button.id, player, canvas)
-          if (icon && rendered) {
-            icon.src = canvas.toDataURL()
-          }
-        }
-        this.constructionPanel.appendChild(element)
-        if (hotkey && typeof button.onClick === 'function') {
-          this.menu.setActionHotkey(hotkey, () => {
-            this.menu.playUiClick()
-            button.onClick!(selection, null)
-            if (this.menu.context.controls.mouseBuilding) this.close()
-          })
-        }
-      })
+    renderInventoryConstruction(this)
   }
 
   selectTool(tool: HeroEquippedItem): void {

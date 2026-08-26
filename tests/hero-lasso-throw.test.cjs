@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
   const filename = path.join(__dirname, '../app/classes/HeroLassoThrow.ts')
@@ -65,7 +66,7 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
       pointsDistance: (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by),
     },
     '../lib/lang': { t: key => key },
-    '../lib/horseCapture': {
+    '../lib/horses/horseCapture': {
       HORSE_CAPTURE_STABLE_MAX_DISTANCE: 7,
       HORSE_CAPTURE_STABLE_TIMEOUT_MS: 12000,
       routeCapturedHorseToStableWithOwnerContact: options => {
@@ -114,7 +115,7 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
       },
     },
     '../lib/treeCollision': { findTreeSegmentCollision: treeCollision },
-    '../lib/wildHorseBehavior': {
+    '../lib/horses/wildHorseBehavior': {
       spookWildHorse: (horse, threat) => {
         horse.strategy = 'runaway'
         horse.ambientMovement = true
@@ -123,7 +124,7 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.HeroLassoThrow
 }

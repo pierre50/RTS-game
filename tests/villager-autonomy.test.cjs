@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -59,18 +60,18 @@ const constants = {
 }
 
 function loadVillagerAutonomy() {
-  return loadModule('app/lib/villagerAutonomy.ts', {
+  return loadModule('app/lib/units/villagerAutonomy.ts', {
     '../constants': constants,
-    './combat': {
+    '../combat': {
       isWheatMature: target => {
         const sprite = target?.sprite
         return Boolean(sprite?.textures?.length && sprite.currentFrame >= sprite.textures.length - 1)
       },
     },
-    './playerState': {
+    '../playerState': {
       getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
     },
-    './horseCapture': {
+    '../horses/horseCapture': {
       getNearestAvailableStableForUnit: unit =>
         unit.owner?.buildings?.find(
           building =>

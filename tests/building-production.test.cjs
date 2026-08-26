@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -29,7 +30,7 @@ function loadModule(relativePath, mocks) {
         playerNeedsChiefForCommand: () => false,
       }
     }
-    if (request === '../../lib/stableHorses') {
+    if (request === '../../lib/horses/stableHorses') {
       return {
         getStableHorseAmount: building => building.stableHorses?.length ?? 0,
         consumeStableHorse: building => building.stableHorses?.shift?.() ?? null,
@@ -40,7 +41,7 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
-    if (request === '../../lib/entityFade') {
+    if (request === '../../lib/entities/entityFade') {
       return {
         fadeOut: (entity, _duration, onComplete) => {
           entity.alpha = 0
@@ -48,7 +49,7 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -135,8 +136,8 @@ test('resource rally commands keep the spawned unit context', () => {
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -241,8 +242,8 @@ test('military unit purchase reserves and sends an existing villager instead of 
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -357,8 +358,8 @@ test('military unit purchase can reserve compatible trainee training', () => {
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
         buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
@@ -474,8 +475,8 @@ test('temple priest training reserves and sends an existing villager instead of 
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -589,8 +590,8 @@ test('military training is first arrived first served', () => {
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -696,8 +697,8 @@ test('military training reservation can be cancelled before the unit enters the 
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
         buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
@@ -809,12 +810,12 @@ test('trainee training updates loading even when the building is not classically
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': {
+    '../../lib/buildings/buildingTraining': {
       canUnitTrainInto: (buildingType, unitType, targetType) => true,
       getMissingResourceNames: () => [],
       isTraineeTrainingType: () => true,
     },
-    '../../lib/unitUpgrades': {
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
         buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
@@ -898,12 +899,12 @@ test('missing resources for trainee training list the exact resources', () => {
     '../../lib/lang': {
       t: (key, vars = {}) => (key === 'needMore' ? `needMore:${vars.resource}` : key),
     },
-    '../../lib/buildingTraining': {
+    '../../lib/buildings/buildingTraining': {
       canUnitTrainInto: () => true,
       getMissingResourceNames: () => ['food', 'wood'],
       isTraineeTrainingType: () => true,
     },
-    '../../lib/unitUpgrades': {
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => true,
     },
   })
@@ -962,8 +963,8 @@ test('active military training cannot be cancelled after the unit entered the bu
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -1083,8 +1084,8 @@ test('stable training remounts the same unit type without charging unit cost or 
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => true,
     },
   })
@@ -1191,8 +1192,8 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => true,
     },
   })
@@ -1287,8 +1288,8 @@ test('chief requirement for trainee training is checked when the unit enters', (
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => true,
     },
   })
@@ -1410,8 +1411,8 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
         buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
@@ -1534,8 +1535,8 @@ test('failed trainee placement clears active military training state', () => {
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })
@@ -1653,8 +1654,8 @@ test('arrived villager is consumed and trained unit reuses the same population s
     '../../lib/lang': {
       t: key => key,
     },
-    '../../lib/buildingTraining': buildingTrainingMock,
-    '../../lib/unitUpgrades': {
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
     },
   })

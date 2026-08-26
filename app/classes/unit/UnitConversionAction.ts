@@ -7,9 +7,9 @@ import {
   syncMovedActionTarget,
   updateInstanceVisibility,
 } from '../../lib'
-import { grantUnitXp, XP_CATEGORIES, XP_CONVERT_SUCCESS } from '../../lib/unitExperience'
-import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
-import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
+import { grantUnitXp, XP_CATEGORIES, XP_CONVERT_SUCCESS } from '../../lib/units/unitExperience'
+import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
+import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 

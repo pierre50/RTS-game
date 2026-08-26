@@ -7,7 +7,7 @@ import {
   isHeroPowerChargeActiveForTool,
   isHeroToolAvailable,
   type HeroEquippedItem,
-} from '../lib/heroTools'
+} from '../lib/hero/heroTools'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { HeroAimPoint } from './HeroControllerSupport'

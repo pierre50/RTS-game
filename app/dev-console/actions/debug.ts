@@ -1,4 +1,4 @@
-import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
+import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPerformanceMetric, DevPerformanceSnapshot } from '../types'
 import {

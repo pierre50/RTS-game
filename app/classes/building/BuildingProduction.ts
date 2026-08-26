@@ -4,7 +4,7 @@ import {
   payCost,
   refundCost,
 } from '../../lib'
-import { isTraineeTrainingType } from '../../lib/buildingTraining'
+import { isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { t } from '../../lib/lang'
 import {
   cancelPendingTraining,

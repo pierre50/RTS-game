@@ -15,7 +15,7 @@ function loadHeroInventoryAction() {
   const module = { exports: {} }
   const localRequire = request => {
     if (request === '../../constants') return { UNIT_TYPES: { hero: 'Hero' } }
-    if (request === '../../lib/equipmentLoot') {
+    if (request === '../../lib/equipment/equipmentLoot') {
       return {
         getEquipmentSlot: item =>
           item.startsWith('helmet_') ||

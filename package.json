@@ -19,6 +19,7 @@
     "compile": "pnpm dist",
     "deploy": "pnpm build && gh-pages -d build",
     "maps:generate": "node tools/generate-maps.cjs",
+    "interiors:generate": "node tools/generate-interior-maps.cjs",
     "assets:lpc:build": "python3 scripts/lpc/export_runtime_palettes.py && python3 scripts/lpc/build.py && python3 scripts/lpc/build_equipment.py && python3 scripts/lpc/build_hero_appearance.py && python3 scripts/lpc/build_animals.py",
     "assets:lpc:export-palettes": "python3 scripts/lpc/export_runtime_palettes.py",
     "assets:lpc:build-equipment": "python3 scripts/lpc/build_equipment.py",

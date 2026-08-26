@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadDebugActions(overrides = {}) {
   const filename = path.join(__dirname, '../app/dev-console/actions/debug.ts')
@@ -35,7 +36,7 @@ function loadDebugActions(overrides = {}) {
       isPlayerEliminated: () => false,
       parseTextureRef: texture => texture,
     },
-    '../../lib/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
+    '../../lib/entities/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
     './DebugMapRenderers': {
       drawCoordsDebug: () => {},
       drawGridDebug: () => {},
@@ -75,7 +76,7 @@ function loadDebugActions(overrides = {}) {
       ...overrides.shared,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

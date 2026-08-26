@@ -1,5 +1,5 @@
 import { Container, Matrix, RenderTexture, Sprite } from 'pixi.js'
-import { getShadowsEnabled } from '../lib/settings'
+import { getShadowsEnabled } from '../lib/audio/settings'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeMap } from '../types/map'
 

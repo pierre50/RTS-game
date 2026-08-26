@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -12,12 +13,12 @@ function loadModule(relativePath, mocks = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
-const { bindAnimatedSpriteToTicker } = loadModule('app/lib/spriteTextures.ts', {
+const { bindAnimatedSpriteToTicker } = loadModule('app/lib/entities/spriteTextures.ts', {
   '../constants': { SHEET_TYPES: {}, WORK_TYPES: {} },
   './maths': {},
 })
@@ -47,7 +48,7 @@ function bindSprite(sprite) {
 const { updateInstanceRenderVisibility } = loadModule('app/lib/grid/visibility.ts', {
   '../../constants': { BUCKET_SIZE: 8, FAMILY_TYPES: { resource: 'resource' } },
   '../../services/FogOfWar': { updateVisibility: () => {} },
-  '../insightDetection': { getInsightDetectionRange: (_instance, _target, range) => range },
+  '../units/insightDetection': { getInsightDetectionRange: (_instance, _target, range) => range },
   './cells': { getBuildingFootprintCells: (i, j) => [{ i, j }] },
 })
 

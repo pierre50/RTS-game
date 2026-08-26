@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks = {}) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    throw new Error(`Unexpected require: ${request}`)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -22,7 +23,7 @@ function loadModule(relativePath, mocks = {}) {
 
 test('unit corpse loot initializes from resolved equipment and transfers to hero inventory', () => {
   const calls = []
-  const { getUnitCorpseLootEquipment, pickupCorpseEquipment } = loadModule('app/lib/equipmentLoot.ts', {
+  const { getUnitCorpseLootEquipment, pickupCorpseEquipment } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
       SHEET_TYPES: { corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
@@ -34,13 +35,13 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
         return ['helmet_barbarian_ceramic', 'round_shield_ceramic_slash', 'helmet_barbarian_ceramic']
       },
     },
-    './unitExperience': {
+    '../units/unitExperience': {
       getUnitEquipmentLevel: unit => {
         calls.push(['getUnitEquipmentLevel', unit.label])
         return 2
       },
     },
-    './lpc': {
+    '../lpc': {
       applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
     },
   })
@@ -78,14 +79,14 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
 })
 
 test('equipment loot labels humanize runtime ids', () => {
-  const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule('app/lib/equipmentLoot.ts', {
+  const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
       SHEET_TYPES: { corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
     },
     './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
-    './unitExperience': { getUnitEquipmentLevel: () => 0 },
-    './lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
 
   assert.equal(formatEquipmentLootLabel('round_shield_ceramic_slash'), 'Round Shield Ceramic Slash')
@@ -98,7 +99,7 @@ test('equipment loot labels humanize runtime ids', () => {
 
 test('hero equips bag items into gear and weapon slots with replacement swaps', () => {
   const calls = []
-  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipmentLoot.ts', {
+  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
       SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
@@ -107,8 +108,8 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
     },
-    './unitExperience': { getUnitEquipmentLevel: () => 0 },
-    './lpc': {
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': {
       applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
     },
   })
@@ -210,7 +211,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
 
 test('helmet decor requires an equipped helmet and is removed with the helmet', () => {
   const calls = []
-  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipmentLoot.ts', {
+  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
       SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
@@ -219,8 +220,8 @@ test('helmet decor requires an equipped helmet and is removed with the helmet', 
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
     },
-    './unitExperience': { getUnitEquipmentLevel: () => 0 },
-    './lpc': {
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': {
       applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
     },
   })
@@ -255,7 +256,7 @@ test('helmet decor requires an equipped helmet and is removed with the helmet', 
 })
 
 test('equipping the same arrow type merges the bag stack into the equipped stack', () => {
-  const { equipHeroInventoryItem } = loadModule('app/lib/equipmentLoot.ts', {
+  const { equipHeroInventoryItem } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
       SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
@@ -264,8 +265,8 @@ test('equipping the same arrow type merges the bag stack into the equipped stack
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: () => {},
     },
-    './unitExperience': { getUnitEquipmentLevel: () => 0 },
-    './lpc': { applyBakedLpcUnitAssets: () => {} },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const hero = {
     currentSheet: 'standingSheet',

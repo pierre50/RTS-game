@@ -6,11 +6,11 @@ function loadModule(relativePath, mocks) {
   return loadTsModule(relativePath, {
     mocks: {
       '../HeroLassoThrow': { HeroLassoThrow: class {} },
-      '../../lib/horseCapture': {
+      '../../lib/horses/horseCapture': {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
       },
-      '../../lib/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+      '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
       ...mocks,
     },
   })
@@ -50,9 +50,9 @@ const entityHealthDisplayMock = {
 }
 
 function loadExperience(feedbackCalls = []) {
-  return loadModule('app/lib/unitExperience.ts', {
+  return loadModule('app/lib/units/unitExperience.ts', {
     '../constants': constants,
-    './combatFeedback': {
+    './combat/combatFeedback': {
       showLevelUpFeedback: (target, text) => feedbackCalls.push({ target, text }),
     },
     './lang': { t: key => key },
@@ -318,7 +318,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       SLASH_IMPACT_FRAME: 5,
       BOW_SHOOT_RELEASE_FRAME: 8,
     },
-    '../../lib/unitExperience': {
+    '../../lib/units/unitExperience': {
       LOADING_XP_CATEGORY: { berry: 'farming' },
       XP_BUILD_TICK: 2,
       XP_CATEGORIES: {},
@@ -329,14 +329,14 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       getHealingXpBonus: () => 0,
       grantUnitXp: (unit, category, amount) => xpCalls.push({ category, amount }),
     },
-    '../../lib/entityHealthDisplay': entityHealthDisplayMock,
-    '../../lib/unitControl': {
+    '../../lib/entities/entityHealthDisplay': entityHealthDisplayMock,
+    '../../lib/units/unitControl': {
       isHeroControlled: () => false,
       isManualHeroActionReleased: () => false,
     },
     '../../lib/lang': { t: key => key },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
-    '../../lib/unitWorkAppearance': {
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitWorkAppearance': {
       applyUnitWorkAssets: () => {},
     },
     '../Projectile': { Projectile: class {} },

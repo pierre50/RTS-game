@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadPlacementModule() {
   const filename = path.join(__dirname, '../app/lib/grid/placement.ts')
@@ -70,7 +71,7 @@ function loadPlacementModule() {
         },
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports

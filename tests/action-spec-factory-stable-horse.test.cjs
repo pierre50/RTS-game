@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadActionSpecFactory() {
   const filename = path.join(__dirname, '../app/ui/ActionSpecFactory.ts')
@@ -40,16 +41,16 @@ function loadActionSpecFactory() {
       isValidCondition: () => true,
     },
     '../lib/avatar': { renderUnitTypeAvatar: () => false },
-    '../lib/buildingTraining': { getMissingResourceNames: () => [], isTraineeTrainingType: () => false },
+    '../lib/buildings/buildingTraining': { getMissingResourceNames: () => [], isTraineeTrainingType: () => false },
     '../lib/chief': {
       hasLivingChief: () => true,
       heroCanCommand: () => true,
       playerNeedsChiefForCommand: () => false,
     },
     '../lib/lang': { t: key => key },
-    '../lib/uiSound': { playUiSound: () => {} },
+    '../lib/audio/uiSound': { playUiSound: () => {} },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.ActionSpecFactory
 }

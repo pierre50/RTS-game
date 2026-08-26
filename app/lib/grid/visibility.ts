@@ -1,7 +1,7 @@
 import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from './cells'
 import { updateVisibility } from '../../services/FogOfWar'
-import { getInsightDetectionRange } from '../insightDetection'
+import { getInsightDetectionRange } from '../units/insightDetection'
 import type { GridPosition, Point } from '../../types/grid'
 import type { VisibilityEntity } from '../../services/FogOfWar'
 import type { Bounds } from '../../types/geometry'

@@ -30,16 +30,16 @@ export const SOUND_CUES = {
     arrowLaunch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
   },
   unit: {
-    fallbackCreate: 'human-unit-completed',
+    fallbackCreate: null,
     horseMoving: 'horse-moving',
-    militaryCommand: ['eventide', 'arectus', 'conan', 'werebus'],
+    militaryCommand: null,
     swordAttack: ['sword-attack', 'sword-attack-2'],
   },
   surface: {
     bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'],
   },
   villager: {
-    command: 'olmars',
+    command: null,
     gatherFood: 'farming-3',
     chopWood: 'wood-chopping',
     forageBerry: 'berry-gathering',

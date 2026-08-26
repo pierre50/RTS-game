@@ -3,15 +3,17 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadHorseCapture(calls) {
-  const filename = path.join(__dirname, '../app/lib/horseCapture.ts')
+  const filename = path.join(__dirname, '../app/lib/horses/horseCapture.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
+  const mocks = {}
   const localRequire = request => {
     if (request === '../constants') return { BUILDING_TYPES: { stable: 'Stable' }, STEP_TIME: 20 }
     if (request === './stableHorses') {
@@ -25,11 +27,11 @@ function loadHorseCapture(calls) {
         },
       }
     }
-    if (request === './maths') return { instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j) }
-    if (request === './grid/movement') {
+    if (request === '../maths') return { instancesDistance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j) }
+    if (request === '../grid/movement') {
       return { instanceContactInstance: (a, b) => a.i === b.i && a.j === b.j }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports

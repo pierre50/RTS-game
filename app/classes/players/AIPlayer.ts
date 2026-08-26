@@ -1,28 +1,20 @@
 import { Player } from './Player'
 import type { PlayerOptions } from './Player'
 
-import {
-  getPositionInGridAroundInstance,
-  getClosestInstance,
-  instancesDistance,
-  canAfford,
-  isPlayerEliminated,
-} from '../../lib'
-import {
-  ACTION_TYPES,
-  FAMILY_TYPES,
-  PLAYER_TYPES,
-  UNIT_TYPES,
-  BUILDING_TYPES,
-  RESOURCE_TYPES,
-  WORK_TYPES,
-} from '../../constants'
+import { isPlayerEliminated } from '../../lib'
+import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
 import { AIThreatManager, type EnemyMemory, type StoredThreat, type ThreatProfile } from '../../ai/AIThreatManager'
 import { classifyMilitaryUnits, isAliveUnit } from '../../ai/unitGroups'
-import { AI_CHIEF_SUCCESSION_DELAY_MS, isChiefUnit, isLivingChief } from '../../lib/chief'
-import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
+import { isChiefUnit, isLivingChief } from '../../lib/chief'
+import {
+  cleanupAITrackingSets,
+  createAIUnitExtraOptions,
+  getApproachableHeroNearChiefAnchor,
+  handleAIChiefGuard,
+  refreshAIChiefSuccession,
+} from './AIPlayerBehavior'
 import type {
   AIAge,
   AIBuildingLike,
@@ -32,8 +24,7 @@ import type {
   EnemyMemoryOptions,
 } from '../../ai/types'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
-import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 type StrategySnapshotState = {
   map: AIStrategySnapshot['map']
@@ -51,8 +42,6 @@ type StrategySnapshotState = {
 }
 
 const DEBUG = false
-const CHIEF_FORUM_GUARD_RANGE = 8
-const CHIEF_HERO_TALK_RANGE = 2.5
 
 export class AI extends Player {
   declare age: AIAge
@@ -260,67 +249,14 @@ export class AI extends Player {
 
   // Remove depleted resources and destroyed buildings from tracked Sets
   cleanupSets() {
-    for (const resources of Object.values(this.foundedResources)) {
-      for (const resource of resources) {
-        if ((resource.quantity ?? 0) <= 0 || resource.isDead) resources.delete(resource)
-      }
-    }
-    for (const a of this.foundedAnimals) {
-      if (a.isDead || a.isDestroyed || (a.hitPoints ?? 0) <= 0) this.foundedAnimals.delete(a)
-    }
-    for (const a of this.foundedDeadAnimals) {
-      if (a.isDestroyed || (a.quantity ?? 0) <= 0) this.foundedDeadAnimals.delete(a)
-    }
-    for (const b of this.foundedEnemyBuildings) {
-      if (b.isDead || b.isDestroyed || !this.isEnemy(b.owner)) this.foundedEnemyBuildings.delete(b)
-    }
-    for (const u of this.foundedEnemyUnits) {
-      if (u.isDead || u.isDestroyed || (u.hitPoints ?? 0) <= 0 || !this.isEnemy(u.owner))
-        this.foundedEnemyUnits.delete(u)
-    }
-    this._refreshEnemyMemory(this.enemyBuildingMemory)
-    this._refreshEnemyMemory(this.enemyUnitMemory)
+    cleanupAITrackingSets(this)
   }
 
   getUnitExtraOptions(type: string) {
-    const options: UnitCreationExtra = {
-      handleSetDest: (target: RuntimeEntity | RuntimeCell) => {
-        if (!('family' in target)) return
-        const aiTarget = target
-        const { map } = this.context
-        if (type === UNIT_TYPES.villager && aiTarget.family === FAMILY_TYPES.resource) {
-          const buildingType =
-            aiTarget.type === RESOURCE_TYPES.berrybush || aiTarget.isDead
-              ? BUILDING_TYPES.granary
-              : BUILDING_TYPES.storagePit
-          const buildings = this.buildingsByTypes([buildingType])
-          const reserve = this.strategy.getAgeUpReserve()
-          if (
-            canAfford(this, this.config.buildings[buildingType].cost) &&
-            this.strategy.canSpendWithReserve(
-              this.config.buildings[buildingType].cost as Partial<Record<'wood' | 'food' | 'stone' | 'gold', number>>,
-              reserve
-            ) &&
-            this.hasNotReachBuildingLimit(buildingType, buildings)
-          ) {
-            const closestBuilding = getClosestInstance(aiTarget, [
-              ...buildings,
-              ...this.buildingsByTypes([BUILDING_TYPES.townCenter]),
-            ])
-            if (!closestBuilding || instancesDistance(closestBuilding, aiTarget) > 5) {
-              const pos = getPositionInGridAroundInstance(aiTarget, map.grid, [1, 5], 1)
-              if (pos && this.buyBuilding(pos.i, pos.j, buildingType)) {
-                if (DEBUG) console.log(`Building ${buildingType} at:`, pos)
-              }
-            }
-          }
-        }
-      },
-    }
     // Villager flee-vs-fight-back reactions live in the shared evaluateCombatMorale()
     // (app/lib/combat.ts), which Unit.isAttacked() applies to every player alike — no
     // AI-specific override needed here.
-    return options
+    return createAIUnitExtraOptions(this, type, DEBUG)
   }
 
   canResearchTech(techKey: string) {
@@ -344,85 +280,15 @@ export class AI extends Player {
   }
 
   refreshChiefSuccession(villagers: AIEntityLike[]): number {
-    if (this.getLivingChiefs().length > 0) {
-      this.chiefLossDetectedAt = null
-      return 0
-    }
-
-    const now = this.getNow()
-    this.chiefLossDetectedAt ??= now
-    if (now - this.chiefLossDetectedAt < AI_CHIEF_SUCCESSION_DELAY_MS) return 0
-
-    const candidates = villagers.filter(villager => !villager.isDead && !villager.isDestroyed && !isChiefUnit(villager))
-    if (!candidates.length) return 0
-    const promoted = this.context.map.randomItem
-      ? this.context.map.randomItem(candidates)
-      : candidates[Math.floor(Math.random() * candidates.length)]
-    if (!promoted) return 0
-    promoted.isChief = true
-    promoted.work = WORK_TYPES.attacker
-    promoted.stop?.()
-    const promotedUnit = promoted as unknown as UnitEntity
-    refreshBakedLpcUnitAssets(promotedUnit)
-    if (promotedUnit.action && !promotedUnit.path?.length) {
-      promotedUnit.getAction?.(promotedUnit.action)
-    }
-    this.chiefLossDetectedAt = null
-    return 1
+    return refreshAIChiefSuccession(this, villagers)
   }
 
   handleChiefGuard(towncenters: AIBuildingLike[]): number {
-    const anchor = towncenters.find(towncenter => towncenter.isBuilt && !towncenter.isDead && !towncenter.isDestroyed)
-    if (!anchor) return 0
-    let actions = 0
-    const now = this.getNow()
-    const hero = this.getApproachableHeroNearChiefAnchor(anchor)
-    for (const chief of this.getLivingChiefs()) {
-      if (chief.controlMode === 'hero') continue
-      const hostiles = this.getVisibleHostilesNear(anchor, 12)
-      const target = hostiles[0]
-      if (target && chief.action !== ACTION_TYPES.attack) {
-        chief.sendTo?.(target, ACTION_TYPES.attack)
-        actions++
-        continue
-      }
-
-      const distanceToAnchor = Math.abs(chief.i - anchor.i) + Math.abs(chief.j - anchor.j)
-      if (distanceToAnchor > CHIEF_FORUM_GUARD_RANGE) {
-        chief.sendTo?.(anchor)
-        actions++
-        continue
-      }
-
-      if (hero && instancesDistance(chief, hero) > CHIEF_HERO_TALK_RANGE) {
-        if (chief.dest !== hero) {
-          chief.sendTo?.(hero)
-          actions++
-        }
-        continue
-      }
-
-      if (
-        chief.inactif &&
-        distanceToAnchor <= CHIEF_FORUM_GUARD_RANGE &&
-        now >= (this.chiefWanderReadyAt.get(chief.label) ?? 0)
-      ) {
-        const guardCell = getPositionInGridAroundInstance(anchor, this.context.map.grid, [2, 6], 0)
-        this.chiefWanderReadyAt.set(chief.label, now + this.context.map.randomRange(6000, 12000))
-        if (guardCell) {
-          chief.sendTo?.(guardCell as RuntimeCell)
-          actions++
-        }
-      }
-    }
-    return actions
+    return handleAIChiefGuard(this, towncenters)
   }
 
   getApproachableHeroNearChiefAnchor(anchor: AIBuildingLike): UnitEntity | null {
-    const hero = this.context.controls?.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed || !hero.owner) return null
-    if (this.isEnemy(hero.owner) || hero.owner.isEnemy?.(this)) return null
-    return instancesDistance(anchor, hero) <= CHIEF_FORUM_GUARD_RANGE ? hero : null
+    return getApproachableHeroNearChiefAnchor(this, anchor)
   }
 
   step() {

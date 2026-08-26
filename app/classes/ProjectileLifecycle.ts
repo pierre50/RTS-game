@@ -1,5 +1,5 @@
 import { ARROW_GROUND_TIME, FADE_DURATION_MS } from '../constants'
-import { fadeOutThenClear } from '../lib/entityFade'
+import { fadeOutThenClear } from '../lib/entities/entityFade'
 import { getReliefOffset, getTerrainSetZIndex, isometricToCartesian, randomRange } from '../lib/maths'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'

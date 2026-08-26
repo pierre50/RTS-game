@@ -1,12 +1,9 @@
 import { Assets } from 'pixi.js'
 import { Gaia } from '../players'
-import { updateInstanceVisibility } from '../../lib'
-import { rehydrateAIKnowledge } from '../../services/FogOfWar'
-import { getIdealSpawnRangeForMapSize } from '../../config/mapSizes'
-import { MapBlueprintGeneration } from './MapBlueprintGeneration'
+import { MapBlueprintGeneration } from './generation/MapBlueprintGeneration'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
-import type { AnimalOptions } from '../animal'
+import type { AnimalOptions } from '../animal/Animal'
 import type { BuildingEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 import { placeBanditCamps } from './BanditCampGeneration'
@@ -18,14 +15,13 @@ import {
 } from './MapPlayerGeneration'
 import {
   canPlaceAmbientAnimalAt,
-  createSpawnSearchCell,
   generateAmbientAnimalSets,
   generateAmbientAnimalSetsAsync,
   getAmbientAnimalProfile,
   pickAmbientAnimalType,
   placeAmbientAnimalGroup,
   type AmbientAnimalProfile,
-} from './AmbientAnimalGeneration'
+} from './generation/AmbientAnimalGeneration'
 import type { SaveEntityState } from '../../types/save'
 import {
   createGenerationTimer,
@@ -37,7 +33,6 @@ import {
   type MapGenerationMap,
   type ProgressCallback,
   type SavedGameData,
-  type TerrainValue,
   type TerrainGrid,
 } from './MapGenerationTypes'
 import type { EnvironmentTerrainParams } from '../../constants'
@@ -50,7 +45,13 @@ import {
   generateTerrain,
   generateTerrainDataAsync,
   generateTerrainInWorker,
-} from './MapCellGeneration'
+} from './generation/MapCellGeneration'
+import {
+  generateStylishMap,
+  prepareBaseTerrain as prepareMapBaseTerrain,
+  prepareTerrainForSavedState as prepareMapTerrainForSavedState,
+  setInitialFogCells as setMapInitialFogCells,
+} from './MapGenerationPipeline'
 import {
   applySavedStateToGeneratedMap,
   clearGeneratedGameplayState,
@@ -59,7 +60,8 @@ import {
   restoreSavedEntities,
   restoreSavedPlayers,
   restoreSavedResources,
-} from './MapSavedStateGeneration'
+} from './generation/MapSavedStateGeneration'
+import { generateMapAsync as generateMapAsyncWithSpawnSearch } from './generation/MapAsyncGeneration'
 export type {
   GenerateMapOptions,
   MapBlueprint,
@@ -189,14 +191,7 @@ export class MapGeneration {
   }
 
   async setInitialFogCells(yieldEvery: number): Promise<number> {
-    const fogCellsStartedAt = performance.now()
-    for (let i = 0; i <= this.map.size; i++) {
-      for (let j = 0; j <= this.map.size; j++) {
-        this.map.grid[i][j].setFog()
-      }
-      if (i % yieldEvery === 0) await this.yieldToBrowser()
-    }
-    return performance.now() - fogCellsStartedAt
+    return setMapInitialFogCells(this.map, () => this.yieldToBrowser(), yieldEvery)
   }
 
   generateFromJSON(data: SavedGameData): void {
@@ -216,121 +211,23 @@ export class MapGeneration {
     repeat: number = 0,
     options: GenerateMapOptions = {}
   ): Promise<void> {
-    this.destroyGeneratedChildren()
-    if (!Number.isFinite(this.map.seed)) this.map.seed = Math.random() * 9999
-    this.map.resetRandom('ideal-spawns')
-    const [minIdealSpawns, maxIdealSpawns] = getIdealSpawnRangeForMapSize(this.map.size)
-    this.map.positionsCount =
-      positionsCountOverride ??
-      this.map.randomRange(Math.min(minIdealSpawns, maxIdealSpawns), Math.max(minIdealSpawns, maxIdealSpawns))
-
-    const terrain = await this.generateTerrainDataAsync()
-    this.map.size = terrain.length - 1
-    // Lightweight placeholder grid used only for the findPlayerPlaces() spawn search below;
-    // generateCellsAsync() replaces it with real GenerationCell instances further down.
-    this.map.grid = terrain.map((row: TerrainValue[], i: number) =>
-      row.map((terrainType: TerrainValue, j: number) => createSpawnSearchCell(i, j, terrainType))
-    )
-
-    let validSpawns = false
-    for (let attempt = repeat; attempt <= 10; attempt++) {
-      this.map.resetRandom(attempt)
-      this.map.playersPos = this.map.findPlayerPlaces()
-      if (this.map.playersPos.length >= this.map.positionsCount) {
-        this.map.resetRandom(attempt)
-        validSpawns = true
-        break
-      }
-      await this.yieldToBrowser()
-    }
-
-    if (!validSpawns) {
-      this.map.grid = []
-      alert('Error while generating the map')
-      return
-    }
-
-    await this.generateCellsAsync({ ...options, terrain })
+    await generateMapAsyncWithSpawnSearch(this.map, this, positionsCountOverride, repeat, options)
   }
 
   async stylishMap({
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = gameContext(this.map.context)
-    const { menu, player } = context
-
-    const { timings, measure, measureAsync } = createGenerationTimer(this.map.generationTimings || {})
-
-    await this.prepareBaseTerrain(context, { timings, measure }, onProgress)
-    await onProgress('generatingPlayers', 0.48)
-    measure('playerPlacement', () => this.map.placePlayers())
-    await onProgress('generatingResources', 0.58)
-    if (this.map.pregeneratedResourcesLoaded) {
-      timings.playerResources = 0
-      timings.neutralResources = 0
-      timings.biomeTrees = 0
-    } else {
-      await measureAsync('playerResources', () => this.map.generateResourcesAroundPlayersAsync(this.map.playersPos))
-      await measureAsync('neutralResources', () => this.map.generateNeutralResourceGroupsAsync(this.map.playersPos))
-      await measureAsync('biomeTrees', () => this.map.generateBiomeTreesAsync(this.map.playersPos))
-    }
-    measure('banditCampPlacement', () => this.placeBanditCamps())
-    measure('portalPlacement', () => this.placePortal())
-    await onProgress('generatingDecorations', 0.74)
-    await measureAsync('decorations', () => this.generateSetsAsync())
-    for (const viewer of this.map.context.players || []) {
-      rehydrateAIKnowledge(viewer, this.map)
-    }
-    await onProgress('generatingFog', 0.86)
-    measure('fogInit', () => this.map._initFogChunks())
-
-    if (!this.map.revealEverything) {
-      const yieldEvery = this.map.pregeneratedBlueprintId ? 32 : 12
-      timings.fogCells = await this.setInitialFogCells(yieldEvery)
-      for (let i = 0; i < player.buildings.length; i++) {
-        const building = player.buildings[i]
-        building.visibleCells = new Set()
-        updateInstanceVisibility(building)
-      }
-      for (let i = 0; i < player.units.length; i++) {
-        const unit = player.units[i]
-        unit.visibleCells = new Set()
-        updateInstanceVisibility(unit)
-      }
-    }
-
-    this.map._fogInitComplete = true
-    this.map._flushFogQueue()
-    await onProgress('finalizingWorld', 0.93)
-    await measureAsync('terrainBake', () => this.map.bakeTerrainToChunks())
-    this.map.ready = true
-    this.map.generationTimings = timings
-    console.table(
-      Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`]))
-    )
-    menu.updateResourcesMiniMap()
+    const timer = createGenerationTimer(this.map.generationTimings || {})
+    await generateStylishMap(this.map, context, timer, this.pipelineCallbacks(), { onProgress })
   }
 
   async prepareTerrainForSavedState({
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = runtimeContext(this.map.context)
-    const { timings, measure, measureAsync } = createGenerationTimer(this.map.generationTimings || {})
-
-    await this.prepareBaseTerrain(context, { timings, measure }, onProgress)
-    await onProgress('generatingFog', 0.72)
-    measure('fogInit', () => this.map._initFogChunks())
-
-    if (!this.map.revealEverything) {
-      timings.fogCells = await this.setInitialFogCells(16)
-    }
-
-    this.map._fogInitComplete = true
-    this.map._flushFogQueue()
-    await onProgress('finalizingWorld', 0.92)
-    await measureAsync('terrainBake', () => this.map.bakeTerrainToChunks())
-    this.map.ready = true
-    this.map.generationTimings = timings
+    const timer = createGenerationTimer(this.map.generationTimings || {})
+    await prepareMapTerrainForSavedState(this.map, context, timer, this.pipelineCallbacks(), { onProgress })
   }
 
   async prepareBaseTerrain(
@@ -338,15 +235,21 @@ export class MapGeneration {
     timer: Pick<GenerationTimer, 'measure' | 'timings'>,
     onProgress: ProgressCallback
   ): Promise<void> {
-    this.map.gaia = new Gaia(context)
-    if (this.map.pregeneratedBlueprintId) {
-      timer.timings.relief = 0
-    } else {
-      await onProgress('generatingRelief', 0.28)
-      timer.measure('relief', () => this.map.generateMapRelief())
+    await prepareMapBaseTerrain(this.map, context, timer, onProgress, () => this.yieldToBrowser())
+  }
+
+  private pipelineCallbacks() {
+    return {
+      generateSetsAsync: () => this.generateSetsAsync(),
+      placeBanditCamps: () => this.placeBanditCamps(),
+      placePortal: () => this.placePortal(),
+      prepareBaseTerrain: (
+        context: GameContextLike,
+        timer: Pick<GenerationTimer, 'measure' | 'timings'>,
+        onProgress: ProgressCallback
+      ) => this.prepareBaseTerrain(context, timer, onProgress),
+      setInitialFogCells: (yieldEvery: number) => this.setInitialFogCells(yieldEvery),
     }
-    await this.yieldToBrowser()
-    timer.measure('terrainRendering', () => this.map.rebuildTerrainAppearance())
   }
 
   applyStartingBonuses(player: PlayerLike, configuredAge: number | null = null): void {
@@ -442,8 +345,9 @@ export class MapGeneration {
   }
 
   _gaiaCreateAnimal(options: AnimalOptions): void {
-    if (this.map.gaia instanceof Gaia) {
-      this.map.gaia.createAnimal(options)
+    const { gaia } = this.map
+    if (gaia instanceof Gaia) {
+      gaia.createAnimal(options)
     }
   }
 

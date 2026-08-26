@@ -1,12 +1,12 @@
 import { instanceIsInPlayerSight } from './grid'
-export { Modal } from './Modal'
+export { Modal } from './ui/Modal'
 export {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getSpriteFrameSelection,
   setUnitTexture,
-} from './spriteTextures'
-export type { UnitTextureInstance } from './spriteTextures'
+} from './entities/spriteTextures'
+export type { UnitTextureInstance } from './entities/spriteTextures'
 import type { GridPosition } from '../types/grid'
 import type { ConfigValue } from '../types/config'
 import type { RenderableInstance } from './grid/visibility'

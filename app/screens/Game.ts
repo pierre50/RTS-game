@@ -1,22 +1,17 @@
 import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
 import { t } from '../lib/lang'
-import Map from '../classes/map'
+import Map from '../classes/map/Map'
 import Menu from '../classes/Menu'
 import Controls from '../classes/Controls'
-import { getReliefOffset, Modal } from '../lib'
-import { clearAllCombatFeedback } from '../lib/combatFeedback'
-import { adjustFactionRelation } from '../lib/factions'
+import { getReliefOffset } from '../lib'
+import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
+import { adjustFactionRelation } from '../lib/combat/factions'
 import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
-import { ActionScheduler } from '../lib/ActionScheduler'
-import { validateSaveData } from '../serialization/SaveValidator'
+import { ActionScheduler } from '../lib/actionScheduler'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { serializeGame } from '../serialization/SaveSerializer'
-import {
-  createInitialCampaignSave,
-  getCurrentWorldState,
-  isCampaignSave,
-} from '../serialization/CampaignSave'
+import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
 import { MapBlueprintLoadError, loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
 import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
@@ -35,7 +30,6 @@ import {
   hasSerializedGrid,
   saveConfig,
   savedRuntimeState,
-  worldStateWithCampaignClock,
   type PortalPartyState,
   type PortalWorldConfig,
 } from './game/GameStateHelpers'
@@ -66,9 +60,10 @@ import {
   setGameOrientationBlocked,
   toggleGamePause,
 } from './game/GameRuntimeLifecycle'
-import { getGameSpeed } from '../lib/settings'
-import { GameLoadingScreen } from '../ui/GameLoadingScreen'
-import { WorldRevealTransition, type PortalRevealPoint, type PortalTravelTransition } from '../ui/PortalTravelTransition'
+import { loadGameRuntime, restartGameRuntime, startGameRuntime } from './game/GameBootFlow'
+import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
+import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
+import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
 import { PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
 import type {
@@ -90,14 +85,7 @@ type RuntimeMapInstance = InstanceType<typeof Map> &
   }
 
 type MapInstance = RuntimeMapInstance & {
-  pregeneratedBlueprintId?: string | number | null
-  generationTimings?: Record<string, number>
-  blueprintDestroyMs?: number
-  blueprintCellCreationMs?: number
-  blueprintFillWaterGapsMs?: number
-  blueprintNormalizeWaterMs?: number
-  blueprintInitialWaterBorderMs?: number
-  blueprintResourceLoadMs?: number
+  pregeneratedBlueprintId?: BlueprintRuntimeMap['pregeneratedBlueprintId']
 }
 
 type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
@@ -211,39 +199,7 @@ export default class Game extends Container {
   }
 
   async start(): Promise<void> {
-    this._acquireWakeLock()
-    const speed = getGameSpeed()
-    this.context.app.ticker.speed = speed
-    if (this.context.scheduler) this.context.scheduler.timeScale = speed
-    this._loadingScreen = new GameLoadingScreen()
-    this._loadingScreen.update('generatingWorld', 0.02)
-    await this._yieldToBrowser()
-    let booted = false
-    try {
-      await this._bootFromConfig(this.config!)
-      booted = true
-    } finally {
-      const revealPoint = booted ? this._getHeroRevealPoint() : null
-      const initialReveal = booted ? new WorldRevealTransition(revealPoint) : null
-      const hero = booted ? this._runtimeHeroUnit() : null
-      const previousDevInvincible = hero?.devInvincible
-      if (hero) hero.devInvincible = true
-      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
-      this._loadingScreen = null
-      if (booted) {
-        this._measure('menu.show', () => this.context.menu?.show?.())
-        try {
-          await initialReveal?.revealFrom(this._getHeroRevealPoint() ?? revealPoint)
-        } finally {
-          if (hero) {
-            if (previousDevInvincible === undefined) delete hero.devInvincible
-            else hero.devInvincible = previousDevInvincible
-          }
-        }
-      } else {
-        initialReveal?.destroy()
-      }
-    }
+    await startGameRuntime(this)
   }
 
   _yieldToBrowser(): Promise<void> {
@@ -413,25 +369,7 @@ export default class Game extends Container {
     await map.generateFromBlueprint(blueprint, {
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
-    map.pregeneratedBlueprintId = blueprint.id
-    console.info('[maps] Loaded map', {
-      source: 'pregenerated-blueprint',
-      id: blueprint.id,
-      size: map.size,
-      environment: map.environment,
-      seed: map.seed,
-      spawns: blueprint.spawns?.length ?? map.playersPos?.length ?? 0,
-    })
-    map.generationTimings = {
-      terrainAndSpawns: performance.now() - mapGenerationStartedAt,
-      ...(blueprint?.timings || {}),
-      blueprintDestroy: map.blueprintDestroyMs || 0,
-      blueprintCellCreation: map.blueprintCellCreationMs || 0,
-      blueprintFillWaterGaps: map.blueprintFillWaterGapsMs || 0,
-      blueprintNormalizeWater: map.blueprintNormalizeWaterMs || 0,
-      blueprintInitialWaterBorder: map.blueprintInitialWaterBorderMs || 0,
-      blueprintResources: map.blueprintResourceLoadMs || 0,
-    }
+    recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
     await this._updateLoading('generatingPlayers', 0.2)
     this.context.players = map.generatePlayers(
       (config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null
@@ -489,15 +427,7 @@ export default class Game extends Container {
     await map.generateFromBlueprint(blueprint, {
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
-    map.pregeneratedBlueprintId = blueprint.id
-    console.info('[maps] Loaded map', {
-      source: 'save-pregenerated-blueprint',
-      id: blueprint.id,
-      size: map.size,
-      environment: map.environment,
-      seed: map.seed,
-      spawns: blueprint.spawns?.length ?? map.playersPos?.length ?? 0,
-    })
+    recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
     await map.prepareTerrainForSavedState({
       onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
     })
@@ -612,42 +542,7 @@ export default class Game extends Container {
   }
 
   async load(json: SaveRecord): Promise<void> {
-    let booted = false
-    try {
-      const saveData = validateSaveData(json)
-      this._campaignSave = isCampaignSave(saveData)
-        ? structuredClone(saveData)
-        : createInitialCampaignSave(structuredClone(saveData))
-      this._restartSaveData = structuredClone(this._campaignSave)
-      this._destroyRuntime()
-      const speed = getGameSpeed()
-      this.context.app.ticker.speed = speed
-      if (this.context.scheduler) this.context.scheduler.timeScale = speed
-      this._loadingScreen = new GameLoadingScreen()
-      this._loadingScreen.update('generatingTerrain', 0.02)
-      await this._yieldToBrowser()
-      await this._bootFromSave(
-        worldStateWithCampaignClock(
-          structuredClone(getCurrentWorldState(this._restartSaveData)),
-          this._campaignSave?.clock?.dayNightElapsedMs
-        )
-      )
-      booted = true
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t('corruptSave')
-      this.quit()
-      const content = document.createElement('div')
-      content.className = 'modal-menu'
-      const paragraph = document.createElement('p')
-      paragraph.className = 'save-list-confirm-message'
-      paragraph.textContent = message
-      content.appendChild(paragraph)
-      new Modal({ title: t('invalidSaveFile'), content })
-    } finally {
-      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
-      this._loadingScreen = null
-      if (booted) this._measure('menu.show', () => this.context.menu?.show?.())
-    }
+    await loadGameRuntime(this, json)
   }
 
   applyZoom(): void {
@@ -655,30 +550,7 @@ export default class Game extends Container {
   }
 
   async restart(): Promise<void> {
-    if (this._isRestarting || !this._restartSaveData) return
-    this._isRestarting = true
-    this._destroyRuntime()
-    const speed = getGameSpeed()
-    this.context.app.ticker.speed = speed
-    if (this.context.scheduler) this.context.scheduler.timeScale = speed
-    this._loadingScreen = new GameLoadingScreen()
-    this._loadingScreen.update('generatingTerrain', 0.02)
-    await this._yieldToBrowser()
-    let booted = false
-    try {
-      await this._bootFromSave(
-        worldStateWithCampaignClock(
-          structuredClone(getCurrentWorldState(this._restartSaveData!)),
-          this._campaignSave?.clock?.dayNightElapsedMs
-        )
-      )
-      booted = true
-    } finally {
-      this._measure('loading.destroy', () => this._loadingScreen?.destroy())
-      this._loadingScreen = null
-      if (booted) this._measure('menu.show', () => this.context.menu?.show?.())
-      this._isRestarting = false
-    }
+    await restartGameRuntime(this)
   }
 
   quit(): void {

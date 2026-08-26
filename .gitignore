@@ -9,4 +9,5 @@ tools/
 !tools/
 tools/*
 !tools/generate-maps.cjs
+!tools/generate-interior-maps.cjs
 !tools/audit-report.cjs

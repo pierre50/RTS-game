@@ -1,7 +1,7 @@
 import { AnimatedSprite, Assets, Rectangle, Sprite, Texture, type Ticker } from 'pixi.js'
 import { bindAnimatedSpriteToTicker, getTextureByFrame, getTextureSheet, parseTextureRef } from '../lib'
 import { LABEL_TYPES, RESOURCE_TYPES } from '../constants'
-import { getResourceWindAnimationEnabled, getShadowsEnabled } from '../lib/settings'
+import { getResourceWindAnimationEnabled, getShadowsEnabled } from '../lib/audio/settings'
 
 export type ResourceShadow = Sprite | AnimatedSprite
 export type WindTick = (ticker: { deltaMS?: number; elapsedMS?: number }) => void

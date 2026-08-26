@@ -8,10 +8,10 @@ import {
   playAudibleSoundCue,
   updateInstanceVisibility,
 } from '../../lib'
-import { runAfterDeathFlash } from '../../lib/deathFlash'
-import { clearEntityVisualFeedback } from '../../lib/entityVisualFeedback'
-import { fadeOutThenClear } from '../../lib/entityFade'
-import { playSpriteAnimationFromStart } from '../../lib/spriteAnimation'
+import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
+import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
+import { fadeOutThenClear } from '../../lib/entities/entityFade'
+import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { AnimalControllerHost } from './AnimalTypes'

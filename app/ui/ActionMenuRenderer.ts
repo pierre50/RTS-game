@@ -1,4 +1,4 @@
-import { getReservedGameplayHotkeys } from '../lib/settings'
+import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import type { RuntimeEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'

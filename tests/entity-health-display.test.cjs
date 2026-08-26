@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadEntityHealthDisplay() {
-  const filename = path.join(__dirname, '../app/lib/entityHealthDisplay.ts')
+  const filename = path.join(__dirname, '../app/lib/entities/entityHealthDisplay.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -14,12 +15,12 @@ function loadEntityHealthDisplay() {
   const module = { exports: {} }
   const mocks = {
     '../constants': { MENU_INFO_IDS: { hitPoints: 'hit-points' } },
-    './hitPointsText': {
+    './entities/hitPointsText': {
       formatHitPointsText: (hitPoints, totalHitPoints) =>
         `${Math.round(Number(hitPoints))}/${Math.round(Number(totalHitPoints))}`,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

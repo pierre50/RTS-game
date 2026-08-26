@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,21 +15,21 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
 
 test('Stable trains only unmounted matching military units into mounted units', () => {
-  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildingTraining.ts', {
+  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildings/buildingTraining.ts', {
     '../constants': {
       BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
-    './combat': { isValidCondition: () => true },
-    './stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
-    './unitUpgrades': {
+    '../combat': { isValidCondition: () => true },
+    '../horses/stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
+    '../units/unitUpgrades': {
       canUpgradeUnitAtBuilding: () => false,
       getUnitUpgradeTargetForBuilding: () => null,
     },
@@ -59,14 +60,14 @@ test('Stable trains only unmounted matching military units into mounted units', 
 })
 
 test('Barracks and archery range no longer upgrade trained soldiers', () => {
-  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildingTraining.ts', {
+  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildings/buildingTraining.ts', {
     '../constants': {
       BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
-    './combat': { isValidCondition: () => true },
-    './stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
-    './unitUpgrades': loadModule('app/lib/unitUpgrades.ts', {
+    '../combat': { isValidCondition: () => true },
+    '../horses/stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
+    '../units/unitUpgrades': loadModule('app/lib/units/unitUpgrades.ts', {
       '../constants': {
         BUILDING_TYPES: { stable: 'Stable', barracks: 'Barracks', archeryRange: 'ArcheryRange' },
         UNIT_TYPES: {

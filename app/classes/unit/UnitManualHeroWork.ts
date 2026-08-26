@@ -1,5 +1,5 @@
-import { isHeroControlled, isManualHeroActionReleased } from '../../lib/unitControl'
-import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/slashRecoveryAnimation'
+import { isHeroControlled, isManualHeroActionReleased } from '../../lib/units/unitControl'
+import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import type { UnitEntity } from '../../types/entities'
 
 export function stopManualHeroAction(unit: UnitEntity): void {

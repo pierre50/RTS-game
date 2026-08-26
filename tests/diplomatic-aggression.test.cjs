@@ -33,7 +33,7 @@ function loadDiplomacy() {
     getItem: () => 'fr',
     setItem() {},
   }
-  return loadTsModule(path.join(__dirname, '../app/lib/diplomaticAggression.ts'), new Map())
+  return loadTsModule(path.join(__dirname, '../app/lib/combat/diplomaticAggression.ts'), new Map())
 }
 
 test.afterEach(() => {

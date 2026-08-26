@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadCameraController() {
   const filename = path.join(__dirname, '../app/controllers/CameraController.ts')
@@ -39,9 +40,9 @@ function loadCameraController() {
       },
     },
     '../constants': { CELL_HEIGHT: 32, CELL_WIDTH: 64 },
-    '../lib/settings': { getCameraZoom: () => 1 },
+    '../lib/audio/settings': { getCameraZoom: () => 1 },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.CameraController
 }

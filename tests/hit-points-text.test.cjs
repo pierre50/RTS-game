@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadHitPointsText() {
-  const filename = path.join(__dirname, '../app/lib/hitPointsText.ts')
+  const filename = path.join(__dirname, '../app/lib/entities/hitPointsText.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,

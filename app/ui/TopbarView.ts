@@ -1,7 +1,7 @@
 import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
-import { summarizeVillagerAssignments } from '../lib/villagerAssignments'
-import { createResourceIconMaps } from './resourceIcons'
+import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
+import { createResourceIconMaps } from './utils/resourceIcons'
 import type { UnitEntity } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 

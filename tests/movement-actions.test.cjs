@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const runtimeTypesMock = new Proxy(
   {},
@@ -139,6 +140,7 @@ function loadModule(relativePath, mocks) {
     return module.exports
   }
   const localRequire = request => {
+    request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../types/runtime') return runtimeTypesMock
     if (request === '../../lib') {
       const libMock = mocks[request] ?? {}
@@ -164,23 +166,23 @@ function loadModule(relativePath, mocks) {
         LPC_RUNTIME_SOURCE_PALETTES: {},
       }
     }
-    if (request === '../../lib/unitWorkAppearance') return unitWorkAppearanceMock
-    if (request === '../../lib/unitExperience') return unitExperienceMock
-    if (request === '../../lib/entityHealthDisplay') return entityHealthDisplayMock
+    if (request === '../../lib/units/unitWorkAppearance') return unitWorkAppearanceMock
+    if (request === '../../lib/units/unitExperience') return unitExperienceMock
+    if (request === '../../lib/entities/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/lang') return { t: value => value }
-    if (request === '../../lib/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
-    if (request === '../../lib/diplomaticAggression') {
+    if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
+    if (request === '../../lib/combat/diplomaticAggression') {
       return {
         applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
       }
     }
-    if (request === '../../lib/horseCapture') {
+    if (request === '../../lib/horses/horseCapture') {
       return {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
       }
     }
-    if (request === '../../lib/unitEnergy') {
+    if (request === '../../lib/units/unitEnergy') {
       return {
         cancelEnergyWait: unit => {
           unit.waitingForEnergyAction = null
@@ -197,34 +199,34 @@ function loadModule(relativePath, mocks) {
         spendOrWaitForEnergy: () => true,
       }
     }
-    if (request === '../../lib/unitLocomotion') {
-      return loadTsFile(path.join(__dirname, '../app/lib/unitLocomotion.ts'))
+    if (request === '../../lib/units/unitLocomotion') {
+      return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     }
-    if (request === '../../lib/unitWalkingAnimation') {
+    if (request === '../../lib/units/unitWalkingAnimation') {
       return {
         applyUnitWalkingAnimationSpeed: (unit, factor) => {
           unit.appliedWalkingAnimationFactor = factor
         },
       }
     }
-    if (request === '../../lib/equipmentStats') {
+    if (request === '../../lib/equipment/equipmentStats') {
       return {
         getUnitCombatRange: unit => unit.range ?? 4,
       }
     }
-    if (request === '../../lib/heroActionRange') {
+    if (request === '../../lib/hero/heroActionRange') {
       return {
         isHeroActionInRange: () => false,
       }
     }
-    if (request === '../../lib/combatBehavior') {
+    if (request === '../../lib/combat/combatBehavior') {
       return {
         markCombatFlee: unit => {
           unit.combatMode = 'flee'
         },
       }
     }
-    if (request === '../../lib/unitControl') {
+    if (request === '../../lib/units/unitControl') {
       return {
         canAutoAcquireTarget: () => true,
         canAutoReactToAttack: () => true,
@@ -235,7 +237,8 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
-    if (request === './UnitCommands') {
+    if (request === '../UnitCommands' && Object.hasOwn(mocks, './UnitCommands')) return mocks['./UnitCommands']
+    if (request === './UnitCommands' || request === '../UnitCommands') {
       return {
         applyWorkForAction: (unit, work, action) => {
           unit.work = work
@@ -250,38 +253,41 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitResourceActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
     }
+    if (request === './UnitResourceGathering') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceGathering.ts'))
+    }
     if (request === './UnitConversionAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitConversionAction.ts'))
     }
     if (request === './UnitDirectedActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectedActions.ts'))
     }
-    if (request === './UnitDirectMovement') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectMovement.ts'))
+    if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitDirectMovement.ts'))
     }
-    if (request === './UnitMovementRouting') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementRouting.ts'))
+    if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
-    if (request === './UnitPathMovement') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPathMovement.ts'))
+    if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
     }
-    if (request === './UnitHeroDirectMovementCollision') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitHeroDirectMovementCollision.ts'))
+    if (request === './movement/UnitHeroDirectMovementCollision' || request === './UnitHeroDirectMovementCollision') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitHeroDirectMovementCollision.ts'))
     }
-    if (request === './UnitMovementDebug') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementDebug.ts'))
+    if (request === './movement/UnitMovementDebug' || request === './UnitMovementDebug') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementDebug.ts'))
     }
-    if (request === './UnitMovementHelpers') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitMovementHelpers.ts'))
+    if (request === './movement/UnitMovementHelpers' || request === './UnitMovementHelpers') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementHelpers.ts'))
     }
-    if (request === './UnitAffectNewDest') {
-      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitAffectNewDest.ts'))
+    if (request === './movement/UnitAffectNewDest' || request === './UnitAffectNewDest') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitAffectNewDest.ts'))
     }
     if (request === './UnitPreviousWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   return loadTsFile(filename)
 }
@@ -581,7 +587,7 @@ test('sets an automatically selected destination before starting its action', ()
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -611,13 +617,13 @@ test('sets an automatically selected destination before starting its action', ()
 })
 
 test('hero-controlled unit action range can satisfy destination checks before strict contact', () => {
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       instanceContactInstance: () => false,
       instancesDistance: () => 2.4,
     },
-    '../../lib/heroActionRange': {
+    '../../lib/hero/heroActionRange': {
       isHeroActionInRange: (_unit, action, dest) =>
         action === constants.ACTION_TYPES.takemeat && dest.family === constants.FAMILY_TYPES.animal,
     },
@@ -638,7 +644,7 @@ test('hero-controlled unit action range can satisfy destination checks before st
 })
 
 test('ranged units must contact buildings before entering them', () => {
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       instanceContactInstance: () => false,
@@ -678,7 +684,7 @@ for (const [mountedOnHorse, expectedSpeed] of [
       moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
       updateInstanceVisibility: () => {},
     }
-    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
       '../../constants': constants,
       '../../lib': lib,
     })
@@ -725,7 +731,7 @@ for (const [mountedOnHorse, expectedSpeed] of [
       moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
       updateInstanceVisibility: () => {},
     }
-    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
       '../../constants': constants,
       '../../lib': lib,
     })
@@ -772,7 +778,7 @@ for (const action of [constants.ACTION_TYPES.hunt, constants.ACTION_TYPES.captur
       moveTowardPoint: (_unit, _x, _y, speed) => speeds.push(speed),
       updateInstanceVisibility: () => {},
     }
-    const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+    const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
       '../../constants': constants,
       '../../lib': lib,
     })
@@ -1136,7 +1142,7 @@ test('destination checks stay pure when no destination exists', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1183,7 +1189,7 @@ test('combat recovery idles when its reposition path finishes without an action'
     playMovementSurfaceAudio: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1262,7 +1268,7 @@ test('path movement treats a same-label solid cell as its own stale occupancy', 
     playMovementSurfaceAudio: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1345,7 +1351,7 @@ test('path movement starts the action when the target occupies the next blocked 
     playMovementSurfaceAudio: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1386,7 +1392,7 @@ test('path movement starts the action when the target occupies the next blocked 
 
 test('combat recovery with no active action pauses instead of using the generic stop flow', () => {
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       resumeVillagerAutonomy: () => {
@@ -1454,7 +1460,7 @@ test('direct movement advances even when subpixel steps would be ignored by path
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1524,7 +1530,7 @@ test('a direct move blocked head-on slides along the obstacle contour', () => {
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1591,7 +1597,7 @@ test('direct move can keep facing separate from movement direction', () => {
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -1671,10 +1677,10 @@ test('hero direct movement rounds building footprint corners', () => {
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -1765,10 +1771,10 @@ test('hero direct movement stops at the map edge without leaking world position'
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -1849,10 +1855,10 @@ test('hero direct movement slides along rounded building collision instead of is
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -1940,10 +1946,10 @@ test('hero direct movement aligns size 2 collision to the even footprint center'
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -2019,10 +2025,10 @@ test('hero direct movement slides along water-border terrain like a rounded obst
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -2100,10 +2106,10 @@ test('hero direct movement collides softly with units and animals', () => {
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -2222,10 +2228,10 @@ test('hero direct movement collides softly with unit corpses until they clear', 
     updateInstanceRenderVisibility: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
     },
   })
@@ -2290,7 +2296,7 @@ test('a blocked gather target sends the villager near it before retrying', () =>
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -2335,7 +2341,7 @@ test('a blocked gather target sends the villager near it before retrying', () =>
 test('a villager retries the original gather order after approaching a blocked target', () => {
   const target = { label: 'berries-1', isDestroyed: false }
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -2382,7 +2388,7 @@ test('manual move orders cancel fatigue resume before routing', () => {
     x: 144,
     y: 144,
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -2401,7 +2407,7 @@ test('manual move orders cancel fatigue resume before routing', () => {
       moveTowardPoint: () => {},
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': {
+    '../../lib/units/unitEnergy': {
       cancelEnergyWait: unit => {
         calls.push(['cancelEnergyWait', unit.waitingForEnergyAction, unit.waitingForEnergyTarget?.label])
         unit.waitingForEnergyAction = null
@@ -2479,7 +2485,7 @@ test('force repath restarts a build action when the villager is already in range
     [{ has: building, i: 2, j: 0, solid: true }],
   ]
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -2561,7 +2567,7 @@ test('an autonomous villager retries its job instead of stopping when pathing fa
   )
   grid[target.i][target.j].solid = true
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -2625,7 +2631,7 @@ test('an autonomous villager retries its job instead of stopping when pathing fa
 test('low-level gather orders realign villager work before starting the action', () => {
   const tree = { family: constants.FAMILY_TYPES.resource, i: 0, isDestroyed: false, j: 0, label: 'tree-1', x: 10, y: 0 }
   const calls = []
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       canUpdateMinimap: () => false,
@@ -2651,9 +2657,9 @@ test('low-level gather orders realign villager work before starting the action',
       updateInstanceRenderVisibility: () => {},
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': { isHeroControlled: () => false },
-    '../../lib/heroActionRange': { isHeroActionInRange: () => false },
-    '../../lib/unitEnergy': { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 },
+    '../../lib/units/unitControl': { isHeroControlled: () => false },
+    '../../lib/hero/heroActionRange': { isHeroActionInRange: () => false },
+    '../../lib/units/unitEnergy': { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 },
     './UnitCommands': {
       applyWorkForAction: (unit, work, action) => {
         calls.push(['applyWorkForAction', work, action])
@@ -2714,7 +2720,7 @@ test('manual move orders cancel previous villager work when the unit arrives', (
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -2755,7 +2761,7 @@ test('an idle builder picks a nearby unfinished building after completing its cu
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -2811,7 +2817,7 @@ test('a villager builds a granary then starts gathering nearby berries', () => {
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -2858,7 +2864,7 @@ test('a villager builds a town center then starts gathering any nearby compatibl
     moveTowardPoint: () => {},
     updateInstanceVisibility: () => {},
   }
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
   })
@@ -2905,7 +2911,7 @@ test('chopping wood shows damage before wood is gathered', () => {
       showResourceGainFeedback: (target, amount) => calls.push(['gain', target.label, amount]),
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -2964,7 +2970,7 @@ test('chopping a depleted berrybush destroys it instead of gathering wood', () =
       showResourceGainFeedback: (target, amount) => calls.push(['gain', target.label, amount]),
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -3022,7 +3028,7 @@ test('chopping a legacy depleted berrybush clamps its health before damage', () 
       showResourceGainFeedback: () => {},
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -3078,7 +3084,7 @@ test('chopping a felled tree adds wood directly to player resources', () => {
       showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -3147,7 +3153,7 @@ test('felled tree wood gathering uses the shared cadence after the tree is cut',
       showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -3227,17 +3233,17 @@ test('hero chopping wood rewinds the work swing after the impact frame', () => {
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/slashRecoveryAnimation': {
+    '../../lib/entities/slashRecoveryAnimation': {
       playReverseSlashRecovery: (unit, options) => {
         reverseCalls.push([unit, options.releaseFrame])
         return true
       },
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
       isManualHeroActionReleased: () => false,
     },
-    '../../lib/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../Projectile': { Projectile: class {} },
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
@@ -3433,7 +3439,7 @@ test('exploration orders bypass the human command throttle', () => {
     }))
   )
   const targetCell = grid[1][0]
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       getInstancePath: (_unit, i, j) => (i === targetCell.i && j === targetCell.j ? [targetCell] : []),
@@ -3461,7 +3467,7 @@ test('runaway units use the shared reachable flee cell selection', () => {
   const calls = []
   const escapeCell = { i: 2, j: 5, solid: false, category: 'Land', border: false }
   let optionsSeen = null
-  const { UnitMovement } = loadModule('app/classes/unit/UnitMovement.ts', {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
       findReachableFleeCell: (_unit, _threat, _map, options) => {
@@ -3514,7 +3520,7 @@ test('hero farming does not claim or replace the farm worker slot', () => {
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
       isManualHeroActionReleased: () => false,
     },
@@ -3579,7 +3585,7 @@ test('hero gathering adds food globally without local resource bookkeeping', () 
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
       isManualHeroActionReleased: () => false,
     },
@@ -3639,7 +3645,7 @@ test('farm gather cadence is the same for hero and villagers', () => {
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
       isManualHeroActionReleased: () => false,
     },
@@ -3730,7 +3736,7 @@ test('hero mining adds stone directly to player resources', () => {
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
       isManualHeroActionReleased: () => false,
     },
@@ -3813,7 +3819,7 @@ test('hero mining progress survives manual action restarts for slower ores', () 
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
     },
-    '../../lib/unitControl': {
+    '../../lib/units/unitControl': {
       isHeroControlled: () => true,
       isManualHeroActionReleased: () => false,
     },

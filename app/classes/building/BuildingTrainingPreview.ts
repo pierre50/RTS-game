@@ -14,7 +14,7 @@ import {
 import { bindAnimatedSpriteToTicker, changeSpriteTexturesColorDirectly, getAnimationFrames } from '../../lib'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { civilizationKey } from '../../lib/lpc/equipment'
-import { getUnitEquipmentLevel } from '../../lib/unitExperience'
+import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
 import {
   MOUNTED_HORSE_BOB,
   MOUNTED_RIDER_CUT_Y,
@@ -22,8 +22,8 @@ import {
   MOUNTED_RIDER_Y_OFFSET,
   mountedRiderLegOffset,
   mountedRiderXOffset,
-} from '../../lib/mountedRider'
-import { getHorseColorFromSeed, recolorHorseTextures, type HorseColor } from '../../lib/horseColors'
+} from '../../lib/hero/mountedRider'
+import { getHorseColorFromSeed, recolorHorseTextures, type HorseColor } from '../../lib/horses/horseColors'
 import type { Texture } from 'pixi.js'
 import type { SchedulerTaskId } from '../../types/context'
 import type { UnitAppearanceLayerConfig } from '../../types/config'

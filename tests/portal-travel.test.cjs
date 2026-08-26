@@ -16,7 +16,7 @@ function loadGameStateHelpers() {
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
       '../../lib': { colors: ['blue', 'red'] },
-      '../../lib/factions': {
+      '../../lib/combat/factions': {
         createFactionSave: ({ id }) => ({ id, name: 'Faction' }),
         FACTION_SCORE: { allied: 1, hostile: -1, neutral: 0 },
       },
@@ -33,7 +33,7 @@ function loadGamePortalTravel() {
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
       },
-      '../../lib/equipmentStats': { refreshUnitEquipmentStats: () => {} },
+      '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats: () => {} },
       '../../serialization/CampaignSave': {
         addChildWorldToCampaign: () => ({}),
         createInitialCampaignSave: () => ({}),
@@ -57,7 +57,7 @@ function loadGamePortalTravel() {
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
       },
-      '../../lib/factions': {
+      '../../lib/combat/factions': {
         createFactionSave: ({ id }) => ({ id, name: 'Faction' }),
         FACTION_SCORE: { allied: 1, hostile: -1, neutral: 0 },
       },

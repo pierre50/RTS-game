@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) {
-  const filename = path.join(__dirname, '../app/lib/movementSurfaceAudio.ts')
+  const filename = path.join(__dirname, '../app/lib/audio/movementSurfaceAudio.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -41,10 +42,10 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
         },
       },
     },
-    './unitControl': {
+    '../units/unitControl': {
       isHeroControlled: () => heroControlled,
     },
-    './unitLocomotion': {
+    '../units/unitLocomotion': {
       isUnitWalkSpeedFactor: factor => factor < 1,
     },
     './sound': {
@@ -68,7 +69,7 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
       playSoundCue: (cue, options) => played.push({ cue, options }),
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

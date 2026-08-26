@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadModule(relativePath, mocks = {}) {
   const filename = path.join(__dirname, '..', relativePath)
@@ -14,7 +15,7 @@ function loadModule(relativePath, mocks = {}) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
-    throw new Error(`Unexpected require: ${request}`)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
@@ -27,8 +28,8 @@ function getHeroInventory(hero) {
 }
 
 function loadCrafting() {
-  return loadModule('app/lib/heroCrafting.ts', {
-    './equipmentLoot': { getHeroInventory },
+  return loadModule('app/lib/hero/heroCrafting.ts', {
+    '../equipment/equipmentLoot': { getHeroInventory },
   })
 }
 

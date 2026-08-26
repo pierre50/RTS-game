@@ -11,7 +11,7 @@ const constants = {
 }
 
 test('slow unit movement reduces the effective insight detection range', () => {
-  const { getInsightDetectionRange, instanceIsInInsightRange } = loadModule('app/lib/insightDetection.ts', {
+  const { getInsightDetectionRange, instanceIsInInsightRange } = loadModule('app/lib/units/insightDetection.ts', {
     '../constants': constants,
     '../constants/heroControls': { HERO_STEALTH_ANIMAL_DETECTION_FACTOR: 0.55 },
   })
@@ -27,7 +27,7 @@ test('slow unit movement reduces the effective insight detection range', () => {
 })
 
 test('hero stealth and slow movement share the same insight range calculation', () => {
-  const { getInsightDetectionRange } = loadModule('app/lib/insightDetection.ts', {
+  const { getInsightDetectionRange } = loadModule('app/lib/units/insightDetection.ts', {
     '../constants': constants,
     '../constants/heroControls': { HERO_STEALTH_ANIMAL_DETECTION_FACTOR: 0.55 },
   })

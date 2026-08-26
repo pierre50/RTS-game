@@ -2,8 +2,6 @@ import {
   LOADING_TYPES,
   MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
-  RESOURCE_GATHER_SWINGS,
-  RESOURCE_STOCKPILE_TYPES,
   RESOURCE_TYPES,
   SHEET_TYPES,
   SOUND_CUES,
@@ -17,137 +15,35 @@ import {
 } from '../../lib'
 import {
   getBuildRateXpMultiplier,
-  getGatherXpBonus,
   grantUnitXp,
   LOADING_XP_CATEGORY,
   XP_BUILD_TICK,
   XP_CATEGORIES,
   XP_FELL_TREE_TICK,
-} from '../../lib/unitExperience'
-import { t } from '../../lib/lang'
-import { isHeroControlled } from '../../lib/unitControl'
-import { spendOrWaitForEnergy } from '../../lib/unitEnergy'
-import { syncEntityHealthDisplay } from '../../lib/entityHealthDisplay'
+} from '../../lib/units/unitExperience'
+import { isHeroControlled } from '../../lib/units/unitControl'
+import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
+import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import {
   finishManualHeroWorkSwing,
   lockManualHeroAction,
   stopManualHeroAction,
 } from './UnitManualHeroWork'
-import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import {
+  addGatheredResourceToPlayer,
+  clampDepletedBerrybushHitPoints,
+  getGatherAmount,
+  isBuildingEntity,
+  isChoppableBerrybush,
+  isFarmHarvestTarget,
+  isResourceEntity,
+  isRuntimeEntity,
+  markBerrybushDepleted,
+  shouldReleaseGatheredResource,
+  showDepletedBerrybushMessage,
+} from './UnitResourceGathering'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
-
-type PlayerResourceKey = 'wood' | 'food' | 'stone' | 'gold' | 'copper' | 'iron'
-
-const DEPLETED_BERRYBUSH_HIT_POINTS = 4
-
-function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
-  return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity {
-  return isRuntimeEntity(value) && value.family === 'building'
-}
-
-function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value is ResourceEntity {
-  return isRuntimeEntity(value) && value.family === 'resource'
-}
-
-function isDepletedBerrybush(value: RuntimeEntity | null | undefined): value is RuntimeEntity {
-  return Boolean(RESOURCE_TYPES.berrybush && value?.type === RESOURCE_TYPES.berrybush && (value.quantity ?? 0) <= 0)
-}
-
-function isChoppableBerrybush(value: RuntimeEntity | null | undefined): boolean {
-  return isDepletedBerrybush(value) && (value.hitPoints ?? 0) > 0
-}
-
-function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEntity | null | undefined): void {
-  if (
-    isDepletedBerrybush(target) &&
-    unit.owner?.isPlayed &&
-    target &&
-    (unit.context?.controls?.instanceInCamera?.(target) ?? true)
-  ) {
-    unit.context?.menu?.showMessage(t('berrybushDepleted'), 'warning')
-  }
-}
-
-function markBerrybushDepleted(target: RuntimeEntity): void {
-  if (!isDepletedBerrybush(target)) return
-  target.totalHitPoints = Math.min(target.totalHitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
-  target.hitPoints = Math.min(target.hitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
-  target.updateTexture?.()
-}
-
-function clampDepletedBerrybushHitPoints(target: RuntimeEntity): void {
-  if (!isChoppableBerrybush(target)) return
-  markBerrybushDepleted(target)
-}
-
-function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity | ResourceEntity {
-  return isResourceEntity(value) && value.type === RESOURCE_TYPES.wheat
-}
-
-function getGatherAmount(unit: UnitEntity): number {
-  return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
-}
-
-function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
-  if (!loadingType) return null
-  if ([LOADING_TYPES.berry, LOADING_TYPES.wheat, LOADING_TYPES.meat].includes(loadingType)) return 'food'
-  return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
-}
-
-function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amount: number): void {
-  const resourceKey = getPlayerResourceKey(loadingType)
-  if (!resourceKey || !unit.owner) return
-  unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
-  if (unit.owner.isPlayed) unit.context?.menu?.updateTopbar?.()
-}
-
-function getResourceGatherSwings(loadingType: string, override?: number): number {
-  return Math.max(1, override ?? RESOURCE_GATHER_SWINGS?.[loadingType as keyof typeof RESOURCE_GATHER_SWINGS] ?? 1)
-}
-
-function getGatherProgressState(
-  unit: UnitEntity,
-  target: RuntimeEntity,
-  loadingType: string,
-  gatherEvery: number
-): NonNullable<UnitEntity['gatherProgressState']> {
-  const current = unit.gatherProgressState
-  if (
-    current &&
-    current.target === target &&
-    current.action === unit.action &&
-    current.loadingType === loadingType &&
-    current.gatherEvery === gatherEvery
-  ) {
-    return current
-  }
-  const next = {
-    action: unit.action,
-    gatherEvery,
-    loadingType,
-    progress: 0,
-    target,
-  }
-  unit.gatherProgressState = next
-  return next
-}
-
-function shouldReleaseGatheredResource(
-  unit: UnitEntity,
-  target: RuntimeEntity,
-  loadingType: string,
-  gatherEvery?: number
-): boolean {
-  const requiredSwings = getResourceGatherSwings(loadingType, gatherEvery)
-  const gatherState = getGatherProgressState(unit, target, loadingType, requiredSwings)
-  gatherState.progress++
-  if (gatherState.progress < requiredSwings) return false
-  gatherState.progress = 0
-  return true
-}
 
 export class UnitResourceActions {
   unit: UnitEntity

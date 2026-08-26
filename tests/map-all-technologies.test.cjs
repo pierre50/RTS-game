@@ -8,7 +8,7 @@ function loadMapGeneration() {
       'pixi.js': { Assets: {}, Sprite: class {} },
       '../Resource': { Resource: class {} },
       '../players': { Human: class {}, AI: class {}, Gaia: class {} },
-      './MapBlueprintGeneration': {
+      './generation/MapBlueprintGeneration': {
         MapBlueprintGeneration: class {
           generateFromBlueprint() {}
           generateEditableFromBlueprint() {}

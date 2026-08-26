@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadWalls() {
   const filename = path.join(__dirname, '../app/lib/buildings/walls.ts')
@@ -30,7 +31,7 @@ function loadWalls() {
       getWallFrame: (vertical, horizontal, endpoint) => (endpoint || (vertical && horizontal) ? 2 : vertical ? 1 : 0),
     },
   }
-  const localRequire = request => mocks[request] || require(request)
+  const localRequire = request => mocks[request] || requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

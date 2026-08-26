@@ -9,10 +9,10 @@ import {
   HERO_LOCKED_STRAFE_MOVE_SPEED_FACTOR,
   SHEET_TYPES,
 } from '../constants'
-import { getCommCellsInRadius } from '../lib/npcInteraction'
+import { getCommCellsInRadius } from '../lib/npc/npcInteraction'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
-import { UNIT_WALK_SPEED_FACTOR } from '../lib/unitLocomotion'
-import type { ControlBindingAction } from '../lib/settings'
+import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
+import type { ControlBindingAction } from '../lib/audio/settings'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 

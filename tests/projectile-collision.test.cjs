@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadProjectile(libOverrides = {}) {
   const filename = path.join(__dirname, '../app/classes/Projectile.ts')
@@ -87,19 +88,19 @@ function loadProjectile(libOverrides = {}) {
       isFriendlyTarget: (source, target) => source.owner?.label === target.owner?.label,
       ...libOverrides,
     },
-    '../lib/combatHit': {
+    '../lib/combat/combatHit': {
       applyCombatHit: () => ({ damageDealt: 0, killed: false }),
       ...libOverrides,
     },
-    '../lib/combatFeedback': { showDamageFeedback: () => {} },
-    '../lib/diplomaticAggression': {
+    '../lib/combat/combatFeedback': { showDamageFeedback: () => {} },
+    '../lib/combat/diplomaticAggression': {
       applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
       canTargetBeAggressed: () => false,
       canTriggerDiplomaticAggression: () => false,
       ...libOverrides,
     },
-    '../lib/entityFade': { fadeOutThenClear: () => {} },
-    '../lib/equipmentStats': { getEntityWeaponPower: () => 0, getUnitCombatRange: unit => unit.range },
+    '../lib/entities/entityFade': { fadeOutThenClear: () => {} },
+    '../lib/equipment/equipmentStats': { getEntityWeaponPower: () => 0, getUnitCombatRange: unit => unit.range },
     '../lib/grid/movement': { moveTowardPoint: () => {} },
     '../lib/maths': {
       average: (a, b) => (a + b) / 2,
@@ -123,17 +124,17 @@ function loadProjectile(libOverrides = {}) {
       ...libOverrides,
     },
     '../lib/debug': { debugLog: () => {} },
-    '../lib/settings': { getShadowsEnabled: () => false },
-    '../lib/sound': { playAudibleSoundCue: () => {}, ...libOverrides },
-    '../lib/spriteTextures': {
+    '../lib/audio/settings': { getShadowsEnabled: () => false },
+    '../lib/audio/sound': { playAudibleSoundCue: () => {}, ...libOverrides },
+    '../lib/entities/spriteTextures': {
       bindAnimatedSpriteToTicker: () => {},
       getAnimationFrames: () => [],
       getMirroredHalfArcFrameIndex: () => ({ frameIndex: 0, mirrored: false }),
       ...libOverrides,
     },
     '../lib/treeCollision': { findTreeSegmentCollision: () => null },
-    '../lib/unitControl': { isHeroControlled: () => false, ...libOverrides },
-    '../lib/unitExperience': {
+    '../lib/units/unitControl': { isHeroControlled: () => false, ...libOverrides },
+    '../lib/units/unitExperience': {
       getCombatXpBonus: () => 0,
       grantUnitXp: () => {},
       XP_CATEGORIES: { hunting: 'hunting', ranged: 'ranged' },
@@ -169,7 +170,7 @@ function loadProjectile(libOverrides = {}) {
     if (request === './ProjectileLifecycle') {
       return loadLocalTs('ProjectileLifecycle.ts')
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.Projectile

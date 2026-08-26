@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadOceanAmbience() {
-  const filename = path.join(__dirname, '../app/lib/oceanAmbience.ts')
+  const filename = path.join(__dirname, '../app/lib/audio/oceanAmbience.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,

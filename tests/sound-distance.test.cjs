@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadSoundModule() {
-  const filename = path.join(__dirname, '../app/lib/sound.ts')
+  const filename = path.join(__dirname, '../app/lib/audio/sound.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -18,17 +19,18 @@ function loadSoundModule() {
         play: () => {},
       },
     },
-    '../config/soundDistance': {
+    '../../config/soundDistance': {
       SOUND_DISTANCE_PROFILES: {
         default: { curve: 2, maxDistance: 100, maxVolume: 1, minVolume: 0 },
         footstep: { curve: 2, maxDistance: 100, maxVolume: 1, minVolume: 0.1 },
+        voice: { curve: 1.4, maxDistance: 320, maxVolume: 1, minVolume: 0.2 },
       },
     },
-    './random': {
+    '../random': {
       pickRandomItem: items => items[0],
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -54,4 +56,12 @@ test('hero distance sound volume supports profile minimums', () => {
 
   assert.ok(getHeroDistanceSoundVolume(instance, 'footstep', 1) > 0.1)
   assert.ok(getHeroDistanceSoundVolume(instance, 'footstep', 1) < 0.2)
+})
+
+test('selection voice does not fall back to hit sounds', () => {
+  const { playSelectionSound } = loadSoundModule()
+  const audibleContext = { controls: { instanceIsAudible: () => true } }
+
+  assert.equal(playSelectionSound({ context: audibleContext, sounds: { hit: 'target-hit' } }), null)
+  assert.equal(playSelectionSound({ context: audibleContext, sounds: { command: 'unit-command', hit: 'target-hit' } }), 'unit-command')
 })

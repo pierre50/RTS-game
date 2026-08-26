@@ -31,7 +31,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
     'pixi.js': { Container },
     '@pixi/sound': { sound: { stopAll() {} } },
     '../lib/lang': { t: key => key },
-    '../classes/map': class Map {},
+    '../classes/map/Map': class Map {},
     '../classes/Menu': class Menu {},
     '../classes/Controls': class Controls {},
     '../lib': {
@@ -42,20 +42,20 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
       isPlayedHeroDefeated: () => false,
     },
     '../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
-    '../lib/factions': {
+    '../lib/combat/factions': {
       adjustFactionRelation: faction => faction,
       createFactionSave: () => ({}),
       FACTION_SCORE: {},
     },
-    '../lib/combatFeedback': { clearAllCombatFeedback() {} },
-    '../lib/equipmentStats': { refreshUnitEquipmentStats() {} },
-    '../lib/ActionScheduler': {
+    '../lib/combat/combatFeedback': { clearAllCombatFeedback() {} },
+    '../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
+    '../lib/actionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
         destroy() {}
       },
     },
-    '../lib/uiSound': { stopAllUiSounds() {} },
+    '../lib/audio/uiSound': { stopAllUiSounds() {} },
     '../serialization/SaveValidator': { validateSaveData() {} },
     '../serialization/SaveStorage': { save: () => ({}) },
     '../serialization/SaveSerializer': { serializeGame: () => ({}) },
@@ -142,7 +142,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
         destroy() {}
       },
     },
-    '../lib/settings': {
+    '../lib/audio/settings': {
       getCameraZoom: () => 1,
       getControlActionForKeyboardEvent: () => null,
       getGameSpeed: () => 1,
@@ -187,9 +187,13 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
   }
   Object.assign(mocks, {
     '../../lib': mocks['../lib'],
-    '../../lib/equipmentStats': mocks['../lib/equipmentStats'],
+    '../../lib/lang': mocks['../lib/lang'],
+    '../../lib/equipment/equipmentStats': mocks['../lib/equipment/equipmentStats'],
+    '../../lib/audio/settings': mocks['../lib/audio/settings'],
     '../../serialization/CampaignSave': mocks['../serialization/CampaignSave'],
+    '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
+    '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
     '../../ui/PortalTravelTransition': mocks['../ui/PortalTravelTransition'],
     '../../services/WeatherSystem': mocks['../services/WeatherSystem'],
     '../../services/LightSystem': mocks['../services/LightSystem'],

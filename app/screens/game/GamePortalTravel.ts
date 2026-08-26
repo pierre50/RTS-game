@@ -1,5 +1,5 @@
 import { getFreeLandCellAroundInstance, getReliefOffset, teleportRuntimeUnitToCell, updateInstanceVisibility } from '../../lib'
-import { refreshUnitEquipmentStats } from '../../lib/equipmentStats'
+import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import {
   addChildWorldToCampaign,
   createInitialCampaignSave,

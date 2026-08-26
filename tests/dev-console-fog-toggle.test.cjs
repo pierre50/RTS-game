@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadMapActions() {
   const filename = path.join(__dirname, '../app/dev-console/actions/map.ts')
@@ -24,7 +25,7 @@ function loadMapActions() {
         normalizeToggle: value => value === 'on',
       }
     }
-    return require(request)
+    return requireFromTsFile(request, filename, mocks)
   }
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)

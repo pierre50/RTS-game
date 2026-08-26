@@ -18,7 +18,7 @@ function loadTsModule(relativePath) {
 }
 
 test('villager hunting uses the age-scaled arrow projectile family', () => {
-  const { HUNTING_PROJECTILE } = loadTsModule('app/lib/hunting.ts')
+  const { HUNTING_PROJECTILE } = loadTsModule('app/lib/units/hunting.ts')
   const { getEffectiveProjectileType } = loadTsModule('app/lib/projectiles.ts')
 
   assert.equal(HUNTING_PROJECTILE, 'Arrow')

@@ -3,7 +3,7 @@ import { changeSpriteColor } from '../lib'
 import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { createInspectionModal } from './InspectionPanel'
-import { getEntityDisplayName } from './entityDisplayName'
+import { getEntityDisplayName } from './utils/entityDisplayName'
 import type { Application } from 'pixi.js'
 import type { Modal } from '../lib'
 import type {

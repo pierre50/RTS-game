@@ -346,14 +346,15 @@ function loadRuntimeGenerators() {
   }
   Module._load = function (request, parent, isMain) {
     if (parent && isMapRuntime(parent.filename)) {
-      if (request === './MapTerrainGeneration') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainGeneration.ts'), parent, isMain)
+      request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
+      if (request === './terrain/MapTerrainGeneration' || request === '../terrain/MapTerrainGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/terrain/MapTerrainGeneration.ts'), parent, isMain)
       }
-      if (request === './MapCellGeneration') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapCellGeneration.ts'), parent, isMain)
+      if (request === './generation/MapCellGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/generation/MapCellGeneration.ts'), parent, isMain)
       }
-      if (request === './MapSavedStateGeneration') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapSavedStateGeneration.ts'), parent, isMain)
+      if (request === './generation/MapSavedStateGeneration') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/generation/MapSavedStateGeneration.ts'), parent, isMain)
       }
       if (request === './MapPortalPlacement') {
         return originalLoad(path.join(ROOT, 'app/classes/map/MapPortalPlacement.ts'), parent, isMain)
@@ -361,26 +362,26 @@ function loadRuntimeGenerators() {
       if (request === './MapSpawnPlacement') {
         return originalLoad(path.join(ROOT, 'app/classes/map/MapSpawnPlacement.ts'), parent, isMain)
       }
-      if (request === './MapTerrainAppearance') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainAppearance.ts'), parent, isMain)
+      if (request === './MapTerrainAppearance' || request === './terrain/MapTerrainAppearance') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/terrain/MapTerrainAppearance.ts'), parent, isMain)
       }
       if (request === './MapTerrainReliefAppearance') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainReliefAppearance.ts'), parent, isMain)
+        return originalLoad(path.join(ROOT, 'app/classes/map/terrain/MapTerrainReliefAppearance.ts'), parent, isMain)
       }
       if (request === './MapTerrainReliefContinuity') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainReliefContinuity.ts'), parent, isMain)
+        return originalLoad(path.join(ROOT, 'app/classes/map/terrain/MapTerrainReliefContinuity.ts'), parent, isMain)
       }
       if (request === './MapTerrainWaterTopology') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapTerrainWaterTopology.ts'), parent, isMain)
+        return originalLoad(path.join(ROOT, 'app/classes/map/terrain/MapTerrainWaterTopology.ts'), parent, isMain)
       }
       if (request === './MapForestResources') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapForestResources.ts'), parent, isMain)
+        return originalLoad(path.join(ROOT, 'app/classes/map/resources/MapForestResources.ts'), parent, isMain)
       }
       if (request === './MapResourceSpacing') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapResourceSpacing.ts'), parent, isMain)
+        return originalLoad(path.join(ROOT, 'app/classes/map/resources/MapResourceSpacing.ts'), parent, isMain)
       }
       if (request === 'pixi.js') return pixi
-      if (request === '../Resource') return { Resource: HeadlessResource }
+      if (request === '../Resource' || request === '../../Resource') return { Resource: HeadlessResource }
       if (request === '../../lib') {
         return {
           getCellsAroundPoint,
@@ -422,8 +423,8 @@ function loadRuntimeGenerators() {
   }
   try {
     const { MapGeneration } = require(path.join(ROOT, 'app/classes/map/MapGeneration.ts'))
-    const { MapTerrain } = require(path.join(ROOT, 'app/classes/map/MapTerrain.ts'))
-    const { MapResources } = require(path.join(ROOT, 'app/classes/map/MapResources.ts'))
+    const { MapTerrain } = require(path.join(ROOT, 'app/classes/map/terrain/MapTerrain.ts'))
+    const { MapResources } = require(path.join(ROOT, 'app/classes/map/resources/MapResources.ts'))
     return { MapGeneration, MapTerrain, MapResources }
   } finally {
     Module._load = originalLoad

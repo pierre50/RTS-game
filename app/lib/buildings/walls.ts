@@ -1,6 +1,6 @@
 import type { Texture, Ticker } from 'pixi.js'
 import { Assets, AnimatedSprite } from 'pixi.js'
-import { BUILDING_TYPES, LABEL_TYPES } from '../../constants'
+import { BUILDING_TYPES, LABEL_TYPES } from '../constants'
 import { getTexture, getTextureByFrame } from '../graphics/textures'
 import { changeSpriteColor } from '../graphics/colors'
 import { bindAnimatedSpriteToTicker } from '../extra'

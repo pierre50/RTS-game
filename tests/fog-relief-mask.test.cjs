@@ -3,9 +3,10 @@ const fs = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadFogRenderer() {
-  const filename = path.join(__dirname, '../app/classes/map/ViewportFogRenderer.ts')
+  const filename = path.join(__dirname, '../app/classes/map/fog/ViewportFogRenderer.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
@@ -26,7 +27,7 @@ function loadFogRenderer() {
     '../../lib': { isometricToCartesian: () => [0, 0] },
     '../cell/CellFog': { getFogPatternTexture: () => ({}) },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : require(request))
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

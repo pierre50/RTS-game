@@ -1,4 +1,4 @@
-import { BUILDING_TYPES } from '../../constants'
+import { BUILDING_TYPES } from '../constants'
 import type { PlayerLike } from '../../types/player'
 
 const BUILDING_LIMITS: Partial<Record<string, number>> = {
