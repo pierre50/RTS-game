@@ -28,11 +28,16 @@ import {
   updateCautiousAnimalApproachSpeed,
 } from './UnitMovementHelpers'
 import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/unitWalkingAnimation'
+import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/unitCrouchPose'
+import { isUnitWalkSpeedFactor } from '../../../lib/units/unitLocomotion'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
   const map = unit.context?.map
-  if (!map || !unit.path?.length) return
+  if (!map || !unit.path?.length) {
+    resetUnitCrouchPose(unit)
+    return
+  }
   const next = unit.path[unit.path.length - 1]
   const nextCell = map.grid[next.i][next.j]
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
@@ -45,6 +50,7 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
     return
   }
   updateCautiousAnimalApproachSpeed(unit)
+  applyUnitCrouchPose(unit, isUnitWalkSpeedFactor(getRequestedMoveSpeedFactor(unit)))
   if (shouldWaitForMovingBlocker(unit, nextCell)) return
   if (handleBlockedPathCell(unit, nextCell, dest)) return
 
@@ -152,6 +158,7 @@ function finishPathCellStep(
   if (unit.isUnitAtDest?.(unit.action, dest)) {
     unit.path = []
     unit.stopInterval?.()
+    resetUnitCrouchPose(unit)
     unit.degree = getInstanceDegree(unit, dest.x, dest.y)
     unit.getAction?.(unit.action ?? '')
     return
@@ -159,6 +166,7 @@ function finishPathCellStep(
   if (!unit.path?.length) {
     if (isRecoveringAttack(unit)) {
       pauseCombatRecoveryMove(unit)
+      resetUnitCrouchPose(unit)
       return
     }
     if (retryBlockedGatherApproach()) return

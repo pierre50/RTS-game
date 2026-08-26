@@ -6,13 +6,13 @@
   --menu-panel-max-width: calc(100vw - 32px);
   --menu-panel-min-height: auto;
   --menu-panel-padding: 48px 68px;
-  --menu-home-gap: var(--ui-gap-24);
+  --menu-home-gap: 64px;
   --menu-home-padding: 0 68px 48px;
   --menu-logo-width: min(760px, 88vw);
   --menu-logo-max-height: none;
   --menu-logo-margin: 0;
-  --menu-logo-font-size: clamp(62px, 9vw, 118px);
-  --menu-logo-letter-gap: clamp(4px, 1.15vw, 18px);
+  --menu-logo-font-size: clamp(56px, 8vw, 96px);
+  --menu-logo-letter-gap: clamp(3px, 0.85vw, 13px);
   --menu-buttons-width: auto;
   --menu-buttons-gap: var(--ui-gap-12);
   --menu-buttons-margin: 0;
@@ -113,7 +113,11 @@
   line-height: 1;
   text-align: center;
   white-space: nowrap;
-  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.48);
+  text-shadow:
+    3px 3px 0 rgba(5, 7, 18, 0.78),
+    -1px 0 0 rgba(5, 7, 18, 0.62),
+    0 -1px 0 rgba(5, 7, 18, 0.56),
+    0 0 18px rgba(154, 167, 217, 0.22);
   transition:
     opacity 200ms steps(4, end),
     transform 200ms steps(4, end);
@@ -146,7 +150,7 @@
 
 .menu-panel--home .button-group .home-btn {
   width: var(--ui-button-width-home);
-  height: var(--ui-button-height-home);
+  height: var(--ui-button-height);
   padding: var(--menu-home-button-padding);
   font-size: var(--menu-home-button-font-size);
 }
@@ -159,11 +163,11 @@
   z-index: 1;
   position: absolute;
   bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(245, 241, 220, 0.86);
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  right: 18px;
+  color: rgba(245, 241, 220, 0.48);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  opacity: 0.82;
   text-shadow: var(--text-shadow-dark-ui);
   white-space: nowrap;
 }

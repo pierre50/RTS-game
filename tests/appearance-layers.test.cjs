@@ -94,6 +94,8 @@ test('helmet decor renders above head and helmet on death sheets', () => {
   assert.equal(helmet?.zIndex, 11)
   assert.equal(hornBack?.zIndex, 8)
   assert.equal(hornFront?.zIndex, 12)
+  assert.equal(hornBack?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/back/shooting')
+  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/front/shooting')
   assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.walking }), 8)
   assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.dying }), 13)
   assert.equal(getAppearanceLayerZIndex({ layer: hornFront, sheet: constants.SHEET_TYPES.corpse }), 13)
@@ -127,8 +129,10 @@ test('helmet decor with hurt art exposes death sheets', () => {
   )
   assert.equal(hornBack?.dyingSheet, 'lpc-equipment/upward_horns_white/back/dying')
   assert.equal(hornBack?.corpseSheet, 'lpc-equipment/upward_horns_white/back/corpse')
+  assert.equal(hornBack?.shootingSheet, 'lpc-equipment/upward_horns_white/back/shooting')
   assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_white/front/dying')
   assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_white/front/corpse')
+  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_white/front/shooting')
 })
 
 test('back-worn equipment lifts above body on death sheets', () => {
@@ -152,6 +156,8 @@ test('back-worn equipment lifts above body on death sheets', () => {
   const capeFront = infantryLayers.find(
     layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking'
   )
+  assert.equal(capeBack?.shootingSheet, 'lpc-equipment/cape_solid/back/shooting')
+  assert.equal(capeFront?.shootingSheet, 'lpc-equipment/cape_solid/front/shooting')
   assert.equal(getAppearanceLayerZIndex({ layer: capeBack, sheet: constants.SHEET_TYPES.corpse }), 11)
   assert.equal(getAppearanceLayerZIndex({ layer: capeFront, sheet: constants.SHEET_TYPES.corpse }), 12)
 })
@@ -572,6 +578,7 @@ test('bandit units use fixed runtime equipment loadouts', () => {
     layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking'
   )
   assert.equal(hornFront?.mountedSheet, 'lpc-equipment/upward_horns_ceramic/front/walking')
+  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/front/shooting')
   assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_ceramic/front/dying')
   assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_ceramic/front/corpse')
   assert.equal(helmet?.zIndex, 11)
@@ -579,6 +586,7 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   assert.equal(helmet?.corpseSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/corpse')
   assert.equal(capeFront?.zIndex, 12)
   assert.equal(capeFront?.palette, 'player')
+  assert.equal(capeFront?.shootingSheet, 'lpc-equipment/cape_solid/front/shooting')
   assert.equal(capeFront?.dyingSheet, 'lpc-equipment/cape_solid/front/dying')
   assert.equal(capeFront?.corpseSheet, 'lpc-equipment/cape_solid/front/corpse')
   assert.equal(shield?.dyingSheet, undefined)

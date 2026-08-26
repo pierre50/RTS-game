@@ -9,6 +9,7 @@ import {
   resolveCommGroup,
   sendNpcGroupToTarget,
 } from '../lib/npc/npcInteraction'
+import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import { drawCommIndicatorCells } from './HeroControllerSupport'
@@ -18,7 +19,7 @@ type HeroCommunicationHost = {
   commCharging: boolean
   commIndicator: Graphics | null
   controls: {
-    context: { menu?: { openNpcOrders?: (npcs: UnitEntity[]) => void } }
+    context: { menu?: { openNpcOrders?: (npcs: UnitEntity[], options?: NpcOrdersOpenOptions) => void } }
     getCellUnderCursor(): RuntimeCell | null
     getWorldPointUnderCursor(): { x: number; y: number }
     openHeroEntityInteraction(): boolean

@@ -1,8 +1,7 @@
 import { FAMILY_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
+import { resolveHeroNpcProximityInteraction } from '../lib/hero/heroProximityInteractions'
 import { findFacingEntity } from '../lib/hero/heroTools'
-import { isTalkableNpc } from '../lib/npc/npcInteraction'
-import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../lib/npc/npcChatter'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 
@@ -66,10 +65,9 @@ export class HeroInteractionController {
 
     if (!hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
 
-    if (isTalkableNpc(hero, target)) {
-      const unit = target as UnitEntity
-      const chatterLine = unit.owner === hero.owner ? pickNpcChatterLine() : pickForeignNpcChatterLine(unit)
-      menu?.openNpcOrders?.([unit], { chatterLine, ordersEnabled: false })
+    const npcInteraction = resolveHeroNpcProximityInteraction(hero, target)
+    if (npcInteraction) {
+      menu?.openNpcOrders?.([npcInteraction.target], npcInteraction.npcOptions)
       return true
     }
 

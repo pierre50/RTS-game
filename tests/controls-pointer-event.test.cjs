@@ -124,6 +124,9 @@ function loadControls() {
     '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => true,
     },
+    '../lib/hero/heroProximityInteractions': {
+      resolveHeroNpcProximityInteraction: () => null,
+    },
     '../lib/hero/heroTools': {
       findFacingEntity: () => null,
     },

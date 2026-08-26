@@ -199,6 +199,35 @@ test('npc waits for full energy before resuming an action', () => {
   assert.deepEqual(calls.at(-1), ['sendToEvt', target, 'chopwood'])
 })
 
+test('npc takemeat fatigue resumes on a dead animal carcass', () => {
+  const { resumeEnergyWaitIfReady, waitForEnergy } = loadUnitEnergy()
+  const calls = []
+  const carcass = { family: 'animal', isDestroyed: false, isDead: true, quantity: 20 }
+  const unit = {
+    action: 'takemeat',
+    context: { scheduler: { elapsedMs: 0 } },
+    dest: carcass,
+    energy: 0,
+    totalEnergy: 2,
+    energyRegenRate: 20,
+    energyRegenDelay: 0,
+    sendToEvt: (resumeTarget, action, options) => calls.push(['sendToEvt', resumeTarget, action, options]),
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite: { stop: () => calls.push(['sprite.stop']) },
+    startInterval: () => calls.push(['startInterval']),
+    stop: () => calls.push(['stop']),
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+
+  assert.equal(waitForEnergy(unit, 'takemeat', carcass), false)
+  unit.context.scheduler.elapsedMs = 100
+  assert.equal(resumeEnergyWaitIfReady(unit), true)
+
+  assert.equal(unit.waitingForEnergyAction, null)
+  assert.deepEqual(calls.at(-1), ['sendToEvt', carcass, 'takemeat', { forceRepath: true }])
+  assert.equal(calls.some(call => call[0] === 'stop'), false)
+})
+
 test('cancelling an energy wait clears the scheduled resume', () => {
   const { __combatBehaviorCalls, cancelEnergyWait } = loadUnitEnergy()
   const calls = []

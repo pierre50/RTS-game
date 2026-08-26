@@ -288,6 +288,15 @@ export const WEARABLE_SHOOTING_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'arrow_bronze',
   'arrow_iron',
   'quiver',
+  'cape_solid',
+  'crest',
+  'centurion_crest',
+  'centurion_plumage',
+  'legion_plumage',
+  'plumage',
+  'helmet_wings',
+  'upward_horns_white',
+  'upward_horns_ceramic',
 ])
 
 export const PLAYER_COLORED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([

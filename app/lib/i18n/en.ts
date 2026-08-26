@@ -193,7 +193,7 @@ export const EN_TRANSLATIONS = {
   save: 'Save',
   load: 'Load',
   restart: 'Restart',
-  quit: 'Quit',
+  quit: 'Exit',
   cancel: 'Cancel',
   close: 'Close',
   dialog: 'Dialog',

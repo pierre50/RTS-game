@@ -202,6 +202,12 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/units/unitLocomotion') {
       return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     }
+    if (request === '../../lib/units/unitCrouchPose') {
+      return {
+        applyUnitCrouchPose: () => {},
+        resetUnitCrouchPose: () => {},
+      }
+    }
     if (request === '../../lib/units/unitWalkingAnimation') {
       return {
         applyUnitWalkingAnimationSpeed: (unit, factor) => {

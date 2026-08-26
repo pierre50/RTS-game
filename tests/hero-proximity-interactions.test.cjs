@@ -6,11 +6,19 @@ function loadHeroProximityInteractions() {
   return loadTsModule('app/lib/hero/heroProximityInteractions.ts', {
     mocks: {
       '../../constants': {
+        ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: { townCenter: 'TownCenter' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
+      '../chief': {
+        heroCanCommand: hero => Boolean(hero?.isChief),
+      },
       '../grid/cells': {
         getCellsInCellRadius: (_i, _j, grid) => grid.flat(),
+      },
+      '../npc/npcChatter': {
+        pickForeignNpcChatterLine: () => 'foreign chatter',
+        pickNpcChatterLine: () => 'friendly chatter',
       },
       '../npc/npcInteraction': {
         isTalkableNpc: (_hero, target) => target?.talkable === true,
@@ -34,6 +42,7 @@ function loadHeroProximityInteractions() {
 function makeHero(extra = {}) {
   return {
     i: 0,
+    isChief: true,
     j: 0,
     degree: 90,
     x: 100,
@@ -90,11 +99,69 @@ test('hero proximity interaction resolves the nearest openable corpse as open', 
 
 test('hero proximity interaction resolves a facing talkable npc as communicate', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
-  const npc = { family: 'unit', isDead: false, isDestroyed: false, talkable: true, type: 'Villager', x: 100, y: 90 }
+  const owner = { isPlayed: true }
+  const npc = {
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    owner,
+    talkable: true,
+    type: 'Villager',
+    x: 100,
+    y: 90,
+  }
+  const hero = makeHero({ owner, y: 100 })
 
-  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero({ y: 100 }), openEntityTarget: npc }), {
+  assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: npc }), {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
     target: npc,
   })
+})
+
+test('hero proximity interaction disables npc orders when the hero cannot command', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const owner = { isPlayed: true }
+  const npc = {
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    owner,
+    talkable: true,
+    type: 'Villager',
+    x: 100,
+    y: 90,
+  }
+  const hero = makeHero({ isChief: false, owner, y: 100 })
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: npc }), {
+    action: 'communicate',
+    labelKey: 'heroInteractionCommunicate',
+    npcOptions: { chatterLine: 'friendly chatter', ordersEnabled: false },
+    target: npc,
+  })
+})
+
+test('hero proximity interaction disables npc orders for foreign talkable npcs', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const npc = {
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    owner: { isPlayed: false },
+    talkable: true,
+    type: 'Villager',
+    x: 100,
+    y: 90,
+  }
+
+  assert.deepEqual(
+    resolveHeroProximityInteraction({ hero: makeHero({ owner: { isPlayed: true }, y: 100 }), openEntityTarget: npc }),
+    {
+      action: 'communicate',
+      labelKey: 'heroInteractionCommunicate',
+      npcOptions: { chatterLine: 'foreign chatter', ordersEnabled: false },
+      target: npc,
+    }
+  )
 })

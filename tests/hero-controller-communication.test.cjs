@@ -355,7 +355,7 @@ function createController({
     context: {
       scheduler,
       menu: {
-        openNpcOrders: npcs => calls.push(['openNpcOrders', npcs]),
+        openNpcOrders: (npcs, options) => calls.push(['openNpcOrders', npcs, options]),
         setHeroInteractionPrompt: actionKey => calls.push(['setHeroInteractionPrompt', actionKey]),
         showMessage: (message, tone) => calls.push(['showMessage', message, tone]),
       },
@@ -1048,7 +1048,10 @@ test('E uses a facing npc proximity interaction before starting communication ch
   assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, false)
   assert.equal(controller.isHeroActionHeld(), true)
-  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionCommunicate'], 'openHeroEntityInteraction'])
+  assert.deepEqual(calls, [
+    ['setHeroInteractionPrompt', 'heroInteractionCommunicate'],
+    ['openNpcOrders', [npc], undefined],
+  ])
 })
 
 test('E owns villager communication and opens orders on key release', () => {
@@ -1063,7 +1066,7 @@ test('E owns villager communication and opens orders on key release', () => {
 
   assert.equal(controller.commCharging, false)
   assert.equal(controller.isHeroActionHeld(), false)
-  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, undefined]])
 })
 
 test('E opens direct interaction when the hero is not a chief', () => {
@@ -1131,7 +1134,7 @@ test('releasing communication before the radius is visible requests precision-on
 
   assert.deepEqual(resolutions, [0])
   assert.deepEqual(optionsSeen, [{ precisionOnly: true }])
-  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, undefined]])
 })
 
 test('releasing communication after the radius is visible resolves the charged radius', () => {
@@ -1154,7 +1157,7 @@ test('releasing communication after the radius is visible resolves the charged r
 
   assert.deepEqual(resolutions, [2.5])
   assert.deepEqual(optionsSeen, [{ precisionOnly: false }])
-  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group]])
+  assert.deepEqual(calls, ['removeIndicator', ['openNpcOrders', group, undefined]])
 })
 
 test('communication charge indicator is drawn as synchronized ground cells', () => {

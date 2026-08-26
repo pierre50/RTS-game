@@ -185,6 +185,10 @@ def cape_solid_equipment() -> dict[str, Equipment]:
             background=(LayerSpec("cape/solid/bg/slash.png", "player_blue"),),
             foreground=(LayerSpec("cape/solid/fg/slash.png", "player_blue"),),
         ),
+        "shoot": Equipment(
+            background=(LayerSpec("cape/solid/bg/shoot.png", "player_blue"),),
+            foreground=(LayerSpec("cape/solid/fg/shoot.png", "player_blue"),),
+        ),
         "hurt": Equipment(
             background=(LayerSpec("cape/solid/bg/hurt.png", "player_blue"),),
             foreground=(LayerSpec("cape/solid/fg/hurt.png", "player_blue"),),
@@ -196,6 +200,7 @@ def hat_accessory_equipment(path: str, include_hurt: bool = False) -> dict[str, 
     equipment = {
         "walk": Equipment(foreground=(LayerSpec(f"{path}/adult/walk.png", "player_blue"),)),
         "slash": Equipment(foreground=(LayerSpec(f"{path}/adult/slash.png", "player_blue"),)),
+        "shoot": Equipment(foreground=(LayerSpec(f"{path}/adult/shoot.png", "player_blue"),)),
     }
     if include_hurt:
         equipment["hurt"] = Equipment(foreground=(LayerSpec(f"{path}/adult/hurt.png", "player_blue"),))
@@ -215,6 +220,10 @@ def split_hat_accessory_equipment(
         "slash": Equipment(
             background=(LayerSpec(f"{path}/bg/adult/slash.png", palette),),
             foreground=(LayerSpec(f"{path}/fg/adult/slash.png", palette),),
+        ),
+        "shoot": Equipment(
+            background=(LayerSpec(f"{path}/bg/adult/shoot.png", palette),),
+            foreground=(LayerSpec(f"{path}/fg/adult/shoot.png", palette),),
         ),
     }
     if include_hurt:

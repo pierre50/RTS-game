@@ -15,6 +15,7 @@ import {
   type HeroEquippedItem,
 } from '../lib/hero/heroTools'
 import { updateHeroCursor } from '../lib/hero/heroCursor'
+import { applyUnitCrouchPose } from '../lib/units/unitCrouchPose'
 import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
@@ -110,6 +111,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   }
 
   const keyboardMove = getKeyboardMoveVector(controller.keysPressed)
+  const stealthMode = Boolean(controller.controls.isHeroStealthMode?.())
   let { dx, dy } = keyboardMove
   const gamepadMove = controller.controls.getGamepadMoveVector()
   dx += gamepadMove.dx
@@ -136,7 +138,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const lockedFacingVector =
       lockedMove && lockedDegree != null && !attacking ? getVectorFromDegree(lockedDegree) : null
     const speedFactor = attacking && !unit.mountedOnHorse ? getHeroActionMoveSpeedFactor(unit) : 1
-    const stealthSpeedFactor = controller.controls.isHeroStealthMode?.() ? HERO_STEALTH_SPEED_FACTOR : 1
+    const stealthSpeedFactor = stealthMode ? HERO_STEALTH_SPEED_FACTOR : 1
     const directionalMoveSpeedFactor = lockedFacingVector ? getLockedMoveSpeedFactor({ dx, dy }, lockedFacingVector) : 1
     const moveSpeedFactor = composeMoveSpeedFactor(walkSpeedFactor, directionalMoveSpeedFactor)
     moveAnimationSpeedFactor = moveSpeedFactor * stealthSpeedFactor * getEnergyMoveSpeedMultiplier(unit)
@@ -193,4 +195,5 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
       unit.sprite?.stop?.()
     }
   }
+  applyUnitCrouchPose(unit, stealthMode)
 }

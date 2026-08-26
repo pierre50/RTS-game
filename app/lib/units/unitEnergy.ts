@@ -165,6 +165,12 @@ function clearEnergyWaitTask(unit: EnergyEntity): void {
   unit.energyWaitTaskId = null
 }
 
+function canResumeEnergyWaitTarget(action: string | null | undefined, target: RuntimeEntity | null | undefined): target is RuntimeEntity {
+  if (!target || target.isDestroyed) return false
+  if (target.isDead) return action === ACTION_TYPES.takemeat
+  return true
+}
+
 export function cancelEnergyWait(unit: EnergyEntity): void {
   if (!unit.waitingForEnergyAction && unit.energyWaitTaskId == null && unit.combatMode !== 'recover') return
   unit.waitingForEnergyAction = null
@@ -181,7 +187,7 @@ function resumeWaitedEnergyAction(unit: EnergyEntity): void {
   exitCombatRecovery(unit)
   clearEnergyWaitTask(unit)
   unit.stopInterval?.()
-  if (resumeAction && resumeTarget && !resumeTarget.isDestroyed && !resumeTarget.isDead) {
+  if (resumeAction && canResumeEnergyWaitTarget(resumeAction, resumeTarget)) {
     if (unit.sendToEvt) {
       unit.sendToEvt(resumeTarget, resumeAction, { forceRepath: true })
     } else {

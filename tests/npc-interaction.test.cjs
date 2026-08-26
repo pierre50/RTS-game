@@ -28,6 +28,10 @@ function loadModule(relativePath, mocks) {
     './units/unitUpgrades': {
       getUnitUpgradeTargetForBuilding: () => null,
     },
+    './units/unitCrouchPose': {
+      applyUnitCrouchPose: () => {},
+      resetUnitCrouchPose: () => {},
+    },
   }
   return loadTsModule(relativePath, { mocks: { ...defaultMocks, ...mocks } })
 }
