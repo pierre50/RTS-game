@@ -2,11 +2,17 @@ import { SHEET_TYPES } from '../../constants'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { getCellsInCellRadius } from '../grid/cells'
+import { isTalkableNpc } from '../npc/npcInteraction'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-export type HeroProximityInteractionAction = 'enter' | 'mount' | 'open'
+export type HeroProximityInteractionAction = 'communicate' | 'enter' | 'mount' | 'open'
 
 export type HeroProximityInteraction =
+  | {
+      action: 'communicate'
+      labelKey: 'heroInteractionCommunicate'
+      target: RuntimeEntity
+    }
   | {
       action: 'enter'
       labelKey: 'heroInteractionEnter'
@@ -89,6 +95,10 @@ export function resolveHeroProximityInteraction({
 
   const openEntity = findNearestOpenableEntity(hero, openEntityTarget)
   if (openEntity) return { action: 'open', labelKey: 'heroInteractionOpen', target: openEntity }
+
+  if (openEntityTarget && isTalkableNpc(hero, openEntityTarget)) {
+    return { action: 'communicate', labelKey: 'heroInteractionCommunicate', target: openEntityTarget }
+  }
 
   return null
 }

@@ -123,7 +123,10 @@ export function updateBuildingShadow(
   }
   const sprite = building.sprite
   shadow.texture = texture ?? sprite.texture
-  const anchor = texture?.defaultAnchor ?? sprite.anchor
+  const anchor = texture?.defaultAnchor ?? {
+    x: building.spriteShadowAnchor?.x ?? sprite.anchor.x,
+    y: building.spriteShadowAnchor?.y ?? sprite.anchor.y,
+  }
   if (anchor) {
     shadow.anchor.set(anchor.x, anchor.y)
   }

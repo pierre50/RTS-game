@@ -116,6 +116,7 @@ export type EquipmentStats = {
 export interface BuildingConfig extends EntityConfig {
   constructionTime?: number
   useSpriteShadow?: boolean
+  spriteShadowAnchor?: { x?: number; y?: number }
   units?: string[]
   technologies?: string[]
 }

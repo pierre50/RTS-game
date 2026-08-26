@@ -20,7 +20,6 @@ function loadPlayerConfig() {
   }
   const buildingTypes = {
     fireCamp: 'FireCamp',
-    campDecoration: 'CampDecoration',
     campTotemPlain: 'CampTotemPlain',
     campTotemHorns: 'CampTotemHorns',
     campTotemSkull: 'CampTotemSkull',
@@ -104,7 +103,8 @@ test('camp decoration buildings do not fade over the hero and use sprite shadows
   )
 
   assert.equal(config.buildings.FireCamp.occlusionFade, false)
-  assert.equal(config.buildings.FireCamp.useSpriteShadow, true)
+  assert.equal(config.buildings.FireCamp.useSpriteShadow, undefined)
+  assert.equal(config.buildings.FireCamp.spriteShadowAnchor, undefined)
   assert.equal(config.buildings.CampFencePost.occlusionFade, false)
   assert.equal(config.buildings.CampFencePost.useSpriteShadow, true)
   assert.equal(config.buildings.CampTotemSkull.occlusionFade, false)

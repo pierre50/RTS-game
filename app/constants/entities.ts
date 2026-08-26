@@ -24,7 +24,6 @@ export const BUILDING_TYPES = {
   watchTower: 'WatchTower',
   smallWall: 'SmallWall',
   fireCamp: 'FireCamp',
-  campDecoration: 'CampDecoration',
   campTotemPlain: 'CampTotemPlain',
   campTotemHorns: 'CampTotemHorns',
   campTotemSkull: 'CampTotemSkull',
@@ -42,7 +41,6 @@ export const BUILDING_TYPES = {
 }
 
 export const CAMP_DECORATION_BUILDING_TYPES = [
-  BUILDING_TYPES.campDecoration,
   BUILDING_TYPES.campTotemPlain,
   BUILDING_TYPES.campTotemHorns,
   BUILDING_TYPES.campTotemSkull,

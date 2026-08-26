@@ -33,6 +33,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   assetType?: string
   textureName?: string
   useSpriteShadow?: boolean
+  spriteShadowAnchor?: { x?: number; y?: number }
   finalTexture?: () => void
   increasePopulation?: number
   populationCapacityApplied?: boolean

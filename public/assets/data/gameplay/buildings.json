@@ -260,16 +260,6 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "CampDecoration": {
-    "size": 1,
-    "sight": 3,
-    "totalHitPoints": 35,
-    "constructionTime": 0,
-    "cost": {},
-    "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
-    }
-  },
   "CampTotemPlain": {
     "size": 1,
     "sight": 3,

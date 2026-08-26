@@ -92,6 +92,7 @@ export class Building extends Instance implements BuildingEntity {
   assetType?: string
   textureName?: string
   useSpriteShadow?: boolean
+  spriteShadowAnchor?: { x?: number; y?: number }
   accept?: string[]
   visibilityTimeout?: ReturnType<typeof setTimeout>
   sounds?: BuildingSounds

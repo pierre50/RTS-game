@@ -1034,6 +1034,23 @@ test('left click with an active lasso clears it instead of throwing again', () =
   assert.equal(controller.primaryClickPoint, null)
 })
 
+test('E uses a facing npc proximity interaction before starting communication charge', () => {
+  const npc = { label: 'villager' }
+  const { calls, controller } = createController({
+    nearbyGroup: [npc],
+    resolveHeroProximityInteraction: () => ({
+      action: 'communicate',
+      labelKey: 'heroInteractionCommunicate',
+      target: npc,
+    }),
+  })
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+  assert.equal(controller.commCharging, false)
+  assert.equal(controller.isHeroActionHeld(), true)
+  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionCommunicate'], 'openHeroEntityInteraction'])
+})
+
 test('E owns villager communication and opens orders on key release', () => {
   const group = [{ label: 'villager-1' }, { label: 'villager-2' }]
   const { calls, controller } = createController({ nearbyGroup: group })

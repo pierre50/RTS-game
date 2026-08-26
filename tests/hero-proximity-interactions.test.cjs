@@ -12,6 +12,9 @@ function loadHeroProximityInteractions() {
       '../grid/cells': {
         getCellsInCellRadius: (_i, _j, grid) => grid.flat(),
       },
+      '../npc/npcInteraction': {
+        isTalkableNpc: (_hero, target) => target?.talkable === true,
+      },
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
       },
@@ -82,5 +85,16 @@ test('hero proximity interaction resolves the nearest openable corpse as open', 
     action: 'open',
     labelKey: 'heroInteractionOpen',
     target: nearCorpse,
+  })
+})
+
+test('hero proximity interaction resolves a facing talkable npc as communicate', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const npc = { family: 'unit', isDead: false, isDestroyed: false, talkable: true, type: 'Villager', x: 100, y: 90 }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero({ y: 100 }), openEntityTarget: npc }), {
+    action: 'communicate',
+    labelKey: 'heroInteractionCommunicate',
+    target: npc,
   })
 })

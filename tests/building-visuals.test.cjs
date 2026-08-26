@@ -109,6 +109,35 @@ test('building sprite shadows can fall back to a flattened source sprite mask', 
   assert.equal(shadow.position.y, 200)
 })
 
+test('building sprite shadow fallback can use a dedicated ground anchor', () => {
+  const { createBuildingShadow, Texture } = loadBuildingVisuals()
+  const texture = new Texture()
+  const building = {
+    context: { map: { shadowLayer: { addChild: () => {} } } },
+    isDead: false,
+    isDestroyed: false,
+    reliefLift: 0,
+    shadow: null,
+    sprite: {
+      texture,
+      anchor: { x: 0.5, y: 0.3 },
+      scale: { x: 1, y: 1 },
+    },
+    spriteShadowAnchor: { y: 0.78 },
+    textureName: 'buildings/deco',
+    useSpriteShadow: true,
+    visible: true,
+    x: 100,
+    y: 200,
+  }
+
+  const shadow = createBuildingShadow(building)
+
+  assert.ok(shadow)
+  assert.equal(shadow.anchor.x, 0.5)
+  assert.equal(shadow.anchor.y, 0.78)
+})
+
 test('buildings without a shadow atlas keep no shadow unless sprite fallback is enabled', () => {
   const { createBuildingShadow, Texture } = loadBuildingVisuals()
   const building = {

@@ -307,6 +307,7 @@ export class HeroController {
       return true
     }
     if (interaction.action === 'mount') return this.mountCompanionHorse(interaction.target as CompanionHorse)
+    if (interaction.action === 'communicate') return this.controls.openHeroEntityInteraction(interaction.target)
     return this.controls.openHeroEntityInteraction(interaction.target)
   }
 
