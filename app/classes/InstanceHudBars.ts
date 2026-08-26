@@ -92,7 +92,7 @@ export function drawInstanceHealthBar(host: InstanceHudHost): void {
 }
 
 function supportsEntityHudBars(family: string): boolean {
-  return family === FAMILY_TYPES.unit || family === FAMILY_TYPES.building || family === FAMILY_TYPES.animal
+  return family === FAMILY_TYPES.unit || family === FAMILY_TYPES.animal
 }
 
 export function drawInstanceEnergyBar(host: InstanceHudHost): void {

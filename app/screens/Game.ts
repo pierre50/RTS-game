@@ -50,6 +50,10 @@ import {
   type PortalTravelGame,
 } from './game/GamePortalTravel'
 import {
+  travelIntoBuildingInterior as travelIntoBuildingInteriorRuntime,
+  type BuildingInteriorTravelGame,
+} from './game/GameBuildingInteriorTravel'
+import {
   acquireGameWakeLock,
   applyGameZoom,
   attachGameWindowListeners,
@@ -63,6 +67,7 @@ import {
 import { loadGameRuntime, restartGameRuntime, startGameRuntime } from './game/GameBootFlow'
 import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
+import type { BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
 import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
 import { PLAYER_TYPES } from '../constants'
 import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
@@ -76,7 +81,7 @@ import type {
 } from '../types/save'
 import type { PlayerLike } from '../types/player'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { ResourceEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, ResourceEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -120,7 +125,7 @@ export default class Game extends Container {
   config: GameConfig | null
   onQuit: (() => void) | null
   context: GameRuntimeContext
-  _loadingScreen?: GameLoadingScreen | PortalTravelTransition | null
+  _loadingScreen?: GameLoadingScreen | PortalTravelTransition | BuildingInteriorTransition | null
   _wakeLock?: WakeLockSentinel | null
   _onVisibilityChange?: () => void
   _onKeydown?: (evt: KeyboardEvent) => void
@@ -178,6 +183,12 @@ export default class Game extends Container {
       travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
         this.travelThroughPortal(portal, color).catch(error => {
           console.error('Unable to travel through portal', error)
+          this.context.menu?.showMessage(t('corruptSave'))
+        })
+      },
+      travelIntoBuildingInterior: (building: BuildingEntity) => {
+        this.travelIntoBuildingInterior(building).catch(error => {
+          console.error('Unable to travel into building interior', error)
           this.context.menu?.showMessage(t('corruptSave'))
         })
       },
@@ -317,7 +328,12 @@ export default class Game extends Container {
     const { map, controls } = this.context
     if (!map || !controls) return
     this.addChild(map as ContainerChild)
-    this._runtimeServices = createRuntimeServices(this._gameContext(), map, () => this._getScreenRect(), dayNightElapsedMs)
+    this._runtimeServices = createRuntimeServices(
+      this._gameContext(),
+      map,
+      () => this._getScreenRect(),
+      dayNightElapsedMs
+    )
     addRuntimeServiceLayers(this, this._runtimeServices)
     this.addChild(controls)
     this.applyZoom()
@@ -539,6 +555,10 @@ export default class Game extends Container {
 
   async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {
     await travelThroughPortalRuntime(this as PortalTravelGame, portal, color)
+  }
+
+  async travelIntoBuildingInterior(building: BuildingEntity): Promise<void> {
+    await travelIntoBuildingInteriorRuntime(this as BuildingInteriorTravelGame, building)
   }
 
   async load(json: SaveRecord): Promise<void> {

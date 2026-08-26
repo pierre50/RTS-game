@@ -91,6 +91,7 @@ export class Building extends Instance implements BuildingEntity {
   interface!: EntityInterfaceLike
   assetType?: string
   textureName?: string
+  useSpriteShadow?: boolean
   accept?: string[]
   visibilityTimeout?: ReturnType<typeof setTimeout>
   sounds?: BuildingSounds

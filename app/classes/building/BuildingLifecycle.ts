@@ -6,7 +6,6 @@ import {
   MENU_INFO_IDS,
   PLAYER_TYPES,
   POPULATION_MAX,
-  RUBBLE_TIME,
   SOUND_CUES,
 } from '../../constants'
 import {
@@ -15,10 +14,8 @@ import {
   getBuildingAsset,
   getBuildingAssetOwner,
   getBuildingTextureNameWithSize,
-  getBuildingRubbleTextureNameWithSize,
   getPercentage,
   getBuildingFootprintCells,
-  getBuildingFootprintRadius,
   getTexture,
   getTextureByFrame,
   getTextureSheet,
@@ -27,6 +24,7 @@ import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   playAudibleSoundCue,
+  spawnSpriteFragmentBurst,
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import type { RuntimeCell } from '../../types/map'
@@ -42,6 +40,7 @@ import {
 
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 type BuildingSpritesheetData = { animationSpeed?: number; loop?: boolean }
+const BUILDING_DESTRUCTION_CLEAR_MS = 940
 
 export class BuildingLifecycle {
   building: BuildingControllerHost
@@ -226,6 +225,38 @@ export class BuildingLifecycle {
     playableDeco?.play?.()
   }
 
+  private spawnDestructionBurst(): void {
+    const building = this.building
+    spawnSpriteFragmentBurst({
+      context: building.context,
+      host: building,
+      sprite: building.sprite,
+      layer: building.parent,
+      fragmentSize: 14,
+      maxFragments: 52,
+      durationMs: BUILDING_DESTRUCTION_CLEAR_MS,
+      gravity: 0.0026,
+      minSpeed: 0.014,
+      maxSpeed: 0.09,
+      upwardVelocity: 0.045,
+      settleToBottom: true,
+      settleSpread: 34,
+      settleStrength: 0.00006,
+      groundBounce: 0.09,
+    })
+  }
+
+  private clearDestroyedSprite(): void {
+    const building = this.building
+    building.sprite.eventMode = 'none'
+    building.sprite.visible = false
+    building.sprite.parent?.removeChild(building.sprite)
+    building.sprite.destroy({ children: true, texture: false })
+    building.shadow?.parent?.removeChild(building.shadow)
+    building.shadow?.destroy({ children: true, texture: false })
+    building.shadow = null
+  }
+
   die(): void {
     const building = this.building
     if (building.isDead) return
@@ -278,25 +309,18 @@ export class BuildingLifecycle {
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
     campfireDecoration && campfireDecoration.destroy()
 
-    const rubbleSheet = getBuildingRubbleTextureNameWithSize(building.size)
-    building.textureName = textureRefToString(rubbleSheet!)
-    building.sprite.texture = getTexture(rubbleSheet!, Assets)
-    building.sprite.eventMode = 'none'
-    const footprintRadius = getBuildingFootprintRadius(building.size)
-    building.zIndex = building.i + building.j - footprintRadius * 2 - 0.1
-    building.updateShadow()
-
+    this.spawnDestructionBurst()
     updateInstanceVisibility(building)
+    this.clearDestroyedSprite()
     getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false
-        cell.corpses.add(building)
       }
       return true
     })
     adjacentWalls.forEach(wall => updateWallTexture(wall))
-    building.startTimeout(() => building.clear(), RUBBLE_TIME)
+    building.startTimeout(() => building.clear(), BUILDING_DESTRUCTION_CLEAR_MS)
     canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
     building.context.checkDefeat?.()
   }

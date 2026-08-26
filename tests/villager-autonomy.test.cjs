@@ -32,6 +32,11 @@ const constants = {
     farm: 'farm',
     captureHorse: 'captureHorse',
   },
+  BUILDING_TYPES: {
+    granary: 'Granary',
+    storagePit: 'StoragePit',
+    townCenter: 'TownCenter',
+  },
   FAMILY_TYPES: {
     animal: 'animal',
     building: 'building',
@@ -70,6 +75,9 @@ function loadVillagerAutonomy() {
     },
     '../playerState': {
       getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
+    },
+    '../grid/movement': {
+      getInstanceClosestFreeCellPath: (_unit, target) => target.path ?? [],
     },
     '../horses/horseCapture': {
       getNearestAvailableStableForUnit: unit =>
@@ -131,6 +139,21 @@ function createVillager(owner, extra = {}) {
       this.work = constants.WORK_TYPES.horseCapture
       this.action = constants.ACTION_TYPES.captureHorse
       return true
+    },
+    sendToTree(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.woodcutter
+      this.action = constants.ACTION_TYPES.chopwood
+    },
+    sendToStone(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.stoneminer
+      this.action = constants.ACTION_TYPES.minestone
+    },
+    sendToGold(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.goldminer
+      this.action = constants.ACTION_TYPES.minegold
     },
     ...extra,
   }
@@ -262,6 +285,30 @@ test('horse capture autonomy targets a known horse when a stable has room', () =
   assert.equal(villager.action, constants.ACTION_TYPES.captureHorse)
 })
 
+test('horse capture autonomy ignores a hero companion horse', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const hero = { label: 'hero-1' }
+  const horse = {
+    companionOwner: hero,
+    family: constants.FAMILY_TYPES.animal,
+    i: 3,
+    isDead: false,
+    isDestroyed: false,
+    j: 3,
+    label: 'horse-1',
+    type: 'Horse',
+  }
+  const owner = createOwner({
+    buildings: [{ type: 'Stable', isBuilt: true, isDead: false, isDestroyed: false, stableHorses: [] }],
+    foundedAnimals: new Set([horse]),
+  })
+  const villager = createVillager(owner)
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'horseCapture'), false)
+  assert.equal(assignVillagerAutonomy(villager, 'horseCapture'), false)
+  assert.equal(villager.dest, null)
+})
+
 test('horse capture autonomy refuses when no stable can store the horse', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const horse = {
@@ -335,6 +382,203 @@ test('resource autonomy clears the job when no target or exploration route exist
   assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
   assert.equal(villager.explored, true)
   assert.equal(villager.autonomousJob, null)
+})
+
+test('resource autonomy tries the next known target when the closest order is rejected', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const blockedTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-blocked',
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const reachableTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 4,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-reachable',
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.tree]: new Set([blockedTree, reachableTree]) },
+  })
+  const attempts = []
+  const villager = createVillager(owner, {
+    sendToTree(target) {
+      attempts.push(target.label)
+      if (target === blockedTree) return false
+      this.dest = target
+      this.work = constants.WORK_TYPES.woodcutter
+      this.action = constants.ACTION_TYPES.chopwood
+      return true
+    },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+
+  assert.deepEqual(attempts, ['tree-blocked', 'tree-reachable'])
+  assert.equal(villager.dest, reachableTree)
+  assert.equal(villager.autonomousJob, 'wood')
+})
+
+test('resource autonomy skips known targets without a contact path before sending orders', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const blockedTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-no-path',
+    path: [],
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const reachableTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 4,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-path',
+    path: [{ i: 1, j: 1 }],
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.tree]: new Set([blockedTree, reachableTree]) },
+  })
+  const attempts = []
+  const villager = createVillager(owner, {
+    context: { map: { grid: [[]] } },
+    sendToTree(target) {
+      attempts.push(target.label)
+      this.dest = target
+      this.work = constants.WORK_TYPES.woodcutter
+      this.action = constants.ACTION_TYPES.chopwood
+      return true
+    },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+
+  assert.deepEqual(attempts, ['tree-path'])
+  assert.equal(villager.dest, reachableTree)
+})
+
+test('resource autonomy scores real path length ahead of raw distance', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const closeTreeWithLongPath = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-close-long-path',
+    path: Array.from({ length: 12 }, (_, i) => ({ i, j: 0 })),
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const fartherTreeWithShortPath = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 5,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-far-short-path',
+    path: [{ i: 1, j: 1 }, { i: 2, j: 1 }],
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.tree]: new Set([closeTreeWithLongPath, fartherTreeWithShortPath]) },
+  })
+  const villager = createVillager(owner, {
+    context: { map: { grid: [[]] } },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), true)
+
+  assert.equal(villager.dest, fartherTreeWithShortPath)
+})
+
+test('resource autonomy explores after every known resource target is rejected', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const stone = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'stone-blocked',
+    quantity: 50,
+    type: constants.RESOURCE_TYPES.stone,
+  }
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.stone]: new Set([stone]) },
+  })
+  const villager = createVillager(owner, {
+    explored: false,
+    explore() {
+      this.explored = true
+      return true
+    },
+    sendToStone() {
+      return false
+    },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'stone'), true)
+
+  assert.equal(villager.explored, true)
+  assert.equal(villager.autonomousJob, 'stone')
+})
+
+test('food autonomy tries the next known food target when the closest order is rejected', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const blockedBerry = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    label: 'berry-blocked',
+    quantity: 250,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+  const reachableBerry = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 4,
+    isDestroyed: false,
+    j: 0,
+    label: 'berry-reachable',
+    quantity: 250,
+    type: constants.RESOURCE_TYPES.berrybush,
+  }
+  const owner = createOwner({ foundedBerrybushs: new Set([blockedBerry, reachableBerry]) })
+  const attempts = []
+  const villager = createVillager(owner, {
+    sendToBerrybush(target) {
+      attempts.push(target.label)
+      if (target === blockedBerry) return false
+      this.dest = target
+      this.work = constants.WORK_TYPES.forager
+      this.action = constants.ACTION_TYPES.forageberry
+      return true
+    },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'food'), true)
+
+  assert.deepEqual(attempts, ['berry-blocked', 'berry-reachable'])
+  assert.equal(villager.dest, reachableBerry)
+  assert.equal(villager.autonomousJob, 'food')
 })
 
 test('construction autonomy only targets own unfinished buildings', () => {

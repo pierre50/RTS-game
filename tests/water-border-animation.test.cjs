@@ -60,7 +60,8 @@ function loadMapModule() {
     rect() {
       return this
     }
-    fill() {
+    fill(options) {
+      this.fillStyle = options
       return this
     }
   }
@@ -116,6 +117,30 @@ function loadMapModule() {
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.default
 }
+
+test('interior maps use a static black background instead of the water overlay', () => {
+  const Map = loadMapModule()
+  const map = new Map({
+    app: {
+      ticker: {
+        add() {
+          assert.fail('interior background should not register a water animation ticker')
+        },
+        remove() {},
+      },
+    },
+    players: [],
+  })
+  map.mapType = 'interior'
+  map.size = 15
+  map.grid = [[]]
+
+  map.updateWaterOverlay()
+
+  assert.equal(map.waterOverlay, null)
+  assert.equal(map.waterBackground.label, 'interiorBackground')
+  assert.deepEqual(map.waterBackground.fillStyle, { color: 0x000000 })
+})
 
 test('registered water border surfaces advance on the water animation ticker', () => {
   const Map = loadMapModule()

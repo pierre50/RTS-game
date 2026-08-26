@@ -127,7 +127,12 @@
   inset: -18vmax;
   content: '';
   background:
-    radial-gradient(circle at center, color-mix(in srgb, var(--portal-travel-color) 48%, transparent) 0 8%, rgba(8, 10, 18, 0.82) 22%, rgba(0, 0, 0, 0.98) 60%),
+    radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--portal-travel-color) 48%, transparent) 0 8%,
+      rgba(8, 10, 18, 0.82) 22%,
+      rgba(0, 0, 0, 0.98) 60%
+    ),
     conic-gradient(
       from 0deg,
       transparent 0deg 24deg,
@@ -148,7 +153,9 @@
   background:
     radial-gradient(circle at center, transparent 0 18%, rgba(0, 0, 0, 0.38) 48%, rgba(0, 0, 0, 0.96) 78%),
     radial-gradient(circle at center, rgba(255, 255, 255, 0.045) 0 1px, transparent 2px);
-  background-size: auto, 48px 48px;
+  background-size:
+    auto,
+    48px 48px;
   opacity: 0.78;
 }
 
@@ -230,7 +237,12 @@
     0 0 22px color-mix(in srgb, var(--portal-travel-color) 68%, transparent),
     0 0 92px color-mix(in srgb, var(--portal-travel-color) 34%, transparent),
     inset 0 0 18px color-mix(in srgb, var(--portal-travel-color) 22%, transparent);
-  background: radial-gradient(circle, color-mix(in srgb, var(--portal-travel-color) 72%, #ffffff) 0 8%, color-mix(in srgb, var(--portal-travel-color) 42%, transparent) 32%, transparent 72%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--portal-travel-color) 72%, #ffffff) 0 8%,
+    color-mix(in srgb, var(--portal-travel-color) 42%, transparent) 32%,
+    transparent 72%
+  );
   opacity: 0.72;
   animation: portal-travel-glow 2.6s ease-in-out infinite alternate;
 }
@@ -314,8 +326,7 @@
   image-rendering: pixelated;
   transform: translateY(4px);
   transform-origin: 50% 60%;
-  filter:
-    drop-shadow(0 0 8px rgba(0, 0, 0, 0.95))
+  filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.95))
     drop-shadow(0 0 16px color-mix(in srgb, var(--portal-travel-color) 54%, transparent));
 }
 
@@ -390,8 +401,60 @@
   bottom: 0;
   left: 0;
   height: 3px;
-  background: linear-gradient(to right, var(--portal-travel-color) var(--portal-travel-progress), transparent var(--portal-travel-progress));
+  background: linear-gradient(
+    to right,
+    var(--portal-travel-color) var(--portal-travel-progress),
+    transparent var(--portal-travel-progress)
+  );
   opacity: 0.55;
+}
+
+.building-interior-transition {
+  --building-interior-progress: 0%;
+
+  position: fixed;
+  inset: 0;
+  z-index: 5200;
+  overflow: hidden;
+  color: #ffffff;
+  background: #000000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+
+.building-interior-transition.is-open {
+  opacity: 1;
+}
+
+.building-interior-transition.is-arriving {
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+
+.building-interior-transition__status {
+  position: absolute;
+  right: 24px;
+  bottom: 28px;
+  left: 24px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+}
+
+.building-interior-transition__progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.72) var(--building-interior-progress),
+    transparent var(--building-interior-progress)
+  );
 }
 
 @keyframes portal-travel-spin {

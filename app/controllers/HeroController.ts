@@ -13,6 +13,7 @@ import type { ControlBindingAction } from '../lib/audio/settings'
 import { setUnitControlMode } from '../lib/units/unitControl'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
+import { resolveHeroProximityInteraction, type HeroProximityInteraction } from '../lib/hero/heroProximityInteractions'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -65,6 +66,7 @@ export class HeroController {
   companionHorseController: HeroCompanionHorseController
   equipmentController: HeroEquipmentController
   keyboardInteractHeld: boolean
+  proximityInteraction: HeroProximityInteraction | null
   criticalHealthEffects: HeroCriticalHealthEffects
   occlusionFade: HeroOcclusionFade
 
@@ -86,6 +88,7 @@ export class HeroController {
     this.companionHorseController = new HeroCompanionHorseController(controls, () => this.heroUnit)
     this.equipmentController = new HeroEquipmentController(this)
     this.keyboardInteractHeld = false
+    this.proximityInteraction = null
     this.criticalHealthEffects = new HeroCriticalHealthEffects(controls.context.app)
     this.occlusionFade = new HeroOcclusionFade()
   }
@@ -148,6 +151,7 @@ export class HeroController {
       // Pressing the key again closes whichever panel it can open, instead of starting a new
       // charge or re-resolving a target.
       if (this.controls.closeAnyHeroPanel()) return true
+      if (this.executeProximityInteraction()) return true
       if (this.commCharging) return true
       // Only a chief can charge up to give orders — everyone else just resolves the tap
       // immediately as an inspect/chatter interaction.
@@ -160,7 +164,13 @@ export class HeroController {
     }
 
     if (action === 'heroMountHorse') {
-      this.toggleHeroHorse()
+      if (!this.heroUnit?.mountedOnHorse) this.callCompanionHorse()
+      return true
+    }
+
+    if (action === 'heroDismountHorse') {
+      if (!this.heroUnit?.mountedOnHorse) return false
+      this.dismountCompanionHorse()
       return true
     }
 
@@ -268,6 +278,38 @@ export class HeroController {
     return this.companionHorseController.toggleHeroHorse()
   }
 
+  getProximityInteraction(): HeroProximityInteraction | null {
+    return resolveHeroProximityInteraction({
+      buildings: this.controls.context.player?.buildings,
+      companionHorse: this.getActiveCompanionHorse(),
+      hero: this.heroUnit,
+      openEntityTarget: this.controls.getFacingEntityTarget(),
+    })
+  }
+
+  updateProximityInteractionPrompt(): void {
+    const interaction = this.getProximityInteraction()
+    const previousLabelKey = this.proximityInteraction?.labelKey ?? null
+    const nextLabelKey = interaction?.labelKey ?? null
+    this.proximityInteraction = interaction
+    if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
+  }
+
+  executeProximityInteraction(): boolean {
+    const interaction = this.getProximityInteraction()
+    const previousLabelKey = this.proximityInteraction?.labelKey ?? null
+    const nextLabelKey = interaction?.labelKey ?? null
+    this.proximityInteraction = interaction
+    if (previousLabelKey !== nextLabelKey) this.controls.context.menu?.setHeroInteractionPrompt?.(nextLabelKey)
+    if (!interaction) return false
+    if (interaction.action === 'enter') {
+      this.controls.context.travelIntoBuildingInterior?.(interaction.target)
+      return true
+    }
+    if (interaction.action === 'mount') return this.mountCompanionHorse(interaction.target as CompanionHorse)
+    return this.controls.openHeroEntityInteraction(interaction.target)
+  }
+
   handleKeyUp(action: ControlBindingAction): void {
     if (isHeroMoveAction(action)) this.keysPressed.delete(action)
     if (action === 'heroInteract') {
@@ -347,6 +389,10 @@ export class HeroController {
     this.mouseHeld = false
     this.defenseHeld = false
     this.keyboardInteractHeld = false
+    if (this.proximityInteraction) {
+      this.proximityInteraction = null
+      this.controls.context.menu?.setHeroInteractionPrompt?.(null)
+    }
     this.primaryClickPoint = null
     this.cancelMountTransition()
     if (this.heroUnit) cancelHeroPowerCharge(this.heroUnit)

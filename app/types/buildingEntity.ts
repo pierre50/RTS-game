@@ -32,6 +32,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   upgrade?: (target: string) => void
   assetType?: string
   textureName?: string
+  useSpriteShadow?: boolean
   finalTexture?: () => void
   increasePopulation?: number
   populationCapacityApplied?: boolean

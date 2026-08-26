@@ -47,7 +47,7 @@ export type BoundsSource = {
   destroyed?: boolean
   isDestroyed?: boolean
   position?: { x?: number; y?: number } | null
-  sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
+  sprite?: { destroyed?: boolean; width: number; height: number; anchor?: { x: number; y: number } }
 }
 
 export type FindInstancesInSightOptions = {
@@ -71,6 +71,7 @@ function getRenderablePosition(instance: BoundsSource): Point | null {
 export function getInstanceScreenBounds(instance: BoundsSource): Bounds | undefined {
   const sprite = instance.sprite
   if (!sprite) return undefined
+  if (sprite.destroyed) return undefined
   const position = getRenderablePosition(instance)
   if (!position) return undefined
 

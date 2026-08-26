@@ -48,11 +48,10 @@ export class Instance extends Container {
     const showEntityBars = Boolean(this.context?.map?.debugEntityBarsVisible)
     const showForFamily =
       this.family === FAMILY_TYPES.unit ||
-      this.family === FAMILY_TYPES.building ||
       this.family === FAMILY_TYPES.animal
     const heroOwner = this.context?.controls?.heroUnit?.owner
     const showForHeroPlayer =
-      (this.family === FAMILY_TYPES.unit || this.family === FAMILY_TYPES.building) &&
+      this.family === FAMILY_TYPES.unit &&
       this.owner &&
       (this.owner.isPlayed ||
         this.owner.label === this.context?.player?.label ||

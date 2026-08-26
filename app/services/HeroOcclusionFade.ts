@@ -3,18 +3,19 @@ import { getInstanceZIndex } from '../lib/maths'
 import { texturesHaveOpaqueOverlap } from '../lib/graphics/alphaMask'
 import { boundsIntersect } from '../lib/graphics/chunkCulling'
 import { findInstancesInSight, getInstanceScreenBounds, type RenderableInstance } from '../lib/grid/visibility'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 
 const FADE_ALPHA = 0.35
 const FADE_SPEED_PER_MS = 1 / 150
 const SEARCH_RADIUS = 6
 const ZINDEX_EPSILON = 0.01
 
-function isFadeableOccluder(target: RuntimeEntity): boolean {
+export function isFadeableHeroOccluder(target: RuntimeEntity): boolean {
   if (!target || target.isDead || target.isDestroyed || !target.sprite) return false
   if (target.occlusionFade === false) return false
   if (target.family === FAMILY_TYPES.building) return (target as BuildingEntity).isBuilt === true
-  return target.family === FAMILY_TYPES.resource
+  if (target.family !== FAMILY_TYPES.resource) return false
+  return !(target as ResourceEntity).isCutOrFallenTree?.()
 }
 
 function drawsInFrontOfHero(entity: RuntimeEntity, hero: UnitEntity): boolean {
@@ -71,7 +72,7 @@ export class HeroOcclusionFade {
     }
 
     const candidates = findInstancesInSight(sightOrigin, instance =>
-      isFadeableOccluder(instance as RuntimeEntity)
+      isFadeableHeroOccluder(instance as RuntimeEntity)
     ) as RuntimeEntity[]
 
     for (const candidate of candidates) {

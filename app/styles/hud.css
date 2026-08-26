@@ -146,6 +146,31 @@
   display: none;
 }
 
+.hero-interaction-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: max(128px, calc(env(safe-area-inset-bottom) + 128px));
+  z-index: 430;
+  transform: translateX(-50%);
+  pointer-events: none;
+  padding: 7px 12px;
+  color: var(--main-text-color);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-align: center;
+  text-shadow: var(--text-shadow-dark-ui);
+  background: rgba(5, 7, 18, 0.78);
+  border: 1px solid rgba(207, 216, 255, 0.28);
+  border-radius: var(--main-border-radius);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.hero-interaction-prompt.hidden {
+  display: none;
+}
+
 .hero-status-frame {
   display: flex;
   align-items: stretch;

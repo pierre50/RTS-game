@@ -23,8 +23,6 @@ test('town center interior generator writes an oval dirt blueprint', () => {
         '1',
         '--seed',
         '12345',
-        '--size',
-        '31',
         '--out',
         out,
       ],
@@ -45,6 +43,7 @@ test('town center interior generator writes an oval dirt blueprint', () => {
 
     assert.equal(blueprint.kind, 'interior')
     assert.equal(blueprint.interiorType, 'TownCenter')
+    assert.equal(blueprint.size, 15)
     assert.equal(blueprint.cellCount, expectedCells)
     assert.equal(terrain.length, expectedCells)
     assert.equal(relief.length, expectedCells)
@@ -53,8 +52,8 @@ test('town center interior generator writes an oval dirt blueprint', () => {
     assert.ok([...relief].every(value => value === 0))
     assert.ok([...floorMask].some(value => value === 1))
     assert.ok([...floorMask].some(value => value === 0))
-    assert.deepEqual(blueprint.spawns, [{ i: 16, j: 20 }])
-    assert.deepEqual(blueprint.exits, [{ id: 'main', i: 16, j: 23, direction: 'south' }])
+    assert.deepEqual(blueprint.spawns, [{ i: 8, j: 10 }])
+    assert.deepEqual(blueprint.exits, [{ id: 'main', i: 8, j: 11, direction: 'south' }])
   } finally {
     fs.rmSync(out, { recursive: true, force: true })
   }

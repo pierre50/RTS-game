@@ -8,6 +8,7 @@ import { NpcOrdersManager } from '../ui/NpcOrdersManager'
 import { HeroBuildingMenuManager } from '../ui/HeroBuildingMenuManager'
 import { EntityInfoModalManager } from '../ui/EntityInfoModalManager'
 import { HeroStatusHud } from '../ui/HeroStatusHud'
+import { HeroInteractionPrompt } from '../ui/HeroInteractionPrompt'
 import { MinimapView } from '../ui/minimap/MinimapView'
 import { ActionMenuRenderer } from '../ui/ActionMenuRenderer'
 import { ActionSpecFactory } from '../ui/ActionSpecFactory'
@@ -48,6 +49,7 @@ export default class Menu implements MenuLike {
   heroBuildingMenuManager: HeroBuildingMenuManager
   entityInfoModalManager: EntityInfoModalManager
   heroStatusHud: HeroStatusHud
+  heroInteractionPrompt: HeroInteractionPrompt
   toggle?: HTMLButtonElement
   toggled: boolean
   icons!: Record<string, string>
@@ -90,6 +92,7 @@ export default class Menu implements MenuLike {
     this.heroBuildingMenuManager = new HeroBuildingMenuManager(this)
     this.entityInfoModalManager = new EntityInfoModalManager(this)
     this.heroStatusHud = new HeroStatusHud(this)
+    this.heroInteractionPrompt = new HeroInteractionPrompt(this.gameHud)
     this.toggled = false
 
     this.topbarView.build()
@@ -113,6 +116,7 @@ export default class Menu implements MenuLike {
     this.entityInfoModalManager.close()
     this.heroBuildingMenuManager.destroy()
     this.heroStatusHud.destroy()
+    this.heroInteractionPrompt.destroy()
     this.minimapView.destroy()
     resetHeroCursor()
     this.gameHud.remove()
@@ -219,6 +223,9 @@ export default class Menu implements MenuLike {
   setActionTarget(selection?: RuntimeEntity | null): void {
     this.selection = selection ?? null
     this.actionRenderer.clearHotkeys()
+  }
+  setHeroInteractionPrompt(actionKey?: string | null): void {
+    this.heroInteractionPrompt.setAction(actionKey)
   }
   getMessage(cost: ResourceAmount): string {
     return this.actionSpecs.getMessage(cost)

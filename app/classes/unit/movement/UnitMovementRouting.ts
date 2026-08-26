@@ -7,6 +7,7 @@ import {
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
+  markVillagerAutonomyTargetRejected,
   showBlockedFeedback,
 } from '../../../lib'
 import { debugCombatMove } from './UnitMovementDebug'
@@ -69,7 +70,7 @@ export class UnitMovementRouting {
 
     for (let distance = minDistance; distance <= maxDistance; distance++) {
       const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
-        if (cell.solid || cell.border) return false
+        if (cell.solid || cell.border || cell.waterBorder) return false
         return cell.category !== 'Water'
       })
       cells.sort(
@@ -115,10 +116,12 @@ export class UnitMovementRouting {
     unit.blockedGatherApproach = null
     const { target, action } = blockedGatherApproach
     if (!target || target.isDestroyed || !unit.getActionCondition?.(target, action)) {
+      markVillagerAutonomyTargetRejected?.(unit, target)
       unit.affectNewDest?.()
       return true
     }
 
+    markVillagerAutonomyTargetRejected?.(unit, target)
     unit.sendToEvt?.(target, action, { forceRepath: true, allowBlockedGatherApproach: false })
     return true
   }

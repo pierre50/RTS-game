@@ -25,7 +25,7 @@ import {
   spawnAnimal,
   spawnBuilding,
   spawnUnits,
-  TRIBAL_BUILDING_COMPLETIONS,
+  DECO_BUILDING_COMPLETIONS,
   toggleEntityBars,
   toggleCoordsDebug,
   toggleFog,
@@ -150,7 +150,7 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     aliases: ['build'],
     usage: 'building <type> [playerIndex]',
     describe: 'Spawn a building near cursor',
-    complete: (_args, { player }) => [...Object.keys(player?.config?.buildings || {}), ...TRIBAL_BUILDING_COMPLETIONS],
+    complete: (_args, { player }) => [...Object.keys(player?.config?.buildings || {}), ...DECO_BUILDING_COMPLETIONS],
     run: ([type, playerIndex], context) => {
       if (!type) return { ok: false, message: 'Usage: building <type> [playerIndex]' }
       return spawnBuilding(context, type, playerIndex)

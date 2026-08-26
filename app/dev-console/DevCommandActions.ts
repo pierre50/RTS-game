@@ -36,7 +36,7 @@ export {
   toggleInstantMode,
 } from './actions/player'
 
-export { spawnAnimal, spawnBuilding, spawnUnits, TRIBAL_BUILDING_COMPLETIONS } from './actions/spawn'
+export { spawnAnimal, spawnBuilding, spawnUnits, DECO_BUILDING_COMPLETIONS } from './actions/spawn'
 
 export { addHeroInventoryEquipment } from './actions/heroInventory'
 

@@ -112,6 +112,7 @@ export interface MenuLike {
   setEquippedTool?(tool: HeroEquippedItem | null): void
   setHeroStatusTarget?(hero: UnitEntity | null): void
   updateHeroStatus?(hero?: UnitEntity | null): void
+  setHeroInteractionPrompt?(actionKey?: string | null): void
   toggleNpcOrders?(npcs: UnitEntity[]): void
   openNpcOrders?(npcs: UnitEntity[], options?: NpcOrdersOpenOptions): void
   isNpcOrdersOpen?(): boolean
@@ -173,6 +174,7 @@ export interface ControlsLike extends Container {
   getViewportMetrics(): { visibleHeight: number; visibleWidth: number; visibleLeft: number; visibleTop: number }
   getWorldPointUnderCursor(): { x: number; y: number }
   getCellUnderCursor(): RuntimeCell | null
+  getFacingEntityTarget(): RuntimeEntity | null
   getGamepadMoveVector(): { dx: number; dy: number }
   removeMouseBuilding(): void
   setMouseBuilding?(building: PlaceableBuildingConfig): void
@@ -250,6 +252,7 @@ export interface GameContextLike {
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
   getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
+  travelIntoBuildingInterior?: (building: BuildingEntity) => void
 }
 
 export type MapRuntimeContext = Omit<

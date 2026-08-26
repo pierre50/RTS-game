@@ -131,35 +131,58 @@ test('selection marker tracks visual relief lift', () => {
   assert.equal(selection.position.y, -12)
 })
 
-test('unselect keeps played unit and building health bars visible in hero gameplay', () => {
+test('unselect keeps played unit health bars visible in hero gameplay', () => {
   const { Instance } = loadInstance()
-  for (const family of ['unit', 'building']) {
-    const instance = Object.create(Instance.prototype)
-    const children = [{ label: 'selection' }, { label: 'healthBar' }]
-    instance.label = `${family}-1`
-    instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
-    instance.family = family
-    instance.owner = { isPlayed: true }
-    instance.selected = true
-    instance.isDead = false
-    instance.isDestroyed = false
-    instance.hitPoints = 7
-    instance.totalHitPoints = 10
-    instance.sprite = { height: 40, anchor: { y: 1 } }
-    instance.children = children
-    instance.getChildByLabel = label => children.find(child => child.label === label) || null
-    instance.removeChild = child => {
-      const index = children.indexOf(child)
-      if (index >= 0) children.splice(index, 1)
-    }
-    instance.addChild = child => children.push(child)
-
-    Instance.prototype.unselect.call(instance)
-
-    assert.equal(instance.selected, false)
-    assert.equal(children.some(child => child.label === 'selection'), false)
-    assert.equal(children.some(child => child.label === 'healthBar'), true)
+  const instance = Object.create(Instance.prototype)
+  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  instance.label = 'unit-1'
+  instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
+  instance.family = 'unit'
+  instance.owner = { isPlayed: true }
+  instance.selected = true
+  instance.isDead = false
+  instance.isDestroyed = false
+  instance.hitPoints = 7
+  instance.totalHitPoints = 10
+  instance.sprite = { height: 40, anchor: { y: 1 } }
+  instance.children = children
+  instance.getChildByLabel = label => children.find(child => child.label === label) || null
+  instance.removeChild = child => {
+    const index = children.indexOf(child)
+    if (index >= 0) children.splice(index, 1)
   }
+  instance.addChild = child => children.push(child)
+
+  Instance.prototype.unselect.call(instance)
+
+  assert.equal(instance.selected, false)
+  assert.equal(children.some(child => child.label === 'selection'), false)
+  assert.equal(children.some(child => child.label === 'healthBar'), true)
+})
+
+test('buildings do not keep world health bars visible in hero gameplay', () => {
+  const { Instance } = loadInstance()
+  const instance = Object.create(Instance.prototype)
+  const children = [{ label: 'selection' }, { label: 'healthBar' }]
+  instance.label = 'building-1'
+  instance.context = { map: {}, controls: { heroUnit: { label: 'hero-1' } } }
+  instance.family = 'building'
+  instance.owner = { isPlayed: true }
+  instance.selected = true
+  instance.isDead = false
+  instance.isDestroyed = false
+  instance.children = children
+  instance.getChildByLabel = label => children.find(child => child.label === label) || null
+  instance.removeChild = child => {
+    const index = children.indexOf(child)
+    if (index >= 0) children.splice(index, 1)
+  }
+
+  Instance.prototype.unselect.call(instance)
+
+  assert.equal(instance.selected, false)
+  assert.equal(children.some(child => child.label === 'selection'), false)
+  assert.equal(children.some(child => child.label === 'healthBar'), false)
 })
 
 test('unselect removes the active hero world health bar in hero gameplay', () => {

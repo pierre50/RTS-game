@@ -9,27 +9,27 @@ import type { PlayerLike } from '../../types/player'
 import type { MapGenerationMap } from './MapGenerationTypes'
 
 const BANDIT_CAMP_OWNER_NAME = 'Bandits'
-const BANDIT_CAMP_BED_OFFSETS: GridPosition[] = [
+const BANDIT_CAMP_FIRE_OFFSETS: GridPosition[] = [
   { i: 0, j: 0 },
   { i: -3, j: 1 },
   { i: 2, j: -3 },
   { i: 3, j: 2 },
 ]
-const BANDIT_CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
-  { type: 'BanditCampMeatRack', offset: { i: -4, j: 3 } },
-  { type: 'BanditCampDryingRack', offset: { i: 3, j: -4 } },
-  { type: 'BanditCampTotemSkull', offset: { i: 0, j: -5 } },
-  { type: 'BanditCampTotemHorns', offset: { i: 4, j: -2 } },
-  { type: 'BanditCampFencePost', offset: { i: -2, j: 4 } },
-  { type: 'BanditCampCrate', offset: { i: 4, j: 1 } },
-  { type: 'BanditCampBucket', offset: { i: -3, j: -2 } },
-  { type: 'BanditCampRockPile', offset: { i: 1, j: 4 } },
-  { type: 'BanditCampAnimalBones', offset: { i: -5, j: 0 } },
-  { type: 'BanditCampJarLarge', offset: { i: 5, j: -1 } },
-  { type: 'BanditCampBoneSmall', offset: { i: -1, j: 5 } },
-  { type: 'BanditCampSkull', offset: { i: 2, j: 4 } },
-  { type: 'BanditCampTotemPlain', offset: { i: -4, j: -1 } },
-  { type: 'BanditCampJarSmall', offset: { i: 5, j: 2 } },
+const CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
+  { type: BUILDING_TYPES.campMeatRack, offset: { i: -4, j: 3 } },
+  { type: BUILDING_TYPES.campDryingRack, offset: { i: 3, j: -4 } },
+  { type: BUILDING_TYPES.campTotemSkull, offset: { i: 0, j: -5 } },
+  { type: BUILDING_TYPES.campTotemHorns, offset: { i: 4, j: -2 } },
+  { type: BUILDING_TYPES.campFencePost, offset: { i: -2, j: 4 } },
+  { type: BUILDING_TYPES.campCrate, offset: { i: 4, j: 1 } },
+  { type: BUILDING_TYPES.campBucket, offset: { i: -3, j: -2 } },
+  { type: BUILDING_TYPES.campRockPile, offset: { i: 1, j: 4 } },
+  { type: BUILDING_TYPES.campAnimalBones, offset: { i: -5, j: 0 } },
+  { type: BUILDING_TYPES.campJarLarge, offset: { i: 5, j: -1 } },
+  { type: BUILDING_TYPES.campBoneSmall, offset: { i: -1, j: 5 } },
+  { type: BUILDING_TYPES.campSkull, offset: { i: 2, j: 4 } },
+  { type: BUILDING_TYPES.campTotemPlain, offset: { i: -4, j: -1 } },
+  { type: BUILDING_TYPES.campJarSmall, offset: { i: 5, j: 2 } },
 ]
 
 export type BanditCampOwner = PlayerLike & { banditCampOwner?: true }
@@ -81,10 +81,10 @@ export function placeBanditCamps(map: MapGenerationMap, context: GameContextLike
     const anchor = findBanditCampAnchor(map, position, owner)
     if (!anchor) continue
     const unitTypes = getBanditCampUnitTypes(map, index, heroLevel)
-    const beds = placeBanditCampBeds(map, owner, anchor, getBanditCampBedCount(unitTypes.length, heroLevel))
-    if (!beds.length) continue
-    placeBanditCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
-    placeBanditCampUnits(map, owner, beds, unitTypes)
+    const fireCamps = placeBanditCampFires(map, owner, anchor, getBanditCampFireCount(unitTypes.length, heroLevel))
+    if (!fireCamps.length) continue
+    placeCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
+    placeBanditCampUnits(map, owner, fireCamps, unitTypes)
   }
 }
 
@@ -119,7 +119,7 @@ function placeCampBuildingNear(
 function findBanditCampAnchor(map: MapGenerationMap, position: GridPosition, owner: PlayerLike): RuntimeCell | null {
   for (let distance = 0; distance <= 8; distance++) {
     const cells = getPlainCellsAroundPoint(position.i, position.j, map.grid, distance, cell =>
-      canPlaceCampBuildingAt(map, owner, cell.i, cell.j, BUILDING_TYPES.banditCamp)
+      canPlaceCampBuildingAt(map, owner, cell.i, cell.j, BUILDING_TYPES.fireCamp)
     )
     if (cells.length) return map.randomItem(cells)
   }
@@ -131,26 +131,26 @@ function getHeroLevel(map: MapGenerationMap): number {
   return hero ? getUnitOverallLevel(hero) : 0
 }
 
-function getBanditCampBedCount(unitCount: number, heroLevel: number): number {
-  return Math.max(1, Math.min(BANDIT_CAMP_BED_OFFSETS.length, Math.ceil(unitCount / 3) + Math.floor(heroLevel / 8)))
+function getBanditCampFireCount(unitCount: number, heroLevel: number): number {
+  return Math.max(1, Math.min(BANDIT_CAMP_FIRE_OFFSETS.length, Math.ceil(unitCount / 3) + Math.floor(heroLevel / 8)))
 }
 
-function placeBanditCampBeds(
+function placeBanditCampFires(
   map: MapGenerationMap,
   owner: PlayerLike,
   anchor: RuntimeCell,
-  bedCount: number
+  fireCount: number
 ): RuntimeCell[] {
-  const beds: RuntimeCell[] = []
-  for (let index = 0; index < bedCount; index++) {
-    const offset = BANDIT_CAMP_BED_OFFSETS[index]
-    const cell = placeCampBuildingNear(map, owner, anchor, BUILDING_TYPES.banditCamp, offset, index === 0 ? 0 : 1)
-    if (cell) beds.push(cell)
+  const fireCamps: RuntimeCell[] = []
+  for (let index = 0; index < fireCount; index++) {
+    const offset = BANDIT_CAMP_FIRE_OFFSETS[index]
+    const cell = placeCampBuildingNear(map, owner, anchor, BUILDING_TYPES.fireCamp, offset, index === 0 ? 0 : 1)
+    if (cell) fireCamps.push(cell)
   }
-  return beds
+  return fireCamps
 }
 
-function placeBanditCampDecorations(
+function placeCampDecorations(
   map: MapGenerationMap,
   owner: PlayerLike,
   anchor: RuntimeCell,
@@ -159,10 +159,10 @@ function placeBanditCampDecorations(
 ): void {
   const targetCount = Math.max(
     4,
-    Math.min(BANDIT_CAMP_DECORATION_LAYOUT.length, 3 + Math.ceil(unitCount / 2) + Math.floor(heroLevel / 5))
+    Math.min(CAMP_DECORATION_LAYOUT.length, 3 + Math.ceil(unitCount / 2) + Math.floor(heroLevel / 5))
   )
   let placed = 0
-  for (const entry of BANDIT_CAMP_DECORATION_LAYOUT) {
+  for (const entry of CAMP_DECORATION_LAYOUT) {
     if (placed >= targetCount) break
     if (placeCampBuildingNear(map, owner, anchor, entry.type, entry.offset, 1)) placed++
   }

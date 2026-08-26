@@ -21,26 +21,26 @@ type AssetCacheLike = {
   }
 }
 
-function staticTribalBuildingAsset(frame: number): BuildingAsset {
-  return { animated: false, images: { final: { sheet: 'buildings/tribal', frame } } }
+function staticDecoBuildingAsset(frame: number): BuildingAsset {
+  return { animated: false, images: { final: { sheet: 'buildings/deco', frame } } }
 }
 
-const TRIBAL_BUILDING_ASSETS: Record<string, BuildingAsset> = {
-  BanditCamp: staticTribalBuildingAsset(0),
-  BanditCampTotemPlain: staticTribalBuildingAsset(1),
-  BanditCampTotemHorns: staticTribalBuildingAsset(2),
-  BanditCampTotemSkull: staticTribalBuildingAsset(3),
-  BanditCampFencePost: staticTribalBuildingAsset(4),
-  BanditCampBoneSmall: staticTribalBuildingAsset(5),
-  BanditCampRockPile: staticTribalBuildingAsset(6),
-  BanditCampSkull: staticTribalBuildingAsset(7),
-  BanditCampAnimalBones: staticTribalBuildingAsset(8),
-  BanditCampMeatRack: staticTribalBuildingAsset(9),
-  BanditCampDryingRack: staticTribalBuildingAsset(10),
-  BanditCampBucket: staticTribalBuildingAsset(11),
-  BanditCampCrate: staticTribalBuildingAsset(12),
-  BanditCampJarSmall: staticTribalBuildingAsset(13),
-  BanditCampJarLarge: staticTribalBuildingAsset(14),
+const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
+  FireCamp: staticDecoBuildingAsset(0),
+  CampTotemPlain: staticDecoBuildingAsset(1),
+  CampTotemHorns: staticDecoBuildingAsset(2),
+  CampTotemSkull: staticDecoBuildingAsset(3),
+  CampFencePost: staticDecoBuildingAsset(4),
+  CampBoneSmall: staticDecoBuildingAsset(5),
+  CampRockPile: staticDecoBuildingAsset(6),
+  CampSkull: staticDecoBuildingAsset(7),
+  CampAnimalBones: staticDecoBuildingAsset(8),
+  CampMeatRack: staticDecoBuildingAsset(9),
+  CampDryingRack: staticDecoBuildingAsset(10),
+  CampBucket: staticDecoBuildingAsset(11),
+  CampCrate: staticDecoBuildingAsset(12),
+  CampJarSmall: staticDecoBuildingAsset(13),
+  CampJarLarge: staticDecoBuildingAsset(14),
 }
 
 export type AssetOwner = {
@@ -87,21 +87,9 @@ export function getBuildingTextureNameWithSize(size: number): TextureRef | undef
   }
 }
 
-export function getBuildingRubbleTextureNameWithSize(size: number): TextureRef | undefined {
-  switch (size) {
-    case 1:
-      return { sheet: 'buildings/rubble/size-1', frame: 0 }
-    case 2:
-      return { sheet: 'buildings/rubble/size-2', frame: 0 }
-    default:
-      // No dedicated rubble art beyond a 3-cell footprint yet; reuse the largest available.
-      return { sheet: 'buildings/rubble/size-3', frame: 0 }
-  }
-}
-
 export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetCacheLike): BuildingAsset {
-  const tribalAsset = TRIBAL_BUILDING_ASSETS[type]
-  if (tribalAsset) return tribalAsset
+  const decoAsset = DECO_BUILDING_ASSETS[type]
+  if (decoAsset) return decoAsset
 
   const path = assets.cache.get((owner.civ || '').toLowerCase())?.buildings ?? assets.cache.get('greek').buildings
   const assetAt = (age: number) => path[age]?.[type]

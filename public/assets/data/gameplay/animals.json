@@ -1,7 +1,7 @@
 {
   "Deer": {
     "totalHitPoints": 14,
-    "sight": 8,
+    "sight": 6,
     "speed": 2,
     "runningSpeed": 2.5,
     "strategy": "runaway",
@@ -87,7 +87,7 @@
   },
   "Fox": {
     "totalHitPoints": 10,
-    "sight": 7,
+    "sight": 6,
     "speed": 1.6,
     "runningSpeed": 2.2,
     "strategy": "runaway",
@@ -116,7 +116,7 @@
   },
   "Boar": {
     "totalHitPoints": 24,
-    "sight": 8,
+    "sight": 6,
     "speed": 1.4,
     "runningSpeed": 1.9,
     "totalEnergy": 8,
@@ -185,7 +185,7 @@
   },
   "Horse": {
     "totalHitPoints": 20,
-    "sight": 8,
+    "sight": 6,
     "speed": 1.8,
     "strategy": "runaway",
     "ambientMovement": true,

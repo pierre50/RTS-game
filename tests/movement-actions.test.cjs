@@ -2338,6 +2338,81 @@ test('a blocked gather target sends the villager near it before retrying', () =>
   assert.deepEqual(unit.path, approachPath)
 })
 
+test('blocked gather approach skips water-border cells before picking an approach', () => {
+  const target = { label: 'tree-1', i: 3, j: 3, isDestroyed: false }
+  const coastCell = { i: 1, j: 3, solid: false, border: false, waterBorder: true, category: 'Grass' }
+  const landCell = { i: 2, j: 3, solid: false, border: false, waterBorder: false, category: 'Grass' }
+  const landPath = [{ i: 2, j: 3 }]
+  const grid = Array.from({ length: 6 }, (_, i) =>
+    Array.from({ length: 6 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      border: false,
+      waterBorder: false,
+      category: 'Grass',
+      has: null,
+    }))
+  )
+  grid[target.i][target.j].solid = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    degreeToDirection: () => 'south',
+    findInstancesInSight: () => [],
+    getCellsAroundPoint: (_i, _j, _grid, distance, condition) =>
+      distance === 2 ? [coastCell, landCell].filter(condition) : [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 0,
+    getInstancePath: (_unit, i, j) => (i === landCell.i && j === landCell.j ? landPath : []),
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    moveTowardPoint: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+  })
+  const unit = {
+    action: null,
+    actionLocked: false,
+    category: 'Unit',
+    context: {
+      map: { grid },
+      performance: { record: () => {} },
+    },
+    dest: null,
+    getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.chopwood,
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => false,
+    j: 0,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: nextTarget => {
+      unit.dest = nextTarget
+    },
+    setPath: path => {
+      unit.path = path
+    },
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.woodcutter,
+  }
+
+  new UnitMovement(unit).sendToEvt(target, constants.ACTION_TYPES.chopwood)
+
+  assert.equal(unit.dest, target)
+  assert.equal(unit.blockedGatherApproach.target, target)
+  assert.deepEqual(unit.path, landPath)
+})
+
 test('a villager retries the original gather order after approaching a blocked target', () => {
   const target = { label: 'berries-1', isDestroyed: false }
   const calls = []
@@ -3461,6 +3536,51 @@ test('exploration orders bypass the human command throttle', () => {
 
   assert.equal(new UnitMovement(unit).explore(), true)
   assert.deepEqual(calls, [['sendToEvt', targetCell, null, { forceRepath: true, preserveAutonomy: true }]])
+})
+
+test('exploration skips water and coast cells', () => {
+  const calls = []
+  const grid = Array.from({ length: 5 }, (_, i) =>
+    Array.from({ length: 5 }, (_, j) => ({
+      i,
+      j,
+      border: false,
+      category: 'Grass',
+      solid: false,
+      waterBorder: false,
+    }))
+  )
+  const waterCell = grid[1][2]
+  waterCell.category = 'Water'
+  const coastCell = grid[2][1]
+  coastCell.waterBorder = true
+  const landCell = grid[4][2]
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getInstancePath: (_unit, i, j) => (i === landCell.i && j === landCell.j ? [landCell] : []),
+    },
+  })
+  const unit = {
+    context: { map: { grid } },
+    i: 2,
+    j: 2,
+    owner: {
+      views: {
+        isViewed: (i, j) =>
+          !(
+            (i === waterCell.i && j === waterCell.j) ||
+            (i === coastCell.i && j === coastCell.j) ||
+            (i === landCell.i && j === landCell.j)
+          ),
+      },
+    },
+    sendToEvt: (target, action, options) => calls.push(['sendToEvt', target, action, options]),
+    stop: () => calls.push(['stop']),
+  }
+
+  assert.equal(new UnitMovement(unit).explore(), true)
+  assert.deepEqual(calls, [['sendToEvt', landCell, null, { forceRepath: true, preserveAutonomy: true }]])
 })
 
 test('runaway units use the shared reachable flee cell selection', () => {

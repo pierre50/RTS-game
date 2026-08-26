@@ -58,12 +58,23 @@ test('hero equipped item slots follow the physical digit row across keyboard lay
   }
 })
 
-test('H is the default debug mount key for the hero', () => {
+test('H is the default call horse key for the hero', () => {
   const { settings, restore } = loadSettings()
   try {
     assert.equal(settings.getKeyBindings().heroMountHorse, 'h')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyH', key: 'h' }), 'heroMountHorse')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'KeyH', key: 'H' }), 'heroMountHorse')
+  } finally {
+    restore()
+  }
+})
+
+test('Shift is the default dismount horse key for the hero', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getKeyBindings().heroDismountHorse, 'Shift')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDismountHorse')
+    assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDismountHorse), 'Shift')
   } finally {
     restore()
   }
@@ -103,7 +114,7 @@ test('Control is the default hero direction lock key and can be rebound', () => 
 
     settings.setKeyBindingFromKeyboardEvent('heroDirectionLock', { code: 'ControlLeft', key: 'Control' })
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), null)
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDismountHorse')
   } finally {
     restore()
   }

@@ -67,9 +67,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
   },
   graphics: {
     ...toTextureBundle('assets/graphics', [
-      'buildings/rubble/size-1',
-      'buildings/rubble/size-2',
-      'buildings/rubble/size-3',
       'buildings/age-0',
       'buildings/age-1',
       'animals/boar/action',
@@ -116,16 +113,13 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/wall/level-1',
       'resources/tree/dead',
       'buildings/portal',
-      'buildings/tribal',
+      'buildings/deco',
       'animals/wolf/standing',
       'animals/wolf/walking',
       'animals/wolf/action',
       'animals/wolf/dying',
     ]),
     ...toBuildingShadowBundle([
-      'buildings/rubble/size-1',
-      'buildings/rubble/size-2',
-      'buildings/rubble/size-3',
       'buildings/age-0',
       'buildings/age-1',
       'buildings/wall/dithered',

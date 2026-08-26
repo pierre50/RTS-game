@@ -188,6 +188,33 @@ test('villagers sleep outside with dying sheet and zZzZ when no shelter exists',
   assert.deepEqual(calls.find(call => call[0] === 'indicator'), ['indicator', 'villager-1', 'sleep'])
 })
 
+test('villagers start going to sleep at 18h', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner)
+  const context = createContext(18, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+
+  new VillagerShelterSystem(context)
+
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.shelterState.reason, 'sleep')
+})
+
+test('villagers stay awake before 18h', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner)
+  const context = createContext(17, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+
+  new VillagerShelterSystem(context)
+
+  assert.equal(villager.shelterState, undefined)
+})
+
 test('villagers move to nearest house entry and disappear inside on arrival', () => {
   const calls = []
   const owner = { units: [], buildings: [] }

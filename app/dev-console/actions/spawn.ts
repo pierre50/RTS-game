@@ -15,24 +15,25 @@ function canSpawnUnitOnCell(cell: DevCell): boolean {
 
 const BANDIT_OWNER_NAME = 'Bandits'
 const BANDIT_UNIT_TYPES = new Set<string>([UNIT_TYPES.banditChief, UNIT_TYPES.banditSword, UNIT_TYPES.banditArcher])
-const TRIBAL_BUILDING_ALIASES: Record<string, string> = {
-  campfire: BUILDING_TYPES.banditCamp,
-  totemplain: BUILDING_TYPES.banditCampTotemPlain,
-  totemhorns: BUILDING_TYPES.banditCampTotemHorns,
-  totemskull: BUILDING_TYPES.banditCampTotemSkull,
-  fencepost: BUILDING_TYPES.banditCampFencePost,
-  bonesmall: BUILDING_TYPES.banditCampBoneSmall,
-  rockpile: BUILDING_TYPES.banditCampRockPile,
-  skull: BUILDING_TYPES.banditCampSkull,
-  animalbones: BUILDING_TYPES.banditCampAnimalBones,
-  meatrack: BUILDING_TYPES.banditCampMeatRack,
-  dryingrack: BUILDING_TYPES.banditCampDryingRack,
-  bucket: BUILDING_TYPES.banditCampBucket,
-  crate: BUILDING_TYPES.banditCampCrate,
-  jarsmall: BUILDING_TYPES.banditCampJarSmall,
-  jarlarge: BUILDING_TYPES.banditCampJarLarge,
+const DECO_BUILDING_ALIASES: Record<string, string> = {
+  firecamp: BUILDING_TYPES.fireCamp,
+  campfire: BUILDING_TYPES.fireCamp,
+  totemplain: BUILDING_TYPES.campTotemPlain,
+  totemhorns: BUILDING_TYPES.campTotemHorns,
+  totemskull: BUILDING_TYPES.campTotemSkull,
+  fencepost: BUILDING_TYPES.campFencePost,
+  bonesmall: BUILDING_TYPES.campBoneSmall,
+  rockpile: BUILDING_TYPES.campRockPile,
+  skull: BUILDING_TYPES.campSkull,
+  animalbones: BUILDING_TYPES.campAnimalBones,
+  meatrack: BUILDING_TYPES.campMeatRack,
+  dryingrack: BUILDING_TYPES.campDryingRack,
+  bucket: BUILDING_TYPES.campBucket,
+  crate: BUILDING_TYPES.campCrate,
+  jarsmall: BUILDING_TYPES.campJarSmall,
+  jarlarge: BUILDING_TYPES.campJarLarge,
 }
-export const TRIBAL_BUILDING_COMPLETIONS = Object.keys(TRIBAL_BUILDING_ALIASES)
+export const DECO_BUILDING_COMPLETIONS = Object.keys(DECO_BUILDING_ALIASES)
 const BANDIT_UNIT_ALIASES: Record<string, string> = {
   bandit1: UNIT_TYPES.banditChief,
   chefbandit: UNIT_TYPES.banditChief,
@@ -64,7 +65,7 @@ function resolveBuildingType(owner: DevPlayer, typeName: string): string | undef
   const directType = findKey(owner.config.buildings, typeName)
   if (directType) return directType
   const compact = normalize(typeName).replace(/[\s_-]+/g, '')
-  const alias = TRIBAL_BUILDING_ALIASES[compact]
+  const alias = DECO_BUILDING_ALIASES[compact]
   return alias && owner.config.buildings[alias] ? alias : undefined
 }
 

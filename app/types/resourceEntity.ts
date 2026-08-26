@@ -7,6 +7,7 @@ export interface ResourceEntity extends RuntimeEntityBase {
   textureName?: string
   startsMature?: boolean
   setCuttedTreeTexture?: () => void
+  isCutOrFallenTree?: () => boolean
   refreshTextureForTerrain?: () => void
   syncWithCell?: () => void
   isUsedBy?: RuntimeEntity | null

@@ -1,5 +1,5 @@
 import { getCivilizationDefinition } from './civilizations'
-import { UNIT_TYPES } from '../constants'
+import { CAMP_DECORATION_BUILDING_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { SOUND_CUES } from '../constants/sounds'
 import { applyEquipmentStatsToUnitConfig } from '../lib/equipment/equipmentStats'
 import type { BuildingConfig, ProjectileConfig, TechnologyConfig, UnitConfig } from '../types/config'
@@ -121,6 +121,16 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   },
 }
 
+const BUILDING_TYPES_WITHOUT_HERO_OCCLUSION_FADE = new Set<string>([
+  BUILDING_TYPES.fireCamp,
+  ...CAMP_DECORATION_BUILDING_TYPES,
+])
+
+const BUILDING_TYPES_WITH_SPRITE_SHADOW = new Set<string>([
+  BUILDING_TYPES.fireCamp,
+  ...CAMP_DECORATION_BUILDING_TYPES,
+])
+
 const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
   Arrow: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
   ArrowCeramic: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
@@ -176,6 +186,15 @@ export function createPlayerData(
     config.buildings[buildingName] = {
       ...config.buildings[buildingName],
       ...override,
+    }
+  }
+
+  for (const [buildingName, building] of Object.entries(config.buildings)) {
+    if (BUILDING_TYPES_WITHOUT_HERO_OCCLUSION_FADE.has(buildingName)) {
+      building.occlusionFade = false
+    }
+    if (BUILDING_TYPES_WITH_SPRITE_SHADOW.has(buildingName)) {
+      building.useSpriteShadow = true
     }
   }
 

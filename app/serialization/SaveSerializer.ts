@@ -349,7 +349,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const world = {
     seed: context.map.seed,
     size: context.map.size,
-    mapType: DEFAULT_SERIALIZED_MAP_TYPE,
+    mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
     environment: context.map.environment,
     positionsCount: context.map.positionsCount,
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
@@ -366,7 +366,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     config: {
       seed: context.map.seed,
       size: context.map.size,
-      mapType: DEFAULT_SERIALIZED_MAP_TYPE,
+      mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
       environment: context.map.environment,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,

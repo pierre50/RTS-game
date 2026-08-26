@@ -88,6 +88,11 @@ export function handleControlsKeyDown(controls: ControlsKeyboardHost, evt: Keybo
     return
   }
   if (evt.key === 'Shift') {
+    if (action && !controls.isInteractionBlocked() && controls.heroController.handleKeyDown(action)) {
+      if (evt.code) controls.keyActionsByCode[evt.code] = action
+      evt.preventDefault()
+      return
+    }
     controls.shiftKeyActive = true
     evt.preventDefault()
     return
@@ -141,6 +146,7 @@ export function handleControlsKeyUp(controls: ControlsKeyboardHost, evt: Keyboar
     return
   }
   if (evt.key === 'Shift') {
+    if (action) controls.heroController.handleKeyUp(action)
     controls.shiftKeyActive = false
     evt.preventDefault()
     return

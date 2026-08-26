@@ -238,12 +238,28 @@ export class UnitMovement {
         const dyMax = r - Math.abs(dx)
         for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
           const cell = row[unit.j + dy]
-          if (cell && !views.isViewed(cell.i, cell.j) && !cell.solid) {
+          if (
+            cell &&
+            !views.isViewed(cell.i, cell.j) &&
+            !cell.solid &&
+            !cell.border &&
+            !cell.waterBorder &&
+            cell.category !== 'Water'
+          ) {
             let unseenNeighbors = 0
             for (let ni = cell.i - 1; ni <= cell.i + 1; ni++) {
               for (let nj = cell.j - 1; nj <= cell.j + 1; nj++) {
                 const neighbor = grid[ni]?.[nj]
-                if (neighbor && !views.isViewed(ni, nj) && !neighbor.solid) unseenNeighbors++
+                if (
+                  neighbor &&
+                  !views.isViewed(ni, nj) &&
+                  !neighbor.solid &&
+                  !neighbor.border &&
+                  !neighbor.waterBorder &&
+                  neighbor.category !== 'Water'
+                ) {
+                  unseenNeighbors++
+                }
               }
             }
             const score = unseenNeighbors * 3 - r
@@ -272,7 +288,11 @@ export class UnitMovement {
     const map = unit.context?.map
     if (!map) return
     const cell = findReachableFleeCell<RuntimeCell>(unit, instance, map, {
-      isCellAllowed: candidate => !isCellBlockedForUnit(unit, candidate) && candidate.category !== 'Water' && !candidate.border,
+      isCellAllowed: candidate =>
+        !isCellBlockedForUnit(unit, candidate) &&
+        candidate.category !== 'Water' &&
+        !candidate.border &&
+        !candidate.waterBorder,
       range: unit.sight ?? 0,
     })
     if (cell) {

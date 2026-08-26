@@ -18,13 +18,35 @@ function loadPlayerConfig() {
     banditChief: 'BanditChief',
     banditSword: 'BanditSword',
   }
+  const buildingTypes = {
+    fireCamp: 'FireCamp',
+    campDecoration: 'CampDecoration',
+    campTotemPlain: 'CampTotemPlain',
+    campTotemHorns: 'CampTotemHorns',
+    campTotemSkull: 'CampTotemSkull',
+    campFencePost: 'CampFencePost',
+    campBoneSmall: 'CampBoneSmall',
+    campRockPile: 'CampRockPile',
+    campSkull: 'CampSkull',
+    campAnimalBones: 'CampAnimalBones',
+    campMeatRack: 'CampMeatRack',
+    campDryingRack: 'CampDryingRack',
+    campBucket: 'CampBucket',
+    campCrate: 'CampCrate',
+    campJarSmall: 'CampJarSmall',
+    campJarLarge: 'CampJarLarge',
+  }
   const soundCues = {
     projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
     unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
   }
   const mocks = {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
-    '../constants': { UNIT_TYPES: unitTypes },
+    '../constants': {
+      CAMP_DECORATION_BUILDING_TYPES: Object.values(buildingTypes).filter(type => type !== 'FireCamp'),
+      BUILDING_TYPES: buildingTypes,
+      UNIT_TYPES: unitTypes,
+    },
     '../constants/sounds': { SOUND_CUES: soundCues },
     '../lib/equipment/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
   }
@@ -62,4 +84,31 @@ test('LPC arrows spawn lower when fired toward the left', () => {
 
   assert.deepEqual(config.projectiles.Arrow.directionalSpawnOffsets.west, { x: -10, y: 8 })
   assert.deepEqual(config.projectiles.ArrowCeramic.directionalSpawnOffsets.west, { x: -10, y: 8 })
+})
+
+test('camp decoration buildings do not fade over the hero and use sprite shadows', () => {
+  const { createPlayerData } = loadPlayerConfig()
+  const { config } = createPlayerData(
+    {
+      buildings: {
+        FireCamp: {},
+        CampFencePost: {},
+        CampTotemSkull: {},
+        House: {},
+      },
+      projectiles: {},
+      units: {},
+    },
+    {},
+    'Greek'
+  )
+
+  assert.equal(config.buildings.FireCamp.occlusionFade, false)
+  assert.equal(config.buildings.FireCamp.useSpriteShadow, true)
+  assert.equal(config.buildings.CampFencePost.occlusionFade, false)
+  assert.equal(config.buildings.CampFencePost.useSpriteShadow, true)
+  assert.equal(config.buildings.CampTotemSkull.occlusionFade, false)
+  assert.equal(config.buildings.CampTotemSkull.useSpriteShadow, true)
+  assert.equal(config.buildings.House.occlusionFade, undefined)
+  assert.equal(config.buildings.House.useSpriteShadow, undefined)
 })

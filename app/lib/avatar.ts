@@ -2,7 +2,7 @@ import { Assets, Rectangle, Texture } from 'pixi.js'
 import { SHEET_TYPES } from '../constants'
 import { getAnimationFrames } from './extra'
 import { getBuildingAsset, type AssetOwner } from './graphics/assets'
-import { recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
+import { recolorCanvasByPalette, recolorCanvasPixels, SOURCE_COLORS } from './graphics/colors'
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
@@ -224,18 +224,22 @@ function renderLayeredUnitHeadAvatar(
   if (!ctx) return false
   ctx.imageSmoothingEnabled = false
 
-  const drawTexture = (texture: Texture) => {
-    ctx.drawImage(app.renderer.extract.canvas(texture) as unknown as CanvasImageSource, 0, 0)
+  const drawTexture = (texture: Texture, layer?: UnitAppearanceLayerConfig) => {
+    const layerCanvas = app.renderer.extract.canvas(texture) as HTMLCanvasElement
+    if (layer?.palette?.startsWith('hair:')) {
+      recolorCanvasByPalette(layerCanvas, layer.paletteSource ?? 'brown_hair', layer.palette.slice('hair:'.length))
+    }
+    ctx.drawImage(layerCanvas as unknown as CanvasImageSource, 0, 0)
   }
 
   for (const { layer, texture } of layers) {
     if (layer.zIndex >= MAIN_SPRITE_LAYER_Z_INDEX) continue
-    drawTexture(texture)
+    drawTexture(texture, layer)
   }
   drawTexture(baseTexture)
   for (const { layer, texture } of layers) {
     if (layer.zIndex < MAIN_SPRITE_LAYER_Z_INDEX) continue
-    drawTexture(texture)
+    drawTexture(texture, layer)
   }
 
   const scanHeight = Math.min(composed.height, Math.round(composed.height * HEAD_SCAN_HEIGHT_RATIO))

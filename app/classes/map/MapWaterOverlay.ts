@@ -16,6 +16,7 @@ type WaterOverlayHost = {
   context: MapContext
   environment?: string
   grid: unknown[][]
+  mapType?: string
   size: number
   waterBackground: Graphics | null
   waterBorderSurfaces: Set<WaterBorderSurface>
@@ -30,6 +31,7 @@ const WATER_OVERLAY_FRAME_COUNT = 4
 const WATER_OVERLAY_FRAME_SPEED = 1 / 17
 const WATER_OVERLAY_ALPHA = 0.32
 const WATER_OVERLAY_MARGIN = CELL_WIDTH * 2
+const INTERIOR_BACKGROUND_COLOR = 0x000000
 const WATER_BACKGROUND_Z_INDEX = -3
 const WATER_OVERLAY_Z_INDEX = -2.5
 
@@ -60,19 +62,22 @@ export function getWaterOverlayBounds(map: Pick<WaterOverlayHost, 'size'>): Boun
 
 export function updateWaterOverlay(map: WaterOverlayHost): void {
   if (!map.grid.length || map.size <= 0) return
+  if (isInteriorMap(map)) {
+    if (!map.waterBackground) createInteriorBackground(map)
+    return
+  }
   if (!map.waterOverlay || !map.waterBackground) createWaterOverlay(map)
 }
 
 export function createWaterOverlay(map: WaterOverlayHost): void {
+  if (isInteriorMap(map)) {
+    createInteriorBackground(map)
+    return
+  }
   const frames = getWaterOverlayFrames()
   if (!frames.length || map.waterOverlay) return
   const bounds = getWaterOverlayBounds(map)
-  const background = new Graphics()
-  background.label = 'waterBackground'
-  background.eventMode = 'none'
-  background.zIndex = WATER_BACKGROUND_Z_INDEX
-  background.rect(bounds.minX, bounds.minY, bounds.width, bounds.height)
-  background.fill({ color: getEnvironmentTerrainParams(map.environment).waterBackgroundColor })
+  const background = createBackgroundGraphics(bounds, getEnvironmentTerrainParams(map.environment).waterBackgroundColor)
 
   const overlay = new TilingSprite({ texture: frames[0], width: bounds.width, height: bounds.height })
   overlay.label = 'waterOverlayFilter'
@@ -86,6 +91,29 @@ export function createWaterOverlay(map: WaterOverlayHost): void {
   map.waterBackground = background
   map.waterOverlay = overlay
   ensureWaterAnimationTicker(map)
+}
+
+function isInteriorMap(map: Pick<WaterOverlayHost, 'mapType'>): boolean {
+  return map.mapType === 'interior'
+}
+
+function createInteriorBackground(map: WaterOverlayHost): void {
+  if (map.waterBackground) return
+  const bounds = getWaterOverlayBounds(map)
+  const background = createBackgroundGraphics(bounds, INTERIOR_BACKGROUND_COLOR)
+  background.label = 'interiorBackground'
+  map.addChild(background)
+  map.waterBackground = background
+}
+
+function createBackgroundGraphics(bounds: Bounds, color: number): Graphics {
+  const background = new Graphics()
+  background.label = 'waterBackground'
+  background.eventMode = 'none'
+  background.zIndex = WATER_BACKGROUND_Z_INDEX
+  background.rect(bounds.minX, bounds.minY, bounds.width, bounds.height)
+  background.fill({ color })
+  return background
 }
 
 export function ensureWaterAnimationTicker(map: WaterOverlayHost): void {

@@ -16,6 +16,8 @@ export type BuildingShadow = Sprite
 
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_OFFSET_Y = 0
+const SPRITE_SHADOW_SCALE_X = 1.02
+const SPRITE_SHADOW_SCALE_Y = -0.5
 const shadowTextureFrameCache = new Map<string, Texture>()
 
 export function setBuildingRallyPoint(
@@ -91,8 +93,8 @@ export function getBuildingShadowTexture(building: BuildingControllerHost): Text
 
 export function createBuildingShadow(building: BuildingControllerHost): BuildingShadow | null {
   const texture = getBuildingShadowTexture(building)
-  if (!texture) return null
-  const shadow = new Sprite(texture)
+  if (!texture && !building.useSpriteShadow) return null
+  const shadow = new Sprite(texture ?? building.sprite.texture)
   shadow.label = LABEL_TYPES.shadow
   shadow.eventMode = 'none'
   shadow.roundPixels = true
@@ -105,14 +107,14 @@ export function updateBuildingShadow(
   shadow: BuildingShadow | null = building.shadow ?? null
 ): void {
   const texture = getBuildingShadowTexture(building)
-  if (!texture) {
+  if (!texture && !building.useSpriteShadow) {
     building.shadow?.parent?.removeChild(building.shadow)
     building.shadow?.destroy()
     building.shadow = null
     return
   }
   if (!shadow) {
-    shadow = new Sprite(texture)
+    shadow = new Sprite(texture ?? building.sprite.texture)
     shadow.label = LABEL_TYPES.shadow
     shadow.eventMode = 'none'
     shadow.roundPixels = true
@@ -120,16 +122,20 @@ export function updateBuildingShadow(
     building.context.map.shadowLayer?.addChild(shadow)
   }
   const sprite = building.sprite
-  shadow.texture = texture
-  if (texture.defaultAnchor) {
-    shadow.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
+  shadow.texture = texture ?? sprite.texture
+  const anchor = texture?.defaultAnchor ?? sprite.anchor
+  if (anchor) {
+    shadow.anchor.set(anchor.x, anchor.y)
   }
   shadow.zIndex = -2
   shadow.alpha = SHADOW_MASK_ALPHA
   shadow.visible = getShadowsEnabled() && building.visible && !building.isDead && !building.isDestroyed
   shadow.rotation = 0
-  shadow.tint = 0xffffff
-  shadow.scale.set(sprite.scale.x, sprite.scale.y)
+  shadow.tint = texture ? 0xffffff : 0x000000
+  shadow.scale.set(
+    texture ? sprite.scale.x : Math.abs(sprite.scale.x) * SPRITE_SHADOW_SCALE_X,
+    texture ? sprite.scale.y : Math.abs(sprite.scale.y) * SPRITE_SHADOW_SCALE_Y
+  )
   shadow.position.set(building.x, building.y + (building.reliefLift ?? 0) + SHADOW_OFFSET_Y)
 }
 

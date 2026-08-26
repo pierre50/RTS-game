@@ -1,4 +1,4 @@
-import { BUILDING_TYPES } from '../constants'
+import { BUILDING_TYPES, CAMP_DECORATION_BUILDING_TYPES } from '../constants'
 import { renderBuildingAvatar, renderTextureRefAvatar } from '../lib/avatar'
 import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import type { RuntimeEntity } from '../types/entities'
@@ -6,6 +6,10 @@ import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
 
 const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
+const HIDDEN_HERO_CONSTRUCTION_BUILDINGS = new Set<string>([
+  BUILDING_TYPES.fireCamp,
+  ...CAMP_DECORATION_BUILDING_TYPES,
+])
 
 type InventoryConstructionHost = {
   constructionPanel: HTMLDivElement
@@ -14,7 +18,7 @@ type InventoryConstructionHost = {
 }
 
 function isHeroConstructionBuildingType(type: string): boolean {
-  return !type.startsWith(BUILDING_TYPES.banditCamp)
+  return !HIDDEN_HERO_CONSTRUCTION_BUILDINGS.has(type)
 }
 
 export function getInventoryConstructionButtons(menu: MenuHost): MenuButtonSpec[] {

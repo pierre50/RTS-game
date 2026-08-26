@@ -46,7 +46,7 @@ function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourc
 export function syncBuildingCampfireDecoration(building: BuildingControllerHost): void {
   const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
 
-  if (building.type !== BUILDING_TYPES.banditCamp) {
+  if (building.type !== BUILDING_TYPES.fireCamp) {
     existing?.destroy({ children: true })
     return
   }

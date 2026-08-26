@@ -2,7 +2,14 @@ import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } fr
 import { isWheatMature } from '../combat'
 import { getGaiaAnimals } from '../playerState'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
+import {
+  clearVillagerAutonomyTargetRejections,
+  tryVillagerJobCandidates,
+  type VillagerJobCandidate,
+} from './villagerAutonomyTargeting'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
+
+type AssignmentOptions = { preserveRejectedTargets?: boolean }
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
   return Boolean(entity && !entity.isDead && !entity.isDestroyed && (entity.hitPoints ?? 1) > 0)
@@ -29,6 +36,7 @@ function isCapturableHorse(entity: RuntimeEntity | null | undefined): entity is 
       entity.type === 'Horse' &&
       !entity.isDead &&
       !entity.isDestroyed &&
+      !(entity as { companionOwner?: UnitEntity | null }).companionOwner &&
       !(entity as { isLassoed?: boolean }).isLassoed
   )
 }
@@ -154,18 +162,6 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
   return knownResources(unit, resourceTypeByJob[job]).length > 0
 }
 
-export function getAutonomyJobForWork(work: string | null | undefined): VillagerAutonomyJob | null {
-  if (work === WORK_TYPES.woodcutter) return 'wood'
-  if (work === WORK_TYPES.stoneminer) return 'stone'
-  if (work === WORK_TYPES.goldminer) return 'gold'
-  if (work === WORK_TYPES.builder) return 'construction'
-  if (work === WORK_TYPES.horseCapture) return 'horseCapture'
-  if (work === WORK_TYPES.forager || work === WORK_TYPES.farmer || work === WORK_TYPES.hunter) {
-    return 'food'
-  }
-  return null
-}
-
 export function clearVillagerAutonomy(unit: UnitEntity): void {
   if (unit.type !== UNIT_TYPES.villager) return
   unit.autonomousJob = null
@@ -176,27 +172,69 @@ export function setVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJob |
   unit.autonomousJob = job
 }
 
-export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
+function foodCandidateFor(unit: UnitEntity, target: RuntimeEntity): VillagerJobCandidate {
+  if (target.family === FAMILY_TYPES.animal) {
+    return {
+      action: ACTION_TYPES.takemeat,
+      send: candidate => unit.sendToTakeMeat?.(candidate, true),
+      target,
+      work: WORK_TYPES.hunter,
+    }
+  }
+  if (target.type === RESOURCE_TYPES.wheat) {
+    return {
+      action: ACTION_TYPES.farm,
+      send: candidate => unit.sendToFarm?.(candidate, true),
+      target,
+      work: WORK_TYPES.farmer,
+    }
+  }
+  return {
+    action: ACTION_TYPES.forageberry,
+    send: candidate => unit.sendToBerrybush?.(candidate, true),
+    target,
+    work: WORK_TYPES.forager,
+  }
+}
+
+export function assignVillagerAutonomy(
+  unit: UnitEntity,
+  job: VillagerAutonomyJob,
+  options: AssignmentOptions = {}
+): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
+  if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
   setVillagerAutonomy(unit, job)
+  const scoring = {
+    targetWorkerLoad: (target: RuntimeEntity, work: string, action: string) => targetWorkerLoad(unit, target, work, action),
+  }
 
   unit.assigningAutonomousJob = true
   try {
     if (job === 'food') {
-      const target = closest(unit, knownFoodTargets(unit))
-      if (!target) return exploreForAutonomy(unit, job)
-      if (target.family === FAMILY_TYPES.animal) unit.sendToTakeMeat?.(target)
-      else if (target.type === RESOURCE_TYPES.wheat) unit.sendToFarm?.(target)
-      else unit.sendToBerrybush?.(target)
-      return true
+      const targets = knownFoodTargets(unit)
+      if (!targets.length) return exploreForAutonomy(unit, job)
+      if (tryVillagerJobCandidates(unit, job, targets.map(target => foodCandidateFor(unit, target)), scoring)) return true
+      return exploreForAutonomy(unit, job)
     }
 
     if (job === 'horseCapture') {
       const target = closest(unit, knownCapturableHorses(unit))
       if (!target) return exploreForAutonomy(unit, job)
       if (!getNearestAvailableStableForUnit(unit, target)) return false
-      unit.sendToCaptureHorse?.(target)
-      return true
+      return tryVillagerJobCandidates(
+        unit,
+        job,
+        [
+          {
+            action: ACTION_TYPES.captureHorse,
+            send: candidate => unit.sendToCaptureHorse?.(candidate, true),
+            target,
+            work: WORK_TYPES.horseCapture,
+          },
+        ],
+        scoring
+      )
     }
 
     if (job === 'construction') {
@@ -205,8 +243,22 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
         clearVillagerAutonomy(unit)
         return false
       }
-      unit.sendToBuilding?.(target)
-      return true
+      const accepted = tryVillagerJobCandidates(
+        unit,
+        job,
+        [
+          {
+            action: ACTION_TYPES.build,
+            send: candidate => unit.sendToBuilding?.(candidate as BuildingEntity),
+            target,
+            work: WORK_TYPES.builder,
+          },
+        ],
+        scoring
+      )
+      if (accepted) return true
+      clearVillagerAutonomy(unit)
+      return false
     }
 
     const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>, string> = {
@@ -214,12 +266,34 @@ export function assignVillagerAutonomy(unit: UnitEntity, job: VillagerAutonomyJo
       stone: RESOURCE_TYPES.stone,
       gold: RESOURCE_TYPES.gold,
     }
-    const target = closest(unit, knownResources(unit, resourceTypeByJob[job]))
-    if (!target) return exploreForAutonomy(unit, job)
-    if (job === 'wood') unit.sendToTree?.(target)
-    if (job === 'stone') unit.sendToStone?.(target)
-    if (job === 'gold') unit.sendToGold?.(target)
-    return true
+    const targets = knownResources(unit, resourceTypeByJob[job])
+    if (!targets.length) return exploreForAutonomy(unit, job)
+    const candidates = targets.map(target => {
+      if (job === 'wood') {
+        return {
+          action: ACTION_TYPES.chopwood,
+          send: (candidate: RuntimeEntity) => unit.sendToTree?.(candidate, true),
+          target,
+          work: WORK_TYPES.woodcutter,
+        }
+      }
+      if (job === 'stone') {
+        return {
+          action: ACTION_TYPES.minestone,
+          send: (candidate: RuntimeEntity) => unit.sendToStone?.(candidate, true),
+          target,
+          work: WORK_TYPES.stoneminer,
+        }
+      }
+      return {
+        action: ACTION_TYPES.minegold,
+        send: (candidate: RuntimeEntity) => unit.sendToGold?.(candidate, true),
+        target,
+        work: WORK_TYPES.goldminer,
+      }
+    })
+    if (tryVillagerJobCandidates(unit, job, candidates, scoring)) return true
+    return exploreForAutonomy(unit, job)
   } finally {
     unit.assigningAutonomousJob = false
   }
@@ -236,5 +310,5 @@ export function resumeVillagerAutonomy(unit: UnitEntity): boolean {
   ) {
     return false
   }
-  return assignVillagerAutonomy(unit, unit.autonomousJob)
+  return assignVillagerAutonomy(unit, unit.autonomousJob, { preserveRejectedTargets: true })
 }

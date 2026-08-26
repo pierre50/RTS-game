@@ -48,6 +48,7 @@ export type HeroControllerUpdateHost = {
   attackTowardPoint(point: HeroAimPoint): boolean
   facePoint(point: HeroAimPoint): void
   getShiftMoveLockedAimPoint(): HeroAimPoint | null
+  updateProximityInteractionPrompt(): void
   updateCommIndicator(): void
   updateCriticalHealthEffects(elapsedMs: number, active?: boolean): void
   updateOcclusionFade(elapsedMs: number, active?: boolean): void
@@ -61,11 +62,7 @@ function getHeroActionMoveSpeedFactor(unit: UnitEntity): number {
 }
 
 function isHeroMeleeChargeAiming(unit: UnitEntity): boolean {
-  return (
-    unit.heroPowerChargeStart != null &&
-    unit.heroPowerChargeTool === 'sword' &&
-    !unit.heroPowerReleaseQueued
-  )
+  return unit.heroPowerChargeStart != null && unit.heroPowerChargeTool === 'sword' && !unit.heroPowerReleaseQueued
 }
 
 export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost, frameScale: number): void {
@@ -90,6 +87,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     controller.controls.getCellUnderCursor()
   )
   updateHeroCursor(controller.equippedItem, hoverTarget, Boolean(controller.pendingGoToNpcs))
+  controller.updateProximityInteractionPrompt()
   const attacking = Boolean(unit.actionLocked)
   if (controller.defenseHeld && !attacking && !unit.heroDefenseActive) {
     controller.facePoint?.(controller.getShiftMoveLockedAimPoint() ?? aimPoint)
@@ -117,7 +115,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   dx += gamepadMove.dx
   dy += gamepadMove.dy
   const isMoving = dx !== 0 || dy !== 0
-  const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive))
+  const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive && !unit.mountedOnHorse))
   updateNpcFollow(unit, { matchHeroWalk: isMoving && isUnitWalkSpeedFactor(walkSpeedFactor) })
   const lockedMove = Boolean(isHeroDirectionLockActive(controller.controls) && isMoving && !unit.mountedOnHorse)
   if (lockedMove && controller.shiftMoveLockedDegree == null) {
@@ -153,7 +151,9 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     const aimedDegree = powerChargeAiming || defenseAiming ? unit.degree : null
     const aimedFacingVector = aimedDegree != null ? getVectorFromDegree(aimedDegree) : null
     const moveFacingVector = aimedFacingVector ?? lockedFacingVector
-    const moveOptions = moveFacingVector ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy } : undefined
+    const moveOptions = moveFacingVector
+      ? { facingDirX: moveFacingVector.dx, facingDirY: moveFacingVector.dy }
+      : undefined
     moved = distance > 0 ? (unit.moveDirect?.(dx / len, dy / len, distance, moveOptions) ?? false) : false
     if (aimedDegree != null && unit.degree !== aimedDegree) {
       unit.degree = aimedDegree

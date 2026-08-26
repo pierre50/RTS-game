@@ -11,7 +11,7 @@ const CRITICAL_SHELTER_HITPOINT_RATIO = 0.25
 export const SHELTER_ORDER_GRACE_MS = 2500
 export const SHELTER_MAX_RETRIES = 3
 
-const SLEEP_START_HOUR = 22
+const SLEEP_START_HOUR = 18
 const WAKE_HOUR = 6
 const SHELTER_TYPES = new Set<string>([BUILDING_TYPES.house, BUILDING_TYPES.townCenter])
 

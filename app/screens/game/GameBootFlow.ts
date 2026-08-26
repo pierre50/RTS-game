@@ -21,10 +21,15 @@ type BootFlowContext = {
   scheduler?: SchedulerLike | null
 }
 
+type LoadingScreenLike = {
+  destroy(): void
+  update(messageKey: string, progress: number): void
+}
+
 export type GameBootFlowHost = {
   _campaignSave: CampaignSave | null
   _isRestarting: boolean
-  _loadingScreen?: GameLoadingScreen | PortalTravelTransition | null
+  _loadingScreen?: LoadingScreenLike | PortalTravelTransition | null
   _restartSaveData: SaveRecord | null
   config: GameConfig | null
   context: BootFlowContext

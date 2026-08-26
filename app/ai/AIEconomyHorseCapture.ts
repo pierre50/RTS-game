@@ -27,6 +27,7 @@ export function getCapturableHorses(economy: AIEconomyHorseCaptureContext): AIEn
   return [...economy.ai.foundedAnimals]
     .filter((animal: AIEntityLike) => animal.type === 'Horse' && !animal.isDead && !animal.isDestroyed)
     .filter((animal: AIEntityLike) => economy.isLocationSafe(animal))
+    .filter(animal => !(animal as { companionOwner?: AIEntityLike | null }).companionOwner)
     .filter(animal => !(animal as { isLassoed?: boolean }).isLassoed)
 }
 

@@ -247,7 +247,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCamp": {
+  "FireCamp": {
     "size": 2,
     "zIndexOffset": -0.5,
     "occlusionFade": false,
@@ -260,7 +260,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampDecoration": {
+  "CampDecoration": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -270,7 +270,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampTotemPlain": {
+  "CampTotemPlain": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -280,7 +280,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampTotemHorns": {
+  "CampTotemHorns": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -290,7 +290,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampTotemSkull": {
+  "CampTotemSkull": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -300,7 +300,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampFencePost": {
+  "CampFencePost": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -310,7 +310,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampBoneSmall": {
+  "CampBoneSmall": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -320,7 +320,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampRockPile": {
+  "CampRockPile": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -330,7 +330,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampSkull": {
+  "CampSkull": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -340,7 +340,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampAnimalBones": {
+  "CampAnimalBones": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -350,7 +350,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampMeatRack": {
+  "CampMeatRack": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -360,7 +360,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampDryingRack": {
+  "CampDryingRack": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -370,7 +370,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampBucket": {
+  "CampBucket": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -380,7 +380,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampCrate": {
+  "CampCrate": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -390,7 +390,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampJarSmall": {
+  "CampJarSmall": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,
@@ -400,7 +400,7 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
-  "BanditCampJarLarge": {
+  "CampJarLarge": {
     "size": 1,
     "sight": 3,
     "totalHitPoints": 35,

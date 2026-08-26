@@ -14,7 +14,7 @@ import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
+import type { RuntimeCell, RuntimeMap } from '../types/map'
 
 export const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
@@ -174,7 +174,7 @@ export function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, ra
   })
 }
 
-function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
+export function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
   return Boolean(cell && !cell.solid && !cell.has && cell.category !== 'Water' && !cell.waterBorder && !cell.border)
 }
 
@@ -192,7 +192,15 @@ export function findCompanionHorseSpawnCell(
   radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
   options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
 ): RuntimeCell | null {
-  const grid = hero.context?.map?.grid
+  return findCompanionHorseSpawnCellNear(hero, hero.context?.map?.grid, radiusLimit, options)
+}
+
+export function findCompanionHorseSpawnCellNear(
+  origin: Pick<RuntimeEntity, 'i' | 'j'>,
+  grid: RuntimeMap['grid'] | undefined,
+  radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
+  options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
+): RuntimeCell | null {
   if (!grid) return null
   const minRadius = Math.max(1, Math.min(options.minRadius ?? 1, radiusLimit))
   const viewport = options.viewport ?? null
@@ -204,7 +212,7 @@ export function findCompanionHorseSpawnCell(
       [0, -radiusLimit],
     ]
     for (const [di, dj] of preferred) {
-      const cell = grid[hero.i + di]?.[hero.j + dj]
+      const cell = grid[origin.i + di]?.[origin.j + dj]
       if (isFreeHorseCell(cell)) return cell
     }
   }
@@ -214,7 +222,7 @@ export function findCompanionHorseSpawnCell(
       const djAbs = radius - Math.abs(di)
       const offsets: Array<[number, number]> = djAbs === 0 ? [[di, 0]] : [[di, djAbs], [di, -djAbs]]
       for (const [oi, oj] of offsets) {
-        const cell = grid[hero.i + oi]?.[hero.j + oj]
+        const cell = grid[origin.i + oi]?.[origin.j + oj]
         if (!isFreeHorseCell(cell)) continue
         if (!firstFreeCell) firstFreeCell = cell
         if (!viewport || cellIsOutsideViewport(cell, viewport)) return cell

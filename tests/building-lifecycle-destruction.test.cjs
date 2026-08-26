@@ -2,9 +2,19 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-test('destroyed buildings immediately drop shadow and solid footprint while rubble stays below units', () => {
+test('destroyed buildings burst into fragments and immediately drop sprite, shadow, and solid footprint', () => {
   const calls = []
   let timeoutCallback = null
+  const shadow = {
+    destroyed: false,
+    parent: {
+      removeChild: child => calls.push(['removeShadowChild', child === shadow]),
+    },
+    destroy: options => {
+      shadow.destroyed = true
+      calls.push(['destroyShadow', options])
+    },
+  }
   const footprintCells = [
     { i: 4, j: 4, has: null, solid: true, corpses: new Set() },
     { i: 4, j: 5, has: null, solid: true, corpses: new Set() },
@@ -51,7 +61,17 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
     sprite: {
       eventMode: 'static',
       texture: null,
+      visible: true,
+      destroyed: false,
+      destroy: options => {
+        building.sprite.destroyed = true
+        calls.push(['destroySprite', options])
+      },
+      parent: {
+        removeChild: child => calls.push(['removeSpriteChild', child === building.sprite]),
+      },
     },
+    shadow,
     getChildByLabel: () => null,
     stopInterval: () => calls.push(['stopInterval']),
     clearRallyPoint: () => calls.push(['clearRallyPoint']),
@@ -75,7 +95,7 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
       },
       '../../constants': {
         ACTION_TYPES: { attack: 'attack', build: 'build' },
-        BUILDING_TYPES: { banditCamp: 'BanditCamp' },
+        BUILDING_TYPES: { fireCamp: 'FireCamp' },
         LABEL_TYPES: {
           color: 'color',
           deco: 'deco',
@@ -85,7 +105,6 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
         MENU_INFO_IDS: { populationText: 'populationText' },
         PLAYER_TYPES: { ai: 'AI' },
         POPULATION_MAX: 200,
-        RUBBLE_TIME: 12,
         SOUND_CUES: { building: { burning: 'burning', collapse: 'collapse' } },
       },
       '../../lib': {
@@ -100,7 +119,6 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
           return footprintCells
         },
         getBuildingFootprintRadius: () => 0,
-        getBuildingRubbleTextureNameWithSize: () => ({ sheet: 'buildings/rubble/size-2', frame: 0 }),
         getBuildingTextureNameWithSize: () => ({ sheet: 'buildings/construction/size-2', frame: 0 }),
         getPercentage: () => 0,
         getTexture: textureRef => ({ textureRef }),
@@ -108,6 +126,7 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
         getTextureSheet: textureRef => textureRef.sheet || textureRef,
         playAudibleSoundCue: () => {},
         playSoundCue: () => {},
+        spawnSpriteFragmentBurst: options => calls.push(['spawnSpriteFragmentBurst', options]),
         textureRefToString: textureRef => `${textureRef.sheet}:${textureRef.frame}`,
         updateInstanceVisibility: entity => calls.push(['updateInstanceVisibility', entity.type]),
       },
@@ -124,20 +143,26 @@ test('destroyed buildings immediately drop shadow and solid footprint while rubb
 
   assert.equal(building.isDead, true)
   assert.equal(building.sprite.eventMode, 'none')
-  assert.equal(building.textureName, 'buildings/rubble/size-2:0')
-  assert.equal(building.zIndex, 9.9)
-  assert.ok(building.zIndex < building.i + building.j)
+  assert.equal(building.sprite.visible, false)
+  assert.equal(building.sprite.destroyed, true)
+  assert.equal(shadow.destroyed, true)
+  assert.equal(building.shadow, null)
+  assert.equal(building.textureName, undefined)
   assert.equal(owner.buildings.length, 0)
   assert.equal(typeof timeoutCallback, 'function')
   assert.deepEqual(
     footprintCells.map(cell => ({ has: cell.has, solid: cell.solid, hasCorpse: cell.corpses.has(building) })),
     [
-      { has: null, solid: false, hasCorpse: true },
-      { has: null, solid: false, hasCorpse: true },
-      { has: null, solid: false, hasCorpse: true },
-      { has: null, solid: false, hasCorpse: true },
+      { has: null, solid: false, hasCorpse: false },
+      { has: null, solid: false, hasCorpse: false },
+      { has: null, solid: false, hasCorpse: false },
+      { has: null, solid: false, hasCorpse: false },
     ]
   )
-  assert.ok(calls.some(call => call[0] === 'updateShadow' && call[1] === true))
+  const burstCall = calls.find(call => call[0] === 'spawnSpriteFragmentBurst')
+  assert.equal(burstCall?.[1].host, building)
+  assert.equal(burstCall?.[1].sprite, building.sprite)
+  assert.ok(calls.some(call => call[0] === 'destroySprite'))
+  assert.ok(calls.some(call => call[0] === 'destroyShadow'))
   assert.ok(calls.some(call => call[0] === 'updateInstanceVisibility'))
 })

@@ -1,10 +1,9 @@
 import { playAudibleSoundCue } from '../lib'
-import { MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
-import { findFacingEntity } from '../lib/hero/heroTools'
-import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
+import { BUILDING_TYPES, MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
+import { instanceIsInPlayerSight } from '../lib/grid/visibility'
 import { t } from '../lib/lang'
 import type { ControlsLike } from '../types/context'
-import type { UnitEntity } from '../types/entities'
+import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import {
   COMPANION_HORSE_CALL_MAX_RADIUS,
@@ -16,10 +15,13 @@ import {
   MOUNT_TRANSITION_TICK_MS,
   easeInOut,
   findCompanionHorseSpawnCell,
+  findCompanionHorseSpawnCellNear,
   type CompanionHorse,
   type HeroAimPoint,
   type ViewportMetrics,
 } from './HeroControllerSupport'
+
+const COMPANION_HORSE_STABLE_EXIT_RADIUS = 6
 
 export class HeroCompanionHorseController {
   controls: ControlsLike
@@ -93,6 +95,89 @@ export class HeroCompanionHorseController {
     return this.registerCompanionHorse(horse)
   }
 
+  isCompanionHorseVisibleToHero(horse: CompanionHorse, unit: UnitEntity): boolean {
+    if (horse.visible === false) return false
+    const owner = unit.owner ?? this.controls.context.player
+    if (owner?.views) return instanceIsInPlayerSight(horse, owner)
+    const viewport = this.getViewportMetrics()
+    if (!viewport) return true
+    return (
+      horse.x >= viewport.visibleLeft &&
+      horse.x <= viewport.visibleLeft + viewport.visibleWidth &&
+      horse.y >= viewport.visibleTop &&
+      horse.y <= viewport.visibleTop + viewport.visibleHeight
+    )
+  }
+
+  isStableVisibleToHero(stable: BuildingEntity, unit: UnitEntity): boolean {
+    if (
+      stable.type !== BUILDING_TYPES.stable ||
+      stable.owner !== unit.owner ||
+      !stable.isBuilt ||
+      stable.isDead ||
+      stable.isDestroyed
+    ) {
+      return false
+    }
+    const distance = Math.hypot(stable.i - unit.i, stable.j - unit.j)
+    if (distance > (unit.sight ?? COMPANION_HORSE_CALL_MAX_RADIUS)) return false
+    const owner = unit.owner ?? this.controls.context.player
+    if (owner?.views) return instanceIsInPlayerSight(stable, owner)
+    return stable.visible !== false
+  }
+
+  findVisibleOwnedStableForCompanionHorse(): BuildingEntity | null {
+    const unit = this.getHeroUnit()
+    const buildings = unit?.owner?.buildings
+    if (!unit || !buildings?.length) return null
+    let nearestStable: BuildingEntity | null = null
+    let nearestDistance = Infinity
+    for (const building of buildings) {
+      if (!this.isStableVisibleToHero(building, unit)) continue
+      const distance = Math.hypot(building.i - unit.i, building.j - unit.j)
+      if (distance >= nearestDistance) continue
+      nearestStable = building
+      nearestDistance = distance
+    }
+    return nearestStable
+  }
+
+  findCompanionHorseLocalCallCell(): RuntimeCell | null {
+    const unit = this.getHeroUnit()
+    const map = unit?.context?.map
+    if (!unit || !map) return null
+    const stable = this.findVisibleOwnedStableForCompanionHorse()
+    if (stable) {
+      const radius = Math.max(COMPANION_HORSE_STABLE_EXIT_RADIUS, (stable.size ?? 1) + 2)
+      const cell = findCompanionHorseSpawnCellNear(stable, map.grid, radius)
+      if (cell) return cell
+    }
+    return findCompanionHorseSpawnCell(unit, COMPANION_HORSE_CALL_MAX_RADIUS, {
+      minRadius: COMPANION_HORSE_CALL_MIN_RADIUS,
+      viewport: this.getViewportMetrics(),
+    })
+  }
+
+  moveCompanionHorseToCell(horse: CompanionHorse, cell: RuntimeCell): void {
+    const map = this.getHeroUnit()?.context?.map
+    const oldI = horse.i
+    const oldJ = horse.j
+    const currentCell = horse.currentCell ?? map?.grid?.[horse.i]?.[horse.j]
+    if (currentCell?.has === horse) {
+      currentCell.has = null
+      currentCell.solid = false
+    }
+    horse.i = cell.i
+    horse.j = cell.j
+    horse.x = cell.x
+    horse.y = cell.y
+    horse.z = cell.z
+    horse.currentCell = cell
+    cell.place(horse)
+    cell.solid = true
+    map?.updateInstanceBucket?.(horse, oldI, oldJ)
+  }
+
   registerCompanionHorse(horse: CompanionHorse): CompanionHorse {
     const unit = this.getHeroUnit()
     horse.strategy = undefined
@@ -132,11 +217,14 @@ export class HeroCompanionHorseController {
     if (!unit) return false
     const activeHorse = this.getActiveCompanionHorse()
     if (activeHorse) {
-      const facingHorse = findFacingEntity(
-        unit,
-        target => target === activeHorse && isHeroInteractionTargetReachable(unit, null, target)
-      )
-      if (facingHorse === activeHorse) return this.mountCompanionHorse(activeHorse)
+      if (!this.isCompanionHorseVisibleToHero(activeHorse, unit)) {
+        const cell = this.findCompanionHorseLocalCallCell()
+        if (!cell) {
+          this.controls.context.menu?.showMessage(t('heroNeedsVisibleStableOrOpenEdge'), 'warning')
+          return false
+        }
+        this.moveCompanionHorseToCell(activeHorse, cell)
+      }
       this.sendCompanionHorseToHero(activeHorse, unit)
       return true
     }
@@ -145,10 +233,12 @@ export class HeroCompanionHorseController {
       return false
     }
 
-    const horse = this.createCompanionHorseNearHero(COMPANION_HORSE_CALL_MAX_RADIUS, {
-      minRadius: COMPANION_HORSE_CALL_MIN_RADIUS,
-      useViewport: true,
-    })
+    const cell = this.findCompanionHorseLocalCallCell()
+    if (!cell) {
+      this.controls.context.menu?.showMessage(t('heroNeedsVisibleStableOrOpenEdge'), 'warning')
+      return false
+    }
+    const horse = this.createCompanionHorseAt(cell)
     if (!horse) return false
     this.sendCompanionHorseToHero(horse, unit)
     return true

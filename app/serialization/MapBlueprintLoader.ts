@@ -16,6 +16,20 @@ type BlueprintManifest = {
   maps?: BlueprintManifestEntry[]
 }
 
+type InteriorBlueprintManifestEntry = {
+  exits?: number
+  id?: string
+  interiorType?: string
+  kind?: string
+  path: string
+  size: number
+  spawns?: number
+}
+
+type InteriorBlueprintManifest = {
+  interiors?: InteriorBlueprintManifestEntry[]
+}
+
 type BlueprintTimings = Partial<
   Record<
     | 'blueprintManifestFetch'
@@ -34,6 +48,12 @@ type LoadBlueprintOptions = {
   size?: number
   id?: string
   environment?: string
+}
+
+type LoadInteriorBlueprintOptions = {
+  id?: string
+  interiorType?: string
+  random?: () => number
 }
 
 export type MapBlueprintLoadFailureReason =
@@ -88,6 +108,10 @@ function toGrid<TValue extends Uint8Array | Int8Array, TResult>(
     }
   }
   return grid
+}
+
+function normalizeInteriorType(type: string | null | undefined): string {
+  return String(type || '').toLowerCase()
 }
 
 function compatibleMaps(
@@ -186,5 +210,77 @@ export async function loadPregeneratedMapBlueprint({
   } catch (error) {
     if (error instanceof MapBlueprintLoadError) throw error
     throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated map blueprint')
+  }
+}
+
+export async function loadPregeneratedInteriorBlueprint({
+  id,
+  interiorType,
+  random = Math.random,
+}: LoadInteriorBlueprintOptions = {}) {
+  let manifest: InteriorBlueprintManifest | undefined
+  let manifestResponse: Response
+  try {
+    manifestResponse = await fetch('maps/interiors/manifest.json', { cache: 'no-store' })
+    if (!manifestResponse.ok) {
+      fail('manifest-fetch-failed', `Unable to load maps/interiors/manifest.json (${manifestResponse.status})`)
+    }
+  } catch (error) {
+    if (error instanceof MapBlueprintLoadError) throw error
+    fail('manifest-fetch-failed', 'Unable to load maps/interiors/manifest.json')
+  }
+  try {
+    manifest = await manifestResponse.json()
+  } catch (error) {
+    if (error instanceof MapBlueprintLoadError) throw error
+    fail('manifest-invalid', 'maps/interiors/manifest.json is not valid JSON')
+  }
+  if (!Array.isArray(manifest?.interiors)) fail('manifest-invalid', 'maps/interiors/manifest.json is invalid')
+
+  let selected: InteriorBlueprintManifestEntry | undefined
+  if (id) {
+    selected = manifest.interiors.find(map => map.id === id)
+    if (!selected)
+      fail('blueprint-id-missing', `Interior blueprint "${id}" is not listed in maps/interiors/manifest.json`)
+  } else {
+    const wantedType = normalizeInteriorType(interiorType)
+    const candidates = manifest.interiors.filter(map => normalizeInteriorType(map.interiorType) === wantedType)
+    if (!candidates.length) fail('no-compatible-map', `No interior blueprint matches ${interiorType || 'unknown'}`)
+    selected = candidates[Math.floor(random() * candidates.length)]
+  }
+
+  try {
+    const response = await fetch(`maps/interiors/${selected.path}`, { cache: 'no-store' })
+    if (!response.ok) fail('map-fetch-failed', `Unable to load maps/interiors/${selected.path} (${response.status})`)
+    const payload = await response.json()
+    if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.kind !== 'interior') {
+      fail('map-invalid', `Interior blueprint "${selected.path}" is invalid`)
+    }
+
+    const size = Number(payload.size)
+    const expectedCells = (size + 1) ** 2
+    const terrainValues = decodeBase64Bytes(payload.terrain, Uint8Array)
+    const reliefValues = decodeBase64Bytes(payload.relief, Int8Array)
+    if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) {
+      fail('map-invalid', `Interior blueprint "${selected.path}" has invalid terrain data`)
+    }
+
+    return {
+      id: payload.id || selected.id,
+      kind: 'interior',
+      interiorType: payload.interiorType || selected.interiorType,
+      size,
+      seed: payload.seed,
+      terrain: toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass')),
+      relief: toGrid(reliefValues, size, value => value),
+      spawns: Array.isArray(payload.spawns) ? payload.spawns : [],
+      exits: Array.isArray(payload.exits) ? payload.exits : [],
+      resources: Array.isArray(payload.resources) ? payload.resources : [],
+      floorMask: typeof payload.floorMask === 'string' ? payload.floorMask : null,
+      floorShape: payload.floorShape ?? null,
+    }
+  } catch (error) {
+    if (error instanceof MapBlueprintLoadError) throw error
+    throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated interior blueprint')
   }
 }

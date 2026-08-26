@@ -53,6 +53,7 @@ function loadControls() {
           this.lastUpdateFrameScale = null
           this.primaryPointerDowns = 0
           this.secondaryPointerDowns = 0
+          this.keyDowns = []
           this.keyUps = []
           this.stopKeyboardMoveCalls = 0
         }
@@ -60,6 +61,7 @@ function loadControls() {
           return this.active
         }
         handleKeyDown(action) {
+          this.keyDowns.push(action)
           return typeof action === 'string' && action.startsWith('hero')
         }
         handleKeyUp(action) {
@@ -109,6 +111,7 @@ function loadControls() {
         if (evt.key === 'e') return 'heroInteract'
         if (evt.key === 'i') return 'inventory'
         if (evt.key === ' ') return 'heroDefense'
+        if (evt.key === 'Shift') return 'heroDismountHorse'
         if (evt.key === 'ArrowLeft') return 'cameraLeft'
         return null
       },
@@ -591,6 +594,32 @@ test('hero defense key is handled by hero controller', () => {
     })
 
     assert.deepEqual(controls.heroController.keyUps, ['heroDefense'])
+  } finally {
+    restore()
+  }
+})
+
+test('Shift dismount action is handled without enabling slow walk', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.heroController.active = true
+
+    controls.onKeyDown({
+      key: 'Shift',
+      code: 'ShiftLeft',
+      preventDefault() {},
+      target: new MockElement(),
+    })
+    controls.onKeyUp({
+      key: 'Shift',
+      code: 'ShiftLeft',
+      preventDefault() {},
+      target: new MockElement(),
+    })
+
+    assert.deepEqual(controls.heroController.keyDowns, ['heroDismountHorse'])
+    assert.deepEqual(controls.heroController.keyUps, ['heroDismountHorse'])
+    assert.equal(controls.shiftKeyActive, false)
   } finally {
     restore()
   }

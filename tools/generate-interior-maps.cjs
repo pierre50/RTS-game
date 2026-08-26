@@ -19,7 +19,7 @@ function usage(error = '') {
   --type <name>          town-center (default: town-center)
   --count <n>            interior variants to generate (default: 1)
   --seed <n>             reproducible batch seed (default: current time)
-  --size <n>             blueprint size; cell count is (size + 1)^2 (default: 31)
+  --size <n>             blueprint size; cell count is (size + 1)^2 (default: 15)
   --out <directory>      output directory (default: public/maps/interiors)`)
 }
 
@@ -28,7 +28,7 @@ function argumentsFrom(argv) {
     count: 1,
     out: OUTPUT,
     seed: Date.now(),
-    size: 31,
+    size: 15,
     type: 'town-center',
   }
   for (let index = 0; index < argv.length; index++) {
@@ -86,13 +86,18 @@ function townCenterInterior({ id, seed, size }) {
 
   for (let i = 0; i <= size; i++) {
     for (let j = 0; j <= size; j++) {
-      const ovalDistance = ((i - center) ** 2) / radiusI ** 2 + ((j - center) ** 2) / radiusJ ** 2
+      const ovalDistance = (i - center) ** 2 / radiusI ** 2 + (j - center) ** 2 / radiusJ ** 2
       floorMask[i * width + j] = ovalDistance <= 1 ? 1 : 0
     }
   }
 
   const spawn = { i: Math.round(center), j: Math.min(size - 2, Math.round(center + radiusJ * 0.62)) }
-  const exit = { id: 'main', i: Math.round(center), j: Math.min(size - 1, Math.round(center + radiusJ * 0.92)), direction: 'south' }
+  const exit = {
+    id: 'main',
+    i: Math.round(center),
+    j: Math.min(size - 1, Math.round(center + radiusJ * 0.92)),
+    direction: 'south',
+  }
 
   return {
     format: 'map-blueprint',

@@ -383,3 +383,48 @@ test('horse capture assignment spreads villagers across unreserved horses and st
   ])
   assert.deepEqual(villagers.map(villager => villager.label), ['villager-3'])
 })
+
+test('horse capture assignment ignores hero companion horses', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const assignments = []
+  const stable = {
+    i: 8,
+    j: 0,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    stableHorses: [],
+    type: constants.BUILDING_TYPES.stable,
+  }
+  const hero = { label: 'hero-1' }
+  const horses = [
+    { companionOwner: hero, i: 4, j: 0, isDead: false, isDestroyed: false, label: 'horse-1', type: 'Horse' },
+    { i: 5, j: 0, isDead: false, isDestroyed: false, label: 'horse-2', type: 'Horse' },
+  ]
+  const villagers = [
+    {
+      hitPoints: 20,
+      i: 0,
+      inactif: true,
+      j: 0,
+      label: 'villager-1',
+      sendToCaptureHorse: target => {
+        assignments.push([target.label])
+        return true
+      },
+    },
+  ]
+  const ai = {
+    buildingsByTypes: types => (types.includes(constants.BUILDING_TYPES.stable) ? [stable] : []),
+    foundedAnimals: new Set(horses),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    getHomeAnchor: () => null,
+  }
+  const economy = new AIEconomy(ai)
+
+  assert.equal(economy.assignHorseCaptures(villagers), 1)
+  assert.deepEqual(assignments, [['horse-2']])
+})

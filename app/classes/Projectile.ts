@@ -399,7 +399,7 @@ export class Projectile extends Container {
   // A shot that missed: instead of despawning immediately, stick around as a purely decorative
   // ground prop (no damage, no collision — it never re-enters the movement/collision loop) for
   // ARROW_GROUND_TIME, then fade away. Registered in cell.corpses so it also disappears instantly
-  // if a building goes up on top of it, the same way unit/animal corpses and rubble do.
+  // if a building goes up on top of it, the same way unit and animal corpses do.
   landOnGround() {
     landProjectileOnGround(this)
   }
