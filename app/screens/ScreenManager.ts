@@ -48,6 +48,7 @@ export class ScreenManager {
   showMainMenu(): void {
     this.destroyCurrentMenuScreen()
     this.currentMenuScreen = new MainMenu({
+      app: this.app,
       onStart: () => this.showMapConfig(),
       onLoad: (save: SaveRecord) => this.loadGame(save),
     })

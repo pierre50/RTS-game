@@ -1,8 +1,10 @@
+import type { Application } from 'pixi.js'
 import { playClickSound } from '../lib/audio/uiSound'
 import { t } from '../lib/lang'
 import { openSettingsModal } from '../ui/modals/settingsPanel'
 import { openSaveListModal } from '../ui/modals/saveListModal'
 import { listSaves, loadSave } from '../serialization/SaveStorage'
+import { MainMenuBackdrop } from './MainMenuBackdrop'
 import type { SaveRecord } from '../types/save'
 
 declare global {
@@ -14,6 +16,8 @@ declare global {
 }
 
 export default class MainMenu {
+  app?: Application
+  backdrop?: MainMenuBackdrop
   onStart: () => void
   onLoad: (save: SaveRecord) => void
   _onKeyDown: (evt: KeyboardEvent) => void
@@ -21,12 +25,16 @@ export default class MainMenu {
   el: HTMLDivElement
 
   constructor({
+    app,
     onStart,
     onLoad,
   }: {
+    app?: Application
     onStart: () => void
     onLoad: (save: SaveRecord) => void
   }) {
+    this.app = app
+    this.backdrop = app ? new MainMenuBackdrop(app) : undefined
     this.onStart = onStart
     this.onLoad = onLoad
     this._onKeyDown = this._handleKeyDown.bind(this)
@@ -181,6 +189,8 @@ export default class MainMenu {
 
   destroy(): void {
     document.removeEventListener('keydown', this._onKeyDown)
+    this.backdrop?.destroy()
+    this.backdrop = undefined
     this.el.remove()
   }
 }
