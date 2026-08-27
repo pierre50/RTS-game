@@ -1,5 +1,5 @@
 import { FAMILY_TYPES, SHEET_TYPES } from '../../../constants'
-import { cartesianToIsometric, getRoundedIsoFootprintPoints, pointIsInsidePolygon } from '../../../lib'
+import { cartesianToIsometric, distanceToPolygon, getRoundedIsoFootprintPoints, pointIsInsidePolygon } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../../types/map'
@@ -9,8 +9,7 @@ export type HeroDirectMoveBlocker = Pick<
   'family' | 'i' | 'isDead' | 'isDestroyed' | 'j' | 'label' | 'size' | 'type' | 'x' | 'y'
 >
 
-const HERO_BUILDING_COLLISION_PADDING = 0
-const PORTAL_RESOURCE_TYPE = 'Portal'
+const HERO_DIRECT_MOVE_COLLISION_PADDING = 10
 
 function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean {
   if (!entity || entity.isDestroyed) return false
@@ -48,18 +47,30 @@ function isHeroInsideRoundedFootprint(
   return pointIsInsidePolygon(points, { x, y })
 }
 
-function getHeroCollisionFootprintPadding(entity: HeroDirectMoveBlocker): number {
-  if (entity.family === FAMILY_TYPES.building) return HERO_BUILDING_COLLISION_PADDING
-  if (entity.type === PORTAL_RESOURCE_TYPE) return HERO_BUILDING_COLLISION_PADDING
+function getHeroDirectMoveCollisionPadding(entity: HeroDirectMoveBlocker): number {
+  if (
+    entity.family === FAMILY_TYPES.building ||
+    entity.family === FAMILY_TYPES.resource ||
+    blocksHeroDirectMoveWithSoftBody(entity)
+  ) {
+    return HERO_DIRECT_MOVE_COLLISION_PADDING
+  }
   return 0
+}
+
+function getRawHeroCollisionFootprintPoints(
+  entity: HeroDirectMoveBlocker,
+  map?: RuntimeMap | null
+): Array<{ x: number; y: number }> {
+  return getRoundedIsoFootprintPoints(entity, map?.grid)
 }
 
 export function getHeroCollisionFootprintPoints(
   entity: HeroDirectMoveBlocker,
   map?: RuntimeMap | null
 ): Array<{ x: number; y: number }> {
-  let points = getRoundedIsoFootprintPoints(entity, map?.grid)
-  const padding = getHeroCollisionFootprintPadding(entity)
+  let points = getRawHeroCollisionFootprintPoints(entity, map)
+  const padding = getHeroDirectMoveCollisionPadding(entity)
   if (padding > 0) points = inflateFootprintPoints(points, padding)
   return points
 }
@@ -94,23 +105,44 @@ function blocksHeroDirectMoveAtPoint(
   entity: RuntimeEntity | null | undefined,
   x: number,
   y: number,
-  map?: RuntimeMap | null
+  map?: RuntimeMap | null,
+  currentX?: number,
+  currentY?: number
 ): boolean {
   if (!entity || !blocksHeroDirectMove(entity)) return false
   if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
-    const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
+    const collisionRadius = getHeroSoftBodyCollisionRadius(entity)
     const currentDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
     return currentDistance < collisionRadius
   }
-  return isHeroInsideRoundedFootprint(entity, x, y, map)
+  if (!isHeroInsideRoundedFootprint(entity, x, y, map)) return false
+
+  const padding = getHeroDirectMoveCollisionPadding(entity)
+  if (padding > 0 && currentX !== undefined && currentY !== undefined) {
+    const rawPoints = getRawHeroCollisionFootprintPoints(entity, map)
+    const currentPoint = { x: currentX, y: currentY }
+    const nextPoint = { x, y }
+    const currentInsidePadded = isHeroInsideRoundedFootprint(entity, currentX, currentY, map)
+    const nextInsideRaw = pointIsInsidePolygon(rawPoints, nextPoint)
+    const currentRawDistance = distanceToPolygon(rawPoints, currentPoint)
+    const nextRawDistance = distanceToPolygon(rawPoints, nextPoint)
+    if (currentInsidePadded && !nextInsideRaw && nextRawDistance + 0.001 >= currentRawDistance) return false
+  }
+
+  return true
 }
 
 function blocksHeroMobileDirectMoveAtPoint(unit: UnitEntity, entity: RuntimeEntity, x: number, y: number): boolean {
-  const collisionRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
+  const collisionRadius = getHeroSoftBodyCollisionRadius(entity)
   const currentDistance = Math.hypot((entity.x ?? 0) - unit.x, (entity.y ?? 0) - unit.y)
   const nextDistance = Math.hypot((entity.x ?? 0) - x, (entity.y ?? 0) - y)
   if (nextDistance >= currentDistance) return false
   return nextDistance < collisionRadius
+}
+
+function getHeroSoftBodyCollisionRadius(entity: HeroDirectMoveBlocker): number {
+  const baseRadius = Math.max(8, Math.min(14, ((entity.size ?? 1) * 12) / 2))
+  return baseRadius + getHeroDirectMoveCollisionPadding(entity)
 }
 
 function getNearbyHeroCollisionEntities(
@@ -151,7 +183,7 @@ export function getHeroDirectMoveBlockerAtPoint(
       if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) return entity
       continue
     }
-    if (blocksHeroDirectMoveAtPoint(entity, x, y, map)) return entity
+    if (blocksHeroDirectMoveAtPoint(entity, x, y, map, unit.x, unit.y)) return entity
   }
   return null
 }

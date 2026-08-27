@@ -56,6 +56,9 @@ export type BuildingControllerHost = Omit<
     range?: number
     sounds?: BuildingSounds
     hasActiveBurningSound?: boolean
+    flameSoundLoop?: { stop(): void; volume: number } | null
+    flameSoundTicker?: ((ticker?: { deltaMS?: number; elapsedMS?: number }) => void) | null
+    flameSoundStopped?: boolean
     mountingTime?: number
     visibilityTimeout?: ReturnType<typeof setTimeout>
     populationCapacityApplied?: boolean

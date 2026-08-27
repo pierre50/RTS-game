@@ -23,6 +23,7 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
 function resetNpcDirectives(target: UnitEntity): void {
   target.lookingAtHero = false
   target.followingHero = false
+  target.followAssist = null
   const marker = target.getChildByLabel?.(LABEL_TYPES.commSelection)
   if (marker) target.removeChild?.(marker)
 }

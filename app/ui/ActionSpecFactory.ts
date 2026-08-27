@@ -12,15 +12,21 @@ import {
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildings/buildingTraining'
+import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/audio/uiSound'
+import {
+  formatActionCost,
+  getBuildingTooltip as buildBuildingTooltip,
+  getMissingResourceMessage,
+  getTechnologyTooltip as buildTechnologyTooltip,
+  getUnitTooltip as buildUnitTooltip,
+} from './ActionTooltipFactory'
 import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
-import type { Condition } from '../lib/combat'
 import type { MenuHost } from './MenuHost'
 
 function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
@@ -31,12 +37,6 @@ function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolea
   return Boolean(
     selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
   )
-}
-
-const AGE_REQUIREMENT_KEYS: Record<number, string> = {
-  1: 'ToolAge',
-  2: 'BronzeAge',
-  3: 'IronAge',
 }
 
 export class ActionSpecFactory {
@@ -59,97 +59,28 @@ export class ActionSpecFactory {
   }
 
   getMessage(cost: ResourceAmount): string {
-    const { player } = this.menu.context
-    const resource = getMissingResourceNames(player, cost)
-      .map(key => t(key))
-      .join(', ')
-    return t('needMore', { resource })
+    return getMissingResourceMessage(this.menu.context.player, cost)
   }
 
   formatCost(cost?: ResourceAmount): string {
-    return Object.entries(cost || {})
-      .map(([resource, amount]) => `${amount} ${t(resource)}`)
-      .join(', ')
-  }
-
-  getConditionValueLabel(value: Condition['value']): string {
-    if (Array.isArray(value)) return value.map(item => this.getConditionValueLabel(item)).join(', ')
-    if (typeof value === 'string') return t(value)
-    return String(value)
-  }
-
-  getAgeRequirementLabel(value: Condition['value']): string {
-    const age = Number(value)
-    const key = AGE_REQUIREMENT_KEYS[age]
-    return key ? t(key) : String(value)
-  }
-
-  getTechnologyRequirementText(condition: Condition, player: PlayerLike): string | null {
-    try {
-      if (isValidCondition(condition, player)) return null
-    } catch {
-      // Unknown future condition keys should explain the lock instead of breaking the tooltip.
-    }
-
-    if (condition.key === 'age') {
-      return t('tooltipRequiresAge', { age: this.getAgeRequirementLabel(condition.value) })
-    }
-
-    if (condition.key === 'technologies') {
-      const technology = this.getConditionValueLabel(condition.value)
-      return condition.op === 'notincludes'
-        ? t('tooltipBlockedByTechnology', { technology })
-        : t('tooltipRequiresTechnology', { technology })
-    }
-
-    if (condition.key === 'hasBuilt' || condition.key === 'buildings') {
-      return t('tooltipRequiresBuilding', { building: this.getConditionValueLabel(condition.value) })
-    }
-
-    return t('tooltipRequiresCondition', {
-      condition: `${condition.key} ${condition.op} ${this.getConditionValueLabel(condition.value)}`,
-    })
+    return formatActionCost(cost)
   }
 
   getBuildingTooltip(type: string, owner: PlayerLike, config: BuildingConfig): TooltipContent {
-    return {
-      title: t(type),
-      description: t(`${type}Description`),
-      meta: [
-        t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        (config.constructionTime ?? 0) > 0 ? t('tooltipBuildTime', { time: config.constructionTime ?? 0 }) : null,
-        this.isChiefCommandBlocked() ? t('requiresChief') : null,
-        isBuildingLimitReached(owner, type) ? t('buildingLimitReached') : null,
-      ],
-    }
+    return buildBuildingTooltip({
+      commandBlocked: this.isChiefCommandBlocked(),
+      config,
+      isLimitReached: isBuildingLimitReached(owner, type),
+      type,
+    })
   }
 
   getTechnologyTooltip(type: string, config: TechnologyConfig): TooltipContent {
-    const { player } = this.menu.context
-    const unmetRequirements = (config.conditions || [])
-      .map(condition => this.getTechnologyRequirementText(condition, player))
-      .filter((requirement): requirement is string => Boolean(requirement))
-    return {
-      title: t(type),
-      description: t(`${type}Description`),
-      meta: [
-        t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        ...(this.isChiefCommandBlocked() ? [t('requiresChief')] : []),
-        ...unmetRequirements,
-      ],
-    }
+    return buildTechnologyTooltip(type, config, this.menu.context.player, this.isChiefCommandBlocked())
   }
 
   getUnitTooltip(type: string, config: UnitConfig, building?: BuildingEntity): TooltipContent {
-    return {
-      title: t(type),
-      description: t(`${type}Description`),
-      meta: [
-        t('tooltipCost', { cost: this.formatCost(config.cost) }),
-        t('tooltipTrainTime', { time: config.trainingTime ?? 0 }),
-        this.isChiefTrainingBlocked(type, building) ? t('requiresChief') : null,
-      ],
-    }
+    return buildUnitTooltip(type, config, this.isChiefCommandBlocked(), building)
   }
 
   isChiefCommandBlocked(): boolean {

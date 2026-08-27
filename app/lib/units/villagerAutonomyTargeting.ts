@@ -32,7 +32,7 @@ function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' 
   return Math.abs(a.i - b.i) + Math.abs(a.j - b.j)
 }
 
-function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
+export function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
   if (!a || !b) return false
   if (a === b) return true
   return Boolean(a.label && b.label && a.label === b.label)
@@ -91,6 +91,17 @@ export function markVillagerAutonomyTargetRejected(unit: UnitEntity, target: Run
     byJob.set(job, targets)
   }
   targets.set(targetKey(target), nowMs() + AUTONOMY_REJECT_TTL_MS)
+}
+
+export function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string, action: string): number {
+  const workers = unit.owner?.units ?? []
+  let load = 0
+  for (const worker of workers) {
+    if (worker === unit || worker.isDead || worker.isDestroyed) continue
+    if (worker.type !== UNIT_TYPES.villager || worker.work !== work || worker.action !== action) continue
+    if (sameTarget(worker.dest as RuntimeEntity | null | undefined, target)) load++
+  }
+  return load
 }
 
 function isRejectedTarget(unit: UnitEntity, job: VillagerAutonomyJob, target: RuntimeEntity): boolean {

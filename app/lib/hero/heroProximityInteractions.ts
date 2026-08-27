@@ -8,7 +8,7 @@ import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../npc/npcChatter
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-export type HeroProximityInteractionAction = 'communicate' | 'enter' | 'mount' | 'open'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'mount' | 'open'
 
 export type HeroProximityInteraction =
   | {

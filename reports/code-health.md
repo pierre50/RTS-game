@@ -1,16 +1,16 @@
 # Code Health Report
 
-Generated: 2026-08-26T19:33:04.680Z
+Generated: 2026-08-27T09:53:20.241Z
 
 ## Global Score
 
-**92/100 (A)**
+**100/100 (A)**
 
 Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **PASS**.
 
 | Component | Score |
 | --- | --- |
-| Gates | 17/25 |
+| Gates | 25/25 |
 | Duplication | 20/20 |
 | Structure | 20/20 |
 | Architecture | 15/15 |
@@ -23,7 +23,7 @@ Minimum required score: **80/100**. Target score: **90/100**. Quality gate: **PA
 
 | Component | Score | Lost |
 | --- | --- | --- |
-| Gates | 17/25 | 8 |
+| Gates | 25/25 | 0 |
 | Duplication | 20/20 | 0 |
 | Structure | 20/20 | 0 |
 | Architecture | 15/15 | 0 |
@@ -40,11 +40,11 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 
 ## Summary
 
-- Files analyzed: 420
-- Total lines: 68596
-- Code lines: 61037
-- Approx branches: 9128
-- Approx functions/methods: 7756
+- Files analyzed: 430
+- Total lines: 69935
+- Code lines: 62224
+- Approx branches: 9258
+- Approx functions/methods: 7902
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -55,25 +55,25 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 | ESLint | OK |  |
 | TypeScript | OK |  |
 | Duplication | OK | 0 clones, 0% |
-| Dead code | FAIL |  |
+| Dead code | OK |  |
 | Import cycles | OK | 0 cycles / baseline gate 0 |
 
 ## Top Priorities
 
 | File | Kind | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| app/services/TributeRaidSystem.ts | runtime | 166 | 580 | 97 | 62 | 2 | score de risque relatif eleve |
-| app/ai/AIStrategy.ts | app | 163.6 | 363 | 79 | 48 | 18 | souvent modifie |
-| app/ui/ActionSpecFactory.ts | ui | 163.5 | 432 | 69 | 99 | 17 | souvent modifie |
+| app/controllers/HeroController.ts | runtime | 167.3 | 450 | 44 | 55 | 45 | souvent modifie |
 | app/lib/combat/combatActionConditions.ts | library | 163 | 220 | 103 | 24 | 1 | complexite elevee |
-| app/screens/Game.ts | ui | 160.8 | 599 | 30 | 45 | 42 | souvent modifie, beaucoup de dependances |
-| app/classes/building/BuildingLifecycle.ts | runtime | 159.6 | 345 | 62 | 68 | 29 | souvent modifie |
+| app/classes/building/BuildingLifecycle.ts | runtime | 161.6 | 344 | 62 | 67 | 30 | souvent modifie |
 | app/classes/map/terrain/MapTerrain.ts | runtime | 159.6 | 404 | 77 | 120 | 1 | score de risque relatif eleve |
 | app/classes/map/MapGeneration.ts | runtime | 157.2 | 381 | 35 | 19 | 47 | souvent modifie |
+| app/controllers/HeroCompanionHorseController.ts | runtime | 157 | 401 | 90 | 31 | 4 | score de risque relatif eleve |
 | app/classes/map/terrain/MapTerrainGeneration.ts | runtime | 156.8 | 391 | 96 | 63 | 1 | score de risque relatif eleve |
-| app/classes/Projectile.ts | runtime | 153.4 | 426 | 33 | 124 | 29 | souvent modifie |
+| app/classes/Projectile.ts | runtime | 155.4 | 426 | 33 | 124 | 30 | souvent modifie |
 | app/lib/lpc/baked.ts | library | 153.3 | 284 | 46 | 99 | 31 | souvent modifie |
 | app/classes/players/Player.ts | runtime | 152.6 | 429 | 65 | 62 | 21 | souvent modifie |
+| app/classes/unit/UnitCaptureHorseAction.ts | runtime | 152.1 | 334 | 71 | 119 | 3 | score de risque relatif eleve |
+| app/classes/unit/UnitCommands.ts | runtime | 149 | 300 | 65 | 29 | 22 | souvent modifie |
 
 ## Score Moves
 
@@ -85,11 +85,9 @@ No risky hotspots currently count against the score.
 
 | File | Kind | LOC | Branches | Imports |
 | --- | --- | --- | --- | --- |
-| app/lib/lpc/equipmentData.ts | data/config | 739 | 2 | 2 |
-| app/screens/Game.ts | ui | 599 | 30 | 34 |
+| app/lib/lpc/equipmentData.ts | data/config | 748 | 2 | 2 |
 | app/ui/PlayerSetupPanel.ts | ui | 592 | 51 | 7 |
 | app/services/WeatherSystem.ts | runtime | 586 | 44 | 12 |
-| app/services/TributeRaidSystem.ts | runtime | 580 | 97 | 16 |
 | app/ui/InventoryManager.ts | ui | 580 | 59 | 17 |
 | app/classes/map/fog/MapFog.ts | runtime | 554 | 69 | 13 |
 | app/classes/map/resources/MapResources.ts | runtime | 548 | 82 | 10 |
@@ -97,6 +95,8 @@ No risky hotspots currently count against the score.
 | app/classes/map/Map.ts | runtime | 522 | 17 | 19 |
 | app/services/PerformanceMonitor.ts | runtime | 513 | 47 | 0 |
 | app/lib/combat/combatFeedback.ts | library | 504 | 64 | 9 |
+| app/classes/Resource.ts | runtime | 502 | 50 | 13 |
+| app/services/TributeRaidSystem.ts | runtime | 502 | 80 | 16 |
 
 ## Data And Config Files
 
@@ -104,13 +104,13 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 
 | File | Kind | LOC | Branches |
 | --- | --- | --- | --- |
-| app/lib/lpc/equipmentData.ts | data/config | 739 | 2 |
-| app/lib/i18n/en.ts | data/config | 399 | 8 |
-| app/lib/i18n/fr.ts | data/config | 399 | 0 |
-| app/lib/i18n/entityTooltips.ts | data/config | 284 | 11 |
+| app/lib/lpc/equipmentData.ts | data/config | 748 | 2 |
+| app/lib/i18n/en.ts | data/config | 404 | 9 |
+| app/lib/i18n/fr.ts | data/config | 404 | 0 |
+| app/lib/i18n/entityTooltips.ts | data/config | 282 | 11 |
 | app/config/assetManifest.ts | data/config | 256 | 0 |
-| app/config/playerConfig.ts | data/config | 212 | 15 |
-| app/constants/entities.ts | data/config | 195 | 0 |
+| app/config/playerConfig.ts | data/config | 224 | 16 |
+| app/constants/entities.ts | data/config | 211 | 0 |
 | app/constants/environments.ts | data/config | 133 | 8 |
 | app/config/name/greek.ts | data/config | 102 | 0 |
 | app/config/name/asian.ts | data/config | 94 | 0 |
@@ -122,15 +122,15 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | File | Branches | Max Block | LOC |
 | --- | --- | --- | --- |
 | app/lib/combat/combatActionConditions.ts | 103 | 24 | 220 |
-| app/services/TributeRaidSystem.ts | 97 | 62 | 580 |
 | app/classes/map/terrain/MapTerrainGeneration.ts | 96 | 63 | 391 |
+| app/controllers/HeroCompanionHorseController.ts | 90 | 31 | 401 |
 | app/classes/map/terrain/MapTerrainReliefAppearance.ts | 87 | 64 | 137 |
 | app/classes/players/PlayerTechnologies.ts | 84 | 48 | 298 |
 | app/classes/map/resources/MapResources.ts | 82 | 48 | 548 |
 | app/ai/AIEconomyFoodManager.ts | 80 | 19 | 331 |
 | app/classes/map/terrain/MapTerrainReliefContinuity.ts | 80 | 35 | 252 |
 | app/classes/unit/movement/UnitMovementRouting.ts | 80 | 26 | 279 |
-| app/ai/AIStrategy.ts | 79 | 48 | 363 |
+| app/services/TributeRaidSystem.ts | 80 | 62 | 502 |
 | app/classes/map/terrain/MapTerrain.ts | 77 | 120 | 404 |
 | app/classes/building/BuildingTraineeTraining.ts | 76 | 34 | 265 |
 
@@ -141,15 +141,15 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/types/entities.ts | 67 | 27.2 | 17 |
 | app/lib/i18n/translations.ts | 49 | 19.8 | 8 |
 | app/classes/map/MapGeneration.ts | 47 | 157.2 | 381 |
-| app/config/assetManifest.ts | 46 | 24.8 | 256 |
+| app/config/assetManifest.ts | 47 | 25.2 | 256 |
+| app/controllers/HeroController.ts | 45 | 167.3 | 450 |
 | app/classes/unit/UnitActions.ts | 45 | 65.8 | 173 |
-| app/screens/Game.ts | 42 | 160.8 | 599 |
-| app/controllers/HeroController.ts | 42 | 143.5 | 400 |
-| app/serialization/SaveSerializer.ts | 36 | 105.8 | 392 |
+| app/screens/Game.ts | 43 | 136.3 | 428 |
+| app/serialization/SaveSerializer.ts | 37 | 107.8 | 392 |
 | app/types/save.ts | 33 | 73.8 | 311 |
+| app/types/context.ts | 32 | 19.8 | 278 |
 | app/lib/lpc/baked.ts | 31 | 153.3 | 284 |
-| app/types/context.ts | 31 | 19.3 | 276 |
-| app/classes/unit/UnitCombat.ts | 30 | 133.5 | 238 |
+| app/classes/building/BuildingLifecycle.ts | 30 | 161.6 | 344 |
 
 ## Project Hygiene
 
@@ -192,8 +192,8 @@ No folder exceeds the current file-count warning.
 
 | Style | Files |
 | --- | --- |
-| PascalCase | 211 |
-| camelCase | 209 |
+| PascalCase | 219 |
+| camelCase | 211 |
 
 ### Naming Mismatches
 

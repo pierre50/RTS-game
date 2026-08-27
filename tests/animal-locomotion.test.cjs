@@ -186,6 +186,21 @@ test('a walking animal blocked by another animal pauses its animation', () => {
   assert.equal(animal.sprite.stopCalls, 1)
 })
 
+test('an animal repaths instead of stepping onto a water-border cell', () => {
+  const { movement, animal, grid, calls } = createMovement()
+  const nextCell = grid[5][6]
+  nextCell.waterBorder = true
+  animal.path = [nextCell]
+  animal.dest = grid[9][9]
+  animal.action = 'flee'
+
+  movement.moveToPath()
+
+  assert.deepEqual(calls, [['sendTo', grid[9][9], 'flee', { forceRepath: true, movementSheet: undefined }]])
+  assert.equal(animal.i, 5)
+  assert.equal(animal.j, 5)
+})
+
 test('a flying animal uses flyingSpeed for path movement', () => {
   const speeds = []
   const { movement, animal, grid } = createMovement(

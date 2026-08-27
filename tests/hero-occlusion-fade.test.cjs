@@ -10,50 +10,67 @@ const constants = {
   },
 }
 
-function loadHeroOcclusionFade() {
+function loadHeroOcclusionFade(candidates = []) {
   return loadTsModule('app/services/HeroOcclusionFade.ts', {
     mocks: {
       '../constants': constants,
       '../lib/maths': { getInstanceZIndex: instance => instance.zIndex ?? 0 },
-      '../lib/graphics/alphaMask': { texturesHaveOpaqueOverlap: () => false },
-      '../lib/graphics/chunkCulling': { boundsIntersect: () => false },
+      '../lib/graphics/alphaMask': { texturesHaveOpaqueOverlap: () => true },
+      '../lib/graphics/chunkCulling': { boundsIntersect: () => true },
       '../lib/grid/visibility': {
-        findInstancesInSight: () => [],
-        getInstanceScreenBounds: () => null,
+        findInstancesInSight: (_origin, predicate) => candidates.filter(predicate),
+        getInstanceScreenBounds: instance => ({ x: instance.x ?? 0, y: instance.y ?? 0, width: 16, height: 16 }),
       },
     },
   })
 }
 
+function createHero() {
+  return {
+    context: { app: { renderer: {} } },
+    family: constants.FAMILY_TYPES.unit,
+    i: 0,
+    j: 0,
+    label: 'Hero',
+    sprite: { texture: {} },
+    x: 0,
+    y: 0,
+    zIndex: 1,
+  }
+}
+
 test('hero occlusion fade ignores cut or fallen tree resource sprites', () => {
-  const { isFadeableHeroOccluder } = loadHeroOcclusionFade()
   const cutTree = {
     family: constants.FAMILY_TYPES.resource,
     isCutOrFallenTree: () => true,
     sprite: {},
+    zIndex: 2,
   }
+  const { HeroOcclusionFade } = loadHeroOcclusionFade([cutTree])
 
-  assert.equal(isFadeableHeroOccluder(cutTree), false)
+  assert.equal(new HeroOcclusionFade().findOccluders(createHero()).has(cutTree), false)
 })
 
 test('hero occlusion fade still applies to standing resource sprites', () => {
-  const { isFadeableHeroOccluder } = loadHeroOcclusionFade()
   const standingTree = {
     family: constants.FAMILY_TYPES.resource,
     isCutOrFallenTree: () => false,
     sprite: {},
+    zIndex: 2,
   }
+  const { HeroOcclusionFade } = loadHeroOcclusionFade([standingTree])
 
-  assert.equal(isFadeableHeroOccluder(standingTree), true)
+  assert.equal(new HeroOcclusionFade().findOccluders(createHero()).has(standingTree), true)
 })
 
 test('hero occlusion fade keeps built buildings fadeable', () => {
-  const { isFadeableHeroOccluder } = loadHeroOcclusionFade()
   const building = {
     family: constants.FAMILY_TYPES.building,
     isBuilt: true,
     sprite: {},
+    zIndex: 2,
   }
+  const { HeroOcclusionFade } = loadHeroOcclusionFade([building])
 
-  assert.equal(isFadeableHeroOccluder(building), true)
+  assert.equal(new HeroOcclusionFade().findOccluders(createHero()).has(building), true)
 })

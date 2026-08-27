@@ -118,6 +118,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   dy += gamepadMove.dy
   const isMoving = dx !== 0 || dy !== 0
   const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive && !unit.mountedOnHorse))
+  unit.isCrouching = stealthMode
   updateNpcFollow(unit, { matchHeroWalk: isMoving && isUnitWalkSpeedFactor(walkSpeedFactor) })
   const lockedMove = Boolean(isHeroDirectionLockActive(controller.controls) && isMoving && !unit.mountedOnHorse)
   if (lockedMove && controller.shiftMoveLockedDegree == null) {

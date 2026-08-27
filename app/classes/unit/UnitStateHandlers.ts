@@ -93,6 +93,7 @@ export function stopUnit(unit: UnitStateHost): void {
   unit.actionLocked = false
   unit.pendingOrder = null
   unit.blockedGatherApproach = null
+  unit.followAssist = null
   unit.inactif = true
   unit.action = null
   unit.dest = null

@@ -7,80 +7,42 @@ import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
 import { createInspectionModal } from '../ui/InspectionPanel'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventSystem'
-import type { GameContextLike, SchedulerTaskId } from '../types/context'
+import {
+  BANDIT_OWNER_NAME,
+  BANDIT_RAID_FIRST_DAY,
+  BANDIT_RAID_INTERVAL_DAYS,
+  FACTION_RAID_FIRST_DAY,
+  FACTION_RAID_INTERVAL_DAYS,
+  FACTION_RAID_MIN_HATE,
+  PORTAL_RESOURCE_TYPE,
+  RAID_APPROACH_RANGE,
+  RAID_RETURN_RANGE,
+  RAID_SPAWN_MAX_RADIUS,
+  RAID_SPAWN_MIN_RADIUS,
+  RAID_UPDATE_MS,
+  getRaidCellDistance,
+  getRaidUnitTypes,
+  isOpenRaidLandCell,
+  isRaidBanditOwner,
+  isRaidFactionOwner,
+  livingRaidUnits,
+  type TributeRaid,
+  type TributeRaidKind,
+  type TributeRaidOwner,
+  type TributeRaidUnit,
+} from './TributeRaidRules'
+import {
+  getHostileRaidMessage,
+  getIncomingRaidMessage,
+  getTributeDemand,
+  getTributePaidMessage,
+  getTributeTitle,
+} from './TributeRaidText'
+import type { GameContextLike } from '../types/context'
 import type { ResourceAmount } from '../types/common'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
-import type { PlayerLike } from '../types/player'
 import type { FactionSave } from '../types/save'
-import type { Modal } from '../lib'
-
-const BANDIT_OWNER_NAME = 'Bandits'
-const FACTION_RAID_FIRST_DAY = 3
-const FACTION_RAID_INTERVAL_DAYS = 3
-const FACTION_RAID_MIN_HATE = -10
-const BANDIT_RAID_FIRST_DAY = 4
-const BANDIT_RAID_INTERVAL_DAYS = 4
-const RAID_APPROACH_RANGE = 2.2
-const RAID_RETURN_RANGE = 3
-const RAID_UPDATE_MS = 350
-const RAID_SPAWN_MIN_RADIUS = 4
-const RAID_SPAWN_MAX_RADIUS = 9
-const PORTAL_RESOURCE_TYPE = 'Portal'
-
-type TributeRaidPhase = 'approaching' | 'parley' | 'hostile' | 'leaving'
-type TributeRaidKind = 'bandit' | 'faction'
-
-type TributeRaidUnit = UnitEntity & {
-  tributeRaidId?: string
-}
-
-type TributeRaidOwner = PlayerLike & {
-  banditRaidOwner?: true
-  factionRaidOwner?: true
-  factionRaidFactionId?: string
-}
-
-type TributeRaid = {
-  id: string
-  kind: TributeRaidKind
-  faction?: FactionSave | null
-  chief: TributeRaidUnit
-  units: TributeRaidUnit[]
-  phase: TributeRaidPhase
-  portal: RuntimeEntity | null
-  tribute: ResourceAmount
-  modal?: Modal | null
-  updateTaskId?: SchedulerTaskId | null
-}
-
-function isRaidBanditOwner(player: PlayerLike): player is TributeRaidOwner {
-  return Boolean((player as TributeRaidOwner).banditRaidOwner)
-}
-
-function isRaidFactionOwner(player: PlayerLike, factionId: string): player is TributeRaidOwner {
-  const raidOwner = player as TributeRaidOwner
-  return Boolean(raidOwner.factionRaidOwner && raidOwner.factionRaidFactionId === factionId)
-}
-
-function isOpenLandCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
-  return Boolean(cell && !cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
-}
-
-function cellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
-  return Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0))
-}
-
-function livingRaidUnits(raid: TributeRaid): TributeRaidUnit[] {
-  return raid.units.filter(unit => !unit.isDead && !unit.isDestroyed)
-}
-
-function formatCost(cost: ResourceAmount): string {
-  return Object.entries(cost)
-    .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && entry[1] > 0)
-    .map(([resource, amount]) => `${amount} ${t(resource)}`)
-    .join(', ')
-}
 
 export class TributeRaidSystem implements DailyWorldEventHandler {
   context: GameContextLike
@@ -190,7 +152,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     this.raids.push(raid)
     this.sendRaidToHero(raid, { forceRepath: true })
     this.startRaidUpdates(raid)
-    this.context.menu?.showMessage(this.getIncomingMessage(raid), 'warning')
+    this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
     this.context.menu?.updatePlayerMiniMapEvt?.(owner)
     return true
   }
@@ -294,20 +256,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   getRaidUnitTypes(count: number, kind: TributeRaidKind = 'bandit'): string[] {
-    if (kind === 'faction') {
-      const types = [UNIT_TYPES.chief]
-      for (let index = 1; index < count; index++) {
-        types.push(index % 3 === 0 ? UNIT_TYPES.bowman : UNIT_TYPES.infantry)
-      }
-      return types
-    }
-
-    const types = [UNIT_TYPES.banditChief]
-    for (let index = 1; index < count; index++) {
-      const useArcher = index % 3 === 0 || (this.context.player?.age ?? 0) >= 2
-      types.push(useArcher ? UNIT_TYPES.banditArcher : UNIT_TYPES.banditSword)
-    }
-    return types
+    return getRaidUnitTypes(count, kind, this.context.player?.age ?? 0)
   }
 
   getBanditTributeCost(): ResourceAmount {
@@ -337,33 +286,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     ).length
   }
 
-  getIncomingMessage(raid: TributeRaid): string {
-    if (raid.kind === 'faction') return t('factionRaidIncoming', { name: raid.faction?.name ?? t('computer') })
-    return t('banditRaidIncoming')
-  }
-
-  getTributeTitle(raid: TributeRaid): string {
-    if (raid.kind === 'faction') return t('factionTributeTitle', { name: raid.faction?.name ?? t('computer') })
-    return t('banditTributeTitle')
-  }
-
-  getTributeDemand(raid: TributeRaid): string {
-    if (raid.kind === 'faction') {
-      return t('factionTributeDemand', { cost: formatCost(raid.tribute), name: raid.faction?.name ?? t('computer') })
-    }
-    return t('banditTributeDemand', { cost: formatCost(raid.tribute) })
-  }
-
-  getTributePaidMessage(raid: TributeRaid): string {
-    if (raid.kind === 'faction') return t('factionTributePaid', { name: raid.faction?.name ?? t('computer') })
-    return t('banditTributePaid')
-  }
-
-  getHostileMessage(raid: TributeRaid): string {
-    if (raid.kind === 'faction') return t('factionRaidHostile', { name: raid.faction?.name ?? t('computer') })
-    return t('banditRaidHostile')
-  }
-
   findPortal(): RuntimeEntity | null {
     const resources = this.context.map?.resources
     if (!resources) return null
@@ -377,11 +299,11 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const anchor = portal ?? hero
     const cells: RuntimeCell[] = []
     for (let distance = RAID_SPAWN_MIN_RADIUS; distance <= RAID_SPAWN_MAX_RADIUS; distance++) {
-      const ring = getCellsAroundPoint(anchor.i, anchor.j, grid, distance, isOpenLandCell)
+      const ring = getCellsAroundPoint(anchor.i, anchor.j, grid, distance, isOpenRaidLandCell)
       ring.sort(() => (this.context.map.random?.() ?? Math.random()) - 0.5)
       for (const cell of ring) {
         if (cells.includes(cell)) continue
-        if (portal && cellDistance(cell, hero) < 8) continue
+        if (portal && getRaidCellDistance(cell, hero) < 8) continue
         cells.push(cell)
         if (cells.length >= count) return cells
       }
@@ -404,7 +326,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
 
     if (raid.phase === 'approaching') {
-      if (cellDistance(raid.chief, hero) <= RAID_APPROACH_RANGE) {
+      if (getRaidCellDistance(raid.chief, hero) <= RAID_APPROACH_RANGE) {
         this.openTributeModal(raid)
         return
       }
@@ -414,7 +336,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
 
     if (raid.phase === 'leaving') {
       const portal = raid.portal
-      if (!portal || units.every(unit => cellDistance(unit, portal) <= RAID_RETURN_RANGE)) {
+      if (!portal || units.every(unit => getRaidCellDistance(unit, portal) <= RAID_RETURN_RANGE)) {
         this.despawnRaid(raid)
       }
     }
@@ -454,7 +376,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
 
     const speech = document.createElement('p')
     speech.className = 'bandit-tribute-text portal-description'
-    speech.textContent = this.getTributeDemand(raid)
+    speech.textContent = getTributeDemand(raid)
     content.appendChild(speech)
 
     const actions = document.createElement('div')
@@ -495,7 +417,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     content.appendChild(actions)
 
     raid.modal = createInspectionModal({
-      title: this.getTributeTitle(raid),
+      title: getTributeTitle(raid),
       content,
       panelClass: 'bandit-tribute-modal',
       onClose: () => {
@@ -509,7 +431,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     raid.phase = 'leaving'
     setUnitOverheadIndicator(raid.chief, null)
     if (raid.kind === 'faction' && raid.faction) this.context.changeFactionRelation?.(raid.faction.id, 8, 'tribute-paid')
-    this.context.menu?.showMessage(this.getTributePaidMessage(raid), 'success')
+    this.context.menu?.showMessage(getTributePaidMessage(raid), 'success')
     this.sendRaidToPortal(raid)
   }
 
@@ -531,7 +453,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
         unit.sendToEvt?.(hero, ACTION_TYPES.attack, { forceRepath: true })
       }
     }
-    this.context.menu?.showMessage(this.getHostileMessage(raid), 'warning')
+    this.context.menu?.showMessage(getHostileRaidMessage(raid), 'warning')
   }
 
   despawnRaid(raid: TributeRaid): void {

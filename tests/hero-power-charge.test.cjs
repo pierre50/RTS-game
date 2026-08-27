@@ -639,6 +639,43 @@ test('bow charge plays the action animation once while power keeps charging', ()
   }
 })
 
+test('bow release aimed at a live animal publishes a temporary hunt intent for followers', () => {
+  const deer = {
+    family: 'animal',
+    hitPoints: 8,
+    i: 10,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'deer-1',
+    type: 'Deer',
+    x: 10,
+    y: 0,
+  }
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
+    './grid/visibility': {
+      findInstancesInSight: (_hero, matches) => [deer].filter(matches),
+    },
+  })
+  const { hero, projectiles } = makeHero()
+  hero.i = 0
+  hero.j = 0
+
+  assert.equal(triggerToolAttackAt(hero, 'bow', { x: 10, y: 0 }), true)
+  assert.equal(hero.heroPowerChargeTarget, null)
+  assert.equal(hero.followAssistIntent, null)
+
+  assert.equal(releaseHeroPowerCharge(hero), true)
+  playImpactFrame(hero, 8)
+
+  assert.equal(projectiles[0].target, deer)
+  assert.deepEqual(hero.followAssistIntent, {
+    action: 'hunt',
+    target: deer,
+    targetLabel: 'deer-1',
+  })
+})
+
 test('sword charge keeps the current animation while power charges', () => {
   const { triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
   const { hero } = makeHero()

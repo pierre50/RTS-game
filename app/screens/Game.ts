@@ -2,20 +2,13 @@ import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
 import { t } from '../lib/lang'
 import Map from '../classes/map/Map'
-import Menu from '../classes/Menu'
-import Controls from '../classes/Controls'
 import { getReliefOffset } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { adjustFactionRelation } from '../lib/combat/factions'
-import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
-import { ActionScheduler } from '../lib/actionScheduler'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
-import { serializeGame } from '../serialization/SaveSerializer'
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
 import { MapBlueprintLoadError, loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
-import { DevConsole } from '../dev-console/DevConsole'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
-import { PerformanceMonitor } from '../services/PerformanceMonitor'
 import {
   addRuntimeServiceLayers,
   createEmptyRuntimeServices,
@@ -27,9 +20,6 @@ import {
   applyMapConfig,
   getGameScreenRect,
   getMapWorldBounds,
-  hasSerializedGrid,
-  saveConfig,
-  savedRuntimeState,
   type PortalPartyState,
   type PortalWorldConfig,
 } from './game/GameStateHelpers'
@@ -65,21 +55,18 @@ import {
   toggleGamePause,
 } from './game/GameRuntimeLifecycle'
 import { loadGameRuntime, restartGameRuntime, startGameRuntime } from './game/GameBootFlow'
-import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
+import { type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
+import { bootGameFromConfig, bootGameFromSave, bootGameFromSeedSave } from './game/GameWorldBoot'
+import {
+  createGameRuntimeContext,
+  createGameUiRuntime,
+  type GameRuntimeContext,
+} from './game/GameRuntimeContext'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import type { BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
 import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
-import { PLAYER_TYPES } from '../constants'
-import type { GameContextLike, SchedulerLike, PerformanceMonitorLike } from '../types/context'
-import type {
-  CampaignSave,
-  GameConfig,
-  PlayerSetupConfig,
-  SaveEntityState,
-  SaveRecord,
-  SerializedSave,
-} from '../types/save'
-import type { PlayerLike } from '../types/player'
+import type { GameContextLike } from '../types/context'
+import type { CampaignSave, GameConfig, SaveEntityState, SaveRecord, SerializedSave } from '../types/save'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { BuildingEntity, ResourceEntity, UnitEntity } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
@@ -94,21 +81,6 @@ type MapInstance = RuntimeMapInstance & {
 }
 
 type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
-
-type GameRuntimeContext = Omit<
-  GameContextLike,
-  'map' | 'player' | 'controls' | 'menu' | 'scheduler' | 'performance'
-> & {
-  map: RuntimeMapInstance | null
-  player: PlayerLike | null
-  players: PlayerLike[]
-  controls: Controls | null
-  menu: Menu | null
-  scheduler: SchedulerLike | null
-  performance: PerformanceMonitorLike | null
-  devConsole: DevConsole | null
-  checkDefeat: () => boolean
-}
 
 /**
  * Main Display Object
@@ -148,58 +120,7 @@ export default class Game extends Container {
     this._runtimeServices = createEmptyRuntimeServices()
     this.config = config
     this.onQuit = onQuit
-    this.context = {
-      app,
-      gamebox,
-      menu: null,
-      player: null,
-      players: [],
-      map: null,
-      controls: null,
-      dayNight: null,
-      weather: null,
-      tributeRaids: null,
-      villagerShelter: null,
-      devConsole: null,
-      devConsoleOpen: false,
-      paused: false,
-      defeat: false,
-      scheduler: null,
-      performance: null,
-      save: () => this.save(),
-      load: (evt: object) => this.load(evt as SaveRecord),
-      pause: () => this.togglePause(true),
-      resume: () => {
-        if (!this.context.defeat) this.togglePause(false)
-      },
-      restart: () => this.restart(),
-      quit: () => this.quit(),
-      checkDefeat: () => this.checkDefeat(),
-      applyZoom: () => this.applyZoom(),
-      getWorldGraph: () => this._campaignSave?.worldGraph ?? null,
-      getCampaignFactions: () => this._campaignSave?.factions ?? null,
-      changeFactionRelation: (factionId: string, delta: number) => this._changeFactionRelation(factionId, delta),
-      getCurrentWorldId: () => this._campaignSave?.currentWorldId ?? null,
-      travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
-        this.travelThroughPortal(portal, color).catch(error => {
-          console.error('Unable to travel through portal', error)
-          this.context.menu?.showMessage(t('corruptSave'))
-        })
-      },
-      travelIntoBuildingInterior: (building: BuildingEntity) => {
-        this.travelIntoBuildingInterior(building).catch(error => {
-          console.error('Unable to travel into building interior', error)
-          this.context.menu?.showMessage(t('corruptSave'))
-        })
-      },
-    }
-    this.context.performance = new PerformanceMonitor(app)
-    this.context.scheduler = new ActionScheduler(
-      app,
-      () => this.context.paused ?? false,
-      () => this.context.performance ?? null
-    )
-    ;(window as unknown as { __debugContext?: unknown }).__debugContext = this.context // TEMP-VERIFY-DEBUG
+    this.context = createGameRuntimeContext(this, app, gamebox) as GameRuntimeContext
     if (config !== null) {
       this.start().catch(error => {
         this._loadingScreen?.destroy()
@@ -316,18 +237,13 @@ export default class Game extends Container {
   }
 
   _createUiRuntime(): void {
-    const { context } = this
-    const gameContext = context as GameContextLike
-    context.controls = new Controls(gameContext)
-    context.menu = new Menu(gameContext)
-    context.devConsole = new DevConsole(context as DevConsoleRuntimeContext)
-    ;(window as unknown as { __debugContext?: unknown }).__debugContext = context
+    createGameUiRuntime(this.context)
   }
 
   _mountRuntime(dayNightElapsedMs: number | null | undefined = null): void {
     const { map, controls } = this.context
     if (!map || !controls) return
-    this.addChild(map as ContainerChild)
+    this.addChild(map as unknown as ContainerChild)
     this._runtimeServices = createRuntimeServices(
       this._gameContext(),
       map,
@@ -371,104 +287,16 @@ export default class Game extends Container {
   }
 
   async _bootFromConfig(config: GameConfig, options: { dayNightElapsedMs?: number | null } = {}): Promise<void> {
-    this.context.performance?.setPhase?.('load')
-    this._createRuntime()
-    const map = this._map()
-    this._applyMapConfig(map, config)
-    this._createUiRuntime()
-
-    const mapGenerationStartedAt = performance.now()
-    const blueprint = await this._loadRequiredMapBlueprint({
-      size: map.size,
-      environment: map.environment,
-    })
-    await map.generateFromBlueprint(blueprint, {
-      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-    })
-    recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
-    await this._updateLoading('generatingPlayers', 0.2)
-    this.context.players = map.generatePlayers(
-      (config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null
-    )
-    this.context.player = this.context.players[0]
-    this.context.menu?.init?.()
-    await preloadBakedLpcUnitsForPlayers(this.context.players)
-    await map.stylishMap({
-      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-    })
-    await this._updateLoading('finalizingWorld', 0.96)
-    this.context.controls?.init?.()
-    ;(window as unknown as { __debugContext?: unknown }).__debugContext = this.context
-
-    this._mountRuntime(options.dayNightElapsedMs)
-    this.context.performance?.setPhase?.('runtime')
-    this._campaignSave = createInitialCampaignSave(serializeGame(this._gameContext()))
+    await bootGameFromConfig(this, config, options)
     this._restartSaveData = structuredClone(this._campaignSave)
-    this._autosaveCampaign()
   }
 
   async _bootFromSeedSave(json: SerializedSave): Promise<void> {
-    this.context.performance?.setPhase?.('load')
-    this._createRuntime()
-    const map = this._map()
-    const world = saveConfig(json.world)
-    const savedConfig = saveConfig(json.config)
-    const savedPlayers = Array.isArray(json.players) ? json.players : []
-    const seedConfig = {
-      ...savedConfig,
-      seed: world.seed ?? savedConfig.seed,
-      size: world.size ?? savedConfig.size,
-      environment: world.environment ?? savedConfig.environment,
-      players: savedPlayers.map(player => ({
-        civ: player.civ,
-        gender: player.gender,
-        heroAppearance: player.heroAppearance,
-        isHuman: player.isPlayed && player.type === PLAYER_TYPES.human,
-      })),
-    }
-    this._applyMapConfig(map, seedConfig)
-    this._createUiRuntime()
-    const positionsCount =
-      Number.isFinite(world.positionsCount) && Number(world.positionsCount) > 0
-        ? Number(world.positionsCount)
-        : savedPlayers.length || null
-
-    const blueprintId = world.pregeneratedBlueprintId
-    if (!blueprintId) throw new Error(t('mapBlueprintUnavailable'))
-    const blueprint = await this._loadRequiredMapBlueprint({
-      size: map.size,
-      id: String(blueprintId),
-      positionsCount: positionsCount ?? undefined,
-    })
-    await map.generateFromBlueprint(blueprint, {
-      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-    })
-    recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
-    await map.prepareTerrainForSavedState({
-      onProgress: (messageKey: string, progress: number) => this._updateLoading(messageKey, progress),
-    })
-    map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
-    this.context.controls?.init?.()
-    this._mountRuntime(json.runtime?.dayNightElapsedMs)
-    this.context.performance?.setPhase?.('runtime')
+    await bootGameFromSeedSave(this, json)
   }
 
   async _bootFromSave(json: SerializedSave): Promise<void> {
-    this.context.performance?.setPhase?.('load')
-    if (!hasSerializedGrid(json)) {
-      await this._bootFromSeedSave(json)
-      return
-    }
-    this._createRuntime()
-    const map = this._map()
-    const savedMap = json.map
-    map.size = Math.max(0, (savedMap?.length || 1) - 1)
-    this._applyMapConfig(map, saveConfig(json.config))
-    this._createUiRuntime()
-    map.generateFromJSON(savedRuntimeState(json))
-    this.context.controls?.init?.()
-    this._mountRuntime(json.runtime?.dayNightElapsedMs)
-    this.context.performance?.setPhase?.('runtime')
+    await bootGameFromSave(this, json)
   }
 
   save(): { key: string; name: string } {

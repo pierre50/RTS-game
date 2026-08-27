@@ -33,7 +33,10 @@ import type { Texture } from 'pixi.js'
 import {
   CAMPFIRE_DECORATION_LABEL,
   generateBuildingFire,
+  hasBuildingFlameVisual,
   playBuildingBurningSound,
+  startFlameAmbientSound,
+  stopFlameAmbientSound,
   syncBuildingCampfireDecoration,
   updateBuildingFireDamage,
 } from './BuildingFire'
@@ -205,6 +208,7 @@ export class BuildingLifecycle {
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
     campfireDecoration?.stop()
+    stopFlameAmbientSound(building)
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const stoppableDeco = deco as { stop?: () => void } | null
     stoppableDeco?.stop?.()
@@ -220,6 +224,9 @@ export class BuildingLifecycle {
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
     campfireDecoration?.play()
+    if (hasBuildingFlameVisual(building) && building.isBuilt && !building.isDead && !building.isDestroyed) {
+      startFlameAmbientSound(building)
+    }
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const playableDeco = deco as { play?: () => void } | null
     playableDeco?.play?.()
@@ -272,6 +279,7 @@ export class BuildingLifecycle {
     }
     building.isDead = true
     building.hasActiveBurningSound = false
+    stopFlameAmbientSound(building)
     if (building.increasePopulation && building.populationCapacityApplied) {
       building.owner.populationMax = Math.max(0, building.owner.populationMax - building.increasePopulation)
       building.populationCapacityApplied = false
@@ -329,6 +337,7 @@ export class BuildingLifecycle {
     const building = this.building
     if (building.isDestroyed) return
     clearTimeout(building.visibilityTimeout)
+    stopFlameAmbientSound(building)
     building.clearRallyPoint()
     const {
       context: { map },

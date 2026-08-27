@@ -148,7 +148,7 @@ export function isUnitCellOccupant(unit: UnitEntity, cell: RuntimeCell | null | 
 }
 
 export function isCellBlockedForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
-  return Boolean(cell?.solid && !isUnitCellOccupant(unit, cell))
+  return Boolean(cell && ((cell.solid && !isUnitCellOccupant(unit, cell)) || cell.waterBorder))
 }
 
 export function clearCellForUnit(unit: UnitEntity, cell: RuntimeCell | null | undefined): void {

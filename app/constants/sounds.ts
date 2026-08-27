@@ -50,6 +50,7 @@ export const SOUND_CUES = {
   },
   building: {
     burning: ['building-burning', 'building-burning-2', 'building-burning-3'],
+    flame: 'building/campfire-crackle',
     collapse: ['building-destroyed', 'building-destroyed-2', 'building-destroyed-3'],
   },
   weather: {

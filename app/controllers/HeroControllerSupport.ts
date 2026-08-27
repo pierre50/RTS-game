@@ -174,7 +174,7 @@ export function drawCommIndicatorCells(indicator: Graphics, hero: UnitEntity, ra
   })
 }
 
-export function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
+function isFreeHorseCell(cell?: RuntimeCell | null): cell is RuntimeCell {
   return Boolean(cell && !cell.solid && !cell.has && cell.category !== 'Water' && !cell.waterBorder && !cell.border)
 }
 

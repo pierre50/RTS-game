@@ -1,9 +1,11 @@
 import { AnimatedSprite, Assets, Container } from 'pixi.js'
+import { sound, type IMediaInstance } from '@pixi/sound'
 import { BUILDING_TYPES, LABEL_TYPES, SOUND_CUES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getBuildingFootprintRadius,
+  getHeroDistanceSoundVolume,
   playAudibleSoundCue,
 } from '../../lib'
 import type { EntityLightSourceConfig } from '../../types/entities'
@@ -12,6 +14,7 @@ import type { Texture } from 'pixi.js'
 
 type LightedAnimatedSprite = AnimatedSprite & { lightSource?: EntityLightSourceConfig }
 type RuntimeContainer = Container
+type FlameTicker = { deltaMS?: number; elapsedMS?: number }
 
 const BUILDING_FIRE_SHEETS = {
   light: 'effects/fire/light',
@@ -20,6 +23,10 @@ const BUILDING_FIRE_SHEETS = {
 } as const
 
 export const CAMPFIRE_DECORATION_LABEL = 'campfireDecorationFire'
+const FLAME_SOUND_BASE_VOLUME = 0.62
+const FLAME_SOUND_LERP_PER_SECOND = 7
+const CAMPFIRE_DECORATION_X = 0
+const CAMPFIRE_DECORATION_Y = -9
 
 const CAMPFIRE_DECORATION_LIGHT: EntityLightSourceConfig = {
   color: '#ffad4f',
@@ -43,11 +50,66 @@ function attachFireLight(sprite: LightedAnimatedSprite, config: EntityLightSourc
   sprite.lightSource = config
 }
 
+function lerp(current: number, target: number, amount: number): number {
+  return current + (target - current) * Math.max(0, Math.min(1, amount))
+}
+
+function getFlameTargetVolume(building: BuildingControllerHost): number {
+  if (building.context.paused || building.context.defeat || building.isDead || building.isDestroyed) return 0
+  if (!building.context.controls.instanceIsAudible(building)) return 0
+  return getHeroDistanceSoundVolume(building, 'flame', FLAME_SOUND_BASE_VOLUME)
+}
+
+function updateFlameSoundVolume(building: BuildingControllerHost, elapsedMs = 16.67): void {
+  const loop = building.flameSoundLoop
+  if (!loop) return
+  const elapsedSeconds = Math.max(0, Math.min(elapsedMs, 250)) / 1000
+  loop.volume = lerp(loop.volume, getFlameTargetVolume(building), elapsedSeconds * FLAME_SOUND_LERP_PER_SECOND)
+}
+
+export function hasBuildingFlameVisual(building: BuildingControllerHost): boolean {
+  return Boolean(building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) || building.getChildByLabel(LABEL_TYPES.fire))
+}
+
+export function startFlameAmbientSound(building: BuildingControllerHost): void {
+  if (building.flameSoundLoop || building.flameSoundTicker || building.flameSoundStopped === false) return
+  building.flameSoundStopped = false
+
+  const onReady = (instance: IMediaInstance): void => {
+    if (building.flameSoundStopped || building.isDead || building.isDestroyed || !hasBuildingFlameVisual(building)) {
+      instance.stop()
+      return
+    }
+    building.flameSoundLoop = instance
+    instance.volume = getFlameTargetVolume(building)
+  }
+
+  const result = sound.play(SOUND_CUES.building.flame, { loop: true, volume: 0 })
+  if (result instanceof Promise) result.then(onReady).catch(() => {})
+  else onReady(result)
+
+  building.flameSoundTicker = (ticker?: FlameTicker) => {
+    updateFlameSoundVolume(building, ticker?.deltaMS ?? ticker?.elapsedMS)
+  }
+  building.context.app.ticker.add(building.flameSoundTicker)
+}
+
+export function stopFlameAmbientSound(building: BuildingControllerHost): void {
+  building.flameSoundStopped = true
+  if (building.flameSoundTicker) {
+    building.context.app.ticker.remove(building.flameSoundTicker)
+    building.flameSoundTicker = null
+  }
+  building.flameSoundLoop?.stop()
+  building.flameSoundLoop = null
+}
+
 export function syncBuildingCampfireDecoration(building: BuildingControllerHost): void {
   const existing = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
 
   if (building.type !== BUILDING_TYPES.fireCamp) {
     existing?.destroy({ children: true })
+    if (!building.getChildByLabel(LABEL_TYPES.fire)) stopFlameAmbientSound(building)
     return
   }
 
@@ -59,7 +121,9 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   if (existing instanceof AnimatedSprite) {
     existing.textures = textures
     attachFireLight(existing as LightedAnimatedSprite, CAMPFIRE_DECORATION_LIGHT)
+    existing.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y)
     existing.gotoAndPlay(0)
+    if (building.isBuilt) startFlameAmbientSound(building)
     return
   }
 
@@ -70,10 +134,11 @@ export function syncBuildingCampfireDecoration(building: BuildingControllerHost)
   attachFireLight(fire, CAMPFIRE_DECORATION_LIGHT)
   fire.eventMode = 'none'
   fire.roundPixels = true
-  fire.position.set(0, 10)
+  fire.position.set(CAMPFIRE_DECORATION_X, CAMPFIRE_DECORATION_Y)
   fire.animationSpeed = 0.3
   fire.gotoAndPlay(0)
   building.addChild(fire)
+  if (building.isBuilt) startFlameAmbientSound(building)
 }
 
 export function generateBuildingFire(building: BuildingControllerHost, spriteId: string): void {
@@ -88,6 +153,7 @@ export function generateBuildingFire(building: BuildingControllerHost, spriteId:
       attachFireLight(child)
       child.play()
     }
+    startFlameAmbientSound(building)
     return
   }
 
@@ -107,6 +173,7 @@ export function generateBuildingFire(building: BuildingControllerHost, spriteId:
     newFire.addChild(spriteFire)
   }
   building.addChild(newFire)
+  startFlameAmbientSound(building)
 }
 
 export function updateBuildingFireDamage(building: BuildingControllerHost, percentage: number): void {
@@ -124,6 +191,7 @@ export function updateBuildingFireDamage(building: BuildingControllerHost, perce
     const fire = building.getChildByLabel(LABEL_TYPES.fire)
     if (fire) building.removeChild(fire)
     building.hasActiveBurningSound = false
+    if (!building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)) stopFlameAmbientSound(building)
   }
 }
 

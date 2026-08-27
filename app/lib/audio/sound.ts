@@ -1,5 +1,6 @@
 import { sound } from '@pixi/sound'
 import { SOUND_DISTANCE_PROFILES, type SoundDistanceProfileId } from '../../config/soundDistance'
+import { isometricToCartesian } from '../maths'
 import { pickRandomItem } from '../random'
 import type { AudibleInstanceLike } from '../../types/context'
 
@@ -36,6 +37,17 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function getCellPosition(instance: AudibleInstance): { i: number; j: number } | null {
+  if (isFiniteNumber(instance.i) && isFiniteNumber(instance.j)) return { i: instance.i, j: instance.j }
+  if (!isFiniteNumber(instance.x) || !isFiniteNumber(instance.y)) return null
+  const [i, j] = isometricToCartesian(instance.x, instance.y)
+  return { i, j }
+}
+
 export function getHeroDistanceSoundVolume(
   instance: AudibleInstance,
   profileId: SoundDistanceProfileId = 'default',
@@ -43,13 +55,15 @@ export function getHeroDistanceSoundVolume(
 ): number {
   const profile = SOUND_DISTANCE_PROFILES[profileId]
   const hero = instance.context?.controls?.heroUnit
-  if (!hero || hero === instance || instance.x == null || instance.y == null || hero.x == null || hero.y == null) {
+  const instanceCell = getCellPosition(instance)
+  const heroCell = hero ? getCellPosition(hero as AudibleInstance) : null
+  if (!hero || hero === instance || !instanceCell || !heroCell) {
     return clamp(baseVolume * profile.maxVolume, 0, 1)
   }
 
-  const distance = Math.hypot((instance.x ?? 0) - hero.x, (instance.y ?? 0) - hero.y)
-  if (distance >= profile.maxDistance) return 0
-  const ratio = clamp(1 - distance / profile.maxDistance, 0, 1)
+  const distance = Math.hypot(instanceCell.i - heroCell.i, instanceCell.j - heroCell.j)
+  if (distance >= profile.maxCells) return 0
+  const ratio = clamp(1 - distance / profile.maxCells, 0, 1)
   const attenuation = profile.minVolume + (profile.maxVolume - profile.minVolume) * Math.pow(ratio, profile.curve)
   return clamp(baseVolume * attenuation, 0, 1)
 }

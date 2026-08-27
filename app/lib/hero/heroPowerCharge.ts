@@ -1,4 +1,4 @@
-import { SHEET_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { Projectile } from '../../classes/Projectile'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
@@ -6,7 +6,7 @@ import { onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } from '../graphics'
 import { angleDelta, degreeToDirection } from '../maths'
 import { drainTimedHeroEnergy, hasEnergyToStartTimedHeroAction } from './heroEnergy'
 import { finishHeroToolAnimation } from './heroToolAnimation'
-import { MOUNTED_ATTACK_HALF_ANGLE, getHeroAimDegree } from './heroTargeting'
+import { MOUNTED_ATTACK_HALF_ANGLE, findFacingEntity, getHeroAimDegree } from './heroTargeting'
 import {
   consumeHeroArrow,
   getHeroArrowSpawnPoint,
@@ -140,6 +140,18 @@ function clearHeroPowerCharge(hero: UnitEntity): void {
   hero.removeHeroPowerBar?.()
 }
 
+function findBowHuntTarget(hero: UnitEntity): RuntimeEntity | null {
+  return findFacingEntity(
+    hero,
+    target =>
+      target.family === FAMILY_TYPES.animal &&
+      target.type !== 'Horse' &&
+      !target.isDead &&
+      !target.isDestroyed &&
+      (target.hitPoints ?? 1) > 0
+  )
+}
+
 export function cancelHeroPowerCharge(hero: UnitEntity): void {
   if (hero.heroPowerChargeStart == null) return
   const sprite = hero.sprite
@@ -181,8 +193,8 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
     return
   }
   const power = hero.heroPowerReleasePower ?? getHeroPowerChargeRatio(hero)
-  const target = hero.heroPowerChargeTarget ?? undefined
   const tool = hero.heroPowerChargeTool ?? 'bow'
+  const target = hero.heroPowerChargeTarget ?? (tool === 'bow' ? (findBowHuntTarget(hero) ?? undefined) : undefined)
   clearHeroPowerCharge(hero)
   const map = hero.context?.map
   const sprite = hero.sprite
@@ -205,6 +217,8 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
         hero.context!
       )
       map.addChild(projectile)
+      hero.followAssistIntent =
+        tool === 'bow' && target ? { action: ACTION_TYPES.hunt, target, targetLabel: target.label } : null
       consumeHeroArrow(hero)
     }
   }

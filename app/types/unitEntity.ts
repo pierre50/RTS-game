@@ -65,6 +65,12 @@ interface UnitGatherProgressState {
   target: RuntimeEntity
 }
 
+interface UnitFollowAssistState {
+  action: string
+  target?: RuntimeEntity | null
+  targetLabel?: string
+}
+
 interface UnitRealDest {
   i: number
   j: number
@@ -154,6 +160,9 @@ export interface UnitEntity extends EnergyEntity {
   visibleCells?: Set<number>
   lookingAtHero?: boolean
   followingHero?: boolean
+  isCrouching?: boolean
+  followAssist?: UnitFollowAssistState | null
+  followAssistIntent?: UnitFollowAssistState | null
   currentSheet?: string
   currentFrame?: number
   horseColor?: string

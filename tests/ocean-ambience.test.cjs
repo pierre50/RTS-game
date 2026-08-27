@@ -22,7 +22,7 @@ function createGrid(size = 21) {
 
 test('ocean ambience uses water border and water cells inside the proximity radius', () => {
   const { getOceanAmbienceTargetVolume } = loadOceanAmbience()
-  const maxVolume = 0.34
+  const maxVolume = 0.38
   const grid = createGrid()
   grid[4][4].waterBorder = true
 
@@ -33,12 +33,12 @@ test('ocean ambience uses water border and water cells inside the proximity radi
   assert.equal(getOceanAmbienceTargetVolume(grid, { i: 4, j: 4 }), maxVolume)
 })
 
-test('ocean ambience fades over eight cells and stops beyond that radius', () => {
+test('ocean ambience fades over ten cells and stops beyond that radius', () => {
   const { getOceanAmbienceTargetVolume } = loadOceanAmbience()
-  const maxVolume = 0.34
+  const maxVolume = 0.38
   const grid = createGrid()
   grid[4][4].waterBorder = true
 
-  assert.ok(Math.abs(getOceanAmbienceTargetVolume(grid, { i: 4, j: 8 }) - maxVolume * (5 / 9)) < 0.001)
+  assert.ok(Math.abs(getOceanAmbienceTargetVolume(grid, { i: 4, j: 8 }) - maxVolume * (7 / 11)) < 0.001)
   assert.equal(getOceanAmbienceTargetVolume(grid, { i: 18, j: 18 }), 0)
 })

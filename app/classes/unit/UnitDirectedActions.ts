@@ -141,6 +141,11 @@ export class UnitDirectedActions {
         stopManualHeroAction(unit)
         return
       }
+      if (unit.followAssist?.action === ACTION_TYPES.hunt) {
+        unit.followAssist = null
+        unit.stop?.()
+        return
+      }
       unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(huntDest)
       return
     }
@@ -152,6 +157,11 @@ export class UnitDirectedActions {
           dest.die?.()
           if (isHeroControlled(unit)) {
             stopManualHeroAction(unit)
+            return
+          }
+          if (unit.followAssist?.action === ACTION_TYPES.hunt) {
+            unit.followAssist = null
+            unit.stop?.()
             return
           }
           unit.previousDest ? unit.goBackToPrevious?.() : unit.sendToTakeMeat?.(dest)

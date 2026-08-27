@@ -51,15 +51,15 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
     './sound': {
       getHeroDistanceSoundVolume: (unit, profile, baseVolume) => {
         const profiles = {
-          footstep: { curve: 2, maxDistance: 520, maxVolume: 1, minVolume: 0.14 },
-          surface: { curve: 2, maxDistance: 620, maxVolume: 0.58, minVolume: 0.06 },
+          footstep: { curve: 2, maxCells: 8, maxVolume: 1, minVolume: 0.14 },
+          surface: { curve: 2, maxCells: 10, maxVolume: 0.58, minVolume: 0.06 },
         }
         const distanceProfile = profiles[profile] ?? profiles.surface
         const hero = unit.context?.controls?.heroUnit
         if (!hero || hero === unit) return baseVolume * distanceProfile.maxVolume
-        const distance = Math.hypot((unit.x ?? 0) - (hero.x ?? 0), (unit.y ?? 0) - (hero.y ?? 0))
-        if (distance >= distanceProfile.maxDistance) return 0
-        const ratio = Math.max(0, Math.min(1, 1 - distance / distanceProfile.maxDistance))
+        const distance = Math.hypot((unit.i ?? 0) - (hero.i ?? 0), (unit.j ?? 0) - (hero.j ?? 0))
+        if (distance >= distanceProfile.maxCells) return 0
+        const ratio = Math.max(0, Math.min(1, 1 - distance / distanceProfile.maxCells))
         return (
           baseVolume *
           (distanceProfile.minVolume +
@@ -78,6 +78,8 @@ function createUnit({
   elapsedMs = 1000,
   hero = null,
   visible = true,
+  i = 1,
+  j = 1,
   x = 0,
   y = 0,
   resourceType = 'Wheat',
@@ -98,6 +100,8 @@ function createUnit({
     },
     currentCell: { i: 1, j: 1, type: cellType },
     visible,
+    i,
+    j,
     x,
     y,
   }
@@ -165,13 +169,14 @@ test('movement surface audio respects per-unit cooldown', () => {
 test('movement surface audio attenuates from the hero and ignores far movers', () => {
   const played = []
   const { playMovementSurfaceAudio } = loadMovementSurfaceAudio({ played })
-  const hero = { x: 0, y: 0 }
-  const { unit } = createUnit({ hero, x: 310, y: 0, resourceType: 'Tree' })
+  const hero = { i: 0, j: 0, x: 0, y: 0 }
+  const { unit } = createUnit({ hero, i: 6, j: 0, x: 310, y: 0, resourceType: 'Tree' })
 
   playMovementSurfaceAudio(unit, 4)
   assert.equal(played.length, 1)
   assert.ok(played[0].options.volume < 0.11)
 
+  unit.i = 9
   unit.x = 700
   unit.context.scheduler.elapsedMs += 400
   playMovementSurfaceAudio(unit, 4)
@@ -181,8 +186,8 @@ test('movement surface audio attenuates from the hero and ignores far movers', (
 test('movement surface audio plays quiet NPC footsteps by distance to the hero', () => {
   const played = []
   const { playMovementSurfaceAudio } = loadMovementSurfaceAudio({ played })
-  const hero = { x: 0, y: 0 }
-  const { unit } = createUnit({ hero, x: 120, y: 0, resourceType: 'Tree', cellType: 'Desert' })
+  const hero = { i: 0, j: 0, x: 0, y: 0 }
+  const { unit } = createUnit({ hero, i: 3, j: 0, x: 120, y: 0, resourceType: 'Tree', cellType: 'Desert' })
 
   playMovementSurfaceAudio(unit, 4)
   assert.equal(played.length, 1)
@@ -195,6 +200,7 @@ test('movement surface audio plays quiet NPC footsteps by distance to the hero',
   assert.ok(played[0].options.volume < 0.11)
 
   unit.context.scheduler.elapsedMs += 400
+  unit.i = 9
   unit.x = 700
   playMovementSurfaceAudio(unit, 4)
   assert.equal(played.length, 1)
@@ -203,8 +209,8 @@ test('movement surface audio plays quiet NPC footsteps by distance to the hero',
 test('movement surface audio skips NPC footsteps while walking slowly', () => {
   const played = []
   const { playMovementSurfaceAudio } = loadMovementSurfaceAudio({ played })
-  const hero = { x: 0, y: 0 }
-  const { unit } = createUnit({ hero, x: 120, y: 0, resourceType: 'Tree', cellType: 'Desert' })
+  const hero = { i: 0, j: 0, x: 0, y: 0 }
+  const { unit } = createUnit({ hero, i: 3, j: 0, x: 120, y: 0, resourceType: 'Tree', cellType: 'Desert' })
   unit.requestedMoveSpeedFactor = 0.5
 
   playMovementSurfaceAudio(unit, 4)

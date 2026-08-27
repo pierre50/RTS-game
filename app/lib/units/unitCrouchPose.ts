@@ -214,6 +214,7 @@ export function resetUnitCrouchPose(unit: UnitEntity): void {
 }
 
 export function applyUnitCrouchPose(unit: UnitEntity, active: boolean): void {
+  unit.isCrouching = active
   const state = crouchPoseStateByUnit.get(unit)
   if (!canApplyUnitCrouchPose(unit)) {
     resetUnitCrouchPose(unit)

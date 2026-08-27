@@ -100,6 +100,9 @@ export class Building extends Instance implements BuildingEntity {
   rateOfFire!: number
   range?: number
   hasActiveBurningSound?: boolean
+  flameSoundLoop?: { stop(): void; volume: number } | null
+  flameSoundTicker?: ((ticker?: { deltaMS?: number; elapsedMS?: number }) => void) | null
+  flameSoundStopped?: boolean
   increasePopulation?: number
   visualSettingsCleanup: (() => void) | null
 

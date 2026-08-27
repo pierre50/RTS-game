@@ -1,5 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
+import { applyUnitCrouchPose } from '../units/unitCrouchPose'
 import { clearRequestedMoveSpeedFactor, requestUnitWalk } from '../units/unitLocomotion'
+import { tryFollowAssistHero } from './npcFollowAssist'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { findInstancesInSight } from '../grid/visibility'
@@ -66,8 +68,13 @@ function pickEscortTarget(hero: UnitEntity, unit: UnitEntity, threats: RuntimeEn
 }
 
 function isEscortFighting(unit: UnitEntity): boolean {
+  if (unit.followAssist?.action === ACTION_TYPES.attack || unit.followAssist?.action === ACTION_TYPES.hunt) return false
   if (unit.action !== ACTION_TYPES.attack) return false
   return isRuntimeEntityDest(unit.dest) && !unit.dest?.isDead && !unit.dest?.isDestroyed
+}
+
+function syncFollowerCrouchPose(hero: UnitEntity, unit: UnitEntity): void {
+  applyUnitCrouchPose(unit, Boolean(hero.isCrouching))
 }
 
 function getFormationSlotOffset(slotIndex: number, totalCount: number): { back: number; side: number } {
@@ -106,6 +113,7 @@ export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boo
   const formationUnits: UnitEntity[] = []
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
+    syncFollowerCrouchPose(hero, unit)
     if (options.matchHeroWalk) requestUnitWalk(unit)
     else clearRequestedMoveSpeedFactor(unit)
     if (unit.lookingAtHero) continue
@@ -119,6 +127,7 @@ export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boo
       unit.sendToAttack?.(target)
       continue
     }
+    if (tryFollowAssistHero(hero, unit)) continue
     formationUnits.push(unit)
   }
   if (!formationUnits.length) return

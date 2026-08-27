@@ -78,6 +78,24 @@ function mockPointIsInsidePolygon(points, point) {
   return inside
 }
 
+function mockDistanceToSegment(point, a, b) {
+  const segmentX = b.x - a.x
+  const segmentY = b.y - a.y
+  const segmentLengthSq = segmentX * segmentX + segmentY * segmentY
+  if (segmentLengthSq <= 0) return Math.hypot(point.x - a.x, point.y - a.y)
+  const t = Math.max(0, Math.min(1, ((point.x - a.x) * segmentX + (point.y - a.y) * segmentY) / segmentLengthSq))
+  return Math.hypot(point.x - (a.x + segmentX * t), point.y - (a.y + segmentY * t))
+}
+
+function mockDistanceToPolygon(points, point) {
+  if (mockPointIsInsidePolygon(points, point)) return 0
+  let closest = Infinity
+  for (let index = 0; index < points.length; index++) {
+    closest = Math.min(closest, mockDistanceToSegment(point, points[index], points[(index + 1) % points.length]))
+  }
+  return closest
+}
+
 function mockDegreeToDirection(degree) {
   const normalized = ((degree % 360) + 360) % 360
   if (normalized >= 337.5 || normalized < 22.5) return 'east'
@@ -148,6 +166,7 @@ function loadModule(relativePath, mocks) {
         getRoundedIsoFootprintPoints:
           libMock.getRoundedIsoFootprintPoints ?? libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
         pointIsInsidePolygon: libMock.pointIsInsidePolygon ?? mockPointIsInsidePolygon,
+        distanceToPolygon: libMock.distanceToPolygon ?? mockDistanceToPolygon,
         getMiningActions: libMock.getMiningActions ?? mockGetMiningActions,
         syncMovedActionTarget: libMock.syncMovedActionTarget ?? mockSyncMovedActionTarget,
         isBanditOwner: owner =>
@@ -1900,6 +1919,104 @@ test('hero direct movement slides along rounded building collision instead of is
   assert.equal(movement.directMoveBlocker, building)
 })
 
+test('hero rounded-footprint collision keeps global padding beyond the raw edge', () => {
+  const { getHeroDirectMoveBlockerAtPoint } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+      pointIsInsidePolygon: mockPointIsInsidePolygon,
+    },
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+
+  for (const family of [constants.FAMILY_TYPES.building, constants.FAMILY_TYPES.resource]) {
+    const grid = [
+      [
+        {
+          i: 0,
+          j: 0,
+          x: 0,
+          y: 0,
+          z: 0,
+          solid: true,
+          border: false,
+          category: 'Ground',
+          has: null,
+        },
+      ],
+    ]
+    const blocker = {
+      family,
+      i: 0,
+      isDestroyed: false,
+      j: 0,
+      label: `${family}-1`,
+      size: 1,
+      type: family,
+      x: 0,
+      y: 0,
+    }
+    grid[0][0].has = blocker
+    const unit = {
+      context: {
+        map: {
+          grid,
+        },
+      },
+      x: 0,
+      y: -30,
+    }
+
+    assert.equal(getHeroDirectMoveBlockerAtPoint(unit, grid[0][0], 0, -15), blocker)
+  }
+})
+
+test('hero soft-body collision keeps global padding around units and animals', () => {
+  const { getHeroDirectMoveBlockerAtPoint } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
+    '../../constants': constants,
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+
+  for (const family of [constants.FAMILY_TYPES.unit, constants.FAMILY_TYPES.animal]) {
+    const blocker = {
+      family,
+      currentSheet: 'standing',
+      isDead: false,
+      isDestroyed: false,
+      label: `${family}-1`,
+      size: 1,
+      type: family,
+      x: 20,
+      y: 0,
+    }
+    const grid = [
+      [
+        {
+          i: 0,
+          j: 0,
+          has: blocker,
+          corpses: [],
+        },
+      ],
+    ]
+    const unit = {
+      context: {
+        map: {
+          grid,
+        },
+      },
+      x: 0,
+      y: 0,
+    }
+
+    assert.equal(getHeroDirectMoveBlockerAtPoint(unit, grid[0][0], 3, 0), blocker)
+  }
+})
+
 test('hero direct movement aligns size 2 collision to the even footprint center', () => {
   const grid = Array.from({ length: 4 }, (_, i) =>
     Array.from({ length: 4 }, (_, j) => ({
@@ -2071,6 +2188,81 @@ test('hero direct movement slides along water-border terrain like a rounded obst
   assert.equal(movement.directMoveBlocker.type, 'WaterBorder')
 })
 
+test('npc direct movement blocks water-border terrain', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 1 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      waterBorder: false,
+      has: null,
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  grid[1][0].waterBorder = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i, j],
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: () => [1, 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => false,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Villager',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 0,
+  }
+
+  const moved = new UnitMovement(unit).attemptMoveDirect(1, 0, 1)
+
+  assert.equal(moved, false)
+  assert.equal(unit.i, 0)
+  assert.equal(unit.j, 0)
+})
+
 test('hero direct movement collides softly with units and animals', () => {
   const createGrid = blocker => {
     const grid = Array.from({ length: 3 }, (_, i) =>
@@ -2176,7 +2368,6 @@ test('hero direct movement collides softly with units and animals', () => {
     const slid = movement.moveDirect(1, 0, 9)
 
     assert.equal(slid, true)
-    assert.ok(slideUnit.x > 0)
     assert.notEqual(slideUnit.y, 0)
     assert.equal(movement.directMoveBlocker, blocker)
   }

@@ -93,6 +93,11 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
         Container: class {},
         Polygon: class {},
       },
+      '@pixi/sound': {
+        sound: {
+          play: () => ({ stop: () => {}, volume: 0 }),
+        },
+      },
       '../../constants': {
         ACTION_TYPES: { attack: 'attack', build: 'build' },
         BUILDING_TYPES: { fireCamp: 'FireCamp' },
@@ -105,7 +110,7 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
         MENU_INFO_IDS: { populationText: 'populationText' },
         PLAYER_TYPES: { ai: 'AI' },
         POPULATION_MAX: 200,
-        SOUND_CUES: { building: { burning: 'burning', collapse: 'collapse' } },
+        SOUND_CUES: { building: { burning: 'burning', collapse: 'collapse', flame: 'flame' } },
       },
       '../../lib': {
         bindAnimatedSpriteToTicker: () => {},
@@ -119,6 +124,7 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
           return footprintCells
         },
         getBuildingFootprintRadius: () => 0,
+        getHeroDistanceSoundVolume: () => 0,
         getBuildingTextureNameWithSize: () => ({ sheet: 'buildings/construction/size-2', frame: 0 }),
         getPercentage: () => 0,
         getTexture: textureRef => ({ textureRef }),

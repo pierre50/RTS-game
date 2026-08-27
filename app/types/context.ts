@@ -269,6 +269,8 @@ export type MapRuntimeContext = Omit<
 }
 
 export type AudibleInstanceLike = {
+  i?: number
+  j?: number
   x?: number
   y?: number
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }

@@ -156,13 +156,18 @@ export class UnitDirectMovement {
 
     const tangentX = -awayY / awayLength
     const tangentY = awayX / awayLength
+    const awayDirX = awayX / awayLength
+    const awayDirY = awayY / awayLength
     const alignment = dirX * tangentX + dirY * tangentY
     const firstSign = alignment >= 0 ? 1 : -1
     const probeSigns = this.slideBias ? [this.slideBias, -this.slideBias] : [firstSign, -firstSign]
+    const movingTowardBlocker = dirX * awayDirX + dirY * awayDirY < 0
 
     for (const sign of probeSigns) {
-      const slideX = tangentX * sign * 0.7 + dirX * 0.3
-      const slideY = tangentY * sign * 0.7 + dirY * 0.3
+      const blendX = movingTowardBlocker ? awayDirX : dirX
+      const blendY = movingTowardBlocker ? awayDirY : dirY
+      const slideX = tangentX * sign * 0.7 + blendX * 0.3
+      const slideY = tangentY * sign * 0.7 + blendY * 0.3
       const slideLength = Math.hypot(slideX, slideY)
       if (
         slideLength > 0 &&
@@ -216,7 +221,8 @@ export class UnitDirectMovement {
         debugCombatMove(unit, 'direct-target-solid', targetCell, { stage: 'direct-move', rawI, rawJ, newI, newJ })
         return false
       }
-      const categoryAllowed = targetCell.category !== 'Water' && !isHeroLandTerrainBlockedCell(unit, targetCell)
+      const categoryAllowed =
+        targetCell.category !== 'Water' && !targetCell.waterBorder && !isHeroLandTerrainBlockedCell(unit, targetCell)
       if (!categoryAllowed) {
         if (isHeroLandTerrainBlockedCell(unit, targetCell)) this.directMoveBlocker = createHeroTerrainMoveBlocker(targetCell)
         debugBlockedDirectMove(

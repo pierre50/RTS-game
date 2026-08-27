@@ -4,6 +4,7 @@ import { getGaiaAnimals } from '../playerState'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
 import {
   clearVillagerAutonomyTargetRejections,
+  targetWorkerLoad,
   tryVillagerJobCandidates,
   type VillagerJobCandidate,
 } from './villagerAutonomyTargeting'
@@ -56,23 +57,6 @@ function closest<T extends RuntimeEntity>(unit: UnitEntity, candidates: Iterable
     }
   }
   return best
-}
-
-function sameTarget(a: RuntimeEntity | null | undefined, b: RuntimeEntity | null | undefined): boolean {
-  if (!a || !b) return false
-  if (a === b) return true
-  return Boolean(a.label && b.label && a.label === b.label)
-}
-
-function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string, action: string): number {
-  const workers = unit.owner?.units ?? []
-  let load = 0
-  for (const worker of workers) {
-    if (worker === unit || worker.isDead || worker.isDestroyed) continue
-    if (worker.type !== UNIT_TYPES.villager || worker.work !== work || worker.action !== action) continue
-    if (sameTarget(worker.dest as RuntimeEntity | null | undefined, target)) load++
-  }
-  return load
 }
 
 function isFoodTargetAvailable(unit: UnitEntity, target: RuntimeEntity): boolean {

@@ -47,6 +47,7 @@ function getMiningResourceConfig(target: RuntimeEntity): MiningHeroConfig | unde
 
 function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string): void {
   if (hero.actionLocked) return
+  hero.followAssistIntent = null
   hero.setDest?.(target)
   hero.action = action
   hero.degree = getHeroAimDegree(hero, target)

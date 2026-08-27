@@ -34,7 +34,7 @@ function getFrameTopOffset(host: HudPositionHost): number {
   return height * (host.sprite?.anchor?.y ?? 1)
 }
 
-export function getEntityVisualTopOffset(host: HudPositionHost): number {
+function getEntityVisualTopOffset(host: HudPositionHost): number {
   if (host.family === FAMILY_TYPES.unit) return Math.round(UNIT_VISUAL_TOP_OFFSET * getSpriteScale(host))
   if (host.family === FAMILY_TYPES.animal) {
     const topOffset = host.type ? ANIMAL_VISUAL_TOP_OFFSETS[host.type] : undefined

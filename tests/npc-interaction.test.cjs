@@ -40,7 +40,9 @@ const constants = {
   ACTION_TYPES: {
     attack: 'attack',
     build: 'build',
+    chopwood: 'chopwood',
     farm: 'farm',
+    forageberry: 'forageberry',
     hunt: 'hunt',
     takemeat: 'takemeat',
     train: 'train',
@@ -55,6 +57,8 @@ const constants = {
     temple: 'Temple',
   },
   RESOURCE_TYPES: {
+    berrybush: 'Berrybush',
+    tree: 'Tree',
     wheat: 'Wheat',
   },
   COLOR_WHITE: 0xffffff,
@@ -76,6 +80,12 @@ const constants = {
   UNIT_TYPES: {
     priest: 'Priest',
     villager: 'Villager',
+  },
+  WORK_TYPES: {
+    farmer: 'farmer',
+    forager: 'forager',
+    hunter: 'hunter',
+    woodcutter: 'woodcutter',
   },
 }
 
@@ -858,6 +868,12 @@ function loadNpcFollowModule(instances) {
     './grid/visibility': {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
+    './grid/movement': {
+      getInstanceClosestFreeCellPath: (_unit, target) => target.path ?? [{ i: target.i, j: target.j }],
+    },
+    './combat': {
+      isWheatMature: target => target?.mature !== false,
+    },
     './maths': {
       angleDelta,
       getInstanceDegree: () => 0,
@@ -942,6 +958,45 @@ test('followers match the hero walking pace while following', () => {
   updateNpcFollow(hero, { matchHeroWalk: false })
 
   assert.equal(follower.requestedMoveSpeedFactor, undefined)
+})
+
+test('stationary followers copy the hero crouch pose without needing to move', () => {
+  const { updateNpcFollow } = loadModule('app/lib/npc/npcInteraction.ts', {
+    '../constants': constants,
+    './buildings/buildingTraining': {
+      getTrainingTargetForUnit: () => null,
+    },
+    './grid/visibility': {
+      findInstancesInSight: () => [],
+    },
+    './maths': {
+      angleDelta,
+      getInstanceDegree: () => 0,
+      isometricToCartesian: () => [0, 0],
+    },
+    './units/unitCrouchPose': {
+      applyUnitCrouchPose: (unit, active) => {
+        unit.isCrouching = active
+      },
+      resetUnitCrouchPose: () => {},
+    },
+  })
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 0,
+    j: 0,
+    getActionCondition: () => true,
+  })
+  hero.isCrouching = true
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [])
+  assert.equal(follower.isCrouching, true)
+
+  hero.isCrouching = false
+  updateNpcFollow(hero)
+
+  assert.equal(follower.isCrouching, false)
 })
 
 test('followers defend the hero from an attacking predator', () => {
@@ -1029,4 +1084,296 @@ test('a follower dragged past the leash breaks off and returns to the hero', () 
   updateNpcFollow(hero)
 
   assert.deepEqual(calls, [['move', heroCell]])
+})
+
+test('villager followers mirror the hero chopping nearby trees without keeping a permanent wood job', () => {
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-1',
+    path: [{ i: 1, j: 1 }],
+    quantity: 40,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([tree])
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 2,
+    j: 0,
+    type: constants.UNIT_TYPES.villager,
+    autonomousJob: null,
+    getActionCondition: (target, action) => target === tree && action === constants.ACTION_TYPES.chopwood,
+    sendToTree(target) {
+      calls.push(['chopwood', target])
+      this.dest = target
+      this.action = constants.ACTION_TYPES.chopwood
+      this.work = constants.WORK_TYPES.woodcutter
+      this.autonomousJob = 'wood'
+    },
+  })
+  hero.action = constants.ACTION_TYPES.chopwood
+  hero.dest = tree
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['chopwood', tree]])
+  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.chopwood, targetLabel: 'tree-1' })
+  assert.equal(follower.autonomousJob, null)
+})
+
+test('villager followers mirror hero farming while skipping occupied wheat', () => {
+  const occupiedWheat = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'wheat-1',
+    path: [{ i: 1, j: 1 }],
+    quantity: 20,
+    type: constants.RESOURCE_TYPES.wheat,
+  }
+  const freeWheat = {
+    ...occupiedWheat,
+    i: 2,
+    label: 'wheat-2',
+    path: [{ i: 2, j: 1 }],
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([occupiedWheat, freeWheat])
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 3,
+    j: 0,
+    type: constants.UNIT_TYPES.villager,
+    getActionCondition: (_target, action) => action === constants.ACTION_TYPES.farm,
+    sendToFarm(target) {
+      calls.push(['farm', target])
+      this.dest = target
+      this.action = constants.ACTION_TYPES.farm
+      this.work = constants.WORK_TYPES.farmer
+    },
+  })
+  const busyFarmer = {
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.farmer,
+    action: constants.ACTION_TYPES.farm,
+    dest: occupiedWheat,
+    owner: hero.owner,
+  }
+  hero.owner.units.push(busyFarmer)
+  hero.action = constants.ACTION_TYPES.farm
+  hero.dest = occupiedWheat
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['farm', freeWheat]])
+  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.farm, targetLabel: 'wheat-2' })
+})
+
+test('followers mirror the hero attacking a live target', () => {
+  const target = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 12,
+    i: 2,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'boar-1',
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([target])
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 1,
+    j: 0,
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.attack,
+    sendToAttack(orderTarget) {
+      calls.push(['attack', orderTarget])
+      this.dest = orderTarget
+      this.action = constants.ACTION_TYPES.attack
+    },
+  })
+  hero.action = constants.ACTION_TYPES.attack
+  hero.dest = target
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['attack', target]])
+  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.attack, targetLabel: 'boar-1' })
+})
+
+test('villager followers treat a hero bow intent at a deer as a hunt order for that deer', () => {
+  const deer = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 8,
+    i: 2,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'deer-1',
+    path: [{ i: 2, j: 1 }],
+    quantity: 80,
+    type: 'Deer',
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([])
+  const { hero, follower, calls } = makeEscortWorld({
+    i: 1,
+    j: 0,
+    type: constants.UNIT_TYPES.villager,
+    getActionCondition: (target, action) => target === deer && action === constants.ACTION_TYPES.hunt,
+    isUnitAtDest: (action, target) => action === constants.ACTION_TYPES.hunt && target === deer,
+    sendToHunt(target) {
+      calls.push(['hunt', target])
+      this.dest = target
+      this.action = constants.ACTION_TYPES.hunt
+      this.work = constants.WORK_TYPES.hunter
+    },
+  })
+  hero.action = null
+  hero.dest = null
+  hero.followAssistIntent = { action: constants.ACTION_TYPES.hunt, target: deer, targetLabel: 'deer-1' }
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['hunt', deer]])
+  assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.hunt, targetLabel: 'deer-1' })
+})
+
+test('villager followers do not walk toward a deer for a hero bow-shot intent', () => {
+  const deer = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 8,
+    i: 2,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'deer-1',
+    path: [{ i: 2, j: 1 }],
+    quantity: 80,
+    type: 'Deer',
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([])
+  const { hero, follower, heroCell, calls } = makeEscortWorld({
+    i: 4,
+    j: 0,
+    type: constants.UNIT_TYPES.villager,
+    action: constants.ACTION_TYPES.hunt,
+    dest: deer,
+    followAssist: { action: constants.ACTION_TYPES.hunt, targetLabel: 'deer-1' },
+    getActionCondition: (target, action) => target === deer && action === constants.ACTION_TYPES.hunt,
+    isUnitAtDest: () => false,
+    sendToHunt(target) {
+      calls.push(['hunt', target])
+    },
+    stop() {
+      calls.push(['stop'])
+      this.action = null
+      this.dest = null
+    },
+  })
+  hero.action = null
+  hero.dest = null
+  hero.followAssistIntent = { action: constants.ACTION_TYPES.hunt, target: deer, targetLabel: 'deer-1' }
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['stop'], ['move', heroCell]])
+  assert.equal(follower.followAssist, null)
+})
+
+test('followers stop temporary follow-assist work when the hero stops that work', () => {
+  const { updateNpcFollow } = loadNpcFollowModule([])
+  const { hero, follower, heroCell, calls } = makeEscortWorld({
+    i: 4,
+    j: 0,
+    action: constants.ACTION_TYPES.chopwood,
+    dest: { label: 'tree-1' },
+    followAssist: { action: constants.ACTION_TYPES.chopwood, targetLabel: 'tree-1' },
+    stop() {
+      calls.push(['stop'])
+      this.action = null
+      this.dest = null
+    },
+  })
+  hero.action = null
+  hero.dest = null
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [['stop'], ['move', heroCell]])
+  assert.equal(follower.followAssist, null)
+})
+
+test('assisted hunters stop when their hunted animal dies instead of switching to meat gathering', () => {
+  const calls = []
+  const deer = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 0,
+    isDead: true,
+    isDestroyed: false,
+    quantity: 80,
+  }
+  const { UnitDirectedActions } = loadTsModule('app/classes/unit/UnitDirectedActions.ts', {
+    mocks: {
+      '../../constants': {
+        ...constants,
+        LOADING_TYPES: { meat: 'meat' },
+        SHEET_TYPES: { action: 'action' },
+        SOUND_CUES: { villager: { takeMeat: 'takeMeat' } },
+      },
+      '../../lib': {
+        BOW_SHOOT_RELEASE_FRAME: 7,
+        HUNTING_PROJECTILE: 'Arrow',
+        onSpriteLoopAtFrame: () => {},
+        playerCanSeeInstance: () => true,
+        showHealingFeedback: () => {},
+        syncMovedActionTarget: () => {},
+      },
+      '../../lib/entities/entityHealthDisplay': {
+        syncEntityHealthDisplay: () => {},
+      },
+      '../../lib/lang': {
+        t: key => key,
+      },
+      '../../lib/lpc': {
+        refreshBakedLpcUnitAssets: () => {},
+      },
+      '../../lib/units/unitExperience': {
+        getHealingXpBonus: () => 0,
+        grantUnitXp: () => {},
+        XP_CATEGORIES: { healing: 'healing' },
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => false,
+      },
+      '../../lib/units/unitEnergy': {
+        spendOrWaitForEnergy: () => true,
+      },
+      '../Projectile': {
+        Projectile: class {},
+      },
+      './UnitManualHeroWork': {
+        stopManualHeroAction: () => {},
+      },
+    },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.hunt,
+    dest: deer,
+    followAssist: { action: constants.ACTION_TYPES.hunt, targetLabel: 'deer-1' },
+    getActionCondition: () => true,
+    sendToTakeMeat: target => calls.push(['takemeat', target]),
+    sprite: {},
+    stop() {
+      calls.push(['stop'])
+      this.action = null
+      this.dest = null
+    },
+  }
+
+  new UnitDirectedActions(unit, () => {}).handleHuntAction()
+
+  assert.deepEqual(calls, [['stop']])
+  assert.equal(unit.followAssist, null)
 })

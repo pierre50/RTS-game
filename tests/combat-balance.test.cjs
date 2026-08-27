@@ -23,13 +23,16 @@ function loadPlayerConfig() {
     banditChief: 'BanditChief',
     banditSword: 'BanditSword',
   }
+  const buildingTypes = {
+    fireCamp: 'FireCamp',
+  }
   const soundCues = {
     projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
     unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
   }
   const mocks = {
     './civilizations': { getCivilizationDefinition: () => ({ disabledUnits: [], disabledTechnologies: [] }) },
-    '../constants': { UNIT_TYPES: unitTypes },
+    '../constants': { BUILDING_TYPES: buildingTypes, CAMP_DECORATION_BUILDING_TYPES: [], UNIT_TYPES: unitTypes },
     '../constants/sounds': { SOUND_CUES: soundCues },
     '../lib/equipment/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
   }

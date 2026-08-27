@@ -226,6 +226,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'weather/heavy-wind',
       'weather/night-ambience',
       'weather/ocean-ambience',
+      'building/campfire-crackle',
       'weather/thunder-1',
       'weather/thunder-2',
       'weather/thunder-3',

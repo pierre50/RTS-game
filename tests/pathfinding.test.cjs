@@ -78,3 +78,13 @@ test('pathfinding still blocks solid cells occupied by another unit', () => {
 
   assert.deepEqual(path, [])
 })
+
+test('pathfinding blocks water-border shoreline cells', () => {
+  const { findInstancePath } = loadPathfinding()
+  const grid = makeLineGrid()
+  grid[1][0].waterBorder = true
+
+  const path = findInstancePath({ i: 0, j: 0, label: 'villager-1' }, 2, 0, { grid, size: 2 })
+
+  assert.deepEqual(path, [])
+})

@@ -248,7 +248,7 @@
     }
   },
   "FireCamp": {
-    "size": 2,
+    "size": 1,
     "zIndexOffset": -0.5,
     "occlusionFade": false,
     "sight": 9,

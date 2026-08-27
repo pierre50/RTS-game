@@ -65,6 +65,8 @@ function loadAIStrategy(options = {}) {
     if (request === './AIStrategyBuilding') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyBuilding.ts'))
     if (request === './AIStrategyProduction') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyProduction.ts'))
     if (request === './AIStrategyTech') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTech.ts'))
+    if (request === './AIStrategyTechnologyActions')
+      return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTechnologyActions.ts'))
     if (request === './config') {
       return {
         AGE_UP_BUFFERS: {},

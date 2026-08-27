@@ -10,7 +10,7 @@ const FADE_SPEED_PER_MS = 1 / 150
 const SEARCH_RADIUS = 6
 const ZINDEX_EPSILON = 0.01
 
-export function isFadeableHeroOccluder(target: RuntimeEntity): boolean {
+function isFadeableHeroOccluder(target: RuntimeEntity): boolean {
   if (!target || target.isDead || target.isDestroyed || !target.sprite) return false
   if (target.occlusionFade === false) return false
   if (target.family === FAMILY_TYPES.building) return (target as BuildingEntity).isBuilt === true

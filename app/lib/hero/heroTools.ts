@@ -45,8 +45,12 @@ export function triggerToolAttackAt(
   if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)
   if (tool === 'bow' || tool === 'lasso' || tool === 'sword') {
-    return beginHeroPowerChargeAt(hero, destination, null, tool)
+    const triggered = beginHeroPowerChargeAt(hero, destination, null, tool)
+    if (!triggered) return false
+    hero.followAssistIntent = null
+    return true
   }
+  hero.followAssistIntent = null
   if (tool !== 'interact') return false
   const actionResult = performContextActionAt(hero)
   if (actionResult === 'triggered') return true
