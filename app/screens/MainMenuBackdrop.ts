@@ -50,7 +50,7 @@ const SKY_RAY_BASE_ANGLE = 30
 const SKY_RAY_GAIN = 0.36
 const SKY_RAY_LACUNARITY = 2.75
 const SKY_RAY_ALPHA = 0.58
-const STAR_COUNT = 122
+const STAR_COUNT = 260
 const STAR_COLOR = 0xf5f1dc
 const STAR_ALT_COLOR = 0xaadfff
 const CLOUD_COPY_COUNT = 3
@@ -219,6 +219,7 @@ export class MainMenuBackdrop {
     const entries = await Promise.all(
       Object.entries(CLOUD_TEXTURES).map(async ([key, source]) => {
         const texture = await Assets.load<Texture>(source)
+        texture.source.scaleMode = 'linear'
         return [key, texture] as const
       }),
     )
