@@ -186,10 +186,10 @@ test('a walking animal blocked by another animal pauses its animation', () => {
   assert.equal(animal.sprite.stopCalls, 1)
 })
 
-test('an animal repaths instead of stepping onto a water-border cell', () => {
+test('an animal repaths instead of stepping onto a water cell', () => {
   const { movement, animal, grid, calls } = createMovement()
   const nextCell = grid[5][6]
-  nextCell.waterBorder = true
+  nextCell.category = 'Water'
   animal.path = [nextCell]
   animal.dest = grid[9][9]
   animal.action = 'flee'

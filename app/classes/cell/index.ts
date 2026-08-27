@@ -37,6 +37,7 @@ type CellOptions = {
   z?: number
   type: string
   textureName?: TextureRef
+  terrainHidden?: boolean
   skipFog?: boolean
   fogSprites?: FogSpriteMemory[]
 }
@@ -67,6 +68,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   inclined: boolean
   border: boolean
   waterBorder: boolean
+  terrainHidden: boolean
   z: number
   viewed: boolean
   viewBy: Set<VisionViewerRef>
@@ -102,6 +104,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.inclined = false
     this.border = false
     this.waterBorder = false
+    this.terrainHidden = false
     this.z = 0
     this.viewed = false
     this.viewBy = new Set()
@@ -147,7 +150,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     )
     this.sprite.roundPixels = true
     this.sprite.eventMode = 'none'
-    this.sprite.renderable = this.category !== 'Water'
+    this.sprite.renderable = !this.terrainHidden && this.category !== 'Water'
     this.addChild(this.sprite)
 
     this.cellFog = options.skipFog ? null : new CellFog(this)

@@ -10,6 +10,10 @@ type OceanAmbiencePosition = {
   j: number
 }
 
+type OceanAmbienceOptions = {
+  mapType?: string | null
+}
+
 const OCEAN_AMBIENCE_RADIUS_CELLS = 10
 const OCEAN_AMBIENCE_MAX_VOLUME = 0.38
 export const OCEAN_AMBIENCE_LERP_PER_SECOND = 1.8
@@ -45,8 +49,10 @@ function getNearestOceanAmbienceDistance(
 export function getOceanAmbienceTargetVolume(
   grid: OceanAmbienceGrid,
   position: OceanAmbiencePosition | null | undefined,
-  radius = OCEAN_AMBIENCE_RADIUS_CELLS
+  radius = OCEAN_AMBIENCE_RADIUS_CELLS,
+  options: OceanAmbienceOptions = {}
 ): number {
+  if (options.mapType === 'interior') return 0
   if (!position) return 0
   const distance = getNearestOceanAmbienceDistance(grid, position, radius)
   if (distance == null || distance > radius) return 0

@@ -38,6 +38,18 @@ function createResourceFromState(resource: BlueprintResourceState, map: MapGener
   return map.addChild(new Resource({ ...resource, isNaturalResource: true }, runtimeContext(map.context)))
 }
 
+function isInteriorBlueprint(blueprint: MapBlueprint): boolean {
+  return blueprint.kind === 'interior' || blueprint.mapType === 'interior'
+}
+
+function maskValue(mask: MapBlueprint['floorMask'], i: number, j: number): boolean {
+  return mask?.[i]?.[j] === 1
+}
+
+function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: number): boolean {
+  return Boolean(blueprint.exits?.some(exit => exit?.i === i && exit?.j === j))
+}
+
 export class MapBlueprintGeneration {
   map: MapGenerationMap
   yieldToBrowser: () => Promise<void>
@@ -85,21 +97,29 @@ export class MapBlueprintGeneration {
         await this.yieldToBrowser()
       }
     }
+    this.applyInteriorMasks(blueprint)
     this.map.blueprintCellCreationMs = performance.now() - startedAt
     this.map.context.performance?.record('blueprintCellCreation', this.map.blueprintCellCreationMs)
 
-    const fillWaterStartedAt = performance.now()
-    this.map.fillWaterGaps()
-    this.map.blueprintFillWaterGapsMs = performance.now() - fillWaterStartedAt
-    await this.yieldToBrowser()
-    const normalizeWaterStartedAt = performance.now()
-    this.map.normalizeWaterTopology()
-    this.map.blueprintNormalizeWaterMs = performance.now() - normalizeWaterStartedAt
-    await this.yieldToBrowser()
-    const waterBorderStartedAt = performance.now()
-    this.map.formatCellsWaterBorder()
-    this.map.blueprintWaterBorderReady = true
-    this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
+    if (isInteriorBlueprint(blueprint)) {
+      this.map.blueprintFillWaterGapsMs = 0
+      this.map.blueprintNormalizeWaterMs = 0
+      this.map.blueprintInitialWaterBorderMs = 0
+      this.map.blueprintWaterBorderReady = true
+    } else {
+      const fillWaterStartedAt = performance.now()
+      this.map.fillWaterGaps()
+      this.map.blueprintFillWaterGapsMs = performance.now() - fillWaterStartedAt
+      await this.yieldToBrowser()
+      const normalizeWaterStartedAt = performance.now()
+      this.map.normalizeWaterTopology()
+      this.map.blueprintNormalizeWaterMs = performance.now() - normalizeWaterStartedAt
+      await this.yieldToBrowser()
+      const waterBorderStartedAt = performance.now()
+      this.map.formatCellsWaterBorder()
+      this.map.blueprintWaterBorderReady = true
+      this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
+    }
 
     this.loadBlueprintResources(blueprint)
   }
@@ -128,21 +148,47 @@ export class MapBlueprintGeneration {
         row[j] = cell
       }
     }
+    this.applyInteriorMasks(blueprint)
 
-    this.map.fillWaterGaps()
-    this.map.normalizeWaterTopology()
-    this.map.formatCellsWaterBorder()
+    if (isInteriorBlueprint(blueprint)) {
+      this.map.blueprintWaterBorderReady = true
+    } else {
+      this.map.fillWaterGaps()
+      this.map.normalizeWaterTopology()
+      this.map.formatCellsWaterBorder()
+    }
     this.loadBlueprintResources(blueprint)
   }
 
   applyBlueprintMetadata(blueprint: MapBlueprint): void {
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
-    this.map.mapType = 'continent'
+    this.map.mapType = isInteriorBlueprint(blueprint) ? 'interior' : (blueprint.mapType ?? 'continent')
     this.map.playersPos = blueprint.spawns || []
+    this.map.interiorExits = blueprint.exits || []
     this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
     this.map.resetRandom()
     this.map.invalidateReliefCoastDistances()
+  }
+
+  applyInteriorMasks(blueprint: MapBlueprint): void {
+    if (!isInteriorBlueprint(blueprint) || !blueprint.floorMask) return
+
+    for (let i = 0; i <= this.map.size; i++) {
+      for (let j = 0; j <= this.map.size; j++) {
+        const cell = this.map.grid[i]?.[j]
+        if (!cell) continue
+        const isFloor = maskValue(blueprint.floorMask, i, j)
+        const isBorder = maskValue(blueprint.borderMask, i, j)
+        const isExit = isBlueprintExitCell(blueprint, i, j)
+        cell.terrainHidden = !isFloor
+        cell.border = isBorder && !isExit
+        cell.waterBorder = false
+        if (!cell.has) cell.solid = !isFloor
+        const sprite = 'sprite' in cell ? (cell.sprite as { renderable?: boolean } | null | undefined) : null
+        if (sprite) sprite.renderable = isFloor && cell.category !== 'Water'
+      }
+    }
   }
 
   loadBlueprintResources(blueprint: MapBlueprint): void {

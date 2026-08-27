@@ -5,6 +5,7 @@ import { applyToolAppearance } from '../../lib/hero/heroTools'
 import { markUnitHealthDamaged } from '../../lib/units/unitHealth'
 import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/units/unitControl'
+import { keepSleepingOutsideVisual } from '../../services/VillagerSleepVisuals'
 import { debugBanditStop } from './UnitBanditDebug'
 import { UnitActions } from './UnitActions'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -119,9 +120,7 @@ export function stopUnit(unit: UnitStateHost): void {
   unit.path = []
   unit.stopInterval()
   if (unit.shelterState?.status === 'outside') {
-    unit.setTextures(SHEET_TYPES.dying)
-    unit.sprite?.gotoAndStop?.(0)
-    unit.sprite?.stop?.()
+    keepSleepingOutsideVisual(unit)
     unit.actionLocked = true
     return
   }

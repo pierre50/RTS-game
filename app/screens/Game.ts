@@ -7,7 +7,11 @@ import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { adjustFactionRelation } from '../lib/combat/factions'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
-import { MapBlueprintLoadError, loadPregeneratedMapBlueprint } from '../serialization/MapBlueprintLoader'
+import {
+  MapBlueprintLoadError,
+  loadPregeneratedInteriorBlueprint,
+  loadPregeneratedMapBlueprint,
+} from '../serialization/MapBlueprintLoader'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import {
   addRuntimeServiceLayers,
@@ -41,6 +45,7 @@ import {
 } from './game/GamePortalTravel'
 import {
   travelIntoBuildingInterior as travelIntoBuildingInteriorRuntime,
+  travelOutOfBuildingInterior as travelOutOfBuildingInteriorRuntime,
   type BuildingInteriorTravelGame,
 } from './game/GameBuildingInteriorTravel'
 import {
@@ -81,6 +86,7 @@ type MapInstance = RuntimeMapInstance & {
 }
 
 type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
+type RequiredInteriorBlueprintOptions = Parameters<typeof loadPregeneratedInteriorBlueprint>[0]
 
 /**
  * Main Display Object
@@ -170,6 +176,18 @@ export default class Game extends Container {
   async _loadRequiredMapBlueprint(options: RequiredBlueprintOptions = {}) {
     try {
       return await loadPregeneratedMapBlueprint(options)
+    } catch (error) {
+      if (error instanceof MapBlueprintLoadError) {
+        console.error(`[maps] ${error.reason}: ${error.message}`)
+        throw new Error(t('mapBlueprintUnavailable'))
+      }
+      throw error
+    }
+  }
+
+  async _loadRequiredInteriorBlueprint(options: RequiredInteriorBlueprintOptions = {}) {
+    try {
+      return await loadPregeneratedInteriorBlueprint(options)
     } catch (error) {
       if (error instanceof MapBlueprintLoadError) {
         console.error(`[maps] ${error.reason}: ${error.message}`)
@@ -387,6 +405,10 @@ export default class Game extends Container {
 
   async travelIntoBuildingInterior(building: BuildingEntity): Promise<void> {
     await travelIntoBuildingInteriorRuntime(this as BuildingInteriorTravelGame, building)
+  }
+
+  async travelOutOfBuildingInterior(): Promise<void> {
+    await travelOutOfBuildingInteriorRuntime(this as BuildingInteriorTravelGame)
   }
 
   async load(json: SaveRecord): Promise<void> {

@@ -11,6 +11,7 @@ import {
 import { heroCanCommand } from '../lib/chief'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { setUnitControlMode } from '../lib/units/unitControl'
+import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
 import { resolveHeroProximityInteraction, type HeroProximityInteraction } from '../lib/hero/heroProximityInteractions'
@@ -280,7 +281,7 @@ export class HeroController {
 
   getProximityInteraction(): HeroProximityInteraction | null {
     return resolveHeroProximityInteraction({
-      buildings: this.controls.context.player?.buildings,
+      buildings: getKnownBuildings(this.controls.context),
       companionHorse: this.getActiveCompanionHorse(),
       hero: this.heroUnit,
       openEntityTarget: this.controls.getFacingEntityTarget(),
@@ -304,6 +305,10 @@ export class HeroController {
     if (!interaction) return false
     if (interaction.action === 'enter') {
       this.controls.context.travelIntoBuildingInterior?.(interaction.target)
+      return true
+    }
+    if (interaction.action === 'exit') {
+      this.controls.context.travelOutOfBuildingInterior?.()
       return true
     }
     if (interaction.action === 'mount') return this.mountCompanionHorse(interaction.target as CompanionHorse)

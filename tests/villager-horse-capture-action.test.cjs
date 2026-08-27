@@ -107,6 +107,7 @@ function loadUnitActions(calls, captureHorse) {
     if (request === '../../lib/units/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/units/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
     if (request === '../../lib/entities/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
+    if (request === '../../lib/buildings/buildingOccupancy') return { getBuildingShelterCapacity: () => 0 }
     if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
     if (request === './UnitCaptureHorseAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))

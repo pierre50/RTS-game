@@ -155,6 +155,7 @@ export interface UnitEntity extends EnergyEntity {
   buildQueue?: BuildingEntity[]
   isDirectMoving?: boolean
   requestedMoveSpeedFactor?: number
+  tired?: boolean
   degree?: number
   huntRange?: number
   visibleCells?: Set<number>

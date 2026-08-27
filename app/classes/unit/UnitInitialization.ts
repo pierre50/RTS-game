@@ -121,6 +121,7 @@ export function initializeUnitRuntimeState(unit: UnitRuntimeHost): void {
   unit.actionLocked = false
   unit.pendingOrder = null
   unit.currentSheet = SHEET_TYPES.standing
+  unit.tired = undefined
   unit.inactif = true
   unit.experience = {}
 }

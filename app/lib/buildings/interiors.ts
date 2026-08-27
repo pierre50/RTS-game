@@ -1,79 +1,58 @@
 import { BUILDING_TYPES } from '../../constants'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
-import { angleDelta, getInstanceDegree } from '../maths'
+import type { GridPosition } from '../../types/grid'
+import type { RuntimeCell } from '../../types/map'
+import { sameGridCell } from '../grid/interactionCells'
 
-const TOWN_CENTER_DOOR_OFFSET_X = 0
-const TOWN_CENTER_DOOR_OFFSET_Y = 48
-const TOWN_CENTER_DOOR_RADIUS_X = 48
-const TOWN_CENTER_DOOR_RADIUS_Y = 38
-const TOWN_CENTER_DOOR_FACING_OFFSET_X = 0
-const TOWN_CENTER_DOOR_FACING_OFFSET_Y = 0
-const TOWN_CENTER_DOOR_HALF_ANGLE = 70
+const DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET = { i: 1, j: 2 }
 
-type BuildingInteriorDoorConfig = {
-  facingHalfAngle?: number
-  facingOffsetX?: number
-  facingOffsetY?: number
-  offsetX?: number
-  offsetY?: number
-  radius?: number
-  radiusX?: number
-  radiusY?: number
+type BuildingInteriorEntryConfig = {
+  entryOffset?: Partial<GridPosition>
 }
 
 type BuildingWithInteriorConfig = BuildingEntity & {
-  interior?: {
-    door?: BuildingInteriorDoorConfig
+  interior?: BuildingInteriorEntryConfig & {
     type?: string
   }
 }
 
-function doorConfigForBuilding(building: BuildingWithInteriorConfig): Required<BuildingInteriorDoorConfig> | null {
-  if (building.type !== BUILDING_TYPES.townCenter || !building.isBuilt) return null
-  const configured = building.interior?.door ?? {}
-  const radius = configured.radius ?? 0
+const BUILDING_INTERIOR_TYPES = new Set<string>([BUILDING_TYPES.townCenter, BUILDING_TYPES.house])
+
+export function isBuildingInteriorSupported(building: Pick<BuildingEntity, 'isBuilt' | 'type'> | null | undefined): boolean {
+  return Boolean(building?.isBuilt && BUILDING_INTERIOR_TYPES.has(building.type))
+}
+
+function entryOffsetForBuilding(building: BuildingWithInteriorConfig): GridPosition {
   return {
-    offsetX: configured.offsetX ?? TOWN_CENTER_DOOR_OFFSET_X,
-    offsetY: configured.offsetY ?? TOWN_CENTER_DOOR_OFFSET_Y,
-    radius,
-    radiusX: configured.radiusX ?? (radius || TOWN_CENTER_DOOR_RADIUS_X),
-    radiusY: configured.radiusY ?? (radius || TOWN_CENTER_DOOR_RADIUS_Y),
-    facingOffsetX: configured.facingOffsetX ?? TOWN_CENTER_DOOR_FACING_OFFSET_X,
-    facingOffsetY: configured.facingOffsetY ?? TOWN_CENTER_DOOR_FACING_OFFSET_Y,
-    facingHalfAngle: configured.facingHalfAngle ?? TOWN_CENTER_DOOR_HALF_ANGLE,
+    i: building.interior?.entryOffset?.i ?? DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET.i,
+    j: building.interior?.entryOffset?.j ?? DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET.j,
   }
 }
 
-function isHeroInDoorZone(hero: UnitEntity, building: BuildingWithInteriorConfig): boolean {
-  const door = doorConfigForBuilding(building)
-  if (!door) return false
-  const x = building.x + door.offsetX
-  const y = building.y + door.offsetY
-  const normalizedX = (hero.x - x) / door.radiusX
-  const normalizedY = (hero.y - y) / door.radiusY
-  return normalizedX * normalizedX + normalizedY * normalizedY <= 1
+export function getBuildingInteriorEntryCell(
+  building: BuildingEntity | null | undefined,
+  grid: RuntimeCell[][] | null | undefined = building?.context?.map?.grid
+): RuntimeCell | null {
+  if (!building || !isBuildingInteriorSupported(building) || !grid) return null
+  const offset = entryOffsetForBuilding(building as BuildingWithInteriorConfig)
+  return grid[building.i + offset.i]?.[building.j + offset.j] ?? null
 }
 
-function isHeroFacingDoor(hero: UnitEntity, building: BuildingWithInteriorConfig): boolean {
-  const door = doorConfigForBuilding(building)
-  if (!door || typeof hero.degree !== 'number') return false
-  const targetX = building.x + door.facingOffsetX
-  const targetY = building.y + door.facingOffsetY
-  return angleDelta(getInstanceDegree(hero, targetX, targetY), hero.degree) <= door.facingHalfAngle
+export function isHeroOnBuildingInteriorEntryCell(
+  hero: UnitEntity | null | undefined,
+  building: BuildingEntity | null | undefined
+): boolean {
+  if (!hero || !building) return false
+  return sameGridCell(hero, getBuildingInteriorEntryCell(building, hero.context?.map?.grid))
 }
 
 export function findBuildingInteriorEntryTarget(
   hero: UnitEntity | null,
-  buildings: BuildingEntity[] | null | undefined,
-  options: { requireFacing?: boolean } = {}
+  buildings: BuildingEntity[] | null | undefined
 ): BuildingEntity | null {
   if (!hero) return null
-  const requireFacing = options.requireFacing ?? true
   for (const building of buildings || []) {
-    const interiorBuilding = building as BuildingWithInteriorConfig
-    if (isHeroInDoorZone(hero, interiorBuilding) && (!requireFacing || isHeroFacingDoor(hero, interiorBuilding))) {
-      return building
-    }
+    if (isHeroOnBuildingInteriorEntryCell(hero, building)) return building
   }
   return null
 }

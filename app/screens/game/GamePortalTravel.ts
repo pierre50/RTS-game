@@ -78,6 +78,17 @@ function restorePortalHeroProtection(protection: PortalHeroInvincibility | null)
   }
 }
 
+function commitPortalCampaign(game: PortalTravelGame, campaign: CampaignSave): void {
+  game._campaignSave = structuredClone(campaign)
+  game._restartSaveData = structuredClone(campaign)
+  game._autosaveCampaign()
+}
+
+function saveRuntimeToCurrentCampaign(game: PortalTravelGame, campaign: CampaignSave, now: number): CampaignSave {
+  const state = withFogEnabledState(serializeGame(game._gameContext()))
+  return updateCurrentWorldState(campaign, state, now)
+}
+
 function getPortalRevealPoint(game: PortalTravelGame, hero: UnitEntity | null): PortalRevealPoint | null {
   if (!hero) return null
   const { controls } = game._gameContext()
@@ -269,11 +280,7 @@ async function bootCampaignSaveWorld(
   game._map().revealEverything = false
   applyPortalPartyToRuntime(game, party, findPortalArrivalCell(game), { equippedItem })
   const arrivalHero = runtimeHeroUnit(game)
-  const targetState = withFogEnabledState(serializeGame(game._gameContext()))
-  const committedCampaign = updateCurrentWorldState(campaign, targetState, now)
-  game._campaignSave = structuredClone(committedCampaign)
-  game._restartSaveData = structuredClone(committedCampaign)
-  game._autosaveCampaign()
+  commitPortalCampaign(game, saveRuntimeToCurrentCampaign(game, campaign, now))
   return {
     heroProtection: protectPortalHero(arrivalHero),
     revealPoint: getPortalRevealPoint(game, arrivalHero),
@@ -308,7 +315,7 @@ export async function travelThroughPortal(
     : createInitialCampaignSave(currentWorldState, { now })
   const currentCampaignWorld = campaign.worlds[campaign.currentWorldId]
   const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
-  const targetWorldId = portalWorldId(game._campaignSave?.currentWorldId, portal, color)
+  const targetWorldId = portalWorldId(campaign.currentWorldId, portal, color)
   const existingTarget = campaign.worlds[targetWorldId]
   const heroSpriteSources = heroTravelSpriteSources(game.context.player)
   const portalTransition = new PortalTravelTransition(color, {
@@ -370,9 +377,7 @@ export async function travelThroughPortal(
         parentWorldId,
         worldId: targetWorldId,
       })
-      game._campaignSave = structuredClone(nextCampaign)
-      game._restartSaveData = structuredClone(nextCampaign)
-      game._autosaveCampaign()
+      commitPortalCampaign(game, nextCampaign)
     }
     game.context.menu?.show?.()
   } finally {

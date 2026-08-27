@@ -261,7 +261,16 @@ export async function loadPregeneratedInteriorBlueprint({
     const expectedCells = (size + 1) ** 2
     const terrainValues = decodeBase64Bytes(payload.terrain, Uint8Array)
     const reliefValues = decodeBase64Bytes(payload.relief, Int8Array)
-    if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) {
+    const floorMaskValues =
+      typeof payload.floorMask === 'string' ? decodeBase64Bytes(payload.floorMask, Uint8Array) : null
+    const borderMaskValues =
+      typeof payload.borderMask === 'string' ? decodeBase64Bytes(payload.borderMask, Uint8Array) : null
+    if (
+      terrainValues.length !== expectedCells ||
+      reliefValues.length !== expectedCells ||
+      (floorMaskValues && floorMaskValues.length !== expectedCells) ||
+      (borderMaskValues && borderMaskValues.length !== expectedCells)
+    ) {
       fail('map-invalid', `Interior blueprint "${selected.path}" has invalid terrain data`)
     }
 
@@ -269,6 +278,7 @@ export async function loadPregeneratedInteriorBlueprint({
       id: payload.id || selected.id,
       kind: 'interior',
       interiorType: payload.interiorType || selected.interiorType,
+      mapType: 'interior',
       size,
       seed: payload.seed,
       terrain: toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass')),
@@ -276,7 +286,8 @@ export async function loadPregeneratedInteriorBlueprint({
       spawns: Array.isArray(payload.spawns) ? payload.spawns : [],
       exits: Array.isArray(payload.exits) ? payload.exits : [],
       resources: Array.isArray(payload.resources) ? payload.resources : [],
-      floorMask: typeof payload.floorMask === 'string' ? payload.floorMask : null,
+      floorMask: floorMaskValues ? toGrid(floorMaskValues, size, value => value) : undefined,
+      borderMask: borderMaskValues ? toGrid(borderMaskValues, size, value => value) : undefined,
       floorShape: payload.floorShape ?? null,
     }
   } catch (error) {

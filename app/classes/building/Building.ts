@@ -7,6 +7,7 @@ import {
 } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
+import { stopFlameAmbientSound } from './BuildingFire'
 import { BuildingProduction } from './BuildingProduction'
 import type { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
@@ -104,6 +105,7 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundTicker?: ((ticker?: { deltaMS?: number; elapsedMS?: number }) => void) | null
   flameSoundStopped?: boolean
   increasePopulation?: number
+  shelterCapacity?: number
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {
@@ -292,6 +294,7 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
+    stopFlameAmbientSound(this)
     this.buildingTrainingPreview?.destroy()
     this.buildingTrainingPreview = null
     destroyBuildingVisuals(this)

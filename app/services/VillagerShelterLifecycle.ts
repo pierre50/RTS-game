@@ -1,4 +1,4 @@
-import { FADE_DURATION_MS, SHEET_TYPES } from '../constants'
+import { FADE_DURATION_MS } from '../constants'
 import {
   cartesianToIsometric,
   getGroundReliefLevel,
@@ -16,6 +16,13 @@ import {
   isUsableShelter,
   SHELTER_MAX_RETRIES,
 } from './VillagerShelterRules'
+import {
+  cancelSleepingWakeVisual,
+  playSleepingOutsideVisual,
+  playSleepingWakeVisual,
+  setSleepingOutsideFinalVisual,
+  setDetachedShadowsVisible,
+} from './VillagerSleepVisuals'
 
 type RuntimeMapWithBuckets = RuntimeMap & {
   addChild?: (child: UnitEntity) => void
@@ -25,11 +32,8 @@ type RuntimeMapWithBuckets = RuntimeMap & {
 }
 
 export type TimedVillagerShelterState = VillagerShelterState & { hiddenAt?: number }
-
-type UnitWithDetachedShadows = UnitEntity & {
-  horseShadow?: { visible?: boolean } | null
-  syncShadow?: () => void
-}
+export type VillagerWakeMode = 'resume' | 'order'
+export type SleepOutsideVisualMode = 'animate' | 'finalFrame'
 
 function rememberShelterState(
   unit: UnitEntity,
@@ -66,12 +70,6 @@ function stopUnitForShelter(unit: UnitEntity): void {
   unit.inactif = true
 }
 
-function setDetachedShadowsVisible(unit: UnitEntity, visible: boolean): void {
-  const shadowed = unit as UnitWithDetachedShadows
-  if (shadowed.shadow) shadowed.shadow.visible = visible
-  if (shadowed.horseShadow) shadowed.horseShadow.visible = visible
-}
-
 function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void {
   const state = unit.shelterState
   if (state?.status !== 'inside' || state.shelter !== shelter) return
@@ -83,7 +81,12 @@ function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void 
   unit.visible = false
 }
 
-export function sleepOutside(unit: UnitEntity, reason: VillagerShelterReason = unit.shelterState?.reason ?? 'sleep'): void {
+export function sleepOutside(
+  unit: UnitEntity,
+  reason: VillagerShelterReason = unit.shelterState?.reason ?? 'sleep',
+  options: { visual?: SleepOutsideVisualMode } = {}
+): void {
+  cancelSleepingWakeVisual(unit)
   rememberShelterState(unit, { status: 'outside', reason, location: 'outside', shelter: null, targetCell: null })
   cancelFade(unit)
   unit.alpha = 1
@@ -93,21 +96,12 @@ export function sleepOutside(unit: UnitEntity, reason: VillagerShelterReason = u
   unit.dest = null
   unit.action = null
   unit.actionLocked = true
-  unit.setTextures?.(SHEET_TYPES.dying)
-  unit.sprite?.gotoAndStop?.(0)
-  unit.sprite?.stop?.()
+  if ((options.visual ?? 'animate') === 'finalFrame') {
+    setSleepingOutsideFinalVisual(unit)
+  } else {
+    playSleepingOutsideVisual(unit)
+  }
   setUnitOverheadIndicator(unit, 'sleep')
-}
-
-export function keepSleepingOutsideVisual(unit: UnitEntity): void {
-  if (unit.shelterState?.status !== 'outside') return
-  cancelFade(unit)
-  unit.alpha = 1
-  unit.visible = true
-  setDetachedShadowsVisible(unit, true)
-  unit.setTextures?.(SHEET_TYPES.dying)
-  unit.sprite?.gotoAndStop?.(0)
-  unit.sprite?.stop?.()
 }
 
 function markShelterEnteredAt(unit: UnitEntity): void {
@@ -161,23 +155,36 @@ function resumePreviousActivity(unit: UnitEntity, state: VillagerShelterState): 
   unit.alpha = 1
   setDetachedShadowsVisible(unit, true)
   clearUnitOverheadIndicator(unit)
-  unit.setTextures?.(SHEET_TYPES.standing)
-  unit.sprite?.stop?.()
   unit.inactif = true
-  unit.syncShadow?.()
   fadeIn(unit, FADE_DURATION_MS)
 
-  unit.autonomousJob = state.previousAutonomousJob ?? null
-  if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return
+  playSleepingWakeVisual(unit, () => {
+    unit.autonomousJob = state.previousAutonomousJob ?? null
+    if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return
 
-  const previousDest = state.previousDest
-  if (previousDest && !(previousDest as RuntimeEntity).isDestroyed) {
-    unit.work = state.previousWork ?? unit.work ?? null
-    unit.sendToEvt?.(previousDest, state.previousAction ?? null, { forceRepath: true, preserveAutonomy: true })
-  }
+    const previousDest = state.previousDest
+    if (previousDest && !(previousDest as RuntimeEntity).isDestroyed) {
+      unit.work = state.previousWork ?? unit.work ?? null
+      unit.sendToEvt?.(previousDest, state.previousAction ?? null, { forceRepath: true, preserveAutonomy: true })
+    }
+  })
 }
 
-export function wakeUnit(unit: UnitEntity, options: { force?: boolean } = {}): void {
+function wakeWithoutPreviousActivity(unit: UnitEntity, onComplete?: () => void): void {
+  unit.shelterState = null
+  unit.actionLocked = false
+  unit.alpha = 1
+  setDetachedShadowsVisible(unit, true)
+  clearUnitOverheadIndicator(unit)
+  unit.inactif = true
+  fadeIn(unit, FADE_DURATION_MS)
+  playSleepingWakeVisual(unit, onComplete)
+}
+
+export function wakeUnit(
+  unit: UnitEntity,
+  options: { force?: boolean; mode?: VillagerWakeMode; onComplete?: () => void } = {}
+): void {
   const state = unit.shelterState
   if (!state) return
   if (state.status === 'inside') {
@@ -189,6 +196,10 @@ export function wakeUnit(unit: UnitEntity, options: { force?: boolean } = {}): v
     } else if (!options.force) {
       return
     }
+  }
+  if ((options.mode ?? 'resume') === 'order') {
+    wakeWithoutPreviousActivity(unit, options.onComplete)
+    return
   }
   resumePreviousActivity(unit, state)
 }

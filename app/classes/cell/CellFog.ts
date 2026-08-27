@@ -197,3 +197,30 @@ export class CellFog {
     }
   }
 }
+
+type CellFogOwner = FogCellLike & { cellFog: CellFog | null }
+
+export function ensureCellFog(cell: CellFogOwner): CellFog {
+  if (!cell.cellFog) cell.cellFog = new CellFog(cell)
+  return cell.cellFog
+}
+
+export function setCellFog(cell: CellFogOwner, init: boolean): void {
+  return ensureCellFog(cell).setFog(init)
+}
+
+export function removeCellFog(cell: CellFogOwner): void {
+  return ensureCellFog(cell).removeFog()
+}
+
+export function addCellFogBuilding(cell: CellFogOwner, textureSheet: string, colorName?: string): void {
+  return ensureCellFog(cell).addFogBuilding(textureSheet, colorName)
+}
+
+export function removeCellFogBuilding(cell: CellFogOwner, instance?: RuntimeEntity): void {
+  return ensureCellFog(cell).removeFogBuilding(instance)
+}
+
+export function setCellFogChildren(cell: CellFogOwner, instance: RuntimeEntity, init: boolean): void {
+  return ensureCellFog(cell).setFogChildren(instance, init)
+}

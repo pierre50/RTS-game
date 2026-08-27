@@ -137,7 +137,7 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
     pauseForBlockedAnimal(animal)
     return
   }
-  if ((nextCell.solid || nextCell.waterBorder) && animal.dest) {
+  if ((nextCell.solid || nextCell.category === 'Water') && animal.dest) {
     animal.sendTo(animal.dest, animal.action, { forceRepath: true, movementSheet: animal.movementSheet })
     return
   }

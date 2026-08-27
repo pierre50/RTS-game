@@ -198,6 +198,44 @@ test('single-direction dying sheets always use south-facing frames', () => {
   assert.equal(sprite.playCalls, 1)
 })
 
+test('tired units slow action animation when textures change', () => {
+  const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './maths': {
+      degreeToDirection: () => 'south',
+    },
+  })
+  const sprite = {
+    currentFrame: 0,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    play() {},
+  }
+
+  setUnitTexture('actionSheet', {
+    context: {},
+    degree: 180,
+    sprite,
+    tired: true,
+    actionSheet: {
+      data: { animationSpeed: 0.4 },
+      textures: { '000.png': { id: 'action-0' }, '001.png': { id: 'action-1' } },
+    },
+  })
+
+  assert.equal(sprite.animationSpeed, 0.26)
+})
+
 test('mounted units use action art for idle, walking and animated attack actions', () => {
   const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
     '../constants': {

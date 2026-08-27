@@ -79,12 +79,31 @@ test('pathfinding still blocks solid cells occupied by another unit', () => {
   assert.deepEqual(path, [])
 })
 
-test('pathfinding blocks water-border shoreline cells', () => {
+test('pathfinding blocks water cells behind the shoreline', () => {
   const { findInstancePath } = loadPathfinding()
   const grid = makeLineGrid()
-  grid[1][0].waterBorder = true
+  grid[1][0].category = 'Water'
+  grid[1][0].waterBorder = false
+  grid[1][0].solid = false
 
   const path = findInstancePath({ i: 0, j: 0, label: 'villager-1' }, 2, 0, { grid, size: 2 })
 
   assert.deepEqual(path, [])
+})
+
+test('pathfinding can cross water-border shoreline cells', () => {
+  const { findInstancePath } = loadPathfinding()
+  const grid = makeLineGrid()
+  grid[1][0].waterBorder = true
+  grid[1][0].solid = false
+
+  const path = findInstancePath({ i: 0, j: 0, label: 'villager-1' }, 2, 0, { grid, size: 2 })
+
+  assert.deepEqual(
+    path.map(cell => [cell.i, cell.j]),
+    [
+      [2, 0],
+      [1, 0],
+    ]
+  )
 })

@@ -1,18 +1,20 @@
 import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { getFreeLandCellAroundInstance } from '../lib'
+import { hasBuildingShelterCapacity } from '../lib/buildings/buildingOccupancy'
+import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../lib/buildings/interiors'
 import { isHeroControlled } from '../lib/units/unitControl'
+import { isVillagerSleepTime, isVillagerWakeTime } from '../lib/units/villagerSchedule'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, VillagerShelterReason } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 
 export const SHELTER_CHECK_INTERVAL_MS = 1000
 export const DANGER_SHELTER_MIN_MS = 8000
+export const DANGER_SHELTER_MAX_MS = 60000
 const CRITICAL_SHELTER_HITPOINT_RATIO = 0.25
 export const SHELTER_ORDER_GRACE_MS = 2500
 export const SHELTER_MAX_RETRIES = 3
 
-const SLEEP_START_HOUR = 18
-const WAKE_HOUR = 6
 const SHELTER_TYPES = new Set<string>([BUILDING_TYPES.house, BUILDING_TYPES.townCenter])
 
 function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -26,12 +28,11 @@ function hitPointRatio(entity: Pick<RuntimeEntity, 'hitPoints' | 'totalHitPoints
 }
 
 export function isSleepTime(context: GameContextLike): boolean {
-  const hour = context.dayNight?.state?.hour ?? 12
-  return hour >= SLEEP_START_HOUR || hour < WAKE_HOUR
+  return isVillagerSleepTime(context)
 }
 
 export function isWakeTime(context: GameContextLike): boolean {
-  return !isSleepTime(context)
+  return isVillagerWakeTime(context)
 }
 
 export function isUsableShelter(
@@ -59,6 +60,10 @@ export function isShelterUnsafe(building: BuildingEntity | null | undefined): bo
 export function getShelterEntryCell(unit: UnitEntity, shelter: BuildingEntity): RuntimeCell | null {
   const map = unit.context?.map
   if (!map) return null
+  if (isBuildingInteriorSupported(shelter)) {
+    const entryCell = getBuildingInteriorEntryCell(shelter, map.grid)
+    if (entryCell && !entryCell.terrainHidden && entryCell.category !== 'Water' && !entryCell.border) return entryCell
+  }
   return getFreeLandCellAroundInstance(shelter, map.grid, (items: RuntimeCell[]) => {
     let best: RuntimeCell | null = null
     let bestDistance = Infinity
@@ -78,6 +83,13 @@ function getShelterScore(unit: UnitEntity, building: BuildingEntity, reason: Vil
   return distance(unit, building) + townCenterBias
 }
 
+function isShelterVisibleToUnit(unit: UnitEntity, building: BuildingEntity): boolean {
+  const map = unit.context?.map
+  if (map?.revealEverything || building.visible) return true
+  if (!unit.owner?.views) return true
+  return unit.owner.views.isVisible(building.i, building.j)
+}
+
 export function getNearestShelter(
   unit: UnitEntity,
   reason: VillagerShelterReason
@@ -85,7 +97,9 @@ export function getNearestShelter(
   let best: { shelter: BuildingEntity; targetCell: RuntimeCell; score: number } | null = null
   for (const building of unit.owner?.buildings ?? []) {
     if (!isUsableShelter(building, unit.owner)) continue
+    if (!isShelterVisibleToUnit(unit, building)) continue
     if (hitPointRatio(building) <= CRITICAL_SHELTER_HITPOINT_RATIO) continue
+    if (!hasBuildingShelterCapacity(building, unit.owner?.units ?? [], { exclude: unit })) continue
     const targetCell = getShelterEntryCell(unit, building)
     if (!targetCell) continue
     const score = getShelterScore(unit, building, reason)
@@ -101,6 +115,7 @@ export function shouldShelter(unit: UnitEntity): boolean {
       !unit.isDestroyed &&
       !isHeroControlled(unit) &&
       unit.controlMode !== 'hero' &&
+      !unit.followingHero &&
       !unit.trainingTargetType
   )
 }

@@ -103,3 +103,54 @@ test('generated building flames start the shared flame ambient loop', () => {
   assert.equal(building.flameSoundLoop.volume, 0.33)
   assert.equal(tickerCallbacks.length, 1)
 })
+
+test('stopping building flame ambient sound removes ticker and stops loop', () => {
+  const calls = []
+  const ticker = () => {}
+  const loop = { stop: () => calls.push(['stop']), volume: 0.4 }
+  const building = {
+    context: {
+      app: {
+        ticker: {
+          remove: callback => calls.push(['removeTicker', callback === ticker]),
+        },
+      },
+    },
+    flameSoundLoop: loop,
+    flameSoundTicker: ticker,
+    flameSoundStopped: false,
+  }
+
+  const { stopFlameAmbientSound } = loadTsModule('app/classes/building/BuildingFire.ts', {
+    mocks: {
+      '@pixi/sound': { sound: { play: () => loop } },
+      'pixi.js': {
+        AnimatedSprite: class {},
+        Assets: { cache: { get: () => ({ textures: {} }) } },
+        Container: class {},
+      },
+      '../../constants': {
+        BUILDING_TYPES: { fireCamp: 'FireCamp' },
+        LABEL_TYPES: { fire: 'fire' },
+        SOUND_CUES: { building: { burning: 'burning', flame: 'flame' } },
+      },
+      '../../lib': {
+        bindAnimatedSpriteToTicker: () => {},
+        getAnimationFrames: () => [],
+        getBuildingFootprintRadius: () => 0,
+        getHeroDistanceSoundVolume: () => 0,
+        playAudibleSoundCue: () => null,
+      },
+    },
+  })
+
+  stopFlameAmbientSound(building)
+
+  assert.equal(building.flameSoundStopped, true)
+  assert.equal(building.flameSoundTicker, null)
+  assert.equal(building.flameSoundLoop, null)
+  assert.deepEqual(calls, [
+    ['removeTicker', true],
+    ['stop'],
+  ])
+})

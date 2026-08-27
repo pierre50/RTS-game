@@ -316,7 +316,9 @@ export class WeatherSystem {
     const nightTargetVolume = getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
     const hero = this.context.controls?.heroUnit
     const oceanTargetVolume =
-      hero && !hero.isDead && !hero.isDestroyed ? getOceanAmbienceTargetVolume(this.map.grid, hero) : 0
+      hero && !hero.isDead && !hero.isDestroyed
+        ? getOceanAmbienceTargetVolume(this.map.grid, hero, undefined, { mapType: this.map.mapType })
+        : 0
     this.nightVolume = lerp(this.nightVolume, nightTargetVolume, elapsedSeconds * NIGHT_AMBIENCE_LERP_PER_SECOND)
     this.oceanVolume = lerp(this.oceanVolume, oceanTargetVolume, elapsedSeconds * OCEAN_AMBIENCE_LERP_PER_SECOND)
     if (this.rainLoopLight) this.rainLoopLight.volume = rainVolumes.low * RAIN_LOOP_MAX_VOLUME

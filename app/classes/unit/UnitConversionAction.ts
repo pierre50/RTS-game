@@ -10,6 +10,7 @@ import {
 import { grantUnitXp, XP_CATEGORIES, XP_CONVERT_SUCCESS } from '../../lib/units/unitExperience'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
+import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
@@ -186,9 +187,10 @@ export class UnitConversionAction {
       t.assetType = t.assetType || t.type
       removeFromOwnerList(oldOwner, 'buildings', t)
       addToOwnerList(newOwner, 'buildings', t)
-      if (t.increasePopulation && t.populationCapacityApplied) {
-        oldOwner.populationMax = Math.max(0, oldOwner.populationMax - t.increasePopulation)
-        newOwner.populationMax += t.increasePopulation
+      const populationCapacity = getBuildingShelterCapacity(t) || t.increasePopulation || 0
+      if (populationCapacity && t.populationCapacityApplied) {
+        oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
+        newOwner.populationMax += populationCapacity
       }
       t.clearRallyPoint?.()
       t.queue = []

@@ -163,6 +163,7 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib') {
       const libMock = mocks[request] ?? {}
       return {
+        getRoundedIsoShapePoints: libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
         getRoundedIsoFootprintPoints:
           libMock.getRoundedIsoFootprintPoints ?? libMock.getRoundedIsoShapePoints ?? mockRoundedIsoShapePoints,
         pointIsInsidePolygon: libMock.pointIsInsidePolygon ?? mockPointIsInsidePolygon,
@@ -220,6 +221,11 @@ function loadModule(relativePath, mocks) {
     }
     if (request === '../../lib/units/unitLocomotion') {
       return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
+    }
+    if (request === './unitTired' || request === '../../lib/units/unitTired') {
+      return {
+        getUnitTiredSpeedFactor: unit => (unit.tired ? 0.65 : 1),
+      }
     }
     if (request === '../../lib/units/unitCrouchPose') {
       return {
@@ -318,6 +324,8 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  CELL_HEIGHT: 32,
+  CELL_WIDTH: 64,
   ACTION_TYPES: {
     attack: 'attack',
     build: 'build',
@@ -1457,8 +1465,8 @@ test('direct movement advances even when subpixel steps would be ignored by path
     Array.from({ length: 2 }, (_, j) => ({
       i,
       j,
-      x: 0,
-      y: 0,
+      x: i,
+      y: j,
       z: 0,
       solid: false,
       border: false,
@@ -2105,13 +2113,13 @@ test('hero direct movement aligns size 2 collision to the even footprint center'
   assert.equal(unit.y, -12)
 })
 
-test('hero direct movement slides along water-border terrain like a rounded obstacle', () => {
+test('hero direct movement can enter a passable water-border cell', () => {
   const grid = Array.from({ length: 2 }, (_, i) =>
     Array.from({ length: 2 }, (_, j) => ({
       i,
       j,
-      x: 0,
-      y: 0,
+      x: i,
+      y: j,
       z: 0,
       solid: false,
       border: false,
@@ -2183,12 +2191,151 @@ test('hero direct movement slides along water-border terrain like a rounded obst
 
   assert.equal(moved, true)
   assert.equal(unit.i, 1)
-  assert.equal(unit.j, 1)
-  assert.equal(movement.directMoveBlocker.family, 'terrain')
-  assert.equal(movement.directMoveBlocker.type, 'WaterBorder')
+  assert.equal(unit.j, 0)
+  assert.equal(movement.directMoveBlocker, null)
 })
 
-test('npc direct movement blocks water-border terrain', () => {
+test('hero terrain blocker pads the water cell after the water border', () => {
+  const getIsoDiamondPoints = ({ x, y }) => [
+    { x, y: y - 16 },
+    { x: x + 32, y },
+    { x, y: y + 16 },
+    { x: x - 32, y },
+  ]
+  const cell = {
+    i: 1,
+    j: 0,
+    x: 32,
+    y: 16,
+    z: 0,
+    solid: false,
+    border: true,
+    category: 'Water',
+    waterBorder: false,
+    has: null,
+  }
+  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
+      distanceToPolygon: mockDistanceToPolygon,
+      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+      getRoundedIsoShapePoints: getIsoDiamondPoints,
+      pointIsInsidePolygon: mockPointIsInsidePolygon,
+    },
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const blocker = createHeroTerrainCollisionBlocker(cell)
+
+  assert.deepEqual(blocker.collisionPoints, [
+    { x: 32, y: 0 },
+    { x: 64, y: 16 },
+    { x: 32, y: 32 },
+    { x: 0, y: 16 },
+  ])
+  assert.deepEqual(getHeroCollisionFootprintPoints(blocker), [
+    { x: 32, y: -24 },
+    { x: 112, y: 16 },
+    { x: 32, y: 56 },
+    { x: -48, y: 16 },
+  ])
+})
+
+test('hero terrain blocker uses iso-aligned standard padding for interior solid terrain', () => {
+  const getIsoDiamondPoints = ({ x, y }) => [
+    { x, y: y - 16 },
+    { x: x + 32, y },
+    { x, y: y + 16 },
+    { x: x - 32, y },
+  ]
+  const cell = {
+    i: 1,
+    j: 0,
+    x: 32,
+    y: 16,
+    z: 0,
+    solid: true,
+    border: false,
+    category: 'Dirt',
+    terrainHidden: true,
+    waterBorder: false,
+    has: null,
+  }
+  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
+      distanceToPolygon: mockDistanceToPolygon,
+      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+      getRoundedIsoShapePoints: getIsoDiamondPoints,
+      pointIsInsidePolygon: mockPointIsInsidePolygon,
+    },
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const blocker = createHeroTerrainCollisionBlocker(cell, { mapType: 'interior' })
+
+  assert.equal(blocker.terrainCollisionKind, 'wall')
+  assert.deepEqual(getHeroCollisionFootprintPoints(blocker), [
+    { x: 32, y: -14 },
+    { x: 92, y: 16 },
+    { x: 32, y: 46 },
+    { x: -28, y: 16 },
+  ])
+
+  const interiorWaterBlocker = createHeroTerrainCollisionBlocker({ ...cell, category: 'Water' }, { mapType: 'interior' })
+  assert.equal(interiorWaterBlocker.terrainCollisionKind, 'wall')
+  assert.deepEqual(getHeroCollisionFootprintPoints(interiorWaterBlocker), [
+    { x: 32, y: -14 },
+    { x: 92, y: 16 },
+    { x: 32, y: 46 },
+    { x: -28, y: 16 },
+  ])
+})
+
+test('hero terrain blocking targets water and interior solid terrain, not the water-border cell itself', () => {
+  const { isHeroTerrainCollisionCell } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      cartesianToIsometric: (i, j) => [i, j],
+      distanceToPolygon: mockDistanceToPolygon,
+      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+      pointIsInsidePolygon: mockPointIsInsidePolygon,
+    },
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const hero = {}
+  const interiorGrid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      category: 'Dirt',
+      has: null,
+      solid: true,
+      terrainHidden: true,
+      waterBorder: false,
+    }))
+  )
+  interiorGrid[1][1].solid = false
+  interiorGrid[1][1].terrainHidden = false
+  interiorGrid[0][1].category = 'Water'
+  const interiorHero = { context: { map: { grid: interiorGrid, mapType: 'interior' } } }
+
+  assert.equal(isHeroTerrainCollisionCell(hero, { category: 'Ground', waterBorder: true, solid: true }), false)
+  assert.equal(isHeroTerrainCollisionCell(hero, { category: 'Ground', waterBorder: true, solid: false }), false)
+  assert.equal(isHeroTerrainCollisionCell(hero, { category: 'Water', waterBorder: false, solid: false }), true)
+  assert.equal(isHeroTerrainCollisionCell(interiorHero, interiorGrid[1][1]), false)
+  assert.equal(isHeroTerrainCollisionCell(interiorHero, interiorGrid[0][1]), true)
+  assert.equal(isHeroTerrainCollisionCell(interiorHero, { ...interiorGrid[0][0], i: 10, j: 10 }), false)
+  assert.equal(isHeroTerrainCollisionCell(interiorHero, { ...interiorGrid[0][1], has: interiorHero }), false)
+})
+
+test('hero direct movement allows water-border cell entry outside the rounded terrain footprint', () => {
   const grid = Array.from({ length: 2 }, (_, i) =>
     Array.from({ length: 1 }, (_, j) => ({
       i,
@@ -2207,6 +2354,87 @@ test('npc direct movement blocks water-border terrain', () => {
     }))
   )
   grid[1][0].waterBorder = true
+  grid[1][0].border = true
+  const lib = {
+    canUpdateMinimap: () => false,
+    cartesianToIsometric: (i, j) => [i, j],
+    degreeToDirection: () => 'west',
+    findInstancesInSight: () => [],
+    getClosestInstanceWithPath: () => null,
+    getFreeCellAroundPoint: () => null,
+    getGroundReliefLevel: () => 0,
+    getInstanceClosestFreeCellPath: () => [],
+    getInstanceDegree: () => 270,
+    getInstancePath: () => [],
+    getInstanceZIndex: () => 0,
+    getRoundedIsoShapePoints: mockRoundedIsoShapePoints,
+    instanceContactInstance: () => false,
+    instancesDistance: () => Infinity,
+    isometricToCartesian: () => [1, 0],
+    moveTowardPoint: () => {},
+    updateInstanceRenderVisibility: () => {},
+    updateInstanceVisibility: () => {},
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': lib,
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+    },
+  })
+  const unit = {
+    actionLocked: false,
+    category: 'Fantassin',
+    context: {
+      map: {
+        grid,
+        size: 1,
+        updateInstanceBucket: () => {},
+      },
+    },
+    currentCell: grid[0][0],
+    degree: 0,
+    i: 0,
+    j: 0,
+    sprite: {
+      playing: true,
+      play: () => {},
+    },
+    setTextures: () => {},
+    x: 0,
+    y: 20,
+  }
+  grid[0][0].has = unit
+  grid[0][0].solid = true
+
+  const moved = new UnitMovement(unit).attemptMoveDirect(1, 0, 1)
+
+  assert.equal(moved, true)
+  assert.equal(unit.i, 1)
+  assert.equal(unit.j, 0)
+})
+
+test('npc direct movement blocks water terrain behind the shoreline', () => {
+  const grid = Array.from({ length: 2 }, (_, i) =>
+    Array.from({ length: 1 }, (_, j) => ({
+      i,
+      j,
+      x: 0,
+      y: 0,
+      z: 0,
+      solid: false,
+      border: false,
+      category: 'Ground',
+      waterBorder: false,
+      has: null,
+      place(entity) {
+        this.has = entity
+      },
+    }))
+  )
+  grid[1][0].category = 'Water'
+  grid[1][0].waterBorder = false
+  grid[1][0].solid = false
   const lib = {
     canUpdateMinimap: () => false,
     cartesianToIsometric: (i, j) => [i, j],
@@ -2535,9 +2763,9 @@ test('a blocked gather target sends the villager near it before retrying', () =>
   assert.deepEqual(unit.path, approachPath)
 })
 
-test('blocked gather approach skips water-border cells before picking an approach', () => {
+test('blocked gather approach skips water cells before picking an approach', () => {
   const target = { label: 'tree-1', i: 3, j: 3, isDestroyed: false }
-  const coastCell = { i: 1, j: 3, solid: false, border: false, waterBorder: true, category: 'Grass' }
+  const coastCell = { i: 1, j: 3, solid: false, border: false, waterBorder: false, category: 'Water' }
   const landCell = { i: 2, j: 3, solid: false, border: false, waterBorder: false, category: 'Grass' }
   const landPath = [{ i: 2, j: 3 }]
   const grid = Array.from({ length: 6 }, (_, i) =>

@@ -36,6 +36,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   spriteShadowAnchor?: { x?: number; y?: number }
   finalTexture?: () => void
   increasePopulation?: number
+  shelterCapacity?: number
   populationCapacityApplied?: boolean
   constructionTime?: number
   updateHitPoints?: (action: string) => void

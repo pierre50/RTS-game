@@ -1,16 +1,26 @@
 {
   "format": "interior-map-manifest",
   "version": 1,
-  "generatedAt": "2026-08-26T19:00:17.426Z",
+  "generatedAt": "2026-08-27T22:58:26.480Z",
   "batchSeed": 12345,
   "interiors": [
     {
-      "id": "town-center-oval-001",
+      "id": "town-center-circle-001",
       "interiorType": "TownCenter",
       "kind": "interior",
-      "path": "town-center/town-center-oval-001.map",
+      "path": "town-center/town-center-circle-001.map",
       "seed": 1563891744,
       "size": 15,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "house-circle-001",
+      "interiorType": "House",
+      "kind": "interior",
+      "path": "house/house-circle-001.map",
+      "seed": 1493591785,
+      "size": 13,
       "spawns": 1,
       "exits": 1
     }

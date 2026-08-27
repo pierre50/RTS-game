@@ -43,7 +43,7 @@ import {
   toggleVisionDebug,
   WEATHER_PHASES,
 } from './DevCommandActions'
-import { toggleHeroCollisionDebug } from './actions/debug'
+import { toggleHeroCollisionDebug, toggleUnitMovementDebug } from './actions/debug'
 import { getAllHeroInventoryItems } from './actions/heroInventory'
 import type { DevEntity, DevPlayer } from './types'
 
@@ -348,6 +348,15 @@ function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
     describe: 'Toggle hero-controlled unit collision shape debug overlay',
     complete: () => ['on', 'off'],
     run: ([value], context) => toggleHeroCollisionDebug(context, value),
+  })
+
+  registry.register({
+    name: 'move-debug',
+    aliases: ['movedbg'],
+    usage: 'move-debug [on|off]',
+    describe: 'Toggle detailed direct movement block logging',
+    complete: () => ['on', 'off'],
+    run: ([value]) => toggleUnitMovementDebug(value),
   })
 
   registry.register({

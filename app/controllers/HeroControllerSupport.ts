@@ -12,6 +12,7 @@ import {
 import { getCommCellsInRadius } from '../lib/npc/npcInteraction'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
 import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
+import { getLastDirectMoveDebugSnapshot } from '../classes/unit/movement/UnitMovementDebug'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -61,9 +62,11 @@ export function debugHeroMove(message: string, unit: UnitEntity, details: Record
   const now = performance.now()
   if (now - lastHeroMoveDebugAt < HERO_MOVE_DEBUG_THROTTLE_MS) return
   lastHeroMoveDebugAt = now
+  const directMoveDebug = getLastDirectMoveDebugSnapshot()
   console.debug('[hero-controlled unit move]', {
     message,
     details,
+    directMoveDebug,
     unit: {
       controlMode: unit.controlMode,
       actionLocked: unit.actionLocked,
@@ -80,6 +83,7 @@ export function debugHeroMove(message: string, unit: UnitEntity, details: Record
         i: unit.currentCell?.i,
         j: unit.currentCell?.j,
         solid: unit.currentCell?.solid,
+        waterBorder: unit.currentCell?.waterBorder,
         border: unit.currentCell?.border,
         category: unit.currentCell?.category,
         has: unit.currentCell?.has

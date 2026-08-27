@@ -42,3 +42,11 @@ test('ocean ambience fades over ten cells and stops beyond that radius', () => {
   assert.ok(Math.abs(getOceanAmbienceTargetVolume(grid, { i: 4, j: 8 }) - maxVolume * (7 / 11)) < 0.001)
   assert.equal(getOceanAmbienceTargetVolume(grid, { i: 18, j: 18 }), 0)
 })
+
+test('ocean ambience stays silent on interior maps', () => {
+  const { getOceanAmbienceTargetVolume } = loadOceanAmbience()
+  const grid = createGrid()
+  grid[4][4].category = 'Water'
+
+  assert.equal(getOceanAmbienceTargetVolume(grid, { i: 4, j: 4 }, undefined, { mapType: 'interior' }), 0)
+})

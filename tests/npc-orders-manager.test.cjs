@@ -258,6 +258,57 @@ test('picking the horse capture order assigns the horseCapture villager job', ()
   })
 })
 
+test('sleeping villagers only expose follow and cancel orders', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Villager',
+      label: 'sleepy-villager',
+      owner: context.player,
+      shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    }
+
+    manager.open([npc])
+
+    assert.equal(manager.chatterContainer.children[0].textContent, 'npcOrdersSleepingChatter')
+    assert.equal(manager.buttons.get('follow').hidden, false)
+    assert.equal(manager.buttons.get('cancel').hidden, false)
+    assert.equal(manager.buttons.get('food').hidden, true)
+    assert.equal(manager.buttons.get('stay').hidden, true)
+
+    manager.buttons.get('follow').click()
+
+    assert.deepEqual(calls, [['startFollowingHero', 'paused=false']])
+  })
+})
+
+test('solo followers disable the follow order', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Villager',
+      label: 'villager-1',
+      owner: context.player,
+      followingHero: true,
+    }
+
+    manager.open([npc])
+    const followButton = manager.buttons.get('follow')
+
+    assert.equal(followButton.disabled, true)
+    followButton.click()
+    assert.deepEqual(calls, [])
+  })
+})
+
 test('debug level button cycles a solo unit level without closing communication', async () => {
   await withFakeDocument(async () => {
     const calls = []

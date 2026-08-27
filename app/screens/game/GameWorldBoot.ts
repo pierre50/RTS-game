@@ -51,6 +51,10 @@ export type GameWorldBootHost = {
     positionsCount?: number
     size?: number
   }): Promise<LoadedMapBlueprint>
+  _loadRequiredInteriorBlueprint(options?: {
+    id?: string
+    interiorType?: string
+  }): Promise<LoadedMapBlueprint>
   _map(): RuntimeMapInstance
   _mountRuntime(dayNightElapsedMs?: number | null): void
   _updateLoading(messageKey: string, progress: number): Promise<void>
@@ -104,6 +108,7 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
     ...savedConfig,
     seed: world.seed ?? savedConfig.seed,
     size: world.size ?? savedConfig.size,
+    mapType: world.mapType ?? savedConfig.mapType,
     environment: world.environment ?? savedConfig.environment,
     players: savedPlayers.map(player => ({
       civ: player.civ,
@@ -121,11 +126,14 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
 
   const blueprintId = world.pregeneratedBlueprintId
   if (!blueprintId) throw new Error(t('mapBlueprintUnavailable'))
-  const blueprint = await game._loadRequiredMapBlueprint({
-    size: map.size,
-    id: String(blueprintId),
-    positionsCount: positionsCount ?? undefined,
-  })
+  const isInteriorWorld = world.mapType === 'interior' || savedConfig.mapType === 'interior'
+  const blueprint = isInteriorWorld
+    ? await game._loadRequiredInteriorBlueprint({ id: String(blueprintId) })
+    : await game._loadRequiredMapBlueprint({
+        size: map.size,
+        id: String(blueprintId),
+        positionsCount: positionsCount ?? undefined,
+      })
   await map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
   recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
   await map.prepareTerrainForSavedState({ onProgress: reportProgress(game) })

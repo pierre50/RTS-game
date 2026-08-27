@@ -7,11 +7,14 @@ function loadHeroProximityInteractions() {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
-        BUILDING_TYPES: { townCenter: 'TownCenter' },
+        BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
       '../chief': {
         heroCanCommand: hero => Boolean(hero?.isChief),
+      },
+      '../buildings/interiorExits': {
+        isHeroOnInteriorExitCell: hero => Boolean(hero?.onInteriorExit),
       },
       '../grid/cells': {
         getCellsInCellRadius: (_i, _j, grid) => grid.flat(),
@@ -26,35 +29,29 @@ function loadHeroProximityInteractions() {
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
       },
-      '../maths': {
-        angleDelta(a, b) {
-          const diff = Math.abs(a - b) % 360
-          return diff > 180 ? 360 - diff : diff
-        },
-        getInstanceDegree(instance, x, y) {
-          return Math.round((Math.atan2(y - instance.y, x - instance.x) * 180) / Math.PI + 180)
-        },
-      },
     },
   })
 }
 
 function makeHero(extra = {}) {
+  const grid = Array.from({ length: 12 }, (_, i) =>
+    Array.from({ length: 12 }, (_, j) => ({ i, j, corpses: new Set() }))
+  )
   return {
-    i: 0,
+    i: 6,
     isChief: true,
-    j: 0,
+    j: 7,
     degree: 90,
     x: 100,
     y: 248,
-    context: { map: { grid: [[{ corpses: new Set() }]] } },
+    context: { map: { grid } },
     ...extra,
   }
 }
 
 test('hero proximity interaction resolves a town center door as enter', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
-  const building = { isBuilt: true, type: 'TownCenter', x: 100, y: 200 }
+  const building = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
 
   assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), {
     action: 'enter',
@@ -63,11 +60,32 @@ test('hero proximity interaction resolves a town center door as enter', () => {
   })
 })
 
-test('hero proximity interaction ignores a town center door behind the hero', () => {
+test('hero proximity interaction resolves a house door as enter', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
-  const building = { isBuilt: true, type: 'TownCenter', x: 100, y: 200 }
+  const building = { i: 5, isBuilt: true, j: 5, type: 'House' }
 
-  assert.equal(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ degree: 270 }) }), null)
+  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), {
+    action: 'enter',
+    labelKey: 'heroInteractionEnter',
+    target: building,
+  })
+})
+
+test('hero proximity interaction resolves an interior exit cell as exit', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ onInteriorExit: true }) }), {
+    action: 'exit',
+    labelKey: 'heroInteractionExit',
+  })
+})
+
+test('hero proximity interaction ignores a town center when hero is not on the entry cell', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
+
+  assert.equal(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ i: 4 }) }), null)
 })
 
 test('hero proximity interaction resolves a close companion horse as mount', () => {

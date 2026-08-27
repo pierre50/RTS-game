@@ -242,8 +242,7 @@ export class UnitMovement {
             cell &&
             !views.isViewed(cell.i, cell.j) &&
             !cell.solid &&
-            !cell.border &&
-            !cell.waterBorder &&
+            (!cell.border || (cell.waterBorder && !cell.solid)) &&
             cell.category !== 'Water'
           ) {
             let unseenNeighbors = 0
@@ -254,8 +253,7 @@ export class UnitMovement {
                   neighbor &&
                   !views.isViewed(ni, nj) &&
                   !neighbor.solid &&
-                  !neighbor.border &&
-                  !neighbor.waterBorder &&
+                  (!neighbor.border || (neighbor.waterBorder && !neighbor.solid)) &&
                   neighbor.category !== 'Water'
                 ) {
                   unseenNeighbors++
@@ -289,10 +287,11 @@ export class UnitMovement {
     if (!map) return
     const cell = findReachableFleeCell<RuntimeCell>(unit, instance, map, {
       isCellAllowed: candidate =>
-        !isCellBlockedForUnit(unit, candidate) &&
-        candidate.category !== 'Water' &&
-        !candidate.border &&
-        !candidate.waterBorder,
+        Boolean(
+          !isCellBlockedForUnit(unit, candidate) &&
+            candidate.category !== 'Water' &&
+            (!candidate.border || (candidate.waterBorder && !candidate.solid))
+        ),
       range: unit.sight ?? 0,
     })
     if (cell) {

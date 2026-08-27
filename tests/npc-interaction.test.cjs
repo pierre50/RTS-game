@@ -579,6 +579,54 @@ test('closing communication resumes a pending training order', () => {
   assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 
+test('talking to a sleeping villager previews a reversed wake and plays sleep hurt on close', () => {
+  const calls = []
+  const owner = {}
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    getChildByLabel: () => null,
+    addChildAt: () => {},
+    context: {
+      villagerShelter: {
+        previewSleepingVillagerWake: unit => calls.push(['previewWake', unit.label]),
+        restoreSleepingVillagerVisual: unit => calls.push(['restoreSleep', unit.label]),
+      },
+    },
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'sleepy-villager',
+    owner,
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    x: 32,
+    y: 0,
+  }
+  const hero = {
+    degree: 0,
+    i: 0,
+    j: 0,
+    owner,
+    x: 0,
+    y: 0,
+  }
+  const { releaseIfStillLooking, resolveCommGroup } = loadNpcInteraction(target)
+
+  const group = resolveCommGroup(hero, 0, { precisionOnly: true })
+
+  assert.deepEqual(group, [target])
+  assert.equal(target.lookingAtHero, true)
+  assert.deepEqual(calls, [['previewWake', 'sleepy-villager']])
+
+  releaseIfStillLooking(group)
+
+  assert.equal(target.lookingAtHero, false)
+  assert.deepEqual(calls, [
+    ['previewWake', 'sleepy-villager'],
+    ['restoreSleep', 'sleepy-villager'],
+  ])
+})
+
 test('"aller vers" cursor shows combat feedback over combat targets', () => {
   const classes = new Set()
   global.document = {

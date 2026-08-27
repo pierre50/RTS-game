@@ -2,13 +2,14 @@ import { ACTION_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
+import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
 import { getCellsInCellRadius } from '../grid/cells'
 import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-type HeroProximityInteractionAction = 'communicate' | 'enter' | 'mount' | 'open'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open'
 
 export type HeroProximityInteraction =
   | {
@@ -21,6 +22,10 @@ export type HeroProximityInteraction =
       action: 'enter'
       labelKey: 'heroInteractionEnter'
       target: BuildingEntity
+    }
+  | {
+      action: 'exit'
+      labelKey: 'heroInteractionExit'
     }
   | {
       action: 'mount'
@@ -109,6 +114,8 @@ export function resolveHeroProximityInteraction({
   openEntityTarget,
 }: HeroProximityInteractionOptions): HeroProximityInteraction | null {
   if (!hero || hero.isDead || hero.isDestroyed) return null
+
+  if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) return { action: 'enter', labelKey: 'heroInteractionEnter', target: building }

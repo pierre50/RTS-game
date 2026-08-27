@@ -21,7 +21,7 @@ import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
-type NpcOrderId = 'stay' | 'follow' | 'goto' | VillagerAutonomyJob
+type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | VillagerAutonomyJob
 
 const NPC_ORDER_SPECS: {
   id: NpcOrderId
@@ -39,7 +39,12 @@ const NPC_ORDER_SPECS: {
   { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
   { id: 'stay', labelKey: 'npcOrderStay', run: keepNpcHere },
+  { id: 'cancel', labelKey: 'npcOrderCancelSleep' },
 ]
+
+function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
+  return npc?.shelterState?.reason === 'sleep'
+}
 
 export class NpcOrdersManager {
   menu: MenuHost
@@ -99,6 +104,10 @@ export class NpcOrdersManager {
         if (!this.npcs.length || button.disabled) return
         playUiSound(SOUND_CUES.ui.menuClick)
         const npcs = this.npcs
+        if (spec.id === 'cancel') {
+          this.close()
+          return
+        }
         if (spec.startsPicking) {
           // Still committed to an order (waiting on the world click) — don't resume old tasks yet.
           this.close(true)
@@ -133,6 +142,7 @@ export class NpcOrdersManager {
     // a group order doesn't have one set of stats to show, so it stays buttons-only.
     this.infoContainer.replaceChildren()
     const soloTarget = npcs.length === 1 ? npcs[0] : null
+    const sleepingSoloTarget = isSleepingNpc(soloTarget)
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
@@ -153,7 +163,9 @@ export class NpcOrdersManager {
     const chatterLine =
       options.chatterLine ??
       (soloTarget
-        ? ordersEnabled
+        ? sleepingSoloTarget
+          ? t('npcOrdersSleepingChatter')
+          : ordersEnabled
           ? pickNpcGreetingLine(this.menu.context.player?.name ?? '')
           : pickForeignNpcChatterLine(soloTarget)
         : null)
@@ -169,6 +181,13 @@ export class NpcOrdersManager {
     const stayButton = this.buttons.get('stay')
     if (stayButton) {
       stayButton.disabled = !npcs.some(canKeepNpcHere)
+    }
+    const followButton = this.buttons.get('follow')
+    if (followButton) {
+      followButton.disabled = soloTarget?.followingHero === true
+    }
+    for (const [id, button] of this.buttons) {
+      button.hidden = sleepingSoloTarget && id !== 'follow' && id !== 'cancel'
     }
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
     for (const spec of NPC_ORDER_SPECS) {

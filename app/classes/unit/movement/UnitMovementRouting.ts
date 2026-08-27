@@ -70,7 +70,7 @@ export class UnitMovementRouting {
 
     for (let distance = minDistance; distance <= maxDistance; distance++) {
       const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
-        if (cell.solid || cell.border || cell.waterBorder) return false
+        if (cell.solid || (cell.border && (!cell.waterBorder || cell.solid))) return false
         return cell.category !== 'Water'
       })
       cells.sort(

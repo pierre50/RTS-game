@@ -27,6 +27,7 @@ import {
   removeDebugLayer,
   stopDebugTicker,
 } from './shared'
+import { isMovementDebugEnabled, setMovementDebugEnabled } from '../../classes/unit/movement/UnitMovementDebug'
 
 export function performanceReport(context: DevConsoleContext, value = ''): CommandResult {
   const [mode = '', ...rest] = value.trim().split(/\s+/).filter(Boolean)
@@ -84,6 +85,15 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     )
   }
   return { ok: true, message: lines.join('\n') }
+}
+
+export function toggleUnitMovementDebug(value = ''): CommandResult {
+  const enabled = normalizeToggle(value, isMovementDebugEnabled())
+  setMovementDebugEnabled(enabled)
+  return {
+    ok: true,
+    message: `Unit movement debug ${enabled ? 'enabled' : 'disabled'} (${enabled ? 'logs to console and hero-collision overlay' : 'off'})`,
+  }
 }
 
 function perfReportSlowFrames(report: DevPerformanceSnapshot, limit: number): string[] {

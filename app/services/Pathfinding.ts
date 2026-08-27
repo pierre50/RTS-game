@@ -121,7 +121,7 @@ export function findInstancePath<TCell extends PathCell>(
   function isCellReachable(cell?: PathCell): boolean {
     if (!cell) return false
     if (cell.solid && !isCellOccupiedByPathingInstance(cell)) return false
-    return cell.category !== 'Water' && !cell.waterBorder
+    return cell.category !== 'Water'
   }
 
   const startCell = initCell(start)

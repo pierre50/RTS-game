@@ -183,6 +183,8 @@ function createController({
   getInstanceDegree = () => 0,
   heroToolsOverride = {},
   commIndicatorDelayMs,
+  additionalPlayers = [],
+  ownerBuildings = [],
   resolveCommGroup,
   resolveHeroProximityInteraction = () => null,
   withScheduler = false,
@@ -269,7 +271,7 @@ function createController({
   }
   const owner = {
     label: 'player',
-    buildings: [],
+    buildings: ownerBuildings,
   }
   hero.owner = owner
   const npcInteraction = {
@@ -354,6 +356,8 @@ function createController({
   const controller = new HeroController({
     context: {
       scheduler,
+      player: owner,
+      players: [owner, ...additionalPlayers],
       menu: {
         openNpcOrders: (npcs, options) => calls.push(['openNpcOrders', npcs, options]),
         setHeroInteractionPrompt: actionKey => calls.push(['setHeroInteractionPrompt', actionKey]),
@@ -1052,6 +1056,27 @@ test('E uses a facing npc proximity interaction before starting communication ch
     ['setHeroInteractionPrompt', 'heroInteractionCommunicate'],
     ['openNpcOrders', [npc], undefined],
   ])
+})
+
+test('hero proximity interaction can use buildings owned by other players', () => {
+  const ownBuilding = { label: 'own-house' }
+  const otherBuilding = { label: 'other-house' }
+  let receivedBuildings = null
+  const { controller } = createController({
+    additionalPlayers: [{ label: 'other-player', buildings: [otherBuilding] }],
+    ownerBuildings: [ownBuilding],
+    resolveHeroProximityInteraction: options => {
+      receivedBuildings = options.buildings
+      return null
+    },
+  })
+
+  controller.getProximityInteraction()
+
+  assert.deepEqual(
+    receivedBuildings.map(building => building.label),
+    ['own-house', 'other-house']
+  )
 })
 
 test('E owns villager communication and opens orders on key release', () => {

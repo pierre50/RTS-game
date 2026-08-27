@@ -176,7 +176,7 @@ export function applyPortableUnitState(
 export function applyMapConfig(map: RuntimeMap, config: GameConfig = {}): void {
   if (config.size) map.size = config.size
   if (Number.isFinite(config.seed)) map.seed = config.seed
-  map.mapType = DEFAULT_MAP_TYPE
+  map.mapType = config.mapType || DEFAULT_MAP_TYPE
   const humanCiv = config.players?.find(player => player.isHuman)?.civ ?? config.players?.[0]?.civ
   map.environment = (config.environment as EnvironmentId | undefined) || getEnvironmentForCiv(humanCiv)
   if (config.instantMode) map.instantMode = true

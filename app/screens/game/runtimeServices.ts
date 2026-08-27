@@ -1,7 +1,9 @@
 import type { ContainerChild } from 'pixi.js'
+import { BuildingInteriorEntryMarkerSystem } from '../../services/BuildingInteriorEntryMarkerSystem'
 import { CampPatrolSystem } from '../../services/CampPatrolSystem'
 import { DailyWorldEventSystem } from '../../services/DailyWorldEventSystem'
 import { DayNightSystem } from '../../services/DayNightSystem'
+import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
 import { LightSystem } from '../../services/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TributeRaidSystem } from '../../services/TributeRaidSystem'
@@ -16,9 +18,11 @@ type LayerHost = { addChild(child: ContainerChild): unknown }
 type RuntimeServiceContext = Pick<GameContextLike, 'dayNight' | 'tributeRaids' | 'villagerShelter' | 'weather'>
 
 export type RuntimeServices = {
+  buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
   campPatrols: CampPatrolSystem | null
   dailyWorldEvents: DailyWorldEventSystem | null
   dayNight: DayNightSystem | null
+  interiorExitMarker: InteriorExitMarkerSystem | null
   lights: LightSystem | null
   shadows: ShadowSystem | null
   tributeRaids: TributeRaidSystem | null
@@ -29,9 +33,11 @@ export type RuntimeServices = {
 
 export function createEmptyRuntimeServices(): RuntimeServices {
   return {
+    buildingInteriorEntryMarker: null,
     campPatrols: null,
     dailyWorldEvents: null,
     dayNight: null,
+    interiorExitMarker: null,
     lights: null,
     shadows: null,
     tributeRaids: null,
@@ -47,6 +53,7 @@ export function createRuntimeServices(
   getScreenRect: () => ScreenRect,
   dayNightElapsedMs: number | null | undefined = null
 ): RuntimeServices {
+  const isInterior = map.mapType === 'interior'
   const dayNight = new DayNightSystem(context, { elapsedMs: dayNightElapsedMs })
   context.dayNight = dayNight
 
@@ -61,14 +68,18 @@ export function createRuntimeServices(
   const campPatrols = new CampPatrolSystem(context)
   const unitEnergyRegen = new UnitEnergyRegenSystem(context)
   const shadows = new ShadowSystem(context, map)
-  const weather = new WeatherSystem(context, map, getScreenRect)
+  const buildingInteriorEntryMarker = isInterior ? null : new BuildingInteriorEntryMarkerSystem(context, map)
+  const interiorExitMarker = isInterior ? new InteriorExitMarkerSystem(context, map) : null
+  const weather = isInterior ? null : new WeatherSystem(context, map, getScreenRect)
   context.weather = weather
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
   const services = {
+    buildingInteriorEntryMarker,
     campPatrols,
     dailyWorldEvents,
     dayNight,
+    interiorExitMarker,
     lights,
     shadows,
     tributeRaids,
@@ -86,11 +97,10 @@ export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServic
   if (services.weather) host.addChild(services.weather.layer)
 }
 
-export function destroyRuntimeServices(
-  services: RuntimeServices,
-  context: RuntimeServiceContext
-): RuntimeServices {
+export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {
+  services.buildingInteriorEntryMarker?.destroy()
   services.lights?.destroy()
+  services.interiorExitMarker?.destroy()
   services.shadows?.destroy()
   services.dailyWorldEvents?.destroy()
   services.villagerShelter?.destroy()

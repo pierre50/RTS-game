@@ -24,6 +24,7 @@ export type MapGenerationContext = MapRuntimeContext
 export type MapGenerationMap = RuntimeMap & {
   context: MapGenerationContext
   playersPos: GeneratedPosition[]
+  interiorExits?: GeneratedPosition[]
   banditCampPositions: GridPosition[]
   positionsCount: number
   noAI?: boolean
@@ -110,10 +111,15 @@ type BlueprintResource = {
 export type MapBlueprint = {
   seed?: string | number
   size: number
+  kind?: string
   mapType?: string
+  interiorType?: string
   spawns?: GeneratedPosition[]
+  exits?: GeneratedPosition[]
   terrain: BlueprintTerrainValue[][]
   relief?: number[][]
+  floorMask?: number[][]
+  borderMask?: number[][]
   resources?: BlueprintResource[]
 }
 

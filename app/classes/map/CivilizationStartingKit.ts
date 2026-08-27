@@ -2,6 +2,7 @@ import { MAX_ARCHER_BY_AGE, MAX_BUILDING_BY_AGE, MAX_INFANTRY_BY_AGE } from '../
 import { ARCHER_TECH_UPGRADES, getBestUnitFromTechs } from '../../ai/unitGroups'
 import { CIVILIZATION_LEVEL_RESOURCE_BONUS } from '../../config/resourcePresets'
 import { canPlaceBuildingAt, getPositionInGridAroundInstance } from '../../lib'
+import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -73,7 +74,10 @@ export function applyCivilizationLevelStartingKit(
   for (const [, count] of unitTargets) populationTarget += count
 
   const houseConfig = player.config.buildings[BUILDING_TYPES.house]
-  const houseCapacity = Number(houseConfig?.increasePopulation) || 0
+  const houseCapacity =
+    getBuildingShelterCapacity({ type: BUILDING_TYPES.house, shelterCapacity: houseConfig?.shelterCapacity }) ||
+    Number(houseConfig?.increasePopulation) ||
+    0
   if (houseCapacity > 0) {
     let guard = 0
     while (player.populationMax < populationTarget && guard++ < 20) {

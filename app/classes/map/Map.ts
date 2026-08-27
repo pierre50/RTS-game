@@ -71,6 +71,7 @@ export default class Map extends Container {
   debugEntityBarsVisible: boolean
   startingUnits: number
   playersPos: GeneratedPosition[]
+  interiorExits: GeneratedPosition[]
   banditCampPositions: GridPosition[]
   positionsCount: number
   gaia: PlayerLike | null
@@ -131,6 +132,7 @@ export default class Map extends Container {
     this.startingUnits = 3
 
     this.playersPos = []
+    this.interiorExits = []
     this.banditCampPositions = []
     this.positionsCount = 2
     this.gaia = null

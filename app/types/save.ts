@@ -28,6 +28,7 @@ export type SaveEntityState = {
   dest?: SaveReference | SaveDestination | null
   direction?: number
   experience?: Record<string, number>
+  gender?: 'male' | 'female'
   energy?: number
   totalEnergy?: number
   lastEnergySpentAt?: number

@@ -1,5 +1,5 @@
 import type { Container, ContainerChild } from 'pixi.js'
-import type { GridCell, Grid } from './grid'
+import type { GridCell, Grid, GridPosition } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { ResourceAmount } from './common'
 import type { FogSpriteMemory } from './fog'
@@ -25,6 +25,7 @@ export interface RuntimeCell extends GridCell {
   inclined?: boolean
   border?: boolean
   waterBorder?: boolean
+  terrainHidden?: boolean
   viewed?: boolean
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
@@ -76,6 +77,7 @@ export interface RuntimeMap {
   difficulty?: string
   positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
+  interiorExits?: Array<GridPosition | null>
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>
   naturalResourceRespawnSlots?: SaveEntityState[]

@@ -27,6 +27,7 @@ import {
   spawnSpriteFragmentBurst,
 } from '../../lib'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
+import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 import type { Texture } from 'pixi.js'
@@ -159,8 +160,9 @@ export class BuildingLifecycle {
     const {
       context: { menu },
     } = building
-    if (building.increasePopulation && !building.populationCapacityApplied) {
-      building.owner.populationMax += building.increasePopulation
+    const populationCapacity = getBuildingShelterCapacity(building) || building.increasePopulation || 0
+    if (populationCapacity && !building.populationCapacityApplied) {
+      building.owner.populationMax += populationCapacity
       building.populationCapacityApplied = true
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
         menu.updateInfo(
@@ -280,8 +282,9 @@ export class BuildingLifecycle {
     building.isDead = true
     building.hasActiveBurningSound = false
     stopFlameAmbientSound(building)
-    if (building.increasePopulation && building.populationCapacityApplied) {
-      building.owner.populationMax = Math.max(0, building.owner.populationMax - building.increasePopulation)
+    const populationCapacity = getBuildingShelterCapacity(building) || building.increasePopulation || 0
+    if (populationCapacity && building.populationCapacityApplied) {
+      building.owner.populationMax = Math.max(0, building.owner.populationMax - populationCapacity)
       building.populationCapacityApplied = false
       if (building.owner.isPlayed && building.owner.selectedBuilding?.displayPopulation) {
         menu.updateInfo(

@@ -534,6 +534,7 @@ function buildHeadlessMap(
         setWaterBorder(resourceName, index) {
           this.border = true
           this.waterBorder = true
+          this.solid = false
           this.waterBorderResourceName = resourceName
           this.waterBorderIndex = index
         },

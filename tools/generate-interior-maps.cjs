@@ -11,15 +11,33 @@ const OUTPUT = path.join(ROOT, 'public', 'maps', 'interiors')
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 const DIRT = TERRAIN_INDEX.get('Dirt')
+const WATER = TERRAIN_INDEX.get('Water')
+
+const INTERIOR_TYPES = {
+  house: {
+    directory: 'house',
+    idPrefix: 'house-circle',
+    interiorType: 'House',
+    minSize: 13,
+    size: 13,
+  },
+  'town-center': {
+    directory: 'town-center',
+    idPrefix: 'town-center-circle',
+    interiorType: 'TownCenter',
+    minSize: 15,
+    size: 15,
+  },
+}
 
 function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
-  console.log(`Usage: pnpm interiors:generate -- --type town-center --count 1
+  console.log(`Usage: pnpm interiors:generate -- --type all --count 1
 
-  --type <name>          town-center (default: town-center)
+  --type <name>          all, town-center, house (default: all)
   --count <n>            interior variants to generate (default: 1)
   --seed <n>             reproducible batch seed (default: current time)
-  --size <n>             blueprint size; cell count is (size + 1)^2 (default: 15)
+  --size <n>             override blueprint size for a single type
   --out <directory>      output directory (default: public/maps/interiors)`)
 }
 
@@ -28,8 +46,8 @@ function argumentsFrom(argv) {
     count: 1,
     out: OUTPUT,
     seed: Date.now(),
-    size: 15,
-    type: 'town-center',
+    size: null,
+    type: 'all',
   }
   for (let index = 0; index < argv.length; index++) {
     const key = argv[index]
@@ -44,10 +62,13 @@ function argumentsFrom(argv) {
     else if (key === '--type') options.type = value
     else throw new Error(`Unknown option: ${key}`)
   }
-  if (options.type !== 'town-center') throw new Error('Unsupported --type')
+  if (options.type !== 'all' && !INTERIOR_TYPES[options.type]) throw new Error('Unsupported --type')
+  if (options.type === 'all' && options.size != null) throw new Error('--size can only be used with one --type')
   if (!Number.isInteger(options.count) || options.count < 1) throw new Error('--count must be positive')
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
-  if (!Number.isInteger(options.size) || options.size < 15) throw new Error('--size must be an integer >= 15')
+  if (options.size != null && (!Number.isInteger(options.size) || options.size < INTERIOR_TYPES[options.type].minSize)) {
+    throw new Error(`--size must be an integer >= ${INTERIOR_TYPES[options.type].minSize}`)
+  }
   return options
 }
 
@@ -75,36 +96,62 @@ function encode(array) {
   return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64')
 }
 
-function townCenterInterior({ id, seed, size }) {
+function buildingInterior({ id, interiorType, seed, size }) {
   const width = size + 1
   const center = size / 2
-  const radiusI = Math.max(5, Math.floor(width * 0.36))
-  const radiusJ = Math.max(4, Math.floor(width * 0.25))
-  const terrain = new Uint8Array(width * width).fill(DIRT)
+  const radius = Math.max(4, Math.floor(width * 0.31))
+  const terrain = new Uint8Array(width * width).fill(WATER)
   const relief = new Int8Array(width * width)
   const floorMask = new Uint8Array(width * width)
+  const borderMask = new Uint8Array(width * width)
+
+  const indexOf = (i, j) => i * width + j
 
   for (let i = 0; i <= size; i++) {
     for (let j = 0; j <= size; j++) {
-      const ovalDistance = (i - center) ** 2 / radiusI ** 2 + (j - center) ** 2 / radiusJ ** 2
-      floorMask[i * width + j] = ovalDistance <= 1 ? 1 : 0
+      const distance = Math.hypot(i - center, j - center)
+      if (distance <= radius) {
+        floorMask[indexOf(i, j)] = 1
+        terrain[indexOf(i, j)] = DIRT
+      }
     }
   }
 
-  const spawn = { i: Math.round(center), j: Math.min(size - 2, Math.round(center + radiusJ * 0.62)) }
+  for (let i = 0; i <= size; i++) {
+    for (let j = 0; j <= size; j++) {
+      const index = indexOf(i, j)
+      if (!floorMask[index]) continue
+      let touchesOutside = false
+      for (let di = -1; di <= 1 && !touchesOutside; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          if (di === 0 && dj === 0) continue
+          const ni = i + di
+          const nj = j + dj
+          if (ni < 0 || nj < 0 || ni > size || nj > size || !floorMask[indexOf(ni, nj)]) {
+            touchesOutside = true
+            break
+          }
+        }
+      }
+      if (!touchesOutside) continue
+      borderMask[index] = 1
+    }
+  }
+
   const exit = {
     id: 'main',
     i: Math.round(center),
-    j: Math.min(size - 1, Math.round(center + radiusJ * 0.92)),
+    j: Math.min(size - 1, Math.round(center + radius * 0.76)),
     direction: 'south',
   }
+  const spawn = { i: exit.i, j: exit.j }
 
   return {
     format: 'map-blueprint',
     version: 1,
     id,
     kind: 'interior',
-    interiorType: 'TownCenter',
+    interiorType,
     size,
     seed,
     encoding: 'base64',
@@ -112,10 +159,11 @@ function townCenterInterior({ id, seed, size }) {
     terrain: encode(terrain),
     relief: encode(relief),
     floorMask: encode(floorMask),
+    borderMask: encode(borderMask),
     floorShape: {
-      type: 'oval',
+      type: 'circle',
       center: { i: center, j: center },
-      radius: { i: radiusI, j: radiusJ },
+      radius,
     },
     spawns: [spawn],
     exits: [exit],
@@ -135,6 +183,7 @@ async function main() {
   if (options.help) return usage()
 
   const random = randomFrom(options.seed)
+  const selectedTypes = options.type === 'all' ? ['town-center', 'house'] : [options.type]
   const manifest = {
     format: 'interior-map-manifest',
     version: 1,
@@ -143,29 +192,33 @@ async function main() {
     interiors: [],
   }
 
-  const directory = path.join(options.out, options.type)
-  fs.mkdirSync(directory, { recursive: true })
-  for (let index = 0; index < options.count; index++) {
-    const seed = Math.floor(random() * 0x7fffffff)
-    const id = `${options.type}-oval-${String(index + 1).padStart(3, '0')}`
-    const map = townCenterInterior({ id, seed, size: options.size })
-    const relativePath = `${options.type}/${id}.map`
-    fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify(map)}\n`)
-    manifest.interiors.push({
-      id,
-      interiorType: map.interiorType,
-      kind: map.kind,
-      path: relativePath,
-      seed,
-      size: map.size,
-      spawns: map.spawns.length,
-      exits: map.exits.length,
-    })
+  for (const type of selectedTypes) {
+    const profile = INTERIOR_TYPES[type]
+    const size = options.size ?? profile.size
+    const directory = path.join(options.out, profile.directory)
+    fs.mkdirSync(directory, { recursive: true })
+    for (let index = 0; index < options.count; index++) {
+      const seed = Math.floor(random() * 0x7fffffff)
+      const id = `${profile.idPrefix}-${String(index + 1).padStart(3, '0')}`
+      const map = buildingInterior({ id, interiorType: profile.interiorType, seed, size })
+      const relativePath = `${profile.directory}/${id}.map`
+      fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify(map)}\n`)
+      manifest.interiors.push({
+        id,
+        interiorType: map.interiorType,
+        kind: map.kind,
+        path: relativePath,
+        seed,
+        size: map.size,
+        spawns: map.spawns.length,
+        exits: map.exits.length,
+      })
+    }
   }
 
   fs.mkdirSync(options.out, { recursive: true })
   fs.writeFileSync(path.join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-  console.log(`Generated ${options.count} interior map(s): ${options.type}`)
+  console.log(`Generated ${options.count * selectedTypes.length} interior map(s): ${selectedTypes.join(', ')}`)
   console.log(`Manifest: ${path.relative(ROOT, path.join(options.out, 'manifest.json'))}`)
 }
 

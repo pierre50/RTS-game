@@ -80,6 +80,14 @@ function createScheduler() {
   }
 }
 
+function runSchedulerTaskByName(scheduler, name, times = 1) {
+  for (let index = 0; index < times; index += 1) {
+    const task = [...scheduler.tasks.values()].find(entry => entry.name === name)
+    assert.ok(task, `expected scheduler task ${name}`)
+    task.callback()
+  }
+}
+
 function createCell(i, j) {
   return {
     i,
@@ -133,14 +141,28 @@ function createVillager(owner, extra = {}) {
     dest: extra.dest ?? null,
     path: [],
     sprite: {
+      textures: ['sleep-0', 'sleep-1', 'sleep-2'],
+      loop: true,
+      onComplete: null,
       gotoAndStop(frame) {
         this.frame = frame
       },
+      gotoAndPlay(frame) {
+        this.frame = frame
+        this.playedFrom = frame
+        this.playing = true
+      },
+      stop() {
+        this.playing = false
+        this.stopped = true
+      },
+    },
+    shadow: {
+      visible: true,
       stop() {
         this.stopped = true
       },
     },
-    shadow: { visible: true },
     syncShadow() {
       this.shadow.visible = true
     },
@@ -180,9 +202,15 @@ test('villagers sleep outside with dying sheet and zZzZ when no shelter exists',
 
   assert.equal(villager.shelterState.status, 'outside')
   assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
+  assert.equal(villager.sprite.loop, false)
+  assert.equal(villager.sprite.playing, true)
+  assert.equal(villager.sprite.playedFrom, 0)
+  villager.sprite.onComplete()
+  assert.equal(villager.sprite.frame, 2)
+  assert.equal(villager.shadow.stopped, true)
   assert.equal(villager.alpha, 1)
   assert.equal(villager.visible, true)
-  assert.equal(villager.shadow.visible, true)
+  assert.equal(villager.shadow.visible, false)
   assert.equal(villager.actionLocked, true)
   assert.deepEqual(calls.find(call => call[0] === 'cancelFade'), ['cancelFade', 'villager-1'])
   assert.deepEqual(calls.find(call => call[0] === 'indicator'), ['indicator', 'villager-1', 'sleep'])
@@ -218,12 +246,12 @@ test('villagers stay awake before 18h', () => {
 test('villagers move to nearest house entry and disappear inside on arrival', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const entry = createCell(4, 5)
-  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5, entryCells: [entry] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
   const villager = createVillager(owner, { i: 0, j: 0 })
   const context = createContext(23, [owner], calls)
   villager.context = context
+  const entry = context.map.grid[6][7]
   const VillagerShelterSystem = loadShelterSystem(calls)
   const system = new VillagerShelterSystem(context)
 
@@ -242,11 +270,34 @@ test('villagers move to nearest house entry and disappear inside on arrival', ()
   assert.deepEqual(calls.find(call => call[0] === 'removeBucket'), ['removeBucket', 'villager-1'])
 })
 
+test('villagers skip full shelters when going to sleep', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  for (let index = 0; index < 5; index += 1) {
+    createVillager(owner, {
+      label: `inside-${index}`,
+      shelterState: { status: 'inside', reason: 'sleep', location: 'shelter', shelter: house },
+    })
+  }
+  const villager = createVillager(owner, { label: 'extra-villager', i: 0, j: 0 })
+  const context = createContext(23, [owner], calls)
+  for (const unit of owner.units) unit.context = context
+  const entry = context.map.grid[6][7]
+  const VillagerShelterSystem = loadShelterSystem(calls)
+
+  new VillagerShelterSystem(context)
+
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.shelterState.location, 'outside')
+  assert.notEqual(villager.dest, entry)
+})
+
 test('villagers keep shelter order while movement command is still pending', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const entry = createCell(4, 5)
-  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5, entryCells: [entry] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
   const villager = createVillager(owner, {
     sendToEvt(dest, action) {
@@ -258,6 +309,7 @@ test('villagers keep shelter order while movement command is still pending', () 
   const context = createContext(23, [owner], calls)
   context.scheduler.elapsedMs = 5000
   villager.context = context
+  const entry = context.map.grid[6][7]
   const VillagerShelterSystem = loadShelterSystem(calls)
   const system = new VillagerShelterSystem(context)
 
@@ -274,8 +326,6 @@ test('villagers keep shelter order while movement command is still pending', () 
 test('villagers retry a fresh shelter entry before sleeping outside', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const blockedEntry = createCell(4, 5)
-  const freshEntry = createCell(6, 5)
   const house = {
     label: 'house',
     type: constants.BUILDING_TYPES.house,
@@ -283,7 +333,6 @@ test('villagers retry a fresh shelter entry before sleeping outside', () => {
     isBuilt: true,
     i: 5,
     j: 5,
-    entryCells: [blockedEntry, freshEntry],
   }
   owner.buildings.push(house)
   const villager = createVillager(owner, {
@@ -297,6 +346,7 @@ test('villagers retry a fresh shelter entry before sleeping outside', () => {
   })
   const context = createContext(23, [owner], calls)
   villager.context = context
+  const entry = context.map.grid[6][7]
   const VillagerShelterSystem = loadShelterSystem(calls)
   const system = new VillagerShelterSystem(context)
   villager.dest = null
@@ -307,15 +357,14 @@ test('villagers retry a fresh shelter entry before sleeping outside', () => {
 
   assert.equal(villager.shelterState.status, 'movingToShelter')
   assert.equal(villager.shelterState.retryCount, 1)
-  assert.equal(villager.dest, blockedEntry)
+  assert.equal(villager.dest, entry)
   assert.notEqual(villager.currentSheet, constants.SHEET_TYPES.dying)
 })
 
-test('villagers wake in the morning and resume their previous autonomous job', () => {
+test('villagers wake at 8h and resume their previous autonomous job', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const entry = createCell(4, 5)
-  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5, entryCells: [entry] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
   owner.buildings.push(house)
   const villager = createVillager(owner, { autonomousJob: 'wood' })
   villager.shelterState = {
@@ -327,19 +376,186 @@ test('villagers wake in the morning and resume their previous autonomous job', (
     previousAction: 'chopwood',
     previousDest: null,
   }
-  const context = createContext(6, [owner], calls)
+  const context = createContext(8, [owner], calls)
   villager.context = context
+  const entry = context.map.grid[6][7]
   const VillagerShelterSystem = loadShelterSystem(calls)
 
   new VillagerShelterSystem(context)
 
   assert.equal(villager.shelterState, null)
   assert.equal(villager.alpha, 1)
-  assert.equal(villager.shadow.visible, true)
-  assert.equal(villager.currentSheet, constants.SHEET_TYPES.standing)
+  assert.equal(villager.shadow.visible, false)
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
+  assert.equal(villager.sprite.frame, 2)
   assert.equal(villager.i, entry.i)
   assert.equal(villager.j, entry.j)
+  assert.equal(calls.some(call => call[0] === 'resumeAutonomy'), false)
+  runSchedulerTaskByName(context.scheduler, 'villager.sleepWake')
+  assert.equal(villager.shadow.visible, true)
+  runSchedulerTaskByName(context.scheduler, 'villager.sleepWake')
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.standing)
   assert.deepEqual(calls.find(call => call[0] === 'resumeAutonomy'), ['resumeAutonomy', 'villager-1'])
+})
+
+test('sleeping villagers play reversed hurt as a dialogue preview and lie back down on close', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner)
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+  const system = new VillagerShelterSystem(context)
+  villager.sprite.onComplete()
+  villager.lookingAtHero = true
+
+  system.previewSleepingVillagerWake(villager)
+
+  assert.equal(villager.shelterState.reason, 'sleep')
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
+  assert.equal(villager.sprite.frame, 2)
+  assert.equal(villager.shadow.visible, false)
+  system.updateSleepingOutsideVisuals()
+  assert.ok([...context.scheduler.tasks.values()].some(task => task.name === 'villager.sleepWake'))
+  runSchedulerTaskByName(context.scheduler, 'villager.sleepWake')
+  assert.equal(villager.sprite.frame, 1)
+  assert.equal(villager.shadow.visible, true)
+  runSchedulerTaskByName(context.scheduler, 'villager.sleepWake')
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.standing)
+  assert.equal(villager.shelterState.reason, 'sleep')
+
+  system.restoreSleepingVillagerVisual(villager)
+
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
+  assert.equal(villager.sprite.playedFrom, 0)
+  assert.equal(villager.sprite.playing, true)
+  assert.equal(villager.shadow.visible, true)
+  villager.sprite.onComplete()
+  assert.equal(villager.sprite.frame, 2)
+  assert.equal(villager.shadow.visible, false)
+})
+
+test('follow orders wake sleeping villagers with reversed hurt without resuming old work', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const previousDest = { i: 9, j: 9, isDestroyed: false }
+  const villager = createVillager(owner, {
+    autonomousJob: 'wood',
+    shelterState: {
+      status: 'outside',
+      reason: 'sleep',
+      location: 'outside',
+      previousAutonomousJob: 'wood',
+      previousAction: 'chopwood',
+      previousDest,
+      previousWork: 'woodcutter',
+    },
+  })
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+  const system = new VillagerShelterSystem(context)
+  let following = false
+
+  const waking = system.wakeSleepingVillagerForOrder(villager, () => {
+    following = true
+  })
+
+  assert.equal(waking, true)
+  assert.equal(following, false)
+  assert.equal(villager.shelterState, null)
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
+  assert.equal(villager.sprite.frame, 2)
+  runSchedulerTaskByName(context.scheduler, 'villager.sleepWake', 2)
+  assert.equal(following, true)
+  assert.equal(villager.currentSheet, constants.SHEET_TYPES.standing)
+  assert.equal(calls.some(call => call[0] === 'resumeAutonomy'), false)
+  assert.notEqual(villager.dest, previousDest)
+})
+
+test('villagers are tired from 22h until 5h without changing sleep timing', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner)
+  const context = createContext(22, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+  const system = new VillagerShelterSystem(context)
+
+  assert.equal(villager.tired, true)
+  context.dayNight.state.hour = 5
+  system.updateVillagerTiredStates()
+  assert.equal(villager.tired, undefined)
+})
+
+test('followers stay with the hero at night instead of going to sleep', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner, { followingHero: true })
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+
+  new VillagerShelterSystem(context)
+
+  assert.equal(villager.shelterState, undefined)
+  assert.equal(villager.followingHero, true)
+  assert.equal(villager.tired, true)
+})
+
+test('tired awake villagers pulse the existing sleep indicator briefly', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createVillager(owner, { followingHero: true })
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+  const system = new VillagerShelterSystem(context)
+
+  assert.equal(villager.tired, true)
+  assert.deepEqual(calls.find(call => call[0] === 'indicator'), ['indicator', 'villager-1', 'sleep'])
+
+  context.scheduler.elapsedMs = 4000
+  system.updateVillagerTiredStates()
+  assert.deepEqual(calls.at(-1), ['clearIndicator', 'villager-1'])
+
+  context.scheduler.elapsedMs = 20000
+  system.updateVillagerTiredStates()
+  assert.deepEqual(calls.at(-1), ['indicator', 'villager-1', 'sleep'])
+
+  context.dayNight.state.hour = 5
+  system.updateVillagerTiredStates()
+  assert.equal(villager.tired, undefined)
+  assert.deepEqual(calls.at(-1), ['clearIndicator', 'villager-1'])
+})
+
+test('sleeping villagers wake when attacked and can fight with tired penalty', () => {
+  const calls = []
+  const owner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other?.label === 'enemy'
+    },
+  }
+  const villager = createVillager(owner)
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const VillagerShelterSystem = loadShelterSystem(calls)
+  const system = new VillagerShelterSystem(context)
+
+  assert.equal(villager.shelterState.status, 'outside')
+  const sheltered = system.handleVillagerDangerShelter(villager, {
+    family: 'unit',
+    owner: { label: 'enemy' },
+    isDead: false,
+    isDestroyed: false,
+  })
+
+  assert.equal(sheltered, false)
+  assert.equal(villager.shelterState, null)
+  assert.equal(villager.actionLocked, false)
+  assert.equal(villager.tired, true)
 })
 
 test('violent attacks send villagers to the town center before a closer house', () => {
@@ -351,10 +567,8 @@ test('violent attacks send villagers to the town center before a closer house', 
       return other?.label === 'enemy'
     },
   }
-  const houseEntry = createCell(2, 2)
-  const townCenterEntry = createCell(8, 8)
   owner.buildings.push(
-    { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 2, j: 2, entryCells: [houseEntry] },
+    { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 2, j: 2 },
     {
       label: 'tc',
       type: constants.BUILDING_TYPES.townCenter,
@@ -362,12 +576,12 @@ test('violent attacks send villagers to the town center before a closer house', 
       isBuilt: true,
       i: 8,
       j: 8,
-      entryCells: [townCenterEntry],
     }
   )
   const villager = createVillager(owner, { i: 0, j: 0 })
   const context = createContext(12, [owner], calls)
   villager.context = context
+  const townCenterEntry = context.map.grid[9][10]
   const VillagerShelterSystem = loadShelterSystem(calls)
   const system = new VillagerShelterSystem(context)
 
@@ -386,7 +600,6 @@ test('violent attacks send villagers to the town center before a closer house', 
 test('critical shelters eject hidden villagers', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const entry = createCell(4, 5)
   const house = {
     label: 'house',
     type: constants.BUILDING_TYPES.house,
@@ -398,12 +611,12 @@ test('critical shelters eject hidden villagers', () => {
     totalHitPoints: 20,
     i: 5,
     j: 5,
-    entryCells: [entry],
   }
   owner.buildings.push(house)
   const villager = createVillager(owner)
   const context = createContext(12, [owner], calls)
   villager.context = context
+  const entry = context.map.grid[6][7]
   villager.shelterState = { status: 'inside', reason: 'sleep', location: 'shelter', shelter: house }
   villager.alpha = 0
   villager.visible = false

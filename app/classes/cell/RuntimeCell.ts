@@ -4,7 +4,15 @@ import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
-import { CellFog } from './CellFog'
+import type { CellFog } from './CellFog'
+import {
+  addCellFogBuilding,
+  ensureCellFog,
+  removeCellFog,
+  removeCellFogBuilding,
+  setCellFog,
+  setCellFogChildren,
+} from './CellFog'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 
 export type RuntimeCellContext = {
@@ -44,6 +52,7 @@ export type RuntimeCellSource = {
   inclined?: boolean
   border?: boolean
   waterBorder?: boolean
+  terrainHidden?: boolean
   viewed?: boolean
   viewBy?: Set<VisionViewerRef>
   has?: RuntimeEntity | null
@@ -74,6 +83,7 @@ export class RuntimeCell {
   inclined: boolean
   border: boolean
   waterBorder: boolean
+  terrainHidden: boolean
   viewed: boolean
   viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
@@ -105,6 +115,7 @@ export class RuntimeCell {
     this.inclined = source.inclined ?? false
     this.border = source.border ?? false
     this.waterBorder = source.waterBorder ?? false
+    this.terrainHidden = source.terrainHidden ?? false
     this.viewed = source.viewed ?? false
     this.viewBy = source.viewBy ?? new Set()
     this.has = source.has ?? null
@@ -141,13 +152,12 @@ export class RuntimeCell {
   }
 
   _ensureCellFog(): CellFog {
-    if (!this.cellFog) this.cellFog = new CellFog(this)
-    return this.cellFog
+    return ensureCellFog(this)
   }
 
-  setFog(init: boolean): void { return this._ensureCellFog().setFog(init) }
-  removeFog(): void { return this._ensureCellFog().removeFog() }
-  addFogBuilding(textureSheet: string, colorName?: string): void { return this._ensureCellFog().addFogBuilding(textureSheet, colorName) }
-  removeFogBuilding(instance?: RuntimeEntity): void { return this._ensureCellFog().removeFogBuilding(instance) }
-  setFogChildren(instance: RuntimeEntity, init: boolean): void { return this._ensureCellFog().setFogChildren(instance, init) }
+  setFog = (init: boolean): void => setCellFog(this, init)
+  removeFog = (): void => removeCellFog(this)
+  addFogBuilding = (textureSheet: string, colorName?: string): void => addCellFogBuilding(this, textureSheet, colorName)
+  removeFogBuilding = (instance?: RuntimeEntity): void => removeCellFogBuilding(this, instance)
+  setFogChildren = (instance: RuntimeEntity, init: boolean): void => setCellFogChildren(this, instance, init)
 }

@@ -29,6 +29,8 @@ export const LABEL_TYPES = {
   fogOverlay: 'fogOverlay',
   commRadius: 'commRadius',
   commSelection: 'commSelection',
+  buildingInteriorEntry: 'buildingInteriorEntry',
+  interiorExit: 'interiorExit',
   overheadIndicator: 'overheadIndicator',
 }
 

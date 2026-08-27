@@ -51,6 +51,10 @@ interface VillagerShelterSystemLike {
   handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
   evacuateVillagersFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
   evacuateVillagersIfShelterUnsafe(building: BuildingEntity): void
+  sendVillagerToSleep(unit: UnitEntity): boolean
+  wakeSleepingVillagerForOrder(unit: UnitEntity, onComplete?: () => void): boolean
+  previewSleepingVillagerWake(unit: UnitEntity): void
+  restoreSleepingVillagerVisual(unit: UnitEntity): void
 }
 
 export type SchedulerTaskId = number
@@ -253,6 +257,7 @@ export interface GameContextLike {
   getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
+  travelOutOfBuildingInterior?: () => void
 }
 
 export type MapRuntimeContext = Omit<

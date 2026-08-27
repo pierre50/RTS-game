@@ -115,18 +115,22 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
 
 function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
   if (target.lookingAtHero) return
+  const sleeping = target.shelterState?.reason === 'sleep'
   const sprite = target.sprite
-  if (sprite) {
+  if (sprite && !sleeping) {
     sprite.onLoop = undefined
     sprite.onFrameChange = undefined
     sprite.onComplete = undefined
   }
   target.previousDest = target.dest ?? null
   target.lookingAtHero = true
-  target.dest = null
-  target.path = []
+  if (!sleeping) {
+    target.dest = null
+    target.path = []
+  }
   target.degree = getInstanceDegree(target, hero.x, hero.y)
-  target.setTextures?.(SHEET_TYPES.standing)
+  if (!sleeping) target.setTextures?.(SHEET_TYPES.standing)
+  else target.context?.villagerShelter?.previewSleepingVillagerWake(target)
   setCommSelected(target, true)
   if (shouldPlayVoice) playSelectionSound(target)
 }
@@ -156,6 +160,10 @@ function releaseNpc(target: UnitEntity): void {
   if (!target.lookingAtHero) return
   target.lookingAtHero = false
   setCommSelected(target, false)
+  if (target.shelterState?.reason === 'sleep') {
+    target.context?.villagerShelter?.restoreSleepingVillagerVisual(target)
+    return
+  }
   const dest = target.previousDest
   if (target.autonomousJob) {
     target.previousDest = null

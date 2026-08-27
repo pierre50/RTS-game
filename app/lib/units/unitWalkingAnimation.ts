@@ -1,4 +1,3 @@
-import { SHEET_TYPES } from '../constants'
 import type { UnitEntity } from '../../types/entities'
 
 type AnimationSpriteLike = {
@@ -22,7 +21,6 @@ function applySpriteAnimationSpeed(sprite: AnimationSpriteLike | null | undefine
 }
 
 export function applyUnitWalkingAnimationSpeed(unit: UnitEntity, factor: number): void {
-  if (unit.currentSheet !== SHEET_TYPES.walking) return
   const safeFactor = Math.max(0, Math.min(1, factor))
   applySpriteAnimationSpeed(unit.sprite, safeFactor)
   applySpriteAnimationSpeed(unit.shadow, safeFactor)

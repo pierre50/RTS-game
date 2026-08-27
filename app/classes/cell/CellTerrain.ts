@@ -97,6 +97,7 @@ export type TerrainCellLike = {
   children: TerrainChild[]
   sprite: TerrainSprite | null
   has: RuntimeEntity | null
+  solid: boolean
   inclined: boolean
   border: boolean
   waterBorder: boolean
@@ -207,6 +208,7 @@ export class CellTerrain {
     cell.x = x
     cell.y = y - cell.z * CELL_DEPTH
     cell.inclined = false
+    if (cell.waterBorder && !cell.has) cell.solid = false
     cell.border = false
     cell.waterBorder = false
     cell.unregisterWaterBorderSurface?.()
@@ -298,6 +300,7 @@ export class CellTerrain {
     if (cell.has && typeof cell.has.die === 'function') {
       cell.has.die()
     }
+    cell.solid = false
     sprite.zIndex = 1
     sprite.texture = texture
     sprite.renderable = true

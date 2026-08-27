@@ -42,6 +42,7 @@ export type GameRuntimeContextHost = {
   save(): { key: string; name: string }
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
+  travelOutOfBuildingInterior(): Promise<void>
   travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void>
 }
 
@@ -91,6 +92,12 @@ export function createGameRuntimeContext(
     travelIntoBuildingInterior: (building: BuildingEntity) => {
       host.travelIntoBuildingInterior(building).catch(error => {
         console.error('Unable to travel into building interior', error)
+        context.menu?.showMessage(t('corruptSave'))
+      })
+    },
+    travelOutOfBuildingInterior: () => {
+      host.travelOutOfBuildingInterior().catch(error => {
+        console.error('Unable to travel out of building interior', error)
         context.menu?.showMessage(t('corruptSave'))
       })
     },

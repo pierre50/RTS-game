@@ -189,7 +189,14 @@ function getOrbitDirection(unit: EnergyEntity): 1 | -1 {
 
 function isOpenRecoveryCell(unit: EnergyEntity, cell: RuntimeCell | null | undefined): cell is RuntimeCell {
   const occupiedBySelf = Boolean(cell?.has && cell.has.label === unit.label)
-  if (!cell || (cell.solid && !occupiedBySelf) || cell.border || cell.waterBorder || cell.category === 'Water') return false
+  if (
+    !cell ||
+    (cell.solid && !occupiedBySelf) ||
+    (cell.border && (!cell.waterBorder || cell.solid)) ||
+    cell.category === 'Water'
+  ) {
+    return false
+  }
   return cell.i !== unit.i || cell.j !== unit.j
 }
 

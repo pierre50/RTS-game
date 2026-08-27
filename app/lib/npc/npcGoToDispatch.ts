@@ -4,6 +4,7 @@ import { drawInstanceBlinkingSelection } from '../graphics/selection'
 import { findInstancesInSight } from '../grid/visibility'
 import { getTrainingTargetForUnit } from '../buildings/buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from '../buildings/buildingFeedback'
+import { isVillagerSleepTime } from '../units/villagerSchedule'
 import type { SelectableInstance } from '../graphics/selection'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -52,12 +53,24 @@ export function keepNpcHere(target: UnitEntity): void {
   target.previousDest = null
   target.autonomousJob = null
   target.stop?.()
+  if (target.context && target.type === UNIT_TYPES.villager && isVillagerSleepTime(target.context) && !target.shelterState) {
+    target.context?.villagerShelter?.sendVillagerToSleep(target)
+  }
 }
 
 export function startFollowingHero(target: UnitEntity): void {
+  const wasSleeping = target.shelterState?.reason === 'sleep'
   resetNpcDirectives(target)
   target.previousDest = null
   target.autonomousJob = null
+  if (wasSleeping) {
+    const waking =
+      target.context?.villagerShelter?.wakeSleepingVillagerForOrder(target, () => {
+        target.followingHero = true
+      }) ?? false
+    if (!waking) target.followingHero = true
+    return
+  }
   target.followingHero = true
   target.stop?.()
 }

@@ -362,6 +362,7 @@ export class MapFog {
             z: source.z,
             type: source.type,
             textureName: source.terrainTextureName,
+            terrainHidden: source.terrainHidden,
             fogSprites: source.fogSprites,
             skipFog: true,
           },
@@ -372,6 +373,7 @@ export class MapFog {
         cell.inclined = source.inclined ?? false
         cell.border = source.border ?? false
         cell.waterBorder = source.waterBorder ?? false
+        cell.terrainHidden = source.terrainHidden ?? false
         cell.viewed = source.viewed ?? false
         cell.viewBy = source.viewBy
         cell.has = source.has

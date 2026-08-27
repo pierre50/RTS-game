@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint } = {}) {
+function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedMapBlueprint } = {}) {
   class MapBlueprintLoadError extends Error {
     constructor(reason, message) {
       super(message)
@@ -84,6 +84,14 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
             throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test blueprint')
           }
           return { id: 'test-blueprint', size: 144, terrain: [], spawns: [], timings: {} }
+        }),
+      loadPregeneratedInteriorBlueprint:
+        loadPregeneratedInteriorBlueprint ||
+        (async () => {
+          if (blueprintFailureReason) {
+            throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test interior blueprint')
+          }
+          return { id: 'test-interior-blueprint', kind: 'interior', mapType: 'interior', size: 13, terrain: [], spawns: [] }
         }),
     },
     '../dev-console/DevConsole': { DevConsole: class DevConsole {} },
@@ -179,10 +187,12 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
       getInstanceZIndex: instance => (instance?.i ?? 0) + (instance?.j ?? 0),
     },
     '../constants': {
+      BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
       CELL_WIDTH: 64,
       CELL_HEIGHT: 32,
       ENVIRONMENT_IDS: ['temperate'],
       PLAYER_TYPES: { human: 'human', computer: 'computer' },
+      UNIT_TYPES: { villager: 'Villager' },
     },
   }
   Object.assign(mocks, {
@@ -191,6 +201,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedMapBlueprint 
     '../../lib/equipment/equipmentStats': mocks['../lib/equipment/equipmentStats'],
     '../../lib/audio/settings': mocks['../lib/audio/settings'],
     '../../serialization/CampaignSave': mocks['../serialization/CampaignSave'],
+    '../../serialization/MapBlueprintLoader': mocks['../serialization/MapBlueprintLoader'],
     '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
@@ -345,6 +356,61 @@ test('seed saves without a blueprint id do not fall back to runtime generation',
   )
 
   assert.equal(runtimeGenerationCalls, 0)
+})
+
+test('interior seed saves load their blueprint from the interior manifest', async () => {
+  const calls = []
+  const Game = loadGame({
+    loadPregeneratedInteriorBlueprint: async options => {
+      calls.push(['interior', options])
+      return { id: options.id, kind: 'interior', mapType: 'interior', size: 13, terrain: [], spawns: [] }
+    },
+    loadPregeneratedMapBlueprint: async options => {
+      calls.push(['world', options])
+      return { id: options.id, size: 144, terrain: [], spawns: [], timings: {} }
+    },
+  })
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  const map = {
+    generateFromBlueprint: async blueprint => calls.push(['generate', blueprint.id]),
+    mapGeneration: { applySavedStateToGeneratedMap: () => calls.push(['applySavedState']) },
+    prepareTerrainForSavedState: async () => calls.push(['prepareTerrain']),
+    size: 0,
+  }
+
+  game._createRuntime = () => calls.push(['createRuntime'])
+  game._map = () => map
+  game._applyMapConfig = (_map, config) => {
+    calls.push(['applyMapConfig', config.mapType])
+    _map.mapType = config.mapType
+    _map.size = config.size
+  }
+  game._createUiRuntime = () => {
+    calls.push(['createUiRuntime'])
+    game.context.controls = { init: () => calls.push(['controls.init']) }
+  }
+  game._mountRuntime = () => calls.push(['mountRuntime'])
+
+  await game._bootFromSeedSave({
+    version: 2,
+    runtime: { elapsedMs: 0 },
+    world: {
+      seed: 42,
+      size: 13,
+      mapType: 'interior',
+      positionsCount: 1,
+      pregeneratedBlueprintId: 'house-circle-001',
+    },
+    config: { seed: 42, size: 13, mapType: 'interior' },
+    players: [],
+    camera: { x: 0, y: 0 },
+    resources: [],
+    animals: [],
+  })
+
+  assert.deepEqual(calls.find(call => call[0] === 'interior'), ['interior', { id: 'house-circle-001' }])
+  assert.equal(calls.some(call => call[0] === 'world'), false)
+  assert.deepEqual(calls.find(call => call[0] === 'generate'), ['generate', 'house-circle-001'])
 })
 
 test('portable hero state preserves mounted horse color across worlds', () => {

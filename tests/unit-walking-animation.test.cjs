@@ -46,7 +46,7 @@ test('unit walking animation speed follows and restores movement speed factor', 
   assert.equal(layer.animationSpeed, 0.4)
 })
 
-test('unit walking animation speed ignores non-walking sheets', () => {
+test('unit animation speed also affects non-walking action sheets', () => {
   const { applyUnitWalkingAnimationSpeed } = loadUnitWalkingAnimation()
   const unit = {
     currentSheet: 'standingSheet',
@@ -54,5 +54,5 @@ test('unit walking animation speed ignores non-walking sheets', () => {
   }
 
   applyUnitWalkingAnimationSpeed(unit, 0.6)
-  assert.equal(unit.sprite.animationSpeed, 0.4)
+  assert.equal(unit.sprite.animationSpeed, 0.24)
 })

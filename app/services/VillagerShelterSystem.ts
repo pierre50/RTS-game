@@ -1,16 +1,19 @@
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
+import { findInstancesInSight } from '../lib/grid/visibility'
 import {
   enterShelter,
-  keepSleepingOutsideVisual,
   retryShelterPath,
   sendUnitToShelter,
   sleepOutside,
   wakeUnit,
 } from './VillagerShelterLifecycle'
 import type { TimedVillagerShelterState } from './VillagerShelterLifecycle'
+import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './VillagerSleepVisuals'
+import { updateVillagerTired } from './VillagerTiredIndicator'
 import {
   DANGER_SHELTER_MIN_MS,
+  DANGER_SHELTER_MAX_MS,
   isShelterUnsafe,
   isSleepTime,
   isUsableShelter,
@@ -30,6 +33,10 @@ function hasPendingShelterOrder(unit: UnitEntity, targetCell: UnitEntity['curren
 
 function handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
   if (!isViolentVillagerThreat(unit, attacker)) return false
+  if (unit.shelterState?.reason === 'sleep') {
+    wakeUnit(unit, { force: true })
+    return false
+  }
   if (unit.shelterState?.status === 'inside') return true
   return sendUnitToShelter(unit, 'danger')
 }
@@ -48,6 +55,19 @@ function evacuateVillagersIfShelterUnsafe(building: BuildingEntity): void {
   evacuateVillagersFromShelter(building, { force: true })
 }
 
+function isDangerNearShelter(unit: UnitEntity, shelter: BuildingEntity | null | undefined): boolean {
+  if (!shelter) return false
+  return findInstancesInSight<BuildingEntity, RuntimeEntity>(
+    shelter,
+    target => {
+      if (target === unit || target.isDead || target.isDestroyed) return false
+      if (target.family === 'animal') return true
+      return Boolean(target.owner && unit.owner?.isEnemy?.(target.owner))
+    },
+    { range: unit.sight ?? 7, useInsightRange: true }
+  ).some(target => unit.owner?.views?.isVisible(target.i, target.j) ?? true)
+}
+
 function updateDangerShelter(unit: UnitEntity): void {
   const state = unit.shelterState as TimedVillagerShelterState | null | undefined
   if (!state || state.reason !== 'danger') return
@@ -58,7 +78,14 @@ function updateDangerShelter(unit: UnitEntity): void {
   }
   const elapsed = unit.context?.scheduler?.elapsedMs ?? 0
   const hiddenAt = state.hiddenAt ?? elapsed
-  if (state.status === 'inside' && elapsed - hiddenAt >= DANGER_SHELTER_MIN_MS) wakeUnit(unit)
+  const shelteredMs = elapsed - hiddenAt
+  if (
+    state.status === 'inside' &&
+    shelteredMs >= DANGER_SHELTER_MIN_MS &&
+    (shelteredMs >= DANGER_SHELTER_MAX_MS || !isDangerNearShelter(unit, state.shelter))
+  ) {
+    wakeUnit(unit)
+  }
 }
 
 export class VillagerShelterSystem {
@@ -73,6 +100,7 @@ export class VillagerShelterSystem {
   }
 
   update(): void {
+    this.updateVillagerTiredStates()
     if (isSleepTime(this.context)) this.sendVillagersToSleep()
     if (isWakeTime(this.context)) this.wakeVillagers()
     this.updateAllDangerShelters()
@@ -81,6 +109,24 @@ export class VillagerShelterSystem {
 
   handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
     return handleVillagerDangerShelter(unit, attacker)
+  }
+
+  wakeSleepingVillagerForOrder(unit: UnitEntity, onComplete?: () => void): boolean {
+    if (unit.shelterState?.reason !== 'sleep') return false
+    wakeUnit(unit, { force: true, mode: 'order', onComplete })
+    return true
+  }
+
+  previewSleepingVillagerWake(unit: UnitEntity): void {
+    if (unit.shelterState?.reason === 'sleep') playSleepingWakeVisual(unit)
+  }
+
+  restoreSleepingVillagerVisual(unit: UnitEntity): void {
+    if (unit.shelterState?.reason === 'sleep') playSleepingOutsideVisual(unit)
+  }
+
+  sendVillagerToSleep(unit: UnitEntity): boolean {
+    return sendUnitToShelter(unit, 'sleep')
   }
 
   evacuateVillagersFromShelter(building: BuildingEntity, options: { force?: boolean } = {}): void {
@@ -100,6 +146,12 @@ export class VillagerShelterSystem {
     }
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) this.updateShelteringUnit(unit)
+    }
+  }
+
+  updateVillagerTiredStates(): void {
+    for (const player of this.context.players ?? []) {
+      for (const unit of player.units ?? []) updateVillagerTired(unit)
     }
   }
 
@@ -133,7 +185,10 @@ export class VillagerShelterSystem {
 
   updateSleepingOutsideVisuals(): void {
     for (const player of this.context.players ?? []) {
-      for (const unit of player.units ?? []) keepSleepingOutsideVisual(unit)
+      for (const unit of player.units ?? []) {
+        if (unit.lookingAtHero && unit.shelterState?.reason === 'sleep') continue
+        keepSleepingOutsideVisual(unit)
+      }
     }
   }
 

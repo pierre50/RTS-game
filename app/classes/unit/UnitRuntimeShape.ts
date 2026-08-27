@@ -47,6 +47,7 @@ declare module './Unit' {
     blockedGatherApproach: UnitEntity['blockedGatherApproach']
     buildQueue: NonNullable<UnitEntity['buildQueue']>
     isDirectMoving?: UnitEntity['isDirectMoving']
+    tired?: UnitEntity['tired']
     currentCell: NonNullable<UnitEntity['currentCell']>
     visibleCells: NonNullable<UnitEntity['visibleCells']>
     speed?: UnitEntity['speed']

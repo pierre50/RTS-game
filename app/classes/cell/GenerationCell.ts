@@ -6,7 +6,15 @@ import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
-import { CellFog } from './CellFog'
+import type { CellFog } from './CellFog'
+import {
+  addCellFogBuilding,
+  ensureCellFog,
+  removeCellFog,
+  removeCellFogBuilding,
+  setCellFog,
+  setCellFogChildren,
+} from './CellFog'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 
 type GenerationCellContext = {
@@ -59,6 +67,7 @@ export class GenerationCell implements RuntimeCell {
   inclined: boolean
   border: boolean
   waterBorder: boolean
+  terrainHidden: boolean
   viewed: boolean
   viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
@@ -92,6 +101,7 @@ export class GenerationCell implements RuntimeCell {
     this.inclined = false
     this.border = false
     this.waterBorder = false
+    this.terrainHidden = false
     this.viewed = false
     this.viewBy = new Set()
     this.has = null
@@ -156,6 +166,7 @@ export class GenerationCell implements RuntimeCell {
     this.y = y - this.z * CELL_DEPTH
     this.inclined = false
     if (!preserveWaterBorder) {
+      if (this.waterBorder && !this.has) this.solid = false
       this.border = false
       this.waterBorder = false
     }
@@ -186,6 +197,7 @@ export class GenerationCell implements RuntimeCell {
     this.waterBorder = true
     this._terrainAppearance.waterBorder = { resourceName, index }
     if (this.has && typeof this.has.die === 'function') this.has.die()
+    this.solid = false
   }
 
   setReliefBorder(index: number, elevation: number = 0): void {
@@ -200,14 +212,23 @@ export class GenerationCell implements RuntimeCell {
     this._terrainAppearance.patchBorderGroundType = groundType
   }
 
-  setFog(init: boolean): void { return this._ensureCellFog().setFog(init) }
-  removeFog(): void { return this._ensureCellFog().removeFog() }
-  addFogBuilding(textureSheet: string, colorName?: string): void { return this._ensureCellFog().addFogBuilding(textureSheet, colorName) }
-  removeFogBuilding(instance?: RuntimeEntity): void { return this._ensureCellFog().removeFogBuilding(instance) }
-  setFogChildren(instance: RuntimeEntity, init: boolean): void { return this._ensureCellFog().setFogChildren(instance, init) }
+  setFog(init: boolean): void {
+    return setCellFog(this, init)
+  }
+  removeFog(): void {
+    return removeCellFog(this)
+  }
+  addFogBuilding(textureSheet: string, colorName?: string): void {
+    return addCellFogBuilding(this, textureSheet, colorName)
+  }
+  removeFogBuilding(instance?: RuntimeEntity): void {
+    return removeCellFogBuilding(this, instance)
+  }
+  setFogChildren(instance: RuntimeEntity, init: boolean): void {
+    return setCellFogChildren(this, instance, init)
+  }
   _ensureCellFog(): CellFog {
-    if (!this.cellFog) this.cellFog = new CellFog(this)
-    return this.cellFog
+    return ensureCellFog(this)
   }
 
   getTerrainDecorations(): TerrainDecoration[] {

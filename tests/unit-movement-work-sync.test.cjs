@@ -38,6 +38,7 @@ function loadUnitMovement(calls) {
     new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
     return tsModule.exports
   }
+  const mocks = {}
   const localRequire = request => {
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
     if (request === '../../constants') return constants
@@ -74,6 +75,7 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/hero/heroActionRange') return { isHeroActionInRange: () => false }
     if (request === '../../lib/combat/combatBehavior') return { markCombatFlee: () => {} }
     if (request === '../../lib/units/unitEnergy') return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
+    if (request === './unitTired') return { getUnitTiredSpeedFactor: () => 1 }
     if (request === '../../lib/units/unitLocomotion') return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     if (request === '../../lib/units/unitCrouchPose') {
       return {
@@ -82,6 +84,7 @@ function loadUnitMovement(calls) {
       }
     }
     if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
+    if (request === '../../services/VillagerSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
     if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
     if (request === './UnitCommands' || request === '../UnitCommands') {
       return {
@@ -105,16 +108,18 @@ function loadUnitMovement(calls) {
       return {
         blocksHeroDirectMoveWithRoundedFootprint: () => false,
         blocksHeroDirectMoveWithSoftBody: () => false,
-        createHeroTerrainMoveBlocker: () => null,
+        createHeroTerrainCollisionBlocker: () => null,
         getHeroCollisionFootprintPoints: () => [],
         getHeroDirectMoveBlockerAtPoint: () => null,
-        isHeroLandTerrainBlockedCell: () => false,
+        getHeroTerrainCollisionBlockerNearPoint: () => null,
+        isHeroTerrainCollisionCell: () => false,
       }
     }
     if (request === './movement/UnitMovementDebug' || request === './UnitMovementDebug') {
       return {
         debugBlockedDirectMove: () => {},
         debugCombatMove: () => {},
+        debugDirectMoveProbe: () => {},
         debugHuntRangeCheck: () => {},
       }
     }

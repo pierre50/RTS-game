@@ -27,8 +27,17 @@ import {
   getSolidDebugColor,
 } from './shared'
 import { ensureDebugOverlay } from './DebugOverlayRenderers'
+import {
+  createHeroTerrainCollisionBlocker,
+  getHeroCollisionFootprintPoints,
+  isHeroTerrainCollisionCell,
+} from '../../classes/unit/movement/UnitHeroDirectMovementCollision'
+import { getLastDirectMoveDebugSnapshot } from '../../classes/unit/movement/UnitMovementDebug'
+import type { UnitEntity } from '../../types/entities'
+import type { RuntimeMap } from '../../types/map'
 
 const HERO_COLLISION_SCAN_RADIUS = 8
+const HERO_TERRAIN_COLLISION_DEBUG_RADIUS = 2
 const HERO_AIM_DEBUG_RADIUS = 120
 const HERO_AIM_DEBUG_SEGMENTS = 10
 const HERO_AIM_DEBUG_Y_SCALE = CELL_HEIGHT / CELL_WIDTH
@@ -45,6 +54,7 @@ const HERO_AIM_DEBUG_SECTORS = [
   { start: 292.5, end: 337.5, color: 0xfb7185 },
 ] as const
 const HERO_COLLISION_FAMILY_COLORS: Record<string, number> = {
+  terrain: 0x35a7ff,
   [FAMILY_TYPES.resource]: 0xffa500,
   [FAMILY_TYPES.unit]: 0xb46bff,
   [FAMILY_TYPES.animal]: 0xd4ff35,
@@ -54,9 +64,24 @@ export function drawSolidDebug(context: DevConsoleContext): void {
   const { map } = context
   const layer = getDebugLayer(map, DEBUG_SOLID_LAYER, DEBUG_OVERLAY_Z + 1)
   layer.clear()
+  const hero = context.controls?.heroUnit
 
   for (const cell of getCameraCells(context)) {
-    if (!cell || (!cell.solid && !cell.border && !cell.inclined)) continue
+    if (!cell) continue
+    if (!cell.solid && !cell.border && !cell.inclined && !cell.waterBorder && cell.category !== 'Water') continue
+
+    const isHeroOccupancyOnly =
+      hero && cell.has === hero && cell.solid && !cell.border && !cell.inclined && !cell.waterBorder && cell.category !== 'Water'
+    if (isHeroOccupancyOnly) {
+      drawCellStroke(layer, cell, getSolidDebugColor(cell), 0.55, 2)
+      continue
+    }
+
+    if (cell.waterBorder) {
+      drawCellStroke(layer, cell, getSolidDebugColor(cell), 0.55, 2)
+      continue
+    }
+
     drawCellDiamond(layer, cell, getSolidDebugColor(cell))
   }
 }
@@ -230,11 +255,61 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
   return [...entities]
 }
 
+function getNearbyHeroTerrainCollisionCells(context: DevConsoleContext, hero: DevEntity) {
+  const cells = []
+  const { map } = context
+  for (let i = hero.i - HERO_TERRAIN_COLLISION_DEBUG_RADIUS; i <= hero.i + HERO_TERRAIN_COLLISION_DEBUG_RADIUS; i++) {
+    const row = map.grid[i]
+    if (!row) continue
+    for (let j = hero.j - HERO_TERRAIN_COLLISION_DEBUG_RADIUS; j <= hero.j + HERO_TERRAIN_COLLISION_DEBUG_RADIUS; j++) {
+      const cell = row[j]
+      if (cell && !cell.has && isHeroTerrainCollisionCell(hero as unknown as UnitEntity, cell)) cells.push(cell)
+    }
+  }
+  return cells
+}
+
 function getEntityCollisionInfo(context: DevConsoleContext, hero: DevEntity, entity: DevEntity) {
   const points = getRoundedIsoFootprintPoints(entity, context.map.grid)
   const inside = pointIsInsidePolygon(points, hero)
   const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }
+}
+
+function formatDirectMoveDebugDetails(details: Record<string, unknown>): string {
+  const target = details.target as
+    | { i?: unknown; j?: unknown; solid?: unknown; waterBorder?: unknown; border?: unknown; category?: unknown }
+    | null
+    | undefined
+  const firstTarget = details.firstTarget as { newI?: unknown; newJ?: unknown; crossingCell?: unknown; cell?: unknown } | null | undefined
+  const firstTargetCell = firstTarget?.cell as
+    | { i?: unknown; j?: unknown; solid?: unknown; waterBorder?: unknown; border?: unknown; category?: unknown }
+    | null
+    | undefined
+  const terrainBlocker = details.terrainBlocker as { type?: unknown; pointCount?: unknown } | null | undefined
+  const blocker = details.blocker as { family?: unknown; type?: unknown; i?: unknown; j?: unknown; pointCount?: unknown } | null | undefined
+  const cell = target ?? firstTargetCell
+  const parts = [
+    `raw=${String(details.rawI ?? '?')},${String(details.rawJ ?? '?')}`,
+    `new=${String(details.newI ?? firstTarget?.newI ?? '?')},${String(details.newJ ?? firstTarget?.newJ ?? '?')}`,
+    `cross=${String(details.crossingCell ?? firstTarget?.crossingCell ?? '?')}`,
+  ]
+  if (cell) {
+    parts.push(
+      `cell=${String(cell.i ?? '?')},${String(cell.j ?? '?')} ${String(cell.category ?? '?')} solid=${String(
+        cell.solid ?? '?'
+      )} wb=${String(cell.waterBorder ?? '?')} border=${String(cell.border ?? '?')}`
+    )
+  }
+  if (terrainBlocker) parts.push(`terrain=${String(terrainBlocker.type ?? '?')} pts=${String(terrainBlocker.pointCount ?? '?')}`)
+  if (blocker) {
+    parts.push(
+      `blocker=${String(blocker.family ?? '?')}:${String(blocker.type ?? '?')} ${String(blocker.i ?? '?')},${String(
+        blocker.j ?? '?'
+      )} pts=${String(blocker.pointCount ?? '?')}`
+    )
+  }
+  return parts.join(' | ')
 }
 
 export function drawHeroCollisionDebug(context: DevConsoleContext): void {
@@ -252,6 +327,14 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
   const infos = entities
     .map(entity => ({ entity, ...getEntityCollisionInfo(context, hero, entity) }))
     .sort((a, b) => a.value - b.value)
+  const terrainInfos = getNearbyHeroTerrainCollisionCells(context, hero)
+    .map(cell => {
+      const blocker = createHeroTerrainCollisionBlocker(cell, context.map as unknown as RuntimeMap)
+      const points = getHeroCollisionFootprintPoints(blocker, context.map as unknown as RuntimeMap)
+      const value = Math.hypot((blocker.x ?? cell.x) - hero.x, (blocker.y ?? cell.y) - hero.y)
+      return { blocker, inside: pointIsInsidePolygon(points, hero), points, rawPoints: blocker.collisionPoints ?? [], value }
+    })
+    .sort((a, b) => a.value - b.value)
 
   for (const info of infos) {
     const color = info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff
@@ -261,6 +344,19 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
     layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
     layer.circle(info.entity.x, info.entity.y + lift, 3)
     layer.fill({ color, alpha: 0.85 })
+  }
+
+  for (const info of terrainInfos) {
+    if (info.rawPoints.length) {
+      drawRoundedIsoShape(layer, info.rawPoints)
+      layer.stroke({ color: 0xffffff, alpha: 0.35, width: 1 })
+    }
+    drawRoundedIsoShape(layer, info.points)
+    layer.stroke({
+      color: info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS.terrain,
+      alpha: info.inside ? 0.95 : 0.75,
+      width: info.inside ? 4 : 2,
+    })
   }
 
   const cell = context.map.grid[hero.i]?.[hero.j]
@@ -274,17 +370,29 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
   layer.stroke({ color: 0xffffff, alpha: 0.95, width: 2 })
 
   const nearest = infos[0]
+  const nearestTerrain = terrainInfos[0]
+  const lastMoveBlock = getLastDirectMoveDebugSnapshot()
   const overlay = ensureDebugOverlay('debug-hero-collision')
   overlay.textContent = [
     `Hero collision`,
     `hero ${Math.round(hero.x)},${Math.round(hero.y)} cell ${hero.i},${hero.j}`,
-    `cell solid=${Boolean(cell?.solid)} has=${cell?.has?.family || 'none'}:${cell?.has?.type || ''}`,
+    `cell solid=${Boolean(cell?.solid)} waterBorder=${Boolean(cell?.waterBorder)} has=${cell?.has?.family || 'none'}:${cell?.has?.type || ''}`,
     nearest
       ? `nearest ${nearest.entity.family}:${nearest.entity.type} ${nearest.entity.i},${nearest.entity.j} roundedIso=${nearest.value.toFixed(3)} ${
           nearest.inside ? 'INSIDE' : 'outside'
         }`
       : 'nearest none',
-    `cyan=building orange=resource purple=unit lime=animal red=blocking white=current cell green/red=hero`,
+    nearestTerrain
+      ? `nearest terrain ${nearestTerrain.blocker.i},${nearestTerrain.blocker.j} distance=${nearestTerrain.value.toFixed(3)} ${
+          nearestTerrain.inside ? 'TOUCHING' : 'outside'
+        }`
+      : 'nearest terrain none',
+    lastMoveBlock
+      ? `last block ${lastMoveBlock.reason} dir=${lastMoveBlock.dir.x},${lastMoveBlock.dir.y} unit=${lastMoveBlock.unit.i},${lastMoveBlock.unit.j} ${formatDirectMoveDebugDetails(
+          lastMoveBlock.details
+        )}`
+      : 'last block none',
+    `blue=solid terrain orange=resource purple=unit lime=animal red=blocking white=current cell green/red=hero`,
   ].join('\n')
 }
 
