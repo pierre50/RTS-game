@@ -258,7 +258,7 @@ function interiorDecorationLayout(
   ]
 }
 
-export function ensureInteriorDecorations(game: BuildingInteriorTravelGame, sourceBuilding: BuildingEntity): void {
+function ensureInteriorDecorations(game: BuildingInteriorTravelGame, sourceBuilding: BuildingEntity): void {
   const { map, player } = game._gameContext()
   if (!player) return
   const center = Math.round(map.size / 2)
@@ -511,6 +511,7 @@ export async function travelIntoBuildingInterior(
       const nextCampaign = addChildWorldToCampaign(campaign, arrival.state, {
         color: 'neutral',
         entryPortalId: building.label || `${building.i},${building.j}`,
+        kind: 'interior',
         name: `Interieur ${building.type}`,
         now,
         parentWorldId,

@@ -24,11 +24,11 @@ function loadGameStateHelpers() {
   })
 }
 
-function loadGamePortalTravel() {
+function loadGamePortalTravel(overrides = {}) {
   return loadTsModule('app/screens/game/GamePortalTravel.ts', {
     mocks: {
       '../../lib': {
-        getFreeLandCellAroundInstance: () => null,
+        getFreeLandCellAroundInstance: overrides.getFreeLandCellAroundInstance ?? (() => null),
         getReliefOffset: () => 0,
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
@@ -52,7 +52,7 @@ function loadGamePortalTravel() {
       '../../constants': constants,
       '../../lib': {
         colors: ['blue', 'red'],
-        getFreeLandCellAroundInstance: () => null,
+        getFreeLandCellAroundInstance: overrides.getFreeLandCellAroundInstance ?? (() => null),
         getReliefOffset: () => 0,
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
@@ -115,4 +115,58 @@ test('applying a portal party restores the selected hero tool after controls ini
   applyPortalPartyToRuntime(game, { hero: null, followers: [] }, null, { equippedItem: 'sword' })
 
   assert.deepEqual(calls, [['init'], ['setEquippedItem', 'sword']])
+})
+
+test('portal follower spawn preserves gendered appearance before initialization', () => {
+  const { applyPortalPartyToRuntime } = loadGamePortalTravel({
+    getFreeLandCellAroundInstance: () => ({ i: 4, j: 5 }),
+  })
+  const hero = {
+    controlMode: 'hero',
+    currentCell: null,
+    inventory: { equipped: {} },
+    isDestroyed: false,
+    type: 'Hero',
+    visibleCells: new Set(),
+  }
+  const created = []
+  const game = {
+    _gameContext() {
+      return {
+        controls: {
+          context: { menu: { updateHeroStatus: () => {}, updatePlayerMiniMapEvt: () => {} } },
+          init: () => {},
+        },
+        map: { revealEverything: true },
+        menu: {},
+        player: {
+          createUnit(options) {
+            created.push(options)
+            return { ...options, currentCell: null, visibleCells: new Set() }
+          },
+          units: [hero],
+          views: { removeViewerEverywhere: () => [], coordinates: () => [0, 0] },
+        },
+      }
+    },
+  }
+
+  applyPortalPartyToRuntime(game, {
+    hero: null,
+    followers: [
+      {
+        i: 1,
+        j: 1,
+        label: 'follower-1',
+        type: 'Villager',
+        name: 'Livia',
+        gender: 'female',
+        appearanceVariants: { gender: 'female' },
+      },
+    ],
+  })
+
+  assert.equal(created[0].gender, 'female')
+  assert.deepEqual(created[0].appearanceVariants, { gender: 'female' })
+  assert.equal(created[0].label, 'follower-1')
 })

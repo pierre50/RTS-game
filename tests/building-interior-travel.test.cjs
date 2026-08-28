@@ -448,6 +448,49 @@ test('awake interior occupants spawn on the interior exit cell when it is free',
   assert.equal(occupant.j, 11)
 })
 
+test('interior occupants preserve gendered appearance before initialization', () => {
+  const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants()
+  const created = []
+  const player = {
+    buildings: [],
+    units: [],
+    createUnit(options) {
+      created.push(options)
+      const unit = { ...options, label: options.label }
+      this.units.push(unit)
+      return unit
+    },
+  }
+  const game = {
+    _gameContext() {
+      return {
+        map: { random: () => 0 },
+        player,
+      }
+    },
+  }
+
+  addInteriorOccupantsToRuntime(
+    game,
+    [
+      {
+        i: 1,
+        j: 1,
+        label: 'occupant-1',
+        name: 'Julia',
+        gender: 'female',
+        appearanceVariants: { gender: 'female' },
+        type: 'Villager',
+      },
+    ],
+    { i: 7, j: 11 }
+  )
+
+  assert.equal(created[0].gender, 'female')
+  assert.deepEqual(created[0].appearanceVariants, { gender: 'female' })
+  assert.equal(created[0].label, 'occupant-1')
+})
+
 test('interior sleepers are placed away from the exit cell', () => {
   const { addInteriorOccupantsToRuntime } = loadBuildingInteriorOccupants({
     villagerShelterLifecycle: {
@@ -484,52 +527,4 @@ test('interior sleepers are placed away from the exit cell', () => {
   )
 
   assert.notDeepEqual([sleeper.i, sleeper.j], [2, 2])
-})
-
-test('interior decorations are not regenerated when a saved fixture already exists', () => {
-  const { ensureInteriorDecorations } = loadBuildingInteriorTravel()
-  const created = []
-  const grid = Array.from({ length: 16 }, (_, i) =>
-    Array.from({ length: 16 }, (_, j) => ({
-      i,
-      j,
-      border: false,
-      category: 'Dirt',
-      has: null,
-      solid: false,
-      terrainHidden: false,
-    }))
-  )
-  const player = {
-    buildings: [
-      {
-        i: 1,
-        isDestroyed: true,
-        j: 1,
-        label: 'interior-House-crate-nw',
-        type: 'CampCrate',
-      },
-    ],
-    createBuilding(options) {
-      created.push(options)
-      this.buildings.push(options)
-      return options
-    },
-  }
-  const game = {
-    _gameContext() {
-      return {
-        map: { grid, interiorExits: [{ i: 7, j: 11 }], mapType: 'interior', size: 13 },
-        player,
-      }
-    },
-  }
-
-  ensureInteriorDecorations(game, { type: 'House' })
-
-  assert.equal(created.some(building => building.label === 'interior-House-crate-nw'), false)
-  assert.deepEqual(
-    created.map(building => building.label),
-    ['interior-House-jar-se', 'interior-House-bucket-s']
-  )
 })

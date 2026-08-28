@@ -33,6 +33,7 @@ type SerializableEntity = RuntimeEntityBase & {
   direction?: number
   experience?: Record<string, number>
   gender?: SaveEntityState['gender']
+  appearanceVariants?: SaveEntityState['appearanceVariants']
   energy?: number
   totalEnergy?: number
   lastEnergySpentAt?: number
@@ -235,6 +236,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'banditCampAnchor',
       'experience',
       'gender',
+      'appearanceVariants',
     ]),
     currentFrame: unit.sprite?.currentFrame,
     loop: unit.sprite?.loop,

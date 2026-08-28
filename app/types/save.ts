@@ -29,6 +29,7 @@ export type SaveEntityState = {
   direction?: number
   experience?: Record<string, number>
   gender?: 'male' | 'female'
+  appearanceVariants?: Record<string, string>
   energy?: number
   totalEnergy?: number
   lastEnergySpentAt?: number
@@ -199,6 +200,7 @@ export type WorldGraphNode = {
   id: string
   name: string
   color: WorldColor
+  kind?: 'world' | 'interior'
   environment?: string | null
   encounter?: PortalEncounterKind | null
   banditsCleared?: boolean

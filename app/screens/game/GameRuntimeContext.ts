@@ -11,6 +11,7 @@ import type { BuildingEntity, ResourceEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
 import type { RuntimeMap } from '../../types/map'
+import { getRealWorldGraph } from '../../serialization/CampaignSave'
 
 type DestroyableRuntimeMap = RuntimeMap & {
   destroy(options?: unknown): void
@@ -79,7 +80,7 @@ export function createGameRuntimeContext(
     quit: () => host.quit(),
     checkDefeat: () => host.checkDefeat(),
     applyZoom: () => host.applyZoom(),
-    getWorldGraph: () => host._campaignSave?.worldGraph ?? null,
+    getWorldGraph: () => (host._campaignSave ? getRealWorldGraph(host._campaignSave) : null),
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
     changeFactionRelation: (factionId: string, delta: number) => host._changeFactionRelation(factionId, delta),
     getCurrentWorldId: () => host._campaignSave?.currentWorldId ?? null,

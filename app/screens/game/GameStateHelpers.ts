@@ -133,6 +133,7 @@ export function applyPortableUnitState(
   assignDefined(target, {
     assetAge: source.assetAge,
     assetCiv: source.assetCiv,
+    appearanceVariants: cloneRecord((source as { appearanceVariants?: Record<string, string> }).appearanceVariants),
     controlMode: source.controlMode,
     energy: source.energy,
     experience: cloneRecord(source.experience),

@@ -33,6 +33,7 @@ const {
   addChildWorldToCampaign,
   createInitialCampaignSave,
   getCurrentWorldState,
+  getRealWorldGraph,
   getVisitedWorldNodes,
   getWorldTreePath,
   isCampaignSave,
@@ -156,4 +157,28 @@ test('exposes visited world nodes and the current tree path for the inventory ma
     getVisitedWorldNodes(child).map(node => node.id),
     ['root', 'child']
   )
+})
+
+test('filters building interiors out of the world graph shown in inventory', () => {
+  const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
+  const interiorState = worldSave(789)
+  interiorState.world.mapType = 'interior'
+  interiorState.config.mapType = 'interior'
+  const withInterior = addChildWorldToCampaign(campaign, interiorState, {
+    kind: 'interior',
+    now: 1500,
+    parentWorldId: 'root',
+    worldId: 'interior-house',
+  })
+  const withPortalWorld = addChildWorldToCampaign(withInterior, worldSave(456), {
+    color: 'red',
+    now: 2000,
+    parentWorldId: 'root',
+    worldId: 'child-red',
+  })
+
+  const graph = getRealWorldGraph(withPortalWorld)
+
+  assert.deepEqual(Object.keys(graph.nodes).sort(), ['child-red', 'root'])
+  assert.deepEqual(graph.nodes.root.children, ['child-red'])
 })

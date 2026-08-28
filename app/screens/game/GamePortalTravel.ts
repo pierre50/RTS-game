@@ -247,6 +247,13 @@ export function applyPortalPartyToRuntime(
     const follower = player.createUnit?.({
       i: cell.i,
       j: cell.j,
+      appearanceVariants: followerState.appearanceVariants
+        ? { ...followerState.appearanceVariants }
+        : followerState.gender
+          ? { gender: followerState.gender }
+          : undefined,
+      gender: followerState.gender,
+      label: followerState.label,
       name: followerState.name,
       type: followerState.type,
     })

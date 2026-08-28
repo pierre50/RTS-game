@@ -203,6 +203,12 @@ export function addInteriorOccupantsToRuntime(
       {
         i: cell.i,
         j: cell.j,
+        appearanceVariants: occupantState.appearanceVariants
+          ? { ...occupantState.appearanceVariants }
+          : occupantState.gender
+            ? { gender: occupantState.gender }
+            : undefined,
+        gender: occupantState.gender,
         label: occupantState.label,
         name: occupantState.name,
         suppressCreateSound: true,

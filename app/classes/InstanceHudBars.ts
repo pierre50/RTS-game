@@ -16,15 +16,13 @@ import {
   LABEL_TYPES,
 } from '../constants'
 import { getEntityHudTopY } from '../lib/entities/entityHudPosition'
+import { HUD_FADE_MS, HUD_FADE_STEP_MS } from '../lib/entities/hudFade'
 import type { SchedulerTaskId } from '../types/context'
 
 let healthBarTrackGradient: FillGradient | null = null
 let healthBarFillGradient: FillGradient | null = null
 let energyBarTrackGradient: FillGradient | null = null
 let energyBarFillGradient: FillGradient | null = null
-
-const HUD_BAR_FADE_MS = 140
-const HUD_BAR_FADE_STEP_MS = 1000 / 60
 
 type HudBarHost = {
   context?: { scheduler?: { add(callback: () => void, time: number, name?: string): SchedulerTaskId; remove(id: SchedulerTaskId): void } }
@@ -254,7 +252,7 @@ function scheduleHudBarFade(
 ): void {
   const scheduler = host.context?.scheduler
   if (!scheduler) return
-  const steps = Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS))
+  const steps = Math.max(1, Math.round(HUD_FADE_MS / HUD_FADE_STEP_MS))
   let step = initialStep
   const state: HudBarFadeState = { bar, mode, taskId: -1 as SchedulerTaskId }
   let taskId: SchedulerTaskId | null = null
@@ -273,7 +271,7 @@ function scheduleHudBarFade(
         hudBarFadeStates.delete(activeBar)
       }
     },
-    HUD_BAR_FADE_STEP_MS,
+    HUD_FADE_STEP_MS,
     `hud.barFade${mode === 'in' ? 'In' : 'Out'}`
   )
   state.taskId = taskId
@@ -295,7 +293,7 @@ function fadeInHudBar(host: HudBarHost, bar: Container, fromAlpha = 0): void {
     (activeBar, step, steps) => {
       activeBar.alpha = Math.min(1, step / steps)
     },
-    Math.round(startAlpha * Math.max(1, Math.round(HUD_BAR_FADE_MS / HUD_BAR_FADE_STEP_MS)))
+    Math.round(startAlpha * Math.max(1, Math.round(HUD_FADE_MS / HUD_FADE_STEP_MS)))
   )
 }
 

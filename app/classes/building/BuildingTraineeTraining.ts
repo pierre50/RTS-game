@@ -67,6 +67,7 @@ function getTrainingExtra(
 ): UnitCreationExtra | undefined {
   const baseExtra: UnitCreationExtra = {}
   if (trainee.name) baseExtra.name = trainee.name
+  if (trainee.gender) baseExtra.gender = trainee.gender
   if (trainee.appearanceVariants) baseExtra.appearanceVariants = { ...trainee.appearanceVariants }
   if (trainee.mountedOnHorse) {
     baseExtra.mountedOnHorse = true

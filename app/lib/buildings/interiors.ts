@@ -38,7 +38,7 @@ export function getBuildingInteriorEntryCell(
   return grid[building.i + offset.i]?.[building.j + offset.j] ?? null
 }
 
-export function isHeroOnBuildingInteriorEntryCell(
+function isHeroOnBuildingInteriorEntryCell(
   hero: UnitEntity | null | undefined,
   building: BuildingEntity | null | undefined
 ): boolean {

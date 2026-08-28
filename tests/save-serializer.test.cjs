@@ -191,6 +191,7 @@ test('serializes unit work orders, equipment state and build queues', () => {
       family: 'unit',
       type: 'Villager',
       gender: 'female',
+      appearanceVariants: { gender: 'female' },
       i: 10,
       j: 11,
       x: 320,
@@ -253,6 +254,7 @@ test('serializes unit work orders, equipment state and build queues', () => {
   assert.equal(save.players[0].units[0].mountedOnHorse, true)
   assert.equal(save.players[0].units[0].companionHorseColor, 'dark')
   assert.equal(save.players[0].units[0].gender, 'female')
+  assert.deepEqual(save.players[0].units[0].appearanceVariants, { gender: 'female' })
   assert.deepEqual(save.players[0].units[0].experience, { woodcutting: 15 })
   assert.deepEqual(save.players[0].units[0].inventory, {
     equipment: ['round_shield_ceramic_slash'],
