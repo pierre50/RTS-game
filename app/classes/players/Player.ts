@@ -172,7 +172,7 @@ export class Player implements PlayerLike {
       map.size,
       Array.isArray(options.views) ? options.views : [],
       (i, j) => {
-        if (this.isPlayed && !map.revealEverything) {
+        if (this.isPlayed && !map.revealEverything && this.context.menu.isMiniMapActive?.() !== false) {
           this.context.menu.updateTerrainMiniMap?.(i, j)
         }
       },
@@ -362,7 +362,7 @@ export class Player implements PlayerLike {
       planted.forEach(wheat => memory.foundedWheats?.add(wheat))
       planted.forEach(wheat => memory.foundedResources?.[RESOURCE_TYPES.wheat]?.add(wheat))
       this.isPlayed && menu.updateTopbar()
-      menu.updateResourcesMiniMap?.()
+      if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
       return true
     }
     return false
@@ -409,7 +409,9 @@ export class Player implements PlayerLike {
         context
       )
     )
-    canUpdateMinimap(unit, context.player) && context.menu.updatePlayerMiniMapEvt(this)
+    canUpdateMinimap(unit, context.player) &&
+      context.menu.isMiniMapActive?.() !== false &&
+      context.menu.updatePlayerMiniMapEvt(this)
     if (!options.suppressCreateSound) {
       updateInstanceVisibility(unit)
       fadeIn(unit, FADE_DURATION_MS)
@@ -422,7 +424,9 @@ export class Player implements PlayerLike {
     const building = context.map.addChild(new Building({ ...options, owner: this }, context))
     this.buildings.push(building)
     updateWallAndNeighbours(building)
-    canUpdateMinimap(building, context.player) && context.menu.updatePlayerMiniMapEvt(this)
+    canUpdateMinimap(building, context.player) &&
+      context.menu.isMiniMapActive?.() !== false &&
+      context.menu.updatePlayerMiniMapEvt(this)
     return building
   }
 }

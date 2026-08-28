@@ -153,7 +153,9 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     this.sendRaidToHero(raid, { forceRepath: true })
     this.startRaidUpdates(raid)
     this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
-    this.context.menu?.updatePlayerMiniMapEvt?.(owner)
+    if (this.context.menu?.isMiniMapActive?.() !== false) {
+      this.context.menu?.updatePlayerMiniMapEvt?.(owner)
+    }
     return true
   }
 
@@ -430,7 +432,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   acceptTribute(raid: TributeRaid): void {
     raid.phase = 'leaving'
     setUnitOverheadIndicator(raid.chief, null)
-    if (raid.kind === 'faction' && raid.faction) this.context.changeFactionRelation?.(raid.faction.id, 8, 'tribute-paid')
+    if (raid.kind === 'faction' && raid.faction)
+      this.context.changeFactionRelation?.(raid.faction.id, 8, 'tribute-paid')
     this.context.menu?.showMessage(getTributePaidMessage(raid), 'success')
     this.sendRaidToPortal(raid)
   }
@@ -438,7 +441,8 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   makeRaidHostile(raid: TributeRaid): void {
     if (raid.phase === 'hostile') return
     raid.phase = 'hostile'
-    if (raid.kind === 'faction' && raid.faction) this.context.changeFactionRelation?.(raid.faction.id, -8, 'tribute-refused')
+    if (raid.kind === 'faction' && raid.faction)
+      this.context.changeFactionRelation?.(raid.faction.id, -8, 'tribute-refused')
     raid.modal?.close()
     raid.modal = null
     setUnitOverheadIndicator(raid.chief, null)

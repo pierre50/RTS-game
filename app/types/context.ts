@@ -97,6 +97,7 @@ export interface MenuLike {
   updateCameraMiniMap?(): void
   updatePlayerMiniMap?(player: PlayerLike): void
   updatePlayerMiniMapEvt(player: PlayerLike): void
+  isMiniMapActive?(): boolean
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
   toggleQueuedActionCancel(id: string, enabled: boolean): void
@@ -140,6 +141,7 @@ interface EntityPreviewLike {
 
 interface MinimapManagerLike {
   getMinimapFactor(): number
+  isActive?(): boolean
 }
 
 export interface MinimapHostLike {
@@ -147,11 +149,12 @@ export interface MinimapHostLike {
   gameHud: HTMLDivElement
   editorPanelMap?: HTMLDivElement
   minimapMap?: HTMLDivElement
-  terrainMinimap: HTMLCanvasElement
-  resourcesMinimap: HTMLCanvasElement
-  cameraMinimap: HTMLCanvasElement
+  terrainMinimap?: HTMLCanvasElement
+  resourcesMinimap?: HTMLCanvasElement
+  cameraMinimap?: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
   minimapManager: MinimapManagerLike
+  ensureMinimapCanvases?(): void
   toggle?: HTMLButtonElement
   toggled: boolean
 }

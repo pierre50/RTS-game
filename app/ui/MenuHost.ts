@@ -18,10 +18,10 @@ export interface MenuHost {
   context: GameContextLike
   gameHud: HTMLDivElement
   minimapWrap: HTMLDivElement
-  terrainMinimap: HTMLCanvasElement
+  terrainMinimap?: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
-  resourcesMinimap: HTMLCanvasElement
-  cameraMinimap: HTMLCanvasElement
+  resourcesMinimap?: HTMLCanvasElement
+  cameraMinimap?: HTMLCanvasElement
   menuTooltip: MenuTooltipHost
   pauseMenu: MenuPauseHost
   icons: Record<string, string>
@@ -55,6 +55,9 @@ export interface MenuHost {
   ): HTMLButtonElement
   setActionHotkey(key: string, action: () => void): void
   updateCameraMiniMap(): void
+  activateMiniMap(): void
+  deactivateMiniMap(): void
+  isMiniMapActive(): boolean
   toggleQueuedActionCancel(target: string, value: boolean): void
   closeHeroBuildingMenu(): void
   updateHeroStatus?(hero?: UnitEntity | null): void

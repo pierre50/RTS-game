@@ -13,12 +13,14 @@ export class MinimapInputController {
   longClick: boolean
   mouseHoldTimeout: ReturnType<typeof setTimeout> | null
   pointerSession: PointerSession | null
+  private bound: boolean
 
   constructor(menu: MinimapHostLike) {
     this.menu = menu
     this.longClick = false
     this.mouseHoldTimeout = null
     this.pointerSession = null
+    this.bound = false
   }
 
   getElement(): HTMLDivElement {
@@ -28,11 +30,27 @@ export class MinimapInputController {
   }
 
   bind(): void {
+    if (this.bound) return
     const minimap = this.getElement()
     minimap.addEventListener('pointerdown', this.onPointerDown)
     minimap.addEventListener('pointermove', this.onPointerMove)
     minimap.addEventListener('pointerup', this.onPointerUp)
     minimap.addEventListener('pointercancel', this.onPointerCancel)
+    this.bound = true
+  }
+
+  unbind(): void {
+    if (!this.bound) return
+    clearTimeout(this.mouseHoldTimeout ?? undefined)
+    this.mouseHoldTimeout = null
+    this.longClick = false
+    this.pointerSession = null
+    const minimap = this.menu.minimapMap
+    minimap?.removeEventListener('pointerdown', this.onPointerDown)
+    minimap?.removeEventListener('pointermove', this.onPointerMove)
+    minimap?.removeEventListener('pointerup', this.onPointerUp)
+    minimap?.removeEventListener('pointercancel', this.onPointerCancel)
+    this.bound = false
   }
 
   onPointerDown = (evt: PointerEvent): void => {
@@ -130,11 +148,6 @@ export class MinimapInputController {
   }
 
   destroy(): void {
-    clearTimeout(this.mouseHoldTimeout ?? undefined)
-    const minimap = this.menu.minimapMap
-    minimap?.removeEventListener('pointerdown', this.onPointerDown)
-    minimap?.removeEventListener('pointermove', this.onPointerMove)
-    minimap?.removeEventListener('pointerup', this.onPointerUp)
-    minimap?.removeEventListener('pointercancel', this.onPointerCancel)
+    this.unbind()
   }
 }

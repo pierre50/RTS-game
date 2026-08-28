@@ -146,10 +146,12 @@ export class NaturalRegrowthSystem implements DailyWorldEventHandler {
       }
     }
 
-    if (resourcesChanged) menu.updateResourcesMiniMap?.()
+    if (resourcesChanged && menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
     if (animalsChanged) {
-      menu.updateResourcesMiniMap?.()
-      menu.updatePlayerMiniMapEvt?.(this.context.player)
+      if (menu.isMiniMapActive?.() !== false) {
+        menu.updateResourcesMiniMap?.()
+        menu.updatePlayerMiniMapEvt?.(this.context.player)
+      }
     }
   }
   destroy(): void {}

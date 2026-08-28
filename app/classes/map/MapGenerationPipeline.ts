@@ -2,12 +2,7 @@ import { Gaia } from '../players'
 import { updateInstanceVisibility } from '../../lib'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
 import type { GameContextLike } from '../../types/context'
-import type {
-  GenerationTimer,
-  MapGenerationMap,
-  ProgressCallback,
-  GenerateMapOptions,
-} from './MapGenerationTypes'
+import type { GenerationTimer, MapGenerationMap, ProgressCallback, GenerateMapOptions } from './MapGenerationTypes'
 
 type PipelineCallbacks = {
   generateSetsAsync: () => Promise<void>
@@ -157,5 +152,5 @@ async function finalizeGeneratedMap(
       Object.fromEntries(Object.entries(timings).map(([name, duration]) => [name, `${duration.toFixed(1)} ms`]))
     )
   }
-  menu?.updateResourcesMiniMap()
+  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
 }

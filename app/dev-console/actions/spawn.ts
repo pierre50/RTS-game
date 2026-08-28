@@ -174,7 +174,7 @@ function spawnBanditUnits(context: DevConsoleContext, type: string, count: strin
     return { ok: false, message: 'No free land cell near cursor' }
   }
   menu.updateTopbar()
-  menu.updatePlayerMiniMapEvt?.(owner)
+  if (menu.isMiniMapActive?.() !== false) menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: `Spawned ${spawned > 1 ? `${spawned} ${type}` : type} for bandits` }
 }
 
@@ -198,7 +198,7 @@ function spawnWheatField(
     map.resources.add(wheat)
   }
   menu.updateTopbar()
-  menu.updateResourcesMiniMapEvt?.()
+  if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMapEvt?.()
   return { ok: true, message: formatSpawnMessage('Wheat Field', 1, ownerIndex, includeOwner) }
 }
 
@@ -234,7 +234,7 @@ export function spawnUnits(
     return { ok: false, message: 'No free land cell near cursor' }
   }
   menu.updateTopbar()
-  menu.updatePlayerMiniMapEvt?.(owner)
+  if (menu.isMiniMapActive?.() !== false) menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, spawned, ownerIndex, playerIndex != null) }
 }
 
@@ -286,6 +286,6 @@ export function spawnBuilding(
   if (!owner.hasBuilt.includes(type)) owner.hasBuilt.push(type)
   ;(building as { updateTexture?: () => void }).updateTexture?.()
   menu.updateTopbar()
-  menu.updatePlayerMiniMapEvt?.(owner)
+  if (menu.isMiniMapActive?.() !== false) menu.updatePlayerMiniMapEvt?.(owner)
   return { ok: true, message: formatSpawnMessage(type, 1, ownerIndex, playerIndex != null) }
 }

@@ -104,7 +104,10 @@ export class UnitLifecycle {
       }
     }
     this.death()
-    canUpdateMinimap(unit, player) && unit.owner && menu?.updatePlayerMiniMapEvt?.(unit.owner)
+    canUpdateMinimap(unit, player) &&
+      unit.owner &&
+      menu?.isMiniMapActive?.() !== false &&
+      menu?.updatePlayerMiniMapEvt?.(unit.owner)
     unit.context?.checkDefeat?.()
   }
 

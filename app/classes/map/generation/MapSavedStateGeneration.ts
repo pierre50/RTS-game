@@ -101,7 +101,8 @@ export function restoreSavedEntities(
   const gaia = map.gaia instanceof Gaia ? map.gaia : null
   animals.forEach(animal => {
     if (!gaia) return
-    if (animal.isDestroyed) (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
+    if (animal.isDestroyed)
+      (gaia.animals as unknown as GaiaRespawnSlot[]).push(createGaiaRespawnSlot(animal, context, gaia))
     else gaia.createAnimal(animal)
   })
 
@@ -120,7 +121,10 @@ export function restoreSavedEntities(
   })
 }
 
-export function finishSavedStateRestore(map: MapGenerationMap, { bakeTerrain = false }: { bakeTerrain?: boolean } = {}): void {
+export function finishSavedStateRestore(
+  map: MapGenerationMap,
+  { bakeTerrain = false }: { bakeTerrain?: boolean } = {}
+): void {
   map._fogInitComplete = true
   map._flushFogQueue()
   if (bakeTerrain) map.bakeTerrainToChunks()
@@ -173,7 +177,7 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
 
   controls?.setCamera?.(camera.x, camera.y, true)
   menu?.init?.()
-  menu?.updateResourcesMiniMap()
+  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
 
   restoreSavedEntities(map, players, animals, context)
   finishSavedStateRestore(map, { bakeTerrain: true })
@@ -223,7 +227,7 @@ export function applySavedStateToGeneratedMap(map: MapGenerationMap, data: Saved
 
   controls?.setCamera?.(camera.x, camera.y, true)
   menu?.init?.()
-  menu?.updateResourcesMiniMap()
+  if (menu?.isMiniMapActive?.() !== false) menu?.updateResourcesMiniMap()
 
   restoreSavedEntities(map, players, animals, context)
   finishSavedStateRestore(map)

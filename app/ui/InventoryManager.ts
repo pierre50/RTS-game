@@ -203,10 +203,12 @@ export class InventoryManager {
     this.modalTabs.setActive(tab, { emit: false })
 
     if (tab === 'minimap') {
-      this.menu.updateCameraMiniMap()
+      this.menu.activateMiniMap()
       this.menu.clearActionHotkeys()
       return
     }
+
+    this.menu.deactivateMiniMap()
 
     if (tab === 'technologies') {
       this.renderTechnologies()

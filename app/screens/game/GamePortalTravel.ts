@@ -1,4 +1,9 @@
-import { getFreeLandCellAroundInstance, getReliefOffset, teleportRuntimeUnitToCell, updateInstanceVisibility } from '../../lib'
+import {
+  getFreeLandCellAroundInstance,
+  getReliefOffset,
+  teleportRuntimeUnitToCell,
+  updateInstanceVisibility,
+} from '../../lib'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import {
   addChildWorldToCampaign,
@@ -141,11 +146,7 @@ export function findPortalArrivalCell(game: PortalTravelGame): RuntimeCell | nul
   const portal = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
   if (!portal) return null
 
-  return getFreeLandCellAroundInstance(
-    portal,
-    map.grid,
-    cells => cells[Math.floor(map.random() * cells.length)]
-  )
+  return getFreeLandCellAroundInstance(portal, map.grid, cells => cells[Math.floor(map.random() * cells.length)])
 }
 
 export function findPartyFollowerArrivalCell(game: PortalTravelGame, anchor: UnitEntity): RuntimeCell | null {
@@ -166,7 +167,9 @@ export function refreshPortalPartyFog(game: PortalTravelGame, units: UnitEntity[
   const { map, controls, menu } = game._gameContext()
   if (map.revealEverything) return
   const runtimeMap = map as PortalRuntimeMap
-  const viewport = (controls as { cameraController?: { getViewportRect?: () => Viewport } }).cameraController?.getViewportRect?.()
+  const viewport = (
+    controls as { cameraController?: { getViewportRect?: () => Viewport } }
+  ).cameraController?.getViewportRect?.()
 
   for (const unit of units) {
     unit.visibleCells = unit.visibleCells ?? new Set()
@@ -179,7 +182,7 @@ export function refreshPortalPartyFog(game: PortalTravelGame, units: UnitEntity[
     runtimeMap.mapFog.viewportRenderer.update(viewport, true)
     runtimeMap.updateRenderChunks(viewport)
   }
-  menu.updateResourcesMiniMap?.()
+  if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
 }
 
 export function applyFogStateToCell(game: PortalTravelGame, i: number, j: number): void {
@@ -268,8 +271,10 @@ export function applyPortalPartyToRuntime(
   controls.init?.()
   if (equippedItem) controls.setEquippedItem?.(equippedItem)
   controls.context?.menu?.updateHeroStatus?.(hero)
-  controls.context?.menu?.updatePlayerMiniMapEvt?.(player)
-  controls.context?.menu?.updateCameraMiniMap?.()
+  if (controls.context?.menu?.isMiniMapActive?.() !== false) {
+    controls.context?.menu?.updatePlayerMiniMapEvt?.(player)
+    controls.context?.menu?.updateCameraMiniMap?.()
+  }
 }
 
 async function bootCampaignSaveWorld(

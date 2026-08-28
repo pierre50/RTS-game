@@ -25,6 +25,7 @@ type CameraContext = {
   map: RuntimeMap
   menu?: {
     updateCameraMiniMap?(): void
+    isMiniMapActive?(): boolean
   } | null
   player?: {
     views?: VisionGridLike
@@ -214,7 +215,7 @@ export class CameraController {
     if (this.camera.x === prevX && this.camera.y === prevY) return
 
     this.clampCameraToMap()
-    menu?.updateCameraMiniMap?.()
+    if (menu?.isMiniMapActive?.() !== false) menu?.updateCameraMiniMap?.()
     this.applyCameraTransform()
     this.scheduleVisibleCellsUpdate()
   }
@@ -374,7 +375,7 @@ export class CameraController {
 
     this.camera = nextCamera
     this.applyCameraTransform()
-    menu?.updateCameraMiniMap?.()
+    if (menu?.isMiniMapActive?.() !== false) menu?.updateCameraMiniMap?.()
     if (refreshVisibleCells) {
       this.updateVisibleCells()
     } else {

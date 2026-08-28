@@ -1,13 +1,6 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import {
-  ACTION_TYPES,
-  LABEL_TYPES,
-  MENU_INFO_IDS,
-  PLAYER_TYPES,
-  POPULATION_MAX,
-  SOUND_CUES,
-} from '../../constants'
+import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES } from '../../constants'
 import {
   canUpdateMinimap,
   changeSpriteColorDirectly,
@@ -332,7 +325,9 @@ export class BuildingLifecycle {
     })
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), BUILDING_DESTRUCTION_CLEAR_MS)
-    canUpdateMinimap(building, player) && menu.updatePlayerMiniMapEvt(building.owner)
+    canUpdateMinimap(building, player) &&
+      menu.isMiniMapActive?.() !== false &&
+      menu.updatePlayerMiniMapEvt(building.owner)
     building.context.checkDefeat?.()
   }
 

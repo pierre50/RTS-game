@@ -206,7 +206,7 @@ export class Unit extends Instance implements UnitEntity {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt?.(this.owner)
+    canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
   override unselect() {
@@ -215,7 +215,7 @@ export class Unit extends Instance implements UnitEntity {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt?.(this.owner)
+    canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt?.(this.owner)
   }
 
   override hasPath() {

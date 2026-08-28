@@ -57,11 +57,7 @@ function teleportUnitToCell(context: DevConsoleContext, unit: DevEntity, cell: D
 
 function findPortalArrivalCell(context: DevConsoleContext, portal: DevEntity): DevCell | null {
   const { map } = context
-  return getFreeLandCellAroundInstance(
-    portal,
-    map.grid,
-    cells => cells[0]
-  )
+  return getFreeLandCellAroundInstance(portal, map.grid, cells => cells[0])
 }
 
 export function teleportHeroToPortal(context: DevConsoleContext): CommandResult {
@@ -85,8 +81,10 @@ export function teleportHeroToPortal(context: DevConsoleContext): CommandResult 
   else controls?.setCamera?.(hero.x, hero.y)
   controls?.cameraController?.visibleCells?.clear()
   controls?.updateVisibleCells?.()
-  menu.updatePlayerMiniMapEvt?.(context.player)
-  menu.updateCameraMiniMapEvt?.()
+  if (menu.isMiniMapActive?.() !== false) {
+    menu.updatePlayerMiniMapEvt?.(context.player)
+    menu.updateCameraMiniMapEvt?.()
+  }
   return { ok: true, message: `Hero teleported near portal ${portal.i},${portal.j} -> ${cell.i},${cell.j}` }
 }
 
@@ -107,21 +105,24 @@ export function toggleFog(context: DevConsoleContext, value: string): CommandRes
 
   map.terrainChunkManager?.invalidateAll()
 
+  const minimapActive = menu.isMiniMapActive?.() !== false
   if (!showFog) {
-    menu.revealTerrainMinimap?.()
+    if (minimapActive) menu.revealTerrainMinimap?.()
     map.resources.forEach(resource => {
       const cell = map.grid[resource.i]?.[resource.j]
       cell?.updateVisible()
     })
-  } else {
+  } else if (minimapActive) {
     menu.rebuildTerrainMiniMapFromViews?.()
   }
 
   refreshAnimalsAndCameraVisibility(context)
 
-  menu.updateResourcesMiniMapEvt?.()
-  players.forEach((p: DevPlayer) => menu.updatePlayerMiniMapEvt?.(p))
-  menu.updateCameraMiniMapEvt?.()
+  if (minimapActive) {
+    menu.updateResourcesMiniMapEvt?.()
+    players.forEach((p: DevPlayer) => menu.updatePlayerMiniMapEvt?.(p))
+    menu.updateCameraMiniMapEvt?.()
+  }
 
   return { ok: true, message: `Fog of war: ${showFog ? 'on' : 'off'}` }
 }
@@ -140,7 +141,7 @@ export function toggleResourcesVisibility(context: DevConsoleContext, value: str
       resource.visible = false
     }
   })
-  menu.updateResourcesMiniMapEvt?.()
+  if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMapEvt?.()
 
   return { ok: true, message: `Resources: ${showResources ? 'on' : 'off'}` }
 }
@@ -160,6 +161,6 @@ export function killResources(context: DevConsoleContext, typeName = 'all'): Com
     (resource: DevEntity) => wantedType === 'all' || normalize(resource.type) === wantedType
   )
   resources.forEach(resource => resource.die?.(true))
-  menu.updateResourcesMiniMapEvt?.()
+  if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMapEvt?.()
   return { ok: true, message: `Killed ${resources.length} resources${typeName !== 'all' ? ` ${typeName}` : ''}` }
 }

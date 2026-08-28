@@ -33,10 +33,10 @@ export default class Menu implements MenuLike {
   minimapView: MinimapView
   minimapWrap: HTMLDivElement
   minimapMap: HTMLDivElement
-  terrainMinimap: HTMLCanvasElement
+  terrainMinimap?: HTMLCanvasElement
   playersMinimap: MinimapPlayerCanvas[]
-  resourcesMinimap: HTMLCanvasElement
-  cameraMinimap: HTMLCanvasElement
+  resourcesMinimap?: HTMLCanvasElement
+  cameraMinimap?: HTMLCanvasElement
   minimapManager: MinimapManager
   actionSpecs: ActionSpecFactory
   actionRenderer: ActionMenuRenderer
@@ -74,10 +74,7 @@ export default class Menu implements MenuLike {
     this.minimapView = new MinimapView(this)
     this.minimapWrap = this.minimapView.wrap
     this.minimapMap = this.minimapView.element
-    this.terrainMinimap = this.minimapView.terrain
     this.playersMinimap = this.minimapView.players
-    this.resourcesMinimap = this.minimapView.resources
-    this.cameraMinimap = this.minimapView.camera
     document.body.appendChild(this.gameHud)
 
     this.minimapManager = new MinimapManager(this)
@@ -96,7 +93,6 @@ export default class Menu implements MenuLike {
     this.toggled = false
 
     this.topbarView.build()
-    this.minimapInputController.bind()
 
     // Expose throttled minimap updaters as top-level properties for external callers
     this.updatePlayerMiniMap = this.minimapManager.updatePlayerMiniMap
@@ -191,6 +187,29 @@ export default class Menu implements MenuLike {
   }
   updateCameraMiniMapEvt(): void {
     return this.minimapManager.updateCameraMiniMapEvt()
+  }
+  ensureMinimapCanvases(): void {
+    const { terrain, resources, camera } = this.minimapView.ensureCanvases()
+    this.terrainMinimap = terrain
+    this.resourcesMinimap = resources
+    this.cameraMinimap = camera
+    this.playersMinimap = this.minimapView.players
+  }
+  activateMiniMap(): void {
+    this.minimapInputController.bind()
+    return this.minimapManager.activate()
+  }
+  deactivateMiniMap(): void {
+    this.minimapInputController.unbind()
+    this.minimapManager.deactivate()
+    this.minimapView.releaseCanvases()
+    this.terrainMinimap = undefined
+    this.resourcesMinimap = undefined
+    this.cameraMinimap = undefined
+    this.playersMinimap = this.minimapView.players
+  }
+  isMiniMapActive(): boolean {
+    return this.minimapManager.isActive()
   }
 
   // Legacy selection target surface kept as no-op compatibility while gameplay is ARPG-only.

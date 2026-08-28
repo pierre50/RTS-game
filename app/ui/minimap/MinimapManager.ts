@@ -28,6 +28,10 @@ function isResourceEntity(instance: RuntimeEntity | null | undefined): instance 
   return instance?.family === FAMILY_TYPES.resource
 }
 
+function isMinimapUnitMarker(instance: RuntimeEntity | null | undefined): boolean {
+  return Boolean(instance && instance.family !== FAMILY_TYPES.animal)
+}
+
 function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
   const element = menu.minimapMap
   if (!element) throw new Error('Minimap host is missing a minimap element')
@@ -60,10 +64,14 @@ export class MinimapManager {
   updatePlayerMiniMap: (owner: PlayerLike) => void
   updateResourcesMiniMap: () => void
   updateCameraMiniMap: () => void
+  private active: boolean
+  private initialized: boolean
 
   constructor(menu: MinimapHostLike) {
     this.menu = menu
     this.miniMapAlpha = 1.284 * MINIMAP_RESOLUTION_SCALE
+    this.active = false
+    this.initialized = false
 
     this.updatePlayerMiniMap = throttleByKey(
       this.updatePlayerMiniMapEvt.bind(this),
@@ -72,6 +80,43 @@ export class MinimapManager {
     )
     this.updateResourcesMiniMap = throttle(this.updateResourcesMiniMapEvt.bind(this), 500)
     this.updateCameraMiniMap = throttle(this.updateCameraMiniMapEvt.bind(this), 100)
+  }
+
+  activate(): void {
+    this.active = true
+    this.initMiniMap()
+    this.redrawMiniMap()
+  }
+
+  deactivate(): void {
+    this.active = false
+    this.initialized = false
+  }
+
+  isActive(): boolean {
+    return this.active
+  }
+
+  private canDraw(): boolean {
+    if (!this.active) return false
+    this.menu.ensureMinimapCanvases?.()
+    return Boolean(this.menu.terrainMinimap && this.menu.resourcesMinimap && this.menu.cameraMinimap)
+  }
+
+  private redrawMiniMap(): void {
+    const { map, player, players } = this.menu.context
+    if (map.revealEverything || map.revealTerrain) {
+      this.revealTerrainMinimap()
+    } else {
+      this.rebuildTerrainMiniMapFromViews()
+    }
+    this.updateResourcesMiniMapEvt()
+    if (map.revealEverything) {
+      players.forEach(owner => this.updatePlayerMiniMapEvt(owner))
+    } else if (player) {
+      this.updatePlayerMiniMapEvt(player)
+    }
+    this.updateCameraMiniMapEvt()
   }
 
   getMinimapFactor(): number {
@@ -86,19 +131,22 @@ export class MinimapManager {
   }
 
   initMiniMap(): void {
+    if (!this.canDraw()) return
+    if (this.initialized) return
+
     const { menu } = this
     const { map } = menu.context
     const { factor, translate } = this.getMinimapParams()
 
-    for (const canvas of [menu.terrainMinimap, menu.cameraMinimap, menu.resourcesMinimap]) {
+    for (const canvas of [menu.terrainMinimap!, menu.cameraMinimap!, menu.resourcesMinimap!]) {
       canvas.width = MINIMAP_BASE_WIDTH * MINIMAP_RESOLUTION_SCALE
       canvas.height = MINIMAP_BASE_HEIGHT * MINIMAP_RESOLUTION_SCALE
       canvas.getContext('2d')!.translate(translate, 0)
     }
 
     const N = map.size
-    const canvasW = menu.terrainMinimap.width
-    const canvasH = menu.terrainMinimap.height
+    const canvasW = menu.terrainMinimap!.width
+    const canvasH = menu.terrainMinimap!.height
     const centerX = 2 * translate
     const halfW = (N * CELL_WIDTH) / 2 / factor
     const halfH = (N * CELL_HEIGHT) / 2 / factor
@@ -106,17 +154,16 @@ export class MinimapManager {
     const px = (v: number) => `${((v / canvasW) * 100).toFixed(2)}%`
     const py = (v: number) => `${((v / canvasH) * 100).toFixed(2)}%`
 
-    getMinimapElement(menu).style.clipPath = `polygon(${px(centerX)} 0%, ${px(centerX + halfW)} ${py(halfH)}, ${px(centerX)} ${py(halfH * 2)}, ${px(centerX - halfW)} ${py(halfH)})`
-
-    if (map.revealEverything || map.revealTerrain) {
-      this.revealTerrainMinimap()
-    }
+    getMinimapElement(menu).style.clipPath =
+      `polygon(${px(centerX)} 0%, ${px(centerX + halfW)} ${py(halfH)}, ${px(centerX)} ${py(halfH * 2)}, ${px(centerX - halfW)} ${py(halfH)})`
+    this.initialized = true
   }
 
   revealTerrainMinimap(): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { map } = menu.context
-    const canvas = menu.terrainMinimap
+    const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
 
@@ -137,9 +184,10 @@ export class MinimapManager {
   }
 
   rebuildTerrainMiniMapFromViews(): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { map, player } = menu.context
-    const canvas = menu.terrainMinimap
+    const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
 
@@ -163,9 +211,10 @@ export class MinimapManager {
   }
 
   updateTerrainMiniMap(i: number, j: number): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { map } = menu.context
-    const canvas = menu.terrainMinimap
+    const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const cell = map.grid[i][j]
@@ -184,11 +233,12 @@ export class MinimapManager {
   }
 
   updateResourceMiniMap(resource: ResourceEntity): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { map } = menu.context
     if (!map.showResources) return
 
-    const context = menu.resourcesMinimap.getContext('2d')!
+    const context = menu.resourcesMinimap!.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
     const position = getMinimapDrawPosition(resource)
@@ -205,9 +255,10 @@ export class MinimapManager {
   }
 
   updateResourcesMiniMapEvt(): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { map, player } = menu.context
-    const canvas = menu.resourcesMinimap
+    const canvas = menu.resourcesMinimap!
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const squareSize = 2 * MINIMAP_RESOLUTION_SCALE
@@ -233,9 +284,10 @@ export class MinimapManager {
   }
 
   updateCameraMiniMapEvt(): void {
+    if (!this.canDraw()) return
     const { menu } = this
     const { controls } = menu.context
-    const canvas = menu.cameraMinimap
+    const canvas = menu.cameraMinimap!
     const context = canvas.getContext('2d')!
     const { factor, translate } = this.getMinimapParams()
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = controls.getViewportMetrics()
@@ -252,6 +304,7 @@ export class MinimapManager {
   }
 
   updatePlayerMiniMapEvt(owner: PlayerLike): void {
+    if (!this.canDraw()) return
     if (!owner) return
 
     const { menu } = this
@@ -301,6 +354,7 @@ export class MinimapManager {
       )
     })
     owner.units.forEach(unit => {
+      if (!isMinimapUnitMarker(unit)) return
       if (!isVisible(unit)) return
       const position = getMinimapDrawPosition(unit)
       if (!position) return

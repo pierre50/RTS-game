@@ -16,7 +16,7 @@ type LifecycleContext = {
   defeat?: boolean
   devConsoleOpen?: boolean
   map?: RuntimeMap | null
-  menu?: { pauseMenu?: { open: () => void }; updateCameraMiniMap?: () => void } | null
+  menu?: { pauseMenu?: { open: () => void }; updateCameraMiniMap?: () => void; isMiniMapActive?: () => boolean } | null
   paused?: boolean
   player?: PlayerLike | null
   players?: PlayerLike[]
@@ -61,7 +61,7 @@ export function attachGameWindowListeners(game: GameRuntimeLifecycleHost): void 
   game._onResize = debounce(() => {
     game.applyZoom()
     game.context.controls?.updateVisibleCells?.()
-    game.context.menu?.updateCameraMiniMap?.()
+    if (game.context.menu?.isMiniMapActive?.() !== false) game.context.menu?.updateCameraMiniMap?.()
   }, 100)
   game._onDocumentVisibilityChange = () => {
     if (document.visibilityState === 'hidden') {

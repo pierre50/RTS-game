@@ -97,7 +97,7 @@ export class PauseMenu {
       onZoomChange: () => {
         menu.context.applyZoom?.()
         menu.context.controls?.updateVisibleCells?.()
-        menu.updateCameraMiniMap()
+        if (menu.isMiniMapActive()) menu.updateCameraMiniMap()
       },
       onClose: resumeIfNeeded,
     })

@@ -219,8 +219,8 @@ export class UnitConversionAction {
     } else {
       t.removeHealthBar?.()
     }
-    canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(oldOwner)
-    canUpdateMinimap(t, player) && menu?.updatePlayerMiniMapEvt?.(newOwner)
+    canUpdateMinimap(t, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMapEvt?.(oldOwner)
+    canUpdateMinimap(t, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMapEvt?.(newOwner)
     if (newOwner.isPlayed) menu?.updateTopbar()
     if (grantXpOnSuccess) grantUnitXp(unit, XP_CATEGORIES.healing, XP_CONVERT_SUCCESS)
     if (stopConverter) unit.stop?.()

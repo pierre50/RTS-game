@@ -19,7 +19,8 @@ function loadMinimapInputController() {
       MINIMAP_DRAG_THRESHOLD: 4,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.MinimapInputController
 }
@@ -79,4 +80,33 @@ test('minimap camera movement remains enabled for the map editor', () => {
     setCamera: (x, y) => calls.push([x, y]),
   })
   assert.deepEqual(calls, [[0, 34]])
+})
+
+test('minimap input binding is idempotent and removable', () => {
+  const MinimapInputController = loadMinimapInputController()
+  const listeners = []
+  const removed = []
+  const minimapElement = {
+    addEventListener: (type, handler) => listeners.push([type, handler]),
+    removeEventListener: (type, handler) => removed.push([type, handler]),
+  }
+  const controller = new MinimapInputController({
+    context: { controls: {} },
+    minimapMap: minimapElement,
+    minimapManager: { getMinimapFactor: () => 2 },
+  })
+
+  controller.bind()
+  controller.bind()
+  controller.unbind()
+  controller.unbind()
+
+  assert.deepEqual(
+    listeners.map(([type]) => type),
+    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
+  )
+  assert.deepEqual(
+    removed.map(([type]) => type),
+    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel']
+  )
 })

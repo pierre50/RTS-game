@@ -114,6 +114,7 @@ type DevMenuLike = {
   updatePlayerMiniMapEvt?(player: PlayerLike): void
   updateResourcesMiniMapEvt?(): void
   updateCameraMiniMapEvt?(): void
+  isMiniMapActive?(): boolean
   revealTerrainMinimap?(): void
   rebuildTerrainMiniMapFromViews?(): void
   refreshInventory?(): void

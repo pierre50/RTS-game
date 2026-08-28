@@ -204,7 +204,7 @@ function advanceTowardPathCell(
     previousX: beforeX,
     previousY: beforeY,
   })
-  canUpdateMinimap(unit, player) && menu?.updatePlayerMiniMap?.(unit.owner!)
+  canUpdateMinimap(unit, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMap?.(unit.owner!)
   if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
     unit.setTextures?.(SHEET_TYPES.walking)
   }

@@ -1,10 +1,6 @@
 import type { AnimatedSprite, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
-import {
-  drawInstanceBlinkingSelection,
-  canUpdateMinimap,
-  playAudibleSoundCue,
-} from '../../lib'
+import { drawInstanceBlinkingSelection, canUpdateMinimap, playAudibleSoundCue } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { stopFlameAmbientSound } from './BuildingFire'
@@ -248,11 +244,12 @@ export class Building extends Instance implements BuildingEntity {
     const {
       context: { menu, player },
     } = this
-    if (this.owner.isPlayed && this.sounds?.create) playAudibleSoundCue(this, this.sounds.create, { profile: 'building' })
+    if (this.owner.isPlayed && this.sounds?.create)
+      playAudibleSoundCue(this, this.sounds.create, { profile: 'building' })
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading !== null && this.owner.isPlayed) this.updateInterfaceLoading()
-    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   override unselect(): void {
@@ -262,7 +259,7 @@ export class Building extends Instance implements BuildingEntity {
     const {
       context: { menu, player },
     } = this
-    canUpdateMinimap(this, player) && menu.updatePlayerMiniMapEvt(this.owner)
+    canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
   setRallyPoint(cell: RuntimeCell | undefined, direction: number = this.context.map.randomRange(0, 1)): boolean {

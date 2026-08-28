@@ -175,7 +175,7 @@ export class Resource extends Instance implements ResourceEntity {
     }
     map.resources.delete(this)
     this.registerNaturalRespawnSlot()
-    menu.updateResourcesMiniMap()
+    if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap()
     map.removeFromInstanceBucket(this)
     this.isDead = true
     this.stopWindMotion()
