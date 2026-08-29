@@ -259,7 +259,12 @@ function getCurrentOutsideRestSite(unit: UnitEntity): UnitRestSite | null {
 }
 
 export function getNearestRestSite(unit: UnitEntity): UnitRestSite | null {
-  const shelter = isVillager(unit) ? getNearestShelter(unit) : null
+  const fireCamp = getNearestFireCampRestSite(unit)
+  const shelter = getNearestShelter(unit)
+  if (isVillager(unit) && shelter) {
+    return { location: 'shelter', shelter: shelter.shelter, targetCell: shelter.targetCell }
+  }
+  if (fireCamp) return fireCamp
   if (shelter) return { location: 'shelter', shelter: shelter.shelter, targetCell: shelter.targetCell }
-  return getNearestFireCampRestSite(unit) ?? getCampAnchorRestSite(unit) ?? getCurrentOutsideRestSite(unit)
+  return getCampAnchorRestSite(unit) ?? getCurrentOutsideRestSite(unit)
 }

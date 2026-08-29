@@ -1,4 +1,3 @@
-import { UNIT_TYPES } from '../../constants'
 import { getBuildingFootprintCells, getFreeLandCellAroundInstance } from '../../lib'
 import { findInteriorSleepCell, hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { sameBuilding } from '../../lib/buildings/identity'
@@ -6,7 +5,7 @@ import { createNonReservedPassageCellCondition } from '../../lib/buildings/passa
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { sleepOutside } from '../../services/rest/UnitRestLifecycle'
 import type { SleepOutsideVisualMode } from '../../services/rest/UnitRestLifecycle'
-import { getNearestShelter, isSleepTime } from '../../services/rest/UnitRestRules'
+import { canUseUnitRest, getNearestShelter, isSleepTime } from '../../services/rest/UnitRestRules'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -108,9 +107,9 @@ export function extractBuildingInteriorSleepArrivals(
 
   return played.units.flatMap(unit => {
     if (!unit.label || partyLabels.has(unit.label) || immediateLabels.has(unit.label)) return []
-    if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed || unit.followingHero) return []
+    if (unit.isDead || unit.isDestroyed || unit.followingHero) return []
     const runtimeUnit = runtimeUnitsByLabel.get(unit.label)
-    if (!runtimeUnit || runtimeUnit.followingHero || runtimeUnit.shelterState) return []
+    if (!runtimeUnit || !canUseUnitRest(runtimeUnit) || runtimeUnit.shelterState) return []
     if (
       !hasBuildingShelterCapacity(building, runtimeUnits, {
         exclude: runtimeUnit,

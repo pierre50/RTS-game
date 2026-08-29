@@ -27,6 +27,7 @@ function loadBuildingInteriorOccupants(overrides = {}) {
       '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats: () => {} },
       '../../services/rest/UnitRestLifecycle': { sleepOutside: () => {}, ...overrides.unitRestLifecycle },
       '../../services/rest/UnitRestRules': {
+        canUseUnitRest: unit => !unit.isDead && !unit.isDestroyed && !unit.followingHero && unit.type !== 'Hero',
         getNearestShelter: unit => (unit.nextSleepShelter ? { shelter: unit.nextSleepShelter, targetCell: {} } : null),
         isSleepTime: context => context.dayNight?.state?.hour >= 18,
       },
@@ -1668,7 +1669,7 @@ test('runtime followers on a building footprint are not transferred as passive o
   assert.deepEqual(occupants, [])
 })
 
-test('villagers whose next sleep target is the town center are queued as interior night arrivals', () => {
+test('rest-capable units whose next sleep target is the town center are queued as interior night arrivals', () => {
   const { extractBuildingInteriorSleepArrivals } = loadBuildingInteriorOccupants()
   const townCenter = { i: 5, j: 5, label: 'tc-1', size: 3, type: 'TownCenter' }
   const otherHouse = { i: 1, j: 1, label: 'house-1', size: 2, type: 'House' }
@@ -1696,7 +1697,10 @@ test('villagers whose next sleep target is the town center are queued as interio
 
   assert.deepEqual(
     arrivals.map(unit => [unit.label, unit.sleepInInterior]),
-    [['future-sleeper', true]]
+    [
+      ['future-sleeper', true],
+      ['soldier', true],
+    ]
   )
 })
 

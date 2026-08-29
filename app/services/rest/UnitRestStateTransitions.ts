@@ -64,6 +64,7 @@ function settleMovingRestState(unit: UnitEntity, state: TimedUnitRestState | nul
 
 function canDetectHeroForRestAlert(unit: UnitEntity, hero: UnitEntity | null): hero is UnitEntity {
   if (!hero || hero === unit || hero.isDead || hero.isDestroyed) return false
+  if (!unit.owner?.isEnemy?.(hero.owner)) return false
   return instanceIsInInsightRange(unit, hero, unit.sight ?? 7)
 }
 

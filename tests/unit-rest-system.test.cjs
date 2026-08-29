@@ -345,6 +345,54 @@ test('military units prefer a visible fire camp before sleeping outside', () => 
   assert.ok(Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) + Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <= 1)
 })
 
+test('military units use building shelters when no visible fire camp is available', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const soldier = createUnit(owner, { i: 0, j: 0, label: 'soldier', type: constants.UNIT_TYPES.infantry })
+  const context = createContext(23, [owner], calls)
+  soldier.context = context
+  const entry = context.map.grid[6][7]
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(soldier.shelterState.status, 'movingToRest')
+  assert.equal(soldier.shelterState.location, 'shelter')
+  assert.equal(soldier.shelterState.shelter, house)
+  assert.equal(soldier.dest, entry)
+})
+
+test('military units prefer visible fire camps over building shelters', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 1, j: 1 }
+  const fireCamp = {
+    label: 'fire',
+    type: constants.BUILDING_TYPES.fireCamp,
+    owner,
+    isBuilt: true,
+    i: 5,
+    j: 5,
+    visible: true,
+  }
+  owner.buildings.push(house, fireCamp)
+  const soldier = createUnit(owner, { i: 0, j: 0, label: 'soldier', sight: 12, type: constants.UNIT_TYPES.infantry })
+  const context = createContext(23, [owner], calls)
+  context.map.grid[5][5].has = fireCamp
+  context.map.grid[5][5].solid = true
+  soldier.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(soldier.shelterState.status, 'movingToRest')
+  assert.equal(soldier.shelterState.location, 'outside')
+  assert.equal(soldier.shelterState.shelter, null)
+  assert.ok(Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) + Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <= 1)
+})
+
 test('time jump to night settles military sleepers around a visible fire camp instantly', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
@@ -376,7 +424,14 @@ test('time jump to night settles military sleepers around a visible fire camp in
 
 test('sleeping military wake on hero insight and do not immediately sleep again', () => {
   const calls = []
-  const owner = { units: [], buildings: [] }
+  const heroOwner = { label: 'player' }
+  const owner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other === heroOwner
+    },
+  }
   const soldier = createUnit(owner, {
     detect: target => calls.push(['detect', target.label]),
     family: 'unit',
@@ -389,6 +444,7 @@ test('sleeping military wake on hero insight and do not immediately sleep again'
   const hero = {
     label: 'hero',
     family: 'unit',
+    owner: heroOwner,
     type: constants.UNIT_TYPES.hero,
     controlMode: 'hero',
     i: 18,
@@ -419,10 +475,94 @@ test('sleeping military wake on hero insight and do not immediately sleep again'
   assert.equal(soldier.shelterState.reason, 'sleep')
 })
 
+test('player military near the hero still go to sleep at night', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const soldier = createUnit(owner, {
+    detect: target => calls.push(['detect', target.label]),
+    family: 'unit',
+    i: 1,
+    j: 0,
+    label: 'guard',
+    sight: 8,
+    type: constants.UNIT_TYPES.infantry,
+  })
+  const context = createContext(23, [owner], calls)
+  const hero = {
+    label: 'hero',
+    family: 'unit',
+    owner,
+    type: constants.UNIT_TYPES.hero,
+    controlMode: 'hero',
+    i: 0,
+    j: 0,
+    isDead: false,
+    isDestroyed: false,
+  }
+  context.controls.heroUnit = hero
+  soldier.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(soldier.shelterState.reason, 'sleep')
+  assert.equal(soldier.restWakeLockUntilMs, undefined)
+  assert.equal(calls.some(call => call[0] === 'detect'), false)
+})
+
+test('neutral military near the hero still go to sleep at night', () => {
+  const calls = []
+  const heroOwner = { label: 'player' }
+  const neutralOwner = {
+    units: [],
+    buildings: [],
+    isEnemy() {
+      return false
+    },
+  }
+  const soldier = createUnit(neutralOwner, {
+    detect: target => calls.push(['detect', target.label]),
+    family: 'unit',
+    i: 1,
+    j: 0,
+    label: 'neutral-guard',
+    sight: 8,
+    type: constants.UNIT_TYPES.infantry,
+  })
+  const context = createContext(23, [neutralOwner], calls)
+  const hero = {
+    label: 'hero',
+    family: 'unit',
+    owner: heroOwner,
+    type: constants.UNIT_TYPES.hero,
+    controlMode: 'hero',
+    i: 0,
+    j: 0,
+    isDead: false,
+    isDestroyed: false,
+  }
+  context.controls.heroUnit = hero
+  soldier.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(soldier.shelterState.reason, 'sleep')
+  assert.equal(soldier.restWakeLockUntilMs, undefined)
+  assert.equal(calls.some(call => call[0] === 'detect'), false)
+})
+
 test('rest alert wakes nearby sleeping military from the same group', () => {
   const calls = []
   const visibleTargetsBySource = new Map()
-  const owner = { units: [], buildings: [] }
+  const heroOwner = { label: 'player' }
+  const owner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other === heroOwner
+    },
+  }
   const leader = createUnit(owner, {
     family: 'unit',
     label: 'leader',
@@ -441,6 +581,7 @@ test('rest alert wakes nearby sleeping military from the same group', () => {
   const hero = {
     label: 'hero',
     family: 'unit',
+    owner: heroOwner,
     type: constants.UNIT_TYPES.hero,
     controlMode: 'hero',
     i: 18,
