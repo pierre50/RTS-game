@@ -5,6 +5,7 @@ import { getCellsInCellRadius } from '../grid/cells'
 import { findInstancesInSight } from '../grid/visibility'
 import { getHeroInteractionTargetPoint } from './heroActionRange'
 import { angleDelta } from '../maths'
+import { getEntitySpaceGrid } from '../mapSpaces'
 
 const CLICK_DIRECTION_HALF_ANGLE = 25
 export const CLICK_TARGET_SEARCH_RANGE = 15
@@ -43,7 +44,7 @@ export function findFacingEntity(
 ): RuntimeEntity | null {
   const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, matches, range)
   const seen = new Set<RuntimeEntity>(candidates)
-  const grid = hero.context?.map?.grid
+  const grid = getEntitySpaceGrid(hero, hero.context?.map)
   if (grid) {
     const centerI = hero.i ?? 0
     const centerJ = hero.j ?? 0

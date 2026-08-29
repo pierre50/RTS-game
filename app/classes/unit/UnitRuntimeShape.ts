@@ -33,10 +33,14 @@ declare module './Unit' {
     visualSettingsCleanup: (() => void) | null
 
     controlMode: NonNullable<UnitEntity['controlMode']>
+    spaceId?: UnitEntity['spaceId']
     inactif: boolean
     sounds?: UnitEntity['sounds']
     work: UnitEntity['work']
     shelterState?: UnitEntity['shelterState']
+    restWakeLockUntilMs?: UnitEntity['restWakeLockUntilMs']
+    restAlertTargetLabel?: UnitEntity['restAlertTargetLabel']
+    interiorExitState?: UnitEntity['interiorExitState']
 
     dest: UnitEntity['dest']
     realDest: UnitEntity['realDest']

@@ -1,5 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { getReliefOffset, isometricToCartesian } from '../lib'
+import { getActiveInteractionSpace, getEntityMapPoint, getSpaceLocalPointFromMapPoint } from '../lib/mapSpaces'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
@@ -55,6 +56,7 @@ export default class Controls extends Container implements ControlsLike {
   minimapRectangle: Graphics
   buildingPlacer: BuildingPlacer
   rallyPointController: RallyPointController
+  runtimeInputEnabled: boolean
   _onDocMouseMove: (evt: MouseEvent) => void
   _onDocMouseOut: () => void
   _onKeyDown: (evt: KeyboardEvent) => void
@@ -114,6 +116,7 @@ export default class Controls extends Container implements ControlsLike {
 
     this.buildingPlacer = new BuildingPlacer(this)
     this.rallyPointController = new RallyPointController(this)
+    this.runtimeInputEnabled = true
 
     this._onDocMouseMove = (evt: MouseEvent) => this.moveCameraWithMouse(evt)
     this._onDocMouseOut = () => this.stopMouseCameraMove()
@@ -198,7 +201,8 @@ export default class Controls extends Container implements ControlsLike {
   getHeroCameraCenter(): { x: number; y: number } | null {
     const hero = this.heroUnit
     if (!hero) return null
-    return { x: hero.x, y: hero.y + getReliefOffset(hero) }
+    const point = getEntityMapPoint(hero)
+    return { x: point.x, y: point.y + getReliefOffset(hero) }
   }
 
   getViewportMetrics(): {
@@ -239,9 +243,11 @@ export default class Controls extends Container implements ControlsLike {
 
   isInteractionBlocked(): boolean {
     return Boolean(
-      this.context.devConsoleOpen ||
+      !this.runtimeInputEnabled ||
+        this.context.devConsoleOpen ||
         this.context.paused ||
-        this.context.defeat
+        this.context.defeat ||
+        this.context.timeSkip?.active
     )
   }
 
@@ -251,6 +257,7 @@ export default class Controls extends Container implements ControlsLike {
       this.context.devConsoleOpen ||
         this.context.paused ||
         this.context.defeat ||
+        this.context.timeSkip?.active ||
         menu?.isInventoryOpen?.() ||
         menu?.isNpcOrdersOpen?.() ||
         menu?.isHeroBuildingMenuOpen?.() ||
@@ -264,18 +271,25 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   handleEscapeKey(evt: KeyboardEvent): boolean {
+    if (!this.runtimeInputEnabled) return false
     return handleControlsEscapeKey(this, evt)
   }
 
   onKeyDown(evt: KeyboardEvent): void {
+    if (!this.runtimeInputEnabled) return
     handleControlsKeyDown(this, evt)
   }
 
   onKeyUp(evt: KeyboardEvent): void {
+    if (!this.runtimeInputEnabled) return
     handleControlsKeyUp(this, evt)
   }
 
   onTick(ticker: TickerLike): void {
+    if (!this.runtimeInputEnabled) {
+      setHeroGameCursorEnabled(false)
+      return
+    }
     setHeroGameCursorEnabled(this.isHeroControlActive() && !this.isInGameMenuOpen())
     const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
     if (this.isInteractionBlocked()) {
@@ -316,38 +330,59 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   onTouchStart(evt: TouchEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.touchInputController.onTouchStart(evt)
   }
 
   onTouchMove(evt: TouchEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.touchInputController.onTouchMove(evt)
   }
 
   onTouchEnd(evt: TouchEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.touchInputController.onTouchEnd(evt)
   }
 
   onMouseDown(evt: PointerPageEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.pointerInputController.onMouseDown(evt)
   }
 
   onMouseMove(evt: PointerPageEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.pointerInputController.onMouseMove(evt)
   }
 
   onWheel(evt: WheelEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.pointerInputController.onWheel(evt)
   }
 
   onContextMenu(evt: MouseEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.pointerInputController.onContextMenu(evt)
   }
 
   onMouseUp(evt: PointerPageEvent): void {
+    if (!this.runtimeInputEnabled) return
     this.pointerInputController.onMouseUp(evt)
   }
 
   getWorldPointUnderCursor(): PointerPoint {
+    const {
+      context: { map },
+    } = this
+    const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
+    const mapPoint = {
+      x: pointer.x - map.x,
+      y: pointer.y - map.y,
+    }
+    const space = getActiveInteractionSpace(this.context)
+    return getSpaceLocalPointFromMapPoint(space, mapPoint)
+  }
+
+  getMapPointUnderCursor(): PointerPoint {
     const {
       context: { map },
     } = this
@@ -362,11 +397,14 @@ export default class Controls extends Container implements ControlsLike {
     const {
       context: { map },
     } = this
+    const space = getActiveInteractionSpace(this.context)
     const pointer = this.getWorldPointUnderCursor()
     const pos = isometricToCartesian(pointer.x, pointer.y)
-    const i = Math.min(Math.max(pos[0], 0), map.size)
-    const j = Math.min(Math.max(pos[1], 0), map.size)
-    return map.grid[i]?.[j] || null
+    const size = space?.size ?? map.size
+    const grid = space?.grid ?? map.grid
+    const i = Math.min(Math.max(pos[0], 0), size)
+    const j = Math.min(Math.max(pos[1], 0), size)
+    return grid[i]?.[j] || null
   }
 
   getFacingEntityTarget(): RuntimeEntity | null {
@@ -441,7 +479,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   isHeroControlActive(): boolean {
-    return this.heroController.isActive()
+    return !this.context.timeSkip?.active && this.heroController.isActive()
   }
 
   setFreeCamera(enabled: boolean): void {
@@ -453,6 +491,14 @@ export default class Controls extends Container implements ControlsLike {
       const cameraCenter = this.getHeroCameraCenter()
       if (cameraCenter) this.cameraController.set(cameraCenter.x, cameraCenter.y)
     }
+  }
+
+  setRuntimeInputEnabled(enabled: boolean): void {
+    if (this.runtimeInputEnabled === enabled) return
+    this.runtimeInputEnabled = enabled
+    this.eventMode = enabled ? 'auto' : 'none'
+    this.renderable = enabled
+    if (!enabled) this.cancelActiveInteraction()
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {
@@ -477,7 +523,8 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean {
-    return this.cameraController.instanceInCamera(instance, bounds)
+    const point = 'context' in instance ? getEntityMapPoint(instance as UnitEntity) : instance
+    return this.cameraController.instanceInCamera(point, bounds)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {

@@ -2,13 +2,16 @@ import { Assets, AnimatedSprite } from 'pixi.js'
 import { FAMILY_TYPES, SHEET_TYPES, LABEL_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
+  attachEntityShadowsToMapSpace,
   getInstanceZIndex,
   getGroundReliefLevel,
   bindAnimatedSpriteToTicker,
   updateInstanceVisibility,
   getAnimationFrames,
+  getEntityMapSpace,
 } from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
+import { routeEntityAwayFromPassageCell } from '../../lib/buildings/passageCells'
 import { AnimalInterface } from '../../ui/entity/AnimalInterface'
 import { Instance } from '../Instance'
 import { AnimalLifecycle } from './AnimalLifecycle'
@@ -29,7 +32,7 @@ import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { getHorseColorFromSeed, isHorseColor, type HorseColor } from '../../lib/horses/horseColors'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 
-export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; type: string }
+export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; spaceId?: string; type: string }
 type PositionedConfig = { x?: number; y?: number; z?: number | null }
 type AnimalShadow = AnimatedSprite
 const LANDING_STEPS = 8
@@ -156,14 +159,16 @@ export class Animal extends Instance implements AnimalEntity {
     this.size = 1
     this.visible = false
     this.visibleCells = new Set()
-    const spawnCell = map.grid[this.i][this.j]
+    const space = getEntityMapSpace(this, map)
+    const grid = space?.grid ?? map.grid
+    const spawnCell = grid[this.i][this.j]
     const [flatSpawnX, flatSpawnY] = cartesianToIsometric(this.i, this.j)
     this.x = animalConfig.x ?? numberCoordinate(options.x) ?? flatSpawnX
     this.y = animalConfig.y ?? numberCoordinate(options.y) ?? flatSpawnY
     this.z = animalConfig.z ?? numberCoordinate(options.z) ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this)
 
-    this.currentCell = map.grid[this.i][this.j]
+    this.currentCell = grid[this.i][this.j]
     this.currentCell.place(this)
     this.currentCell.solid = true
 
@@ -212,7 +217,7 @@ export class Animal extends Instance implements AnimalEntity {
 
     this.sprite.updateAnchor = true
     this.shadow = this.createShadow()
-    this.context.map.shadowLayer?.addChild(this.shadow)
+    attachEntityShadowsToMapSpace(this.context.map, this)
     this.addChild(this.sprite)
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     if (this.shouldKeepHealthBarVisible()) {
@@ -233,6 +238,7 @@ export class Animal extends Instance implements AnimalEntity {
       this.sendTo(this.currentCell)
       return
     }
+    if (routeEntityAwayFromPassageCell(this)) return
     clearCombatAttackRecovery(this)
     this.inactif = true
     this.isFleeing = false

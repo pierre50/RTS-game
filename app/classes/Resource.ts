@@ -1,11 +1,14 @@
 import { Assets, Polygon, AnimatedSprite, type Sprite } from 'pixi.js'
 import {
   cartesianToIsometric,
+  attachEntityShadowsToMapSpace,
   getGroundReliefLevel,
   getInstanceZIndex,
   getReliefLiftPixels,
   getDeterministicCellVariant,
   getTexture,
+  getEntityMapSpace,
+  getEntityCell,
   parseTextureRef,
   spawnSpriteFragmentBurst,
   textureRefToString,
@@ -98,18 +101,20 @@ export class Resource extends Instance implements ResourceEntity {
     this.assignProperties(options)
     const config = getResourceConfig()
     this.assignProperties(config.resources[this.type])
+    const space = getEntityMapSpace(this, map)
+    const grid = space?.grid ?? map.grid
+    const cell = grid[this.i][this.j]
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints
     const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
     this.x = flatX
     this.y = flatY
-    this.z = map.grid[this.i][this.j].z
+    this.z = cell.z
     this.zIndex = getInstanceZIndex(this)
     this.visible = false
 
     // Set solid zone
-    const cell = map.grid[this.i][this.j]
     cell.solid = true
     cell.has = this
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
@@ -143,7 +148,7 @@ export class Resource extends Instance implements ResourceEntity {
 
       this.shadow = this.createShadow()
       if (this.shadow) {
-        this.context.map.shadowLayer?.addChild(this.shadow)
+        attachEntityShadowsToMapSpace(this.context.map, this)
         this.addChild(this.sprite)
       } else {
         this.addChild(this.sprite)
@@ -358,10 +363,11 @@ export class Resource extends Instance implements ResourceEntity {
     } = this
     this.eventMode = 'none'
     if (this.sprite) this.sprite.eventMode = 'none'
-    if (map.grid[this.i][this.j].has === this) {
-      map.grid[this.i][this.j].has = null
-      map.grid[this.i][this.j].corpses.add(this)
-      map.grid[this.i][this.j].solid = false
+    const cell = getEntityCell(this, map)
+    if (cell?.has === this) {
+      cell.has = null
+      cell.corpses.add(this)
+      cell.solid = false
     }
   }
 
@@ -374,12 +380,13 @@ export class Resource extends Instance implements ResourceEntity {
     } = this
     this.isDestroyed = true
     this.stopWindMotion()
-    if (map.grid[this.i][this.j].has === this) {
-      map.grid[this.i][this.j].has = null
-      map.grid[this.i][this.j].solid = false
+    const cell = getEntityCell(this, map)
+    if (cell?.has === this) {
+      cell.has = null
+      cell.solid = false
     }
-    map.grid[this.i][this.j].corpses.delete(this)
-    map.removeChild(this)
+    cell?.corpses.delete(this)
+    this.parent?.removeChild(this)
     this.destroy({ children: true, texture: false })
   }
 
@@ -393,7 +400,7 @@ export class Resource extends Instance implements ResourceEntity {
     const {
       context: { map },
     } = this
-    const cell = map.grid[this.i]?.[this.j]
+    const cell = getEntityCell(this, map)
     const terrainAssets = getTerrainAssets(this.assets, cell?.type ?? '')
     if (!cell || !Array.isArray(terrainAssets) || !terrainAssets.length) return
 
@@ -414,7 +421,7 @@ export class Resource extends Instance implements ResourceEntity {
     const {
       context: { map },
     } = this
-    const cell = map.grid[this.i]?.[this.j]
+    const cell = getEntityCell(this, map)
     if (!cell) return
     const [flatX, flatY] = cartesianToIsometric(this.i, this.j)
     this.x = flatX

@@ -1,11 +1,17 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
-import { evaluateCombatMorale, resumeVillagerAutonomy, showAggressionFeedback, updateInstanceRenderVisibility } from '../../lib'
+import {
+  evaluateCombatMorale,
+  resumeVillagerAutonomy,
+  showAggressionFeedback,
+  updateInstanceRenderVisibility,
+} from '../../lib'
 import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { applyToolAppearance } from '../../lib/hero/heroTools'
 import { markUnitHealthDamaged } from '../../lib/units/unitHealth'
 import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/units/unitControl'
-import { keepSleepingOutsideVisual } from '../../services/VillagerSleepVisuals'
+import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../lib/buildings/passageCells'
+import { keepSleepingOutsideVisual } from '../../services/rest/UnitSleepVisuals'
 import { debugBanditStop } from './UnitBanditDebug'
 import { UnitActions } from './UnitActions'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -52,7 +58,7 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
 
   const currentDest = unit.dest
   showAggressionFeedback(unit)
-  if (unit.context.villagerShelter?.handleVillagerDangerShelter(unit, instance)) {
+  if (unit.context.unitRest?.handleUnitDanger(unit, instance)) {
     unit.previousDest = currentDest
     return
   }
@@ -88,6 +94,14 @@ export function stopUnit(unit: UnitStateHost): void {
     unit.currentCell.solid = true
   }
   if (!heroControlled && resumeVillagerAutonomy?.(unit)) return
+  if (
+    !heroControlled &&
+    !unit.action &&
+    !unitHasActivePassageStopIntent(unit, unit.currentCell) &&
+    routeUnitAwayFromPassageCell(unit, unit.currentCell)
+  ) {
+    return
+  }
 
   clearCombatAttackRecovery(unit)
   unit.handleChangeDest()

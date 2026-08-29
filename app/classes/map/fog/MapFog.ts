@@ -10,6 +10,7 @@ import { _DW, _DH } from '../../cell/CellFog'
 import { Cell } from '../../cell'
 import { RuntimeCell, type RuntimeCellContext, type RuntimeCellSource } from '../../cell/RuntimeCell'
 import { getGaiaAnimals } from '../../../lib'
+import { getTerrainBakeChunkRects } from '../../../lib/graphics/terrainBakeChunks'
 import { ViewportFogRenderer } from './ViewportFogRenderer'
 
 type PixiRendererLike = {
@@ -224,32 +225,26 @@ export class MapFog {
     bounds: Pick<FogMapBounds, 'minX' | 'minY' | 'totalW' | 'totalH'>,
     maxTex: number
   ): void {
-    const chunksX = Math.ceil(bounds.totalW / maxTex)
-    const chunksY = Math.ceil(bounds.totalH / maxTex)
-    const chunkW = bounds.totalW / chunksX
-    const chunkH = bounds.totalH / chunksY
+    const chunks = getTerrainBakeChunkRects(
+      { minX: bounds.minX, minY: bounds.minY, width: bounds.totalW, height: bounds.totalH },
+      maxTex
+    )
     const renderStartedAt = performance.now()
 
-    for (let cx = 0; cx < chunksX; cx++) {
-      for (let cy = 0; cy < chunksY; cy++) {
-        const cMinX = bounds.minX + cx * chunkW
-        const cMinY = bounds.minY + cy * chunkH
-        const cW = Math.ceil(cx === chunksX - 1 ? bounds.totalW - cx * chunkW : chunkW)
-        const cH = Math.ceil(cy === chunksY - 1 ? bounds.totalH - cy * chunkH : chunkH)
-        const rt = RenderTexture.create({ width: cW, height: cH })
-        const transform = new Matrix().translate(-cMinX, -cMinY)
-        renderer.render({ container: terrainContainer, target: rt, transform, clear: true })
+    for (const chunk of chunks) {
+      const rt = RenderTexture.create({ width: chunk.width, height: chunk.height })
+      const transform = new Matrix().translate(-chunk.minX, -chunk.minY)
+      renderer.render({ container: terrainContainer, target: rt, transform, clear: true })
 
-        const sprite = new Sprite(rt)
-        sprite.x = cMinX
-        sprite.y = cMinY
-        sprite.zIndex = -1
-        sprite.eventMode = 'none'
-        sprite.label = 'terrainChunk'
-        sprite.roundPixels = true
-        this.map.addChild(sprite)
-        this.map.registerRenderChunk(sprite, { minX: cMinX, minY: cMinY, width: cW, height: cH })
-      }
+      const sprite = new Sprite(rt)
+      sprite.x = chunk.minX
+      sprite.y = chunk.minY
+      sprite.zIndex = -1
+      sprite.eventMode = 'none'
+      sprite.label = 'terrainChunk'
+      sprite.roundPixels = true
+      this.map.addChild(sprite)
+      this.map.registerRenderChunk(sprite, chunk)
     }
     this.map.context.performance?.record?.('terrainBake.renderTextures', performance.now() - renderStartedAt)
   }

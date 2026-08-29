@@ -4,6 +4,7 @@ import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import { onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } from '../graphics'
 import { angleDelta, degreeToDirection } from '../maths'
+import { attachProjectileToMapSpace } from '../projectiles'
 import { drainTimedHeroEnergy, hasEnergyToStartTimedHeroAction } from './heroEnergy'
 import { finishHeroToolAnimation } from './heroToolAnimation'
 import { MOUNTED_ATTACK_HALF_ANGLE, findFacingEntity, getHeroAimDegree } from './heroTargeting'
@@ -216,7 +217,7 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
         },
         hero.context!
       )
-      map.addChild(projectile)
+      attachProjectileToMapSpace(projectile, map)
       hero.followAssistIntent =
         tool === 'bow' && target ? { action: ACTION_TYPES.hunt, target, targetLabel: target.label } : null
       consumeHeroArrow(hero)

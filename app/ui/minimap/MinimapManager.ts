@@ -6,6 +6,7 @@ import {
   canvasDrawStrokeRectangle,
   playerCanSeeInstance,
 } from '../../lib'
+import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../../constants'
 import type { MinimapHostLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
@@ -30,6 +31,10 @@ function isResourceEntity(instance: RuntimeEntity | null | undefined): instance 
 
 function isMinimapUnitMarker(instance: RuntimeEntity | null | undefined): boolean {
   return Boolean(instance && instance.family !== FAMILY_TYPES.animal)
+}
+
+function isOutsideMinimapEntity(instance: RuntimeEntity | null | undefined): instance is RuntimeEntity {
+  return Boolean(instance && isOutsideSpaceId(instance.spaceId))
 }
 
 function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
@@ -236,6 +241,7 @@ export class MinimapManager {
     if (!this.canDraw()) return
     const { menu } = this
     const { map } = menu.context
+    if (!isOutsideMinimapEntity(resource)) return
     if (!map.showResources) return
 
     const context = menu.resourcesMinimap!.getContext('2d')!
@@ -267,6 +273,7 @@ export class MinimapManager {
     if (!map.showResources) return
 
     map.resources.forEach(resource => {
+      if (!isOutsideMinimapEntity(resource)) return
       if (resource.color && (player?.views?.isViewed(resource.i, resource.j) || map.revealEverything)) {
         const position = getMinimapDrawPosition(resource)
         if (!position) return
@@ -339,6 +346,7 @@ export class MinimapManager {
     const isVisible = (instance: RuntimeEntity) => map.revealEverything || playerCanSeeInstance(instance, player)
 
     owner.buildings.forEach(building => {
+      if (!isOutsideMinimapEntity(building)) return
       if (!isVisible(building)) return
       const position = getMinimapDrawPosition(building)
       if (!position) return
@@ -355,6 +363,7 @@ export class MinimapManager {
     })
     owner.units.forEach(unit => {
       if (!isMinimapUnitMarker(unit)) return
+      if (!isOutsideMinimapEntity(unit)) return
       if (!isVisible(unit)) return
       const position = getMinimapDrawPosition(unit)
       if (!position) return

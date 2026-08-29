@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance, scheduleAmbientMove } from '../lib'
+import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import type { SchedulerTaskId, GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -9,10 +10,17 @@ const PATROL_DELAY_MAX_MS = 8500
 const PATROL_RANGE = 4
 const AGGRO_SCAN_INTERVAL_MS = 500
 
+function hasActiveRestLock(unit: UnitEntity): boolean {
+  const until = unit.restWakeLockUntilMs
+  return Boolean(until != null && until > (unit.context?.scheduler?.elapsedMs ?? 0))
+}
+
 function canPatrol(unit: UnitEntity): boolean {
   return Boolean(
     !unit.isDead &&
       !unit.isDestroyed &&
+      !unit.shelterState &&
+      !hasActiveRestLock(unit) &&
       !unit.action &&
       !unit.dest &&
       !(unit.path?.length) &&
@@ -89,15 +97,9 @@ export class CampPatrolSystem {
     const anchor = getCampPatrolAnchor(unit)
     if (!map || !anchor) return null
 
+    const passageLookup = createReservedPassageCellLookup(unit.context)
     const cells = getCellsAroundPoint(anchor.i, anchor.j, map.grid, PATROL_RANGE, cell =>
-      Boolean(
-        !cell.solid &&
-          !cell.has &&
-          !cell.border &&
-          !cell.waterBorder &&
-          cell.category !== 'Water' &&
-          (cell.i !== unit.i || cell.j !== unit.j)
-      )
+      Boolean(canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }) && (cell.i !== unit.i || cell.j !== unit.j))
     )
 
     return cells.length ? map.randomItem(cells) : null
@@ -109,6 +111,7 @@ export class CampPatrolSystem {
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) {
         if (!isCampPatrolUnit(unit)) continue
+        if (unit.shelterState?.reason === 'sleep') continue
         if (unit.action === ACTION_TYPES.attack && unit.dest) continue
 
         const target = this.findAggroTarget(unit)

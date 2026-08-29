@@ -1,6 +1,10 @@
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 
 const FADE_STEP_MS = 40
+export const ENTITY_TRANSITION_FADE_OUT_MS = 120
+export const ENTITY_TRANSITION_FADE_IN_MS = 140
+export const ENTITY_TRANSITION_TICK_MS = 40
+export const ENTITY_TRANSITION_HIDDEN_ALPHA = 0.05
 
 type FadeTaskState = {
   scheduler: Pick<NonNullable<GameContextLike['scheduler']>, 'remove'>

@@ -11,7 +11,12 @@ import {
   drawTerrainFrameDebug,
   drawVisionDebug,
 } from './DebugMapRenderers'
-import { ensureAiInfoOverlay, ensurePerfOverlay, ensurePlayerStatsOverlay, isAiDebugPlayer } from './DebugOverlayRenderers'
+import {
+  ensureAiInfoOverlay,
+  ensurePerfOverlay,
+  ensurePlayerStatsOverlay,
+  isAiDebugPlayer,
+} from './DebugOverlayRenderers'
 import {
   DEBUG_COORDS_LAYER,
   DEBUG_GRID_LAYER,
@@ -74,6 +79,7 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
   ]
   lines.push(...perfReportSlowFrames(report, 3))
   lines.push(...perfReportRenderStats(report, 3))
+  lines.push(...perfReportMetricGroup(report, 'Load breakdown', 'load.', 16))
   lines.push('Top metrics')
   const limit = mode === 'top' ? Number(rest[0] || 20) : 12
   const metrics = Object.entries(report.metrics)
@@ -94,6 +100,22 @@ export function toggleUnitMovementDebug(value = ''): CommandResult {
     ok: true,
     message: `Unit movement debug ${enabled ? 'enabled' : 'disabled'} (${enabled ? 'logs to console and hero-collision overlay' : 'off'})`,
   }
+}
+
+function perfReportMetricGroup(report: DevPerformanceSnapshot, title: string, prefix: string, limit: number): string[] {
+  const metrics = Object.entries(report.metrics)
+    .filter(([name]) => name.startsWith(prefix))
+    .sort(([, a], [, b]) => b.totalMs - a.totalMs)
+    .slice(0, limit)
+  if (!metrics.length) return []
+
+  const lines = [title]
+  for (const [name, metric] of metrics as [string, DevPerformanceMetric][]) {
+    lines.push(
+      `${name}: total ${metric.totalMs.toFixed(2)}ms | exclusive ${metric.exclusiveMs?.toFixed(2) ?? '0.00'}ms | max ${metric.maxMs.toFixed(2)}ms | calls ${metric.count}`
+    )
+  }
+  return lines
 }
 
 function perfReportSlowFrames(report: DevPerformanceSnapshot, limit: number): string[] {

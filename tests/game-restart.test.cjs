@@ -145,8 +145,8 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../services/VillagerShelterSystem': {
-      VillagerShelterSystem: class VillagerShelterSystem {
+    '../services/rest/UnitRestSystem': {
+      UnitRestSystem: class UnitRestSystem {
         destroy() {}
       },
     },
@@ -213,7 +213,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     '../../services/DailyWorldEventSystem': mocks['../services/DailyWorldEventSystem'],
     '../../services/TributeRaidSystem': mocks['../services/TributeRaidSystem'],
     '../../services/CampPatrolSystem': mocks['../services/CampPatrolSystem'],
-    '../../services/VillagerShelterSystem': mocks['../services/VillagerShelterSystem'],
+    '../../services/rest/UnitRestSystem': mocks['../services/rest/UnitRestSystem'],
   })
 
   global.window = global.window || {}

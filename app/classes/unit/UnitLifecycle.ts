@@ -1,5 +1,5 @@
 import { CORPSE_TIME, FADE_DURATION_MS, MENU_INFO_IDS, POPULATION_MAX, SHEET_TYPES } from '../../constants'
-import { canUpdateMinimap, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
+import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVisibility } from '../../lib'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
@@ -7,6 +7,12 @@ import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
 import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
+
+type ParentDisplay = {
+  parent?: {
+    removeChild: (child: unknown) => unknown
+  } | null
+}
 
 export class UnitLifecycle {
   unit: UnitEntity
@@ -27,8 +33,8 @@ export class UnitLifecycle {
     sprite.animationSpeed = sprite.textures.length / (CORPSE_TIME * 60)
     sprite.onComplete = () => fadeOutThenClear(unit, FADE_DURATION_MS)
     if (map) {
-      const cell = map.grid[unit.i][unit.j]
-      if (cell.has === unit) {
+      const cell = getEntityCell(unit, map)
+      if (cell?.has === unit) {
         cell.has = null
         cell.corpses.add(unit)
         cell.solid = false
@@ -122,8 +128,8 @@ export class UnitLifecycle {
       corpses?.splice(index, 1)
     }
     if (map) {
-      map.grid[unit.i][unit.j].corpses.delete(unit)
-      map.removeChild(unit)
+      getEntityCell(unit, map)?.corpses.delete(unit)
+      ;(unit as ParentDisplay).parent?.removeChild(unit)
     }
     unit.destroy?.({
       children: true,

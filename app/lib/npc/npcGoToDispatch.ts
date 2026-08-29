@@ -5,6 +5,7 @@ import { findInstancesInSight } from '../grid/visibility'
 import { getTrainingTargetForUnit } from '../buildings/buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from '../buildings/buildingFeedback'
 import { isVillagerSleepTime } from '../units/villagerSchedule'
+import { getMapSpace } from '../mapSpaces'
 import type { SelectableInstance } from '../graphics/selection'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -54,7 +55,7 @@ export function keepNpcHere(target: UnitEntity): void {
   target.autonomousJob = null
   target.stop?.()
   if (target.context && target.type === UNIT_TYPES.villager && isVillagerSleepTime(target.context) && !target.shelterState) {
-    target.context?.villagerShelter?.sendVillagerToSleep(target)
+    target.context?.unitRest?.sendUnitToSleep(target)
   }
 }
 
@@ -65,7 +66,7 @@ export function startFollowingHero(target: UnitEntity): void {
   target.autonomousJob = null
   if (wasSleeping) {
     const waking =
-      target.context?.villagerShelter?.wakeSleepingVillagerForOrder(target, () => {
+      target.context?.unitRest?.wakeSleepingUnitForOrder(target, () => {
         target.followingHero = true
       }) ?? false
     if (!waking) target.followingHero = true
@@ -209,6 +210,8 @@ export function sendNpcGroupToTarget(
     return
   }
   const map = npcs[0].context?.map
+  const targetSpace = map ? getMapSpace(map, cell.spaceId) : null
+  const grid = targetSpace?.grid ?? map?.grid
   let minI = Infinity
   let minJ = Infinity
   let maxI = -Infinity
@@ -223,7 +226,7 @@ export function sendNpcGroupToTarget(
   const centerJ = minJ + Math.round((maxJ - minJ) / 2)
   for (const npc of npcs) {
     resetNpcDirectives(npc)
-    const finalCell = map?.grid[cell.i + (npc.i - centerI)]?.[cell.j + (npc.j - centerJ)]
+    const finalCell = grid?.[cell.i + (npc.i - centerI)]?.[cell.j + (npc.j - centerJ)]
     npc.sendTo?.(finalCell || cell)
   }
 }

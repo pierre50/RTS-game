@@ -11,6 +11,7 @@ import {
 } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
+import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
 import { debugBlockedDirectMove, debugCombatMove, debugDirectMoveProbe, serializeDirectMoveDebugCell } from './UnitMovementDebug'
 import {
   SLIDE_PROBE_ANGLES,
@@ -46,7 +47,8 @@ export class UnitDirectMovement {
 
   moveDirect(dirX: number, dirY: number, distance: number, options: DirectMoveOptions = {}): boolean {
     const unit = this.unit
-    const map = unit.context?.map
+    const contextMap = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, contextMap)
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) {
       debugBlockedDirectMove(
         unit,
@@ -147,7 +149,7 @@ export class UnitDirectMovement {
 
   getDirectMoveCandidateDebug(dirX: number, dirY: number, distance: number): Record<string, unknown> | null {
     const unit = this.unit
-    const map = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return null
     const effectiveDistance = distance * this.directMoveClimbFactor * getEnergyMoveSpeedMultiplier(unit)
     const candidateX = unit.x + dirX * effectiveDistance
@@ -280,7 +282,8 @@ export class UnitDirectMovement {
     facingDirY: number = dirY
   ): boolean {
     const unit = this.unit
-    const map = unit.context?.map
+    const contextMap = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, contextMap)
     if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
 
     const targetClimbFactor = unit.currentCell?.inclined ? RELIEF_CLIMB_SPEED_MULTIPLIER : 1
@@ -469,7 +472,7 @@ export class UnitDirectMovement {
         updateInstanceRenderVisibility(unit)
         unit.visible = true
       }
-      map.updateInstanceBucket(unit, oldI, oldJ)
+      contextMap?.updateInstanceBucket(unit, oldI, oldJ)
     }
     updateInstanceVisibility(unit)
     unit.applyReliefLift?.(getGroundReliefLevel(unit.currentCell))

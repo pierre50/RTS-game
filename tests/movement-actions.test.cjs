@@ -116,7 +116,9 @@ function mockGetMiningActions() {
   const configured = Object.values(constants.MINING_RESOURCE_CONFIG ?? {})
     .map(config => config.action)
     .filter(Boolean)
-  return configured.length ? configured : [constants.ACTION_TYPES.minestone, constants.ACTION_TYPES.minegold].filter(Boolean)
+  return configured.length
+    ? configured
+    : [constants.ACTION_TYPES.minestone, constants.ACTION_TYPES.minegold].filter(Boolean)
 }
 
 function mockSyncMovedActionTarget(unit, dest) {
@@ -151,7 +153,10 @@ function loadModule(relativePath, mocks) {
     const source = fs.readFileSync(tsFilename, 'utf8')
     const { code } = babel.transformSync(source, {
       filename: tsFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const module = { exports: {} }
     new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -177,6 +182,47 @@ function loadModule(relativePath, mocks) {
         playAudibleSoundCue: (_instance, cue) => libMock.playSoundCue?.(cue),
         playMovementSurfaceAudio: () => {},
         ...libMock,
+      }
+    }
+    if (request === '../../lib/mapSpaces') {
+      const getSpace = (map, spaceId) => map?.spaces?.get?.(spaceId || 'outside') ?? null
+      const getSpaceGrid = (entity, map) => getSpace(map, entity?.spaceId)?.grid ?? map?.grid ?? null
+      return {
+        getEntityCell: (entity, map) =>
+          entity?.currentCell ?? getSpaceGrid(entity, map)?.[entity?.i]?.[entity?.j] ?? map?.grid?.[entity?.i]?.[entity?.j] ?? null,
+        getEntitySpaceGrid: unit => getSpaceGrid(unit, unit?.context?.map ?? mocks['../../lib']?.map ?? null),
+        getEntitySpaceMapLike: unit => unit?.context?.map ?? mocks['../../lib']?.map ?? null,
+        isOutsideSpaceId: spaceId => !spaceId || spaceId === 'outside',
+        sameCellMapSpace: () => true,
+        sameMapSpace: () => true,
+      }
+    }
+    if (request === '../../lib/buildings/passageCells') {
+      const passageCells = mocks[request] ?? {}
+      const canUnitWaitOnCell =
+        passageCells.canUnitWaitOnCell ??
+        ((_unit, cell) =>
+          Boolean(cell && !cell.solid && cell.category !== 'Water' && !cell.border && !cell.waterBorder))
+      return {
+        canUnitUseCellAsIdleDestination:
+          passageCells.canUnitUseCellAsIdleDestination ??
+          ((unit, cell, options = {}) => {
+            if (!canUnitWaitOnCell(unit, cell, options)) return false
+            if (cell.waterBorder) return false
+            const occupant = cell.has
+            return Boolean(!occupant || occupant === unit || occupant.label === unit.label || occupant.isDestroyed)
+          }),
+        canUnitWaitOnCell,
+        createReservedPassageCellLookup:
+          passageCells.createReservedPassageCellLookup ??
+          (() => ({
+            has: () => false,
+            size: 0,
+          })),
+        findNearestPassageWaitingCell: passageCells.findNearestPassageWaitingCell ?? (() => null),
+        routeUnitAwayFromPassageCell: passageCells.routeUnitAwayFromPassageCell ?? (() => false),
+        shouldUnitAvoidPassageStop: passageCells.shouldUnitAvoidPassageStop ?? (() => false),
+        unitHasActivePassageStopIntent: passageCells.unitHasActivePassageStopIntent ?? (() => false),
       }
     }
     if (Object.hasOwn(mocks, request)) return mocks[request]
@@ -1928,16 +1974,19 @@ test('hero direct movement slides along rounded building collision instead of is
 })
 
 test('hero rounded-footprint collision keeps global padding beyond the raw edge', () => {
-  const { getHeroDirectMoveBlockerAtPoint } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
-    '../../constants': constants,
-    '../../lib': {
-      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
-      pointIsInsidePolygon: mockPointIsInsidePolygon,
-    },
-    '../../lib/units/unitControl': {
-      isHeroControlled: () => true,
-    },
-  })
+  const { getHeroDirectMoveBlockerAtPoint } = loadModule(
+    'app/classes/unit/movement/UnitHeroDirectMovementCollision.ts',
+    {
+      '../../constants': constants,
+      '../../lib': {
+        getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+        pointIsInsidePolygon: mockPointIsInsidePolygon,
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => true,
+      },
+    }
+  )
 
   for (const family of [constants.FAMILY_TYPES.building, constants.FAMILY_TYPES.resource]) {
     const grid = [
@@ -1982,12 +2031,15 @@ test('hero rounded-footprint collision keeps global padding beyond the raw edge'
 })
 
 test('hero soft-body collision keeps global padding around units and animals', () => {
-  const { getHeroDirectMoveBlockerAtPoint } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
-    '../../constants': constants,
-    '../../lib/units/unitControl': {
-      isHeroControlled: () => true,
-    },
-  })
+  const { getHeroDirectMoveBlockerAtPoint } = loadModule(
+    'app/classes/unit/movement/UnitHeroDirectMovementCollision.ts',
+    {
+      '../../constants': constants,
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => true,
+      },
+    }
+  )
 
   for (const family of [constants.FAMILY_TYPES.unit, constants.FAMILY_TYPES.animal]) {
     const blocker = {
@@ -2214,19 +2266,22 @@ test('hero terrain blocker pads the water cell after the water border', () => {
     waterBorder: false,
     has: null,
   }
-  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
-    '../../constants': constants,
-    '../../lib': {
-      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
-      distanceToPolygon: mockDistanceToPolygon,
-      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
-      getRoundedIsoShapePoints: getIsoDiamondPoints,
-      pointIsInsidePolygon: mockPointIsInsidePolygon,
-    },
-    '../../lib/units/unitControl': {
-      isHeroControlled: () => true,
-    },
-  })
+  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule(
+    'app/classes/unit/movement/UnitHeroDirectMovementCollision.ts',
+    {
+      '../../constants': constants,
+      '../../lib': {
+        cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
+        distanceToPolygon: mockDistanceToPolygon,
+        getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+        getRoundedIsoShapePoints: getIsoDiamondPoints,
+        pointIsInsidePolygon: mockPointIsInsidePolygon,
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => true,
+      },
+    }
+  )
   const blocker = createHeroTerrainCollisionBlocker(cell)
 
   assert.deepEqual(blocker.collisionPoints, [
@@ -2263,19 +2318,22 @@ test('hero terrain blocker uses iso-aligned standard padding for interior solid 
     waterBorder: false,
     has: null,
   }
-  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule('app/classes/unit/movement/UnitHeroDirectMovementCollision.ts', {
-    '../../constants': constants,
-    '../../lib': {
-      cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
-      distanceToPolygon: mockDistanceToPolygon,
-      getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
-      getRoundedIsoShapePoints: getIsoDiamondPoints,
-      pointIsInsidePolygon: mockPointIsInsidePolygon,
-    },
-    '../../lib/units/unitControl': {
-      isHeroControlled: () => true,
-    },
-  })
+  const { createHeroTerrainCollisionBlocker, getHeroCollisionFootprintPoints } = loadModule(
+    'app/classes/unit/movement/UnitHeroDirectMovementCollision.ts',
+    {
+      '../../constants': constants,
+      '../../lib': {
+        cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],
+        distanceToPolygon: mockDistanceToPolygon,
+        getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+        getRoundedIsoShapePoints: getIsoDiamondPoints,
+        pointIsInsidePolygon: mockPointIsInsidePolygon,
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => true,
+      },
+    }
+  )
   const blocker = createHeroTerrainCollisionBlocker(cell, { mapType: 'interior' })
 
   assert.equal(blocker.terrainCollisionKind, 'wall')
@@ -2286,7 +2344,10 @@ test('hero terrain blocker uses iso-aligned standard padding for interior solid 
     { x: -28, y: 16 },
   ])
 
-  const interiorWaterBlocker = createHeroTerrainCollisionBlocker({ ...cell, category: 'Water' }, { mapType: 'interior' })
+  const interiorWaterBlocker = createHeroTerrainCollisionBlocker(
+    { ...cell, category: 'Water' },
+    { mapType: 'interior' }
+  )
   assert.equal(interiorWaterBlocker.terrainCollisionKind, 'wall')
   assert.deepEqual(getHeroCollisionFootprintPoints(interiorWaterBlocker), [
     { x: 32, y: -14 },
@@ -2843,6 +2904,11 @@ test('a villager retries the original gather order after approaching a blocked t
   const calls = []
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
+    '../../lib/buildings/passageCells': {
+      findNearestPassageWaitingCell: () => ({ cell: expectedWaitCell, path: [expectedWaitCell] }),
+      shouldUnitAvoidPassageStop: (_unit, cell, options = {}) => cell === entryCell && !options.allowPassageStop,
+      unitHasActivePassageStopIntent: () => false,
+    },
     '../../lib': {
       canUpdateMinimap: () => false,
       degreeToDirection: () => 'south',
@@ -2966,6 +3032,215 @@ test('manual move orders cancel fatigue resume before routing', () => {
     ['setDest', 1, 0],
     ['setPath', [targetCell]],
   ])
+})
+
+function makePassageMovementCell(i, j) {
+  return {
+    category: 'Land',
+    corpses: new Set(),
+    fogSprites: [],
+    has: null,
+    i,
+    j,
+    solid: false,
+    terrainHidden: false,
+    type: 'grass',
+    visible: true,
+    viewBy: new Set(),
+    waterBorder: false,
+    x: i,
+    y: j,
+    z: 0,
+    place(entity) {
+      this.has = entity
+    },
+    removeFog() {},
+    setFog() {},
+    updateVisible() {},
+  }
+}
+
+function makePassageMovementGrid(size = 5) {
+  return Array.from({ length: size }, (_, i) => Array.from({ length: size }, (_, j) => makePassageMovementCell(i, j)))
+}
+
+function makePassageMovementUnit(context, grid) {
+  const unit = {
+    action: null,
+    actionLocked: false,
+    blockedGatherApproach: null,
+    context,
+    currentCell: grid[0][0],
+    dest: null,
+    handleChangeDest: () => {},
+    i: 0,
+    isDead: false,
+    isUnitAtDest: () => false,
+    j: 0,
+    label: 'villager-1',
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    queueOrder: () => false,
+    setDest: dest => {
+      unit.dest = dest
+    },
+    setPath: path => {
+      unit.path = path
+    },
+    stopInterval: () => {},
+    type: constants.UNIT_TYPES.villager,
+  }
+  return unit
+}
+
+test('manual move orders avoid building passage cells as final stops', () => {
+  const grid = makePassageMovementGrid()
+  const owner = { buildings: [], units: [] }
+  const building = {
+    i: 1,
+    isBuilt: true,
+    j: 0,
+    label: 'town-center-1',
+    owner,
+    type: constants.BUILDING_TYPES.townCenter,
+  }
+  owner.buildings.push(building)
+  const entryCell = grid[2][2]
+  const expectedWaitCell = grid[1][2]
+  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [owner] }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/passageCells': {
+      findNearestPassageWaitingCell: () => ({ cell: expectedWaitCell, path: [expectedWaitCell] }),
+      shouldUnitAvoidPassageStop: (_unit, cell, options = {}) => cell === entryCell && !options.allowPassageStop,
+      unitHasActivePassageStopIntent: () => false,
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: (_unit, i, j) =>
+        i === expectedWaitCell.i && j === expectedWaitCell.j ? [expectedWaitCell] : [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = makePassageMovementUnit(context, grid)
+
+  new UnitMovement(unit).sendToEvt(entryCell, null)
+
+  assert.equal(unit.dest, expectedWaitCell)
+  assert.deepEqual(unit.path, [expectedWaitCell])
+})
+
+test('solid target approach cells avoid building passage cells as final stops', () => {
+  const grid = makePassageMovementGrid()
+  const entryCell = grid[1][2]
+  const approachCell = grid[2][1]
+  const target = { family: 'building', i: 2, isDestroyed: false, j: 2, label: 'barracks-1', type: 'Barracks', x: 2, y: 2 }
+  grid[target.i][target.j].solid = true
+  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  let rejectedPassageCell = false
+  let acceptedApproachCell = false
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/passageCells': {
+      canUnitWaitOnCell: (_unit, cell, options = {}) => options.passageLookup?.has(cell) !== true,
+      createReservedPassageCellLookup: () => ({
+        has: cell => cell === entryCell,
+        size: 1,
+      }),
+      findNearestPassageWaitingCell: () => null,
+      shouldUnitAvoidPassageStop: () => false,
+      unitHasActivePassageStopIntent: () => false,
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: (_unit, _target, _map, options = {}) => {
+        rejectedPassageCell = options.isCellAllowed?.(entryCell) === false
+        acceptedApproachCell = options.isCellAllowed?.(approachCell) === true
+        return [approachCell]
+      },
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = makePassageMovementUnit(context, grid)
+
+  new UnitMovement(unit).sendToEvt(target, constants.ACTION_TYPES.attack)
+
+  assert.equal(rejectedPassageCell, true)
+  assert.equal(acceptedApproachCell, true)
+  assert.equal(unit.dest, target)
+  assert.deepEqual(unit.path, [approachCell])
+})
+
+test('passage move orders can explicitly stop on the passage cell', () => {
+  const grid = makePassageMovementGrid()
+  const owner = { buildings: [], units: [] }
+  const building = {
+    i: 1,
+    isBuilt: true,
+    j: 0,
+    label: 'town-center-1',
+    owner,
+    type: constants.BUILDING_TYPES.townCenter,
+  }
+  owner.buildings.push(building)
+  const entryCell = grid[2][2]
+  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [owner] }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/passageCells': {
+      findNearestPassageWaitingCell: () => null,
+      shouldUnitAvoidPassageStop: (_unit, cell, options = {}) => cell === entryCell && !options.allowPassageStop,
+      unitHasActivePassageStopIntent: () => false,
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: (_unit, i, j) => (i === entryCell.i && j === entryCell.j ? [entryCell] : []),
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = makePassageMovementUnit(context, grid)
+
+  new UnitMovement(unit).sendToEvt(entryCell, null, { allowPassageStop: true })
+
+  assert.equal(unit.dest, entryCell)
+  assert.deepEqual(unit.path, [entryCell])
 })
 
 test('force repath restarts a build action when the villager is already in range', () => {
@@ -3929,6 +4204,54 @@ test('resuming previous animal work does not remember the interrupted target aga
   assert.deepEqual(unit.path, [])
 })
 
+test('resuming previous work routes to the previous destination runtime map space cell', () => {
+  const stoneType = 'Stone'
+  const outsideCell = { i: 2, j: 2, label: 'outside-cell' }
+  const interiorCell = { i: 2, j: 2, label: 'interior-cell', spaceId: 'interior:test' }
+  const interior = { grid: [[null, null, null], [null, null, null], [null, null, interiorCell]], id: 'interior:test' }
+  const map = {
+    grid: [[null, null, null], [null, null, null], [null, null, outsideCell]],
+    spaces: new Map([[interior.id, interior]]),
+  }
+  const target = {
+    category: stoneType,
+    family: constants.FAMILY_TYPES.resource,
+    i: 2,
+    j: 2,
+    label: 'stone-1',
+    spaceId: interior.id,
+    type: stoneType,
+  }
+  const calls = []
+  const { goBackToPrevious } = loadModule('app/classes/unit/UnitPreviousWork.ts', {
+    '../../constants': {
+      ...constants,
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, stone: stoneType },
+      TYPE_ACTION: { [stoneType]: constants.ACTION_TYPES.minestone },
+    },
+    '../../lib': {
+      resumeVillagerAutonomy: () => false,
+    },
+  })
+  const unit = {
+    context: { map },
+    dest: { label: 'interrupted' },
+    path: [{ label: 'old-path-cell' }],
+    previousDest: target,
+    previousWork: constants.WORK_TYPES.stoneminer,
+    work: constants.WORK_TYPES.lumberjack,
+    getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.minestone,
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    sendToEvt: (cell, action) => calls.push(['sendToEvt', cell, action]),
+  }
+
+  goBackToPrevious(unit)
+
+  assert.deepEqual(calls, [['handleChangeDest'], ['sendToEvt', interiorCell, constants.ACTION_TYPES.minestone]])
+  assert.equal(unit.previousDest, null)
+  assert.equal(unit.work, constants.WORK_TYPES.stoneminer)
+})
+
 test('exploration orders bypass the human command throttle', () => {
   const calls = []
   const grid = Array.from({ length: 3 }, (_, i) =>
@@ -4162,7 +4485,10 @@ test('hero gathering adds food globally without local resource bookkeeping', () 
 
   assert.equal(unit.owner.food, 1)
   assert.equal(wheat.quantity, 19)
-  assert.deepEqual(calls, [['setTextures', 'action'], ['feedback', 'hero', 1]])
+  assert.deepEqual(calls, [
+    ['setTextures', 'action'],
+    ['feedback', 'hero', 1],
+  ])
 })
 
 test('farm gather cadence is the same for hero and villagers', () => {

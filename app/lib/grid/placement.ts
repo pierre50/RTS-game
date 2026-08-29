@@ -1,11 +1,7 @@
 import type { ContainerChild } from 'pixi.js'
 import { instancesDistance } from '../maths'
-import { LABEL_TYPES } from '../../constants'
-import {
-  getBuildingFootprintCells,
-  getRandomZoneInGridWithCondition,
-  getZoneInGridWithCondition,
-} from './cells'
+import { FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { getBuildingFootprintCells, getRandomZoneInGridWithCondition, getZoneInGridWithCondition } from './cells'
 import type { Grid, GridCell, GridInstanceLike, GridPosition, GridZone } from '../../types/grid'
 
 type TerrainCell = GridCell & {
@@ -26,10 +22,19 @@ type BuildingPlacement = {
   type?: string
 }
 
+export const BUILDING_PLACEMENT_EXTRA_SIZE = 1
+
+type PlacementClearanceCell = GridCell & {
+  has?: {
+    family?: string
+  } | null
+}
+
 type PlacementVisibility<TCell extends GridCell> = {
   requireVisible: boolean
   requireExplored: boolean
   isExplored: ((cell: TCell) => boolean) | null
+  canUseCell: ((cell: TCell) => boolean) | null
 }
 
 export function clearCellTerrainSet(cell?: TerrainCell | null): void {
@@ -115,8 +120,53 @@ function canPlaceGroundBuilding<TCell extends GridCell>(
       !cell.inclined &&
       !cell.border &&
       cell.z === groundLevel &&
-      hasRequiredVisibility(cell, visibility)
+      hasRequiredVisibility(cell, visibility) &&
+      (!visibility.canUseCell || visibility.canUseCell(cell))
   )
+}
+
+function canUseBuildingClearanceCell<TCell extends PlacementClearanceCell>(
+  cell: TCell,
+  visibility: PlacementVisibility<TCell>
+): boolean {
+  return (
+    cell.category !== 'Water' &&
+    !cell.waterBorder &&
+    !cell.inclined &&
+    !cell.border &&
+    hasRequiredVisibility(cell, visibility) &&
+    cell.has?.family !== FAMILY_TYPES.building &&
+    (!visibility.canUseCell || visibility.canUseCell(cell))
+  )
+}
+
+export function getBuildingPlacementSearchSize(size: number): number {
+  return Math.max(0, Math.floor(size)) + BUILDING_PLACEMENT_EXTRA_SIZE
+}
+
+export function hasBuildingPlacementClearance<TCell extends PlacementClearanceCell = PlacementClearanceCell>(
+  grid: Grid<TCell>,
+  i: number,
+  j: number,
+  building: BuildingPlacement,
+  {
+    requireVisible = false,
+    requireExplored = false,
+    isExplored = null,
+    canUseCell = null,
+  }: Partial<PlacementVisibility<TCell>> = {}
+): boolean {
+  const size = getBuildingPlacementSearchSize(Number(building.size ?? 1))
+  const cells = getBuildingFootprintCells(i, j, grid, size)
+  if (cells.length !== size ** 2) return false
+
+  const visibility: PlacementVisibility<TCell> = {
+    requireVisible,
+    requireExplored,
+    isExplored,
+    canUseCell,
+  }
+  return cells.every(cell => canUseBuildingClearanceCell(cell, visibility))
 }
 
 export function getPositionInGridAroundInstance(
@@ -142,11 +192,21 @@ export function canPlaceBuildingAt<TCell extends GridCell = GridCell>(
   i: number,
   j: number,
   building: BuildingPlacement,
-  { requireVisible = false, requireExplored = false, isExplored = null }: Partial<PlacementVisibility<TCell>> = {}
+  {
+    requireVisible = false,
+    requireExplored = false,
+    isExplored = null,
+    canUseCell = null,
+  }: Partial<PlacementVisibility<TCell>> = {}
 ): boolean {
   const { cells, expectedCells } = getPlacementFootprintCells(grid, i, j, building)
   if (cells.length !== expectedCells) return false
 
-  const visibility: PlacementVisibility<TCell> = { requireVisible, requireExplored, isExplored }
+  const visibility: PlacementVisibility<TCell> = {
+    requireVisible,
+    requireExplored,
+    isExplored,
+    canUseCell,
+  }
   return canPlaceGroundBuilding(cells, visibility)
 }

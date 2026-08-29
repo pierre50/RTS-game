@@ -99,8 +99,8 @@ export interface PlayerLike {
   corpses: UnitEntity[]
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
-  buyBuilding?: (i: number, j: number, type: string) => boolean
-  plantWheatField?: (i: number, j: number) => boolean
+  buyBuilding?: (i: number, j: number, type: string, options?: { spaceId?: string }) => boolean
+  plantWheatField?: (i: number, j: number, options?: { spaceId?: string }) => boolean
   createBuilding: (
     options: Partial<BuildingConfig> & {
       i: number

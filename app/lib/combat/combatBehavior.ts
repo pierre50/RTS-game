@@ -1,5 +1,7 @@
 import { ACTION_TYPES, CELL_HEIGHT, CELL_WIDTH, SHEET_TYPES } from '../constants'
+import { createReservedPassageCellLookup } from '../buildings/passageCells'
 import { getCellsAroundPoint, getInstancePath } from '../grid'
+import { getEntitySpaceMapLike } from '../mapSpaces'
 import type { CombatBehaviorConfig, CombatRecoveryMode } from '../../types/config'
 import type { EnergyEntity, RuntimeEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -273,11 +275,12 @@ function findCombatRecoveryCell(
   target: RuntimeEntity,
   behavior: ResolvedCombatBehavior
 ): RecoveryCandidate | null {
-  const map = unit.context?.map as RuntimeMap | undefined
+  const map = getEntitySpaceMapLike(unit, unit.context?.map as RuntimeMap | null | undefined)
   if (!map) return null
   const desired = getDesiredRecoveryPoint(unit, target, behavior)
+  const passageLookup = createReservedPassageCellLookup(unit.context)
   const candidates = getCellsAroundPoint(target.i, target.j, map.grid, behavior.recoverySearchRadius, cell =>
-    isOpenRecoveryCell(unit, cell)
+    isOpenRecoveryCell(unit, cell) && !passageLookup.has(cell)
   )
 
   let best: RecoveryCandidate | null = null

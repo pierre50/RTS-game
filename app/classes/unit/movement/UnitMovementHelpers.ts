@@ -26,7 +26,12 @@ export const CAPTURE_HORSE_TRIGGER_RANGE = 4
 export const MAX_BLOCKED_GATHER_APPROACH_DISTANCE = 6
 export const SLIDE_PROBE_ANGLES = [Math.PI / 8, Math.PI / 4, (3 * Math.PI) / 8]
 
-export type SendToOptions = { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
+export type SendToOptions = {
+  forceRepath?: boolean
+  allowBlockedGatherApproach?: boolean
+  preserveAutonomy?: boolean
+  allowPassageStop?: boolean
+}
 export type DirectMoveOptions = { facingDirX?: number; facingDirY?: number }
 
 function getVillagerWorkForAction(action: string | null | undefined): string | null {
@@ -168,7 +173,11 @@ export function cellOccupantIsDest(cell: RuntimeCell, dest: RuntimeEntity | Runt
   return isRuntimeEntity(dest) && Boolean(cell.has?.label && cell.has.label === dest.label)
 }
 
-export function startActionIfAlreadyInRange(unit: UnitEntity, dest: RuntimeEntity | RuntimeCell, reason: string): boolean {
+export function startActionIfAlreadyInRange(
+  unit: UnitEntity,
+  dest: RuntimeEntity | RuntimeCell,
+  reason: string
+): boolean {
   if (!unit.action || !unit.isUnitAtDest?.(unit.action, dest)) return false
   unit.path = []
   unit.stopInterval?.()

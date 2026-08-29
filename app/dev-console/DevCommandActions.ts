@@ -40,4 +40,5 @@ export { spawnAnimal, spawnBuilding, spawnUnits, DECO_BUILDING_COMPLETIONS } fro
 
 export { addHeroInventoryEquipment } from './actions/heroInventory'
 
-export { forceNextDay, setTime, setWeatherPhase, showTimeState, WEATHER_PHASES } from './actions/world'
+export { advanceTime } from './actions/timeSkip'
+export { forceNextDay, setWeatherPhase, WEATHER_PHASES } from './actions/world'

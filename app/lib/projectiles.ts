@@ -1,6 +1,13 @@
+import type { ContainerChild } from 'pixi.js'
+import type { RuntimeMap } from '../types/map'
+
 type PlayerTechnologyState = {
   age?: number
   technologies?: string[]
+}
+
+type RuntimeProjectileDisplay = ContainerChild & {
+  attachToMapSpace?: () => void
 }
 
 const AGE_ARROW_PROJECTILES = ['ArrowCeramic', 'ArrowCopper', 'ArrowBronze', 'ArrowIron'] as const
@@ -24,4 +31,12 @@ export function getEffectiveProjectileType(projectileType: string, player?: Play
 
 export function projectileTracksTarget(projectileType: string, player?: PlayerTechnologyState | null): boolean {
   return !!player?.technologies?.includes('Ballistics') && BALLISTICS_PROJECTILES.has(projectileType)
+}
+
+export function attachProjectileToMapSpace(projectile: RuntimeProjectileDisplay, map: RuntimeMap): void {
+  if (typeof projectile.attachToMapSpace === 'function') {
+    projectile.attachToMapSpace()
+    return
+  }
+  map.addChild(projectile)
 }

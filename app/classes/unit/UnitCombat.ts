@@ -27,6 +27,7 @@ import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/eq
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
+import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -206,7 +207,7 @@ export class UnitCombat {
           },
           unit.context!
         )
-        map.addChild(projectile)
+        attachProjectileToMapSpace(projectile, map)
       })
     } else {
       this.runAttackLoop(

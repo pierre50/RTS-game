@@ -215,6 +215,36 @@ test('attack orders cannot target neutral berry bushes', () => {
   assert.equal(getActionCondition(swordsman, berrybush, 'attack'), false)
 })
 
+test('animals cannot attack buildings', () => {
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
+    '../constants': constants,
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+
+  const boar = {
+    family: constants.FAMILY_TYPES.animal,
+    hitPoints: 20,
+    isDead: false,
+    owner,
+    type: 'Boar',
+    weaponPower: 3,
+  }
+  const enemyHouse = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 120,
+    isDead: false,
+    owner: { label: 'enemy' },
+    type: 'House',
+  }
+  const enemyVillager = {
+    ...target,
+    type: 'Villager',
+  }
+
+  assert.equal(getActionCondition(boar, enemyHouse, 'attack'), false)
+  assert.equal(getActionCondition(boar, enemyVillager, 'attack'), true)
+})
+
 test('sendToAttack does not issue an attack order against neutral berry bushes', () => {
   const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,

@@ -120,6 +120,22 @@ function loadNpcInteraction(target, overrides = {}) {
   })
 }
 
+function createNpcTestGrid(size, spaceId = undefined) {
+  return Array.from({ length: size + 1 }, (_, i) =>
+    Array.from({ length: size + 1 }, (_, j) => ({
+      category: null,
+      corpses: new Set(),
+      has: null,
+      i,
+      j,
+      solid: false,
+      spaceId,
+      x: i,
+      y: j,
+    }))
+  )
+}
+
 test('"aller vers" sends villagers to attack an enemy under the cursor', () => {
   const enemyOwner = { label: 'enemy' }
   const target = {
@@ -147,6 +163,45 @@ test('"aller vers" sends villagers to attack an enemy under the cursor', () => {
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['attack', target]])
+})
+
+test('"aller vers" keeps empty go-to targets inside the clicked runtime map space', () => {
+  const outsideGrid = createNpcTestGrid(6)
+  const interiorGrid = createNpcTestGrid(6, 'interior:house')
+  const interiorCell = interiorGrid[4][4]
+  const outsideCellAtSameCoords = outsideGrid[4][4]
+  const map = {
+    grid: outsideGrid,
+    size: 6,
+    spaces: new Map([
+      [
+        'interior:house',
+        {
+          container: {},
+          grid: interiorGrid,
+          id: 'interior:house',
+          kind: 'interior',
+          origin: { x: 100, y: 50 },
+          size: 6,
+        },
+      ],
+    ]),
+  }
+  const calls = []
+  const npc = {
+    context: { map },
+    i: 2,
+    j: 2,
+    owner: {},
+    sendTo: orderCell => calls.push(orderCell),
+    spaceId: 'interior:house',
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null)
+
+  sendNpcGroupToTarget([npc], interiorCell, { x: 4, y: 4 })
+
+  assert.deepEqual(calls, [interiorCell])
+  assert.notEqual(calls[0], outsideCellAtSameCoords)
 })
 
 test('"aller vers" blinks the target once when any communicated NPC has a targeted action', () => {
@@ -587,9 +642,9 @@ test('talking to a sleeping villager previews a reversed wake and plays sleep hu
     getChildByLabel: () => null,
     addChildAt: () => {},
     context: {
-      villagerShelter: {
-        previewSleepingVillagerWake: unit => calls.push(['previewWake', unit.label]),
-        restoreSleepingVillagerVisual: unit => calls.push(['restoreSleep', unit.label]),
+      unitRest: {
+        previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
+        restoreSleepingUnitVisual: unit => calls.push(['restoreSleep', unit.label]),
       },
     },
     i: 1,
@@ -880,6 +935,46 @@ test('communication indicator cells use the same grid radius as group selection'
   assert.deepEqual(group, [inside])
   assert.ok(cells.includes('4:2'))
   assert.equal(cells.includes('4:4'), false)
+})
+
+test('communication indicator cells use the hero runtime map space grid', () => {
+  const owner = { label: 'player' }
+  const outsideGrid = createNpcTestGrid(5)
+  const interiorGrid = createNpcTestGrid(5, 'interior:house')
+  const hero = {
+    context: {
+      map: {
+        grid: outsideGrid,
+        size: 5,
+        spaces: new Map([
+          [
+            'interior:house',
+            {
+              container: {},
+              grid: interiorGrid,
+              id: 'interior:house',
+              kind: 'interior',
+              origin: { x: 100, y: 50 },
+              size: 5,
+            },
+          ],
+        ]),
+      },
+    },
+    degree: 0,
+    i: 2,
+    j: 2,
+    owner,
+    spaceId: 'interior:house',
+    x: 0,
+    y: 0,
+  }
+  const { getCommCellsInRadius } = loadCommModule([], () => 0)
+
+  const cells = getCommCellsInRadius(hero, 1)
+
+  assert.ok(cells.length > 0)
+  assert.equal(cells.every(cell => cell.spaceId === 'interior:house'), true)
 })
 
 test('hidden communication release only takes the ally in front of the hero even with a charged radius', () => {

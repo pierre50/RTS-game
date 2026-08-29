@@ -1,8 +1,10 @@
 import { Container, Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
-import { canPlaceBuildingAt } from '../../lib'
+import { addEntityToMapSpaceContainer, canPlaceBuildingAt, getMapSpace } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
+import type { RuntimeEntity } from '../../types/entities'
+import type { RuntimeMap } from '../../types/map'
 
 export { RESOURCE_NAMES } from '../../constants'
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
@@ -16,6 +18,7 @@ export const DEBUG_TERRAIN_FRAME_LAYER = 'debugTerrainFrameLayer'
 export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
 type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
+type DevRuntimeMap = RuntimeMap
 
 export function normalizeToggle(value: string | undefined, currently: boolean): boolean {
   return value === 'on' ? true : value === 'off' ? false : !currently
@@ -35,6 +38,14 @@ export function getAmount(value: string | number | undefined, fallback = 1): num
   return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
 }
 
+export function getDevMapSpace(context: DevConsoleContext, spaceId?: string | null) {
+  return getMapSpace(context.map as unknown as DevRuntimeMap, spaceId)
+}
+
+export function addDevEntityToMapSpaceContainer(context: DevConsoleContext, entity: RuntimeEntity): void {
+  addEntityToMapSpaceContainer(context.map as unknown as DevRuntimeMap, entity)
+}
+
 export function getSpawnCell(
   context: DevConsoleContext,
   {
@@ -45,10 +56,12 @@ export function getSpawnCell(
   const { map, controls } = context
   const cursorCell = controls?.getCellUnderCursor?.()
   if (!cursorCell) return null
+  const space = getDevMapSpace(context, cursorCell.spaceId)
+  const grid = space?.grid ?? map.grid
   if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
   if (
     buildingConfig &&
-    canPlaceBuildingAt(map.grid, cursorCell.i, cursorCell.j, buildingConfig)
+    canPlaceBuildingAt(grid, cursorCell.i, cursorCell.j, buildingConfig)
   )
     return cursorCell
 
@@ -57,10 +70,10 @@ export function getSpawnCell(
     for (let di = -radius; di <= radius; di++) {
       for (let dj = -radius; dj <= radius; dj++) {
         if (Math.abs(di) !== radius && Math.abs(dj) !== radius) continue
-        const cell = map.grid[cursorCell.i + di]?.[cursorCell.j + dj]
+        const cell = grid[cursorCell.i + di]?.[cursorCell.j + dj]
         if (!cell) continue
         if (buildingConfig) {
-          if (canPlaceBuildingAt(map.grid, cell.i, cell.j, buildingConfig))
+          if (canPlaceBuildingAt(grid, cell.i, cell.j, buildingConfig))
             return cell
         } else if (!cellCondition || cellCondition(cell)) {
           return cell

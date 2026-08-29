@@ -8,6 +8,7 @@ import {
   aiInfo,
   applyAllTechnologies,
   applyTechnology,
+  advanceTime,
   forceNextDay,
   healAll,
   highlightInstances,
@@ -17,11 +18,9 @@ import {
   setAge,
   setCiv,
   setGameSpeed,
-  setTime,
   toggleHeroInvincible,
   setPopMax,
   setWeatherPhase,
-  showTimeState,
   spawnAnimal,
   spawnBuilding,
   spawnUnits,
@@ -213,11 +212,11 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
   })
 
   registry.register({
-    name: 'time',
-    aliases: ['clock'],
-    usage: 'time [HH[:MM]]',
-    describe: 'Print or set day/night time',
-    run: ([value], context) => (value ? setTime(context, value) : showTimeState(context)),
+    name: 'next',
+    usage: 'next <1-12>',
+    describe: 'Fast-forward game simulation by up to 12 hours',
+    complete: () => ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+    run: ([value], context) => advanceTime(context, value),
   })
 
   registry.register({

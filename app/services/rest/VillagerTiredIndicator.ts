@@ -1,6 +1,6 @@
-import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
-import { updateVillagerTiredState } from '../lib/units/unitTired'
-import type { UnitEntity } from '../types/entities'
+import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
+import { updateVillagerTiredState } from '../../lib/units/unitTired'
+import type { UnitEntity } from '../../types/entities'
 
 const TIRED_INDICATOR_PERIOD_MS = 20000
 const TIRED_INDICATOR_VISIBLE_MS = 4000

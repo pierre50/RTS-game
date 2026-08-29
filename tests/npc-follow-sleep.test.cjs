@@ -28,8 +28,8 @@ test('stop following sends a released villager to sleep during sleep time', () =
     type: 'Villager',
     followingHero: true,
     context: {
-      villagerShelter: {
-        sendVillagerToSleep: unit => calls.push(['sleep', unit.label]),
+      unitRest: {
+        sendUnitToSleep: unit => calls.push(['sleep', unit.label]),
       },
     },
     label: 'villager-1',
@@ -48,8 +48,8 @@ test('follow me wakes a sleeping villager before enabling follow', () => {
   const villager = {
     type: 'Villager',
     context: {
-      villagerShelter: {
-        wakeSleepingVillagerForOrder: (unit, onComplete) => {
+      unitRest: {
+        wakeSleepingUnitForOrder: (unit, onComplete) => {
           calls.push(['wake', unit.label, typeof onComplete])
           onComplete?.()
           return true

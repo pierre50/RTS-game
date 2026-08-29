@@ -1,4 +1,5 @@
 import { instanceIsInPlayerSight } from './grid'
+import { isOutsideSpaceId } from './mapSpaces'
 export { Modal } from './ui/Modal'
 export {
   bindAnimatedSpriteToTicker,
@@ -200,6 +201,7 @@ type VisibleInstance = GridPosition & {
     label?: string
   } | null
   size?: number
+  spaceId?: string | null
 }
 
 type PlayerLike = {
@@ -220,6 +222,7 @@ const playerHasVisionOfInstance = (instance?: VisibleInstance | null, player?: P
 }
 
 export const canUpdateMinimap = (instance: VisibleInstance, player?: PlayerLike | null): boolean => {
+  if (!isOutsideSpaceId(instance.spaceId)) return false
   if (instance.context?.map?.revealEverything) return true
   return playerOwnsInstance(instance, player)
 }

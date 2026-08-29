@@ -1,4 +1,4 @@
-import { DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS, type EnvironmentId } from '../constants'
+import { DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
 import {
   BASE_PHASE_DURATIONS_SECONDS,
   BASE_WEATHER_TRANSITIONS,

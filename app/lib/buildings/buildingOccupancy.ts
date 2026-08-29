@@ -1,16 +1,12 @@
 import { BUILDING_TYPES } from '../../constants'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
+import { sameBuilding } from './identity'
 import { getInteriorExitCell } from './interiorExits'
 
 const DEFAULT_BUILDING_SHELTER_CAPACITY: Record<string, number> = {
   [BUILDING_TYPES.house]: 5,
   [BUILDING_TYPES.townCenter]: 10,
-}
-
-function sameBuilding(a: BuildingEntity | null | undefined, b: BuildingEntity | null | undefined): boolean {
-  if (!a || !b) return false
-  return a === b || Boolean(a.label && a.label === b.label)
 }
 
 export function getBuildingShelterCapacity(building: Pick<BuildingEntity, 'shelterCapacity' | 'type'> | null | undefined): number {

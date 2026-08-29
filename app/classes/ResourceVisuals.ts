@@ -1,7 +1,15 @@
 import { AnimatedSprite, Assets, Rectangle, Sprite, Texture, type Ticker } from 'pixi.js'
-import { bindAnimatedSpriteToTicker, getTextureByFrame, getTextureSheet, parseTextureRef } from '../lib'
+import {
+  bindAnimatedSpriteToTicker,
+  getEntityMapPoint,
+  getTextureByFrame,
+  getTextureSheet,
+  isEntityInActiveMapSpace,
+  parseTextureRef,
+} from '../lib'
 import { LABEL_TYPES, RESOURCE_TYPES } from '../constants'
 import { getResourceWindAnimationEnabled, getShadowsEnabled } from '../lib/audio/settings'
+import type { RuntimeMap } from '../types/map'
 
 export type ResourceShadow = Sprite | AnimatedSprite
 export type WindTick = (ticker: { deltaMS?: number; elapsedMS?: number }) => void
@@ -10,6 +18,7 @@ type TextureWithCacheIds = Texture & { textureCacheIds?: string[] }
 type ResourceVisualOwner = {
   context: {
     app: { ticker: { add: (tick: (ticker: Ticker) => void) => void; remove: (tick: (ticker: Ticker) => void) => void } }
+    map?: RuntimeMap | null
     paused?: boolean
   }
   destroyed?: boolean
@@ -33,6 +42,7 @@ type ResourceVisualOwner = {
   windTime: number
   x: number
   y: number
+  spaceId?: string | null
 }
 
 const resourceShadowTextureFrameCache = new Map<string, Texture>()
@@ -208,7 +218,7 @@ export function createShadow(resource: ResourceVisualOwner): ResourceShadow | nu
 
 export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shadow): void {
   if (!shadow || !resource.sprite) return
-  shadow.visible = getShadowsEnabled() && resource.visible && !resource.isDestroyed
+  shadow.visible = getShadowsEnabled() && resource.visible && !resource.isDestroyed && isEntityInActiveMapSpace(resource)
   if (resource.usesTextureShadow && shadow instanceof Sprite) {
     const shadowTexture = resource.textureName
       ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
@@ -223,7 +233,8 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
       shadow.alpha = SHADOW_MASK_ALPHA
       shadow.rotation = 0
       shadow.scale.set(resource.sprite.scale.x, resource.sprite.scale.y)
-      shadow.position.set(resource.x, resource.y + (resource.reliefLift ?? 0))
+      const point = getEntityMapPoint(resource)
+      shadow.position.set(point.x, point.y + (resource.reliefLift ?? 0))
       shadow.tint = 0xffffff
       return
     }
@@ -250,12 +261,14 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
     Math.abs(resource.sprite.scale.x) * SHADOW_SCALE_X,
     Math.abs(resource.sprite.scale.y) * SHADOW_SCALE_Y
   )
-  shadow.position.set(resource.x, resource.y + (resource.reliefLift ?? 0))
+  const point = getEntityMapPoint(resource)
+  shadow.position.set(point.x, point.y + (resource.reliefLift ?? 0))
 }
 
 export function syncVisualSettings(resource: ResourceVisualOwner): void {
   if (resource.shadow) {
-    resource.shadow.visible = getShadowsEnabled() && resource.visible && !resource.isDestroyed
+    resource.shadow.visible =
+      getShadowsEnabled() && resource.visible && !resource.isDestroyed && isEntityInActiveMapSpace(resource)
   }
   if (getResourceWindAnimationEnabled()) {
     startWindMotion(resource)

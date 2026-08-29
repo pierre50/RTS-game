@@ -1,6 +1,7 @@
 import { sound } from '@pixi/sound'
 import { SOUND_DISTANCE_PROFILES, type SoundDistanceProfileId } from '../../config/soundDistance'
 import { isometricToCartesian } from '../maths'
+import { sameMapSpace } from '../mapSpaces'
 import { pickRandomItem } from '../random'
 import type { AudibleInstanceLike } from '../../types/context'
 
@@ -13,10 +14,12 @@ type PlayAudibleSoundCueOptions = PlaySoundCueOptions & {
   profile?: SoundDistanceProfileId
 }
 
+let gameplaySoundSuppressed = false
+
 export type AudibleInstance = {
   context?: {
     controls?: {
-      heroUnit?: { x?: number; y?: number } | null
+      heroUnit?: AudibleInstanceLike | null
       instanceIsAudible?: (instance: AudibleInstanceLike) => boolean
     }
   }
@@ -31,6 +34,14 @@ function resolveSoundCue(cue: MaybeSoundCue): SoundCue | null {
   if (cue == null) return null
   if (Array.isArray(cue)) return cue.length ? pickRandomItem(cue) : null
   return cue
+}
+
+export function isGameplaySoundSuppressed(): boolean {
+  return gameplaySoundSuppressed
+}
+
+export function setGameplaySoundSuppressed(suppressed: boolean): void {
+  gameplaySoundSuppressed = suppressed
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -55,6 +66,8 @@ export function getHeroDistanceSoundVolume(
 ): number {
   const profile = SOUND_DISTANCE_PROFILES[profileId]
   const hero = instance.context?.controls?.heroUnit
+  if (hero && hero !== instance && !sameMapSpace(instance, hero)) return 0
+
   const instanceCell = getCellPosition(instance)
   const heroCell = hero ? getCellPosition(hero as AudibleInstance) : null
   if (!hero || hero === instance || !instanceCell || !heroCell) {
@@ -69,6 +82,7 @@ export function getHeroDistanceSoundVolume(
 }
 
 export function playSoundCue(cue: MaybeSoundCue, options: PlaySoundCueOptions = {}): SoundCue | null {
+  if (gameplaySoundSuppressed) return null
   const soundId = resolveSoundCue(cue)
   if (!soundId) return null
   sound.play(soundId as string, options)
@@ -80,6 +94,7 @@ export function playAudibleSoundCue(
   cue: MaybeSoundCue,
   options: PlayAudibleSoundCueOptions = {}
 ): SoundCue | null {
+  if (gameplaySoundSuppressed) return null
   if (!instance?.context?.controls?.instanceIsAudible?.(instance)) return null
   const { profile, ...playOptions } = options
   const volume = getHeroDistanceSoundVolume(instance, profile, playOptions.volume ?? 1)

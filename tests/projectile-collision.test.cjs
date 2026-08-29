@@ -118,6 +118,17 @@ function loadProjectile(libOverrides = {}) {
       uuidv4: () => 'projectile-1',
       ...libOverrides,
     },
+    '../lib/mapSpaces': {
+      addDisplayObjectToMapSpaceContainer: (map, display) => {
+        const space = map.spaces?.get?.(display.spaceId || 'outside')
+        const container = space?.container ?? map
+        container.addChild?.(display)
+        display.parent = container
+      },
+      getEntitySpaceGrid: (entity, map) => map?.spaces?.get?.(entity?.spaceId || 'outside')?.grid ?? map?.grid ?? null,
+      getEntitySpaceMapLike: (entity, map) => map?.spaces?.get?.(entity?.spaceId || 'outside') ?? map ?? null,
+      sameMapSpace: (a, b) => (a?.spaceId ?? 'outside') === (b?.spaceId ?? 'outside'),
+    },
     '../lib/projectiles': {
       getEffectiveProjectileType: type => type,
       projectileTracksTarget: () => false,
@@ -175,6 +186,91 @@ function loadProjectile(libOverrides = {}) {
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.Projectile
 }
+
+test('projectiles collide only with entities in their runtime map space', () => {
+  const Projectile = loadProjectile()
+  const insideTarget = {
+    family: 'unit',
+    hitPoints: 10,
+    isDead: false,
+    isDestroyed: false,
+    owner: { label: 'enemy' },
+    spaceId: 'interior:test',
+  }
+  const outsideTarget = {
+    family: 'unit',
+    hitPoints: 10,
+    isDead: false,
+    isDestroyed: false,
+    owner: { label: 'enemy' },
+  }
+  const projectile = Object.create(Projectile.prototype)
+
+  Object.assign(projectile, {
+    context: {
+      map: { gaia: { animals: [] } },
+      players: [{ buildings: [], units: [insideTarget, outsideTarget], animals: [] }],
+    },
+    owner: { owner: { label: 'player' }, spaceId: 'interior:test' },
+    spaceId: 'interior:test',
+  })
+
+  assert.deepEqual(projectile.getCollisionCandidates(), [insideTarget])
+})
+
+test('landed projectiles use their runtime map space grid', () => {
+  const Projectile = loadProjectile({ isometricToCartesian: () => [1, 1] })
+  const outsideCell = { category: 'Grass', corpses: new Set(), i: 1, j: 1, waterBorder: false }
+  const interiorCell = {
+    category: 'Grass',
+    corpses: new Set(),
+    i: 1,
+    j: 1,
+    spaceId: 'interior:test',
+    waterBorder: false,
+  }
+  const projectile = Object.create(Projectile.prototype)
+
+  Object.assign(projectile, {
+    applyEmbeddedMask: () => {},
+    context: {
+      map: {
+        grid: [[null, null], [null, outsideCell]],
+        size: 1,
+        spaces: new Map([
+          [
+            'interior:test',
+            {
+              container: {},
+              grid: [[null, null], [null, interiorCell]],
+              id: 'interior:test',
+              kind: 'interior',
+              origin: { x: 0, y: 0 },
+              size: 1,
+            },
+          ],
+        ]),
+      },
+      scheduler: { addOneShot: () => null, remove: () => {} },
+    },
+    createImpactEffect: () => {},
+    destroy: () => {},
+    interval: null,
+    isDead: false,
+    isDestroyed: false,
+    shadow: { visible: true },
+    spaceId: 'interior:test',
+    sprite: { stop: () => {} },
+    stopTimeout: () => {},
+    x: 64,
+    y: 32,
+  })
+
+  projectile.landOnGround()
+
+  assert.equal(interiorCell.corpses.has(projectile), true)
+  assert.equal(outsideCell.corpses.has(projectile), false)
+})
 
 test('projectile collision candidates include enemy buildings', () => {
   const Projectile = loadProjectile()

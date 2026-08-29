@@ -1,5 +1,6 @@
 import { pointInRectangle, pointIsBetweenTwoPoint, updateInstanceRenderVisibility } from '../lib'
 import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
+import { getActiveMapSpace, OUTSIDE_SPACE_ID } from '../lib/mapSpaces'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/audio/settings'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -39,6 +40,13 @@ type MouseMoveState = {
   dir: CameraDirection[]
   calcs: Record<CameraDirection, number>
 }
+type CameraMapSpaceView = {
+  grid: RuntimeMap['grid']
+  id: string
+  isOutside: boolean
+  origin: Point
+  size: number
+}
 
 export class CameraController {
   context: CameraContext
@@ -61,19 +69,31 @@ export class CameraController {
     this._lastVisibleCellsViewportKey = null
   }
 
-  getCameraDiamondBounds(): { A: Point; B: Point; D: Point; C: Point } {
+  getActiveCameraSpace(): CameraMapSpaceView {
     const { map } = this.context
+    const space = getActiveMapSpace(map)
     return {
-      A: { x: CELL_WIDTH / 2 - this.camera.x, y: -this.camera.y },
+      grid: space?.grid ?? map.grid,
+      id: space?.id ?? OUTSIDE_SPACE_ID,
+      isOutside: !space || space.id === OUTSIDE_SPACE_ID || space.container === map,
+      origin: space?.origin ?? { x: 0, y: 0 },
+      size: space?.size ?? map.size,
+    }
+  }
+
+  getCameraDiamondBounds(): { A: Point; B: Point; D: Point; C: Point } {
+    const { origin, size } = this.getActiveCameraSpace()
+    return {
+      A: { x: origin.x + CELL_WIDTH / 2 - this.camera.x, y: origin.y - this.camera.y },
       B: {
-        x: CELL_WIDTH / 2 - (map.size * CELL_WIDTH) / 2 - this.camera.x,
-        y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+        x: origin.x + CELL_WIDTH / 2 - (size * CELL_WIDTH) / 2 - this.camera.x,
+        y: origin.y + (size * CELL_HEIGHT) / 2 - this.camera.y,
       },
       D: {
-        x: CELL_WIDTH / 2 + (map.size * CELL_WIDTH) / 2 - this.camera.x,
-        y: (map.size * CELL_HEIGHT) / 2 - this.camera.y,
+        x: origin.x + CELL_WIDTH / 2 + (size * CELL_WIDTH) / 2 - this.camera.x,
+        y: origin.y + (size * CELL_HEIGHT) / 2 - this.camera.y,
       },
-      C: { x: CELL_WIDTH / 2 - this.camera.x, y: map.size * CELL_HEIGHT - this.camera.y },
+      C: { x: origin.x + CELL_WIDTH / 2 - this.camera.x, y: origin.y + size * CELL_HEIGHT - this.camera.y },
     }
   }
 
@@ -86,11 +106,14 @@ export class CameraController {
     ].join(':')
   }
 
+  getVisibleCellsStateKey(viewport: Viewport): string {
+    return `${this.getActiveCameraSpace().id}:${this.getVisibleCellsViewportKey(viewport)}`
+  }
+
   scheduleVisibleCellsUpdate(): void {
-    const { map } = this.context
-    if (!map?.grid?.length) return
+    if (!this.getActiveCameraSpace().grid?.length) return
     const viewport = this.getViewportRect()
-    if (this.getVisibleCellsViewportKey(viewport) === this._lastVisibleCellsViewportKey) return
+    if (this.getVisibleCellsStateKey(viewport) === this._lastVisibleCellsViewportKey) return
     if (this._rafPending) return
     this._rafPending = true
     requestAnimationFrame(() => {
@@ -123,14 +146,16 @@ export class CameraController {
   }
 
   clampWorldPointToMap(x: number, y: number): { x: number; y: number } {
-    const { map } = this.context
-    const gridX = (x / (CELL_WIDTH / 2) + y / (CELL_HEIGHT / 2)) / 2
-    const gridY = (y / (CELL_HEIGHT / 2) - x / (CELL_WIDTH / 2)) / 2
-    const clampedX = Math.min(Math.max(gridX, 0), map.size)
-    const clampedY = Math.min(Math.max(gridY, 0), map.size)
+    const { origin, size } = this.getActiveCameraSpace()
+    const localX = x - origin.x
+    const localY = y - origin.y
+    const gridX = (localX / (CELL_WIDTH / 2) + localY / (CELL_HEIGHT / 2)) / 2
+    const gridY = (localY / (CELL_HEIGHT / 2) - localX / (CELL_WIDTH / 2)) / 2
+    const clampedX = Math.min(Math.max(gridX, 0), size)
+    const clampedY = Math.min(Math.max(gridY, 0), size)
     return {
-      x: ((clampedX - clampedY) * CELL_WIDTH) / 2,
-      y: ((clampedX + clampedY) * CELL_HEIGHT) / 2,
+      x: origin.x + ((clampedX - clampedY) * CELL_WIDTH) / 2,
+      y: origin.y + ((clampedX + clampedY) * CELL_HEIGHT) / 2,
     }
   }
 
@@ -277,14 +302,12 @@ export class CameraController {
   }
 
   getCellOnCamera(callback: (cell: RuntimeCell) => void): void {
-    const {
-      context: { map },
-    } = this
+    const { grid, origin, size } = this.getActiveCameraSpace()
 
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = this.getViewportRect()
     const cameraFloor = {
-      x: Math.floor(visibleLeft),
-      y: Math.floor(visibleTop),
+      x: Math.floor(visibleLeft - origin.x),
+      y: Math.floor(visibleTop - origin.y),
     }
     const margin = CELL_WIDTH
 
@@ -294,24 +317,25 @@ export class CameraController {
     const invCH = 1 / CELL_HEIGHT
     for (let i = cameraFloor.x - margin; i <= cameraFloor.x + visibleWidth + margin; i += stepX) {
       for (let j = cameraFloor.y - margin; j <= cameraFloor.y + visibleHeight + margin; j += stepY) {
-        const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
-        const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
-        if (map.grid[x]?.[y]) callback(map.grid[x][y])
+        const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), size)
+        const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), size)
+        if (grid[x]?.[y]) callback(grid[x][y])
       }
     }
   }
 
   updateVisibleCells(force = true): void {
     const { map, player } = this.context
-    if (!map?.grid?.length) return
+    const activeSpace = this.getActiveCameraSpace()
+    if (!activeSpace.grid?.length) return
     const viewport = this.getViewportRect()
-    const viewportKey = this.getVisibleCellsViewportKey(viewport)
+    const viewportKey = this.getVisibleCellsStateKey(viewport)
     if (!force && viewportKey === this._lastVisibleCellsViewportKey) {
       this.context.performance?.record('camera.visibleCellsSkip', 0)
       return
     }
     this._lastVisibleCellsViewportKey = viewportKey
-    map.updateRenderChunks?.(viewport)
+    if (activeSpace.isOutside) map.updateRenderChunks?.(viewport)
 
     const startedAt = performance.now()
     try {
@@ -320,11 +344,13 @@ export class CameraController {
       newVisible.clear()
       const margin = CAMERA_CULL_MARGIN
       const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
+      const localVisibleLeft = visibleLeft - activeSpace.origin.x
+      const localVisibleTop = visibleTop - activeSpace.origin.y
 
-      const startX = Math.floor(visibleLeft - margin)
-      const endX = Math.floor(visibleLeft + visibleWidth + margin)
-      const startY = Math.floor(visibleTop - margin)
-      const endY = Math.floor(visibleTop + visibleHeight + margin)
+      const startX = Math.floor(localVisibleLeft - margin)
+      const endX = Math.floor(localVisibleLeft + visibleWidth + margin)
+      const startY = Math.floor(localVisibleTop - margin)
+      const endY = Math.floor(localVisibleTop + visibleHeight + margin)
 
       const stepX = CELL_WIDTH / 2
       const stepY = CELL_HEIGHT / 2
@@ -332,9 +358,9 @@ export class CameraController {
       const invCH = 1 / CELL_HEIGHT
       for (let i = startX; i <= endX; i += stepX) {
         for (let j = startY; j <= endY; j += stepY) {
-          const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), map.size)
-          const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), map.size)
-          const cell = map.grid[x]?.[y]
+          const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), activeSpace.size)
+          const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), activeSpace.size)
+          const cell = activeSpace.grid[x]?.[y]
           if (cell) newVisible.add(cell)
         }
       }
@@ -371,7 +397,11 @@ export class CameraController {
       y: center.y - app.screen.height / 2,
     }
     const moved = nextCamera.x !== this.camera.x || nextCamera.y !== this.camera.y
-    if (!moved) return
+    if (!moved) {
+      if (refreshVisibleCells) this.updateVisibleCells()
+      else this.scheduleVisibleCellsUpdate()
+      return
+    }
 
     this.camera = nextCamera
     this.applyCameraTransform()

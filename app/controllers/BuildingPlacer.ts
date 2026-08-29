@@ -1,14 +1,16 @@
 import { Assets, Container, Sprite } from 'pixi.js'
 import {
   cartesianToIsometric,
-  isometricToCartesian,
   canAfford,
   canPlaceBuildingAt,
   getBuildingFootprintCells,
+  hasBuildingPlacementClearance,
   getTexture,
   payCost,
   isBuildingLimitReached,
 } from '../lib'
+import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
+import { getCellMapPoint, getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { WallPlacementController } from './WallPlacementController'
@@ -36,10 +38,7 @@ export class BuildingPlacer {
     this.wallPlacementController = new WallPlacementController({
       context: controls.context,
       parent: controls,
-      getPreviewPosition: (cell: RuntimeCell) => ({
-        x: cell.x - controls.camera.x,
-        y: cell.y - controls.camera.y,
-      }),
+      getPreviewPosition: (cell: RuntimeCell) => this.getPreviewPosition(cell),
       canUseCell: (cell: RuntimeCell, owner: PlacementOwner, allowExistingWall?: boolean) =>
         this.canWallUseCell(cell, owner, allowExistingWall),
       onCommit: (path: RuntimeCell[], owner: PlacementOwner) => this.commitWallPath(path, owner),
@@ -48,12 +47,16 @@ export class BuildingPlacer {
 
   getPointerCell(): RuntimeCell | null {
     const { controls } = this
-    const {
-      context: { map },
-    } = controls
-    const pointer = controls.screenToLocal(controls.mouse.x, controls.mouse.y)
-    const [i, j] = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
-    return map.grid[Math.min(Math.max(i, 0), map.size)]?.[Math.min(Math.max(j, 0), map.size)] || null
+    return controls.getCellUnderCursor?.() ?? null
+  }
+
+  getPreviewPosition(cell: RuntimeCell): { x: number; y: number } {
+    const { controls } = this
+    const point = getCellMapPoint(cell, controls.context.map)
+    return {
+      x: point.x - controls.camera.x,
+      y: point.y - controls.camera.y,
+    }
   }
 
   handleMouseMove(): void {
@@ -71,8 +74,9 @@ export class BuildingPlacer {
         const canPlace = this.canWallUseCell(cell, player)
         sprite.visible = true
         sprite.tint = canPlace ? COLOR_GREEN : COLOR_RED
-        mouseBuilding.x = cell.x - controls.camera.x
-        mouseBuilding.y = cell.y - controls.camera.y
+        const point = this.getPreviewPosition(cell)
+        mouseBuilding.x = point.x
+        mouseBuilding.y = point.y
       } else {
         sprite.visible = false
       }
@@ -80,8 +84,9 @@ export class BuildingPlacer {
       return
     }
 
-    mouseBuilding.x = cell.x - controls.camera.x
-    mouseBuilding.y = cell.y - controls.camera.y
+    const point = this.getPreviewPosition(cell)
+    mouseBuilding.x = point.x
+    mouseBuilding.y = point.y
     const isFree = this.canPlaceMouseBuilding(cell)
 
     const tint = isFree ? COLOR_GREEN : COLOR_RED
@@ -104,7 +109,7 @@ export class BuildingPlacer {
       if (mouseBuilding.type === BUILDING_TYPES.farm) {
         return this.placeWheatField(cell)
       }
-      if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type)) {
+      if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type, { spaceId: cell.spaceId })) {
         controls.removeMouseBuilding()
         if (controls.isHeroControlActive?.()) {
           menu.setActionTarget(controls.heroUnit ?? null)
@@ -167,6 +172,7 @@ export class BuildingPlacer {
         context: { map },
       },
     } = this
+    if (!isOutsideSpaceId(cell.spaceId)) return cell.visible !== false
     return Boolean(cell && (map.revealEverything || map.revealTerrain || owner?.views?.isViewed(cell.i, cell.j)))
   }
 
@@ -177,16 +183,24 @@ export class BuildingPlacer {
         context: { map, player },
       },
     } = this
+    const space = getMapSpace(map, cell.spaceId)
+    const grid = space?.grid ?? map.grid
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
     if (!cell) return false
     if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
-    return canPlaceBuildingAt(map.grid, cell.i, cell.j, mouseBuilding, {
+    const passageLookup = createReservedPassageCellLookup(controls.context)
+    const placementOptions = {
       requireVisible: true,
       requireExplored: true,
-      isExplored: candidate => this.isExploredForPlacement(candidate, player),
-    })
+      isExplored: (candidate: RuntimeCell) => this.isExploredForPlacement(candidate, player),
+      canUseCell: (candidate: RuntimeCell) => !passageLookup.has(candidate),
+    }
+    return (
+      canPlaceBuildingAt(grid, cell.i, cell.j, mouseBuilding, placementOptions) &&
+      hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions)
+    )
   }
 
   addWheatFieldPreview(container: Container, texture: ReturnType<typeof getTexture>): void {
@@ -223,7 +237,7 @@ export class BuildingPlacer {
     const {
       context: { menu, player },
     } = controls
-    if (!player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm)) return false
+    if (!player.buyBuilding?.(cell.i, cell.j, BUILDING_TYPES.farm, { spaceId: cell.spaceId })) return false
 
     controls.removeMouseBuilding()
     if (controls.isHeroControlActive?.()) {
@@ -237,8 +251,10 @@ export class BuildingPlacer {
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
     const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
     if (!hero || hero.isDead || hero.isDestroyed) return false
+    if (!sameCellMapSpace(hero, cell)) return false
     const size = typeof building.size === 'number' ? building.size : 1
-    return getBuildingFootprintCells(cell.i, cell.j, this.controls.context.map.grid, size).some(
+    const space = getMapSpace(this.controls.context.map, cell.spaceId)
+    return getBuildingFootprintCells(cell.i, cell.j, space?.grid ?? this.controls.context.map.grid, size).some(
       footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
     )
   }
@@ -293,6 +309,7 @@ export class BuildingPlacer {
       owner.createBuilding({
         i: cell.i,
         j: cell.j,
+        spaceId: cell.spaceId,
         type: BUILDING_TYPES.smallWall,
         isBuilt: map.instantMode,
       })

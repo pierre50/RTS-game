@@ -5,6 +5,7 @@ import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
 import { getCellsInCellRadius } from '../grid/cells'
+import { getEntitySpaceMapLike } from '../mapSpaces'
 import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
@@ -71,7 +72,7 @@ function findNearestOpenableEntity(hero: UnitEntity, openEntityTarget?: RuntimeE
 
   addCandidate(openEntityTarget)
 
-  const grid = hero.context?.map?.grid
+  const grid = getEntitySpaceMapLike(hero, hero.context?.map)?.grid
   if (grid) {
     for (const cell of getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, OPENABLE_CORPSE_CELL_RADIUS)) {
       for (const corpse of cell.corpses ?? []) addCandidate(corpse)

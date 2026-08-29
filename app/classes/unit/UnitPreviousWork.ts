@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, TYPE_ACTION } from '../../constants'
 import { resumeVillagerAutonomy } from '../../lib'
+import { getEntityCell } from '../../lib/mapSpaces'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
@@ -23,6 +24,12 @@ function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value i
 function resumeAutonomyOrStop(unit: UnitEntity): void {
   if (resumeVillagerAutonomy?.(unit)) return
   unit.stop?.()
+}
+
+function sendBackToPreviousDestinationCell(unit: UnitEntity, dest: RuntimeEntity, action?: string): void {
+  const map = unit.context?.map
+  const cell = map ? getEntityCell(dest, map) : null
+  if (cell) unit.sendToEvt?.(cell, action)
 }
 
 export function restorePreviousWork(unit: UnitEntity): void {
@@ -57,40 +64,36 @@ export function clearInvalidPreviousTask(unit: UnitEntity): boolean {
 }
 
 function routeBackToAnimal(unit: UnitEntity, dest: RuntimeEntity): void {
-  const map = unit.context?.map
   if (unit.getActionCondition?.(dest, ACTION_TYPES.takemeat)) {
     unit.sendToTakeMeat?.(dest, true)
-  } else if (map) {
-    unit.sendToEvt?.(map.grid[dest.i][dest.j], ACTION_TYPES.hunt)
+  } else {
+    sendBackToPreviousDestinationCell(unit, dest, ACTION_TYPES.hunt)
   }
 }
 
 function routeBackToBuilding(unit: UnitEntity, dest: RuntimeEntity): void {
-  const map = unit.context?.map
   if (unit.getActionCondition?.(dest, ACTION_TYPES.build)) {
     if (isBuildingEntity(dest)) unit.sendToBuilding?.(dest)
   } else if (unit.getActionCondition?.(dest, ACTION_TYPES.farm)) {
     unit.sendToFarm?.(dest, true)
-  } else if (map) {
-    unit.sendToEvt?.(map.grid[dest.i][dest.j], ACTION_TYPES.build)
+  } else {
+    sendBackToPreviousDestinationCell(unit, dest, ACTION_TYPES.build)
   }
 }
 
 function routeBackToResource(unit: UnitEntity, dest: RuntimeEntity, type: string): boolean {
-  const map = unit.context?.map
   const action = TYPE_ACTION[type as keyof typeof TYPE_ACTION]
   if (!action) return false
   if (unit.getActionCondition?.(dest, action)) {
     const sendTo = RESOURCE_SEND_TO_BY_TYPE[type as keyof typeof TYPE_ACTION]
-    if (!sendTo(unit, dest)) unit.stop?.()
-  } else if (map) {
-    unit.sendToEvt?.(map.grid[dest.i][dest.j], action)
+    if (!sendTo?.(unit, dest)) sendBackToPreviousDestinationCell(unit, dest, action)
+  } else {
+    sendBackToPreviousDestinationCell(unit, dest, action)
   }
   return true
 }
 
 export function goBackToPrevious(unit: UnitEntity): true | void {
-  const map = unit.context?.map
   clearInvalidPreviousTask(unit)
   if (!unit.previousDest) {
     restorePreviousWork(unit)
@@ -117,7 +120,7 @@ export function goBackToPrevious(unit: UnitEntity): true | void {
     routeBackToAnimal(unit, dest)
   } else if (dest.family === FAMILY_TYPES.building) {
     routeBackToBuilding(unit, dest)
-  } else if (!routeBackToResource(unit, dest, type ?? '') && map) {
-    unit.sendToEvt?.(map.grid[dest.i][dest.j])
+  } else if (!routeBackToResource(unit, dest, type ?? '')) {
+    sendBackToPreviousDestinationCell(unit, dest)
   }
 }

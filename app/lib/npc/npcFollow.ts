@@ -6,6 +6,7 @@ import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../../types/entiti
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { findInstancesInSight } from '../grid/visibility'
 import { isometricToCartesian } from '../maths'
+import { getEntitySpaceMapLike, sameMapSpace } from '../mapSpaces'
 
 const FOLLOW_SLACK = 2
 const ESCORT_ENGAGE_RANGE = 7
@@ -89,7 +90,7 @@ function getFormationSlotCell(
   hero: UnitEntity,
   slotIndex: number,
   totalCount: number,
-  map: RuntimeMap
+  map: Pick<RuntimeMap, 'grid'>
 ): RuntimeCell | null {
   const { back, side } = getFormationSlotOffset(slotIndex, totalCount)
   const rad = ((hero.degree ?? 0) - 180) * (Math.PI / 180)
@@ -105,7 +106,7 @@ function getFormationSlotCell(
 
 export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boolean } = {}): void {
   const units = hero.owner?.units
-  const map = hero.context?.map
+  const map = getEntitySpaceMapLike(hero, hero.context?.map)
   if (!units || !map) return
   const heroCell = map.grid[hero.i]?.[hero.j]
   if (!heroCell) return
@@ -113,6 +114,7 @@ export function updateNpcFollow(hero: UnitEntity, options: { matchHeroWalk?: boo
   const formationUnits: UnitEntity[] = []
   for (const unit of units) {
     if (!unit.followingHero || unit === hero || unit.isDead || unit.isDestroyed) continue
+    if (!sameMapSpace(hero, unit)) continue
     syncFollowerCrouchPose(hero, unit)
     if (options.matchHeroWalk) requestUnitWalk(unit)
     else clearRequestedMoveSpeedFactor(unit)

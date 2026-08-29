@@ -1,7 +1,13 @@
 import { Container, Matrix, RenderTexture, Sprite } from 'pixi.js'
 import { getShadowsEnabled } from '../lib/audio/settings'
+import {
+  ensureOutsideMapSpace,
+  getActiveMapSpace,
+  getMapSpaceShadowLayer,
+  getMapSpaceShadowRenderContainer,
+} from '../lib/mapSpaces'
 import type { GameContextLike } from '../types/context'
-import type { RuntimeMap } from '../types/map'
+import type { RuntimeMap, RuntimeMapSpace } from '../types/map'
 
 type TickerLike = { deltaMS?: number; elapsedMS?: number }
 type ViewportMetrics = {
@@ -15,6 +21,7 @@ const TARGET_FRAME_MS = 1000 / 60
 const SHADOW_ALPHA = 0.42
 const SHADOW_LAYER_Z_INDEX = 0.5
 const SHADOW_RENDER_OFFSET_Y = 3
+type ShadowRenderContainer = Container | RuntimeMap
 
 export class ShadowSystem {
   context: GameContextLike
@@ -50,8 +57,26 @@ export class ShadowSystem {
     context.app.ticker.add(this._onTick)
   }
 
+  getActiveShadowSpace(): RuntimeMapSpace {
+    return getActiveMapSpace(this.map) ?? ensureOutsideMapSpace(this.map)
+  }
+
+  attachLayerTo(container: ShadowRenderContainer): void {
+    if (this.layer.parent === container) return
+    this.layer.parent?.removeChild(this.layer)
+    container.addChild(this.layer)
+    ;(container as ShadowRenderContainer & { sortChildren?: () => void }).sortChildren?.()
+  }
+
   update(_elapsedMs: number): void {
-    const sourceLayer = this.map.shadowLayer
+    const space = this.getActiveShadowSpace()
+    const sourceLayer = getMapSpaceShadowLayer(this.map, space)
+    const renderContainer = getMapSpaceShadowRenderContainer(this.map, space)
+    if (!renderContainer) {
+      this.layer.visible = false
+      return
+    }
+    this.attachLayerTo(renderContainer)
     if (!sourceLayer || !getShadowsEnabled() || sourceLayer.children.length === 0) {
       this.layer.visible = false
       return
@@ -65,7 +90,8 @@ export class ShadowSystem {
 
     this.layer.visible = true
     this.resizeTexture(viewport)
-    this.sprite.position.set(viewport.visibleLeft, viewport.visibleTop + SHADOW_RENDER_OFFSET_Y)
+    const origin = space.origin ?? { x: 0, y: 0 }
+    this.sprite.position.set(viewport.visibleLeft - origin.x, viewport.visibleTop - origin.y + SHADOW_RENDER_OFFSET_Y)
     this.sprite.width = viewport.visibleWidth
     this.sprite.height = viewport.visibleHeight
     this.transform.identity()

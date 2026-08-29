@@ -1,8 +1,10 @@
 import { Container, Sprite, Texture } from 'pixi.js'
 import { FADE_DURATION_MS, UNIT_TYPES } from '../constants'
 import { getInstanceScreenBounds } from '../lib/grid/visibility'
+import { OUTSIDE_SPACE_ID, getActiveMapSpace, getEntityMapPoint } from '../lib/mapSpaces'
 import type { GameContextLike } from '../types/context'
 import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../types/entities'
+import type { RuntimeMapSpace } from '../types/map'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
@@ -195,14 +197,15 @@ export class LightSystem {
     const heroFlicker = 1.08 + Math.sin(now * 0.006) * 0.025 + Math.sin(now * 0.013) * 0.012
 
     if (hero && !hero.isDead && !hero.isDestroyed) {
+      const point = getEntityMapPoint(hero)
       this.addTrackedLightSource('hero', {
         color: '255,198,96',
         fadeOutMs: LIGHT_FADE_OUT_MS,
         intensity: clamp(heroFlicker, 1, 1.16),
         radius: HERO_LIGHT_RADIUS / zoom,
         verticalScale: HERO_LIGHT_VERTICAL_SCALE,
-        x: hero.x - visibleLeft,
-        y: hero.y - visibleTop + HERO_LIGHT_CENTER_OFFSET_Y / zoom,
+        x: point.x - visibleLeft,
+        y: point.y - visibleTop + HERO_LIGHT_CENTER_OFFSET_Y / zoom,
       })
     }
 
@@ -213,8 +216,10 @@ export class LightSystem {
   }
 
   collectEntityLights(visibleLeft: number, visibleTop: number, zoom: number, now: number): void {
-    const buckets = this.context.map?.instanceBuckets
     const controls = this.context.controls
+    const activeSpace = getActiveMapSpace(this.context.map)
+    const buckets =
+      activeSpace && activeSpace.id !== OUTSIDE_SPACE_ID ? activeSpace.instanceBuckets : this.context.map?.instanceBuckets
     if (!buckets || !controls) return
 
     const seen = new Set<RuntimeEntity>()
@@ -223,13 +228,21 @@ export class LightSystem {
         for (const instance of bucket as Set<RuntimeEntity>) {
           if (seen.has(instance)) continue
           seen.add(instance)
-          this.addEntityLights(instance, visibleLeft, visibleTop, zoom, now)
+          this.addEntityLights(instance, visibleLeft, visibleTop, zoom, now, activeSpace)
         }
       }
     }
   }
 
-  addEntityLights(instance: RuntimeEntity, visibleLeft: number, visibleTop: number, zoom: number, now: number): void {
+  addEntityLights(
+    instance: RuntimeEntity,
+    visibleLeft: number,
+    visibleTop: number,
+    zoom: number,
+    now: number,
+    activeSpace?: RuntimeMapSpace | null
+  ): void {
+    if (activeSpace && activeSpace.id !== OUTSIDE_SPACE_ID && instance.spaceId !== activeSpace.id) return
     if (
       instance.isDead ||
       instance.isDestroyed ||
@@ -332,10 +345,11 @@ export class LightSystem {
     const flickerRatio = flicker ? 1 + Math.sin(now * 0.007 + instance.i * 0.37 + instance.j * 0.19) * flicker : 1
     const offsetX = (config.offsetX ?? 0) / zoom
     const offsetY = (config.offsetY ?? 0) / zoom
+    const point = getEntityMapPoint(instance)
 
     this.addTrackedLightSource(tracking?.key, {
-      x: instance.x - visibleLeft + localX / zoom + offsetX,
-      y: instance.y - visibleTop + localY / zoom + offsetY,
+      x: point.x - visibleLeft + localX / zoom + offsetX,
+      y: point.y - visibleTop + localY / zoom + offsetY,
       fadeOutMs: LIGHT_FADE_OUT_MS,
       radius: Math.max(1, (config.radius ?? DEFAULT_ENTITY_LIGHT_RADIUS) / zoom),
       intensity: clamp((config.intensity ?? DEFAULT_ENTITY_LIGHT_INTENSITY) * flickerRatio, 0, 1.4),

@@ -10,6 +10,7 @@ import {
   moveTowardPoint,
   updateInstanceVisibility,
 } from '../../lib'
+import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import {
   drainEnergyAmount,
   getActionEnergyCost,
@@ -25,9 +26,13 @@ function getMovementSpeed(animal: AnimalControllerHost): number {
   return animal.speed
 }
 
-function syncReliefLiftTowardNextCell(animal: AnimalControllerHost, nextFlatPoint: { i: number; j: number; x: number; y: number }): void {
+function syncReliefLiftTowardNextCell(
+  animal: AnimalControllerHost,
+  grid: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>['grid'],
+  nextFlatPoint: { i: number; j: number; x: number; y: number }
+): void {
   if (!animal.currentCell) return
-  const nextCell = animal.context.map.grid[nextFlatPoint.i][nextFlatPoint.j]
+  const nextCell = grid[nextFlatPoint.i][nextFlatPoint.j]
   const from = getGroundReliefLevel(animal.currentCell)
   const to = getGroundReliefLevel(nextCell)
   const total = instancesDistance(animal.currentCell, nextCell, false) || 1
@@ -60,6 +65,8 @@ function pauseForBlockedAnimal(animal: AnimalControllerHost): void {
 
 function settleOnNextCell(animal: AnimalControllerHost, nextCell: AnimalControllerHost['currentCell']): void {
   const map = animal.context.map
+  const spaceMap = getEntitySpaceMapLike(animal, map)
+  const grid = spaceMap?.grid ?? map.grid
   const oldI = animal.i
   const oldJ = animal.j
   animal.z = nextCell.z
@@ -70,7 +77,7 @@ function settleOnNextCell(animal: AnimalControllerHost, nextCell: AnimalControll
     animal.currentCell.has = null
     animal.currentCell.solid = false
   }
-  animal.currentCell = map.grid[animal.i][animal.j]
+  animal.currentCell = grid[animal.i][animal.j]
   if (animal.currentCell.has === null) {
     animal.currentCell.place(animal)
     animal.currentCell.solid = true
@@ -104,12 +111,19 @@ function resolveArrivalAfterStep(animal: AnimalControllerHost): boolean {
   return false
 }
 
-function moveTowardNextCell(animal: AnimalControllerHost, nextFlatX: number, nextFlatY: number, moveSpeed: number): void {
+function moveTowardNextCell(
+  animal: AnimalControllerHost,
+  grid: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>['grid'],
+  nextFlatX: number,
+  nextFlatY: number,
+  moveSpeed: number
+): void {
   const oldDeg = animal.degree
   const isFastFlee = animal.isFleeing && [SHEET_TYPES.running, SHEET_TYPES.flying].includes(animal.movementSheet ?? '')
   if (isFastFlee) drainEnergyAmount(animal, getActionEnergyCost(animal, ACTION_TYPES.flee))
   let speed = moveSpeed * getEnergyMoveSpeedMultiplier(animal)
-  const nextCell = animal.context.map.grid[animal.path[animal.path.length - 1].i][animal.path[animal.path.length - 1].j]
+  const next = animal.path[animal.path.length - 1]
+  const nextCell = grid[next.i][next.j]
   if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
   moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
   if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
@@ -120,14 +134,14 @@ function moveTowardNextCell(animal: AnimalControllerHost, nextFlatX: number, nex
 export function moveAnimalToPath(animal: AnimalControllerHost): void {
   if (animal.isDead || animal.isDestroyed) return
   updateUnitEnergy(animal, STEP_TIME)
-  const {
-    context: { map },
-  } = animal
+  const runtimeMap = animal.context.map
+  const map = getEntitySpaceMapLike(animal, runtimeMap)
+  if (!map) return
   const next = animal.path[animal.path.length - 1]
   const nextCell = map.grid[next.i][next.j]
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
-  syncReliefLiftTowardNextCell(animal, nextFlatPoint)
+  syncReliefLiftTowardNextCell(animal, map.grid, nextFlatPoint)
 
   if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
     animal.affectNewDest()
@@ -149,5 +163,5 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
     resolveArrivalAfterStep(animal)
     return
   }
-  moveTowardNextCell(animal, nextFlatX, nextFlatY, moveSpeed)
+  moveTowardNextCell(animal, map.grid, nextFlatX, nextFlatY, moveSpeed)
 }

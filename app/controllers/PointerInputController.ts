@@ -1,4 +1,3 @@
-import { isometricToCartesian } from '../lib'
 import { setVirtualCursorVisible } from '../lib/hero/heroCursor'
 import type { ControlPointerEvent, GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
@@ -38,6 +37,7 @@ type PointerControlsHost = {
   isHeroControlActive(): boolean
   cancelActiveInteraction(): void
   screenToLocal(x: number, y: number): { x: number; y: number }
+  getCellUnderCursor(): RuntimeCell | null
   shouldIgnoreCompatibilityMouseEvent(evt: PointerPageEvent): boolean
   stopKeyboardMove(): void
 }
@@ -174,6 +174,7 @@ export class PointerInputController {
       this.host.context.devConsoleOpen ||
         this.host.context.paused ||
         this.host.context.defeat ||
+        this.host.context.timeSkip?.active ||
         menu?.isInventoryOpen?.() ||
         menu?.isNpcOrdersOpen?.() ||
         menu?.isHeroBuildingMenuOpen?.() ||
@@ -192,14 +193,7 @@ export class PointerInputController {
   }
 
   private getCellUnderPointer(): RuntimeCell | null {
-    const {
-      context: { map },
-    } = this.host
-    const pointer = this.host.screenToLocal(this.host.mouse.x, this.host.mouse.y)
-    const pos = isometricToCartesian(pointer.x - map.x, pointer.y - map.y)
-    const i = Math.min(Math.max(pos[0], 0), map.size)
-    const j = Math.min(Math.max(pos[1], 0), map.size)
-    return map.grid[i]?.[j] || null
+    return this.host.getCellUnderCursor()
   }
 }
 

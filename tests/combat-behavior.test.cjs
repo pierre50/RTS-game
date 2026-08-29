@@ -16,6 +16,7 @@ function loadCombatBehavior() {
   const mocks = {
     '../constants': {
       ACTION_TYPES: { attack: 'attack' },
+      BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       SHEET_TYPES: { standing: 'standingSheet' },
@@ -44,7 +45,7 @@ function loadCombatBehavior() {
   return module.exports
 }
 
-function buildGrid(size) {
+function buildGrid(size, spaceId) {
   const grid = []
   for (let i = 0; i < size; i++) {
     grid[i] = []
@@ -52,6 +53,7 @@ function buildGrid(size) {
       grid[i][j] = {
         i,
         j,
+        ...(spaceId ? { spaceId } : {}),
         x: i * 64,
         y: j * 32,
         solid: false,
@@ -117,6 +119,42 @@ test('combat recovery leaves attack visuals and moves to a reachable orbit cell'
   assert.ok(move)
   assert.notDeepEqual([move[1].i, move[1].j], [unit.i, unit.j])
   assert.notEqual(move[1].solid, true)
+})
+
+test('combat recovery searches the unit runtime map space grid', () => {
+  const { enterCombatRecovery } = loadCombatBehavior()
+  const outsideGrid = buildGrid(12)
+  const interiorGrid = buildGrid(12, 'interior:test')
+  const { calls, target, unit } = createRecoveryFixture({
+    context: {
+      map: {
+        grid: outsideGrid,
+        size: 11,
+        spaces: new Map([
+          [
+            'interior:test',
+            {
+              container: {},
+              grid: interiorGrid,
+              id: 'interior:test',
+              kind: 'interior',
+              origin: { x: 100, y: 50 },
+              size: 11,
+            },
+          ],
+        ]),
+      },
+      scheduler: { elapsedMs: 0 },
+    },
+    spaceId: 'interior:test',
+  })
+  target.spaceId = 'interior:test'
+
+  enterCombatRecovery(unit, target)
+
+  const move = calls.find(([type]) => type === 'sendTo')
+  assert.ok(move)
+  assert.equal(move[1].spaceId, 'interior:test')
 })
 
 test('combat recovery keeps orbiting only after its reposition delay', () => {

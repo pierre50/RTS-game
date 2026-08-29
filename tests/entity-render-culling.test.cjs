@@ -101,6 +101,65 @@ test('renders an explored resource only while it is inside the camera', () => {
   assert.equal(resource.visible, true)
 })
 
+test('hides exterior instances while a runtime interior space is active', () => {
+  const unit = {
+    owner: { isPlayed: true },
+    x: 0,
+    y: 0,
+    context: {
+      map: { activeSpaceId: 'interior:test', revealEverything: true },
+      player: {},
+      controls: { instanceInCamera: () => true },
+    },
+    syncShadow() {
+      this.shadowSynced = true
+    },
+  }
+
+  assert.equal(updateInstanceRenderVisibility(unit), false)
+  assert.equal(unit.visible, false)
+  assert.equal(unit.shadowSynced, true)
+})
+
+test('renders interior instances while their runtime space is active', () => {
+  const unit = {
+    owner: { isPlayed: true },
+    spaceId: 'interior:test',
+    x: 12,
+    y: 24,
+    context: {
+      map: {
+        activeSpaceId: 'interior:test',
+        grid: [[]],
+        revealEverything: true,
+        size: 1,
+        spaces: new Map([
+          [
+            'interior:test',
+            {
+              container: {},
+              grid: [[]],
+              id: 'interior:test',
+              kind: 'interior',
+              origin: { x: 400, y: 200 },
+              size: 1,
+            },
+          ],
+        ]),
+      },
+      player: {},
+      controls: { instanceInCamera: () => true },
+    },
+    syncShadow() {
+      this.shadowSynced = true
+    },
+  }
+
+  assert.equal(updateInstanceRenderVisibility(unit), true)
+  assert.equal(unit.visible, true)
+  assert.equal(unit.shadowSynced, true)
+})
+
 test('culls a sprite-based entity by its full bounding box, not just its anchor point', () => {
   let receivedBounds
   const building = {

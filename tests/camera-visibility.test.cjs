@@ -41,6 +41,22 @@ function loadCameraController() {
     },
     '../constants': { CELL_HEIGHT: 32, CELL_WIDTH: 64 },
     '../lib/audio/settings': { getCameraZoom: () => 1 },
+    '../lib/mapSpaces': {
+      OUTSIDE_SPACE_ID: 'outside',
+      getActiveMapSpace: map => {
+        const activeId = map.activeSpaceId || 'outside'
+        return (
+          map.spaces?.get?.(activeId) ?? {
+            container: map,
+            grid: map.grid,
+            id: 'outside',
+            kind: 'outside',
+            origin: { x: 0, y: 0 },
+            size: map.size,
+          }
+        )
+      },
+    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -146,4 +162,68 @@ test('skips scheduled visible-cell refreshes while the camera stays in the same 
 
   assert.equal(renderChunkUpdates, 2)
   assert.equal(updates, 1)
+})
+
+test('tracks visible cells from the active interior space instead of the outside map', () => {
+  const CameraController = loadCameraController()
+  let outsideUpdates = 0
+  let interiorUpdates = 0
+  let renderChunkUpdates = 0
+  const outsideCell = {
+    has: null,
+    corpses: new Set(),
+    updateVisible: () => outsideUpdates++,
+  }
+  const interiorCell = {
+    has: null,
+    corpses: new Set(),
+    updateVisible: () => interiorUpdates++,
+  }
+  const interiorSpace = {
+    container: {},
+    grid: [[interiorCell]],
+    id: 'interior:house',
+    kind: 'interior',
+    origin: { x: 1200, y: 640 },
+    size: 0,
+  }
+  const map = {
+    activeSpaceId: 'interior:house',
+    grid: [[outsideCell]],
+    size: 0,
+    spaces: new Map([
+      [
+        'outside',
+        {
+          container: null,
+          grid: [[outsideCell]],
+          id: 'outside',
+          kind: 'outside',
+          origin: { x: 0, y: 0 },
+          size: 0,
+        },
+      ],
+      ['interior:house', interiorSpace],
+    ]),
+    updateRenderChunks: () => renderChunkUpdates++,
+  }
+  map.spaces.get('outside').container = map
+  const controller = new CameraController({
+    app: { screen: { width: 64, height: 32 } },
+    map,
+    player: { views: {} },
+  })
+  controller.getViewportRect = () => ({
+    visibleLeft: 1200,
+    visibleTop: 640,
+    visibleWidth: 64,
+    visibleHeight: 32,
+  })
+
+  controller.updateVisibleCells()
+
+  assert.equal(interiorUpdates, 1)
+  assert.equal(outsideUpdates, 0)
+  assert.equal(renderChunkUpdates, 0)
+  assert.equal(controller.visibleCells.has(interiorCell), true)
 })

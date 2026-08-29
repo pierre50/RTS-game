@@ -29,6 +29,8 @@ function loadSpawnActions(sharedOverrides = {}) {
           const amount = Number(value ?? fallback)
           return Number.isFinite(amount) && amount > 0 ? Math.floor(amount) : fallback
         },
+        addDevEntityToMapSpaceContainer: (context, entity) => context.map?.addChild?.(entity),
+        getDevMapSpace: () => null,
         getSpawnCell: () => ({ i: 12, j: 34, category: 'Grass', solid: false, has: null }),
         ...sharedOverrides,
       }

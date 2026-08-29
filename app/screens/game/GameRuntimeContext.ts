@@ -7,7 +7,7 @@ import { t } from '../../lib/lang'
 import { PerformanceMonitor } from '../../services/PerformanceMonitor'
 import type { DevConsoleRuntimeContext } from '../../dev-console/types'
 import type { GameContextLike, PerformanceMonitorLike, SchedulerLike } from '../../types/context'
-import type { BuildingEntity, ResourceEntity } from '../../types/entities'
+import type { BuildingEntity, ResourceEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
 import type { RuntimeMap } from '../../types/map'
@@ -44,6 +44,8 @@ export type GameRuntimeContextHost = {
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
   travelOutOfBuildingInterior(): Promise<void>
+  routeInteriorUnitToExit(unit: UnitEntity): void
+  synchronizeBuildingInteriorAfterTimeJump(): void
   travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void>
 }
 
@@ -63,7 +65,7 @@ export function createGameRuntimeContext(
     dayNight: null,
     weather: null,
     tributeRaids: null,
-    villagerShelter: null,
+    unitRest: null,
     devConsole: null,
     devConsoleOpen: false,
     paused: false,
@@ -102,6 +104,8 @@ export function createGameRuntimeContext(
         context.menu?.showMessage(t('corruptSave'))
       })
     },
+    routeInteriorUnitToExit: (unit: UnitEntity) => host.routeInteriorUnitToExit(unit),
+    synchronizeBuildingInteriorAfterTimeJump: () => host.synchronizeBuildingInteriorAfterTimeJump(),
   }
 
   context.performance = new PerformanceMonitor(app)

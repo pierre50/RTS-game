@@ -5,6 +5,7 @@ import {
   teleportRuntimeUnitToCell,
   updateInstanceVisibility,
 } from '../../lib'
+import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
@@ -57,7 +58,12 @@ function teleportUnitToCell(context: DevConsoleContext, unit: DevEntity, cell: D
 
 function findPortalArrivalCell(context: DevConsoleContext, portal: DevEntity): DevCell | null {
   const { map } = context
-  return getFreeLandCellAroundInstance(portal, map.grid, cells => cells[0])
+  return getFreeLandCellAroundInstance(
+    portal,
+    map.grid,
+    cells => cells[0],
+    createNonReservedPassageCellCondition(context)
+  )
 }
 
 export function teleportHeroToPortal(context: DevConsoleContext): CommandResult {

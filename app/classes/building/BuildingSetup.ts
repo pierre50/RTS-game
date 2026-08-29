@@ -1,8 +1,10 @@
 import { Assets, Polygon, Sprite } from 'pixi.js'
 import { LABEL_TYPES } from '../../constants'
 import {
+  attachEntityShadowsToMapSpace,
   cartesianToIsometric,
   clearCellTerrainSet,
+  getEntityMapSpace,
   getBuildingFootprintCells,
   getBuildingTextureNameWithSize,
   getGroundReliefLevel,
@@ -37,7 +39,9 @@ export function resumeInitialBuildingWork(building: Building): void {
 
 export function setupBuildingTransform(building: Building): void {
   const { map, controls } = building.context
-  const anchorCell = map.grid[building.i][building.j]
+  const space = getEntityMapSpace(building, map)
+  const grid = space?.grid ?? map.grid
+  const anchorCell = grid[building.i][building.j]
   const [flatX, flatY] = cartesianToIsometric(building.i, building.j)
   building.x = flatX
   building.y = flatY
@@ -64,20 +68,25 @@ export function createInitialBuildingSprite(building: Building): void {
 
 export function occupyBuildingFootprint(building: Building): void {
   const { map, player } = building.context
-  getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
+  const space = getEntityMapSpace(building, map)
+  const grid = space?.grid ?? map.grid
+  const updatesWorldVision = space?.kind !== 'interior'
+  getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
     clearCellTerrainSet(cell)
     for (const corpse of cell.corpses) {
       typeof corpse.clear === 'function' && corpse.clear()
     }
     cell.has = building
     cell.solid = true
-    building.owner.views.addViewer(cell.i, cell.j, building)
-    if (building.owner.views.setViewed(cell.i, cell.j)) {
-      building.owner.cellViewed++
-    }
-    cell.viewBy = new Set(player.views.getViewers(cell.i, cell.j))
-    if (player.views.hasViewer(cell.i, cell.j, building) && !map.revealEverything) {
-      cell.removeFog()
+    if (updatesWorldVision) {
+      building.owner.views.addViewer(cell.i, cell.j, building)
+      if (building.owner.views.setViewed(cell.i, cell.j)) {
+        building.owner.cellViewed++
+      }
+      cell.viewBy = new Set(player.views.getViewers(cell.i, cell.j))
+      if (player.views.hasViewer(cell.i, cell.j, building) && !map.revealEverything) {
+        cell.removeFog()
+      }
     }
     return true
   })
@@ -87,7 +96,7 @@ export function attachInitialBuildingVisuals(building: Building): void {
   building.sprite.eventMode = 'static'
   building.sprite.roundPixels = true
   building.bindSpriteInteractions()
-  if (building.shadow) building.context.map.shadowLayer?.addChild(building.shadow)
+  attachEntityShadowsToMapSpace(building.context.map, building)
   building.addChild(building.sprite)
   building.buildingTrainingPreview = new BuildingTrainingPreview(building)
   building.buildingTrainingPreview.update()
@@ -108,5 +117,7 @@ export function activateBuiltBuilding(building: Building): void {
 export function restoreBuildingRallyPoint(building: Building, options: BuildingOptions): void {
   const rallyPoint = options.rallyPoint as { i: number; j: number; direction: number } | undefined
   if (!rallyPoint) return
-  building.setRallyPoint(building.context.map.grid[rallyPoint.i]?.[rallyPoint.j], rallyPoint.direction)
+  const space = getEntityMapSpace(building, building.context.map)
+  const grid = space?.grid ?? building.context.map.grid
+  building.setRallyPoint(grid[rallyPoint.i]?.[rallyPoint.j], rallyPoint.direction)
 }

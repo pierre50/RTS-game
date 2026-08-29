@@ -11,6 +11,8 @@ import {
   playAudibleSoundCue,
   SLASH_IMPACT_FRAME,
 } from '../../lib'
+import { createReservedPassageCellLookup, shouldEntityAvoidPassageStop } from '../../lib/buildings/passageCells'
+import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { markCombatAttack, markCombatFlee, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combat/combatFeedback'
@@ -51,6 +53,7 @@ export class AnimalCombat {
     if (animal.strategy === 'runaway') {
       animal.runaway(instance, hitDirection)
     } else {
+      if (!animal.getActionCondition(instance, ACTION_TYPES.attack)) return
       if (this.isRecoveringAttack()) {
         if (evaluateCombatMorale(animal, instance) === 'flee') {
           showAlertFeedback(animal)
@@ -146,10 +149,10 @@ export class AnimalCombat {
   // instance-position equivalent of this raycast).
   getFleeCellAlongDirection(hitDirection?: Point): RuntimeCell | null {
     const animal = this.animal
-    const {
-      context: { map },
-    } = animal
+    const grid = getEntitySpaceGrid(animal, animal.context?.map)
     if (!hitDirection) return null
+    if (!grid) return null
+    const passageLookup = createReservedPassageCellLookup(animal.context)
     const worldLen = Math.hypot(hitDirection.x, hitDirection.y)
     if (!worldLen) return null
     // Scale to a large magnitude before converting so isometricToCartesian's internal
@@ -161,8 +164,8 @@ export class AnimalCombat {
     for (let dist = animal.sight ?? 0; dist >= 1; dist--) {
       const ti = Math.round(animal.i + (di / gridLen) * dist)
       const tj = Math.round(animal.j + (dj / gridLen) * dist)
-      const cell = map.grid[ti]?.[tj]
-      if (cell && !cell.solid) return cell
+      const cell = grid[ti]?.[tj]
+      if (cell && !cell.solid && !shouldEntityAvoidPassageStop(animal, cell, { passageLookup })) return cell
     }
     return null
   }
@@ -170,6 +173,7 @@ export class AnimalCombat {
   getBestFleeCell(instance: RuntimeEntity, preferredCell: RuntimeCell | null): RuntimeCell | null {
     const animal = this.animal
     return findReachableFleeCell<RuntimeCell>(animal, instance, animal.context.map, {
+      isCellAllowed: cell => !cell.solid && cell.category !== 'Water' && !shouldEntityAvoidPassageStop(animal, cell),
       preferredCell,
       range: animal.sight ?? 0,
     })

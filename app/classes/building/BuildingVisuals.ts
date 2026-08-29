@@ -2,9 +2,13 @@ import { AnimatedSprite, Assets, Rectangle, Sprite, Texture } from 'pixi.js'
 import { LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
+  attachEntityShadowsToMapSpace,
   getRallyPointFrames,
+  getEntityMapPoint,
   getTextureByFrame,
   getTextureSheet,
+  getEntityMapSpace,
+  isEntityInActiveMapSpace,
   parseTextureRef,
   RALLY_POINT_SHEET_ID,
 } from '../../lib'
@@ -40,7 +44,8 @@ export function setBuildingRallyPoint(
   flag.eventMode = 'none'
   flag.roundPixels = true
   flag.play()
-  building.context.map.addChild(flag)
+  const space = getEntityMapSpace(building, building.context.map)
+  ;(space?.container ?? building.context.map).addChild(flag)
   building.rallyPointFlag = flag
   return true
 }
@@ -119,7 +124,7 @@ export function updateBuildingShadow(
     shadow.eventMode = 'none'
     shadow.roundPixels = true
     building.shadow = shadow
-    building.context.map.shadowLayer?.addChild(shadow)
+    attachEntityShadowsToMapSpace(building.context.map, building)
   }
   const sprite = building.sprite
   shadow.texture = texture ?? sprite.texture
@@ -132,19 +137,30 @@ export function updateBuildingShadow(
   }
   shadow.zIndex = -2
   shadow.alpha = SHADOW_MASK_ALPHA
-  shadow.visible = getShadowsEnabled() && building.visible && !building.isDead && !building.isDestroyed
+  shadow.visible =
+    getShadowsEnabled() &&
+    building.visible &&
+    !building.isDead &&
+    !building.isDestroyed &&
+    isEntityInActiveMapSpace(building)
   shadow.rotation = 0
   shadow.tint = texture ? 0xffffff : 0x000000
   shadow.scale.set(
     texture ? sprite.scale.x : Math.abs(sprite.scale.x) * SPRITE_SHADOW_SCALE_X,
     texture ? sprite.scale.y : Math.abs(sprite.scale.y) * SPRITE_SHADOW_SCALE_Y
   )
-  shadow.position.set(building.x, building.y + (building.reliefLift ?? 0) + SHADOW_OFFSET_Y)
+  const point = getEntityMapPoint(building)
+  shadow.position.set(point.x, point.y + (building.reliefLift ?? 0) + SHADOW_OFFSET_Y)
 }
 
 export function syncBuildingVisualSettings(building: BuildingControllerHost): void {
   if (building.shadow) {
-    building.shadow.visible = getShadowsEnabled() && building.visible && !building.isDead && !building.isDestroyed
+    building.shadow.visible =
+      getShadowsEnabled() &&
+      building.visible &&
+      !building.isDead &&
+      !building.isDestroyed &&
+      isEntityInActiveMapSpace(building)
   }
 }
 

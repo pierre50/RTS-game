@@ -14,19 +14,21 @@ function loadMapActions() {
   })
 
   const module = { exports: {} }
-  const localRequire = request => {
-    if (request === '../../lib') {
-      return { drawInstanceBlinkingSelection: () => {}, getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [] }
-    }
-    if (request === './shared') {
-      return {
-        getInstancesByCategory: () => [],
-        normalize: value => String(value).trim().toLowerCase(),
-        normalizeToggle: value => value === 'on',
-      }
-    }
-    return requireFromTsFile(request, filename, mocks)
+  const mocks = {
+    '../../lib': {
+      drawInstanceBlinkingSelection: () => {},
+      getGaiaAnimals: gaia => gaia?.animals ?? gaia?.units ?? [],
+    },
+    '../../lib/buildings/passageCells': {
+      createNonReservedPassageCellCondition: () => () => true,
+    },
+    './shared': {
+      getInstancesByCategory: () => [],
+      normalize: value => String(value).trim().toLowerCase(),
+      normalizeToggle: value => value === 'on',
+    },
   }
+  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports

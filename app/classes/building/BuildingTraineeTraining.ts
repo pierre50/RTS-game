@@ -260,6 +260,6 @@ export function requestUnitTraining(
     menu.toggleQueuedActionCancel(type, true)
     refreshOpenBuildingMenu(building)
   }
-  trainee.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true })
+  trainee.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
   return true
 }

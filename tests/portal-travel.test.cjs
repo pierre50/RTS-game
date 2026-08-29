@@ -33,6 +33,9 @@ function loadGamePortalTravel(overrides = {}) {
         teleportRuntimeUnitToCell: () => {},
         updateInstanceVisibility: () => {},
       },
+      '../../lib/buildings/passageCells': {
+        createNonReservedPassageCellCondition: () => () => true,
+      },
       '../../lib/equipment/equipmentStats': { refreshUnitEquipmentStats: () => {} },
       '../../serialization/CampaignSave': {
         addChildWorldToCampaign: () => ({}),

@@ -32,7 +32,7 @@ function buildGrid(size, solidCells = []) {
 function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.solid } = {}) {
   const constants = {
     ACTION_TYPES: { attack: 'attack' },
-    FAMILY_TYPES: { unit: 'unit' },
+    FAMILY_TYPES: { building: 'building', unit: 'unit' },
     SHEET_TYPES: { action: 'action', flying: 'flying', running: 'running', standing: 'standing', walking: 'walking' },
   }
   const getCellsAroundPointCalls = []
@@ -80,6 +80,14 @@ function loadAnimalCombat({ isometricToCartesianImpl, pathable = cell => !cell.s
   const { AnimalCombat } = loadModule('app/classes/animal/AnimalCombat.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    '../../lib/buildings/passageCells': {
+      createReservedPassageCellLookup: () => ({
+        has: cell => Boolean(cell?.reservedPassage),
+        size: 0,
+      }),
+      shouldEntityAvoidPassageStop: (_entity, cell, options = {}) =>
+        Boolean(options.passageLookup?.has?.(cell) ?? cell?.reservedPassage),
+    },
     '../../lib/combat/combatFeedback': {
       showAggressionFeedback: () => {},
       showAlertFeedback: () => {},
@@ -119,6 +127,7 @@ function createAnimalCombat({ solidCells = [], isometricToCartesianImpl, animalO
     isFleeing: false,
     strategy: 'runaway',
     context: { editor: null, map: { grid: buildGrid(12, solidCells) } },
+    getActionCondition: (_target, action = 'attack') => action === 'attack',
     sendTo: (dest, action, options) => calls.push(['sendTo', dest, action, options]),
     stop: () => calls.push(['stop']),
     setAltitude: altitude => calls.push(['setAltitude', altitude]),
@@ -204,6 +213,20 @@ test('an aggressive animal falls back to walking when it has no running sheet', 
   assert.deepEqual(calls, [['sendTo', target, 'attack', { movementSheet: 'walking' }]])
 })
 
+test('an aggressive animal ignores invalid attack reaction targets', () => {
+  const building = { family: 'building', i: 7, j: 5, label: 'house' }
+  const { combat, calls } = createAnimalCombat({
+    animalOverrides: {
+      getActionCondition: () => false,
+      strategy: 'attack',
+    },
+  })
+
+  combat.getReaction(building)
+
+  assert.deepEqual(calls, [])
+})
+
 test('animal attacks fall back to the shared slash impact frame', () => {
   const target = { family: 'unit', hitPoints: 20, i: 5, j: 6, label: 'hero' }
   const { combat, attackLoopCalls } = createAnimalCombat({
@@ -256,6 +279,21 @@ test('runaway flees along the projectile direction instead of away from the shoo
   assert.equal(getCellsAroundPointCalls.length, 0)
   const [, dest] = calls[0]
   // (8, 5) is solid, so the farthest reachable cell along the direction is (7, 5).
+  assert.deepEqual({ i: dest.i, j: dest.j }, { i: 7, j: 5 })
+  assert.equal(animal.isFleeing, true)
+})
+
+test('runaway avoids building passage cells when fleeing along a projectile direction', () => {
+  const { combat, animal, calls, getCellsAroundPointCalls } = createAnimalCombat({
+    isometricToCartesianImpl: () => [1, 0],
+  })
+  animal.context.map.grid[8][5].reservedPassage = true
+  const shooter = { i: 5, j: 0, label: 'shooter' }
+
+  combat.runaway(shooter, { x: 10, y: 0 })
+
+  assert.equal(getCellsAroundPointCalls.length, 0)
+  const [, dest] = calls[0]
   assert.deepEqual({ i: dest.i, j: dest.j }, { i: 7, j: 5 })
   assert.equal(animal.isFleeing, true)
 })

@@ -18,7 +18,7 @@ function loadPlacementModule() {
       return { instancesDistance: () => 0 }
     }
     if (request === '../../constants') {
-      return { LABEL_TYPES: {} }
+      return { FAMILY_TYPES: { building: 'building' }, LABEL_TYPES: {} }
     }
     if (request === './cells') {
       const getPlainCellsAroundPoint = (startX, startY, grid, dist = 0) => {
@@ -88,6 +88,7 @@ function createCell(i, j, overrides = {}) {
     visible: true,
     waterBorder: false,
     category: 'Grass',
+    reservedPassage: false,
     ...overrides,
   }
 }
@@ -96,7 +97,7 @@ function createGrid(size, factory) {
   return Array.from({ length: size }, (_, i) => Array.from({ length: size }, (_, j) => factory(i, j)))
 }
 
-const { canPlaceBuildingAt } = loadPlacementModule()
+const { canPlaceBuildingAt, hasBuildingPlacementClearance } = loadPlacementModule()
 const barracks = { type: 'Barracks', size: 3 }
 const tower = { type: 'WatchTower', size: 2 }
 
@@ -141,4 +142,45 @@ test('size 2 building placement is rejected when footprint leaves the grid', () 
   const grid = createGrid(5, (i, j) => createCell(i, j))
 
   assert.equal(canPlaceBuildingAt(grid, 4, 4, tower), false)
+})
+
+test('building placement rejects reserved passage cells in its extra clearance', () => {
+  const grid = createGrid(7, (i, j) => createCell(i, j))
+  grid[4][4].reservedPassage = true
+
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, barracks), true)
+  assert.equal(
+    hasBuildingPlacementClearance(grid, 2, 2, barracks, {
+      canUseCell: cell => !cell.reservedPassage,
+    }),
+    false
+  )
+})
+
+test('building placement rejects buildings in its extra clearance', () => {
+  const grid = createGrid(7, (i, j) => createCell(i, j))
+  grid[4][4].solid = true
+  grid[4][4].has = { family: 'building' }
+
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, barracks), true)
+  assert.equal(
+    hasBuildingPlacementClearance(grid, 2, 2, barracks, {
+      canUseCell: cell => !cell.reservedPassage,
+    }),
+    false
+  )
+})
+
+test('building placement allows units in its extra clearance', () => {
+  const grid = createGrid(7, (i, j) => createCell(i, j))
+  grid[4][4].solid = true
+  grid[4][4].has = { family: 'unit' }
+
+  assert.equal(canPlaceBuildingAt(grid, 2, 2, barracks), true)
+  assert.equal(
+    hasBuildingPlacementClearance(grid, 2, 2, barracks, {
+      canUseCell: cell => !cell.reservedPassage,
+    }),
+    true
+  )
 })

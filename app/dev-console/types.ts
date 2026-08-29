@@ -49,16 +49,28 @@ type DevWeatherLike = {
   phase?: DevWeatherPhase
 }
 
+type DevTimeSkipLike = {
+  active?: boolean
+  dayNightMaxDeltaMs?: number
+  suppressAudio?: boolean
+  suppressCosmetics?: boolean
+  cancel?(options?: { silent?: boolean }): void
+  destroy?(): void
+  getProgress?(): number
+  start?(hours: number): CommandResult
+}
+
 type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number }) => void
 
 export type DevMapLike = {
   size: number
   grid: RuntimeCell[][]
+  mapType?: string
   resources: Set<DevEntity>
   gaia?: {
     units: DevEntity[]
     animals?: DevEntity[]
-    createAnimal?(options: { i: number; j: number; type: string }): unknown
+    createAnimal?(options: { i: number; j: number; spaceId?: string; type: string }): unknown
   } | null
   instantMode?: boolean
   revealEverything?: boolean
@@ -219,6 +231,7 @@ export type DevConsoleContext = {
   menu: DevMenuLike
   controls?: DevControlsLike
   devConsoleOpen?: boolean
+  defeat?: boolean
   instantMode?: boolean
   paused?: boolean
   performance?: {
@@ -232,6 +245,11 @@ export type DevConsoleContext = {
     triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
     triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
   } | null
+  timeSkip?: DevTimeSkipLike | null
+  unitRest?: {
+    synchronizeAfterTimeJump?(): void
+  } | null
+  synchronizeBuildingInteriorAfterTimeJump?: () => void
   app?: {
     ticker: {
       FPS?: number

@@ -36,7 +36,7 @@ export type GameWorldBootHost = {
   context: {
     controls?: { init?: () => void } | null
     menu?: { init?: () => void } | null
-    performance?: { setPhase?: (phase: string) => void } | null
+    performance?: { record?: (name: string, duration: number) => void; setPhase?: (phase: string) => void } | null
     player: PlayerLike | null
     players: PlayerLike[]
   }
@@ -51,10 +51,7 @@ export type GameWorldBootHost = {
     positionsCount?: number
     size?: number
   }): Promise<LoadedMapBlueprint>
-  _loadRequiredInteriorBlueprint(options?: {
-    id?: string
-    interiorType?: string
-  }): Promise<LoadedMapBlueprint>
+  _loadRequiredInteriorBlueprint(options?: { id?: string; interiorType?: string }): Promise<LoadedMapBlueprint>
   _map(): RuntimeMapInstance
   _mountRuntime(dayNightElapsedMs?: number | null): void
   _updateLoading(messageKey: string, progress: number): Promise<void>
@@ -64,34 +61,58 @@ function reportProgress(game: GameWorldBootHost) {
   return (messageKey: string, progress: number) => game._updateLoading(messageKey, progress)
 }
 
+async function measureAsync<T>(game: GameWorldBootHost, name: string, callback: () => Promise<T>): Promise<T> {
+  const startedAt = performance.now()
+  try {
+    return await callback()
+  } finally {
+    game.context.performance?.record?.(name, performance.now() - startedAt)
+  }
+}
+
+function measure<T>(game: GameWorldBootHost, name: string, callback: () => T): T {
+  const startedAt = performance.now()
+  try {
+    return callback()
+  } finally {
+    game.context.performance?.record?.(name, performance.now() - startedAt)
+  }
+}
+
 export async function bootGameFromConfig(
   game: GameWorldBootHost,
   config: GameConfig,
   options: { dayNightElapsedMs?: number | null } = {}
 ): Promise<void> {
   game.context.performance?.setPhase?.('load')
-  game._createRuntime()
+  measure(game, 'boot.createRuntime', () => game._createRuntime())
   const map = game._map()
-  game._applyMapConfig(map, config)
-  game._createUiRuntime()
+  measure(game, 'boot.applyMapConfig', () => game._applyMapConfig(map, config))
+  measure(game, 'boot.createUiRuntime', () => game._createUiRuntime())
 
   const mapGenerationStartedAt = performance.now()
-  const blueprint = await game._loadRequiredMapBlueprint({
-    size: map.size,
-    environment: map.environment,
-  })
-  await map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
+  const blueprint = await measureAsync(game, 'boot.loadMapBlueprint', () =>
+    game._loadRequiredMapBlueprint({
+      size: map.size,
+      environment: map.environment,
+    })
+  )
+  await measureAsync(game, 'boot.generateFromBlueprint', () =>
+    map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
+  )
   recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
   await game._updateLoading('generatingPlayers', 0.2)
-  game.context.players = map.generatePlayers((config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null)
+  game.context.players = measure(game, 'boot.generatePlayers', () =>
+    map.generatePlayers((config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null)
+  )
   game.context.player = game.context.players[0]
-  game.context.menu?.init?.()
-  await preloadBakedLpcUnitsForPlayers(game.context.players)
-  await map.stylishMap({ onProgress: reportProgress(game) })
+  measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
+  await measureAsync(game, 'boot.preloadUnits', () => preloadBakedLpcUnitsForPlayers(game.context.players))
+  await measureAsync(game, 'boot.stylishMap', () => map.stylishMap({ onProgress: reportProgress(game) }))
   await game._updateLoading('finalizingWorld', 0.96)
-  game.context.controls?.init?.()
+  measure(game, 'boot.controlsInit', () => game.context.controls?.init?.())
 
-  game._mountRuntime(options.dayNightElapsedMs)
+  measure(game, 'boot.mountRuntime', () => game._mountRuntime(options.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')
   game._campaignSave = createInitialCampaignSave(serializeGame(game._gameContext()))
   game._autosaveCampaign()
@@ -99,7 +120,7 @@ export async function bootGameFromConfig(
 
 export async function bootGameFromSeedSave(game: GameWorldBootHost, json: SerializedSave): Promise<void> {
   game.context.performance?.setPhase?.('load')
-  game._createRuntime()
+  measure(game, 'seedSave.createRuntime', () => game._createRuntime())
   const map = game._map()
   const world = saveConfig(json.world)
   const savedConfig = saveConfig(json.config)
@@ -117,8 +138,8 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
       isHuman: player.isPlayed && player.type === PLAYER_TYPES.human,
     })),
   }
-  game._applyMapConfig(map, seedConfig)
-  game._createUiRuntime()
+  measure(game, 'seedSave.applyMapConfig', () => game._applyMapConfig(map, seedConfig))
+  measure(game, 'seedSave.createUiRuntime', () => game._createUiRuntime())
   const positionsCount =
     Number.isFinite(world.positionsCount) && Number(world.positionsCount) > 0
       ? Number(world.positionsCount)
@@ -127,19 +148,27 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   const blueprintId = world.pregeneratedBlueprintId
   if (!blueprintId) throw new Error(t('mapBlueprintUnavailable'))
   const isInteriorWorld = world.mapType === 'interior' || savedConfig.mapType === 'interior'
-  const blueprint = isInteriorWorld
-    ? await game._loadRequiredInteriorBlueprint({ id: String(blueprintId) })
-    : await game._loadRequiredMapBlueprint({
-        size: map.size,
-        id: String(blueprintId),
-        positionsCount: positionsCount ?? undefined,
-      })
-  await map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
+  const blueprint = await measureAsync(game, 'seedSave.loadBlueprint', () =>
+    isInteriorWorld
+      ? game._loadRequiredInteriorBlueprint({ id: String(blueprintId) })
+      : game._loadRequiredMapBlueprint({
+          size: map.size,
+          id: String(blueprintId),
+          positionsCount: positionsCount ?? undefined,
+        })
+  )
+  await measureAsync(game, 'seedSave.generateFromBlueprint', () =>
+    map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
+  )
   recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
-  await map.prepareTerrainForSavedState({ onProgress: reportProgress(game) })
-  map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
-  game.context.controls?.init?.()
-  game._mountRuntime(json.runtime?.dayNightElapsedMs)
+  await measureAsync(game, 'seedSave.prepareTerrainForSavedState', () =>
+    map.prepareTerrainForSavedState({ onProgress: reportProgress(game) })
+  )
+  measure(game, 'seedSave.applySavedState', () =>
+    map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
+  )
+  measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
+  measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')
 }
 
@@ -149,14 +178,14 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
     await bootGameFromSeedSave(game, json)
     return
   }
-  game._createRuntime()
+  measure(game, 'save.createRuntime', () => game._createRuntime())
   const map = game._map()
   const savedMap = json.map
   map.size = Math.max(0, (savedMap?.length || 1) - 1)
-  game._applyMapConfig(map, saveConfig(json.config))
-  game._createUiRuntime()
-  map.generateFromJSON(savedRuntimeState(json))
-  game.context.controls?.init?.()
-  game._mountRuntime(json.runtime?.dayNightElapsedMs)
+  measure(game, 'save.applyMapConfig', () => game._applyMapConfig(map, saveConfig(json.config)))
+  measure(game, 'save.createUiRuntime', () => game._createUiRuntime())
+  measure(game, 'save.generateFromJSON', () => map.generateFromJSON(savedRuntimeState(json)))
+  measure(game, 'save.controlsInit', () => game.context.controls?.init?.())
+  measure(game, 'save.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')
 }

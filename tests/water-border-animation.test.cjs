@@ -94,6 +94,24 @@ function loadMapModule() {
     if (request === './terrain/MapTerrain') return { MapTerrain: class {} }
     if (request === './fog/MapFog') return { MapFog: class {} }
     if (request === '../../lib') return { getTextureByFrame: () => ({}) }
+    if (request === '../../lib/mapSpaces') {
+      return {
+        OUTSIDE_SPACE_ID: 'outside',
+        addEntityToRuntimeMapSpaceBucket: () => {},
+        ensureOutsideMapSpace: map => ({
+          id: 'outside',
+          kind: 'outside',
+          grid: map.grid,
+          size: map.size,
+          container: map,
+          origin: { x: 0, y: 0 },
+          instanceBuckets: map.instanceBuckets ?? null,
+        }),
+        getEntityMapSpace: () => null,
+        removeEntityFromRuntimeMapSpaceBucket: () => {},
+        updateEntityRuntimeMapSpaceBucket: () => {},
+      }
+    }
     if (request === '../../lib/random') return { createSeededRandom: () => Math.random }
     if (request === '../../lib/graphics/chunkCulling') return { rectangleIntersectsViewport: () => true }
     if (request === './MapWaterOverlay') {

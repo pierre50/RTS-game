@@ -4,6 +4,7 @@ import { BUILDING_TYPES, LABEL_TYPES } from '../constants'
 import { getTexture, getTextureByFrame } from '../graphics/textures'
 import { changeSpriteColor } from '../graphics/colors'
 import { bindAnimatedSpriteToTicker } from '../extra'
+import { getEntitySpaceId, OUTSIDE_SPACE_ID } from '../mapSpaces'
 import { getWallFrame } from '../grid/wallPath'
 import type { Grid, GridCell } from '../../types/grid'
 import type { RecolorableSprite } from '../graphics/colors'
@@ -49,6 +50,7 @@ export type WallBuilding = {
     app?: WallTickerApp
     map: {
       grid: Grid<WallCell>
+      spaces?: Map<string, { grid: Grid<WallCell> }>
     }
   }
   getChildByLabel: (label: string) => { destroy: () => void } | null
@@ -62,6 +64,7 @@ export type WallBuilding = {
     texture: Texture
   }
   type?: string
+  spaceId?: string
 }
 
 function isWallCandidate(instance: unknown): instance is { owner?: WallOwner; type?: string } {
@@ -107,9 +110,15 @@ function getWallFrameAt(grid: Grid<WallCell>, i: number, j: number, owner: WallO
   return getWallFrame(hasNorthSouth, hasEastWest, neighbours.filter(Boolean).length <= 1)
 }
 
+function getWallGrid(wall: WallBuilding): Grid<WallCell> {
+  const spaceId = getEntitySpaceId(wall)
+  if (spaceId === OUTSIDE_SPACE_ID) return wall.context.map.grid
+  return wall.context.map.spaces?.get(spaceId)?.grid ?? wall.context.map.grid
+}
+
 export function updateWallTexture(wall?: WallBuilding | null): void {
   if (!isWall(wall) || !wall.sprite || wall.isDestroyed || !wall.isBuilt) return
-  const frame = getWallFrameAt(wall.context.map.grid, wall.i, wall.j, wall.owner)
+  const frame = getWallFrameAt(getWallGrid(wall), wall.i, wall.j, wall.owner)
   wall.sprite.texture = getWallTexture(wall.owner, frame)
   if (wall.sprite.texture.defaultAnchor) {
     wall.sprite.anchor.copyFrom(wall.sprite.texture.defaultAnchor)
@@ -148,7 +157,7 @@ export function getAdjacentWalls(grid: Grid<WallCell>, i: number, j: number, own
 export function updateWallAndNeighbours(wall?: WallBuilding | null): void {
   if (!isWall(wall)) return
   updateWallTexture(wall)
-  getAdjacentWalls(wall.context.map.grid, wall.i, wall.j, wall.owner).forEach(updateWallTexture)
+  getAdjacentWalls(getWallGrid(wall), wall.i, wall.j, wall.owner).forEach(updateWallTexture)
 }
 
 export function refreshOwnerWalls(owner?: WallOwner | null): void {

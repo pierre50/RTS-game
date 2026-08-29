@@ -1,4 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -149,7 +150,10 @@ function getCandidatePathLength(unit: UnitEntity, candidate: VillagerJobCandidat
   if (unit.isUnitAtDest?.(candidate.action, candidate.target)) return 0
   const map = unit.context?.map
   if (!map?.grid) return distance(unit, candidate.target)
-  const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, candidate.target, map)
+  const passageLookup = createReservedPassageCellLookup(unit.context)
+  const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, candidate.target, map, {
+    isCellAllowed: cell => canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }),
+  })
   return path.length ? path.length : null
 }
 

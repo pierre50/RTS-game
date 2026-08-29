@@ -1,6 +1,7 @@
 import { Player } from '../classes/players/Player'
 import { ACTION_TYPES, FADE_DURATION_MS, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { canAfford, getCellsAroundPoint, getFreeLandCellAroundInstance, payCost } from '../lib'
+import { createNonReservedPassageCellCondition } from '../lib/buildings/passageCells'
 import { fadeOut } from '../lib/entities/entityFade'
 import { t } from '../lib/lang'
 import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
@@ -300,8 +301,15 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const portal = this.findPortal()
     const anchor = portal ?? hero
     const cells: RuntimeCell[] = []
+    const nonPassageCell = createNonReservedPassageCellCondition(this.context)
     for (let distance = RAID_SPAWN_MIN_RADIUS; distance <= RAID_SPAWN_MAX_RADIUS; distance++) {
-      const ring = getCellsAroundPoint(anchor.i, anchor.j, grid, distance, isOpenRaidLandCell)
+      const ring = getCellsAroundPoint(
+        anchor.i,
+        anchor.j,
+        grid,
+        distance,
+        cell => isOpenRaidLandCell(cell) && nonPassageCell(cell)
+      )
       ring.sort(() => (this.context.map.random?.() ?? Math.random()) - 0.5)
       for (const cell of ring) {
         if (cells.includes(cell)) continue
@@ -310,7 +318,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
         if (cells.length >= count) return cells
       }
     }
-    const fallback = getFreeLandCellAroundInstance(hero, grid)
+    const fallback = getFreeLandCellAroundInstance(hero, grid, undefined, nonPassageCell)
     if (fallback) cells.push(fallback)
     return cells
   }

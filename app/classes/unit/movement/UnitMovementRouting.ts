@@ -12,6 +12,14 @@ import {
 } from '../../../lib'
 import { debugCombatMove } from './UnitMovementDebug'
 import {
+  canUnitWaitOnCell,
+  canUnitUseCellAsIdleDestination,
+  createReservedPassageCellLookup,
+  findNearestPassageWaitingCell,
+  shouldUnitAvoidPassageStop,
+  unitHasActivePassageStopIntent,
+} from '../../../lib/buildings/passageCells'
+import {
   BLOCKED_GATHER_APPROACH_ACTIONS,
   GATHER_SEND_TO_BY_ACTION,
   MAX_BLOCKED_GATHER_APPROACH_DISTANCE,
@@ -23,6 +31,7 @@ import {
   type SendToOptions,
 } from './UnitMovementHelpers'
 import { cancelEnergyWait } from '../../../lib/units/unitEnergy'
+import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 
@@ -31,6 +40,11 @@ export class UnitMovementRouting {
 
   constructor(unit: UnitEntity) {
     this.unit = unit
+  }
+
+  targetIsInUnitSpace(dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
+    if (!dest) return false
+    return isRuntimeEntity(dest) ? sameMapSpace(this.unit, dest) : sameCellMapSpace(this.unit, dest)
   }
 
   sendToPostBuildResource(): boolean {
@@ -60,19 +74,19 @@ export class UnitMovementRouting {
     allowCurrentCell = false
   ): { cell: RuntimeCell; path: RuntimeCell[] } | null {
     const unit = this.unit
-    const map = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return null
     const maxDistance = Math.max(
       2,
       Math.min(unit.sight || MAX_BLOCKED_GATHER_APPROACH_DISTANCE, MAX_BLOCKED_GATHER_APPROACH_DISTANCE)
     )
     let best: { cell: RuntimeCell; path: RuntimeCell[] } | null = null
+    const passageLookup = createReservedPassageCellLookup(unit.context)
 
     for (let distance = minDistance; distance <= maxDistance; distance++) {
-      const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell => {
-        if (cell.solid || (cell.border && (!cell.waterBorder || cell.solid))) return false
-        return cell.category !== 'Water'
-      })
+      const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell =>
+        canUnitWaitOnCell(unit, cell, { passageLookup })
+      )
       cells.sort(
         (a, b) =>
           Math.abs(a.i - target.i) + Math.abs(a.j - target.j) - (Math.abs(b.i - target.i) + Math.abs(b.j - target.j)) ||
@@ -182,10 +196,15 @@ export class UnitMovementRouting {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
-    { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
+    {
+      forceRepath = false,
+      allowBlockedGatherApproach = true,
+      preserveAutonomy = false,
+      allowPassageStop = false,
+    }: SendToOptions = {}
   ) {
     const unit = this.unit
-    const map = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
@@ -207,6 +226,25 @@ export class UnitMovementRouting {
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []
     if (!dest || isDestroyedEntity(dest) || unit.isDead || !map) return
+    if (!this.targetIsInUnitSpace(dest)) {
+      this.handleUnreachableDestination(action)
+      return
+    }
+    const passageLookup = createReservedPassageCellLookup(unit.context)
+    const passageStopAllowed =
+      allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(unit, dest))
+    if (
+      !action &&
+      !isRuntimeEntity(dest) &&
+      shouldUnitAvoidPassageStop(unit, dest, { allowPassageStop: passageStopAllowed, passageLookup })
+    ) {
+      const waitingCell = findNearestPassageWaitingCell(unit, dest, { passageLookup })
+      if (!waitingCell) {
+        this.handleUnreachableDestination(action)
+        return
+      }
+      dest = waitingCell.cell
+    }
     cancelEnergyWait(unit)
     if (!action && !preserveAutonomy) {
       unit.previousDest = null
@@ -231,7 +269,10 @@ export class UnitMovementRouting {
     if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
       const destCell = map.grid[dest.i][dest.j]
       if (destCell.solid) {
-        path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map)
+        path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map, {
+          isCellAllowed: cell =>
+            canUnitUseCellAsIdleDestination(unit, cell, { allowPassageStop: passageStopAllowed, passageLookup }),
+        })
         if (!path.length && unit.work) {
           unit.action = action
           if (

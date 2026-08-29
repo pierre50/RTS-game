@@ -2,6 +2,7 @@ import type { UnitEntity } from '../../types/entities'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { sameGridCell } from '../grid/interactionCells'
+import { getActiveMapSpace, getEntityMapSpace } from '../mapSpaces'
 
 type InteriorExitRuntimeMap = RuntimeMap & {
   interiorExits?: Array<GridPosition | null>
@@ -17,17 +18,32 @@ function cellAt(map: RuntimeMap, position: GridPosition | null | undefined): Run
 }
 
 export function getInteriorExitCell(map: RuntimeMap | null | undefined): RuntimeCell | null {
-  if (!map || map.mapType !== 'interior') return null
+  if (!map) return null
+  const activeSpace = getActiveMapSpace(map)
+  if (activeSpace?.kind === 'interior') {
+    if (isInteriorFloorCell(activeSpace.exitCell)) return activeSpace.exitCell
+    return findBestInteriorExitCell(activeSpace.grid, activeSpace.size, activeSpace.entryCell)
+  }
+  if (map.mapType !== 'interior') return null
 
   const configuredExit = (map as InteriorExitRuntimeMap).interiorExits?.find(exit => Boolean(exit))
   const configuredCell = cellAt(map, configuredExit)
   if (isInteriorFloorCell(configuredCell)) return configuredCell
 
-  const centerI = Math.round(map.size / 2)
+  return findBestInteriorExitCell(map.grid, map.size)
+}
+
+function findBestInteriorExitCell(
+  grid: RuntimeMap['grid'],
+  size: number,
+  preferredCell: RuntimeCell | null | undefined = null
+): RuntimeCell | null {
+  if (isInteriorFloorCell(preferredCell)) return preferredCell
+  const centerI = Math.round(size / 2)
   let best: RuntimeCell | null = null
-  for (let i = 0; i <= map.size; i++) {
-    for (let j = 0; j <= map.size; j++) {
-      const cell = map.grid[i]?.[j]
+  for (let i = 0; i <= size; i++) {
+    for (let j = 0; j <= size; j++) {
+      const cell = grid[i]?.[j]
       if (!isInteriorFloorCell(cell)) continue
       if (!best || j > best.j || (j === best.j && Math.abs(i - centerI) < Math.abs(best.i - centerI))) {
         best = cell
@@ -39,8 +55,10 @@ export function getInteriorExitCell(map: RuntimeMap | null | undefined): Runtime
 }
 
 export function isHeroOnInteriorExitCell(hero: UnitEntity | null | undefined): boolean {
-  const map = hero?.context?.map
-  const exitCell = getInteriorExitCell(map)
-  if (!hero || !exitCell) return false
+  if (!hero) return false
+  const map = hero.context?.map
+  const space = getEntityMapSpace(hero, map)
+  const exitCell = space?.kind === 'interior' ? space.exitCell : getInteriorExitCell(map)
+  if (!exitCell) return false
   return sameGridCell(hero, exitCell)
 }

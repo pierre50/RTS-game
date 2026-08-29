@@ -1,4 +1,4 @@
-import { type EnvironmentId } from '../constants'
+import { type EnvironmentId } from '../../constants'
 
 export type WeatherPhase =
   | 'sunny'

@@ -8,6 +8,7 @@ import {
   playAudibleSoundCue,
   updateInstanceVisibility,
 } from '../../lib'
+import { getEntityCell, getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
@@ -15,6 +16,12 @@ import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation
 import type { SchedulerTaskId } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { AnimalControllerHost } from './AnimalTypes'
+
+type ParentDisplay = {
+  parent?: {
+    removeChild: (child: unknown) => unknown
+  } | null
+}
 
 const DEATH_FALL_STEPS = 8
 const DEATH_FALL_STEP_MS = 40
@@ -66,9 +73,11 @@ export class AnimalLifecycle {
   settleCorpseCell(): void {
     const animal = this.animal
     const map = animal.context.map
-    const currentCell = animal.currentCell ?? map.grid[animal.i]?.[animal.j]
+    const spaceMap = getEntitySpaceMapLike(animal, map)
+    const grid = spaceMap?.grid ?? map.grid
+    const currentCell = animal.currentCell ?? grid[animal.i]?.[animal.j]
     const [targetI, targetJ] = isometricToCartesian(animal.x, animal.y)
-    const targetCell = map.grid[targetI]?.[targetJ]
+    const targetCell = grid[targetI]?.[targetJ]
 
     if (!this.canSettleCorpseOnCell(targetCell)) {
       this.snapCorpseToCell(currentCell)
@@ -196,10 +205,11 @@ export class AnimalLifecycle {
       animal.syncShadow()
     } else if (percentage <= 0) {
       animal.stopInterval()
-      if (map.grid[animal.i][animal.j].has === animal) {
-        map.grid[animal.i][animal.j].has = null
-        map.grid[animal.i][animal.j].corpses.add(animal)
-        map.grid[animal.i][animal.j].solid = false
+      const cell = getEntityCell(animal, map)
+      if (cell?.has === animal) {
+        cell.has = null
+        cell.corpses.add(animal)
+        cell.solid = false
       }
       if (animal.selected && player.selectedOther === animal) {
         player.unselectAll()
@@ -227,7 +237,7 @@ export class AnimalLifecycle {
     animal.animalBehavior.stop()
     animal.isDestroyed = true
     map.removeFromInstanceBucket(animal)
-    const cell = map.grid[animal.i]?.[animal.j]
+    const cell = getEntityCell(animal, map)
     if (cell?.has === animal) {
       cell.has = null
       cell.solid = false
@@ -237,7 +247,7 @@ export class AnimalLifecycle {
     if (index >= 0) {
       animal.owner.units.splice(index, 1)
     }
-    map.removeChild(animal)
+    ;(animal as ParentDisplay).parent?.removeChild(animal)
     animal.destroy({ children: true, texture: false })
   }
 }

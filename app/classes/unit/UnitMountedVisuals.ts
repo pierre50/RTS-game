@@ -1,6 +1,6 @@
 import { AnimatedSprite, Graphics, type Texture } from 'pixi.js'
 import { LABEL_TYPES, SHEET_TYPES } from '../../constants'
-import { bindAnimatedSpriteToTicker, degreeToDirection, getSpriteFrameSelection } from '../../lib'
+import { attachEntityShadowsToMapSpace, bindAnimatedSpriteToTicker, degreeToDirection, getSpriteFrameSelection } from '../../lib'
 import { recolorHorseTextures, type HorseColor } from '../../lib/horses/horseColors'
 import {
   MOUNTED_HORSE_BOB,
@@ -80,7 +80,7 @@ export function setupMountedHorseSprite(unit: MountedVisualHost, getCachedSprite
   unit.horseSprite.onFrameChange = () => syncMountedRiderPosition(unit, getCachedSpritesheet)
   unit.addChild(unit.horseSprite)
   unit.horseShadow = unit.createShadow(unit.horseSprite, `${LABEL_TYPES.shadow}-horse`)
-  unit.context.map.shadowLayer?.addChild(unit.horseShadow)
+  attachEntityShadowsToMapSpace(unit.context.map, unit)
   setupMountedRiderLegsSprite(unit, getCachedSpritesheet)
   syncMountedHorseSprite(unit, getCachedSpritesheet)
 }

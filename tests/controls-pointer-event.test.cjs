@@ -20,6 +20,7 @@ function loadControls() {
           this.camera = { x: 0, y: 0 }
         }
         set() {}
+        stopMouseMove() {}
         updateMouseMove() {}
       },
     },
@@ -42,6 +43,7 @@ function loadControls() {
         constructor() {
           this.active = false
         }
+        cancel() {}
       },
     },
     '../controllers/HeroController': {
@@ -70,6 +72,8 @@ function loadControls() {
         update(frameScale) {
           this.lastUpdateFrameScale = frameScale
         }
+        updateCriticalHealthEffects() {}
+        updateOcclusionFade() {}
         handlePrimaryPointerDown() {
           this.primaryPointerDowns++
         }
@@ -102,6 +106,11 @@ function loadControls() {
       getReliefOffset: () => 0,
       pointsDistance: () => 0,
       instanceContactInstance: () => true,
+    },
+    '../lib/mapSpaces': {
+      getActiveInteractionSpace: () => null,
+      getEntityMapPoint: instance => ({ x: instance.x, y: instance.y }),
+      getSpaceLocalPointFromMapPoint: (_space, point) => point,
     },
     '../lib/audio/settings': {
       DISPLAY_SCALE: 1,
@@ -302,6 +311,27 @@ test('uses uncapped speed-scaled ticker delta for hero-controlled unit movement'
     })
 
     assert.equal(controls.heroController.lastUpdateFrameScale, 8)
+  } finally {
+    restore()
+  }
+})
+
+test('time skip blocks hero-controlled unit movement', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.context.timeSkip = { active: true }
+    controls.heroController.active = true
+    controls.heroController.heroUnit = { x: 12, y: 34 }
+
+    controls.onTick({
+      elapsedMS: 1000 / 60,
+      deltaMS: (1000 / 60) * 8,
+      deltaTime: 8,
+    })
+
+    assert.equal(controls.isHeroControlActive(), false)
+    assert.equal(controls.isInteractionBlocked(), true)
+    assert.equal(controls.heroController.lastUpdateFrameScale, null)
   } finally {
     restore()
   }

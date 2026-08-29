@@ -1,6 +1,6 @@
 import type { RuntimeCell } from '../../types/map'
 import type { RuntimeEntity } from '../../types/entities'
-import type { EnergyEntity } from '../../types/entities'
+import type { EnergyEntity, UnitSendToOptions } from '../../types/entities'
 import type { UnitCreationExtra } from '../../types/entities'
 import type { ActionProps } from './combat'
 import { instancesDistance } from '../maths'
@@ -89,11 +89,7 @@ type AttackFrameActor = Partial<
     }
     isUnitAtDest?: (action: string | null | undefined, dest: AttackFrameTarget) => boolean
     isAnimalAtDest?: (action: string | null, dest: RuntimeEntity | RuntimeCell | null) => boolean
-    sendToEvt?: (
-      dest: RuntimeEntity | RuntimeCell | null,
-      action?: string | null,
-      options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
-    ) => void
+    sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
     sendTo?: (
       dest: RuntimeEntity | RuntimeCell,
       action?: string,

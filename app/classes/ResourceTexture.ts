@@ -28,6 +28,7 @@ export type ResourceOptions = Partial<ResourceDefinition> & {
   i: number
   isNaturalResource?: boolean
   j: number
+  spaceId?: string
   berrybushFullTextureName?: string
   type: string
   textureName?: string

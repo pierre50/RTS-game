@@ -75,6 +75,7 @@ export type SaveEntityState = {
   rallyPoint?: SaveRallyPoint | null
   realDest?: SaveDestination | null
   size?: number
+  spaceId?: string
   technology?: SaveTechnologyState
   textureName?: string
   berrybushFullTextureName?: string

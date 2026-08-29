@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
-import { findKey, getAmount, getSpawnCell, normalize } from './shared'
+import { addDevEntityToMapSpaceContainer, findKey, getAmount, getDevMapSpace, getSpawnCell, normalize } from './shared'
 import { Resource } from '../../classes/Resource'
 import { Player } from '../../classes/players/Player'
 import { BUILDING_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
@@ -152,6 +152,10 @@ function formatSpawnMessage(entityType: string, spawned: number, ownerIndex: num
   return includeOwner ? `Spawned ${entityLabel} for player ${ownerIndex}` : `Spawned ${entityLabel}`
 }
 
+function withCellSpaceId<T extends object>(cell: DevCell, options: T): T & { spaceId?: string } {
+  return cell.spaceId ? { ...options, spaceId: cell.spaceId } : options
+}
+
 function spawnBanditUnits(context: DevConsoleContext, type: string, count: string | number = 1): CommandResult {
   const { menu } = context
   const owner = getOrCreateBanditOwner(context)
@@ -160,13 +164,15 @@ function spawnBanditUnits(context: DevConsoleContext, type: string, count: strin
   for (let i = 0; i < getAmount(count); i++) {
     const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
     if (!cell) break
-    owner.createUnit?.({
-      i: cell.i,
-      j: cell.j,
-      type,
-      gender: 'male',
-      appearanceVariants: { gender: 'male' },
-    })
+    owner.createUnit?.(
+      withCellSpaceId(cell, {
+        i: cell.i,
+        j: cell.j,
+        type,
+        gender: 'male',
+        appearanceVariants: { gender: 'male' },
+      })
+    )
     owner.population = (owner.population ?? 0) + 1
     spawned++
   }
@@ -186,15 +192,21 @@ function spawnWheatField(
   includeOwner: boolean
 ): CommandResult {
   const { map, menu } = context
+  const space = getDevMapSpace(context, cell.spaceId)
+  const grid = space?.grid ?? map.grid
   const size = Number(owner.config.buildings[BUILDING_TYPES.farm]?.size ?? 4)
-  const cells = getBuildingFootprintCells(cell.i, cell.j, map.grid, size)
+  const cells = getBuildingFootprintCells(cell.i, cell.j, grid, size)
   for (const footprintCell of cells) {
-    const wheat = map.addChild(
-      new Resource(
-        { i: footprintCell.i, j: footprintCell.j, type: RESOURCE_TYPES.wheat, startsMature: true },
-        context as unknown as ConstructorParameters<typeof Resource>[1]
-      )
+    const wheat = new Resource(
+      withCellSpaceId(footprintCell, {
+        i: footprintCell.i,
+        j: footprintCell.j,
+        type: RESOURCE_TYPES.wheat,
+        startsMature: true,
+      }),
+      context as unknown as ConstructorParameters<typeof Resource>[1]
     )
+    addDevEntityToMapSpaceContainer(context, wheat)
     map.resources.add(wheat)
   }
   menu.updateTopbar()
@@ -226,7 +238,7 @@ export function spawnUnits(
   for (let i = 0; i < getAmount(count); i++) {
     const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
     if (!cell) break
-    owner.createUnit?.({ i: cell.i, j: cell.j, type })
+    owner.createUnit?.(withCellSpaceId(cell, { i: cell.i, j: cell.j, type }))
     owner.population = (owner.population ?? 0) + 1
     spawned++
   }
@@ -249,7 +261,7 @@ export function spawnAnimal(context: DevConsoleContext, typeName: string, count:
   for (let i = 0; i < getAmount(count); i++) {
     const cell = getSpawnCell(context, { cellCondition: canSpawnUnitOnCell })
     if (!cell) break
-    map.gaia.createAnimal({ i: cell.i, j: cell.j, type })
+    map.gaia.createAnimal(withCellSpaceId(cell, { i: cell.i, j: cell.j, type }))
     spawned++
   }
   if (!spawned) return { ok: false, message: 'No free land cell near cursor' }
@@ -281,7 +293,7 @@ export function spawnBuilding(
     return spawnWheatField(context, owner, cell, ownerIndex, playerIndex != null)
   }
 
-  const building = owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
+  const building = owner.createBuilding(withCellSpaceId(cell, { i: cell.i, j: cell.j, type, isBuilt: true }))
   owner.hasBuilt ??= []
   if (!owner.hasBuilt.includes(type)) owner.hasBuilt.push(type)
   ;(building as { updateTexture?: () => void }).updateTexture?.()

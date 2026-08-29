@@ -1,7 +1,9 @@
 import { BUCKET_SIZE, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getEntityWeaponPower } from '../equipment/equipmentStats'
 import { getCombatBehavior, getCombatMoraleRoll } from './combatBehavior'
+import { getEntitySpaceMapLike } from '../mapSpaces'
 import type { CombatEntity } from '../../types/combat'
+import type { RuntimeMap } from '../../types/map'
 
 const SPARE_A_WEAKENED_ATTACKER_HEALTH_RATIO = 0.4
 const MORALE_SCAN_RADIUS = 6
@@ -9,6 +11,12 @@ const CIVILIAN_SURRENDER_HEALTH_RATIO = 0.28
 const SOLDIER_SURRENDER_HEALTH_RATIO = 0.18
 
 export type CombatMoraleDecision = 'fight' | 'flee' | 'surrender'
+
+type SpaceLookupEntity = Parameters<typeof getEntitySpaceMapLike>[0]
+
+function getCombatEntitySpaceMap(source: CombatEntity) {
+  return getEntitySpaceMapLike(source as SpaceLookupEntity, source.context?.map as RuntimeMap | null | undefined)
+}
 
 function canAttack(source?: CombatEntity | null): boolean {
   return getEntityWeaponPower(source as Parameters<typeof getEntityWeaponPower>[0] | null | undefined) > 0
@@ -49,7 +57,7 @@ function isSurrenderEligible(source: CombatEntity, attacker?: CombatEntity | nul
     !attacker ||
     attacker.family !== FAMILY_TYPES.unit ||
     !attacker.owner ||
-      !source.owner?.isEnemy?.(attacker.owner as never)
+    !source.owner?.isEnemy?.(attacker.owner as never)
   ) {
     return false
   }
@@ -88,7 +96,8 @@ function nearbyCombatants(
   addUniqueCombatant(allies, source)
   if (attacker && isEnemyOf(source, attacker)) addUniqueCombatant(enemies, attacker)
 
-  const buckets = source.context?.map?.instanceBuckets
+  const map = getCombatEntitySpaceMap(source)
+  const buckets = map?.instanceBuckets ?? source.context?.map?.instanceBuckets
   const sourceI = source.i
   const sourceJ = source.j
   if (!buckets || sourceI == null || sourceJ == null || !buckets.length || !buckets[0]?.length)
@@ -121,15 +130,13 @@ function nearbyCombatants(
 }
 
 function hasEscapeCell(source: CombatEntity, attacker?: CombatEntity | null): boolean {
-  const grid = source.context?.map?.grid
+  const map = getCombatEntitySpaceMap(source)
+  const grid = map?.grid ?? source.context?.map?.grid
   if (!grid || source.i == null || source.j == null || attacker?.i == null || attacker?.j == null) return true
   const di = source.i - attacker.i
   const dj = source.j - attacker.j
   const len = Math.sqrt(di * di + dj * dj) || 1
-  const maxDist = Math.max(
-    2,
-    Math.min(source.i + source.j + 1, source.context?.map?.grid?.length ?? 2, MORALE_SCAN_RADIUS)
-  )
+  const maxDist = Math.max(2, Math.min(source.i + source.j + 1, grid.length, MORALE_SCAN_RADIUS))
   for (let dist = 1; dist <= maxDist; dist++) {
     const ti = Math.round(source.i + (di / len) * dist)
     const tj = Math.round(source.j + (dj / len) * dist)

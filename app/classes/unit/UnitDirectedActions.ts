@@ -10,6 +10,7 @@ import {
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { t } from '../../lib/lang'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
+import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
@@ -193,7 +194,7 @@ export class UnitDirectedActions {
         },
         unit.context!
       )
-      map.addChild(projectile)
+      attachProjectileToMapSpace(projectile, map)
     })
   }
 

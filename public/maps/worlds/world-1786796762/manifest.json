@@ -1,0 +1,374 @@
+{
+  "format": "macro-world-map-manifest",
+  "version": 1,
+  "generatedAt": "2026-08-28T20:33:19.223Z",
+  "worldSeed": 1786796762,
+  "regionMapSize": 144,
+  "regionsWide": 5,
+  "regionsHigh": 4,
+  "biomeSectors": [
+    "blackforest",
+    "jungle",
+    "desert",
+    "temperate"
+  ],
+  "macroPreviewPath": "macro-world-preview.png",
+  "macroRegionsPath": "macro-world-regions.json",
+  "maps": [
+    {
+      "id": "world-1786796762-r0-0-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1
+      },
+      "waterRatio": 0.5276,
+      "region": {
+        "x": 0,
+        "y": 0
+      },
+      "path": "144/world-1786796762-r0-0-temperate.map",
+      "seed": 1437142269,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r1-0-black-forest",
+      "size": 144,
+      "environment": "BlackForest",
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.6563,
+        "temperate": 0.3437
+      },
+      "waterRatio": 0.2564,
+      "region": {
+        "x": 1,
+        "y": 0
+      },
+      "path": "144/world-1786796762-r1-0-black-forest.map",
+      "seed": 823146559,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r2-0-black-forest",
+      "size": 144,
+      "environment": "BlackForest",
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 1
+      },
+      "waterRatio": 0.2811,
+      "region": {
+        "x": 2,
+        "y": 0
+      },
+      "path": "144/world-1786796762-r2-0-black-forest.map",
+      "seed": 40847488,
+      "spawns": 3
+    },
+    {
+      "id": "world-1786796762-r3-0-black-forest",
+      "size": 144,
+      "environment": "BlackForest",
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.8363,
+        "jungle": 0.1637
+      },
+      "waterRatio": 0.2728,
+      "region": {
+        "x": 3,
+        "y": 0
+      },
+      "path": "144/world-1786796762-r3-0-black-forest.map",
+      "seed": 1136539458,
+      "spawns": 3
+    },
+    {
+      "id": "world-1786796762-r4-0-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "blackforest": 0.4989,
+        "jungle": 0.5011
+      },
+      "waterRatio": 0.4742,
+      "region": {
+        "x": 4,
+        "y": 0
+      },
+      "path": "144/world-1786796762-r4-0-jungle.map",
+      "seed": 2070785218,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r0-1-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1
+      },
+      "waterRatio": 0.3069,
+      "region": {
+        "x": 0,
+        "y": 1
+      },
+      "path": "144/world-1786796762-r0-1-temperate.map",
+      "seed": 1957419383,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r1-1-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "blackforest": 0.1906,
+        "temperate": 0.8094
+      },
+      "waterRatio": 0,
+      "region": {
+        "x": 1,
+        "y": 1
+      },
+      "path": "144/world-1786796762-r1-1-temperate.map",
+      "seed": 1236150391,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r2-1-black-forest",
+      "size": 144,
+      "environment": "BlackForest",
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.7917,
+        "desert": 0.0014,
+        "jungle": 0.071,
+        "temperate": 0.136
+      },
+      "waterRatio": 0,
+      "region": {
+        "x": 2,
+        "y": 1
+      },
+      "path": "144/world-1786796762-r2-1-black-forest.map",
+      "seed": 1728807681,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r3-1-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "blackforest": 0.1549,
+        "jungle": 0.8451
+      },
+      "waterRatio": 0.0123,
+      "region": {
+        "x": 3,
+        "y": 1
+      },
+      "path": "144/world-1786796762-r3-1-jungle.map",
+      "seed": 1579724026,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r4-1-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "jungle": 1
+      },
+      "waterRatio": 0.2772,
+      "region": {
+        "x": 4,
+        "y": 1
+      },
+      "path": "144/world-1786796762-r4-1-jungle.map",
+      "seed": 127214481,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r0-2-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1
+      },
+      "waterRatio": 0.3349,
+      "region": {
+        "x": 0,
+        "y": 2
+      },
+      "path": "144/world-1786796762-r0-2-temperate.map",
+      "seed": 595089810,
+      "spawns": 3
+    },
+    {
+      "id": "world-1786796762-r1-2-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "desert": 0.0054,
+        "temperate": 0.9946
+      },
+      "waterRatio": 0,
+      "region": {
+        "x": 1,
+        "y": 2
+      },
+      "path": "144/world-1786796762-r1-2-temperate.map",
+      "seed": 358975480,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r2-2-desert",
+      "size": 144,
+      "environment": "Desert",
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 0.7647,
+        "jungle": 0.0388,
+        "temperate": 0.1966
+      },
+      "waterRatio": 0,
+      "region": {
+        "x": 2,
+        "y": 2
+      },
+      "path": "144/world-1786796762-r2-2-desert.map",
+      "seed": 998726717,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r3-2-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "desert": 0.1172,
+        "jungle": 0.8828
+      },
+      "waterRatio": 0.0071,
+      "region": {
+        "x": 3,
+        "y": 2
+      },
+      "path": "144/world-1786796762-r3-2-jungle.map",
+      "seed": 1286252552,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r4-2-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "jungle": 1
+      },
+      "waterRatio": 0.2699,
+      "region": {
+        "x": 4,
+        "y": 2
+      },
+      "path": "144/world-1786796762-r4-2-jungle.map",
+      "seed": 1850707275,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r0-3-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1
+      },
+      "waterRatio": 0.7463,
+      "region": {
+        "x": 0,
+        "y": 3
+      },
+      "path": "144/world-1786796762-r0-3-temperate.map",
+      "seed": 233843095,
+      "spawns": 4
+    },
+    {
+      "id": "world-1786796762-r1-3-temperate",
+      "size": 144,
+      "environment": "Temperate",
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "desert": 0.3073,
+        "temperate": 0.6927
+      },
+      "waterRatio": 0.3843,
+      "region": {
+        "x": 1,
+        "y": 3
+      },
+      "path": "144/world-1786796762-r1-3-temperate.map",
+      "seed": 2022136259,
+      "spawns": 3
+    },
+    {
+      "id": "world-1786796762-r2-3-desert",
+      "size": 144,
+      "environment": "Desert",
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 1
+      },
+      "waterRatio": 0.3061,
+      "region": {
+        "x": 2,
+        "y": 3
+      },
+      "path": "144/world-1786796762-r2-3-desert.map",
+      "seed": 1923443978,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r3-3-desert",
+      "size": 144,
+      "environment": "Desert",
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 0.8993,
+        "jungle": 0.1007
+      },
+      "waterRatio": 0.2124,
+      "region": {
+        "x": 3,
+        "y": 3
+      },
+      "path": "144/world-1786796762-r3-3-desert.map",
+      "seed": 1640391003,
+      "spawns": 2
+    },
+    {
+      "id": "world-1786796762-r4-3-jungle",
+      "size": 144,
+      "environment": "Jungle",
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "desert": 0.3617,
+        "jungle": 0.6383
+      },
+      "waterRatio": 0.4282,
+      "region": {
+        "x": 4,
+        "y": 3
+      },
+      "path": "144/world-1786796762-r4-3-jungle.map",
+      "seed": 1209700023,
+      "spawns": 4
+    }
+  ]
+}

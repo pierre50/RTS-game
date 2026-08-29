@@ -11,11 +11,14 @@ import {
 } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
+  attachEntityShadowsToMapSpace,
   cartesianToIsometric,
   getAnimationFrames,
   getIconPath,
   getInstanceZIndex,
   getGroundReliefLevel,
+  getEntityMapSpace,
+  getEntityCell,
   playAudibleSoundCue,
   throttle,
   updateInstanceVisibility,
@@ -156,7 +159,9 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   unit.size = 1
   unit.visible = false
   unit.visibleCells = new Set()
-  const spawnCell = map.grid[unit.i][unit.j]
+  const space = getEntityMapSpace(unit, map)
+  const grid = space?.grid ?? map.grid
+  const spawnCell = grid[unit.i][unit.j]
   const [flatSpawnX, flatSpawnY] = cartesianToIsometric(unit.i, unit.j)
   unit.x = unitConfig.x ?? options.x ?? flatSpawnX
   unit.y = unitConfig.y ?? options.y ?? flatSpawnY
@@ -171,10 +176,12 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
 
 export function registerInitialUnitMapPresence(unit: UnitRuntimeHost): void {
   const { map } = unit.context
-  unit.currentCell = map.grid[unit.i][unit.j]
+  const currentCell = getEntityCell(unit, map)
+  if (!currentCell) return
+  unit.currentCell = currentCell
   if (unit.currentSheet === SHEET_TYPES.corpse) {
     unit.owner.corpses.push(unit)
-    map.grid[unit.i][unit.j].corpses.add(unit)
+    currentCell.corpses.add(unit)
   } else if (!unit.isDead) {
     unit.currentCell.place(unit)
     unit.currentCell.solid = true
@@ -261,7 +268,7 @@ export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: Runtime
   unit.sprite.loop = unit.loop ?? true
   unit.sprite.zIndex = MAIN_SPRITE_LAYER_Z_INDEX
   unit.shadow = unit.createShadow?.() ?? null
-  if (unit.shadow) unit.context.map.shadowLayer?.addChild(unit.shadow)
+  attachEntityShadowsToMapSpace(unit.context.map, unit)
   unit.addChild(unit.sprite)
   unit.setupMountedHorseSprite?.()
   unit.visualSettingsCleanup = onVisualSettingsChange(() => unit.syncVisualSettings?.())

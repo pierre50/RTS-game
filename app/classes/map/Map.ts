@@ -12,6 +12,14 @@ import { MapResources, type ResourceDensity } from './resources/MapResources'
 import { MapTerrain, type ReliefLevelBounds } from './terrain/MapTerrain'
 import { MapFog } from './fog/MapFog'
 import { createSeededRandom } from '../../lib/random'
+import {
+  OUTSIDE_SPACE_ID,
+  addEntityToRuntimeMapSpaceBucket,
+  ensureOutsideMapSpace,
+  getEntityMapSpace,
+  removeEntityFromRuntimeMapSpaceBucket,
+  updateEntityRuntimeMapSpaceBucket,
+} from '../../lib/mapSpaces'
 import { rectangleIntersectsViewport } from '../../lib/graphics/chunkCulling'
 import { TerrainChunkManager, type ChunkedTerrainMap } from './TerrainChunkManager'
 import {
@@ -25,7 +33,7 @@ import {
 } from './MapWaterOverlay'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
-import type { RuntimeCell, RenderChunk } from '../../types/map'
+import type { RuntimeCell, RenderChunk, RuntimeMap, RuntimeMapSpace } from '../../types/map'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
@@ -50,6 +58,8 @@ export default class Map extends Container {
   chanceOfSets: number
   ready: boolean
   grid: RuntimeCell[][]
+  spaces: globalThis.Map<string, RuntimeMapSpace>
+  activeSpaceId: string | null
   allTechnologies: boolean
   startingAge: number
   noAI: boolean
@@ -104,6 +114,8 @@ export default class Map extends Container {
 
     this.ready = false
     this.grid = []
+    this.spaces = new globalThis.Map()
+    this.activeSpaceId = null
     this.sortableChildren = true
 
     this.allTechnologies = false
@@ -261,32 +273,43 @@ export default class Map extends Container {
     const bw = Math.ceil(this.grid.length / BUCKET_SIZE)
     const bh = Math.ceil(this.grid[0].length / BUCKET_SIZE)
     this.instanceBuckets = Array.from({ length: bw }, () => Array.from({ length: bh }, () => new Set()))
+    ensureOutsideMapSpace(this as unknown as RuntimeMap).instanceBuckets = this.instanceBuckets
   }
 
   addToInstanceBucket(instance: RuntimeEntity): void {
-    this._ensureBuckets()
-    const bi = Math.floor(instance.i / BUCKET_SIZE)
-    const bj = Math.floor(instance.j / BUCKET_SIZE)
-    this.instanceBuckets?.[bi]?.[bj]?.add(instance)
+    const space = getEntityMapSpace(instance, this as unknown as RuntimeMap)
+    if (!space || space.id === OUTSIDE_SPACE_ID) {
+      this._ensureBuckets()
+      ensureOutsideMapSpace(this as unknown as RuntimeMap).instanceBuckets = this.instanceBuckets
+      const outside = ensureOutsideMapSpace(this as unknown as RuntimeMap)
+      addEntityToRuntimeMapSpaceBucket(outside, instance)
+      return
+    }
+    addEntityToRuntimeMapSpaceBucket(space, instance)
   }
 
   removeFromInstanceBucket(instance: RuntimeEntity): void {
-    if (!this.instanceBuckets) return
-    const bi = Math.floor(instance.i / BUCKET_SIZE)
-    const bj = Math.floor(instance.j / BUCKET_SIZE)
-    this.instanceBuckets[bi]?.[bj]?.delete(instance)
+    const space = getEntityMapSpace(instance, this as unknown as RuntimeMap)
+    if (!space || space.id === OUTSIDE_SPACE_ID) {
+      ensureOutsideMapSpace(this as unknown as RuntimeMap).instanceBuckets = this.instanceBuckets
+      if (!this.instanceBuckets) return
+      const outside = ensureOutsideMapSpace(this as unknown as RuntimeMap)
+      removeEntityFromRuntimeMapSpaceBucket(outside, instance)
+      return
+    }
+    removeEntityFromRuntimeMapSpaceBucket(space, instance)
   }
 
   updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void {
-    if (!this.instanceBuckets) return
-    const oldBi = Math.floor(oldI / BUCKET_SIZE),
-      oldBj = Math.floor(oldJ / BUCKET_SIZE)
-    const newBi = Math.floor(instance.i / BUCKET_SIZE),
-      newBj = Math.floor(instance.j / BUCKET_SIZE)
-    if (oldBi !== newBi || oldBj !== newBj) {
-      this.instanceBuckets[oldBi]?.[oldBj]?.delete(instance)
-      this.instanceBuckets[newBi]?.[newBj]?.add(instance)
+    const space = getEntityMapSpace(instance, this as unknown as RuntimeMap)
+    if (!space || space.id === OUTSIDE_SPACE_ID) {
+      ensureOutsideMapSpace(this as unknown as RuntimeMap).instanceBuckets = this.instanceBuckets
+      if (!this.instanceBuckets) return
+      const outside = ensureOutsideMapSpace(this as unknown as RuntimeMap)
+      updateEntityRuntimeMapSpaceBucket(outside, instance, { i: oldI, j: oldJ })
+      return
     }
+    updateEntityRuntimeMapSpaceBucket(space, instance, { i: oldI, j: oldJ })
   }
 
   // MapGeneration

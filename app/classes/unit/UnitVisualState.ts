@@ -6,6 +6,7 @@ import {
   getReliefLiftPixels,
   setSpriteFiltersPreservingDamageFeedback,
 } from '../../lib'
+import { getEntityMapPoint, isEntityInActiveMapSpace } from '../../lib/mapSpaces'
 import { getShadowsEnabled } from '../../lib/audio/settings'
 import type { Texture } from 'pixi.js'
 import type { UnitRuntimeHost } from './UnitTypes'
@@ -13,6 +14,22 @@ import type { UnitRuntimeHost } from './UnitTypes'
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
+
+function isSleepingFinalFrame(unit: UnitRuntimeHost): boolean {
+  const sprite = unit.sprite
+  const lastFrame = Math.max((sprite?.textures?.length ?? 1) - 1, 0)
+  return Boolean(
+    unit.shelterState?.status === 'outside' &&
+      unit.shelterState.reason === 'sleep' &&
+      unit.currentSheet === SHEET_TYPES.dying &&
+      !sprite?.playing &&
+      (sprite?.currentFrame ?? 0) >= lastFrame
+  )
+}
+
+function shouldShowUnitShadow(unit: UnitRuntimeHost): boolean {
+  return Boolean(getShadowsEnabled() && unit.visible && !unit.isDestroyed && isEntityInActiveMapSpace(unit))
+}
 
 export function createUnitShadow(
   unit: UnitRuntimeHost,
@@ -38,7 +55,6 @@ export function syncUnitShadow(
 ): void {
   if (!shadow || !source) return
   const frame = Math.min(source.currentFrame, Math.max(source.textures.length - 1, 0))
-  shadow.visible = getShadowsEnabled() && unit.visible && !unit.isDestroyed
   shadow.textures = source.textures
   shadow.animationSpeed = source.animationSpeed
   shadow.loop = source.loop
@@ -47,20 +63,23 @@ export function syncUnitShadow(
   shadow.rotation = 0
   shadow.scale.x = source.scale.x * SHADOW_SCALE_X
   shadow.scale.y = Math.abs(source.scale.y) * SHADOW_SCALE_Y
-  shadow.position.set(unit.x + source.position.x, unit.y + (unit.reliefLift ?? 0))
+  const point = getEntityMapPoint(unit)
+  shadow.position.set(point.x + source.position.x, point.y + (unit.reliefLift ?? 0))
   if (source.playing) {
     shadow.gotoAndPlay(frame)
   } else {
     shadow.gotoAndStop(frame)
   }
+  shadow.visible = shouldShowUnitShadow(unit) && !isSleepingFinalFrame(unit)
 }
 
 export function syncUnitVisualSettings(unit: UnitRuntimeHost): void {
+  const visible = shouldShowUnitShadow(unit) && !isSleepingFinalFrame(unit)
   if (unit.shadow) {
-    unit.shadow.visible = getShadowsEnabled() && unit.visible && !unit.isDestroyed
+    unit.shadow.visible = visible
   }
   if (unit.horseShadow) {
-    unit.horseShadow.visible = getShadowsEnabled() && unit.visible && !unit.isDestroyed
+    unit.horseShadow.visible = visible
   }
 }
 

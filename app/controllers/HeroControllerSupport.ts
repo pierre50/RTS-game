@@ -11,6 +11,13 @@ import {
 } from '../constants'
 import { getCommCellsInRadius } from '../lib/npc/npcInteraction'
 import { applyBakedLpcUnitAssets } from '../lib/lpc'
+import { getEntitySpaceGrid } from '../lib/mapSpaces'
+import {
+  ENTITY_TRANSITION_FADE_IN_MS,
+  ENTITY_TRANSITION_FADE_OUT_MS,
+  ENTITY_TRANSITION_HIDDEN_ALPHA,
+  ENTITY_TRANSITION_TICK_MS,
+} from '../lib/entities/entityFade'
 import { UNIT_WALK_SPEED_FACTOR } from '../lib/units/unitLocomotion'
 import { getLastDirectMoveDebugSnapshot } from '../classes/unit/movement/UnitMovementDebug'
 import type { ControlBindingAction } from '../lib/audio/settings'
@@ -21,11 +28,11 @@ export const TARGET_FRAME_MS = 1000 / 60
 const HERO_MOVE_DEBUG_THROTTLE_MS = 250
 export const COMPANION_HORSE_CALL_MIN_RADIUS = 10
 export const COMPANION_HORSE_CALL_MAX_RADIUS = 36
-export const MOUNT_TRANSITION_FADE_OUT_MS = 120
-export const MOUNT_TRANSITION_FADE_IN_MS = 140
+export const MOUNT_TRANSITION_FADE_OUT_MS = ENTITY_TRANSITION_FADE_OUT_MS
+export const MOUNT_TRANSITION_FADE_IN_MS = ENTITY_TRANSITION_FADE_IN_MS
 export const MOUNT_TRANSITION_CAMERA_MS = 180
-export const MOUNT_TRANSITION_TICK_MS = 40
-export const MOUNT_TRANSITION_HIDDEN_ALPHA = 0.05
+export const MOUNT_TRANSITION_TICK_MS = ENTITY_TRANSITION_TICK_MS
+export const MOUNT_TRANSITION_HIDDEN_ALPHA = ENTITY_TRANSITION_HIDDEN_ALPHA
 
 export type HeroAimPoint = { x: number; y: number }
 export type MoveVector = { dx: number; dy: number }
@@ -196,7 +203,7 @@ export function findCompanionHorseSpawnCell(
   radiusLimit = COMPANION_HORSE_CALL_MAX_RADIUS,
   options: { minRadius?: number; viewport?: ViewportMetrics | null } = {}
 ): RuntimeCell | null {
-  return findCompanionHorseSpawnCellNear(hero, hero.context?.map?.grid, radiusLimit, options)
+  return findCompanionHorseSpawnCellNear(hero, getEntitySpaceGrid(hero, hero.context?.map) ?? undefined, radiusLimit, options)
 }
 
 export function findCompanionHorseSpawnCellNear(

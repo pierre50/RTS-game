@@ -1,5 +1,6 @@
 import { SHEET_TYPES } from '../../constants'
 import { getInstanceDegree, isBanditUnit } from '../../lib'
+import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import type { UnitEntity } from '../../types/entities'
 
 const BANDIT_STOP_DEBUG_THROTTLE_MS = 600
@@ -68,7 +69,8 @@ function debugBanditStep(unit: UnitEntity, reason: string): void {
   lastBanditStopDebugAt = now
   const cell = unit.currentCell
   const next = unit.path?.at(-1)
-  const nextCell = next ? unit.context?.map?.grid[next.i]?.[next.j] : null
+  const grid = getEntitySpaceGrid(unit, unit.context?.map)
+  const nextCell = next ? grid?.[next.i]?.[next.j] : null
   console.warn('[bandit-stuck]', reason, {
     unit: {
       label: unit.label,

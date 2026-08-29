@@ -1,5 +1,6 @@
 import { BUILDING_TYPES } from '../constants'
-import { canAfford, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
+import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import type {
   AIBuildingLike,
   AIEntityLike,
@@ -8,6 +9,8 @@ import type {
   AIStrategyPlayerLike,
   AIStrategySnapshot,
 } from './types'
+import type { GridCell } from '../types/grid'
+import type { RuntimeCell } from '../types/map'
 
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type ResourceLedger = Record<string, number | undefined>
@@ -125,6 +128,12 @@ export function handleAIBuildingActions(
 
   const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
     otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
+  const passageLookup = createReservedPassageCellLookup(ai.context)
+  const avoidsReservedPassages = (cell: GridCell) => !passageLookup.has(cell as RuntimeCell)
+  const placementCondition =
+    (...conditions: Array<(cell: AIGridPosition) => boolean>) =>
+    (cell: GridCell) =>
+      avoidsReservedPassages(cell) && conditions.every(condition => condition(cell as AIGridPosition))
   const ageUpReserve = strategy.getAgeUpReserve()
   const buy = (
     condition: boolean,
@@ -149,7 +158,15 @@ export function handleAIBuildingActions(
     buy(
       ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
       BUILDING_TYPES.house,
-      () => getPositionInGridAroundInstance(anchor, map.grid, [6, 10], 0),
+      () =>
+        getPositionInGridAroundInstance(
+          anchor,
+          map.grid,
+          [6, 10],
+          getBuildingPlacementSearchSize(0),
+          false,
+          placementCondition()
+        ),
       false
     )
   )
@@ -157,35 +174,70 @@ export function handleAIBuildingActions(
 
   if (
     buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
-      getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+      getPositionInGridAroundInstance(
+        anchor,
+        map.grid,
+        [6, 20],
+        getBuildingPlacementSearchSize(1),
+        false,
+        placementCondition(isEnemyFacing(anchor))
+      )
     )
   )
     actions++
 
   if (
     buy(markets.length === 0, BUILDING_TYPES.market, () =>
-      getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+      getPositionInGridAroundInstance(
+        anchor,
+        map.grid,
+        [6, 20],
+        getBuildingPlacementSearchSize(1),
+        false,
+        placementCondition(isEnemyFacing(anchor))
+      )
     )
   )
     actions++
 
   if (
     buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
-      getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+      getPositionInGridAroundInstance(
+        anchor,
+        map.grid,
+        [6, 20],
+        getBuildingPlacementSearchSize(1),
+        false,
+        placementCondition(isEnemyFacing(anchor))
+      )
     )
   )
     actions++
 
   if (
     buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
-      getPositionInGridAroundInstance(anchor, map.grid, [6, 20], 1, false, isEnemyFacing(anchor))
+      getPositionInGridAroundInstance(
+        anchor,
+        map.grid,
+        [6, 20],
+        getBuildingPlacementSearchSize(1),
+        false,
+        placementCondition(isEnemyFacing(anchor))
+      )
     )
   )
     actions++
 
   if (
     buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
-      getPositionInGridAroundInstance(anchor, map.grid, [6, 15], 2, false, isEnemyFacing(anchor))
+      getPositionInGridAroundInstance(
+        anchor,
+        map.grid,
+        [6, 15],
+        getBuildingPlacementSearchSize(2),
+        false,
+        placementCondition(isEnemyFacing(anchor))
+      )
     )
   )
     actions++
@@ -199,7 +251,15 @@ export function handleAIBuildingActions(
       strategy,
       ai.technologies.includes('Farming') && granarys.length > 0 && currentWheatFields < desiredWheatFields,
       livingWheatTiles,
-      () => getPositionInGridAroundInstance(wheatAnchor, map.grid, [4, 14], 4, false),
+      () =>
+        getPositionInGridAroundInstance(
+          wheatAnchor,
+          map.grid,
+          [4, 14],
+          getBuildingPlacementSearchSize(4),
+          false,
+          placementCondition()
+        ),
       ageUpReserve,
       debug
     )

@@ -2,9 +2,11 @@ import { BUCKET_SIZE, FAMILY_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from './cells'
 import { updateVisibility } from '../../services/FogOfWar'
 import { getInsightDetectionRange } from '../units/insightDetection'
+import { getEntityMapPoint, getEntityMapSpace, isEntityInActiveMapSpace, sameMapSpace } from '../mapSpaces'
 import type { GridPosition, Point } from '../../types/grid'
 import type { VisibilityEntity } from '../../services/FogOfWar'
 import type { Bounds } from '../../types/geometry'
+import type { RuntimeMap } from '../../types/map'
 
 type PlayerVisibility = {
   views?: {
@@ -31,6 +33,7 @@ export type RenderableInstance = VisibilityEntity &
       player?: PlayerVisibility
     }
     family?: string
+    spaceId?: string
     type?: string
     owner?: VisibilityEntity['owner'] & {
       isPlayed?: boolean
@@ -42,12 +45,30 @@ export type RenderableInstance = VisibilityEntity &
   }
 
 export type BoundsSource = {
+  context?: {
+    map?: unknown
+  }
   x: number
   y: number
   destroyed?: boolean
   isDestroyed?: boolean
   position?: { x?: number; y?: number } | null
+  spaceId?: string
   sprite?: { destroyed?: boolean; width: number; height: number; anchor?: { x: number; y: number } }
+}
+
+type SpaceAwareInstance = {
+  context?: { map?: RuntimeMap | null }
+  spaceId?: string | null
+  x: number
+  y: number
+}
+
+function getVisibilityRuntimeMap(instance?: { context?: { map?: unknown } } | null): RuntimeMap | null {
+  const map = instance?.context?.map
+  if (!map || typeof map !== 'object') return null
+  const candidate = map as Partial<RuntimeMap>
+  return Array.isArray(candidate.grid) && typeof candidate.size === 'number' ? (candidate as RuntimeMap) : null
 }
 
 export type FindInstancesInSightOptions = {
@@ -60,6 +81,8 @@ function getRenderablePosition(instance: BoundsSource): Point | null {
   const x = instance.position?.x ?? instance.x
   const y = instance.position?.y ?? instance.y
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  const map = getVisibilityRuntimeMap(instance)
+  if (map) return getEntityMapPoint({ ...instance, x: x as number, y: y as number } as SpaceAwareInstance, map)
   return { x: x as number, y: y as number }
 }
 
@@ -97,7 +120,9 @@ export function findInstancesInSight<
   const { i: instX, j: instY, sight = 0 } = instance
   const options = typeof rangeOrOptions === 'number' ? { range: rangeOrOptions } : rangeOrOptions
   const searchRadius = options?.range ?? sight
-  const { instanceBuckets } = instance.context?.map || {}
+  const map = getVisibilityRuntimeMap(instance)
+  const space = getEntityMapSpace(instance as SpaceAwareInstance, map)
+  const instanceBuckets = space?.instanceBuckets ?? instance.context?.map?.instanceBuckets
   if (!instanceBuckets) return []
 
   const instances: TTarget[] = []
@@ -113,6 +138,7 @@ export function findInstancesInSight<
         const dx = target.i - instX
         const dy = target.j - instY
         const typedTarget = target as TTarget
+        if (!sameMapSpace(instance, typedTarget)) continue
         const detectionRadius = options?.useInsightRange
           ? getInsightDetectionRange(instance, typedTarget, searchRadius)
           : searchRadius
@@ -133,6 +159,8 @@ export function updateInstanceVisibility(instance: RenderableInstance): void {
 function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   const { map, player, controls } = instance?.context || {}
   if (!map || !controls || !instance || instance.isDestroyed) return false
+  const runtimeMap = getVisibilityRuntimeMap(instance)
+  if (!isEntityInActiveMapSpace(instance as SpaceAwareInstance, runtimeMap)) return false
   if (!getRenderablePosition(instance)) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
   if (!controls.instanceInCamera(instance, getInstanceScreenBounds(instance))) return false

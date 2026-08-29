@@ -12,7 +12,10 @@ import {
   updateInstanceVisibility,
   isBuildingLimitReached,
   getBuildingFootprintCells,
+  hasBuildingPlacementClearance,
 } from '../../lib'
+import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
+import { addEntityToMapSpaceContainer, getMapSpace } from '../../lib/mapSpaces'
 import { Building } from '../building/Building'
 import type { BuildingOptions } from '../building/Building'
 import { Resource } from '../Resource'
@@ -52,7 +55,7 @@ import {
 import type { GameContextLike } from '../../types/context'
 import type { ConfigOperation, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { RuntimeMap } from '../../types/map'
+import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
 import type { SerializedVisionGrid } from '../../types/vision'
 import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
@@ -337,22 +340,33 @@ export class Player implements PlayerLike {
     return isBuildingEligible(this, type)
   }
 
-  plantWheatField(i: number, j: number) {
+  plantWheatField(i: number, j: number, options: { spaceId?: string } = {}) {
     const {
       context: { menu, map },
     } = this
+    const space = getMapSpace(map, options.spaceId)
+    const grid = space?.grid ?? map.grid
     const config = this.config.buildings[BUILDING_TYPES.farm]
     const placementConfig = { ...config, type: BUILDING_TYPES.farm }
+    const passageLookup = createReservedPassageCellLookup(this.context)
+    const placementOptions = {
+      canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
+    }
     if (
       canAfford(this, config.cost) &&
       this.isBuildingEligible(BUILDING_TYPES.farm) &&
-      canPlaceBuildingAt(map.grid, i, j, placementConfig)
+      canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
+      hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
     ) {
       const planted: RuntimeEntity[] = []
       payCost(this, config.cost)
       const size = typeof config.size === 'number' ? config.size : 4
-      for (const cell of getBuildingFootprintCells(i, j, map.grid, size)) {
-        const wheat = map.addChild(new Resource({ i: cell.i, j: cell.j, type: RESOURCE_TYPES.wheat }, this.context))
+      for (const cell of getBuildingFootprintCells(i, j, grid, size)) {
+        const wheat = new Resource(
+          { i: cell.i, j: cell.j, spaceId: cell.spaceId, type: RESOURCE_TYPES.wheat },
+          this.context
+        )
+        addEntityToMapSpaceContainer(map, wheat)
         cell.updateVisible()
         fadeIn(wheat, FADE_DURATION_MS)
         map.resources.add(wheat)
@@ -368,20 +382,27 @@ export class Player implements PlayerLike {
     return false
   }
 
-  buyBuilding(i: number, j: number, type: string) {
-    if (type === BUILDING_TYPES.farm) return this.plantWheatField(i, j)
+  buyBuilding(i: number, j: number, type: string, options: { spaceId?: string } = {}) {
+    if (type === BUILDING_TYPES.farm) return this.plantWheatField(i, j, options)
     const {
       context: { menu, map },
     } = this
+    const space = getMapSpace(map, options.spaceId)
+    const grid = space?.grid ?? map.grid
     const config = this.config.buildings[type]
     const placementConfig = { ...config, type }
+    const passageLookup = createReservedPassageCellLookup(this.context)
+    const placementOptions = {
+      canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
+    }
     if (
       canAfford(this, config.cost) &&
       this.isBuildingEligible(type) &&
       !isBuildingLimitReached(this, type) &&
-      canPlaceBuildingAt(map.grid, i, j, placementConfig)
+      canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
+      hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
     ) {
-      this.spawnBuilding({ i, j, type, isBuilt: map.instantMode })
+      this.spawnBuilding({ i, j, spaceId: space?.id, type, isBuilt: map.instantMode })
       payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true
@@ -396,19 +417,18 @@ export class Player implements PlayerLike {
     const name =
       options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
-    let unit = context.map.addChild(
-      new Unit(
-        {
-          ...options,
-          type,
-          name,
-          controlMode: isHeroUnit ? 'hero' : options.controlMode,
-          isChief: options.isChief ?? isHeroUnit,
-          owner: this,
-        },
-        context
-      )
+    let unit = new Unit(
+      {
+        ...options,
+        type,
+        name,
+        controlMode: isHeroUnit ? 'hero' : options.controlMode,
+        isChief: options.isChief ?? isHeroUnit,
+        owner: this,
+      },
+      context
     )
+    addEntityToMapSpaceContainer(context.map, unit)
     canUpdateMinimap(unit, context.player) &&
       context.menu.isMiniMapActive?.() !== false &&
       context.menu.updatePlayerMiniMapEvt(this)
@@ -421,7 +441,8 @@ export class Player implements PlayerLike {
 
   createBuilding(options: BuildingOptions) {
     const { context } = this
-    const building = context.map.addChild(new Building({ ...options, owner: this }, context))
+    const building = new Building({ ...options, owner: this }, context)
+    addEntityToMapSpaceContainer(context.map, building)
     this.buildings.push(building)
     updateWallAndNeighbours(building)
     canUpdateMinimap(building, context.player) &&

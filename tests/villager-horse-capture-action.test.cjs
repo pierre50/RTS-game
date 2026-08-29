@@ -86,6 +86,15 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === '../HeroLassoThrow') return { HeroLassoThrow }
     if (request === '../Projectile') return { Projectile: class {} }
+    if (request === '../../lib/mapSpaces') {
+      return {
+        getEntityCell: (entity, map) => entity?.currentCell ?? map?.grid?.[entity?.i]?.[entity?.j] ?? null,
+        getEntitySpaceMapLike: entity => entity?.context?.map ?? null,
+        sameCellMapSpace: () => true,
+        sameMapSpace: () => true,
+      }
+    }
+    if (request === '../../lib/projectiles') return { attachProjectileToMapSpace: () => {} }
     if (request === '../../lib/units/unitExperience') {
       return {
         LOADING_XP_CATEGORY: {},

@@ -18,6 +18,7 @@ import { getCellsInCellRadius } from '../grid/cells'
 import { angleDelta, getInstanceDegree } from '../maths'
 import { playAudibleSoundCue, playSelectionSound } from '../audio/sound'
 import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToDispatch'
+import { getEntitySpaceMapLike } from '../mapSpaces'
 export { updateNpcFollow } from './npcFollow'
 export {
   canKeepNpcHere,
@@ -130,7 +131,7 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true)
   }
   target.degree = getInstanceDegree(target, hero.x, hero.y)
   if (!sleeping) target.setTextures?.(SHEET_TYPES.standing)
-  else target.context?.villagerShelter?.previewSleepingVillagerWake(target)
+  else target.context?.unitRest?.previewSleepingUnitWake(target)
   setCommSelected(target, true)
   if (shouldPlayVoice) playSelectionSound(target)
 }
@@ -161,7 +162,7 @@ function releaseNpc(target: UnitEntity): void {
   target.lookingAtHero = false
   setCommSelected(target, false)
   if (target.shelterState?.reason === 'sleep') {
-    target.context?.villagerShelter?.restoreSleepingVillagerVisual(target)
+    target.context?.unitRest?.restoreSleepingUnitVisual(target)
     return
   }
   const dest = target.previousDest
@@ -209,7 +210,7 @@ function findCommGroup(hero: UnitEntity, radius: number): UnitEntity[] {
 }
 
 export function getCommCellsInRadius(hero: UnitEntity, radius: number): RuntimeCell[] {
-  const grid = hero.context?.map?.grid
+  const grid = getEntitySpaceMapLike(hero, hero.context?.map)?.grid
   if (!grid) return []
   return getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, radius)
 }

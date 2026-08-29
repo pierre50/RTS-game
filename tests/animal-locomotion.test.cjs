@@ -138,6 +138,18 @@ function createMovement(animalOverrides = {}, libOverrides = {}) {
   const { AnimalMovement } = loadModule('app/classes/animal/AnimalMovement.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    '../../lib/buildings/passageCells': {
+      createReservedPassageCellLookup: () => ({
+        has: cell => Boolean(cell?.reservedPassage),
+        size: 0,
+      }),
+      findNearestPassageWaitingCell: (entity, cell) => {
+        const waitingCell = entity.context.map.grid[cell.i - 1]?.[cell.j] ?? null
+        return waitingCell ? { cell: waitingCell, path: [waitingCell] } : null
+      },
+      shouldEntityAvoidPassageStop: (_entity, cell, options = {}) =>
+        Boolean(options.passageLookup?.has?.(cell) ?? cell?.reservedPassage),
+    },
     '../../lib/units/unitEnergy': {
       drainEnergyAmount: () => true,
       getActionEnergyCost: () => 0,
@@ -269,6 +281,18 @@ test('a repath on the ground still defaults to the walking sheet', () => {
 
   assert.deepEqual(calls, [
     ['setDest', 8, 8],
+    ['setPath', 'walkingSheet'],
+  ])
+})
+
+test('direct animal movement avoids building passage cells as final stops', () => {
+  const { movement, grid, calls } = createMovement()
+  grid[5][5].reservedPassage = true
+
+  movement.sendTo(grid[5][5], null, { forceRepath: true })
+
+  assert.deepEqual(calls, [
+    ['setDest', 4, 5],
     ['setPath', 'walkingSheet'],
   ])
 })

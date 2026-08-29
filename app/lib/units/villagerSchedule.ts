@@ -10,10 +10,6 @@ export function isVillagerSleepTime(context: Pick<GameContextLike, 'dayNight'> |
   return hour >= VILLAGER_SLEEP_START_HOUR || hour < VILLAGER_WAKE_HOUR
 }
 
-export function isVillagerWakeTime(context: Pick<GameContextLike, 'dayNight'> | null | undefined): boolean {
-  return !isVillagerSleepTime(context)
-}
-
 export function isVillagerTiredTime(context: Pick<GameContextLike, 'dayNight'> | null | undefined): boolean {
   const hour = context?.dayNight?.state?.hour ?? 12
   return hour >= VILLAGER_TIRED_START_HOUR || hour < VILLAGER_TIRED_END_HOUR

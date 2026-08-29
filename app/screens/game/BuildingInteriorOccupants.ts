@@ -1,13 +1,12 @@
 import { UNIT_TYPES } from '../../constants'
 import { getBuildingFootprintCells, getFreeLandCellAroundInstance } from '../../lib'
-import {
-  findInteriorSleepCell,
-  hasBuildingShelterCapacity,
-} from '../../lib/buildings/buildingOccupancy'
+import { findInteriorSleepCell, hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { sameBuilding } from '../../lib/buildings/identity'
+import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
-import { sleepOutside } from '../../services/VillagerShelterLifecycle'
-import type { SleepOutsideVisualMode } from '../../services/VillagerShelterLifecycle'
-import { getNearestShelter, isSleepTime } from '../../services/VillagerShelterRules'
+import { sleepOutside } from '../../services/rest/UnitRestLifecycle'
+import type { SleepOutsideVisualMode } from '../../services/rest/UnitRestLifecycle'
+import { getNearestShelter, isSleepTime } from '../../services/rest/UnitRestRules'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -42,10 +41,6 @@ function isRuntimeUnitInsideBuildingShelter(unit: UnitEntity | undefined, buildi
   if (unit?.shelterState?.status !== 'inside') return false
   const shelter = unit.shelterState.shelter
   return shelter === building || Boolean(shelter?.label && shelter.label === building.label)
-}
-
-function sameBuilding(a: BuildingEntity | null | undefined, b: BuildingEntity): boolean {
-  return a === b || Boolean(a?.label && a.label === b.label)
 }
 
 export function extractBuildingInteriorOccupants(
@@ -124,17 +119,14 @@ export function extractBuildingInteriorSleepArrivals(
     ) {
       return []
     }
-    const sleepTarget = getNearestShelter(runtimeUnit, 'sleep')
+    const sleepTarget = getNearestShelter(runtimeUnit)
     if (!sameBuilding(sleepTarget?.shelter, building)) return []
     reservedSleepArrivals += 1
     return [{ ...structuredClone(unit), sleepInInterior: true }]
   })
 }
 
-export function removeBuildingInteriorOccupants(
-  state: SerializedSave,
-  occupants: SaveEntityState[]
-): SerializedSave {
+export function removeBuildingInteriorOccupants(state: SerializedSave, occupants: SaveEntityState[]): SerializedSave {
   const occupantLabels = new Set(
     occupants.map(unit => unit.label).filter((label): label is string => typeof label === 'string' && label.length > 0)
   )
@@ -148,7 +140,9 @@ export function removeBuildingInteriorOccupants(
       return {
         ...player,
         selectedUnitLabel:
-          player.selectedUnitLabel && occupantLabels.has(player.selectedUnitLabel) ? undefined : player.selectedUnitLabel,
+          player.selectedUnitLabel && occupantLabels.has(player.selectedUnitLabel)
+            ? undefined
+            : player.selectedUnitLabel,
         selectedUnitLabels,
         units: player.units.filter(unit => !unit.label || !occupantLabels.has(unit.label)),
       }
@@ -173,9 +167,33 @@ function findInteriorOccupantArrivalCell(
     return directCell
   }
   const center = Math.round(map.size / 2)
-  return getFreeLandCellAroundInstance(anchor ?? { i: center, j: center, size: 1 }, map.grid, cells =>
-    cells[Math.floor(map.random() * cells.length)]
+  return getFreeLandCellAroundInstance(
+    anchor ?? { i: center, j: center, size: 1 },
+    map.grid,
+    cells => cells[Math.floor(map.random() * cells.length)],
+    createNonReservedPassageCellCondition(game._gameContext())
   )
+}
+
+function sameCell(a: RuntimeCell | null | undefined, b: RuntimeCell | null | undefined): boolean {
+  return Boolean(a && b && a.i === b.i && a.j === b.j)
+}
+
+function sendOccupantToInteriorSleepCell(occupant: UnitEntity, targetCell: RuntimeCell): void {
+  occupant.shelterState = {
+    status: 'movingToRest',
+    reason: 'sleep',
+    location: 'outside',
+    shelter: null,
+    targetCell,
+    startedAtMs: occupant.context?.scheduler?.elapsedMs ?? 0,
+    retryCount: 0,
+    previousDest: null,
+    previousWork: null,
+    previousAction: null,
+    previousAutonomousJob: null,
+  }
+  occupant.sendToEvt?.(targetCell, null, { forceRepath: true, preserveAutonomy: true })
 }
 
 export function addInteriorOccupantsToRuntime(
@@ -188,21 +206,24 @@ export function addInteriorOccupantsToRuntime(
   if (!player || !occupants.length) return []
 
   const existingLabels = new Set(
-    player.units.map(unit => unit.label).filter((label): label is string => typeof label === 'string' && label.length > 0)
+    player.units
+      .map(unit => unit.label)
+      .filter((label): label is string => typeof label === 'string' && label.length > 0)
   )
   const created: UnitEntity[] = []
 
   for (const occupantState of occupants) {
     if (!occupantState.label || existingLabels.has(occupantState.label)) continue
-    const cell = occupantState.sleepInInterior
-      ? findInteriorSleepCell(game._gameContext().map) ?? findInteriorOccupantArrivalCell(game, anchor)
-      : findInteriorOccupantArrivalCell(game, anchor)
-    if (!cell) continue
+    const arrivalCell = findInteriorOccupantArrivalCell(game, anchor)
+    if (!arrivalCell) continue
+    const sleepCell = occupantState.sleepInInterior ? findInteriorSleepCell(game._gameContext().map) : null
+    const enterSleepingInstantly = occupantState.sleepInInterior && (options.sleepVisual ?? 'finalFrame') === 'finalFrame'
+    const spawnCell = enterSleepingInstantly && sleepCell ? sleepCell : arrivalCell
 
     const occupant = player.createUnit?.(
       {
-        i: cell.i,
-        j: cell.j,
+        i: spawnCell.i,
+        j: spawnCell.j,
         appearanceVariants: occupantState.appearanceVariants
           ? { ...occupantState.appearanceVariants }
           : occupantState.gender
@@ -220,7 +241,11 @@ export function addInteriorOccupantsToRuntime(
 
     applyPortableUnitState(occupant as Partial<SaveEntityState>, occupantState, { keepAlive: true })
     occupant.followingHero = false
-    if (occupantState.sleepInInterior) sleepOutside(occupant, 'sleep', { visual: options.sleepVisual ?? 'finalFrame' })
+    if (occupantState.sleepInInterior) {
+      if (enterSleepingInstantly) sleepOutside(occupant, 'sleep', { visual: 'finalFrame' })
+      else if (sleepCell && !sameCell(sleepCell, arrivalCell)) sendOccupantToInteriorSleepCell(occupant, sleepCell)
+      else sleepOutside(occupant, 'sleep', { visual: options.sleepVisual ?? 'finalFrame' })
+    }
     refreshUnitEquipmentStats(occupant)
     existingLabels.add(occupant.label)
     created.push(occupant)
@@ -259,6 +284,8 @@ export function scheduleInteriorSleepArrivals(
     }
   }
 
-  taskId = game._gameContext().scheduler.add(flushNext, INTERIOR_SLEEP_ARRIVAL_INTERVAL_MS, 'buildingInterior.sleepArrivals')
+  taskId = game
+    ._gameContext()
+    .scheduler.add(flushNext, INTERIOR_SLEEP_ARRIVAL_INTERVAL_MS, 'buildingInterior.sleepArrivals')
   if (flushImmediately) flushNext()
 }

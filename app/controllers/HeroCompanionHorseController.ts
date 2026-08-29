@@ -1,4 +1,5 @@
 import { playAudibleSoundCue } from '../lib'
+import { getEntityCell, getEntitySpaceGrid, getMapSpace, moveEntityToMapSpace, sameMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
 import { instanceIsInPlayerSight } from '../lib/grid/visibility'
 import { t } from '../lib/lang'
@@ -91,12 +92,19 @@ export class HeroCompanionHorseController {
     const createAnimal = map?.gaia?.createAnimal
     if (!unit || !map || typeof createAnimal !== 'function') return null
     const horseColor = unit.companionHorseColor ?? unit.horseColor
-    const horse = createAnimal.call(map.gaia, { i: cell.i, j: cell.j, type: 'Horse', horseColor }) as CompanionHorse
+    const horse = createAnimal.call(map.gaia, {
+      i: cell.i,
+      j: cell.j,
+      spaceId: cell.spaceId,
+      type: 'Horse',
+      horseColor,
+    }) as CompanionHorse
     return this.registerCompanionHorse(horse)
   }
 
   isCompanionHorseVisibleToHero(horse: CompanionHorse, unit: UnitEntity): boolean {
     if (horse.visible === false) return false
+    if (!sameMapSpace(horse, unit)) return false
     const owner = unit.owner ?? this.controls.context.player
     if (owner?.views) return instanceIsInPlayerSight(horse, owner)
     const viewport = this.getViewportMetrics()
@@ -119,6 +127,7 @@ export class HeroCompanionHorseController {
     ) {
       return false
     }
+    if (!sameMapSpace(stable, unit)) return false
     const distance = Math.hypot(stable.i - unit.i, stable.j - unit.j)
     if (distance > (unit.sight ?? COMPANION_HORSE_CALL_MAX_RADIUS)) return false
     const owner = unit.owner ?? this.controls.context.player
@@ -149,7 +158,8 @@ export class HeroCompanionHorseController {
     const stable = this.findVisibleOwnedStableForCompanionHorse()
     if (stable) {
       const radius = Math.max(COMPANION_HORSE_STABLE_EXIT_RADIUS, (stable.size ?? 1) + 2)
-      const cell = findCompanionHorseSpawnCellNear(stable, map.grid, radius)
+      const grid = getEntitySpaceGrid(stable, map)
+      const cell = findCompanionHorseSpawnCellNear(stable, grid ?? undefined, radius)
       if (cell) return cell
     }
     return findCompanionHorseSpawnCell(unit, COMPANION_HORSE_CALL_MAX_RADIUS, {
@@ -162,7 +172,12 @@ export class HeroCompanionHorseController {
     const map = this.getHeroUnit()?.context?.map
     const oldI = horse.i
     const oldJ = horse.j
-    const currentCell = horse.currentCell ?? map?.grid?.[horse.i]?.[horse.j]
+    const targetSpace = map ? getMapSpace(map, cell.spaceId) : null
+    if (map && targetSpace) {
+      moveEntityToMapSpace(map, horse, targetSpace, cell)
+      return
+    }
+    const currentCell = horse.currentCell ?? (map ? getEntityCell(horse, map) : null)
     if (currentCell?.has === horse) {
       currentCell.has = null
       currentCell.solid = false
@@ -203,7 +218,7 @@ export class HeroCompanionHorseController {
   }
 
   sendCompanionHorseToHero(horse: CompanionHorse, unit: UnitEntity): void {
-    const cell = unit.currentCell ?? unit.context?.map?.grid?.[unit.i]?.[unit.j]
+    const cell = getEntityCell(unit, unit.context?.map)
     const destination = cell
       ? { i: cell.i, j: cell.j, x: cell.x, y: cell.y, z: cell.z }
       : { i: unit.i, j: unit.j, x: unit.x, y: unit.y, z: unit.z ?? 0 }
@@ -268,7 +283,7 @@ export class HeroCompanionHorseController {
 
   snapHeroToHorse(horse: CompanionHorse): void {
     const map = this.getHeroUnit()?.context?.map
-    const targetCell = map?.grid[horse.i]?.[horse.j]
+    const targetCell = map ? getEntityCell(horse, map) : null
     if (targetCell) this.snapHeroToCell(targetCell)
   }
 
@@ -292,7 +307,7 @@ export class HeroCompanionHorseController {
     const map = unit?.context?.map
     const createAnimal = map?.gaia?.createAnimal
     if (!unit || !map || typeof createAnimal !== 'function') return false
-    const horseCell = unit.currentCell ?? map.grid[unit.i]?.[unit.j]
+    const horseCell = getEntityCell(unit, map)
     const heroCell = findCompanionHorseSpawnCell(unit, 1)
     if (!horseCell || !heroCell) return false
     unit.companionHorseColor = unit.horseColor ?? unit.companionHorseColor ?? 'brown'

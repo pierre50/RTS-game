@@ -257,7 +257,12 @@ export class Unit extends Instance implements UnitEntity {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
+    options?: {
+      forceRepath?: boolean
+      allowBlockedGatherApproach?: boolean
+      preserveAutonomy?: boolean
+      allowPassageStop?: boolean
+    }
   ) {
     return this.unitMovement.sendToEvt(dest, action ?? null, options)
   }

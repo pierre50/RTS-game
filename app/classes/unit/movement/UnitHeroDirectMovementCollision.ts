@@ -7,11 +7,13 @@ import {
   pointIsInsidePolygon,
 } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
+import { getEntitySpaceMapLike, sameMapSpace } from '../../../lib/mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../../types/map'
 
 type CollisionPoint = { x: number; y: number }
 type HeroTerrainCollisionKind = 'water' | 'wall'
+type HeroCollisionMap = Pick<RuntimeMap, 'grid' | 'mapType'>
 
 export type HeroDirectMoveBlocker = Pick<
   RuntimeEntity,
@@ -52,7 +54,7 @@ function isHeroInsideRoundedFootprint(
   entity: HeroDirectMoveBlocker,
   x: number,
   y: number,
-  map?: RuntimeMap | null
+  map?: HeroCollisionMap | null
 ): boolean {
   const points = getHeroCollisionFootprintPoints(entity, map)
   return pointIsInsidePolygon(points, { x, y })
@@ -74,7 +76,7 @@ function getHeroDirectMoveCollisionPadding(entity: HeroDirectMoveBlocker): numbe
 
 function getRawHeroCollisionFootprintPoints(
   entity: HeroDirectMoveBlocker,
-  map?: RuntimeMap | null
+  map?: HeroCollisionMap | null
 ): Array<{ x: number; y: number }> {
   if (entity.collisionPoints?.length) return entity.collisionPoints
   return getRoundedIsoFootprintPoints(entity, map?.grid)
@@ -82,7 +84,7 @@ function getRawHeroCollisionFootprintPoints(
 
 export function getHeroCollisionFootprintPoints(
   entity: HeroDirectMoveBlocker,
-  map?: RuntimeMap | null
+  map?: HeroCollisionMap | null
 ): Array<{ x: number; y: number }> {
   let points = getRawHeroCollisionFootprintPoints(entity, map)
   const padding = getHeroDirectMoveCollisionPadding(entity)
@@ -136,7 +138,7 @@ function blocksHeroDirectMoveAtPoint(
   entity: RuntimeEntity | null | undefined,
   x: number,
   y: number,
-  map?: RuntimeMap | null,
+  map?: HeroCollisionMap | null,
   currentX?: number,
   currentY?: number
 ): boolean {
@@ -178,7 +180,8 @@ function getHeroSoftBodyCollisionRadius(entity: HeroDirectMoveBlocker): number {
 
 function getNearbyHeroCollisionEntities(
   cell: RuntimeCell | null | undefined,
-  map: RuntimeMap | null | undefined
+  map: HeroCollisionMap | null | undefined,
+  unit: UnitEntity
 ): RuntimeEntity[] {
   const entities = new Set<RuntimeEntity>()
   if (!cell || !map) return []
@@ -190,9 +193,9 @@ function getNearbyHeroCollisionEntities(
     for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
       const scanCell = row[j]
       const entity = scanCell?.has
-      if (entity && blocksHeroDirectMove(entity)) entities.add(entity)
+      if (entity && sameMapSpace(unit, entity) && blocksHeroDirectMove(entity)) entities.add(entity)
       for (const corpse of scanCell?.corpses ?? []) {
-        if (blocksHeroDirectMove(corpse)) entities.add(corpse)
+        if (sameMapSpace(unit, corpse) && blocksHeroDirectMove(corpse)) entities.add(corpse)
       }
     }
   }
@@ -207,8 +210,8 @@ export function getHeroDirectMoveBlockerAtPoint(
   y: number
 ): RuntimeEntity | null {
   if (!cell) return null
-  const map = unit.context?.map
-  for (const entity of getNearbyHeroCollisionEntities(cell, map)) {
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
+  for (const entity of getNearbyHeroCollisionEntities(cell, map, unit)) {
     if (entity === unit) continue
     if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) {
       if (blocksHeroMobileDirectMoveAtPoint(unit, entity, x, y)) return entity
@@ -226,8 +229,9 @@ function getHeroTerrainCollisionBlockerAtPoint(
   y: number
 ): HeroDirectMoveBlocker | null {
   if (!cell || !isHeroTerrainCollisionCell(unit, cell)) return null
-  const blocker = createHeroTerrainCollisionBlocker(cell, unit.context?.map)
-  return isHeroInsideRoundedFootprint(blocker, x, y, unit.context?.map) ? blocker : null
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
+  const blocker = createHeroTerrainCollisionBlocker(cell, map)
+  return isHeroInsideRoundedFootprint(blocker, x, y, map) ? blocker : null
 }
 
 export function getHeroTerrainCollisionBlockerNearPoint(
@@ -236,7 +240,7 @@ export function getHeroTerrainCollisionBlockerNearPoint(
   x: number,
   y: number
 ): HeroDirectMoveBlocker | null {
-  const map = unit.context?.map
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
   if (!cell || !map || !isHeroControlled(unit)) return null
 
   const scanRadius = 1
@@ -254,13 +258,14 @@ export function getHeroTerrainCollisionBlockerNearPoint(
 
 export function isHeroTerrainCollisionCell(unit: UnitEntity, cell: RuntimeCell | null | undefined): boolean {
   if (!isHeroControlled(unit) || !cell) return false
-  if (unit.context?.map?.mapType === 'interior') return Boolean(cell.solid && !cell.has && touchesInteriorFloor(unit, cell))
+  const map = getEntitySpaceMapLike(unit, unit.context?.map)
+  if (map?.mapType === 'interior') return Boolean(cell.solid && !cell.has && touchesInteriorFloor(unit, cell))
   if (cell.category === 'Water') return true
   return false
 }
 
 function touchesInteriorFloor(unit: UnitEntity, cell: RuntimeCell): boolean {
-  const grid = unit.context?.map?.grid
+  const grid = getEntitySpaceMapLike(unit, unit.context?.map)?.grid
   if (!grid) return false
 
   for (let i = cell.i - 1; i <= cell.i + 1; i++) {
@@ -277,7 +282,7 @@ function touchesInteriorFloor(unit: UnitEntity, cell: RuntimeCell): boolean {
   return false
 }
 
-function getHeroTerrainCollisionKind(cell: RuntimeCell, map?: RuntimeMap | null): HeroTerrainCollisionKind {
+function getHeroTerrainCollisionKind(cell: RuntimeCell, map?: HeroCollisionMap | null): HeroTerrainCollisionKind {
   if (map?.mapType === 'interior') return 'wall'
   return cell.category === 'Water' ? 'water' : 'wall'
 }
@@ -289,7 +294,7 @@ function getCellTerrainCollisionPoints(cell: RuntimeCell): CollisionPoint[] {
   return getRoundedIsoShapePoints({ x, y })
 }
 
-export function createHeroTerrainCollisionBlocker(cell: RuntimeCell, map?: RuntimeMap | null): HeroDirectMoveBlocker {
+export function createHeroTerrainCollisionBlocker(cell: RuntimeCell, map?: HeroCollisionMap | null): HeroDirectMoveBlocker {
   const [x, y] = cartesianToIsometric(cell.i, cell.j)
   const terrainCollisionKind = getHeroTerrainCollisionKind(cell, map)
   return {

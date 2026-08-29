@@ -14,6 +14,8 @@ if (typeof globalThis.requestAnimationFrame !== 'function') {
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps')
+const BLUEPRINT_MAP_SIZE = 144
+const BLUEPRINT_MAP_SPAWN_RANGE = [2, 4]
 // Index must match MapGeneration#generateTerrain's raw output.
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
@@ -37,32 +39,13 @@ const { ENVIRONMENT_TERRAIN_PARAMS, DEFAULT_ENVIRONMENT_ID, ENVIRONMENT_IDS } = 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 const { createSeededRandom } = loadPlainTsModule('app/lib/random.ts')
 
-function mapSettingsFromRuntimeConfig() {
-  const sizesSource = fs.readFileSync(path.join(ROOT, 'app/config/mapSizes.ts'), 'utf8')
-  const sizes = [
-    ...sizesSource.matchAll(/value:\s*(\d+),\s*idealSpawnRange:\s*\[(\d+),\s*(\d+)\](?:,\s*editorOnly:\s*true)?/g),
-  ]
-    .map(([, size, minSpawns, maxSpawns]) => ({
-      size: Number(size),
-      minSpawns: Number(minSpawns),
-      maxSpawns: Number(maxSpawns),
-    }))
-    .filter(({ size }) => size !== 16)
-  if (!sizes.length) throw new Error('Could not read map sizes from app/config')
-  return { sizes }
-}
-
-const MAP_SETTINGS = mapSettingsFromRuntimeConfig()
-const SIZES = new Set(MAP_SETTINGS.sizes.map(({ size }) => size))
-const idealSpawnRangeForSize = size =>
-  MAP_SETTINGS.sizes.find(entry => entry.size === size) || { minSpawns: 1, maxSpawns: 3 }
-
 function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
-  console.log(`Usage: pnpm maps:generate -- --size 256 --count 100
+  console.log(`Usage: pnpm maps:generate -- --count 100
 
-  --size <n[,n]>          144, 256 (default: 256)
-  --count <n>             maps per size, per environment (default: 10)
+  Blueprints use the standard ${BLUEPRINT_MAP_SIZE}x${BLUEPRINT_MAP_SIZE} world-region size.
+
+  --count <n>             maps per environment (default: 10)
   --seed <n>              reproducible batch seed (default: current time)
   --out <directory>       output directory (default: public/maps)
   --environment <e[,e]>   ${ENVIRONMENT_IDS.join(', ')} (default: ${DEFAULT_ENVIRONMENT_ID} only, untagged filenames)`)
@@ -70,7 +53,6 @@ function usage(error = '') {
 
 function argumentsFrom(argv) {
   const options = {
-    sizes: [256],
     count: 10,
     seed: Date.now(),
     out: OUTPUT,
@@ -83,7 +65,7 @@ function argumentsFrom(argv) {
     if (key === '--help') return { help: true }
     const value = argv[++index]
     if (!value) throw new Error(`Missing value for ${key}`)
-    if (key === '--size') options.sizes = value.split(',').map(Number)
+    if (key === '--size') throw new Error(`--size was removed; map blueprints use the standard ${BLUEPRINT_MAP_SIZE} size`)
     else if (key === '--count') options.count = Number(value)
     else if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
@@ -92,7 +74,6 @@ function argumentsFrom(argv) {
       options.explicitEnvironment = true
     } else throw new Error(`Unknown option: ${key}`)
   }
-  if (!options.sizes.every(size => SIZES.has(size))) throw new Error('Unsupported --size')
   if (!Number.isInteger(options.count) || options.count < 1) throw new Error('--count must be positive')
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
   if (!options.environments.every(env => Object.hasOwn(ENVIRONMENT_TERRAIN_PARAMS, env))) {
@@ -755,7 +736,7 @@ function unsupportedReliefCells(map) {
 }
 
 async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
-  const { minSpawns, maxSpawns } = idealSpawnRangeForSize(size)
+  const [minSpawns, maxSpawns] = BLUEPRINT_MAP_SPAWN_RANGE
   const spawnCount = Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
   const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
   const context = { map: { seed, positionsCount: spawnCount } }
@@ -839,43 +820,52 @@ async function main() {
     batchSeed: options.seed,
     maps: [],
   }
-  for (const size of options.sizes) {
-    const directory = path.join(options.out, String(size))
-    fs.mkdirSync(directory, { recursive: true })
-    for (const environmentId of options.environments) {
-      const envSlug = environmentId.toLowerCase()
-      let written = 0,
-        attempts = 0
-      while (written < options.count) {
-        if (++attempts > options.count * 30)
-          throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
-        const seed = Math.floor(random() * 0x7fffffff),
-          map = await blueprint(size, seed, environmentId)
-        if (!map) continue
-        const id = options.explicitEnvironment
-          ? `map-${size}-${envSlug}-${String(written + 1).padStart(3, '0')}`
-          : `map-${size}-${String(written + 1).padStart(3, '0')}`
-        const relativePath = `${size}/${id}.map`
-        fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
-        manifest.maps.push({
-          id,
-          size,
-          environment: environmentId,
-          path: relativePath,
-          seed,
-          spawns: map.spawns.length,
-        })
-        written++
-      }
-      console.log(`Generated ${written} map(s): ${size} (${environmentId})`)
+  const size = BLUEPRINT_MAP_SIZE
+  const directory = path.join(options.out, String(size))
+  fs.mkdirSync(directory, { recursive: true })
+  for (const environmentId of options.environments) {
+    const envSlug = environmentId.toLowerCase()
+    let written = 0,
+      attempts = 0
+    while (written < options.count) {
+      if (++attempts > options.count * 30)
+        throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
+      const seed = Math.floor(random() * 0x7fffffff),
+        map = await blueprint(size, seed, environmentId)
+      if (!map) continue
+      const id = options.explicitEnvironment
+        ? `map-${size}-${envSlug}-${String(written + 1).padStart(3, '0')}`
+        : `map-${size}-${String(written + 1).padStart(3, '0')}`
+      const relativePath = `${size}/${id}.map`
+      fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify({ ...map, id })}\n`)
+      manifest.maps.push({
+        id,
+        size,
+        environment: environmentId,
+        path: relativePath,
+        seed,
+        spawns: map.spawns.length,
+      })
+      written++
     }
+    console.log(`Generated ${written} map(s): ${size} (${environmentId})`)
   }
   fs.mkdirSync(options.out, { recursive: true })
   fs.writeFileSync(path.join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
   console.log(`Manifest: ${path.relative(ROOT, path.join(options.out, 'manifest.json'))}`)
 }
 
-main().catch(error => {
-  console.error(error)
-  process.exitCode = 1
-})
+if (require.main === module) {
+  main().catch(error => {
+    console.error(error)
+    process.exitCode = 1
+  })
+}
+
+module.exports = {
+  BLUEPRINT_MAP_SIZE,
+  DEFAULT_ENVIRONMENT_ID,
+  ENVIRONMENT_IDS,
+  blueprint,
+  randomFrom,
+}

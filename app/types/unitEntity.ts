@@ -12,13 +12,13 @@ import type { HeroCivilTool, HeroContextAction } from './heroTools'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
-type VillagerShelterLocation = 'shelter' | 'outside'
-type VillagerShelterStatus = 'movingToShelter' | 'inside' | 'outside'
-export type VillagerShelterReason = 'sleep' | 'danger'
-export type VillagerShelterState = {
-  status: VillagerShelterStatus
-  reason?: VillagerShelterReason
-  location: VillagerShelterLocation
+type UnitRestLocation = 'shelter' | 'outside'
+type UnitRestStatus = 'movingToRest' | 'inside' | 'outside'
+export type UnitRestReason = 'sleep'
+export type UnitRestState = {
+  status: UnitRestStatus
+  reason?: UnitRestReason
+  location: UnitRestLocation
   shelter?: BuildingEntity | null
   targetCell?: RuntimeCell | null
   startedAtMs?: number
@@ -45,6 +45,12 @@ export type UnitCreationExtra = {
 }
 
 export type UnitCommandOptions = Record<string, ConfigValue | RuntimeEntity | RuntimeCell | undefined>
+export type UnitSendToOptions = {
+  forceRepath?: boolean
+  allowBlockedGatherApproach?: boolean
+  preserveAutonomy?: boolean
+  allowPassageStop?: boolean
+}
 
 interface UnitPendingOrder {
   execute?: () => void
@@ -79,6 +85,23 @@ interface UnitRealDest {
   label: string
 }
 
+type UnitInteriorExitState = {
+  targetCell?: RuntimeCell | null
+  startedAtMs?: number
+  retryCount?: number
+  taskId?: number | null
+}
+
+type UnitSpacePortalState = {
+  portalId: string
+  sourceCell?: RuntimeCell | null
+  sourceSpaceId: string
+  startedAtMs?: number
+  targetCell?: RuntimeCell | null
+  targetSpaceId: string
+  taskId?: number | null
+}
+
 export interface EnergyEntity extends RuntimeEntityBase {
   action?: string | null
   dest?: RuntimeEntity | RuntimeCell | null
@@ -107,11 +130,7 @@ export interface EnergyEntity extends RuntimeEntityBase {
   actionLocked?: boolean
   stop?: () => void
   sendTo?: (target: RuntimeEntity | RuntimeCell, action?: string, options?: { forceRepath?: boolean }) => void
-  sendToEvt?: (
-    dest: RuntimeEntity | RuntimeCell | null,
-    action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
-  ) => void
+  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
   setTextures?: (sheet: string) => void
@@ -132,7 +151,11 @@ export interface UnitEntity extends EnergyEntity {
   campPatrolTaskId?: number | null
   banditCampAnchor?: GridPosition | null
   banditCampPatrolTaskId?: number | null
-  shelterState?: VillagerShelterState | null
+  shelterState?: UnitRestState | null
+  restWakeLockUntilMs?: number | null
+  restAlertTargetLabel?: string | null
+  interiorExitState?: UnitInteriorExitState | null
+  spacePortalState?: UnitSpacePortalState | null
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
@@ -252,11 +275,7 @@ export interface UnitEntity extends EnergyEntity {
     immediate?: boolean,
     preserveBuildQueue?: boolean
   ) => void
-  sendToEvt?: (
-    dest: RuntimeEntity | RuntimeCell | null,
-    action?: string | null,
-    options?: { forceRepath?: boolean; allowBlockedGatherApproach?: boolean; preserveAutonomy?: boolean }
-  ) => void
+  sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined

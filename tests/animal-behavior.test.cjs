@@ -8,7 +8,7 @@ function loadModule(relativePath, mocks) {
 
 const constants = {
   ACTION_TYPES: { attack: 'attack' },
-  FAMILY_TYPES: { unit: 'unit' },
+  FAMILY_TYPES: { building: 'building', unit: 'unit' },
   UNIT_TYPES: { villager: 'Villager' },
 }
 
@@ -20,11 +20,12 @@ function createBehavior({
   ambientWalkDelayMin,
   ambientWalkDelayMax,
   ambientWalkRange,
+  ambientCells,
 } = {}) {
   const calls = []
   const alertCalls = []
   const findInstancesInSightCalls = []
-  const cells = [
+  const cells = ambientCells ?? [
     { i: 4, j: 5, solid: false },
     { i: 5, j: 4, solid: false },
     { i: 7, j: 5, solid: false },
@@ -58,6 +59,7 @@ function createBehavior({
     ambientWalkRange,
     altitude,
     context: { map, scheduler, editor: null },
+    getActionCondition: () => true,
     runaway: villager => calls.push(['runaway', villager.label]),
     getReaction: villager => calls.push(['reaction', villager.label]),
     sendTo: cell => calls.push(['sendTo', cell.i, cell.j]),
@@ -99,6 +101,15 @@ function createBehavior({
   const { AnimalBehavior } = loadModule('app/classes/animal/AnimalBehavior.ts', {
     '../../constants': constants,
     '../../lib': lib,
+    '../../lib/buildings/passageCells': {
+      canEntityUseCellAsIdleDestination: (_entity, cell, options = {}) =>
+        !cell.solid && !(options.passageLookup?.has?.(cell) ?? cell.reservedPassage),
+      createReservedPassageCellLookup: () => ({
+        has: cell => Boolean(cell?.reservedPassage),
+        size: 0,
+      }),
+      routeEntityAwayFromPassageCell: () => false,
+    },
     '../../lib/combat/combatFeedback': { showAlertFeedback: target => alertCalls.push(target) },
     '../../lib/units/unitEnergy': { updateUnitEnergy: () => {} },
     './locomotion': { isAirborne: target => (target.altitude ?? 0) > 0 },
@@ -135,6 +146,22 @@ test('an idle animal occasionally walks to a nearby free cell', () => {
   assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 4000)
 })
 
+test('idle animals skip building passage cells when picking ambient walks', () => {
+  const { behavior, calls, scheduler } = createBehavior({
+    elapsedMs: 10000,
+    ambientCells: [
+      { i: 4, j: 5, solid: false, reservedPassage: true },
+      { i: 5, j: 4, solid: false },
+    ],
+  })
+  behavior.nextAmbientWalkAt = 5000
+
+  behavior.update()
+
+  assert.deepEqual(calls, [['sendTo', 5, 4]])
+  assert.equal(behavior.nextAmbientWalkAt, scheduler.elapsedMs + 4000)
+})
+
 test('ambient walk timing and range can vary by animal species', () => {
   const { behavior, calls, randomRangeCalls, scheduler } = createBehavior({
     elapsedMs: 10000,
@@ -159,6 +186,16 @@ test('an aggressive animal attacks instead of fleeing through ambient behavior',
   behavior.update()
 
   assert.deepEqual(calls, [['reaction', 'villager-1']])
+})
+
+test('an aggressive animal ignores nearby buildings instead of charging them', () => {
+  const house = { label: 'house-1', family: 'building', type: 'House', distance: 2 }
+  const { behavior, calls } = createBehavior({ nearby: [house], strategy: 'attack', elapsedMs: 10000 })
+  behavior.nextAmbientWalkAt = 5000
+
+  behavior.update()
+
+  assert.deepEqual(calls, [['sendTo', 4, 5]])
 })
 
 test('an animal still in the air does not start an ambient walk', () => {

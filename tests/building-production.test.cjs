@@ -149,6 +149,91 @@ test('resource rally commands keep the spawned unit context', () => {
   assert.deepEqual(calls[1], [unit, tree])
 })
 
+test('produced units do not spawn on reserved passage cells', () => {
+  const passageCell = { i: 1, j: 0, category: 'Land', solid: false, reservedPassage: true }
+  const spawnCell = { i: 0, j: 1, category: 'Land', solid: false }
+  const calls = []
+  const building = {
+    i: 0,
+    j: 0,
+    size: 1,
+    rallyPoint: null,
+    context: {
+      map: {
+        grid: [
+          [null, spawnCell],
+          [passageCell, null],
+        ],
+        randomItem: items => items[0],
+      },
+      menu: {},
+    },
+    owner: {
+      population: 0,
+      populationMax: 10,
+      config: {
+        units: {
+          Villager: {},
+        },
+      },
+      createUnit(options) {
+        calls.push(options)
+        return { sendTo() {} }
+      },
+      isPlayed: false,
+    },
+  }
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: {},
+      BUILDING_TYPES: { temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: {},
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: (_instance, _grid, pickRandomItem, extraCondition) => {
+        const candidates = [passageCell, spawnCell].filter(cell => !extraCondition || extraCondition(cell))
+        return pickRandomItem(candidates)
+      },
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: () => {},
+    },
+    '../../lib/buildings/passageCells': {
+      createNonReservedPassageCellCondition: () => cell => !cell?.reservedPassage,
+      createReservedPassageCellLookup: () => ({
+        has: cell => Boolean(cell?.reservedPassage),
+        size: 1,
+      }),
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/units/unitUpgrades': {
+      canUpgradeUnitAtBuilding: () => false,
+    },
+  })
+
+  assert.equal(new BuildingProduction(building).placeUnit('Villager'), true)
+  assert.deepEqual(calls, [{ i: 0, j: 1, type: 'Villager' }])
+})
+
 test('military unit purchase reserves and sends an existing villager instead of spawning directly', () => {
   const calls = []
   const villager = {
@@ -1205,7 +1290,7 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
 
   assert.equal(production.requestUnitTraining('Bowman', undefined, bowman), true)
   assert.equal(bowman.trainingTargetType, 'Bowman')
-  assert.deepEqual(calls, [['sendToEvt', 'Stable', 'train', { forceRepath: true }]])
+  assert.deepEqual(calls, [['sendToEvt', 'Stable', 'train', { forceRepath: true, allowPassageStop: true }]])
 
   assert.equal(production.startTrainingWithUnit(bowman), false)
   assert.equal(bowman.trainingTargetType, null)
@@ -1301,7 +1386,7 @@ test('chief requirement for trainee training is checked when the unit enters', (
 
   assert.equal(production.buyUnit('Fantassin'), true)
   assert.equal(trainee.trainingTargetType, 'Fantassin')
-  assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true }]])
+  assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true, allowPassageStop: true }]])
 
   assert.equal(production.startTrainingWithUnit(trainee), false)
   assert.equal(trainee.trainingTargetType, null)

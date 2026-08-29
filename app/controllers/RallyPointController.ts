@@ -7,6 +7,7 @@ import {
   getRallyPointFrames,
   RALLY_POINT_SHEET_ID,
 } from '../lib'
+import { getEntityCell, sameMapSpace } from '../lib/mapSpaces'
 import type { ControlsLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -96,7 +97,8 @@ export class RallyPointController {
     const {
       context: { map },
     } = this.controls
-    const cell = map.grid[entity.i]?.[entity.j]
+    if (!sameMapSpace(this.building, entity)) return false
+    const cell = getEntityCell(entity, map)
     if (!cell || !cell.visible) return false
     this.building!.setRallyPoint?.(cell, this.direction)
     drawInstanceBlinkingSelection(entity)

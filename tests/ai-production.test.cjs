@@ -37,7 +37,10 @@ function loadAIStrategy(options = {}) {
     const tsSource = fs.readFileSync(tsFilename, 'utf8')
     const { code: tsCode } = babel.transformSync(tsSource, {
       filename: tsFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const tsModule = { exports: {} }
     new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
@@ -50,9 +53,18 @@ function loadAIStrategy(options = {}) {
         canAfford: () => true,
         canPlaceBuildingAt: () => false,
         getClosestInstance: () => null,
+        getBuildingPlacementSearchSize: size => size + 1,
         getPositionInGridAroundInstance: () => null,
         instancesDistance: (a, b) => Math.abs(a.i - b.i) + Math.abs(a.j - b.j),
         ...options.lib,
+      }
+    }
+    if (request === '../lib/buildings/passageCells') {
+      return {
+        createReservedPassageCellLookup: () => ({
+          has: cell => Boolean(cell?.reservedPassage),
+          size: 0,
+        }),
       }
     }
     if (request === '../lib/chief') {
@@ -63,7 +75,8 @@ function loadAIStrategy(options = {}) {
     }
     if (request === './AIMilitary') return { AIMilitary: class {} }
     if (request === './AIStrategyBuilding') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyBuilding.ts'))
-    if (request === './AIStrategyProduction') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyProduction.ts'))
+    if (request === './AIStrategyProduction')
+      return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyProduction.ts'))
     if (request === './AIStrategyTech') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTech.ts'))
     if (request === './AIStrategyTechnologyActions')
       return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyTechnologyActions.ts'))
@@ -186,6 +199,66 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
 
   assert.equal(actions, 1)
   assert.deepEqual(bought, [[12, 14, 'Farm']])
+})
+
+test('ai building strategy adds passage clearance to construction searches', () => {
+  const calls = []
+  const AIStrategy = loadAIStrategy({
+    lib: {
+      getPositionInGridAroundInstance: (_anchor, _grid, _space, size, _allowInclined, extraCondition) => {
+        calls.push({
+          size,
+          blocksPassage: extraCondition({ i: 0, j: 0, reservedPassage: true }) === false,
+          allowsOpenCell: extraCondition({ i: 0, j: 1 }) === true,
+        })
+        return null
+      },
+    },
+  })
+  const ai = {
+    age: 0,
+    config: { buildings: { House: { cost: { wood: 30 }, size: 2 } } },
+    food: 0,
+    gold: 0,
+    phase: 'economy',
+    population: 19,
+    populationMax: 20,
+    stone: 0,
+    technologies: [],
+    units: [{ type: 'Chief', hitPoints: 10 }],
+    wood: 200,
+    buyBuilding: () => false,
+    hasNotReachBuildingLimit: () => true,
+  }
+  const strategy = new AIStrategy(ai)
+
+  strategy.handleBuildingActions({
+    map: { grid: [] },
+    otherPlayers: [],
+    villagers: [],
+    maxVillagers: 16,
+    towncenters: [{ i: 8, j: 8 }],
+    infantry: [],
+    maxInfantry: 0,
+    barracks: [],
+    infantryUnit: null,
+    archers: [],
+    maxArcher: 0,
+    archeryRanges: [],
+    archerUnit: null,
+    cavalry: [],
+    maxCavalry: 0,
+    stables: [],
+    houses: [],
+    farms: [],
+    granarys: [],
+    storagepits: [],
+    markets: [{}],
+    watchTowers: [],
+    notBuiltHouses: [],
+  })
+
+  assert.deepEqual(calls, [{ size: 1, blocksPassage: true, allowsOpenCell: true }])
 })
 
 test('ai production trains villagers again when a chief is alive', () => {

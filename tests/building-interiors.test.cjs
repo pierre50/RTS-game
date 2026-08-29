@@ -68,7 +68,7 @@ test('house interior entry uses the same grid cell flow', () => {
 })
 
 test('building interior entry offset matches the measured exterior door cell', () => {
-  const { getBuildingInteriorEntryCell } = loadBuildingInteriors()
+  const { getBuildingInteriorEntryCell, getBuildingInteriorEntryPosition } = loadBuildingInteriors()
   const grid = makeGrid(50)
   const building = {
     context: { map: { grid } },
@@ -79,6 +79,32 @@ test('building interior entry offset matches the measured exterior door cell', (
   }
 
   assert.equal(getBuildingInteriorEntryCell(building), grid[23][41])
+  assert.deepEqual(getBuildingInteriorEntryPosition({ i: 22, j: 39, type: 'TownCenter' }), { i: 23, j: 41 })
+  assert.equal(getBuildingInteriorEntryPosition({ i: 22, isBuilt: false, j: 39, type: 'TownCenter' }), null)
+})
+
+test('building interior portal id includes the owner to avoid cross-player collisions', () => {
+  const { getBuildingInteriorPortalId } = loadBuildingInteriors()
+  const ownTownCenter = {
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    label: 'town-center',
+    owner: { label: 'player-1' },
+    type: 'TownCenter',
+  }
+  const enemyTownCenter = {
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    label: 'town-center',
+    owner: { label: 'enemy-1' },
+    type: 'TownCenter',
+  }
+
+  assert.equal(getBuildingInteriorPortalId(ownTownCenter), 'player-1:town-center')
+  assert.equal(getBuildingInteriorPortalId(enemyTownCenter), 'enemy-1:town-center')
+  assert.notEqual(getBuildingInteriorPortalId(ownTownCenter), getBuildingInteriorPortalId(enemyTownCenter))
 })
 
 test('building interior entry can override the default entry offset', () => {

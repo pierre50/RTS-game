@@ -1,0 +1,211 @@
+{
+  "format": "macro-world-regions",
+  "version": 1,
+  "seed": 1786796762,
+  "regionMapSize": 144,
+  "regionsWide": 5,
+  "regionsHigh": 4,
+  "biomeSectors": [
+    "blackforest",
+    "jungle",
+    "desert",
+    "temperate"
+  ],
+  "regions": [
+    {
+      "x": 0,
+      "y": 0,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1.0
+      },
+      "waterRatio": 0.5276
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.6563,
+        "temperate": 0.3437
+      },
+      "waterRatio": 0.2564
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 1.0
+      },
+      "waterRatio": 0.2811
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.8363,
+        "jungle": 0.1637
+      },
+      "waterRatio": 0.2728
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "blackforest": 0.4989,
+        "jungle": 0.5011
+      },
+      "waterRatio": 0.4742
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1.0
+      },
+      "waterRatio": 0.3069
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "blackforest": 0.1906,
+        "temperate": 0.8094
+      },
+      "waterRatio": 0.0
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "dominantBiome": "blackforest",
+      "biomeWeights": {
+        "blackforest": 0.7917,
+        "desert": 0.0014,
+        "jungle": 0.071,
+        "temperate": 0.136
+      },
+      "waterRatio": 0.0
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "blackforest": 0.1549,
+        "jungle": 0.8451
+      },
+      "waterRatio": 0.0123
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "jungle": 1.0
+      },
+      "waterRatio": 0.2772
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1.0
+      },
+      "waterRatio": 0.3349
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "desert": 0.0054,
+        "temperate": 0.9946
+      },
+      "waterRatio": 0.0
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 0.7647,
+        "jungle": 0.0388,
+        "temperate": 0.1966
+      },
+      "waterRatio": 0.0
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "desert": 0.1172,
+        "jungle": 0.8828
+      },
+      "waterRatio": 0.0071
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "jungle": 1.0
+      },
+      "waterRatio": 0.2699
+    },
+    {
+      "x": 0,
+      "y": 3,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "temperate": 1.0
+      },
+      "waterRatio": 0.7463
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "dominantBiome": "temperate",
+      "biomeWeights": {
+        "desert": 0.3073,
+        "temperate": 0.6927
+      },
+      "waterRatio": 0.3843
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 1.0
+      },
+      "waterRatio": 0.3061
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "dominantBiome": "desert",
+      "biomeWeights": {
+        "desert": 0.8993,
+        "jungle": 0.1007
+      },
+      "waterRatio": 0.2124
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "dominantBiome": "jungle",
+      "biomeWeights": {
+        "desert": 0.3617,
+        "jungle": 0.6383
+      },
+      "waterRatio": 0.4282
+    }
+  ]
+}

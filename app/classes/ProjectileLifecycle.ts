@@ -1,5 +1,6 @@
 import { ARROW_GROUND_TIME, FADE_DURATION_MS } from '../constants'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
+import { getEntitySpaceGrid } from '../lib/mapSpaces'
 import { getReliefOffset, getTerrainSetZIndex, isometricToCartesian, randomRange } from '../lib/maths'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
@@ -17,6 +18,7 @@ type LifecycleProjectile = {
   parent?: { removeChild(child: unknown): unknown } | null
   position: { set(x: number, y: number): void }
   shadow?: ProjectileSprite
+  spaceId?: string | null
   sprite?: ProjectileSprite
   timeoutId: SchedulerTaskId | null
   treeAnchor?: ResourceEntity | null
@@ -59,7 +61,8 @@ export function landProjectileOnGround(projectile: LifecycleProjectile): void {
   const [i, j] = isometricToCartesian(projectile.x, projectile.y)
   projectile.i = i
   projectile.j = j
-  const cell = projectile.context.map.grid[i]?.[j]
+  const grid = getEntitySpaceGrid(projectile, projectile.context.map)
+  const cell = grid?.[i]?.[j]
   if (!cell || cell.category === 'Water' || cell.waterBorder) {
     projectile.clear()
     return
@@ -109,7 +112,8 @@ export function clearProjectile(projectile: LifecycleProjectile): void {
   if (projectile.treeAnchor) {
     projectile.treeAnchor = null
   } else {
-    const cell = projectile.context.map.grid[projectile.i]?.[projectile.j]
+    const grid = getEntitySpaceGrid(projectile, projectile.context.map)
+    const cell = grid?.[projectile.i]?.[projectile.j]
     cell?.corpses.delete(projectile as unknown as RuntimeEntity)
   }
   projectile.parent?.removeChild(projectile)

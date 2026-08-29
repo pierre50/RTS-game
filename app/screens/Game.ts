@@ -5,6 +5,8 @@ import Map from '../classes/map/Map'
 import { getReliefOffset } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { adjustFactionRelation } from '../lib/combat/factions'
+import { getBuildingInteriorBlueprintType } from '../lib/buildings/interiors'
+import { getEntityMapPoint } from '../lib/mapSpaces'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
 import {
@@ -44,8 +46,12 @@ import {
   type PortalTravelGame,
 } from './game/GamePortalTravel'
 import {
+  buildBuildingInteriorSessionSaveRecord,
+  routeInteriorUnitToExit as routeInteriorUnitToExitRuntime,
+  synchronizeInteriorOccupantsAfterTimeJump,
   travelIntoBuildingInterior as travelIntoBuildingInteriorRuntime,
   travelOutOfBuildingInterior as travelOutOfBuildingInteriorRuntime,
+  type BuildingInteriorSession,
   type BuildingInteriorTravelGame,
 } from './game/GameBuildingInteriorTravel'
 import {
@@ -68,8 +74,20 @@ import {
   type GameRuntimeContext,
 } from './game/GameRuntimeContext'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
-import type { BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
+import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
 import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
+import {
+  activateBuildingInteriorSpace,
+  deactivateBuildingInteriorSpace,
+  ensureBuildingInteriorSpace,
+  getBuildingInteriorSpaceForUnit,
+  moveHeroPartyIntoBuildingInteriorSpace,
+  moveHeroPartyOutOfBuildingInteriorSpace,
+  refreshMapSpaceEntityVisibility,
+  routeUnitOutOfBuildingInteriorSpace,
+  syncBuildingInteriorShelterOccupants,
+  type BuildingInteriorRuntimeSpace,
+} from '../services/BuildingInteriorSpaceSystem'
 import type { GameContextLike } from '../types/context'
 import type { CampaignSave, GameConfig, SaveEntityState, SaveRecord, SerializedSave } from '../types/save'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
@@ -97,6 +115,8 @@ type RequiredInteriorBlueprintOptions = Parameters<typeof loadPregeneratedInteri
 export default class Game extends Container {
   _pausedByVisibility: boolean
   _pausedByOrientation: boolean
+  _activeBuildingInteriorSpace: BuildingInteriorRuntimeSpace | null
+  _buildingInteriorSession: BuildingInteriorSession | null
   _restartSaveData: SaveRecord | null
   _campaignSave: CampaignSave | null
   _isRestarting: boolean
@@ -120,6 +140,8 @@ export default class Game extends Container {
     super()
     this._pausedByVisibility = false
     this._pausedByOrientation = false
+    this._activeBuildingInteriorSpace = null
+    this._buildingInteriorSession = null
     this._restartSaveData = null
     this._campaignSave = null
     this._isRestarting = false
@@ -165,7 +187,8 @@ export default class Game extends Container {
     const { controls } = this.context
     const hero = this._runtimeHeroUnit()
     if (!controls || !hero) return null
-    return controls.localToScreen(hero.x - controls.camera.x, hero.y + getReliefOffset(hero) - controls.camera.y)
+    const point = getEntityMapPoint(hero)
+    return controls.localToScreen(point.x - controls.camera.x, point.y + getReliefOffset(hero) - controls.camera.y)
   }
 
   async _updateLoading(messageKey: string, progress: number): Promise<void> {
@@ -274,6 +297,70 @@ export default class Game extends Container {
     this._attachWindowListeners()
   }
 
+  _isBuildingInteriorLayerOpen(): boolean {
+    return Boolean(this._activeBuildingInteriorSpace)
+  }
+
+  async _openBuildingInteriorLayer(building: BuildingEntity): Promise<void> {
+    if (this._activeBuildingInteriorSpace) return
+    const context = this._gameContext()
+    const hero = this._runtimeHeroUnit()
+    const blueprint = await this._loadRequiredInteriorBlueprint({
+      interiorType: getBuildingInteriorBlueprintType(building),
+      random: () => context.map.random(),
+    })
+    const space = ensureBuildingInteriorSpace(context, building, blueprint)
+    syncBuildingInteriorShelterOccupants(context, space)
+    await playBuildingInteriorDoorTransition(() => {
+      if (hero) {
+        if (!moveHeroPartyIntoBuildingInteriorSpace(context, hero, space)) {
+          deactivateBuildingInteriorSpace(context, space)
+          this._activeBuildingInteriorSpace = null
+          context.menu?.setHeroInteractionPrompt?.(null)
+          context.menu?.updateHeroStatus?.(hero)
+          return
+        }
+      }
+      activateBuildingInteriorSpace(context, space)
+      this._activeBuildingInteriorSpace = space
+      if (hero) {
+        const point = getEntityMapPoint(hero)
+        context.controls?.setCamera?.(point.x, point.y)
+        context.controls?.updateVisibleCells?.()
+        refreshMapSpaceEntityVisibility(context)
+      }
+      context.menu?.setHeroInteractionPrompt?.('heroInteractionExit')
+      context.menu?.updateHeroStatus?.(hero)
+    })
+  }
+
+  async _closeBuildingInteriorLayer(): Promise<void> {
+    const context = this._gameContext()
+    const hero = this._runtimeHeroUnit()
+    const space = (hero && getBuildingInteriorSpaceForUnit(hero)) || this._activeBuildingInteriorSpace
+    if (!space) return
+    await playBuildingInteriorDoorTransition(() => {
+      if (hero) {
+        if (!moveHeroPartyOutOfBuildingInteriorSpace(context, hero, space)) return
+      } else {
+        deactivateBuildingInteriorSpace(context, space)
+      }
+      this._activeBuildingInteriorSpace = null
+      if (hero) {
+        const point = getEntityMapPoint(hero)
+        context.controls?.setCamera?.(point.x, point.y)
+        context.controls?.updateVisibleCells?.()
+        refreshMapSpaceEntityVisibility(context)
+      }
+      context.menu?.setHeroInteractionPrompt?.(null)
+      context.menu?.updateHeroStatus?.(hero)
+    })
+  }
+
+  _withBuildingInteriorLayerRuntimeRestored<T>(callback: () => T): T {
+    return callback()
+  }
+
   _getScreenRect(): { x: number; y: number; width: number; height: number } {
     return getGameScreenRect(this, this.context.app)
   }
@@ -283,6 +370,8 @@ export default class Game extends Container {
   }
 
   _destroyRuntime({ preserveLoadingScreen = false }: { preserveLoadingScreen?: boolean } = {}): void {
+    this._buildingInteriorSession = null
+    this._activeBuildingInteriorSpace = null
     if (!preserveLoadingScreen) {
       this._loadingScreen?.destroy()
       this._loadingScreen = null
@@ -318,15 +407,26 @@ export default class Game extends Container {
   }
 
   save(): { key: string; name: string } {
-    const record = buildSaveRecord(this._gameContext(), this._campaignSave)
-    this._campaignSave = isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
-    this._restartSaveData = structuredClone(this._campaignSave)
-    return saveRecordToStorage(this._campaignSave)
+    return this._withBuildingInteriorLayerRuntimeRestored(() => {
+      const buildingInteriorRecord = buildBuildingInteriorSessionSaveRecord(this as BuildingInteriorTravelGame)
+      if (buildingInteriorRecord) {
+        this._restartSaveData = structuredClone(buildingInteriorRecord)
+        return saveRecordToStorage(buildingInteriorRecord)
+      }
+      const record = buildSaveRecord(this._gameContext(), this._campaignSave)
+      this._campaignSave = isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
+      this._restartSaveData = structuredClone(this._campaignSave)
+      return saveRecordToStorage(this._campaignSave)
+    })
   }
 
   _autosaveCampaign(): void {
-    if (!this._campaignSave) return
-    autosaveRecord(this._campaignSave, t('autosave'))
+    this._withBuildingInteriorLayerRuntimeRestored(() => {
+      const buildingInteriorRecord = buildBuildingInteriorSessionSaveRecord(this as BuildingInteriorTravelGame)
+      const campaign = buildingInteriorRecord ?? this._campaignSave
+      if (!campaign) return
+      autosaveRecord(campaign, t('autosave'))
+    })
   }
 
   _changeFactionRelation(factionId: string, delta: number): void {
@@ -409,6 +509,17 @@ export default class Game extends Container {
 
   async travelOutOfBuildingInterior(): Promise<void> {
     await travelOutOfBuildingInteriorRuntime(this as BuildingInteriorTravelGame)
+  }
+
+  routeInteriorUnitToExit(unit: UnitEntity): void {
+    const context = this._gameContext()
+    const space = getBuildingInteriorSpaceForUnit(unit)
+    if (space && routeUnitOutOfBuildingInteriorSpace(context, unit, space)) return
+    routeInteriorUnitToExitRuntime(this as BuildingInteriorTravelGame, unit)
+  }
+
+  synchronizeBuildingInteriorAfterTimeJump(): void {
+    synchronizeInteriorOccupantsAfterTimeJump(this as BuildingInteriorTravelGame)
   }
 
   async load(json: SaveRecord): Promise<void> {

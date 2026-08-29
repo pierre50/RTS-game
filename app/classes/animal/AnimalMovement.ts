@@ -4,8 +4,14 @@ import {
   getInstanceDegree,
   getInstancePath,
   instanceContactInstance,
-  instancesDistance
+  instancesDistance,
 } from '../../lib'
+import {
+  createReservedPassageCellLookup,
+  findNearestPassageWaitingCell,
+  shouldEntityAvoidPassageStop,
+} from '../../lib/buildings/passageCells'
+import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../lib/mapSpaces'
 import type { RuntimeCell } from '../../types/map'
 import type { AnimalControllerHost, AnimalDestination, AnimalMoveOptions } from './AnimalTypes'
 import { moveAnimalToPath } from './AnimalMovementStep'
@@ -50,6 +56,8 @@ export class AnimalMovement {
   isAnimalAtDest(action: string | null, dest: AnimalDestination | null): boolean {
     const animal = this.animal
     if (!action || !dest) return false
+    if ('has' in dest && !sameCellMapSpace(animal, dest)) return false
+    if (!('has' in dest) && !sameMapSpace(animal, dest)) return false
     return instanceContactInstance(animal, dest)
   }
 
@@ -69,9 +77,12 @@ export class AnimalMovement {
   ): void {
     const animal = this.animal
     if (animal.isDead || animal.isDestroyed) return
-    const {
-      context: { map },
-    } = animal
+    const runtimeMap = animal.context.map
+    const map = getEntitySpaceMapLike(animal, runtimeMap)
+    if (!map) {
+      animal.stop()
+      return
+    }
     if (!dest) {
       animal.stopInterval()
       animal.stop()
@@ -98,8 +109,8 @@ export class AnimalMovement {
     animal.stopInterval()
     if (
       this.isAnimalAtDest(action, dest) &&
-      (!map.grid[animal.i][animal.j].solid ||
-        (map.grid[animal.i][animal.j].solid && map.grid[animal.i][animal.j].has?.label === animal.label))
+      (!map.grid[animal.i]?.[animal.j]?.solid ||
+        (map.grid[animal.i]?.[animal.j]?.solid && map.grid[animal.i]?.[animal.j]?.has?.label === animal.label))
     ) {
       animal.setDest(dest)
       animal.action = action
@@ -107,9 +118,21 @@ export class AnimalMovement {
       animal.getAction(action ?? '')
       return
     }
+    const passageLookup = createReservedPassageCellLookup(animal.context)
+    if ('has' in dest && !action && shouldEntityAvoidPassageStop(animal, dest, { passageLookup })) {
+      const waitingCell = findNearestPassageWaitingCell(animal, dest, { passageLookup })
+      if (waitingCell) {
+        animal.setDest(waitingCell.cell)
+        animal.action = action
+        animal.setPath(waitingCell.path, resolveMovementSheet(animal, movementSheet))
+        return
+      }
+    }
     let path: RuntimeCell[] = []
     if (map.grid[dest.i] && map.grid[dest.i][dest.j] && map.grid[dest.i][dest.j].solid) {
-      path = getInstanceClosestFreeCellPath<RuntimeCell>(animal, dest, map)
+      path = getInstanceClosestFreeCellPath<RuntimeCell>(animal, dest, map, {
+        isCellAllowed: cell => !shouldEntityAvoidPassageStop(animal, cell, { passageLookup }),
+      })
     } else {
       path = getInstancePath<RuntimeCell>(animal, dest.i, dest.j, map)
     }

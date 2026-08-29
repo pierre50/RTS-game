@@ -70,7 +70,10 @@ export class MapBlueprintGeneration {
     const destroyStartedAt = performance.now()
     this.destroyGeneratedChildren()
     this.map.blueprintDestroyMs = performance.now() - destroyStartedAt
+    this.map.context.performance?.record?.('blueprint.destroyGeneratedChildren', this.map.blueprintDestroyMs)
+    const metadataStartedAt = performance.now()
     this.applyBlueprintMetadata(blueprint)
+    this.map.context.performance?.record?.('blueprint.applyMetadata', performance.now() - metadataStartedAt)
 
     const startedAt = performance.now()
     const cellDefinitions = gameConfig().cells
@@ -99,6 +102,7 @@ export class MapBlueprintGeneration {
     }
     this.applyInteriorMasks(blueprint)
     this.map.blueprintCellCreationMs = performance.now() - startedAt
+    this.map.context.performance?.record?.('blueprint.createGenerationCells', this.map.blueprintCellCreationMs)
     this.map.context.performance?.record('blueprintCellCreation', this.map.blueprintCellCreationMs)
 
     if (isInteriorBlueprint(blueprint)) {
@@ -110,18 +114,23 @@ export class MapBlueprintGeneration {
       const fillWaterStartedAt = performance.now()
       this.map.fillWaterGaps()
       this.map.blueprintFillWaterGapsMs = performance.now() - fillWaterStartedAt
+      this.map.context.performance?.record?.('blueprint.fillWaterGaps', this.map.blueprintFillWaterGapsMs)
       await this.yieldToBrowser()
       const normalizeWaterStartedAt = performance.now()
       this.map.normalizeWaterTopology()
       this.map.blueprintNormalizeWaterMs = performance.now() - normalizeWaterStartedAt
+      this.map.context.performance?.record?.('blueprint.normalizeWaterTopology', this.map.blueprintNormalizeWaterMs)
       await this.yieldToBrowser()
       const waterBorderStartedAt = performance.now()
       this.map.formatCellsWaterBorder()
       this.map.blueprintWaterBorderReady = true
       this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
+      this.map.context.performance?.record?.('blueprint.formatWaterBorder', this.map.blueprintInitialWaterBorderMs)
     }
 
+    const resourcesStartedAt = performance.now()
     this.loadBlueprintResources(blueprint)
+    this.map.context.performance?.record?.('blueprint.loadResourcesTotal', performance.now() - resourcesStartedAt)
   }
 
   generateEditableFromBlueprint(blueprintData: MapBlueprint): void {

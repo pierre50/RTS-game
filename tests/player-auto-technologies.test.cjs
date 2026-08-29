@@ -47,6 +47,13 @@ function loadPlayer(overrides = {}) {
           }
         },
         canPlaceBuildingAt: () => true,
+        hasBuildingPlacementClearance: (grid, i, j, building, options = {}) =>
+          (overrides.getBuildingFootprintCells ?? ((cellI, cellJ, cells) => [cells[cellI][cellJ]]))(
+            i,
+            j,
+            grid,
+            building.size
+          ).every(cell => options.canUseCell?.(cell) !== false),
         playSoundCue: () => {},
         updateInstanceVisibility: () => {},
         isBuildingLimitReached: () => false,

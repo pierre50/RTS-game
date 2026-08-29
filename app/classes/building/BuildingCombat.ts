@@ -1,5 +1,6 @@
 import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES } from '../../constants'
 import { findInstancesInSight, getActionCondition, instancesDistance } from '../../lib'
+import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { Projectile } from '../Projectile'
 import type { RuntimeEntity } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
@@ -33,12 +34,10 @@ export class BuildingCombat {
 
   attackAction(target: RuntimeEntity): void {
     const building = this.building
+    const map = building.context.map
     const range = getBuildingCombatRange(building)
     if (!building.isBuilt || building.isDead || !range || !building.projectile) return
     const projectileType = building.projectile
-    const {
-      context: { map },
-    } = building
     building.startAttackInterval(() => {
       if (
         building.isBuilt &&
@@ -46,7 +45,7 @@ export class BuildingCombat {
         instancesDistance(building, target) <= range
       ) {
         const projectile = new Projectile({ owner: building, type: projectileType, target }, building.context)
-        map.addChild(projectile)
+        attachProjectileToMapSpace(projectile, map)
       } else {
         building.stopAttackInterval()
       }

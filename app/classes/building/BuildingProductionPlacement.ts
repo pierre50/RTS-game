@@ -1,5 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import { getActionCondition, getFreeLandCellAroundInstance } from '../../lib'
+import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
+import { getEntityMapSpace } from '../../lib/mapSpaces'
 import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
@@ -34,7 +36,17 @@ function findSpawnCell(building: BuildingControllerHost): RuntimeCell | null {
   const {
     context: { map },
   } = building
-  return getFreeLandCellAroundInstance(building, map.grid, (items: RuntimeCell[]) => map.randomItem(items))
+  const space = getEntityMapSpace(building, map)
+  return getFreeLandCellAroundInstance(
+    building,
+    space?.grid ?? map.grid,
+    (items: RuntimeCell[]) => map.randomItem(items),
+    createNonReservedPassageCellCondition(building.context)
+  )
+}
+
+function withCellSpaceId<T extends object>(cell: RuntimeCell, options: T): T & { spaceId?: string } {
+  return cell.spaceId ? { ...options, spaceId: cell.spaceId } : options
 }
 
 export function placeProducedUnit(
@@ -56,10 +68,11 @@ export function placeProducedUnit(
   if (consumePopulationSlot) building.owner.population++
 
   const unitExtra = { ...(building.owner.getUnitExtraOptions?.(type) || {}), ...(extra || {}) }
-  const unit = building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type, ...unitExtra })
+  const unit = building.owner.createUnit?.(withCellSpaceId(spawnCell, { i: spawnCell.i, j: spawnCell.j, type, ...unitExtra }))
   if (!unit) return false
   const rallyPoint = building.rallyPoint
-  const rallyCell = rallyPoint && map.grid[rallyPoint.i]?.[rallyPoint.j]
+  const space = getEntityMapSpace(building, map)
+  const rallyCell = rallyPoint && (space?.grid ?? map.grid)[rallyPoint.i]?.[rallyPoint.j]
   if (rallyCell) {
     const rallyTarget = rallyCell.has && !rallyCell.has.isDestroyed ? rallyCell.has : null
     rallyTarget ? sendUnitToEntity(unit, rallyTarget) : unit.sendTo(rallyCell)
@@ -72,5 +85,5 @@ export function ejectTrainingVillager(building: BuildingControllerHost): void {
   const spawnCell = findSpawnCell(building)
   if (!spawnCell) return
   const unitExtra = building.owner.getUnitExtraOptions?.(UNIT_TYPES.villager) || {}
-  building.owner.createUnit?.({ i: spawnCell.i, j: spawnCell.j, type: UNIT_TYPES.villager, ...unitExtra })
+  building.owner.createUnit?.(withCellSpaceId(spawnCell, { i: spawnCell.i, j: spawnCell.j, type: UNIT_TYPES.villager, ...unitExtra }))
 }

@@ -6,16 +6,17 @@ import { DayNightSystem } from '../../services/DayNightSystem'
 import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
 import { LightSystem } from '../../services/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
+import { TimeSkipSystem } from '../../services/TimeSkipSystem'
 import { TributeRaidSystem } from '../../services/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
-import { VillagerShelterSystem } from '../../services/VillagerShelterSystem'
+import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
 import { WeatherSystem } from '../../services/WeatherSystem'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type LayerHost = { addChild(child: ContainerChild): unknown }
-type RuntimeServiceContext = Pick<GameContextLike, 'dayNight' | 'tributeRaids' | 'villagerShelter' | 'weather'>
+type RuntimeServiceContext = Pick<GameContextLike, 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather'>
 
 export type RuntimeServices = {
   buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
@@ -25,9 +26,10 @@ export type RuntimeServices = {
   interiorExitMarker: InteriorExitMarkerSystem | null
   lights: LightSystem | null
   shadows: ShadowSystem | null
+  timeSkip: TimeSkipSystem | null
   tributeRaids: TributeRaidSystem | null
   unitEnergyRegen: UnitEnergyRegenSystem | null
-  villagerShelter: VillagerShelterSystem | null
+  unitRest: UnitRestSystem | null
   weather: WeatherSystem | null
 }
 
@@ -40,9 +42,10 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     interiorExitMarker: null,
     lights: null,
     shadows: null,
+    timeSkip: null,
     tributeRaids: null,
     unitEnergyRegen: null,
-    villagerShelter: null,
+    unitRest: null,
     weather: null,
   }
 }
@@ -54,12 +57,15 @@ export function createRuntimeServices(
   dayNightElapsedMs: number | null | undefined = null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
+  const timeSkip = new TimeSkipSystem(context)
+  context.timeSkip = timeSkip
+
   const dayNight = new DayNightSystem(context, { elapsedMs: dayNightElapsedMs })
   context.dayNight = dayNight
 
   const dailyWorldEvents = new DailyWorldEventSystem(context)
-  const villagerShelter = new VillagerShelterSystem(context)
-  context.villagerShelter = villagerShelter
+  const unitRest = new UnitRestSystem(context)
+  context.unitRest = unitRest
 
   const tributeRaids = new TributeRaidSystem(context)
   context.tributeRaids = tributeRaids
@@ -82,9 +88,10 @@ export function createRuntimeServices(
     interiorExitMarker,
     lights,
     shadows,
+    timeSkip,
     tributeRaids,
     unitEnergyRegen,
-    villagerShelter,
+    unitRest,
     weather,
   }
 
@@ -102,8 +109,9 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.lights?.destroy()
   services.interiorExitMarker?.destroy()
   services.shadows?.destroy()
+  services.timeSkip?.destroy()
   services.dailyWorldEvents?.destroy()
-  services.villagerShelter?.destroy()
+  services.unitRest?.destroy()
   services.campPatrols?.destroy()
   services.unitEnergyRegen?.destroy()
   services.dayNight?.destroy()
@@ -111,8 +119,9 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
 
   context.dayNight = null
   context.weather = null
+  context.timeSkip = null
   context.tributeRaids = null
-  context.villagerShelter = null
+  context.unitRest = null
   clearRuntimeServiceDebugGlobals()
   return createEmptyRuntimeServices()
 }

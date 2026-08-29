@@ -9,6 +9,7 @@ import {
   uuidv4,
 } from '../lib/maths'
 import { moveTowardPoint } from '../lib/grid/movement'
+import { addDisplayObjectToMapSpaceContainer } from '../lib/mapSpaces'
 import { getEffectiveProjectileType, projectileTracksTarget } from '../lib/projectiles'
 import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { getUnitCombatRange } from '../lib/equipment/equipmentStats'
@@ -64,6 +65,7 @@ type ProjectileOptions = {
   target?: RuntimeEntity
   destination?: Point
   spawnPoint?: Point
+  spaceId?: string
   degree?: number
   weaponPower?: number
   maxDistance?: number
@@ -85,6 +87,7 @@ export class Projectile extends Container {
   target?: RuntimeEntity
   destination?: Point
   spawnPoint?: Point
+  spaceId?: string
   degree?: number
   direction?: string
   weaponPower?: number
@@ -144,6 +147,7 @@ export class Projectile extends Container {
     this.isDestroyed = false
 
     Object.assign(this, options)
+    this.spaceId = options.spaceId ?? this.owner.spaceId
     const player = this.owner.owner
     if (!player) throw new Error('Projectile owner must belong to a player')
     this.type = getEffectiveProjectileType(this.type, player)
@@ -256,6 +260,10 @@ export class Projectile extends Container {
       STEP_TIME,
       'projectile.step'
     )
+  }
+
+  attachToMapSpace(): void {
+    addDisplayObjectToMapSpaceContainer(this.context.map, this)
   }
 
   createShadowSprite(source: ProjectileSprite): ProjectileSprite {

@@ -2,9 +2,11 @@ import { FAMILY_TYPES, CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { average, pointsDistance } from '../lib/maths'
 import { isFriendlyTarget } from '../lib/combat'
 import { canTargetBeAggressed } from '../lib/combat/diplomaticAggression'
+import { getEntitySpaceMapLike, sameMapSpace } from '../lib/mapSpaces'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import type { GameContextLike } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
+import type { RuntimeMap } from '../types/map'
 import { PROJECTILE_COLLISION_SCALE, getProjectileVisualOffset } from './ProjectileGeometry'
 
 type CollisionProjectile = {
@@ -12,6 +14,7 @@ type CollisionProjectile = {
   currentAltitude: number
   owner: RuntimeEntity
   size: number
+  spaceId?: string | null
   target?: RuntimeEntity
   x: number
   y: number
@@ -20,6 +23,7 @@ type CollisionProjectile = {
 export function canProjectileCollideWith(projectile: CollisionProjectile, instance: RuntimeEntity): boolean {
   if (
     instance === projectile.owner ||
+    !sameMapSpace(projectile, instance) ||
     (isFriendlyTarget(projectile.owner, instance) && !canTargetBeAggressed(projectile.owner, instance)) ||
     instance.isDead ||
     instance.isDestroyed ||
@@ -73,8 +77,9 @@ export function findProjectileTreeCollision(
   previousX: number,
   previousY: number
 ): ResourceEntity | null {
+  const map = getEntitySpaceMapLike(projectile, projectile.context.map) ?? projectile.context.map
   return findTreeSegmentCollision(
-    projectile.context.map,
+    map as RuntimeMap,
     { x: previousX, y: previousY },
     { x: projectile.x, y: projectile.y },
     { currentAltitude: projectile.currentAltitude }

@@ -119,7 +119,8 @@ export class DayNightSystem {
   update(elapsedMs: number): void {
     if (this.context.paused || this.context.defeat) return
     const previousDay = this.state.day
-    this.elapsedMs += Math.min(Math.max(elapsedMs, 0), 250)
+    const maxDeltaMs = this.context.timeSkip?.dayNightMaxDeltaMs ?? 250
+    this.elapsedMs += Math.min(Math.max(elapsedMs, 0), maxDeltaMs)
     this.state = this.computeState()
     if (this.state.day !== previousDay) {
       for (const listener of this.dayChangeListeners) listener(this.state.day, previousDay)
@@ -176,6 +177,18 @@ export class DayNightSystem {
       clamp(Math.floor(hour), 0, 23),
       clamp(Math.floor(minute), 0, 59)
     )
+    this.state = this.computeState()
+    if (this.state.day !== previousDay) {
+      for (const listener of this.dayChangeListeners) listener(this.state.day, previousDay)
+    }
+    this.lastTopbarMinute = -1
+    this.context.menu?.updateTopbar?.()
+  }
+
+  setElapsedMs(elapsedMs: number): void {
+    if (!Number.isFinite(elapsedMs)) return
+    const previousDay = this.state.day
+    this.elapsedMs = Math.max(0, elapsedMs)
     this.state = this.computeState()
     if (this.state.day !== previousDay) {
       for (const listener of this.dayChangeListeners) listener(this.state.day, previousDay)

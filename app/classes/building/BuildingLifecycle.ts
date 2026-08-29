@@ -19,6 +19,7 @@ import {
   playAudibleSoundCue,
   spawnSpriteFragmentBurst,
 } from '../../lib'
+import { getEntityMapSpace } from '../../lib/mapSpaces'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import type { RuntimeCell } from '../../types/map'
@@ -177,7 +178,7 @@ export class BuildingLifecycle {
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
 
     if (building.hitPoints <= 0) {
-      building.context.villagerShelter?.evacuateVillagersFromShelter(building, { force: true })
+      building.context.unitRest?.evacuateUnitsFromShelter(building, { force: true })
       building.die()
     }
     if (action === ACTION_TYPES.build && !building.isBuilt) {
@@ -265,7 +266,9 @@ export class BuildingLifecycle {
     const {
       context: { map, player, players, menu },
     } = building
-    const adjacentWalls = isWall(building) ? getAdjacentWalls(map.grid, building.i, building.j, building.owner) : []
+    const space = getEntityMapSpace(building, map)
+    const grid = space?.grid ?? map.grid
+    const adjacentWalls = isWall(building) ? getAdjacentWalls(grid, building.i, building.j, building.owner) : []
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.clearRallyPoint()
@@ -316,7 +319,7 @@ export class BuildingLifecycle {
     this.spawnDestructionBurst()
     updateInstanceVisibility(building)
     this.clearDestroyedSprite()
-    getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
+    getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
       if (cell.has === building) {
         cell.has = null
         cell.solid = false
@@ -340,11 +343,13 @@ export class BuildingLifecycle {
     const {
       context: { map },
     } = building
-    getBuildingFootprintCells(building.i, building.j, map.grid, building.size, (cell: RuntimeCell) => {
+    const space = getEntityMapSpace(building, map)
+    getBuildingFootprintCells(building.i, building.j, space?.grid ?? map.grid, building.size, (cell: RuntimeCell) => {
       cell.corpses.delete(building)
       return true
     })
     building.isDestroyed = true
+    building.parent?.removeChild(building)
     building.destroy({ children: true, texture: false })
   }
 }

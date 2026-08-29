@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
 import { getCellsAroundPoint, getBuildingContactDistance } from '../lib'
+import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import { getEquipmentCombatStats, getUnitCombatRange, UNARMED_UNIT_WEAPON_POWER } from '../lib/equipment/equipmentStats'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -43,6 +44,7 @@ export class AIMilitary {
     if (soldiers.length > 1 && targetCell?.solid) {
       const size = target.size || targetCell.has?.size || 1
       const dist = getBuildingContactDistance(size)
+      const passageLookup = createReservedPassageCellLookup(this.ai.context)
       const candidates = getCellsAroundPoint(
         target.i,
         target.j,
@@ -56,6 +58,7 @@ export class AIMilitary {
           bestDist = Infinity
         for (const cell of candidates) {
           if (taken.has(cell)) continue
+          if (!canUnitUseCellAsIdleDestination(soldier as UnitEntity, cell, { passageLookup })) continue
           const d = Math.abs(cell.i - soldier.i) + Math.abs(cell.j - soldier.j)
           if (d < bestDist) {
             bestDist = d

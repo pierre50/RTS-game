@@ -62,7 +62,7 @@ test('pregenerated map blueprints persist water terrain', () => {
   try {
     execFileSync(
       process.execPath,
-      [path.join(ROOT, 'tools/generate-maps.cjs'), '--size', '144', '--count', '1', '--seed', '98765', '--out', out],
+      [path.join(ROOT, 'tools/generate-maps.cjs'), '--count', '1', '--seed', '98765', '--out', out],
       { cwd: ROOT, stdio: 'pipe' }
     )
 

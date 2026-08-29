@@ -178,7 +178,7 @@ export function generateBuildingFire(building: BuildingControllerHost, spriteId:
 
 export function updateBuildingFireDamage(building: BuildingControllerHost, percentage: number): void {
   if (percentage > 0 && percentage < 25) {
-    building.context.villagerShelter?.evacuateVillagersIfShelterUnsafe(building)
+    building.context.unitRest?.evacuateUnitsIfShelterUnsafe(building)
     playBuildingBurningSound(building)
     building.generateFire(BUILDING_FIRE_SHEETS.heavy)
   } else if (percentage >= 25 && percentage < 50) {

@@ -28,9 +28,10 @@ function loadRuntimeServices() {
       '../../services/InteriorExitMarkerSystem': { InteriorExitMarkerSystem: service('interiorExitMarker') },
       '../../services/LightSystem': { LightSystem: service('lights') },
       '../../services/ShadowSystem': { ShadowSystem: service('shadows') },
+      '../../services/TimeSkipSystem': { TimeSkipSystem: service('timeSkip') },
       '../../services/TributeRaidSystem': { TributeRaidSystem: service('tributeRaids') },
       '../../services/UnitEnergyRegenSystem': { UnitEnergyRegenSystem: service('unitEnergyRegen') },
-      '../../services/VillagerShelterSystem': { VillagerShelterSystem: service('villagerShelter') },
+      '../../services/rest/UnitRestSystem': { UnitRestSystem: service('unitRest') },
       '../../services/WeatherSystem': { WeatherSystem: service('weather') },
     },
   })
@@ -49,7 +50,9 @@ test('runtime services skip weather inside interior maps', () => {
   assert.equal(services.buildingInteriorEntryMarker, null)
   assert.ok(services.interiorExitMarker)
   assert.equal(context.weather, null)
+  assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), false)
+  assert.equal(calls.includes('timeSkip'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), false)
   assert.equal(calls.includes('interiorExitMarker'), true)
 
@@ -72,6 +75,7 @@ test('runtime services keep weather outside interior maps', () => {
   assert.ok(services.buildingInteriorEntryMarker)
   assert.equal(services.interiorExitMarker, null)
   assert.equal(context.weather, services.weather)
+  assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), true)
 })

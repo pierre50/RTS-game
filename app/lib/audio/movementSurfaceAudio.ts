@@ -3,6 +3,7 @@ import type { SoundDistanceProfileId } from '../../config/soundDistance'
 import { isHeroControlled } from '../units/unitControl'
 import { isUnitWalkSpeedFactor } from '../units/unitLocomotion'
 import { getHeroDistanceSoundVolume, playSoundCue } from './sound'
+import { getEntitySpaceGrid } from '../mapSpaces'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -146,13 +147,13 @@ function findContactingRule(
   cell: RuntimeCell | null | undefined,
   options: MovementSurfaceAudioOptions
 ): SurfaceAudioRule | null {
-  const map = unit.context?.map
-  if (!map || !cell) return null
+  const grid = getEntitySpaceGrid(unit, unit.context?.map)
+  if (!grid || !cell) return null
   const scanRadius = 1
   for (const rule of MOVEMENT_SURFACE_AUDIO_RULES) {
     if (rule.cellTypes?.has(cell.type)) return rule
     for (let i = cell.i - scanRadius; i <= cell.i + scanRadius; i++) {
-      const row = map.grid[i]
+      const row = grid[i]
       if (!row) continue
       for (let j = cell.j - scanRadius; j <= cell.j + scanRadius; j++) {
         const entity = row[j]?.has

@@ -73,6 +73,22 @@ test('free land spawn around instance skips blocked terrain classes', () => {
   assert.deepEqual({ i: cell.i, j: cell.j }, { i: 3, j: 2 })
 })
 
+test('free land spawn around instance applies an extra candidate condition', () => {
+  const { getFreeLandCellAroundInstance } = loadMovement()
+  const grid = makeGrid(5)
+  grid[1][2] = { i: 1, j: 2, category: 'Land', solid: false, reservedPassage: true }
+  grid[2][1] = { i: 2, j: 1, category: 'Land', solid: false }
+
+  const cell = getFreeLandCellAroundInstance(
+    { i: 2, j: 2, size: 1 },
+    grid,
+    cells => cells[0],
+    candidate => !candidate.reservedPassage
+  )
+
+  assert.deepEqual({ i: cell.i, j: cell.j }, { i: 2, j: 1 })
+})
+
 test('closest free cell path skips occupied solid target-adjacent cells', () => {
   const calls = []
   const grid = makeGrid(3)

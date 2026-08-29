@@ -2,7 +2,9 @@ import { AnimatedSprite } from 'pixi.js'
 import { LABEL_TYPES, RELIEF_LIFT_SMOOTHING } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
+  getEntityMapPoint,
   getReliefLiftPixels,
+  isEntityInActiveMapSpace,
   setSpriteFiltersPreservingDamageFeedback,
 } from '../../lib'
 import { getShadowsEnabled } from '../../lib/audio/settings'
@@ -20,6 +22,7 @@ type AnimalVisualHost = {
   reliefLift: number
   sprite: InteractiveSprite
   shadow: AnimatedSprite | null
+  spaceId?: string | null
   type: string
   visible: boolean
   x: number
@@ -63,11 +66,12 @@ export class AnimalVisuals {
     shadow.loop = animal.sprite.loop
     shadow.anchor.set(animal.sprite.anchor.x, animal.sprite.anchor.y)
     shadow.alpha = SHADOW_MASK_ALPHA
-    shadow.visible = Boolean(getShadowsEnabled() && animal.visible && !animal.isDestroyed)
+    shadow.visible = Boolean(getShadowsEnabled() && animal.visible && !animal.isDestroyed && isEntityInActiveMapSpace(animal))
     shadow.rotation = 0
     shadow.scale.x = animal.sprite.scale.x * SHADOW_SCALE_X * altitudeFactor
     shadow.scale.y = Math.abs(animal.sprite.scale.y) * SHADOW_SCALE_Y * altitudeFactor
-    shadow.position.set(animal.x, animal.y + animal.reliefLift)
+    const point = getEntityMapPoint(animal)
+    shadow.position.set(point.x, point.y + animal.reliefLift)
     if (animal.sprite.playing) {
       shadow.gotoAndPlay(frame)
     } else {
@@ -98,7 +102,9 @@ export class AnimalVisuals {
   syncVisualSettings(): void {
     const animal = this.animal
     if (animal.shadow) {
-      animal.shadow.visible = Boolean(getShadowsEnabled() && animal.visible && !animal.isDestroyed)
+      animal.shadow.visible = Boolean(
+        getShadowsEnabled() && animal.visible && !animal.isDestroyed && isEntityInActiveMapSpace(animal)
+      )
     }
   }
 

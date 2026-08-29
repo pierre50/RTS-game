@@ -186,6 +186,7 @@ export const getActionCondition = (
           target &&
           !isFriendlyTarget(source, target) &&
           (source.owner?.isEnemy?.(target.owner as never) || target.family === FAMILY_TYPES.animal) &&
+          (source.family !== FAMILY_TYPES.animal || target.family !== FAMILY_TYPES.building) &&
           [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead

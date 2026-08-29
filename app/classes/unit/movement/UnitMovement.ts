@@ -1,17 +1,10 @@
-import {
-  ACTION_TYPES,
-  FAMILY_TYPES,
-  UNIT_TYPES,
-} from '../../../constants'
-import {
-  findReachableFleeCell,
-  getInstancePath,
-  instanceContactInstance,
-  instancesDistance,
-} from '../../../lib'
+import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../../../constants'
+import { findReachableFleeCell, getInstancePath, instanceContactInstance, instancesDistance } from '../../../lib'
 import { isHeroActionInRange } from '../../../lib/hero/heroActionRange'
 import { markCombatFlee } from '../../../lib/combat/combatBehavior'
 import { getUnitCombatRange } from '../../../lib/equipment/equipmentStats'
+import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
+import { canUnitWaitOnCell, createReservedPassageCellLookup } from '../../../lib/buildings/passageCells'
 import { UnitDirectMovement } from './UnitDirectMovement'
 import { UnitMovementRouting } from './UnitMovementRouting'
 import { moveUnitToPath } from './UnitPathMovement'
@@ -19,7 +12,6 @@ import { debugCombatMove, debugHuntRangeCheck } from './UnitMovementDebug'
 import {
   CAPTURE_HORSE_TRIGGER_RANGE,
   clearRequestedMoveSpeedFactor,
-  isCellBlockedForUnit,
   isRuntimeEntity,
   type DirectMoveOptions,
   type SendToOptions,
@@ -108,12 +100,22 @@ export class UnitMovement {
   sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
-    { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
+    {
+      forceRepath = false,
+      allowBlockedGatherApproach = true,
+      preserveAutonomy = false,
+      allowPassageStop = false,
+    }: SendToOptions = {}
   ) {
     const startedAt = performance.now()
     if (forceRepath) this.unit.context?.performance?.record?.('unit.repath', 0)
     try {
-      return this._sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach, preserveAutonomy })
+      return this._sendToEvt(dest, action, {
+        forceRepath,
+        allowBlockedGatherApproach,
+        preserveAutonomy,
+        allowPassageStop,
+      })
     } finally {
       this.unit.context?.performance?.record?.('unit.command', performance.now() - startedAt)
     }
@@ -122,12 +124,22 @@ export class UnitMovement {
   _sendToEvt(
     dest: RuntimeEntity | RuntimeCell | null,
     action: string | null,
-    { forceRepath = false, allowBlockedGatherApproach = true, preserveAutonomy = false }: SendToOptions = {}
+    {
+      forceRepath = false,
+      allowBlockedGatherApproach = true,
+      preserveAutonomy = false,
+      allowPassageStop = false,
+    }: SendToOptions = {}
   ) {
     if (!this.unit.followingHero && !usesCautiousAnimalApproach(this.unit, dest, action)) {
       clearRequestedMoveSpeedFactor(this.unit)
     }
-    return this.routing.sendToEvt(dest, action, { forceRepath, allowBlockedGatherApproach, preserveAutonomy })
+    return this.routing.sendToEvt(dest, action, {
+      forceRepath,
+      allowBlockedGatherApproach,
+      preserveAutonomy,
+      allowPassageStop,
+    })
   }
 
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
@@ -143,10 +155,10 @@ export class UnitMovement {
       unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse
         ? CAPTURE_HORSE_TRIGGER_RANGE
         : unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
-        ? getUnitCombatRange(unit)
-        : action === ACTION_TYPES.attack
-        ? getUnitCombatRange(unit)
-        : undefined
+          ? getUnitCombatRange(unit)
+          : action === ACTION_TYPES.attack
+            ? getUnitCombatRange(unit)
+            : undefined
     const distance = instancesDistance(unit, dest)
     debugHuntRangeCheck(unit, action, dest, effectiveRange, distance)
     if (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse) {
@@ -223,12 +235,13 @@ export class UnitMovement {
 
   explore(): boolean {
     const unit = this.unit
-    const map = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return false
     const { grid } = map
     const views = unit.owner?.views
     if (!views) return false
     const candidates: { cell: RuntimeCell; score: number; dist: number }[] = []
+    const passageLookup = createReservedPassageCellLookup(unit.context)
 
     for (let r = 1; r <= 50; r++) {
       for (let dx = -r; dx <= r; dx++) {
@@ -238,24 +251,12 @@ export class UnitMovement {
         const dyMax = r - Math.abs(dx)
         for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
           const cell = row[unit.j + dy]
-          if (
-            cell &&
-            !views.isViewed(cell.i, cell.j) &&
-            !cell.solid &&
-            (!cell.border || (cell.waterBorder && !cell.solid)) &&
-            cell.category !== 'Water'
-          ) {
+          if (cell && !views.isViewed(cell.i, cell.j) && canUnitWaitOnCell(unit, cell, { passageLookup })) {
             let unseenNeighbors = 0
             for (let ni = cell.i - 1; ni <= cell.i + 1; ni++) {
               for (let nj = cell.j - 1; nj <= cell.j + 1; nj++) {
                 const neighbor = grid[ni]?.[nj]
-                if (
-                  neighbor &&
-                  !views.isViewed(ni, nj) &&
-                  !neighbor.solid &&
-                  (!neighbor.border || (neighbor.waterBorder && !neighbor.solid)) &&
-                  neighbor.category !== 'Water'
-                ) {
+                if (neighbor && !views.isViewed(ni, nj) && canUnitWaitOnCell(unit, neighbor, { passageLookup })) {
                   unseenNeighbors++
                 }
               }
@@ -283,15 +284,11 @@ export class UnitMovement {
 
   runaway(instance: RuntimeEntity) {
     const unit = this.unit
-    const map = unit.context?.map
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
     if (!map) return
+    const passageLookup = createReservedPassageCellLookup(unit.context)
     const cell = findReachableFleeCell<RuntimeCell>(unit, instance, map, {
-      isCellAllowed: candidate =>
-        Boolean(
-          !isCellBlockedForUnit(unit, candidate) &&
-            candidate.category !== 'Water' &&
-            (!candidate.border || (candidate.waterBorder && !candidate.solid))
-        ),
+      isCellAllowed: candidate => canUnitWaitOnCell(unit, candidate, { passageLookup }),
       range: unit.sight ?? 0,
     })
     if (cell) {

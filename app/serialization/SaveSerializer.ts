@@ -1,9 +1,10 @@
-import { filterObject, getGaiaAnimals } from '../lib'
+import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../lib'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'
 import type { RuntimeEntityBase, UnitControlMode } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
 import type {
   SavedAIState,
   SaveEntityState,
@@ -104,6 +105,10 @@ type ThreatTargetMemory = {
 type SerializableContext = GameContextLike & {
   players?: SerializablePlayer[]
 }
+type InteriorSerializableSpace = {
+  building?: SerializableEntity | null
+  exteriorEntryCell?: RuntimeCell | null
+}
 
 function cameraData(camera?: { x?: number; y?: number } | null) {
   return {
@@ -130,6 +135,36 @@ function destinationData(dest?: Destination | null) {
 function referenceData(dest?: Destination | null): SaveReference | null | undefined {
   if (!dest) return dest
   return [dest.i ?? 0, dest.j ?? 0, dest.label]
+}
+
+function getInteriorWorldSaveCell(entity: SerializableEntity): RuntimeCell | null {
+  if (!entity.spaceId) return null
+  const map = entity.context?.map
+  const space = getEntityMapSpace(entity)
+  if (!map || space?.kind !== 'interior') return null
+  const interiorSpace = space as InteriorSerializableSpace
+  if (interiorSpace.exteriorEntryCell) return interiorSpace.exteriorEntryCell
+  const building = interiorSpace.building
+  return building ? map.grid[building.i]?.[building.j] ?? null : null
+}
+
+function projectInteriorEntityToWorld(entity: SerializableEntity, data: SaveEntityState): SaveEntityState {
+  const cell = getInteriorWorldSaveCell(entity)
+  if (!cell) return data
+  const point = getCellMapPoint(cell, entity.context?.map)
+  data.i = cell.i
+  data.j = cell.j
+  data.x = point.x
+  data.y = point.y
+  data.z = cell.z
+  data.action = null
+  data.dest = null
+  data.path = []
+  data.realDest = null
+  delete data.currentFrame
+  delete data.currentSheet
+  delete data.loop
+  return data
 }
 
 function resourceData(resource: SerializableEntity): SaveEntityState {
@@ -190,7 +225,7 @@ function animalData(animal: SerializableEntity): SaveEntityState {
 }
 
 function unitData(unit: SerializableEntity): SaveEntityState {
-  return {
+  return projectInteriorEntityToWorld(unit, {
     ...filterObject(unit, [
       'label',
       'name',
@@ -255,7 +290,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       ],
       action: unit.blockedGatherApproach.action,
     },
-  }
+  })
 }
 
 function buildingData(building: SerializableEntity): SaveEntityState {

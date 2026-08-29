@@ -3,7 +3,7 @@ import { Assets, Sprite, AnimatedSprite } from 'pixi.js'
 import { COLOR_GREEN } from '../constants'
 import { findWallPath, getWallFrame } from '../lib/grid/wallPath'
 import { getWallLevel, getWallTexture, isWall, WALL_CONSTRUCTION_FLAG_SHEET_ID } from '../lib/buildings/walls'
-import { bindAnimatedSpriteToTicker, changeSpriteColor, getTextureByFrame } from '../lib'
+import { bindAnimatedSpriteToTicker, changeSpriteColor, getMapSpace, getTextureByFrame } from '../lib'
 import type { GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
@@ -74,8 +74,9 @@ export class WallPlacementController {
   update(cell: RuntimeCell): boolean {
     const draft = this.draft
     if (!draft || !cell) return false
+    const space = getMapSpace(this.context.map, draft.start.spaceId)
     const path = findWallPath(
-      this.context.map.grid,
+      space?.grid ?? this.context.map.grid,
       draft.start,
       cell,
       (candidate: RuntimeCell, isEnd: boolean) =>

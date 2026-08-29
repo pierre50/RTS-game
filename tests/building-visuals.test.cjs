@@ -62,9 +62,16 @@ function loadBuildingVisuals() {
         '../../constants': { LABEL_TYPES: { shadow: 'shadow' } },
         '../../lib': {
           bindAnimatedSpriteToTicker: () => {},
+          getEntityMapPoint: building => {
+            const space = building.context?.map?.spaces?.get?.(building.spaceId ?? 'outside')
+            const origin = space?.origin ?? { x: 0, y: 0 }
+            return { x: origin.x + building.x, y: origin.y + building.y }
+          },
           getRallyPointFrames: () => [],
           getTextureByFrame: () => null,
           getTextureSheet: textureName => textureName,
+          isEntityInActiveMapSpace: building =>
+            (building.context?.map?.activeSpaceId ?? 'outside') === (building.spaceId ?? 'outside'),
           parseTextureRef: () => ({ frame: 0 }),
           RALLY_POINT_SHEET_ID: 'rally-point',
         },
@@ -107,6 +114,71 @@ test('building sprite shadows can fall back to a flattened source sprite mask', 
   assert.equal(shadow.scale.y, -1.5)
   assert.equal(shadow.position.x, 100)
   assert.equal(shadow.position.y, 200)
+})
+
+test('building shadows only render in the active map space', () => {
+  const { createBuildingShadow, updateBuildingShadow, Texture } = loadBuildingVisuals()
+  const texture = new Texture()
+  const building = {
+    context: { map: { activeSpaceId: null, shadowLayer: { addChild: () => {} } } },
+    isDead: false,
+    isDestroyed: false,
+    reliefLift: 0,
+    shadow: null,
+    spaceId: 'interior:test',
+    sprite: {
+      texture,
+      anchor: { x: 0.5, y: 0.75 },
+      scale: { x: 2, y: 3 },
+    },
+    textureName: 'buildings/deco',
+    useSpriteShadow: true,
+    visible: true,
+    x: 100,
+    y: 200,
+  }
+
+  const shadow = createBuildingShadow(building)
+
+  assert.ok(shadow)
+  assert.equal(shadow.visible, false)
+  building.context.map.activeSpaceId = 'interior:test'
+  updateBuildingShadow(building, shadow)
+  assert.equal(shadow.visible, true)
+})
+
+test('building shadows use runtime map-space coordinates', () => {
+  const { createBuildingShadow, Texture } = loadBuildingVisuals()
+  const texture = new Texture()
+  const building = {
+    context: {
+      map: {
+        activeSpaceId: 'interior:test',
+        shadowLayer: { addChild: () => {} },
+        spaces: new Map([['interior:test', { id: 'interior:test', origin: { x: 300, y: 120 } }]]),
+      },
+    },
+    isDead: false,
+    isDestroyed: false,
+    reliefLift: -4,
+    shadow: null,
+    spaceId: 'interior:test',
+    sprite: {
+      texture,
+      anchor: { x: 0.5, y: 0.75 },
+      scale: { x: 1, y: 1 },
+    },
+    textureName: 'buildings/deco',
+    useSpriteShadow: true,
+    visible: true,
+    x: 20,
+    y: 40,
+  }
+
+  const shadow = createBuildingShadow(building)
+
+  assert.equal(shadow.position.x, 320)
+  assert.equal(shadow.position.y, 156)
 })
 
 test('building sprite shadow fallback can use a dedicated ground anchor', () => {

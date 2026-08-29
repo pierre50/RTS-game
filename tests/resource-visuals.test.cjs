@@ -76,6 +76,11 @@ function loadResourceVisuals() {
     'pixi.js': { AnimatedSprite, Assets, Rectangle, Sprite, Texture },
     '../lib': {
       bindAnimatedSpriteToTicker: () => {},
+      getEntityMapPoint: resource => {
+        const space = resource.context?.map?.spaces?.get?.(resource.spaceId ?? 'outside')
+        const origin = space?.origin ?? { x: 0, y: 0 }
+        return { x: origin.x + resource.x, y: origin.y + resource.y }
+      },
       getTextureSheet: textureName => textureName.split('_').slice(1).join('_'),
       parseTextureRef: textureName => ({
         sheet: textureName.split('_').slice(1).join('_'),
@@ -86,6 +91,8 @@ function loadResourceVisuals() {
         if (!texture) throw new Error(`missing frame ${frameIndex}`)
         return texture
       },
+      isEntityInActiveMapSpace: resource =>
+        (resource.context?.map?.activeSpaceId ?? 'outside') === (resource.spaceId ?? 'outside'),
     },
     '../constants': {
       LABEL_TYPES: { shadow: 'shadow' },

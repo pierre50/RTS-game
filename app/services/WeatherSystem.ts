@@ -1,12 +1,10 @@
-import { Container, Graphics, ParticleContainer, type Filter, type Texture } from 'pixi.js'
+import { Container, Graphics, ParticleContainer, type Texture } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
-import { sound, type IMediaInstance } from '@pixi/sound'
 import { SOUND_CUES, type EnvironmentId } from '../constants'
-import { playSoundCue } from '../lib'
+import { isGameplaySoundSuppressed, playSoundCue } from '../lib'
 import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/nightAmbience'
 import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/oceanAmbience'
 import type { GameContextLike } from '../types/context'
-import type { RuntimeMap } from '../types/map'
 
 import {
   AMBIENT_CROSSFADE_MID,
@@ -37,7 +35,7 @@ import {
   type WeatherBiomeProfile,
   type WeatherColor,
   type WeatherPhase,
-} from './WeatherProfiles'
+} from './weather/WeatherProfiles'
 import {
   addParticleDrift,
   biomeKeyFromEnvironment,
@@ -51,7 +49,7 @@ import {
   randomDuration,
   scaleParticleTarget,
   seconds,
-} from './WeatherUtils'
+} from './weather/WeatherUtils'
 import {
   createRainTexture,
   createSandTexture,
@@ -59,16 +57,12 @@ import {
   Raindrop,
   SandGrain,
   Snowflake,
-} from './WeatherParticles'
-
-function startAmbientLoop(alias: string, onReady: (instance: IMediaInstance) => void): void {
-  const result = sound.play(alias, { loop: true, volume: 0 })
-  if (result instanceof Promise) result.then(onReady).catch(() => {})
-  else onReady(result)
-}
-
+} from './weather/WeatherParticles'
+import { startAmbientLoop, type WeatherLoopInstance } from './weather/WeatherAudio'
+import { WeatherColorGrading, type WeatherColorMap } from './weather/WeatherColorGrading'
 
 export class WeatherSystem {
+  colorGrading: WeatherColorGrading
   context: GameContextLike
   currentColor: WeatherColor
   elapsedMs: number
@@ -79,8 +73,7 @@ export class WeatherSystem {
   layer: Container
   lightningBursts: number
   lightningNextBurstMs: number
-  map: RuntimeMap & { filters?: readonly Filter[] | null }
-  mapFilters: readonly Filter[] | null
+  map: WeatherColorMap
   biome: EnvironmentId
   biomeProfile: WeatherBiomeProfile
   phase: WeatherPhase
@@ -99,11 +92,11 @@ export class WeatherSystem {
   rainIntensity: number
   snowIntensity: number
   sandIntensity: number
-  rainLoopHeavy: IMediaInstance | null
-  rainLoopLight: IMediaInstance | null
-  nightLoop: IMediaInstance | null
+  rainLoopHeavy: WeatherLoopInstance | null
+  rainLoopLight: WeatherLoopInstance | null
+  nightLoop: WeatherLoopInstance | null
   nightVolume: number
-  oceanLoop: IMediaInstance | null
+  oceanLoop: WeatherLoopInstance | null
   oceanVolume: number
   random: RandomFn
   screenRect: ScreenRect
@@ -111,15 +104,15 @@ export class WeatherSystem {
   lastMapX: number
   lastMapY: number
   windIntensity: number
-  windLoopHeavy: IMediaInstance | null
-  windLoopLight: IMediaInstance | null
+  windLoopHeavy: WeatherLoopInstance | null
+  windLoopLight: WeatherLoopInstance | null
   windX: number
   windTargetX: number
   _onTick: (ticker: TickerLike) => void
 
   constructor(
     context: GameContextLike,
-    map: RuntimeMap & { filters?: readonly Filter[] | null },
+    map: WeatherColorMap,
     getScreenRect: () => ScreenRect,
     random: RandomFn = Math.random
   ) {
@@ -155,8 +148,8 @@ export class WeatherSystem {
     this.sandGrains = Array.from({ length: MAX_SAND_GRAINS }, () => this.createSandGrain(true))
 
     this.tintFilter = new AdjustmentFilter(this.currentColor)
-    this.mapFilters = map.filters ?? null
-    map.filters = [...(this.mapFilters ?? []), this.tintFilter]
+    this.colorGrading = new WeatherColorGrading(context, map, this.tintFilter, () => this.screenRect)
+    this.colorGrading.sync()
 
     this.layer = new Container()
     this.layer.eventMode = 'none'
@@ -302,15 +295,34 @@ export class WeatherSystem {
       elapsedSeconds * WIND_LERP_PER_SECOND
     )
 
+    const shouldRenderWeatherEffects = this.colorGrading.shouldRender()
+    this.colorGrading.sync(shouldRenderWeatherEffects)
     this.updateColor(elapsedSeconds)
+    this.updateAmbientSound(elapsedSeconds)
+    if (!shouldRenderWeatherEffects || this.context.timeSkip?.suppressCosmetics) {
+      this.layer.visible = false
+      return
+    }
+    this.layer.visible = true
     this.drawRainVeil()
     this.updateLightning(safeElapsedMs)
     this.updatePrecipitation(elapsedSeconds, mapShiftX, mapShiftY)
-    this.updateAmbientSound(elapsedSeconds)
     this.drawFlash()
   }
 
   updateAmbientSound(elapsedSeconds: number): void {
+    if (isGameplaySoundSuppressed() || !this.colorGrading.shouldRender()) {
+      this.nightVolume = 0
+      this.oceanVolume = 0
+      if (this.rainLoopLight) this.rainLoopLight.volume = 0
+      if (this.rainLoopHeavy) this.rainLoopHeavy.volume = 0
+      if (this.windLoopLight) this.windLoopLight.volume = 0
+      if (this.windLoopHeavy) this.windLoopHeavy.volume = 0
+      if (this.nightLoop) this.nightLoop.volume = 0
+      if (this.oceanLoop) this.oceanLoop.volume = 0
+      return
+    }
+
     const rainVolumes = crossfadeVolumes(this.rainIntensity, AMBIENT_CROSSFADE_MID)
     const windVolumes = crossfadeVolumes(this.windIntensity, AMBIENT_CROSSFADE_MID)
     const nightTargetVolume = getNightAmbienceTargetVolume(this.context.dayNight?.getDarknessLevel?.())
@@ -396,10 +408,6 @@ export class WeatherSystem {
           ? 0xdce8f5
           : 0x9fb2c4
     this.rainVeil.fill({ alpha: veilAlpha, color })
-  }
-
-  getDarknessLevel(): number {
-    return this.phase === 'night' ? 1 : 0
   }
 
   updatePrecipitation(elapsedSeconds: number, mapShiftX = 0, mapShiftY = 0): void {
@@ -545,7 +553,7 @@ export class WeatherSystem {
       rainIntensity: Number(this.rainIntensity.toFixed(2)),
       snowIntensity: Number(this.snowIntensity.toFixed(2)),
       sandIntensity: Number(this.sandIntensity.toFixed(2)),
-      darknessLevel: Number(this.getDarknessLevel().toFixed(2)),
+      darknessLevel: this.phase === 'night' ? 1 : 0,
       rainSlantRatio: Number(
         clamp(RAIN_BASE_SLANT_RATIO + this.windX * RAIN_WIND_SLANT_FACTOR, -0.32, -0.08).toFixed(2)
       ),
@@ -567,12 +575,8 @@ export class WeatherSystem {
 
   destroy(): void {
     this.context.app.ticker.remove(this._onTick)
-    this.map.filters = this.mapFilters ? [...this.mapFilters] : null
+    this.colorGrading.destroy()
     this.layer.destroy({ children: true })
-    // Destroying the texture wrapper only, NOT its source (no `true` arg): the rain and snow
-    // containers never set custom shaders, so they rely on the shared particle shader. Destroying
-    // their source textures directly can trigger GL resource churn under some context-recovery paths.
-    // Keeping source textures alive as tiny canvas-backed resources is harmless and avoids regressions.
     this.rainTexture.destroy()
     this.snowTexture.destroy()
     this.sandTexture.destroy()

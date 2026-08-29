@@ -2,53 +2,44 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadWorldActions() {
-  return loadTsModule('app/dev-console/actions/world.ts')
+function loadTimeSkipActions() {
+  return loadTsModule('app/dev-console/actions/timeSkip.ts')
 }
 
-function createContext() {
+test('advanceTime forwards valid next hours to the time skip system', () => {
+  const { advanceTime } = loadTimeSkipActions()
   const calls = []
-  return {
-    dayNight: {
-      getDayLabel: () => 'Day 3',
-      getTimeLabel: () => '22:30',
-      setTime: (hour, minute) => calls.push(['setTime', hour, minute]),
+  const context = {
+    timeSkip: {
+      start: hours => {
+        calls.push(['start', hours])
+        return { ok: true, message: `started ${hours}` }
+      },
     },
-    calls,
   }
-}
 
-test('setTime accepts hour-only dev-console input', () => {
-  const { setTime } = loadWorldActions()
-  const context = createContext()
-
-  const result = setTime(context, '22')
+  const result = advanceTime(context, '12')
 
   assert.equal(result.ok, true)
-  assert.deepEqual(context.calls, [['setTime', 22, 0]])
-  assert.equal(result.message, 'Time set to Day 3 22:30')
+  assert.equal(result.message, 'started 12')
+  assert.deepEqual(calls, [['start', 12]])
 })
 
-test('setTime accepts HH:MM and HHhMM dev-console input', () => {
-  const { setTime } = loadWorldActions()
-  const context = createContext()
+test('advanceTime only accepts 1 to 12 hours', () => {
+  const { advanceTime } = loadTimeSkipActions()
+  const context = {
+    timeSkip: {
+      start: hours => ({ ok: true, message: `started ${hours}` }),
+    },
+  }
 
-  assert.equal(setTime(context, '05:45').ok, true)
-  assert.equal(setTime(context, '6h30').ok, true)
-
-  assert.deepEqual(context.calls, [
-    ['setTime', 5, 45],
-    ['setTime', 6, 30],
-  ])
+  assert.equal(advanceTime(context, '12').ok, true)
+  assert.deepEqual(advanceTime(context, '0'), { ok: false, message: 'Usage: next <1-12>' })
+  assert.deepEqual(advanceTime(context, '13'), { ok: false, message: 'Usage: next <1-12>' })
 })
 
-test('setTime rejects invalid dev-console input', () => {
-  const { setTime } = loadWorldActions()
-  const context = createContext()
+test('advanceTime reports when the time skip system is unavailable', () => {
+  const { advanceTime } = loadTimeSkipActions()
 
-  const result = setTime(context, '24:00')
-
-  assert.equal(result.ok, false)
-  assert.equal(result.message, 'Usage: time [HH[:MM]]')
-  assert.deepEqual(context.calls, [])
+  assert.deepEqual(advanceTime({}, '1'), { ok: false, message: 'Time skip system unavailable' })
 })

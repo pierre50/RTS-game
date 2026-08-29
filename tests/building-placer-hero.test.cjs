@@ -31,6 +31,10 @@ function loadBuildingPlacer() {
       isometricToCartesian: () => [0, 0],
       canAfford: () => true,
       canPlaceBuildingAt: () => true,
+      hasBuildingPlacementClearance: (grid, i, j, building, options = {}) =>
+        mocks['../lib']
+          .getBuildingFootprintCells(i, j, grid, building.size)
+          .every(cell => options.canUseCell?.(cell) !== false),
       changeSpriteColor: () => {},
       getBuildingFootprintCells(startX, startY, grid, size = 1) {
         const result = []

@@ -1,5 +1,5 @@
 import { ACTION_TYPES, RESOURCE_NAMES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob, VillagerShelterState } from '../../types/entities'
+import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob, UnitRestState } from '../../types/entities'
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
 
@@ -39,7 +39,7 @@ function resourceFromWork(unit: UnitEntity, work: string | null | undefined): Re
   return null
 }
 
-function shelterResource(unit: UnitEntity, state: VillagerShelterState): ResourceName | null {
+function shelterResource(unit: UnitEntity, state: UnitRestState): ResourceName | null {
   const previousJob = state.previousAutonomousJob ? RESOURCE_JOB_BY_AUTONOMY[state.previousAutonomousJob] : null
   return previousJob ?? resourceFromWork(unit, state.previousWork)
 }

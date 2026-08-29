@@ -4,6 +4,7 @@ import {
   teleportRuntimeUnitToCell,
   updateInstanceVisibility,
 } from '../../lib'
+import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import {
   addChildWorldToCampaign,
@@ -146,7 +147,12 @@ export function findPortalArrivalCell(game: PortalTravelGame): RuntimeCell | nul
   const portal = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
   if (!portal) return null
 
-  return getFreeLandCellAroundInstance(portal, map.grid, cells => cells[Math.floor(map.random() * cells.length)])
+  return getFreeLandCellAroundInstance(
+    portal,
+    map.grid,
+    cells => cells[Math.floor(map.random() * cells.length)],
+    createNonReservedPassageCellCondition(game._gameContext())
+  )
 }
 
 export function findPartyFollowerArrivalCell(game: PortalTravelGame, anchor: UnitEntity): RuntimeCell | null {
@@ -154,7 +160,8 @@ export function findPartyFollowerArrivalCell(game: PortalTravelGame, anchor: Uni
   return getFreeLandCellAroundInstance(
     { i: anchor.i, j: anchor.j, size: 1 },
     map.grid,
-    cells => cells[Math.floor(map.random() * cells.length)]
+    cells => cells[Math.floor(map.random() * cells.length)],
+    createNonReservedPassageCellCondition(game._gameContext())
   )
 }
 

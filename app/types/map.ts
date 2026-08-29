@@ -12,6 +12,7 @@ export type { FogSpriteMemory } from './fog'
 
 export interface RuntimeCell extends GridCell {
   map?: object
+  spaceId?: string
   x: number
   y: number
   z: number
@@ -53,11 +54,13 @@ export interface RenderChunk {
 type GaiaPlayerLike = {
   animals?: RuntimeEntity[]
   units?: RuntimeEntity[]
-  createAnimal?: (options: { i: number; j: number; type: string; horseColor?: string }) => RuntimeEntity
+  createAnimal?: (options: { i: number; j: number; spaceId?: string; type: string; horseColor?: string }) => RuntimeEntity
 }
 
 export interface RuntimeMap {
   grid: Grid<RuntimeCell>
+  spaces?: Map<string, RuntimeMapSpace>
+  activeSpaceId?: string | null
   size: number
   x: number
   y: number
@@ -100,4 +103,31 @@ export interface RuntimeMap {
   updateInstanceBucket(instance: RuntimeEntity, oldI: number, oldJ: number): void
   addChild: Container['addChild']
   removeChild(child: RuntimeEntity | Container): ContainerChild
+}
+
+type RuntimeMapSpaceKind = 'outside' | 'interior'
+
+export interface RuntimeMapSpacePortal {
+  id: string
+  sourceSpaceId: string
+  sourceCell: RuntimeCell | null
+  targetSpaceId: string
+  targetCell: RuntimeCell | null
+}
+
+export interface RuntimeMapSpace {
+  id: string
+  kind: RuntimeMapSpaceKind
+  grid: Grid<RuntimeCell>
+  size: number
+  container: Container | RuntimeMap
+  shadowLayer?: Container | null
+  shadowRenderContainer?: Container | RuntimeMap | null
+  origin: { x: number; y: number }
+  mapType?: string
+  buildingLabel?: string | null
+  entryCell?: RuntimeCell | null
+  exitCell?: RuntimeCell | null
+  instanceBuckets?: Array<Array<Set<RuntimeEntity>>> | null
+  portals?: RuntimeMapSpacePortal[]
 }

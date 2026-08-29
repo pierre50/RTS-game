@@ -32,7 +32,10 @@ function loadUnitMovement(calls) {
     const tsSource = fs.readFileSync(tsFilename, 'utf8')
     const { code: tsCode } = babel.transformSync(tsSource, {
       filename: tsFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const tsModule = { exports: {} }
     new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
@@ -71,12 +74,36 @@ function loadUnitMovement(calls) {
         updateInstanceVisibility: () => {},
       }
     }
+    if (request === '../../lib/mapSpaces') {
+      return {
+        getEntitySpaceMapLike: unit => unit?.context?.map ?? null,
+        isOutsideSpaceId: spaceId => !spaceId || spaceId === 'outside',
+        sameCellMapSpace: () => true,
+        sameMapSpace: () => true,
+      }
+    }
+    if (request === '../../lib/buildings/passageCells') {
+      return {
+        canUnitWaitOnCell: (_unit, cell) =>
+          Boolean(cell && !cell.solid && cell.category !== 'Water' && !cell.border && !cell.waterBorder),
+        createReservedPassageCellLookup: () => ({
+          has: () => false,
+          size: 0,
+        }),
+        findNearestPassageWaitingCell: () => null,
+        routeUnitAwayFromPassageCell: () => false,
+        shouldUnitAvoidPassageStop: () => false,
+        unitHasActivePassageStopIntent: () => false,
+      }
+    }
     if (request === '../../lib/units/unitControl') return { isHeroControlled: () => false }
     if (request === '../../lib/hero/heroActionRange') return { isHeroActionInRange: () => false }
     if (request === '../../lib/combat/combatBehavior') return { markCombatFlee: () => {} }
-    if (request === '../../lib/units/unitEnergy') return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
+    if (request === '../../lib/units/unitEnergy')
+      return { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 }
     if (request === './unitTired') return { getUnitTiredSpeedFactor: () => 1 }
-    if (request === '../../lib/units/unitLocomotion') return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
+    if (request === '../../lib/units/unitLocomotion')
+      return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     if (request === '../../lib/units/unitCrouchPose') {
       return {
         applyUnitCrouchPose: () => {},
@@ -84,7 +111,7 @@ function loadUnitMovement(calls) {
       }
     }
     if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
-    if (request === '../../services/VillagerSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
+    if (request === '../../services/rest/UnitSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
     if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
     if (request === './UnitCommands' || request === '../UnitCommands') {
       return {

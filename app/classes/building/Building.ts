@@ -52,6 +52,7 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   i: number
   j: number
   type: string
+  spaceId?: string
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
   isBuilt?: boolean

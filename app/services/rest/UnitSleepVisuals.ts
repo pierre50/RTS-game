@@ -1,8 +1,8 @@
-import { SHEET_TYPES } from '../constants'
-import { cancelFade } from '../lib/entities/entityFade'
-import { buildFrameRange, playSpriteAnimationFromStart, playSpriteFrameSequence } from '../lib/entities/spriteAnimation'
-import type { SchedulerTaskId } from '../types/context'
-import type { UnitEntity } from '../types/entities'
+import { SHEET_TYPES } from '../../constants'
+import { cancelFade } from '../../lib/entities/entityFade'
+import { buildFrameRange, playSpriteAnimationFromStart, playSpriteFrameSequence } from '../../lib/entities/spriteAnimation'
+import type { SchedulerTaskId } from '../../types/context'
+import type { UnitEntity } from '../../types/entities'
 
 const SLEEP_WAKE_FRAME_MS = 80
 const wakeAnimationTaskIds = new WeakMap<UnitEntity, SchedulerTaskId>()
@@ -10,6 +10,23 @@ const wakeAnimationTaskIds = new WeakMap<UnitEntity, SchedulerTaskId>()
 type UnitWithDetachedShadows = UnitEntity & {
   horseShadow?: { visible?: boolean; stop?: () => void } | null
   syncShadow?: (shadow?: UnitEntity['shadow'], source?: UnitEntity['sprite']) => void
+}
+
+type SleepAppearanceLayerSprite = {
+  currentFrame?: number
+  gotoAndPlay?: (frame: number) => void
+  gotoAndStop?: (frame: number) => void
+  loop?: boolean
+  onComplete?: (() => void) | null
+  onFrameChange?: ((frame: number) => void) | null
+  onLoop?: (() => void) | null
+  playing?: boolean
+  stop?: () => void
+  textures?: unknown[]
+}
+
+type UnitWithAppearanceLayers = UnitEntity & {
+  appearanceLayerSprites?: Map<unknown, SleepAppearanceLayerSprite>
 }
 
 export function setDetachedShadowsVisible(unit: UnitEntity, visible: boolean): void {
@@ -29,7 +46,30 @@ function syncSleepingShadow(unit: UnitEntity): void {
   shadowed.horseShadow?.stop?.()
 }
 
+function getLayerFrame(layer: SleepAppearanceLayerSprite, frame: number): number {
+  return Math.max(0, Math.min(frame, Math.max((layer.textures?.length ?? 1) - 1, 0)))
+}
+
+function syncSleepingAppearanceLayers(unit: UnitEntity, frame: number, playing: boolean): void {
+  const layers = (unit as UnitWithAppearanceLayers).appearanceLayerSprites
+  if (!layers?.size) return
+  for (const layer of layers.values()) {
+    const layerFrame = getLayerFrame(layer, frame)
+    layer.loop = false
+    layer.onComplete = null
+    layer.onFrameChange = null
+    layer.onLoop = null
+    if (playing) {
+      layer.gotoAndPlay?.(layerFrame)
+    } else {
+      layer.gotoAndStop?.(layerFrame)
+      layer.stop?.()
+    }
+  }
+}
+
 function syncHurtFrameShadow(unit: UnitEntity, frame: number): void {
+  syncSleepingAppearanceLayers(unit, frame, false)
   syncSleepingShadow(unit)
   setDetachedShadowsVisible(unit, frame !== getLastSpriteFrame(unit))
 }
@@ -45,6 +85,7 @@ function freezeSleepingOutsideVisual(unit: UnitEntity): void {
   const lastFrame = getLastSpriteFrame(unit)
   unit.sprite?.gotoAndStop?.(lastFrame)
   unit.sprite?.stop?.()
+  syncSleepingAppearanceLayers(unit, lastFrame, false)
   syncHurtFrameShadow(unit, lastFrame)
 }
 
@@ -57,6 +98,7 @@ export function playSleepingOutsideVisual(unit: UnitEntity): void {
     loop: false,
     onComplete: () => freezeSleepingOutsideVisual(unit),
   })
+  syncSleepingAppearanceLayers(unit, 0, true)
   syncSleepingShadow(unit)
 }
 
@@ -102,6 +144,7 @@ export function playSleepingWakeVisual(unit: UnitEntity, onComplete?: () => void
   sprite.onComplete = undefined
   sprite.loop = false
   sprite.stop?.()
+  syncSleepingAppearanceLayers(unit, getLastSpriteFrame(unit), false)
 
   const frames = buildFrameRange(getLastSpriteFrame(unit), 0)
   const taskId = playSpriteFrameSequence(sprite, scheduler, {
@@ -115,7 +158,7 @@ export function playSleepingWakeVisual(unit: UnitEntity, onComplete?: () => void
       unit.syncShadow?.()
       onComplete?.()
     },
-    taskName: 'villager.sleepWake',
+    taskName: 'unit.sleepWake',
   })
   if (taskId != null) wakeAnimationTaskIds.set(unit, taskId)
 }

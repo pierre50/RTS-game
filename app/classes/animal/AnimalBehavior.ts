@@ -1,5 +1,11 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../../constants'
 import { AmbientMovementController, findInstancesInSight, getCellsAroundPoint, instancesDistance } from '../../lib'
+import {
+  canEntityUseCellAsIdleDestination,
+  createReservedPassageCellLookup,
+  routeEntityAwayFromPassageCell,
+} from '../../lib/buildings/passageCells'
+import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { showAlertFeedback } from '../../lib/combat/combatFeedback'
 import { updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { isAirborne } from './locomotion'
@@ -64,7 +70,8 @@ export class AnimalBehavior {
       (instance: AnimalThreat) =>
         !instance.isDead &&
         !instance.isDestroyed &&
-        (instance.family === FAMILY_TYPES.unit || instance.family === FAMILY_TYPES.building),
+        (instance.family === FAMILY_TYPES.unit ||
+          (animal.strategy === 'runaway' && instance.family === FAMILY_TYPES.building)),
       { useInsightRange: true }
     )
     return threats.reduce(
@@ -112,20 +119,23 @@ export class AnimalBehavior {
       return
     }
 
+    if (routeEntityAwayFromPassageCell(animal)) return
     this.ambientMovement.tryMove()
   }
 
   findAmbientDestination(animal: AnimalControllerHost): RuntimeCell | null {
-    const {
-      context: { map },
-    } = animal
+    const map = getEntitySpaceMapLike(animal, animal.context.map)
+    if (!map) return null
+    const passageLookup = createReservedPassageCellLookup(animal.context)
     const cells = getCellsAroundPoint(
       animal.i,
       animal.j,
       map.grid,
       animal.ambientWalkRange ?? AMBIENT_WALK_RANGE,
-      cell => !cell.solid && (cell.i !== animal.i || cell.j !== animal.j)
+      cell =>
+        canEntityUseCellAsIdleDestination(animal, cell, { passageLookup }) &&
+        (cell.i !== animal.i || cell.j !== animal.j)
     )
-    return cells.length ? map.randomItem(cells) : null
+    return cells.length ? animal.context.map.randomItem(cells) : null
   }
 }

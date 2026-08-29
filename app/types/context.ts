@@ -29,6 +29,7 @@ interface DayNightSystemLike {
   getColorAdjustment(): DayNightColorAdjustment
   getDarknessLevel(): number
   getElapsedMs(): number
+  setElapsedMs?(elapsedMs: number): void
   getDayLabel(): string
   getTimeLabel(): string
   onDayChange?(callback: (day: number, previousDay: number) => void): () => void
@@ -47,14 +48,26 @@ interface TributeRaidSystemLike {
   triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
 }
 
-interface VillagerShelterSystemLike {
-  handleVillagerDangerShelter(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
-  evacuateVillagersFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
-  evacuateVillagersIfShelterUnsafe(building: BuildingEntity): void
-  sendVillagerToSleep(unit: UnitEntity): boolean
-  wakeSleepingVillagerForOrder(unit: UnitEntity, onComplete?: () => void): boolean
-  previewSleepingVillagerWake(unit: UnitEntity): void
-  restoreSleepingVillagerVisual(unit: UnitEntity): void
+interface UnitRestSystemLike {
+  handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
+  evacuateUnitsFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
+  evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void
+  sendUnitToSleep(unit: UnitEntity): boolean
+  synchronizeAfterTimeJump?(): void
+  wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean
+  previewSleepingUnitWake(unit: UnitEntity): void
+  restoreSleepingUnitVisual(unit: UnitEntity): void
+}
+
+interface TimeSkipSystemLike {
+  active: boolean
+  dayNightMaxDeltaMs?: number
+  suppressAudio: boolean
+  suppressCosmetics: boolean
+  cancel(options?: { silent?: boolean }): void
+  destroy(): void
+  getProgress(): number
+  start(hours: number): { ok: boolean; message: string }
 }
 
 export type SchedulerTaskId = number
@@ -200,6 +213,8 @@ export interface ControlsLike extends Container {
   shiftKeyActive?: boolean
   setEquippedItem?(item: HeroEquippedItem | null): void
   setEquippedTool?(tool: HeroEquippedItem | null): void
+  stopKeyboardMove(): void
+  setRuntimeInputEnabled?(enabled: boolean): void
   isHeroControlActive?(): boolean
   isHeroDirectionLockActive?(): boolean
   isHeroStealthMode?(): boolean
@@ -241,7 +256,8 @@ export interface GameContextLike {
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
   tributeRaids?: TributeRaidSystemLike | null
-  villagerShelter?: VillagerShelterSystemLike | null
+  timeSkip?: TimeSkipSystemLike | null
+  unitRest?: UnitRestSystemLike | null
   editor?: EditorInteractionTarget
   paused?: boolean
   devConsoleOpen?: boolean
@@ -261,6 +277,8 @@ export interface GameContextLike {
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
   travelOutOfBuildingInterior?: () => void
+  routeInteriorUnitToExit?: (unit: UnitEntity) => void
+  synchronizeBuildingInteriorAfterTimeJump?: () => void
 }
 
 export type MapRuntimeContext = Omit<
@@ -279,6 +297,7 @@ export type MapRuntimeContext = Omit<
 export type AudibleInstanceLike = {
   i?: number
   j?: number
+  spaceId?: string | null
   x?: number
   y?: number
   owner?: { isPlayed?: boolean; owner?: { isPlayed?: boolean }; visible?: boolean }

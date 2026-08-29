@@ -30,10 +30,13 @@ import {
 import { applyUnitWalkingAnimationSpeed } from '../../../lib/units/unitWalkingAnimation'
 import { applyUnitCrouchPose, resetUnitCrouchPose } from '../../../lib/units/unitCrouchPose'
 import { isUnitWalkSpeedFactor } from '../../../lib/units/unitLocomotion'
+import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../../lib/buildings/passageCells'
+import { getEntitySpaceMapLike, isOutsideSpaceId } from '../../../lib/mapSpaces'
 import type { UnitEntity } from '../../../types/entities'
 
 export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () => boolean): void {
-  const map = unit.context?.map
+  const contextMap = unit.context?.map
+  const map = getEntitySpaceMapLike(unit, contextMap)
   if (!map || !unit.path?.length) {
     resetUnitCrouchPose(unit)
     return
@@ -135,7 +138,8 @@ function finishPathCellStep(
   dest: NonNullable<UnitEntity['dest']>,
   retryBlockedGatherApproach: () => boolean
 ): void {
-  const map = unit.context?.map
+  const contextMap = unit.context?.map
+  const map = getEntitySpaceMapLike(unit, contextMap)
   if (!map) return
   const oldI = unit.i
   const oldJ = unit.j
@@ -148,7 +152,7 @@ function finishPathCellStep(
   clearCellForUnit(unit, unit.currentCell)
   unit.currentCell = map.grid[unit.i][unit.j]
   placeUnitOnCell(unit, unit.currentCell)
-  map.updateInstanceBucket(unit, oldI, oldJ)
+  contextMap?.updateInstanceBucket(unit, oldI, oldJ)
   updateInstanceVisibility(unit)
   unit.path?.pop()
   if (unit.destHasMoved?.()) {
@@ -166,6 +170,14 @@ function finishPathCellStep(
   if (!unit.path?.length) {
     if (isRecoveringAttack(unit)) {
       pauseCombatRecoveryMove(unit)
+      resetUnitCrouchPose(unit)
+      return
+    }
+    if (
+      !unit.action &&
+      !unitHasActivePassageStopIntent(unit, unit.currentCell) &&
+      routeUnitAwayFromPassageCell(unit, unit.currentCell)
+    ) {
       resetUnitCrouchPose(unit)
       return
     }
@@ -204,7 +216,10 @@ function advanceTowardPathCell(
     previousX: beforeX,
     previousY: beforeY,
   })
-  canUpdateMinimap(unit, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMap?.(unit.owner!)
+  canUpdateMinimap(unit, player) &&
+    isOutsideSpaceId(unit.spaceId) &&
+    menu?.isMiniMapActive?.() !== false &&
+    menu?.updatePlayerMiniMap?.(unit.owner!)
   if (!wasWalking || degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
     unit.setTextures?.(SHEET_TYPES.walking)
   }

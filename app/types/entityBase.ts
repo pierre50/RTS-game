@@ -32,6 +32,7 @@ export interface EntityInterfaceLike {
 
 export interface RuntimeEntityBase extends GridPosition, Point {
   label: string
+  spaceId?: string
   family: string
   type: string
   name?: string
@@ -83,6 +84,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   shouldKeepHealthBarVisible?: () => boolean
   getMountedRiderY?: () => number
   isAttacked?: (attacker: RuntimeEntity, hitDirection?: Point) => void
+  detect?: (instance: RuntimeEntity) => void
   stopAttackInterval?: () => void
   stopInterval?: () => void
   stopTimeout?: () => void

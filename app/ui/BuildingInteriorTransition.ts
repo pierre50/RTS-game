@@ -16,9 +16,10 @@ export class BuildingInteriorTransition {
   status: HTMLDivElement
   progress: HTMLDivElement
 
-  constructor() {
+  constructor(options: { mode?: 'loading' | 'door' } = {}) {
     this.root = document.createElement('div')
     this.root.className = 'building-interior-transition'
+    if (options.mode === 'door') this.root.classList.add('building-interior-transition--door')
     this.root.setAttribute('role', 'status')
     this.root.setAttribute('aria-live', 'polite')
 
@@ -29,7 +30,7 @@ export class BuildingInteriorTransition {
     this.progress = document.createElement('div')
     this.progress.className = 'building-interior-transition__progress'
 
-    this.root.append(this.status, this.progress)
+    if (options.mode !== 'door') this.root.append(this.status, this.progress)
     document.body.appendChild(this.root)
   }
 
@@ -56,5 +57,17 @@ export class BuildingInteriorTransition {
   destroy(): void {
     this.root?.remove()
     this.root = null
+  }
+}
+
+export async function playBuildingInteriorDoorTransition(callback: () => void | Promise<void>): Promise<void> {
+  const transition = new BuildingInteriorTransition({ mode: 'door' })
+  try {
+    await transition.playDeparture()
+    await callback()
+    await transition.finish()
+  } catch (error) {
+    transition.destroy()
+    throw error
   }
 }

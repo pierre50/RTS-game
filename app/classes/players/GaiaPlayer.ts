@@ -1,4 +1,5 @@
 import { PLAYER_TYPES } from '../../constants'
+import { addEntityToMapSpaceContainer } from '../../lib'
 import { Animal } from '../animal/Animal'
 import type { AnimalOptions } from '../animal/Animal'
 import { Player } from './Player'
@@ -15,7 +16,8 @@ export class Gaia extends Player {
 
   createAnimal(options: AnimalOptions) {
     const { context } = this
-    const animal = context.map.addChild(new Animal({ ...options, owner: this }, context))
+    const animal = new Animal({ ...options, owner: this }, context)
+    addEntityToMapSpaceContainer(context.map, animal)
     this.animals.push(animal)
     if (!animal.isDead && !animal.isDestroyed) {
       this.population++
