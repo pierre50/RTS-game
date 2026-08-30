@@ -30,7 +30,7 @@ export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     descriptionKey: 'craftChestDescription',
     outputEquipment: HERO_CHEST_ITEM,
     outputCount: 1,
-    cost: { wood: 10 },
+    cost: { wood: 5 },
   },
   {
     id: 'arrow_ceramic',

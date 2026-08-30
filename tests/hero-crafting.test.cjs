@@ -66,7 +66,7 @@ test('hero chest craft spends wood and adds a placeable chest to the bag', () =>
   const hero = {}
 
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.equal(player.wood, 2)
+  assert.equal(player.wood, 7)
   assert.deepEqual(hero.inventory.equipment, ['chest'])
 })
 
