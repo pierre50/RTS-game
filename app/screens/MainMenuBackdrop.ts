@@ -41,16 +41,17 @@ type ShootingStarConfig = {
 }
 
 const CLOUDS: CloudConfig[] = [
-  { texture: 'back', x: -0.36, y: 0.2, scale: 2.02, alpha: 0.9, speed: 0.006 },
-  { texture: 'mid', x: 0.1, y: 0.46, scale: 1.92, alpha: 0.96, speed: 0.01 },
-  { texture: 'front', x: -0.2, y: 0.74, scale: 2.12, alpha: 1, speed: 0.013 },
+  { texture: 'mid', x: -0.5, y: 0.3, scale: 0.8, alpha: 0.8, speed: 0.001 },
+  { texture: 'back', x: -0.36, y: 0.45, scale: 1, alpha: 0.9, speed: 0.006 },
+  { texture: 'mid', x: 0.1, y: 0.65, scale: 1.25, alpha: 0.96, speed: 0.01 },
+  { texture: 'front', x: -0.2, y: 0.8, scale: 1.5, alpha: 1, speed: 0.013 },
 ]
 
 const SKY_RAY_BASE_ANGLE = 30
 const SKY_RAY_GAIN = 0.36
 const SKY_RAY_LACUNARITY = 2.75
 const SKY_RAY_ALPHA = 0.58
-const STAR_COUNT = 260
+const STAR_COUNT = 500
 const STAR_COLOR = 0xf5f1dc
 const STAR_ALT_COLOR = 0xaadfff
 const CLOUD_COPY_COUNT = 3
@@ -59,6 +60,12 @@ const CLOUD_FADE_START = 0.54
 const CLOUD_MASK_WIDTH = 8
 const CLOUD_MASK_HEIGHT = 256
 const CLOUD_VERTICAL_OFFSET_PX = 130
+const MENU_INTRO_DURATION_MS = 1900
+const MENU_STAR_INTRO_DURATION_MS = 950
+const MENU_SHOOTING_STAR_INTRO_DELAY_MS = 1350
+const CLOUD_INTRO_DELAY_MS = 150
+const CLOUD_INTRO_STAGGER_MS = 160
+const CLOUD_INTRO_RISE_PX = 120
 
 const SHOOTING_STARS: ShootingStarConfig[] = [
   { startX: 0.04, startY: 0.14, travelX: 0.34, travelY: 0.12, size: 170, delay: 1.7, duration: 0.62, repeat: 12.5 },
@@ -72,20 +79,26 @@ function createSkyGradient(): FillGradient {
     start: { x: 0, y: 0 },
     end: { x: 0, y: 1 },
     colorStops: [
-      { offset: 0, color: 0x0b123e },
-      { offset: 0.34, color: 0x25206d },
-      { offset: 0.68, color: 0x1f62a8 },
-      { offset: 1, color: 0x2aa0aa },
+      { offset: 0, color: 0x070d30 },
+      { offset: 0.34, color: 0x1b1854 },
+      { offset: 0.68, color: 0x174b86 },
+      { offset: 1, color: 0x1e7f88 },
     ],
   })
 }
 
 type CloudRuntime = {
   config: CloudConfig
+  introIndex: number
   sprites: Array<{
     mask: Sprite
     sprite: Sprite
   }>
+}
+
+function easeOutCubic(progress: number): number {
+  const clamped = Math.max(0, Math.min(1, progress))
+  return 1 - (1 - clamped) ** 3
 }
 
 export class MainMenuBackdrop {
@@ -101,8 +114,11 @@ export class MainMenuBackdrop {
   clouds: CloudRuntime[]
   skyGradient: FillGradient
   _destroyed: boolean
+  _prefersReducedMotion: boolean
   _onTick: (ticker: Ticker) => void
   _elapsed: number
+  _lastScreenWidth: number
+  _lastScreenHeight: number
 
   constructor(app: Application) {
     this.app = app
@@ -137,7 +153,11 @@ export class MainMenuBackdrop {
     this.root.addChild(this.cloudLayer)
 
     this._destroyed = false
+    this._prefersReducedMotion =
+      typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
     this._elapsed = 0
+    this._lastScreenWidth = 0
+    this._lastScreenHeight = 0
     this._onTick = ticker => this.update(ticker)
     this.app.stage.addChildAt(this.root, 0)
     this.app.ticker.add(this._onTick)
@@ -160,7 +180,7 @@ export class MainMenuBackdrop {
       return {
         x: next(),
         y,
-        radius: (0.55 + shine * 1.95) * depth,
+        radius: (0.25 + shine * 1) * depth,
         alpha: (0.24 + shine * 0.62) * depth,
         shine,
         twinkleOffset: next() * Math.PI * 2,
@@ -192,7 +212,7 @@ export class MainMenuBackdrop {
     const loadedTextures = await this.loadCloudTextures()
     if (this._destroyed) return
 
-    this.clouds = CLOUDS.map(config => {
+    this.clouds = CLOUDS.map((config, introIndex) => {
       const texture = loadedTextures[config.texture]
       const sprites = Array.from({ length: CLOUD_COPY_COUNT }, () => {
         const sprite = new Sprite(texture)
@@ -208,7 +228,7 @@ export class MainMenuBackdrop {
         this.cloudLayer.addChild(mask)
         return { mask, sprite }
       })
-      const cloud = { config, sprites }
+      const cloud = { config, introIndex, sprites }
 
       this.placeCloud(cloud)
       return cloud
@@ -221,7 +241,7 @@ export class MainMenuBackdrop {
         const texture = await Assets.load<Texture>(source)
         texture.source.scaleMode = 'linear'
         return [key, texture] as const
-      }),
+      })
     )
 
     return Object.fromEntries(entries) as CloudTextureMap
@@ -230,6 +250,8 @@ export class MainMenuBackdrop {
   resize(): void {
     const width = this.app.screen.width
     const height = this.app.screen.height
+    this._lastScreenWidth = width
+    this._lastScreenHeight = height
 
     this.sky.clear()
     this.sky.rect(0, 0, width, height).fill(this.skyGradient)
@@ -239,14 +261,26 @@ export class MainMenuBackdrop {
     this.clouds.forEach(cloud => this.placeCloud(cloud))
   }
 
+  getIntroProgress(durationMs: number, delayMs = 0): number {
+    if (this._prefersReducedMotion) return 1
+    return easeOutCubic((this._elapsed - delayMs) / durationMs)
+  }
+
+  getCloudIntroProgress(cloud: CloudRuntime): number {
+    const delay = CLOUD_INTRO_DELAY_MS + cloud.introIndex * CLOUD_INTRO_STAGGER_MS
+    const duration = MENU_INTRO_DURATION_MS - delay * 0.35
+    return this.getIntroProgress(duration, delay)
+  }
+
   drawStars(seconds: number): void {
     const width = this.app.screen.width
     const height = this.app.screen.height
+    const introAlpha = this.getIntroProgress(MENU_STAR_INTRO_DURATION_MS)
 
     this.starLayer.clear()
     this.stars.forEach((star, index) => {
       const twinkle = (Math.sin(seconds * star.twinkleSpeed + star.twinkleOffset) + 1) * 0.5
-      const alpha = star.alpha * (0.55 + twinkle * 0.45)
+      const alpha = star.alpha * (0.55 + twinkle * 0.45) * introAlpha
       const color = index % 5 === 0 ? STAR_ALT_COLOR : STAR_COLOR
 
       this.starLayer.circle(star.x * width, star.y * height, star.radius).fill({ color, alpha })
@@ -259,6 +293,7 @@ export class MainMenuBackdrop {
   drawShootingStars(seconds: number): void {
     const width = this.app.screen.width
     const height = this.app.screen.height
+    const introAlpha = this.getIntroProgress(MENU_STAR_INTRO_DURATION_MS, MENU_SHOOTING_STAR_INTRO_DELAY_MS)
 
     this.shootingStarLayer.clear()
     SHOOTING_STARS.forEach(star => {
@@ -268,7 +303,7 @@ export class MainMenuBackdrop {
       const progress = cycle / star.duration
       const fadeIn = Math.min(1, progress * 4)
       const fadeOut = Math.min(1, (1 - progress) * 3)
-      const alpha = 0.9 * Math.min(fadeIn, fadeOut)
+      const alpha = 0.9 * Math.min(fadeIn, fadeOut) * introAlpha
       const headX = (star.startX + star.travelX * progress) * width
       const headY = (star.startY + star.travelY * progress) * height
       const directionX = star.travelX * width
@@ -322,18 +357,23 @@ export class MainMenuBackdrop {
     })
   }
 
-  placeCloud({ config, sprites }: CloudRuntime): void {
+  placeCloud(cloud: CloudRuntime): void {
+    const { config, sprites } = cloud
     const width = this.app.screen.width
     const height = this.app.screen.height
     const baseWidth = width * config.scale
     const textureWidth = Math.max(1, sprites[0]?.sprite.texture.width ?? 1)
     const scale = baseWidth / textureWidth
     const stride = baseWidth * CLOUD_STRIDE_RATIO
+    const introProgress = this.getCloudIntroProgress(cloud)
+    const introRise = (1 - introProgress) * (CLOUD_INTRO_RISE_PX + cloud.introIndex * 22)
+    const alpha = config.alpha * introProgress
 
     sprites.forEach(({ mask, sprite }, index) => {
       sprite.scale.set(scale)
       sprite.x = width * config.x + stride * index
-      sprite.y = height * config.y + CLOUD_VERTICAL_OFFSET_PX
+      sprite.y = height * config.y + CLOUD_VERTICAL_OFFSET_PX + introRise
+      sprite.alpha = alpha
       mask.x = sprite.x
       mask.y = sprite.y
       mask.width = sprite.width
@@ -347,6 +387,11 @@ export class MainMenuBackdrop {
 
     const seconds = this._elapsed / 1000
     const width = this.app.screen.width
+    const height = this.app.screen.height
+
+    if (width !== this._lastScreenWidth || height !== this._lastScreenHeight) {
+      this.resize()
+    }
 
     this.skyRayFilter.time = seconds * 0.12
     this.skyRayFilter.angle = SKY_RAY_BASE_ANGLE + Math.sin(seconds * 0.04) * 3
@@ -355,6 +400,10 @@ export class MainMenuBackdrop {
     this.drawShootingStars(seconds)
 
     this.clouds.forEach(cloud => {
+      const introProgress = this.getCloudIntroProgress(cloud)
+      const introRise = (1 - introProgress) * (CLOUD_INTRO_RISE_PX + cloud.introIndex * 22)
+      const cloudY = height * cloud.config.y + CLOUD_VERTICAL_OFFSET_PX + introRise
+      const cloudAlpha = cloud.config.alpha * introProgress
       const stride = (cloud.sprites[0]?.sprite.width || 1) * CLOUD_STRIDE_RATIO
       const resetDistance = stride * cloud.sprites.length
 
@@ -363,8 +412,10 @@ export class MainMenuBackdrop {
         if (sprite.x > width + stride * 0.3) {
           sprite.x -= resetDistance
         }
+        sprite.y = cloudY
+        sprite.alpha = cloudAlpha
         mask.x = sprite.x
-        mask.y = sprite.y
+        mask.y = cloudY
       })
     })
   }

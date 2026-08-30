@@ -54,6 +54,7 @@ interface UnitRestSystemLike {
   evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void
   sendUnitToSleep(unit: UnitEntity): boolean
   synchronizeAfterTimeJump?(): void
+  isRestWakeLockActive(unit: UnitEntity): boolean
   wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean
   previewSleepingUnitWake(unit: UnitEntity): void
   restoreSleepingUnitVisual(unit: UnitEntity): void

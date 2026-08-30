@@ -11,7 +11,7 @@ import { markUnitHealthDamaged } from '../../lib/units/unitHealth'
 import { shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { canAutoReactToAttack, isHeroControlled } from '../../lib/units/unitControl'
 import { routeUnitAwayFromPassageCell, unitHasActivePassageStopIntent } from '../../lib/buildings/passageCells'
-import { keepSleepingOutsideVisual } from '../../services/rest/UnitSleepVisuals'
+import { clearSleepingVisualState, keepSleepingOutsideVisual } from '../../services/rest/UnitSleepVisuals'
 import { debugBanditStop } from './UnitBanditDebug'
 import { UnitActions } from './UnitActions'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -38,6 +38,14 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
   if (!canAutoReactToAttack(unit)) return
 
   unit.owner.reportThreat?.(unit, instance)
+  if (unit.shelterState?.reason === 'sleep' && unit.context.unitRest?.handleUnitDanger(unit, instance)) return
+  if (unit.sleepVisualState) {
+    clearSleepingVisualState(unit)
+    unit.setTextures?.(SHEET_TYPES.standing)
+    unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
+    unit.syncShadow?.()
+  }
+
   const moraleDecision = evaluateCombatMorale(unit, instance)
   if (moraleDecision === 'surrender') {
     if (instance.family === FAMILY_TYPES.unit) {

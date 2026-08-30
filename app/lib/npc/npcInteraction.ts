@@ -130,8 +130,14 @@ function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true)
     target.path = []
   }
   target.degree = getInstanceDegree(target, hero.x, hero.y)
-  if (!sleeping) target.setTextures?.(SHEET_TYPES.standing)
-  else target.context?.unitRest?.previewSleepingUnitWake(target)
+  if (sleeping && target.owner === hero.owner) {
+    // Their chief talking to them is a real wake, not a peek — foreign sleepers stay asleep.
+    target.context?.unitRest?.wakeSleepingUnitForOrder(target)
+  } else if (sleeping) {
+    target.context?.unitRest?.previewSleepingUnitWake(target)
+  } else {
+    target.setTextures?.(SHEET_TYPES.standing)
+  }
   setCommSelected(target, true)
   if (shouldPlayVoice) playSelectionSound(target)
 }
@@ -163,6 +169,13 @@ function releaseNpc(target: UnitEntity): void {
   setCommSelected(target, false)
   if (target.shelterState?.reason === 'sleep') {
     target.context?.unitRest?.restoreSleepingUnitVisual(target)
+    return
+  }
+  if (target.context?.unitRest?.isRestWakeLockActive(target)) {
+    // Woken just now (talk or danger) and given no follow-up order — leave it idle rather than
+    // marching it back to its old day job; the rest scheduler settles it back to sleep on its own
+    // once the lock expires.
+    target.previousDest = null
     return
   }
   const dest = target.previousDest

@@ -135,7 +135,7 @@ test('time skip starts fast-forward mode and restores runtime state on completio
   })
 })
 
-test('time skip overlay tracks exact day/night progress with whole percents', () => {
+test('time skip overlay tracks remaining whole hours while the progress bar fills', () => {
   withDocument(() => {
     const TimeSkipSystem = loadTimeSkipSystem()
     const { context, getTick, setElapsedMs } = createContext()
@@ -148,13 +148,13 @@ test('time skip overlay tracks exact day/night progress with whole percents', ()
     const label = panel.children[0]
     const fill = panel.children[1].children[0]
 
-    assert.equal(label.textContent, 'Waiting 2h... 0%')
+    assert.equal(label.textContent, 'Waiting... 2 hours remaining')
     assert.equal(fill.style.width, '0%')
 
     setElapsedMs(60 * 1000)
     getTick()()
 
-    assert.equal(label.textContent, 'Waiting 2h... 50%')
+    assert.equal(label.textContent, 'Waiting... 1 hour remaining')
     assert.equal(fill.style.width, '50%')
   })
 })

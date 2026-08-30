@@ -2,6 +2,7 @@ import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } fr
 import { isWheatMature } from '../combat'
 import { getGaiaAnimals } from '../playerState'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
+import { isVillagerSleepTime } from './villagerSchedule'
 import {
   clearVillagerAutonomyTargetRejections,
   targetWorkerLoad,
@@ -187,6 +188,7 @@ export function assignVillagerAutonomy(
   options: AssignmentOptions = {}
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
+  if (isVillagerSleepTime(unit.context)) return false
   if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
   setVillagerAutonomy(unit, job)
   const scoring = {

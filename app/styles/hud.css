@@ -615,8 +615,8 @@
 }
 
 .inventory-panel {
-  width: min(760px, calc(100vw - 24px));
-  max-height: min(600px, calc(100vh - 140px));
+  width: min(920px, calc(100vw - 24px));
+  max-height: min(760px, calc(100vh - 72px));
   gap: 0;
 }
 
@@ -909,7 +909,7 @@
   min-height: 128px;
 }
 
-.inventory-equipment-slot.empty {
+.inventory-equipment-slot.empty:not(:disabled) {
   opacity: 0.78;
 }
 
@@ -943,10 +943,6 @@
   font-size: var(--font-size-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.inventory-loot-slot:disabled {
-  opacity: 1;
 }
 
 .corpse-loot {

@@ -2,8 +2,9 @@ import type { GridInstanceLike } from '../types/grid'
 import type { Point } from '../types/grid'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { PlayerLike } from '../types/player'
-import type { RuntimeEntity, UnitCreationExtra } from '../types/entities'
+import type { RuntimeEntity, UnitCommandOptions, UnitCreationExtra } from '../types/entities'
 import type { ConfigValue } from '../types/config'
+import type { GameContextLike } from '../types/context'
 
 export type AIResourceName = 'wood' | 'food' | 'gold' | 'stone'
 
@@ -77,7 +78,7 @@ export type AIEntityLike = {
   sendToCaptureHorse?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToFarm?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToBuilding?(target: AIEntityLike | RuntimeEntity): boolean | void
-  sendToAttack?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToAttack?(target: AIEntityLike | RuntimeEntity, options?: UnitCommandOptions): boolean | void
   runaway?(target: AIEntityLike | RuntimeEntity): boolean | void
   stop?(): void
   explore?(): boolean
@@ -189,7 +190,7 @@ export type AIStrategyPlayerLike = {
   techs: Record<string, AITechConfig>
   units: AIEntityLike[]
   buildings: AIBuildingLike[]
-  context: { map: RuntimeMap }
+  context: Pick<GameContextLike, 'dayNight'> & { map: RuntimeMap }
   economy: AIEconomyLike
   views?: {
     length: number

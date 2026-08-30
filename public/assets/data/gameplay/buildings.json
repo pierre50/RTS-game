@@ -3,11 +3,12 @@
     "size": 2,
     "sight": 6,
     "totalHitPoints": 75,
-    "constructionTime": 16,
+    "constructionTime": 48,
     "displayPopulation": true,
     "increasePopulation": 4,
     "cost": {
-      "wood": 30
+      "wood": 45,
+      "stone": 15
     },
     "sounds": {
       "create": "house-completed-selected",
@@ -19,9 +20,10 @@
     "size": 3,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 24,
+    "constructionTime": 72,
     "cost": {
-      "wood": 125
+      "wood": 190,
+      "stone": 75
     },
     "units": ["Fantassin"],
     "sounds": {
@@ -34,9 +36,10 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 24,
+    "constructionTime": 72,
     "cost": {
-      "wood": 120
+      "wood": 180,
+      "stone": 50
     },
     "accept": ["berry", "wheat", "meat"],
     "technologies": ["ResearchWatchTower", "ResearchSmallWall", "UpgradeMediumWall", "UpgradeFortification"],
@@ -50,9 +53,10 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 24,
+    "constructionTime": 72,
     "cost": {
-      "wood": 120
+      "wood": 180,
+      "stone": 80
     },
     "accept": ["wood", "stone", "gold", "copper", "iron"],
     "technologies": [
@@ -82,9 +86,10 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 32,
+    "constructionTime": 96,
     "cost": {
-      "wood": 150
+      "wood": 225,
+      "stone": 65
     },
     "conditions": [],
     "units": ["Bowman"],
@@ -99,9 +104,10 @@
     "size": 3,
     "sight": 8,
     "totalHitPoints": 350,
-    "constructionTime": 32,
+    "constructionTime": 96,
     "cost": {
-      "wood": 150
+      "wood": 225,
+      "stone": 70
     },
     "conditions": [
       {
@@ -123,7 +129,8 @@
     "size": 4,
     "constructionTime": 0,
     "cost": {
-      "wood": 75
+      "wood": 100,
+      "stone": 10
     },
     "conditions": [
       {
@@ -137,13 +144,14 @@
     "size": 2,
     "sight": 16,
     "totalHitPoints": 100,
-    "constructionTime": 64,
+    "constructionTime": 120,
     "range": 6,
     "projectile": "Arrow",
     "equipment": ["watch_tower_arrow"],
     "rateOfFire": 1.9,
     "cost": {
-      "stone": 150
+      "wood": 60,
+      "stone": 240
     },
     "conditions": [
       {
@@ -167,9 +175,9 @@
     "size": 1,
     "sight": 6,
     "totalHitPoints": 200,
-    "constructionTime": 6.4,
+    "constructionTime": 18,
     "cost": {
-      "stone": 5
+      "stone": 10
     },
     "conditions": [
       {
@@ -193,9 +201,10 @@
     "size": 3,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 32,
+    "constructionTime": 96,
     "cost": {
-      "wood": 150
+      "wood": 225,
+      "stone": 90
     },
     "technologies": [
       "Woodworking",
@@ -218,9 +227,11 @@
     "size": 2,
     "sight": 10,
     "totalHitPoints": 350,
-    "constructionTime": 48,
+    "constructionTime": 144,
     "cost": {
-      "wood": 200
+      "wood": 300,
+      "stone": 150,
+      "gold": 75
     },
     "units": ["Priest"],
     "technologies": ["Astrology", "Monotheism"],
@@ -234,10 +245,11 @@
     "size": 3,
     "sight": 14,
     "totalHitPoints": 600,
-    "constructionTime": 48,
+    "constructionTime": 144,
     "increasePopulation": 4,
     "cost": {
-      "wood": 200
+      "wood": 350,
+      "stone": 220
     },
     "units": ["Villager"],
     "technologies": ["ToolAge", "BronzeAge", "IronAge"],

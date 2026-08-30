@@ -51,7 +51,7 @@ export function ensureBanditCampOwner(
       name: BANDIT_CAMP_OWNER_NAME,
       type: PLAYER_TYPES.bandits,
       isPlayed: false,
-      color: 'red',
+      color: 'grey',
       civ: civilization,
       gender: 'male',
       team: null,

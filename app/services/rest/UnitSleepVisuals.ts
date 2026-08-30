@@ -1,6 +1,11 @@
 import { SHEET_TYPES } from '../../constants'
 import { cancelFade } from '../../lib/entities/entityFade'
-import { buildFrameRange, playSpriteAnimationFromStart, playSpriteFrameSequence } from '../../lib/entities/spriteAnimation'
+import { buildFrameRange, playSpriteFrameSequence } from '../../lib/entities/spriteAnimation'
+import {
+  cancelUnitVisualAnimation,
+  isUnitVisualAnimationCurrent,
+  setUnitVisualSheet,
+} from '../../lib/units/unitVisualTransition'
 import type { SchedulerTaskId } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 
@@ -37,6 +42,16 @@ export function setDetachedShadowsVisible(unit: UnitEntity, visible: boolean): v
 
 function getLastSpriteFrame(unit: UnitEntity): number {
   return Math.max((unit.sprite?.textures?.length ?? 1) - 1, 0)
+}
+
+function setSleepVisualState(unit: UnitEntity, state: UnitEntity['sleepVisualState']): void {
+  unit.sleepVisualState = state ?? null
+}
+
+export function isSleepingFinalVisual(unit: UnitEntity): boolean {
+  const sprite = unit.sprite
+  const lastFrame = getLastSpriteFrame(unit)
+  return Boolean(unit.sleepVisualState === 'sleeping' && !sprite?.playing && (sprite?.currentFrame ?? 0) >= lastFrame)
 }
 
 function syncSleepingShadow(unit: UnitEntity): void {
@@ -81,29 +96,55 @@ export function cancelSleepingWakeVisual(unit: UnitEntity): void {
   wakeAnimationTaskIds.delete(unit)
 }
 
+export function clearSleepingVisualState(unit: UnitEntity): void {
+  cancelSleepingWakeVisual(unit)
+  const hadSleepingVisualState = Boolean(unit.sleepVisualState)
+  setSleepVisualState(unit, null)
+  cancelUnitVisualAnimation(unit)
+  if (unit.shelterState?.reason !== 'sleep' && !hadSleepingVisualState) return
+  for (const layer of (unit as UnitWithAppearanceLayers).appearanceLayerSprites?.values() ?? []) {
+    layer.onComplete = null
+    layer.onFrameChange = null
+    layer.onLoop = null
+  }
+}
+
 function freezeSleepingOutsideVisual(unit: UnitEntity): void {
   const lastFrame = getLastSpriteFrame(unit)
-  unit.sprite?.gotoAndStop?.(lastFrame)
-  unit.sprite?.stop?.()
+  if (unit.sprite) {
+    unit.sprite.loop = false
+    unit.sprite.gotoAndStop?.(lastFrame)
+    unit.sprite.stop?.()
+  }
   syncSleepingAppearanceLayers(unit, lastFrame, false)
   syncHurtFrameShadow(unit, lastFrame)
 }
 
 export function playSleepingOutsideVisual(unit: UnitEntity): void {
   cancelSleepingWakeVisual(unit)
-  unit.setTextures?.(SHEET_TYPES.dying)
-  if (!unit.sprite) return
-  playSpriteAnimationFromStart(unit.sprite, {
-    clearFrameChange: true,
+  setSleepVisualState(unit, 'sleeping')
+  const token = setUnitVisualSheet(unit, SHEET_TYPES.dying, {
+    frame: 0,
     loop: false,
-    onComplete: () => freezeSleepingOutsideVisual(unit),
+    play: 'play',
+    syncShadow: false,
   })
+  if (!unit.sprite) return
+  unit.sprite.onComplete = () => {
+    if (!isUnitVisualAnimationCurrent(unit, token)) return
+    freezeSleepingOutsideVisual(unit)
+  }
   syncSleepingAppearanceLayers(unit, 0, true)
   syncSleepingShadow(unit)
 }
 
 export function setSleepingOutsideFinalVisual(unit: UnitEntity): void {
-  unit.setTextures?.(SHEET_TYPES.dying)
+  setSleepVisualState(unit, 'sleeping')
+  setUnitVisualSheet(unit, SHEET_TYPES.dying, {
+    loop: false,
+    play: 'stop',
+    syncShadow: false,
+  })
   freezeSleepingOutsideVisual(unit)
 }
 
@@ -114,7 +155,7 @@ export function keepSleepingOutsideVisual(unit: UnitEntity): void {
   unit.alpha = 1
   unit.visible = true
   setDetachedShadowsVisible(unit, true)
-  if (unit.currentSheet === SHEET_TYPES.dying) {
+  if (unit.sleepVisualState === 'sleeping' && unit.currentSheet === SHEET_TYPES.dying) {
     if (unit.sprite?.playing) syncSleepingShadow(unit)
     else freezeSleepingOutsideVisual(unit)
     return
@@ -128,20 +169,23 @@ export function playSleepingWakeVisual(unit: UnitEntity, onComplete?: () => void
   unit.alpha = 1
   unit.visible = true
   setDetachedShadowsVisible(unit, true)
-  unit.setTextures?.(SHEET_TYPES.dying)
+  setSleepVisualState(unit, 'waking')
+  const token = setUnitVisualSheet(unit, SHEET_TYPES.dying, {
+    loop: false,
+    play: 'stop',
+    syncShadow: false,
+  })
   const sprite = unit.sprite
   const scheduler = unit.context?.scheduler
   if (!sprite || !scheduler) {
-    unit.setTextures?.(SHEET_TYPES.standing)
-    unit.sprite?.stop?.()
-    unit.syncShadow?.()
+    setSleepVisualState(unit, null)
+    setUnitVisualSheet(unit, SHEET_TYPES.standing, {
+      play: 'stop',
+    })
     onComplete?.()
     return
   }
 
-  sprite.onLoop = undefined
-  sprite.onFrameChange = undefined
-  sprite.onComplete = undefined
   sprite.loop = false
   sprite.stop?.()
   syncSleepingAppearanceLayers(unit, getLastSpriteFrame(unit), false)
@@ -150,12 +194,16 @@ export function playSleepingWakeVisual(unit: UnitEntity, onComplete?: () => void
   const taskId = playSpriteFrameSequence(sprite, scheduler, {
     frameMs: SLEEP_WAKE_FRAME_MS,
     frames,
-    onFrame: frame => syncHurtFrameShadow(unit, frame),
+    onFrame: frame => {
+      if (isUnitVisualAnimationCurrent(unit, token)) syncHurtFrameShadow(unit, frame)
+    },
     onComplete: () => {
+      if (!isUnitVisualAnimationCurrent(unit, token)) return
       wakeAnimationTaskIds.delete(unit)
-      unit.setTextures?.(SHEET_TYPES.standing)
-      unit.sprite?.stop?.()
-      unit.syncShadow?.()
+      setSleepVisualState(unit, null)
+      setUnitVisualSheet(unit, SHEET_TYPES.standing, {
+        play: 'stop',
+      })
       onComplete?.()
     },
     taskName: 'unit.sleepWake',

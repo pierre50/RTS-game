@@ -198,7 +198,7 @@ test('single-direction dying sheets always use south-facing frames', () => {
   assert.equal(sprite.playCalls, 1)
 })
 
-test('tired units slow action animation when textures change', () => {
+test('unit animation speed uses the selected action sheet speed directly', () => {
   const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
@@ -226,14 +226,13 @@ test('tired units slow action animation when textures change', () => {
     context: {},
     degree: 180,
     sprite,
-    tired: true,
     actionSheet: {
       data: { animationSpeed: 0.4 },
       textures: { '000.png': { id: 'action-0' }, '001.png': { id: 'action-1' } },
     },
   })
 
-  assert.equal(sprite.animationSpeed, 0.26)
+  assert.equal(sprite.animationSpeed, 0.4)
 })
 
 test('mounted units use action art for idle, walking and animated attack actions', () => {

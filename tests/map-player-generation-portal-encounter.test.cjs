@@ -17,7 +17,7 @@ function loadMapPlayerGeneration() {
 
   const module = loadTsModule('app/classes/map/MapPlayerGeneration.ts', {
     mocks: {
-      '../../lib': { colors: ['blue', 'red', 'green'] },
+      '../../lib': { playerColors: ['blue', 'red', 'green'] },
       '../../constants': {
         BUILDING_TYPES: { townCenter: 'TownCenter' },
         PLAYER_TYPES: { ai: 'AI', bandits: 'Bandits' },

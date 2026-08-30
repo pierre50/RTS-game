@@ -4,7 +4,8 @@ import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
 import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
-import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation'
+import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
+import { clearSleepingVisualState } from '../../services/rest/UnitSleepVisuals'
 import type { AnimatedSprite } from 'pixi.js'
 import type { UnitEntity } from '../../types/entities'
 
@@ -26,12 +27,15 @@ export class UnitLifecycle {
     const map = unit.context?.map
     const sprite = unit.sprite as AnimatedSprite
     clearEntityVisualFeedback(unit)
-    unit.setTextures?.(SHEET_TYPES.corpse)
-    sprite.loop = false
-    unit.syncShadow?.()
-    unit.syncAppearanceLayers?.(SHEET_TYPES.corpse)
+    const token = setUnitVisualSheet(unit, SHEET_TYPES.corpse, {
+      frame: 0,
+      loop: false,
+      play: 'play',
+    })
     sprite.animationSpeed = sprite.textures.length / (CORPSE_TIME * 60)
-    sprite.onComplete = () => fadeOutThenClear(unit, FADE_DURATION_MS)
+    sprite.onComplete = () => {
+      if (isUnitVisualAnimationCurrent(unit, token)) fadeOutThenClear(unit, FADE_DURATION_MS)
+    }
     if (map) {
       const cell = getEntityCell(unit, map)
       if (cell?.has === unit) {
@@ -45,16 +49,15 @@ export class UnitLifecycle {
   death() {
     const unit = this.unit
     clearEntityVisualFeedback(unit)
-    // dying/corpse are exempt from setUnitTexture's onFrameChange reset (kept for mid-attack direction changes), so a stale attack/gather callback must be cleared here or it hijacks the death animation back to standing.
     const sprite = unit.sprite as AnimatedSprite
-    unit.setTextures?.(SHEET_TYPES.dying)
-    unit.zIndex = (unit.zIndex ?? 0) - 1
-    unit.syncShadow?.()
-    playSpriteAnimationFromStart(sprite, {
-      clearFrameChange: true,
+    const token = setUnitVisualSheet(unit, SHEET_TYPES.dying, {
+      frame: 0,
       loop: false,
+      play: 'play',
     })
+    unit.zIndex = (unit.zIndex ?? 0) - 1
     sprite.onComplete = runAfterDeathFlash(sprite, () => {
+      if (!isUnitVisualAnimationCurrent(unit, token)) return
       updateInstanceVisibility(unit)
       const corpses = unit.owner?.corpses
       const index = corpses?.indexOf(unit) ?? -1
@@ -63,7 +66,6 @@ export class UnitLifecycle {
       }
       this.decompose()
     })
-    unit.syncAppearanceLayers?.(SHEET_TYPES.dying)
   }
 
   die() {
@@ -77,6 +79,7 @@ export class UnitLifecycle {
     playAudibleSoundCue(unit, unit.sounds?.die, { profile: 'combat' })
 
     unit.stopInterval?.()
+    clearSleepingVisualState(unit)
     clearTimeout(unit.visibilityTimeout as number | undefined)
     clearEntityVisualFeedback(unit)
     if (unit.selected && unit.owner?.isPlayed) {

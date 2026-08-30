@@ -27,6 +27,8 @@ import type { BuildingControllerHost } from './BuildingTypes'
 import type { Texture } from 'pixi.js'
 import {
   CAMPFIRE_DECORATION_LABEL,
+  CAMPFIRE_SMOKE_DECORATION_LABEL,
+  type FireAnimation,
   generateBuildingFire,
   hasBuildingFlameVisual,
   playBuildingBurningSound,
@@ -145,7 +147,7 @@ export class BuildingLifecycle {
     syncBuildingCampfireDecoration(this.building)
   }
 
-  generateFire(spriteId: string): void {
+  generateFire(spriteId: FireAnimation): void {
     generateBuildingFire(this.building, spriteId)
   }
 
@@ -204,6 +206,8 @@ export class BuildingLifecycle {
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).stop())
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
     campfireDecoration?.stop()
+    const campfireSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL) as AnimatedSprite | null
+    campfireSmoke?.stop()
     stopFlameAmbientSound(building)
     const deco = building.getChildByLabel(LABEL_TYPES.deco)
     const stoppableDeco = deco as { stop?: () => void } | null
@@ -220,6 +224,8 @@ export class BuildingLifecycle {
     if (fire) fire.children.forEach(sprite => (sprite as AnimatedSprite).play())
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL) as AnimatedSprite | null
     campfireDecoration?.play()
+    const campfireSmoke = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL) as AnimatedSprite | null
+    campfireSmoke?.play()
     if (hasBuildingFlameVisual(building) && building.isBuilt && !building.isDead && !building.isDestroyed) {
       startFlameAmbientSound(building)
     }
@@ -315,6 +321,8 @@ export class BuildingLifecycle {
     fire && fire.destroy()
     const campfireDecoration = building.getChildByLabel(CAMPFIRE_DECORATION_LABEL)
     campfireDecoration && campfireDecoration.destroy()
+    const campfireSmokeDecoration = building.getChildByLabel(CAMPFIRE_SMOKE_DECORATION_LABEL)
+    campfireSmokeDecoration && campfireSmokeDecoration.destroy()
 
     this.spawnDestructionBurst()
     updateInstanceVisibility(building)

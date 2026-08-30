@@ -1,6 +1,9 @@
 import { FAMILY_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
-import { resolveHeroNpcProximityInteraction } from '../lib/hero/heroProximityInteractions'
+import {
+  resolveHeroNpcProximityInteraction,
+  wakeOwnSleepingNpcForCommunication,
+} from '../lib/hero/heroProximityInteractions'
 import { findFacingEntity } from '../lib/hero/heroTools'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
@@ -67,6 +70,7 @@ export class HeroInteractionController {
 
     const npcInteraction = resolveHeroNpcProximityInteraction(hero, target)
     if (npcInteraction) {
+      wakeOwnSleepingNpcForCommunication(hero, npcInteraction.target)
       menu?.openNpcOrders?.([npcInteraction.target], npcInteraction.npcOptions)
       return true
     }

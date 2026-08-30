@@ -268,11 +268,6 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/units/unitLocomotion') {
       return loadTsFile(path.join(__dirname, '../app/lib/units/unitLocomotion.ts'))
     }
-    if (request === './unitTired' || request === '../../lib/units/unitTired') {
-      return {
-        getUnitTiredSpeedFactor: unit => (unit.tired ? 0.65 : 1),
-      }
-    }
     if (request === '../../lib/units/unitCrouchPose') {
       return {
         applyUnitCrouchPose: () => {},
@@ -2941,7 +2936,7 @@ test('a villager retries the original gather order after approaching a blocked t
   ])
 })
 
-test('manual move orders cancel fatigue resume before routing', () => {
+test('manual move orders cancel autonomy resume before routing', () => {
   const calls = []
   const targetCell = { corpses: [], has: null, i: 1, j: 0, solid: false, x: 48, y: 0 }
   const grid = [[{ corpses: [], has: null, i: 0, j: 0, solid: false, x: 0, y: 0 }], [targetCell]]

@@ -1,4 +1,5 @@
 import { UNIT_TYPES } from '../../constants'
+import { evaluateCombatMorale } from '../../lib/combat'
 import { findInstancesInSight } from '../../lib/grid/visibility'
 import { instanceIsInInsightRange } from '../../lib/units/insightDetection'
 import type { GameContextLike } from '../../types/context'
@@ -109,20 +110,29 @@ function fleeFromDanger(unit: UnitEntity, attacker: RuntimeEntity): void {
   fleeingUnit.runaway?.(attacker)
 }
 
+export function reactUnitToDanger(unit: UnitEntity, attacker: RuntimeEntity): void {
+  markUnitRestAlert(unit, attacker)
+  if (evaluateCombatMorale(unit, attacker) === 'flee') {
+    fleeFromDanger(unit, attacker)
+    return
+  }
+  unit.detect?.(attacker)
+}
+
 export function handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
   if (!isActiveThreat(attacker)) return false
-  const shouldVillagerFlee = isVillager(unit) && canUseUnitRest(unit)
+  const shouldVillagerReact = isVillager(unit) && canUseUnitRest(unit)
   if (unit.shelterState?.reason === 'sleep') {
     markUnitRestAlert(unit, attacker)
     wakeUnit(unit, {
       force: true,
       mode: 'order',
-      onComplete: shouldVillagerFlee ? () => fleeFromDanger(unit, attacker) : undefined,
+      onComplete: shouldVillagerReact ? () => reactUnitToDanger(unit, attacker) : undefined,
     })
-    return shouldVillagerFlee
+    return shouldVillagerReact
   }
-  if (!shouldVillagerFlee) return false
-  fleeFromDanger(unit, attacker)
+  if (!shouldVillagerReact) return false
+  reactUnitToDanger(unit, attacker)
   return true
 }
 

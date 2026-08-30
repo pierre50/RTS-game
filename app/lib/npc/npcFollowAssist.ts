@@ -1,6 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { isWheatMature } from '../combat'
 import { findInstancesInSight } from '../grid/visibility'
+import { isVillagerSleepTime } from '../units/villagerSchedule'
 import {
   sameTarget,
   targetWorkerLoad,
@@ -118,6 +119,8 @@ function resourcePlan(
 }
 
 function getFollowAssistPlan(hero: UnitEntity, follower: UnitEntity): FollowAssistPlan | null {
+  if (follower.type === UNIT_TYPES.villager && isVillagerSleepTime(follower.context ?? hero.context)) return null
+
   const wood = resourcePlan(
     hero,
     follower,

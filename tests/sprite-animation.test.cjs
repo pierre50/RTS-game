@@ -117,16 +117,6 @@ test('unit death starts the dying animation through the shared helper', () => {
     '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
     '../../lib/entities/entityFade': { fadeOutThenClear: () => {} },
     '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
-    '../../lib/entities/spriteAnimation': {
-      playSpriteAnimationFromStart: (sprite, options = {}) => {
-        calls.push(['playSpriteAnimationFromStart', options.clearFrameChange, options.loop])
-        if (options.clearFrameChange) sprite.onFrameChange = undefined
-        if (options.clearLoop !== false) sprite.onLoop = undefined
-        sprite.loop = options.loop ?? sprite.loop
-        if (options.onComplete !== undefined) sprite.onComplete = options.onComplete
-        sprite.gotoAndPlay(0)
-      },
-    },
   })
   const sprite = {
     loop: true,
@@ -153,11 +143,11 @@ test('unit death starts the dying animation through the shared helper', () => {
 
   assert.deepEqual(calls, [
     ['setTextures', 'dyingSheet'],
-    ['syncShadow'],
-    ['playSpriteAnimationFromStart', true, false],
     ['gotoAndPlay', 0],
     ['syncAppearanceLayers', 'dyingSheet'],
+    ['syncShadow'],
   ])
+  assert.equal(unit.visualAnimationToken, 1)
   assert.equal(sprite.loop, false)
   assert.equal(typeof sprite.onFrameChange, 'function')
   sprite.onFrameChange(1)
@@ -165,4 +155,67 @@ test('unit death starts the dying animation through the shared helper', () => {
   assert.equal(sprite.onLoop, undefined)
   assert.equal(typeof sprite.onComplete, 'function')
   assert.equal(sprite.currentFrame, 0)
+})
+
+test('stale unit death callbacks do not decompose after another visual transition took ownership', () => {
+  const calls = []
+  const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
+    '../../constants': {
+      CORPSE_TIME: 60,
+      FADE_DURATION_MS: 2000,
+      MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
+      POPULATION_MAX: 50,
+      SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet', standing: 'standingSheet' },
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      playAudibleSoundCue: () => {},
+      updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
+    },
+    '../../lib/entities/deathFlash': {
+      runAfterDeathFlash: (_sprite, onComplete) => onComplete,
+    },
+    '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
+    '../../lib/entities/entityFade': { fadeOutThenClear: () => calls.push(['fadeOutThenClear']) },
+    '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
+  })
+  const sprite = {
+    loop: true,
+    textures: ['dying-0'],
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+    gotoAndStop(frame) {
+      calls.push(['gotoAndStop', frame])
+      this.currentFrame = frame
+    },
+    play() {
+      calls.push(['play'])
+    },
+    stop() {
+      calls.push(['stop'])
+    },
+  }
+  const unit = {
+    context: {},
+    i: 0,
+    j: 0,
+    owner: { corpses: [] },
+    sprite,
+    visualAnimationToken: 0,
+    zIndex: 4,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    syncShadow: () => calls.push(['syncShadow']),
+    syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
+  }
+
+  new UnitLifecycle(unit).death()
+  const staleComplete = sprite.onComplete
+  unit.visualAnimationToken += 1
+  staleComplete()
+
+  assert.equal(unit.owner.corpses.length, 0)
+  assert.equal(calls.some(call => call[0] === 'updateInstanceVisibility'), false)
+  assert.equal(calls.some(call => call[0] === 'fadeOutThenClear'), false)
 })

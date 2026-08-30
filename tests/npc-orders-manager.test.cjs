@@ -85,6 +85,7 @@ function makeContext(calls) {
     paused: false,
     app: {},
     player: { name: 'Hero', isPlayed: true },
+    dayNight: { state: { hour: 12 } },
     controls: { beginNpcGoTo: () => {} },
     pause() {
       calls.push(['pause'])
@@ -139,6 +140,12 @@ function buildMocks(calls, context) {
       playNpcOrderSound: () => {},
       clearNpcCommunicationFocus: () => {},
     },
+    '../lib/units/villagerSchedule': {
+      isVillagerSleepTime: ctx => {
+        const hour = ctx?.dayNight?.state?.hour ?? 12
+        return hour >= 18 || hour < 8
+      },
+    },
     './EntityInfoModalManager': { createTitledEntityInfoContent: () => makeFakeElement() },
     './InspectionPanel': {
       createInspectionModal: options => new FakeModal(options),
@@ -149,7 +156,12 @@ function buildMocks(calls, context) {
         modal.title = title
       },
     },
-    '../lib/npc/npcChatter': { pickForeignNpcChatterLine: () => 'foreign hi', pickNpcGreetingLine: () => 'hi' },
+    '../lib/npc/npcChatter': {
+      pickForeignNpcChatterLine: () => 'foreign hi',
+      pickNpcGreetingLine: () => 'hi',
+      pickNpcSleepingChatterLine: () => 'sleepy chatter',
+      pickForeignNpcSleepingChatterLine: () => 'foreign sleepy chatter',
+    },
   }
 }
 
@@ -258,10 +270,11 @@ test('picking the horse capture order assigns the horseCapture villager job', ()
   })
 })
 
-test('sleeping villagers only expose follow and cancel orders', () => {
+test('sleeping villagers keep movement orders visible and disable night work', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
+    context.dayNight.state.hour = 23
     const menu = { context }
     const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
     const manager = new NpcOrdersManager(menu)
@@ -274,15 +287,59 @@ test('sleeping villagers only expose follow and cancel orders', () => {
 
     manager.open([npc])
 
-    assert.equal(manager.chatterContainer.children[0].textContent, 'npcOrdersSleepingChatter')
+    assert.equal(manager.chatterContainer.children[0].textContent, 'sleepy chatter')
+    assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('follow').hidden, false)
     assert.equal(manager.buttons.get('cancel').hidden, false)
-    assert.equal(manager.buttons.get('food').hidden, true)
-    assert.equal(manager.buttons.get('stay').hidden, true)
+    assert.equal(manager.buttons.get('food').hidden, false)
+    assert.equal(manager.buttons.get('food').disabled, true)
+    assert.equal(manager.buttons.get('stay').hidden, false)
 
     manager.buttons.get('follow').click()
 
     assert.deepEqual(calls, [['startFollowingHero', 'paused=false']])
+  })
+})
+
+test('night communication disables villager job buttons but keeps go-to and follow usable', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.dayNight.state.hour = 23
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+
+    assert.equal(manager.buttons.get('goto').disabled, false)
+    assert.equal(manager.buttons.get('follow').disabled, false)
+    assert.equal(manager.buttons.get('food').disabled, true)
+    assert.equal(manager.buttons.get('wood').disabled, true)
+    assert.equal(manager.buttons.get('construction').disabled, true)
+    assert.equal(manager.buttons.get('horseCapture').disabled, true)
+  })
+})
+
+test('a foreign sleeping npc gets a distinct "stays asleep" chatter line', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Villager',
+      label: 'sleepy-neutral-villager',
+      owner: { label: 'neutral-ai' },
+      shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    }
+
+    manager.open([npc])
+
+    assert.equal(manager.buttonsContainer.hidden, true)
+    assert.equal(manager.chatterContainer.children[0].textContent, 'foreign sleepy chatter')
   })
 })
 

@@ -2,7 +2,8 @@ import { Texture, type Filter } from 'pixi.js'
 import { MultiColorReplaceFilter } from 'pixi-filters'
 import { LPC_RUNTIME_PALETTES, LPC_RUNTIME_SOURCE_PALETTES } from '../lpc/generatedPalettes'
 
-export const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'grey', 'cyan'] as const
+const colors = ['blue', 'red', 'yellow', 'brown', 'orange', 'green', 'teal', 'violet', 'grey', 'cyan'] as const
+export const playerColors = ['violet', 'red', 'yellow', 'brown', 'orange', 'green', 'teal'] as const
 type PlayerColor = (typeof colors)[number]
 
 // These are NOT the `player_blue` values from scripts/lpc/config.py — the bake
@@ -20,13 +21,17 @@ const COLOR_PALETTES: Partial<Record<PlayerColor, readonly number[]>> = {
 
   brown: [0xe8cb82, 0xcca96e, 0xb29062, 0x997951, 0x7e6144, 0x614a3c, 0x453125, 0x372423],
 
-  orange: [0xffbc4e, 0xffb108, 0xe98627, 0xcd5e46, 0xbf5a3e, 0x9c3327, 0x753b09, 0x721c03],
+  orange: [0xffe949, 0xffbc4e, 0xf99b4e, 0xe37840, 0xcd5e46, 0xb64d46, 0x94363a, 0x662b29],
 
   green: [0xa6cc34, 0x7da42d, 0x518822, 0x2f690c, 0x225918, 0x174a1b, 0x003221, 0x002219],
 
   grey: [0xebf0f6, 0xbac7db, 0xabaebe, 0x848795, 0x73737f, 0x5b5c69, 0x48474d, 0x2d3136],
 
-  cyan: [0x74f5fd, 0x52d2ff, 0x41b2e3, 0x318eb8, 0x366b8a, 0x25466b, 0x23324d, 0x181f2f],
+  teal: [0x00deda, 0x00bfa3, 0x00a087, 0x008279, 0x006b6d, 0x005162, 0x004051, 0x002e49],
+
+  violet: [0x8393c3, 0x6c82c4, 0x5274c5, 0x5165ae, 0x3d5083, 0x2d3d72, 0x28335d, 0x262450],
+
+  cyan: [0x00deda, 0x00bfa3, 0x00a087, 0x008279, 0x006b6d, 0x005162, 0x004051, 0x002e49],
 }
 
 const NAMED_SOURCE_PALETTES: Record<string, readonly number[]> = LPC_RUNTIME_SOURCE_PALETTES
@@ -37,10 +42,12 @@ const HEX_COLOR_MAP: Record<PlayerColor, string> = {
   red: '#e30b00',
   yellow: '#c3a31b',
   brown: '#8b5b37',
-  orange: '#ef6307',
+  orange: '#e37840',
   green: '#4b6b2b',
+  teal: '#008279',
+  violet: '#3d5083',
   grey: '#8f8f8f',
-  cyan: '#00837b',
+  cyan: '#008279',
 }
 
 export type RecolorableTexture = Texture & {

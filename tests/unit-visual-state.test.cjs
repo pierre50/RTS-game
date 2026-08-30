@@ -53,6 +53,9 @@ function createSprite({ frame = 0, playing = false, textureCount = 3 } = {}) {
       this.currentFrame = nextFrame
       this.playing = false
     },
+    play() {
+      this.playing = true
+    },
   }
 }
 
@@ -93,6 +96,7 @@ test('sleeping final-frame units do not revive their shadow during visual refres
     reliefLift: 0,
     shadow: createShadow(),
     shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: 'sleeping',
     sprite: createSprite({ frame: 2, playing: false, textureCount: 3 }),
     visible: true,
   }
@@ -113,11 +117,52 @@ test('sleeping hurt animation keeps the shadow until the final stopped frame', (
     reliefLift: 0,
     shadow: createShadow(),
     shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: 'sleeping',
     sprite: createSprite({ frame: 1, playing: true, textureCount: 3 }),
     visible: true,
   }
 
   syncUnitShadow(unit, unit.shadow, unit.sprite)
 
+  assert.equal(unit.shadow.visible, true)
+})
+
+test('resuming from pause leaves a frozen sleeping sprite untouched even with a stale loop flag', () => {
+  const { resumeUnitVisuals } = loadUnitVisualState()
+  const sprite = createSprite({ frame: 2, playing: false, textureCount: 3 })
+  // Left over from the unit's last walk (Unit.setPath forces loop = true) — this is exactly the
+  // stale state that made a resumed sleeper replay the hurt sheet forever via PIXI's own ticker.
+  sprite.loop = true
+  const unit = {
+    currentSheet: 'dyingSheet',
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: 'sleeping',
+    sprite,
+  }
+
+  const handled = resumeUnitVisuals(unit)
+
+  assert.equal(handled, true)
+  assert.equal(sprite.playing, false)
+})
+
+test('true dying units are not treated as sleeping just because they use the dying sheet', () => {
+  const { syncUnitShadow, syncUnitVisualSettings } = loadUnitVisualState()
+  const unit = {
+    currentSheet: 'dyingSheet',
+    isDestroyed: false,
+    reliefLift: 0,
+    shadow: createShadow(),
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: null,
+    sprite: createSprite({ frame: 2, playing: false, textureCount: 3 }),
+    visible: true,
+  }
+
+  unit.shadow.visible = false
+  syncUnitVisualSettings(unit)
+  assert.equal(unit.shadow.visible, true)
+
+  syncUnitShadow(unit, unit.shadow, unit.sprite)
   assert.equal(unit.shadow.visible, true)
 })

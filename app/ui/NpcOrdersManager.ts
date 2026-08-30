@@ -5,6 +5,7 @@ import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/u
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
+import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
   canKeepNpcHere,
@@ -15,7 +16,12 @@ import {
 } from '../lib/npc/npcInteraction'
 import { createTitledEntityInfoContent } from './EntityInfoModalManager'
 import { createInspectionModal, setInspectionMode, setModalTitle } from './InspectionPanel'
-import { pickForeignNpcChatterLine, pickNpcGreetingLine } from '../lib/npc/npcChatter'
+import {
+  pickForeignNpcChatterLine,
+  pickForeignNpcSleepingChatterLine,
+  pickNpcGreetingLine,
+  pickNpcSleepingChatterLine,
+} from '../lib/npc/npcChatter'
 import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
@@ -143,6 +149,7 @@ export class NpcOrdersManager {
     this.infoContainer.replaceChildren()
     const soloTarget = npcs.length === 1 ? npcs[0] : null
     const sleepingSoloTarget = isSleepingNpc(soloTarget)
+    const ownSleepingSoloTarget = sleepingSoloTarget && soloTarget?.owner?.isPlayed === true
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
@@ -164,7 +171,9 @@ export class NpcOrdersManager {
       options.chatterLine ??
       (soloTarget
         ? sleepingSoloTarget
-          ? t('npcOrdersSleepingChatter')
+          ? ownSleepingSoloTarget
+            ? pickNpcSleepingChatterLine()
+            : pickForeignNpcSleepingChatterLine()
           : ordersEnabled
           ? pickNpcGreetingLine(this.menu.context.player?.name ?? '')
           : pickForeignNpcChatterLine(soloTarget)
@@ -186,10 +195,9 @@ export class NpcOrdersManager {
     if (followButton) {
       followButton.disabled = soloTarget?.followingHero === true
     }
-    for (const [id, button] of this.buttons) {
-      button.hidden = sleepingSoloTarget && id !== 'follow' && id !== 'cancel'
-    }
+    for (const button of this.buttons.values()) button.hidden = false
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
+    const nightWorkBlocked = hasVillager && isVillagerSleepTime(this.menu.context)
     for (const spec of NPC_ORDER_SPECS) {
       if (!spec.villagerJob) continue
       const button = this.buttons.get(spec.id)
@@ -198,7 +206,7 @@ export class NpcOrdersManager {
       const hasTarget =
         !needsKnownTarget ||
         npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, spec.villagerJob!))
-      button.disabled = !hasVillager || !hasTarget
+      button.disabled = !hasVillager || !hasTarget || nightWorkBlocked
     }
     if (this.modal) {
       setModalTitle(this.modal, title)

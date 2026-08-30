@@ -69,10 +69,12 @@ const PLAYER_FLASH_COLORS: Record<string, string> = {
   red: '#e30b00',
   yellow: '#c3a31b',
   brown: '#8b5b37',
-  orange: '#ef6307',
+  orange: '#e37840',
   green: '#4b6b2b',
+  teal: '#008279',
+  violet: '#3d5083',
   grey: '#8f8f8f',
-  cyan: '#00837b',
+  cyan: '#008279',
 }
 
 function formatDamageFeedback(damage: number): string | null {

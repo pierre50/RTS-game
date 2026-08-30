@@ -15,9 +15,9 @@ function loadGameStateHelpers() {
       '../../config/environments': { getEnvironmentForCiv: () => 'Temperate' },
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
-      '../../lib': { colors: ['blue', 'red'] },
+      '../../lib': { playerColors: ['blue', 'red'] },
       '../../lib/combat/factions': {
-        createFactionSave: ({ id }) => ({ id, name: 'Faction' }),
+        createFactionSave: ({ id, initialScore }) => ({ id, name: 'Faction', relationScore: initialScore }),
         FACTION_SCORE: { allied: 1, hostile: -1, neutral: 0 },
       },
     },
@@ -54,7 +54,7 @@ function loadGamePortalTravel(overrides = {}) {
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
       '../../lib': {
-        colors: ['blue', 'red'],
+        playerColors: ['blue', 'red'],
         getFreeLandCellAroundInstance: overrides.getFreeLandCellAroundInstance ?? (() => null),
         getReliefOffset: () => 0,
         teleportRuntimeUnitToCell: () => {},
@@ -84,6 +84,47 @@ test('portal travel sprite sources include customized hero hair', () => {
   assert.equal(sources.hairColor, 'blond')
   assert.equal(sources.hairBack, null)
   assert.equal(sources.hairBackAtlas, null)
+})
+
+test('portal colors select debug encounter destinations', () => {
+  const { configForPortalWorld } = loadGameStateHelpers()
+  const map = {
+    allTechnologies: false,
+    difficulty: 'normal',
+    environment: 'Temperate',
+    instantMode: false,
+    mapType: 'continent',
+    random: () => 0.5,
+    revealTerrain: false,
+    size: 144,
+    startingAge: 1,
+    startingResources: { food: 100, wood: 100, stone: 0, gold: 0 },
+    resourceDensity: 'normal',
+  }
+  const player = {
+    civ: 'Greek',
+    color: 'green',
+    factionId: 'human-faction',
+    gender: 'female',
+    name: 'Hero',
+    team: 7,
+  }
+
+  const yellow = configForPortalWorld({ color: 'yellow', map, now: 1000, player, worldId: 'yellow-world' })
+  const blue = configForPortalWorld({ color: 'blue', map, now: 1000, player, worldId: 'blue-world' })
+  const red = configForPortalWorld({ color: 'red', map, now: 1000, player, worldId: 'red-world' })
+
+  assert.equal(yellow.config.portalEncounter, 'bandit')
+  assert.equal(yellow.config.players[1].diplomacy, null)
+  assert.equal(yellow.faction.relationScore, -1)
+
+  assert.equal(blue.config.portalEncounter, 'village')
+  assert.equal(blue.config.players[1].diplomacy, 'neutral')
+  assert.equal(blue.faction.relationScore, 0)
+
+  assert.equal(red.config.portalEncounter, 'village')
+  assert.equal(red.config.players[1].diplomacy, null)
+  assert.equal(red.faction.relationScore, -1)
 })
 
 test('applying a portal party restores the selected hero tool after controls init', () => {

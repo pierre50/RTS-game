@@ -31,6 +31,14 @@ export function getTributePaidMessage(raid: TributeRaid): string {
   return t('banditTributePaid')
 }
 
+export function getLocalTributeTargetMessage(raid: TributeRaid): string {
+  return t('banditLocalTributePaid', { name: raid.target.owner?.name ?? t('computer') })
+}
+
+export function getLocalTributeRefusedMessage(raid: TributeRaid): string {
+  return t('banditLocalTributeRefused', { name: raid.target.owner?.name ?? t('computer') })
+}
+
 export function getHostileRaidMessage(raid: TributeRaid): string {
   if (raid.kind === 'faction') return t('factionRaidHostile', { name: raid.faction?.name ?? t('computer') })
   return t('banditRaidHostile')

@@ -8,24 +8,13 @@ import {
 } from '../../lib'
 import { getEntityMapPoint, isEntityInActiveMapSpace } from '../../lib/mapSpaces'
 import { getShadowsEnabled } from '../../lib/audio/settings'
+import { isSleepingFinalVisual } from '../../services/rest/UnitSleepVisuals'
 import type { Texture } from 'pixi.js'
 import type { UnitRuntimeHost } from './UnitTypes'
 
 const SHADOW_MASK_ALPHA = 1
 const SHADOW_SCALE_X = 1.05
 const SHADOW_SCALE_Y = -0.42
-
-function isSleepingFinalFrame(unit: UnitRuntimeHost): boolean {
-  const sprite = unit.sprite
-  const lastFrame = Math.max((sprite?.textures?.length ?? 1) - 1, 0)
-  return Boolean(
-    unit.shelterState?.status === 'outside' &&
-      unit.shelterState.reason === 'sleep' &&
-      unit.currentSheet === SHEET_TYPES.dying &&
-      !sprite?.playing &&
-      (sprite?.currentFrame ?? 0) >= lastFrame
-  )
-}
 
 function shouldShowUnitShadow(unit: UnitRuntimeHost): boolean {
   return Boolean(getShadowsEnabled() && unit.visible && !unit.isDestroyed && isEntityInActiveMapSpace(unit))
@@ -70,11 +59,11 @@ export function syncUnitShadow(
   } else {
     shadow.gotoAndStop(frame)
   }
-  shadow.visible = shouldShowUnitShadow(unit) && !isSleepingFinalFrame(unit)
+  shadow.visible = shouldShowUnitShadow(unit) && !isSleepingFinalVisual(unit)
 }
 
 export function syncUnitVisualSettings(unit: UnitRuntimeHost): void {
-  const visible = shouldShowUnitShadow(unit) && !isSleepingFinalFrame(unit)
+  const visible = shouldShowUnitShadow(unit) && !isSleepingFinalVisual(unit)
   if (unit.shadow) {
     unit.shadow.visible = visible
   }
@@ -126,6 +115,10 @@ export function pauseUnitVisuals(unit: UnitRuntimeHost): void {
 }
 
 export function resumeUnitVisuals(unit: UnitRuntimeHost): boolean {
+  // A sleeper frozen on its last "dying" frame must stay frozen — calling .play() here would
+  // leave PIXI's own ticker to cycle the sheet forever if `sprite.loop` was left true by an
+  // earlier walk (see freezeSleepingOutsideVisual).
+  if (isSleepingFinalVisual(unit)) return true
   if (unit.currentSheet !== SHEET_TYPES.standing) return false
   unit.sprite.gotoAndStop(unit.sprite.currentFrame)
   unit.shadow?.gotoAndStop(unit.shadow.currentFrame)

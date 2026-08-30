@@ -1,4 +1,4 @@
-import { colors } from '../../lib'
+import { playerColors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import { AI, Human } from '../players'
 import { ensureBanditCampOwner } from './BanditCampGeneration'
@@ -132,7 +132,7 @@ function createHumanPlayer(
       j,
       age: 0,
       civ: config?.civ ?? 'Greek',
-      color: config?.color ?? colors[playerIndex],
+      color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
       factionId: config?.factionId ?? null,
       gender: config?.gender,
@@ -161,7 +161,7 @@ function createAIPlayer(
       j,
       age: 0,
       civ: config?.civ ?? 'Greek',
-      color: config?.color ?? colors[playerIndex],
+      color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
       factionId: config?.factionId ?? null,
       gender: config?.gender,

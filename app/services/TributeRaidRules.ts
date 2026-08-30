@@ -38,6 +38,7 @@ export type TributeRaid = {
   kind: TributeRaidKind
   faction?: FactionSave | null
   chief: TributeRaidUnit
+  target: TributeRaidUnit
   units: TributeRaidUnit[]
   phase: TributeRaidPhase
   portal: RuntimeEntity | null

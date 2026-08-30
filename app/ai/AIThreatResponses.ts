@@ -64,7 +64,10 @@ function getVillagerDefenseCount(threat: ActiveThreat, nearbyVillagers: AIEntity
     return Math.min(nearbyVillagers.length, Math.max(4, threat.hostiles.length + 3))
   }
 
-  if (profile.hostileMilitary.length > 0) return 0
+  if (profile.hostileMilitary.length > 0) {
+    if (!profile.isDirectVillageAssault && !profile.isCriticalBuilding) return 0
+    return Math.min(nearbyVillagers.length, profile.isCriticalBuilding ? 4 : 3)
+  }
 
   let villagerDefenseCount = 0
   if (profile.hostileAnimals.length > 0) {
@@ -101,7 +104,7 @@ function attackWithVillagers(
     if (primaryHostile.family === FAMILY_TYPES.animal) {
       villager.sendToHunt?.(primaryHostile)
     } else {
-      villager.sendToAttack?.(primaryHostile)
+      villager.sendToAttack?.(primaryHostile, { keepPrevious: true })
     }
   }
 }

@@ -4,6 +4,7 @@ import { drawInstanceBlinkingSelection, canUpdateMinimap, playAudibleSoundCue } 
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { stopFlameAmbientSound } from './BuildingFire'
+import type { FireAnimation } from './BuildingFire'
 import { BuildingProduction } from './BuildingProduction'
 import type { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import { Instance } from '../Instance'
@@ -308,7 +309,7 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingLifecycle.finalTexture()
   }
 
-  generateFire(spriteId: string): void {
+  generateFire(spriteId: FireAnimation): void {
     return this.buildingLifecycle.generateFire(spriteId)
   }
 

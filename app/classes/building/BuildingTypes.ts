@@ -4,6 +4,7 @@ import type { TechnologyConfig } from '../../types/config'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
+import type { FireAnimation } from './BuildingFire'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
@@ -76,7 +77,7 @@ export type BuildingControllerHost = Omit<
     updateInterfaceLoading?(): void
     updateShadow(shadow?: Sprite | null): void
     finalTexture(): void
-    generateFire(spriteId: string): void
+    generateFire(spriteId: FireAnimation): void
     onBuilt(): void
     die(): void
     clear(): void

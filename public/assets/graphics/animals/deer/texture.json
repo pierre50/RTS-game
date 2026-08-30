@@ -1,0 +1,1287 @@
+{
+  "frames": {
+    "000_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "001_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 68,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "002_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 136,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "003_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 204,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "004_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 272,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "005_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 340,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "006_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 408,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "007_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 476,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "008_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 544,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "009_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 612,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "010_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 680,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "011_graphics_animals_deer_standing.png": {
+      "frame": {
+        "x": 748,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 52
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 52
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "012_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 816,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "013_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 884,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "014_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 952,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "015_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1020,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "016_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1088,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "017_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1156,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "018_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1224,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "019_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1292,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "020_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1360,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "021_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1428,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "022_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1496,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "023_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1564,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "024_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1632,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "025_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1700,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "026_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1768,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "027_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1836,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "028_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1904,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "029_graphics_animals_deer_walking.png": {
+      "frame": {
+        "x": 1972,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 68,
+        "h": 54
+      },
+      "sourceSize": {
+        "w": 68,
+        "h": 54
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "030_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2040,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "031_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2116,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "032_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2192,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "033_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2268,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "034_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2344,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "035_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2420,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "036_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2496,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "037_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2572,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "038_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2648,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "039_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2724,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "040_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2800,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "041_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2876,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "042_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 2952,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "043_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 3028,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "044_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 3104,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "045_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 3180,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "046_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 3256,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "047_graphics_animals_deer_running.png": {
+      "frame": {
+        "x": 3332,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 76,
+        "h": 62
+      },
+      "sourceSize": {
+        "w": 76,
+        "h": 62
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "048_graphics_animals_deer_dying.png": {
+      "frame": {
+        "x": 3408,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 84,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "049_graphics_animals_deer_dying.png": {
+      "frame": {
+        "x": 3492,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 84,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "050_graphics_animals_deer_dying.png": {
+      "frame": {
+        "x": 3576,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 84,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "051_graphics_animals_deer_dying.png": {
+      "frame": {
+        "x": 3660,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 84,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "052_graphics_animals_deer_dying.png": {
+      "frame": {
+        "x": 3744,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 84,
+        "h": 50
+      },
+      "sourceSize": {
+        "w": 84,
+        "h": 50
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    }
+  },
+  "meta": {
+    "image": "texture.png",
+    "scale": "1",
+    "animalAnimationSpeeds": {
+      "standing": 0.1,
+      "walking": 0.3,
+      "running": 0.3,
+      "dying": 0.3
+    }
+  },
+  "animationSpeed": 0.3
+}

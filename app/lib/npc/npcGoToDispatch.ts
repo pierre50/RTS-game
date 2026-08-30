@@ -4,8 +4,10 @@ import { drawInstanceBlinkingSelection } from '../graphics/selection'
 import { findInstancesInSight } from '../grid/visibility'
 import { getTrainingTargetForUnit } from '../buildings/buildingTraining'
 import { showUnitCannotEnterBuildingMessage } from '../buildings/buildingFeedback'
-import { isVillagerSleepTime } from '../units/villagerSchedule'
+import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
+import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
+import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
 import type { SelectableInstance } from '../graphics/selection'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -20,6 +22,56 @@ const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: Runtime
   Gold: (npc, target) => npc.sendToGold?.(target),
   Berrybush: (npc, target) => npc.sendToBerrybush?.(target),
   Wheat: (npc, target) => npc.sendToFarm?.(target),
+}
+const NIGHT_WORK_REFUSAL_MS = 1200
+
+function isNightWorkBlockedForVillager(npc: UnitEntity): boolean {
+  return Boolean(npc.context && npc.type === UNIT_TYPES.villager && isSleepTime(npc.context))
+}
+
+function showNightWorkRefusal(npc: UnitEntity): void {
+  setUnitOverheadIndicator(npc, 'sleep')
+  npc.context?.scheduler?.add(
+    () => {
+      clearUnitOverheadIndicator(npc)
+    },
+    NIGHT_WORK_REFUSAL_MS,
+    'npc.nightWorkRefusal'
+  )
+}
+
+function getNightWorkFallbackCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity): RuntimeCell {
+  const map = npc.context?.map
+  const targetSpace = map ? getMapSpace(map, target.spaceId) : null
+  const grid = targetSpace?.grid ?? map?.grid
+  if (!grid) return cell
+  return (
+    getFreeLandCellAroundInstance(
+      target,
+      grid,
+      cells =>
+        [...cells].sort(
+          (a, b) =>
+            Math.abs(a.i - npc.i) + Math.abs(a.j - npc.j) - (Math.abs(b.i - npc.i) + Math.abs(b.j - npc.j))
+        )[0]
+    ) ?? cell
+  )
+}
+
+function refuseNightWorkIfNeeded(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity): boolean {
+  if (!isNightWorkBlockedForVillager(npc)) return false
+  resetNpcDirectives(npc)
+  npc.previousDest = null
+  const moveThenRefuse = () => {
+    delayUnitRestAfterActivity(npc)
+    npc.sendTo?.(getNightWorkFallbackCell(npc, cell, target))
+    showNightWorkRefusal(npc)
+  }
+  if (npc.shelterState?.reason === 'sleep' && npc.context?.unitRest?.wakeSleepingUnitForOrder(npc, moveThenRefuse)) {
+    return true
+  }
+  moveThenRefuse()
+  return true
 }
 
 function resetNpcDirectives(target: UnitEntity): void {
@@ -54,9 +106,7 @@ export function keepNpcHere(target: UnitEntity): void {
   target.previousDest = null
   target.autonomousJob = null
   target.stop?.()
-  if (target.context && target.type === UNIT_TYPES.villager && isVillagerSleepTime(target.context) && !target.shelterState) {
-    target.context?.unitRest?.sendUnitToSleep(target)
-  }
+  delayUnitRestAfterActivity(target)
 }
 
 export function startFollowingHero(target: UnitEntity): void {
@@ -128,14 +178,17 @@ export function resolveHoverTarget(
 
 function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): boolean {
   resetNpcDirectives(npc)
+  delayUnitRestAfterActivity(npc)
   if (target) {
     const kind = target.category || target.type
     const resourceSend = kind ? RESOURCE_SEND_TO[kind] : undefined
     if (resourceSend) {
+      if (refuseNightWorkIfNeeded(npc, cell, target)) return false
       resourceSend(npc, target)
       return true
     }
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
+      if (refuseNightWorkIfNeeded(npc, cell, target)) return false
       npc.sendToBuilding?.(target as BuildingEntity)
       return true
     }
@@ -144,6 +197,7 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
       if (building.owner === npc.owner && building.isBuilt) {
         const trainingType = getTrainingTargetForUnit(building, npc)
         if (trainingType) {
+          if (refuseNightWorkIfNeeded(npc, cell, target)) return false
           return Boolean(building.requestUnitTraining?.(trainingType, undefined, npc))
         }
         if (npc.type !== UNIT_TYPES.villager) {
@@ -156,14 +210,17 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     }
     if (target.family === FAMILY_TYPES.animal) {
       if (target.type === 'Horse' && npc.type === UNIT_TYPES.villager) {
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
         const captureAttemptResult = npc.sendToCaptureHorse?.(target)
         return captureAttemptResult !== false
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
         npc.sendToHunt?.(target)
         return true
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.takemeat)) {
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
         npc.sendToTakeMeat?.(target)
         return true
       }
@@ -226,6 +283,7 @@ export function sendNpcGroupToTarget(
   const centerJ = minJ + Math.round((maxJ - minJ) / 2)
   for (const npc of npcs) {
     resetNpcDirectives(npc)
+    delayUnitRestAfterActivity(npc)
     const finalCell = grid?.[cell.i + (npc.i - centerI)]?.[cell.j + (npc.j - centerJ)]
     npc.sendTo?.(finalCell || cell)
   }

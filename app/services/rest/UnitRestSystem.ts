@@ -1,16 +1,16 @@
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import { isVillagerTiredTime } from '../../lib/units/villagerSchedule'
 import {
   sendUnitToRest,
   wakeUnit,
 } from './UnitRestLifecycle'
 import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
-import { updateVillagerTired } from './VillagerTiredIndicator'
 import {
   canUseUnitRest,
   clearExpiredUnitRestAlert,
+  delayUnitRestAfterActivity,
   isSleepTime,
+  isUnitRestWakeLocked,
   markUnitRestAlert,
   REST_CHECK_INTERVAL_MS,
   shouldRest,
@@ -22,6 +22,7 @@ import {
   findPropagatedRestAlertSleepers,
   handleUnitDanger,
   isVillager,
+  reactUnitToDanger,
   settleSleepState,
   shouldRouteUnitToInteriorExit,
   updateMovingRestUnit,
@@ -46,17 +47,15 @@ export class UnitRestSystem {
   }
 
   update(): void {
-    const { livingUnits, restUnits, villagers } = this.collectUnits()
+    const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
 
     const sleepTime = isSleepTime(this.context)
     const wakeTime = !sleepTime
     const hasShelterState = restUnits.some(unit => Boolean(unit.shelterState))
-    const hasTiredState = villagers.some(unit => Boolean(unit.tired))
 
-    if (!sleepTime && !isVillagerTiredTime(this.context) && !hasTiredState && !hasShelterState) return
+    if (!sleepTime && !hasShelterState) return
 
-    this.updateVillagerTiredStates(villagers)
     for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
     if (sleepTime) this.updateRestAlerts(restUnits)
     if (sleepTime) this.sendUnitsToSleep(restUnits)
@@ -85,13 +84,21 @@ export class UnitRestSystem {
     return findHeroRestAlertTarget(this.context, unit)
   }
 
+  private reactToRestAlert(unit: UnitEntity, target: RuntimeEntity): void {
+    if (isVillager(unit) && canUseUnitRest(unit)) {
+      reactUnitToDanger(unit, target)
+      return
+    }
+    unit.detect?.(target)
+  }
+
   private wakeRestUnitForAlert(unit: UnitEntity, target: RuntimeEntity, options: { propagate?: boolean } = {}): void {
     markUnitRestAlert(unit, target)
-    const attackIfNeeded = () => unit.detect?.(target)
+    const react = () => this.reactToRestAlert(unit, target)
     if (unit.shelterState?.reason === 'sleep') {
-      wakeUnit(unit, { force: true, mode: 'order', onComplete: attackIfNeeded })
+      wakeUnit(unit, { force: true, mode: 'order', onComplete: react })
     } else {
-      attackIfNeeded()
+      react()
     }
     if (options.propagate !== false) this.propagateRestAlert(unit, target)
   }
@@ -101,16 +108,18 @@ export class UnitRestSystem {
     for (const sleeper of sleepers) this.wakeRestUnitForAlert(sleeper, target, { propagate: false })
   }
 
+  // No ownership/villager exclusion here: findHeroRestAlertTarget only ever returns a target for
+  // units hostile to the hero, so this only ever wakes enemy sleepers (bandit, soldier, or
+  // villager alike) — never the player's own or an allied faction's.
   updateRestAlerts(units = this.collectUnits().restUnits): void {
     for (const unit of units) {
-      if (isVillager(unit)) continue
       const target = this.findHeroRestAlertTarget(unit)
       if (!target) continue
       if (unit.shelterState?.reason === 'sleep' && unit.shelterState.status === 'outside') {
         this.wakeRestUnitForAlert(unit, target)
       } else if (!unit.shelterState) {
         markUnitRestAlert(unit, target)
-        unit.detect?.(target)
+        this.reactToRestAlert(unit, target)
       }
     }
   }
@@ -119,8 +128,17 @@ export class UnitRestSystem {
     return handleUnitDanger(unit, attacker)
   }
 
+  // True while a unit is up on "borrowed time" after a talk/danger-triggered wake — it'll settle
+  // back into rest on its own once this expires, so callers shouldn't resume old activity for it.
+  isRestWakeLockActive(unit: UnitEntity): boolean {
+    return isUnitRestWakeLocked(unit)
+  }
+
   wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean {
     if (unit.shelterState?.reason !== 'sleep') return false
+    // Keeps the unit up for a while after a talk-triggered wake with no follow-up order, instead
+    // of it dozing back off mid-conversation on the next sleep tick.
+    delayUnitRestAfterActivity(unit)
     wakeUnit(unit, { force: true, mode: 'order', onComplete })
     return true
   }
@@ -138,7 +156,7 @@ export class UnitRestSystem {
   }
 
   synchronizeAfterTimeJump(): void {
-    const { livingUnits, restUnits, villagers } = this.collectUnits()
+    const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
 
     if (isSleepTime(this.context)) {
@@ -146,7 +164,6 @@ export class UnitRestSystem {
     } else {
       this.wakeRestingUnitsInstant(restUnits)
     }
-    this.updateVillagerTiredStates(villagers)
     this.updateSleepingOutsideVisuals(restUnits)
   }
 
@@ -164,10 +181,6 @@ export class UnitRestSystem {
       sendUnitToRest(unit, 'sleep')
     }
     for (const unit of units) this.updateRestingUnit(unit)
-  }
-
-  updateVillagerTiredStates(villagers = this.collectUnits().villagers): void {
-    for (const unit of villagers) updateVillagerTired(unit)
   }
 
   updateRestingUnit(unit: UnitEntity): void {

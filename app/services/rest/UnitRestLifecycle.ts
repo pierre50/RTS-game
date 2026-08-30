@@ -14,6 +14,7 @@ import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { getNearestRestSite, getShelterEntryCell, isUsableShelter, REST_MAX_RETRIES } from './UnitRestRules'
 import {
   cancelSleepingWakeVisual,
+  clearSleepingVisualState,
   playSleepingOutsideVisual,
   playSleepingWakeVisual,
   setSleepingOutsideFinalVisual,
@@ -217,9 +218,10 @@ function wakeWithoutPreviousActivity(unit: UnitEntity, onComplete?: () => void):
 
 function restoreVisibleAwakeState(unit: UnitEntity): void {
   restoreAwakeState(unit)
-  cancelSleepingWakeVisual(unit)
+  clearSleepingVisualState(unit)
   cancelFade(unit)
   unit.setTextures?.(SHEET_TYPES.standing)
+  unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
   unit.sprite?.stop?.()
   unit.syncShadow?.()
   unit.inactif = true

@@ -22,7 +22,7 @@ type BuildingPlacement = {
   type?: string
 }
 
-export const BUILDING_PLACEMENT_EXTRA_SIZE = 1
+const BUILDING_PLACEMENT_EXTRA_SIZE = 1
 
 type PlacementClearanceCell = GridCell & {
   has?: {

@@ -1,0 +1,1263 @@
+{
+  "frames": {
+    "000_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "001_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 59,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "002_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 118,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "003_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 177,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "004_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 236,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "005_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 295,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "006_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 354,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "007_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 413,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "008_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 472,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "009_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 531,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "010_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 590,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "011_graphics_animals_black-grouse_standing.png": {
+      "frame": {
+        "x": 649,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 59,
+        "h": 42
+      },
+      "sourceSize": {
+        "w": 59,
+        "h": 42
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "012_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 708,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "013_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 771,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "014_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 834,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "015_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 897,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "016_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 960,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "017_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1023,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "018_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1086,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "019_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1149,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "020_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1212,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "021_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1275,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "022_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1338,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "023_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1401,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "024_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1464,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "025_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1527,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "026_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1590,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "027_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1653,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "028_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1716,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "029_graphics_animals_black-grouse_walking.png": {
+      "frame": {
+        "x": 1779,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 63,
+        "h": 46
+      },
+      "sourceSize": {
+        "w": 63,
+        "h": 46
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "030_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 1842,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "031_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 1911,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "032_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 1980,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "033_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2049,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "034_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2118,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "035_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2187,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "036_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2256,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "037_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2325,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "038_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2394,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "039_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2463,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "040_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2532,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "041_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2601,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "042_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2670,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "043_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2739,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "044_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2808,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "045_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2877,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "046_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 2946,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "047_graphics_animals_black-grouse_flying.png": {
+      "frame": {
+        "x": 3015,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 69,
+        "h": 55
+      },
+      "sourceSize": {
+        "w": 69,
+        "h": 55
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "048_graphics_animals_black-grouse_dying.png": {
+      "frame": {
+        "x": 3084,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 81,
+        "h": 40
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "049_graphics_animals_black-grouse_dying.png": {
+      "frame": {
+        "x": 3165,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 81,
+        "h": 40
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "050_graphics_animals_black-grouse_dying.png": {
+      "frame": {
+        "x": 3246,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 81,
+        "h": 40
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    },
+    "051_graphics_animals_black-grouse_dying.png": {
+      "frame": {
+        "x": 3327,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 81,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 81,
+        "h": 40
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.86
+      }
+    }
+  },
+  "meta": {
+    "image": "texture.png",
+    "scale": "1",
+    "animalAnimationSpeeds": {
+      "standing": 0.1,
+      "walking": 0.3,
+      "flying": 0.3,
+      "dying": 0.3
+    }
+  },
+  "animationSpeed": 0.3
+}

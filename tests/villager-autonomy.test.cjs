@@ -581,6 +581,38 @@ test('food autonomy tries the next known food target when the closest order is r
   assert.equal(villager.autonomousJob, 'food')
 })
 
+test('villager autonomy does not assign work during sleep time', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 2,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-1',
+    quantity: 250,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const owner = createOwner({
+    foundedResources: { [constants.RESOURCE_TYPES.tree]: new Set([tree]) },
+  })
+  const attempts = []
+  const villager = createVillager(owner, {
+    context: { dayNight: { state: { hour: 23 } } },
+    sendToTree(target) {
+      attempts.push(target.label)
+      this.dest = target
+      this.work = constants.WORK_TYPES.woodcutter
+      this.action = constants.ACTION_TYPES.chopwood
+      return true
+    },
+  })
+
+  assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
+  assert.deepEqual(attempts, [])
+  assert.equal(villager.autonomousJob, null)
+  assert.equal(villager.dest, null)
+})
+
 test('construction autonomy only targets own unfinished buildings', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const owner = createOwner()

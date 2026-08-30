@@ -321,12 +321,14 @@ export class InventoryManager {
     grid.className = 'inventory-equipped-grid'
     for (const slotId of HERO_EQUIPMENT_SLOTS) {
       const equipment = hero.inventory?.equipped?.[slotId]
+      const requiresHelmet = slotId === 'helmetDecor' && !hero.inventory?.equipped?.helmet
+      const disabled = !equipment || requiresHelmet
       const button = document.createElement('button')
       button.type = 'button'
       button.className = 'inventory-slot ui-btn inventory-equipment-slot'
       button.classList.toggle('empty', !equipment)
-      button.disabled = !equipment
-      if (equipment) {
+      button.disabled = disabled
+      if (equipment && !disabled) {
         button.addEventListener('click', () => {
           if (!unequipHeroInventorySlot(hero, slotId)) return
           this.menu.playUiClick()

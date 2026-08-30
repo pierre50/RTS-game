@@ -35,10 +35,13 @@ import {
 import {
   getHostileRaidMessage,
   getIncomingRaidMessage,
+  getLocalTributeRefusedMessage,
+  getLocalTributeTargetMessage,
   getTributeDemand,
   getTributePaidMessage,
   getTributeTitle,
 } from './TributeRaidText'
+import { findRaidTarget, hasActiveBanditCampPresence } from './TributeRaidTargeting'
 import type { GameContextLike } from '../types/context'
 import type { ResourceAmount } from '../types/common'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -76,6 +79,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
 
   triggerRaid(_options: { source?: 'schedule' | 'dev-console' } = {}): boolean {
     if (!this.canStartRaid()) return false
+    if (hasActiveBanditCampPresence(this.context)) return false
     return this.createRaid({
       kind: 'bandit',
       owner: this.getOrCreateBanditOwner(),
@@ -105,9 +109,9 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     tribute: ResourceAmount
   }): boolean {
     if (!this.canStartRaid()) return false
-    const hero = this.context.controls?.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed) return false
-    const spawnCells = this.findSpawnCells(hero, options.size)
+    const target = findRaidTarget(this.context, options.kind)
+    if (!target) return false
+    const spawnCells = this.findSpawnCells(target, options.size)
     if (!spawnCells.length) return false
 
     const owner = options.owner
@@ -117,6 +121,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       kind: options.kind,
       faction: options.faction ?? null,
       chief: null as unknown as TributeRaidUnit,
+      target,
       units: [],
       phase: 'approaching',
       portal,
@@ -151,7 +156,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     if (!raid.units.length || !raid.chief) return false
     setUnitOverheadIndicator(raid.chief, 'exclamation')
     this.raids.push(raid)
-    this.sendRaidToHero(raid, { forceRepath: true })
+    this.sendRaidToTarget(raid, { forceRepath: true })
     this.startRaidUpdates(raid)
     this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
     if (this.context.menu?.isMiniMapActive?.() !== false) {
@@ -295,11 +300,11 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     return [...resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE && !resource.isDestroyed) ?? null
   }
 
-  findSpawnCells(hero: UnitEntity, count: number): RuntimeCell[] {
+  findSpawnCells(target: UnitEntity, count: number): RuntimeCell[] {
     const grid = this.context.map?.grid
     if (!grid) return []
     const portal = this.findPortal()
-    const anchor = portal ?? hero
+    const anchor = portal ?? target
     const cells: RuntimeCell[] = []
     const nonPassageCell = createNonReservedPassageCellCondition(this.context)
     for (let distance = RAID_SPAWN_MIN_RADIUS; distance <= RAID_SPAWN_MAX_RADIUS; distance++) {
@@ -313,12 +318,12 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       ring.sort(() => (this.context.map.random?.() ?? Math.random()) - 0.5)
       for (const cell of ring) {
         if (cells.includes(cell)) continue
-        if (portal && getRaidCellDistance(cell, hero) < 8) continue
+        if (portal && getRaidCellDistance(cell, target) < 8) continue
         cells.push(cell)
         if (cells.length >= count) return cells
       }
     }
-    const fallback = getFreeLandCellAroundInstance(hero, grid, undefined, nonPassageCell)
+    const fallback = getFreeLandCellAroundInstance(target, grid, undefined, nonPassageCell)
     if (fallback) cells.push(fallback)
     return cells
   }
@@ -328,19 +333,19 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   updateRaid(raid: TributeRaid): void {
-    const hero = this.context.controls?.heroUnit
     const units = livingRaidUnits(raid)
-    if (!hero || !units.length || hero.isDead || hero.isDestroyed) {
+    const target = raid.target
+    if (!target || !units.length || target.isDead || target.isDestroyed) {
       this.cleanupRaid(raid)
       return
     }
 
     if (raid.phase === 'approaching') {
-      if (getRaidCellDistance(raid.chief, hero) <= RAID_APPROACH_RANGE) {
-        this.openTributeModal(raid)
+      if (getRaidCellDistance(raid.chief, target) <= RAID_APPROACH_RANGE) {
+        this.resolveTributeParley(raid)
         return
       }
-      this.sendRaidToHero(raid)
+      this.sendRaidToTarget(raid)
       return
     }
 
@@ -352,13 +357,13 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
   }
 
-  sendRaidToHero(raid: TributeRaid, options: { forceRepath?: boolean } = {}): void {
-    const hero = this.context.controls?.heroUnit
-    if (!hero) return
+  sendRaidToTarget(raid: TributeRaid, options: { forceRepath?: boolean } = {}): void {
+    const target = raid.target
+    if (!target) return
     for (const unit of livingRaidUnits(raid)) {
       unit.work = WORK_TYPES.attacker
       unit.action = null
-      unit.sendToEvt?.(hero, null, options)
+      unit.sendToEvt?.(target, null, options)
     }
   }
 
@@ -437,6 +442,32 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     })
   }
 
+  resolveTributeParley(raid: TributeRaid): void {
+    if (raid.target.owner?.isPlayed) {
+      this.openTributeModal(raid)
+      return
+    }
+
+    raid.phase = 'parley'
+    for (const unit of livingRaidUnits(raid)) unit.stop?.()
+    const targetOwner = raid.target.owner
+    if (targetOwner && this.shouldLocalChiefPayTribute(raid)) {
+      payCost(targetOwner, raid.tribute)
+      this.context.menu?.showMessage(getLocalTributeTargetMessage(raid), 'info')
+      this.acceptTribute(raid)
+      return
+    }
+
+    this.context.menu?.showMessage(getLocalTributeRefusedMessage(raid), 'warning')
+    this.makeRaidHostile(raid)
+  }
+
+  shouldLocalChiefPayTribute(raid: TributeRaid): boolean {
+    const targetOwner = raid.target.owner
+    if (!targetOwner || !canAfford(targetOwner, raid.tribute)) return false
+    return (this.context.map.random?.() ?? Math.random()) < 0.5
+  }
+
   acceptTribute(raid: TributeRaid): void {
     raid.phase = 'leaving'
     setUnitOverheadIndicator(raid.chief, null)
@@ -459,10 +490,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       owner.diplomacy = null
       if (raid.kind === 'faction' && raid.faction) owner.factionId = raid.faction.id
     }
-    const hero = this.context.controls?.heroUnit
-    if (hero) {
+    const target = raid.target
+    if (target) {
       for (const unit of livingRaidUnits(raid)) {
-        unit.sendToEvt?.(hero, ACTION_TYPES.attack, { forceRepath: true })
+        unit.sendToEvt?.(target, ACTION_TYPES.attack, { forceRepath: true })
       }
     }
     this.context.menu?.showMessage(getHostileRaidMessage(raid), 'warning')

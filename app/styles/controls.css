@@ -55,7 +55,9 @@ button,
 .ui-range:focus {
   outline: none;
   border-color: var(--main-accent-color);
-  box-shadow: var(--ui-inset-shadow);
+  box-shadow:
+    var(--ui-inset-shadow),
+    0 0 0 1px var(--ui-control-focus-ring);
 }
 
 .ui-range {
@@ -200,6 +202,7 @@ button,
   .ui-tab:not(.active):hover {
     filter: brightness(var(--ui-hover-brightness));
     border-color: var(--main-accent-color);
+    color: var(--main-accent-hover);
   }
 }
 
@@ -208,6 +211,9 @@ button,
   color: var(--home-button-focus-color);
   border-color: var(--home-button-focus-color);
   filter: brightness(var(--ui-hover-brightness));
+  box-shadow:
+    var(--ui-button-shadow-raised),
+    0 0 0 1px var(--home-button-focus-ring);
 }
 
 .home-btn:active,
@@ -290,5 +296,5 @@ button,
 .ui-checkbox:focus {
   outline: none;
   border-color: var(--main-accent-color);
-  background: rgba(223, 177, 91, 0.1);
+  background: var(--surface-accent-soft);
 }

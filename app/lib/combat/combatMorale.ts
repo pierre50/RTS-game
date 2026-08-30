@@ -33,7 +33,7 @@ function isLeaderUnit(source: CombatEntity): boolean {
 }
 
 function usesCombatMoralePersonality(source: CombatEntity): boolean {
-  return canAttack(source) && !(source.category === 'Civilian' && !isLeaderUnit(source))
+  return canAttack(source)
 }
 
 function shouldStandGroundFromMorale(source: CombatEntity): boolean {
@@ -176,7 +176,7 @@ export function evaluateCombatMorale(
   if (!source) return 'fight'
   if (shouldSurrenderWhenAttacked(source, attacker)) return 'surrender'
   if (source.category === 'Civilian' && !isLeaderUnit(source)) {
-    return attacker?.family !== FAMILY_TYPES.animal || isCriticallyOutmatched(source, attacker) ? 'flee' : 'fight'
+    return canAttack(source) && isCriticallyOutmatched(source, attacker) ? 'flee' : 'fight'
   }
   return canAttack(source) && isCriticallyOutmatched(source, attacker) ? 'flee' : 'fight'
 }

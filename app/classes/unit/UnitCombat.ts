@@ -6,10 +6,10 @@ import {
   SHEET_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
-  WORK_TYPES,
 } from '../../constants'
 import {
   applyCombatHit,
+  evaluateCombatMorale,
   findInstancesInSight,
   getClosestInstanceWithPath,
   getInstanceDegree,
@@ -29,6 +29,7 @@ import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimat
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
+import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -79,13 +80,20 @@ export class UnitCombat {
     runAttackLoopOnFrame(unit, {
       releaseFrame,
       prepareAttackSheet: () => {
-        unit.setTextures?.(SHEET_TYPES.action)
-        unit.sprite?.gotoAndPlay?.(0)
-        unit.syncMountedHorseSprite?.()
-        unit.syncAppearanceLayers?.(SHEET_TYPES.action)
+        setUnitVisualSheet(unit, SHEET_TYPES.action, {
+          clearCallbacks: ['onComplete', 'onFrameChange'],
+          frame: 0,
+          play: 'play',
+          syncMountedHorse: true,
+          syncShadow: false,
+        })
       },
       prepareRecoverySheet: () => {
-        unit.setTextures?.(SHEET_TYPES.standing)
+        setUnitVisualSheet(unit, SHEET_TYPES.standing, {
+          clearCallbacks: false,
+          invalidateAnimation: false,
+          syncShadow: false,
+        })
       },
       playRecoveryAnimation: visualOptions.playRecoveryAnimation,
       onOutOfRange: dest => {
@@ -132,17 +140,27 @@ export class UnitCombat {
     if (unit.context?.editor) return
     if (!canAutoAcquireTarget(unit)) return
     if (shouldSuppressAggroDuringCombatRecovery(unit)) return
-    if (
-      unit.work === WORK_TYPES.attacker &&
-      instance &&
-      instance.family === FAMILY_TYPES.unit &&
-      !unit.path?.length &&
-      !unit.dest &&
-      unit.getActionCondition?.(instance, ACTION_TYPES.attack)
-    ) {
+    if (!instance || instance.family !== FAMILY_TYPES.unit) return
+    if (!unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
+
+    const isVillager = unit.type === UNIT_TYPES.villager
+    const isIdleCombatUnit = !isVillager && !unit.path?.length && !unit.dest
+    const canInterruptCivilianTask = isVillager && unit.action !== ACTION_TYPES.attack
+
+    if (isVillager && evaluateCombatMorale(unit, instance) === 'flee') {
+      ;(unit as UnitEntity & { runaway?: (target: RuntimeEntity) => void }).runaway?.(instance)
+      return
+    }
+
+    if (isIdleCombatUnit || canInterruptCivilianTask) {
       showAlertThenAggressionFeedback(unit, () => {
         if (unit.context?.editor || !canAutoAcquireTarget(unit)) return
-        if (unit.path?.length || unit.dest || !unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
+        if (!unit.getActionCondition?.(instance, ACTION_TYPES.attack)) return
+        if (unit.sendToAttack) {
+          unit.sendToAttack(instance, { keepPrevious: isVillager })
+          return
+        }
+        if (unit.path?.length || unit.dest) return
         unit.sendTo?.(instance, ACTION_TYPES.attack)
       })
     }

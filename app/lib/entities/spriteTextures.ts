@@ -1,6 +1,5 @@
 import { SHEET_TYPES } from '../constants'
 import { degreeToDirection } from '../maths'
-import { getUnitTiredSpeedFactor } from '../units/unitTired'
 import type { AnimatedSprite, Ticker } from 'pixi.js'
 
 type Direction = 'south' | 'southwest' | 'west' | 'northwest' | 'north' | 'northeast' | 'east' | 'southeast'
@@ -266,7 +265,6 @@ export type UnitTextureInstance = {
   actionSheet?: SheetLike
   dyingSheet?: SheetLike
   mountedOnHorse?: boolean
-  tired?: boolean
 }
 
 function getWalkingFallbackTexture(
@@ -381,8 +379,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   if (defaultAnchor) {
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
-  instance.sprite.animationSpeed =
-    (selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.4) * getUnitTiredSpeedFactor(instance)
+  instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.4
   // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
   // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
   // (e.g. wildlife idle animations) is real art and should play normally.

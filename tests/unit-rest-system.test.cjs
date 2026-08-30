@@ -63,6 +63,9 @@ function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
     '../lib/units/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
     },
+    '../../lib/combat': {
+      evaluateCombatMorale: () => 'fight',
+    },
     ...moduleOverrides,
   }).UnitRestSystem
 }
@@ -296,7 +299,7 @@ test('villagers stay awake before 18h', () => {
   assert.equal(villager.shelterState, undefined)
 })
 
-test('rest tick rests non-villager units without villager tired state', () => {
+test('rest tick sends villagers and non-villagers to sleep without tired state', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const villager = createUnit(owner, { label: 'villager' })
@@ -307,12 +310,10 @@ test('rest tick rests non-villager units without villager tired state', () => {
   const UnitRestSystem = loadUnitRestSystem(calls)
   const system = new UnitRestSystem(context)
 
-  soldier.tired = undefined
-  system.updateVillagerTiredStates()
   system.sendUnitsToSleep()
 
   assert.equal(villager.shelterState.reason, 'sleep')
-  assert.equal(villager.tired, true)
+  assert.equal(villager.tired, undefined)
   assert.equal(soldier.shelterState.reason, 'sleep')
   assert.equal(soldier.tired, undefined)
 })
@@ -420,6 +421,10 @@ test('time jump to night settles military sleepers around a visible fire camp in
   assert.equal(soldier.shelterState.status, 'outside')
   assert.equal(soldier.currentSheet, constants.SHEET_TYPES.dying)
   assert.ok(Math.abs(soldier.i - fireCamp.i) + Math.abs(soldier.j - fireCamp.j) <= 1)
+  // The instant "settle" path freezes the sprite without ever animating it, so `loop` (left
+  // `true` from the unit's last walk) must be explicitly cleared — otherwise a later pause/resume
+  // cycle that calls sprite.play() would have PIXI cycle the hurt sheet forever.
+  assert.equal(soldier.sprite.loop, false)
 })
 
 test('sleeping military wake on hero insight and do not immediately sleep again', () => {
@@ -1247,18 +1252,15 @@ test('follow orders wake sleeping villagers with reversed hurt without resuming 
   assert.notEqual(villager.dest, previousDest)
 })
 
-test('villagers are tired from 22h until 5h without changing sleep timing', () => {
+test('night rest no longer applies a tired state to villagers', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const villager = createUnit(owner)
   const context = createContext(22, [owner], calls)
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
-  const system = new UnitRestSystem(context)
+  new UnitRestSystem(context)
 
-  assert.equal(villager.tired, true)
-  context.dayNight.state.hour = 5
-  system.updateVillagerTiredStates()
   assert.equal(villager.tired, undefined)
 })
 
@@ -1274,39 +1276,10 @@ test('followers stay with the hero at night instead of going to sleep', () => {
 
   assert.equal(villager.shelterState, undefined)
   assert.equal(villager.followingHero, true)
-  assert.equal(villager.tired, true)
-})
-
-test('tired awake villagers pulse the existing sleep indicator briefly', () => {
-  const calls = []
-  const owner = { units: [], buildings: [] }
-  const villager = createUnit(owner, { followingHero: true })
-  const context = createContext(23, [owner], calls)
-  villager.context = context
-  const UnitRestSystem = loadUnitRestSystem(calls)
-  const system = new UnitRestSystem(context)
-
-  assert.equal(villager.tired, true)
-  assert.deepEqual(
-    calls.find(call => call[0] === 'indicator'),
-    ['indicator', 'villager-1', 'sleep']
-  )
-
-  context.scheduler.elapsedMs = 4000
-  system.updateVillagerTiredStates()
-  assert.deepEqual(calls.at(-1), ['clearIndicator', 'villager-1'])
-
-  context.scheduler.elapsedMs = 20000
-  system.updateVillagerTiredStates()
-  assert.deepEqual(calls.at(-1), ['indicator', 'villager-1', 'sleep'])
-
-  context.dayNight.state.hour = 5
-  system.updateVillagerTiredStates()
   assert.equal(villager.tired, undefined)
-  assert.deepEqual(calls.at(-1), ['clearIndicator', 'villager-1'])
 })
 
-test('sleeping villagers wake when attacked and can fight with tired penalty', () => {
+test('sleeping villagers wake when attacked and can fight without a tired penalty', () => {
   const calls = []
   const owner = {
     units: [],
@@ -1333,10 +1306,45 @@ test('sleeping villagers wake when attacked and can fight with tired penalty', (
   assert.equal(handled, true)
   assert.equal(villager.shelterState, null)
   assert.equal(villager.actionLocked, false)
-  assert.equal(villager.tired, true)
+  assert.equal(villager.tired, undefined)
 })
 
-test('awake villagers flee danger instead of entering shelter', () => {
+test('awake villagers attack danger instead of entering shelter when morale holds', () => {
+  const calls = []
+  const owner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other?.label === 'enemy'
+    },
+  }
+  owner.buildings.push({ label: 'tc', type: constants.BUILDING_TYPES.townCenter, owner, isBuilt: true, i: 8, j: 8 })
+  const villager = createUnit(owner, {
+    i: 0,
+    j: 0,
+    detect(target) {
+      calls.push(['detect', this.label, target.label])
+    },
+  })
+  const context = createContext(12, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  const handled = system.handleUnitDanger(villager, {
+    label: 'enemy',
+    family: 'unit',
+    owner: { label: 'enemy' },
+    isDead: false,
+    isDestroyed: false,
+  })
+
+  assert.equal(handled, true)
+  assert.equal(villager.shelterState, undefined)
+  assert.deepEqual(calls.at(-1), ['detect', 'villager-1', 'enemy'])
+})
+
+test('awake villagers still flee danger when morale breaks', () => {
   const calls = []
   const owner = {
     units: [],
@@ -1355,7 +1363,11 @@ test('awake villagers flee danger instead of entering shelter', () => {
   })
   const context = createContext(12, [owner], calls)
   villager.context = context
-  const UnitRestSystem = loadUnitRestSystem(calls)
+  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
+    '../../lib/combat': {
+      evaluateCombatMorale: () => 'flee',
+    },
+  })
   const system = new UnitRestSystem(context)
 
   const handled = system.handleUnitDanger(villager, {

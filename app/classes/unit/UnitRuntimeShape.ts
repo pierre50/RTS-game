@@ -38,6 +38,8 @@ declare module './Unit' {
     sounds?: UnitEntity['sounds']
     work: UnitEntity['work']
     shelterState?: UnitEntity['shelterState']
+    sleepVisualState?: UnitEntity['sleepVisualState']
+    visualAnimationToken?: UnitEntity['visualAnimationToken']
     restWakeLockUntilMs?: UnitEntity['restWakeLockUntilMs']
     restAlertTargetLabel?: UnitEntity['restAlertTargetLabel']
     interiorExitState?: UnitEntity['interiorExitState']
@@ -51,7 +53,6 @@ declare module './Unit' {
     blockedGatherApproach: UnitEntity['blockedGatherApproach']
     buildQueue: NonNullable<UnitEntity['buildQueue']>
     isDirectMoving?: UnitEntity['isDirectMoving']
-    tired?: UnitEntity['tired']
     currentCell: NonNullable<UnitEntity['currentCell']>
     visibleCells: NonNullable<UnitEntity['visibleCells']>
     speed?: UnitEntity['speed']
@@ -115,7 +116,7 @@ declare module './Unit' {
       preserveBuildQueue?: boolean
     ): unknown
     sendToBuilding(target: BuildingEntity, preserveBuildQueue?: boolean): unknown
-    sendToAttack(target: RuntimeEntity): unknown
+    sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions): unknown
     sendToConvert(target: RuntimeEntity): unknown
     sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): unknown
     sendToHunt(target: RuntimeEntity, immediate?: boolean): unknown

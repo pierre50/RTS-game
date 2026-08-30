@@ -187,6 +187,7 @@ function createController({
   ownerBuildings = [],
   resolveCommGroup,
   resolveHeroProximityInteraction = () => null,
+  wakeOwnSleepingNpcForCommunication = () => {},
   withScheduler = false,
 } = {}) {
   const calls = []
@@ -325,6 +326,7 @@ function createController({
     heroActionRange,
     heroProximityInteractions: {
       resolveHeroProximityInteraction,
+      wakeOwnSleepingNpcForCommunication,
     },
     getInstanceDegree,
     playSoundCue: cue => calls.push(['playSoundCue', cue]),

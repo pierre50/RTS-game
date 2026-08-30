@@ -95,7 +95,7 @@ test('generated building flames start the shared flame ambient loop', () => {
     },
   })
 
-  generateBuildingFire(building, 'effects/fire/light')
+  generateBuildingFire(building, 'light')
 
   assert.equal(played.length, 1)
   assert.equal(played[0].cue, 'flame')

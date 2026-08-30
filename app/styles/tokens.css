@@ -4,7 +4,7 @@
      ========================================================= */
 
   --main-primary-color: #111735;
-  --form-surface-color: #202a55;
+  --form-surface-color: var(--color-blue-control);
 
   --main-border-radius: 0px;
   --main-border-radius-lg: 0px;
@@ -19,6 +19,7 @@
 
   --color-blue-deep: #111735;
   --color-blue-mid: #202a55;
+  --color-blue-control: #283568;
   --color-blue-bright: #5366a8;
   --color-cyan: #9aa7d9;
 
@@ -104,12 +105,12 @@
     sans-serif;
 
   --font-family-display:
-    'cobblestone',
+    'marcellus-sc',
     var(--font-family-ui);
 
   --font-family-logo:
     'marcellus-sc',
-    var(--font-family-display);
+    var(--font-family-ui);
 
   --text-color-inverse: #f5f1dc;
   --text-color-white: #ffffff;
@@ -141,12 +142,18 @@
   --surface-black-light: rgba(5, 7, 18, 0.76);
 
   --surface-white-faint: rgba(255, 255, 255, 0.055);
+  --surface-accent-faint: rgba(231, 198, 106, 0.05);
+  --surface-accent-soft: rgba(231, 198, 106, 0.1);
+  --surface-accent-medium: rgba(231, 198, 106, 0.12);
 
   --surface-row-subtle: rgba(154, 167, 217, 0.1);
   --surface-row-dark: rgba(5, 7, 18, 0.46);
 
+  --border-accent-faint: rgba(231, 198, 106, 0.08);
+  --border-accent-soft: rgba(231, 198, 106, 0.15);
   --border-row-subtle: rgba(207, 216, 255, 0.2);
   --border-divider-subtle: rgba(207, 216, 255, 0.16);
+  --border-accent-subtle: rgba(231, 198, 106, 0.35);
 
   /* =========================================================
      MENU
@@ -175,9 +182,10 @@
 
   --menu-title-shadow: rgba(0, 0, 0, 0.92);
 
-  --home-button-bg: #202a55;
+  --home-button-bg: var(--ui-bar-bg);
   --home-button-focus-color: #fff0a8;
   --home-button-focus-scale: 1;
+  --home-button-focus-ring: rgba(231, 198, 106, 0.42);
 
   /* =========================================================
      ORIENTATION
@@ -253,9 +261,9 @@
   --ui-button-height: 52px;
 
   --ui-control-height: 46px;
-  --ui-control-height-compact: 38px;
+  --ui-control-height-compact: 42px;
   --ui-control-padding-x: 12px;
-  --ui-control-font-size: var(--font-size-sm);
+  --ui-control-font-size: var(--font-size-base);
 
   --ui-range-thumb-size: 24px;
   --ui-range-track-height: 10px;
@@ -316,12 +324,15 @@
     inset 2px 0 0 #050716,
     inset -1px 0 0 #31385f,
     inset 0 -1px 0 #cfd8ff;
+  --ui-scrollbar-thumb-hover-bg: rgba(231, 198, 106, 0.5);
+
+  --ui-control-focus-ring: rgba(231, 198, 106, 0.34);
 
   /* =========================================================
      BARS / SLOTS
      ========================================================= */
 
-  --ui-bar-bg: #202a55;
+  --ui-bar-bg: var(--color-blue-control);
 
   --ui-bar-border:
     2px solid #cfd8ff;

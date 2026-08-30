@@ -25,6 +25,41 @@ function loadModule(relativePath, mocks) {
         unit.context?.menu?.showMessage(`unitCannotEnterBuilding:${unit.type}:${building.type}`, 'warning')
       },
     },
+    '../entities/overheadIndicator': {
+      clearUnitOverheadIndicator: unit => unit.context?.calls?.push(['clearIndicator', unit.label]),
+      setUnitOverheadIndicator: (unit, type) => unit.context?.calls?.push(['indicator', unit.label, type]),
+    },
+    '../units/villagerSchedule': {
+      isVillagerSleepTime: context => {
+        const hour = context?.dayNight?.state?.hour ?? 12
+        return hour >= 18 || hour < 8
+      },
+    },
+    '../../services/rest/UnitRestRules': {
+      delayUnitRestAfterActivity: unit => {
+        const hour = unit.context?.dayNight?.state?.hour ?? 12
+        if (hour < 18 && hour >= 8) return false
+        const now = unit.context?.scheduler?.elapsedMs ?? 0
+        unit.restWakeLockUntilMs = Math.max(unit.restWakeLockUntilMs ?? 0, now + 12000)
+        unit.restAlertTargetLabel = null
+        return true
+      },
+      isSleepTime: context => {
+        const hour = context?.dayNight?.state?.hour ?? 12
+        return hour >= 18 || hour < 8
+      },
+    },
+    '../grid/movement': {
+      getFreeLandCellAroundInstance: (instance, grid, pick) => {
+        const cells = [
+          grid[instance.i - 1]?.[instance.j],
+          grid[instance.i]?.[instance.j - 1],
+          grid[instance.i + 1]?.[instance.j],
+          grid[instance.i]?.[instance.j + 1],
+        ].filter(Boolean)
+        return pick(cells)
+      },
+    },
     './units/unitUpgrades': {
       getUnitUpgradeTargetForBuilding: () => null,
     },
@@ -204,6 +239,30 @@ test('"aller vers" keeps empty go-to targets inside the clicked runtime map spac
   assert.notEqual(calls[0], outsideCellAtSameCoords)
 })
 
+test('"aller vers" delays night rest after an empty go-to order', () => {
+  const grid = createNpcTestGrid(6)
+  const targetCell = grid[4][4]
+  const calls = []
+  const npc = {
+    context: {
+      dayNight: { state: { hour: 23 } },
+      map: { grid },
+      scheduler: { elapsedMs: 2000 },
+    },
+    i: 2,
+    j: 2,
+    owner: {},
+    sendTo: orderCell => calls.push(orderCell),
+    type: constants.UNIT_TYPES.villager,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null)
+
+  sendNpcGroupToTarget([npc], targetCell, { x: 4, y: 4 })
+
+  assert.deepEqual(calls, [targetCell])
+  assert.equal(npc.restWakeLockUntilMs, 14000)
+})
+
 test('"aller vers" blinks the target once when any communicated NPC has a targeted action', () => {
   const enemyOwner = { label: 'enemy' }
   const target = {
@@ -341,6 +400,7 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
     getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.farm,
     i: 1,
     j: 1,
+    label: 'villager-1',
     owner,
     sendToFarm: orderTarget => calls.push(['farm', orderTarget]),
     type: constants.UNIT_TYPES.villager,
@@ -349,6 +409,95 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['farm', target]])
+})
+
+test('"aller vers" moves villagers near night resource work and shows zzz', () => {
+  const owner = { label: 'player' }
+  const grid = createNpcTestGrid(6)
+  const fallbackCell = grid[4][5]
+  const target = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 5,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    label: 'wheat-1',
+    quantity: 10,
+    type: constants.RESOURCE_TYPES.wheat,
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: {
+      calls,
+      dayNight: { state: { hour: 23 } },
+      map: { grid },
+      scheduler: {
+        elapsedMs: 3000,
+        add(callback, interval, name) {
+          calls.push(['schedule', interval, name])
+          callback()
+          return 1
+        },
+      },
+    },
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.farm,
+    i: 1,
+    j: 1,
+    label: 'villager-1',
+    owner,
+    sendTo: orderCell => calls.push(['move', orderCell]),
+    sendToFarm: orderTarget => calls.push(['farm', orderTarget]),
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.equal(npc.restWakeLockUntilMs, 15000)
+  assert.deepEqual(calls, [
+    ['move', fallbackCell],
+    ['indicator', 'villager-1', 'sleep'],
+    ['schedule', 1200, 'npc.nightWorkRefusal'],
+    ['clearIndicator', 'villager-1'],
+  ])
+})
+
+test('"aller vers" still lets villagers attack enemies at night', () => {
+  const enemyOwner = { label: 'enemy' }
+  const target = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    i: 5,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner: enemyOwner,
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: {
+      calls,
+      dayNight: { state: { hour: 23 } },
+      map: { grid: [] },
+      scheduler: { elapsedMs: 4000 },
+    },
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.attack,
+    i: 1,
+    j: 1,
+    owner: { isEnemy: owner => owner === enemyOwner },
+    sendToAttack: orderTarget => calls.push(['attack', orderTarget]),
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.equal(npc.restWakeLockUntilMs, 16000)
+  assert.deepEqual(calls, [['attack', target]])
 })
 
 test('"aller vers" sends a communicated villager into a temple to train a priest', () => {
@@ -634,7 +783,7 @@ test('closing communication resumes a pending training order', () => {
   assert.deepEqual(calls, [['sendTo', barracks, constants.ACTION_TYPES.train]])
 })
 
-test('talking to a sleeping villager previews a reversed wake and plays sleep hurt on close', () => {
+test('talking to your own sleeping unit wakes it for real, like their chief would', () => {
   const calls = []
   const owner = {}
   const target = {
@@ -643,8 +792,10 @@ test('talking to a sleeping villager previews a reversed wake and plays sleep hu
     addChildAt: () => {},
     context: {
       unitRest: {
-        previewSleepingUnitWake: unit => calls.push(['previewWake', unit.label]),
-        restoreSleepingUnitVisual: unit => calls.push(['restoreSleep', unit.label]),
+        wakeSleepingUnitForOrder: unit => {
+          calls.push(['wakeForOrder', unit.label])
+          return true
+        },
       },
     },
     i: 1,
@@ -665,21 +816,44 @@ test('talking to a sleeping villager previews a reversed wake and plays sleep hu
     x: 0,
     y: 0,
   }
-  const { releaseIfStillLooking, resolveCommGroup } = loadNpcInteraction(target)
+  const { resolveCommGroup } = loadNpcInteraction(target)
 
   const group = resolveCommGroup(hero, 0, { precisionOnly: true })
 
   assert.deepEqual(group, [target])
   assert.equal(target.lookingAtHero, true)
-  assert.deepEqual(calls, [['previewWake', 'sleepy-villager']])
+  assert.deepEqual(calls, [['wakeForOrder', 'sleepy-villager']])
+})
 
-  releaseIfStillLooking(group)
+test('closing without an order after a real wake does not resume the old day job', () => {
+  const calls = []
+  const npc = {
+    lookingAtHero: true,
+    // Left over from before bedtime — sleep never clears this — and shelterState is already null
+    // because the talk interaction already woke the unit for real.
+    autonomousJob: 'wood',
+    previousDest: null,
+    shelterState: null,
+    getChildByLabel: () => null,
+    context: {
+      unitRest: {
+        isRestWakeLockActive: () => true,
+      },
+    },
+    affectNewDest() {
+      calls.push(['affectNewDest'])
+    },
+    goBackToPrevious() {
+      calls.push(['goBackToPrevious'])
+    },
+  }
+  const { releaseIfStillLooking } = loadNpcInteraction(null)
 
-  assert.equal(target.lookingAtHero, false)
-  assert.deepEqual(calls, [
-    ['previewWake', 'sleepy-villager'],
-    ['restoreSleep', 'sleepy-villager'],
-  ])
+  releaseIfStillLooking([npc])
+
+  assert.equal(npc.lookingAtHero, false)
+  assert.equal(npc.previousDest, null)
+  assert.deepEqual(calls, [])
 })
 
 test('"aller vers" cursor shows combat feedback over combat targets', () => {
@@ -1265,6 +1439,39 @@ test('villager followers mirror the hero chopping nearby trees without keeping a
   assert.deepEqual(calls, [['chopwood', tree]])
   assert.deepEqual(follower.followAssist, { action: constants.ACTION_TYPES.chopwood, targetLabel: 'tree-1' })
   assert.equal(follower.autonomousJob, null)
+})
+
+test('villager followers do not mirror hero resource work at night', () => {
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 10,
+    i: 1,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'tree-1',
+    path: [{ i: 1, j: 1 }],
+    quantity: 40,
+    type: constants.RESOURCE_TYPES.tree,
+  }
+  const { updateNpcFollow } = loadNpcFollowModule([tree])
+  const { hero, follower, heroCell, calls } = makeEscortWorld({
+    i: 2,
+    j: 0,
+    type: constants.UNIT_TYPES.villager,
+    getActionCondition: (target, action) => target === tree && action === constants.ACTION_TYPES.chopwood,
+    sendToTree(target) {
+      calls.push(['chopwood', target])
+    },
+  })
+  hero.context.dayNight = { state: { hour: 23 } }
+  hero.action = constants.ACTION_TYPES.chopwood
+  hero.dest = tree
+
+  updateNpcFollow(hero)
+
+  assert.deepEqual(calls, [])
+  assert.equal(follower.followAssist, undefined)
 })
 
 test('villager followers mirror hero farming while skipping occupied wheat', () => {

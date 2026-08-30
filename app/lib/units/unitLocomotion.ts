@@ -1,5 +1,4 @@
 import type { UnitEntity } from '../../types/entities'
-import { getUnitTiredSpeedFactor } from './unitTired'
 
 export const UNIT_WALK_SPEED_FACTOR = 0.5
 export const CAUTIOUS_ANIMAL_APPROACH_RANGE = 7
@@ -17,7 +16,7 @@ export function composeMoveSpeedFactor(...factors: number[]): number {
 }
 
 export function getRequestedMoveSpeedFactor(unit: UnitEntity): number {
-  return Math.max(0, Math.min(1, unit.requestedMoveSpeedFactor ?? 1)) * getUnitTiredSpeedFactor(unit)
+  return Math.max(0, Math.min(1, unit.requestedMoveSpeedFactor ?? 1))
 }
 
 export function clearRequestedMoveSpeedFactor(unit: UnitEntity): void {

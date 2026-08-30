@@ -428,3 +428,67 @@ test('horse capture assignment ignores hero companion horses', () => {
   assert.equal(economy.assignHorseCaptures(villagers), 1)
   assert.deepEqual(assignments, [['horse-2']])
 })
+
+test('AI economy does not assign villager work during sleep time', () => {
+  const { AIEconomy, constants } = loadAIEconomy()
+  const tree = { i: 4, j: 4, label: 'tree-1' }
+  const assignments = []
+  const villager = {
+    action: null,
+    hitPoints: 20,
+    i: 0,
+    inactif: true,
+    j: 0,
+    label: 'villager-1',
+    type: constants.UNIT_TYPES.villager,
+    work: null,
+    sendToTree: target => assignments.push(['wood', target.label]),
+    explore: () => {
+      assignments.push(['explore'])
+      return true
+    },
+  }
+  const ai = {
+    age: 0,
+    buildingsByTypes: () => [],
+    config: { buildings: {} },
+    context: {
+      dayNight: { state: { hour: 23 } },
+      map: { gaia: {}, grid: [] },
+    },
+    foundedAnimals: new Set(),
+    foundedBerrybushs: new Set(),
+    foundedDeadAnimals: new Set(),
+    foundedEnemyBuildings: new Set(),
+    foundedEnemyUnits: new Set(),
+    foundedGolds: new Set(),
+    foundedStones: new Set(),
+    foundedTrees: new Set([tree]),
+    foundedWheats: new Set(),
+    getHomeAnchor: () => null,
+    hasNotReachBuildingLimit: () => true,
+    strategy: { getEconomicDemand: () => ({}) },
+    villageTargetPercentageByAge: {
+      0: { food: 50, wood: 50, gold: 0, stone: 0 },
+    },
+    views: {
+      length: 1,
+      coordinates: () => [0, 0],
+      isViewed: () => false,
+    },
+  }
+  const economy = new AIEconomy(ai)
+
+  const actions = economy.handleVillagerActions({
+    debug: false,
+    farms: [],
+    map: ai.context.map,
+    notBuiltBuildings: [],
+    storagepits: [],
+    towncenters: [],
+    villagers: [villager],
+  })
+
+  assert.equal(actions, 0)
+  assert.deepEqual(assignments, [])
+})

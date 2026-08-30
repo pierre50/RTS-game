@@ -185,7 +185,7 @@ export class UnitCommands {
     }
   }
 
-  sendToAttack(target: RuntimeEntity) {
+  sendToAttack(target: RuntimeEntity, options: UnitCommandOptions = {}) {
     if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) {
       if (!applyDiplomaticAggression(this.unit, target).hostileNow) return
       if (!checkActionCondition(this.unit, target, ACTION_TYPES.attack)) return
@@ -194,7 +194,7 @@ export class UnitCommands {
       target,
       WORK_TYPES.attacker,
       ACTION_TYPES.attack,
-      { resource: 'attack' },
+      { resource: 'attack', keepPrevious: options.keepPrevious },
       false,
       false
     )

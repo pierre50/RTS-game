@@ -14,6 +14,15 @@ import type { RuntimeCell } from '../types/map'
 
 type BuildingListByType = Record<string, AIBuildingLike[]>
 type ResourceLedger = Record<string, number | undefined>
+type BuildActionBuyer = (
+  condition: boolean,
+  buildingType: string,
+  positionCallback: () => AIGridPosition | null,
+  preserveAgeReserve?: boolean
+) => boolean
+type PlacementConditionFactory = (
+  ...conditions: Array<(cell: AIGridPosition) => boolean>
+) => (cell: GridCell) => boolean
 
 const WHEAT_TILES_PER_FIELD = 16
 const MAX_AI_WHEAT_FIELDS = 4
@@ -88,6 +97,90 @@ export function buyAIWheatFieldIfNeeded(
   return false
 }
 
+function findBuildingPosition(
+  anchor: AIGridPosition,
+  map: AIStrategySnapshot['map'],
+  distanceRange: [number, number],
+  footprintSize: number,
+  placementCondition: ReturnType<PlacementConditionFactory>
+): AIGridPosition | null {
+  return getPositionInGridAroundInstance(
+    anchor,
+    map.grid,
+    distanceRange,
+    getBuildingPlacementSearchSize(footprintSize),
+    false,
+    placementCondition
+  )
+}
+
+function buyCoreInfrastructure(options: {
+  ai: AIStrategyPlayerLike
+  anchor: AIGridPosition
+  barracks: AIBuildingLike[]
+  buy: BuildActionBuyer
+  desiredBarracks: number
+  map: AIStrategySnapshot['map']
+  markets: AIBuildingLike[]
+  notBuiltHouses: AIBuildingLike[]
+  otherPlayers: AIStrategySnapshot['otherPlayers']
+  placementCondition: PlacementConditionFactory
+}): number {
+  const { ai, anchor, barracks, buy, desiredBarracks, map, markets, notBuiltHouses, otherPlayers, placementCondition } =
+    options
+  const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
+    otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
+  const defensivePlacement = () => placementCondition(isEnemyFacing(anchor))
+  let actions = 0
+
+  if (
+    buy(
+      ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
+      BUILDING_TYPES.house,
+      () => findBuildingPosition(anchor, map, [6, 10], 0, placementCondition()),
+      false
+    )
+  )
+    actions++
+
+  if (
+    buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
+      findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
+    )
+  )
+    actions++
+
+  if (
+    buy(markets.length === 0, BUILDING_TYPES.market, () =>
+      findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
+    )
+  )
+    actions++
+
+  if (
+    buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
+      findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
+    )
+  )
+    actions++
+
+  if (
+    buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
+      findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
+    )
+  )
+    actions++
+
+  if (
+    buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
+      findBuildingPosition(anchor, map, [6, 15], 2, defensivePlacement())
+    )
+  )
+    actions++
+
+  return actions
+}
+
 export function handleAIBuildingActions(
   strategy: BuildingStrategy,
   snapshot: AIStrategySnapshot,
@@ -126,8 +219,6 @@ export function handleAIBuildingActions(
     [BUILDING_TYPES.watchTower]: watchTowers,
   }
 
-  const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
-    otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
   const passageLookup = createReservedPassageCellLookup(ai.context)
   const avoidsReservedPassages = (cell: GridCell) => !passageLookup.has(cell as RuntimeCell)
   const placementCondition =
@@ -153,94 +244,18 @@ export function handleAIBuildingActions(
 
   let actions = 0
   const desiredBarracks = strategy.getDesiredBarracksCount(snapshot)
-
-  if (
-    buy(
-      ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
-      BUILDING_TYPES.house,
-      () =>
-        getPositionInGridAroundInstance(
-          anchor,
-          map.grid,
-          [6, 10],
-          getBuildingPlacementSearchSize(0),
-          false,
-          placementCondition()
-        ),
-      false
-    )
-  )
-    actions++
-
-  if (
-    buy(ai.phase !== 'economy' && barracks.length < desiredBarracks, BUILDING_TYPES.barracks, () =>
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [6, 20],
-        getBuildingPlacementSearchSize(1),
-        false,
-        placementCondition(isEnemyFacing(anchor))
-      )
-    )
-  )
-    actions++
-
-  if (
-    buy(markets.length === 0, BUILDING_TYPES.market, () =>
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [6, 20],
-        getBuildingPlacementSearchSize(1),
-        false,
-        placementCondition(isEnemyFacing(anchor))
-      )
-    )
-  )
-    actions++
-
-  if (
-    buy(barracks.length > 0, BUILDING_TYPES.archeryRange, () =>
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [6, 20],
-        getBuildingPlacementSearchSize(1),
-        false,
-        placementCondition(isEnemyFacing(anchor))
-      )
-    )
-  )
-    actions++
-
-  if (
-    buy(barracks.length > 0, BUILDING_TYPES.stable, () =>
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [6, 20],
-        getBuildingPlacementSearchSize(1),
-        false,
-        placementCondition(isEnemyFacing(anchor))
-      )
-    )
-  )
-    actions++
-
-  if (
-    buy(ai.technologies.includes('ResearchWatchTower'), BUILDING_TYPES.watchTower, () =>
-      getPositionInGridAroundInstance(
-        anchor,
-        map.grid,
-        [6, 15],
-        getBuildingPlacementSearchSize(2),
-        false,
-        placementCondition(isEnemyFacing(anchor))
-      )
-    )
-  )
-    actions++
+  actions += buyCoreInfrastructure({
+    ai,
+    anchor,
+    barracks,
+    buy,
+    desiredBarracks,
+    map,
+    markets,
+    notBuiltHouses,
+    otherPlayers,
+    placementCondition,
+  })
 
   const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)
   const currentWheatFields = Math.ceil(livingWheatTiles.length / WHEAT_TILES_PER_FIELD)

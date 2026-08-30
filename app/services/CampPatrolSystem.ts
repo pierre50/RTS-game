@@ -1,6 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
 import { findInstancesInSight, getCellsAroundPoint, instancesDistance, scheduleAmbientMove } from '../lib'
 import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../lib/buildings/passageCells'
+import { isUnitRestWakeLocked } from './rest/UnitRestRules'
 import type { SchedulerTaskId, GameContextLike } from '../types/context'
 import type { RuntimeCell } from '../types/map'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -10,17 +11,12 @@ const PATROL_DELAY_MAX_MS = 8500
 const PATROL_RANGE = 4
 const AGGRO_SCAN_INTERVAL_MS = 500
 
-function hasActiveRestLock(unit: UnitEntity): boolean {
-  const until = unit.restWakeLockUntilMs
-  return Boolean(until != null && until > (unit.context?.scheduler?.elapsedMs ?? 0))
-}
-
 function canPatrol(unit: UnitEntity): boolean {
   return Boolean(
     !unit.isDead &&
       !unit.isDestroyed &&
       !unit.shelterState &&
-      !hasActiveRestLock(unit) &&
+      !isUnitRestWakeLocked(unit) &&
       !unit.action &&
       !unit.dest &&
       !(unit.path?.length) &&

@@ -12,6 +12,14 @@ import {
   createHeroAppearanceControls,
   createHeroPreview,
 } from './PlayerSetupHeroAppearance'
+import {
+  PLAYER_COLORS,
+  firstAvailablePlayerColor,
+  isKnownPlayerColor,
+  nextAvailablePlayerColor,
+  nextPlayerColor,
+  normalizePlayerColor,
+} from './PlayerSetupColors'
 import type { PlayerSetupConfig } from '../types/save'
 
 type PlayerSetupPanelOptions = {
@@ -48,17 +56,6 @@ const MAX_BOTS = 4
 const MAX_PLAYERS = MAX_BOTS + 1
 const MIN_PLAYERS = 1
 const CIVS = CIVILIZATIONS.map(civ => ({ label: () => t(civ.labelKey), value: civ.value }))
-
-const PLAYER_COLORS = [
-  { name: 'blue', hex: '#3f5f9f' },
-  { name: 'red', hex: '#e30b00' },
-  { name: 'yellow', hex: '#c3a31b' },
-  { name: 'brown', hex: '#8b5b37' },
-  { name: 'orange', hex: '#ef6307' },
-  { name: 'green', hex: '#4b6b2b' },
-  { name: 'grey', hex: '#8f8f8f' },
-  { name: 'cyan', hex: '#00837b' },
-]
 
 export class PlayerSetupPanel {
   onChange: ((players: PlayerSetupConfig[]) => void) | null
@@ -148,7 +145,7 @@ export class PlayerSetupPanel {
     const shouldGenerateHumanName = player.isHuman === true && (!player.name || player.name === t('you'))
     return {
       name: shouldGenerateHumanName ? randomPlayerNameForCivilization(civ, gender) : player.name || t('computer'),
-      color: player.color || PLAYER_COLORS[0].name,
+      color: normalizePlayerColor(player.color),
       civ,
       gender,
       heroAppearance: normalizeHeroAppearance(player.heroAppearance, civ, gender),
@@ -189,29 +186,8 @@ export class PlayerSetupPanel {
     return new Set(this.players.map(player => player.color))
   }
 
-  _isKnownColor(color: string): boolean {
-    return PLAYER_COLORS.some(playerColor => playerColor.name === color)
-  }
-
-  _nextColor(currentColor: string): string {
-    const idx = PLAYER_COLORS.findIndex(color => color.name === currentColor)
-    return PLAYER_COLORS[((idx >= 0 ? idx : 0) + 1) % PLAYER_COLORS.length].name
-  }
-
-  _nextAvailableColor(currentColor: string): string {
-    const used = this._usedColors()
-    const idx = PLAYER_COLORS.findIndex(color => color.name === currentColor)
-    for (let offset = 1; offset < PLAYER_COLORS.length; offset++) {
-      const candidate = PLAYER_COLORS[(idx + offset) % PLAYER_COLORS.length]
-      if (!used.has(candidate.name)) return candidate.name
-    }
-    return currentColor
-  }
-
   _firstAvailableColor(): string {
-    const used = this._usedColors()
-    const found = PLAYER_COLORS.find(color => !used.has(color.name))
-    return found ? found.name : PLAYER_COLORS[0].name
+    return firstAvailablePlayerColor(this._usedColors())
   }
 
   _reassignAIColors(): void {
@@ -219,12 +195,12 @@ export class PlayerSetupPanel {
 
     this.players.forEach(player => {
       if (player.isHuman) return
-      if (!used.has(player.color) && this._isKnownColor(player.color)) {
+      if (!used.has(player.color) && isKnownPlayerColor(player.color)) {
         used.add(player.color)
         return
       }
 
-      const color = PLAYER_COLORS.find(candidate => !used.has(candidate.name))?.name ?? PLAYER_COLORS[0].name
+      const color = firstAvailablePlayerColor(used)
       player.color = color
       used.add(color)
     })
@@ -347,7 +323,9 @@ export class PlayerSetupPanel {
   _cycleColor(playerIndex: number): void {
     const player = this.players[playerIndex]
     if (!player) return
-    player.color = player.isHuman ? this._nextColor(player.color) : this._nextAvailableColor(player.color)
+    player.color = player.isHuman
+      ? nextPlayerColor(player.color)
+      : nextAvailablePlayerColor(player.color, this._usedColors())
     this._reassignAIColors()
     this._refresh()
     this._emitChange()

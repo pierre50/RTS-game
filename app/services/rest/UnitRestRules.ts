@@ -33,6 +33,13 @@ export type UnitRestSite = {
   targetCell: RuntimeCell
 }
 
+type UnitRestDelayOptions = {
+  durationMs?: number
+  requireRestCapable?: boolean
+  requireSleepTime?: boolean
+  target?: RuntimeEntity | null
+}
+
 function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
   return Math.abs(a.i - b.i) + Math.abs(a.j - b.j)
 }
@@ -156,9 +163,7 @@ export function markUnitRestAlert(
   target?: RuntimeEntity | null,
   durationMs = REST_WAKE_LOCK_MS
 ): void {
-  const until = getNowMs(unit) + durationMs
-  unit.restWakeLockUntilMs = Math.max(unit.restWakeLockUntilMs ?? 0, until)
-  unit.restAlertTargetLabel = target?.label ?? null
+  keepUnitAwakeForRestDelay(unit, { durationMs, target })
 }
 
 export function clearExpiredUnitRestAlert(unit: UnitEntity): void {
@@ -168,7 +173,7 @@ export function clearExpiredUnitRestAlert(unit: UnitEntity): void {
   unit.restAlertTargetLabel = null
 }
 
-function isUnitRestWakeLocked(unit: UnitEntity): boolean {
+export function isUnitRestWakeLocked(unit: UnitEntity): boolean {
   clearExpiredUnitRestAlert(unit)
   return Boolean(unit.restWakeLockUntilMs != null && unit.restWakeLockUntilMs > getNowMs(unit))
 }
@@ -181,6 +186,30 @@ export function canUseUnitRest(unit: UnitEntity): boolean {
       !unit.followingHero &&
       !unit.trainingTargetType
   )
+}
+
+function keepUnitAwakeForRestDelay(unit: UnitEntity, options: UnitRestDelayOptions = {}): boolean {
+  const {
+    durationMs = REST_WAKE_LOCK_MS,
+    requireRestCapable = false,
+    requireSleepTime = false,
+    target = null,
+  } = options
+  if (!unit.context) return false
+  if (requireSleepTime && !isSleepTime(unit.context)) return false
+  if (requireRestCapable && !canUseUnitRest(unit)) return false
+  const until = getNowMs(unit) + durationMs
+  unit.restWakeLockUntilMs = Math.max(unit.restWakeLockUntilMs ?? 0, until)
+  unit.restAlertTargetLabel = target?.label ?? null
+  return true
+}
+
+export function delayUnitRestAfterActivity(unit: UnitEntity, durationMs = REST_WAKE_LOCK_MS): boolean {
+  return keepUnitAwakeForRestDelay(unit, {
+    durationMs,
+    requireRestCapable: true,
+    requireSleepTime: true,
+  })
 }
 
 export function shouldRest(unit: UnitEntity, options: { ignoreWakeLock?: boolean } = {}): boolean {

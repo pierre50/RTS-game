@@ -1,6 +1,7 @@
 import { SHEET_TYPES } from '../constants'
 import { onSpriteLoopAtFrame } from '../graphics'
 import { logHeroSlashFrame, playReverseSlashRecovery } from '../entities/slashRecoveryAnimation'
+import { resetUnitCrouchPose } from '../units/unitCrouchPose'
 import type { UnitEntity } from '../../types/entities'
 
 const HERO_SWORD_POWER_FLASH_MS = 180
@@ -111,6 +112,7 @@ export function playHeroToolAnimation(
   sprite.loop = false
   const finishAnimation = () => finishHeroToolAnimation(hero)
   hero.setTextures?.(SHEET_TYPES.action)
+  resetUnitCrouchPose(hero)
   hero.syncMountedHorseSprite?.()
   showHeroSwordPowerFlash(hero, options.swordChargePower)
   logHeroSlashFrame(hero, 'tool:start', { impactFrame, recoveryAnimation: options.recoveryAnimation ?? null })

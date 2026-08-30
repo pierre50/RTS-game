@@ -324,7 +324,7 @@ test('villagers can still forage neutral berry bushes', () => {
   assert.equal(getActionCondition(villager, berrybush, 'forageberry'), true)
 })
 
-test('villagers flee from anything that fights back, human or AI-controlled alike', () => {
+test('healthy villagers fight back against hostile units', () => {
   const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
     '../constants': constants,
     './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
@@ -332,7 +332,7 @@ test('villagers flee from anything that fights back, human or AI-controlled alik
   const villager = { category: 'Civilian', hitPoints: 25, weaponPower: 3, totalHitPoints: 25, type: 'Villager' }
   const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
 
-  assert.equal(evaluateCombatMorale(villager, enemySoldier), 'flee')
+  assert.equal(evaluateCombatMorale(villager, enemySoldier), 'fight')
 })
 
 test('villagers keep hunting a nearly-dead animal instead of fleeing full health', () => {
@@ -355,6 +355,25 @@ test('villagers retreat from a healthy animal once critically hurt themselves', 
   const healthyBoar = { family: 'animal', hitPoints: 40, weaponPower: 6, totalHitPoints: 40, type: 'Boar' }
 
   assert.equal(evaluateCombatMorale(woundedVillager, healthyBoar), 'flee')
+})
+
+test('brave wounded villagers can keep fighting instead of fleeing', () => {
+  const { evaluateCombatMorale } = loadModule('app/lib/combat/combat.ts', {
+    '../constants': constants,
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0, UNARMED_UNIT_WEAPON_POWER: 0.5 },
+  })
+  const woundedVillager = {
+    category: 'Civilian',
+    combatBehavior: { bravery: 0.95, fleeHealthRatio: 0.3 },
+    combatMoraleRoll: 0.1,
+    hitPoints: 5,
+    weaponPower: 3,
+    totalHitPoints: 25,
+    type: 'Villager',
+  }
+  const enemySoldier = { family: 'unit', hitPoints: 40, totalHitPoints: 40, type: 'Fantassin' }
+
+  assert.equal(evaluateCombatMorale(woundedVillager, enemySoldier), 'fight')
 })
 
 test('heroes and chiefs hold their ground like combatants instead of fleeing every hit', () => {
@@ -1130,6 +1149,7 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
         target.die?.()
         return { damageDealt: 5, killed: true }
       },
+      evaluateCombatMorale: () => 'fight',
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getClosestInstanceWithPath: () => null,
@@ -1160,7 +1180,7 @@ test('hero-controlled units do not use unit auto-detection attacks', () => {
   assert.deepEqual(calls, [])
 })
 
-test('attacker units show alert feedback when detection starts an attack', () => {
+test('idle combat units show alert feedback when detection starts an attack', () => {
   const calls = []
   const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
     '../../constants': constants,
@@ -1170,6 +1190,7 @@ test('attacker units show alert feedback when detection starts an attack', () =>
         target.die?.()
         return { damageDealt: 5, killed: true }
       },
+      evaluateCombatMorale: () => 'fight',
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getClosestInstanceWithPath: () => null,
@@ -1200,15 +1221,66 @@ test('attacker units show alert feedback when detection starts an attack', () =>
     getActionCondition: instance => instance === target,
     label: 'guard-1',
     path: [],
-    sendTo: instance => calls.push(['sendTo', instance]),
-    work: constants.WORK_TYPES.attacker,
+    sendToAttack: (instance, options) => calls.push(['sendToAttack', instance, options]),
+    type: constants.UNIT_TYPES.infantry,
   }
 
   new UnitCombat(unit).detect(target)
 
   assert.deepEqual(calls, [
     ['alertThenAggression', 'guard-1'],
-    ['sendTo', target],
+    ['sendToAttack', target, { keepPrevious: false }],
+  ])
+})
+
+test('villagers interrupt civilian work to attack enemies detected in sight', () => {
+  const calls = []
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      applyCombatHit: () => ({ damageDealt: 0, killed: false }),
+      evaluateCombatMorale: () => 'fight',
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getHitPointsWithDamage: () => 0,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => false,
+      onSpriteLoopAtFrame: () => {},
+      playAudibleSoundCue: () => {},
+      BOW_SHOOT_RELEASE_FRAME: 8,
+      SLASH_IMPACT_FRAME: 5,
+      syncAnimationSpeedToRate: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/combat/combatFeedback': {
+      showAlertThenAggressionFeedback: (unit, onAggression) => {
+        calls.push(['alertThenAggression', unit.label])
+        onAggression()
+      },
+      showDamageFeedback: () => {},
+    },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+  })
+  const target = { family: constants.FAMILY_TYPES.unit }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: { editor: null },
+    dest: { family: constants.FAMILY_TYPES.resource },
+    getActionCondition: instance => instance === target,
+    label: 'worker-1',
+    path: [{ i: 1, j: 1 }],
+    sendToAttack: (instance, options) => calls.push(['sendToAttack', instance, options]),
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.woodcutter,
+  }
+
+  new UnitCombat(unit).detect(target)
+
+  assert.deepEqual(calls, [
+    ['alertThenAggression', 'worker-1'],
+    ['sendToAttack', target, { keepPrevious: true }],
   ])
 })
 

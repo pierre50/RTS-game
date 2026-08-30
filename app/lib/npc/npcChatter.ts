@@ -105,3 +105,51 @@ export function pickNpcGreetingLine(name: string): string {
   const lines = NPC_GREETING_LINES[getLang()] ?? NPC_GREETING_LINES.fr
   return pickRandomItem(lines).replace('{name}', name)
 }
+
+// Shown when the hero talks to one of their own sleeping units — a short in-character half-asleep
+// mumble, addressed to the chief since this is a real (if groggy) wake-up, not just a peek.
+const NPC_SLEEPING_CHATTER_LINES: Record<string, string[]> = {
+  fr: [
+    'Zzz... hein ? Quoi, chef ?',
+    'Mmh... déjà, chef ?',
+    'Zzz... encore cinq minutes, chef...',
+    'Hmm... zzz... j’arrive, chef...',
+    'Zzz... ah, c’est vous, chef.',
+  ],
+  en: [
+    'Zzz... mm, what, chief?',
+    'Mmh... already, chief?',
+    'Zzz... five more minutes, chief...',
+    'Hmm... zzz... coming, chief...',
+    "Zzz... oh, it's you, chief.",
+  ],
+}
+
+export function pickNpcSleepingChatterLine(): string {
+  const lines = NPC_SLEEPING_CHATTER_LINES[getLang()] ?? NPC_SLEEPING_CHATTER_LINES.fr
+  return pickRandomItem(lines)
+}
+
+// Shown for a foreign/neutral sleeper — not the hero's chief, so they stay asleep: plain
+// in-character sleep-talk, not addressed to the hero at all.
+const FOREIGN_NPC_SLEEPING_CHATTER_LINES: Record<string, string[]> = {
+  fr: [
+    'Zzz... zzz...',
+    'Mmh... des moutons...',
+    'Zzz... pas maintenant...',
+    '...zzz... du pain...',
+    'Mmh... zzz zzz...',
+  ],
+  en: [
+    'Zzz... zzz...',
+    'Mmh... sheep...',
+    'Zzz... not now...',
+    '...zzz... bread...',
+    'Mmh... zzz zzz...',
+  ],
+}
+
+export function pickForeignNpcSleepingChatterLine(): string {
+  const lines = FOREIGN_NPC_SLEEPING_CHATTER_LINES[getLang()] ?? FOREIGN_NPC_SLEEPING_CHATTER_LINES.fr
+  return pickRandomItem(lines)
+}

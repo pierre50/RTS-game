@@ -97,15 +97,29 @@ export function resolveHeroNpcProximityInteraction(
   if (isCommandableNpc(hero, unit)) {
     return { action: 'communicate', labelKey: 'heroInteractionCommunicate', target: unit }
   }
+  const sleeping = unit.shelterState?.reason === 'sleep'
   return {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
     npcOptions: {
-      chatterLine: unit.owner === hero.owner ? pickNpcChatterLine() : pickForeignNpcChatterLine(unit),
+      // Leave it unset while asleep — NpcOrdersManager.open already picks the right "Zzz..." line
+      // for an own vs. a foreign sleeper, which this precomputed line would otherwise override.
+      chatterLine: sleeping
+        ? undefined
+        : unit.owner === hero.owner
+        ? pickNpcChatterLine()
+        : pickForeignNpcChatterLine(unit),
       ordersEnabled: false,
     },
     target: unit,
   }
+}
+
+// Only call this at actual interaction-execution time, never from the per-frame proximity-prompt
+// resolver above — it has a side effect (waking the unit).
+export function wakeOwnSleepingNpcForCommunication(hero: UnitEntity, target: UnitEntity): void {
+  if (target.shelterState?.reason !== 'sleep' || target.owner !== hero.owner) return
+  target.context?.unitRest?.wakeSleepingUnitForOrder(target)
 }
 
 export function resolveHeroProximityInteraction({

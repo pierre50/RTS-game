@@ -3,7 +3,7 @@ import { CIVILIZATIONS } from '../../config/civilizations'
 import { getEnvironmentForCiv } from '../../config/environments'
 import { DEFAULT_MAP_TYPE } from '../../config/mapTypes'
 import { CELL_HEIGHT, CELL_WIDTH, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
-import { colors } from '../../lib'
+import { playerColors } from '../../lib'
 import { createFactionSave, FACTION_SCORE } from '../../lib/combat/factions'
 import type { FactionSave, GameConfig, PortalEncounterKind, SaveEntityState, SerializedSave } from '../../types/save'
 import type { PlayerLike } from '../../types/player'
@@ -36,7 +36,7 @@ export type PortalPartyState = {
   hero: SaveEntityState | null
 }
 
-type PortalEncounterRelation = 'hostile' | 'neutral' | 'ally'
+type PortalEncounterRelation = 'hostile' | 'neutral'
 
 export type PortalWorldConfig = {
   config: GameConfig
@@ -96,7 +96,7 @@ function randomAICiv(): string {
 }
 
 function randomPlayerColorExcept(excludedColor?: string | null): string {
-  const pool = colors.filter(playerColor => playerColor !== excludedColor)
+  const pool = playerColors.filter(playerColor => playerColor !== excludedColor)
   return pool[Math.floor(Math.random() * pool.length)] || 'red'
 }
 
@@ -106,14 +106,12 @@ function randomPortalEnvironment(currentEnvironment?: string | null): Environmen
   return pool[Math.floor(Math.random() * pool.length)] || 'Temperate'
 }
 
-function randomPortalEncounterRelation(): PortalEncounterRelation {
-  const relations: PortalEncounterRelation[] = ['hostile', 'neutral', 'ally']
-  return relations[Math.floor(Math.random() * relations.length)] || 'hostile'
+function portalEncounterRelationForColor(color: 'blue' | 'yellow' | 'red'): PortalEncounterRelation {
+  return color === 'blue' ? 'neutral' : 'hostile'
 }
 
-function randomPortalEncounterKind(): PortalEncounterKind {
-  const encounters: PortalEncounterKind[] = ['village', 'bandit']
-  return encounters[Math.floor(Math.random() * encounters.length)] || 'village'
+function portalEncounterKindForColor(color: 'blue' | 'yellow' | 'red'): PortalEncounterKind {
+  return color === 'yellow' ? 'bandit' : 'village'
 }
 
 export function extractPortalParty(state: SerializedSave): PortalPartyState {
@@ -252,19 +250,19 @@ export function configForPortalWorld({
   player: PlayerLike
   worldId: string
 }): PortalWorldConfig {
-  const relation = randomPortalEncounterRelation()
-  const playerTeam = relation === 'ally' ? player.team ?? 1 : player.team ?? null
-  const aiTeam = relation === 'ally' ? playerTeam : null
+  const relation = portalEncounterRelationForColor(color)
+  const playerTeam = player.team ?? null
+  const aiTeam = null
   const playerColor = player.color || color
   const aiColor = randomPlayerColorExcept(playerColor)
   const aiCiv = randomAICiv()
   const factionId = `${worldId}-tribe`
+  const initialScore = relation === 'neutral' ? FACTION_SCORE.neutral : FACTION_SCORE.hostile
   const faction = createFactionSave({
     civilization: aiCiv,
     homeWorldId: worldId,
     id: factionId,
-    initialScore:
-      relation === 'ally' ? FACTION_SCORE.allied : relation === 'neutral' ? FACTION_SCORE.neutral : FACTION_SCORE.hostile,
+    initialScore,
     now,
   })
   return {
@@ -279,7 +277,7 @@ export function configForPortalWorld({
       revealTerrain: map.revealTerrain,
       instantMode: map.instantMode,
       humanStartsWithoutBase: true,
-      portalEncounter: randomPortalEncounterKind(),
+      portalEncounter: portalEncounterKindForColor(color),
       startingResources: map.startingResources,
       resourceDensity: map.resourceDensity,
       difficulty: map.difficulty,

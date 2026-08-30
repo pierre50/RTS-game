@@ -31,7 +31,7 @@
   flex: 1 1 0;
   padding: 8px 12px;
   overflow: hidden;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: bold;
   text-align: center;
   text-overflow: ellipsis;

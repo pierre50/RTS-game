@@ -14,7 +14,11 @@ import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
-import { resolveHeroProximityInteraction, type HeroProximityInteraction } from '../lib/hero/heroProximityInteractions'
+import {
+  resolveHeroProximityInteraction,
+  wakeOwnSleepingNpcForCommunication,
+  type HeroProximityInteraction,
+} from '../lib/hero/heroProximityInteractions'
 import type { ControlsLike } from '../types/context'
 import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -313,6 +317,7 @@ export class HeroController {
     }
     if (interaction.action === 'mount') return this.mountCompanionHorse(interaction.target as CompanionHorse)
     if (interaction.action === 'communicate') {
+      if (this.heroUnit) wakeOwnSleepingNpcForCommunication(this.heroUnit, interaction.target)
       this.controls.context.menu?.openNpcOrders?.([interaction.target], interaction.npcOptions)
       return true
     }

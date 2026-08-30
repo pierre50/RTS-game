@@ -96,11 +96,21 @@ export default class MainMenu {
     buttons.appendChild(this._btn(t('quit'), () => this._quitGame()))
     panel.appendChild(buttons)
 
+    const heroShell = document.createElement('div')
+    heroShell.className = 'menu-hero-shell'
+
+    const hero = document.createElement('img')
+    hero.className = 'menu-hero'
+    hero.src = '/assets/graphics/ui/hero.png'
+    hero.alt = 'Hero Image'
+    heroShell.appendChild(hero)
+
     const copyright = document.createElement('div')
     copyright.className = 'menu-copyright'
     copyright.textContent = '© 2026 Kaelor'
 
     this.el.appendChild(panel)
+    this.el.appendChild(heroShell)
     this.el.appendChild(copyright)
   }
 

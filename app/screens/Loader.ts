@@ -1,6 +1,8 @@
 import { Assets, Container } from 'pixi.js'
 import { t } from '../lib/lang'
 import { ASSET_BUNDLES, ASSET_LOAD_SEQUENCE } from '../config/assetManifest'
+import { registerAnimalSheetAliases } from '../lib/animals/aliases'
+import type { AnimalConfigMap } from '../lib/animals/aliases'
 import type { UnitConfig } from '../types/config'
 import type { SpritesheetLike } from '../types/pixi'
 
@@ -40,7 +42,7 @@ export default class LoaderScreen extends Container {
       buildings: unknown
       units: Record<string, UnitConfig>
       resources: unknown
-      animals: unknown
+      animals: AnimalConfigMap | undefined
       projectiles: unknown
       equipment: unknown
       cells: unknown
@@ -48,11 +50,13 @@ export default class LoaderScreen extends Container {
       buildings: Assets.cache.get('buildingsData'),
       units: Assets.cache.get('unitsData'),
       resources: Assets.cache.get('resourcesData'),
-      animals: Assets.cache.get('animalsData'),
+      animals: Assets.cache.get('animalsData') as AnimalConfigMap | undefined,
       projectiles: Assets.cache.get('projectilesData'),
       equipment: Assets.cache.get('equipmentData'),
       cells: Assets.cache.get('cellsData'),
     }
+
+    registerAnimalSheetAliases(gameConfig.animals)
 
     Assets.cache.set('config', gameConfig)
 

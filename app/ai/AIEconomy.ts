@@ -1,5 +1,6 @@
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, instancesDistance, isWheatMature } from '../lib'
+import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import {
   assignBuilders,
   getBuildersNeeded,
@@ -362,6 +363,8 @@ export class AIEconomy {
     towncenters,
     debug = false,
   }: AIVillagerActionOptions): number {
+    if (isVillagerSleepTime(this.ai.context)) return 0
+
     const workerSnapshot = this.getWorkerSnapshot(villagers)
     const targets = this.getResourceTargets(villagers.length)
     const emptyFarms = farms.filter(farm => !farm.isUsedBy && isWheatMature(farm))

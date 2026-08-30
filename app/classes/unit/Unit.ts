@@ -400,8 +400,8 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToWithCell(target, arrivalCell, action)
   }
 
-  sendToAttack(target: RuntimeEntity) {
-    return this.unitCommands.sendToAttack(target)
+  sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions) {
+    return this.unitCommands.sendToAttack(target, options)
   }
 
   sendToConvert(target: RuntimeEntity) {

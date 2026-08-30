@@ -15,6 +15,7 @@ export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construc
 type UnitRestLocation = 'shelter' | 'outside'
 type UnitRestStatus = 'movingToRest' | 'inside' | 'outside'
 export type UnitRestReason = 'sleep'
+type UnitSleepVisualState = 'sleeping' | 'waking'
 export type UnitRestState = {
   status: UnitRestStatus
   reason?: UnitRestReason
@@ -152,6 +153,8 @@ export interface UnitEntity extends EnergyEntity {
   banditCampAnchor?: GridPosition | null
   banditCampPatrolTaskId?: number | null
   shelterState?: UnitRestState | null
+  sleepVisualState?: UnitSleepVisualState | null
+  visualAnimationToken?: number
   restWakeLockUntilMs?: number | null
   restAlertTargetLabel?: string | null
   interiorExitState?: UnitInteriorExitState | null
@@ -178,7 +181,6 @@ export interface UnitEntity extends EnergyEntity {
   buildQueue?: BuildingEntity[]
   isDirectMoving?: boolean
   requestedMoveSpeedFactor?: number
-  tired?: boolean
   degree?: number
   huntRange?: number
   visibleCells?: Set<number>
@@ -279,7 +281,7 @@ export interface UnitEntity extends EnergyEntity {
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
-  sendToAttack(target: RuntimeEntity): void
+  sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions): void
   sendToConvert(target: RuntimeEntity): void
   sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): void
   sendToHunt(target: RuntimeEntity, immediate?: boolean): void

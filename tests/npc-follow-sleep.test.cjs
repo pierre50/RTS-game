@@ -17,17 +17,34 @@ function loadNpcGoToDispatch(isSleepTime = false) {
       '../buildings/buildingTraining': { getTrainingTargetForUnit: () => null },
       '../buildings/buildingFeedback': { showUnitCannotEnterBuildingMessage: () => {} },
       '../units/villagerSchedule': { isVillagerSleepTime: () => isSleepTime },
+      '../../services/rest/UnitRestRules': {
+        delayUnitRestAfterActivity: unit => {
+          if (!isSleepTime) return false
+          const now = unit.context?.scheduler?.elapsedMs ?? 0
+          unit.restWakeLockUntilMs = Math.max(unit.restWakeLockUntilMs ?? 0, now + 12000)
+          unit.restAlertTargetLabel = null
+          return true
+        },
+        isSleepTime: () => isSleepTime,
+      },
+      '../grid/movement': { getFreeLandCellAroundInstance: () => null },
+      '../mapSpaces': { getMapSpace: () => null },
+      '../entities/overheadIndicator': {
+        clearUnitOverheadIndicator: () => {},
+        setUnitOverheadIndicator: () => {},
+      },
     },
   })
 }
 
-test('stop following sends a released villager to sleep during sleep time', () => {
+test('stop following delays sleep for a released villager during sleep time', () => {
   const calls = []
   const { keepNpcHere } = loadNpcGoToDispatch(true)
   const villager = {
     type: 'Villager',
     followingHero: true,
     context: {
+      scheduler: { elapsedMs: 1000 },
       unitRest: {
         sendUnitToSleep: unit => calls.push(['sleep', unit.label]),
       },
@@ -39,7 +56,8 @@ test('stop following sends a released villager to sleep during sleep time', () =
   keepNpcHere(villager)
 
   assert.equal(villager.followingHero, false)
-  assert.deepEqual(calls, [['stop'], ['sleep', 'villager-1']])
+  assert.equal(villager.restWakeLockUntilMs, 13000)
+  assert.deepEqual(calls, [['stop']])
 })
 
 test('follow me wakes a sleeping villager before enabling follow', () => {

@@ -1,9 +1,4 @@
 @font-face {
-  font-family: 'cobblestone';
-  src: url('../../public/assets/fonts/Cobblestone.ttf') format('truetype');
-  font-display: swap;
-}
-@font-face {
   font-family: 'marcellus-sc';
   src: url('../../public/assets/fonts/MarcellusSC-Regular.ttf') format('truetype');
   font-weight: 400;
@@ -84,7 +79,7 @@ input:focus-visible {
 
 ::-webkit-scrollbar-thumb {
   background-color: var(--form-surface-color);
-  border: 1px solid rgba(223, 177, 91, 0.35);
+  border: 1px solid var(--border-accent-subtle);
   border-radius: var(--main-border-radius);
   box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -92,7 +87,7 @@ input:focus-visible {
 @media (hover: hover) and (pointer: fine) {
   ::-webkit-scrollbar-thumb:hover {
     filter: brightness(var(--ui-hover-brightness));
-    background-color: rgba(223, 177, 91, 0.5);
+    background-color: var(--ui-scrollbar-thumb-hover-bg);
   }
 }
 

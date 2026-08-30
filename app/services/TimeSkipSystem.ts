@@ -99,6 +99,14 @@ export class TimeSkipSystem {
     return Math.max(0, Math.min(1, (elapsed - this.startElapsedMs) / duration))
   }
 
+  getRemainingHours(): number {
+    const elapsed = this.context.dayNight?.getElapsedMs?.() ?? this.startElapsedMs
+    const remainingMs = Math.max(0, this.targetElapsedMs - elapsed)
+    const hourLengthMs = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
+    if (hourLengthMs <= 0) return 0
+    return Math.ceil(remainingMs / hourLengthMs)
+  }
+
   onTick(): void {
     if (!this.active) return
     this.updateOverlay()
@@ -190,18 +198,19 @@ export class TimeSkipSystem {
     this.context.gamebox.appendChild(overlay)
 
     const result = { fill, label, root: overlay }
-    this.updateOverlayElement(result, hours, 0)
+    this.updateOverlayElement(result, 0, hours)
     return result
   }
 
   private updateOverlay(): void {
-    this.updateOverlayElement(this.overlay, this.hours, this.getProgress())
+    this.updateOverlayElement(this.overlay, this.getProgress(), this.getRemainingHours())
   }
 
-  private updateOverlayElement(overlay: TimeSkipOverlay | null, hours: number, progress: number): void {
+  private updateOverlayElement(overlay: TimeSkipOverlay | null, progress: number, remainingHours: number): void {
     if (!overlay) return
-    const label = `${Math.round(Math.max(0, Math.min(100, progress * 100)))}%`
-    overlay.label.textContent = `Waiting ${hours}h... ${label}`
-    overlay.fill.style.width = label
+    const percent = `${Math.round(Math.max(0, Math.min(100, progress * 100)))}%`
+    const unit = remainingHours === 1 ? 'hour' : 'hours'
+    overlay.label.textContent = `Waiting... ${remainingHours} ${unit} remaining`
+    overlay.fill.style.width = percent
   }
 }

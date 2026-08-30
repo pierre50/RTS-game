@@ -1,0 +1,591 @@
+{
+  "frames": {
+    "000_graphics_effects_smoke_light_0.png": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.96875
+      }
+    },
+    "001_graphics_effects_smoke_light_1.png": {
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.96875
+      }
+    },
+    "002_graphics_effects_smoke_light_2.png": {
+      "frame": {
+        "x": 128,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.96875
+      }
+    },
+    "003_graphics_effects_smoke_light_3.png": {
+      "frame": {
+        "x": 192,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9609375
+      }
+    },
+    "004_graphics_effects_smoke_light_4.png": {
+      "frame": {
+        "x": 256,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9609375
+      }
+    },
+    "005_graphics_effects_smoke_light_5.png": {
+      "frame": {
+        "x": 320,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.953125
+      }
+    },
+    "006_graphics_effects_smoke_light_6.png": {
+      "frame": {
+        "x": 384,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9375
+      }
+    },
+    "007_graphics_effects_smoke_light_7.png": {
+      "frame": {
+        "x": 448,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9375
+      }
+    },
+    "008_graphics_effects_smoke_medium_0.png": {
+      "frame": {
+        "x": 512,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9921875
+      }
+    },
+    "009_graphics_effects_smoke_medium_1.png": {
+      "frame": {
+        "x": 576,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.984375
+      }
+    },
+    "010_graphics_effects_smoke_medium_2.png": {
+      "frame": {
+        "x": 640,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9765625
+      }
+    },
+    "011_graphics_effects_smoke_medium_3.png": {
+      "frame": {
+        "x": 704,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.953125
+      }
+    },
+    "012_graphics_effects_smoke_medium_4.png": {
+      "frame": {
+        "x": 768,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.96875
+      }
+    },
+    "013_graphics_effects_smoke_medium_5.png": {
+      "frame": {
+        "x": 832,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.953125
+      }
+    },
+    "014_graphics_effects_smoke_medium_6.png": {
+      "frame": {
+        "x": 896,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9140625
+      }
+    },
+    "015_graphics_effects_smoke_medium_7.png": {
+      "frame": {
+        "x": 960,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 128
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.9921875
+      }
+    },
+    "016_graphics_effects_smoke_heavy_0.png": {
+      "frame": {
+        "x": 1024,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.825
+      }
+    },
+    "017_graphics_effects_smoke_heavy_1.png": {
+      "frame": {
+        "x": 1072,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.825
+      }
+    },
+    "018_graphics_effects_smoke_heavy_2.png": {
+      "frame": {
+        "x": 1120,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7875
+      }
+    },
+    "019_graphics_effects_smoke_heavy_3.png": {
+      "frame": {
+        "x": 1168,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8375
+      }
+    },
+    "020_graphics_effects_smoke_heavy_4.png": {
+      "frame": {
+        "x": 1216,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.825
+      }
+    },
+    "021_graphics_effects_smoke_heavy_5.png": {
+      "frame": {
+        "x": 1264,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8125
+      }
+    },
+    "022_graphics_effects_smoke_heavy_6.png": {
+      "frame": {
+        "x": 1312,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.8
+      }
+    },
+    "023_graphics_effects_smoke_heavy_7.png": {
+      "frame": {
+        "x": 1360,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 80
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.7875
+      }
+    }
+  },
+  "meta": {
+    "app": "custom build script",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1408,
+      "h": 128
+    },
+    "scale": 1
+  }
+}
