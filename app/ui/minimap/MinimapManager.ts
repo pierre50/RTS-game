@@ -321,6 +321,7 @@ export class MinimapManager {
     const color = owner.colorHex
     const id = `minimap-${owner.label}`
     const shouldDrawOwner = map.revealEverything || owner.label === player?.label
+    const shouldDrawOwnerUnits = owner.label === player?.label
 
     let canvas: HTMLCanvasElement
     let context: CanvasRenderingContext2D
@@ -361,6 +362,8 @@ export class MinimapManager {
         selected ? 'white' : color
       )
     })
+    if (!shouldDrawOwnerUnits) return
+
     owner.units.forEach(unit => {
       if (!isMinimapUnitMarker(unit)) return
       if (!isOutsideMinimapEntity(unit)) return

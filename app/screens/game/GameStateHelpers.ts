@@ -10,7 +10,11 @@ import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
 import type { Application, Container } from 'pixi.js'
-import { normalizeHeroAppearance, normalizeHeroAppearanceGender, type HeroHairColor } from '../../lib/lpc/heroAppearance'
+import {
+  normalizeHeroAppearance,
+  normalizeHeroAppearanceGender,
+  type HeroHairColor,
+} from '../../lib/lpc/heroAppearance'
 
 export function saveConfig(config: SerializedSave['config'] | SerializedSave['world'] | undefined): GameConfig {
   return config || {}
@@ -57,6 +61,7 @@ function cloneRecord<T>(record: T | undefined): T | undefined {
 function cloneHeroInventory(inventory: SaveEntityState['inventory']): SaveEntityState['inventory'] {
   if (!inventory) return inventory
   return {
+    resources: cloneRecord(inventory.resources),
     equipment: inventory.equipment ? [...inventory.equipment] : inventory.equipment,
     equipped: cloneRecord(inventory.equipped),
     equippedCounts: cloneRecord(inventory.equippedCounts),

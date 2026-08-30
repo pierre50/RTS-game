@@ -67,7 +67,7 @@ test('attacking a neutral faction starts a war immediately', () => {
   }
   const target = { owner: { label: 'neutral-ai', factionId: 'tribe' } }
 
-  assert.deepEqual(applyDiplomaticAggression(source, target), {
+  assert.deepEqual(applyDiplomaticAggression(source, target, { reason: 'theft:horse' }), {
     changed: true,
     hostileNow: true,
     relation: 'hostile',
@@ -76,6 +76,30 @@ test('attacking a neutral faction starts a war immediately', () => {
   assert.equal(factions.tribe.relationScore, -65)
   assert.equal(sourceOwner.isEnemy(target.owner), true)
   assert.deepEqual(messages, [['Vous êtes maintenant en guerre avec Clan Test.', 'warning']])
+})
+
+test('diplomatic aggression forwards a custom faction relation reason', () => {
+  const { applyDiplomaticAggression } = loadDiplomacy()
+  const reasons = []
+  const factions = {
+    tribe: { id: 'tribe', name: 'Clan Test', relationScore: 0, relationState: 'neutral' },
+  }
+  const source = {
+    context: {
+      getCampaignFactions: () => factions,
+      changeFactionRelation: (_id, _delta, reason) => reasons.push(reason),
+    },
+    owner: {
+      isPlayed: true,
+      label: 'player',
+      isEnemy: () => false,
+    },
+  }
+  const target = { owner: { label: 'neutral-ai', factionId: 'tribe' } }
+
+  applyDiplomaticAggression(source, target, { notify: false, reason: 'theft:horse' })
+
+  assert.deepEqual(reasons, ['theft:horse'])
 })
 
 test('attacking an allied team only breaks the alliance on the first incident', () => {

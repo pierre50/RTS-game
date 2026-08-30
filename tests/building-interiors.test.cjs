@@ -6,7 +6,18 @@ function loadBuildingInteriors() {
   return loadTsModule('app/lib/buildings/interiors.ts', {
     mocks: {
       '../../constants': {
-        BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
+        BUILDING_TYPES: {
+          archeryRange: 'ArcheryRange',
+          barracks: 'Barracks',
+          granary: 'Granary',
+          house: 'House',
+          market: 'Market',
+          stable: 'Stable',
+          storagePit: 'StoragePit',
+          temple: 'Temple',
+          townCenter: 'TownCenter',
+          watchTower: 'WatchTower',
+        },
       },
     },
   })
@@ -43,7 +54,7 @@ test('building interior entry ignores unfinished and unsupported buildings', () 
   const hero = { context: { map: { grid } }, i: 6, j: 7 }
 
   assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: false, j: 5, type: 'TownCenter' }]), null)
-  assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: true, j: 5, type: 'Barracks' }]), null)
+  assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: true, j: 5, type: 'Farm' }]), null)
 })
 
 test('house interior entry uses the same grid cell flow', () => {
@@ -65,6 +76,74 @@ test('house interior entry uses the same grid cell flow', () => {
   assert.equal(isBuildingInteriorSupported(house), true)
   assert.equal(findBuildingInteriorEntryTarget(hero, [house]), house)
   assert.equal(findBuildingInteriorEntryTarget({ ...hero, j: 6 }, [house]), null)
+})
+
+test('stable interior entry uses the same size and entry flow as a house', () => {
+  const { findBuildingInteriorEntryTarget, getBuildingInteriorBlueprintType, isBuildingInteriorSupported } =
+    loadBuildingInteriors()
+  const grid = makeGrid(12)
+  const stable = {
+    context: { map: { grid } },
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    type: 'Stable',
+  }
+  const hero = {
+    context: { map: { grid } },
+    i: 6,
+    j: 7,
+  }
+
+  assert.equal(isBuildingInteriorSupported(stable), true)
+  assert.equal(getBuildingInteriorBlueprintType(stable), 'Stable')
+  assert.equal(findBuildingInteriorEntryTarget(hero, [stable]), stable)
+})
+
+test('interior decorations vary by building type', () => {
+  const { getBuildingInteriorDecorationLayout } = loadTsModule('app/lib/buildings/interiorDecorations.ts', {
+    mocks: {
+      '../../constants': {
+        BUILDING_TYPES: {
+          archeryRange: 'ArcheryRange',
+          barracks: 'Barracks',
+          campBucket: 'CampBucket',
+          campCrate: 'CampCrate',
+          campDryingRack: 'CampDryingRack',
+          campFencePost: 'CampFencePost',
+          campJarSmall: 'CampJarSmall',
+          campJarLarge: 'CampJarLarge',
+          campRockPile: 'CampRockPile',
+          campSkull: 'CampSkull',
+          campTotemHorns: 'CampTotemHorns',
+          campTotemPlain: 'CampTotemPlain',
+          fireCamp: 'FireCamp',
+          granary: 'Granary',
+          house: 'House',
+          market: 'Market',
+          stable: 'Stable',
+          storagePit: 'StoragePit',
+          temple: 'Temple',
+          watchTower: 'WatchTower',
+        },
+      },
+    },
+  })
+
+  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type), [
+    'CampBucket',
+    'CampDryingRack',
+  ])
+  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type), [
+    'FireCamp',
+    'CampCrate',
+    'CampTotemPlain',
+  ])
+  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Temple' }).map(item => item.type), [
+    'CampTotemHorns',
+    'CampJarLarge',
+    'CampJarSmall',
+  ])
 })
 
 test('building interior entry offset matches the measured exterior door cell', () => {

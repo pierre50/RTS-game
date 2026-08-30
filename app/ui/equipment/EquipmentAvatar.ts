@@ -1,6 +1,6 @@
-import { renderEquipmentAvatar } from '../lib/avatar'
-import { isDynamicEquipmentKey } from '../lib/lpc/equipment'
-import { loadDynamicEquipmentAssetQueued } from '../lib/lpc/lazyEquipmentAssets'
+import { renderEquipmentAvatar } from '../../lib/avatar'
+import { isDynamicEquipmentKey } from '../../lib/lpc/equipment'
+import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
 import type { Application } from 'pixi.js'
 
 type EquipmentAvatarPerformanceMonitor = {

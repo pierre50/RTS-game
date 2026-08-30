@@ -197,6 +197,23 @@
       "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
     }
   },
+  "Trap": {
+    "size": 1,
+    "occlusionFade": false,
+    "providesVision": false,
+    "requiresActiveSightInteraction": true,
+    "overheadIndicatorOffsetY": 30,
+    "totalHitPoints": 20,
+    "constructionTime": 0,
+    "instantPlacement": true,
+    "inventoryItem": "trap",
+    "useSpriteShadow": true,
+    "spriteShadowAnchor": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "cost": {}
+  },
   "Market": {
     "size": 3,
     "sight": 10,

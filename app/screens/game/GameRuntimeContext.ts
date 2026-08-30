@@ -6,7 +6,7 @@ import { ActionScheduler } from '../../lib/actionScheduler'
 import { t } from '../../lib/lang'
 import { PerformanceMonitor } from '../../services/PerformanceMonitor'
 import type { DevConsoleRuntimeContext } from '../../dev-console/types'
-import type { GameContextLike, PerformanceMonitorLike, SchedulerLike } from '../../types/context'
+import type { GameContextLike, PerformanceMonitorLike, SchedulerLike, VisionChangeEvent } from '../../types/context'
 import type { BuildingEntity, ResourceEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
@@ -46,6 +46,7 @@ export type GameRuntimeContextHost = {
   travelOutOfBuildingInterior(): Promise<void>
   routeInteriorUnitToExit(unit: UnitEntity): void
   synchronizeBuildingInteriorAfterTimeJump(): void
+  syncStableInteriorHorses(building: BuildingEntity): void
   travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void>
 }
 
@@ -54,6 +55,7 @@ export function createGameRuntimeContext(
   app: Application,
   gamebox: HTMLElement
 ): GameRuntimeContext {
+  const visionChangeListeners = new Set<(event: VisionChangeEvent) => void>()
   const context: GameRuntimeContext = {
     app,
     gamebox,
@@ -85,6 +87,15 @@ export function createGameRuntimeContext(
     getWorldGraph: () => (host._campaignSave ? getRealWorldGraph(host._campaignSave) : null),
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
     changeFactionRelation: (factionId: string, delta: number) => host._changeFactionRelation(factionId, delta),
+    notifyVisionChange: event => {
+      for (const listener of visionChangeListeners) listener(event)
+    },
+    onVisionChange: callback => {
+      visionChangeListeners.add(callback)
+      return () => {
+        visionChangeListeners.delete(callback)
+      }
+    },
     getCurrentWorldId: () => host._campaignSave?.currentWorldId ?? null,
     travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
       host.travelThroughPortal(portal, color).catch(error => {
@@ -106,6 +117,7 @@ export function createGameRuntimeContext(
     },
     routeInteriorUnitToExit: (unit: UnitEntity) => host.routeInteriorUnitToExit(unit),
     synchronizeBuildingInteriorAfterTimeJump: () => host.synchronizeBuildingInteriorAfterTimeJump(),
+    syncStableInteriorHorses: (building: BuildingEntity) => host.syncStableInteriorHorses(building),
   }
 
   context.performance = new PerformanceMonitor(app)

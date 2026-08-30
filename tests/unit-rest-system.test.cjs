@@ -25,8 +25,17 @@ const constants = {
   ACTION_TYPES: { attack: 'attack' },
   BUILDING_TYPES: { fireCamp: 'FireCamp', house: 'House', townCenter: 'TownCenter' },
   FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+  PLAYER_TYPES: { bandits: 'Bandits' },
   SHEET_TYPES: { dying: 'dyingSheet', standing: 'standingSheet' },
-  UNIT_TYPES: { hero: 'Hero', infantry: 'Fantassin', villager: 'Villager' },
+  UNIT_TYPES: {
+    banditArcher: 'BanditArcher',
+    banditChief: 'BanditChief',
+    banditSword: 'BanditSword',
+    hero: 'Hero',
+    infantry: 'Fantassin',
+    villager: 'Villager',
+  },
+  WORK_TYPES: { attacker: 'attacker' },
 }
 
 function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
@@ -299,6 +308,65 @@ test('villagers stay awake before 18h', () => {
   assert.equal(villager.shelterState, undefined)
 })
 
+test('player villagers stay awake at night in an undominated portal world', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], isPlayed: true }
+  const villager = createUnit(owner)
+  const context = createContext(23, [owner], calls)
+  context.getCurrentWorldId = () => 'hostile-world'
+  context.getWorldGraph = () => ({
+    rootWorldId: 'home-world',
+    nodes: {
+      'home-world': { id: 'home-world', children: [], discoveredAt: 0, visitedAt: 0 },
+      'hostile-world': {
+        id: 'hostile-world',
+        children: [],
+        discoveredAt: 0,
+        encounter: 'village',
+        factionIds: ['hostile-faction'],
+        parentId: 'home-world',
+        visitedAt: 0,
+      },
+    },
+  })
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  const system = new UnitRestSystem(context)
+  system.sendUnitToSleep(villager)
+
+  assert.equal(villager.shelterState, undefined)
+})
+
+test('local faction villagers can sleep in their dominated portal world', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], factionId: 'local-faction' }
+  const villager = createUnit(owner)
+  const context = createContext(23, [owner], calls)
+  context.getCurrentWorldId = () => 'local-world'
+  context.getWorldGraph = () => ({
+    rootWorldId: 'home-world',
+    nodes: {
+      'home-world': { id: 'home-world', children: [], discoveredAt: 0, visitedAt: 0 },
+      'local-world': {
+        id: 'local-world',
+        children: [],
+        discoveredAt: 0,
+        encounter: 'village',
+        factionIds: ['local-faction'],
+        parentId: 'home-world',
+        visitedAt: 0,
+      },
+    },
+  })
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(villager.shelterState.reason, 'sleep')
+})
+
 test('rest tick sends villagers and non-villagers to sleep without tired state', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
@@ -425,6 +493,89 @@ test('time jump to night settles military sleepers around a visible fire camp in
   // `true` from the unit's last walk) must be explicitly cleared — otherwise a later pause/resume
   // cycle that calls sprite.play() would have PIXI cycle the hurt sheet forever.
   assert.equal(soldier.sprite.loop, false)
+})
+
+test('time jump to night keeps expedition bandits awake away from their camp', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], name: 'Bandits', type: constants.PLAYER_TYPES.bandits }
+  const bandit = createUnit(owner, {
+    dest: { i: 2, j: 2, label: 'hero-camp' },
+    label: 'bandit-raider',
+    path: [{ i: 1, j: 0 }],
+    type: constants.UNIT_TYPES.banditSword,
+    work: constants.WORK_TYPES.attacker,
+  })
+  const context = createContext(12, [owner], calls)
+  bandit.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  context.dayNight.state.hour = 23
+  system.synchronizeAfterTimeJump()
+
+  assert.equal(bandit.shelterState, undefined)
+  assert.equal(bandit.dest.label, 'hero-camp')
+  assert.equal(bandit.work, constants.WORK_TYPES.attacker)
+})
+
+test('time jump to night keeps hostile military attackers awake during an external attack', () => {
+  const calls = []
+  const heroOwner = { label: 'player' }
+  const attackerOwner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other === heroOwner
+    },
+  }
+  const target = { i: 2, j: 2, label: 'hero-camp', owner: heroOwner }
+  const soldier = createUnit(attackerOwner, {
+    action: constants.ACTION_TYPES.attack,
+    dest: target,
+    label: 'hostile-soldier',
+    path: [{ i: 1, j: 0 }],
+    type: constants.UNIT_TYPES.infantry,
+    work: constants.WORK_TYPES.attacker,
+  })
+  const context = createContext(12, [attackerOwner], calls)
+  soldier.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  context.dayNight.state.hour = 23
+  system.synchronizeAfterTimeJump()
+  system.sendUnitToSleep(soldier)
+
+  assert.equal(soldier.shelterState, undefined)
+  assert.equal(soldier.dest, target)
+  assert.equal(soldier.action, constants.ACTION_TYPES.attack)
+})
+
+test('time jump to night lets camp bandits sleep near their camp anchor', () => {
+  const calls = []
+  const owner = { units: [], buildings: [], name: 'Bandits', type: constants.PLAYER_TYPES.bandits }
+  const anchor = { i: 5, j: 5 }
+  const bandit = createUnit(owner, {
+    banditCampAnchor: anchor,
+    campPatrolAnchor: anchor,
+    i: 6,
+    j: 5,
+    label: 'bandit-guard',
+    path: [{ i: 5, j: 5 }],
+    type: constants.UNIT_TYPES.banditSword,
+    work: constants.WORK_TYPES.attacker,
+  })
+  const context = createContext(12, [owner], calls)
+  bandit.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  context.dayNight.state.hour = 23
+  system.synchronizeAfterTimeJump()
+
+  assert.equal(bandit.shelterState.reason, 'sleep')
+  assert.equal(bandit.shelterState.status, 'outside')
+  assert.ok(Math.abs(bandit.i - anchor.i) + Math.abs(bandit.j - anchor.j) <= 4)
 })
 
 test('sleeping military wake on hero insight and do not immediately sleep again', () => {

@@ -46,6 +46,27 @@ test('keeps overlapping viewers until the last contributor leaves', () => {
   assert.equal(grid.visibleBy.size, 0)
 })
 
+test('notifies visibility changes when viewers enter or leave a cell', () => {
+  const changes = []
+  const grid = new VisionGrid(8, [], null, false, (i, j) => changes.push([i, j]))
+  const scout = { label: 'scout' }
+  const tower = { label: 'tower' }
+
+  assert.equal(grid.addViewer(4, 4, scout), true)
+  assert.equal(grid.addViewer(4, 4, scout), false)
+  assert.equal(grid.addViewer(4, 4, tower), true)
+  assert.equal(grid.removeViewer(4, 4, scout), true)
+  assert.equal(grid.removeViewer(4, 4, scout), false)
+  assert.equal(grid.removeViewer(4, 4, tower), true)
+
+  assert.deepEqual(changes, [
+    [4, 4],
+    [4, 4],
+    [4, 4],
+    [4, 4],
+  ])
+})
+
 test('round-trips the existing save format and restores entity references', () => {
   const saved = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({})))
   saved[1][2] = { viewed: true, viewBy: ['unit-1'] }

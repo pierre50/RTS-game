@@ -62,6 +62,7 @@ function loadUnitActions(calls, captureHorse) {
         canUpdateMinimap: () => false,
         degreeToDirection: () => 'south',
         getInstanceDegree: () => 0,
+        isWildHorse: horse => horse?.type === 'Horse' && horse?.tamingStatus !== 'tamed',
         instancesDistance: (a, b) => Math.hypot((a.i ?? 0) - (b.i ?? 0), (a.j ?? 0) - (b.j ?? 0)),
         onSpriteLoopAtFrame: () => {},
         playSoundCue: () => {},
@@ -291,6 +292,55 @@ test('villager horse capture repath throttle survives synchronous action reentry
     calls.some(call => call[0] === 'lasso'),
     false
   )
+})
+
+test('villager horse capture refuses a tamed horse', () => {
+  const calls = []
+  const horse = {
+    family: 'animal',
+    type: 'Horse',
+    tamingStatus: 'tamed',
+    label: 'horse-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    isDead: false,
+    isDestroyed: false,
+  }
+  const scheduler = {
+    elapsedMs: 500,
+    tasks: [],
+    add(callback) {
+      this.tasks.push(callback)
+      return this.tasks.length
+    },
+    remove: id => calls.push(['removeTask', id]),
+  }
+  const unit = {
+    family: 'unit',
+    type: 'Villager',
+    label: 'villager-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    action: 'captureHorse',
+    dest: horse,
+    owner: { buildings: [] },
+    context: { scheduler, map: { addChild: () => calls.push(['addChild']) } },
+    sprite: {},
+    path: [],
+    getActionCondition: () => true,
+    affectNewDest: () => calls.push(['affectNewDest']),
+  }
+
+  const UnitActions = loadUnitActions(calls, horse)
+  const actions = new UnitActions(unit)
+  actions.getAction('captureHorse')
+
+  assert.deepEqual(calls, [['affectNewDest']])
+  assert.equal(scheduler.tasks.length, 0)
 })
 
 test('villager horse capture cleanup releases the attached horse when the order changes', () => {

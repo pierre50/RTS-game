@@ -11,7 +11,14 @@ import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/
 import { getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitRestReason, UnitRestState } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
-import { getNearestRestSite, getShelterEntryCell, isUsableShelter, REST_MAX_RETRIES } from './UnitRestRules'
+import {
+  canStartSleepRest,
+  canSleepWithoutRestSite,
+  getNearestRestSite,
+  getShelterEntryCell,
+  isUsableShelter,
+  REST_MAX_RETRIES,
+} from './UnitRestRules'
 import {
   cancelSleepingWakeVisual,
   clearSleepingVisualState,
@@ -280,10 +287,14 @@ export function wakeUnitInstant(unit: UnitEntity, options: { force?: boolean; mo
 }
 
 export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason): boolean {
+  if (reason === 'sleep' && !canStartSleepRest(unit)) return false
   const restSite = getNearestRestSite(unit)
   if (!restSite) {
-    if (reason === 'sleep') sleepOutside(unit, reason)
-    return reason === 'sleep'
+    if (reason === 'sleep' && canSleepWithoutRestSite(unit)) {
+      sleepOutside(unit, reason)
+      return true
+    }
+    return false
   }
   rememberRestState(unit, {
     status: 'movingToRest',

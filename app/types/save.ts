@@ -6,6 +6,7 @@ import type { SerializedVisionGrid } from './vision'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 import type { VillagerAutonomyJob } from './entities'
 import type { HeroAppearanceConfig } from '../lib/lpc/heroAppearance'
+import type { HorseTamingStatus } from '../lib/horses/horseTaming'
 
 export type SaveReference = string | [number, number, string?]
 export type SaveGridPoint = { i: number; j: number }
@@ -35,16 +36,19 @@ export type SaveEntityState = {
   lastEnergySpentAt?: number
   hitPoints?: number
   horseColor?: string
+  trapPrey?: boolean
+  tamingStatus?: HorseTamingStatus
   companionHorseColor?: string | null
   campPatrolAnchor?: SaveGridPoint | null
   banditCampAnchor?: SaveGridPoint | null
+  containedAnimalType?: string | null
   healthRegenRate?: number
   healthRegenDelay?: number
   healthRegenMultiplier?: number
   lastHealthDamagedAt?: number
   i: number
   horseAmount?: number
-  stableHorses?: Array<{ horseColor?: string }>
+  stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   inactif?: boolean
   isBuilt?: boolean
   isDead?: boolean
@@ -52,6 +56,7 @@ export type SaveEntityState = {
   isNaturalResource?: boolean
   isChief?: boolean
   inventory?: {
+    resources?: ResourceAmount
     equipment?: string[]
     equipped?: Partial<Record<HeroEquipmentSlot, string>>
     equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>

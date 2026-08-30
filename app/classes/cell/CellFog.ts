@@ -35,6 +35,7 @@ type FogInstance = RuntimeEntity & {
   assetType?: string
   textureName?: string
   children?: Array<{ tint?: number }>
+  hideWhenFogged?: boolean
   owner?: RuntimeEntity['owner'] & { isPlayed?: boolean; color?: string }
   visible?: boolean
 }
@@ -126,6 +127,11 @@ export class CellFog {
   setFogChildren(instance: FogInstance, init: boolean): void {
     const { cell } = this
     const { player, map } = cell.context
+    if (instance.hideWhenFogged && !map.revealEverything) {
+      this.removeFogBuilding(instance)
+      updateInstanceRenderVisibility(instance)
+      return
+    }
     if (!playerCanSeeInstance(instance, player)) {
       if (instance.owner && !instance.owner.isPlayed) {
         if (!init && instance.family === FAMILY_TYPES.building) {

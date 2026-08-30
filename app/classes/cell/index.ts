@@ -1,6 +1,7 @@
-import { Container, Assets, Sprite, Texture } from 'pixi.js'
-import { cartesianToIsometric, getTexture, textureRefToString } from '../../lib'
-import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { Container, Assets } from 'pixi.js'
+import type { Sprite } from 'pixi.js'
+import { cartesianToIsometric } from '../../lib'
+import { CELL_DEPTH, FAMILY_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
@@ -8,31 +9,18 @@ import type { TextureRef } from '../../lib'
 import { CellFog, type FogCellLike } from './CellFog'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
+import { createCellTerrainSprite } from './CellSpriteFactory'
+import {
+  assignCellCommonState,
+  createEmptyTerrainAppearance,
+  type CellConfig,
+  type CellContextLike,
+  type CellMapLike,
+} from './CellTypes'
 export { GenerationCell } from './GenerationCell'
-export { LogicalCell, type LogicalCellSource, type TerrainAppearance } from './LogicalCell'
-export { RuntimeCell, type RuntimeCellSource } from './RuntimeCell'
-export { TerrainBakeCell, type TerrainBakeCellContext } from './TerrainBakeCell'
 
-type CellMap = {
-  grid: RuntimeCell[][]
-  size: number
-  revealEverything?: boolean
-  seed?: string | number
-  randomRange(min: number, max: number): number
-  randomItem<T>(items: T[]): T
-  invalidateReliefCoastDistances?: () => void
-  invalidateWaterOverlay?: () => void
-  registerWaterBorderSurface?: (
-    sprite: { texture: Texture; destroyed?: boolean },
-    frames: Texture[],
-    initialFrame?: number
-  ) => () => void
-}
-
-type CellContext = {
-  map: CellMap
-  player?: { views?: { isViewed(i: number, j: number): boolean; isVisible(i: number, j: number): boolean } }
-}
+type CellMap = CellMapLike
+type CellContext = CellContextLike
 
 type CellOptions = {
   i: number
@@ -43,12 +31,6 @@ type CellOptions = {
   terrainHidden?: boolean
   skipFog?: boolean
   fogSprites?: FogSpriteMemory[]
-}
-
-type CellConfig = {
-  category?: string
-  color?: string | number
-  assets?: TextureRef[]
 }
 
 type SavedFogSprite = FogSpriteMemory & {
@@ -67,23 +49,23 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   category?: string
   color?: string | number
   assets: TextureRef[]
-  solid: boolean
-  inclined: boolean
-  border: boolean
-  waterBorder: boolean
-  terrainHidden: boolean
+  solid!: boolean
+  inclined!: boolean
+  border!: boolean
+  waterBorder!: boolean
+  terrainHidden!: boolean
   z: number
-  viewed: boolean
+  viewed!: boolean
   viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
-  _hasFog: boolean
+  _hasFog!: boolean
   terrainTextureName: string
   sprite: CellSprite | null
   cellFog: CellFog | null
   cellTerrain: CellTerrain
-  unregisterWaterBorderSurface: (() => void) | null
+  unregisterWaterBorderSurface!: (() => void) | null
   _terrainRenderResourcesReleased?: boolean
   _terrainAppearance: {
     patchBorders: Set<string> | null
@@ -100,34 +82,18 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     const map = context.map
     this.family = FAMILY_TYPES.cell
     this.map = map
-
-    this.solid = false
-    this.visible = false
-    this.zIndex = 0
-    this.inclined = false
-    this.border = false
-    this.waterBorder = false
-    this.terrainHidden = false
+    this.i = 0
+    this.j = 0
+    this.type = ''
     this.z = 0
-    this.viewed = false
-    this.viewBy = new Set()
-    this.has = null
+    this.assets = []
     this.corpses = new Set()
     this.fogSprites = []
-    this._hasFog = false
-    this.i = options.i
-    this.j = options.j
-    this.z = options.z ?? this.z
-    this.type = options.type
-    this.assets = []
+    this.has = null
     this.terrainTextureName = ''
-    this.unregisterWaterBorderSurface = null
-    this._terrainAppearance = {
-      patchBorders: null,
-      patchBorderGroundType: null,
-      relief: null,
-      waterBorder: null,
-    }
+    this.viewBy = new Set()
+    this._terrainAppearance = createEmptyTerrainAppearance()
+    assignCellCommonState(this, options)
 
     Object.assign(this, options)
     const definition = Assets.cache.get('config').cells[this.type] as CellConfig
@@ -141,19 +107,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
     this.zIndex = this.i + this.j
     this.sortableChildren = true
 
-    const textureRef = options.textureName || (this.assets.length ? map.randomItem(this.assets) : null)
-    this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
-    const texture = textureRef ? getTexture(textureRef, Assets) : Texture.EMPTY
-    this.sprite = new Sprite(texture) as CellSprite
-    this.sprite.zIndex = 0
-    this.sprite.label = LABEL_TYPES.sprite
-    this.sprite.anchor.set(
-      Math.floor(texture.width / 2) / texture.width,
-      Math.floor(texture.height / 2) / texture.height
-    )
-    this.sprite.roundPixels = true
-    this.sprite.eventMode = 'none'
-    this.sprite.renderable = !this.terrainHidden && this.category !== 'Water'
+    this.sprite = createCellTerrainSprite(this, map, options.textureName) as CellSprite
     this.addChild(this.sprite)
 
     this.cellFog = options.skipFog ? null : new CellFog(this)

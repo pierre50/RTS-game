@@ -9,20 +9,78 @@ export type BuildingInteriorDecorationSpec = {
   type: string
 }
 
+type DecorationTemplate = Omit<BuildingInteriorDecorationSpec, 'type'> & {
+  type: keyof typeof BUILDING_TYPES
+}
+
+const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
+  [BUILDING_TYPES.stable]: [
+    { key: 'bucket-west', type: 'campBucket', offsetI: -2, offsetJ: 1 },
+    { key: 'drying-rack-east', type: 'campDryingRack', offsetI: 3, offsetJ: -1 },
+  ],
+  [BUILDING_TYPES.house]: [{ key: 'jar-se', type: 'campJarSmall', offsetI: 2, offsetJ: 1 }],
+  [BUILDING_TYPES.barracks]: [
+    { key: 'crate-west', type: 'campCrate', offsetI: -3, offsetJ: 0 },
+    { key: 'totem-north', type: 'campTotemPlain', offsetI: 0, offsetJ: -3 },
+  ],
+  [BUILDING_TYPES.archeryRange]: [
+    { key: 'fence-west', type: 'campFencePost', offsetI: -3, offsetJ: 1 },
+    { key: 'drying-rack-east', type: 'campDryingRack', offsetI: 3, offsetJ: 0 },
+  ],
+  [BUILDING_TYPES.temple]: [
+    { key: 'totem-center', type: 'campTotemHorns', offsetI: 0, offsetJ: -1 },
+    { key: 'jar-west', type: 'campJarLarge', offsetI: -2, offsetJ: 2 },
+    { key: 'jar-east', type: 'campJarSmall', offsetI: 2, offsetJ: 2 },
+  ],
+  [BUILDING_TYPES.market]: [
+    { key: 'crate-nw', type: 'campCrate', offsetI: -2, offsetJ: -2 },
+    { key: 'jar-se', type: 'campJarLarge', offsetI: 2, offsetJ: 2 },
+  ],
+  [BUILDING_TYPES.granary]: [
+    { key: 'bucket-west', type: 'campBucket', offsetI: -2, offsetJ: 1 },
+    { key: 'drying-rack-east', type: 'campDryingRack', offsetI: 2, offsetJ: -1 },
+  ],
+  [BUILDING_TYPES.storagePit]: [
+    { key: 'crate-west', type: 'campCrate', offsetI: -2, offsetJ: 0 },
+    { key: 'rock-east', type: 'campRockPile', offsetI: 2, offsetJ: 1 },
+  ],
+  [BUILDING_TYPES.watchTower]: [
+    { key: 'skull-north', type: 'campSkull', offsetI: 0, offsetJ: -2 },
+    { key: 'crate-south', type: 'campCrate', offsetI: 0, offsetJ: 2 },
+  ],
+}
+
+const DEFAULT_DECORATION_LAYOUT: DecorationTemplate[] = [
+  { key: 'crate-nw', type: 'campCrate', offsetI: -3, offsetJ: -2 },
+  { key: 'rock-se', type: 'campRockPile', offsetI: 3, offsetJ: 2 },
+]
+
+const WITHOUT_FIRE_CAMP = new Set<string>([
+  BUILDING_TYPES.granary,
+  BUILDING_TYPES.stable,
+  BUILDING_TYPES.storagePit,
+  BUILDING_TYPES.temple,
+  BUILDING_TYPES.watchTower,
+])
+
+function resolveDecoration(template: DecorationTemplate): BuildingInteriorDecorationSpec {
+  return { ...template, type: BUILDING_TYPES[template.type] }
+}
+
+function shouldIncludeFireCamp(buildingType: string, includeFireCamp: boolean): boolean {
+  return includeFireCamp && !WITHOUT_FIRE_CAMP.has(buildingType)
+}
+
 export function getBuildingInteriorDecorationLayout(
   building: Pick<BuildingEntity, 'type'>,
   options: { includeFireCamp?: boolean } = {}
 ): BuildingInteriorDecorationSpec[] {
   const { includeFireCamp = true } = options
-  const base = includeFireCamp ? [{ key: 'firecamp-center', type: BUILDING_TYPES.fireCamp, offsetI: 0, offsetJ: 0 }] : []
-  if (building.type === BUILDING_TYPES.house) {
-    return [...base, { key: 'jar-se', type: BUILDING_TYPES.campJarSmall, offsetI: 2, offsetJ: 1 }]
-  }
-  return [
-    ...base,
-    { key: 'crate-nw', type: BUILDING_TYPES.campCrate, offsetI: -3, offsetJ: -2 },
-    { key: 'rock-se', type: BUILDING_TYPES.campRockPile, offsetI: 3, offsetJ: 2 },
-  ]
+  const layout = DECORATION_LAYOUTS[building.type] ?? DEFAULT_DECORATION_LAYOUT
+  const base = shouldIncludeFireCamp(building.type, includeFireCamp)
+    ? [{ key: 'firecamp-center', type: BUILDING_TYPES.fireCamp, offsetI: 0, offsetJ: 0 }]
+    : []
+  return [...base, ...layout.map(resolveDecoration)]
 }
 
 export function interiorCellKey(cell: Pick<RuntimeCell, 'i' | 'j'>): string {

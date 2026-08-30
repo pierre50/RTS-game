@@ -16,7 +16,9 @@ function createBehavior({
   nearby = [],
   elapsedMs = 0,
   altitude = 0,
+  type = 'Deer',
   strategy = 'runaway',
+  tamingStatus,
   ambientWalkDelayMin,
   ambientWalkDelayMax,
   ambientWalkRange,
@@ -45,6 +47,8 @@ function createBehavior({
     remove: () => {},
   }
   const animal = {
+    type,
+    tamingStatus,
     i: 5,
     j: 5,
     sight: 4,
@@ -134,6 +138,23 @@ test('a nearby villager interrupts idle behavior immediately', () => {
   assert.deepEqual(findInstancesInSightCalls, [{ useInsightRange: true }])
   assert.deepEqual(alertCalls, [animal])
   assert.deepEqual(calls, [['reaction', 'villager-1']])
+})
+
+test('a tamed horse does not flee from a nearby villager', () => {
+  const villager = { label: 'villager-1', family: 'unit', type: 'Villager', distance: 2 }
+  const { behavior, calls, alertCalls } = createBehavior({
+    nearby: [villager],
+    type: 'Horse',
+    tamingStatus: 'tamed',
+  })
+
+  behavior.update()
+
+  assert.deepEqual(alertCalls, [])
+  assert.equal(
+    calls.some(call => call[0] === 'reaction'),
+    false
+  )
 })
 
 test('an idle animal occasionally walks to a nearby free cell', () => {

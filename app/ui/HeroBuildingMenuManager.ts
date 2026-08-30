@@ -88,9 +88,7 @@ export class HeroBuildingMenuManager {
 
   canOpenFor(building: BuildingEntity | null | undefined): building is BuildingEntity {
     const hero = this.menu.context.controls.heroUnit
-    const player = this.menu.context.player
     if (!hero || !building || building.isDestroyed || building.isDead) return false
-    if (building.owner !== player || !building.owner?.isPlayed) return false
     return isHeroInteractionTargetReachable(hero, null, building)
   }
 
@@ -224,6 +222,8 @@ export class HeroBuildingMenuManager {
     element.type = 'button'
     element.className = 'ui-btn ui-action-row'
     element.id = button.id ? `hero-${button.id}` : ''
+    if (!button.icon && !button.onCreate) element.classList.add('is-text-only')
+    if (button.id?.startsWith('stableDebug')) element.classList.add('hero-building-menu-debug')
     const disabled = button.disabled?.() ?? false
     element.disabled = disabled
 
@@ -239,8 +239,11 @@ export class HeroBuildingMenuManager {
         })
       })
     } else {
-      const image = this.menu.createActionIcon(typeof button.icon === 'function' ? button.icon() : (button.icon ?? ''))
-      icon.appendChild(image)
+      const iconSrc = typeof button.icon === 'function' ? button.icon() : button.icon
+      if (iconSrc) {
+        const image = this.menu.createActionIcon(iconSrc)
+        icon.appendChild(image)
+      }
     }
 
     const label = document.createElement('span')
@@ -263,7 +266,7 @@ export class HeroBuildingMenuManager {
     status.appendChild(progress)
     status.appendChild(statusText)
 
-    element.appendChild(icon)
+    if (icon.childElementCount > 0) element.appendChild(icon)
     element.appendChild(label)
     element.appendChild(meta)
     element.appendChild(status)

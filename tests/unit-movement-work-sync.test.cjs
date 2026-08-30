@@ -18,6 +18,7 @@ function loadUnitMovement(calls) {
       captureHorse: 'captureHorse',
       hunt: 'hunt',
       takemeat: 'takemeat',
+      train: 'train',
     },
     BUILDING_TYPES: {},
     FAMILY_TYPES: { animal: 'animal', building: 'building' },
@@ -59,7 +60,7 @@ function loadUnitMovement(calls) {
         getGroundReliefLevel: () => 0,
         getInstanceClosestFreeCellPath: () => [],
         getInstanceDegree: () => 0,
-        getInstancePath: () => [],
+        getInstancePath: unit => unit.context?.pathToReturn ?? [],
         getInstanceZIndex: () => 0,
         getRoundedIsoFootprintPoints: () => [],
         instanceContactInstance: () => true,
@@ -86,6 +87,8 @@ function loadUnitMovement(calls) {
       return {
         canUnitWaitOnCell: (_unit, cell) =>
           Boolean(cell && !cell.solid && cell.category !== 'Water' && !cell.border && !cell.waterBorder),
+        canUnitUseCellAsIdleDestination: (_unit, cell) =>
+          Boolean(cell && !cell.solid && cell.category !== 'Water' && !cell.border && !cell.waterBorder),
         createReservedPassageCellLookup: () => ({
           has: () => false,
           size: 0,
@@ -94,6 +97,12 @@ function loadUnitMovement(calls) {
         routeUnitAwayFromPassageCell: () => false,
         shouldUnitAvoidPassageStop: () => false,
         unitHasActivePassageStopIntent: () => false,
+      }
+    }
+    if (request === '../../lib/buildings/interiors') {
+      return {
+        getBuildingInteriorEntryCell: building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
+        isBuildingInteriorSupported: building => Boolean(building?.isBuilt && building.type === 'Barracks'),
       }
     }
     if (request === '../../lib/units/unitControl') return { isHeroControlled: () => false }
@@ -201,4 +210,49 @@ test('villager movement syncs hunting actions to hunter work and capture to hors
       action,
     ])
   }
+})
+
+test('training movement routes a unit to the building entry cell before starting train action', () => {
+  const calls = []
+  const { UnitMovement, constants } = loadUnitMovement(calls)
+  const grid = Array.from({ length: 8 }, (_, i) =>
+    Array.from({ length: 8 }, (_, j) => ({
+      category: 'Dirt',
+      has: null,
+      i,
+      j,
+      solid: false,
+      x: i,
+      y: j,
+    }))
+  )
+  const entryCell = grid[5][6]
+  const path = [grid[1][1], entryCell]
+  const building = {
+    context: { map: { grid } },
+    family: constants.FAMILY_TYPES.building,
+    i: 4,
+    isBuilt: true,
+    isDestroyed: false,
+    j: 4,
+    label: 'barracks-1',
+    type: 'Barracks',
+    x: 4,
+    y: 4,
+  }
+  const unit = makeUnit(constants, calls)
+  unit.context = { map: { grid }, pathToReturn: path }
+  unit.i = 0
+  unit.j = 0
+  unit.isUnitAtDest = () => false
+  unit.setPath = nextPath => {
+    calls.push(['setPath', nextPath])
+    unit.path = nextPath
+  }
+
+  new UnitMovement(unit).sendToEvt(building, constants.ACTION_TYPES.train, { forceRepath: true })
+
+  assert.equal(unit.dest, building)
+  assert.equal(unit.action, constants.ACTION_TYPES.train)
+  assert.deepEqual(calls.find(call => call[0] === 'setPath'), ['setPath', path])
 })

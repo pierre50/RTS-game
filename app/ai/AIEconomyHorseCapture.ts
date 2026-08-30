@@ -1,6 +1,7 @@
 import { BUILDING_TYPES } from '../constants'
 import { getClosestInstance } from '../lib/grid/queries'
 import { canStoreStableHorse, getStableHorseAmount, STABLE_HORSE_CAPACITY } from '../lib/horses/stableHorses'
+import { isWildHorse } from '../lib/horses/horseTaming'
 import type { AIBuildingLike, AIEconomyHorseCaptureContext, AIEntityLike } from './types'
 
 export function getAvailableStableForCapture(economy: AIEconomyHorseCaptureContext): AIBuildingLike[] {
@@ -26,6 +27,7 @@ export function getAvailableHorseCaptureSlots(economy: AIEconomyHorseCaptureCont
 export function getCapturableHorses(economy: AIEconomyHorseCaptureContext): AIEntityLike[] {
   return [...economy.ai.foundedAnimals]
     .filter((animal: AIEntityLike) => animal.type === 'Horse' && !animal.isDead && !animal.isDestroyed)
+    .filter((animal: AIEntityLike) => isWildHorse(animal))
     .filter((animal: AIEntityLike) => economy.isLocationSafe(animal))
     .filter(animal => !(animal as { companionOwner?: AIEntityLike | null }).companionOwner)
     .filter(animal => !(animal as { isLassoed?: boolean }).isLassoed)

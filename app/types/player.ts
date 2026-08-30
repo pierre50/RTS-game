@@ -17,6 +17,7 @@ export interface VisionGridLike {
   length: number
   size: number
   onViewed?: ((i: number, j: number) => void) | null
+  onVisibilityChange?: ((i: number, j: number) => void) | null
   index(i: number, j: number): number
   coordinates(index: number): [number, number]
   addViewer(i: number, j: number, viewer: VisionViewer): void
@@ -99,7 +100,7 @@ export interface PlayerLike {
   corpses: UnitEntity[]
   enemyPlayers?: () => PlayerLike[]
   isEnemy?: (other?: PlayerLike | null) => boolean
-  buyBuilding?: (i: number, j: number, type: string, options?: { spaceId?: string }) => boolean
+  buyBuilding?: (i: number, j: number, type: string, options?: { alreadyPaid?: boolean; spaceId?: string }) => boolean
   plantWheatField?: (i: number, j: number, options?: { spaceId?: string }) => boolean
   createBuilding: (
     options: Partial<BuildingConfig> & {
@@ -111,7 +112,16 @@ export interface PlayerLike {
     }
   ) => BuildingEntity
   createUnit?: (options: PlayerUnitCreationOptions, creationOptions?: { preserveType?: boolean }) => UnitEntity
-  createAnimal?: (options: { i: number; j: number; type: string; horseColor?: string }) => RuntimeEntity
+  createAnimal?: (options: {
+    i: number
+    j: number
+    spaceId?: string
+    type: string
+    horseColor?: string
+    tamingStatus?: string
+    ambientMovement?: boolean
+    strategy?: string
+  }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
   unlockTechnology?: (type: string) => void
   buyTechnology?: (type: string, alreadyPaid?: boolean, force?: boolean) => boolean

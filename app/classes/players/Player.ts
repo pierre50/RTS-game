@@ -179,7 +179,8 @@ export class Player implements PlayerLike {
           this.context.menu.updateTerrainMiniMap?.(i, j)
         }
       },
-      this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain
+      this.isPlayed && this.type === PLAYER_TYPES.human && map.revealTerrain,
+      (i, j) => this.context.notifyVisionChange?.({ i, j, player: this })
     )
   }
 
@@ -340,7 +341,7 @@ export class Player implements PlayerLike {
     return isBuildingEligible(this, type)
   }
 
-  plantWheatField(i: number, j: number, options: { spaceId?: string } = {}) {
+  plantWheatField(i: number, j: number, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
     const {
       context: { menu, map },
     } = this
@@ -353,13 +354,13 @@ export class Player implements PlayerLike {
       canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
     }
     if (
-      canAfford(this, config.cost) &&
+      (options.alreadyPaid || canAfford(this, config.cost)) &&
       this.isBuildingEligible(BUILDING_TYPES.farm) &&
       canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
       hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
     ) {
       const planted: RuntimeEntity[] = []
-      payCost(this, config.cost)
+      if (!options.alreadyPaid) payCost(this, config.cost)
       const size = typeof config.size === 'number' ? config.size : 4
       for (const cell of getBuildingFootprintCells(i, j, grid, size)) {
         const wheat = new Resource(
@@ -382,7 +383,7 @@ export class Player implements PlayerLike {
     return false
   }
 
-  buyBuilding(i: number, j: number, type: string, options: { spaceId?: string } = {}) {
+  buyBuilding(i: number, j: number, type: string, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
     if (type === BUILDING_TYPES.farm) return this.plantWheatField(i, j, options)
     const {
       context: { menu, map },
@@ -396,14 +397,20 @@ export class Player implements PlayerLike {
       canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
     }
     if (
-      canAfford(this, config.cost) &&
+      (options.alreadyPaid || canAfford(this, config.cost)) &&
       this.isBuildingEligible(type) &&
       !isBuildingLimitReached(this, type) &&
       canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
       hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
     ) {
-      this.spawnBuilding({ i, j, spaceId: space?.id, type, isBuilt: map.instantMode })
-      payCost(this, config.cost)
+      this.spawnBuilding({
+        i,
+        j,
+        spaceId: space?.id,
+        type,
+        isBuilt: map.instantMode || config.instantPlacement === true,
+      })
+      if (!options.alreadyPaid) payCost(this, config.cost)
       this.isPlayed && menu.updateTopbar()
       return true
     }

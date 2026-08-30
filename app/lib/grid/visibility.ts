@@ -9,7 +9,10 @@ import type { Bounds } from '../../types/geometry'
 import type { RuntimeMap } from '../../types/map'
 
 type PlayerVisibility = {
+  label?: string
+  team?: number | null
   views?: {
+    getViewers?: (i: number, j: number) => ReadonlySet<unknown>
     isVisible: (i: number, j: number) => boolean
   }
 }
@@ -31,13 +34,17 @@ export type RenderableInstance = VisibilityEntity &
         showResources?: boolean
       }
       player?: PlayerVisibility
+      players?: PlayerVisibility[]
     }
     family?: string
     spaceId?: string
     type?: string
-    owner?: VisibilityEntity['owner'] & {
-      isPlayed?: boolean
-    } | null
+    hideWhenFogged?: boolean
+    owner?:
+      | (VisibilityEntity['owner'] & {
+          isPlayed?: boolean
+        })
+      | null
     isDestroyed?: boolean
     size?: number
     sprite?: { width: number; height: number; anchor?: { x: number; y: number } }
@@ -164,11 +171,15 @@ function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   if (!getRenderablePosition(instance)) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
   if (!controls.instanceInCamera(instance, getInstanceScreenBounds(instance))) return false
+  if (map.revealEverything) return true
+  const inPlayerSight = instanceIsInPlayerSight(instance, player)
+  if (instance.hideWhenFogged && !instanceIsInActiveOrTeamSight(instance, player, instance.context?.players)) {
+    return false
+  }
 
   return (
-    map.revealEverything ||
     instance.owner?.isPlayed ||
-    instanceIsInPlayerSight(instance, player) ||
+    inPlayerSight ||
     instance.family === FAMILY_TYPES.resource ||
     (!map.revealTerrain && !instance.owner)
   )
@@ -191,4 +202,58 @@ export function instanceIsInPlayerSight(instance: RenderableInstance, player?: P
   return getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1).some(cell =>
     views.isVisible(cell.i, cell.j)
   )
+}
+
+function hasActiveViewerOtherThanSelf(
+  instance: RenderableInstance,
+  views: NonNullable<PlayerVisibility['views']>,
+  i: number,
+  j: number
+): boolean {
+  const viewers = views.getViewers?.(i, j)
+  if (!viewers) return views.isVisible(i, j)
+  for (const viewer of viewers) {
+    if (viewer === instance) continue
+    if (typeof viewer === 'string') {
+      if (viewer !== instance.label) return true
+      continue
+    }
+    if (viewer && typeof viewer === 'object' && 'label' in viewer && viewer.label === instance.label) continue
+    return true
+  }
+  return false
+}
+
+function playerIsSameTeam(player: PlayerVisibility | undefined, other: PlayerVisibility | undefined): boolean {
+  return Boolean(
+    player &&
+      other &&
+      (player.label === other.label || (player.team != null && other.team != null && player.team === other.team))
+  )
+}
+
+export function instanceIsInActiveOrTeamSight(
+  instance: RenderableInstance,
+  player?: PlayerVisibility,
+  players: readonly PlayerVisibility[] = []
+): boolean {
+  const friendlyPlayers = players.length ? players.filter(candidate => playerIsSameTeam(player, candidate)) : [player]
+  for (const candidate of friendlyPlayers) {
+    const views = candidate?.views
+    if (!views) continue
+    const parent = (instance as RenderableInstance & { parent?: { grid?: Array<Array<GridPosition>> } | null }).parent
+    const grid = parent?.grid
+    if (!grid) {
+      if (hasActiveViewerOtherThanSelf(instance, views, instance.i, instance.j)) return true
+      continue
+    }
+    if (
+      getBuildingFootprintCells(instance.i, instance.j, grid, instance.size ?? 1).some(cell =>
+        hasActiveViewerOtherThanSelf(instance, views, cell.i, cell.j)
+      )
+    ) {
+      return true
+    }
+  }
+  return false
 }

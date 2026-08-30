@@ -44,6 +44,7 @@ import type {
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingConfig, TechnologyConfig } from '../../types/config'
+import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
 
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
@@ -55,7 +56,7 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   type: string
   spaceId?: string
   horseAmount?: number
-  stableHorses?: Array<{ horseColor?: string }>
+  stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   isBuilt?: boolean
   skipBuiltEffects?: boolean
 }
@@ -85,12 +86,17 @@ export class Building extends Instance implements BuildingEntity {
   units?: string[]
   technologies?: string[]
   horseAmount?: number
-  stableHorses?: Array<{ horseColor?: string }>
+  stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   mountingTime?: number
   interface!: EntityInterfaceLike
   assetType?: string
   textureName?: string
+  hideWhenFogged?: boolean
   useSpriteShadow?: boolean
+  providesVision?: boolean
+  requiresActiveSightInteraction?: boolean
+  overheadIndicatorOffsetX?: number
+  overheadIndicatorOffsetY?: number
   spriteShadowAnchor?: { x?: number; y?: number }
   accept?: string[]
   visibilityTimeout?: ReturnType<typeof setTimeout>
@@ -104,6 +110,7 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundStopped?: boolean
   increasePopulation?: number
   shelterCapacity?: number
+  containedAnimalType?: string | null
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {

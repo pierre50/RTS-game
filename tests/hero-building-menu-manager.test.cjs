@@ -54,14 +54,17 @@ function installMockDocument() {
         children: [],
         className: '',
         textContent: '',
+        childElementCount: 0,
         style: { setProperty() {} },
         classList: { add() {}, toggle() {} },
         appendChild(child) {
           this.children.push(child)
+          this.childElementCount = this.children.length
           return child
         },
         append(...children) {
           this.children.push(...children)
+          this.childElementCount = this.children.length
         },
         addEventListener() {},
         querySelectorAll() {
@@ -98,6 +101,23 @@ test('hero building menu can open own unfinished buildings for inspection', () =
       family: 'building',
       owner: player,
       isBuilt: false,
+      isDead: false,
+      isDestroyed: false,
+    }
+
+    assert.equal(manager.canOpenFor(building), true)
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu can open reachable foreign buildings for inspection', () => {
+  const { manager, restoreDocument } = createManager()
+  try {
+    const building = {
+      family: 'building',
+      owner: { isPlayed: false },
+      isBuilt: true,
       isDead: false,
       isDestroyed: false,
     }

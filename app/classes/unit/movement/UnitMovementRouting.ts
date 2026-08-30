@@ -32,6 +32,7 @@ import {
 } from './UnitMovementHelpers'
 import { cancelEnergyWait } from '../../../lib/units/unitEnergy'
 import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../lib/mapSpaces'
+import { getActionArrivalCell } from './UnitActionArrivalCells'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 
@@ -140,6 +141,43 @@ export class UnitMovementRouting {
     return true
   }
 
+  routeToActionArrivalCell(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    passageLookup: ReturnType<typeof createReservedPassageCellLookup>
+  ): boolean {
+    const unit = this.unit
+    const map = getEntitySpaceMapLike(unit, unit.context?.map)
+    const arrivalCell = getActionArrivalCell(unit, dest, action)
+    if (!arrivalCell) return false
+    if (
+      !canUnitUseCellAsIdleDestination(unit, arrivalCell, {
+        allowPassageStop: true,
+        passageLookup,
+      })
+    ) {
+      this.handleUnreachableDestination(action)
+      return true
+    }
+
+    if (unit.i === arrivalCell.i && unit.j === arrivalCell.j) {
+      unit.setDest?.(dest)
+      unit.action = action
+      unit.degree = getInstanceDegree(unit, dest.x, dest.y)
+      unit.getAction?.(action ?? '')
+      return true
+    }
+
+    if (!map) return false
+    const path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map)
+    if (!path.length) return false
+
+    unit.setDest?.(dest)
+    unit.action = action
+    unit.setPath?.(path)
+    return true
+  }
+
   handleUnreachableDestination(_action: string | null): void {
     const unit = this.unit
     if (resumeAutonomyBeforeStopping(unit)) {
@@ -233,6 +271,7 @@ export class UnitMovementRouting {
     const passageLookup = createReservedPassageCellLookup(unit.context)
     const passageStopAllowed =
       allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(unit, dest))
+    if (this.routeToActionArrivalCell(dest, action, passageLookup)) return
     if (
       !action &&
       !isRuntimeEntity(dest) &&

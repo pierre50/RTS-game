@@ -1,10 +1,12 @@
-import { MENU_INFO_IDS, UNIT_TYPES } from '../../constants'
+import { MENU_INFO_IDS, RESOURCE_ICON_IDS, RESOURCE_NAMES, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
 import {
   formatEquipmentStackLabel,
   getEquipmentStacks,
   getUnitCorpseLootEquipment,
+  getUnitCorpseLootResources,
   pickupCorpseEquipment,
+  pickupCorpseResource,
 } from '../../lib/equipment/equipmentLoot'
 import {
   getHeroInventoryWeaponCombatStats,
@@ -21,11 +23,12 @@ import {
   XP_CATEGORIES,
 } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
-import { renderEquipmentAvatarLazy } from '../equipmentAvatar'
+import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
 import type { MenuLike } from '../../types/context'
+import type { ResourceAmount } from '../../types/common'
 
 const ARCHER_XP_CATEGORIES = [XP_CATEGORIES.ranged, XP_CATEGORIES.defense]
 const INFANTRY_XP_CATEGORIES = [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
@@ -93,6 +96,47 @@ function createCorpseEquipmentLootButton(
   return button
 }
 
+function formatCorpseResourceLootLabel(resource: keyof ResourceAmount, amount: number): string {
+  return `${t(resource)} x${amount}`
+}
+
+function createCorpseResourceLootButton(
+  unit: UnitEntity,
+  resource: keyof ResourceAmount,
+  amount: number,
+  menu: MenuLike
+): HTMLButtonElement {
+  const button = document.createElement('button')
+  const label = formatCorpseResourceLootLabel(resource, amount)
+  button.type = 'button'
+  button.className = 'corpse-loot-button ui-btn'
+  button.setAttribute('aria-label', t('corpseLootTakeItem', { item: label }))
+
+  button.appendChild(createInfoImage('corpse-loot-icon', getIconPath(RESOURCE_ICON_IDS[resource].commodity)))
+
+  const text = document.createElement('span')
+  text.className = 'corpse-loot-label'
+  text.textContent = label
+
+  button.appendChild(text)
+  button.addEventListener('click', evt => {
+    evt.preventDefault()
+    evt.stopPropagation()
+    const hero = unit.context?.controls?.heroUnit
+    const pickedAmount = pickupCorpseResource(unit, hero, resource)
+    if (pickedAmount <= 0) return
+    menu.playUiClick?.()
+    menu.showMessage(
+      t('corpseLootPickedItem', { item: formatCorpseResourceLootLabel(resource, pickedAmount) }),
+      'success'
+    )
+    menu.syncEntityInfoModal?.()
+    menu.refreshInventory?.()
+  })
+
+  return button
+}
+
 function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[], menu: MenuLike): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
@@ -105,6 +149,9 @@ function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[
     if (!hero) return
 
     let pickedCount = 0
+    for (const resource of RESOURCE_NAMES) {
+      if (pickupCorpseResource(unit, hero, resource) > 0) pickedCount += 1
+    }
     for (const item of [...equipment]) {
       if (pickupCorpseEquipment(unit, hero, item)) pickedCount += 1
     }
@@ -120,7 +167,12 @@ function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[
 
 function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
   const equipment = getUnitCorpseLootEquipment(unit)
-  if (!equipment.length) return
+  const resources = getUnitCorpseLootResources(unit)
+  const resourceEntries = RESOURCE_NAMES.map(resource => ({
+    amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
+    resource,
+  })).filter(entry => entry.amount > 0)
+  if (!equipment.length && !resourceEntries.length) return
   const stacks = getEquipmentStacks(equipment)
 
   const loot = document.createElement('div')
@@ -128,12 +180,15 @@ function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu:
 
   const title = document.createElement('div')
   title.className = 'corpse-loot-title'
-  title.textContent = t('corpseLootEquipment')
+  title.textContent = t('corpseLootInventory')
   loot.appendChild(title)
   loot.appendChild(createCorpseTakeAllButton(unit, equipment, menu))
 
   const grid = document.createElement('div')
   grid.className = 'corpse-loot-grid'
+  for (const { amount, resource } of resourceEntries) {
+    grid.appendChild(createCorpseResourceLootButton(unit, resource, amount, menu))
+  }
   for (const stack of stacks) {
     grid.appendChild(createCorpseEquipmentLootButton(unit, stack.equipment, stack.count, menu))
   }
@@ -202,7 +257,12 @@ export class UnitInterface {
       infos.push({ key: 'meleeArmor', icon: '008_50731', title: 'combatMeleeArmorStat', value: combatStats.meleeArmor })
     }
     if (combatStats.pierceArmor) {
-      infos.push({ key: 'pierceArmor', icon: '010_50731', title: 'combatPierceArmorStat', value: combatStats.pierceArmor })
+      infos.push({
+        key: 'pierceArmor',
+        icon: '010_50731',
+        title: 'combatPierceArmorStat',
+        value: combatStats.pierceArmor,
+      })
     }
 
     for (let i = 0; i < infos.length; i++) {
@@ -221,13 +281,13 @@ export class UnitInterface {
     const focusedXpCategories = showExperience ? getFocusedXpCategories(unit, data) : null
     const xpEntries = showExperience
       ? focusedXpCategories
-      ? focusedXpCategories.map(category => ({
-          category,
-          ...getUnitExperienceEntries(unit, { includeZero: true }).find(entry => entry.category === category),
-        }))
-      : getUnitExperienceEntries(unit, { includeZero: options?.showAllXp }).filter(
-          entry => shouldShowGenericXpCategory(unit, entry.category)
-        )
+        ? focusedXpCategories.map(category => ({
+            category,
+            ...getUnitExperienceEntries(unit, { includeZero: true }).find(entry => entry.category === category),
+          }))
+        : getUnitExperienceEntries(unit, { includeZero: options?.showAllXp }).filter(entry =>
+            shouldShowGenericXpCategory(unit, entry.category)
+          )
       : []
     if (xpEntries.length) {
       const xpDiv = document.createElement('div')

@@ -1,16 +1,5 @@
 import { Modal } from '../lib'
-import {
-  equipHeroInventoryItem,
-  formatEquipmentLootLabel,
-  formatEquipmentStackLabel,
-  getEquipmentSlot,
-  getEquipmentStacks,
-  getHeroEquipmentSlotLabelKey,
-  getHeroEquippedItemCount,
-  getWeaponSlot,
-  HERO_EQUIPMENT_SLOTS,
-  unequipHeroInventorySlot,
-} from '../lib/equipment/equipmentLoot'
+import { formatEquipmentLootLabel } from '../lib/equipment/equipmentLoot'
 import {
   HERO_ARROW_CRAFT_RECIPES,
   canCraftHeroRecipe,
@@ -18,6 +7,7 @@ import {
   getMissingCraftResources,
   type HeroCraftRecipe,
 } from '../lib/hero/heroCrafting'
+import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
 import { SOUND_CUES } from '../constants'
@@ -33,7 +23,9 @@ import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
-import { renderEquipmentAvatarLazy } from './equipmentAvatar'
+import { renderInventoryEquippedEquipment, renderInventoryLootedEquipment } from './inventory/InventoryEquipmentRenderer'
+import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
+import { renderBuildingAvatar } from '../lib/avatar'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
@@ -259,110 +251,11 @@ export class InventoryManager {
   }
 
   renderLootedEquipment(): void {
-    this.lootedEquipmentPanel.replaceChildren()
-    const hero = this.menu.context.controls.heroUnit
-    const equipment = hero?.inventory?.equipment ?? []
-    if (!equipment.length) return
-
-    const title = document.createElement('div')
-    title.className = 'inventory-loot-title'
-    title.textContent = t('inventoryBag')
-    this.lootedEquipmentPanel.appendChild(title)
-
-    const grid = document.createElement('div')
-    grid.className = 'inventory-loot-grid'
-    for (const stack of getEquipmentStacks(equipment)) {
-      const item = stack.equipment
-      const slot = document.createElement('button')
-      const equipmentSlot = getEquipmentSlot(item)
-      const weaponSlot = getWeaponSlot(item)
-      const canEquip = Boolean(
-        (equipmentSlot && (equipmentSlot !== 'helmetDecor' || hero?.inventory?.equipped?.helmet)) || weaponSlot
-      )
-      slot.type = 'button'
-      slot.className = 'inventory-slot ui-btn inventory-loot-slot'
-      slot.disabled = !canEquip
-      if (canEquip) {
-        slot.addEventListener('click', () => {
-          if (!equipHeroInventoryItem(hero, item)) return
-          this.menu.playUiClick()
-          this.renderTools()
-        })
-      }
-
-      const icon = document.createElement('canvas')
-      icon.className = 'unit-avatar-frame inventory-slot-icon'
-      icon.width = 64
-      icon.height = 64
-      renderEquipmentAvatarLazy(this.menu.context.app, item, icon, 'inventory', this.menu.context.performance)
-
-      const label = document.createElement('div')
-      label.className = 'inventory-slot-label'
-      label.textContent = formatEquipmentStackLabel(item, stack.count)
-
-      slot.appendChild(icon)
-      slot.appendChild(label)
-      grid.appendChild(slot)
-    }
-    this.lootedEquipmentPanel.appendChild(grid)
+    renderInventoryLootedEquipment(this)
   }
 
   renderEquippedEquipment(): void {
-    this.equippedPanel.replaceChildren()
-    const hero = this.menu.context.controls.heroUnit
-    if (!hero) return
-
-    const title = document.createElement('div')
-    title.className = 'inventory-loot-title'
-    title.textContent = t('inventoryEquippedEquipment')
-    this.equippedPanel.appendChild(title)
-
-    const grid = document.createElement('div')
-    grid.className = 'inventory-equipped-grid'
-    for (const slotId of HERO_EQUIPMENT_SLOTS) {
-      const equipment = hero.inventory?.equipped?.[slotId]
-      const requiresHelmet = slotId === 'helmetDecor' && !hero.inventory?.equipped?.helmet
-      const disabled = !equipment || requiresHelmet
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className = 'inventory-slot ui-btn inventory-equipment-slot'
-      button.classList.toggle('empty', !equipment)
-      button.disabled = disabled
-      if (equipment && !disabled) {
-        button.addEventListener('click', () => {
-          if (!unequipHeroInventorySlot(hero, slotId)) return
-          this.menu.playUiClick()
-          this.renderTools()
-        })
-      }
-
-      const iconWrap = document.createElement('span')
-      iconWrap.className = 'inventory-equipped-icon-wrap'
-      if (equipment) {
-        const icon = document.createElement('canvas')
-        icon.className = 'unit-avatar-frame inventory-slot-icon'
-        icon.width = 64
-        icon.height = 64
-        renderEquipmentAvatarLazy(this.menu.context.app, equipment, icon, 'inventory', this.menu.context.performance)
-        iconWrap.appendChild(icon)
-      }
-
-      const slotLabel = document.createElement('div')
-      slotLabel.className = 'inventory-slot-type'
-      slotLabel.textContent = t(getHeroEquipmentSlotLabelKey(slotId))
-
-      const label = document.createElement('div')
-      label.className = 'inventory-slot-label'
-      label.textContent = equipment
-        ? formatEquipmentStackLabel(equipment, getHeroEquippedItemCount(hero, slotId))
-        : t('inventoryEmptySlot')
-
-      button.appendChild(iconWrap)
-      button.appendChild(slotLabel)
-      button.appendChild(label)
-      grid.appendChild(button)
-    }
-    this.equippedPanel.appendChild(grid)
+    renderInventoryEquippedEquipment(this)
   }
 
   renderActiveWeapons(): void {
@@ -499,7 +392,12 @@ export class InventoryManager {
     canvas.className = 'unit-avatar-frame inventory-slot-icon'
     canvas.width = 64
     canvas.height = 64
-    renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
+    const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
+    if (placeableBuildingType) {
+      renderBuildingAvatar(app, placeableBuildingType, player, canvas)
+    } else {
+      renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
+    }
     icon.appendChild(canvas)
 
     const label = document.createElement('span')
@@ -518,7 +416,7 @@ export class InventoryManager {
     element.appendChild(meta)
     this.menu.menuTooltip.bind(element, {
       title: t(recipe.labelKey),
-      description: t('craftArrowDescription'),
+      description: t(recipe.descriptionKey ?? 'craftArrowDescription'),
       meta: [t('tooltipCost', { cost: this.formatResourceAmount(recipe.cost) })],
     })
     element.addEventListener('pointerup', evt => {

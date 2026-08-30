@@ -22,7 +22,7 @@ export class BuildingInterface {
     if (building.displayPopulation && building.owner?.isPlayed && building.isBuilt) {
       element.appendChild(this.getPopulationElement())
     }
-    if (building.type === BUILDING_TYPES.stable && building.owner?.isPlayed && building.isBuilt) {
+    if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
     }
     element.appendChild(this.getLoadingElement())
@@ -95,13 +95,11 @@ export class BuildingInterface {
   setDefaultInterface(element: HTMLElement, _data: BuildingConfig, options?: EntityInfoRenderOptions): void {
     const building = this.building
     const menu = (building.context as { menu: MenuLike }).menu
-    const hitPoints = building.owner?.isPlayed ? building.hitPoints : undefined
-
     appendBaseEntityInfo(
       element,
       t(building.owner!.civ || ''),
       getBuildingDisplayName(building),
-      hitPoints,
+      building.hitPoints,
       building.totalHitPoints,
       {
         hideType: options?.hideIdentity,

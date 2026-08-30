@@ -170,3 +170,23 @@ test('minimap does not draw animal markers on player layers', () => {
   assert.equal(menu.playersMinimap[0].context.rectangles.length, 1)
   assert.deepEqual(menu.playersMinimap[0].context.rectangles[0], [8, 8, 8, 8, '#00f'])
 })
+
+test('minimap skips non-player units when the whole map is revealed', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  const manager = new MinimapManager(menu)
+  manager.getMinimapParams = () => ({ factor: 1, translate: 0 })
+  manager.activate()
+
+  manager.updatePlayerMiniMapEvt({
+    label: 'ally',
+    colorHex: '#f00',
+    buildings: [{ position: { x: 10, y: 10 }, size: 1 }],
+    units: [{ family: 'unit', position: { x: 12, y: 12 } }],
+  })
+
+  const layer = menu.playersMinimap.find(playerLayer => playerLayer.id === 'minimap-ally')
+  assert.ok(layer)
+  assert.equal(layer.context.rectangles.length, 1)
+  assert.deepEqual(layer.context.rectangles[0], [4, 4, 12, 12, '#f00'])
+})

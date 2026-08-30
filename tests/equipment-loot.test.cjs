@@ -79,15 +79,18 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
 })
 
 test('equipment loot labels humanize runtime ids', () => {
-  const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule('app/lib/equipment/equipmentLoot.ts', {
-    '../constants': {
-      SHEET_TYPES: { corpse: 'corpseSheet' },
-      UNIT_TYPES: { villager: 'Villager' },
-    },
-    './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
-    '../lpc': { applyBakedLpcUnitAssets: () => {} },
-  })
+  const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule(
+    'app/lib/equipment/equipmentLoot.ts',
+    {
+      '../constants': {
+        SHEET_TYPES: { corpse: 'corpseSheet' },
+        UNIT_TYPES: { villager: 'Villager' },
+      },
+      './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
+      '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+      '../lpc': { applyBakedLpcUnitAssets: () => {} },
+    }
+  )
 
   assert.equal(formatEquipmentLootLabel('round_shield_ceramic_slash'), 'Round Shield Ceramic Slash')
   assert.equal(formatEquipmentStackLabel('round_shield_ceramic_slash', 2), 'Round Shield Ceramic Slash x2')
@@ -95,6 +98,33 @@ test('equipment loot labels humanize runtime ids', () => {
     { equipment: 'bow', count: 2 },
     { equipment: 'helmet_barbarian_ceramic', count: 1 },
   ])
+})
+
+test('unit corpse loot transfers pocket resources to hero inventory', () => {
+  const { getUnitCorpseLootResources, pickupCorpseResource } = loadModule('app/lib/equipment/equipmentLoot.ts', {
+    '../constants': {
+      RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+      SHEET_TYPES: { corpse: 'corpseSheet' },
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const corpse = {
+    inventory: { resources: { wood: 3, stone: 7, gold: 0 } },
+    isDead: true,
+    isDestroyed: false,
+  }
+  const hero = { inventory: { resources: { stone: 2 } } }
+
+  assert.deepEqual(getUnitCorpseLootResources(corpse), { wood: 3, stone: 7 })
+  assert.equal(pickupCorpseResource(corpse, hero, 'stone', 4), 4)
+  assert.deepEqual(corpse.inventory.resources, { wood: 3, stone: 3 })
+  assert.deepEqual(hero.inventory.resources, { stone: 6 })
+  assert.equal(pickupCorpseResource(corpse, hero, 'stone'), 3)
+  assert.deepEqual(corpse.inventory.resources, { wood: 3 })
+  assert.deepEqual(hero.inventory.resources, { stone: 9 })
 })
 
 test('hero equips bag items into gear and weapon slots with replacement swaps', () => {

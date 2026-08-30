@@ -1,7 +1,8 @@
-import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import { getFreeLandCellAroundInstance } from '../../lib'
 import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../../lib/buildings/interiors'
+import { isBanditUnit } from '../../lib/combat/bandits'
 import {
   canUnitUseCellAsIdleDestination,
   createNonReservedPassageCellCondition,
@@ -22,6 +23,7 @@ export const REST_MAX_RETRIES = 3
 const REST_WAKE_LOCK_MS = 12000
 const REST_OUTSIDE_SEARCH_RADIUS = 4
 const DEFAULT_UNIT_SIGHT = 7
+const BANDIT_HOME_SLEEP_RADIUS = 8
 
 const SHELTER_TYPES = new Set<string>(
   [BUILDING_TYPES.house, BUILDING_TYPES.townCenter].filter((type): type is string => typeof type === 'string')
@@ -154,6 +156,54 @@ function isActiveDefense(unit: UnitEntity): boolean {
   )
 }
 
+function getBanditHomeAnchor(unit: UnitEntity): Pick<RuntimeEntity, 'i' | 'j'> | null {
+  return unit.campPatrolAnchor ?? unit.banditCampAnchor ?? null
+}
+
+function isBanditAtHome(unit: UnitEntity): boolean {
+  if (!isBanditUnit(unit)) return true
+  const anchor = getBanditHomeAnchor(unit)
+  if (!anchor) return false
+  return distance(unit, anchor) <= BANDIT_HOME_SLEEP_RADIUS
+}
+
+function isBuiltTownCenter(building: BuildingEntity | null | undefined): boolean {
+  return Boolean(
+    building &&
+      building.type === BUILDING_TYPES.townCenter &&
+      building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed
+  )
+}
+
+function hasDominantLocalBase(unit: UnitEntity): boolean {
+  return Boolean(unit.owner?.buildings?.some(isBuiltTownCenter))
+}
+
+function isDominatedSleepWorld(unit: UnitEntity): boolean {
+  const context = unit.context
+  const worldGraph = context?.getWorldGraph?.()
+  const currentWorldId = context?.getCurrentWorldId?.()
+  if (!worldGraph || !currentWorldId) return true
+
+  const node = worldGraph.nodes[currentWorldId]
+  if (context?.map?.mapType === 'interior' || node?.kind === 'interior') return true
+  if (isBanditUnit(unit)) return isBanditAtHome(unit)
+  if (unit.owner?.isPlayed && currentWorldId === worldGraph.rootWorldId) return true
+  if (unit.owner?.isPlayed && node?.encounter === 'bandit' && node.banditsCleared) return true
+  if (unit.owner?.factionId && node?.factionIds?.includes(unit.owner.factionId)) return true
+  return hasDominantLocalBase(unit)
+}
+
+function isExternalOffensiveUnit(unit: UnitEntity): boolean {
+  if (isBanditUnit(unit) && isBanditAtHome(unit)) return false
+  return Boolean(
+    unit.work === WORK_TYPES.attacker &&
+      (unit.dest || unit.action === ACTION_TYPES.attack || unit.combatMode === 'attack' || unit.path?.length)
+  )
+}
+
 function getNowMs(unit: UnitEntity): number {
   return unit.context?.scheduler?.elapsedMs ?? 0
 }
@@ -212,12 +262,25 @@ export function delayUnitRestAfterActivity(unit: UnitEntity, durationMs = REST_W
   })
 }
 
-export function shouldRest(unit: UnitEntity, options: { ignoreWakeLock?: boolean } = {}): boolean {
+export function canStartSleepRest(unit: UnitEntity): boolean {
   return Boolean(
     canUseUnitRest(unit) &&
       !isActiveDefense(unit) &&
+      !isExternalOffensiveUnit(unit) &&
+      isBanditAtHome(unit) &&
+      isDominatedSleepWorld(unit)
+  )
+}
+
+export function shouldRest(unit: UnitEntity, options: { ignoreWakeLock?: boolean } = {}): boolean {
+  return Boolean(
+    canStartSleepRest(unit) &&
       (options.ignoreWakeLock || !isUnitRestWakeLocked(unit))
   )
+}
+
+export function canSleepWithoutRestSite(unit: UnitEntity): boolean {
+  return !isBanditUnit(unit) || isBanditAtHome(unit)
 }
 
 function findRestCellAroundPoint(
@@ -271,7 +334,7 @@ function getNearestFireCampRestSite(unit: UnitEntity): UnitRestSite | null {
 }
 
 function getCampAnchorRestSite(unit: UnitEntity): UnitRestSite | null {
-  const anchor = unit.campPatrolAnchor ?? unit.banditCampAnchor
+  const anchor = getBanditHomeAnchor(unit)
   if (!anchor) return null
   const targetCell = findRestCellAroundPoint(unit, anchor)
   return targetCell ? { location: 'outside', shelter: null, targetCell } : null
@@ -288,6 +351,7 @@ function getCurrentOutsideRestSite(unit: UnitEntity): UnitRestSite | null {
 }
 
 export function getNearestRestSite(unit: UnitEntity): UnitRestSite | null {
+  if (isBanditUnit(unit)) return isBanditAtHome(unit) ? getCampAnchorRestSite(unit) : null
   const fireCamp = getNearestFireCampRestSite(unit)
   const shelter = getNearestShelter(unit)
   if (isVillager(unit) && shelter) {

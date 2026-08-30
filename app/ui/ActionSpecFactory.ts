@@ -1,15 +1,16 @@
 import { Assets } from 'pixi.js'
 import {
-  assignStableHorseToHero,
   canAfford,
   getBuildingAsset,
   getIconPath,
   getStableHorseAmount,
-  heroHasLinkedHorse,
   isBuildingLimitReached,
   isValidCondition,
+  storeStableHorse,
+  STABLE_HORSE_CAPACITY,
 } from '../lib'
 import { renderUnitTypeAvatar } from '../lib/avatar'
+import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
@@ -37,6 +38,10 @@ function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolea
   return Boolean(
     selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
   )
+}
+
+function isOwnedByPlayer(building: BuildingEntity, player: PlayerLike): boolean {
+  return building.owner === player || Boolean(building.owner?.label && building.owner.label === player.label)
 }
 
 export class ActionSpecFactory {
@@ -226,37 +231,26 @@ export class ActionSpecFactory {
     }
   }
 
-  getStableBindHeroHorseButton(building: BuildingEntity): MenuButtonSpec {
+  getStableDebugAddHorseButton(building: BuildingEntity): MenuButtonSpec {
     const { menu } = this
-    const hero = () => menu.context.controls.heroUnit
-    const isUnavailable = () => getStableHorseAmount(building) <= 0 || heroHasLinkedHorse(hero())
+    const horseColors = Object.keys(HORSE_COLOR_PALETTES) as HorseColor[]
+    const nextHorseColor = (): HorseColor => horseColors[getStableHorseAmount(building) % horseColors.length] ?? 'brown'
+    const isFull = () => getStableHorseAmount(building) >= STABLE_HORSE_CAPACITY
     return {
-      id: 'stableBindHeroHorse',
-      icon: getIconPath('004_50731'),
+      id: 'stableDebugAddHorse',
       tooltip: () => ({
-        title: t('stableBindHeroHorse'),
-        description: t('stableBindHeroHorseDescription'),
-        meta: [
-          getStableHorseAmount(building) <= 0 ? t('stableNeedsHorse') : null,
-          heroHasLinkedHorse(hero()) ? t('heroAlreadyHasHorse') : null,
-        ],
+        title: t('stableDebugAddHorse'),
+        description: t('stableDebugAddHorseDescription'),
+        meta: [isFull() ? t('stableFull') : null],
       }),
-      disabled: isUnavailable,
+      disabled: isFull,
       onClick: () => {
-        const heroUnit = hero()
-        if (heroHasLinkedHorse(heroUnit)) {
-          menu.showMessage(t('heroAlreadyHasHorse'), 'warning')
+        if (!storeStableHorse(building, { type: 'Horse', horseColor: nextHorseColor() })) {
+          menu.showMessage(t('stableFull'), 'warning')
           return
         }
-        if (getStableHorseAmount(building) <= 0) {
-          menu.showMessage(t('stableNeedsHorse'), 'warning')
-          return
-        }
-        if (!assignStableHorseToHero(building, heroUnit)) {
-          menu.showMessage(t('stableNeedsHorse'), 'warning')
-          return
-        }
-        menu.showMessage(t('heroHorseLinked'), 'success')
+        menu.showMessage(t('stableDebugHorseAdded'), 'success')
+        menu.syncHeroBuildingMenu?.()
       },
     }
   }
@@ -355,8 +349,8 @@ export class ActionSpecFactory {
     if (!selection.interface) return []
     if (!isBuildingEntity(selection)) return selection.interface.menu || []
     if (!selection.isBuilt) return []
-    const items = selection.interface.menu || []
-    if (selection.type !== BUILDING_TYPES.stable) return items
-    return [this.getStableBindHeroHorseButton(selection), ...items]
+    const debugItems = selection.type === BUILDING_TYPES.stable ? [this.getStableDebugAddHorseButton(selection)] : []
+    if (!isOwnedByPlayer(selection, this.menu.context.player)) return debugItems
+    return [...debugItems, ...(selection.interface.menu || [])]
   }
 }

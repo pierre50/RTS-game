@@ -8,6 +8,7 @@
     "app/constants/environments.ts": ["exports"],
     "app/lib/combat/parry.ts": ["exports"],
     "app/lib/units/unitExperience.ts": ["exports"],
+    "app/lib/lpc/baked.ts": ["exports"],
     "app/screens/game/BuildingInteriorOccupants.ts": ["exports"],
     "app/services/BuildingInteriorSpaceSystem.ts": ["exports"],
     "app/serialization/CampaignSave.ts": ["exports"]

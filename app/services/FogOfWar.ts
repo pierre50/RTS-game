@@ -34,6 +34,7 @@ export type VisibilityEntity = {
   context?: VisibilityContext
   owner?: VisibilityOwner | null
   sight?: number
+  providesVision?: boolean
   isDead?: boolean
   visibleCells?: Set<number>
   _visibleScratch?: Set<number>
@@ -142,7 +143,7 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   const newVisible = instance._visibleScratch ?? new Set()
   newVisible.clear()
 
-  if (!isDead) {
+  if (!isDead && instance.providesVision !== false) {
     const minI = Math.max(cx - sight, 0)
     const maxI = Math.min(cx + sight, owner.views.size)
     const minJ = Math.max(cy - sight, 0)

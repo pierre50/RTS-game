@@ -1,7 +1,7 @@
 {
   "format": "interior-map-manifest",
   "version": 1,
-  "generatedAt": "2026-08-27T22:58:26.480Z",
+  "generatedAt": "2026-08-30T19:56:24.645Z",
   "batchSeed": 12345,
   "interiors": [
     {
@@ -21,6 +21,86 @@
       "path": "house/house-circle-001.map",
       "seed": 1493591785,
       "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "barracks-circle-001",
+      "interiorType": "Barracks",
+      "kind": "interior",
+      "path": "barracks/barracks-circle-001.map",
+      "seed": 2131564054,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "archery-range-circle-001",
+      "interiorType": "ArcheryRange",
+      "kind": "interior",
+      "path": "archery-range/archery-range-circle-001.map",
+      "seed": 1350861951,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "temple-circle-001",
+      "interiorType": "Temple",
+      "kind": "interior",
+      "path": "temple/temple-circle-001.map",
+      "seed": 642816218,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "market-circle-001",
+      "interiorType": "Market",
+      "kind": "interior",
+      "path": "market/market-circle-001.map",
+      "seed": 1120194016,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "granary-circle-001",
+      "interiorType": "Granary",
+      "kind": "interior",
+      "path": "granary/granary-circle-001.map",
+      "seed": 2001954608,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "storage-pit-circle-001",
+      "interiorType": "StoragePit",
+      "kind": "interior",
+      "path": "storage-pit/storage-pit-circle-001.map",
+      "seed": 416111585,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "stable-circle-001",
+      "interiorType": "Stable",
+      "kind": "interior",
+      "path": "stable/stable-circle-001.map",
+      "seed": 2066548094,
+      "size": 13,
+      "spawns": 1,
+      "exits": 1
+    },
+    {
+      "id": "watch-tower-circle-001",
+      "interiorType": "WatchTower",
+      "kind": "interior",
+      "path": "watch-tower/watch-tower-circle-001.map",
+      "seed": 1126687244,
+      "size": 11,
       "spawns": 1,
       "exits": 1
     }

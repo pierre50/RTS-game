@@ -171,6 +171,15 @@
   display: none;
 }
 
+.hero-interaction-prompt.is-danger {
+  color: #ffd7d7;
+  background: rgba(80, 8, 18, 0.88);
+  border-color: rgba(255, 82, 82, 0.68);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 8px 22px rgba(60, 0, 8, 0.45);
+}
+
 .hero-status-frame {
   display: flex;
   align-items: stretch;
@@ -1202,6 +1211,15 @@
 
 .hero-building-menu-body > .ui-action-row {
   gap: 2px var(--ui-gap-10);
+}
+
+.hero-building-menu-body > .ui-action-row.is-text-only {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+
+.hero-building-menu-body > .ui-action-row.hero-building-menu-debug {
+  padding: 8px 10px;
 }
 
 .hero-building-menu-icon {

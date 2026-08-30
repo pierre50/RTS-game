@@ -33,12 +33,20 @@ test('interior generator writes circular dirt blueprints for supported buildings
 
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
     assert.equal(manifest.format, 'interior-map-manifest')
-    assert.equal(manifest.interiors.length, 2)
+    assert.equal(manifest.interiors.length, 10)
     assert.deepEqual(
       manifest.interiors.map(interior => [interior.interiorType, interior.size]),
       [
         ['TownCenter', 15],
         ['House', 13],
+        ['Barracks', 13],
+        ['ArcheryRange', 13],
+        ['Temple', 13],
+        ['Market', 13],
+        ['Granary', 13],
+        ['StoragePit', 13],
+        ['Stable', 13],
+        ['WatchTower', 11],
       ]
     )
 
@@ -74,6 +82,9 @@ test('interior generator writes circular dirt blueprints for supported buildings
       if (entry.interiorType === 'TownCenter') {
         assert.deepEqual(blueprint.spawns, [{ i: 8, j: 11 }])
         assert.deepEqual(blueprint.exits, [{ id: 'main', i: 8, j: 11, direction: 'south' }])
+      } else if (entry.interiorType === 'WatchTower') {
+        assert.deepEqual(blueprint.spawns, [{ i: 6, j: 9 }])
+        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 6, j: 9, direction: 'south' }])
       } else {
         assert.deepEqual(blueprint.spawns, [{ i: 7, j: 10 }])
         assert.deepEqual(blueprint.exits, [{ id: 'main', i: 7, j: 10, direction: 'south' }])
@@ -90,6 +101,7 @@ test('interior blueprint masks make cells beyond the dirt floor solid', () => {
       'pixi.js': { Assets: { cache: { get: () => ({ resources: {}, cells: {} }) } } },
       '../../Resource': { Resource: class {} },
       '../../cell': { Cell: class {}, GenerationCell: class {} },
+      '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
     },
   })
   const grid = Array.from({ length: 3 }, (_, i) =>
@@ -136,6 +148,7 @@ test('interior blueprint exits remain passable when placed on the dirt border', 
       'pixi.js': { Assets: { cache: { get: () => ({ resources: {}, cells: {} }) } } },
       '../../Resource': { Resource: class {} },
       '../../cell': { Cell: class {}, GenerationCell: class {} },
+      '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
     },
   })
   const grid = Array.from({ length: 3 }, (_, i) =>

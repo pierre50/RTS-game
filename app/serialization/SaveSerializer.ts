@@ -1,5 +1,6 @@
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../lib'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
+import type { ResourceAmount } from '../types/common'
 import type { GameContextLike } from '../types/context'
 import type { PlayerLike, VisionGridLike } from '../types/player'
 import type { AssetAge } from '../types/pixi'
@@ -43,9 +44,12 @@ type SerializableEntity = RuntimeEntityBase & {
   healthRegenMultiplier?: number
   lastHealthDamagedAt?: number
   horseColor?: string
+  trapPrey?: boolean
+  tamingStatus?: SaveEntityState['tamingStatus']
   companionHorseColor?: string | null
   campPatrolAnchor?: GridPoint | null
   banditCampAnchor?: GridPoint | null
+  containedAnimalType?: string | null
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
   followingHero?: boolean
@@ -66,6 +70,7 @@ type SerializableEntity = RuntimeEntityBase & {
   isFleeing?: boolean
   isChief?: boolean
   inventory?: {
+    resources?: ResourceAmount
     equipment?: string[]
     equipped?: NonNullable<SaveEntityState['inventory']>['equipped']
     equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
@@ -145,7 +150,7 @@ function getInteriorWorldSaveCell(entity: SerializableEntity): RuntimeCell | nul
   const interiorSpace = space as InteriorSerializableSpace
   if (interiorSpace.exteriorEntryCell) return interiorSpace.exteriorEntryCell
   const building = interiorSpace.building
-  return building ? map.grid[building.i]?.[building.j] ?? null : null
+  return building ? (map.grid[building.i]?.[building.j] ?? null) : null
 }
 
 function projectInteriorEntityToWorld(entity: SerializableEntity, data: SaveEntityState): SaveEntityState {
@@ -189,39 +194,42 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
 }
 
 function animalData(animal: SerializableEntity): SaveEntityState {
+  const data = filterObject(animal, [
+    'label',
+    'type',
+    'i',
+    'j',
+    'x',
+    'y',
+    'z',
+    'hitPoints',
+    'horseColor',
+    'trapPrey',
+    'tamingStatus',
+    'path',
+    'work',
+    'realDest',
+    'zIndex',
+    'degree',
+    'action',
+    'direction',
+    'currentSheet',
+    'size',
+    'inactif',
+    'isDead',
+    'isDestroyed',
+    'quantity',
+    'isFleeing',
+  ]) as Partial<SaveEntityState>
   return {
-    ...filterObject(animal, [
-      'label',
-      'type',
-      'i',
-      'j',
-      'x',
-      'y',
-      'z',
-      'hitPoints',
-      'horseColor',
-      'path',
-      'work',
-      'realDest',
-      'zIndex',
-      'degree',
-      'action',
-      'direction',
-      'currentSheet',
-      'size',
-      'inactif',
-      'isDead',
-      'isDestroyed',
-      'quantity',
-      'isFleeing',
-    ]),
+    ...data,
     currentFrame: animal.sprite?.currentFrame,
     loop: animal.sprite?.loop,
     dest: referenceData(animal.dest),
     previousDest: referenceData(animal.previousDest),
     path: pathData(animal.path),
     realDest: destinationData(animal.realDest),
-  }
+  } as SaveEntityState
 }
 
 function unitData(unit: SerializableEntity): SaveEntityState {
@@ -314,6 +322,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'assetType',
       'horseAmount',
       'stableHorses',
+      'containedAnimalType',
     ]),
     isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
   }

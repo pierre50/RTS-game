@@ -49,6 +49,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
           campRockPile: 'CampRockPile',
           fireCamp: 'FireCamp',
           house: 'House',
+          stable: 'Stable',
           townCenter: 'TownCenter',
         },
       },
@@ -73,6 +74,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
         getInteriorExitCell: map => map.grid?.[7]?.[11] ?? null,
       },
       '../../lib/lpc': { preloadBakedLpcUnitsForPlayers: async () => {} },
+      '../../lib/lang': { t: key => key },
       '../../serialization/CampaignSave': {
         addChildWorldToCampaign: campaign => campaign,
         createInitialCampaignSave: state => ({ currentWorldId: 'root', worlds: { root: { state } } }),
@@ -261,6 +263,34 @@ test('entering a building interior through the runtime layer does not boot a sep
   assert.equal(game._campaignSave.currentWorldId, 'root')
   assert.deepEqual(game._campaignSave.worlds.root.state, exteriorState)
   assert.equal(autosaves.length, 1)
+})
+
+test('mounted hero cannot enter non-stable building interiors', async () => {
+  const opened = []
+  const messages = []
+  const building = { i: 5, j: 5, isBuilt: true, label: 'house-1', type: 'House' }
+  const { travelIntoBuildingInterior } = loadBuildingInteriorTravel({
+    serializeGame: () => ({ animals: [], players: [], resources: [] }),
+  })
+  const game = {
+    _isRestarting: false,
+    context: {
+      controls: { heroUnit: { mountedOnHorse: true } },
+      menu: { showMessage: (...args) => messages.push(args) },
+    },
+    _gameContext() {
+      return this.context
+    },
+    async _openBuildingInteriorLayer(target) {
+      opened.push(target.label)
+    },
+  }
+
+  await travelIntoBuildingInterior(game, building)
+
+  assert.deepEqual(opened, [])
+  assert.deepEqual(messages, [['heroCannotEnterMounted', 'warning']])
+  assert.equal(game._isRestarting, false)
 })
 
 test('leaving a building interior runtime layer keeps the exterior map alive', async () => {

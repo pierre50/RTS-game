@@ -13,14 +13,20 @@ const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 const DIRT = TERRAIN_INDEX.get('Dirt')
 const WATER = TERRAIN_INDEX.get('Water')
 
+const INTERIOR_TYPE_ORDER = [
+  'town-center',
+  'house',
+  'barracks',
+  'archery-range',
+  'temple',
+  'market',
+  'granary',
+  'storage-pit',
+  'stable',
+  'watch-tower',
+]
+
 const INTERIOR_TYPES = {
-  house: {
-    directory: 'house',
-    idPrefix: 'house-circle',
-    interiorType: 'House',
-    minSize: 13,
-    size: 13,
-  },
   'town-center': {
     directory: 'town-center',
     idPrefix: 'town-center-circle',
@@ -28,13 +34,58 @@ const INTERIOR_TYPES = {
     minSize: 15,
     size: 15,
   },
+  house: {
+    directory: 'house',
+    interiorType: 'House',
+  },
+  barracks: {
+    directory: 'barracks',
+    interiorType: 'Barracks',
+  },
+  'archery-range': {
+    directory: 'archery-range',
+    interiorType: 'ArcheryRange',
+  },
+  temple: {
+    directory: 'temple',
+    interiorType: 'Temple',
+  },
+  market: {
+    directory: 'market',
+    interiorType: 'Market',
+  },
+  granary: {
+    directory: 'granary',
+    interiorType: 'Granary',
+  },
+  'storage-pit': {
+    directory: 'storage-pit',
+    interiorType: 'StoragePit',
+  },
+  stable: {
+    directory: 'stable',
+    interiorType: 'Stable',
+  },
+  'watch-tower': {
+    directory: 'watch-tower',
+    interiorType: 'WatchTower',
+    minSize: 11,
+    size: 11,
+  },
+}
+
+for (const [type, profile] of Object.entries(INTERIOR_TYPES)) {
+  profile.idPrefix ??= `${type}-circle`
+  profile.minSize ??= 13
+  profile.size ??= 13
 }
 
 function usage(error = '') {
   if (error) console.error(`Error: ${error}\n`)
   console.log(`Usage: pnpm interiors:generate -- --type all --count 1
 
-  --type <name>          all, town-center, house (default: all)
+  --type <name>          all, town-center, house, barracks, archery-range, temple,
+                         market, granary, storage-pit, stable, watch-tower (default: all)
   --count <n>            interior variants to generate (default: 1)
   --seed <n>             reproducible batch seed (default: current time)
   --size <n>             override blueprint size for a single type
@@ -183,7 +234,7 @@ async function main() {
   if (options.help) return usage()
 
   const random = randomFrom(options.seed)
-  const selectedTypes = options.type === 'all' ? ['town-center', 'house'] : [options.type]
+  const selectedTypes = options.type === 'all' ? INTERIOR_TYPE_ORDER : [options.type]
   const manifest = {
     format: 'interior-map-manifest',
     version: 1,

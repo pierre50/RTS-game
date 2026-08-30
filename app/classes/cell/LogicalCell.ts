@@ -5,6 +5,12 @@ import type { FogSpriteMemory } from '../../types/map'
 import type { VisionViewerRef } from '../../types/vision'
 import type { TextureRef } from '../../lib'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
+import {
+  assignCellCommonState,
+  createEmptyTerrainAppearance,
+  type CellCommonStateSource,
+  type CellCommonStateTarget,
+} from './CellTypes'
 
 export type LogicalCellContext = {
   map: {
@@ -21,33 +27,12 @@ export type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
 }
 
-export type LogicalCellSource = {
+export type LogicalCellSource = CellCommonStateSource & {
   context: LogicalCellContext
   map?: object
-  i: number
-  j: number
   x: number
   y: number
-  z: number
   zIndex?: number
-  type: string
-  category?: string
-  color?: string | number
-  assets?: TextureRef[]
-  terrainTextureName?: string
-  solid?: boolean
-  visible?: boolean
-  inclined?: boolean
-  border?: boolean
-  waterBorder?: boolean
-  terrainHidden?: boolean
-  viewed?: boolean
-  viewBy?: Set<VisionViewerRef>
-  has?: RuntimeEntity | null
-  corpses?: Set<RuntimeEntity>
-  fogSprites?: FogSpriteMemory[]
-  _hasFog?: boolean
-  _terrainAppearance?: TerrainAppearance
   terrainSet?: ContainerChild | null
 }
 
@@ -66,18 +51,18 @@ export class LogicalCell {
   color?: string | number
   assets: TextureRef[]
   terrainTextureName: string
-  solid: boolean
-  visible: boolean
-  inclined: boolean
-  border: boolean
-  waterBorder: boolean
-  terrainHidden: boolean
-  viewed: boolean
+  solid!: boolean
+  visible!: boolean
+  inclined!: boolean
+  border!: boolean
+  waterBorder!: boolean
+  terrainHidden!: boolean
+  viewed!: boolean
   viewBy: Set<VisionViewerRef>
   has: RuntimeEntity | null
   corpses: Set<RuntimeEntity>
   fogSprites: FogSpriteMemory[]
-  _hasFog: boolean
+  _hasFog!: boolean
   _terrainAppearance: TerrainAppearance
   terrainSet: ContainerChild | null
   _fogChunks: Array<object> | null
@@ -86,30 +71,21 @@ export class LogicalCell {
     this.context = source.context
     this.family = FAMILY_TYPES.cell
     this.map = source.map ?? source.context.map
-    this.i = source.i
-    this.j = source.j
+    this.i = 0
+    this.j = 0
     this.x = source.x
     this.y = source.y
-    this.z = source.z
     this.zIndex = source.zIndex ?? source.i + source.j
-    this.type = source.type
-    this.category = source.category
-    this.color = source.color
-    this.assets = source.assets ?? []
-    this.terrainTextureName = source.terrainTextureName ?? ''
-    this.solid = source.solid ?? false
-    this.visible = source.visible ?? false
-    this.inclined = source.inclined ?? false
-    this.border = source.border ?? false
-    this.waterBorder = source.waterBorder ?? false
-    this.terrainHidden = source.terrainHidden ?? false
-    this.viewed = source.viewed ?? false
-    this.viewBy = source.viewBy ?? new Set()
-    this.has = source.has ?? null
-    this.corpses = source.corpses ?? new Set()
-    this.fogSprites = source.fogSprites ?? []
-    this._hasFog = source._hasFog ?? false
-    this._terrainAppearance = source._terrainAppearance ?? {}
+    this.type = ''
+    this.z = 0
+    this.assets = []
+    this.terrainTextureName = ''
+    this.viewBy = new Set()
+    this.has = null
+    this.corpses = new Set()
+    this.fogSprites = []
+    this._terrainAppearance = createEmptyTerrainAppearance()
+    assignCellCommonState(this as CellCommonStateTarget, source)
     this.terrainSet = source.terrainSet ?? null
     this._fogChunks = null
   }

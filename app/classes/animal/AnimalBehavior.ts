@@ -7,6 +7,7 @@ import {
 } from '../../lib/buildings/passageCells'
 import { getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { showAlertFeedback } from '../../lib/combat/combatFeedback'
+import { shouldHorseFleeFromThreat } from '../../lib/horses/horseTaming'
 import { updateUnitEnergy } from '../../lib/units/unitEnergy'
 import { isAirborne } from './locomotion'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -90,7 +91,7 @@ export class AnimalBehavior {
     updateUnitEnergy(animal, BEHAVIOR_CHECK_INTERVAL)
 
     const threat = this.findNearbyThreat()
-    if (threat && !animal.isFleeing && animal.strategy === 'runaway') {
+    if (threat && !animal.isFleeing && animal.strategy === 'runaway' && shouldHorseFleeFromThreat(animal)) {
       showAlertFeedback(animal)
       animal.getReaction(threat)
       return

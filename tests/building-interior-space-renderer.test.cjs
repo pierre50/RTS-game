@@ -51,7 +51,30 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
   return loadTsModule('app/services/BuildingInteriorSpaceSystem.ts', {
     mocks: {
       'pixi.js': { Container, Graphics },
-      '../classes/cell': { Cell: class {} },
+      '../classes/cell': {
+        Cell: class {
+          constructor(options) {
+            Object.assign(this, options)
+            this.category = options.type
+            this.corpses = new Set()
+            this.has = null
+            this.solid = false
+            this.visible = true
+            this.x = options.i * 32
+            this.y = options.j * 16
+          }
+
+          place(entity) {
+            this.has = entity
+            this.solid = true
+            entity.currentCell = this
+            entity.i = this.i
+            entity.j = this.j
+            entity.x = this.x
+            entity.y = this.y
+          }
+        },
+      },
       '../constants': {
         BUILDING_TYPES: {
           campCrate: 'CampCrate',
@@ -59,6 +82,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
           campRockPile: 'CampRockPile',
           fireCamp: 'FireCamp',
           house: 'House',
+          stable: 'Stable',
         },
         CELL_HEIGHT: 32,
         CELL_WIDTH: 64,
@@ -78,7 +102,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
         OUTSIDE_SPACE_ID: 'outside',
         ensureMapSpaces: map => (map.spaces ??= new Map()),
         getEntityMapSpace: () => null,
-        getMapSpace: () => null,
+        getMapSpace: (map, spaceId = 'outside') => map?.spaces?.get(spaceId || 'outside') ?? null,
         moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
         sameMapSpace: () => true,
       },
@@ -120,6 +144,145 @@ test('runtime building interiors sort floor cells and entities in one scene laye
   assert.equal(renderer.entityLayer.sortableChildren, true)
   assert.equal(renderer.sceneLayer.sortableChildren, true)
   assert.equal(renderer.terrainLayer.sortableChildren, true)
+})
+
+test('runtime stable interiors synchronize stored horses without default decorations', () => {
+  const createdBuildings = []
+  const createdAnimals = []
+  const { ensureBuildingInteriorSpace, syncBuildingStableInteriorHorses } = loadBuildingInteriorSpaceSystem()
+  const context = {
+    app: { ticker: { add: () => {}, remove: () => {} } },
+    controls: {},
+    map: {
+      addChild: child => {
+        child.parent = context.map
+        return child
+      },
+      addToInstanceBucket: () => {},
+      gaia: {
+        animals: createdAnimals,
+        createAnimal(options) {
+          const animal = {
+            ...options,
+            family: 'animal',
+            label: `created-${createdAnimals.length}`,
+            animalBehavior: { stop: () => {} },
+            clear() {
+              this.isDestroyed = true
+              if (this.currentCell?.has === this) {
+                this.currentCell.has = null
+                this.currentCell.solid = false
+              }
+            },
+            updateTexture: () => {},
+          }
+          context.map.spaces.get(options.spaceId).grid[options.i][options.j].place(animal)
+          createdAnimals.push(animal)
+          return animal
+        },
+      },
+      grid: [[{ i: 0, j: 0 }]],
+      random: () => 0,
+      randomItem: items => items[0],
+      randomRange: min => min,
+      removeFromInstanceBucket: () => {},
+      spaces: new Map(),
+      updateInstanceBucket: () => {},
+    },
+  }
+  const owner = {
+    buildings: [],
+    createBuilding: options => {
+      createdBuildings.push(options)
+      return options
+    },
+    isPlayed: true,
+  }
+  const building = {
+    context,
+    family: 'building',
+    i: 3,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 4,
+    label: 'stable-1',
+    owner,
+    stableHorses: [{ horseColor: 'dark' }, { horseColor: 'light' }],
+    type: 'Stable',
+    x: 120,
+    y: 160,
+  }
+  const blueprint = {
+    floorMask: [
+      [0, 0, 0],
+      [0, 1, 1],
+      [0, 1, 1],
+    ],
+    borderMask: [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
+    exits: [{ i: 2, j: 2 }],
+    relief: [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
+    size: 2,
+    terrain: [
+      ['Water', 'Water', 'Water'],
+      ['Water', 'Dirt', 'Dirt'],
+      ['Water', 'Dirt', 'Dirt'],
+    ],
+  }
+
+  const space = ensureBuildingInteriorSpace(context, building, blueprint)
+
+  assert.deepEqual(createdBuildings, [])
+  assert.equal(space.size, 2)
+  assert.equal(createdAnimals.length, 2)
+  assert.deepEqual(
+    createdAnimals.map(horse => ({
+      ambientMovement: horse.ambientMovement,
+      horseColor: horse.horseColor,
+      spaceId: horse.spaceId,
+      tamingStatus: horse.tamingStatus,
+      type: horse.type,
+    })),
+    [
+      {
+        ambientMovement: false,
+        horseColor: 'dark',
+        spaceId: space.id,
+        tamingStatus: 'tamed',
+        type: 'Horse',
+      },
+      {
+        ambientMovement: false,
+        horseColor: 'light',
+        spaceId: space.id,
+        tamingStatus: 'tamed',
+        type: 'Horse',
+      },
+    ]
+  )
+  assert.deepEqual(createdAnimals.map(horse => horse.label), [
+    `${space.id}:stable-horse:0`,
+    `${space.id}:stable-horse:1`,
+  ])
+
+  building.stableHorses = [{ horseColor: 'dark' }]
+  syncBuildingStableInteriorHorses(context, building)
+  assert.equal(createdAnimals[1].isDestroyed, true)
+
+  building.stableHorses = [{ horseColor: 'dark' }, { horseColor: 'gold' }]
+  syncBuildingStableInteriorHorses(context, building)
+  assert.equal(createdAnimals.length, 3)
+  assert.equal(createdAnimals[2].label, `${space.id}:stable-horse:1`)
+  assert.equal(createdAnimals[2].horseColor, 'gold')
+  assert.equal(createdAnimals[2].tamingStatus, 'tamed')
 })
 
 test('runtime building interior exit marker sorts above its floor cell inside the scene layer', () => {

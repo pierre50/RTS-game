@@ -1,16 +1,18 @@
-import { ACTION_TYPES, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, SHEET_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
 import { getCellsInCellRadius } from '../grid/cells'
-import { getEntitySpaceMapLike } from '../mapSpaces'
+import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
+import { isTamedHorse } from '../horses/horseTaming'
+import { getEntitySpaceMapLike, getMapSpace } from '../mapSpaces'
 import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
-type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open'
+type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'recoverTrap'
 
 export type HeroProximityInteraction =
   | {
@@ -30,13 +32,18 @@ export type HeroProximityInteraction =
     }
   | {
       action: 'mount'
-      labelKey: 'heroInteractionMount'
+      labelKey: 'heroInteractionMount' | 'heroInteractionSteal'
       target: RuntimeEntity
     }
   | {
       action: 'open'
       labelKey: 'heroInteractionOpen'
       target: RuntimeEntity
+    }
+  | {
+      action: 'recoverTrap'
+      labelKey: 'heroInteractionRecover'
+      target: BuildingEntity
     }
 
 export type HeroProximityInteractionOptions = {
@@ -47,6 +54,7 @@ export type HeroProximityInteractionOptions = {
 }
 
 const OPENABLE_CORPSE_CELL_RADIUS = 2
+const MOUNTABLE_HORSE_CELL_RADIUS = 2
 
 function isOpenableEntity(target: RuntimeEntity | null | undefined): target is RuntimeEntity {
   if (!target || target.isDestroyed) return false
@@ -82,6 +90,86 @@ function findNearestOpenableEntity(hero: UnitEntity, openEntityTarget?: RuntimeE
   return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
 }
 
+function getStableInteriorHorseOwner(hero: UnitEntity, horse: RuntimeEntity) {
+  const map = hero.context?.map
+  const space = map && horse.spaceId ? getMapSpace(map, horse.spaceId) : null
+  const interiorSpace = space as (typeof space & { building?: BuildingEntity | null }) | null
+  return interiorSpace?.kind === 'interior' && interiorSpace.building?.type === BUILDING_TYPES.stable
+    ? (interiorSpace.building.owner ?? null)
+    : null
+}
+
+function getHorseTheftOwner(hero: UnitEntity, horse: RuntimeEntity) {
+  return getStableInteriorHorseOwner(hero, horse) ?? horse.owner ?? null
+}
+
+function isHorseTheftInteraction(hero: UnitEntity, horse: RuntimeEntity): boolean {
+  const heroOwner = hero.owner
+  const horseOwner = getHorseTheftOwner(hero, horse)
+  if (!heroOwner?.label || !horseOwner?.label) return false
+  return heroOwner.label !== horseOwner.label
+}
+
+function isMountableTamedHorse(
+  hero: UnitEntity,
+  target: RuntimeEntity | null | undefined,
+  allowLegacyCompanionHorse = false
+): target is AnimalEntity {
+  if (hero.mountedOnHorse) return false
+  if (!target || target.isDead || target.isDestroyed) return false
+  if (target.family !== 'animal' || target.type !== 'Horse') return false
+  if (!allowLegacyCompanionHorse && !isTamedHorse(target as AnimalEntity)) return false
+  return isHeroInteractionTargetReachable(hero, null, target)
+}
+
+function findNearestMountableHorse(
+  hero: UnitEntity,
+  companionHorse?: RuntimeEntity | null,
+  openEntityTarget?: RuntimeEntity | null
+): RuntimeEntity | null {
+  const candidates: RuntimeEntity[] = []
+  const seen = new Set<RuntimeEntity>()
+
+  const addCandidate = (target: RuntimeEntity | null | undefined, allowLegacyCompanionHorse = false) => {
+    if (!target || seen.has(target) || !isMountableTamedHorse(hero, target, allowLegacyCompanionHorse)) return
+    seen.add(target)
+    candidates.push(target)
+  }
+
+  addCandidate(openEntityTarget)
+  addCandidate(companionHorse, true)
+
+  const grid = getEntitySpaceMapLike(hero, hero.context?.map)?.grid
+  if (grid) {
+    for (const cell of getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, MOUNTABLE_HORSE_CELL_RADIUS)) {
+      addCandidate(cell.has as RuntimeEntity | null | undefined)
+    }
+  }
+
+  return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
+}
+
+function isRecoverableTrap(hero: UnitEntity, building: BuildingEntity | null | undefined): building is BuildingEntity {
+  return Boolean(
+    building &&
+      building.type === BUILDING_TYPES.trap &&
+      building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed &&
+      (!building.requiresActiveSightInteraction ||
+        instanceIsInActiveOrTeamSight(building, hero.context?.player, hero.context?.players)) &&
+      isHeroInteractionTargetReachable(hero, null, building)
+  )
+}
+
+function findNearestRecoverableTrap(
+  hero: UnitEntity,
+  buildings: BuildingEntity[] | null | undefined
+): BuildingEntity | null {
+  const candidates = (buildings ?? []).filter(building => isRecoverableTrap(hero, building))
+  return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
+}
+
 function isCommandableNpc(hero: UnitEntity, target: UnitEntity): boolean {
   if (!heroCanCommand(hero)) return false
   if (target.owner !== hero.owner) return false
@@ -107,8 +195,8 @@ export function resolveHeroNpcProximityInteraction(
       chatterLine: sleeping
         ? undefined
         : unit.owner === hero.owner
-        ? pickNpcChatterLine()
-        : pickForeignNpcChatterLine(unit),
+          ? pickNpcChatterLine()
+          : pickForeignNpcChatterLine(unit),
       ordersEnabled: false,
     },
     target: unit,
@@ -132,17 +220,19 @@ export function resolveHeroProximityInteraction({
 
   if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
 
+  const trap = findNearestRecoverableTrap(hero, buildings)
+  if (trap) return { action: 'recoverTrap', labelKey: 'heroInteractionRecover', target: trap }
+
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) return { action: 'enter', labelKey: 'heroInteractionEnter', target: building }
 
-  if (
-    companionHorse &&
-    !hero.mountedOnHorse &&
-    !companionHorse.isDead &&
-    !companionHorse.isDestroyed &&
-    isHeroInteractionTargetReachable(hero, null, companionHorse)
-  ) {
-    return { action: 'mount', labelKey: 'heroInteractionMount', target: companionHorse }
+  const mountableHorse = findNearestMountableHorse(hero, companionHorse, openEntityTarget)
+  if (mountableHorse) {
+    return {
+      action: 'mount',
+      labelKey: isHorseTheftInteraction(hero, mountableHorse) ? 'heroInteractionSteal' : 'heroInteractionMount',
+      target: mountableHorse,
+    }
   }
 
   const openEntity = findNearestOpenableEntity(hero, openEntityTarget)

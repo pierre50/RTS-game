@@ -13,7 +13,8 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -69,7 +70,7 @@ class MockGraphics {
   }
 }
 
-function createUnit() {
+function createUnit(extra = {}) {
   const children = []
   return {
     children,
@@ -90,6 +91,7 @@ function createUnit() {
       if (index >= 0) children.splice(index, 1)
       child.parent = null
     },
+    ...extra,
   }
 }
 
@@ -121,13 +123,20 @@ function createScheduler() {
 test('overhead indicators use styled text for alert and sleep states', () => {
   const createdBubbles = []
   const { setUnitOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
-    '../constants': { FAMILY_TYPES: { animal: 'animal', unit: 'unit' }, LABEL_TYPES: { overheadIndicator: 'overheadIndicator' } },
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
     '../maths': { getReliefOffset: unit => unit.reliefLift ?? 0 },
     './statusBubble': {
       createStatusBubble: options => {
         createdBubbles.push(options)
         const bubble = new MockContainer()
-        bubble.addChild(new MockGraphics(), new MockGraphics(), new MockText({ ...options, style: { fontSize: options.fontSize } }))
+        bubble.addChild(
+          new MockGraphics(),
+          new MockGraphics(),
+          new MockText({ ...options, style: { fontSize: options.fontSize } })
+        )
         return bubble
       },
     },
@@ -149,7 +158,10 @@ test('overhead indicators use styled text for alert and sleep states', () => {
 
 test('overhead indicators track visual relief lift', () => {
   const { setUnitOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
-    '../constants': { FAMILY_TYPES: { animal: 'animal', unit: 'unit' }, LABEL_TYPES: { overheadIndicator: 'overheadIndicator' } },
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
     '../maths': { getReliefOffset: unit => unit.reliefLift ?? 0 },
     './statusBubble': {
       createStatusBubble: () => new MockContainer(),
@@ -164,9 +176,37 @@ test('overhead indicators track visual relief lift', () => {
   assert.equal(unit.children[0].y, -72)
 })
 
+test('overhead indicators support entity-specific offsets', () => {
+  const { setEntityOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
+    '../maths': { getReliefOffset: entity => entity.reliefLift ?? 0 },
+    './statusBubble': {
+      createStatusBubble: () => new MockContainer(),
+    },
+  })
+  const trap = createUnit({
+    family: 'building',
+    overheadIndicatorOffsetX: 3,
+    overheadIndicatorOffsetY: 30,
+    reliefLift: 0,
+    sprite: { anchor: { y: 0.5 }, height: 96, scale: { y: 1 } },
+  })
+
+  setEntityOverheadIndicator(trap, 'question')
+
+  assert.equal(trap.children[0].x, 3)
+  assert.equal(trap.children[0].y, -24)
+})
+
 test('overhead indicators keep tracking relief while visible', () => {
   const { setUnitOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
-    '../constants': { FAMILY_TYPES: { animal: 'animal', unit: 'unit' }, LABEL_TYPES: { overheadIndicator: 'overheadIndicator' } },
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
     '../maths': { getReliefOffset: unit => unit.reliefLift ?? 0 },
     './statusBubble': {
       createStatusBubble: () => new MockContainer(),
@@ -181,14 +221,17 @@ test('overhead indicators keep tracking relief while visible', () => {
   setUnitOverheadIndicator(unit, 'sleep')
   const indicator = unit.children[0]
   unit.reliefLift = -24
-  scheduler.runByName('unit.overheadIndicatorPosition')
+  scheduler.runByName('entity.overheadIndicatorPosition')
 
   assert.equal(indicator.y, -72)
 })
 
 test('clearing an overhead indicator fades it out before destroying it', () => {
   const { clearUnitOverheadIndicator, setUnitOverheadIndicator } = loadModule('app/lib/entities/overheadIndicator.ts', {
-    '../constants': { FAMILY_TYPES: { animal: 'animal', unit: 'unit' }, LABEL_TYPES: { overheadIndicator: 'overheadIndicator' } },
+    '../constants': {
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { overheadIndicator: 'overheadIndicator' },
+    },
     '../maths': { getReliefOffset: () => 0 },
     './statusBubble': {
       createStatusBubble: () => new MockContainer(),
@@ -204,14 +247,14 @@ test('clearing an overhead indicator fades it out before destroying it', () => {
   clearUnitOverheadIndicator(unit)
   clearUnitOverheadIndicator(unit)
   scheduler.elapsedMs = 70
-  scheduler.runByName('unit.overheadIndicatorFade')
+  scheduler.runByName('entity.overheadIndicatorFade')
 
   assert.equal(unit.children[0], indicator)
   assert.equal(indicator.alpha, 0.5)
   assert.equal(indicator.destroyed, false)
 
   scheduler.elapsedMs = 140
-  scheduler.runByName('unit.overheadIndicatorFade')
+  scheduler.runByName('entity.overheadIndicatorFade')
 
   assert.equal(unit.children.length, 0)
   assert.equal(indicator.destroyed, true)

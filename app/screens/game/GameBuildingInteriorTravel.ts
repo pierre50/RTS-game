@@ -2,6 +2,8 @@ import {
   getBuildingInteriorPortalId,
   isBuildingInteriorSupported,
 } from '../../lib/buildings/interiors'
+import { BUILDING_TYPES } from '../../constants'
+import { t } from '../../lib/lang'
 import {
   createInitialCampaignSave,
   getCurrentWorldState,
@@ -151,6 +153,11 @@ export async function travelIntoBuildingInterior(
 ): Promise<void> {
   if (game._isRestarting || !isBuildingInteriorSupported(building)) return
   if (!game._openBuildingInteriorLayer) return
+  const context = game._gameContext()
+  if (context.controls.heroUnit?.mountedOnHorse && building.type !== BUILDING_TYPES.stable) {
+    context.menu?.showMessage?.(t('heroCannotEnterMounted'), 'warning')
+    return
+  }
   const now = Date.now()
   game._isRestarting = true
   try {

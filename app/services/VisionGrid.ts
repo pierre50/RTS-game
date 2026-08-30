@@ -13,6 +13,7 @@ export class VisionGrid {
   knownOccupants: Map<number, KnownVisionOccupant>
   length: number
   onViewed: ((i: number, j: number) => void) | null
+  onVisibilityChange: ((i: number, j: number) => void) | null
   size: number
   stride: number
   visibleBy: Map<number, Set<VisionViewerRef>>
@@ -22,7 +23,8 @@ export class VisionGrid {
     size: number,
     savedViews: SerializedVisionGrid = [],
     onViewed: ((i: number, j: number) => void) | null = null,
-    revealTerrain = false
+    revealTerrain = false,
+    onVisibilityChange: ((i: number, j: number) => void) | null = null
   ) {
     this.size = size
     this.stride = size + 1
@@ -32,6 +34,7 @@ export class VisionGrid {
     this.visibleBy = new Map()
     this.knownOccupants = new Map()
     this.onViewed = onViewed
+    this.onVisibilityChange = onVisibilityChange
 
     for (let i = 0; i < this.stride; i++) {
       for (let j = 0; j < this.stride; j++) {
@@ -88,7 +91,9 @@ export class VisionGrid {
     const before = viewers.size
     viewers.add(instance)
     this.visibleCount[index] = viewers.size
-    return viewers.size !== before
+    const changed = viewers.size !== before
+    if (changed) this.onVisibilityChange?.(i, j)
+    return changed
   }
 
   removeViewer(i: number, j: number, instance: VisionViewer): boolean {
@@ -98,6 +103,7 @@ export class VisionGrid {
     if (!viewers?.delete(instance)) return false
     this.visibleCount[index] = viewers.size
     if (!viewers.size) this.visibleBy.delete(index)
+    this.onVisibilityChange?.(i, j)
     return true
   }
 
@@ -108,6 +114,8 @@ export class VisionGrid {
       this.visibleCount[index] = viewers.size
       if (!viewers.size) this.visibleBy.delete(index)
       changed.push(index)
+      const [i, j] = this.coordinates(index)
+      this.onVisibilityChange?.(i, j)
     }
     return changed
   }

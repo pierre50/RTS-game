@@ -6,6 +6,7 @@ import type { RuntimeEntityBase } from './entityBase'
 import type { RuntimeEntity } from './entityRuntime'
 import type { UnitCreationExtra, UnitEntity } from './unitEntity'
 import type { TextureRef } from '../lib/graphics/textures'
+import type { HorseTamingStatus } from '../lib/horses/horseTaming'
 
 export interface BuildingEntity extends RuntimeEntityBase {
   isBuilt?: boolean
@@ -14,7 +15,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   technology?: { type?: string; config?: TechnologyConfig } | null
   isUsedBy?: RuntimeEntity | null
   horseAmount?: number
-  stableHorses?: Array<{ horseColor?: string }>
+  stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
   addChild?: Container['addChild']
@@ -32,6 +33,11 @@ export interface BuildingEntity extends RuntimeEntityBase {
   upgrade?: (target: string) => void
   assetType?: string
   textureName?: string
+  hideWhenFogged?: boolean
+  providesVision?: boolean
+  requiresActiveSightInteraction?: boolean
+  overheadIndicatorOffsetX?: number
+  overheadIndicatorOffsetY?: number
   useSpriteShadow?: boolean
   spriteShadowAnchor?: { x?: number; y?: number }
   finalTexture?: () => void
@@ -39,6 +45,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   shelterCapacity?: number
   populationCapacityApplied?: boolean
   constructionTime?: number
+  containedAnimalType?: string | null
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]

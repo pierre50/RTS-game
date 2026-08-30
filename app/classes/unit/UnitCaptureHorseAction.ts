@@ -1,5 +1,5 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
-import { degreeToDirection, getInstanceDegree, instancesDistance } from '../../lib'
+import { degreeToDirection, getInstanceDegree, instancesDistance, isWildHorse } from '../../lib'
 import { getNearestAvailableStableForUnit, routeCapturedHorseToStableWithOwnerContact } from '../../lib/horses/horseCapture'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { SchedulerTaskId } from '../../types/context'
@@ -73,7 +73,7 @@ function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is
 }
 
 function isHorseEntity(value: RuntimeEntity | null | undefined): value is AnimalEntity {
-  return Boolean(value?.family === FAMILY_TYPES.animal && value.type === 'Horse')
+  return Boolean(value?.family === FAMILY_TYPES.animal && value.type === 'Horse' && isWildHorse(value))
 }
 
 function getHorseLassoOwner(horse: AnimalEntity): UnitEntity | null | undefined {

@@ -24,13 +24,9 @@ import {
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
+import { finishManualHeroWorkSwing, lockManualHeroAction, stopManualHeroAction } from './UnitManualHeroWork'
 import {
-  finishManualHeroWorkSwing,
-  lockManualHeroAction,
-  stopManualHeroAction,
-} from './UnitManualHeroWork'
-import {
-  addGatheredResourceToPlayer,
+  addGatheredResource,
   clampDepletedBerrybushHitPoints,
   getGatherAmount,
   isBuildingEntity,
@@ -206,7 +202,7 @@ export class UnitResourceActions {
         finishManualHeroWorkSwing(unit, releaseFrame)
         return
       }
-      addGatheredResourceToPlayer(unit, loadingType, gain)
+      addGatheredResource(unit, loadingType, gain)
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
@@ -282,7 +278,7 @@ export class UnitResourceActions {
         finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
         return
       }
-      addGatheredResourceToPlayer(unit, LOADING_TYPES.wheat, gain)
+      addGatheredResource(unit, LOADING_TYPES.wheat, gain)
       grantUnitXp(unit, XP_CATEGORIES.farming, gain)
       d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
       showResourceGainFeedback(unit, gain)
@@ -343,7 +339,7 @@ export class UnitResourceActions {
           finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
           return
         }
-        addGatheredResourceToPlayer(unit, LOADING_TYPES.wood, gain)
+        addGatheredResource(unit, LOADING_TYPES.wood, gain)
         grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
         dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
         showResourceGainFeedback(unit, gain)

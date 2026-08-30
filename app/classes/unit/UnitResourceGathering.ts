@@ -1,9 +1,10 @@
 import { LOADING_TYPES, RESOURCE_GATHER_SWINGS, RESOURCE_STOCKPILE_TYPES, RESOURCE_TYPES } from '../../constants'
 import { getGatherXpBonus } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
+import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 
-type PlayerResourceKey = 'wood' | 'food' | 'stone' | 'gold' | 'copper' | 'iron'
+type PlayerResourceKey = keyof ResourceAmount
 
 const DEPLETED_BERRYBUSH_HIT_POINTS = 4
 
@@ -40,7 +41,10 @@ export function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEn
 
 export function markBerrybushDepleted(target: RuntimeEntity): void {
   if (!isDepletedBerrybush(target)) return
-  target.totalHitPoints = Math.min(target.totalHitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
+  target.totalHitPoints = Math.min(
+    target.totalHitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS,
+    DEPLETED_BERRYBUSH_HIT_POINTS
+  )
   target.hitPoints = Math.min(target.hitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS, DEPLETED_BERRYBUSH_HIT_POINTS)
   target.updateTexture?.()
 }
@@ -50,7 +54,9 @@ export function clampDepletedBerrybushHitPoints(target: RuntimeEntity): void {
   markBerrybushDepleted(target)
 }
 
-export function isFarmHarvestTarget(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity | ResourceEntity {
+export function isFarmHarvestTarget(
+  value: UnitEntity['dest'] | null | undefined
+): value is BuildingEntity | ResourceEntity {
   return isResourceEntity(value) && value.type === RESOURCE_TYPES.wheat
 }
 
@@ -58,17 +64,31 @@ export function getGatherAmount(unit: UnitEntity): number {
   return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
 }
 
-function getPlayerResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
+function getGatheredResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
   if (!loadingType) return null
   if ([LOADING_TYPES.berry, LOADING_TYPES.wheat, LOADING_TYPES.meat].includes(loadingType)) return 'food'
   return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
 }
 
-export function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amount: number): void {
-  const resourceKey = getPlayerResourceKey(loadingType)
+function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amount: number): void {
+  const resourceKey = getGatheredResourceKey(loadingType)
   if (!resourceKey || !unit.owner) return
   unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
   if (unit.owner.isPlayed) unit.context?.menu?.updateTopbar?.()
+}
+
+function addGatheredResourceToUnitInventory(unit: UnitEntity, loadingType: string, amount: number): void {
+  const resourceKey = getGatheredResourceKey(loadingType)
+  if (!resourceKey || amount <= 0) return
+  unit.inventory = unit.inventory ?? {}
+  unit.inventory.resources = unit.inventory.resources ?? {}
+  unit.inventory.resources[resourceKey] = (unit.inventory.resources[resourceKey] ?? 0) + amount
+  if (unit.context?.controls?.heroUnit === unit) unit.context.menu?.refreshInventory?.()
+}
+
+export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): void {
+  addGatheredResourceToUnitInventory(unit, loadingType, amount)
+  addGatheredResourceToPlayer(unit, loadingType, amount)
 }
 
 function getResourceGatherSwings(loadingType: string, override?: number): number {

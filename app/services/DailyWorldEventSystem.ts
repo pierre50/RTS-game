@@ -1,4 +1,5 @@
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
+import { TrapHarvestSystem } from './world/TrapHarvestSystem'
 import type { GameContextLike } from '../types/context'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
@@ -12,10 +13,10 @@ export class DailyWorldEventSystem {
   constructor(context: GameContextLike) {
     this.context = context
     this.handlers = []
-    this.unsubscribeDayChange = context.dayNight?.onDayChange?.((day, previousDay) =>
-      this.handleDayChange({ day, previousDay })
-    ) ?? null
+    this.unsubscribeDayChange =
+      context.dayNight?.onDayChange?.((day, previousDay) => this.handleDayChange({ day, previousDay })) ?? null
     this.register(new NaturalRegrowthSystem(context))
+    this.register(new TrapHarvestSystem(context))
   }
 
   register(handler: DailyWorldEventHandler): () => void {

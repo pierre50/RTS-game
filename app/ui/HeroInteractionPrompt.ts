@@ -1,5 +1,7 @@
 import { t } from '../lib/lang'
 
+const DANGER_ACTION_KEYS = new Set(['heroInteractionSteal'])
+
 export class HeroInteractionPrompt {
   element: HTMLDivElement
   private actionKey: string | null
@@ -16,6 +18,7 @@ export class HeroInteractionPrompt {
     if (!actionKey) {
       this.actionKey = null
       this.element.classList.add('hidden')
+      this.element.classList.remove('is-danger')
       this.element.setAttribute('aria-hidden', 'true')
       this.element.textContent = ''
       return
@@ -24,6 +27,7 @@ export class HeroInteractionPrompt {
       this.actionKey = actionKey
       this.element.textContent = t('heroInteractionPrompt', { action: t(actionKey) })
     }
+    this.element.classList.toggle('is-danger', DANGER_ACTION_KEYS.has(actionKey))
     this.element.classList.remove('hidden')
     this.element.setAttribute('aria-hidden', 'false')
   }

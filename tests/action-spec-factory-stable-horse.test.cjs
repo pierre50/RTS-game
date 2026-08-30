@@ -23,24 +23,29 @@ function loadActionSpecFactory() {
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
     },
     '../lib': {
-      assignStableHorseToHero: (building, hero) => {
-        if (!hero || hero.mountedOnHorse || hero.companionHorseColor) return null
-        const horse = building.stableHorses?.shift?.() ?? null
-        if (!horse) return null
-        building.horseAmount = building.stableHorses.length
-        hero.companionHorseColor = horse.horseColor ?? 'brown'
-        hero.horseColor = hero.companionHorseColor
-        return horse
-      },
       canAfford: () => true,
       getBuildingAsset: () => ({}),
       getIconPath: id => id,
       getStableHorseAmount: building => building.stableHorses?.length ?? 0,
-      heroHasLinkedHorse: hero => Boolean(hero?.mountedOnHorse || hero?.companionHorseColor),
       isBuildingLimitReached: () => false,
       isValidCondition: () => true,
+      STABLE_HORSE_CAPACITY: 5,
+      storeStableHorse: (building, horse) => {
+        if ((building.stableHorses?.length ?? 0) >= 5) return false
+        building.stableHorses = building.stableHorses ?? []
+        building.stableHorses.push({ horseColor: horse.horseColor, tamingStatus: 'tamed' })
+        building.horseAmount = building.stableHorses.length
+        return true
+      },
     },
     '../lib/avatar': { renderUnitTypeAvatar: () => false },
+    '../lib/horses/horseColors': {
+      HORSE_COLOR_PALETTES: {
+        brown: [],
+        dark: [],
+        light: [],
+      },
+    },
     '../lib/buildings/buildingTraining': { getMissingResourceNames: () => [], isTraineeTrainingType: () => false },
     '../lib/chief': {
       hasLivingChief: () => true,
@@ -57,21 +62,22 @@ function loadActionSpecFactory() {
 
 function createFactory({ hero, messages }) {
   const ActionSpecFactory = loadActionSpecFactory()
+  const player = {
+    config: { buildings: {}, units: {} },
+    techs: {},
+    technologies: [],
+  }
   const menu = {
     context: {
       controls: { heroUnit: hero },
-      player: {
-        config: { buildings: {}, units: {} },
-        techs: {},
-        technologies: [],
-      },
+      player,
     },
     showMessage: (...args) => messages.push(args),
   }
-  return new ActionSpecFactory(menu)
+  return { factory: new ActionSpecFactory(menu), player }
 }
 
-test('stable bind button consumes a stored horse and links it to the hero', () => {
+test('stable debug horse button adds a stored horse without linking it to the hero', () => {
   const hero = {}
   const messages = []
   const stable = {
@@ -82,37 +88,83 @@ test('stable bind button consumes a stored horse and links it to the hero', () =
     stableHorses: [{ horseColor: 'dark' }],
     horseAmount: 1,
   }
-  const factory = createFactory({ hero, messages })
+  const { factory, player } = createFactory({ hero, messages })
+  stable.owner = player
 
-  const button = factory.getActionMenuItems(stable).find(item => item.id === 'stableBindHeroHorse')
+  const button = factory.getActionMenuItems(stable).find(item => item.id === 'stableDebugAddHorse')
   assert.ok(button)
   assert.equal(button.disabled(), false)
 
   button.onClick(stable)
 
-  assert.equal(hero.companionHorseColor, 'dark')
-  assert.equal(hero.horseColor, 'dark')
-  assert.deepEqual(stable.stableHorses, [])
-  assert.deepEqual(messages, [['heroHorseLinked', 'success']])
-  assert.equal(button.disabled(), true)
+  assert.equal(hero.companionHorseColor, undefined)
+  assert.equal(hero.horseColor, undefined)
+  assert.deepEqual(stable.stableHorses, [
+    { horseColor: 'dark' },
+    { horseColor: 'dark', tamingStatus: 'tamed' },
+  ])
+  assert.deepEqual(messages, [['stableDebugHorseAdded', 'success']])
+  assert.equal(button.disabled(), false)
 })
 
-test('stable bind button is disabled when empty or hero already has a horse', () => {
+test('stable debug horse button is disabled when the stable is full', () => {
   const messages = []
-  const factory = createFactory({ hero: { companionHorseColor: 'light' }, messages })
+  const { factory } = createFactory({ hero: { companionHorseColor: 'light' }, messages })
   const stable = {
     family: 'building',
     type: 'Stable',
     isBuilt: true,
     interface: { menu: [] },
-    stableHorses: [{ horseColor: 'dark' }],
+    stableHorses: [{}, {}, {}, {}, {}],
   }
 
-  const linkedButton = factory.getActionMenuItems(stable).find(item => item.id === 'stableBindHeroHorse')
-  assert.equal(linkedButton.disabled(), true)
+  const button = factory.getActionMenuItems(stable).find(item => item.id === 'stableDebugAddHorse')
+  assert.equal(button.disabled(), true)
+})
 
-  const emptyFactory = createFactory({ hero: {}, messages })
-  const emptyStable = { ...stable, stableHorses: [] }
-  const emptyButton = emptyFactory.getActionMenuItems(emptyStable).find(item => item.id === 'stableBindHeroHorse')
-  assert.equal(emptyButton.disabled(), true)
+test('foreign buildings expose no production actions except stable debug', () => {
+  const messages = []
+  const { factory } = createFactory({ hero: {}, messages })
+  const foreignOwner = { isPlayed: false }
+  const foreignHouse = {
+    family: 'building',
+    type: 'House',
+    owner: foreignOwner,
+    isBuilt: true,
+    interface: { menu: [{ id: 'spawn' }] },
+  }
+  const foreignStable = {
+    family: 'building',
+    type: 'Stable',
+    owner: foreignOwner,
+    isBuilt: true,
+    interface: { menu: [{ id: 'train' }] },
+    stableHorses: [],
+  }
+
+  assert.deepEqual(factory.getActionMenuItems(foreignHouse), [])
+  assert.deepEqual(
+    factory.getActionMenuItems(foreignStable).map(item => item.id),
+    ['stableDebugAddHorse']
+  )
+})
+
+test('own building actions survive owner object restore by label', () => {
+  const messages = []
+  const { factory, player } = createFactory({ hero: {}, messages })
+  player.label = 'player-1'
+  const restoredOwner = { ...player }
+  const stable = {
+    family: 'building',
+    type: 'Stable',
+    owner: restoredOwner,
+    isBuilt: true,
+    interface: { menu: [{ id: 'train' }] },
+    stableHorses: [],
+  }
+
+  assert.deepEqual(
+    factory.getActionMenuItems(stable).map(item => item.id),
+    ['stableDebugAddHorse', 'train']
+  )
 })

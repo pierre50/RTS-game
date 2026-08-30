@@ -30,6 +30,7 @@ import type { RuntimeCell } from '../../types/map'
 import type { InteractiveSprite, SpritesheetLike } from '../../types/pixi'
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { getHorseColorFromSeed, isHorseColor, type HorseColor } from '../../lib/horses/horseColors'
+import { getHorseTamingStatus, shouldHorseFleeFromThreat, type HorseTamingStatus } from '../../lib/horses/horseTaming'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 
 export type AnimalOptions = Partial<AnimalConfig> & { i: number; j: number; spaceId?: string; type: string }
@@ -92,6 +93,7 @@ export class Animal extends Instance implements AnimalEntity {
   ambientWalkRange?: number
   sounds?: UnitSounds
   horseColor?: HorseColor
+  tamingStatus?: HorseTamingStatus
   companionOwner?: AnimalEntity['companionOwner']
   companionHitCount?: AnimalEntity['companionHitCount']
   declare energy?: AnimalEntity['energy']
@@ -153,6 +155,10 @@ export class Animal extends Instance implements AnimalEntity {
         : isHorseColor(this.horseColor)
           ? this.horseColor
           : getHorseColorFromSeed(`${this.type}:${this.i}:${this.j}:${this.label}`)
+      this.tamingStatus = getHorseTamingStatus(this)
+      if (!shouldHorseFleeFromThreat(this) && this.strategy === 'runaway') {
+        this.strategy = undefined
+      }
     }
     this.movementSheet = this.currentSheet === SHEET_TYPES.running ? SHEET_TYPES.running : SHEET_TYPES.walking
 

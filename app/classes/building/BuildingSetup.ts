@@ -12,20 +12,29 @@ import {
   getReliefLiftPixels,
   getTexture,
   STABLE_HORSE_CAPACITY,
+  HORSE_TAMING_STATUS,
   textureRefToString,
   updateInstanceVisibility,
 } from '../../lib'
 import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import type { Building, BuildingOptions } from './Building'
+import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
 import type { RuntimeCell } from '../../types/map'
 import type { Texture } from 'pixi.js'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
 
-export function stableHorsesFromOptions(options: BuildingOptions): Array<{ horseColor?: string }> {
-  if (Array.isArray(options.stableHorses)) return [...options.stableHorses]
+export function stableHorsesFromOptions(
+  options: BuildingOptions
+): Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }> {
+  if (Array.isArray(options.stableHorses)) {
+    return options.stableHorses.map(horse => ({
+      ...horse,
+      tamingStatus: HORSE_TAMING_STATUS.tamed,
+    }))
+  }
   const horseAmount = Math.max(0, Math.min(STABLE_HORSE_CAPACITY, Number(options.horseAmount) || 0))
-  return Array.from({ length: horseAmount }, () => ({}))
+  return Array.from({ length: horseAmount }, () => ({ tamingStatus: HORSE_TAMING_STATUS.tamed }))
 }
 
 export function resumeInitialBuildingWork(building: Building): void {
@@ -70,7 +79,8 @@ export function occupyBuildingFootprint(building: Building): void {
   const { map, player } = building.context
   const space = getEntityMapSpace(building, map)
   const grid = space?.grid ?? map.grid
-  const updatesWorldVision = space?.kind !== 'interior'
+  const updatesOutsideWorldVision = space?.kind !== 'interior'
+  const providesOutsideWorldVision = updatesOutsideWorldVision && building.providesVision !== false
   getBuildingFootprintCells(building.i, building.j, grid, building.size, (cell: RuntimeCell) => {
     clearCellTerrainSet(cell)
     for (const corpse of cell.corpses) {
@@ -78,7 +88,7 @@ export function occupyBuildingFootprint(building: Building): void {
     }
     cell.has = building
     cell.solid = true
-    if (updatesWorldVision) {
+    if (providesOutsideWorldVision) {
       building.owner.views.addViewer(cell.i, cell.j, building)
       if (building.owner.views.setViewed(cell.i, cell.j)) {
         building.owner.cellViewed++
@@ -87,6 +97,9 @@ export function occupyBuildingFootprint(building: Building): void {
       if (player.views.hasViewer(cell.i, cell.j, building) && !map.revealEverything) {
         cell.removeFog()
       }
+    } else if (updatesOutsideWorldVision) {
+      cell.viewBy = new Set(player.views.getViewers(cell.i, cell.j))
+      cell.updateVisible()
     }
     return true
   })

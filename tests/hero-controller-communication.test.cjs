@@ -12,6 +12,10 @@ function loadHeroController({
   heroTools,
   heroActionRange,
   heroProximityInteractions,
+  theft = {
+    applyTheftConsequences: () => ({ stolen: false }),
+    THEFT_SUBJECT_TYPES: { horse: 'horse' },
+  },
   getInstanceDegree = () => 0,
   playSoundCue = () => {},
 }) {
@@ -118,6 +122,8 @@ function loadHeroController({
     '../lib/lang': {
       t: key => key,
     },
+    '../lib/theft/theft': theft,
+    '../theft/theft': theft,
     '../lib/lpc': {
       applyBakedLpcUnitAssets: () => {},
     },
@@ -153,6 +159,9 @@ function loadHeroController({
         update() {}
       },
     },
+    '../services/world/TrapHarvestSystem': {
+      recoverTrapBuilding: () => false,
+    },
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
@@ -187,6 +196,7 @@ function createController({
   ownerBuildings = [],
   resolveCommGroup,
   resolveHeroProximityInteraction = () => null,
+  theft,
   wakeOwnSleepingNpcForCommunication = () => {},
   withScheduler = false,
 } = {}) {
@@ -328,6 +338,7 @@ function createController({
       resolveHeroProximityInteraction,
       wakeOwnSleepingNpcForCommunication,
     },
+    theft,
     getInstanceDegree,
     playSoundCue: cue => calls.push(['playSoundCue', cue]),
   })
@@ -385,6 +396,7 @@ function createController({
     controller,
     grid,
     hero,
+    map,
     createdAnimals,
     nearbyGroup,
     scheduler,
@@ -721,6 +733,102 @@ test('H calls a companion horse, then E mounts when it is close', () => {
     ['horse.clear', 'animal-1'],
     ['setCamera', grid[0][1].x, grid[0][1].y, undefined],
   ])
+})
+
+test('E refuses to change stable horses while the hero is already mounted', () => {
+  let horseInteraction = null
+  const { calls, controller, createdAnimals, grid, hero, map } = createController({
+    resolveHeroProximityInteraction: () => horseInteraction,
+  })
+  const spaceId = 'interior:stable-1'
+  const stable = {
+    family: 'building',
+    horseAmount: 2,
+    stableHorses: [{ horseColor: 'light', tamingStatus: 'tamed' }, { horseColor: 'black', tamingStatus: 'tamed' }],
+    type: 'Stable',
+  }
+  map.spaces = new Map([[spaceId, { building: stable, kind: 'interior' }]])
+  hero.speed = 1.45
+  hero.mountedOnHorse = true
+  hero.horseColor = 'dark'
+  hero.companionHorseColor = 'dark'
+
+  const horse = map.gaia.createAnimal({
+    i: 0,
+    j: 1,
+    spaceId,
+    type: 'Horse',
+    horseColor: 'black',
+    tamingStatus: 'tamed',
+  })
+  horse.label = `${spaceId}:stable-horse:1`
+  horse.currentCell = grid[0][1]
+  grid[0][1].has = horse
+  grid[0][1].solid = true
+  horseInteraction = { action: 'mount', labelKey: 'heroInteractionMount', target: horse }
+  calls.length = 0
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(controller.commCharging, false)
+  assert.equal(hero.speed, 1.45)
+  assert.equal(hero.horseColor, 'dark')
+  assert.equal(hero.companionHorseColor, 'dark')
+  assert.equal(hero.i, 0)
+  assert.equal(hero.j, 0)
+  assert.equal(horse.isDestroyed, false)
+  assert.deepEqual(stable.stableHorses, [
+    { horseColor: 'light', tamingStatus: 'tamed' },
+    { horseColor: 'black', tamingStatus: 'tamed' },
+  ])
+  assert.equal(stable.horseAmount, 2)
+  assert.equal(createdAnimals.length, 1)
+  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionMount']])
+})
+
+test('E reports horse theft when taking a foreign stable horse', () => {
+  let horseInteraction = null
+  const theftCalls = []
+  const { controller, grid, hero, map } = createController({
+    resolveHeroProximityInteraction: () => horseInteraction,
+    theft: {
+      applyTheftConsequences: event => theftCalls.push(event),
+      THEFT_SUBJECT_TYPES: { horse: 'horse' },
+    },
+  })
+  const spaceId = 'interior:foreign-stable'
+  const foreignOwner = { label: 'neutral-ai' }
+  const stable = {
+    family: 'building',
+    owner: foreignOwner,
+    stableHorses: [{ horseColor: 'black', tamingStatus: 'tamed' }],
+    type: 'Stable',
+  }
+  map.spaces = new Map([[spaceId, { building: stable, kind: 'interior' }]])
+  hero.speed = 1
+
+  const horse = map.gaia.createAnimal({
+    i: 0,
+    j: 1,
+    spaceId,
+    type: 'Horse',
+    horseColor: 'black',
+    tamingStatus: 'tamed',
+  })
+  horse.label = `${spaceId}:stable-horse:0`
+  horse.currentCell = grid[0][1]
+  grid[0][1].has = horse
+  grid[0][1].solid = true
+  horseInteraction = { action: 'mount', labelKey: 'heroInteractionMount', target: horse }
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+
+  assert.equal(theftCalls.length, 1)
+  assert.equal(theftCalls[0].actor, hero)
+  assert.equal(theftCalls[0].owner, foreignOwner)
+  assert.equal(theftCalls[0].subject, 'horse')
+  assert.equal(theftCalls[0].target.owner, foreignOwner)
 })
 
 test('H brings an unspawned linked horse out from a visible owned stable', () => {

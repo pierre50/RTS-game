@@ -13,7 +13,8 @@ function loadModule(relativePath, mocks = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -99,6 +100,63 @@ test('renders an explored resource only while it is inside the camera', () => {
   inCamera = true
   assert.equal(updateInstanceRenderVisibility(resource), true)
   assert.equal(resource.visible, true)
+})
+
+test('hideWhenFogged owned entities render only while in active player sight', () => {
+  let visible = false
+  const trap = {
+    family: 'building',
+    hideWhenFogged: true,
+    i: 2,
+    j: 3,
+    owner: { isPlayed: true },
+    x: 0,
+    y: 0,
+    context: {
+      map: { revealEverything: false, revealTerrain: false },
+      player: {
+        views: {
+          isVisible: () => visible,
+        },
+      },
+      controls: { instanceInCamera: () => true },
+    },
+    syncShadow() {
+      this.shadowSynced = true
+    },
+  }
+
+  assert.equal(updateInstanceRenderVisibility(trap), false)
+  assert.equal(trap.visible, false)
+  visible = true
+  assert.equal(updateInstanceRenderVisibility(trap), true)
+  assert.equal(trap.visible, true)
+  assert.equal(trap.shadowSynced, true)
+})
+
+test('owned entities without hideWhenFogged can render under fog even outside active sight', () => {
+  const trap = {
+    family: 'building',
+    i: 2,
+    j: 3,
+    owner: { isPlayed: true },
+    providesVision: false,
+    x: 0,
+    y: 0,
+    context: {
+      map: { revealEverything: false, revealTerrain: false },
+      player: {
+        views: {
+          getViewers: () => new Set(),
+          isVisible: () => false,
+        },
+      },
+      controls: { instanceInCamera: () => true },
+    },
+  }
+
+  assert.equal(updateInstanceRenderVisibility(trap), true)
+  assert.equal(trap.visible, true)
 })
 
 test('hides exterior instances while a runtime interior space is active', () => {

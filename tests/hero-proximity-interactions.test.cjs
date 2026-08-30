@@ -7,7 +7,7 @@ function loadHeroProximityInteractions() {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
-        BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
+        BUILDING_TYPES: { house: 'House', stable: 'Stable', townCenter: 'TownCenter', trap: 'Trap' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
       '../chief': {
@@ -18,6 +18,17 @@ function loadHeroProximityInteractions() {
       },
       '../grid/cells': {
         getCellsInCellRadius: (_i, _j, grid) => grid.flat(),
+      },
+      '../grid/visibility': {
+        instanceIsInActiveOrTeamSight: building => building.visibleToHero === true,
+      },
+      '../horses/horseTaming': {
+        isTamedHorse: horse => horse?.type === 'Horse' && horse?.tamingStatus === 'tamed',
+      },
+      '../mapSpaces': {
+        getEntitySpaceMapLike: entity => entity?.context?.map ?? null,
+        getMapSpace: (map, spaceId) => map?.spaces?.get?.(spaceId) ?? null,
+        isOutsideSpaceId: spaceId => !spaceId || spaceId === 'outside',
       },
       '../npc/npcChatter': {
         pickForeignNpcChatterLine: () => 'foreign chatter',
@@ -35,7 +46,7 @@ function loadHeroProximityInteractions() {
 
 function makeHero(extra = {}) {
   const grid = Array.from({ length: 12 }, (_, i) =>
-    Array.from({ length: 12 }, (_, j) => ({ i, j, corpses: new Set() }))
+    Array.from({ length: 12 }, (_, j) => ({ i, j, corpses: new Set(), has: null }))
   )
   return {
     i: 6,
@@ -75,10 +86,13 @@ test('hero proximity interaction resolves an interior exit cell as exit', () => 
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const building = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
 
-  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ onInteriorExit: true }) }), {
-    action: 'exit',
-    labelKey: 'heroInteractionExit',
-  })
+  assert.deepEqual(
+    resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ onInteriorExit: true }) }),
+    {
+      action: 'exit',
+      labelKey: 'heroInteractionExit',
+    }
+  )
 })
 
 test('hero proximity interaction ignores a town center when hero is not on the entry cell', () => {
@@ -86,6 +100,49 @@ test('hero proximity interaction ignores a town center when hero is not on the e
   const building = { i: 5, isBuilt: true, j: 5, type: 'TownCenter' }
 
   assert.equal(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ i: 4 }) }), null)
+})
+
+test('hero proximity interaction ignores a fogged trap', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    reachable: true,
+    requiresActiveSightInteraction: true,
+    type: 'Trap',
+    visibleToHero: false,
+    x: 100,
+    y: 248,
+  }
+
+  assert.equal(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), null)
+})
+
+test('hero proximity interaction can recover a visible foreign trap', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    owner: { label: 'other-player' },
+    reachable: true,
+    requiresActiveSightInteraction: true,
+    type: 'Trap',
+    visibleToHero: true,
+    x: 100,
+    y: 248,
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), {
+    action: 'recoverTrap',
+    labelKey: 'heroInteractionRecover',
+    target: building,
+  })
 })
 
 test('hero proximity interaction resolves a close companion horse as mount', () => {
@@ -97,6 +154,101 @@ test('hero proximity interaction resolves a close companion horse as mount', () 
     labelKey: 'heroInteractionMount',
     target: horse,
   })
+})
+
+test('hero proximity interaction resolves a nearby tamed horse as mount', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const hero = makeHero({ y: 100 })
+  const horse = {
+    family: 'animal',
+    i: 6,
+    isDead: false,
+    isDestroyed: false,
+    j: 8,
+    tamingStatus: 'tamed',
+    type: 'Horse',
+    x: 104,
+    y: 100,
+  }
+  hero.context.map.grid[6][8].has = horse
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero }), {
+    action: 'mount',
+    labelKey: 'heroInteractionMount',
+    target: horse,
+  })
+})
+
+test('hero proximity interaction labels a foreign stable horse as theft', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const spaceId = 'interior:foreign-stable'
+  const hero = makeHero({ owner: { label: 'player' }, y: 100 })
+  hero.context.map.spaces = new Map([
+    [spaceId, { building: { owner: { label: 'neutral-ai' }, type: 'Stable' }, kind: 'interior' }],
+  ])
+  const horse = {
+    family: 'animal',
+    i: 6,
+    isDead: false,
+    isDestroyed: false,
+    j: 8,
+    spaceId,
+    tamingStatus: 'tamed',
+    type: 'Horse',
+    x: 104,
+    y: 100,
+  }
+  hero.context.map.grid[6][8].has = horse
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero }), {
+    action: 'mount',
+    labelKey: 'heroInteractionSteal',
+    target: horse,
+  })
+})
+
+test('hero proximity interaction ignores a nearby wild horse for mounting', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const hero = makeHero({ y: 100 })
+  hero.context.map.grid[6][8].has = {
+    family: 'animal',
+    i: 6,
+    isDead: false,
+    isDestroyed: false,
+    j: 8,
+    tamingStatus: 'wild',
+    type: 'Horse',
+    x: 104,
+    y: 100,
+  }
+
+  assert.equal(resolveHeroProximityInteraction({ hero }), null)
+})
+
+test('mounted hero ignores a tamed horse inside a stable interior', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const spaceId = 'interior:stable-1'
+  const stable = { type: 'Stable' }
+  const hero = makeHero({
+    mountedOnHorse: true,
+    y: 100,
+  })
+  hero.context.map.spaces = new Map([[spaceId, { building: stable, kind: 'interior' }]])
+  const horse = {
+    family: 'animal',
+    i: 6,
+    isDead: false,
+    isDestroyed: false,
+    j: 8,
+    spaceId,
+    tamingStatus: 'tamed',
+    type: 'Horse',
+    x: 104,
+    y: 100,
+  }
+  hero.context.map.grid[6][8].has = horse
+
+  assert.equal(resolveHeroProximityInteraction({ hero }), null)
 })
 
 test('hero proximity interaction resolves the nearest openable corpse as open', () => {

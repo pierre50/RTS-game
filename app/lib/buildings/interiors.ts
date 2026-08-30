@@ -1,9 +1,9 @@
-import { BUILDING_TYPES } from '../../constants'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { GridPosition } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
 import { sameGridCell } from '../grid/interactionCells'
 import { isOutsideSpaceId } from '../mapSpaces'
+import { BUILDING_INTERIOR_TYPES } from './interiorProfiles'
 
 const DEFAULT_BUILDING_INTERIOR_ENTRY_OFFSET = { i: 1, j: 2 }
 
@@ -16,8 +16,6 @@ type BuildingWithInteriorConfig = BuildingEntity & {
     type?: string
   }
 }
-
-const BUILDING_INTERIOR_TYPES = new Set<string>([BUILDING_TYPES.townCenter, BUILDING_TYPES.house])
 
 function buildingOwnerKey(building: BuildingEntity): string {
   return building.owner?.label || building.owner?.factionId || building.owner?.name || 'owner'

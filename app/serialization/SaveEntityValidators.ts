@@ -1,4 +1,5 @@
 import { ACTION_TYPES, PLAYER_TYPES, SHEET_TYPES } from '../constants'
+import { isHorseTamingStatus } from '../lib/horses/horseTaming'
 import type { LoadedGameConfig } from '../types/save'
 import {
   fail,
@@ -134,6 +135,12 @@ function validatePlayerBuildings(
     if (typeof building.type !== 'string' || !config.buildings?.[building.type]) {
       fail(`Invalid save file: player ${playerIndex} building ${buildingIndex} has an unsupported type.`)
     }
+    if (isObject(building) && building.stableHorses != null) {
+      validateArray(building.stableHorses, `player ${playerIndex} building ${buildingIndex}.stableHorses`)
+      building.stableHorses.forEach((horse, horseIndex) =>
+        validateSavedHorseTamingStatus(horse, `player ${playerIndex} building ${buildingIndex}.stableHorses ${horseIndex}`)
+      )
+    }
   })
 }
 
@@ -167,6 +174,7 @@ function validateAnimalState(
   validateOptionalBoundedNumber(animal.hitPoints, definition.totalHitPoints, `${label}.hitPoints`)
   validateOptionalBoolean(animal.isDead, `${label}.isDead`)
   validateOptionalBoolean(animal.isDestroyed, `${label}.isDestroyed`)
+  validateSavedHorseTamingStatus(animal, label)
   if (animal.isDestroyed === true && animal.isDead !== true) {
     fail(`Invalid save file: ${label} is destroyed but not dead.`)
   }
@@ -180,6 +188,13 @@ function validateAnimalState(
   validateOptionalGridDestination(animal.dest, size, `${label}.dest`)
   validateOptionalGridDestination(animal.previousDest, size, `${label}.previousDest`)
   validateOptionalGridDestination(animal.realDest, size, `${label}.realDest`)
+}
+
+function validateSavedHorseTamingStatus(record: unknown, label: string): void {
+  if (!isObject(record) || record.tamingStatus == null) return
+  if (!isHorseTamingStatus(record.tamingStatus)) {
+    fail(`Invalid save file: ${label}.tamingStatus is invalid.`)
+  }
 }
 
 function validateOptionalBoundedNumber(value: unknown, max: unknown, label: string): void {

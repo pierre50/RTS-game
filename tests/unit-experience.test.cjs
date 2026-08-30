@@ -362,6 +362,36 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
 
   // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
   assert.equal(unit.owner.food, 3)
+  assert.deepEqual(unit.inventory.resources, { food: 3 })
   assert.equal(berryBush.quantity, 7)
   assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
+})
+
+test('gathered stone is added to the unit inventory while still increasing global resources', () => {
+  let inventoryRefreshes = 0
+  const { addGatheredResource } = loadModule('app/classes/unit/UnitResourceGathering.ts', {
+    '../../constants': {
+      LOADING_TYPES: { berry: 'berry', wheat: 'wheat', meat: 'meat', stone: 'stone' },
+      RESOURCE_GATHER_SWINGS: {},
+      RESOURCE_STOCKPILE_TYPES: { Stone: 'stone' },
+      RESOURCE_TYPES: { berrybush: 'Berrybush' },
+    },
+    '../../lib/lang': { t: key => key },
+    '../../lib/units/unitExperience': { getGatherXpBonus: () => 0 },
+  })
+  const unit = {
+    context: {
+      controls: {},
+      menu: { refreshInventory: () => inventoryRefreshes++ },
+    },
+    inventory: {},
+    owner: { stone: 4 },
+  }
+  unit.context.controls.heroUnit = unit
+
+  addGatheredResource(unit, 'stone', 6)
+
+  assert.deepEqual(unit.inventory.resources, { stone: 6 })
+  assert.equal(unit.owner.stone, 10)
+  assert.equal(inventoryRefreshes, 1)
 })

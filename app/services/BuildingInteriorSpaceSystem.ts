@@ -1,6 +1,6 @@
 import { Container, Graphics, type ContainerChild } from 'pixi.js'
 import { Cell } from '../classes/cell'
-import { CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../constants'
+import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../constants'
 import { sameBuilding } from '../lib/buildings/identity'
 import {
   findInteriorDecorationCell,
@@ -37,6 +37,7 @@ import {
   routeUnitThroughSpacePortal,
   transferUnitThroughSpacePortal,
 } from './SpacePortalSystem'
+import { syncStableInteriorHorses } from './buildingInterior/StableInteriorHorses'
 import type { GameContextLike } from '../types/context'
 import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap, RuntimeMapSpace, RuntimeMapSpacePortal } from '../types/map'
@@ -168,6 +169,10 @@ function findInteriorDefaultBuildingCell(
 
 function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
   if (space.defaultBuildingsPlaced) return
+  if (space.building.type === BUILDING_TYPES.stable) {
+    space.defaultBuildingsPlaced = true
+    return
+  }
   const owner = space.building.owner
   if (!owner?.createBuilding) return
   const center = Math.round(space.size / 2)
@@ -197,6 +202,14 @@ function ensureInteriorDefaultBuildings(context: GameContextLike, space: Buildin
     blockedCells.add(interiorCellKey(cell))
   }
   space.defaultBuildingsPlaced = true
+}
+
+export function syncBuildingStableInteriorHorses(context: GameContextLike, building: BuildingEntity): void {
+  if (building.type !== BUILDING_TYPES.stable) return
+  const space = getBuildingInteriorSpaceForBuilding(context, building)
+  if (!space) return
+  syncStableInteriorHorses(context, space)
+  refreshMapSpaceEntityVisibility(context)
 }
 
 export function refreshMapSpaceEntityVisibility(context: GameContextLike): void {
@@ -449,7 +462,10 @@ export function ensureBuildingInteriorSpace(
   const map = context.map
   const id = getBuildingInteriorSpaceId(building)
   const existing = getMapSpace(map, id)
-  if (isBuildingInteriorRuntimeSpace(existing)) return existing
+  if (isBuildingInteriorRuntimeSpace(existing)) {
+    syncStableInteriorHorses(context, existing)
+    return existing
+  }
 
   ensureMapSpaces(map)
   const grid: RuntimeCell[][] = []
@@ -497,6 +513,7 @@ export function ensureBuildingInteriorSpace(
   map.spaces?.set(id, space)
   map.addChild(renderer)
   ensureInteriorDefaultBuildings(context, space)
+  syncStableInteriorHorses(context, space)
   return space
 }
 

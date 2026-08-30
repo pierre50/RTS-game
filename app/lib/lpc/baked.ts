@@ -208,7 +208,7 @@ export function collectBakedLpcRuntimeEquipmentAssets(players: BakedPreloadPlaye
   return assets
 }
 
-export async function preloadBakedLpcEquipmentAssets(
+async function preloadBakedLpcEquipmentAssets(
   players: BakedPreloadPlayer[] = [],
   performanceMonitor?: PreloadPerformanceMonitor | null,
   metricPrefix = 'preloadUnits',

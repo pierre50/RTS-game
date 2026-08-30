@@ -14,6 +14,7 @@ import { setUnitControlMode } from '../lib/units/unitControl'
 import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { HeroCriticalHealthEffects } from '../services/HeroCriticalHealthEffects'
 import { HeroOcclusionFade } from '../services/HeroOcclusionFade'
+import { recoverTrapBuilding } from '../services/world/TrapHarvestSystem'
 import {
   resolveHeroProximityInteraction,
   wakeOwnSleepingNpcForCommunication,
@@ -315,11 +316,17 @@ export class HeroController {
       this.controls.context.travelOutOfBuildingInterior?.()
       return true
     }
-    if (interaction.action === 'mount') return this.mountCompanionHorse(interaction.target as CompanionHorse)
+    if (interaction.action === 'mount') {
+      this.mountCompanionHorse(interaction.target as CompanionHorse)
+      return true
+    }
     if (interaction.action === 'communicate') {
       if (this.heroUnit) wakeOwnSleepingNpcForCommunication(this.heroUnit, interaction.target)
       this.controls.context.menu?.openNpcOrders?.([interaction.target], interaction.npcOptions)
       return true
+    }
+    if (interaction.action === 'recoverTrap') {
+      return recoverTrapBuilding(this.heroUnit, interaction.target)
     }
     return this.controls.openHeroEntityInteraction(interaction.target)
   }

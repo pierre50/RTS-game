@@ -3,18 +3,20 @@ import { getEntityHudTopY } from './entityHudPosition'
 import { HUD_FADE_MS, HUD_FADE_STEP_MS } from './hudFade'
 import { getReliefOffset } from '../maths'
 import { createStatusBubble } from './statusBubble'
-import type { UnitEntity } from '../../types/entities'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { GameContextLike } from '../../types/context'
 
-export type OverheadIndicatorType = 'exclamation' | 'sleep'
+export type OverheadIndicatorType = 'exclamation' | 'question' | 'sleep'
 
 const INDICATOR_TEXT: Record<OverheadIndicatorType, string> = {
   exclamation: '!',
+  question: '?',
   sleep: 'zzz',
 }
 
 const INDICATOR_FONT_SIZE: Record<OverheadIndicatorType, number> = {
   exclamation: 14,
+  question: 14,
   sleep: 13,
 }
 const INDICATOR_TOP_GAP = 6
@@ -27,8 +29,22 @@ type OverheadIndicatorDisplay = ReturnType<typeof createStatusBubble> & {
   positionScheduler?: GameContextLike['scheduler'] | null
 }
 
-function updateIndicatorPosition(unit: UnitEntity, indicator: OverheadIndicatorDisplay): void {
-  indicator.y = getEntityHudTopY(unit, INDICATOR_TOP_GAP) + getReliefOffset(unit)
+type OverheadIndicatorHost = RuntimeEntity & {
+  overheadIndicatorOffsetX?: number
+  overheadIndicatorOffsetY?: number
+}
+
+function getFiniteOffset(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function updateIndicatorPosition(entity: RuntimeEntity, indicator: OverheadIndicatorDisplay): void {
+  const host = entity as OverheadIndicatorHost
+  indicator.x = getFiniteOffset(host.overheadIndicatorOffsetX)
+  indicator.y =
+    getEntityHudTopY(entity, INDICATOR_TOP_GAP) +
+    getReliefOffset(entity) +
+    getFiniteOffset(host.overheadIndicatorOffsetY)
 }
 
 function destroyOverheadIndicator(indicator: OverheadIndicatorDisplay): void {
@@ -44,39 +60,39 @@ function destroyOverheadIndicator(indicator: OverheadIndicatorDisplay): void {
   if (!indicator.destroyed) indicator.destroy({ children: true })
 }
 
-function syncIndicatorPositionWhileVisible(unit: UnitEntity, indicator: OverheadIndicatorDisplay): void {
-  const scheduler = unit.context?.scheduler
+function syncIndicatorPositionWhileVisible(entity: RuntimeEntity, indicator: OverheadIndicatorDisplay): void {
+  const scheduler = entity.context?.scheduler
   if (!scheduler) return
   indicator.positionScheduler = scheduler
   indicator.positionTaskId = scheduler.add(
     () => {
-      if (indicator.destroyed || unit.isDestroyed) {
+      if (indicator.destroyed || entity.isDestroyed) {
         destroyOverheadIndicator(indicator)
         return
       }
-      updateIndicatorPosition(unit, indicator)
+      updateIndicatorPosition(entity, indicator)
     },
     INDICATOR_POSITION_SYNC_MS,
-    'unit.overheadIndicatorPosition'
+    'entity.overheadIndicatorPosition'
   )
 }
 
-export function clearUnitOverheadIndicator(unit: UnitEntity, options: { fade?: boolean } = {}): void {
-  const existing = unit.getChildByLabel?.(LABEL_TYPES.overheadIndicator)
+export function clearEntityOverheadIndicator(entity: RuntimeEntity, options: { fade?: boolean } = {}): void {
+  const existing = entity.getChildByLabel?.(LABEL_TYPES.overheadIndicator)
   if (!existing) return
   const indicator = existing as OverheadIndicatorDisplay
-  if (options.fade === false || !unit.context?.scheduler) {
+  if (options.fade === false || !entity.context?.scheduler) {
     destroyOverheadIndicator(indicator)
     return
   }
   if (indicator.fadeTaskId != null) return
 
-  const scheduler = unit.context.scheduler
+  const scheduler = entity.context.scheduler
   const startedAt = scheduler.elapsedMs
   indicator.fadeScheduler = scheduler
   indicator.fadeTaskId = scheduler.add(
     () => {
-      if (indicator.destroyed || unit.isDestroyed) {
+      if (indicator.destroyed || entity.isDestroyed) {
         destroyOverheadIndicator(indicator)
         return
       }
@@ -85,12 +101,12 @@ export function clearUnitOverheadIndicator(unit: UnitEntity, options: { fade?: b
       if (progress >= 1) destroyOverheadIndicator(indicator)
     },
     HUD_FADE_STEP_MS,
-    'unit.overheadIndicatorFade'
+    'entity.overheadIndicatorFade'
   )
 }
 
-export function setUnitOverheadIndicator(unit: UnitEntity, type: OverheadIndicatorType | null): void {
-  clearUnitOverheadIndicator(unit, { fade: !type })
+export function setEntityOverheadIndicator(entity: RuntimeEntity, type: OverheadIndicatorType | null): void {
+  clearEntityOverheadIndicator(entity, { fade: !type })
   if (!type) return
 
   const indicator = createStatusBubble({
@@ -98,9 +114,16 @@ export function setUnitOverheadIndicator(unit: UnitEntity, type: OverheadIndicat
     fontSize: INDICATOR_FONT_SIZE[type],
   })
   indicator.label = LABEL_TYPES.overheadIndicator
-  indicator.x = 0
-  updateIndicatorPosition(unit, indicator)
+  updateIndicatorPosition(entity, indicator)
   indicator.zIndex = 120
-  unit.addChild?.(indicator)
-  syncIndicatorPositionWhileVisible(unit, indicator)
+  entity.addChild?.(indicator)
+  syncIndicatorPositionWhileVisible(entity, indicator)
+}
+
+export function clearUnitOverheadIndicator(unit: UnitEntity, options: { fade?: boolean } = {}): void {
+  clearEntityOverheadIndicator(unit, options)
+}
+
+export function setUnitOverheadIndicator(unit: UnitEntity, type: OverheadIndicatorType | null): void {
+  setEntityOverheadIndicator(unit, type)
 }

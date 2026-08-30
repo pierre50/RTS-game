@@ -1,7 +1,8 @@
-import { SHEET_TYPES, UNIT_TYPES } from '../constants'
+import { RESOURCE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
 import { getUnitEquipmentLevel } from '../units/unitExperience'
 import { applyBakedLpcUnitAssets } from '../lpc'
+import type { ResourceAmount } from '../../types/common'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 
 export const HERO_EQUIPMENT_SLOTS: readonly HeroEquipmentSlot[] = [
@@ -28,7 +29,15 @@ const SLOT_LABEL_KEYS: Record<HeroEquipmentSlot, string> = {
   arrow: 'heroEquipmentSlotArrow',
 }
 
-const HELMET_DECOR_PREFIXES = ['upward_horns', 'helmet_wings', 'plumage', 'centurion_crest', 'centurion_plumage', 'legion_plumage', 'crest']
+const HELMET_DECOR_PREFIXES = [
+  'upward_horns',
+  'helmet_wings',
+  'plumage',
+  'centurion_crest',
+  'centurion_plumage',
+  'legion_plumage',
+  'crest',
+]
 const HELMET_DECOR_COMPANIONS: Partial<Record<string, string>> = {
   helmet_barbarian_ceramic: 'upward_horns_ceramic',
   helmet_norman_bronze: 'upward_horns_white',
@@ -77,6 +86,7 @@ export function getWeaponSlot(equipment: string): HeroWeaponSlot | null {
 
 export function getHeroInventory(hero: UnitEntity): NonNullable<UnitEntity['inventory']> {
   hero.inventory = hero.inventory ?? {}
+  hero.inventory.resources = hero.inventory.resources ?? {}
   hero.inventory.equipment = hero.inventory.equipment ?? []
   hero.inventory.equipped = hero.inventory.equipped ?? {}
   hero.inventory.equippedCounts = hero.inventory.equippedCounts ?? {}
@@ -94,6 +104,27 @@ export function getEquipmentStacks(items: readonly string[]): EquipmentStack[] {
     counts.set(item, (counts.get(item) ?? 0) + 1)
   }
   return [...counts.entries()].map(([equipment, count]) => ({ equipment, count }))
+}
+
+export function removeHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
+  if (!hero || !item) return false
+  const inventory = getHeroInventory(hero)
+  const bag = inventory.equipment!
+  const amount = Math.max(1, Math.floor(count))
+  const indexes: number[] = []
+  for (let i = 0; i < bag.length && indexes.length < amount; i++) {
+    if (bag[i] === item) indexes.push(i)
+  }
+  if (indexes.length < amount) return false
+  for (let i = indexes.length - 1; i >= 0; i--) bag.splice(indexes[i], 1)
+  return true
+}
+
+export function addHeroInventoryItem(hero: UnitEntity | null | undefined, item: string, count = 1): boolean {
+  if (!hero || !item) return false
+  const inventory = getHeroInventory(hero)
+  pushEquipmentCopies(inventory.equipment!, item, Math.max(1, Math.floor(count)))
+  return true
 }
 
 export function formatEquipmentLootLabel(equipment: string): string {
@@ -130,6 +161,15 @@ function removeAllBagEquipment(bag: string[], equipment: string): number {
   return count
 }
 
+function cleanResourceAmount(resources: ResourceAmount | null | undefined): ResourceAmount {
+  const clean: ResourceAmount = {}
+  for (const resource of RESOURCE_NAMES) {
+    const amount = Math.max(0, Math.floor(resources?.[resource] ?? 0))
+    if (amount > 0) clean[resource] = amount
+  }
+  return clean
+}
+
 export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   if (!unit.isDead || unit.isDestroyed) return []
   if (Array.isArray(unit.lootEquipment)) return unit.lootEquipment
@@ -150,7 +190,38 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   return unit.lootEquipment
 }
 
-export function pickupCorpseEquipment(corpse: UnitEntity, hero: UnitEntity | null | undefined, equipment: string): boolean {
+export function getUnitCorpseLootResources(unit: UnitEntity): ResourceAmount {
+  if (!unit.isDead || unit.isDestroyed) return {}
+  const resources = cleanResourceAmount(unit.inventory?.resources)
+  if (unit.inventory) unit.inventory.resources = resources
+  return resources
+}
+
+export function pickupCorpseResource(
+  corpse: UnitEntity,
+  hero: UnitEntity | null | undefined,
+  resource: keyof ResourceAmount,
+  requestedAmount?: number
+): number {
+  if (!hero || !corpse.isDead || corpse.isDestroyed) return 0
+  const loot = getUnitCorpseLootResources(corpse)
+  const available = Math.max(0, Math.floor(loot[resource] ?? 0))
+  const amount = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))
+  if (amount <= 0) return 0
+
+  const heroResources = getHeroInventory(hero).resources!
+  heroResources[resource] = (heroResources[resource] ?? 0) + amount
+  const remaining = available - amount
+  if (remaining > 0) loot[resource] = remaining
+  else delete loot[resource]
+  return amount
+}
+
+export function pickupCorpseEquipment(
+  corpse: UnitEntity,
+  hero: UnitEntity | null | undefined,
+  equipment: string
+): boolean {
   if (!hero || !corpse.isDead || corpse.isDestroyed) return false
   const loot = getUnitCorpseLootEquipment(corpse)
   const index = loot.indexOf(equipment)
@@ -243,7 +314,11 @@ export function unequipHeroInventorySlot(hero: UnitEntity | null | undefined, sl
   return true
 }
 
-export function consumeHeroEquippedItem(hero: UnitEntity | null | undefined, slot: HeroEquipmentSlot, count = 1): boolean {
+export function consumeHeroEquippedItem(
+  hero: UnitEntity | null | undefined,
+  slot: HeroEquipmentSlot,
+  count = 1
+): boolean {
   if (!hero?.inventory?.equipped?.[slot]) return false
   const inventory = getHeroInventory(hero)
   const currentCount = getHeroEquippedItemCount(hero, slot)

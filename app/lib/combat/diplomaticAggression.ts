@@ -83,7 +83,7 @@ export function canTargetBeAggressed(
 export function applyDiplomaticAggression(
   source: DiplomaticAggressor | null | undefined,
   target: RuntimeEntity | null | undefined,
-  options: { notify?: boolean } = {}
+  options: { notify?: boolean; reason?: string } = {}
 ): DiplomaticAggressionResult {
   if (!canTriggerDiplomaticAggression(source, target)) return NO_DIPLOMATIC_CHANGE
   const sourceOwner = source?.owner
@@ -99,7 +99,7 @@ export function applyDiplomaticAggression(
 
   const factionDelta = getFactionRelationDelta(targetOwner, source?.context)
   if (factionDelta != null) {
-    source.context?.changeFactionRelation?.(targetOwner.factionId!, factionDelta, 'attack')
+    source.context?.changeFactionRelation?.(targetOwner.factionId!, factionDelta, options.reason ?? 'attack')
     const hostileNow = Boolean(sourceOwner.isEnemy?.(targetOwner))
     return complete({ changed: true, hostileNow, relation: hostileNow ? 'hostile' : 'neutral' })
   }

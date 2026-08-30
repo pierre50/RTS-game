@@ -1,6 +1,7 @@
 import type { AnimatedSprite } from 'pixi.js'
 import type { ActionProps } from './combat'
 import type { CombatBehaviorConfig, ConfigValue, UnitAppearanceConfig } from './config'
+import type { ResourceAmount } from './common'
 import type { GridPosition, Point } from './grid'
 import type { RuntimeCell } from './map'
 import type { SpritesheetLike } from './pixi'
@@ -218,6 +219,7 @@ export interface UnitEntity extends EnergyEntity {
   parryStreak?: number
   contextAction?: HeroContextAction | null
   inventory?: {
+    resources?: ResourceAmount
     equipment?: string[]
     equipped?: Partial<Record<HeroEquipmentSlot, string>>
     equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>

@@ -225,6 +225,15 @@ function loadModule(relativePath, mocks) {
         unitHasActivePassageStopIntent: passageCells.unitHasActivePassageStopIntent ?? (() => false),
       }
     }
+    if (request === '../../lib/buildings/interiors') {
+      const interiors = mocks[request] ?? {}
+      return {
+        getBuildingInteriorEntryCell:
+          interiors.getBuildingInteriorEntryCell ??
+          (building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null),
+        isBuildingInteriorSupported: interiors.isBuildingInteriorSupported ?? (() => false),
+      }
+    }
     if (Object.hasOwn(mocks, request)) return mocks[request]
     if (request === '../lpc/generatedPalettes') {
       return {

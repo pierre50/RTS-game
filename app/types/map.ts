@@ -54,7 +54,16 @@ export interface RenderChunk {
 type GaiaPlayerLike = {
   animals?: RuntimeEntity[]
   units?: RuntimeEntity[]
-  createAnimal?: (options: { i: number; j: number; spaceId?: string; type: string; horseColor?: string }) => RuntimeEntity
+  createAnimal?: (options: {
+    i: number
+    j: number
+    spaceId?: string
+    type: string
+    horseColor?: string
+    tamingStatus?: string
+    ambientMovement?: boolean
+    strategy?: string
+  }) => RuntimeEntity
 }
 
 export interface RuntimeMap {

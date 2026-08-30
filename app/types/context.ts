@@ -95,6 +95,12 @@ export interface PerformanceMonitorLike {
   destroy?(): void
 }
 
+export type VisionChangeEvent = {
+  i: number
+  j: number
+  player: PlayerLike
+}
+
 export interface MenuLike {
   selection?: RuntimeEntity | null
   icons?: Record<string, string>
@@ -256,6 +262,8 @@ export interface GameContextLike {
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
+  notifyVisionChange?(event: VisionChangeEvent): void
+  onVisionChange?(callback: (event: VisionChangeEvent) => void): () => void
   tributeRaids?: TributeRaidSystemLike | null
   timeSkip?: TimeSkipSystemLike | null
   unitRest?: UnitRestSystemLike | null
@@ -280,6 +288,7 @@ export interface GameContextLike {
   travelOutOfBuildingInterior?: () => void
   routeInteriorUnitToExit?: (unit: UnitEntity) => void
   synchronizeBuildingInteriorAfterTimeJump?: () => void
+  syncStableInteriorHorses?: (building: BuildingEntity) => void
 }
 
 export type MapRuntimeContext = Omit<

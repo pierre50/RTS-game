@@ -44,11 +44,17 @@ function loadBuildingInterface() {
       STABLE_HORSE_CAPACITY: 5,
     },
     './BaseEntityInterface': {
-      appendBaseEntityInfo: (element, _civ, type) => {
+      appendBaseEntityInfo: (element, _civ, type, hitPoints, totalHitPoints) => {
         const header = document.createElement('div')
         header.className = 'entity-info-header'
         header.textContent = type
         element.appendChild(header)
+        if (hitPoints !== undefined) {
+          const hp = document.createElement('div')
+          hp.className = 'hit-points'
+          hp.textContent = `${hitPoints}/${totalHitPoints}`
+          element.appendChild(hp)
+        }
       },
       appendQuantityInfo: () => {},
       createInfoImage: className => {
@@ -142,5 +148,25 @@ test('stable info displays horse amount and stored horse color avatars', () => {
     assert.equal(element.querySelectorAll('.stable-horse-avatar').length, 5)
     assert.equal(element.querySelectorAll('.filled').length, 2)
     assert.equal(element.querySelectorAll('.filled')[0].styles.get('--stable-horse-color'), '#73737f')
+  })
+})
+
+test('foreign building info still displays hit points', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const building = {
+      type: 'House',
+      owner: { isPlayed: false, civ: 'Greek' },
+      isBuilt: true,
+      loading: null,
+      hitPoints: 75,
+      totalHitPoints: 120,
+      context: { menu: {} },
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    assert.equal(element.querySelector('.hit-points').textContent, '75/120')
   })
 })

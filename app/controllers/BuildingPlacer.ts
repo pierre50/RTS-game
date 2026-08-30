@@ -13,6 +13,7 @@ import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import { getCellMapPoint, getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
+import { addHeroInventoryItem, removeHeroInventoryItem } from '../lib/equipment/equipmentLoot'
 import { WallPlacementController } from './WallPlacementController'
 import { t } from '../lib/lang'
 import type { ControlsLike } from '../types/context'
@@ -24,6 +25,7 @@ import type { ResourceLedger } from '../lib'
 type MouseBuilding = Container &
   PlaceableBuildingConfig & {
     isFree?: boolean
+    inventoryItem?: string
   }
 
 const WHEAT_FIELD_SIZE = 4
@@ -109,13 +111,27 @@ export class BuildingPlacer {
       if (mouseBuilding.type === BUILDING_TYPES.farm) {
         return this.placeWheatField(cell)
       }
-      if (mouseBuilding.type && player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type, { spaceId: cell.spaceId })) {
+      if (
+        mouseBuilding.inventoryItem &&
+        !removeHeroInventoryItem(controls.heroUnit ?? null, mouseBuilding.inventoryItem)
+      ) {
+        return false
+      }
+      if (
+        mouseBuilding.type &&
+        player.buyBuilding?.(cell.i, cell.j, mouseBuilding.type, {
+          alreadyPaid: Boolean(mouseBuilding.inventoryItem),
+          spaceId: cell.spaceId,
+        })
+      ) {
         controls.removeMouseBuilding()
         if (controls.isHeroControlActive?.()) {
           menu.setActionTarget(controls.heroUnit ?? null)
         } else if (menu.selection) {
           menu.setActionTarget(menu.selection)
         }
+      } else if (mouseBuilding.inventoryItem) {
+        addHeroInventoryItem(controls.heroUnit ?? null, mouseBuilding.inventoryItem)
       }
     }
   }
@@ -188,6 +204,12 @@ export class BuildingPlacer {
     const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
     if (!mouseBuilding) return false
     if (!cell) return false
+    if (
+      mouseBuilding.inventoryItem &&
+      !controls.heroUnit?.inventory?.equipment?.includes(mouseBuilding.inventoryItem)
+    ) {
+      return false
+    }
     if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
     const passageLookup = createReservedPassageCellLookup(controls.context)

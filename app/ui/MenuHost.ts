@@ -60,6 +60,7 @@ export interface MenuHost {
   isMiniMapActive(): boolean
   toggleQueuedActionCancel(target: string, value: boolean): void
   closeHeroBuildingMenu(): void
+  syncHeroBuildingMenu?(): void
   updateHeroStatus?(hero?: UnitEntity | null): void
   closeEntityInfoModal?(): void
   openNpcOrders?(npcs: UnitEntity[], options?: NpcOrdersOpenOptions): void

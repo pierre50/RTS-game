@@ -8,6 +8,7 @@ import { canUnitWaitOnCell, createReservedPassageCellLookup } from '../../../lib
 import { UnitDirectMovement } from './UnitDirectMovement'
 import { UnitMovementRouting } from './UnitMovementRouting'
 import { moveUnitToPath } from './UnitPathMovement'
+import { isUnitOnActionArrivalCell } from './UnitActionArrivalCells'
 import { debugCombatMove, debugHuntRangeCheck } from './UnitMovementDebug'
 import {
   CAPTURE_HORSE_TRIGGER_RANGE,
@@ -145,6 +146,7 @@ export class UnitMovement {
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!action || !dest) return false
+    if (isUnitOnActionArrivalCell(unit, dest, action)) return true
     if (isRuntimeEntity(dest) && isHeroActionInRange(unit, action, dest)) return true
     const usesActionRange =
       action === ACTION_TYPES.attack ||

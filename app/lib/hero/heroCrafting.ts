@@ -4,6 +4,7 @@ import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 export type HeroCraftRecipe = {
+  descriptionKey?: string
   id: string
   labelKey: string
   outputEquipment: string
@@ -11,7 +12,17 @@ export type HeroCraftRecipe = {
   cost: ResourceAmount
 }
 
+export const HERO_TRAP_ITEM = 'trap'
+
 export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
+  {
+    id: HERO_TRAP_ITEM,
+    labelKey: 'craftTrap',
+    descriptionKey: 'craftTrapDescription',
+    outputEquipment: HERO_TRAP_ITEM,
+    outputCount: 1,
+    cost: { wood: 5 },
+  },
   {
     id: 'arrow_ceramic',
     labelKey: 'craftArrowCeramic',
@@ -55,7 +66,11 @@ export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe):
   return Object.keys(getMissingCraftResources(player, recipe.cost)).length === 0
 }
 
-export function craftHeroRecipe(player: PlayerLike, hero: UnitEntity | null | undefined, recipe: HeroCraftRecipe): boolean {
+export function craftHeroRecipe(
+  player: PlayerLike,
+  hero: UnitEntity | null | undefined,
+  recipe: HeroCraftRecipe
+): boolean {
   if (!hero || !canCraftHeroRecipe(player, recipe)) return false
 
   for (const [resource, amount] of Object.entries(recipe.cost) as [keyof ResourceAmount, number][]) {

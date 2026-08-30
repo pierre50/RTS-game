@@ -1,5 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, MINING_RESOURCE_CONFIG, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { getEntityWeaponPower } from '../equipment/equipmentStats'
+import { isWildHorse } from '../horses/horseTaming'
 import { canUpgradeUnitAtBuilding } from '../units/unitUpgrades'
 import { isBanditOwner, isBanditUnitType } from './bandits'
 import { isFriendlyTarget } from './combatRelations'
@@ -141,6 +142,7 @@ export const getActionCondition = (
       source.type === UNIT_TYPES.villager &&
       target.family === FAMILY_TYPES.animal &&
       target.type === 'Horse' &&
+      isWildHorse(target as { type: string; tamingStatus?: unknown }) &&
       (target.hitPoints ?? 0) > 0 &&
       !target.isDead &&
       !target.isDestroyed &&

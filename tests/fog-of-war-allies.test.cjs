@@ -104,6 +104,36 @@ test('unit vision updates only its owner, not allied players', () => {
   assert.equal(ally.cellViewed, 0)
 })
 
+test('instances with providesVision false do not reveal even their own cell', () => {
+  const { updateVisibility } = loadFogOfWar()
+  const owner = {
+    label: 'owner',
+    type: 'human',
+    cellViewed: 0,
+    views: createViews(),
+  }
+  const grid = Array.from({ length: 3 }, (_, i) => Array.from({ length: 3 }, (_, j) => createCell(i, j)))
+  const trap = {
+    i: 1,
+    j: 1,
+    label: 'trap',
+    owner,
+    providesVision: false,
+    sight: 3,
+    visibleCells: new Set([owner.views.index(1, 1)]),
+    context: {
+      map: { grid, revealEverything: false },
+      player: owner,
+    },
+  }
+  owner.views.addViewer(1, 1, trap)
+
+  updateVisibility(trap)
+
+  assert.equal(owner.views.hasViewer(1, 1, trap), false)
+  assert.equal(grid[1][1].viewBy.has(trap), false)
+})
+
 test('animal detection uses slow target insight range when a unit reveals its cell', () => {
   const { updateVisibility } = loadFogOfWar()
 

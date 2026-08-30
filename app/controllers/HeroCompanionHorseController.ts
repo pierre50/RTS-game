@@ -2,7 +2,9 @@ import { playAudibleSoundCue } from '../lib'
 import { getEntityCell, getEntitySpaceGrid, getMapSpace, moveEntityToMapSpace, sameMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, MOUNTED_HORSE_SPEED_BONUS, SHEET_TYPES, SOUND_CUES } from '../constants'
 import { instanceIsInPlayerSight } from '../lib/grid/visibility'
+import type { StableHorse } from '../lib/horses/stableHorses'
 import { t } from '../lib/lang'
+import { takeStableInteriorHorseForHero } from '../lib/horses/stableHorseInteraction'
 import type { ControlsLike } from '../types/context'
 import type { BuildingEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
@@ -98,6 +100,7 @@ export class HeroCompanionHorseController {
       spaceId: cell.spaceId,
       type: 'Horse',
       horseColor,
+      tamingStatus: 'tamed',
     }) as CompanionHorse
     return this.registerCompanionHorse(horse)
   }
@@ -287,8 +290,20 @@ export class HeroCompanionHorseController {
     if (targetCell) this.snapHeroToCell(targetCell)
   }
 
+  takeMountedStableHorse(
+    horse: CompanionHorse,
+    replacementHorse: StableHorse | null
+  ): { building: BuildingEntity; horse: StableHorse } | null {
+    const unit = this.getHeroUnit()
+    if (!unit) return null
+    return takeStableInteriorHorseForHero(unit, horse, replacementHorse)
+  }
+
   finishCompanionHorseMount(horse: CompanionHorse): boolean {
     const unit = this.getHeroUnit()
+    const wasMounted = Boolean(unit?.mountedOnHorse)
+    if (wasMounted) return false
+    this.takeMountedStableHorse(horse, null)
     if (unit && horse.horseColor) {
       unit.horseColor = horse.horseColor
       unit.companionHorseColor = horse.horseColor

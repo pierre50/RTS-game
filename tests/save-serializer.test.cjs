@@ -139,6 +139,7 @@ test('serializes animal movement and corpse state while skipping destroyed anima
             y: 50,
             z: 2,
             hitPoints: 4,
+            tamingStatus: 'tamed',
             quantity: 20,
             work: 'hunter',
             action: 'takemeat',
@@ -180,6 +181,7 @@ test('serializes animal movement and corpse state while skipping destroyed anima
   assert.equal(save.animals[0].currentFrame, 3)
   assert.equal(save.animals[0].loop, false)
   assert.equal(save.animals[0].isFleeing, true)
+  assert.equal(save.animals[0].tamingStatus, 'tamed')
 })
 
 test('serializes unit work orders, equipment state and build queues', () => {
@@ -281,7 +283,7 @@ test('serializes building production, research, rally points and active user lin
       hitPoints: 500,
       quantity: 3,
       horseAmount: 2,
-      stableHorses: [{ horseColor: 'dark' }, { horseColor: 'light' }],
+      stableHorses: [{ horseColor: 'dark', tamingStatus: 'tamed' }, { horseColor: 'light', tamingStatus: 'tamed' }],
       rallyPoint: { i: 22, j: 23, direction: 1 },
       assetCiv: 'greek',
       assetAge: 1,
@@ -304,7 +306,7 @@ test('serializes building production, research, rally points and active user lin
     hitPoints: 500,
     quantity: 3,
     horseAmount: 2,
-    stableHorses: [{ horseColor: 'dark' }, { horseColor: 'light' }],
+    stableHorses: [{ horseColor: 'dark', tamingStatus: 'tamed' }, { horseColor: 'light', tamingStatus: 'tamed' }],
     rallyPoint: { i: 22, j: 23, direction: 1 },
     assetCiv: 'greek',
     assetAge: 1,

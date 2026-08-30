@@ -10,6 +10,7 @@ import {
 } from '../lib/horses/horseCapture'
 import { findTreeSegmentCollision } from '../lib/treeCollision'
 import { spookWildHorse } from '../lib/horses/wildHorseBehavior'
+import { isWildHorse } from '../lib/horses/horseTaming'
 import type { AnimalEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { Point } from '../types/grid'
@@ -183,6 +184,7 @@ function isHorse(entity: RuntimeEntity): entity is LassoedHorse {
   return (
     entity.family === FAMILY_TYPES.animal &&
     entity.type === 'Horse' &&
+    isWildHorse(entity) &&
     !entity.isDead &&
     !entity.isDestroyed &&
     !(entity as LassoedHorse).isLassoed &&

@@ -359,6 +359,30 @@
         "x": 0.5,
         "y": 0.6
       }
+    },
+    "000_graphics_buildings_trap.png": {
+      "frame": {
+        "x": 432,
+        "y": 288,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
     }
   },
   "meta": {

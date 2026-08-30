@@ -114,7 +114,14 @@ export type EquipmentStats = {
 }
 
 export interface BuildingConfig extends EntityConfig {
+  hideWhenFogged?: boolean
+  providesVision?: boolean
+  requiresActiveSightInteraction?: boolean
+  overheadIndicatorOffsetX?: number
+  overheadIndicatorOffsetY?: number
   constructionTime?: number
+  instantPlacement?: boolean
+  inventoryItem?: string
   shelterCapacity?: number
   useSpriteShadow?: boolean
   spriteShadowAnchor?: { x?: number; y?: number }

@@ -86,6 +86,7 @@ import {
   refreshMapSpaceEntityVisibility,
   routeUnitOutOfBuildingInteriorSpace,
   syncBuildingInteriorShelterOccupants,
+  syncBuildingStableInteriorHorses,
   type BuildingInteriorRuntimeSpace,
 } from '../services/BuildingInteriorSpaceSystem'
 import type { GameContextLike } from '../types/context'
@@ -520,6 +521,10 @@ export default class Game extends Container {
 
   synchronizeBuildingInteriorAfterTimeJump(): void {
     synchronizeInteriorOccupantsAfterTimeJump(this as BuildingInteriorTravelGame)
+  }
+
+  syncStableInteriorHorses(building: BuildingEntity): void {
+    syncBuildingStableInteriorHorses(this._gameContext(), building)
   }
 
   async load(json: SaveRecord): Promise<void> {

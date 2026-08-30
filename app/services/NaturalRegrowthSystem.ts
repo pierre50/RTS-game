@@ -13,6 +13,7 @@ type AnimalSlot = Partial<AnimalEntity> & {
   isDestroyed?: boolean
   j: number
   label?: string
+  trapPrey?: boolean
   type: string
 }
 type GaiaWithRespawnSlots = PlayerLike & {
@@ -43,6 +44,7 @@ function regrowQuantity(entity: RuntimeEntity, ratio: number): boolean {
 
 function reviveAnimal(animal: AnimalEntity): boolean {
   if (!animal.isDead || animal.isDestroyed) return false
+  if (animal.trapPrey) return false
   const totalHitPoints = Number(animal.totalHitPoints)
   const totalQuantity = Number(animal.totalQuantity)
   if (!Number.isFinite(totalHitPoints) || totalHitPoints <= 0) return false
@@ -80,6 +82,7 @@ function reviveAnimal(animal: AnimalEntity): boolean {
 
 function respawnDestroyedAnimal(context: GameContextLike, slot: AnimalSlot, slots: AnimalSlot[]): boolean {
   if (!slot.isDestroyed) return false
+  if (slot.trapPrey) return false
   const gaia = context.map.gaia as GaiaWithRespawnSlots | null | undefined
   const cell = context.map.grid?.[slot.i]?.[slot.j]
   if (!gaia?.createAnimal || !cell || cell.has) return false

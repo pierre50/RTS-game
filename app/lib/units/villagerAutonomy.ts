@@ -2,6 +2,7 @@ import { ACTION_TYPES, FAMILY_TYPES, RESOURCE_TYPES, UNIT_TYPES, WORK_TYPES } fr
 import { isWheatMature } from '../combat'
 import { getGaiaAnimals } from '../playerState'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
+import { isWildHorse } from '../horses/horseTaming'
 import { isVillagerSleepTime } from './villagerSchedule'
 import {
   clearVillagerAutonomyTargetRejections,
@@ -36,6 +37,7 @@ function isCapturableHorse(entity: RuntimeEntity | null | undefined): entity is 
     entity &&
       entity.family === FAMILY_TYPES.animal &&
       entity.type === 'Horse' &&
+      isWildHorse(entity) &&
       !entity.isDead &&
       !entity.isDestroyed &&
       !(entity as { companionOwner?: UnitEntity | null }).companionOwner &&

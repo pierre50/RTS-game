@@ -73,6 +73,10 @@ function loadBuildingPlacer() {
       getWallTexture: () => ({}),
       isWall: () => false,
     },
+    '../lib/equipment/equipmentLoot': {
+      addHeroInventoryItem: () => {},
+      removeHeroInventoryItem: () => true,
+    },
     './WallPlacementController': {
       WallPlacementController: class {
         cancel() {
