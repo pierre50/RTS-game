@@ -106,6 +106,8 @@ export const FR_TRANSLATIONS = {
   craftTrap: 'Piège',
   craftTrapDescription:
     'Fabrique un piège à poser au sol depuis le sac. Il capture au changement de jour seulement hors vision des unités et bâtiments.',
+  craftChest: 'Coffre',
+  craftChestDescription: 'Fabrique un coffre décoratif à poser au sol depuis le sac.',
   craftRecipeMeta: 'x{count} | {cost}',
   craftRecipeSuccess: '{item} x{count} ajouté au sac',
   heroEquipmentSlotHelmet: 'Casque',
@@ -315,6 +317,7 @@ export const FR_TRANSLATIONS = {
   Portal: 'Portail',
   Farm: 'Champ de blé',
   Trap: 'Piège',
+  Chest: 'Coffre',
   FireCamp: 'Feu de camp',
   CampTotemPlain: 'Totem de camp',
   CampTotemHorns: 'Totem à cornes',

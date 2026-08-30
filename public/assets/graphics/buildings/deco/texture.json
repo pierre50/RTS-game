@@ -383,6 +383,30 @@
         "x": 0.5,
         "y": 0.5
       }
+    },
+    "000_graphics_buildings_coffre.png": {
+      "frame": {
+        "x": 0,
+        "y": 384,
+        "w": 144,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 144,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 144,
+        "h": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      }
     }
   },
   "meta": {
@@ -392,7 +416,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 576,
-      "h": 384
+      "h": 480
     },
     "scale": 1
   }

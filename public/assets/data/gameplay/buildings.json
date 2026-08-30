@@ -214,6 +214,21 @@
     },
     "cost": {}
   },
+  "Chest": {
+    "size": 1,
+    "occlusionFade": false,
+    "providesVision": false,
+    "totalHitPoints": 20,
+    "constructionTime": 0,
+    "instantPlacement": true,
+    "inventoryItem": "chest",
+    "useSpriteShadow": true,
+    "spriteShadowAnchor": {
+      "x": 0.5,
+      "y": 0.5
+    },
+    "cost": {}
+  },
   "Market": {
     "size": 3,
     "sight": 10,

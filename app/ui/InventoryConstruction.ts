@@ -9,6 +9,7 @@ const WHEAT_FARM_AVATAR_REF = { sheet: 'resources/wheat', frame: 4 } as const
 const HIDDEN_HERO_CONSTRUCTION_BUILDINGS = new Set<string>([
   BUILDING_TYPES.fireCamp,
   BUILDING_TYPES.trap,
+  BUILDING_TYPES.chest,
   ...CAMP_DECORATION_BUILDING_TYPES,
 ])
 

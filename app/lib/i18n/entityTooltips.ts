@@ -25,6 +25,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     FarmDescription: 'Place un champ de blé 4x4 récolté comme nourriture.',
     TrapDescription:
       'Piège instantané qui capture du petit gibier au changement de jour, seulement s’il n’est vu par aucune unité ou bâtiment.',
+    ChestDescription: 'Coffre décoratif à poser au sol.',
     FireCampDescription: 'Feu de camp qui sert de point de rassemblement.',
     CampTotemPlainDescription: 'Totem de camp dressé près du site.',
     CampTotemHornsDescription: 'Totem à cornes utilisé comme marque de territoire.',
@@ -167,6 +168,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
     FarmDescription: 'Places a 4x4 wheat field harvested as food.',
     TrapDescription:
       'Instant trap that catches small game when the day changes, only if no unit or building can see it.',
+    ChestDescription: 'Decorative chest placed on the ground.',
     FireCampDescription: 'Camp fire used as a gathering point.',
     CampTotemPlainDescription: 'Camp totem raised near the site.',
     CampTotemHornsDescription: 'Horned totem used as a territorial marker.',

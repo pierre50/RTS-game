@@ -58,3 +58,24 @@ test('hero craft refuses missing resources without changing inventory or resourc
   assert.deepEqual(player, { wood: 4, food: 0, stone: 0, gold: 0, copper: 0, iron: 1 })
   assert.deepEqual(hero.inventory.equipment, ['arrow_ceramic'])
 })
+
+test('hero chest craft spends wood and adds a placeable chest to the bag', () => {
+  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'chest')
+  const player = { wood: 12, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
+  const hero = {}
+
+  assert.equal(craftHeroRecipe(player, hero, recipe), true)
+  assert.equal(player.wood, 2)
+  assert.deepEqual(hero.inventory.equipment, ['chest'])
+})
+
+test('crafted chest item resolves to the Chest building placement', () => {
+  const { getPlaceableInventoryBuildingType } = loadModule('app/lib/hero/placeableInventoryItems.ts', {
+    '../../constants': { BUILDING_TYPES: { chest: 'Chest', trap: 'Trap' } },
+    './heroCrafting': { HERO_CHEST_ITEM: 'chest', HERO_TRAP_ITEM: 'trap' },
+  })
+
+  assert.equal(getPlaceableInventoryBuildingType('chest'), 'Chest')
+  assert.equal(getPlaceableInventoryBuildingType('trap'), 'Trap')
+})

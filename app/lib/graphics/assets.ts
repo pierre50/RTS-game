@@ -42,6 +42,7 @@ const DECO_BUILDING_ASSETS: Record<string, BuildingAsset> = {
   CampJarSmall: staticDecoBuildingAsset(13),
   CampJarLarge: staticDecoBuildingAsset(14),
   Trap: staticDecoBuildingAsset(15),
+  Chest: staticDecoBuildingAsset(16),
 }
 
 export type AssetOwner = {

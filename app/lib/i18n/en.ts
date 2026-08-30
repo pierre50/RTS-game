@@ -106,6 +106,8 @@ export const EN_TRANSLATIONS = {
   craftTrap: 'Trap',
   craftTrapDescription:
     'Crafts a trap that can be placed from the bag. It catches prey on day change only outside unit and building sight.',
+  craftChest: 'Chest',
+  craftChestDescription: 'Crafts a decorative chest that can be placed from the bag.',
   craftRecipeMeta: 'x{count} | {cost}',
   craftRecipeSuccess: '{item} x{count} added to bag',
   heroEquipmentSlotHelmet: 'Helmet',
@@ -315,6 +317,7 @@ export const EN_TRANSLATIONS = {
   Portal: 'Portal',
   Farm: 'Wheat Field',
   Trap: 'Trap',
+  Chest: 'Chest',
   FireCamp: 'Fire Camp',
   CampTotemPlain: 'Camp totem',
   CampTotemHorns: 'Horned totem',

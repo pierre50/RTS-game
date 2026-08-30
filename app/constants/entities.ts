@@ -24,6 +24,7 @@ export const BUILDING_TYPES = {
   watchTower: 'WatchTower',
   smallWall: 'SmallWall',
   trap: 'Trap',
+  chest: 'Chest',
   fireCamp: 'FireCamp',
   campTotemPlain: 'CampTotemPlain',
   campTotemHorns: 'CampTotemHorns',
