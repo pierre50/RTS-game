@@ -4,6 +4,8 @@ import Loader from './screens/Loader'
 import { ScreenManager } from './screens/ScreenManager'
 import { DISPLAY_SCALE, getScreenBrightness, onVisualSettingsChange } from './lib/audio/settings'
 
+const DEFAULT_MAX_FPS = 60
+
 TextureStyle.defaultOptions.scaleMode = 'nearest'
 
 ;(Error as typeof Error & { stackTraceLimit: number }).stackTraceLimit = Infinity
@@ -50,6 +52,7 @@ TextureStyle.defaultOptions.scaleMode = 'nearest'
     autoDensity: true,
     powerPreference: 'high-performance',
   })
+  app.ticker.maxFPS = DEFAULT_MAX_FPS
 
   window.addEventListener('resize', resizeRenderer)
   new ResizeObserver(resizeRenderer).observe(gameRoot)

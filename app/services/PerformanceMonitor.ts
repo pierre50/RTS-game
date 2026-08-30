@@ -87,6 +87,8 @@ type SlowFrame = {
 type RenderStats = {
   at: number
   duration: number
+  effectiveRenderable: number
+  effectiveVisible: number
   maxDepth: number
   nodes: number
   renderable: number
@@ -374,22 +376,39 @@ export class PerformanceMonitor {
   collectRenderStats(root: unknown): Omit<RenderStats, 'at' | 'duration' | 'target'> | null {
     const container = this.renderRoot(root)
     if (!container) return null
-    const stack: Array<{ depth: number; node: RenderNode }> = [{ node: container, depth: 0 }]
+    const stack: Array<{ depth: number; node: RenderNode; parentRenderable: boolean; parentVisible: boolean }> = [
+      { node: container, depth: 0, parentRenderable: true, parentVisible: true },
+    ]
+    let effectiveRenderable = 0
+    let effectiveVisible = 0
     let maxDepth = 0
     let nodes = 0
     let renderable = 0
     let visible = 0
     while (stack.length) {
-      const { node, depth } = stack.pop()!
+      const { node, depth, parentRenderable, parentVisible } = stack.pop()!
+      const nodeVisible = node.visible !== false
+      const nodeRenderable = node.renderable !== false
+      const nodeEffectiveVisible = parentVisible && nodeVisible
+      const nodeEffectiveRenderable = parentRenderable && nodeVisible && nodeRenderable
       nodes++
-      if (node.renderable !== false) renderable++
-      if (node.visible !== false) visible++
+      if (nodeRenderable) renderable++
+      if (nodeVisible) visible++
+      if (nodeEffectiveVisible) effectiveVisible++
+      if (nodeEffectiveRenderable) effectiveRenderable++
       maxDepth = Math.max(maxDepth, depth)
       const children = node.children
       if (!children?.length) continue
-      for (let i = children.length - 1; i >= 0; i--) stack.push({ node: children[i], depth: depth + 1 })
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack.push({
+          node: children[i],
+          depth: depth + 1,
+          parentRenderable: nodeEffectiveRenderable,
+          parentVisible: nodeEffectiveVisible,
+        })
+      }
     }
-    return { maxDepth, nodes, renderable, visible }
+    return { effectiveRenderable, effectiveVisible, maxDepth, nodes, renderable, visible }
   }
 
   renderRoot(root: unknown): RenderNode | null {

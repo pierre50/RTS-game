@@ -233,3 +233,84 @@ test('perf-report default output includes the scene breakdown', () => {
   assert.match(result.message, /Frame interval 1 samples/)
   assert.match(result.message, /Scene breakdown/)
 })
+
+test('perf-report display groups effective renderable display subtrees', () => {
+  const { performanceReport } = loadDebugActions()
+  const hiddenLayer = {
+    children: [{ label: 'hidden-sprite', renderable: true, visible: true }],
+    label: 'hidden-layer',
+    renderable: true,
+    visible: false,
+  }
+  const visibleLayer = {
+    children: [
+      { label: 'visible-sprite', renderable: true, visible: true },
+      { label: 'culled-sprite', renderable: true, visible: false },
+    ],
+    label: 'visible-layer',
+    renderable: true,
+    visible: true,
+  }
+  const map = {
+    children: [hiddenLayer, visibleLayer],
+    grid: [[]],
+    label: 'map-root',
+    resources: new Set(),
+    size: 1,
+  }
+  const context = {
+    app: {
+      stage: { children: [map], label: 'stage-root', renderable: true, visible: true },
+      ticker: { FPS: 120, add: () => {}, remove: () => {}, speed: 1 },
+    },
+    map,
+    performance: {
+      snapshot: () => ({
+        frames: { samples: 1, averageMs: 8, p95Ms: 8, p99Ms: 8, fps: 120, speed: 1 },
+        metrics: {},
+        renderStats: [],
+        slowFrames: [],
+      }),
+    },
+    players: [],
+  }
+
+  const result = performanceReport(context, 'display')
+
+  assert.equal(result.ok, true)
+  assert.match(result.message, /Display tree/)
+  assert.match(result.message, /stage: nodes 7 \| effective 4 renderable\/4 visible \| flags 7 renderable\/5 visible/)
+  assert.match(result.message, /hidden-layer \(Object\) x1: nodes 2 \| effective 0 renderable\/0 visible/)
+  assert.match(result.message, /visible-layer \(Object\) x1: nodes 3 \| effective 2 renderable\/2 visible/)
+})
+
+test('fps-cap updates the Pixi ticker cap without changing game speed', () => {
+  const { setFpsCapDebug } = loadDebugActions()
+  const context = {
+    app: {
+      ticker: {
+        FPS: 119.6,
+        add: () => {},
+        maxFPS: 0,
+        minFPS: 10,
+        remove: () => {},
+        speed: 1,
+      },
+    },
+    map: { grid: [], resources: new Set(), size: 1 },
+    players: [],
+  }
+
+  const capped = setFpsCapDebug(context, '60')
+
+  assert.equal(capped.ok, true)
+  assert.match(capped.message, /FPS cap set: 60/)
+  assert.equal(context.app.ticker.maxFPS, 60)
+  assert.equal(context.app.ticker.speed, 1)
+
+  const native = setFpsCapDebug(context, 'native')
+
+  assert.equal(native.ok, true)
+  assert.match(native.message, /FPS cap set: native/)
+  assert.equal(context.app.ticker.maxFPS, 0)
+})

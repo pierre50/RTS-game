@@ -16,6 +16,15 @@ const CAMERA_VISIBLE_CELLS_SNAP = CELL_WIDTH / 2
 
 type Point = { x: number; y: number }
 type CameraDirection = 'left' | 'right' | 'up' | 'down'
+type CameraVisibleCellsStats = {
+  candidates: number
+  exited: number
+  margin: number
+  samples: number
+  stepX: number
+  stepY: number
+  updated: number
+}
 type CameraContext = {
   app: {
     screen: {
@@ -56,6 +65,7 @@ export class CameraController {
   _rafPending: boolean
   _nextVisibleCells?: Set<RuntimeCell>
   _lastVisibleCellsViewportKey: string | null
+  visibleCellsStats: CameraVisibleCellsStats
 
   constructor(context: CameraContext) {
     this.context = context
@@ -67,6 +77,15 @@ export class CameraController {
     this.mouseMoveState = null
     this._rafPending = false
     this._lastVisibleCellsViewportKey = null
+    this.visibleCellsStats = {
+      candidates: 0,
+      exited: 0,
+      margin: CAMERA_CULL_MARGIN,
+      samples: 0,
+      stepX: CELL_WIDTH / 2,
+      stepY: CELL_HEIGHT / 2,
+      updated: 0,
+    }
   }
 
   getActiveCameraSpace(): CameraMapSpaceView {
@@ -356,8 +375,10 @@ export class CameraController {
       const stepY = CELL_HEIGHT / 2
       const invCW = 1 / CELL_WIDTH
       const invCH = 1 / CELL_HEIGHT
+      let samples = 0
       for (let i = startX; i <= endX; i += stepX) {
         for (let j = startY; j <= endY; j += stepY) {
+          samples++
           const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), activeSpace.size)
           const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), activeSpace.size)
           const cell = activeSpace.grid[x]?.[y]
@@ -365,18 +386,32 @@ export class CameraController {
         }
       }
 
+      let exited = 0
       for (let cell of this.visibleCells) {
         if (!newVisible.has(cell)) {
+          exited++
           if (cell.has) updateInstanceRenderVisibility(cell.has)
           for (const corpse of cell.corpses) updateInstanceRenderVisibility(corpse)
         }
       }
 
+      let updated = 0
       for (let cell of newVisible) {
         const hasCameraCulledContent = cell.has || cell.corpses?.size
         if (!this.visibleCells.has(cell) || hasCameraCulledContent) {
+          updated++
           cell.updateVisible()
         }
+      }
+
+      this.visibleCellsStats = {
+        candidates: newVisible.size,
+        exited,
+        margin,
+        samples,
+        stepX,
+        stepY,
+        updated,
       }
 
       this._nextVisibleCells = this.visibleCells

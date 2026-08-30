@@ -44,6 +44,10 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
   }
   const report = context.performance?.snapshot?.()
   if (!report) return { ok: false, message: 'Performance monitor unavailable' }
+  if (mode === 'display' || mode === 'tree') {
+    const limit = Number(rest[0] || 12)
+    return { ok: true, message: formatDisplayTreeBreakdown(context, Number.isFinite(limit) ? limit : 12).join('\n') }
+  }
   const scene = createSceneBreakdown(context)
   if (mode === 'json') return { ok: true, message: JSON.stringify({ ...report, scene }, null, 2) }
   if (mode === 'spikes') {
@@ -109,6 +113,12 @@ type SceneBreakdown = {
   cells: {
     total: number
     cameraCandidates: number
+    cameraExited: number
+    cameraMargin: number
+    cameraSamples: number
+    cameraStepX: number
+    cameraStepY: number
+    cameraUpdated: number
   }
   entities: {
     units: SceneEntityCounts
@@ -185,6 +195,7 @@ function createSceneBreakdown(context: DevConsoleContext): SceneBreakdown {
   const renderChunks = context.map.renderChunks ?? []
   const terrainChunks = context.map.terrainChunkManager?.chunks
   const terrainChunkClock = context.map.terrainChunkManager?.clock
+  const cameraCellsStats = context.controls?.cameraController?.visibleCellsStats
   let visibleTerrainChunks = 0
   let mountedTerrainChunks = 0
   let terrainVisualCells = 0
@@ -195,11 +206,16 @@ function createSceneBreakdown(context: DevConsoleContext): SceneBreakdown {
       terrainVisualCells += chunk.visualCells?.size ?? 0
     }
   }
-
   return {
     cells: {
       total: context.map.size * context.map.size,
       cameraCandidates: visibleCells.size,
+      cameraExited: cameraCellsStats?.exited ?? 0,
+      cameraMargin: cameraCellsStats?.margin ?? 0,
+      cameraSamples: cameraCellsStats?.samples ?? 0,
+      cameraStepX: cameraCellsStats?.stepX ?? 0,
+      cameraStepY: cameraCellsStats?.stepY ?? 0,
+      cameraUpdated: cameraCellsStats?.updated ?? 0,
     },
     entities: {
       units,
@@ -231,7 +247,8 @@ function formatEntityCounts(label: string, counts: SceneEntityCounts): string {
 function formatSceneBreakdown(scene: SceneBreakdown): string[] {
   return [
     'Scene breakdown',
-    `cells ${scene.cells.total} total | ${scene.cells.cameraCandidates} camera candidates`,
+    `cells ${scene.cells.total} total | ${scene.cells.cameraCandidates} camera candidates | ${scene.cells.cameraSamples} camera samples`,
+    `camera cells step ${scene.cells.cameraStepX}x${scene.cells.cameraStepY} | margin ${scene.cells.cameraMargin} | updated ${scene.cells.cameraUpdated} | exited ${scene.cells.cameraExited}`,
     formatEntityCounts('units', scene.entities.units),
     formatEntityCounts('buildings', scene.entities.buildings),
     formatEntityCounts('resources', scene.entities.resources),
@@ -296,11 +313,149 @@ function perfReportRenderStats(report: DevPerformanceSnapshot, limit: number): s
   if (!stats.length) return []
   const lines = ['Recent renders']
   for (const stat of stats.slice(-limit).reverse()) {
+    const effectiveRenderable = stat.effectiveRenderable ?? stat.renderable
+    const effectiveVisible = stat.effectiveVisible ?? stat.visible
     lines.push(
-      `${stat.duration.toFixed(2)}ms | nodes ${stat.nodes} | visible ${stat.visible} | renderable ${stat.renderable} | depth ${stat.maxDepth}`
+      `${stat.duration.toFixed(2)}ms | nodes ${stat.nodes} | effective ${effectiveRenderable} renderable/${effectiveVisible} visible | flags ${stat.renderable} renderable/${stat.visible} visible | depth ${stat.maxDepth}`
     )
   }
   return lines
+}
+
+type DisplayTreeNode = {
+  children?: unknown[]
+  constructor?: { name?: string }
+  label?: unknown
+  renderable?: boolean
+  visible?: boolean
+}
+
+type DisplayTreeStats = {
+  effectiveRenderable: number
+  effectiveVisible: number
+  maxDepth: number
+  nodes: number
+  renderable: number
+  visible: number
+}
+
+type DisplayTreeGroup = DisplayTreeStats & {
+  count: number
+  label: string
+}
+
+function asDisplayTreeNode(value: unknown): DisplayTreeNode | null {
+  if (!value || typeof value !== 'object') return null
+  return value as DisplayTreeNode
+}
+
+function looksLikeUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+}
+
+function displayNodeLabel(node: DisplayTreeNode): string {
+  const constructorName = node.constructor?.name || 'Object'
+  const label = typeof node.label === 'string' ? node.label.trim() : ''
+  if (label && !looksLikeUuid(label)) return `${label} (${constructorName})`
+  return constructorName
+}
+
+function collectDisplayTreeStats(root: unknown): DisplayTreeStats | null {
+  const rootNode = asDisplayTreeNode(root)
+  if (!rootNode) return null
+  const stack: Array<{ depth: number; node: DisplayTreeNode; parentRenderable: boolean; parentVisible: boolean }> = [
+    { node: rootNode, depth: 0, parentRenderable: true, parentVisible: true },
+  ]
+  const stats: DisplayTreeStats = {
+    effectiveRenderable: 0,
+    effectiveVisible: 0,
+    maxDepth: 0,
+    nodes: 0,
+    renderable: 0,
+    visible: 0,
+  }
+
+  while (stack.length) {
+    const { depth, node, parentRenderable, parentVisible } = stack.pop()!
+    const nodeVisible = node.visible !== false
+    const nodeRenderable = node.renderable !== false
+    const nodeEffectiveVisible = parentVisible && nodeVisible
+    const nodeEffectiveRenderable = parentRenderable && nodeVisible && nodeRenderable
+    stats.nodes++
+    if (nodeVisible) stats.visible++
+    if (nodeRenderable) stats.renderable++
+    if (nodeEffectiveVisible) stats.effectiveVisible++
+    if (nodeEffectiveRenderable) stats.effectiveRenderable++
+    stats.maxDepth = Math.max(stats.maxDepth, depth)
+
+    const children = node.children
+    if (!children?.length) continue
+    for (let index = children.length - 1; index >= 0; index--) {
+      const child = asDisplayTreeNode(children[index])
+      if (!child) continue
+      stack.push({
+        node: child,
+        depth: depth + 1,
+        parentRenderable: nodeEffectiveRenderable,
+        parentVisible: nodeEffectiveVisible,
+      })
+    }
+  }
+
+  return stats
+}
+
+function mergeDisplayTreeStats(target: DisplayTreeGroup, stats: DisplayTreeStats): void {
+  target.effectiveRenderable += stats.effectiveRenderable
+  target.effectiveVisible += stats.effectiveVisible
+  target.maxDepth = Math.max(target.maxDepth, stats.maxDepth)
+  target.nodes += stats.nodes
+  target.renderable += stats.renderable
+  target.visible += stats.visible
+}
+
+function formatDisplayTreeStats(stats: DisplayTreeStats): string {
+  return `nodes ${stats.nodes} | effective ${stats.effectiveRenderable} renderable/${stats.effectiveVisible} visible | flags ${stats.renderable} renderable/${stats.visible} visible | depth ${stats.maxDepth}`
+}
+
+function formatDisplayTreeSection(title: string, root: unknown, limit: number): string[] {
+  const rootNode = asDisplayTreeNode(root)
+  const rootStats = collectDisplayTreeStats(root)
+  if (!rootNode || !rootStats) return [`${title}: unavailable`]
+
+  const lines = [`${title}: ${formatDisplayTreeStats(rootStats)}`]
+  const groups = new Map<string, DisplayTreeGroup>()
+  for (const childValue of rootNode.children ?? []) {
+    const child = asDisplayTreeNode(childValue)
+    if (!child) continue
+    const stats = collectDisplayTreeStats(child)
+    if (!stats) continue
+    const label = displayNodeLabel(child)
+    let group = groups.get(label)
+    if (!group) {
+      group = { count: 0, effectiveRenderable: 0, effectiveVisible: 0, label, maxDepth: 0, nodes: 0, renderable: 0, visible: 0 }
+      groups.set(label, group)
+    }
+    group.count++
+    mergeDisplayTreeStats(group, stats)
+  }
+
+  const sortedGroups = [...groups.values()]
+    .sort((a, b) => b.effectiveRenderable - a.effectiveRenderable || b.nodes - a.nodes)
+    .slice(0, Math.max(1, limit))
+  if (sortedGroups.length) lines.push(`${title} children`)
+  for (const group of sortedGroups) {
+    lines.push(`  ${group.label} x${group.count}: ${formatDisplayTreeStats(group)}`)
+  }
+  return lines
+}
+
+function formatDisplayTreeBreakdown(context: DevConsoleContext, limit: number): string[] {
+  return [
+    'Display tree',
+    ...formatDisplayTreeSection('stage', context.app?.stage, limit),
+    ...formatDisplayTreeSection('map', context.map, limit),
+  ]
 }
 
 export function toggleSolidDebug(context: DevConsoleContext, value: string): CommandResult {
@@ -456,6 +611,32 @@ export function togglePerfDebug(context: DevConsoleContext, value: string): Comm
   map._debugPerfTicker = () => ensurePerfOverlay(context)
   app?.ticker.add(map._debugPerfTicker)
   return { ok: true, message: 'Perf debug: on' }
+}
+
+function formatFpsCapStatus(context: DevConsoleContext, label = 'FPS cap'): string {
+  const ticker = context.app?.ticker
+  if (!ticker) return `${label}: unavailable`
+  const maxFPS = ticker.maxFPS ?? 0
+  const cap = maxFPS > 0 ? `${Math.round(maxFPS)}` : 'native'
+  return `${label}: ${cap} | measured ${Math.round(ticker.FPS ?? 0)} | speed ${ticker.speed ?? 1}x`
+}
+
+export function setFpsCapDebug(context: DevConsoleContext, value = ''): CommandResult {
+  const ticker = context.app?.ticker
+  if (!ticker) return { ok: false, message: 'FPS cap unavailable' }
+
+  const trimmed = value.trim().toLowerCase()
+  if (!trimmed || trimmed === 'status' || trimmed === 'info') {
+    return { ok: true, message: formatFpsCapStatus(context) }
+  }
+
+  const cap = trimmed === 'native' || trimmed === 'off' || trimmed === 'unlimited' ? 0 : Number(trimmed)
+  if (!Number.isFinite(cap) || cap < 0) {
+    return { ok: false, message: 'Usage: fps-cap [status|native|30|60|120]' }
+  }
+
+  ticker.maxFPS = cap
+  return { ok: true, message: formatFpsCapStatus(context, 'FPS cap set') }
 }
 
 function getVisibleEntities(context: DevConsoleContext): Set<DevEntity> {

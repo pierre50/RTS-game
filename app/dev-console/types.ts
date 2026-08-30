@@ -158,6 +158,15 @@ type DevControlsLike = {
   cameraController?: {
     getViewportRect(): { visibleLeft: number; visibleTop: number; visibleWidth: number; visibleHeight: number }
     set?(x: number, y: number, direct?: boolean): void
+    visibleCellsStats?: {
+      candidates: number
+      exited: number
+      margin: number
+      samples: number
+      stepX: number
+      stepY: number
+      updated: number
+    }
     visibleCells?: Set<RuntimeCell>
   }
   stopKeyboardMove?(): void
@@ -226,6 +235,8 @@ export type DevPerformanceSnapshot = {
   renderStats?: Array<{
     at: number
     duration: number
+    effectiveRenderable?: number
+    effectiveVisible?: number
     maxDepth: number
     nodes: number
     renderable: number
@@ -267,8 +278,11 @@ export type DevConsoleContext = {
   } | null
   synchronizeBuildingInteriorAfterTimeJump?: () => void
   app?: {
+    stage?: unknown
     ticker: {
       FPS?: number
+      maxFPS?: number
+      minFPS?: number
       speed?: number
       add(callback: DebugTickerCallback): void
       remove(callback: DebugTickerCallback): void

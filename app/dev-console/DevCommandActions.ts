@@ -1,6 +1,7 @@
 export {
   aiInfo,
   performanceReport,
+  setFpsCapDebug,
   toggleCoordsDebug,
   toggleFreeCamera,
   toggleGridDebug,

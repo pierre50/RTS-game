@@ -15,6 +15,7 @@ import {
   killEntities,
   killResources,
   performanceReport,
+  setFpsCapDebug,
   setAge,
   setCiv,
   setGameSpeed,
@@ -387,10 +388,19 @@ function registerDebugOverlayCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'perf-report',
     aliases: ['perfr'],
-    usage: 'perf-report [top [limit]|spikes|metric <name>|render|scene|json|reset]',
+    usage: 'perf-report [top [limit]|spikes|metric <name>|render|scene|display|json|reset]',
     describe: 'Print, inspect, export or reset frame, pathfinding, AI and fog timings',
-    complete: () => ['top', 'spikes', 'metric', 'render', 'scene', 'json', 'reset'],
+    complete: () => ['top', 'spikes', 'metric', 'render', 'scene', 'display', 'json', 'reset'],
     run: (args, context) => performanceReport(context, args.join(' ')),
+  })
+
+  registry.register({
+    name: 'fps-cap',
+    aliases: ['fpscap'],
+    usage: 'fps-cap [status|native|30|60|120]',
+    describe: 'Cap Pixi ticker FPS for idle performance tests',
+    complete: () => ['status', 'native', '30', '60', '120'],
+    run: (args, context) => setFpsCapDebug(context, args.join(' ')),
   })
 }
 
