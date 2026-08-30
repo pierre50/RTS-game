@@ -7,7 +7,7 @@ import type { Bounds, Viewport } from '../../../types/geometry'
 import type * as MapTypes from '../../../types/map'
 import type { PlayerLike } from '../../../types/player'
 import { _DW, _DH } from '../../cell/CellFog'
-import { Cell } from '../../cell'
+import { TerrainBakeCell } from '../../cell/TerrainBakeCell'
 import { RuntimeCell, type RuntimeCellContext, type RuntimeCellSource } from '../../cell/RuntimeCell'
 import { getGaiaAnimals } from '../../../lib'
 import { getTerrainBakeChunkRects } from '../../../lib/graphics/terrainBakeChunks'
@@ -81,6 +81,7 @@ type FogGridCell = MapTypes.RuntimeCell & {
   removeChild?(child: ContainerChild): ContainerChild | void
   addChild?(child: ContainerChild): ContainerChild
   getTerrainDecorations?(): TerrainDecoration[]
+  getTerrainBakeChildren?(): ContainerChild[]
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
   setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void
@@ -213,7 +214,9 @@ export class MapFog {
           cell.terrainSet = set
           terrainSets.push(set)
         }
-        if (isFogContainerCell(cell)) terrainContainer.addChild(cell)
+        const bakeChildren = cell.getTerrainBakeChildren?.()
+        if (bakeChildren?.length) terrainContainer.addChild(...bakeChildren)
+        else if (isFogContainerCell(cell)) terrainContainer.addChild(cell)
       }
     }
     this.map.context.performance?.record?.('terrainBake.collectCells', performance.now() - collectStartedAt)
@@ -345,35 +348,13 @@ export class MapFog {
   _materializeGenerationCells(): void {
     const startedAt = performance.now()
     const cellsStartedAt = performance.now()
-    const replacements = new globalThis.Map<FogGridCell, Cell>()
+    const replacements = new globalThis.Map<FogGridCell, TerrainBakeCell>()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const source = this.map.grid[i][j]
         if (!source?.isGenerationCell) continue
-        const cell = new Cell(
-          {
-            i: source.i,
-            j: source.j,
-            z: source.z,
-            type: source.type,
-            textureName: source.terrainTextureName,
-            terrainHidden: source.terrainHidden,
-            fogSprites: source.fogSprites,
-            skipFog: true,
-          },
-          this.map.context as ConstructorParameters<typeof Cell>[1]
-        )
-        cell.solid = source.solid
+        const cell = new TerrainBakeCell(source, this.map.context as ConstructorParameters<typeof TerrainBakeCell>[1])
         cell.visible = source.visible
-        cell.inclined = source.inclined ?? false
-        cell.border = source.border ?? false
-        cell.waterBorder = source.waterBorder ?? false
-        cell.terrainHidden = source.terrainHidden ?? false
-        cell.viewed = source.viewed ?? false
-        cell.viewBy = source.viewBy
-        cell.has = source.has
-        cell.corpses = source.corpses
-        cell._hasFog = source._hasFog ?? false
 
         replacements.set(source, cell)
         this.map.grid[i][j] = cell

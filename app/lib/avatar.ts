@@ -383,6 +383,7 @@ const EQUIPMENT_LAYERS = ['back', 'front'] as const
 const EQUIPMENT_SHEETS = ['walking', 'action'] as const
 const EQUIPMENT_VARIANTS = ['', 'male', 'female'] as const
 const MIN_EQUIPMENT_OPAQUE_PIXELS = 30
+const equipmentAvatarCache = new Map<string, HTMLCanvasElement>()
 
 function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
   let sheetData: SpritesheetLike | undefined
@@ -405,11 +406,24 @@ function countOpaquePixels(pixels: Uint8ClampedArray): number {
   return count
 }
 
+function drawCachedEquipmentAvatar(source: HTMLCanvasElement, canvas: HTMLCanvasElement): boolean {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return false
+  ctx.imageSmoothingEnabled = false
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(source, 0, 0, source.width, source.height, 0, 0, canvas.width, canvas.height)
+  return true
+}
+
 // Renders the weapon/tool an inventory slot equips into `canvas` — composites
 // its back+front layers (both drawn at once; some equipment splits its shape
 // across both, e.g. a halberd's shaft going behind the arm), then crops
 // tightly to whatever's actually drawn.
 export function renderEquipmentAvatar(app: Application, equipment: string, canvas: HTMLCanvasElement): boolean {
+  const cacheKey = `${equipment}:${canvas.width}x${canvas.height}`
+  const cached = equipmentAvatarCache.get(cacheKey)
+  if (cached) return drawCachedEquipmentAvatar(cached, canvas)
+
   for (const sheet of EQUIPMENT_SHEETS) {
     const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(equipment, layer, sheet)).filter(
       (texture): texture is Texture => Boolean(texture)
@@ -442,6 +456,15 @@ export function renderEquipmentAvatar(app: Application, equipment: string, canva
     outCtx.imageSmoothingEnabled = false
     outCtx.clearRect(0, 0, canvas.width, canvas.height)
     outCtx.drawImage(composed, square.x, square.y, square.width, square.height, 0, 0, canvas.width, canvas.height)
+    const cachedCanvas = document.createElement('canvas')
+    cachedCanvas.width = canvas.width
+    cachedCanvas.height = canvas.height
+    const cachedCtx = cachedCanvas.getContext('2d')
+    if (cachedCtx) {
+      cachedCtx.imageSmoothingEnabled = false
+      cachedCtx.drawImage(canvas, 0, 0)
+      equipmentAvatarCache.set(cacheKey, cachedCanvas)
+    }
     return true
   }
   return false

@@ -19,8 +19,26 @@ function getFrameIndex(textureName: string): number {
   return parseInt(textureName.split('_')[0], 10)
 }
 
-function getSortedTextureNames(textures: Record<string, TextureWithHitArea>): string[] {
-  return Object.keys(textures).sort((a, b) => getFrameIndex(a) - getFrameIndex(b))
+type TextureFrameLookup = {
+  sortedTextureNames: string[]
+  textureNameByFrameIndex: Map<number, string>
+}
+
+const textureFrameLookupCache = new WeakMap<Record<string, TextureWithHitArea>, TextureFrameLookup>()
+
+function getTextureFrameLookup(textures: Record<string, TextureWithHitArea>): TextureFrameLookup {
+  const cached = textureFrameLookupCache.get(textures)
+  if (cached) return cached
+
+  const sortedTextureNames = Object.keys(textures).sort((a, b) => getFrameIndex(a) - getFrameIndex(b))
+  const textureNameByFrameIndex = new Map<number, string>()
+  for (const textureName of sortedTextureNames) {
+    const frameIndex = getFrameIndex(textureName)
+    if (!textureNameByFrameIndex.has(frameIndex)) textureNameByFrameIndex.set(frameIndex, textureName)
+  }
+  const lookup = { sortedTextureNames, textureNameByFrameIndex }
+  textureFrameLookupCache.set(textures, lookup)
+  return lookup
 }
 
 export function getTextureByFrame(
@@ -35,10 +53,9 @@ export function getTextureByFrame(
     throw new Error(`Spritesheet for ID "${sheetId}" not found in assets.`)
   }
 
-  const sortedTextureNames = getSortedTextureNames(spritesheet.textures)
+  const { sortedTextureNames, textureNameByFrameIndex } = getTextureFrameLookup(spritesheet.textures)
   const textureName =
-    sortedTextureNames.find(name => getFrameIndex(name) === normalizedFrameIndex) ??
-    sortedTextureNames[normalizedFrameIndex]
+    textureNameByFrameIndex.get(normalizedFrameIndex) ?? sortedTextureNames[normalizedFrameIndex]
   const texture = textureName ? spritesheet.textures[textureName] : undefined
 
   if (!texture || !textureName) {

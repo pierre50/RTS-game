@@ -67,6 +67,10 @@ export type DevMapLike = {
   grid: RuntimeCell[][]
   mapType?: string
   resources: Set<DevEntity>
+  renderChunks?: Array<{
+    displayObjects?: unknown[]
+    renderable?: boolean
+  }>
   gaia?: {
     units: DevEntity[]
     animals?: DevEntity[]
@@ -78,7 +82,19 @@ export type DevMapLike = {
   fogLayer?: { visible: boolean } | null
   fogMemoryLayer?: { visible: boolean } | null
   mapFog?: { viewportRenderer: { invalidate(): void; update(viewport?: DevViewportRect): void } }
-  terrainChunkManager?: { invalidateAll(): void }
+  terrainChunkManager?: {
+    clock?: number
+    chunks?: Map<
+      string,
+      {
+        lastUsed?: number
+        mounted?: boolean
+        visualCells?: { size?: number } | null
+      }
+    >
+    invalidateAll(): void
+  }
+  visibleRenderChunkCount?: number
   debugSolidVisible?: boolean
   debugPathVisible?: boolean
   debugVisionVisible?: boolean
@@ -276,6 +292,7 @@ export type DevEntity = RuntimeEntity & {
   hitPoints?: number
   inactif?: boolean
   name?: string
+  renderable?: boolean
   totalHitPoints?: number
   path?: RuntimeCell[]
   applyReliefLift?: (level: number, immediate?: boolean) => void

@@ -21,7 +21,11 @@ function hashSeed(value: SeedValue): number {
 }
 
 function hashCoordinates(seed: SeedValue, i: number, j: number): number {
-  let hash = hashSeed(seed)
+  return hashCoordinatesFromSeedHash(hashSeed(seed), i, j)
+}
+
+function hashCoordinatesFromSeedHash(seedHash: number, i: number, j: number): number {
+  let hash = seedHash
   hash ^= Math.imul(i + 1, 374761393)
   hash = Math.imul(hash, 668265263)
   hash ^= Math.imul(j + 1, 1274126177)
@@ -50,4 +54,13 @@ function getDeterministicCellVariantIndex(i: number, j: number, count: number, s
 export function getDeterministicCellVariant<T>(items: T[] = [], i: number, j: number, seed: SeedValue = 0): T | null {
   if (!Array.isArray(items) || !items.length) return null
   return items[getDeterministicCellVariantIndex(i, j, items.length, seed)]
+}
+
+export function createDeterministicCellVariantPicker(seed: SeedValue = 0): <T>(items: T[] | undefined, i: number, j: number) => T | null {
+  const seedHash = hashSeed(seed)
+  return <T>(items: T[] = [], i: number, j: number): T | null => {
+    if (!Array.isArray(items) || !items.length) return null
+    const index = hashCoordinatesFromSeedHash(seedHash, i, j) % items.length
+    return items[index]
+  }
 }

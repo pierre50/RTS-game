@@ -1,10 +1,9 @@
 import { Assets } from 'pixi.js'
 import type { ContainerChild } from 'pixi.js'
-import { cartesianToIsometric, getDeterministicCellVariant, textureRefToString } from '../../lib'
-import { CELL_DEPTH, FAMILY_TYPES, LABEL_TYPES } from '../../constants'
+import { getDeterministicCellVariant, textureRefToString } from '../../lib'
+import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
-import type { FogSpriteMemory, RuntimeCell } from '../../types/map'
-import type { VisionViewerRef } from '../../types/vision'
+import type { RuntimeCell } from '../../types/map'
 import type { TextureRef } from '../../lib'
 import type { CellFog } from './CellFog'
 import {
@@ -15,7 +14,7 @@ import {
   setCellFog,
   setCellFogChildren,
 } from './CellFog'
-import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
+import { LogicalCell } from './LogicalCell'
 
 type GenerationCellContext = {
   map: {
@@ -43,106 +42,50 @@ type CellDefinition = {
   [key: string]: string | TextureRef | TextureRef[] | number | boolean | undefined
 }
 
-type TerrainAppearance = {
-  patchBorders: Set<string> | null
-  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
-  relief: { index: number; elevation: number } | null
-  waterBorder: { resourceName: string; index: number } | null
-}
-
 type TerrainDecoration = ContainerChild & {
   label?: string
 }
 
-export class GenerationCell implements RuntimeCell {
-  context: GenerationCellContext
-  map: GenerationCellContext['map']
-  family: string
-  i: number
-  j: number
-  z: number
-  type: string
-  solid: boolean
-  visible: boolean
-  inclined: boolean
-  border: boolean
-  waterBorder: boolean
-  terrainHidden: boolean
-  viewed: boolean
-  viewBy: Set<VisionViewerRef>
-  has: RuntimeEntity | null
-  corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
+export class GenerationCell extends LogicalCell implements RuntimeCell {
+  override map: GenerationCellContext['map']
   children: TerrainDecoration[]
-  terrainSet: ContainerChild | null
-  _hasFog: boolean
-  _fogChunks: Array<object> | null
-  _terrainAppearance: TerrainAppearance
-  category?: string
-  color?: string | number
-  assets: TextureRef[]
-  terrainTextureName: string
-  x: number
-  y: number
-  zIndex: number
   cellFog: CellFog | null
   isGenerationCell: boolean
 
   constructor(options: GenerationCellOptions, context: GenerationCellContext) {
-    this.context = context
-    this.map = context.map
-    this.family = FAMILY_TYPES.cell
-    this.i = options.i
-    this.j = options.j
-    this.z = options.z ?? 0
-    this.type = options.type
-    this.solid = false
-    this.visible = false
-    this.inclined = false
-    this.border = false
-    this.waterBorder = false
-    this.terrainHidden = false
-    this.viewed = false
-    this.viewBy = new Set()
-    this.has = null
-    this.corpses = new Set()
-    this.fogSprites = []
-    this.children = []
-    this.terrainSet = null
-    this._hasFog = false
-    this._fogChunks = null
-    this._terrainAppearance = {
-      patchBorders: null,
-      patchBorderGroundType: null,
-      relief: null,
-      waterBorder: null,
-    }
-
-    const definition = options.definition || (Assets.cache.get('config').cells[this.type] as CellDefinition)
-    this.category = definition.category
-    this.color = definition.color
-    this.assets = definition.assets ?? []
+    const definition = options.definition || (Assets.cache.get('config').cells[options.type] as CellDefinition)
+    const z = options.z ?? 0
     const textureRef =
-      options.textureName || getDeterministicCellVariant(this.assets, this.i, this.j, this.map?.seed) || this.assets[0]
-    this.terrainTextureName = textureRef ? textureRefToString(textureRef) : ''
-    const [x, y] = cartesianToIsometric(this.i, this.j)
-    this.x = x
-    this.y = y - this.z * CELL_DEPTH
-    this.zIndex = this.i + this.j
+      options.textureName ||
+      getDeterministicCellVariant(definition.assets ?? [], options.i, options.j, context.map?.seed) ||
+      definition.assets?.[0]
+    const x = Math.floor(((options.i - options.j) * CELL_WIDTH) / 2)
+    const y = Math.floor(((options.i + options.j) * CELL_HEIGHT) / 2)
+    super({
+      context,
+      map: context.map,
+      i: options.i,
+      j: options.j,
+      x,
+      y: y - z * CELL_DEPTH,
+      z,
+      zIndex: options.i + options.j,
+      type: options.type,
+      category: definition.category,
+      color: definition.color,
+      assets: definition.assets ?? [],
+      terrainTextureName: textureRef ? textureRefToString(textureRef) : '',
+      _terrainAppearance: {
+        patchBorders: null,
+        patchBorderGroundType: null,
+        relief: null,
+        waterBorder: null,
+      },
+    })
+    this.map = context.map
+    this.children = []
     this.cellFog = null
     this.isGenerationCell = true
-  }
-
-  _updateChild(instance: RuntimeEntity): void {
-    updateCellChildVisibility(this, instance)
-  }
-
-  updateVisible(): void {
-    updateCellVisible(this)
-  }
-
-  place(entity: RuntimeEntity): void {
-    placeCellEntity(this, entity)
   }
 
   addChild<T extends TerrainDecoration>(child: T): T {
@@ -161,7 +104,8 @@ export class GenerationCell implements RuntimeCell {
   }
 
   resetTerrainAppearance({ preserveWaterBorder = false }: { preserveWaterBorder?: boolean } = {}): void {
-    const [x, y] = cartesianToIsometric(this.i, this.j)
+    const x = Math.floor(((this.i - this.j) * CELL_WIDTH) / 2)
+    const y = Math.floor(((this.i + this.j) * CELL_HEIGHT) / 2)
     this.x = x
     this.y = y - this.z * CELL_DEPTH
     this.inclined = false

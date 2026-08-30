@@ -139,20 +139,31 @@ export type ProgressCallback = (stage: string, progress: number) => Promise<void
 export type GenerationTimer = ReturnType<typeof createGenerationTimer>
 type GeneratedMapChild = ContainerChild & Partial<RuntimeEntity>
 
-export function createGenerationTimer(timings: Record<string, number>) {
+export function createGenerationTimer(
+  timings: Record<string, number>,
+  performanceMonitor?: { record?: (name: string, duration: number) => void } | null
+) {
   return {
     timings,
     measure<T>(name: string, callback: () => T): T {
       const startedAt = performance.now()
-      const result = callback()
-      timings[name] = performance.now() - startedAt
-      return result
+      try {
+        return callback()
+      } finally {
+        const duration = performance.now() - startedAt
+        timings[name] = duration
+        performanceMonitor?.record?.(`mapGeneration.${name}`, duration)
+      }
     },
     async measureAsync<T>(name: string, callback: () => Promise<T> | T): Promise<T> {
       const startedAt = performance.now()
-      const result = await callback()
-      timings[name] = performance.now() - startedAt
-      return result
+      try {
+        return await callback()
+      } finally {
+        const duration = performance.now() - startedAt
+        timings[name] = duration
+        performanceMonitor?.record?.(`mapGeneration.${name}`, duration)
+      }
     },
   }
 }

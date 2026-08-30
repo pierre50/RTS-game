@@ -1,5 +1,4 @@
 import { Modal } from '../lib'
-import { renderEquipmentAvatar } from '../lib/avatar'
 import {
   equipHeroInventoryItem,
   formatEquipmentLootLabel,
@@ -34,6 +33,7 @@ import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
+import { renderEquipmentAvatarLazy } from './equipmentAvatar'
 import type { RuntimeEntity } from '../types/entities'
 import type { ResourceAmount } from '../types/common'
 import type { MenuButtonSpec } from '../types/ui'
@@ -251,7 +251,7 @@ export class InventoryManager {
     for (const [tool, canvas] of this.toolIcons) {
       const equipment = getEquippedItemWeapon(tool, this.menu.context.player?.age ?? 0, hero)
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height)
-      if (equipment) renderEquipmentAvatar(app, equipment, canvas)
+      if (equipment) renderEquipmentAvatarLazy(app, equipment, canvas, 'inventory', this.menu.context.performance)
 
       const label = this.slots.get(tool)?.querySelector<HTMLDivElement>('.inventory-slot-label')
       if (label) label.textContent = equipment ? formatEquipmentLootLabel(equipment) : t(TOOL_LABEL_KEYS[tool])
@@ -294,7 +294,7 @@ export class InventoryManager {
       icon.className = 'unit-avatar-frame inventory-slot-icon'
       icon.width = 64
       icon.height = 64
-      renderEquipmentAvatar(this.menu.context.app, item, icon)
+      renderEquipmentAvatarLazy(this.menu.context.app, item, icon, 'inventory', this.menu.context.performance)
 
       const label = document.createElement('div')
       label.className = 'inventory-slot-label'
@@ -343,7 +343,7 @@ export class InventoryManager {
         icon.className = 'unit-avatar-frame inventory-slot-icon'
         icon.width = 64
         icon.height = 64
-        renderEquipmentAvatar(this.menu.context.app, equipment, icon)
+        renderEquipmentAvatarLazy(this.menu.context.app, equipment, icon, 'inventory', this.menu.context.performance)
         iconWrap.appendChild(icon)
       }
 
@@ -499,7 +499,7 @@ export class InventoryManager {
     canvas.className = 'unit-avatar-frame inventory-slot-icon'
     canvas.width = 64
     canvas.height = 64
-    renderEquipmentAvatar(app, recipe.outputEquipment, canvas)
+    renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
     icon.appendChild(canvas)
 
     const label = document.createElement('span')

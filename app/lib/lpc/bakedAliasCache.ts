@@ -1,5 +1,5 @@
 import { Assets } from 'pixi.js'
-import { dynamicEquipmentAliases } from './equipment'
+import { dynamicEquipmentAliases, dynamicEquipmentAsset } from './equipment'
 import { lpcAnimationSpeedForAlias, lpcAnimationSpeedForSheet } from './animationSpeeds'
 import {
   bakedLogicalAliases,
@@ -8,6 +8,7 @@ import {
   type BakedUnitType,
 } from './bakedAliases'
 import type { SpritesheetLike } from '../../types/pixi'
+import type { DynamicEquipmentKey } from './equipmentData'
 
 const BAKED_MELEE_ACTION_UNITS = ['/infantry/', '/chief/', '/bandit_chief/', '/bandit_sword/'] as const
 
@@ -58,8 +59,9 @@ function registerBakedUnitVariantAliases(unit: BakedUnitType, variant: string): 
   }
 }
 
-export function registerDynamicEquipmentAliases(): void {
+export function registerDynamicEquipmentAliases(atlasAliases?: ReadonlySet<string>): void {
   for (const { alias, atlasAlias, animationSpeed, frameSuffix } of dynamicEquipmentAliases()) {
+    if (atlasAliases && !atlasAliases.has(atlasAlias)) continue
     if (isAssetCached(alias)) continue
     const atlas = Assets.cache.get(atlasAlias) as SpritesheetLike | undefined
     if (!atlas?.textures) continue
@@ -80,6 +82,14 @@ export function registerDynamicEquipmentAliases(): void {
       textures,
     })
   }
+}
+
+export async function loadDynamicEquipmentAsset(equipment: DynamicEquipmentKey): Promise<void> {
+  const asset = dynamicEquipmentAsset(equipment)
+  if (!isAssetCached(asset.alias)) {
+    await Assets.load(asset)
+  }
+  registerDynamicEquipmentAliases(new Set([asset.alias]))
 }
 
 export async function loadBakedUnitVariant(unit: BakedUnitType, variant: string): Promise<void> {

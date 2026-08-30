@@ -5,9 +5,11 @@ import { bindAnimatedSpriteToTicker, changeSpritePalette, changeSpriteColor, get
 import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from '../../lib/units/actionVisualSheet'
 import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
+import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
 import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitRuntimeHost } from './UnitTypes'
+import type { DynamicEquipmentKey } from '../../lib/lpc/equipmentData'
 
 type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
@@ -25,6 +27,24 @@ type AppearanceLayerRenderState = {
 }
 
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
+
+function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
+  if (!unit.context.map.ready) return false
+  return unit.controlMode === 'hero' || unit.visible
+}
+
+function requestMissingEquipmentLayer(unit: UnitRuntimeHost, layer: RuntimeAppearanceLayer): void {
+  if (!shouldRequestMissingEquipmentLayer(unit)) return
+  const equipmentKey = layer.equipmentKey as DynamicEquipmentKey | undefined
+  if (!equipmentKey) return
+  const request = loadDynamicEquipmentAssetQueued(equipmentKey, {
+    metricName: 'lazyEquipment.loadAsset',
+    performanceMonitor: unit.context.performance,
+  })
+  void request
+    .then(() => unit.syncAppearanceLayers?.(unit.currentSheet))
+    .catch(error => console.warn(`Unable to load equipment appearance "${equipmentKey}"`, error))
+}
 
 function removeAppearanceLayer(unit: UnitRuntimeHost, spriteKey: number): void {
   const existing = unit.appearanceLayerSprites.get(spriteKey)
@@ -121,6 +141,7 @@ function getLayerRenderState(
     !sheetId ||
     !spritesheet?.textures
   ) {
+    if (sheetId && !spritesheet?.textures) requestMissingEquipmentLayer(unit, layer)
     return null
   }
 

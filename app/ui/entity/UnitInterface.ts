@@ -1,6 +1,5 @@
 import { MENU_INFO_IDS, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
-import { renderEquipmentAvatar } from '../../lib/avatar'
 import {
   formatEquipmentStackLabel,
   getEquipmentStacks,
@@ -22,6 +21,7 @@ import {
   XP_CATEGORIES,
 } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
+import { renderEquipmentAvatarLazy } from '../equipmentAvatar'
 import { appendBaseEntityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
 import type { EntityInfoRenderOptions, UnitEntity } from '../../types/entities'
 import type { UnitConfig } from '../../types/config'
@@ -69,7 +69,9 @@ function createCorpseEquipmentLootButton(
   icon.className = 'unit-avatar-frame corpse-loot-icon'
   icon.width = 56
   icon.height = 56
-  if (unit.context?.app) renderEquipmentAvatar(unit.context.app, equipment, icon)
+  if (unit.context?.app) {
+    renderEquipmentAvatarLazy(unit.context.app, equipment, icon, 'corpse loot', unit.context.performance)
+  }
 
   const text = document.createElement('span')
   text.className = 'corpse-loot-label'

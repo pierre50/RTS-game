@@ -33,6 +33,8 @@ import {
   stopDebugTicker,
 } from './shared'
 import { isMovementDebugEnabled, setMovementDebugEnabled } from '../../classes/unit/movement/UnitMovementDebug'
+import { getLazyEquipmentLoadStats } from '../../lib/lpc/lazyEquipmentAssets'
+import { getGaiaAnimals } from '../../lib/playerState'
 
 export function performanceReport(context: DevConsoleContext, value = ''): CommandResult {
   const [mode = '', ...rest] = value.trim().split(/\s+/).filter(Boolean)
@@ -42,7 +44,8 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
   }
   const report = context.performance?.snapshot?.()
   if (!report) return { ok: false, message: 'Performance monitor unavailable' }
-  if (mode === 'json') return { ok: true, message: JSON.stringify(report, null, 2) }
+  const scene = createSceneBreakdown(context)
+  if (mode === 'json') return { ok: true, message: JSON.stringify({ ...report, scene }, null, 2) }
   if (mode === 'spikes') {
     const lines = perfReportSlowFrames(report, 8)
     if (!lines.length) return { ok: true, message: 'No slow frames captured yet' }
@@ -74,11 +77,13 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     if (!lines.length) return { ok: true, message: 'No render stats captured yet' }
     return { ok: true, message: lines.join('\n') }
   }
+  if (mode === 'scene') return { ok: true, message: formatSceneBreakdown(scene).join('\n') }
   const lines = [
     `Frame interval ${report.frames.samples} samples | avg ${report.frames.averageMs.toFixed(2)}ms | p95 ${report.frames.p95Ms.toFixed(2)}ms | p99 ${report.frames.p99Ms.toFixed(2)}ms | slow frames ${report.frames.slowCount ?? 0} | FPS ${Math.round(report.frames.fps)} | speed ${report.frames.speed}x`,
   ]
   lines.push(...perfReportSlowFrames(report, 3))
   lines.push(...perfReportRenderStats(report, 3))
+  lines.push(...formatSceneBreakdown(scene))
   lines.push(...perfReportMetricGroup(report, 'Load breakdown', 'load.', 16))
   lines.push('Top metrics')
   const limit = mode === 'top' ? Number(rest[0] || 20) : 12
@@ -91,6 +96,152 @@ export function performanceReport(context: DevConsoleContext, value = ''): Comma
     )
   }
   return { ok: true, message: lines.join('\n') }
+}
+
+type SceneEntityCounts = {
+  total: number
+  camera: number
+  visible: number
+  renderable: number
+}
+
+type SceneBreakdown = {
+  cells: {
+    total: number
+    cameraCandidates: number
+  }
+  entities: {
+    units: SceneEntityCounts
+    buildings: SceneEntityCounts
+    resources: SceneEntityCounts
+    animals: SceneEntityCounts
+    corpses: SceneEntityCounts
+  }
+  renderChunks: {
+    total: number
+    renderable: number
+    displayObjects: number
+  }
+  terrainChunks: {
+    total: number
+    mounted: number
+    visible: number
+    visualCells: number
+  }
+  equipmentAtlases: {
+    loaded: number
+    pending: number
+    total: number
+  }
+  tasks: number
+}
+
+function createEmptyEntityCounts(): SceneEntityCounts {
+  return { total: 0, camera: 0, visible: 0, renderable: 0 }
+}
+
+function isEntityVisible(entity: DevEntity): boolean {
+  const sprite = entity.sprite as { visible?: boolean } | undefined
+  return entity.visible !== false && sprite?.visible !== false
+}
+
+function isEntityRenderable(entity: DevEntity): boolean {
+  const sprite = entity.sprite as { renderable?: boolean } | undefined
+  return isEntityVisible(entity) && entity.renderable !== false && sprite?.renderable !== false
+}
+
+function countEntity(
+  counts: SceneEntityCounts,
+  context: DevConsoleContext,
+  visibleCells: Set<DevEntity['currentCell']>,
+  entity: DevEntity | undefined
+): void {
+  if (!entity || entity.isDestroyed) return
+
+  counts.total += 1
+  const cell = entity.currentCell ?? context.map.grid[entity.i]?.[entity.j] ?? null
+  if (cell && visibleCells.has(cell)) counts.camera += 1
+  if (isEntityVisible(entity)) counts.visible += 1
+  if (isEntityRenderable(entity)) counts.renderable += 1
+}
+
+function createSceneBreakdown(context: DevConsoleContext): SceneBreakdown {
+  const visibleCells = (context.controls?.cameraController?.visibleCells ?? new Set()) as Set<DevEntity['currentCell']>
+  const units = createEmptyEntityCounts()
+  const buildings = createEmptyEntityCounts()
+  const resources = createEmptyEntityCounts()
+  const animals = createEmptyEntityCounts()
+  const corpses = createEmptyEntityCounts()
+
+  for (const player of context.players) {
+    player.units.forEach(unit => countEntity(units, context, visibleCells, unit as DevEntity))
+    player.buildings.forEach(building => countEntity(buildings, context, visibleCells, building as DevEntity))
+    player.corpses?.forEach(corpse => countEntity(corpses, context, visibleCells, corpse as DevEntity))
+    player.animals?.forEach(animal => countEntity(animals, context, visibleCells, animal as DevEntity))
+  }
+  getGaiaAnimals(context.map.gaia).forEach(animal => countEntity(animals, context, visibleCells, animal as DevEntity))
+  context.map.resources.forEach(resource => countEntity(resources, context, visibleCells, resource))
+
+  const renderChunks = context.map.renderChunks ?? []
+  const terrainChunks = context.map.terrainChunkManager?.chunks
+  const terrainChunkClock = context.map.terrainChunkManager?.clock
+  let visibleTerrainChunks = 0
+  let mountedTerrainChunks = 0
+  let terrainVisualCells = 0
+  if (terrainChunks) {
+    for (const chunk of terrainChunks.values()) {
+      if (terrainChunkClock != null && chunk.lastUsed === terrainChunkClock) visibleTerrainChunks += 1
+      if (chunk.mounted) mountedTerrainChunks += 1
+      terrainVisualCells += chunk.visualCells?.size ?? 0
+    }
+  }
+
+  return {
+    cells: {
+      total: context.map.size * context.map.size,
+      cameraCandidates: visibleCells.size,
+    },
+    entities: {
+      units,
+      buildings,
+      resources,
+      animals,
+      corpses,
+    },
+    renderChunks: {
+      total: renderChunks.length,
+      renderable: renderChunks.filter(chunk => chunk.renderable !== false).length,
+      displayObjects: renderChunks.reduce((sum, chunk) => sum + (chunk.displayObjects?.length ?? 0), 0),
+    },
+    terrainChunks: {
+      total: terrainChunks?.size ?? 0,
+      mounted: mountedTerrainChunks,
+      visible: terrainChunkClock == null ? (context.map.visibleRenderChunkCount ?? 0) : visibleTerrainChunks,
+      visualCells: terrainVisualCells,
+    },
+    equipmentAtlases: getLazyEquipmentLoadStats(),
+    tasks: context.scheduler?._tasks?.size ?? 0,
+  }
+}
+
+function formatEntityCounts(label: string, counts: SceneEntityCounts): string {
+  return `${label} ${counts.total} total | ${counts.camera} camera | ${counts.visible} visible | ${counts.renderable} renderable`
+}
+
+function formatSceneBreakdown(scene: SceneBreakdown): string[] {
+  return [
+    'Scene breakdown',
+    `cells ${scene.cells.total} total | ${scene.cells.cameraCandidates} camera candidates`,
+    formatEntityCounts('units', scene.entities.units),
+    formatEntityCounts('buildings', scene.entities.buildings),
+    formatEntityCounts('resources', scene.entities.resources),
+    formatEntityCounts('animals', scene.entities.animals),
+    formatEntityCounts('corpses', scene.entities.corpses),
+    `terrain chunks ${scene.terrainChunks.total} total | ${scene.terrainChunks.visible} visible | ${scene.terrainChunks.mounted} mounted | ${scene.terrainChunks.visualCells} visual cells`,
+    `render chunks ${scene.renderChunks.total} total | ${scene.renderChunks.renderable} renderable | ${scene.renderChunks.displayObjects} display objects`,
+    `equipment atlases ${scene.equipmentAtlases.loaded}/${scene.equipmentAtlases.total} loaded | ${scene.equipmentAtlases.pending} pending`,
+    `scheduler tasks ${scene.tasks}`,
+  ]
 }
 
 export function toggleUnitMovementDebug(value = ''): CommandResult {

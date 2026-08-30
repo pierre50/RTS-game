@@ -1,6 +1,7 @@
 import { Assets } from 'pixi.js'
 import { Resource } from '../../Resource'
 import { Cell, GenerationCell } from '../../cell'
+import { createDeterministicCellVariantPicker } from '../../../lib'
 import type { RuntimeCell } from '../../../types/map'
 import type { ResourceEntity } from '../../../types/entities'
 import type { GameContextLike } from '../../../types/context'
@@ -77,19 +78,22 @@ export class MapBlueprintGeneration {
 
     const startedAt = performance.now()
     const cellDefinitions = gameConfig().cells
+    const pickCellVariant = createDeterministicCellVariantPicker(this.map.seed ?? 0)
     const relief = blueprint.relief ?? []
     for (let i = 0; i <= this.map.size; i++) {
       const row: RuntimeCell[] = []
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
         const type = blueprint.terrain[i][j]
+        const definition = cellDefinitions[type] as CellDefinition
         const cell = new GenerationCell(
           {
             i,
             j,
             z: relief[i]?.[j] || 0,
             type: String(type),
-            definition: cellDefinitions[type] as CellDefinition,
+            definition,
+            textureName: pickCellVariant(definition?.assets, i, j) ?? undefined,
           },
           context
         )

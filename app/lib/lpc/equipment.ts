@@ -208,6 +208,14 @@ export function dynamicEquipmentAssets(): DynamicEquipmentAsset[] {
   })
 }
 
+export function isDynamicEquipmentKey(value: string): value is DynamicEquipmentKey {
+  return DYNAMIC_EQUIPMENT_KEYS.includes(value as DynamicEquipmentKey)
+}
+
+export function dynamicEquipmentAsset(equipment: DynamicEquipmentKey): DynamicEquipmentAsset {
+  return { alias: equipmentFamilyAlias(equipment), src: equipmentFamilySrc(equipment) }
+}
+
 export function dynamicEquipmentAliases(): DynamicEquipmentAlias[] {
   return dynamicEquipmentLogicalAliases()
 }

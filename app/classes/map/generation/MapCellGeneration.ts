@@ -161,7 +161,8 @@ export async function generateCellsAsync(
     const row: RuntimeCell[] = []
     map.grid[i] = row
     for (let j = 0; j <= map.size; j++) {
-      const cell = new GenerationCell({ i, j, z, type: TERRAIN_TYPES[terrain[i][j]] }, context)
+      const type = TERRAIN_TYPES[terrain[i][j]]
+      const cell = new GenerationCell({ i, j, z, type }, context)
       row[j] = cell
     }
     if (i % 8 === 0) {

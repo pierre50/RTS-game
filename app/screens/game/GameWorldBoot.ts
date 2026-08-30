@@ -107,7 +107,11 @@ export async function bootGameFromConfig(
   )
   game.context.player = game.context.players[0]
   measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
-  await measureAsync(game, 'boot.preloadUnits', () => preloadBakedLpcUnitsForPlayers(game.context.players))
+  await measureAsync(game, 'boot.preloadUnits', () =>
+    preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
+      preloadEquipment: true,
+    })
+  )
   await measureAsync(game, 'boot.stylishMap', () => map.stylishMap({ onProgress: reportProgress(game) }))
   await game._updateLoading('finalizingWorld', 0.96)
   measure(game, 'boot.controlsInit', () => game.context.controls?.init?.())
@@ -167,6 +171,11 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   measure(game, 'seedSave.applySavedState', () =>
     map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
   )
+  await measureAsync(game, 'seedSave.preloadUnits', () =>
+    preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
+      preloadEquipment: true,
+    })
+  )
   measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')
@@ -185,6 +194,11 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
   measure(game, 'save.applyMapConfig', () => game._applyMapConfig(map, saveConfig(json.config)))
   measure(game, 'save.createUiRuntime', () => game._createUiRuntime())
   measure(game, 'save.generateFromJSON', () => map.generateFromJSON(savedRuntimeState(json)))
+  await measureAsync(game, 'save.preloadUnits', () =>
+    preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
+      preloadEquipment: true,
+    })
+  )
   measure(game, 'save.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'save.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')

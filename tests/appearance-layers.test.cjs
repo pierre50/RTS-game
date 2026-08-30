@@ -247,6 +247,46 @@ test('hero baked appearance includes inventory equipped layers', () => {
   assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'), false)
 })
 
+test('runtime equipment preload collection deduplicates used equipment atlases', () => {
+  const cachedAliases = new Set(['lpc-baked/infantry/greek/male/walking'])
+  const { collectBakedLpcRuntimeEquipmentAssets } = loadModule('app/lib/lpc/baked.ts', {
+    './appearance': { hashLpcAppearanceSeed: () => 0 },
+    './heroAppearance': heroAppearanceMock,
+    './equipment': {
+      dynamicEquipmentAsset: equipment => ({
+        alias: equipment.startsWith('sword_') ? 'lpc-equipment/weapon/sword' : `lpc-equipment/${equipment}`,
+        src: `${equipment}.json`,
+      }),
+      dynamicEquipmentAssets: () => [],
+      dynamicEquipmentLayersForEquipment: () => [],
+      dynamicEquipmentLayersForUnit: () => [
+        { equipmentKey: 'sword_ceramic' },
+        { equipmentKey: 'sword_copper' },
+        { equipmentKey: 'helmet_pointed_ceramic' },
+        { equipmentKey: 'not_dynamic' },
+      ],
+      dynamicEquipmentLayersForVillager: () => [],
+      isDynamicEquipmentKey: equipment => equipment !== 'not_dynamic',
+    },
+    '../chief': { isChiefUnit: () => false },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../constants': constants,
+    'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
+  })
+  const unit = {
+    type: 'Fantassin',
+    owner: { civ: 'Greek', label: 'P1' },
+    label: 'unit',
+    i: 1,
+    j: 1,
+  }
+
+  assert.deepEqual(collectBakedLpcRuntimeEquipmentAssets([{ units: [unit] }]), [
+    { alias: 'lpc-equipment/weapon/sword', src: 'sword_ceramic.json' },
+    { alias: 'lpc-equipment/helmet_pointed_ceramic', src: 'helmet_pointed_ceramic.json' },
+  ])
+})
+
 test('hero hair appearance layer is hidden while a helmet is equipped and restored after unequip', () => {
   class AnimatedSprite {
     constructor(textures) {

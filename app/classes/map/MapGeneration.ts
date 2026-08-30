@@ -218,7 +218,7 @@ export class MapGeneration {
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = gameContext(this.map.context)
-    const timer = createGenerationTimer(this.map.generationTimings || {})
+    const timer = createGenerationTimer(this.map.generationTimings || {}, this.map.context.performance)
     await generateStylishMap(this.map, context, timer, this.pipelineCallbacks(), { onProgress })
   }
 
@@ -226,7 +226,7 @@ export class MapGeneration {
     onProgress = async (_stage: string, _progress: number) => {},
   }: GenerateMapOptions = {}): Promise<void> {
     const context = runtimeContext(this.map.context)
-    const timer = createGenerationTimer(this.map.generationTimings || {})
+    const timer = createGenerationTimer(this.map.generationTimings || {}, this.map.context.performance)
     await prepareMapTerrainForSavedState(this.map, context, timer, this.pipelineCallbacks(), { onProgress })
   }
 
