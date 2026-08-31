@@ -1,4 +1,5 @@
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { getFreeLandCellAroundInstance } from '../../lib'
 import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../../lib/buildings/interiors'
@@ -24,6 +25,7 @@ const REST_WAKE_LOCK_MS = 12000
 const REST_OUTSIDE_SEARCH_RADIUS = 4
 const DEFAULT_UNIT_SIGHT = 7
 const BANDIT_HOME_SLEEP_RADIUS = 8
+const GAME_HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
 
 const SHELTER_TYPES = new Set<string>(
   [BUILDING_TYPES.house, BUILDING_TYPES.townCenter].filter((type): type is string => typeof type === 'string')
@@ -40,6 +42,15 @@ type UnitRestDelayOptions = {
   requireRestCapable?: boolean
   requireSleepTime?: boolean
   target?: RuntimeEntity | null
+}
+
+function stableUnitSeed(unit: UnitEntity): number {
+  const value = unit.label ?? `${unit.type}:${unit.i}:${unit.j}`
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+  return hash
 }
 
 function distance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEntity, 'i' | 'j'>): number {
@@ -311,6 +322,18 @@ function findRestCellAroundPoint(
   }
 
   return best?.cell ?? null
+}
+
+export function getRestTransitionDurationMs(unit: UnitEntity, phase: 'windingDown' | 'wakingUp'): number {
+  const seed = stableUnitSeed(unit)
+  const base = phase === 'windingDown' ? GAME_HOUR_MS * 1.25 : GAME_HOUR_MS * 0.25
+  const spread = phase === 'windingDown' ? GAME_HOUR_MS * 1.5 : GAME_HOUR_MS * 0.45
+  return base + (seed % spread)
+}
+
+export function getRestTransitionCell(unit: UnitEntity, restSite?: UnitRestSite | null): RuntimeCell | null {
+  const anchor = restSite?.shelter ?? restSite?.targetCell ?? unit
+  return findRestCellAroundPoint(unit, anchor, restSite?.location === 'shelter' ? 3 : 2)
 }
 
 function isVisibleFireCampInSight(unit: UnitEntity, building: BuildingEntity): boolean {

@@ -11,7 +11,11 @@ export type GameMap<TCell extends GridCell = GridCell> = {
 
 type PathInstanceLike = GridPosition & Partial<Point> & { category?: string; label?: string }
 type PathCellOccupant = { has?: (InstanceLike & { label?: string }) | null }
-type PathSpaceEntity = PathInstanceLike & { context?: { map?: RuntimeMap | null }; family?: string; spaceId?: string | null }
+type PathSpaceEntity = PathInstanceLike & {
+  context?: { map?: RuntimeMap | null }
+  family?: string
+  spaceId?: string | null
+}
 type PathSpaceCell = GridCell & { spaceId?: string | null }
 type FreeCellCondition<TCell extends GridCell> = (cell: TCell) => boolean
 type ClosestFreeCellPathOptions<TCell extends GridCell> = {
@@ -56,6 +60,27 @@ function getFreeCellAroundPoint<TCell extends GridCell>(
   return null
 }
 
+function getContactCandidateCells<TCell extends GridCell>(
+  target: GridInstanceLike | TCell,
+  grid: Grid<TCell>,
+  distance: number
+): TCell[] {
+  const cells: TCell[] = []
+  const radius = Math.ceil(distance + 1)
+
+  for (let i = Math.max(target.i - radius, 0); i <= Math.min(target.i + radius, grid.length - 1); i++) {
+    const row = grid[i]
+    if (!row) continue
+    for (let j = Math.max(target.j - radius, 0); j <= Math.min(target.j + radius, row.length - 1); j++) {
+      const cell = row[j]
+      if (!cell) continue
+      if (Math.floor(instancesDistance(cell, target)) <= distance) cells.push(cell)
+    }
+  }
+
+  return cells
+}
+
 export function getFreeLandCellAroundInstance<TCell extends GridCell>(
   instance: GridPosition & { size?: number },
   grid: Grid<TCell>,
@@ -90,7 +115,7 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
   const size = targetSize || occupiedInstance?.size || 1
   const distance = getBuildingContactDistance(size)
 
-  const candidates = getCellsAroundPoint(target.i, target.j, pathMap.grid, distance)
+  const candidates = getContactCandidateCells(target, pathMap.grid, distance)
   candidates.sort(
     (a, b) =>
       Math.abs(a.i - instance.i) +

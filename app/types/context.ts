@@ -1,7 +1,14 @@
 import type { Application, Container } from 'pixi.js'
 import type { RuntimeMap, RuntimeCell } from './map'
 import type { PlayerLike } from './player'
-import type { RuntimeEntity, PlaceableBuildingConfig, UnitEntity, BuildingEntity, ResourceEntity } from './entities'
+import type {
+  RuntimeEntity,
+  PlaceableBuildingConfig,
+  UnitEntity,
+  BuildingEntity,
+  ResourceEntity,
+  UnitResourceDeliveryReturnTask,
+} from './entities'
 import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
 import type { HeroEquippedItem } from './heroTools'
 import type { FactionSave, WorldGraphSave } from './save'
@@ -269,6 +276,7 @@ export interface GameContextLike {
   unitRest?: UnitRestSystemLike | null
   editor?: EditorInteractionTarget
   paused?: boolean
+  restTransitionsEnabled?: boolean
   devConsoleOpen?: boolean
   defeat?: boolean
   checkDefeat?: () => boolean
@@ -286,7 +294,8 @@ export interface GameContextLike {
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
   travelOutOfBuildingInterior?: () => void
-  routeInteriorUnitToExit?: (unit: UnitEntity) => void
+  routeUnitResourceDelivery?: (unit: UnitEntity, building: BuildingEntity) => void
+  routeInteriorUnitToExit?: (unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null) => void
   synchronizeBuildingInteriorAfterTimeJump?: () => void
   syncStableInteriorHorses?: (building: BuildingEntity) => void
 }

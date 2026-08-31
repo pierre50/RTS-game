@@ -69,13 +69,6 @@ export class BuildingLifecycle {
       building.isBuilt = true
       building.finalTexture()
       if (!wasBuilt) {
-        if (
-          building.owner.isPlayed &&
-          building.sounds?.create &&
-          building.context.controls.instanceIsAudible(building)
-        ) {
-          playAudibleSoundCue(building, building.sounds.create, { profile: 'building' })
-        }
         building.onBuilt()
       }
       if (building.owner.hasBuilt && !building.owner.hasBuilt.includes(building.type)) {

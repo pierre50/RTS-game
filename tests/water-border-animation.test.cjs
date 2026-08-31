@@ -188,3 +188,36 @@ test('registered water border surfaces advance on the water animation ticker', (
 
   assert.deepEqual(sequence, [0, 1, 2, 3, 2, 1, 0, 1, 2])
 })
+
+test('water overlay ticker does not advance while the map is paused', () => {
+  const Map = loadMapModule()
+  let tick = null
+  const map = new Map({
+    app: {
+      ticker: {
+        add(callback) {
+          tick = callback
+        },
+        remove() {},
+      },
+    },
+    players: [],
+  })
+
+  const frames = [{ id: 0 }, { id: 1 }, { id: 2 }, { id: 3 }]
+  const sprite = { texture: frames[0] }
+
+  map.registerWaterBorderSurface(sprite, frames)
+  tick({ deltaTime: 17 })
+  assert.equal(sprite.texture.id, 1)
+
+  map.waterOverlayPaused = true
+  for (let i = 0; i < 4; i++) tick({ deltaTime: 17 })
+  assert.equal(sprite.texture.id, 1)
+  assert.equal(map.waterOverlayFrame, 1)
+
+  map.waterOverlayPaused = false
+  tick({ deltaTime: 17 })
+  assert.equal(sprite.texture.id, 2)
+  assert.equal(map.waterOverlayFrame, 2)
+})

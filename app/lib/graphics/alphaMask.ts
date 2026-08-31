@@ -23,28 +23,61 @@ type AlphaMask = {
 
 const alphaMaskCache = new WeakMap<Texture, AlphaMask | null>()
 
+function createCanvas(width: number, height: number): HTMLCanvasElement | OffscreenCanvas | null {
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    return canvas
+  }
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height)
+  return null
+}
+
+function getCanvasAlphaMask(texture: Texture): AlphaMask | null {
+  const resource = texture.source?.resource as CanvasImageSource | undefined
+  const frame = texture.frame
+  if (!resource || !frame || texture.rotate) return null
+
+  const resolution = texture.source?.resolution ?? 1
+  const sourceX = Math.round(frame.x * resolution)
+  const sourceY = Math.round(frame.y * resolution)
+  const width = Math.max(1, Math.round(frame.width * resolution))
+  const height = Math.max(1, Math.round(frame.height * resolution))
+  const canvas = createCanvas(width, height)
+  const context = canvas?.getContext('2d', { willReadFrequently: true })
+  if (!canvas || !context) return null
+
+  context.clearRect(0, 0, width, height)
+  context.drawImage(resource, sourceX, sourceY, width, height, 0, 0, width, height)
+  const imageData = context.getImageData(0, 0, width, height)
+  const mask = new Uint8Array(width * height)
+  for (let sourceIndex = 3, maskIndex = 0; maskIndex < mask.length; sourceIndex += 4, maskIndex++) {
+    mask[maskIndex] = imageData.data[sourceIndex] ?? 0
+  }
+  return { pixels: mask, width, height }
+}
+
+function getRendererAlphaMask(texture: Texture, renderer?: TexturePixelExtractor | null): AlphaMask | null {
+  const extract = renderer?.extract
+  if (typeof extract?.pixels !== 'function') return null
+
+  const output = extract.pixels(texture)
+  if (!output?.pixels || output.width <= 0 || output.height <= 0) return null
+
+  const mask = new Uint8Array(output.width * output.height)
+  for (let sourceIndex = 3, maskIndex = 0; maskIndex < mask.length; sourceIndex += 4, maskIndex++) {
+    mask[maskIndex] = output.pixels[sourceIndex] ?? 0
+  }
+
+  return { pixels: mask, width: output.width, height: output.height }
+}
+
 function getAlphaMask(texture: Texture, renderer?: TexturePixelExtractor | null): AlphaMask | null {
   if (alphaMaskCache.has(texture)) return alphaMaskCache.get(texture) ?? null
 
-  const extract = renderer?.extract
-  if (typeof extract?.pixels !== 'function') {
-    alphaMaskCache.set(texture, null)
-    return null
-  }
-
   try {
-    const output = extract.pixels(texture)
-    if (!output?.pixels || output.width <= 0 || output.height <= 0) {
-      alphaMaskCache.set(texture, null)
-      return null
-    }
-
-    const mask = new Uint8Array(output.width * output.height)
-    for (let sourceIndex = 3, maskIndex = 0; maskIndex < mask.length; sourceIndex += 4, maskIndex++) {
-      mask[maskIndex] = output.pixels[sourceIndex] ?? 0
-    }
-
-    const alphaMask = { pixels: mask, width: output.width, height: output.height }
+    const alphaMask = getCanvasAlphaMask(texture) ?? getRendererAlphaMask(texture, renderer)
     alphaMaskCache.set(texture, alphaMask)
     return alphaMask
   } catch {

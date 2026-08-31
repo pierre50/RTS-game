@@ -14,7 +14,7 @@ export type InventoryContainer = {
   canAcceptResource?: (resource: keyof ResourceAmount, amount: number) => boolean
 }
 
-export function ensureInventoryStorage(target: { inventory?: InventoryStorage | null }): InventoryStorage {
+function ensureInventoryStorage(target: { inventory?: InventoryStorage | null }): InventoryStorage {
   target.inventory = target.inventory ?? {}
   target.inventory.equipment = target.inventory.equipment ?? []
   target.inventory.resources = target.inventory.resources ?? {}

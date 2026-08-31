@@ -7,6 +7,7 @@ const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const transferPanels = []
+  const audibleSoundCues = []
   const filename = path.join(__dirname, '../app/ui/HeroBuildingMenuManager.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -18,7 +19,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
       BUILDING_TYPES: { chest: 'Chest' },
-      SOUND_CUES: { ui: { menuClick: 'menuClick' } },
+      SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
       renderBuildingAvatar: () => false,
@@ -31,6 +32,9 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/audio/uiSound': {
       playUiSound: () => {},
+    },
+    '../lib/audio/sound': {
+      playAudibleSoundCue: (instance, cue, options) => audibleSoundCues.push({ cue, instance, options }),
     },
     './InspectionPanel': {
       createInspectionModal: () => ({ close() {} }),
@@ -64,6 +68,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.HeroBuildingMenuManager.__transferPanels = transferPanels
+  module.exports.HeroBuildingMenuManager.__audibleSoundCues = audibleSoundCues
   return module.exports.HeroBuildingMenuManager
 }
 
@@ -203,6 +208,9 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
     assert.equal(panel.options.source.id, 'hero')
     assert.equal(panel.options.source.inventory, hero.inventory)
     assert.equal(manager.body.children.at(-1).className, 'inventory-transfer-panel')
+    assert.deepEqual(manager.constructor.__audibleSoundCues, [
+      { cue: 'building/chest-open', instance: building, options: { profile: 'surface' } },
+    ])
   } finally {
     restoreDocument()
   }

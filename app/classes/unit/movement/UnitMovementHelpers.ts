@@ -17,7 +17,7 @@ import {
   getRequestedMoveSpeedFactor,
   requestUnitWalk,
 } from '../../../lib/units/unitLocomotion'
-import { applyWorkForAction } from '../UnitCommands'
+import { applyWorkForAction } from '../UnitResourceDeliveryCommands'
 import { debugCombatMove } from './UnitMovementDebug'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'

@@ -84,7 +84,7 @@ export function getSpawnCell(
   return null
 }
 
-export function getDebugLayer(parent: DebugParent, label: string, zIndex: number): Graphics {
+function getDebugLayer(parent: DebugParent, label: string, zIndex: number): Graphics {
   let layer = parent.getChildByLabel?.(label)
   if (!layer) {
     layer = new Graphics()
@@ -96,7 +96,7 @@ export function getDebugLayer(parent: DebugParent, label: string, zIndex: number
   return layer as Graphics
 }
 
-export function getDebugContainer(parent: DebugParent, label: string, zIndex: number): Container {
+function getDebugContainer(parent: DebugParent, label: string, zIndex: number): Container {
   let layer = parent.getChildByLabel?.(label)
   if (!layer) {
     layer = new Container()

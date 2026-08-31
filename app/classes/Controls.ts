@@ -23,7 +23,6 @@ import {
   handleControlsKeyUp,
   panControlsCameraWithArrowKeys,
 } from './ControlsKeyboard'
-
 type PointerPoint = { x: number; y: number }
 type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
@@ -36,7 +35,6 @@ function pointIsInCellDiamond(point: PointerPoint, cell: RuntimeCell): boolean {
   const dy = Math.abs(point.y - cell.y)
   return dx / (CELL_WIDTH / 2) + dy / (CELL_HEIGHT / 2) <= 1
 }
-
 export default class Controls extends Container implements ControlsLike {
   context: GameContextLike
   mouse: { x: number; y: number; prevent: boolean }

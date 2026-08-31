@@ -14,7 +14,7 @@ import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitT
 
 export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
 type UnitRestLocation = 'shelter' | 'outside'
-type UnitRestStatus = 'movingToRest' | 'inside' | 'outside'
+type UnitRestStatus = 'windingDown' | 'movingToRest' | 'inside' | 'outside' | 'wakingUp'
 export type UnitRestReason = 'sleep'
 type UnitSleepVisualState = 'sleeping' | 'waking'
 export type UnitRestState = {
@@ -23,6 +23,9 @@ export type UnitRestState = {
   location: UnitRestLocation
   shelter?: BuildingEntity | null
   targetCell?: RuntimeCell | null
+  transitionTargetCell?: RuntimeCell | null
+  transitionUntilMs?: number
+  transitionStep?: number
   startedAtMs?: number
   retryCount?: number
   previousDest?: RuntimeEntity | RuntimeCell | null
@@ -88,6 +91,7 @@ interface UnitRealDest {
 }
 
 type UnitInteriorExitState = {
+  returnTask?: UnitResourceDeliveryReturnTask | null
   targetCell?: RuntimeCell | null
   startedAtMs?: number
   retryCount?: number
@@ -101,6 +105,22 @@ type UnitSpacePortalState = {
   startedAtMs?: number
   targetCell?: RuntimeCell | null
   targetSpaceId: string
+  taskId?: number | null
+}
+
+export type UnitResourceDeliveryReturnTask = {
+  action?: string | null
+  autonomousJob?: VillagerAutonomyJob | null
+  dest?: RuntimeEntity | RuntimeCell | null
+  work?: string | null
+}
+
+type UnitResourceDeliveryState = {
+  building?: BuildingEntity | null
+  chest?: BuildingEntity | null
+  phase: 'toBuilding' | 'entering' | 'toChest' | 'leaving'
+  returnTask?: UnitResourceDeliveryReturnTask | null
+  spaceId?: string | null
   taskId?: number | null
 }
 
@@ -151,6 +171,8 @@ export interface UnitEntity extends EnergyEntity {
   assigningAutonomousJob?: boolean
   campPatrolAnchor?: GridPosition | null
   campPatrolTaskId?: number | null
+  heroFollowerPatrolTaskId?: number | null
+  idlePatrolTaskId?: number | null
   banditCampAnchor?: GridPosition | null
   banditCampPatrolTaskId?: number | null
   shelterState?: UnitRestState | null
@@ -160,6 +182,7 @@ export interface UnitEntity extends EnergyEntity {
   restAlertTargetLabel?: string | null
   interiorExitState?: UnitInteriorExitState | null
   spacePortalState?: UnitSpacePortalState | null
+  resourceDeliveryState?: UnitResourceDeliveryState | null
   queue?: string[]
   buyUnit?: (type: string) => void
   cancelUnits?: (type: string) => void
@@ -282,6 +305,10 @@ export interface UnitEntity extends EnergyEntity {
   sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
   sendToBuilding(building: BuildingEntity, preserveBuildQueue?: boolean): void
   sendToBuildingQueue?: (buildings: BuildingEntity[]) => boolean
+  sendToDelivery?: (
+    target?: BuildingEntity | null,
+    returnTaskOverride?: UnitResourceDeliveryReturnTask | null
+  ) => boolean | void
   sendToWithCell?: (target: RuntimeEntity, arrivalCell: RuntimeCell, action: string) => boolean | undefined
   sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions): void
   sendToConvert(target: RuntimeEntity): void

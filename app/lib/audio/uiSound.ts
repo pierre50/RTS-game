@@ -7,7 +7,7 @@ const _audioCache = new Map<SoundId, HTMLAudioElement>()
 
 function getAudio(soundId: SoundId): HTMLAudioElement {
   if (!_audioCache.has(soundId)) {
-    _audioCache.set(soundId, new Audio(`assets/sounds/${soundId}.wav`))
+    _audioCache.set(soundId, new Audio(`assets/sounds/ui/${soundId}.ogg`))
   }
   return _audioCache.get(soundId)!
 }

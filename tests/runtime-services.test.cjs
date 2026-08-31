@@ -25,6 +25,8 @@ function loadRuntimeServices() {
       '../../services/CampPatrolSystem': { CampPatrolSystem: service('campPatrols') },
       '../../services/DailyWorldEventSystem': { DailyWorldEventSystem: service('dailyWorldEvents') },
       '../../services/DayNightSystem': { DayNightSystem: service('dayNight') },
+      '../../services/HeroFollowerPatrolSystem': { HeroFollowerPatrolSystem: service('heroFollowerPatrols') },
+      '../../services/IdleUnitPatrolSystem': { IdleUnitPatrolSystem: service('idleUnitPatrols') },
       '../../services/InteriorExitMarkerSystem': { InteriorExitMarkerSystem: service('interiorExitMarker') },
       '../../services/LightSystem': { LightSystem: service('lights') },
       '../../services/ShadowSystem': { ShadowSystem: service('shadows') },
@@ -33,6 +35,7 @@ function loadRuntimeServices() {
       '../../services/UnitEnergyRegenSystem': { UnitEnergyRegenSystem: service('unitEnergyRegen') },
       '../../services/rest/UnitRestSystem': { UnitRestSystem: service('unitRest') },
       '../../services/WeatherSystem': { WeatherSystem: service('weather') },
+      './GameResourceDelivery': { ResourceDeliverySystem: service('resourceDelivery') },
     },
   })
 
@@ -53,6 +56,7 @@ test('runtime services skip weather inside interior maps', () => {
   assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), false)
   assert.equal(calls.includes('timeSkip'), true)
+  assert.equal(calls.includes('idleUnitPatrols'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), false)
   assert.equal(calls.includes('interiorExitMarker'), true)
 

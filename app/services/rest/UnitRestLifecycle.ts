@@ -1,4 +1,4 @@
-import { FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, FADE_DURATION_MS, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import {
   cartesianToIsometric,
   getGroundReliefLevel,
@@ -15,9 +15,12 @@ import {
   canStartSleepRest,
   canSleepWithoutRestSite,
   getNearestRestSite,
+  getRestTransitionCell,
+  getRestTransitionDurationMs,
   getShelterEntryCell,
   isUsableShelter,
   REST_MAX_RETRIES,
+  type UnitRestSite,
 } from './UnitRestRules'
 import {
   cancelSleepingWakeVisual,
@@ -43,6 +46,9 @@ type RuntimeMapWithBuckets = RuntimeMap & {
 export type TimedUnitRestState = UnitRestState & { hiddenAt?: number }
 export type UnitWakeMode = 'resume' | 'order'
 export type SleepOutsideVisualMode = 'animate' | 'finalFrame'
+type RestTransitionOptions = {
+  transition?: boolean
+}
 
 function rememberRestState(
   unit: UnitEntity,
@@ -188,8 +194,8 @@ export function sleepOutsideAtCellInstant(
   sleepOutside(unit, reason, { visual: 'finalFrame' })
 }
 
-function restoreAwakeState(unit: UnitEntity): void {
-  unit.shelterState = null
+function restoreAwakeState(unit: UnitEntity, options: { clearShelterState?: boolean } = {}): void {
+  if (options.clearShelterState ?? true) unit.shelterState = null
   unit.actionLocked = false
   unit.alpha = 1
   unit.visible = true
@@ -198,23 +204,108 @@ function restoreAwakeState(unit: UnitEntity): void {
   unit.inactif = true
 }
 
-function resumeStoredVillagerActivity(unit: UnitEntity, state: UnitRestState): void {
-  if (unit.type !== UNIT_TYPES.villager) return
+function isRuntimeEntity(target: RuntimeEntity | RuntimeCell): target is RuntimeEntity {
+  return !('has' in target)
+}
 
-  unit.autonomousJob = state.previousAutonomousJob ?? null
-  if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return
-
-  const previousDest = state.previousDest
-  if (previousDest && !(previousDest as RuntimeEntity).isDestroyed) {
-    unit.work = state.previousWork ?? unit.work ?? null
-    unit.sendToEvt?.(previousDest, state.previousAction ?? null, { forceRepath: true, preserveAutonomy: true })
+function canResumeStoredDestination(
+  unit: UnitEntity,
+  dest: RuntimeEntity | RuntimeCell | null | undefined,
+  action: string | null | undefined
+): dest is RuntimeEntity | RuntimeCell {
+  if (!dest) return false
+  if (isRuntimeEntity(dest)) {
+    if (dest.isDestroyed) return false
+    if (action && unit.getActionCondition?.(dest, action) === false) return false
   }
+  return true
+}
+
+export function getRestReturnTask(unit: UnitEntity, state: UnitRestState | null | undefined = unit.shelterState) {
+  if (!state) return null
+  const deliveryAction = ACTION_TYPES?.delivery ?? 'delivery'
+  const deliveryReturnTask = unit.resourceDeliveryState?.returnTask
+  if (state.previousAction === deliveryAction && deliveryReturnTask?.dest) return deliveryReturnTask
+  const task = {
+    autonomousJob: state.previousAutonomousJob ?? null,
+    dest: state.previousDest,
+    action: state.previousAction ?? null,
+    work: state.previousWork ?? null,
+  }
+  if (!task.dest && !task.action && !task.work && !task.autonomousJob) return null
+  return task
+}
+
+function resumeUnitReturnTask(unit: UnitEntity, task = getRestReturnTask(unit)): boolean {
+  if (!task) return false
+  if (!canResumeStoredDestination(unit, task.dest, task.action)) return false
+  unit.work = task.work ?? unit.work ?? null
+  unit.autonomousJob = task.autonomousJob ?? null
+  unit.sendToEvt?.(task.dest, task.action ?? null, { forceRepath: true, preserveAutonomy: true })
+  return true
+}
+
+function resumeStoredReturnTask(unit: UnitEntity, state: UnitRestState): boolean {
+  return resumeUnitReturnTask(unit, getRestReturnTask(unit, state))
+}
+
+export function finishUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
+  unit.shelterState = null
+  if (resumeStoredReturnTask(unit, state)) return
+
+  if (unit.type !== UNIT_TYPES.villager) return
+  unit.autonomousJob = state.previousAutonomousJob ?? unit.autonomousJob ?? null
+  if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return
+}
+
+function startUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
+  const now = unit.context?.scheduler?.elapsedMs ?? 0
+  const transitionTargetCell = getRestTransitionCell(unit)
+  unit.shelterState = {
+    ...state,
+    status: 'wakingUp',
+    transitionTargetCell,
+    transitionUntilMs: now + getRestTransitionDurationMs(unit, 'wakingUp'),
+    startedAtMs: now,
+    retryCount: 0,
+  }
+  if (!transitionTargetCell) {
+    finishUnitWakeTransition(unit, unit.shelterState)
+    return
+  }
+  unit.sendToEvt?.(transitionTargetCell, null, { forceRepath: true, preserveAutonomy: true })
+}
+
+export function startUnitWakeTransitionFromTask(
+  unit: UnitEntity,
+  task: ReturnType<typeof getRestReturnTask>
+): boolean {
+  if (!task) return false
+  if (unit.context?.restTransitionsEnabled !== true) {
+    return resumeUnitReturnTask(unit, task)
+  }
+  startUnitWakeTransition(unit, {
+    status: 'wakingUp',
+    reason: 'sleep',
+    location: 'outside',
+    shelter: null,
+    targetCell: null,
+    previousAutonomousJob: task.autonomousJob ?? null,
+    previousDest: task.dest ?? null,
+    previousAction: task.action ?? null,
+    previousWork: task.work ?? null,
+  })
+  return true
 }
 
 function resumePreviousActivity(unit: UnitEntity, state: UnitRestState): void {
-  restoreAwakeState(unit)
+  const useWakeTransition = unit.context?.restTransitionsEnabled === true
+  restoreAwakeState(unit, { clearShelterState: !useWakeTransition })
   fadeIn(unit, FADE_DURATION_MS)
-  playSleepingWakeVisual(unit, () => resumeStoredVillagerActivity(unit, state))
+  playSleepingWakeVisual(unit, () => {
+    if (useWakeTransition) startUnitWakeTransition(unit, state)
+    else finishUnitWakeTransition(unit, state)
+  })
 }
 
 function wakeWithoutPreviousActivity(unit: UnitEntity, onComplete?: () => void): void {
@@ -283,10 +374,43 @@ export function wakeUnitInstant(unit: UnitEntity, options: { force?: boolean; mo
 
   restoreVisibleAwakeState(unit)
   if (mode === 'order') return
-  resumeStoredVillagerActivity(unit, state)
+  finishUnitWakeTransition(unit, state)
 }
 
-export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason): boolean {
+function sendUnitToRestSite(
+  unit: UnitEntity,
+  reason: UnitRestReason,
+  restSite: UnitRestSite,
+  options: RestTransitionOptions = {}
+): boolean {
+  const transition = options.transition ?? unit.context?.restTransitionsEnabled === true
+  const transitionTargetCell = transition ? getRestTransitionCell(unit, restSite) : null
+  const now = unit.context?.scheduler?.elapsedMs ?? 0
+  rememberRestState(unit, {
+    status: transition && transitionTargetCell ? 'windingDown' : 'movingToRest',
+    reason,
+    location: restSite.location,
+    shelter: restSite.shelter,
+    targetCell: restSite.targetCell,
+    transitionTargetCell,
+    transitionUntilMs: transition ? now + getRestTransitionDurationMs(unit, 'windingDown') : now,
+    transitionStep: 0,
+    startedAtMs: now,
+    retryCount: 0,
+  })
+  unit.sendToEvt?.(transitionTargetCell ?? restSite.targetCell, null, {
+    forceRepath: true,
+    preserveAutonomy: true,
+    allowPassageStop: restSite.location === 'shelter' && !transitionTargetCell,
+  })
+  return true
+}
+
+export function sendUnitToRest(
+  unit: UnitEntity,
+  reason: UnitRestReason,
+  options: RestTransitionOptions = {}
+): boolean {
   if (reason === 'sleep' && !canStartSleepRest(unit)) return false
   const restSite = getNearestRestSite(unit)
   if (!restSite) {
@@ -296,21 +420,7 @@ export function sendUnitToRest(unit: UnitEntity, reason: UnitRestReason): boolea
     }
     return false
   }
-  rememberRestState(unit, {
-    status: 'movingToRest',
-    reason,
-    location: restSite.location,
-    shelter: restSite.shelter,
-    targetCell: restSite.targetCell,
-    startedAtMs: unit.context?.scheduler?.elapsedMs ?? 0,
-    retryCount: 0,
-  })
-  unit.sendToEvt?.(restSite.targetCell, null, {
-    forceRepath: true,
-    preserveAutonomy: true,
-    allowPassageStop: restSite.location === 'shelter',
-  })
-  return true
+  return sendUnitToRestSite(unit, reason, restSite, options)
 }
 
 export function retryShelterPath(unit: UnitEntity, state: UnitRestState): boolean {

@@ -1,4 +1,4 @@
-import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, MINING_RESOURCE_CONFIG, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
@@ -121,11 +121,8 @@ function getCompatibleDropoffTypes(candidate: VillagerJobCandidate): Set<string>
   if (candidate.action === ACTION_TYPES.forageberry || candidate.action === ACTION_TYPES.farm) {
     return new Set([BUILDING_TYPES.granary, BUILDING_TYPES.townCenter])
   }
-  if (
-    candidate.action === ACTION_TYPES.chopwood ||
-    candidate.action === ACTION_TYPES.minestone ||
-    candidate.action === ACTION_TYPES.minegold
-  ) {
+  const miningActions = new Set(Object.values(MINING_RESOURCE_CONFIG ?? {}).map(config => config.action))
+  if (candidate.action === ACTION_TYPES.chopwood || miningActions.has(candidate.action)) {
     return new Set([BUILDING_TYPES.storagePit, BUILDING_TYPES.townCenter])
   }
   if (candidate.action === ACTION_TYPES.takemeat) {
@@ -196,11 +193,7 @@ function rankVillagerJobCandidates(
     .sort((a, b) => a.score - b.score)
 }
 
-function wasAutonomyOrderAccepted(
-  unit: UnitEntity,
-  candidate: VillagerJobCandidate,
-  result: unknown
-): boolean {
+function wasAutonomyOrderAccepted(unit: UnitEntity, candidate: VillagerJobCandidate, result: unknown): boolean {
   const dest = unit.dest as RuntimeEntity | null | undefined
   if (sameTarget(dest, candidate.target) && unit.action === candidate.action) return true
   if (

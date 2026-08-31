@@ -2,7 +2,13 @@ import type { AnimatedSprite, Graphics } from 'pixi.js'
 import type { UnitInterface } from '../../ui/entity/UnitInterface'
 import type { HorseColor } from '../../lib/horses/horseColors'
 import type { GameContextLike, SchedulerLike } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitCommandOptions, UnitEntity } from '../../types/entities'
+import type {
+  BuildingEntity,
+  RuntimeEntity,
+  UnitCommandOptions,
+  UnitEntity,
+  UnitResourceDeliveryReturnTask,
+} from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { UnitActions } from './UnitActions'
 import type { UnitCombat } from './UnitCombat'
@@ -43,6 +49,7 @@ declare module './Unit' {
     restWakeLockUntilMs?: UnitEntity['restWakeLockUntilMs']
     restAlertTargetLabel?: UnitEntity['restAlertTargetLabel']
     interiorExitState?: UnitEntity['interiorExitState']
+    resourceDeliveryState?: UnitEntity['resourceDeliveryState']
 
     dest: UnitEntity['dest']
     realDest: UnitEntity['realDest']
@@ -116,6 +123,7 @@ declare module './Unit' {
       preserveBuildQueue?: boolean
     ): unknown
     sendToBuilding(target: BuildingEntity, preserveBuildQueue?: boolean): unknown
+    sendToDelivery(target?: BuildingEntity | null, returnTaskOverride?: UnitResourceDeliveryReturnTask | null): unknown
     sendToAttack(target: RuntimeEntity, options?: UnitCommandOptions): unknown
     sendToConvert(target: RuntimeEntity): unknown
     sendToTakeMeat(target: RuntimeEntity, immediate?: boolean): unknown

@@ -1,6 +1,5 @@
 import {
   ACTION_TYPES,
-  MENU_INFO_IDS,
   MINING_RESOURCE_CONFIG,
   RESOURCE_TYPES,
   SHEET_TYPES,
@@ -19,13 +18,18 @@ import { getNearestAvailableStableForUnit } from '../../lib/horses/horseCapture'
 import { t } from '../../lib/lang'
 import { applyDiplomaticAggression } from '../../lib/combat/diplomaticAggression'
 import { isHeroControlled } from '../../lib/units/unitControl'
-import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
+import {
+  applyWorkForAction,
+  getDeliveryBeforeGatherJobSwitch,
+  sendUnitToDelivery,
+} from './UnitResourceDeliveryCommands'
 import type {
   BuildingEntity,
   RuntimeEntity,
   UnitCommandOptions,
   UnitCreationExtra,
   UnitEntity,
+  UnitResourceDeliveryReturnTask,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { ActionProps } from '../../lib/combat'
@@ -41,29 +45,13 @@ function checkActionCondition(
   props?: ActionProps | UnitCreationExtra
 ): boolean {
   if (!target) return false
-  const actionProps = action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
+  const actionProps =
+    action === ACTION_TYPES.train && !props ? { trainingType: source.trainingTargetType ?? '' } : props
   return getActionCondition(source, target as RuntimeEntity, action ?? '', actionProps as ActionProps)
 }
 
 function canShowTargetAlert(unit: UnitEntity, target: RuntimeEntity): boolean {
   return Boolean(unit.owner?.isPlayed && (unit.context?.controls?.instanceInCamera?.(target) ?? true))
-}
-
-// Applies the work/texture bookkeeping a work reassignment needs. Extracted out of
-// commonSendTo so hero-direct triggers can reuse it without command-queue machinery.
-export function applyWorkForAction(unit: UnitEntity, work: string, action: string | null): void {
-  const menu = unit.context?.menu
-  if (unit.work === work && unit.action === action) return
-  unit.work = work
-  if (unit.owner?.isPlayed && unit.owner.selectedUnit === unit) {
-    menu?.updateInfo?.(MENU_INFO_IDS.type, t(unit.type === UNIT_TYPES.villager ? unit.work || unit.type : unit.type))
-  }
-  applyUnitWorkAssets(unit, work, { action, refreshEquipmentStats: true })
-  // If the unit is already moving when AI/job assignment changes its role,
-  // refresh the walking animation immediately so the sprite matches the new work.
-  if (unit.path?.length) {
-    unit.setTextures?.(SHEET_TYPES.walking)
-  }
 }
 
 export class UnitCommands {
@@ -120,9 +108,14 @@ export class UnitCommands {
       return false
     }
     if (unit.actionLocked) {
-      return unit.queueOrder?.(() => this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps))
+      return unit.queueOrder?.(() =>
+        this.commonSendTo(target, work, action, keepPrevious, immediate, preserveBuildQueue, actionProps)
+      )
     }
     if (this.isRedundantOrder(target, work, action)) return false
+
+    const deliveryTransition = getDeliveryBeforeGatherJobSwitch(unit, target, work, action)
+    if (deliveryTransition) return this.sendToDelivery(deliveryTransition.target, deliveryTransition.returnTask)
 
     // The hero never auto-resumes a previous job — it's player-controlled, not AI, and
     // silently walking it back to a gather spot would be the same unwanted autonomy as
@@ -229,7 +222,8 @@ export class UnitCommands {
     if (!canCaptureTarget) {
       return false
     }
-    const commandSent = this.commonSendTo(target, WORK_TYPES.horseCapture, ACTION_TYPES.captureHorse, false, immediate) !== false
+    const commandSent =
+      this.commonSendTo(target, WORK_TYPES.horseCapture, ACTION_TYPES.captureHorse, false, immediate) !== false
     const currentDest = isRuntimeEntity(unit.dest) ? unit.dest : null
     if (!commandSent && unit.action === ACTION_TYPES.captureHorse && currentDest?.label === target.label) {
       unit.sendToEvt?.(target, ACTION_TYPES.captureHorse, { forceRepath: true })
@@ -241,6 +235,13 @@ export class UnitCommands {
   sendToBuilding(target: BuildingEntity, preserveBuildQueue = false) {
     if (!preserveBuildQueue) this.unit.buildQueue = []
     return this.commonSendTo(target, WORK_TYPES.builder, ACTION_TYPES.build, true, false, true)
+  }
+
+  sendToDelivery(
+    target: BuildingEntity | null = null,
+    returnTaskOverride: UnitResourceDeliveryReturnTask | null = null
+  ): boolean {
+    return sendUnitToDelivery(this.unit, checkActionCondition, target, returnTaskOverride)
   }
 
   sendToBuildingQueue(targets: BuildingEntity[]) {

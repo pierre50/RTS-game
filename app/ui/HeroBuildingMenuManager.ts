@@ -3,6 +3,7 @@ import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
 import { t } from '../lib/lang'
+import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
 import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
@@ -113,6 +114,9 @@ export class HeroBuildingMenuManager {
       content: this.panel,
       onClose: () => this.close(),
     })
+    if (building.type === BUILDING_TYPES.chest) {
+      playAudibleSoundCue(building, SOUND_CUES.building.chestOpen, { profile: 'surface' })
+    }
     this.render()
     return true
   }

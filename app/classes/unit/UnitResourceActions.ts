@@ -35,6 +35,7 @@ import {
   isResourceEntity,
   isRuntimeEntity,
   markBerrybushDepleted,
+  sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
   showDepletedBerrybushMessage,
 } from './UnitResourceGathering'
@@ -187,8 +188,8 @@ export class UnitResourceActions {
         unit.affectNewDest?.()
         return
       }
-      const gain = getGatherAmount(unit)
-      if (!dest || gain <= 0) {
+      const requestedGain = getGatherAmount(unit)
+      if (!dest || requestedGain <= 0) {
         unit.gatherProgressState = null
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
@@ -202,7 +203,13 @@ export class UnitResourceActions {
         finishManualHeroWorkSwing(unit, releaseFrame)
         return
       }
-      addGatheredResource(unit, loadingType, gain)
+      const gain = addGatheredResource(unit, loadingType, requestedGain)
+      if (gain <= 0) {
+        unit.gatherProgressState = null
+        if (!isHeroControlled(unit)) unit.sendToDelivery?.()
+        else stopManualHeroAction(unit)
+        return
+      }
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
@@ -216,6 +223,8 @@ export class UnitResourceActions {
         if (dieOnEmpty) dest.die?.()
         onDepleted?.(dest)
         unit.affectNewDest?.()
+      } else if (sendVillagerToDeliveryIfFull(unit, loadingType)) {
+        unit.gatherProgressState = null
       }
       finishManualHeroWorkSwing(unit, releaseFrame)
     }
@@ -257,8 +266,8 @@ export class UnitResourceActions {
         return
       }
       if (d && !isHeroControlled(unit)) d.isUsedBy = unit
-      const gain = getGatherAmount(unit)
-      if (!d || gain <= 0) {
+      const requestedGain = getGatherAmount(unit)
+      if (!d || requestedGain <= 0) {
         if (isHeroControlled(unit)) {
           if (d) {
             d.isUsedBy = null
@@ -278,7 +287,12 @@ export class UnitResourceActions {
         finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
         return
       }
-      addGatheredResource(unit, LOADING_TYPES.wheat, gain)
+      const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
+      if (gain <= 0) {
+        if (isHeroControlled(unit)) stopManualHeroAction(unit)
+        else unit.sendToDelivery?.()
+        return
+      }
       grantUnitXp(unit, XP_CATEGORIES.farming, gain)
       d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
       showResourceGainFeedback(unit, gain)
@@ -288,6 +302,8 @@ export class UnitResourceActions {
       if ((d.quantity ?? 0) <= 0) {
         d.die?.()
         unit.affectNewDest?.()
+      } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) {
+        unit.gatherProgressState = null
       }
       finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
     })
@@ -334,12 +350,17 @@ export class UnitResourceActions {
           }
         }
       } else if (!isChoppableBerrybush(dest)) {
-        const gain = getGatherAmount(unit)
+        const requestedGain = getGatherAmount(unit)
         if (!shouldReleaseGatheredResource(unit, dest, LOADING_TYPES.wood)) {
           finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
           return
         }
-        addGatheredResource(unit, LOADING_TYPES.wood, gain)
+        const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
+        if (gain <= 0) {
+          if (isHeroControlled(unit)) stopManualHeroAction(unit)
+          else unit.sendToDelivery?.()
+          return
+        }
         grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
         dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
         showResourceGainFeedback(unit, gain)
@@ -349,6 +370,8 @@ export class UnitResourceActions {
         if ((dest.quantity ?? 0) <= 0) {
           dest.die?.()
           unit.affectNewDest?.()
+        } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood)) {
+          unit.gatherProgressState = null
         }
       }
       finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
@@ -397,6 +420,15 @@ export class UnitResourceActions {
         unit.affectNewDest?.()
       }
       finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+    })
+  }
+
+  handleDeliveryAction() {
+    if (!this.unit.context) return
+    const unit = this.unit
+    void import('../../screens/game/GameResourceDelivery').then(({ handleResourceDeliveryAction }) => {
+      if (!unit.context) return
+      handleResourceDeliveryAction(unit.context, unit)
     })
   }
 }

@@ -68,11 +68,11 @@ import {
 import { loadGameRuntime, restartGameRuntime, startGameRuntime } from './game/GameBootFlow'
 import { type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
 import { bootGameFromConfig, bootGameFromSave, bootGameFromSeedSave } from './game/GameWorldBoot'
+import { createGameRuntimeContext, createGameUiRuntime, type GameRuntimeContext } from './game/GameRuntimeContext'
 import {
-  createGameRuntimeContext,
-  createGameUiRuntime,
-  type GameRuntimeContext,
-} from './game/GameRuntimeContext'
+  routeUnitResourceDelivery as routeUnitResourceDeliveryRuntime,
+  type ResourceDeliveryGame,
+} from './game/GameResourceDelivery'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
 import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
@@ -84,7 +84,6 @@ import {
   moveHeroPartyIntoBuildingInteriorSpace,
   moveHeroPartyOutOfBuildingInteriorSpace,
   refreshMapSpaceEntityVisibility,
-  routeUnitOutOfBuildingInteriorSpace,
   syncBuildingInteriorShelterOccupants,
   syncBuildingStableInteriorHorses,
   type BuildingInteriorRuntimeSpace,
@@ -92,7 +91,7 @@ import {
 import type { GameContextLike } from '../types/context'
 import type { CampaignSave, GameConfig, SaveEntityState, SaveRecord, SerializedSave } from '../types/save'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { BuildingEntity, ResourceEntity, UnitEntity } from '../types/entities'
+import type { BuildingEntity, ResourceEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -512,11 +511,12 @@ export default class Game extends Container {
     await travelOutOfBuildingInteriorRuntime(this as BuildingInteriorTravelGame)
   }
 
-  routeInteriorUnitToExit(unit: UnitEntity): void {
-    const context = this._gameContext()
-    const space = getBuildingInteriorSpaceForUnit(unit)
-    if (space && routeUnitOutOfBuildingInteriorSpace(context, unit, space)) return
-    routeInteriorUnitToExitRuntime(this as BuildingInteriorTravelGame, unit)
+  async routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean> {
+    return routeUnitResourceDeliveryRuntime(this as ResourceDeliveryGame, unit, building)
+  }
+
+  routeInteriorUnitToExit(unit: UnitEntity, returnTask: UnitResourceDeliveryReturnTask | null = null): void {
+    routeInteriorUnitToExitRuntime(this as BuildingInteriorTravelGame, unit, returnTask)
   }
 
   synchronizeBuildingInteriorAfterTimeJump(): void {

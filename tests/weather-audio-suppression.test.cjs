@@ -101,14 +101,16 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
       },
       '../lib/audio/nightAmbience': {
         getNightAmbienceTargetVolume: () => {
-          if (failOnAmbience) throw new Error('night ambience should not be calculated while gameplay sound is suppressed')
+          if (failOnAmbience)
+            throw new Error('night ambience should not be calculated while gameplay sound is suppressed')
           return 0
         },
         NIGHT_AMBIENCE_LERP_PER_SECOND: 1,
       },
       '../lib/audio/oceanAmbience': {
         getOceanAmbienceTargetVolume: () => {
-          if (failOnAmbience) throw new Error('ocean ambience should not be calculated while gameplay sound is suppressed')
+          if (failOnAmbience)
+            throw new Error('ocean ambience should not be calculated while gameplay sound is suppressed')
           return 0
         },
         OCEAN_AMBIENCE_LERP_PER_SECOND: 1,
@@ -274,6 +276,37 @@ test('weather ambient loops are silenced while gameplay sound is suppressed', ()
   }
 
   WeatherSystem.prototype.updateAmbientSound.call(weather, 1)
+
+  assert.equal(weather.nightVolume, 0)
+  assert.equal(weather.oceanVolume, 0)
+  for (const loop of Object.values(loops)) {
+    assert.equal(loop.volume, 0)
+  }
+})
+
+test('weather ambient loops are silenced while the game is paused', () => {
+  const WeatherSystem = loadWeatherSystem({ failOnAmbience: true })
+  const loops = {
+    rainLoopLight: { volume: 1 },
+    rainLoopHeavy: { volume: 1 },
+    windLoopLight: { volume: 1 },
+    windLoopHeavy: { volume: 1 },
+    nightLoop: { volume: 1 },
+    oceanLoop: { volume: 1 },
+  }
+  const weather = {
+    ...loops,
+    colorGrading: { shouldRender: () => true },
+    context: { paused: true },
+    map: {},
+    nightVolume: 0.4,
+    oceanVolume: 0.7,
+    rainIntensity: 1,
+    windIntensity: 1,
+    updateAmbientSound: WeatherSystem.prototype.updateAmbientSound,
+  }
+
+  WeatherSystem.prototype.update.call(weather, 16.67)
 
   assert.equal(weather.nightVolume, 0)
   assert.equal(weather.oceanVolume, 0)

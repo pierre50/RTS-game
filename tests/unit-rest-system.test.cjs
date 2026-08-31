@@ -22,7 +22,7 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
-  ACTION_TYPES: { attack: 'attack' },
+  ACTION_TYPES: { attack: 'attack', delivery: 'delivery' },
   BUILDING_TYPES: { fireCamp: 'FireCamp', house: 'House', townCenter: 'TownCenter' },
   FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
   PLAYER_TYPES: { bandits: 'Bandits' },
@@ -31,6 +31,7 @@ const constants = {
     banditArcher: 'BanditArcher',
     banditChief: 'BanditChief',
     banditSword: 'BanditSword',
+    chief: 'Chief',
     hero: 'Hero',
     infantry: 'Fantassin',
     villager: 'Villager',
@@ -61,13 +62,17 @@ function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
     },
     '../lib/entities/entityFade': {
       cancelFade: fadeOverrides.cancelFade ?? (entity => calls.push(['cancelFade', entity.label])),
-      fadeOut: fadeOverrides.fadeOut ?? ((entity, _duration, onComplete) => {
-        entity.alpha = 0
-        onComplete?.()
-      }),
-      fadeIn: fadeOverrides.fadeIn ?? (entity => {
-        entity.alpha = 1
-      }),
+      fadeOut:
+        fadeOverrides.fadeOut ??
+        ((entity, _duration, onComplete) => {
+          entity.alpha = 0
+          onComplete?.()
+        }),
+      fadeIn:
+        fadeOverrides.fadeIn ??
+        (entity => {
+          entity.alpha = 1
+        }),
     },
     '../lib/units/unitControl': {
       isHeroControlled: unit => unit.controlMode === 'hero',
@@ -270,7 +275,10 @@ test('sleeping equipped units freeze appearance layers with the hurt sheet', () 
 
   new UnitRestSystem(context)
 
-  assert.deepEqual(calls.find(call => call[0] === 'layerPlay'), ['layerPlay', 0])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'layerPlay'),
+    ['layerPlay', 0]
+  )
   assert.equal(equipmentLayer.loop, false)
   assert.equal(equipmentLayer.playing, true)
 
@@ -293,6 +301,38 @@ test('villagers start going to sleep at 18h', () => {
 
   assert.equal(villager.shelterState.status, 'outside')
   assert.equal(villager.shelterState.reason, 'sleep')
+})
+
+test('runtime rest transitions keep shelterless villagers winding down past 19h', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner, { i: 5, j: 5 })
+  const context = createContext(18, [owner], calls)
+  context.restTransitionsEnabled = true
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(villager.shelterState.status, 'windingDown')
+  assert.equal(villager.shelterState.reason, 'sleep')
+  assert.ok(villager.shelterState.transitionUntilMs >= 75_000)
+  assert.notEqual(villager.currentSheet, constants.SHEET_TYPES.dying)
+
+  context.scheduler.elapsedMs = 60_000
+  context.dayNight.state.hour = 19
+  const transitionCell = villager.shelterState.transitionTargetCell
+  villager.i = transitionCell.i
+  villager.j = transitionCell.j
+  villager.currentCell = transitionCell
+  villager.dest = null
+  villager.path = []
+
+  const system = new UnitRestSystem(context)
+  system.updateRestingUnit(villager)
+
+  assert.equal(villager.shelterState.status, 'windingDown')
+  assert.notEqual(villager.currentSheet, constants.SHEET_TYPES.dying)
 })
 
 test('villagers stay awake before 18h', () => {
@@ -386,6 +426,40 @@ test('rest tick sends villagers and non-villagers to sleep without tired state',
   assert.equal(soldier.tired, undefined)
 })
 
+test('rest transitions make villagers, chiefs and infantry linger before moving to their rest site', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const villager = createUnit(owner, { i: 1, j: 1, label: 'villager' })
+  const chief = createUnit(owner, { i: 1, j: 2, label: 'chief', type: constants.UNIT_TYPES.chief })
+  const soldier = createUnit(owner, { i: 1, j: 3, label: 'soldier', type: constants.UNIT_TYPES.infantry })
+  const context = createContext(23, [owner], calls)
+  context.restTransitionsEnabled = true
+  for (const unit of [villager, chief, soldier]) unit.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  for (const unit of [villager, chief, soldier]) {
+    assert.equal(unit.shelterState.status, 'windingDown')
+    assert.equal(unit.shelterState.reason, 'sleep')
+    assert.ok(unit.shelterState.transitionTargetCell)
+    assert.ok(unit.shelterState.targetCell)
+    assert.equal(unit.dest, unit.shelterState.transitionTargetCell)
+    assert.notEqual(unit.dest, unit.shelterState.targetCell)
+
+    const transitionCell = unit.shelterState.transitionTargetCell
+    unit.i = transitionCell.i
+    unit.j = transitionCell.j
+    unit.currentCell = transitionCell
+    context.scheduler.elapsedMs = unit.shelterState.transitionUntilMs + 1
+    system.updateRestingUnit(unit)
+
+    assert.equal(unit.shelterState.status, 'movingToRest')
+    assert.equal(unit.dest, unit.shelterState.targetCell)
+  }
+})
+
 test('military units prefer a visible fire camp before sleeping outside', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
@@ -411,7 +485,11 @@ test('military units prefer a visible fire camp before sleeping outside', () => 
   assert.equal(soldier.shelterState.status, 'movingToRest')
   assert.equal(soldier.shelterState.location, 'outside')
   assert.equal(soldier.shelterState.shelter, null)
-  assert.ok(Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) + Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <= 1)
+  assert.ok(
+    Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) +
+      Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <=
+      1
+  )
 })
 
 test('military units use building shelters when no visible fire camp is available', () => {
@@ -459,7 +537,11 @@ test('military units prefer visible fire camps over building shelters', () => {
   assert.equal(soldier.shelterState.status, 'movingToRest')
   assert.equal(soldier.shelterState.location, 'outside')
   assert.equal(soldier.shelterState.shelter, null)
-  assert.ok(Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) + Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <= 1)
+  assert.ok(
+    Math.abs(soldier.shelterState.targetCell.i - fireCamp.i) +
+      Math.abs(soldier.shelterState.targetCell.j - fireCamp.j) <=
+      1
+  )
 })
 
 test('time jump to night settles military sleepers around a visible fire camp instantly', () => {
@@ -663,7 +745,10 @@ test('player military near the hero still go to sleep at night', () => {
 
   assert.equal(soldier.shelterState.reason, 'sleep')
   assert.equal(soldier.restWakeLockUntilMs, undefined)
-  assert.equal(calls.some(call => call[0] === 'detect'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'detect'),
+    false
+  )
 })
 
 test('neutral military near the hero still go to sleep at night', () => {
@@ -705,7 +790,10 @@ test('neutral military near the hero still go to sleep at night', () => {
 
   assert.equal(soldier.shelterState.reason, 'sleep')
   assert.equal(soldier.restWakeLockUntilMs, undefined)
-  assert.equal(calls.some(call => call[0] === 'detect'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'detect'),
+    false
+  )
 })
 
 test('rest alert wakes nearby sleeping military from the same group', () => {
@@ -746,12 +834,16 @@ test('rest alert wakes nearby sleeping military from the same group', () => {
     isDestroyed: false,
   }
   context.controls.heroUnit = hero
-  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
-    '../lib/grid/visibility': {
-      findInstancesInSight: (source, condition) =>
-        (visibleTargetsBySource.get(source.label) ?? []).filter(target => condition(target)),
-    },
-  })
+  const UnitRestSystem = loadUnitRestSystem(
+    calls,
+    {},
+    {
+      '../lib/grid/visibility': {
+        findInstancesInSight: (source, condition) =>
+          (visibleTargetsBySource.get(source.label) ?? []).filter(target => condition(target)),
+      },
+    }
+  )
   const system = new UnitRestSystem(context)
 
   hero.i = 1
@@ -832,17 +924,21 @@ test('active runtime interiors route shelter entry through the space portal', ()
     startedAtMs: context.scheduler.elapsedMs,
     retryCount: 0,
   }
-  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
-    '../BuildingInteriorSpaceSystem': {
-      getBuildingInteriorSpaceForBuilding: (_ctx, building) => (building === house ? { id: 'space-house' } : null),
-      getBuildingInteriorSpaceForUnit: () => null,
-      moveUnitToBuildingInteriorSleep: (_ctx, unit, space, options) => {
-        portalEntries.push([unit.label, space.id, options])
-        return true
+  const UnitRestSystem = loadUnitRestSystem(
+    calls,
+    {},
+    {
+      '../BuildingInteriorSpaceSystem': {
+        getBuildingInteriorSpaceForBuilding: (_ctx, building) => (building === house ? { id: 'space-house' } : null),
+        getBuildingInteriorSpaceForUnit: () => null,
+        moveUnitToBuildingInteriorSleep: (_ctx, unit, space, options) => {
+          portalEntries.push([unit.label, space.id, options])
+          return true
+        },
+        settleUnitAtBuildingInteriorSleepCell: () => {},
       },
-      settleUnitAtBuildingInteriorSleepCell: () => {},
-    },
-  })
+    }
+  )
 
   new UnitRestSystem(context)
 
@@ -1004,17 +1100,21 @@ test('runtime interior sleepers settle at their sleep spot without re-entering s
     startedAtMs: context.scheduler.elapsedMs,
     retryCount: 0,
   }
-  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
-    '../BuildingInteriorSpaceSystem': {
-      getBuildingInteriorSpaceForBuilding: () => null,
-      getBuildingInteriorSpaceForUnit: unit => (unit === villager ? { building: house, id: 'space-house' } : null),
-      moveUnitToBuildingInteriorSleep: () => false,
-      settleUnitAtBuildingInteriorSleepCell: (unit, space, cell) => {
-        settled.push([unit.label, space.id, cell.i, cell.j])
-        unit.shelterState = { status: 'outside', reason: 'sleep', location: 'shelter', shelter: space.building }
+  const UnitRestSystem = loadUnitRestSystem(
+    calls,
+    {},
+    {
+      '../BuildingInteriorSpaceSystem': {
+        getBuildingInteriorSpaceForBuilding: () => null,
+        getBuildingInteriorSpaceForUnit: unit => (unit === villager ? { building: house, id: 'space-house' } : null),
+        moveUnitToBuildingInteriorSleep: () => false,
+        settleUnitAtBuildingInteriorSleepCell: (unit, space, cell) => {
+          settled.push([unit.label, space.id, cell.i, cell.j])
+          unit.shelterState = { status: 'outside', reason: 'sleep', location: 'shelter', shelter: space.building }
+        },
       },
-    },
-  })
+    }
+  )
 
   new UnitRestSystem(context)
 
@@ -1069,6 +1169,164 @@ test('villagers wake at 8h and resume their previous autonomous job', () => {
   )
 })
 
+test('villagers wake at 8h and resume their stored gathering target before generic autonomy', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
+  const villager = createUnit(owner, {
+    autonomousJob: 'stone',
+    shelterState: {
+      status: 'inside',
+      location: 'shelter',
+      shelter: house,
+      previousAutonomousJob: 'stone',
+      previousWork: 'stonecutter',
+      previousAction: 'minestone',
+      previousDest: stone,
+    },
+    getActionCondition(target, action) {
+      return target === stone && action === 'minestone'
+    },
+    sendToEvt(dest, action, options) {
+      calls.push(['sendToEvt', dest.label, action, options])
+      this.dest = dest
+      this.action = action
+      this.path = dest ? [{ i: dest.i, j: dest.j }] : []
+    },
+  })
+  const context = createContext(8, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+  runSchedulerTaskByName(context.scheduler, 'unit.sleepWake', 2)
+
+  assert.deepEqual(
+    calls.find(call => call[0] === 'sendToEvt'),
+    ['sendToEvt', 'stone-pile', 'minestone', { forceRepath: true, preserveAutonomy: true }]
+  )
+  assert.equal(
+    calls.some(call => call[0] === 'resumeAutonomy'),
+    false
+  )
+  assert.equal(villager.dest, stone)
+  assert.equal(villager.action, 'minestone')
+  assert.equal(villager.work, 'stonecutter')
+  assert.equal(villager.autonomousJob, 'stone')
+})
+
+test('rest wake transitions delay stored work until the morning linger finishes', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
+  const villager = createUnit(owner, {
+    autonomousJob: 'stone',
+    shelterState: {
+      status: 'inside',
+      location: 'shelter',
+      shelter: house,
+      previousAutonomousJob: 'stone',
+      previousWork: 'stonecutter',
+      previousAction: 'minestone',
+      previousDest: stone,
+    },
+    getActionCondition(target, action) {
+      return target === stone && action === 'minestone'
+    },
+    sendToEvt(dest, action, options) {
+      calls.push(['sendToEvt', dest?.label ?? `${dest.i}:${dest.j}`, action, options])
+      this.dest = dest
+      this.action = action
+      this.path = dest ? [{ i: dest.i, j: dest.j }] : []
+    },
+  })
+  const context = createContext(8, [owner], calls)
+  context.restTransitionsEnabled = true
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  runSchedulerTaskByName(context.scheduler, 'unit.sleepWake', 2)
+
+  assert.equal(villager.shelterState.status, 'wakingUp')
+  assert.notEqual(villager.dest, stone)
+  assert.equal(
+    calls.some(call => call[0] === 'sendToEvt' && call[1] === 'stone-pile'),
+    false
+  )
+
+  const transitionCell = villager.shelterState.transitionTargetCell
+  villager.i = transitionCell.i
+  villager.j = transitionCell.j
+  villager.currentCell = transitionCell
+  context.scheduler.elapsedMs = villager.shelterState.transitionUntilMs + 1
+  system.updateRestingUnit(villager)
+
+  assert.equal(villager.shelterState, null)
+  assert.equal(villager.dest, stone)
+  assert.equal(villager.action, 'minestone')
+  assert.equal(villager.work, 'stonecutter')
+  assert.equal(villager.autonomousJob, 'stone')
+})
+
+test('villagers waking from delivery resume the delivery return task', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
+  owner.buildings.push(house)
+  const chest = { label: 'storage-chest', i: 6, j: 6, isDestroyed: false }
+  const stone = { label: 'stone-pile', i: 9, j: 9, isDestroyed: false }
+  const villager = createUnit(owner, {
+    autonomousJob: 'stone',
+    resourceDeliveryState: {
+      target: house,
+      returnTask: {
+        autonomousJob: 'stone',
+        dest: stone,
+        action: 'minestone',
+        work: 'stonecutter',
+      },
+    },
+    shelterState: {
+      status: 'inside',
+      location: 'shelter',
+      shelter: house,
+      previousAutonomousJob: 'stone',
+      previousWork: null,
+      previousAction: 'delivery',
+      previousDest: chest,
+    },
+    getActionCondition(target, action) {
+      return target === stone && action === 'minestone'
+    },
+    sendToEvt(dest, action, options) {
+      calls.push(['sendToEvt', dest.label, action, options])
+      this.dest = dest
+      this.action = action
+      this.path = dest ? [{ i: dest.i, j: dest.j }] : []
+    },
+  })
+  const context = createContext(8, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+  runSchedulerTaskByName(context.scheduler, 'unit.sleepWake', 2)
+
+  assert.deepEqual(
+    calls.find(call => call[0] === 'sendToEvt'),
+    ['sendToEvt', 'stone-pile', 'minestone', { forceRepath: true, preserveAutonomy: true }]
+  )
+  assert.equal(villager.dest, stone)
+  assert.notEqual(villager.dest, chest)
+  assert.equal(villager.action, 'minestone')
+  assert.equal(villager.work, 'stonecutter')
+})
+
 test('interior sleepers route to the exit after waking instead of resuming old work', () => {
   const calls = []
   const routed = []
@@ -1091,7 +1349,7 @@ test('interior sleepers route to the exit after waking instead of resuming old w
   })
   const context = createContext(8, [owner], calls)
   context.map.mapType = 'interior'
-  context.routeInteriorUnitToExit = unit => routed.push(unit.label)
+  context.routeInteriorUnitToExit = (unit, returnTask) => routed.push([unit.label, returnTask])
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
 
@@ -1106,7 +1364,17 @@ test('interior sleepers route to the exit after waking instead of resuming old w
 
   runSchedulerTaskByName(context.scheduler, 'unit.sleepWake', 2)
 
-  assert.deepEqual(routed, ['villager-1'])
+  assert.deepEqual(routed, [
+    [
+      'villager-1',
+      {
+        autonomousJob: 'wood',
+        dest: previousDest,
+        action: 'chopwood',
+        work: 'woodcutter',
+      },
+    ],
+  ])
   assert.equal(
     calls.some(call => call[0] === 'resumeAutonomy'),
     false
@@ -1135,15 +1403,19 @@ test('runtime interior sleepers wake in place before routing through the space e
   villager.spaceId = 'space-house'
   const context = createContext(8, [owner], calls)
   context.map.mapType = 'continent'
-  context.routeInteriorUnitToExit = unit => routed.push(unit.label)
+  context.routeInteriorUnitToExit = (unit, returnTask) => routed.push([unit.label, returnTask])
   villager.context = context
-  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
-    '../BuildingInteriorSpaceSystem': {
-      getBuildingInteriorSpaceForBuilding: () => null,
-      getBuildingInteriorSpaceForUnit: unit => (unit === villager ? { id: 'space-house' } : null),
-      moveUnitToBuildingInteriorSleep: () => false,
-    },
-  })
+  const UnitRestSystem = loadUnitRestSystem(
+    calls,
+    {},
+    {
+      '../BuildingInteriorSpaceSystem': {
+        getBuildingInteriorSpaceForBuilding: () => null,
+        getBuildingInteriorSpaceForUnit: unit => (unit === villager ? { id: 'space-house' } : null),
+        moveUnitToBuildingInteriorSleep: () => false,
+      },
+    }
+  )
 
   new UnitRestSystem(context)
 
@@ -1155,7 +1427,7 @@ test('runtime interior sleepers wake in place before routing through the space e
 
   runSchedulerTaskByName(context.scheduler, 'unit.sleepWake', 2)
 
-  assert.deepEqual(routed, ['villager-1'])
+  assert.deepEqual(routed, [['villager-1', null]])
 })
 
 test('time jump to daytime wakes sleeping villagers immediately', () => {
@@ -1418,16 +1690,21 @@ test('night rest no longer applies a tired state to villagers', () => {
 test('followers stay with the hero at night instead of going to sleep', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
-  const villager = createUnit(owner, { followingHero: true })
+  const villager = createUnit(owner, { label: 'villager', followingHero: true })
+  const chief = createUnit(owner, { label: 'chief', type: constants.UNIT_TYPES.chief, followingHero: true })
+  const soldier = createUnit(owner, { label: 'soldier', type: constants.UNIT_TYPES.infantry, followingHero: true })
   const context = createContext(23, [owner], calls)
-  villager.context = context
+  context.restTransitionsEnabled = true
+  for (const unit of [villager, chief, soldier]) unit.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
 
   new UnitRestSystem(context)
 
-  assert.equal(villager.shelterState, undefined)
-  assert.equal(villager.followingHero, true)
-  assert.equal(villager.tired, undefined)
+  for (const unit of [villager, chief, soldier]) {
+    assert.equal(unit.shelterState, undefined)
+    assert.equal(unit.followingHero, true)
+    assert.equal(unit.tired, undefined)
+  }
 })
 
 test('sleeping villagers wake when attacked and can fight without a tired penalty', () => {
@@ -1514,11 +1791,15 @@ test('awake villagers still flee danger when morale breaks', () => {
   })
   const context = createContext(12, [owner], calls)
   villager.context = context
-  const UnitRestSystem = loadUnitRestSystem(calls, {}, {
-    '../../lib/combat': {
-      evaluateCombatMorale: () => 'flee',
-    },
-  })
+  const UnitRestSystem = loadUnitRestSystem(
+    calls,
+    {},
+    {
+      '../../lib/combat': {
+        evaluateCombatMorale: () => 'flee',
+      },
+    }
+  )
   const system = new UnitRestSystem(context)
 
   const handled = system.handleUnitDanger(villager, {

@@ -1,10 +1,12 @@
-import { LOADING_TYPES, RESOURCE_GATHER_SWINGS, RESOURCE_STOCKPILE_TYPES, RESOURCE_TYPES } from '../../constants'
+import { RESOURCE_GATHER_SWINGS, RESOURCE_TYPES } from '../../constants'
+import {
+  getResourceKeyForLoadingType,
+  getUnitResourceCapacityRemaining,
+  unitShouldDeliverResource,
+} from '../../lib/resources/resourceDelivery'
 import { getGatherXpBonus } from '../../lib/units/unitExperience'
 import { t } from '../../lib/lang'
-import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-
-type PlayerResourceKey = keyof ResourceAmount
 
 const DEPLETED_BERRYBUSH_HIT_POINTS = 4
 
@@ -64,31 +66,26 @@ export function getGatherAmount(unit: UnitEntity): number {
   return Math.max(1, Math.round(unit.gatherAmount?.[unit.work ?? ''] ?? 1)) + getGatherXpBonus(unit)
 }
 
-function getGatheredResourceKey(loadingType: string | null | undefined): PlayerResourceKey | null {
-  if (!loadingType) return null
-  if ([LOADING_TYPES.berry, LOADING_TYPES.wheat, LOADING_TYPES.meat].includes(loadingType)) return 'food'
-  return Object.values(RESOURCE_STOCKPILE_TYPES).find(resource => resource === loadingType) ?? null
-}
-
-function addGatheredResourceToPlayer(unit: UnitEntity, loadingType: string, amount: number): void {
-  const resourceKey = getGatheredResourceKey(loadingType)
-  if (!resourceKey || !unit.owner) return
-  unit.owner[resourceKey] = (unit.owner[resourceKey] ?? 0) + amount
-  if (unit.owner.isPlayed) unit.context?.menu?.updateTopbar?.()
-}
-
-function addGatheredResourceToUnitInventory(unit: UnitEntity, loadingType: string, amount: number): void {
-  const resourceKey = getGatheredResourceKey(loadingType)
-  if (!resourceKey || amount <= 0) return
+export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): number {
+  const resourceKey = getResourceKeyForLoadingType(loadingType)
+  const gatheredAmount = Math.min(Math.max(0, Math.floor(amount)), getUnitResourceCapacityRemaining(unit, loadingType))
+  if (!resourceKey || gatheredAmount <= 0) return 0
   unit.inventory = unit.inventory ?? {}
   unit.inventory.resources = unit.inventory.resources ?? {}
-  unit.inventory.resources[resourceKey] = (unit.inventory.resources[resourceKey] ?? 0) + amount
+  unit.inventory.resources[resourceKey] = (unit.inventory.resources[resourceKey] ?? 0) + gatheredAmount
   if (unit.context?.controls?.heroUnit === unit) unit.context.menu?.refreshInventory?.()
+  return gatheredAmount
 }
 
-export function addGatheredResource(unit: UnitEntity, loadingType: string, amount: number): void {
-  addGatheredResourceToUnitInventory(unit, loadingType, amount)
-  addGatheredResourceToPlayer(unit, loadingType, amount)
+export function sendVillagerToDeliveryIfFull(unit: UnitEntity, loadingType: string): boolean {
+  if (!unitShouldDeliverResource(unit, loadingType)) return false
+  if (unit.sendToDelivery?.() === true) return true
+  if (unit.owner?.isPlayed) {
+    unit.gatherProgressState = null
+    unit.stop?.()
+    return true
+  }
+  return false
 }
 
 function getResourceGatherSwings(loadingType: string, override?: number): number {

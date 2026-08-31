@@ -20,10 +20,7 @@ import {
   type PortalPartyState,
 } from './GameStateHelpers'
 import { teleportRuntimeUnit, type PortalTravelGame } from './GamePortalTravel'
-import {
-  removeBuildingInteriorOccupants,
-  type BuildingInteriorOccupantState,
-} from './BuildingInteriorOccupants'
+import { removeBuildingInteriorOccupants, type BuildingInteriorOccupantState } from './BuildingInteriorOccupants'
 import type { BuildingInteriorSession, BuildingInteriorTravelGame } from './BuildingInteriorTravelTypes'
 
 export function commitBuildingInteriorCampaign(game: BuildingInteriorTravelGame, campaign: CampaignSave): void {
@@ -160,12 +157,14 @@ function normalizeReturnedOccupant(
 ): SaveEntityState {
   const { sleepInInterior: _sleepInInterior, ...savedOccupant } = structuredClone(occupant)
   const entryPosition = getBuildingInteriorEntryPosition(building as BuildingEntity | null)
+  const resumeAction = savedOccupant.action ?? null
+  const resumeDest = savedOccupant.dest ?? null
   return {
     ...savedOccupant,
-    action: null,
+    action: resumeDest ? resumeAction : null,
     currentFrame: undefined,
     currentSheet: undefined,
-    dest: null,
+    dest: resumeDest,
     followingHero: options.followingHero ?? false,
     i: entryPosition?.i ?? building?.i ?? savedOccupant.i,
     inactif: false,

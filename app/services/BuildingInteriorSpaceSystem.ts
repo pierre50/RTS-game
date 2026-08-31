@@ -666,7 +666,7 @@ function moveUnitIntoBuildingInteriorSpace(
   return transferUnitThroughSpacePortal(context, unit, space.entryPortal)
 }
 
-function routeUnitIntoBuildingInteriorSpace(
+export function routeUnitIntoBuildingInteriorSpace(
   context: GameContextLike,
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace

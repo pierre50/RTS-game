@@ -13,6 +13,7 @@ export type {
   UnitCommandOptions,
   UnitCreationExtra,
   UnitEntity,
+  UnitResourceDeliveryReturnTask,
   UnitSendToOptions,
   VillagerAutonomyJob,
   UnitRestReason,

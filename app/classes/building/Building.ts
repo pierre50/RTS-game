@@ -1,6 +1,6 @@
 import type { AnimatedSprite, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
-import { drawInstanceBlinkingSelection, canUpdateMinimap, playAudibleSoundCue } from '../../lib'
+import { drawInstanceBlinkingSelection, canUpdateMinimap } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
 import { BuildingLifecycle } from './BuildingLifecycle'
 import { stopFlameAmbientSound } from './BuildingFire'
@@ -260,8 +260,6 @@ export class Building extends Instance implements BuildingEntity {
     const {
       context: { menu, player },
     } = this
-    if (this.owner.isPlayed && this.sounds?.create)
-      playAudibleSoundCue(this, this.sounds.create, { profile: 'building' })
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
     if (this.loading !== null && this.owner.isPlayed) this.updateInterfaceLoading()

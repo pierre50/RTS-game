@@ -1,9 +1,7 @@
 import { ACTION_TYPES, FAMILY_TYPES } from '../constants'
-import { findInstancesInSight, getCellsAroundPoint, instancesDistance, scheduleAmbientMove } from '../lib'
-import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../lib/buildings/passageCells'
+import { findInstancesInSight, instancesDistance, scheduleUnitWalkAround } from '../lib'
 import { isUnitRestWakeLocked } from './rest/UnitRestRules'
 import type { SchedulerTaskId, GameContextLike } from '../types/context'
-import type { RuntimeCell } from '../types/map'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
 
 const PATROL_DELAY_MIN_MS = 3500
@@ -12,16 +10,7 @@ const PATROL_RANGE = 4
 const AGGRO_SCAN_INTERVAL_MS = 500
 
 function canPatrol(unit: UnitEntity): boolean {
-  return Boolean(
-    !unit.isDead &&
-      !unit.isDestroyed &&
-      !unit.shelterState &&
-      !isUnitRestWakeLocked(unit) &&
-      !unit.action &&
-      !unit.dest &&
-      !(unit.path?.length) &&
-      unit.combatMode !== 'attack'
-  )
+  return !isUnitRestWakeLocked(unit)
 }
 
 function getCampPatrolAnchor(unit: UnitEntity) {
@@ -62,43 +51,21 @@ export class CampPatrolSystem {
   }
 
   scheduleNextPatrol(unit: UnitEntity): void {
-    const scheduler = this.context.scheduler
-    const map = this.context.map
-    if (!scheduler || !map) return
-
-    scheduleAmbientMove(unit, {
+    scheduleUnitWalkAround(unit, {
+      anchor: getCampPatrolAnchor,
       canMove: canPatrol,
       delayMaxMs: () => PATROL_DELAY_MAX_MS,
       delayMinMs: () => PATROL_DELAY_MIN_MS,
-      move: (target, destination) => {
-        if (target.sendToEvt) target.sendToEvt(destination, null, { forceRepath: true })
-        else target.sendTo?.(destination)
-      },
       onTaskId: (target, taskId) => {
         const previousTaskId = target.campPatrolTaskId
         if (previousTaskId != null) this.taskIds.delete(previousTaskId)
         target.campPatrolTaskId = taskId
         if (taskId != null) this.taskIds.add(taskId)
       },
-      pickDestination: target => this.findPatrolDestination(target),
-      randomRange: (min, max) => map.randomRange(min, max),
-      scheduler,
+      range: () => PATROL_RANGE,
       shouldContinue: isCampPatrolUnit,
       taskName: 'campPatrol.patrol',
     })
-  }
-
-  findPatrolDestination(unit: UnitEntity): RuntimeCell | null {
-    const map = this.context.map
-    const anchor = getCampPatrolAnchor(unit)
-    if (!map || !anchor) return null
-
-    const passageLookup = createReservedPassageCellLookup(unit.context)
-    const cells = getCellsAroundPoint(anchor.i, anchor.j, map.grid, PATROL_RANGE, cell =>
-      Boolean(canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }) && (cell.i !== unit.i || cell.j !== unit.j))
-    )
-
-    return cells.length ? map.randomItem(cells) : null
   }
 
   updateAggro(): void {

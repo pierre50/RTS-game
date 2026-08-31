@@ -23,6 +23,7 @@ type WaterOverlayHost = {
   waterOverlay: TilingSprite | null
   waterOverlayElapsed: number
   waterOverlayFrame: number
+  waterOverlayPaused: boolean
   waterOverlayTick: ((ticker: Ticker) => void) | null
 }
 
@@ -122,6 +123,7 @@ export function ensureWaterAnimationTicker(map: WaterOverlayHost): void {
   if (!ticker) return
   const tick = (ticker: Ticker) => {
     const update = () => {
+      if (map.waterOverlayPaused) return
       const frames = getWaterOverlayFrames()
       const borderFrameCount = Math.max(0, ...Array.from(map.waterBorderSurfaces, surface => surface.frames.length))
       const frameCount = Math.max(frames.length, borderFrameCount)

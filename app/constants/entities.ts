@@ -119,6 +119,7 @@ export const ACTION_TYPES = {
   minecopper: 'minecopper',
   mineiron: 'mineiron',
   chopwood: 'chopwood',
+  delivery: 'delivery',
   heal: 'heal',
   convert: 'convert',
 }

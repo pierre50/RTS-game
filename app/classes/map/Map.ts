@@ -99,6 +99,7 @@ export default class Map extends Container {
   waterOverlay: TilingSprite | null
   waterOverlayFrame: number
   waterOverlayElapsed: number
+  waterOverlayPaused: boolean
   waterOverlayTick: ((ticker: Ticker) => void) | null
   waterBorderSurfaces: Set<WaterBorderSurface>
   waterBackground: Graphics | null
@@ -168,6 +169,7 @@ export default class Map extends Container {
     this.waterOverlay = null
     this.waterOverlayFrame = 0
     this.waterOverlayElapsed = 0
+    this.waterOverlayPaused = false
     this.waterOverlayTick = null
     this.waterBorderSurfaces = new Set()
     this.waterBackground = null

@@ -1,13 +1,9 @@
 import { ACTION_TYPES } from '../../constants'
-import {
-  playAudibleSoundCue,
-} from '../../lib'
+import { playAudibleSoundCue } from '../../lib'
 import { handleCaptureHorseAction } from './UnitCaptureHorseAction'
 import { UnitDirectedActions } from './UnitDirectedActions'
 import { UnitResourceActions } from './UnitResourceActions'
-import {
-  setActionSpriteLoop,
-} from './UnitManualHeroWork'
+import { setActionSpriteLoop } from './UnitManualHeroWork'
 import { UnitConversionAction } from './UnitConversionAction'
 import {
   clearInvalidPreviousTask as clearInvalidPreviousUnitTask,
@@ -99,6 +95,10 @@ export class UnitActions {
     this.resourceActions.handleBuildAction()
   }
 
+  handleDeliveryAction() {
+    this.resourceActions.handleDeliveryAction()
+  }
+
   handleTrainAction() {
     this.directedActions.handleTrainAction()
   }
@@ -140,6 +140,9 @@ export class UnitActions {
         break
       case ACTION_TYPES.build:
         this.handleBuildAction()
+        break
+      case ACTION_TYPES.delivery:
+        this.handleDeliveryAction()
         break
       case ACTION_TYPES.attack:
         unit.unitCombat?.handleAttackAction()

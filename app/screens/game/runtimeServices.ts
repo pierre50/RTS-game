@@ -4,6 +4,8 @@ import { CampPatrolSystem } from '../../services/CampPatrolSystem'
 import { DailyWorldEventSystem } from '../../services/DailyWorldEventSystem'
 import { DayNightSystem } from '../../services/DayNightSystem'
 import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
+import { HeroFollowerPatrolSystem } from '../../services/HeroFollowerPatrolSystem'
+import { IdleUnitPatrolSystem } from '../../services/IdleUnitPatrolSystem'
 import { LightSystem } from '../../services/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TimeSkipSystem } from '../../services/TimeSkipSystem'
@@ -11,6 +13,7 @@ import { TributeRaidSystem } from '../../services/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
 import { WeatherSystem } from '../../services/WeatherSystem'
+import { ResourceDeliverySystem } from './GameResourceDelivery'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
 
@@ -23,8 +26,11 @@ export type RuntimeServices = {
   campPatrols: CampPatrolSystem | null
   dailyWorldEvents: DailyWorldEventSystem | null
   dayNight: DayNightSystem | null
+  heroFollowerPatrols: HeroFollowerPatrolSystem | null
+  idleUnitPatrols: IdleUnitPatrolSystem | null
   interiorExitMarker: InteriorExitMarkerSystem | null
   lights: LightSystem | null
+  resourceDelivery: ResourceDeliverySystem | null
   shadows: ShadowSystem | null
   timeSkip: TimeSkipSystem | null
   tributeRaids: TributeRaidSystem | null
@@ -39,8 +45,11 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     campPatrols: null,
     dailyWorldEvents: null,
     dayNight: null,
+    heroFollowerPatrols: null,
+    idleUnitPatrols: null,
     interiorExitMarker: null,
     lights: null,
+    resourceDelivery: null,
     shadows: null,
     timeSkip: null,
     tributeRaids: null,
@@ -72,7 +81,10 @@ export function createRuntimeServices(
   dailyWorldEvents.register(tributeRaids)
 
   const campPatrols = new CampPatrolSystem(context)
+  const heroFollowerPatrols = new HeroFollowerPatrolSystem(context)
+  const idleUnitPatrols = new IdleUnitPatrolSystem(context)
   const unitEnergyRegen = new UnitEnergyRegenSystem(context)
+  const resourceDelivery = new ResourceDeliverySystem(context)
   const shadows = new ShadowSystem(context, map)
   const buildingInteriorEntryMarker = isInterior ? null : new BuildingInteriorEntryMarkerSystem(context, map)
   const interiorExitMarker = isInterior ? new InteriorExitMarkerSystem(context, map) : null
@@ -85,8 +97,11 @@ export function createRuntimeServices(
     campPatrols,
     dailyWorldEvents,
     dayNight,
+    heroFollowerPatrols,
+    idleUnitPatrols,
     interiorExitMarker,
     lights,
+    resourceDelivery,
     shadows,
     timeSkip,
     tributeRaids,
@@ -113,7 +128,10 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.dailyWorldEvents?.destroy()
   services.unitRest?.destroy()
   services.campPatrols?.destroy()
+  services.heroFollowerPatrols?.destroy()
+  services.idleUnitPatrols?.destroy()
   services.unitEnergyRegen?.destroy()
+  services.resourceDelivery?.destroy()
   services.dayNight?.destroy()
   services.weather?.destroy()
 

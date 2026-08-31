@@ -361,23 +361,26 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
   new UnitActions(unit).getAction('forageberry')
 
   // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
-  assert.equal(unit.owner.food, 3)
+  assert.equal(unit.owner.food, 0)
   assert.deepEqual(unit.inventory.resources, { food: 3 })
   assert.equal(berryBush.quantity, 7)
   assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
 })
 
-test('gathered stone is added to the unit inventory while still increasing global resources', () => {
+test('gathered stone is added to the unit inventory without increasing global resources', () => {
   let inventoryRefreshes = 0
   const { addGatheredResource } = loadModule('app/classes/unit/UnitResourceGathering.ts', {
     '../../constants': {
+      BUILDING_TYPES: { granary: 'Granary', storagePit: 'StoragePit', townCenter: 'TownCenter' },
       LOADING_TYPES: { berry: 'berry', wheat: 'wheat', meat: 'meat', stone: 'stone' },
+      RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
       RESOURCE_GATHER_SWINGS: {},
-      RESOURCE_STOCKPILE_TYPES: { Stone: 'stone' },
       RESOURCE_TYPES: { berrybush: 'Berrybush' },
+      UNIT_TYPES: { villager: 'Villager' },
     },
     '../../lib/lang': { t: key => key },
     '../../lib/units/unitExperience': { getGatherXpBonus: () => 0 },
+    '../../lib/units/unitControl': { isHeroControlled: () => false },
   })
   const unit = {
     context: {
@@ -389,9 +392,12 @@ test('gathered stone is added to the unit inventory while still increasing globa
   }
   unit.context.controls.heroUnit = unit
 
-  addGatheredResource(unit, 'stone', 6)
+  const firstGain = addGatheredResource(unit, 'stone', 6)
+  const secondGain = addGatheredResource(unit, 'stone', 10)
 
-  assert.deepEqual(unit.inventory.resources, { stone: 6 })
-  assert.equal(unit.owner.stone, 10)
-  assert.equal(inventoryRefreshes, 1)
+  assert.equal(firstGain, 6)
+  assert.equal(secondGain, 4)
+  assert.deepEqual(unit.inventory.resources, { stone: 10 })
+  assert.equal(unit.owner.stone, 4)
+  assert.equal(inventoryRefreshes, 2)
 })

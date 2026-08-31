@@ -1,7 +1,7 @@
 export const SOUND_CUES = {
   ui: {
     buttonPress: 'button-selected',
-    menuClick: 'completed-unknown',
+    menuClick: 'button-selected',
     underAttack: 'attack-warning',
   },
   player: {
@@ -30,7 +30,6 @@ export const SOUND_CUES = {
     arrowLaunch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
   },
   unit: {
-    fallbackCreate: null,
     horseMoving: 'horse-moving',
     militaryCommand: null,
     swordAttack: ['sword-attack', 'sword-attack-2'],
@@ -51,6 +50,7 @@ export const SOUND_CUES = {
   building: {
     burning: ['building-burning', 'building-burning-2', 'building-burning-3'],
     flame: 'building/campfire-crackle',
+    chestOpen: 'building/chest-open',
     collapse: ['building-destroyed', 'building-destroyed-2', 'building-destroyed-3'],
   },
   weather: {

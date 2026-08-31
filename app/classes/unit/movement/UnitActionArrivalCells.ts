@@ -13,7 +13,13 @@ export function getActionArrivalCell(
   dest: RuntimeEntity | RuntimeCell | null | undefined,
   action: string | null | undefined
 ): RuntimeCell | null {
-  if (action !== ACTION_TYPES.train || !isRuntimeEntity(dest) || dest.family !== FAMILY_TYPES.building) return null
+  if (
+    ![ACTION_TYPES.train, ACTION_TYPES.delivery].includes(action ?? '') ||
+    !isRuntimeEntity(dest) ||
+    dest.family !== FAMILY_TYPES.building
+  ) {
+    return null
+  }
   if (!isBuildingInteriorSupported(dest)) return null
   return getBuildingInteriorEntryCell(dest, getEntitySpaceMapLike(unit, unit.context?.map)?.grid)
 }

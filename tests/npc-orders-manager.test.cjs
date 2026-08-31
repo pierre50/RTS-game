@@ -134,7 +134,6 @@ function buildMocks(calls, context) {
     '../lib/npc/npcInteraction': {
       sendNpcToStockpile: () => calls.push(['sendNpcToStockpile', `paused=${context.paused}`]),
       keepNpcHere: () => calls.push(['keepNpcHere', `paused=${context.paused}`]),
-      canKeepNpcHere: () => false,
       startFollowingHero: () => calls.push(['startFollowingHero', `paused=${context.paused}`]),
       releaseIfStillLooking: () => calls.push(['releaseIfStillLooking', `paused=${context.paused}`]),
       playNpcOrderSound: () => {},
@@ -363,6 +362,73 @@ test('solo followers disable the follow order', () => {
     assert.equal(followButton.disabled, true)
     followButton.click()
     assert.deepEqual(calls, [])
+  })
+})
+
+test('solo non-followers disable the stop following order', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Villager',
+      label: 'villager-1',
+      owner: context.player,
+      followingHero: false,
+    }
+
+    manager.open([npc])
+    const stayButton = manager.buttons.get('stay')
+
+    assert.equal(stayButton.disabled, true)
+    stayButton.click()
+    assert.deepEqual(calls, [])
+  })
+})
+
+test('mixed follow groups keep follow and stop following orders usable', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const follower = {
+      type: 'Villager',
+      label: 'follower',
+      owner: context.player,
+      followingHero: true,
+    }
+    const idle = {
+      type: 'Villager',
+      label: 'idle',
+      owner: context.player,
+      followingHero: false,
+    }
+
+    manager.open([follower, idle])
+
+    assert.equal(manager.buttons.get('follow').disabled, false)
+    assert.equal(manager.buttons.get('stay').disabled, false)
+  })
+})
+
+test('all-follower groups disable follow but keep stop following usable', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const first = { type: 'Villager', label: 'follower-1', owner: context.player, followingHero: true }
+    const second = { type: 'Villager', label: 'follower-2', owner: context.player, followingHero: true }
+
+    manager.open([first, second])
+
+    assert.equal(manager.buttons.get('follow').disabled, true)
+    assert.equal(manager.buttons.get('stay').disabled, false)
   })
 })
 

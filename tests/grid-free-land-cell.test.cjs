@@ -25,20 +25,23 @@ function loadMovement(overrides = {}) {
     },
     './cells': {
       getBuildingContactDistance: size => Math.floor(((size ?? 1) - 1) / 2) + 1,
-      getCellsAroundPoint: overrides.getCellsAroundPoint ?? ((startX, startY, grid, dist, callback = () => true) => {
-        const cells = []
-        for (let i = Math.max(startX - dist, 0); i <= Math.min(startX + dist, grid.length - 1); i++) {
-          for (let j = Math.max(startY - dist, 0); j <= Math.min(startY + dist, grid[i].length - 1); j++) {
-            if (Math.max(Math.abs(i - startX), Math.abs(j - startY)) !== dist) continue
-            const cell = grid[i][j]
-            if (cell && callback(cell)) cells.push(cell)
+      getCellsAroundPoint:
+        overrides.getCellsAroundPoint ??
+        ((startX, startY, grid, dist, callback = () => true) => {
+          const cells = []
+          for (let i = Math.max(startX - dist, 0); i <= Math.min(startX + dist, grid.length - 1); i++) {
+            for (let j = Math.max(startY - dist, 0); j <= Math.min(startY + dist, grid[i].length - 1); j++) {
+              if (Math.max(Math.abs(i - startX), Math.abs(j - startY)) !== dist) continue
+              const cell = grid[i][j]
+              if (cell && callback(cell)) cells.push(cell)
+            }
           }
-        }
-        return cells
-      }),
+          return cells
+        }),
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -108,4 +111,25 @@ test('closest free cell path skips occupied solid target-adjacent cells', () => 
 
   assert.deepEqual(calls, [[1, 0]])
   assert.deepEqual(path, [free])
+})
+
+test('closest free cell path can use diagonal contact cells accepted by interaction range', () => {
+  const calls = []
+  const grid = makeGrid(4)
+  const diagonal = { i: 0, j: 0, category: 'Land', solid: false }
+  grid[0][0] = diagonal
+  grid[0][1] = { i: 0, j: 1, category: 'Land', solid: true, has: { label: 'hero-1' } }
+  grid[1][0] = { i: 1, j: 0, category: 'Land', solid: true, has: { label: 'hero-2' } }
+  grid[1][1] = { i: 1, j: 1, category: 'Land', solid: true, has: { label: 'chest-1' } }
+  const { getInstanceClosestFreeCellPath } = loadMovement({
+    findInstancePath: (_instance, x, y, map) => {
+      calls.push([x, y])
+      return [map.grid[x][y]]
+    },
+  })
+
+  const path = getInstanceClosestFreeCellPath({ i: 3, j: 3, label: 'villager-1' }, { i: 1, j: 1, size: 1 }, { grid })
+
+  assert.deepEqual(calls, [[0, 0]])
+  assert.deepEqual(path, [diagonal])
 })

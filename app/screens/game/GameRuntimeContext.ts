@@ -7,7 +7,7 @@ import { t } from '../../lib/lang'
 import { PerformanceMonitor } from '../../services/PerformanceMonitor'
 import type { DevConsoleRuntimeContext } from '../../dev-console/types'
 import type { GameContextLike, PerformanceMonitorLike, SchedulerLike, VisionChangeEvent } from '../../types/context'
-import type { BuildingEntity, ResourceEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, ResourceEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
 import type { RuntimeMap } from '../../types/map'
@@ -44,7 +44,8 @@ export type GameRuntimeContextHost = {
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
   travelOutOfBuildingInterior(): Promise<void>
-  routeInteriorUnitToExit(unit: UnitEntity): void
+  routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean>
+  routeInteriorUnitToExit(unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null): void
   synchronizeBuildingInteriorAfterTimeJump(): void
   syncStableInteriorHorses(building: BuildingEntity): void
   travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void>
@@ -115,12 +116,19 @@ export function createGameRuntimeContext(
         context.menu?.showMessage(t('corruptSave'))
       })
     },
-    routeInteriorUnitToExit: (unit: UnitEntity) => host.routeInteriorUnitToExit(unit),
+    routeUnitResourceDelivery: (unit: UnitEntity, building: BuildingEntity) => {
+      host.routeUnitResourceDelivery(unit, building).catch(error => {
+        console.error('Unable to route unit resource delivery', error)
+      })
+    },
+    routeInteriorUnitToExit: (unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null) =>
+      host.routeInteriorUnitToExit(unit, returnTask),
     synchronizeBuildingInteriorAfterTimeJump: () => host.synchronizeBuildingInteriorAfterTimeJump(),
     syncStableInteriorHorses: (building: BuildingEntity) => host.syncStableInteriorHorses(building),
   }
 
   context.performance = new PerformanceMonitor(app)
+  context.restTransitionsEnabled = true
   context.scheduler = new ActionScheduler(
     app,
     () => context.paused ?? false,

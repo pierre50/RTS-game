@@ -189,7 +189,10 @@ function loadModule(relativePath, mocks) {
       const getSpaceGrid = (entity, map) => getSpace(map, entity?.spaceId)?.grid ?? map?.grid ?? null
       return {
         getEntityCell: (entity, map) =>
-          entity?.currentCell ?? getSpaceGrid(entity, map)?.[entity?.i]?.[entity?.j] ?? map?.grid?.[entity?.i]?.[entity?.j] ?? null,
+          entity?.currentCell ??
+          getSpaceGrid(entity, map)?.[entity?.i]?.[entity?.j] ??
+          map?.grid?.[entity?.i]?.[entity?.j] ??
+          null,
         getEntitySpaceGrid: unit => getSpaceGrid(unit, unit?.context?.map ?? mocks['../../lib']?.map ?? null),
         getEntitySpaceMapLike: unit => unit?.context?.map ?? mocks['../../lib']?.map ?? null,
         isOutsideSpaceId: spaceId => !spaceId || spaceId === 'outside',
@@ -327,6 +330,20 @@ function loadModule(relativePath, mocks) {
         },
       }
     }
+    if (request === './UnitResourceDeliveryCommands') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceDeliveryCommands.ts'))
+    }
+    if (
+      request === '../UnitResourceDeliveryCommands' ||
+      request === '../../classes/unit/UnitResourceDeliveryCommands'
+    ) {
+      return {
+        applyWorkForAction: (unit, work, action) => {
+          unit.work = work
+          unit.action = action
+        },
+      }
+    }
     if (request === './UnitCaptureHorseAction') return { handleCaptureHorseAction: () => {} }
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
@@ -386,6 +403,7 @@ const constants = {
     hunt: 'hunt',
     captureHorse: 'captureHorse',
     convert: 'convert',
+    delivery: 'delivery',
     minegold: 'minegold',
     minestone: 'minestone',
     takemeat: 'takemeat',
@@ -3151,7 +3169,16 @@ test('solid target approach cells avoid building passage cells as final stops', 
   const grid = makePassageMovementGrid()
   const entryCell = grid[1][2]
   const approachCell = grid[2][1]
-  const target = { family: 'building', i: 2, isDestroyed: false, j: 2, label: 'barracks-1', type: 'Barracks', x: 2, y: 2 }
+  const target = {
+    family: 'building',
+    i: 2,
+    isDestroyed: false,
+    j: 2,
+    label: 'barracks-1',
+    type: 'Barracks',
+    x: 2,
+    y: 2,
+  }
   grid[target.i][target.j].solid = true
   const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
   let rejectedPassageCell = false
@@ -3439,7 +3466,7 @@ test('low-level gather orders realign villager work before starting the action',
     '../../lib/units/unitControl': { isHeroControlled: () => false },
     '../../lib/hero/heroActionRange': { isHeroActionInRange: () => false },
     '../../lib/units/unitEnergy': { cancelEnergyWait: () => {}, getEnergyMoveSpeedMultiplier: () => 1 },
-    './UnitCommands': {
+    '../UnitResourceDeliveryCommands': {
       applyWorkForAction: (unit, work, action) => {
         calls.push(['applyWorkForAction', work, action])
         unit.work = work
@@ -3839,7 +3866,7 @@ test('chopping a legacy depleted berrybush clamps its health before damage', () 
   assert.deepEqual(calls, [['setTextures', 'action'], ['updateTexture'], ['damage', 'legacy-berrybush', 1]])
 })
 
-test('chopping a felled tree adds wood directly to player resources', () => {
+test('chopping a felled tree adds wood to the unit inventory', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -3897,11 +3924,11 @@ test('chopping a felled tree adds wood directly to player resources', () => {
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
 
-  assert.equal(unit.owner.wood, 5)
+  assert.equal(unit.owner.wood, 3)
+  assert.deepEqual(unit.inventory.resources, { wood: 2 })
   assert.equal(tree.quantity, 3)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
-    ['updateTopbar'],
     ['feedback', 'villager-1', 2],
     ['updateInfo', 'quantityText', 3],
   ])
@@ -3972,7 +3999,8 @@ test('felled tree wood gathering uses the shared cadence after the tree is cut',
 
   actions.getAction(constants.ACTION_TYPES.chopwood)
 
-  assert.equal(unit.owner.wood, 5)
+  assert.equal(unit.owner.wood, 3)
+  assert.deepEqual(unit.inventory.resources, { wood: 2 })
   assert.equal(tree.quantity, 3)
   assert.deepEqual(
     calls.filter(([type]) => type === 'feedback' || type === 'updateInfo'),
@@ -4212,9 +4240,20 @@ test('resuming previous work routes to the previous destination runtime map spac
   const stoneType = 'Stone'
   const outsideCell = { i: 2, j: 2, label: 'outside-cell' }
   const interiorCell = { i: 2, j: 2, label: 'interior-cell', spaceId: 'interior:test' }
-  const interior = { grid: [[null, null, null], [null, null, null], [null, null, interiorCell]], id: 'interior:test' }
+  const interior = {
+    grid: [
+      [null, null, null],
+      [null, null, null],
+      [null, null, interiorCell],
+    ],
+    id: 'interior:test',
+  }
   const map = {
-    grid: [[null, null, null], [null, null, null], [null, null, outsideCell]],
+    grid: [
+      [null, null, null],
+      [null, null, null],
+      [null, null, outsideCell],
+    ],
     spaces: new Map([[interior.id, interior]]),
   }
   const target = {
@@ -4424,7 +4463,8 @@ test('hero farming does not claim or replace the farm worker slot', () => {
   new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
 
   assert.equal(farm.isUsedBy, occupant)
-  assert.equal(unit.owner.food, 1)
+  assert.equal(unit.owner.food ?? 0, 0)
+  assert.deepEqual(unit.inventory.resources, { food: 1 })
   assert.equal(farm.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
@@ -4433,7 +4473,7 @@ test('hero farming does not claim or replace the farm worker slot', () => {
   ])
 })
 
-test('hero gathering adds food globally without local resource bookkeeping', () => {
+test('hero gathering adds food to local inventory without global resource bookkeeping', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -4487,7 +4527,8 @@ test('hero gathering adds food globally without local resource bookkeeping', () 
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
 
-  assert.equal(unit.owner.food, 1)
+  assert.equal(unit.owner.food, 0)
+  assert.deepEqual(unit.inventory.resources, { food: 1 })
   assert.equal(wheat.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
@@ -4559,7 +4600,8 @@ test('farm gather cadence is the same for hero and villagers', () => {
     assert.equal(actor.wheat.quantity, 20)
 
     actor.actions.getAction(constants.ACTION_TYPES.farm)
-    assert.equal(actor.unit.owner.food, 1)
+    assert.equal(actor.unit.owner.food, 0)
+    assert.deepEqual(actor.unit.inventory.resources, { food: 1 })
     assert.equal(actor.wheat.quantity, 19)
   }
 
@@ -4572,7 +4614,7 @@ test('farm gather cadence is the same for hero and villagers', () => {
   )
 })
 
-test('hero mining adds stone directly to player resources', () => {
+test('hero mining adds stone to local inventory', () => {
   const calls = []
   const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
     'pixi.js': { Assets: { cache: { get: () => null } } },
@@ -4646,7 +4688,8 @@ test('hero mining adds stone directly to player resources', () => {
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.minestone)
 
-  assert.equal(unit.owner.stone, 1)
+  assert.equal(unit.owner.stone, 0)
+  assert.deepEqual(unit.inventory.resources, { stone: 1 })
   assert.equal(rock.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
@@ -4737,7 +4780,8 @@ test('hero mining progress survives manual action restarts for slower ores', () 
 
   actions.getAction(constants.ACTION_TYPES.minegold)
 
-  assert.equal(unit.owner.gold, 1)
+  assert.equal(unit.owner.gold, 0)
+  assert.deepEqual(unit.inventory.resources, { gold: 1 })
   assert.equal(gold.quantity, 19)
   assert.deepEqual(
     calls.filter(([type]) => type === 'feedback' || type === 'updateInfo'),
@@ -4808,7 +4852,8 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
 
   assert.equal(berrybush.quantity, 0)
   assert.equal(berrybush.isDead, false)
-  assert.equal(unit.owner.food, 1)
+  assert.equal(unit.owner.food, 0)
+  assert.deepEqual(unit.inventory.resources, { food: 1 })
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
     ['feedback', 'villager-1', 1],
@@ -4854,6 +4899,175 @@ test('immediate farm orders bypass the human command throttle', () => {
 
   assert.deepEqual(calls, [['sendToEvt', 'farm-1', constants.ACTION_TYPES.farm]])
   assert.equal(unit.work, constants.WORK_TYPES.farmer)
+})
+
+test('villager resource job switches deliver carried resources before starting the new job', () => {
+  const oldTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 2,
+    isDestroyed: false,
+    j: 2,
+    label: 'tree-1',
+    type: 'Tree',
+  }
+  const stone = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 7,
+    isDestroyed: false,
+    j: 7,
+    label: 'stone-1',
+    type: 'Stone',
+  }
+  const storagePit = {
+    family: constants.FAMILY_TYPES.building,
+    i: 4,
+    isDestroyed: false,
+    j: 4,
+    label: 'storage-pit-1',
+    type: constants.BUILDING_TYPES.storagePit,
+  }
+  const calls = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      MINING_RESOURCE_CONFIG: {
+        Stone: {
+          action: constants.ACTION_TYPES.minestone,
+          work: constants.WORK_TYPES.stoneminer,
+        },
+      },
+    },
+    '../../lib': {
+      getActionCondition: (_unit, target, action) =>
+        (target === stone && action === constants.ACTION_TYPES.minestone) ||
+        (target === storagePit && action === constants.ACTION_TYPES.delivery),
+      getAutonomyJobForWork: work => {
+        if (work === constants.WORK_TYPES.woodcutter) return 'wood'
+        if (work === constants.WORK_TYPES.stoneminer) return 'stone'
+        return null
+      },
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      setVillagerAutonomy: (unit, job) => {
+        unit.autonomousJob = job
+      },
+    },
+    '../../lib/resources/resourceDelivery': {
+      findResourceDeliveryTarget: () => storagePit,
+      unitHasDeliverableResources: () => true,
+      unitHasDeliverableResourcesForBuilding: (_unit, building) => building === storagePit,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    allAssets: null,
+    autonomousJob: 'wood',
+    buildQueue: [],
+    context: { menu: { updateInfo: () => {} } },
+    dest: oldTree,
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    inventory: { resources: { wood: 4 } },
+    isDead: false,
+    owner: { isPlayed: true, selectedUnit: null },
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    sendTo: target => calls.push(['sendTo', target.label]),
+    sendToEvt: (target, action, options) => {
+      unit.dest = target
+      unit.action = action
+      calls.push(['sendToEvt', target.label, action, options])
+    },
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.woodcutter,
+  }
+
+  const started = new UnitCommands(unit).sendToStone(stone, true)
+
+  assert.equal(started, true)
+  assert.equal(unit.action, constants.ACTION_TYPES.delivery)
+  assert.equal(unit.work, constants.WORK_TYPES.woodcutter)
+  assert.equal(unit.resourceDeliveryState.building, storagePit)
+  assert.equal(unit.resourceDeliveryState.phase, 'toBuilding')
+  assert.deepEqual(unit.resourceDeliveryState.returnTask, {
+    action: constants.ACTION_TYPES.minestone,
+    autonomousJob: 'stone',
+    dest: stone,
+    work: constants.WORK_TYPES.stoneminer,
+  })
+  assert.deepEqual(calls, [
+    ['handleChangeDest'],
+    ['sendToEvt', 'storage-pit-1', constants.ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true }],
+  ])
+})
+
+test('villager resource orders in the same job do not force an early delivery', () => {
+  const oldTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 2,
+    isDestroyed: false,
+    j: 2,
+    label: 'tree-1',
+    type: 'Tree',
+  }
+  const newTree = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 7,
+    isDestroyed: false,
+    j: 7,
+    label: 'tree-2',
+    type: 'Tree',
+  }
+  const calls = []
+  const { UnitCommands } = loadModule('app/classes/unit/UnitCommands.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      getActionCondition: (_unit, target, action) => target === newTree && action === constants.ACTION_TYPES.chopwood,
+      getAutonomyJobForWork: work => (work === constants.WORK_TYPES.woodcutter ? 'wood' : null),
+      getClosestInstance: () => null,
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      setVillagerAutonomy: (unit, job) => {
+        unit.autonomousJob = job
+      },
+    },
+    '../../lib/resources/resourceDelivery': {
+      findResourceDeliveryTarget: () => {
+        throw new Error('delivery target should not be requested')
+      },
+      unitHasDeliverableResources: () => true,
+      unitHasDeliverableResourcesForBuilding: () => true,
+    },
+    '../../lib/lang': { t: value => value },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    allAssets: null,
+    autonomousJob: 'wood',
+    buildQueue: [],
+    context: { menu: { updateInfo: () => {} } },
+    dest: oldTree,
+    inventory: { resources: { wood: 4 } },
+    isDead: false,
+    owner: { isPlayed: false, selectedUnit: null },
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    sendToEvt: (target, action) => calls.push(['sendToEvt', target.label, action]),
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.woodcutter,
+  }
+
+  new UnitCommands(unit).sendToTree(newTree, true)
+
+  assert.equal(unit.resourceDeliveryState, undefined)
+  assert.equal(unit.work, constants.WORK_TYPES.woodcutter)
+  assert.equal(unit.autonomousJob, 'wood')
+  assert.deepEqual(calls, [['sendToEvt', 'tree-2', constants.ACTION_TYPES.chopwood]])
 })
 
 test('farm orders warn when wheat is not mature yet', () => {

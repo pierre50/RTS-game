@@ -11,9 +11,16 @@
       "stone": 15
     },
     "sounds": {
-      "create": "house-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "Barracks": {
@@ -25,11 +32,20 @@
       "wood": 190,
       "stone": 75
     },
-    "units": ["Fantassin"],
+    "units": [
+      "Fantassin"
+    ],
     "sounds": {
-      "create": "barracks-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "Granary": {
@@ -41,12 +57,28 @@
       "wood": 180,
       "stone": 50
     },
-    "accept": ["berry", "wheat", "meat"],
-    "technologies": ["ResearchWatchTower", "ResearchSmallWall", "UpgradeMediumWall", "UpgradeFortification"],
+    "accept": [
+      "berry",
+      "wheat",
+      "meat"
+    ],
+    "technologies": [
+      "ResearchWatchTower",
+      "ResearchSmallWall",
+      "UpgradeMediumWall",
+      "UpgradeFortification"
+    ],
     "sounds": {
-      "create": "granary-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "StoragePit": {
@@ -58,7 +90,13 @@
       "wood": 180,
       "stone": 80
     },
-    "accept": ["wood", "stone", "gold", "copper", "iron"],
+    "accept": [
+      "wood",
+      "stone",
+      "gold",
+      "copper",
+      "iron"
+    ],
     "technologies": [
       "Toolworking",
       "Metalworking",
@@ -77,9 +115,16 @@
       "TowerShield"
     ],
     "sounds": {
-      "create": "storage-pit-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "ArcheryRange": {
@@ -92,12 +137,21 @@
       "stone": 65
     },
     "conditions": [],
-    "units": ["Bowman"],
+    "units": [
+      "Bowman"
+    ],
     "technologies": [],
     "sounds": {
-      "create": "archery-range-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "Stable": {
@@ -116,12 +170,22 @@
         "value": "HorseTaming"
       }
     ],
-    "units": ["Fantassin", "Bowman"],
+    "units": [
+      "Fantassin",
+      "Bowman"
+    ],
     "technologies": [],
     "sounds": {
-      "create": "horse-4",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     },
     "mountingTime": 16
   },
@@ -147,7 +211,9 @@
     "constructionTime": 120,
     "range": 6,
     "projectile": "Arrow",
-    "equipment": ["watch_tower_arrow"],
+    "equipment": [
+      "watch_tower_arrow"
+    ],
     "rateOfFire": 1.9,
     "cost": {
       "wood": 60,
@@ -166,9 +232,16 @@
       }
     ],
     "sounds": {
-      "create": "tower-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "SmallWall": {
@@ -192,9 +265,16 @@
       }
     ],
     "sounds": {
-      "create": "wall-fortification-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "Trap": {
@@ -250,9 +330,16 @@
       "Coinage"
     ],
     "sounds": {
-      "create": "market-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "Temple": {
@@ -265,12 +352,24 @@
       "stone": 150,
       "gold": 75
     },
-    "units": ["Priest"],
-    "technologies": ["Astrology", "Monotheism"],
+    "units": [
+      "Priest"
+    ],
+    "technologies": [
+      "Astrology",
+      "Monotheism"
+    ],
     "sounds": {
-      "create": "temple-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "TownCenter": {
@@ -283,12 +382,25 @@
       "wood": 350,
       "stone": 220
     },
-    "units": ["Villager"],
-    "technologies": ["ToolAge", "BronzeAge", "IronAge"],
+    "units": [
+      "Villager"
+    ],
+    "technologies": [
+      "ToolAge",
+      "BronzeAge",
+      "IronAge"
+    ],
     "sounds": {
-      "create": "town-center-completed-selected",
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "FireCamp": {
@@ -300,8 +412,16 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "burning": ["building-burning", "building-burning-2", "building-burning-3"],
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "burning": [
+        "building-burning",
+        "building-burning-2",
+        "building-burning-3"
+      ],
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampTotemPlain": {
@@ -311,7 +431,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampTotemHorns": {
@@ -321,7 +445,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampTotemSkull": {
@@ -331,7 +459,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampFencePost": {
@@ -341,7 +473,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampBoneSmall": {
@@ -351,7 +487,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampRockPile": {
@@ -361,7 +501,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampSkull": {
@@ -371,7 +515,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampAnimalBones": {
@@ -381,7 +529,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampMeatRack": {
@@ -391,7 +543,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampDryingRack": {
@@ -401,7 +557,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampBucket": {
@@ -411,7 +571,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampCrate": {
@@ -421,7 +585,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampJarSmall": {
@@ -431,7 +599,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   },
   "CampJarLarge": {
@@ -441,7 +613,11 @@
     "constructionTime": 0,
     "cost": {},
     "sounds": {
-      "collapse": ["building-destroyed", "building-destroyed-2", "building-destroyed-3"]
+      "collapse": [
+        "building-destroyed",
+        "building-destroyed-2",
+        "building-destroyed-3"
+      ]
     }
   }
 }

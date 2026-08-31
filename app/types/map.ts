@@ -83,6 +83,7 @@ export interface RuntimeMap {
   revealEverything: boolean
   revealTerrain: boolean
   showResources?: boolean
+  waterOverlayPaused?: boolean
   startingAge?: number
   allTechnologies?: boolean
   resourceDensity?: string

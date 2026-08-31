@@ -8,7 +8,6 @@ import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
-  canKeepNpcHere,
   startFollowingHero,
   releaseIfStillLooking,
   playNpcOrderSound,
@@ -187,13 +186,15 @@ export class NpcOrdersManager {
 
     this.updateDebugControls(soloTarget)
 
+    const hasFollower = npcs.some(npc => npc.followingHero === true)
+    const hasNonFollower = npcs.some(npc => npc.followingHero !== true)
     const stayButton = this.buttons.get('stay')
     if (stayButton) {
-      stayButton.disabled = !npcs.some(canKeepNpcHere)
+      stayButton.disabled = !hasFollower
     }
     const followButton = this.buttons.get('follow')
     if (followButton) {
-      followButton.disabled = soloTarget?.followingHero === true
+      followButton.disabled = !hasNonFollower
     }
     for (const button of this.buttons.values()) button.hidden = false
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)

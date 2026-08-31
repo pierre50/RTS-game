@@ -11,6 +11,5 @@ export interface UnitSounds {
   attack?: CommandSound
   hit?: CommandSound
   die?: CommandSound
-  create?: CommandSound
   fall?: CommandSound
 }

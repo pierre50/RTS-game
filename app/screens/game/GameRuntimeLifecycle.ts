@@ -2,6 +2,7 @@ import { sound } from '@pixi/sound'
 import { t } from '../../lib/lang'
 import { debounce, isPlayedHeroDefeated } from '../../lib'
 import { clearAllCombatFeedback } from '../../lib/combat/combatFeedback'
+import { isGameplaySoundSuppressed, setGameplaySoundSuppressed } from '../../lib/audio/sound'
 import { stopAllUiSounds } from '../../lib/audio/uiSound'
 import { getCameraZoom, getControlActionForKeyboardEvent } from '../../lib/audio/settings'
 import { collectPausableInstances } from './pausableRuntime'
@@ -32,6 +33,7 @@ export type GameRuntimeLifecycleHost = Container & {
   _onVisibilityChange?: () => void
   _pausedByOrientation: boolean
   _pausedByVisibility: boolean
+  _soundSuppressedBeforePause?: boolean | null
   _wakeLock?: WakeLockSentinel | null
   applyZoom(): void
   context: LifecycleContext
@@ -173,8 +175,23 @@ export function toggleGamePause(
   } else {
     document.getElementById('pause')?.remove()
   }
+  map.waterOverlayPaused = pause
+  togglePauseAudio(game, pause)
   for (const instance of collectPausableInstances(map, players)) {
     pause ? instance.pause?.() : instance.resume?.()
   }
   game.context.paused = pause
+}
+
+function togglePauseAudio(game: GameRuntimeLifecycleHost, pause: boolean): void {
+  if (pause) {
+    if (!game.context.paused) game._soundSuppressedBeforePause = isGameplaySoundSuppressed()
+    setGameplaySoundSuppressed(true)
+    sound.pauseAll?.()
+    return
+  }
+
+  setGameplaySoundSuppressed(game._soundSuppressedBeforePause ?? false)
+  game._soundSuppressedBeforePause = null
+  sound.resumeAll?.()
 }

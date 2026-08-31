@@ -5,7 +5,6 @@ import {
   LABEL_TYPES,
   MOUNTED_HORSE_SPEED_BONUS,
   SHEET_TYPES,
-  SOUND_CUES,
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../constants'
@@ -19,7 +18,6 @@ import {
   getGroundReliefLevel,
   getEntityMapSpace,
   getEntityCell,
-  playAudibleSoundCue,
   throttle,
   updateInstanceVisibility,
 } from '../../lib'
@@ -115,6 +113,7 @@ export function initializeUnitRuntimeState(unit: UnitRuntimeHost): void {
   unit.previousDest = null
   unit.previousWork = null
   unit.blockedGatherApproach = null
+  unit.resourceDeliveryState = null
   unit.buildQueue = []
   unit.path = []
   unit.degree = map.randomRange(1, 360)
@@ -208,17 +207,6 @@ export function loadConfiguredUnitSpritesheets(unit: UnitRuntimeHost): void {
   if (!assets) return
   for (const [key, value] of Object.entries(assets)) {
     Object.assign(unit, { [key]: getCachedUnitSpritesheet(value) })
-  }
-}
-
-export function playUnitCreateSound(unit: UnitRuntimeHost, options: UnitSpawnOptions): void {
-  if (
-    !options.suppressCreateSound &&
-    unit.owner.isPlayed &&
-    unit.context.map.ready &&
-    unit.context.controls.instanceIsAudible?.(unit)
-  ) {
-    playAudibleSoundCue(unit, (unit.sounds && unit.sounds.create) || SOUND_CUES.unit.fallbackCreate, { profile: 'voice' })
   }
 }
 

@@ -1,9 +1,6 @@
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import {
-  sendUnitToRest,
-  wakeUnit,
-} from './UnitRestLifecycle'
+import { getRestReturnTask, sendUnitToRest, wakeUnit } from './UnitRestLifecycle'
 import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
 import {
   canUseUnitRest,
@@ -59,7 +56,10 @@ export class UnitRestSystem {
     for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
     if (sleepTime) this.updateRestAlerts(restUnits)
     if (sleepTime) this.sendUnitsToSleep(restUnits)
-    if (wakeTime && hasShelterState) this.wakeRestingUnits(restUnits)
+    if (wakeTime && hasShelterState) {
+      for (const unit of restUnits) this.updateRestingUnit(unit)
+      this.wakeRestingUnits(restUnits)
+    }
     this.updateSleepingOutsideVisuals(restUnits)
   }
 
@@ -198,13 +198,15 @@ export class UnitRestSystem {
   wakeRestingUnits(units = this.collectUnits().restUnits): void {
     for (const unit of units) {
       if (!unit.shelterState) continue
+      if (unit.shelterState.status === 'wakingUp') continue
       const routeToInteriorExit = shouldRouteUnitToInteriorExit(this.context, unit)
+      const returnTask = routeToInteriorExit ? getRestReturnTask(unit) : null
       wakeUnit(
         unit,
         routeToInteriorExit
           ? {
               mode: 'order',
-              onComplete: () => this.context.routeInteriorUnitToExit?.(unit),
+              onComplete: () => this.context.routeInteriorUnitToExit?.(unit, returnTask),
             }
           : undefined
       )

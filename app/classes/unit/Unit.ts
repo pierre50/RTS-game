@@ -15,7 +15,6 @@ import {
   initializeUnitServices,
   initializeUnitWorkRole,
   loadConfiguredUnitSpritesheets,
-  playUnitCreateSound,
   registerInitialUnitMapPresence,
   scheduleInitialUnitVisibilityUpdate,
   setupUnitCommandDispatch,
@@ -56,6 +55,7 @@ import type {
   UnitCommandOptions,
   UnitCreationExtra,
   UnitEntity,
+  UnitResourceDeliveryReturnTask,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { GameContextLike } from '../../types/context'
@@ -80,7 +80,6 @@ export class Unit extends Instance implements UnitEntity {
     registerInitialUnitMapPresence(this)
     initializeUnitWorkRole(this)
     loadConfiguredUnitSpritesheets(this)
-    playUnitCreateSound(this, options)
     setupUnitInterface(this)
     setupUnitPrimarySprite(this, spawnCell)
     setupUnitCommandDispatch(this)
@@ -424,6 +423,13 @@ export class Unit extends Instance implements UnitEntity {
     return this.unitCommands.sendToBuilding(target, preserveBuildQueue)
   }
 
+  sendToDelivery(
+    target: BuildingEntity | null = null,
+    returnTaskOverride: UnitResourceDeliveryReturnTask | null = null
+  ) {
+    return this.unitCommands.sendToDelivery(target, returnTaskOverride)
+  }
+
   sendToBuildingQueue(targets: BuildingEntity[]) {
     return this.unitCommands.sendToBuildingQueue(targets)
   }
@@ -450,6 +456,14 @@ export class Unit extends Instance implements UnitEntity {
 
   sendToGold(target: RuntimeEntity, immediate = false) {
     return this.unitCommands.sendToGold(target, immediate)
+  }
+
+  sendToCopper(target: RuntimeEntity, immediate = false) {
+    return this.unitCommands.sendToCopper(target, immediate)
+  }
+
+  sendToIron(target: RuntimeEntity, immediate = false) {
+    return this.unitCommands.sendToIron(target, immediate)
   }
 
   setDefaultInterface(element: HTMLElement, data: UnitConfig, options?: EntityInfoRenderOptions) {

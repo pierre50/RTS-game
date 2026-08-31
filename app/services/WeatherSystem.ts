@@ -272,7 +272,10 @@ export class WeatherSystem {
   }
 
   update(elapsedMs: number): void {
-    if (this.context.paused || this.context.defeat) return
+    if (this.context.paused || this.context.defeat) {
+      this.updateAmbientSound(0)
+      return
+    }
     const safeElapsedMs = Math.min(Math.max(elapsedMs, 0), 250)
     const elapsedSeconds = safeElapsedMs / 1000
     this.elapsedMs += safeElapsedMs
@@ -311,7 +314,12 @@ export class WeatherSystem {
   }
 
   updateAmbientSound(elapsedSeconds: number): void {
-    if (isGameplaySoundSuppressed() || !this.colorGrading.shouldRender()) {
+    if (
+      this.context.paused ||
+      this.context.defeat ||
+      isGameplaySoundSuppressed() ||
+      !this.colorGrading.shouldRender()
+    ) {
       this.nightVolume = 0
       this.oceanVolume = 0
       if (this.rainLoopLight) this.rainLoopLight.volume = 0
