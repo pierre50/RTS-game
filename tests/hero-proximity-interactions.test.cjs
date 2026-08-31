@@ -9,6 +9,7 @@ function loadHeroProximityInteractions() {
         ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: { chest: 'Chest', house: 'House', stable: 'Stable', townCenter: 'TownCenter', trap: 'Trap' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
+        UNIT_TYPES: { villager: 'Villager' },
       },
       '../chief': {
         heroCanCommand: hero => Boolean(hero?.isChief),
@@ -33,9 +34,16 @@ function loadHeroProximityInteractions() {
       '../npc/npcChatter': {
         pickForeignNpcChatterLine: () => 'foreign chatter',
         pickNpcChatterLine: () => 'friendly chatter',
+        pickNpcRestingChatterLine: () => 'resting chatter',
       },
       '../npc/npcInteraction': {
         isTalkableNpc: (_hero, target) => target?.talkable === true,
+      },
+      '../units/villagerSchedule': {
+        shouldVillagerRestBeforeBed: unit => {
+          const hour = unit?.context?.dayNight?.state?.hour ?? 12
+          return hour >= 18 && hour < 22
+        },
       },
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
@@ -366,6 +374,32 @@ test('hero proximity interaction disables npc orders when the hero cannot comman
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
     npcOptions: { chatterLine: 'friendly chatter', ordersEnabled: false },
+    target: npc,
+  })
+})
+
+test('hero proximity interaction uses rest chatter for own villagers resting before bed', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const owner = { isPlayed: true }
+  const npc = {
+    context: { dayNight: { state: { hour: 19 } } },
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    owner,
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: null,
+    talkable: true,
+    type: 'Villager',
+    x: 100,
+    y: 90,
+  }
+  const hero = makeHero({ isChief: false, owner, y: 100 })
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: npc }), {
+    action: 'communicate',
+    labelKey: 'heroInteractionCommunicate',
+    npcOptions: { chatterLine: 'resting chatter', ordersEnabled: false },
     target: npc,
   })
 })

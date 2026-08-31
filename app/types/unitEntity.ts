@@ -12,9 +12,17 @@ import type { RuntimeEntity } from './entityRuntime'
 import type { HeroCivilTool, HeroContextAction } from './heroTools'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitControlMode } from './unitTypes'
 
-export type VillagerAutonomyJob = 'food' | 'wood' | 'stone' | 'gold' | 'construction' | 'horseCapture'
+export type VillagerAutonomyJob =
+  | 'food'
+  | 'wood'
+  | 'stone'
+  | 'gold'
+  | 'copper'
+  | 'iron'
+  | 'construction'
+  | 'horseCapture'
 type UnitRestLocation = 'shelter' | 'outside'
-type UnitRestStatus = 'windingDown' | 'movingToRest' | 'inside' | 'outside' | 'wakingUp'
+type UnitRestStatus = 'delivering' | 'windingDown' | 'movingToRest' | 'inside' | 'outside' | 'wakingUp'
 export type UnitRestReason = 'sleep'
 type UnitSleepVisualState = 'sleeping' | 'waking'
 export type UnitRestState = {
@@ -99,6 +107,7 @@ type UnitInteriorExitState = {
 }
 
 type UnitSpacePortalState = {
+  onTransferred?: (() => void) | null
   portalId: string
   sourceCell?: RuntimeCell | null
   sourceSpaceId: string
@@ -176,6 +185,7 @@ export interface UnitEntity extends EnergyEntity {
   banditCampAnchor?: GridPosition | null
   banditCampPatrolTaskId?: number | null
   shelterState?: UnitRestState | null
+  suspendedRestState?: UnitRestState | null
   sleepVisualState?: UnitSleepVisualState | null
   visualAnimationToken?: number
   restWakeLockUntilMs?: number | null
@@ -318,11 +328,10 @@ export interface UnitEntity extends EnergyEntity {
   sendToFarm(target: RuntimeEntity, immediate?: boolean): void
   sendToTree?: (target: RuntimeEntity, immediate?: boolean) => void
   sendToBerrybush?: (target: RuntimeEntity, immediate?: boolean) => void
-  sendToStone?: (target: RuntimeEntity, immediate?: boolean) => void
-  sendToGold?: (target: RuntimeEntity, immediate?: boolean) => void
-  sendToCopper?: (target: RuntimeEntity, immediate?: boolean) => void
-  sendToIron?: (target: RuntimeEntity, immediate?: boolean) => void
-  sendToMineResource?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToStone?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToGold?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToCopper?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
+  sendToIron?: (target: RuntimeEntity, immediate?: boolean) => boolean | void
   affectNewDest?: () => void
   isUnitAtDest?: (action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined) => boolean
   destHasMoved?: () => boolean

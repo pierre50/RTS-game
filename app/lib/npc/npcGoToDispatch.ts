@@ -58,19 +58,32 @@ function getNightWorkFallbackCell(npc: UnitEntity, cell: RuntimeCell, target: Ru
   )
 }
 
-function refuseNightWorkIfNeeded(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity): boolean {
+type NightWorkRefusalOptions = {
+  moveToFallback?: boolean
+}
+
+function refuseNightWorkIfNeeded(
+  npc: UnitEntity,
+  cell: RuntimeCell,
+  target: RuntimeEntity,
+  options: NightWorkRefusalOptions = {}
+): boolean {
   if (!isNightWorkBlockedForVillager(npc)) return false
   resetNpcDirectives(npc)
   npc.previousDest = null
-  const moveThenRefuse = () => {
+  const refuse = () => {
     delayUnitRestAfterActivity(npc)
-    npc.sendTo?.(getNightWorkFallbackCell(npc, cell, target))
+    if (options.moveToFallback !== false) npc.sendTo?.(getNightWorkFallbackCell(npc, cell, target))
     showNightWorkRefusal(npc)
   }
-  if (npc.shelterState?.reason === 'sleep' && npc.context?.unitRest?.wakeSleepingUnitForOrder(npc, moveThenRefuse)) {
+  if (options.moveToFallback === false) {
+    refuse()
     return true
   }
-  moveThenRefuse()
+  if (npc.shelterState?.reason === 'sleep' && npc.context?.unitRest?.wakeSleepingUnitForOrder(npc, refuse)) {
+    return true
+  }
+  refuse()
   return true
 }
 
@@ -84,21 +97,6 @@ function resetNpcDirectives(target: UnitEntity): void {
 
 export function clearNpcCommunicationFocus(target: UnitEntity): void {
   resetNpcDirectives(target)
-}
-
-export function canKeepNpcHere(target: UnitEntity): boolean {
-  return Boolean(
-    target.followingHero ||
-      target.autonomousJob ||
-      target.pendingOrder ||
-      target.previousDest ||
-      target.dest ||
-      target.realDest ||
-      (target.path?.length ?? 0) > 0 ||
-      target.hasPath?.() ||
-      (target.action && target.action !== ACTION_TYPES.attack) ||
-      !target.inactif
-  )
 }
 
 export function keepNpcHere(target: UnitEntity): void {
@@ -183,7 +181,7 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     const kind = target.category || target.type
     const resourceSend = kind ? RESOURCE_SEND_TO[kind] : undefined
     if (resourceSend) {
-      if (refuseNightWorkIfNeeded(npc, cell, target)) return false
+      if (refuseNightWorkIfNeeded(npc, cell, target, { moveToFallback: false })) return false
       resourceSend(npc, target)
       return true
     }

@@ -106,6 +106,60 @@ export function pickNpcGreetingLine(name: string): string {
   return pickRandomItem(lines).replace('{name}', name)
 }
 
+type NpcGender = 'male' | 'female'
+type GenderedNpcLines = {
+  shared: string[]
+  male: string[]
+  female: string[]
+}
+
+const NPC_RESTING_CHATTER_LINES: Record<string, GenderedNpcLines> = {
+  fr: {
+    shared: [
+      'Belle journée, chef. Le feu m’appelle plus fort que les champs.',
+      'Les outils dorment déjà. Moi, je les rejoins doucement.',
+      'Le jour a donné ce qu’il pouvait. Ce soir, je garde mes forces.',
+      'Encore un peu de calme avant la paillasse, chef.',
+    ],
+    male: [
+      'Mes épaules ont bien travaillé aujourd’hui. Je reste près des miens ce soir.',
+      'Je souffle un moment, chef. Demain, je reprends avant l’aube.',
+    ],
+    female: [
+      'Je laisse mes mains se reposer ce soir. Demain, elles sauront quoi faire.',
+      'Je reste au chaud près de la maison, chef. La nuit arrive doucement.',
+    ],
+  },
+  en: {
+    shared: [
+      'Good day, chief. The hearth is calling louder than the fields.',
+      'The tools are resting already. I am almost ready to join them.',
+      'The day gave what it could. Tonight, I keep my strength close.',
+      'A little quiet before the straw bed, chief.',
+    ],
+    male: [
+      'My shoulders carried enough today. I am staying close to my people tonight.',
+      'Let me breathe a moment, chief. I will be ready before dawn.',
+    ],
+    female: [
+      'I am letting my hands rest tonight. Tomorrow, they will know their work.',
+      'I will stay warm near home, chief. Night is settling in softly.',
+    ],
+  },
+}
+
+function getNpcGender(unit?: UnitEntity | null): NpcGender | null {
+  const gender = unit?.gender ?? unit?.appearanceVariants?.gender
+  return gender === 'male' || gender === 'female' ? gender : null
+}
+
+export function pickNpcRestingChatterLine(unit?: UnitEntity | null): string {
+  const linesByGender = NPC_RESTING_CHATTER_LINES[getLang()] ?? NPC_RESTING_CHATTER_LINES.fr
+  const gender = getNpcGender(unit)
+  const lines = gender ? [...linesByGender.shared, ...linesByGender[gender]] : linesByGender.shared
+  return pickRandomItem(lines)
+}
+
 // Shown when the hero talks to one of their own sleeping units — a short in-character half-asleep
 // mumble, addressed to the chief since this is a real (if groggy) wake-up, not just a peek.
 const NPC_SLEEPING_CHATTER_LINES: Record<string, string[]> = {

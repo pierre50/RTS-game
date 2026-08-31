@@ -116,6 +116,13 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === '../../lib/units/unitEnergy') return { spendOrWaitForEnergy: () => true }
     if (request === '../../lib/units/unitWorkAppearance') return { applyUnitWorkAssets: () => {} }
+    if (request === '../../lib/resources/resourceDelivery') {
+      return {
+        carriedResourcesAmount: () => 0,
+        findBestResourceDeliveryTarget: () => null,
+        unitHasDeliverableResources: () => false,
+      }
+    }
     if (request === '../../lib/entities/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
     if (request === '../../lib/buildings/buildingOccupancy') return { getBuildingShelterCapacity: () => 0 }
     if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
@@ -127,6 +134,12 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === './UnitResourceActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
+    }
+    if (request === './UnitGatherVisualDebug') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitGatherVisualDebug.ts'))
+    }
+    if (request === './UnitBuildVisuals') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitBuildVisuals.ts'))
     }
     if (request === './UnitResourceGathering') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceGathering.ts'))

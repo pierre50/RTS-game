@@ -862,9 +862,11 @@
   align-items: center;
   justify-content: center;
   gap: var(--ui-gap-5);
-  min-width: 64px;
+  width: 92px;
+  min-width: 92px;
   min-height: var(--ui-slot-size);
   padding: 4px 10px;
+  overflow: hidden;
   text-align: center;
 }
 
@@ -874,7 +876,12 @@
 }
 
 .inventory-slot-label {
-  white-space: nowrap;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
 }
 
 .inventory-slot.active {
@@ -898,6 +905,12 @@
   color: var(--text-color-inverse);
   font-weight: bold;
   text-shadow: var(--text-shadow-dark-ui);
+}
+
+.inventory-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
 }
 
 .inventory-equipped-grid,

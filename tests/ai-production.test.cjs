@@ -17,6 +17,7 @@ function loadAIStrategy(options = {}) {
     BUILDING_TYPES: {
       archeryRange: 'ArcheryRange',
       barracks: 'Barracks',
+      chest: 'Chest',
       farm: 'Farm',
       granary: 'Granary',
       house: 'House',
@@ -26,11 +27,16 @@ function loadAIStrategy(options = {}) {
       townCenter: 'TownCenter',
       watchTower: 'WatchTower',
     },
+    RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
     UNIT_TYPES: {
       chief: 'Chief',
       villager: 'Villager',
     },
     WORK_TYPES: {},
+  }
+  const mocks = {
+    '../constants': constants,
+    '../../constants': constants,
   }
   const module = { exports: {} }
   function loadTsFile(tsFilename) {
@@ -199,6 +205,84 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
 
   assert.equal(actions, 1)
   assert.deepEqual(bought, [[12, 14, 'Farm']])
+})
+
+test('ai building strategy can spend resources stored in chests', () => {
+  const AIStrategy = loadAIStrategy({
+    lib: {
+      getPositionInGridAroundInstance: () => ({ i: 12, j: 14 }),
+    },
+  })
+  const bought = []
+  const ai = {
+    age: 0,
+    config: { buildings: { Farm: { cost: { wood: 75 }, size: 4 } } },
+    food: 0,
+    gold: 0,
+    label: 'ai-1',
+    phase: 'economy',
+    population: 4,
+    populationMax: 20,
+    stone: 0,
+    technologies: ['Farming'],
+    units: [{ type: 'Chief', hitPoints: 10 }],
+    wood: 0,
+    buildings: [],
+    buyBuilding: (i, j, type) => {
+      bought.push([i, j, type])
+      return true
+    },
+    hasNotReachBuildingLimit: () => true,
+  }
+  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wood: 80 } } })
+  const strategy = new AIStrategy(ai)
+
+  const actions = strategy.handleBuildingActions({
+    map: { grid: [] },
+    otherPlayers: [],
+    villagers: [],
+    maxVillagers: 16,
+    towncenters: [{ i: 8, j: 8 }],
+    infantry: [],
+    maxInfantry: 0,
+    barracks: [],
+    infantryUnit: null,
+    archers: [],
+    maxArcher: 0,
+    archeryRanges: [],
+    archerUnit: null,
+    cavalry: [],
+    maxCavalry: 0,
+    stables: [],
+    houses: [],
+    farms: [],
+    granarys: [{ i: 9, j: 9, isBuilt: true }],
+    storagepits: [],
+    markets: [{}],
+    watchTowers: [],
+    notBuiltHouses: [],
+  })
+
+  assert.equal(actions, 1)
+  assert.deepEqual(bought, [[12, 14, 'Farm']])
+})
+
+test('ai reserve checks can read resources stored in chests', () => {
+  const AIStrategy = loadAIStrategy()
+  const ai = {
+    age: 0,
+    config: { buildings: {}, units: {} },
+    label: 'ai-1',
+    population: 0,
+    units: [],
+    wood: 0,
+    buildings: [],
+  }
+  ai.buildings.push({ owner: ai, type: 'Chest', inventory: { resources: { wood: 80 } } })
+  const strategy = new AIStrategy(ai)
+
+  assert.equal(strategy.canSpendWithReserve({ wood: 75 }, { wood: 5 }), true)
+  assert.equal(strategy.canSpendWithReserve({ wood: 76 }, { wood: 5 }), false)
 })
 
 test('ai building strategy adds passage clearance to construction searches', () => {

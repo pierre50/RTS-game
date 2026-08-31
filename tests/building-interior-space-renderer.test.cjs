@@ -116,7 +116,10 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
         drawInteractionCellMarker: () => {},
         interactionCellPulse: () => 1,
       },
-      '../lib/entities/overheadIndicator': { setUnitOverheadIndicator: () => {} },
+      '../lib/entities/overheadIndicator': {
+        clearUnitOverheadIndicator: () => {},
+        setUnitOverheadIndicator: () => {},
+      },
       './rest/UnitSleepVisuals': {
         setDetachedShadowsVisible: () => {},
         setSleepingOutsideFinalVisual: () => {},

@@ -44,6 +44,10 @@ function isOwnedByPlayer(building: BuildingEntity, player: PlayerLike): boolean 
   return building.owner === player || Boolean(building.owner?.label && building.owner.label === player.label)
 }
 
+function canPayActionCost(player: PlayerLike, cost: ResourceAmount | null | undefined): boolean {
+  return !cost || canAfford(player, cost)
+}
+
 export class ActionSpecFactory {
   menu: MenuHost
 
@@ -129,7 +133,7 @@ export class ActionSpecFactory {
     return {
       id: type,
       tooltip: () => this.getUnitTooltip(type, unit, building),
-      disabled: () => this.isChiefTrainingBlocked(type, building),
+      disabled: () => this.isChiefTrainingBlocked(type, building) || !canPayActionCost(player, unit.cost),
       hide: () => {
         if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
         return (unit.conditions || []).some(condition => !isValidCondition(condition, player))
@@ -142,16 +146,13 @@ export class ActionSpecFactory {
         }
         // Trainee units aren't bought directly: send a villager to the building instead.
         if (isTraineeTrainingType(selection, type)) return
-        if (canAfford(player, unit.cost)) {
-          if (player.population >= player.populationMax) {
-            menu.showMessage(t('needHouses'), 'warning')
-            return
-          }
-          menu.toggleQueuedActionCancel(type, true)
-          selection.buyUnit?.(type)
-        } else {
-          menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
+        if (!canPayActionCost(player, unit.cost)) return
+        if (player.population >= player.populationMax) {
+          menu.showMessage(t('needHouses'), 'warning')
+          return
         }
+        menu.toggleQueuedActionCancel(type, true)
+        selection.buyUnit?.(type)
       },
       onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
         if (!isBuildingEntity(selection)) return
@@ -192,16 +193,13 @@ export class ActionSpecFactory {
               menu.showMessage(t('requiresChief'), 'warning')
               return
             }
-            if (canAfford(player, unit.cost)) {
-              if (player.population >= player.populationMax) {
-                menu.showMessage(t('needHouses'), 'warning')
-                return
-              }
-              menu.toggleQueuedActionCancel(type, true)
-              unitSelection.buyUnit?.(type)
-            } else {
-              menu.showMessage(this.getMessage(unit.cost ?? {}), 'warning')
+            if (!canPayActionCost(player, unit.cost)) return
+            if (player.population >= player.populationMax) {
+              menu.showMessage(t('needHouses'), 'warning')
+              return
             }
+            menu.toggleQueuedActionCancel(type, true)
+            unitSelection.buyUnit?.(type)
           })
         }
         const queue = unitSelection.queue?.filter(q => q === type).length ?? 0
@@ -266,7 +264,8 @@ export class ActionSpecFactory {
       id: type,
       tooltip: () => this.getBuildingTooltip(type, owner, config),
       hide: () => !owner.isBuildingEligible?.(type),
-      disabled: () => this.isChiefCommandBlocked() || isBuildingLimitReached(owner, type),
+      disabled: () =>
+        this.isChiefCommandBlocked() || isBuildingLimitReached(owner, type) || !canPayActionCost(owner, config.cost),
       onClick: () => {
         controls.removeMouseBuilding()
         if (this.isChiefCommandBlocked()) {
@@ -277,16 +276,13 @@ export class ActionSpecFactory {
           menu.showMessage(t('buildingLimitReached'), 'warning')
           return
         }
-        if (canAfford(owner, config.cost)) {
-          const assets =
-            type === 'Farm'
-              ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
-              : getBuildingAsset(type, owner, Assets)
-          const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
-          controls.setMouseBuilding?.(placeableBuilding)
-        } else {
-          menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
-        }
+        if (!canPayActionCost(owner, config.cost)) return
+        const assets =
+          type === 'Farm'
+            ? { images: { final: { sheet: 'resources/wheat', frame: 0 } } }
+            : getBuildingAsset(type, owner, Assets)
+        const placeableBuilding: PlaceableBuildingConfig = { ...config, ...assets, type }
+        controls.setMouseBuilding?.(placeableBuilding)
       },
     }
   }
@@ -309,6 +305,7 @@ export class ActionSpecFactory {
       disabled: () =>
         isAcquired() ||
         this.isChiefCommandBlocked() ||
+        !canPayActionCost(player, config.cost) ||
         (config.conditions || []).some(condition => !isValidCondition(condition, player)),
       onClick: () => {
         controls.removeMouseBuilding()
@@ -320,11 +317,8 @@ export class ActionSpecFactory {
           menu.showMessage(t('technologyUnavailable'), 'warning')
           return
         }
-        if (canAfford(player, config.cost)) {
-          player.buyTechnology?.(type)
-        } else {
-          menu.showMessage(this.getMessage(config.cost ?? {}), 'warning')
-        }
+        if (!canPayActionCost(player, config.cost)) return
+        player.buyTechnology?.(type)
       },
     }
   }

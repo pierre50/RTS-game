@@ -1,5 +1,7 @@
-import { RESOURCE_TYPES, SHEET_TYPES } from '../constants'
+import { RESOURCE_TYPES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getGaiaAnimals, getInstanceZIndex, isWheatMature, updateInstanceVisibility } from '../lib'
+import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
+import { resumeStrictVillagerAutonomy } from '../lib/units/villagerTaskRecovery'
 import type { GameContextLike } from '../types/context'
 import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
@@ -103,6 +105,18 @@ function respawnDestroyedAnimal(context: GameContextLike, slot: AnimalSlot, slot
   return true
 }
 
+function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): void {
+  if (isVillagerSleepTime(context)) return
+  for (const player of context.players ?? []) {
+    for (const unit of player.units ?? []) {
+      if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) continue
+      if (!unit.autonomousJob || unit.dest || unit.action || unit.path?.length) continue
+      if (unit.shelterState || unit.resourceDeliveryState || unit.lookingAtHero || unit.followingHero) continue
+      resumeStrictVillagerAutonomy(unit, unit.autonomousJob, { exploreWhenNoTarget: false })
+    }
+  }
+}
+
 export class NaturalRegrowthSystem implements DailyWorldEventHandler {
   context: GameContextLike
 
@@ -150,6 +164,7 @@ export class NaturalRegrowthSystem implements DailyWorldEventHandler {
     }
 
     if (resourcesChanged && menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
+    if (resourcesChanged || animalsChanged) resumeIdleAutonomousVillagersAfterRegrowth(this.context)
     if (animalsChanged) {
       if (menu.isMiniMapActive?.() !== false) {
         menu.updateResourcesMiniMap?.()

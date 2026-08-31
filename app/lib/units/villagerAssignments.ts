@@ -18,6 +18,8 @@ const RESOURCE_JOB_BY_AUTONOMY: Partial<Record<VillagerAutonomyJob, ResourceName
   wood: 'wood',
   stone: 'stone',
   gold: 'gold',
+  copper: 'copper',
+  iron: 'iron',
 }
 
 function createAssignedCounts(): Record<ResourceName, number> {

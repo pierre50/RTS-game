@@ -198,5 +198,5 @@ export class PointerInputController {
 }
 
 function isSecondaryPointerButton(evt: { button?: number; ctrlKey?: boolean }): boolean {
-  return evt.button === 2 || (evt.button === 0 && evt.ctrlKey === true)
+  return evt.button === 2
 }

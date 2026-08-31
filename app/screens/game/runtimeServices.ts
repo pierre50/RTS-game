@@ -1,18 +1,18 @@
 import type { ContainerChild } from 'pixi.js'
 import { BuildingInteriorEntryMarkerSystem } from '../../services/BuildingInteriorEntryMarkerSystem'
-import { CampPatrolSystem } from '../../services/CampPatrolSystem'
+import { CampPatrolSystem } from '../../services/patrol/CampPatrolSystem'
 import { DailyWorldEventSystem } from '../../services/DailyWorldEventSystem'
 import { DayNightSystem } from '../../services/DayNightSystem'
 import { InteriorExitMarkerSystem } from '../../services/InteriorExitMarkerSystem'
 import { HeroFollowerPatrolSystem } from '../../services/HeroFollowerPatrolSystem'
 import { IdleUnitPatrolSystem } from '../../services/IdleUnitPatrolSystem'
-import { LightSystem } from '../../services/LightSystem'
+import { LightSystem } from '../../services/lighting/LightSystem'
 import { ShadowSystem } from '../../services/ShadowSystem'
 import { TimeSkipSystem } from '../../services/TimeSkipSystem'
 import { TributeRaidSystem } from '../../services/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
-import { WeatherSystem } from '../../services/WeatherSystem'
+import { WeatherSystem } from '../../services/weather/WeatherSystem'
 import { ResourceDeliverySystem } from './GameResourceDelivery'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
@@ -20,6 +20,9 @@ import type { RuntimeMap } from '../../types/map'
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type LayerHost = { addChild(child: ContainerChild): unknown }
 type RuntimeServiceContext = Pick<GameContextLike, 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather'>
+
+const WEATHER_LAYER_Z_INDEX = 10
+const LIGHT_LAYER_Z_INDEX = 20
 
 export type RuntimeServices = {
   buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
@@ -115,8 +118,14 @@ export function createRuntimeServices(
 }
 
 export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServices): void {
-  if (services.lights) host.addChild(services.lights.layer)
-  if (services.weather) host.addChild(services.weather.layer)
+  if (services.weather) {
+    services.weather.layer.zIndex = WEATHER_LAYER_Z_INDEX
+    host.addChild(services.weather.layer)
+  }
+  if (services.lights) {
+    services.lights.layer.zIndex = LIGHT_LAYER_Z_INDEX
+    host.addChild(services.lights.layer)
+  }
 }
 
 export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {

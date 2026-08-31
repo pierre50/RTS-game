@@ -121,6 +121,15 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
     if (request === '../../services/rest/UnitSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
     if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
+    if (request === '../../classes/unit/UnitResourceDeliveryCommands' || request === '../UnitResourceDeliveryCommands') {
+      return {
+        applyWorkForAction: (unit, work, action) => {
+          calls.push(['applyWorkForAction', work, action])
+          unit.work = work
+          unit.action = action
+        },
+      }
+    }
     if (request === './UnitCommands' || request === '../UnitCommands') {
       return {
         applyWorkForAction: (unit, work, action) => {

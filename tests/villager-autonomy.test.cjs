@@ -27,6 +27,8 @@ const constants = {
     forageberry: 'forageberry',
     minestone: 'minestone',
     minegold: 'minegold',
+    minecopper: 'minecopper',
+    mineiron: 'mineiron',
     takemeat: 'takemeat',
     build: 'build',
     farm: 'farm',
@@ -45,6 +47,8 @@ const constants = {
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
     gold: 'Gold',
+    copper: 'Copper',
+    iron: 'Iron',
     stone: 'Stone',
     tree: 'Tree',
     wheat: 'Wheat',
@@ -155,11 +159,61 @@ function createVillager(owner, extra = {}) {
       this.work = constants.WORK_TYPES.goldminer
       this.action = constants.ACTION_TYPES.minegold
     },
+    sendToCopper(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.goldminer
+      this.action = constants.ACTION_TYPES.minecopper
+    },
+    sendToIron(target) {
+      this.dest = target
+      this.work = constants.WORK_TYPES.goldminer
+      this.action = constants.ACTION_TYPES.mineiron
+    },
     ...extra,
   }
   owner.units.push(villager)
   return villager
 }
+
+test('copper and iron autonomy target only the requested ore and issue the matching mining action', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const copper = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 3,
+    isDestroyed: false,
+    j: 3,
+    label: 'copper-1',
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.copper,
+  }
+  const iron = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 5,
+    isDestroyed: false,
+    j: 5,
+    label: 'iron-1',
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.iron,
+  }
+  const owner = createOwner({
+    foundedResources: {
+      [constants.RESOURCE_TYPES.copper]: new Set([copper]),
+      [constants.RESOURCE_TYPES.iron]: new Set([iron]),
+    },
+  })
+  const copperMiner = createVillager(owner)
+  const ironMiner = createVillager(owner)
+
+  assert.equal(assignVillagerAutonomy(copperMiner, 'copper'), true)
+  assert.equal(copperMiner.dest, copper)
+  assert.equal(copperMiner.action, constants.ACTION_TYPES.minecopper)
+  assert.equal(copperMiner.autonomousJob, 'copper')
+
+  assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), true)
+  assert.equal(ironMiner.dest, iron)
+  assert.equal(ironMiner.action, constants.ACTION_TYPES.mineiron)
+  assert.equal(ironMiner.autonomousJob, 'iron')
+})
 
 test('food autonomy treats wheat with an incoming farmer as occupied', () => {
   const { assignVillagerAutonomy } = loadVillagerAutonomy()
@@ -366,7 +420,26 @@ test('resource autonomy explores when the requested resource is unknown', () => 
   assert.equal(villager.autonomousJob, 'wood')
 })
 
-test('resource autonomy clears the job when no target or exploration route exists', () => {
+test('resource autonomy can keep a strict job idle without exploring when no target exists', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const owner = createOwner({ foundedResources: { [constants.RESOURCE_TYPES.gold]: new Set() } })
+  const villager = createVillager(owner, {
+    explored: false,
+    explore() {
+      this.explored = true
+      return true
+    },
+  })
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'gold'), false)
+  assert.equal(assignVillagerAutonomy(villager, 'gold', { exploreWhenNoTarget: false }), false)
+  assert.equal(villager.explored, false)
+  assert.equal(villager.autonomousJob, 'gold')
+  assert.equal(villager.dest, null)
+  assert.equal(villager.action, null)
+})
+
+test('resource autonomy keeps the job stopped when no target or exploration route exists', () => {
   const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
   const owner = createOwner({ foundedTrees: new Set() })
   const villager = createVillager(owner, {
@@ -381,7 +454,10 @@ test('resource autonomy clears the job when no target or exploration route exist
   assert.equal(hasVillagerAutonomyTarget(villager, 'wood'), false)
   assert.equal(assignVillagerAutonomy(villager, 'wood'), false)
   assert.equal(villager.explored, true)
-  assert.equal(villager.autonomousJob, null)
+  assert.equal(villager.autonomousJob, 'wood')
+  assert.equal(villager.dest, null)
+  assert.equal(villager.action, null)
+  assert.equal(villager.inactif, true)
 })
 
 test('resource autonomy tries the next known target when the closest order is rejected', () => {

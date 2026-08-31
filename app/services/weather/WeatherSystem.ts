@@ -1,10 +1,10 @@
 import { Container, Graphics, ParticleContainer, type Texture } from 'pixi.js'
 import { AdjustmentFilter } from 'pixi-filters'
-import { SOUND_CUES, type EnvironmentId } from '../constants'
-import { isGameplaySoundSuppressed, playSoundCue } from '../lib'
-import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/nightAmbience'
-import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../lib/audio/oceanAmbience'
-import type { GameContextLike } from '../types/context'
+import { SOUND_CUES, type EnvironmentId } from '../../constants'
+import { isGameplaySoundSuppressed, playSoundCue } from '../../lib'
+import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/nightAmbience'
+import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/oceanAmbience'
+import type { GameContextLike } from '../../types/context'
 
 import {
   AMBIENT_CROSSFADE_MID,
@@ -35,7 +35,7 @@ import {
   type WeatherBiomeProfile,
   type WeatherColor,
   type WeatherPhase,
-} from './weather/WeatherProfiles'
+} from './WeatherProfiles'
 import {
   addParticleDrift,
   biomeKeyFromEnvironment,
@@ -49,7 +49,7 @@ import {
   randomDuration,
   scaleParticleTarget,
   seconds,
-} from './weather/WeatherUtils'
+} from './WeatherUtils'
 import {
   createRainTexture,
   createSandTexture,
@@ -57,9 +57,9 @@ import {
   Raindrop,
   SandGrain,
   Snowflake,
-} from './weather/WeatherParticles'
-import { startAmbientLoop, type WeatherLoopInstance } from './weather/WeatherAudio'
-import { WeatherColorGrading, type WeatherColorMap } from './weather/WeatherColorGrading'
+} from './WeatherParticles'
+import { startAmbientLoop, type WeatherLoopInstance } from './WeatherAudio'
+import { WeatherColorGrading, type WeatherColorMap } from './WeatherColorGrading'
 
 export class WeatherSystem {
   colorGrading: WeatherColorGrading
@@ -193,7 +193,6 @@ export class WeatherSystem {
       this.context.performance?.measure?.('weather.update', update) ?? update()
     }
     context.app.ticker.add(this._onTick)
-    this.log('started', this.debugState())
   }
 
   createRaindrop(anywhere = false): Raindrop {
@@ -257,18 +256,15 @@ export class WeatherSystem {
     this.phase = phase
     this.phaseEndsAt = this.elapsedMs + phaseDuration(phase, this.random, this.biome)
     if (phase === 'stormBuildUp' || phase === 'rainHeavy') this.flashCooldownMs = randomDuration(2, 7, this.random)
-    this.log('forced phase', this.debugState())
   }
 
   advancePhase(): void {
-    const previousPhase = this.phase
     this.phase = nextPhase(this.phase, this.random, this.biome)
     this.phaseEndsAt = this.elapsedMs + phaseDuration(this.phase, this.random, this.biome)
     this.windTargetX = randomBetween(-9, 9, this.random)
     if (this.phase === 'stormBuildUp' || this.phase === 'rainHeavy') {
       this.flashCooldownMs = randomDuration(4, 14, this.random)
     }
-    this.log(`phase ${previousPhase} -> ${this.phase}`, this.debugState())
   }
 
   update(elapsedMs: number): void {
@@ -372,6 +368,10 @@ export class WeatherSystem {
     this.tintFilter.blue = this.currentColor.blue
   }
 
+  getLightningBrightness(): number {
+    return clamp(this.flashAlpha, 0, 1)
+  }
+
   updateLightning(elapsedMs: number): void {
     this.flashAlpha *= Math.pow(0.012, elapsedMs / 1000)
     const canStorm = this.phase === 'stormBuildUp' || this.phase === 'rainHeavy'
@@ -387,7 +387,6 @@ export class WeatherSystem {
         this.lightningBursts--
         this.lightningNextBurstMs = randomDuration(0.07, 0.22, this.random)
         playSoundCue(SOUND_CUES.weather.thunder)
-        this.log('lightning flash', { phase: this.phase, flashAlpha: Number(this.flashAlpha.toFixed(2)) })
       }
       return
     }
@@ -577,10 +576,6 @@ export class WeatherSystem {
     }
   }
 
-  log(message: string, data?: object): void {
-    console.info(`[weather] ${message}`, data ?? '')
-  }
-
   destroy(): void {
     this.context.app.ticker.remove(this._onTick)
     this.colorGrading.destroy()
@@ -594,6 +589,5 @@ export class WeatherSystem {
     this.windLoopHeavy?.stop()
     this.nightLoop?.stop()
     this.oceanLoop?.stop()
-    this.log('destroyed')
   }
 }

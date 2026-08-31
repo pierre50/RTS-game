@@ -88,7 +88,7 @@ function createShadow() {
   }
 }
 
-test('sleeping final-frame units do not revive their shadow during visual refreshes', () => {
+test('sleeping final-frame hurt units keep their shadow during visual refreshes', () => {
   const { syncUnitShadow, syncUnitVisualSettings } = loadUnitVisualState()
   const unit = {
     currentSheet: 'dyingSheet',
@@ -103,10 +103,10 @@ test('sleeping final-frame units do not revive their shadow during visual refres
 
   unit.shadow.visible = false
   syncUnitVisualSettings(unit)
-  assert.equal(unit.shadow.visible, false)
+  assert.equal(unit.shadow.visible, true)
 
   syncUnitShadow(unit, unit.shadow, unit.sprite)
-  assert.equal(unit.shadow.visible, false)
+  assert.equal(unit.shadow.visible, true)
 })
 
 test('sleeping hurt animation keeps the shadow until the final stopped frame', () => {
@@ -130,10 +130,11 @@ test('sleeping hurt animation keeps the shadow until the final stopped frame', (
 test('resuming from pause leaves a frozen sleeping sprite untouched even with a stale loop flag', () => {
   const { resumeUnitVisuals } = loadUnitVisualState()
   const sprite = createSprite({ frame: 2, playing: false, textureCount: 3 })
-  // Left over from the unit's last walk (Unit.setPath forces loop = true) — this is exactly the
-  // stale state that made a resumed sleeper replay the hurt sheet forever via PIXI's own ticker.
+  // Left over from the unit's last walk (Unit.setPath forces loop = true), which must not make
+  // a resumed sleeper animate again.
   sprite.loop = true
   const unit = {
+    appearanceLayerSprites: new Map(),
     currentSheet: 'dyingSheet',
     shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
     sleepVisualState: 'sleeping',

@@ -100,6 +100,7 @@ function makeContext(calls) {
 }
 
 function buildMocks(calls, context) {
+  const transferPanels = []
   return {
     '../lib': {
       assignVillagerAutonomy: (npc, job) => calls.push(['assignVillagerAutonomy', job, `paused=${context.paused}`]),
@@ -108,6 +109,14 @@ function buildMocks(calls, context) {
     },
     '../lib/lang': { t: key => key },
     '../lib/audio/uiSound': { playUiSound: () => {} },
+    '../lib/inventory/inventoryContainers': {
+      createInventoryContainer: (target, options) => {
+        target.inventory = target.inventory ?? { equipment: [], resources: {} }
+        target.inventory.equipment = target.inventory.equipment ?? []
+        target.inventory.resources = target.inventory.resources ?? {}
+        return { ...options, inventory: target.inventory }
+      },
+    },
     '../constants': {
       SHEET_TYPES: { standing: 'standing' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
@@ -144,6 +153,10 @@ function buildMocks(calls, context) {
         const hour = ctx?.dayNight?.state?.hour ?? 12
         return hour >= 18 || hour < 8
       },
+      shouldVillagerRestBeforeBed: unit => {
+        const hour = unit?.context?.dayNight?.state?.hour ?? 12
+        return hour >= 18 && hour < 22
+      },
     },
     './EntityInfoModalManager': { createTitledEntityInfoContent: () => makeFakeElement() },
     './InspectionPanel': {
@@ -158,9 +171,22 @@ function buildMocks(calls, context) {
     '../lib/npc/npcChatter': {
       pickForeignNpcChatterLine: () => 'foreign hi',
       pickNpcGreetingLine: () => 'hi',
+      pickNpcRestingChatterLine: () => 'resting chatter',
       pickNpcSleepingChatterLine: () => 'sleepy chatter',
       pickForeignNpcSleepingChatterLine: () => 'foreign sleepy chatter',
     },
+    './inventory/InventoryTransferPanel': {
+      InventoryTransferPanel: class InventoryTransferPanel {
+        constructor(options) {
+          this.options = options
+          this.element = global.document.createElement('div')
+          this.element.className = 'inventory-transfer-panel'
+          transferPanels.push(this)
+        }
+      },
+      __transferPanels: transferPanels,
+    },
+    './menu/NestedButtonMenu': loadModule('app/ui/menu/NestedButtonMenu.ts', {}),
   }
 }
 
@@ -241,12 +267,90 @@ test('picking a villager-job order assigns it without pausing or resuming the ga
     const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
 
     manager.open([npc])
+    assert.equal(manager.buttons.get('food').hidden, true)
+    manager.buttons.get('resources').click()
     const foodButton = manager.buttons.get('food')
+    assert.equal(foodButton.hidden, false)
     assert.equal(foodButton.disabled, false)
 
     foodButton.click()
 
     assert.deepEqual(calls, [['assignVillagerAutonomy', 'food', 'paused=false']])
+  })
+})
+
+test('single commandable NPC exposes a bag transfer panel', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { label: 'hero', inventory: { equipment: ['trap'], resources: { food: 2 } } }
+    const mocks = buildMocks(calls, context)
+    const menu = { context, updateHeroStatus: () => calls.push(['updateHeroStatus']) }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      type: 'Villager',
+      label: 'villager-1',
+      name: 'Ada',
+      owner: context.player,
+      inventory: { equipment: ['chest'], resources: { wood: 3 } },
+    }
+
+    manager.open([npc])
+    const bagButton = manager.buttons.get('bag')
+    assert.equal(bagButton.hidden, false)
+
+    bagButton.click()
+
+    const panel = mocks['./inventory/InventoryTransferPanel'].__transferPanels.at(-1)
+    assert.equal(manager.buttonsContainer.hidden, true)
+    assert.equal(manager.bagContainer.hidden, false)
+    assert.equal(panel.options.destination.id, 'villager-1')
+    assert.equal(panel.options.destination.label, 'inventoryNpcBag')
+    assert.equal(panel.options.destination.inventory, npc.inventory)
+    assert.equal(panel.options.source.id, 'hero')
+    assert.equal(panel.options.source.labelKey, 'inventoryYourBag')
+    assert.equal(panel.options.source.inventory, context.controls.heroUnit.inventory)
+  })
+})
+
+test('multi-selection NPC conversations hide the bag button', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.controls.heroUnit = { label: 'hero', inventory: { equipment: [], resources: {} } }
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npcA = { type: 'Villager', label: 'villager-1', owner: context.player }
+    const npcB = { type: 'Villager', label: 'villager-2', owner: context.player }
+
+    manager.open([npcA, npcB])
+
+    assert.equal(manager.buttons.get('bag').hidden, true)
+  })
+})
+
+test('copper and iron orders assign distinct autonomous mining jobs', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+    manager.buttons.get('resources').click()
+    manager.buttons.get('copper').click()
+    manager.open([npc])
+    manager.buttons.get('resources').click()
+    manager.buttons.get('iron').click()
+
+    assert.deepEqual(calls, [
+      ['assignVillagerAutonomy', 'copper', 'paused=false'],
+      ['assignVillagerAutonomy', 'iron', 'paused=false'],
+    ])
   })
 })
 
@@ -282,6 +386,7 @@ test('sleeping villagers keep movement orders visible and disable night work', (
       label: 'sleepy-villager',
       owner: context.player,
       shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+      sleepVisualState: 'sleeping',
     }
 
     manager.open([npc])
@@ -290,17 +395,23 @@ test('sleeping villagers keep movement orders visible and disable night work', (
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('follow').hidden, false)
     assert.equal(manager.buttons.get('cancel').hidden, false)
-    assert.equal(manager.buttons.get('food').hidden, false)
+    assert.equal(manager.buttons.get('resources').hidden, false)
+    assert.equal(manager.buttons.get('resources').disabled, true)
+    assert.equal(manager.buttons.get('food').hidden, true)
+    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.get('goto').hidden, false)
+    assert.equal(manager.buttons.get('back').hidden, true)
+    assert.equal(manager.buttons.get('food').hidden, true)
     assert.equal(manager.buttons.get('food').disabled, true)
-    assert.equal(manager.buttons.get('stay').hidden, false)
 
+    assert.equal(manager.buttons.get('stay').hidden, false)
     manager.buttons.get('follow').click()
 
     assert.deepEqual(calls, [['startFollowingHero', 'paused=false']])
   })
 })
 
-test('night communication disables villager job buttons but keeps go-to and follow usable', () => {
+test('night communication disables the resources parent and villager job buttons but keeps go-to and follow usable', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -314,10 +425,75 @@ test('night communication disables villager job buttons but keeps go-to and foll
 
     assert.equal(manager.buttons.get('goto').disabled, false)
     assert.equal(manager.buttons.get('follow').disabled, false)
+    assert.equal(manager.buttons.get('resources').disabled, true)
+    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.get('back').hidden, true)
+    assert.equal(manager.buttons.get('food').hidden, true)
     assert.equal(manager.buttons.get('food').disabled, true)
     assert.equal(manager.buttons.get('wood').disabled, true)
+    assert.equal(manager.buttons.get('stone').disabled, true)
+    assert.equal(manager.buttons.get('gold').disabled, true)
+    assert.equal(manager.buttons.get('copper').disabled, true)
+    assert.equal(manager.buttons.get('iron').disabled, true)
     assert.equal(manager.buttons.get('construction').disabled, true)
     assert.equal(manager.buttons.get('horseCapture').disabled, true)
+  })
+})
+
+test('resting-before-bed villagers use rest chatter and block the resources parent', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.dayNight.state.hour = 19
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = {
+      context,
+      type: 'Villager',
+      label: 'resting-villager',
+      owner: context.player,
+      shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+      sleepVisualState: null,
+    }
+
+    manager.open([npc])
+
+    assert.equal(manager.chatterContainer.children[0].textContent, 'resting chatter')
+    assert.equal(manager.buttons.get('resources').disabled, true)
+    manager.buttons.get('resources').click()
+    assert.equal(manager.buttons.get('food').hidden, true)
+  })
+})
+
+test('resource orders live behind a resources submenu without a visible back button', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+
+    assert.equal(manager.buttons.get('goto').hidden, false)
+    assert.equal(manager.buttons.get('resources').hidden, false)
+    assert.equal(manager.buttons.get('construction').hidden, false)
+    assert.equal(manager.buttons.get('food').hidden, true)
+    assert.equal(manager.buttons.get('back').hidden, true)
+
+    manager.buttons.get('resources').click()
+
+    assert.equal(manager.buttons.get('goto').hidden, true)
+    assert.equal(manager.buttons.get('construction').hidden, true)
+    assert.equal(manager.buttons.get('food').hidden, false)
+    assert.equal(manager.buttons.get('wood').hidden, false)
+    assert.equal(manager.buttons.get('stone').hidden, false)
+    assert.equal(manager.buttons.get('gold').hidden, false)
+    assert.equal(manager.buttons.get('copper').hidden, false)
+    assert.equal(manager.buttons.get('iron').hidden, false)
+    assert.equal(manager.buttons.get('back').hidden, true)
   })
 })
 
@@ -333,6 +509,7 @@ test('a foreign sleeping npc gets a distinct "stays asleep" chatter line', () =>
       label: 'sleepy-neutral-villager',
       owner: { label: 'neutral-ai' },
       shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+      sleepVisualState: 'sleeping',
     }
 
     manager.open([npc])

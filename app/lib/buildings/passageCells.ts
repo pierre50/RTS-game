@@ -183,6 +183,15 @@ export function canUnitUseCellAsIdleDestination(
   return canEntityUseCellAsIdleDestination(unit, cell, options)
 }
 
+export function canUseReservedPassageCellForTransit(
+  cell: RuntimeCell | null | undefined,
+  passageLookup: ReservedPassageCellLookup
+): cell is RuntimeCell {
+  if (!cell || !passageLookup.has(cell)) return false
+  if (cell.terrainHidden || cell.category === 'Water') return false
+  return !cell.border || Boolean(cell.waterBorder && !cell.solid)
+}
+
 export function findNearestPassageWaitingCell(
   entity: PassageEntity,
   passageCell: RuntimeCell | null | undefined = entity.currentCell,

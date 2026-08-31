@@ -52,6 +52,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
           stable: 'Stable',
           townCenter: 'TownCenter',
         },
+        UNIT_TYPES: { villager: 'Villager' },
       },
       '../../lib': {
         getFreeLandCellAroundInstance: overrides.getFreeLandCellAroundInstance ?? (() => null),
@@ -106,6 +107,18 @@ function loadBuildingInteriorTravel(overrides = {}) {
       '../../serialization/SaveSerializer': { serializeGame: overrides.serializeGame ?? (() => ({ players: [] })) },
       '../../services/rest/UnitRestRules': {
         isSleepTime: context => context.dayNight?.state?.hour >= 18 || context.dayNight?.state?.hour < 8,
+      },
+      '../../services/rest/UnitRestLifecycle': {
+        startUnitWakeTransitionFromTask:
+          overrides.startUnitWakeTransitionFromTask ??
+          ((unit, returnTask) => {
+            unit.startedWakeReturnTask = returnTask
+            unit.work = returnTask?.work ?? unit.work
+            unit.autonomousJob = returnTask?.autonomousJob ?? unit.autonomousJob
+            if (returnTask?.dest && returnTask?.action) {
+              unit.sendToEvt?.(returnTask.dest, returnTask.action, { forceRepath: true, preserveAutonomy: true })
+            }
+          }),
       },
       '../../services/BuildingInteriorSpaceSystem': {
         getBuildingInteriorSpaceForUnit: overrides.getBuildingInteriorSpaceForUnit ?? (() => null),
@@ -1388,7 +1401,7 @@ test('daytime interior sleepers walk to the exit before returning to the parent 
   )
 })
 
-test('runtime layer occupants route out through their active interior space portal', () => {
+test('runtime occupants route out through their local interior space even while its layer is closed', () => {
   const routed = []
   const space = { id: 'building-space' }
   const sleeper = {
@@ -1406,14 +1419,15 @@ test('runtime layer occupants route out through their active interior space port
   }
   const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
     getBuildingInteriorSpaceForUnit: unit => (unit === sleeper ? space : null),
-    routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace) => {
+    routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace, options) => {
       routed.push([ctx, unit.label, targetSpace.id])
+      options?.onTransferred?.()
       return true
     },
   })
   const game = {
     _campaignSave: null,
-    _isBuildingInteriorLayerOpen: () => true,
+    _isBuildingInteriorLayerOpen: () => false,
     _isRestarting: false,
     _restartSaveData: null,
     context,
@@ -1431,10 +1445,9 @@ test('runtime layer occupants route out through their active interior space port
   assert.equal(sleeper.interiorExitState, null)
 })
 
-test('runtime layer sleepers resume their stored work after leaving the active interior space', () => {
+test('runtime sleepers resume stored work from the local exit transfer completion', () => {
   const routed = []
   const sent = []
-  const removedTasks = []
   const scheduler = {
     elapsedMs: 0,
     nextId: 1,
@@ -1445,7 +1458,6 @@ test('runtime layer sleepers resume their stored work after leaving the active i
       return id
     },
     remove(id) {
-      removedTasks.push(id)
       this.tasks.delete(id)
     },
   }
@@ -1476,15 +1488,16 @@ test('runtime layer sleepers resume their stored work after leaving the active i
   }
   const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
     getBuildingInteriorSpaceForUnit: unit => (unit === sleeper && unit.spaceId === 'building-space' ? space : null),
-    routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace) => {
+    routeUnitOutOfBuildingInteriorSpace: (ctx, unit, targetSpace, options) => {
       routed.push([ctx, unit.label, targetSpace.id])
-      unit.spacePortalState = { portalId: 'building-space:exit' }
+      unit.spaceId = 'outside'
+      options?.onTransferred?.()
       return true
     },
   })
   const game = {
     _campaignSave: null,
-    _isBuildingInteriorLayerOpen: () => true,
+    _isBuildingInteriorLayerOpen: () => false,
     _isRestarting: false,
     _restartSaveData: null,
     context,
@@ -1503,17 +1516,35 @@ test('runtime layer sleepers resume their stored work after leaving the active i
     work: 'stonecutter',
   })
 
-  assert.equal(scheduler.tasks.size, 1)
-  sleeper.spaceId = 'outside'
-  sleeper.spacePortalState = null
-  scheduler.tasks.get(1).callback()
-
   assert.deepEqual(routed, [[context, 'sleeper', 'building-space']])
   assert.deepEqual(sent, [['stone-pile', 'minestone', { forceRepath: true, preserveAutonomy: true }]])
   assert.equal(sleeper.interiorExitState, null)
   assert.equal(sleeper.work, 'stonecutter')
   assert.equal(sleeper.autonomousJob, 'stone')
-  assert.deepEqual(removedTasks, [1])
+  assert.equal(scheduler.tasks.size, 0)
+})
+
+test('daytime time jump wakes local interior occupants while the interior layer is closed', () => {
+  const calls = []
+  const context = {
+    dayNight: { state: { hour: 9 } },
+    map: { grid: makeGrid(16), mapType: 'continent', size: 15 },
+    unitRest: { synchronizeAfterTimeJump: () => calls.push('synchronizeRest') },
+  }
+  const { synchronizeInteriorOccupantsAfterTimeJump } = loadBuildingInteriorTravel()
+  const game = {
+    _campaignSave: null,
+    _isBuildingInteriorLayerOpen: () => false,
+    _isRestarting: false,
+    _restartSaveData: null,
+    context,
+    _gameContext: () => context,
+    _map: () => context.map,
+  }
+
+  synchronizeInteriorOccupantsAfterTimeJump(game)
+
+  assert.deepEqual(calls, ['synchronizeRest'])
 })
 
 test('occupants that exited before the hero stay available on the parent exterior door', async () => {

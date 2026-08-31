@@ -34,6 +34,10 @@ function loadModule(relativePath, mocks) {
         const hour = context?.dayNight?.state?.hour ?? 12
         return hour >= 18 || hour < 8
       },
+      shouldVillagerRestBeforeBed: unit => {
+        const hour = unit?.context?.dayNight?.state?.hour ?? 12
+        return hour >= 18 && hour < 22
+      },
     },
     '../../services/rest/UnitRestRules': {
       delayUnitRestAfterActivity: unit => {
@@ -411,10 +415,9 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
   assert.deepEqual(calls, [['farm', target]])
 })
 
-test('"aller vers" moves villagers near night resource work and shows zzz', () => {
+test('"aller vers" refuses night resource work without moving villagers', () => {
   const owner = { label: 'player' }
   const grid = createNpcTestGrid(6)
-  const fallbackCell = grid[4][5]
   const target = {
     family: constants.FAMILY_TYPES.resource,
     i: 5,
@@ -457,7 +460,6 @@ test('"aller vers" moves villagers near night resource work and shows zzz', () =
 
   assert.equal(npc.restWakeLockUntilMs, 15000)
   assert.deepEqual(calls, [
-    ['move', fallbackCell],
     ['indicator', 'villager-1', 'sleep'],
     ['schedule', 1200, 'npc.nightWorkRefusal'],
     ['clearIndicator', 'villager-1'],
@@ -805,6 +807,7 @@ test('talking to your own sleeping unit wakes it for real, like their chief woul
     label: 'sleepy-villager',
     owner,
     shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    sleepVisualState: 'sleeping',
     x: 32,
     y: 0,
   }

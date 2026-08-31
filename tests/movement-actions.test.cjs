@@ -222,6 +222,9 @@ function loadModule(relativePath, mocks) {
             has: () => false,
             size: 0,
           })),
+        canUseReservedPassageCellForTransit:
+          passageCells.canUseReservedPassageCellForTransit ??
+          ((cell, lookup) => Boolean(cell && lookup?.has?.(cell) && !cell.terrainHidden && cell.category !== 'Water')),
         findNearestPassageWaitingCell: passageCells.findNearestPassageWaitingCell ?? (() => null),
         routeUnitAwayFromPassageCell: passageCells.routeUnitAwayFromPassageCell ?? (() => false),
         shouldUnitAvoidPassageStop: passageCells.shouldUnitAvoidPassageStop ?? (() => false),
@@ -3271,6 +3274,80 @@ test('passage move orders can explicitly stop on the passage cell', () => {
   new UnitMovement(unit).sendToEvt(entryCell, null, { allowPassageStop: true })
 
   assert.equal(unit.dest, entryCell)
+  assert.deepEqual(unit.path, [entryCell])
+})
+
+test('building arrival actions path through an occupied passage cell without pushing the blocker', () => {
+  const grid = makePassageMovementGrid()
+  const entryCell = grid[2][2]
+  const blocker = {
+    family: constants.FAMILY_TYPES.unit,
+    i: entryCell.i,
+    isDead: false,
+    isDestroyed: false,
+    j: entryCell.j,
+    label: 'blocker-1',
+  }
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    i: 1,
+    isBuilt: true,
+    isDestroyed: false,
+    j: 0,
+    label: 'town-center-1',
+    type: constants.BUILDING_TYPES.townCenter,
+    x: 1,
+    y: 0,
+  }
+  entryCell.has = blocker
+  entryCell.solid = true
+  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  const routedBlockers = []
+  let pathfinderAcceptedPassage = false
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/interiors': {
+      getBuildingInteriorEntryCell: () => entryCell,
+      isBuildingInteriorSupported: () => true,
+    },
+    '../../lib/buildings/passageCells': {
+      createReservedPassageCellLookup: () => ({
+        has: cell => cell === entryCell,
+        size: 1,
+      }),
+      routeUnitAwayFromPassageCell: unit => {
+        routedBlockers.push(unit.label)
+        return true
+      },
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: (_unit, i, j, _map, options = {}) => {
+        pathfinderAcceptedPassage = options.canPassThroughSolidCell?.(entryCell) === true
+        return i === entryCell.i && j === entryCell.j && pathfinderAcceptedPassage ? [entryCell] : []
+      },
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = makePassageMovementUnit(context, grid)
+
+  new UnitMovement(unit).sendToEvt(building, constants.ACTION_TYPES.train)
+
+  assert.equal(pathfinderAcceptedPassage, true)
+  assert.deepEqual(routedBlockers, [])
+  assert.equal(unit.dest, building)
   assert.deepEqual(unit.path, [entryCell])
 })
 

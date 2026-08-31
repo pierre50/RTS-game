@@ -3,9 +3,11 @@ import {
   cartesianToIsometric,
   getGroundReliefLevel,
   getInstanceZIndex,
-  resumeVillagerAutonomy,
   updateInstanceVisibility,
 } from '../../lib'
+import { resumeStrictVillagerAutonomy, resumeVillagerStoredTask } from '../../lib/units/villagerTaskRecovery'
+import { unitHasDeliverableResources } from '../../lib/resources/resourceDelivery'
+import { shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
 import { cancelFade, fadeIn, fadeOut } from '../../lib/entities/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
 import { getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
@@ -116,6 +118,20 @@ function prepareUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): vo
   clearUnitOverheadIndicator(unit)
 }
 
+export function waitOutsideForSleep(unit: UnitEntity): void {
+  cancelSleepingWakeVisual(unit)
+  rememberRestState(unit, { status: 'outside', reason: 'sleep', location: 'outside', shelter: null, targetCell: null })
+  stopUnitForRest(unit)
+  unit.dest = null
+  unit.action = null
+  unit.actionLocked = true
+  clearSleepingVisualState(unit)
+  clearUnitOverheadIndicator(unit)
+  unit.setTextures?.(SHEET_TYPES.standing)
+  unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
+  unit.sprite?.stop?.()
+}
+
 export function sleepOutside(
   unit: UnitEntity,
   reason: UnitRestReason = unit.shelterState?.reason ?? 'sleep',
@@ -155,6 +171,23 @@ export function enterShelterInstant(unit: UnitEntity, shelter: BuildingEntity): 
   prepareUnitInsideShelter(unit, shelter)
   cancelFade(unit)
   hideUnitInsideShelter(unit, shelter)
+}
+
+export function putRestingUnitToSleep(unit: UnitEntity, options: { instant?: boolean } = {}): boolean {
+  const state = unit.shelterState
+  if (!state || state.reason !== 'sleep') return false
+  if (state.status === 'inside') {
+    unit.actionLocked = true
+    if (options.instant) setSleepingOutsideFinalVisual(unit)
+    else playSleepingOutsideVisual(unit)
+    setUnitOverheadIndicator(unit, 'sleep')
+    return true
+  }
+  if (state.status === 'outside') {
+    sleepOutside(unit, 'sleep', { visual: options.instant ? 'finalFrame' : 'animate' })
+    return true
+  }
+  return false
 }
 
 function placeUnitAtCell(unit: UnitEntity, cell: RuntimeCell): void {
@@ -204,23 +237,6 @@ function restoreAwakeState(unit: UnitEntity, options: { clearShelterState?: bool
   unit.inactif = true
 }
 
-function isRuntimeEntity(target: RuntimeEntity | RuntimeCell): target is RuntimeEntity {
-  return !('has' in target)
-}
-
-function canResumeStoredDestination(
-  unit: UnitEntity,
-  dest: RuntimeEntity | RuntimeCell | null | undefined,
-  action: string | null | undefined
-): dest is RuntimeEntity | RuntimeCell {
-  if (!dest) return false
-  if (isRuntimeEntity(dest)) {
-    if (dest.isDestroyed) return false
-    if (action && unit.getActionCondition?.(dest, action) === false) return false
-  }
-  return true
-}
-
 export function getRestReturnTask(unit: UnitEntity, state: UnitRestState | null | undefined = unit.shelterState) {
   if (!state) return null
   const deliveryAction = ACTION_TYPES?.delivery ?? 'delivery'
@@ -237,12 +253,7 @@ export function getRestReturnTask(unit: UnitEntity, state: UnitRestState | null 
 }
 
 function resumeUnitReturnTask(unit: UnitEntity, task = getRestReturnTask(unit)): boolean {
-  if (!task) return false
-  if (!canResumeStoredDestination(unit, task.dest, task.action)) return false
-  unit.work = task.work ?? unit.work ?? null
-  unit.autonomousJob = task.autonomousJob ?? null
-  unit.sendToEvt?.(task.dest, task.action ?? null, { forceRepath: true, preserveAutonomy: true })
-  return true
+  return resumeVillagerStoredTask(unit, task, { clearMotion: false, exploreWhenNoTarget: true })
 }
 
 function resumeStoredReturnTask(unit: UnitEntity, state: UnitRestState): boolean {
@@ -255,7 +266,7 @@ export function finishUnitWakeTransition(unit: UnitEntity, state: UnitRestState)
 
   if (unit.type !== UNIT_TYPES.villager) return
   unit.autonomousJob = state.previousAutonomousJob ?? unit.autonomousJob ?? null
-  if (unit.autonomousJob && resumeVillagerAutonomy(unit)) return
+  if (unit.autonomousJob && resumeStrictVillagerAutonomy(unit, unit.autonomousJob, { exploreWhenNoTarget: true })) return
 }
 
 function startUnitWakeTransition(unit: UnitEntity, state: UnitRestState): void {
@@ -308,7 +319,8 @@ function resumePreviousActivity(unit: UnitEntity, state: UnitRestState): void {
   })
 }
 
-function wakeWithoutPreviousActivity(unit: UnitEntity, onComplete?: () => void): void {
+function wakeWithoutPreviousActivity(unit: UnitEntity, state: UnitRestState, onComplete?: () => void): void {
+  unit.suspendedRestState = state
   restoreAwakeState(unit)
   fadeIn(unit, FADE_DURATION_MS)
   playSleepingWakeVisual(unit, onComplete)
@@ -359,8 +371,11 @@ export function wakeUnit(
   if (!state) return
   const mode = options.mode ?? 'resume'
   if (!prepareInsideWakePlacement(unit, state, mode, options.force)) return
+  if (unit.sleepVisualState !== 'sleeping') {
+    setSleepingOutsideFinalVisual(unit)
+  }
   if (mode === 'order') {
-    wakeWithoutPreviousActivity(unit, options.onComplete)
+    wakeWithoutPreviousActivity(unit, state, options.onComplete)
     return
   }
   resumePreviousActivity(unit, state)
@@ -412,6 +427,23 @@ export function sendUnitToRest(
   options: RestTransitionOptions = {}
 ): boolean {
   if (reason === 'sleep' && !canStartSleepRest(unit)) return false
+  if (
+    reason === 'sleep' &&
+    unit.type === UNIT_TYPES.villager &&
+    !unit.shelterState &&
+    !unit.resourceDeliveryState &&
+    unitHasDeliverableResources(unit)
+  ) {
+    rememberRestState(unit, {
+      status: 'delivering',
+      reason,
+      location: 'outside',
+      shelter: null,
+      targetCell: null,
+    })
+    if (unit.sendToDelivery?.() === true) return true
+    unit.shelterState = null
+  }
   const restSite = getNearestRestSite(unit)
   if (!restSite) {
     if (reason === 'sleep' && canSleepWithoutRestSite(unit)) {
@@ -420,7 +452,54 @@ export function sendUnitToRest(
     }
     return false
   }
-  return sendUnitToRestSite(unit, reason, restSite, options)
+  if (unit.type === UNIT_TYPES.villager && restSite.location === 'outside') {
+    waitOutsideForSleep(unit)
+    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
+    return true
+  }
+  return sendUnitToRestSite(unit, reason, restSite, {
+    ...options,
+    transition: unit.type === UNIT_TYPES.villager ? false : options.transition,
+  })
+}
+
+export function continueRestAfterDelivery(unit: UnitEntity): boolean {
+  if (unit.shelterState?.reason !== 'sleep' || unit.shelterState.status !== 'delivering') return false
+  const state = unit.shelterState
+  const restSite = getNearestRestSite(unit)
+  if (!restSite || restSite.location === 'outside') {
+    waitOutsideForSleep(unit)
+    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
+    return true
+  }
+  unit.shelterState = state
+  return sendUnitToRestSite(unit, 'sleep', restSite, { transition: false })
+}
+
+export function rerouteRestUnit(unit: UnitEntity): boolean {
+  const state = unit.shelterState
+  if (!state?.reason) return false
+  const restSite = getNearestRestSite(unit)
+  if (!restSite || restSite.location === 'outside') {
+    waitOutsideForSleep(unit)
+    if (shouldVillagerBeAsleep(unit)) putRestingUnitToSleep(unit)
+    return true
+  }
+  unit.shelterState = state
+  return sendUnitToRestSite(unit, state.reason, restSite, { transition: false })
+}
+
+export function settleUnitRestForTimeJump(unit: UnitEntity, sleep: boolean): boolean {
+  if (!unit.shelterState && !sendUnitToRest(unit, 'sleep', { transition: false })) return false
+  const state = unit.shelterState
+  if (!state) return false
+  if (state.status === 'movingToRest' && isUsableShelter(state.shelter, unit.owner)) {
+    enterShelterInstant(unit, state.shelter)
+  } else if (state.status === 'movingToRest') {
+    waitOutsideForSleep(unit)
+  }
+  if (sleep) putRestingUnitToSleep(unit, { instant: true })
+  return true
 }
 
 export function retryShelterPath(unit: UnitEntity, state: UnitRestState): boolean {

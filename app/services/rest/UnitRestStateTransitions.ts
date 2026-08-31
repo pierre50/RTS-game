@@ -10,13 +10,17 @@ import {
   enterShelterInstant,
   finishUnitWakeTransition,
   retryShelterPath,
+  rerouteRestUnit,
   sendUnitToRest,
   sleepOutside,
   sleepOutsideAtCellInstant,
+  waitOutsideForSleep,
   wakeUnit,
   wakeUnitInstant,
   getRestReturnTask,
 } from './UnitRestLifecycle'
+import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
 import type { TimedUnitRestState } from './UnitRestLifecycle'
 import { keepSleepingOutsideVisual } from './UnitSleepVisuals'
 import {
@@ -52,6 +56,13 @@ function retrySleepSpotPath(unit: UnitEntity, state: TimedUnitRestState): boolea
     allowPassageStop: state.location === 'shelter',
   })
   return true
+}
+
+function retryUsableShelterPath(unit: UnitEntity, state: TimedUnitRestState): boolean {
+  if (retryShelterPath(unit, state)) return true
+  if (state.reason !== 'sleep' || !state.shelter || !isUsableShelter(state.shelter, unit.owner)) return false
+  state.retryCount = 0
+  return retryShelterPath(unit, state)
 }
 
 function moveUnitToRestSite(unit: UnitEntity, state: TimedUnitRestState): void {
@@ -297,18 +308,31 @@ export function updateMovingRestUnit(unit: UnitEntity): void {
 
   if (!isUsableShelter(state.shelter, unit.owner)) {
     if (state.location === 'outside' && targetCell) {
-      if (arrived) sleepOutside(unit, state.reason)
-      else if (failedPath && !retrySleepSpotPath(unit, state)) sleepOutside(unit, state.reason)
+      if (arrived) {
+        if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
+        else sleepOutside(unit, state.reason)
+      } else if (failedPath && !retrySleepSpotPath(unit, state)) {
+        if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
+        else sleepOutside(unit, state.reason)
+      }
       return
     }
-    sleepOutside(unit, state.reason)
+    if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
+    else sleepOutside(unit, state.reason)
     return
   }
 
-  if (arrived) enterShelter(unit, state.shelter)
+  if (arrived) {
+    if (!hasBuildingShelterCapacity(state.shelter, unit.owner?.units ?? [], { exclude: unit })) {
+      rerouteRestUnit(unit)
+      return
+    }
+    enterShelter(unit, state.shelter)
+  }
   else if (failedPath) {
-    if (retryShelterPath(unit, state)) return
-    sleepOutside(unit, state.reason)
+    if (retryUsableShelterPath(unit, state)) return
+    if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
+    else sleepOutside(unit, state.reason)
   }
 }
 

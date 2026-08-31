@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadActionSpecFactory() {
+function loadActionSpecFactory(options = {}) {
   const filename = path.join(__dirname, '../app/ui/ActionSpecFactory.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -23,7 +23,7 @@ function loadActionSpecFactory() {
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
     },
     '../lib': {
-      canAfford: () => true,
+      canAfford: options.canAfford ?? (() => true),
       getBuildingAsset: () => ({}),
       getIconPath: id => id,
       getStableHorseAmount: building => building.stableHorses?.length ?? 0,
@@ -60,19 +60,30 @@ function loadActionSpecFactory() {
   return module.exports.ActionSpecFactory
 }
 
-function createFactory({ hero, messages }) {
-  const ActionSpecFactory = loadActionSpecFactory()
+function createFactory({ canAfford, hero, messages }) {
+  const ActionSpecFactory = loadActionSpecFactory({ canAfford })
   const player = {
     config: { buildings: {}, units: {} },
+    isBuildingEligible: () => true,
+    population: 0,
+    populationMax: 10,
     techs: {},
     technologies: [],
   }
   const menu = {
     context: {
-      controls: { heroUnit: hero },
+      controls: {
+        heroUnit: hero,
+        removeMouseBuilding: () => {},
+        setMouseBuilding: building => {
+          menu.mouseBuilding = building
+        },
+      },
       player,
     },
+    playUiClick: () => {},
     showMessage: (...args) => messages.push(args),
+    toggleQueuedActionCancel: () => {},
   }
   return { factory: new ActionSpecFactory(menu), player }
 }
@@ -167,4 +178,49 @@ test('own building actions survive owner object restore by label', () => {
     factory.getActionMenuItems(stable).map(item => item.id),
     ['stableDebugAddHorse', 'train']
   )
+})
+
+test('resource-gated unit button is disabled without showing a missing resource alert', () => {
+  const messages = []
+  const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
+  player.config.units.Villager = { cost: { food: 50 } }
+  const building = {
+    buyUnit: () => {
+      throw new Error('buyUnit should not run')
+    },
+    family: 'building',
+    owner: player,
+    queue: [],
+    type: 'TownCenter',
+  }
+
+  const button = factory.getActionUnitButton('Villager', building)
+  assert.equal(button.disabled(), true)
+  button.onClick(building)
+  assert.deepEqual(messages, [])
+})
+
+test('resource-gated building button is disabled without showing a missing resource alert', () => {
+  const messages = []
+  const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
+  player.config.buildings.House = { cost: { wood: 30 }, size: 2 }
+
+  const button = factory.getActionBuildingButton('House')
+  assert.equal(button.disabled(), true)
+  button.onClick()
+  assert.deepEqual(messages, [])
+})
+
+test('resource-gated technology button is disabled without showing a missing resource alert', () => {
+  const messages = []
+  const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
+  player.techs.Farming = { cost: { food: 100 }, icon: 'farming' }
+  player.buyTechnology = () => {
+    throw new Error('buyTechnology should not run')
+  }
+
+  const button = factory.getActionTechnologyButton('Farming')
+  assert.equal(button.disabled(), true)
+  button.onClick()
+  assert.deepEqual(messages, [])
 })

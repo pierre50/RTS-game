@@ -354,6 +354,9 @@ function loadHeroTools(overrides = {}) {
     '../classes/unit/UnitCommands': {
       applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
     },
+    '../../classes/unit/UnitResourceDeliveryCommands': {
+      applyWorkForAction: (hero, work, action) => Object.assign(hero, { work, action }),
+    },
   }
   Object.assign(mocks, overrides)
   if (overrides['./combat/combat']) mocks['./combat/combat'] = { ...combatMock, ...overrides['./combat/combat'] }

@@ -67,6 +67,21 @@ test('notifies visibility changes when viewers enter or leave a cell', () => {
   ])
 })
 
+test('keeps explored and visible cells separate per runtime map space', () => {
+  const grid = new VisionGrid(8)
+  const scout = { label: 'scout' }
+
+  grid.withSpace('interior:house', () => {
+    assert.equal(grid.setViewed(2, 2), true)
+    assert.equal(grid.addViewer(2, 2, scout), true)
+  })
+
+  assert.equal(grid.isViewed(2, 2), false)
+  assert.equal(grid.isVisible(2, 2), false)
+  assert.equal(grid.withSpace('interior:house', () => grid.isViewed(2, 2)), true)
+  assert.equal(grid.withSpace('interior:house', () => grid.isVisible(2, 2)), true)
+})
+
 test('round-trips the existing save format and restores entity references', () => {
   const saved = Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => ({})))
   saved[1][2] = { viewed: true, viewBy: ['unit-1'] }

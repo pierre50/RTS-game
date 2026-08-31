@@ -102,13 +102,13 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../services/WeatherSystem': class WeatherSystem {
+    '../services/weather/WeatherSystem': class WeatherSystem {
       constructor() {
         this.layer = {}
       }
       destroy() {}
     },
-    '../services/LightSystem': {
+    '../services/lighting/LightSystem': {
       LightSystem: class LightSystem {
         constructor() {
           this.layer = {}
@@ -140,7 +140,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../services/CampPatrolSystem': {
+    '../services/patrol/CampPatrolSystem': {
       CampPatrolSystem: class CampPatrolSystem {
         destroy() {}
       },
@@ -149,6 +149,73 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
       UnitRestSystem: class UnitRestSystem {
         destroy() {}
       },
+    },
+    './game/GameBuildingInteriorTravel': {
+      buildBuildingInteriorSessionSaveRecord: () => null,
+      routeInteriorUnitToExit() {},
+      synchronizeInteriorOccupantsAfterTimeJump() {},
+      travelIntoBuildingInterior: async () => {},
+      travelOutOfBuildingInterior: async () => {},
+    },
+    './game/GameResourceDelivery': {
+      ResourceDeliverySystem: class ResourceDeliverySystem {
+        destroy() {}
+      },
+      routeUnitResourceDelivery: async () => false,
+    },
+    './game/runtimeServices': {
+      addRuntimeServiceLayers() {},
+      createEmptyRuntimeServices: () => ({
+        buildingInteriorEntryMarker: null,
+        campPatrols: null,
+        dailyWorldEvents: null,
+        dayNight: null,
+        heroFollowerPatrols: null,
+        idleUnitPatrols: null,
+        interiorExitMarker: null,
+        lights: null,
+        resourceDelivery: null,
+        shadows: null,
+        timeSkip: null,
+        tributeRaids: null,
+        unitEnergyRegen: null,
+        unitRest: null,
+        weather: null,
+      }),
+      createRuntimeServices: () => ({
+        buildingInteriorEntryMarker: null,
+        campPatrols: null,
+        dailyWorldEvents: null,
+        dayNight: null,
+        heroFollowerPatrols: null,
+        idleUnitPatrols: null,
+        interiorExitMarker: null,
+        lights: null,
+        resourceDelivery: null,
+        shadows: null,
+        timeSkip: null,
+        tributeRaids: null,
+        unitEnergyRegen: null,
+        unitRest: null,
+        weather: null,
+      }),
+      destroyRuntimeServices: () => ({
+        buildingInteriorEntryMarker: null,
+        campPatrols: null,
+        dailyWorldEvents: null,
+        dayNight: null,
+        heroFollowerPatrols: null,
+        idleUnitPatrols: null,
+        interiorExitMarker: null,
+        lights: null,
+        resourceDelivery: null,
+        shadows: null,
+        timeSkip: null,
+        tributeRaids: null,
+        unitEnergyRegen: null,
+        unitRest: null,
+        weather: null,
+      }),
     },
     '../lib/audio/settings': {
       getCameraZoom: () => 1,
@@ -206,13 +273,13 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
     '../../ui/PortalTravelTransition': mocks['../ui/PortalTravelTransition'],
-    '../../services/WeatherSystem': mocks['../services/WeatherSystem'],
-    '../../services/LightSystem': mocks['../services/LightSystem'],
+    '../../services/weather/WeatherSystem': mocks['../services/weather/WeatherSystem'],
+    '../../services/lighting/LightSystem': mocks['../services/lighting/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],
     '../../services/DayNightSystem': mocks['../services/DayNightSystem'],
     '../../services/DailyWorldEventSystem': mocks['../services/DailyWorldEventSystem'],
     '../../services/TributeRaidSystem': mocks['../services/TributeRaidSystem'],
-    '../../services/CampPatrolSystem': mocks['../services/CampPatrolSystem'],
+    '../../services/patrol/CampPatrolSystem': mocks['../services/patrol/CampPatrolSystem'],
     '../../services/rest/UnitRestSystem': mocks['../services/rest/UnitRestSystem'],
   })
 

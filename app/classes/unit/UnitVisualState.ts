@@ -59,11 +59,11 @@ export function syncUnitShadow(
   } else {
     shadow.gotoAndStop(frame)
   }
-  shadow.visible = shouldShowUnitShadow(unit) && !isSleepingFinalVisual(unit)
+  shadow.visible = shouldShowUnitShadow(unit)
 }
 
 export function syncUnitVisualSettings(unit: UnitRuntimeHost): void {
-  const visible = shouldShowUnitShadow(unit) && !isSleepingFinalVisual(unit)
+  const visible = shouldShowUnitShadow(unit)
   if (unit.shadow) {
     unit.shadow.visible = visible
   }
@@ -115,9 +115,8 @@ export function pauseUnitVisuals(unit: UnitRuntimeHost): void {
 }
 
 export function resumeUnitVisuals(unit: UnitRuntimeHost): boolean {
-  // A sleeper frozen on its last "dying" frame must stay frozen — calling .play() here would
-  // leave PIXI's own ticker to cycle the sheet forever if `sprite.loop` was left true by an
-  // earlier walk (see freezeSleepingOutsideVisual).
+  // A sleeper frozen on its standing sheet must stay frozen even if an earlier movement left
+  // stale loop state behind.
   if (isSleepingFinalVisual(unit)) return true
   if (unit.currentSheet !== SHEET_TYPES.standing) return false
   unit.sprite.gotoAndStop(unit.sprite.currentFrame)

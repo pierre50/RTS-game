@@ -1,6 +1,11 @@
 import { ACTION_TYPES, BUILDING_TYPES, MINING_RESOURCE_CONFIG, UNIT_TYPES, WORK_TYPES } from '../../constants'
-import { canUnitUseCellAsIdleDestination, createReservedPassageCellLookup } from '../buildings/passageCells'
+import {
+  canUnitUseCellAsIdleDestination,
+  canUseReservedPassageCellForTransit,
+  createReservedPassageCellLookup,
+} from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
+import { logGoldMinerFlow } from './villagerJobDiagnostics'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -92,6 +97,7 @@ export function markVillagerAutonomyTargetRejected(unit: UnitEntity, target: Run
     byJob.set(job, targets)
   }
   targets.set(targetKey(target), nowMs() + AUTONOMY_REJECT_TTL_MS)
+  logGoldMinerFlow(unit, 'autonomy.target-marked-rejected', { target: target.label ?? targetKey(target) })
 }
 
 export function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: string, action: string): number {
@@ -150,6 +156,9 @@ function getCandidatePathLength(unit: UnitEntity, candidate: VillagerJobCandidat
   const passageLookup = createReservedPassageCellLookup(unit.context)
   const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, candidate.target, map, {
     isCellAllowed: cell => canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }),
+    pathfinding: {
+      canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passageLookup),
+    },
   })
   return path.length ? path.length : null
 }
@@ -214,12 +223,32 @@ export function tryVillagerJobCandidates(
   options: CandidateScoringOptions
 ): boolean {
   for (const candidate of rankVillagerJobCandidates(unit, job, candidates, options)) {
-    if (candidate.rejectedReason) continue
+    if (candidate.rejectedReason) {
+      logGoldMinerFlow(unit, 'autonomy.candidate-skipped', {
+        job,
+        pathLength: candidate.pathLength,
+        reason: candidate.rejectedReason,
+        target: candidate.target.label,
+      })
+      continue
+    }
     const result = candidate.send(candidate.target)
     if (wasAutonomyOrderAccepted(unit, candidate, result)) {
+      logGoldMinerFlow(unit, 'autonomy.candidate-command-accepted', {
+        action: candidate.action,
+        job,
+        pathLength: candidate.pathLength,
+        target: candidate.target.label,
+      })
       clearVillagerAutonomyTargetRejections(unit, job)
       return true
     }
+    logGoldMinerFlow(unit, 'autonomy.candidate-command-refused', {
+      action: candidate.action,
+      job,
+      pathLength: candidate.pathLength,
+      target: candidate.target.label,
+    })
     markVillagerAutonomyTargetRejected(unit, candidate.target)
   }
   return false

@@ -24,7 +24,7 @@ function countBuildingShelterOccupants(
   return units.reduce((count, unit) => {
     if (unit === options.exclude || unit.isDead || unit.isDestroyed) return count
     const state = unit.shelterState
-    if (!state || state.location !== 'shelter') return count
+    if (!state || state.location !== 'shelter' || state.status !== 'inside') return count
     return sameBuilding(state.shelter, building) ? count + 1 : count
   }, 0)
 }

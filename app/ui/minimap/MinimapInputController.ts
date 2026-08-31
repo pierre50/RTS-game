@@ -130,6 +130,8 @@ export class MinimapInputController {
 
   getMinimapPointer(evt: PointerEvent): { x: number; y: number } {
     const rect = (evt.target as HTMLElement).getBoundingClientRect()
+    const point = this.menu.minimapManager.getMinimapWorldPoint?.(evt.clientX, evt.clientY, rect)
+    if (point) return point
     const minimapFactor = this.menu.minimapManager.getMinimapFactor()
     return {
       x: (evt.clientX - rect.left - rect.width / 2) * minimapFactor,

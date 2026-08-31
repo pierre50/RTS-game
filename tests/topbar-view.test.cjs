@@ -65,6 +65,12 @@ test('topbar displays and themes all civilization ages', () => {
     const { TopbarView } = loadModule('app/ui/TopbarView.ts', {
       '../constants': { RESOURCE_NAMES: ['wood', 'food'] },
       '../lib/lang': { t: key => key },
+      '../lib/resources/playerResourceTotals': {
+        getPlayerChestResourceTotals: player => ({
+          wood: player.buildings.reduce((total, building) => total + (building.inventory?.resources?.wood ?? 0), 0),
+          food: player.buildings.reduce((total, building) => total + (building.inventory?.resources?.food ?? 0), 0),
+        }),
+      },
       '../lib/units/villagerAssignments': {
         summarizeVillagerAssignments: units => ({
           total: units.length,
@@ -78,7 +84,16 @@ test('topbar displays and themes all civilization ages', () => {
         }),
       },
     })
-    const player = { age: 0, wood: 12, food: 5, units: [{ work: 'woodcutter' }, { work: 'idle' }] }
+    const player = {
+      age: 0,
+      wood: 99,
+      food: 99,
+      units: [{ work: 'woodcutter' }, { work: 'idle' }],
+      buildings: [
+        { inventory: { resources: { wood: 7, food: 2 } } },
+        { inventory: { resources: { wood: 5, food: 3 } } },
+      ],
+    }
     const menu = {
       context: { player },
       gameHud: makeElement(),

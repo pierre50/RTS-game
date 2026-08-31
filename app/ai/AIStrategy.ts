@@ -4,6 +4,7 @@ import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions
 import { handleAIProductionActions } from './AIStrategyProduction'
 import { canResearchTechForAI } from './AIStrategyTech'
 import { handleAITechnologyActions } from './AIStrategyTechnologyActions'
+import { getPlayerChestResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import {
   AGE_UP_COSTS,
   AI_DIFFICULTIES,
@@ -209,7 +210,8 @@ export class AIStrategy {
 
   canSpendWithReserve(cost: AIResourceAmount, reserve: AIResourceAmount = {}): boolean {
     const { ai } = this
-    return resourceEntries(cost).every(([resource, amount]) => ai[resource] - amount >= (reserve[resource] || 0))
+    const resources = hasPlayerResourceChests(ai) ? getPlayerChestResourceTotals(ai) : ai
+    return resourceEntries(cost).every(([resource, amount]) => (resources[resource] ?? 0) - amount >= (reserve[resource] || 0))
   }
 
   buyUnits(

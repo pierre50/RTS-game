@@ -14,6 +14,10 @@ import type { RuntimeCell, RuntimeMapSpacePortal } from '../types/map'
 
 const SPACE_PORTAL_CHECK_INTERVAL_MS = 250
 
+export type SpacePortalRouteOptions = {
+  onTransferred?: (() => void) | null
+}
+
 function sameGridPosition(
   a: Pick<UnitEntity, 'i' | 'j'> | RuntimeCell | null | undefined,
   b: RuntimeCell | null | undefined
@@ -207,7 +211,8 @@ function clearUnitSpacePortalRoute(unit: UnitEntity): void {
 export function transferUnitThroughSpacePortal(
   context: GameContextLike,
   unit: UnitEntity,
-  portal: RuntimeMapSpacePortal
+  portal: RuntimeMapSpacePortal,
+  options: SpacePortalRouteOptions = {}
 ): boolean {
   if (unit.isDead || unit.isDestroyed) return false
   if (!unitIsOnCell(unit, portal.sourceCell)) return false
@@ -223,11 +228,13 @@ export function transferUnitThroughSpacePortal(
   const arrivalCell = getPortalArrivalCell(context, unit, portal)
   if (!arrivalCell) return false
 
+  const onTransferred = options.onTransferred ?? unit.spacePortalState?.onTransferred ?? null
   clearUnitSpacePortalRoute(unit)
   prepareUnitForSpaceTransfer(unit)
   moveEntityToMapSpace(context.map, unit, targetSpace, arrivalCell)
   updateInstanceVisibility(unit)
   updateInstanceRenderVisibility(unit)
+  onTransferred?.()
   return true
 }
 
@@ -282,14 +289,16 @@ function scheduleUnitSpacePortalRoute(context: GameContextLike, unit: UnitEntity
 export function routeUnitThroughSpacePortal(
   context: GameContextLike,
   unit: UnitEntity,
-  portal: RuntimeMapSpacePortal
+  portal: RuntimeMapSpacePortal,
+  options: SpacePortalRouteOptions = {}
 ): boolean {
   if (unit.isDead || unit.isDestroyed || !portal.sourceCell || !portal.targetCell) return false
   if (getEntitySpaceId(unit) !== portal.sourceSpaceId) return false
 
-  if (transferUnitThroughSpacePortal(context, unit, portal)) return true
+  if (transferUnitThroughSpacePortal(context, unit, portal, options)) return true
 
   unit.spacePortalState = {
+    onTransferred: options.onTransferred ?? null,
     portalId: portal.id,
     sourceCell: portal.sourceCell,
     sourceSpaceId: portal.sourceSpaceId,

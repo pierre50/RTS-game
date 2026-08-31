@@ -269,6 +269,74 @@ test('portal transfer refreshes visibility and sorts the target space immediatel
   assert.deepEqual(sortedContainers, ['interior-house'])
 })
 
+test('portal transfer completes its local transition only after the unit reaches the target space', () => {
+  const { routeUnitThroughSpacePortal } = loadSpacePortalSystem()
+  const { context, portal, sourceCell } = createPortalContext()
+  const completed = []
+  const unit = {
+    context,
+    currentCell: sourceCell,
+    dest: null,
+    i: sourceCell.i,
+    isDead: false,
+    isDestroyed: false,
+    j: sourceCell.j,
+    label: 'villager-1',
+    path: [],
+    stopInterval() {},
+    stopTimeout() {},
+  }
+  sourceCell.place(unit)
+  sourceCell.solid = true
+
+  assert.equal(
+    routeUnitThroughSpacePortal(context, unit, portal, {
+      onTransferred: () => completed.push(unit.spaceId),
+    }),
+    true
+  )
+
+  assert.deepEqual(completed, ['interior-house'])
+  assert.equal(unit.spacePortalState, null)
+})
+
+test('queued portal transfer preserves its completion until the unit reaches the door', () => {
+  const { routeUnitThroughSpacePortal } = loadSpacePortalSystem()
+  const { context, portal, sourceCell, getScheduled } = createPortalContext()
+  const completed = []
+  const unit = {
+    context,
+    currentCell: context.map.grid[0][0],
+    dest: null,
+    i: 0,
+    isDead: false,
+    isDestroyed: false,
+    j: 0,
+    label: 'villager-1',
+    path: [],
+    sendToEvt(dest) {
+      this.dest = dest
+    },
+    stopInterval() {},
+    stopTimeout() {},
+  }
+
+  routeUnitThroughSpacePortal(context, unit, portal, {
+    onTransferred: () => completed.push(unit.spaceId),
+  })
+  assert.deepEqual(completed, [])
+
+  unit.currentCell = sourceCell
+  unit.i = sourceCell.i
+  unit.j = sourceCell.j
+  sourceCell.place(unit)
+  sourceCell.solid = true
+  getScheduled()()
+
+  assert.deepEqual(completed, ['interior-house'])
+  assert.equal(unit.spacePortalState, null)
+})
+
 test('non-hero portal travelers arrive beside the target passage cell after transfer', () => {
   const { routeUnitThroughSpacePortal } = loadSpacePortalSystem()
   const { context, portal, sourceCell, targetCell } = createPortalContext()

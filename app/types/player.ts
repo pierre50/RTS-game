@@ -34,6 +34,7 @@ export interface VisionGridLike {
   setKnownOccupant(i: number, j: number, occupant: RuntimeEntity): void
   restoreViewers(resolve: (label: string) => VisionViewer | null): void
   toJSON(): SerializedVisionGrid
+  withSpace?<T>(spaceId: string | null | undefined, callback: () => T): T
 }
 
 export interface PlayerConfigLike {

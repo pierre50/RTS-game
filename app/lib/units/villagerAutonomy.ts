@@ -3,7 +3,9 @@ import { isWheatMature } from '../combat'
 import { getGaiaAnimals } from '../playerState'
 import { getNearestAvailableStableForUnit } from '../horses/horseCapture'
 import { isWildHorse } from '../horses/horseTaming'
-import { isVillagerSleepTime } from './villagerSchedule'
+import { shouldVillagerWork } from './villagerSchedule'
+import { logGoldMinerFlow } from './villagerJobDiagnostics'
+import { sendUnitToMiningAction } from './miningActions'
 import {
   clearVillagerAutonomyTargetRejections,
   targetWorkerLoad,
@@ -12,7 +14,19 @@ import {
 } from './villagerAutonomyTargeting'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 
-type AssignmentOptions = { preserveRejectedTargets?: boolean }
+type AssignmentOptions = { exploreWhenNoTarget?: boolean; preserveRejectedTargets?: boolean }
+type ResourceAutonomyJob = Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>
+
+const RESOURCE_AUTONOMY_CONFIG: Record<
+  ResourceAutonomyJob,
+  { action: string; resourceType: string; work: string }
+> = {
+  wood: { action: ACTION_TYPES.chopwood, resourceType: RESOURCE_TYPES.tree, work: WORK_TYPES.woodcutter },
+  stone: { action: ACTION_TYPES.minestone, resourceType: RESOURCE_TYPES.stone, work: WORK_TYPES.stoneminer },
+  gold: { action: ACTION_TYPES.minegold, resourceType: RESOURCE_TYPES.gold, work: WORK_TYPES.goldminer },
+  copper: { action: ACTION_TYPES.minecopper, resourceType: RESOURCE_TYPES.copper, work: WORK_TYPES.goldminer },
+  iron: { action: ACTION_TYPES.mineiron, resourceType: RESOURCE_TYPES.iron, work: WORK_TYPES.goldminer },
+}
 
 function isAliveEntity(entity: RuntimeEntity | null | undefined): entity is RuntimeEntity {
   return Boolean(entity && !entity.isDead && !entity.isDestroyed && (entity.hitPoints ?? 1) > 0)
@@ -78,8 +92,29 @@ function isKnownToUnit(unit: UnitEntity, entity: RuntimeEntity): boolean {
 function exploreForAutonomy(unit: UnitEntity, job: VillagerAutonomyJob): boolean {
   const started = unit.explore?.() ?? false
   if (started) unit.autonomousJob = job
-  else clearVillagerAutonomy(unit)
+  else {
+    setVillagerAutonomy(unit, job)
+    unit.dest = null
+    unit.path = []
+    unit.action = null
+    unit.inactif = true
+  }
+  logGoldMinerFlow(unit, started ? 'autonomy.exploration-started' : 'autonomy.exploration-failed', { job })
   return started
+}
+
+function noStrictTargetForAutonomy(
+  unit: UnitEntity,
+  job: VillagerAutonomyJob,
+  options: AssignmentOptions
+): boolean {
+  if (options.exploreWhenNoTarget !== false) return exploreForAutonomy(unit, job)
+  setVillagerAutonomy(unit, job)
+  unit.dest = null
+  unit.path = []
+  unit.action = null
+  unit.inactif = true
+  return false
 }
 
 function knownResources(unit: UnitEntity, type: string): RuntimeEntity[] {
@@ -141,12 +176,7 @@ export function hasVillagerAutonomyTarget(unit: UnitEntity, job: VillagerAutonom
     )
   }
 
-  const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>, string> = {
-    wood: RESOURCE_TYPES.tree,
-    stone: RESOURCE_TYPES.stone,
-    gold: RESOURCE_TYPES.gold,
-  }
-  return knownResources(unit, resourceTypeByJob[job]).length > 0
+  return knownResources(unit, RESOURCE_AUTONOMY_CONFIG[job].resourceType).length > 0
 }
 
 export function clearVillagerAutonomy(unit: UnitEntity): void {
@@ -190,7 +220,7 @@ export function assignVillagerAutonomy(
   options: AssignmentOptions = {}
 ): boolean {
   if (unit.type !== UNIT_TYPES.villager || unit.isDead || unit.isDestroyed) return false
-  if (isVillagerSleepTime(unit.context)) return false
+  if (!shouldVillagerWork(unit)) return false
   if (!options.preserveRejectedTargets) clearVillagerAutonomyTargetRejections(unit, job)
   setVillagerAutonomy(unit, job)
   const scoring = {
@@ -201,14 +231,14 @@ export function assignVillagerAutonomy(
   try {
     if (job === 'food') {
       const targets = knownFoodTargets(unit)
-      if (!targets.length) return exploreForAutonomy(unit, job)
+      if (!targets.length) return noStrictTargetForAutonomy(unit, job, options)
       if (tryVillagerJobCandidates(unit, job, targets.map(target => foodCandidateFor(unit, target)), scoring)) return true
-      return exploreForAutonomy(unit, job)
+      return noStrictTargetForAutonomy(unit, job, options)
     }
 
     if (job === 'horseCapture') {
       const target = closest(unit, knownCapturableHorses(unit))
-      if (!target) return exploreForAutonomy(unit, job)
+      if (!target) return noStrictTargetForAutonomy(unit, job, options)
       if (!getNearestAvailableStableForUnit(unit, target)) return false
       return tryVillagerJobCandidates(
         unit,
@@ -249,39 +279,36 @@ export function assignVillagerAutonomy(
       return false
     }
 
-    const resourceTypeByJob: Record<Exclude<VillagerAutonomyJob, 'food' | 'construction' | 'horseCapture'>, string> = {
-      wood: RESOURCE_TYPES.tree,
-      stone: RESOURCE_TYPES.stone,
-      gold: RESOURCE_TYPES.gold,
+    const resourceJob = job as ResourceAutonomyJob
+    const resourceConfig = RESOURCE_AUTONOMY_CONFIG[resourceJob]
+    const targets = knownResources(unit, resourceConfig.resourceType)
+    if (!targets.length) {
+      logGoldMinerFlow(unit, 'autonomy.no-known-target', { job })
+      return noStrictTargetForAutonomy(unit, job, options)
     }
-    const targets = knownResources(unit, resourceTypeByJob[job])
-    if (!targets.length) return exploreForAutonomy(unit, job)
+    logGoldMinerFlow(unit, 'autonomy.known-targets', { job, targets: targets.map(target => target.label) })
     const candidates = targets.map(target => {
-      if (job === 'wood') {
+      if (resourceJob === 'wood') {
         return {
-          action: ACTION_TYPES.chopwood,
+          action: resourceConfig.action,
           send: (candidate: RuntimeEntity) => unit.sendToTree?.(candidate, true),
           target,
-          work: WORK_TYPES.woodcutter,
-        }
-      }
-      if (job === 'stone') {
-        return {
-          action: ACTION_TYPES.minestone,
-          send: (candidate: RuntimeEntity) => unit.sendToStone?.(candidate, true),
-          target,
-          work: WORK_TYPES.stoneminer,
+          work: resourceConfig.work,
         }
       }
       return {
-        action: ACTION_TYPES.minegold,
-        send: (candidate: RuntimeEntity) => unit.sendToGold?.(candidate, true),
+        action: resourceConfig.action,
+        send: (candidate: RuntimeEntity) => sendUnitToMiningAction(unit, candidate, resourceConfig.action, true),
         target,
-        work: WORK_TYPES.goldminer,
+        work: resourceConfig.work,
       }
     })
-    if (tryVillagerJobCandidates(unit, job, candidates, scoring)) return true
-    return exploreForAutonomy(unit, job)
+    if (tryVillagerJobCandidates(unit, job, candidates, scoring)) {
+      logGoldMinerFlow(unit, 'autonomy.target-accepted', { job })
+      return true
+    }
+    logGoldMinerFlow(unit, 'autonomy.targets-rejected', { job })
+    return noStrictTargetForAutonomy(unit, job, options)
   } finally {
     unit.assigningAutonomousJob = false
   }

@@ -1,4 +1,4 @@
-import { ACTION_TYPES, BUILDING_TYPES, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
@@ -8,8 +8,9 @@ import { getCellsInCellRadius } from '../grid/cells'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
 import { isTamedHorse } from '../horses/horseTaming'
 import { getEntitySpaceMapLike, getMapSpace } from '../mapSpaces'
-import { pickForeignNpcChatterLine, pickNpcChatterLine } from '../npc/npcChatter'
+import { pickForeignNpcChatterLine, pickNpcChatterLine, pickNpcRestingChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
+import { shouldVillagerRestBeforeBed } from '../units/villagerSchedule'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
 type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'recoverTrap'
@@ -195,6 +196,15 @@ function isCommandableNpc(hero: UnitEntity, target: UnitEntity): boolean {
   return target.action !== ACTION_TYPES.attack
 }
 
+function isRestingBeforeBedNpc(unit: UnitEntity): boolean {
+  return Boolean(
+    unit.type === UNIT_TYPES.villager &&
+      unit.shelterState?.reason === 'sleep' &&
+      unit.sleepVisualState !== 'sleeping' &&
+      shouldVillagerRestBeforeBed(unit)
+  )
+}
+
 export function resolveHeroNpcProximityInteraction(
   hero: UnitEntity | null,
   target: RuntimeEntity | null | undefined
@@ -204,7 +214,8 @@ export function resolveHeroNpcProximityInteraction(
   if (isCommandableNpc(hero, unit)) {
     return { action: 'communicate', labelKey: 'heroInteractionCommunicate', target: unit }
   }
-  const sleeping = unit.shelterState?.reason === 'sleep'
+  const sleeping = unit.shelterState?.reason === 'sleep' && unit.sleepVisualState === 'sleeping'
+  const resting = !sleeping && unit.owner === hero.owner && isRestingBeforeBedNpc(unit)
   return {
     action: 'communicate',
     labelKey: 'heroInteractionCommunicate',
@@ -214,7 +225,9 @@ export function resolveHeroNpcProximityInteraction(
       chatterLine: sleeping
         ? undefined
         : unit.owner === hero.owner
-          ? pickNpcChatterLine()
+          ? resting
+            ? pickNpcRestingChatterLine(unit)
+            : pickNpcChatterLine()
           : pickForeignNpcChatterLine(unit),
       ordersEnabled: false,
     },
@@ -225,7 +238,11 @@ export function resolveHeroNpcProximityInteraction(
 // Only call this at actual interaction-execution time, never from the per-frame proximity-prompt
 // resolver above — it has a side effect (waking the unit).
 export function wakeOwnSleepingNpcForCommunication(hero: UnitEntity, target: UnitEntity): void {
-  if (target.shelterState?.reason !== 'sleep' || target.owner !== hero.owner) return
+  if (
+    target.shelterState?.reason !== 'sleep' ||
+    target.sleepVisualState !== 'sleeping' ||
+    target.owner !== hero.owner
+  ) return
   target.context?.unitRest?.wakeSleepingUnitForOrder(target)
 }
 

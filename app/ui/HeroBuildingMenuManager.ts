@@ -177,6 +177,11 @@ export class HeroBuildingMenuManager {
     this.updateProgress()
   }
 
+  refreshInventory(): void {
+    if (this.building?.type !== BUILDING_TYPES.chest) return
+    this.syncLiveState()
+  }
+
   getStructureSignature(): string {
     const building = this.building
     if (!building) return ''
@@ -246,7 +251,7 @@ export class HeroBuildingMenuManager {
     })
     const heroContainer = createInventoryContainer(hero, {
       id: hero.label,
-      labelKey: 'inventoryBag',
+      labelKey: 'inventoryYourBag',
     })
     this.transferPanel = new InventoryTransferPanel({
       context: this.menu.context,

@@ -9,6 +9,7 @@ export type InventoryStorage = {
 export type InventoryContainer = {
   id: string
   inventory: InventoryStorage
+  label?: string
   labelKey: string
   canAcceptEquipment?: (equipment: string) => boolean
   canAcceptResource?: (resource: keyof ResourceAmount, amount: number) => boolean

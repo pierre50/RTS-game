@@ -39,12 +39,58 @@ function loadGamepadHeroInput(getGamepad) {
     },
     '../lib/audio/settings': {
       getGamepadEnabled: () => true,
+      getGamepadButtonIndex: action => (action === 'inventoryTransferOne' ? 0 : 2),
     },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.GamepadHeroInput
 }
+
+test('gamepad inventory transfer buttons dispatch one/all actions to hovered slots', () => {
+  let gamepad = makeGamepad()
+  const calls = []
+  const previousDocument = global.document
+  const previousWindow = global.window
+  const slot = {
+    dispatchEvent: event => calls.push(event.detail.mode),
+  }
+  global.window = { scrollX: 0, scrollY: 0 }
+  global.document = {
+    elementFromPoint: () => ({
+      closest: selector => (selector === '[data-inventory-transfer-slot="true"]' ? slot : null),
+    }),
+  }
+  const GamepadHeroInput = loadGamepadHeroInput(() => gamepad)
+  const input = new GamepadHeroInput({
+    context: { gamebox: { getBoundingClientRect: () => ({ width: 100, height: 100 }) } },
+    mouse: { x: 10, y: 10 },
+    heroController: {
+      handleKeyDown: () => {},
+      handleKeyUp: () => {},
+      cycleTool: () => {},
+      handlePrimaryPointerDown: () => {},
+      handlePointerUp: () => {},
+    },
+    openHeroEntityInteraction: () => {},
+  })
+
+  try {
+    input.update()
+    gamepad = makeGamepad([0])
+    input.update()
+    input.update()
+    gamepad = makeGamepad()
+    input.update()
+    gamepad = makeGamepad([2])
+    input.update()
+
+    assert.deepEqual(calls, ['one', 'all'])
+  } finally {
+    global.document = previousDocument
+    global.window = previousWindow
+  }
+})
 
 function makeGamepad(pressed = []) {
   const pressedButtons = new Set(pressed)

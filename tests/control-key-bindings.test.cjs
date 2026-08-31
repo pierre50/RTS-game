@@ -130,3 +130,22 @@ test('recording a digit-row binding stores the physical key code', () => {
     restore()
   }
 })
+
+test('inventory transfer gamepad bindings can be rebound and reset', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getGamepadBindings().inventoryTransferOne, 'Button0')
+    assert.equal(settings.getGamepadBindings().inventoryTransferAll, 'Button2')
+    assert.equal(settings.getGamepadButtonIndex('inventoryTransferOne'), 0)
+    assert.equal(settings.getGamepadButtonLabel('Button2'), 'X / Square')
+
+    settings.setGamepadBindingFromButtonIndex('inventoryTransferOne', 1)
+    assert.equal(settings.getGamepadBindings().inventoryTransferOne, 'Button1')
+    assert.equal(settings.getGamepadButtonIndex('inventoryTransferOne'), 1)
+
+    settings.resetGamepadBindings()
+    assert.equal(settings.getGamepadBindings().inventoryTransferOne, 'Button0')
+  } finally {
+    restore()
+  }
+})

@@ -51,6 +51,7 @@ function loadGameResourceDelivery(overrides = {}) {
         BUILDING_TYPES: {
           chest: 'Chest',
         },
+        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
         SOUND_CUES: {
           building: { chestOpen: 'building/chest-open' },
         },
@@ -79,7 +80,71 @@ function loadGameResourceDelivery(overrides = {}) {
         getEntitySpaceId: overrides.getEntitySpaceId ?? (unit => unit.spaceId ?? 'outside'),
       },
       '../../lib/units/villagerAutonomy': {
+        assignVillagerAutonomy: overrides.assignVillagerAutonomy ?? (() => false),
         resumeVillagerAutonomy: () => false,
+      },
+      '../../lib/units/villagerAutonomyTargeting': {
+        getAutonomyJobForWork: work => {
+          if (work === 'woodcutter') return 'wood'
+          if (work === 'stoneminer') return 'stone'
+          if (work === 'goldminer') return 'gold'
+          return null
+        },
+      },
+      '../../lib/units/villagerTaskRecovery': {
+        resumeVillagerJobIntent:
+          overrides.resumeVillagerJobIntent ??
+          ((unit, task) => {
+            unit.previousDest = null
+            unit.previousWork = null
+            unit.handleChangeDest?.()
+            unit.dest = null
+            unit.path = []
+            unit.autonomousJob = task?.autonomousJob ?? unit.autonomousJob ?? null
+            if (task?.dest && task.action && unit.getActionCondition?.(task.dest, task.action) !== false) {
+              const senders = {
+                chopwood: unit.sendToTree,
+                minegold: unit.sendToMineResource,
+                minestone: unit.sendToStone,
+              }
+              return senders[task.action]?.call(unit, task.dest, true) !== false
+            }
+            return Boolean(
+              (task?.autonomousJob ?? unit.autonomousJob) &&
+                (overrides.assignVillagerAutonomy?.(unit, task?.autonomousJob ?? unit.autonomousJob, {
+                  exploreWhenNoTarget: true,
+                  preserveRejectedTargets: true,
+                }) ?? false)
+            )
+          }),
+        resumeVillagerStoredTask:
+          overrides.resumeVillagerStoredTask ??
+          ((unit, task, options) => {
+            if (!task?.dest || !task.action) return false
+            unit.previousDest = null
+            unit.previousWork = null
+            unit.handleChangeDest?.()
+            unit.dest = null
+            unit.path = []
+            if (task.work) unit.work = task.work
+            unit.autonomousJob = task.autonomousJob ?? unit.autonomousJob ?? null
+            if (unit.getActionCondition?.(task.dest, task.action) === false) {
+              return Boolean(
+                unit.autonomousJob &&
+                  (overrides.assignVillagerAutonomy?.(unit, unit.autonomousJob, {
+                    exploreWhenNoTarget: options?.exploreWhenNoTarget ?? false,
+                    preserveRejectedTargets: true,
+                  }) ??
+                    false)
+              )
+            }
+            const senders = {
+              chopwood: unit.sendToTree,
+              minegold: unit.sendToMineResource,
+              minestone: unit.sendToStone,
+            }
+            return senders[task.action]?.call(unit, task.dest, true) !== false
+          }),
       },
       '../../lib/resources/resourceDelivery': {
         buildingAcceptsInventoryResource: () => true,
@@ -91,10 +156,15 @@ function loadGameResourceDelivery(overrides = {}) {
         routeUnitIntoBuildingInteriorSpace: () => true,
         routeUnitOutOfBuildingInteriorSpace:
           overrides.routeUnitOutOfBuildingInteriorSpace ??
-          ((_context, unit) => {
+          ((_context, unit, _space, options) => {
             unit.spaceId = 'outside'
+            options?.onTransferred?.()
             return true
           }),
+      },
+      '../../services/rest/UnitRestLifecycle': {
+        continueRestAfterDelivery:
+          overrides.continueRestAfterDelivery ?? (() => false),
       },
     },
   })
@@ -185,7 +255,8 @@ test('delivery target prefers a building that accepts the whole carried pocket',
 })
 
 test('hero-controlled units do not auto-select a delivery target', () => {
-  const { findResourceDeliveryTarget, unitShouldDeliverResource } = loadResourceDelivery()
+  const { findResourceDeliveryTarget, getUnitResourceCapacityRemaining, unitShouldDeliverResource } =
+    loadResourceDelivery()
   const owner = {
     buildings: [
       {
@@ -205,6 +276,7 @@ test('hero-controlled units do not auto-select a delivery target', () => {
     type: 'Villager',
   }
 
+  assert.equal(getUnitResourceCapacityRemaining(hero, 'meat'), Number.POSITIVE_INFINITY)
   assert.equal(unitShouldDeliverResource(hero, 'meat'), false)
   assert.equal(findResourceDeliveryTarget(hero), null)
 })
@@ -256,7 +328,70 @@ test('resource delivery finalizes immediately when building exit transfers the u
   assert.equal(unit.resourceDeliveryState, null)
   assert.deepEqual(unit.inventory.resources, {})
   assert.deepEqual(chest.inventory.resources, { wood: 4 })
-  assert.deepEqual(calls, [['handleChangeDest'], ['sendToTree', 'tree-1', true], ['refreshInventory']])
+  assert.deepEqual(calls, [['refreshInventory'], ['handleChangeDest'], ['sendToTree', 'tree-1', true]])
+})
+
+test('gold miner resumes minegold only after the town center exit transfer completes', () => {
+  let completeExit = null
+  const calls = []
+  const { handleResourceDeliveryAction } = loadGameResourceDelivery({
+    routeUnitOutOfBuildingInteriorSpace: (_context, unit, _space, options) => {
+      calls.push(['routeOutside'])
+      completeExit = () => {
+        unit.spaceId = 'outside'
+        options?.onTransferred?.()
+      }
+      return true
+    },
+  })
+  const owner = { buildings: [], units: [] }
+  const building = { family: 'building', owner, label: 'town-center', type: 'TownCenter' }
+  const chest = { family: 'building', inventory: { resources: {} }, label: 'chest-1', type: 'Chest' }
+  const gold = { family: 'resource', isDestroyed: false, label: 'gold-1', type: 'Gold' }
+  const unit = {
+    action: 'delivery',
+    autonomousJob: 'gold',
+    dest: chest,
+    getActionCondition: (target, action) => target === gold && action === 'minegold',
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    inventory: { resources: { gold: 10 } },
+    owner,
+    path: [],
+    resourceDeliveryState: {
+      building,
+      chest,
+      phase: 'toChest',
+      returnTask: { action: 'minegold', autonomousJob: 'gold', dest: gold, work: 'goldminer' },
+      spaceId: 'interior:tc',
+    },
+    sendToMineResource(target, immediate) {
+      calls.push(['sendToMineResource', target.label, immediate, this.spaceId])
+      this.dest = target
+      this.action = 'minegold'
+      return true
+    },
+    space: { id: 'interior:tc' },
+    spaceId: 'interior:tc',
+    work: 'goldminer',
+  }
+  owner.units.push(unit)
+  const context = { menu: { refreshInventory: () => calls.push(['refreshInventory']) }, scheduler: { remove() {} } }
+
+  assert.equal(handleResourceDeliveryAction(context, unit), true)
+  assert.equal(unit.resourceDeliveryState.phase, 'leaving')
+  assert.equal(calls.some(call => call[0] === 'sendToMineResource'), false)
+
+  completeExit()
+
+  assert.equal(unit.resourceDeliveryState, null)
+  assert.equal(unit.dest, gold)
+  assert.equal(unit.action, 'minegold')
+  assert.deepEqual(calls.find(call => call[0] === 'sendToMineResource'), [
+    'sendToMineResource',
+    'gold-1',
+    true,
+    'outside',
+  ])
 })
 
 test('resource delivery plays a distant chest open cue when a villager deposits resources', () => {
@@ -350,10 +485,10 @@ test('resource delivery system recovers stale leaving states with old task ids',
   assert.equal(unit.resourceDeliveryState, null)
   assert.deepEqual(calls, [
     ['add', 'resource.delivery'],
-    ['handleChangeDest'],
-    ['sendToStone', 'stone-1', true],
     ['remove', 999],
     ['refreshInventory'],
+    ['handleChangeDest'],
+    ['sendToStone', 'stone-1', true],
   ])
 })
 
@@ -413,10 +548,135 @@ test('resource delivery system resumes work when a stale delivery state has no r
   assert.equal(unit.resourceDeliveryState, null)
   assert.deepEqual(calls, [
     ['add', 'resource.delivery'],
-    ['handleChangeDest'],
-    ['sendToTree', 'tree-1', true],
     ['remove', 999],
     ['refreshInventory'],
+    ['handleChangeDest'],
+    ['sendToTree', 'tree-1', true],
+  ])
+})
+
+test('evening delivery clears its delivery state before continuing toward shelter', () => {
+  const { ResourceDeliverySystem } = loadGameResourceDelivery({
+    continueRestAfterDelivery: candidate => {
+      calls.push(['continueRest', candidate.resourceDeliveryState])
+      return true
+    },
+    resumeVillagerJobIntent: () => {
+      calls.push(['fallbackToJob'])
+      return false
+    },
+    unitHasDeliverableResourcesForBuilding: () => false,
+  })
+  const calls = []
+  const owner = { units: [] }
+  const building = { family: 'building', owner, label: 'town-center', type: 'TownCenter' }
+  const chest = { family: 'building', label: 'chest-1', type: 'Chest' }
+  const unit = {
+    autonomousJob: 'gold',
+    inventory: { resources: {} },
+    owner,
+    resourceDeliveryState: {
+      building,
+      chest,
+      phase: 'leaving',
+      returnTask: { action: 'minegold', autonomousJob: 'gold', dest: { label: 'gold-1' }, work: 'goldminer' },
+      spaceId: 'interior:tc',
+      taskId: 999,
+    },
+    shelterState: { status: 'delivering', reason: 'sleep', location: 'outside' },
+    spaceId: 'outside',
+  }
+  owner.units.push(unit)
+  const context = {
+    menu: { refreshInventory: () => calls.push(['refreshInventory']) },
+    players: [owner],
+    scheduler: {
+      add() {
+        return 1
+      },
+      remove: id => calls.push(['remove', id]),
+    },
+  }
+  unit.context = context
+
+  new ResourceDeliverySystem(context)
+
+  assert.equal(unit.resourceDeliveryState, null)
+  assert.equal(unit.shelterState.status, 'delivering')
+  assert.deepEqual(calls, [
+    ['remove', 999],
+    ['refreshInventory'],
+    ['continueRest', null],
+  ])
+})
+
+test('resource delivery system falls back to autonomous job when exact return target is invalid', () => {
+  const calls = []
+  const { ResourceDeliverySystem } = loadGameResourceDelivery({
+    assignVillagerAutonomy: (unit, job, options) => {
+      calls.push(['assignAutonomy', job, options])
+      unit.dest = { family: 'resource', label: 'gold-2' }
+      unit.action = 'minegold'
+      return true
+    },
+    unitHasDeliverableResourcesForBuilding: () => false,
+  })
+  const owner = { units: [] }
+  const building = { family: 'building', owner, label: 'town-center', type: 'TownCenter' }
+  const chest = { family: 'building', inventory: { resources: {} }, label: 'chest-1', type: 'Chest' }
+  const depletedGold = { family: 'resource', isDestroyed: true, label: 'gold-1' }
+  const unit = {
+    action: null,
+    autonomousJob: null,
+    dest: null,
+    handleChangeDest: () => calls.push(['handleChangeDest']),
+    inventory: { resources: {} },
+    owner,
+    path: [],
+    previousDest: null,
+    previousWork: null,
+    resourceDeliveryState: {
+      building,
+      chest,
+      phase: 'entering',
+      returnTask: {
+        action: 'minegold',
+        autonomousJob: 'gold',
+        dest: depletedGold,
+        work: 'goldminer',
+      },
+      spaceId: 'interior:tc',
+      taskId: 999,
+    },
+    sendToMineResource: () => calls.push(['sendToMineResource']),
+    spaceId: 'outside',
+    work: null,
+    getActionCondition: () => false,
+  }
+  owner.units = [unit]
+  const context = {
+    menu: { refreshInventory: () => calls.push(['refreshInventory']) },
+    players: [owner],
+    scheduler: {
+      add(_callback, _interval, name) {
+        calls.push(['add', name])
+        return 1
+      },
+      remove: id => calls.push(['remove', id]),
+    },
+  }
+  unit.context = context
+
+  new ResourceDeliverySystem(context)
+
+  assert.equal(unit.resourceDeliveryState, null)
+  assert.equal(unit.autonomousJob, 'gold')
+  assert.deepEqual(calls, [
+    ['add', 'resource.delivery'],
+    ['remove', 999],
+    ['refreshInventory'],
+    ['handleChangeDest'],
+    ['assignAutonomy', 'gold', { exploreWhenNoTarget: true, preserveRejectedTargets: true }],
   ])
 })
 

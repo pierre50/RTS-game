@@ -14,6 +14,7 @@ import { debugCombatMove } from './UnitMovementDebug'
 import {
   canUnitWaitOnCell,
   canUnitUseCellAsIdleDestination,
+  canUseReservedPassageCellForTransit,
   createReservedPassageCellLookup,
   findNearestPassageWaitingCell,
   shouldUnitAvoidPassageStop,
@@ -35,6 +36,19 @@ import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../../../
 import { getActionArrivalCell } from './UnitActionArrivalCells'
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
+import type { PathfindingOptions } from '../../../services/Pathfinding'
+
+type PassageLookup = ReturnType<typeof createReservedPassageCellLookup>
+
+function createPassagePathfindingOptions(passageLookup: PassageLookup): PathfindingOptions<RuntimeCell> {
+  return {
+    canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passageLookup),
+  }
+}
+
+function canUsePassageCellForTransit(cell: RuntimeCell, passageLookup: PassageLookup): boolean {
+  return canUseReservedPassageCellForTransit(cell, passageLookup)
+}
 
 export class UnitMovementRouting {
   unit: UnitEntity
@@ -83,6 +97,7 @@ export class UnitMovementRouting {
     )
     let best: { cell: RuntimeCell; path: RuntimeCell[] } | null = null
     const passageLookup = createReservedPassageCellLookup(unit.context)
+    const pathfinding = createPassagePathfindingOptions(passageLookup)
 
     for (let distance = minDistance; distance <= maxDistance; distance++) {
       const cells = getCellsAroundPoint(target.i, target.j, map.grid, distance, cell =>
@@ -96,7 +111,7 @@ export class UnitMovementRouting {
 
       for (const cell of cells) {
         if (allowCurrentCell && unit.i === cell.i && unit.j === cell.j) return { cell, path: [] }
-        const path = getInstancePath(unit, cell.i, cell.j, map)
+        const path = getInstancePath(unit, cell.i, cell.j, map, pathfinding)
         if (path.length && (!best || path.length < best.path.length)) {
           best = { cell, path }
         }
@@ -144,7 +159,7 @@ export class UnitMovementRouting {
   routeToActionArrivalCell(
     dest: RuntimeEntity | RuntimeCell,
     action: string | null,
-    passageLookup: ReturnType<typeof createReservedPassageCellLookup>
+    passageLookup: PassageLookup
   ): boolean {
     const unit = this.unit
     const map = getEntitySpaceMapLike(unit, unit.context?.map)
@@ -154,12 +169,12 @@ export class UnitMovementRouting {
       !canUnitUseCellAsIdleDestination(unit, arrivalCell, {
         allowPassageStop: true,
         passageLookup,
-      })
+      }) &&
+      !canUsePassageCellForTransit(arrivalCell, passageLookup)
     ) {
       this.handleUnreachableDestination(action)
       return true
     }
-
     if (unit.i === arrivalCell.i && unit.j === arrivalCell.j) {
       unit.setDest?.(dest)
       unit.action = action
@@ -169,7 +184,13 @@ export class UnitMovementRouting {
     }
 
     if (!map) return false
-    const path = getInstancePath(unit, arrivalCell.i, arrivalCell.j, map)
+    const path = getInstancePath(
+      unit,
+      arrivalCell.i,
+      arrivalCell.j,
+      map,
+      createPassagePathfindingOptions(passageLookup)
+    )
     if (!path.length) return false
 
     unit.setDest?.(dest)
@@ -306,11 +327,13 @@ export class UnitMovementRouting {
       return
     }
     if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
+      const passagePathfinding = createPassagePathfindingOptions(passageLookup)
       const destCell = map.grid[dest.i][dest.j]
       if (destCell.solid) {
         path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map, {
           isCellAllowed: cell =>
             canUnitUseCellAsIdleDestination(unit, cell, { allowPassageStop: passageStopAllowed, passageLookup }),
+          pathfinding: passagePathfinding,
         })
         if (!path.length && unit.work) {
           unit.action = action
@@ -335,7 +358,7 @@ export class UnitMovementRouting {
       }
     }
     if (!path.length) {
-      path = getInstancePath(unit, dest.i, dest.j, map)
+      path = getInstancePath(unit, dest.i, dest.j, map, createPassagePathfindingOptions(passageLookup))
     }
     if (path.length) {
       unit.setDest?.(dest)

@@ -629,7 +629,7 @@ test('hero context menu is suppressed inside the game', () => {
   }
 })
 
-test('hero control-click uses the secondary hero defense action', () => {
+test('hero control-click stays a primary hero action on macOS', () => {
   const { controls, restore } = createControls()
   try {
     const calls = []
@@ -648,8 +648,8 @@ test('hero control-click uses the secondary hero defense action', () => {
     })
 
     assert.deepEqual(calls, ['preventDefault'])
-    assert.equal(controls.heroController.primaryPointerDowns, 0)
-    assert.equal(controls.heroController.secondaryPointerDowns, 1)
+    assert.equal(controls.heroController.primaryPointerDowns, 1)
+    assert.equal(controls.heroController.secondaryPointerDowns, 0)
   } finally {
     restore()
   }

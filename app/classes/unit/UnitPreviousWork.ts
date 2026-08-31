@@ -5,9 +5,9 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 
 const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
   Stone: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
-  Gold: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
-  Copper: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
-  Iron: (unit, dest) => (unit.sendToMineResource ? (unit.sendToMineResource(dest, true), true) : false),
+  Gold: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
+  Copper: (unit, dest) => (unit.sendToCopper ? (unit.sendToCopper(dest, true), true) : false),
+  Iron: (unit, dest) => (unit.sendToIron ? (unit.sendToIron(dest, true), true) : false),
   Berrybush: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
   Wheat: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),
   Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),

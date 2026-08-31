@@ -1,5 +1,6 @@
 import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
+import { getPlayerChestResourceTotals } from '../lib/resources/playerResourceTotals'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import { createResourceIconMaps } from './utils/resourceIcons'
 import type { UnitEntity } from '../types/entities'
@@ -7,7 +8,7 @@ import type { MenuHost } from './MenuHost'
 
 const AGE_LABEL_KEYS = ['stoneAge', 'toolAge', 'bronzeAge', 'ironAge'] as const
 type ResourceName = (typeof RESOURCE_NAMES)[number]
-type ResourcePlayer = Partial<Record<ResourceName, number>> & { age?: number; units?: UnitEntity[] }
+type ResourcePlayer = { age?: number; units?: UnitEntity[] }
 
 export class TopbarView {
   menu: MenuHost
@@ -96,9 +97,9 @@ export class TopbarView {
       },
     } = this
     const assignments = summarizeVillagerAssignments(player?.units ?? [])
+    const storedResources = getPlayerChestResourceTotals(player)
     RESOURCE_NAMES.forEach(prop => {
-      const resourcePlayer = player as ResourcePlayer | null
-      const val = Math.min(resourcePlayer?.[prop] || 0, 99999)
+      const val = Math.min(storedResources[prop] || 0, 99999)
       const valueEl = this.resourceEls[prop]
       valueEl.textContent = String(val)
       const workerEl = this.resourceWorkerEls[prop]

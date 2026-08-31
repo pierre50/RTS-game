@@ -81,11 +81,16 @@ type PathMap<TCell extends PathCell = PathCell> = {
   size?: number
 }
 
+export type PathfindingOptions<TCell extends PathCell = PathCell> = {
+  canPassThroughSolidCell?: (cell: TCell) => boolean
+}
+
 export function findInstancePath<TCell extends PathCell>(
   instance: PathInstance,
   x: number,
   y: number,
-  map: PathMap<TCell>
+  map: PathMap<TCell>,
+  options: PathfindingOptions<TCell> = {}
 ): TCell[] {
   const startedAt = performance.now()
   const maxZone = 10
@@ -120,7 +125,9 @@ export function findInstancePath<TCell extends PathCell>(
 
   function isCellReachable(cell?: PathCell): boolean {
     if (!cell) return false
-    if (cell.solid && !isCellOccupiedByPathingInstance(cell)) return false
+    if (cell.solid && !isCellOccupiedByPathingInstance(cell) && !options.canPassThroughSolidCell?.(cell as TCell)) {
+      return false
+    }
     return cell.category !== 'Water'
   }
 

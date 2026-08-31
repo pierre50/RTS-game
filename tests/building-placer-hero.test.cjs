@@ -119,6 +119,33 @@ test('hero building preview rejects footprints overlapping the hero cell', () =>
   assert.equal(placer.canPlaceMouseBuilding(grid[0][0]), true)
 })
 
+test('crafted inventory building placement stays within two sizes from the hero', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const grid = createGrid(7)
+  const controls = {
+    context: { map: { grid } },
+    mouseBuilding: { type: 'Chest', size: 1, inventoryItem: 'chest' },
+    heroUnit: { i: 3, j: 3, inventory: { equipment: ['chest'] } },
+  }
+  const placer = new BuildingPlacer(controls)
+
+  assert.equal(placer.canPlaceMouseBuilding(grid[5][5]), true)
+  assert.equal(placer.canPlaceMouseBuilding(grid[6][6]), false)
+})
+
+test('regular construction placement keeps its existing range', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const grid = createGrid(5)
+  const controls = {
+    context: { map: { grid } },
+    mouseBuilding: { type: 'House', size: 1 },
+    heroUnit: { i: 2, j: 2 },
+  }
+  const placer = new BuildingPlacer(controls)
+
+  assert.equal(placer.canPlaceMouseBuilding(grid[4][4]), true)
+})
+
 test('hero wall preview rejects the hero cell', () => {
   const BuildingPlacer = loadBuildingPlacer()
   const grid = createGrid(5)

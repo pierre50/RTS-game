@@ -67,7 +67,7 @@ class MockParticle {
 }
 
 function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) {
-  return loadTsModule('app/services/WeatherSystem.ts', {
+  return loadTsModule('app/services/weather/WeatherSystem.ts', {
     mocks: {
       '@pixi/sound': {
         sound: { play: () => ({ stop() {}, volume: 0 }) },
@@ -81,7 +81,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
       'pixi-filters': {
         AdjustmentFilter: MockAdjustmentFilter,
       },
-      '../constants': {
+      '../../constants': {
         FAMILY_TYPES: { cell: 'cell' },
         SOUND_CUES: {
           weather: {
@@ -95,11 +95,11 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
           },
         },
       },
-      '../lib': {
+      '../../lib': {
         isGameplaySoundSuppressed: () => suppressed,
         playSoundCue: () => {},
       },
-      '../lib/audio/nightAmbience': {
+      '../../lib/audio/nightAmbience': {
         getNightAmbienceTargetVolume: () => {
           if (failOnAmbience)
             throw new Error('night ambience should not be calculated while gameplay sound is suppressed')
@@ -107,7 +107,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         },
         NIGHT_AMBIENCE_LERP_PER_SECOND: 1,
       },
-      '../lib/audio/oceanAmbience': {
+      '../../lib/audio/oceanAmbience': {
         getOceanAmbienceTargetVolume: () => {
           if (failOnAmbience)
             throw new Error('ocean ambience should not be calculated while gameplay sound is suppressed')
@@ -115,7 +115,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         },
         OCEAN_AMBIENCE_LERP_PER_SECOND: 1,
       },
-      './weather/WeatherProfiles': {
+      './WeatherProfiles': {
         AMBIENT_CROSSFADE_MID: 0.5,
         BIOME_WEATHER_PROFILES: {
           Temperate: { precipMultiplier: 1, veilMultiplier: 1, windMultiplier: 1 },
@@ -151,7 +151,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         WIND_LOOP_MAX_VOLUME: 1,
         WIND_TARGETS: { sunny: 0 },
       },
-      './weather/WeatherUtils': {
+      './WeatherUtils': {
         addParticleDrift: () => {},
         biomeKeyFromEnvironment: () => 'Temperate',
         clamp: (value, min, max) => Math.max(min, Math.min(max, value)),
@@ -173,7 +173,7 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         scaleParticleTarget: value => value,
         seconds: value => value * 1000,
       },
-      './weather/WeatherParticles': {
+      './WeatherParticles': {
         createRainTexture: () => ({ destroy() {} }),
         createSandTexture: () => ({ destroy() {} }),
         createSnowTexture: () => ({ destroy() {} }),
@@ -181,10 +181,10 @@ function loadWeatherSystem({ failOnAmbience = false, suppressed = false } = {}) 
         SandGrain: MockParticle,
         Snowflake: MockParticle,
       },
-      './weather/WeatherAudio': {
+      './WeatherAudio': {
         startAmbientLoop: (_alias, onReady) => onReady({ stop() {}, volume: 0 }),
       },
-      './weather/WeatherColorGrading': {
+      './WeatherColorGrading': {
         WeatherColorGrading: loadTsModule('app/services/weather/WeatherColorGrading.ts', {
           mocks: {
             'pixi.js': { Container: MockContainer, Rectangle: MockRectangle },

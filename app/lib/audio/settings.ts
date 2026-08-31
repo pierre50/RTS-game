@@ -8,6 +8,7 @@ const SHADOWS_KEY = 'graphics_shadows'
 const RESOURCE_WIND_KEY = 'graphics_resource_wind'
 const KEY_BINDINGS_KEY = 'controls_key_bindings'
 const GAMEPAD_ENABLED_KEY = 'controls_gamepad_enabled'
+const GAMEPAD_BINDINGS_KEY = 'controls_gamepad_bindings'
 
 const DEFAULT_VOLUME = 0.6
 const DEFAULT_SPEED = 1
@@ -50,6 +51,10 @@ export type ControlBindingAction =
 
 export type ControlKeyBindings = Record<ControlBindingAction, string>
 
+export type GamepadBindingAction = 'inventoryTransferOne' | 'inventoryTransferAll'
+export type GamepadButtonBinding = `Button${number}`
+export type GamepadButtonBindings = Record<GamepadBindingAction, GamepadButtonBinding>
+
 const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   cameraUp: 'ArrowUp',
   cameraDown: 'ArrowDown',
@@ -70,6 +75,31 @@ const DEFAULT_KEY_BINDINGS: ControlKeyBindings = {
   heroDismountHorse: 'Shift',
   inventory: 'i',
   pause: 'p',
+}
+
+const DEFAULT_GAMEPAD_BINDINGS: GamepadButtonBindings = {
+  inventoryTransferOne: 'Button0',
+  inventoryTransferAll: 'Button2',
+}
+
+const GAMEPAD_BUTTON_LABELS: Record<GamepadButtonBinding, string> = {
+  Button0: 'A / Cross',
+  Button1: 'B / Circle',
+  Button2: 'X / Square',
+  Button3: 'Y / Triangle',
+  Button4: 'L1 / LB',
+  Button5: 'R1 / RB',
+  Button6: 'L2 / LT',
+  Button7: 'R2 / RT',
+  Button8: 'View / Select',
+  Button9: 'Menu / Start',
+  Button10: 'L3',
+  Button11: 'R3',
+  Button12: 'D-Pad Up',
+  Button13: 'D-Pad Down',
+  Button14: 'D-Pad Left',
+  Button15: 'D-Pad Right',
+  Button16: 'Home',
 }
 
 export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingAction[] }[] = [
@@ -97,6 +127,7 @@ export const CONTROL_BINDING_GROUPS: { key: string; actions: ControlBindingActio
 ]
 
 const CONTROL_BINDING_ACTIONS = Object.keys(DEFAULT_KEY_BINDINGS) as ControlBindingAction[]
+const GAMEPAD_BINDING_ACTIONS = Object.keys(DEFAULT_GAMEPAD_BINDINGS) as GamepadBindingAction[]
 
 export const SPEED_PRESETS = [
   { key: 'speedSlow', value: 0.8 },
@@ -153,6 +184,7 @@ let _shadowsEnabled = getStoredBoolean(SHADOWS_KEY, DEFAULT_SHADOWS_ENABLED)
 let _resourceWindEnabled = getStoredBoolean(RESOURCE_WIND_KEY, DEFAULT_RESOURCE_WIND_ENABLED)
 let _gamepadEnabled = getStoredBoolean(GAMEPAD_ENABLED_KEY, DEFAULT_GAMEPAD_ENABLED)
 let _keyBindings = loadKeyBindings()
+let _gamepadBindings = loadGamepadBindings()
 
 sound.volumeAll = _volume
 
@@ -232,6 +264,30 @@ export function setGamepadEnabled(value: boolean): void {
   _gamepadEnabled = value
   localStorage.setItem(GAMEPAD_ENABLED_KEY, String(value))
   notifySettingsChanged()
+}
+
+export function getGamepadBindings(): GamepadButtonBindings {
+  return { ..._gamepadBindings }
+}
+
+export function getGamepadButtonLabel(binding: GamepadButtonBinding): string {
+  return GAMEPAD_BUTTON_LABELS[binding] ?? binding.replace('Button', 'Button ')
+}
+
+export function getGamepadButtonIndex(action: GamepadBindingAction): number {
+  return Number(_gamepadBindings[action].replace('Button', ''))
+}
+
+export function setGamepadBindingFromButtonIndex(action: GamepadBindingAction, index: number): void {
+  if (!Number.isInteger(index) || index < 0) return
+  _gamepadBindings = { ..._gamepadBindings, [action]: `Button${index}` as GamepadButtonBinding }
+  localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(_gamepadBindings))
+}
+
+export function resetGamepadBindings(): GamepadButtonBindings {
+  _gamepadBindings = { ...DEFAULT_GAMEPAD_BINDINGS }
+  localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(_gamepadBindings))
+  return getGamepadBindings()
 }
 
 export function onVisualSettingsChange(callback: () => void): () => void {
@@ -332,6 +388,27 @@ function loadKeyBindings(): ControlKeyBindings {
     } as ControlKeyBindings
   } catch {
     return { ...DEFAULT_KEY_BINDINGS }
+  }
+}
+
+function normalizeGamepadButtonBinding(value: string | undefined, fallback: GamepadButtonBinding): GamepadButtonBinding {
+  return /^Button\d+$/.test(value ?? '') ? (value as GamepadButtonBinding) : fallback
+}
+
+function loadGamepadBindings(): GamepadButtonBindings {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || '{}') as Partial<GamepadButtonBindings>
+    return {
+      ...DEFAULT_GAMEPAD_BINDINGS,
+      ...Object.fromEntries(
+        GAMEPAD_BINDING_ACTIONS.map(action => [
+          action,
+          normalizeGamepadButtonBinding(parsed[action], DEFAULT_GAMEPAD_BINDINGS[action]),
+        ])
+      ),
+    } as GamepadButtonBindings
+  } catch {
+    return { ...DEFAULT_GAMEPAD_BINDINGS }
   }
 }
 

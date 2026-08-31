@@ -1,6 +1,6 @@
 import { Container, Graphics, type ContainerChild } from 'pixi.js'
 import { Cell } from '../classes/cell'
-import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES } from '../constants'
+import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES, SHEET_TYPES } from '../constants'
 import { sameBuilding } from '../lib/buildings/identity'
 import {
   findInteriorDecorationCell,
@@ -24,7 +24,8 @@ import {
   drawInteractionCellMarker,
   interactionCellPulse,
 } from '../lib/ui/InteractionCellMarker'
-import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
+import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
+import { shouldVillagerBeAsleep } from '../lib/units/villagerSchedule'
 import {
   canUnitUseCellAsIdleDestination,
   createReservedPassageCellLookup,
@@ -36,6 +37,7 @@ import {
   prepareUnitForSpaceTransfer,
   routeUnitThroughSpacePortal,
   transferUnitThroughSpacePortal,
+  type SpacePortalRouteOptions,
 } from './SpacePortalSystem'
 import { syncStableInteriorHorses } from './buildingInterior/StableInteriorHorses'
 import type { GameContextLike } from '../types/context'
@@ -592,7 +594,7 @@ export function moveUnitToBuildingInteriorSleep(
   context: GameContextLike,
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace,
-  options: { mode?: 'instant' | 'route' } = {}
+  options: { mode?: 'instant' | 'route'; sleep?: boolean } = {}
 ): boolean {
   const state = unit.shelterState
   if (state?.reason !== 'sleep' || !sameBuilding(state.shelter, space.building)) return false
@@ -612,7 +614,7 @@ export function moveUnitToBuildingInteriorSleep(
     unit.inactif = true
     setDetachedShadowsVisible(unit, true)
     if (unit.i === cell.i && unit.j === cell.j) {
-      settleUnitAtBuildingInteriorSleepCell(unit, space, cell)
+      settleUnitAtBuildingInteriorSleepCell(unit, space, cell, { sleep: options.sleep })
     } else {
       unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
     }
@@ -620,19 +622,20 @@ export function moveUnitToBuildingInteriorSleep(
   }
   prepareUnitForSpaceTransfer(unit)
   moveEntityToMapSpace(context.map, unit, space, cell)
-  settleUnitAtBuildingInteriorSleepCell(unit, space, cell)
+  settleUnitAtBuildingInteriorSleepCell(unit, space, cell, { sleep: options.sleep })
   return true
 }
 
 export function settleUnitAtBuildingInteriorSleepCell(
   unit: UnitEntity,
   space: BuildingInteriorRuntimeSpace,
-  cell: RuntimeCell | null | undefined = unit.currentCell
+  cell: RuntimeCell | null | undefined = unit.currentCell,
+  options: { sleep?: boolean } = {}
 ): void {
   const state = unit.shelterState
   unit.shelterState = {
     ...state,
-    status: 'outside',
+    status: 'inside',
     location: 'shelter',
     shelter: space.building,
     targetCell: cell,
@@ -640,8 +643,16 @@ export function settleUnitAtBuildingInteriorSleepCell(
   unit.actionLocked = true
   unit.inactif = true
   setDetachedShadowsVisible(unit, true)
-  setSleepingOutsideFinalVisual(unit)
-  setUnitOverheadIndicator(unit, 'sleep')
+  const sleeping = options.sleep ?? shouldVillagerBeAsleep(unit)
+  if (sleeping) {
+    setSleepingOutsideFinalVisual(unit)
+    setUnitOverheadIndicator(unit, 'sleep')
+  } else {
+    clearUnitOverheadIndicator(unit)
+    unit.setTextures?.(SHEET_TYPES.standing)
+    unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
+    unit.sprite?.stop?.()
+  }
 }
 
 export function syncBuildingInteriorShelterOccupants(
@@ -685,10 +696,11 @@ function moveUnitOutOfBuildingInteriorSpace(
 export function routeUnitOutOfBuildingInteriorSpace(
   context: GameContextLike,
   unit: UnitEntity,
-  space: BuildingInteriorRuntimeSpace | null = getBuildingInteriorSpaceForUnit(unit)
+  space: BuildingInteriorRuntimeSpace | null = getBuildingInteriorSpaceForUnit(unit),
+  options: SpacePortalRouteOptions = {}
 ): boolean {
   if (!space || unit.isDead || unit.isDestroyed) return false
-  return routeUnitThroughSpacePortal(context, unit, space.exitPortal)
+  return routeUnitThroughSpacePortal(context, unit, space.exitPortal, options)
 }
 
 export function getBuildingInteriorSpaceForUnit(unit: UnitEntity): BuildingInteriorRuntimeSpace | null {

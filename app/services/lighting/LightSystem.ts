@@ -1,10 +1,10 @@
 import { Container, Sprite, Texture } from 'pixi.js'
-import { FADE_DURATION_MS, UNIT_TYPES } from '../constants'
-import { getInstanceScreenBounds } from '../lib/grid/visibility'
-import { OUTSIDE_SPACE_ID, getActiveMapSpace, getEntityMapPoint } from '../lib/mapSpaces'
-import type { GameContextLike } from '../types/context'
-import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeMapSpace } from '../types/map'
+import { FADE_DURATION_MS, FAMILY_TYPES, UNIT_TYPES } from '../../constants'
+import { getInstanceScreenBounds } from '../../lib/grid/visibility'
+import { OUTSIDE_SPACE_ID, getActiveMapSpace, getEntityMapPoint } from '../../lib/mapSpaces'
+import type { GameContextLike } from '../../types/context'
+import type { EntityLightSourceConfig, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeMapSpace } from '../../types/map'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type TickerLike = { deltaMS?: number; elapsedMS?: number; deltaTime?: number }
@@ -61,6 +61,7 @@ const DEFAULT_ENTITY_LIGHT_VERTICAL_SCALE = 0.7
 const DARKNESS_LERP_PER_SECOND = 5
 const MAX_DARKNESS_ALPHA = 0.96
 const GLOW_ALPHA = 0.11
+const LIGHTNING_DARKNESS_REDUCTION = 0.92
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
@@ -88,11 +89,16 @@ function isPlayedVillager(unit: RuntimeEntity): unit is UnitEntity {
 
 function shouldUseVillagerLight(unit: RuntimeEntity): boolean {
   if (!isPlayedVillager(unit)) return false
+  if (isSleepingUnitLightSuppressed(unit)) return false
   return !(unit.shelterState?.status === 'outside' && unit.shelterState.reason === 'sleep')
 }
 
 function shouldFadeMissingVillagerLight(unit: UnitEntity): boolean {
   return unit.shelterState?.location !== 'shelter'
+}
+
+function isSleepingUnitLightSuppressed(instance: RuntimeEntity): boolean {
+  return Boolean(instance.family === FAMILY_TYPES.unit && (instance as UnitEntity).sleepVisualState === 'sleeping')
 }
 
 export class LightSystem {
@@ -156,7 +162,7 @@ export class LightSystem {
 
     const targetDarkness = clamp(this.getDarknessLevel(), 0, 1)
     this.currentDarkness = lerp(this.currentDarkness, targetDarkness, elapsedSeconds * DARKNESS_LERP_PER_SECOND)
-    if (this.currentDarkness < 0.01) {
+    if (this.getEffectiveDarkness() < 0.01) {
       this.layer.visible = false
       return
     }
@@ -164,6 +170,11 @@ export class LightSystem {
     this.layer.visible = true
     this.updateLights(elapsedMs)
     this.draw()
+  }
+
+  getEffectiveDarkness(): number {
+    const lightningBrightness = clamp(this.context.weather?.getLightningBrightness?.() ?? 0, 0, 1)
+    return this.currentDarkness * (1 - lightningBrightness * LIGHTNING_DARKNESS_REDUCTION)
   }
 
   resizeCanvas(screenRect: ScreenRect): void {
@@ -251,6 +262,7 @@ export class LightSystem {
     ) {
       return
     }
+    if (isSleepingUnitLightSuppressed(instance)) return
 
     this.addLightSource(instance, instance, 0, 0, visibleLeft, visibleTop, zoom, now)
     this.addImplicitUnitLightSource(instance, visibleLeft, visibleTop, zoom, now)
@@ -410,7 +422,8 @@ export class LightSystem {
     if (!ctx) return
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
 
-    const alpha = MAX_DARKNESS_ALPHA * this.currentDarkness
+    const effectiveDarkness = this.getEffectiveDarkness()
+    const alpha = MAX_DARKNESS_ALPHA * effectiveDarkness
     ctx.globalCompositeOperation = 'source-over'
     ctx.fillStyle = `rgba(1, 5, 15, ${alpha})`
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
@@ -448,8 +461,9 @@ export class LightSystem {
     ctx.translate(light.x, light.y)
     ctx.scale(1, light.verticalScale)
     const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius)
-    gradient.addColorStop(0, `rgba(${light.color}, ${GLOW_ALPHA * this.currentDarkness})`)
-    gradient.addColorStop(0.45, `rgba(${light.color}, ${GLOW_ALPHA * 0.42 * this.currentDarkness})`)
+    const effectiveDarkness = this.getEffectiveDarkness()
+    gradient.addColorStop(0, `rgba(${light.color}, ${GLOW_ALPHA * effectiveDarkness})`)
+    gradient.addColorStop(0.45, `rgba(${light.color}, ${GLOW_ALPHA * 0.42 * effectiveDarkness})`)
     gradient.addColorStop(1, `rgba(${light.color}, 0)`)
     ctx.fillStyle = gradient
     ctx.beginPath()

@@ -3,14 +3,14 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadLightSystem() {
-  return loadTsModule('app/services/LightSystem.ts', {
+  return loadTsModule('app/services/lighting/LightSystem.ts', {
     mocks: {
       'pixi.js': {
         Container: class Container {},
         Sprite: class Sprite {},
         Texture: class Texture {},
       },
-      '../lib/grid/visibility': {
+      '../../lib/grid/visibility': {
         getInstanceScreenBounds: () => ({ height: 32, width: 32, x: 0, y: 0 }),
       },
     },
@@ -75,6 +75,24 @@ test('sleeping outside villagers do not keep their lamp on', () => {
   system.addEntityLights(
     createUnit({
       shelterState: { status: 'outside', reason: 'sleep', location: 'outside' },
+    }),
+    0,
+    0,
+    1,
+    1000
+  )
+
+  assert.equal(system.lights.length, 0)
+})
+
+test('sleeping units do not emit attached light sources', () => {
+  const system = createLightSystemHarness()
+
+  system.addEntityLights(
+    createUnit({
+      sleepVisualState: 'sleeping',
+      lightSource: { color: '#ffffff', intensity: 1, radius: 180 },
+      children: [{ label: 'torch', lightSource: { color: '#ffaa55', intensity: 1, radius: 120 } }],
     }),
     0,
     0,
@@ -165,4 +183,20 @@ test('military units and non-played villagers do not get implicit light', () => 
   system.addEntityLights(createUnit({ owner: { isPlayed: false } }), 0, 0, 1, 1000)
 
   assert.equal(system.lights.length, 0)
+})
+
+test('lightning temporarily reduces rendered night darkness', () => {
+  const system = createLightSystemHarness()
+  system.currentDarkness = 1
+  system.context.weather = { getLightningBrightness: () => 0.75 }
+
+  assert.ok(system.getEffectiveDarkness() < 0.35)
+})
+
+test('lightning does not add darkness during daylight', () => {
+  const system = createLightSystemHarness()
+  system.currentDarkness = 0
+  system.context.weather = { getLightningBrightness: () => 1 }
+
+  assert.equal(system.getEffectiveDarkness(), 0)
 })

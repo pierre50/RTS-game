@@ -21,7 +21,6 @@ import { sendNpcGroupToTarget as sendNpcGroupToTargetDispatch } from './npcGoToD
 import { getEntitySpaceMapLike } from '../mapSpaces'
 export { updateNpcFollow } from './npcFollow'
 export {
-  canKeepNpcHere,
   clearNpcCommunicationFocus,
   keepNpcHere,
   resolveHoverTarget,
@@ -116,7 +115,7 @@ function setCommSelected(target: UnitEntity, selected: boolean): void {
 
 function noticeNpc(target: UnitEntity, hero: UnitEntity, shouldPlayVoice = true): void {
   if (target.lookingAtHero) return
-  const sleeping = target.shelterState?.reason === 'sleep'
+  const sleeping = target.shelterState?.reason === 'sleep' && target.sleepVisualState === 'sleeping'
   const sprite = target.sprite
   if (sprite && !sleeping) {
     sprite.onLoop = undefined

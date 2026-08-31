@@ -51,7 +51,12 @@ function setSleepVisualState(unit: UnitEntity, state: UnitEntity['sleepVisualSta
 export function isSleepingFinalVisual(unit: UnitEntity): boolean {
   const sprite = unit.sprite
   const lastFrame = getLastSpriteFrame(unit)
-  return Boolean(unit.sleepVisualState === 'sleeping' && !sprite?.playing && (sprite?.currentFrame ?? 0) >= lastFrame)
+  return Boolean(
+    unit.sleepVisualState === 'sleeping' &&
+      unit.currentSheet === SHEET_TYPES.dying &&
+      !sprite?.playing &&
+      (sprite?.currentFrame ?? 0) >= lastFrame
+  )
 }
 
 function syncSleepingShadow(unit: UnitEntity): void {
@@ -110,14 +115,14 @@ export function clearSleepingVisualState(unit: UnitEntity): void {
 }
 
 function freezeSleepingOutsideVisual(unit: UnitEntity): void {
-  const lastFrame = getLastSpriteFrame(unit)
+  const frame = getLastSpriteFrame(unit)
   if (unit.sprite) {
     unit.sprite.loop = false
-    unit.sprite.gotoAndStop?.(lastFrame)
+    unit.sprite.gotoAndStop?.(frame)
     unit.sprite.stop?.()
   }
-  syncSleepingAppearanceLayers(unit, lastFrame, false)
-  syncHurtFrameShadow(unit, lastFrame)
+  syncSleepingAppearanceLayers(unit, frame, false)
+  syncHurtFrameShadow(unit, frame)
 }
 
 export function playSleepingOutsideVisual(unit: UnitEntity): void {
@@ -154,7 +159,7 @@ export function keepSleepingOutsideVisual(unit: UnitEntity): void {
   cancelFade(unit)
   unit.alpha = 1
   unit.visible = true
-  setDetachedShadowsVisible(unit, true)
+  if (unit.shelterState.reason === 'sleep') unit.actionLocked = true
   if (unit.sleepVisualState === 'sleeping' && unit.currentSheet === SHEET_TYPES.dying) {
     if (unit.sprite?.playing) syncSleepingShadow(unit)
     else freezeSleepingOutsideVisual(unit)

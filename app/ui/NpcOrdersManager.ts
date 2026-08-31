@@ -5,7 +5,8 @@ import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/u
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
-import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
+import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
+import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
   startFollowingHero,
@@ -19,27 +20,29 @@ import {
   pickForeignNpcChatterLine,
   pickForeignNpcSleepingChatterLine,
   pickNpcGreetingLine,
+  pickNpcRestingChatterLine,
   pickNpcSleepingChatterLine,
 } from '../lib/npc/npcChatter'
+import { NestedButtonMenu, type NestedButtonMenuItem } from './menu/NestedButtonMenu'
+import { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import type { Modal } from '../lib'
 import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
 type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | VillagerAutonomyJob
+type NpcOrderMenuId = NpcOrderId | 'resources' | 'bag'
 
-const NPC_ORDER_SPECS: {
+type NpcOrderSpec = {
   id: NpcOrderId
   labelKey: string
   run?: (npc: UnitEntity) => void
   villagerJob?: VillagerAutonomyJob
   startsPicking?: boolean
-}[] = [
+}
+
+const NPC_ORDER_SPECS: NpcOrderSpec[] = [
   { id: 'goto', labelKey: 'npcOrderGoTo', startsPicking: true },
-  { id: 'food', labelKey: 'npcOrderFood', villagerJob: 'food' },
-  { id: 'wood', labelKey: 'npcOrderWood', villagerJob: 'wood' },
-  { id: 'stone', labelKey: 'npcOrderStone', villagerJob: 'stone' },
-  { id: 'gold', labelKey: 'npcOrderGold', villagerJob: 'gold' },
   { id: 'construction', labelKey: 'npcOrderConstruction', villagerJob: 'construction' },
   { id: 'horseCapture', labelKey: 'npcOrderHorseCapture', villagerJob: 'horseCapture' },
   { id: 'follow', labelKey: 'npcOrderFollow', run: startFollowingHero },
@@ -47,8 +50,29 @@ const NPC_ORDER_SPECS: {
   { id: 'cancel', labelKey: 'npcOrderCancelSleep' },
 ]
 
+const NPC_RESOURCE_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 'villagerJob'>>[] = [
+  { id: 'food', labelKey: 'npcOrderFood', villagerJob: 'food' },
+  { id: 'wood', labelKey: 'npcOrderWood', villagerJob: 'wood' },
+  { id: 'stone', labelKey: 'npcOrderStone', villagerJob: 'stone' },
+  { id: 'gold', labelKey: 'npcOrderGold', villagerJob: 'gold' },
+  { id: 'copper', labelKey: 'npcOrderCopper', villagerJob: 'copper' },
+  { id: 'iron', labelKey: 'npcOrderIron', villagerJob: 'iron' },
+]
+
+const ALL_NPC_ORDER_SPECS: NpcOrderSpec[] = [...NPC_ORDER_SPECS, ...NPC_RESOURCE_ORDER_SPECS]
+
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
-  return npc?.shelterState?.reason === 'sleep'
+  return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
+}
+
+function isRestingBeforeBedNpc(npc: UnitEntity | null | undefined): boolean {
+  return Boolean(
+    npc &&
+      npc.type === UNIT_TYPES.villager &&
+      npc.shelterState?.reason === 'sleep' &&
+      npc.sleepVisualState !== 'sleeping' &&
+      shouldVillagerRestBeforeBed(npc)
+  )
 }
 
 export class NpcOrdersManager {
@@ -59,16 +83,21 @@ export class NpcOrdersManager {
   debugContainer: HTMLDivElement
   debugLevelButton: HTMLButtonElement
   buttonsContainer: HTMLDivElement
+  bagContainer: HTMLDivElement
+  transferPanel: InventoryTransferPanel | null
   modal?: Modal
-  buttons: Map<NpcOrderId, HTMLButtonElement>
+  orderMenu: NestedButtonMenu<NpcOrderMenuId>
+  buttons: NestedButtonMenu<NpcOrderMenuId>['buttons']
   opened: boolean
   npcs: UnitEntity[]
+  ordersEnabled: boolean
 
   constructor(menu: MenuHost) {
     this.menu = menu
     this.opened = false
     this.npcs = []
-    this.buttons = new Map()
+    this.ordersEnabled = false
+    this.transferPanel = null
 
     this.panel = document.createElement('div')
     this.panel.className = 'npc-orders-panel-content'
@@ -100,46 +129,28 @@ export class NpcOrdersManager {
     this.buttonsContainer.className = 'npc-orders-options'
     this.panel.appendChild(this.buttonsContainer)
 
-    for (const spec of NPC_ORDER_SPECS) {
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className = 'ui-btn'
-      button.textContent = t(spec.labelKey)
-      button.addEventListener('click', () => {
-        if (!this.npcs.length || button.disabled) return
-        playUiSound(SOUND_CUES.ui.menuClick)
-        const npcs = this.npcs
-        if (spec.id === 'cancel') {
-          this.close()
-          return
-        }
-        if (spec.startsPicking) {
-          // Still committed to an order (waiting on the world click) — don't resume old tasks yet.
-          this.close(true)
-          this.menu.context.controls.beginNpcGoTo?.(npcs)
-          return
-        }
-        this.close(true)
-        if (spec.villagerJob) {
-          for (const npc of npcs) {
-            if (npc.type !== UNIT_TYPES.villager) continue
-            clearNpcCommunicationFocus(npc)
-            npc.previousDest = null
-            assignVillagerAutonomy(npc, spec.villagerJob)
-          }
-        } else {
-          for (const npc of npcs) spec.run?.(npc)
-        }
-        playNpcOrderSound(npcs)
-      })
-      this.buttons.set(spec.id, button)
-      this.buttonsContainer.appendChild(button)
-    }
+    this.bagContainer = document.createElement('div')
+    this.bagContainer.className = 'npc-orders-bag'
+    this.bagContainer.hidden = true
+    this.panel.appendChild(this.bagContainer)
+
+    this.orderMenu = new NestedButtonMenu<NpcOrderMenuId>({
+      container: this.buttonsContainer,
+      items: this.createOrderMenuItems(),
+      backLabel: t('back'),
+      backButtonClassName: 'ui-btn npc-orders-back',
+      showBackButton: false,
+      onNavigate: () => playUiSound(SOUND_CUES.ui.menuClick),
+      onBack: () => playUiSound(SOUND_CUES.ui.menuClick),
+    })
+    this.buttons = this.orderMenu.buttons
   }
 
   open(npcs: UnitEntity[], options: NpcOrdersOpenOptions = {}): void {
     this.npcs = npcs
     this.opened = true
+    this.orderMenu.reset()
+    this.closeBag()
     const title =
       npcs.length > 1 ? t('npcOrdersTitleCount', { count: npcs.length }) : npcs[0]?.name || t('npcOrdersTitle')
 
@@ -149,6 +160,7 @@ export class NpcOrdersManager {
     const soloTarget = npcs.length === 1 ? npcs[0] : null
     const sleepingSoloTarget = isSleepingNpc(soloTarget)
     const ownSleepingSoloTarget = sleepingSoloTarget && soloTarget?.owner?.isPlayed === true
+    const restingSoloTarget = isRestingBeforeBedNpc(soloTarget)
     const hasInfo = Boolean(soloTarget?.interface?.info)
     if (soloTarget && hasInfo) {
       this.infoContainer.appendChild(
@@ -161,7 +173,9 @@ export class NpcOrdersManager {
     // separate window.
     const isOwnGroup = npcs.every(npc => npc.owner?.isPlayed === true)
     const ordersEnabled = (options.ordersEnabled ?? true) && isOwnGroup
+    this.ordersEnabled = ordersEnabled
     this.buttonsContainer.hidden = !ordersEnabled
+    this.orderMenu.syncVisibility()
 
     // A commandable single target gets a short in-character greeting addressed to the player
     // instead of idle chatter — callers can still override with an explicit chatterLine.
@@ -174,7 +188,9 @@ export class NpcOrdersManager {
             ? pickNpcSleepingChatterLine()
             : pickForeignNpcSleepingChatterLine()
           : ordersEnabled
-          ? pickNpcGreetingLine(this.menu.context.player?.name ?? '')
+          ? restingSoloTarget
+            ? pickNpcRestingChatterLine(soloTarget)
+            : pickNpcGreetingLine(this.menu.context.player?.name ?? '')
           : pickForeignNpcChatterLine(soloTarget)
         : null)
     if (chatterLine) {
@@ -196,10 +212,13 @@ export class NpcOrdersManager {
     if (followButton) {
       followButton.disabled = !hasNonFollower
     }
-    for (const button of this.buttons.values()) button.hidden = false
     const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
+    const resourcesButton = this.buttons.get('resources')
     const nightWorkBlocked = hasVillager && isVillagerSleepTime(this.menu.context)
-    for (const spec of NPC_ORDER_SPECS) {
+    if (resourcesButton) {
+      resourcesButton.disabled = !hasVillager || nightWorkBlocked
+    }
+    for (const spec of ALL_NPC_ORDER_SPECS) {
       if (!spec.villagerJob) continue
       const button = this.buttons.get(spec.id)
       if (!button) continue
@@ -254,6 +273,9 @@ export class NpcOrdersManager {
     const modal = this.modal
     this.modal = undefined
     this.opened = false
+    this.ordersEnabled = false
+    this.closeBag()
+    this.orderMenu.reset()
     const npcs = this.npcs
     this.npcs = []
     if (!keepFrozen) releaseIfStillLooking(npcs)
@@ -279,5 +301,113 @@ export class NpcOrdersManager {
   destroy(): void {
     this.modal?.close()
     this.modal = undefined
+  }
+
+  private createOrderMenuItems(): NestedButtonMenuItem<NpcOrderMenuId>[] {
+    return NPC_ORDER_SPECS.flatMap(spec => {
+      const item = this.createOrderMenuItem(spec)
+      if (spec.id !== 'goto') return [item]
+      return [
+        item,
+        {
+          id: 'bag',
+          label: t('npcOrderBag'),
+          hidden: () => !this.canShowBagButton(),
+          onClick: () => this.openBag(),
+        },
+        {
+          id: 'resources',
+          label: t('npcOrderResources'),
+          children: NPC_RESOURCE_ORDER_SPECS.map(resourceSpec => this.createOrderMenuItem(resourceSpec)),
+        },
+      ]
+    })
+  }
+
+  private createOrderMenuItem(spec: NpcOrderSpec): NestedButtonMenuItem<NpcOrderMenuId> {
+    return {
+      id: spec.id,
+      label: t(spec.labelKey),
+      onClick: () => this.runOrder(spec),
+    }
+  }
+
+  refreshInventory(): void {
+    if (!this.opened || this.bagContainer.hidden) return
+    this.renderBag()
+  }
+
+  private canShowBagButton(): boolean {
+    return this.ordersEnabled && this.npcs.length === 1 && Boolean(this.menu.context.controls.heroUnit)
+  }
+
+  private openBag(): void {
+    if (!this.canShowBagButton()) return
+    playUiSound(SOUND_CUES.ui.menuClick)
+    this.orderMenu.reset()
+    this.buttonsContainer.hidden = true
+    this.bagContainer.hidden = false
+    this.renderBag()
+  }
+
+  private closeBag(): void {
+    this.transferPanel = null
+    this.bagContainer.hidden = true
+    this.bagContainer.replaceChildren()
+    this.buttonsContainer.hidden = !this.ordersEnabled
+  }
+
+  private renderBag(): void {
+    const npc = this.npcs.length === 1 ? this.npcs[0] : null
+    const hero = this.menu.context.controls.heroUnit
+    if (!npc || !hero) {
+      this.closeBag()
+      return
+    }
+
+    const npcContainer = createInventoryContainer(npc, {
+      id: npc.label,
+      label: t('inventoryNpcBag', { name: npc.name || t('npcOrdersTitle') }),
+      labelKey: 'inventoryBag',
+    })
+    const heroContainer = createInventoryContainer(hero, {
+      id: hero.label,
+      labelKey: 'inventoryYourBag',
+    })
+    this.transferPanel = new InventoryTransferPanel({
+      context: this.menu.context,
+      destination: npcContainer,
+      source: heroContainer,
+      onChange: () => this.menu.updateHeroStatus?.(hero),
+    })
+    this.bagContainer.replaceChildren(this.transferPanel.element)
+  }
+
+  private runOrder(spec: NpcOrderSpec): void {
+    if (!this.npcs.length) return
+    playUiSound(SOUND_CUES.ui.menuClick)
+    const npcs = this.npcs
+    if (spec.id === 'cancel') {
+      this.close()
+      return
+    }
+    if (spec.startsPicking) {
+      // Still committed to an order (waiting on the world click) — don't resume old tasks yet.
+      this.close(true)
+      this.menu.context.controls.beginNpcGoTo?.(npcs)
+      return
+    }
+    this.close(true)
+    if (spec.villagerJob) {
+      for (const npc of npcs) {
+        if (npc.type !== UNIT_TYPES.villager) continue
+        clearNpcCommunicationFocus(npc)
+        npc.previousDest = null
+        assignVillagerAutonomy(npc, spec.villagerJob)
+      }
+    } else {
+      for (const npc of npcs) spec.run?.(npc)
+    }
+    playNpcOrderSound(npcs)
   }
 }

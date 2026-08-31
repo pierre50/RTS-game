@@ -41,6 +41,7 @@ function getUnitCarriedResourceKeys(unit: UnitEntity): ResourceKey[] {
 export function getUnitResourceCapacityRemaining(unit: UnitEntity, loadingType: string): number {
   const resource = getResourceKeyForLoadingType(loadingType)
   if (!resource) return 0
+  if (isHeroControlled(unit)) return Number.POSITIVE_INFINITY
   return Math.max(0, UNIT_RESOURCE_CARRY_CAPACITY - getUnitCarriedResourceAmount(unit, resource))
 }
 

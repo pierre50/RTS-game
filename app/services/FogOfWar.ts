@@ -1,8 +1,9 @@
 import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
 import { instanceIsInInsightRange } from '../lib/units/insightDetection'
+import { OUTSIDE_SPACE_ID, getMapSpace } from '../lib/mapSpaces'
 import type { PerformanceMonitorLike } from '../types/context'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell, RuntimeMap } from '../types/map'
+import type { RuntimeCell, RuntimeMap, RuntimeMapSpace } from '../types/map'
 import type { PlayerLike } from '../types/player'
 import type { VisionViewerRef } from '../types/vision'
 
@@ -33,10 +34,12 @@ export type VisibilityEntity = {
   visible?: boolean
   context?: VisibilityContext
   owner?: VisibilityOwner | null
+  spaceId?: string | null
   sight?: number
   providesVision?: boolean
   isDead?: boolean
   visibleCells?: Set<number>
+  visibleSpaceId?: string | null
   _visibleScratch?: Set<number>
 }
 
@@ -137,6 +140,11 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   const player = context?.player
   if (!owner?.views || !player?.views || !map?.grid) return
   const ownerPlayer = owner as PlayerLike
+  const runtimeMap = map as RuntimeMap
+  const currentSpace = getMapSpace(runtimeMap, instance.spaceId) ?? getMapSpace(runtimeMap, OUTSIDE_SPACE_ID)
+  if (!currentSpace) return
+  const previousSpace = getMapSpace(runtimeMap, instance.visibleSpaceId) ?? currentSpace
+  const spaceChanged = previousSpace.id !== currentSpace.id
   const sightSq = sight * sight
 
   const prevVisible = instance.visibleCells ?? new Set()
@@ -145,9 +153,9 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
 
   if (!isDead && instance.providesVision !== false) {
     const minI = Math.max(cx - sight, 0)
-    const maxI = Math.min(cx + sight, owner.views.size)
+    const maxI = Math.min(cx + sight, currentSpace.size ?? owner.views.size)
     const minJ = Math.max(cy - sight, 0)
-    const maxJ = Math.min(cy + sight, owner.views.size)
+    const maxJ = Math.min(cy + sight, currentSpace.size ?? owner.views.size)
     for (let i = minI; i <= maxI; i++) {
       for (let j = minJ; j <= maxJ; j++) {
         const dx = i - cx
@@ -160,34 +168,36 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   }
 
   for (const index of prevVisible) {
-    if (!newVisible.has(index)) {
+    if (spaceChanged || !newVisible.has(index)) {
       const [i, j] = owner.views.coordinates(index)
-      const globalCell = map.grid[i][j]
-      ownerPlayer.views.removeViewer(i, j, instance)
-      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
+      const globalCell = previousSpace.grid[i]?.[j]
+      if (!globalCell) continue
+      withPlayerViewSpace(ownerPlayer, previousSpace, () => ownerPlayer.views.removeViewer(i, j, instance))
+      withPlayerViewSpace(player, previousSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))
 
-      if (!player.views.isVisible(i, j) && !map.revealEverything) {
+      if (!withPlayerViewSpace(player, previousSpace, () => player.views.isVisible(i, j)) && !map.revealEverything) {
         globalCell.setFog()
       }
     }
   }
 
   for (const index of newVisible) {
-    if (!prevVisible.has(index)) {
+    if (spaceChanged || !prevVisible.has(index)) {
       const [i, j] = owner.views.coordinates(index)
-      const globalCell = map.grid[i][j]
+      const globalCell = currentSpace.grid[i]?.[j]
+      if (!globalCell) continue
 
-      ownerPlayer.views.addViewer(i, j, instance)
-      if (ownerPlayer.views.setViewed(i, j)) {
+      withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.addViewer(i, j, instance))
+      if (withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.setViewed(i, j))) {
         ownerPlayer.cellViewed++
       }
       if (ownerPlayer.type === PLAYER_TYPES.ai) {
-        updateAIKnowledge(globalCell, ownerPlayer)
+        withPlayerViewSpace(ownerPlayer, currentSpace, () => updateAIKnowledge(globalCell, ownerPlayer))
       }
-      syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j))
+      withPlayerViewSpace(player, currentSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))
       globalCell.updateVisible()
 
-      if (!map.revealEverything && player.views.hasViewer(i, j, instance)) {
+      if (!map.revealEverything && withPlayerViewSpace(player, currentSpace, () => player.views.hasViewer(i, j, instance))) {
         globalCell.removeFog()
       }
 
@@ -200,5 +210,10 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
   }
 
   instance.visibleCells = newVisible
+  instance.visibleSpaceId = currentSpace.id
   instance._visibleScratch = prevVisible
+}
+
+function withPlayerViewSpace<T>(player: PlayerLike, space: RuntimeMapSpace, callback: () => T): T {
+  return player.views.withSpace?.(space.id, callback) ?? callback()
 }

@@ -87,7 +87,7 @@ function createUnit() {
   }
 }
 
-test('sleep wake visual owns its state until the reversed dying animation completes', () => {
+test('sleep wake visual plays the hurt sheet in reverse before returning to standing', () => {
   const { playSleepingWakeVisual } = loadUnitSleepVisuals()
   const unit = createUnit()
   let completed = false
@@ -103,6 +103,7 @@ test('sleep wake visual owns its state until the reversed dying animation comple
     ['syncLayers', 'dyingSheet'],
     ['syncShadow'],
   ])
+  assert.equal(unit.sprite.currentFrame, 2)
   assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 2)
 
   const task = [...unit.context.scheduler.tasks.values()].find(entry => entry.name === 'unit.sleepWake')

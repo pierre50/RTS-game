@@ -22,19 +22,19 @@ function loadRuntimeServices() {
       '../../services/BuildingInteriorEntryMarkerSystem': {
         BuildingInteriorEntryMarkerSystem: service('buildingInteriorEntryMarker'),
       },
-      '../../services/CampPatrolSystem': { CampPatrolSystem: service('campPatrols') },
+      '../../services/patrol/CampPatrolSystem': { CampPatrolSystem: service('campPatrols') },
       '../../services/DailyWorldEventSystem': { DailyWorldEventSystem: service('dailyWorldEvents') },
       '../../services/DayNightSystem': { DayNightSystem: service('dayNight') },
       '../../services/HeroFollowerPatrolSystem': { HeroFollowerPatrolSystem: service('heroFollowerPatrols') },
       '../../services/IdleUnitPatrolSystem': { IdleUnitPatrolSystem: service('idleUnitPatrols') },
       '../../services/InteriorExitMarkerSystem': { InteriorExitMarkerSystem: service('interiorExitMarker') },
-      '../../services/LightSystem': { LightSystem: service('lights') },
+      '../../services/lighting/LightSystem': { LightSystem: service('lights') },
       '../../services/ShadowSystem': { ShadowSystem: service('shadows') },
       '../../services/TimeSkipSystem': { TimeSkipSystem: service('timeSkip') },
       '../../services/TributeRaidSystem': { TributeRaidSystem: service('tributeRaids') },
       '../../services/UnitEnergyRegenSystem': { UnitEnergyRegenSystem: service('unitEnergyRegen') },
       '../../services/rest/UnitRestSystem': { UnitRestSystem: service('unitRest') },
-      '../../services/WeatherSystem': { WeatherSystem: service('weather') },
+      '../../services/weather/WeatherSystem': { WeatherSystem: service('weather') },
       './GameResourceDelivery': { ResourceDeliverySystem: service('resourceDelivery') },
     },
   })
@@ -69,7 +69,7 @@ test('runtime services skip weather inside interior maps', () => {
 })
 
 test('runtime services keep weather outside interior maps', () => {
-  const { calls, createRuntimeServices } = loadRuntimeServices()
+  const { addRuntimeServiceLayers, calls, createRuntimeServices } = loadRuntimeServices()
   const context = {}
   const map = { mapType: 'continent' }
 
@@ -82,4 +82,12 @@ test('runtime services keep weather outside interior maps', () => {
   assert.equal(context.timeSkip, services.timeSkip)
   assert.equal(calls.includes('weather'), true)
   assert.equal(calls.includes('buildingInteriorEntryMarker'), true)
+
+  const layers = []
+  addRuntimeServiceLayers({ addChild: child => layers.push(child) }, services)
+  assert.deepEqual(
+    layers.map(layer => layer.name),
+    ['weather-layer', 'lights-layer']
+  )
+  assert.ok(services.weather.layer.zIndex < services.lights.layer.zIndex)
 })

@@ -329,6 +329,7 @@ export default class Game extends Container {
         context.controls?.updateVisibleCells?.()
         refreshMapSpaceEntityVisibility(context)
       }
+      context.menu?.refreshMiniMap?.()
       context.menu?.setHeroInteractionPrompt?.('heroInteractionExit')
       context.menu?.updateHeroStatus?.(hero)
     })
@@ -352,6 +353,7 @@ export default class Game extends Container {
         context.controls?.updateVisibleCells?.()
         refreshMapSpaceEntityVisibility(context)
       }
+      context.menu?.refreshMiniMap?.()
       context.menu?.setHeroInteractionPrompt?.(null)
       context.menu?.updateHeroStatus?.(hero)
     })

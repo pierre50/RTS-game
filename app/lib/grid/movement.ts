@@ -1,4 +1,4 @@
-import { findInstancePath } from '../../services/Pathfinding'
+import { findInstancePath, type PathfindingOptions } from '../../services/Pathfinding'
 import { randomItem, instancesDistance, pointsDistance, getInstanceDegree } from '../maths'
 import { getCellsAroundPoint, getBuildingContactDistance } from './cells'
 import { getEntitySpaceMapLike, sameCellMapSpace, sameMapSpace } from '../mapSpaces'
@@ -20,6 +20,7 @@ type PathSpaceCell = GridCell & { spaceId?: string | null }
 type FreeCellCondition<TCell extends GridCell> = (cell: TCell) => boolean
 type ClosestFreeCellPathOptions<TCell extends GridCell> = {
   isCellAllowed?: FreeCellCondition<TCell>
+  pathfinding?: PathfindingOptions<TCell>
 }
 
 export function instanceContactInstance(a: InstanceLike, b: InstanceLike): boolean {
@@ -130,7 +131,7 @@ export function getInstanceClosestFreeCellPath<TCell extends GridCell>(
     if (cell.category === 'Water' || (cell.border && (!cell.waterBorder || cell.solid))) continue
     if (options.isCellAllowed && !options.isCellAllowed(cell)) continue
     if (best.length && Math.abs(cell.i - instance.i) + Math.abs(cell.j - instance.j) >= best.length) break
-    const path = getInstancePath(instance, cell.i, cell.j, pathMap)
+    const path = getInstancePath(instance, cell.i, cell.j, pathMap, options.pathfinding)
     if (path.length && (!best.length || path.length < best.length)) best = path
   }
   return best
@@ -140,9 +141,10 @@ export function getInstancePath<TCell extends GridCell>(
   instance: PathInstanceLike,
   x: number,
   y: number,
-  map: GameMap<TCell>
+  map: GameMap<TCell>,
+  options: PathfindingOptions<TCell> = {}
 ): TCell[] {
-  return findInstancePath(instance, x, y, getPathMap(instance, map))
+  return findInstancePath(instance, x, y, getPathMap(instance, map), options)
 }
 
 function getPathMap<TCell extends GridCell>(instance: PathInstanceLike, map: GameMap<TCell>): GameMap<TCell> {

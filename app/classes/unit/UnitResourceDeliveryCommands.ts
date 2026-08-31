@@ -10,6 +10,7 @@ import { getAutonomyJobForWork, setVillagerAutonomy } from '../../lib'
 import { t } from '../../lib/lang'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
+import { logGoldMinerFlow } from '../../lib/units/villagerJobDiagnostics'
 import {
   findResourceDeliveryTarget,
   unitHasDeliverableResources,
@@ -127,6 +128,7 @@ export function sendUnitToDelivery(
           }
         : null,
   }
+  logGoldMinerFlow(unit, 'delivery.started', { deliveryTarget: deliveryTarget.label })
   applyWorkForAction(unit, previousWork ?? WORK_TYPES.forager, ACTION_TYPES.delivery)
   setVillagerAutonomy?.(unit, getAutonomyJobForWork?.(previousWork) ?? unit.autonomousJob ?? null)
   unit.sendToEvt?.(deliveryTarget, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })

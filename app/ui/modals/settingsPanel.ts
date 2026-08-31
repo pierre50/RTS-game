@@ -20,10 +20,15 @@ import {
   CAMERA_ZOOM_PRESETS,
   getControlKeyLabel,
   getKeyBindings,
+  getGamepadButtonLabel,
+  getGamepadBindings,
   resetKeyBindings,
+  resetGamepadBindings,
   setKeyBindingFromKeyboardEvent,
+  setGamepadBindingFromButtonIndex,
   getGamepadEnabled,
   setGamepadEnabled,
+  type GamepadBindingAction,
 } from '../../lib/audio/settings'
 import { ModalTabs } from '../Tabs'
 
@@ -139,6 +144,7 @@ function buildControlsPage(panel: HTMLDivElement): void {
   gamepadTitle.textContent = t('controlsGroupGamepad')
   gamepadSection.appendChild(gamepadTitle)
   gamepadSection.appendChild(buildCheckboxRow(t('gamepadEnabled'), getGamepadEnabled(), setGamepadEnabled))
+  buildGamepadBindings(gamepadSection)
   panel.appendChild(gamepadSection)
 
   const bindings = getKeyBindings()
@@ -221,10 +227,82 @@ function buildControlsPage(panel: HTMLDivElement): void {
   reset.textContent = t('controlsReset')
   reset.addEventListener('click', () => {
     resetKeyBindings()
+    resetGamepadBindings()
     refresh()
   })
 
   panel.appendChild(conflictText)
   panel.appendChild(reset)
+  refresh()
+}
+
+function buildGamepadBindings(section: HTMLDivElement): void {
+  const actions: GamepadBindingAction[] = ['inventoryTransferOne', 'inventoryTransferAll']
+  const buttons = new Map<GamepadBindingAction, HTMLButtonElement>()
+  let listeningAction: GamepadBindingAction | null = null
+  let listeningFrame = 0
+
+  function refresh(): void {
+    const bindings = getGamepadBindings()
+    const used = new Map<string, GamepadBindingAction[]>()
+    for (const action of actions) {
+      buttons.get(action)!.textContent = getGamepadButtonLabel(bindings[action])
+      const list = used.get(bindings[action]) || []
+      list.push(action)
+      used.set(bindings[action], list)
+    }
+    const conflicts = [...used.values()].filter(list => list.length > 1).flat()
+    for (const [action, button] of buttons) {
+      button.classList.toggle('is-conflict', conflicts.includes(action))
+    }
+  }
+
+  function stopListening(button: HTMLButtonElement): void {
+    listeningAction = null
+    button.classList.remove('is-listening')
+    cancelAnimationFrame(listeningFrame)
+    refresh()
+  }
+
+  function listenForButton(action: GamepadBindingAction, button: HTMLButtonElement): void {
+    listeningAction = action
+    button.textContent = t('controlsPressButton')
+    button.classList.add('is-listening')
+    const poll = () => {
+      if (listeningAction !== action) return
+      const pads = navigator.getGamepads?.() ?? []
+      for (const pad of pads) {
+        const index = pad?.buttons.findIndex(gamepadButton => gamepadButton.pressed)
+        if (index != null && index >= 0) {
+          setGamepadBindingFromButtonIndex(action, index)
+          stopListening(button)
+          return
+        }
+      }
+      listeningFrame = requestAnimationFrame(poll)
+    }
+    poll()
+  }
+
+  for (const action of actions) {
+    const row = document.createElement('div')
+    row.className = 'config-row settings-key-row'
+    const label = document.createElement('label')
+    label.textContent = t(`controlAction_${action}`)
+    row.appendChild(label)
+
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'settings-key-button ui-btn'
+    button.textContent = getGamepadButtonLabel(getGamepadBindings()[action])
+    button.addEventListener('click', () => listenForButton(action, button))
+    button.addEventListener('blur', () => {
+      if (listeningAction === action) stopListening(button)
+    })
+    buttons.set(action, button)
+    row.appendChild(button)
+    section.appendChild(row)
+  }
+
   refresh()
 }

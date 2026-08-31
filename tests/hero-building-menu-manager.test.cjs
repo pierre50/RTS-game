@@ -206,11 +206,45 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
     assert.equal(panel.options.destination.id, 'chest-1')
     assert.equal(panel.options.destination.inventory, building.inventory)
     assert.equal(panel.options.source.id, 'hero')
+    assert.equal(panel.options.source.labelKey, 'inventoryYourBag')
     assert.equal(panel.options.source.inventory, hero.inventory)
     assert.equal(manager.body.children.at(-1).className, 'inventory-transfer-panel')
     assert.deepEqual(manager.constructor.__audibleSoundCues, [
       { cue: 'building/chest-open', instance: building, options: { profile: 'surface' } },
     ])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu refreshes an open chest when inventory changes externally', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'Chest',
+      label: 'chest-1',
+      inventory: { equipment: [], resources: { wood: 5 } },
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    manager.menu.context.controls.heroUnit = {
+      family: 'unit',
+      label: 'hero',
+      inventory: { equipment: [], resources: {} },
+    }
+
+    assert.equal(manager.open(building), true)
+    const initialPanels = manager.constructor.__transferPanels.length
+
+    building.inventory.resources.food = 3
+    manager.refreshInventory()
+
+    assert.equal(manager.constructor.__transferPanels.length, initialPanels + 1)
+    assert.equal(manager.body.children.at(-1).className, 'inventory-transfer-panel')
   } finally {
     restoreDocument()
   }

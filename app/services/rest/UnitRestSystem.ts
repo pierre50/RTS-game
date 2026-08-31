@@ -1,6 +1,17 @@
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import { getRestReturnTask, sendUnitToRest, wakeUnit } from './UnitRestLifecycle'
+import {
+  getRestReturnTask,
+  putRestingUnitToSleep,
+  sendUnitToRest,
+  settleUnitRestForTimeJump,
+  wakeUnit,
+} from './UnitRestLifecycle'
+import {
+  shouldVillagerBeAsleep,
+  shouldVillagerReturnHome,
+  shouldVillagerWork,
+} from '../../lib/units/villagerSchedule'
 import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
 import {
   canUseUnitRest,
@@ -47,20 +58,61 @@ export class UnitRestSystem {
     const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
 
-    const sleepTime = isSleepTime(this.context)
-    const wakeTime = !sleepTime
-    const hasShelterState = restUnits.some(unit => Boolean(unit.shelterState))
-
-    if (!sleepTime && !hasShelterState) return
-
     for (const unit of restUnits) clearExpiredUnitRestAlert(unit)
-    if (sleepTime) this.updateRestAlerts(restUnits)
-    if (sleepTime) this.sendUnitsToSleep(restUnits)
-    if (wakeTime && hasShelterState) {
-      for (const unit of restUnits) this.updateRestingUnit(unit)
-      this.wakeRestingUnits(restUnits)
-    }
+    if (isSleepTime(this.context)) this.updateRestAlerts(restUnits)
+    for (const unit of restUnits) this.updateScheduledRest(unit)
     this.updateSleepingOutsideVisuals(restUnits)
+  }
+
+  private shouldReturnHome(unit: UnitEntity): boolean {
+    return isVillager(unit) ? shouldVillagerReturnHome(unit) : isSleepTime(this.context)
+  }
+
+  private shouldSleep(unit: UnitEntity): boolean {
+    return isVillager(unit) ? shouldVillagerBeAsleep(unit) : isSleepTime(this.context)
+  }
+
+  private shouldWake(unit: UnitEntity): boolean {
+    return isVillager(unit) ? shouldVillagerWork(unit) : !isSleepTime(this.context)
+  }
+
+  private restoreInterruptedSleep(unit: UnitEntity): boolean {
+    const suspended = unit.suspendedRestState
+    if (!suspended || isUnitRestWakeLocked(unit) || unit.lookingAtHero || !this.shouldReturnHome(unit)) return false
+    unit.suspendedRestState = null
+    unit.shelterState = suspended
+    if (this.shouldSleep(unit)) putRestingUnitToSleep(unit)
+    return true
+  }
+
+  private updateScheduledRest(unit: UnitEntity): void {
+    if (this.shouldWake(unit)) {
+      unit.suspendedRestState = null
+      if (unit.shelterState && unit.shelterState.status !== 'wakingUp') this.wakeRestingUnit(unit)
+      else if (unit.shelterState) this.updateRestingUnit(unit)
+      return
+    }
+
+    if (!unit.shelterState) {
+      if (this.restoreInterruptedSleep(unit)) return
+      if (this.shouldReturnHome(unit) && shouldRest(unit) && sendUnitToRest(unit, 'sleep')) {
+        this.updateRestingUnit(unit)
+      }
+      return
+    }
+
+    this.updateRestingUnit(unit)
+    const state = unit.shelterState
+    if (
+      state?.reason === 'sleep' &&
+      (state.status === 'inside' || state.status === 'outside') &&
+      this.shouldSleep(unit) &&
+      unit.sleepVisualState !== 'sleeping' &&
+      !isUnitRestWakeLocked(unit) &&
+      !unit.lookingAtHero
+    ) {
+      putRestingUnitToSleep(unit)
+    }
   }
 
   private collectUnits(): RestUnitBuckets {
@@ -135,7 +187,7 @@ export class UnitRestSystem {
   }
 
   wakeSleepingUnitForOrder(unit: UnitEntity, onComplete?: () => void): boolean {
-    if (unit.shelterState?.reason !== 'sleep') return false
+    if (unit.shelterState?.reason !== 'sleep' || unit.sleepVisualState !== 'sleeping') return false
     // Keeps the unit up for a while after a talk-triggered wake with no follow-up order, instead
     // of it dozing back off mid-conversation on the next sleep tick.
     delayUnitRestAfterActivity(unit)
@@ -144,7 +196,7 @@ export class UnitRestSystem {
   }
 
   previewSleepingUnitWake(unit: UnitEntity): void {
-    if (unit.shelterState?.reason === 'sleep') playSleepingWakeVisual(unit)
+    if (unit.shelterState?.reason === 'sleep' && unit.sleepVisualState === 'sleeping') playSleepingWakeVisual(unit)
   }
 
   restoreSleepingUnitVisual(unit: UnitEntity): void {
@@ -159,10 +211,15 @@ export class UnitRestSystem {
     const { livingUnits, restUnits } = this.collectUnits()
     if (!livingUnits.length) return
 
-    if (isSleepTime(this.context)) {
-      for (const unit of restUnits) settleSleepState(unit)
-    } else {
-      this.wakeRestingUnitsInstant(restUnits)
+    for (const unit of restUnits) {
+      if (isVillager(unit)) {
+        if (shouldVillagerWork(unit)) wakeRestingUnitInstant(this.context, unit)
+        else settleUnitRestForTimeJump(unit, shouldVillagerBeAsleep(unit))
+      } else if (isSleepTime(this.context)) {
+        settleSleepState(unit)
+      } else {
+        wakeRestingUnitInstant(this.context, unit)
+      }
     }
     this.updateSleepingOutsideVisuals(restUnits)
   }
@@ -190,26 +247,30 @@ export class UnitRestSystem {
   updateSleepingOutsideVisuals(units = this.collectUnits().restUnits): void {
     for (const unit of units) {
       if (unit.shelterState?.status !== 'outside') continue
-      if (unit.lookingAtHero && unit.shelterState.reason === 'sleep') continue
+      if (unit.sleepVisualState !== 'sleeping') continue
       keepSleepingOutsideVisual(unit)
     }
+  }
+
+  private wakeRestingUnit(unit: UnitEntity): void {
+    const routeToInteriorExit = shouldRouteUnitToInteriorExit(this.context, unit)
+    const returnTask = routeToInteriorExit ? getRestReturnTask(unit) : null
+    wakeUnit(
+      unit,
+      routeToInteriorExit
+        ? {
+            mode: 'order',
+            onComplete: () => this.context.routeInteriorUnitToExit?.(unit, returnTask),
+          }
+        : undefined
+    )
   }
 
   wakeRestingUnits(units = this.collectUnits().restUnits): void {
     for (const unit of units) {
       if (!unit.shelterState) continue
       if (unit.shelterState.status === 'wakingUp') continue
-      const routeToInteriorExit = shouldRouteUnitToInteriorExit(this.context, unit)
-      const returnTask = routeToInteriorExit ? getRestReturnTask(unit) : null
-      wakeUnit(
-        unit,
-        routeToInteriorExit
-          ? {
-              mode: 'order',
-              onComplete: () => this.context.routeInteriorUnitToExit?.(unit, returnTask),
-            }
-          : undefined
-      )
+      this.wakeRestingUnit(unit)
     }
   }
 

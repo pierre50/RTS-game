@@ -6,6 +6,8 @@ import {
 } from '../../services/BuildingInteriorSpaceSystem'
 import { startUnitWakeTransitionFromTask } from '../../services/rest/UnitRestLifecycle'
 import { isSleepTime } from '../../services/rest/UnitRestRules'
+import { shouldVillagerWork } from '../../lib/units/villagerSchedule'
+import { UNIT_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -24,6 +26,10 @@ import type { BuildingInteriorTravelGame } from './BuildingInteriorTravelTypes'
 const INTERIOR_OCCUPANT_EXIT_CHECK_INTERVAL_MS = 500
 const INTERIOR_OCCUPANT_EXIT_ORDER_GRACE_MS = 2500
 const INTERIOR_OCCUPANT_EXIT_MAX_RETRIES = 3
+
+function shouldUnitRemainAtRest(context: GameContextLike, unit: UnitEntity): boolean {
+  return unit.type === UNIT_TYPES.villager ? !shouldVillagerWork(unit) : isSleepTime(context)
+}
 
 function stateLabels(states: Array<Pick<SaveEntityState, 'label'> | null | undefined>): Set<string> {
   return new Set(
@@ -143,7 +149,18 @@ function resumeInteriorExitReturnTask(unit: UnitEntity, scheduler = unit.context
   startUnitWakeTransitionFromTask(unit, returnTask)
 }
 
-function updateActiveInteriorLayerExit(game: BuildingInteriorTravelGame, unit: UnitEntity): void {
+function routeRuntimeInteriorExit(
+  game: BuildingInteriorTravelGame,
+  unit: UnitEntity,
+  space: NonNullable<ReturnType<typeof getBuildingInteriorSpaceForUnit>>
+): boolean {
+  const context = game._gameContext()
+  return routeUnitOutOfBuildingInteriorSpace(context, unit, space, {
+    onTransferred: () => resumeInteriorExitReturnTask(unit, context.scheduler),
+  })
+}
+
+function updateRuntimeInteriorExit(game: BuildingInteriorTravelGame, unit: UnitEntity): void {
   const state = unit.interiorExitState
   if (!state) return
   const context = game._gameContext()
@@ -152,7 +169,7 @@ function updateActiveInteriorLayerExit(game: BuildingInteriorTravelGame, unit: U
     resumeInteriorExitReturnTask(unit, context.scheduler)
     return
   }
-  if (isSleepTime(context) || unit.isDead || unit.isDestroyed) {
+  if (shouldUnitRemainAtRest(context, unit) || unit.isDead || unit.isDestroyed) {
     clearInteriorExitState(unit, context.scheduler)
     return
   }
@@ -162,7 +179,7 @@ function updateActiveInteriorLayerExit(game: BuildingInteriorTravelGame, unit: U
   if (retryCount >= INTERIOR_OCCUPANT_EXIT_MAX_RETRIES) return
   state.retryCount = retryCount + 1
   state.startedAtMs = context.scheduler?.elapsedMs ?? state.startedAtMs ?? 0
-  routeUnitOutOfBuildingInteriorSpace(context, unit, space)
+  routeRuntimeInteriorExit(game, unit, space)
 }
 
 function completeInteriorOccupantExit(game: BuildingInteriorTravelGame, units: UnitEntity[]): void {
@@ -188,11 +205,11 @@ function updateInteriorOccupantExit(game: BuildingInteriorTravelGame, unit: Unit
   const state = unit.interiorExitState
   if (!state) return
   const context = game._gameContext()
-  if (game._isBuildingInteriorLayerOpen?.()) {
-    updateActiveInteriorLayerExit(game, unit)
+  if (getBuildingInteriorSpaceForUnit(unit)) {
+    updateRuntimeInteriorExit(game, unit)
     return
   }
-  if (isSleepTime(context) || !canRouteInteriorOccupantToExit(game, unit)) {
+  if (shouldUnitRemainAtRest(context, unit) || !canRouteInteriorOccupantToExit(game, unit)) {
     clearInteriorExitState(unit, context.scheduler)
     return
   }
@@ -250,11 +267,10 @@ export function routeInteriorUnitToExit(
   returnTask: UnitResourceDeliveryReturnTask | null = null
 ): void {
   const context = game._gameContext()
-  if (game._isBuildingInteriorLayerOpen?.()) {
-    const space = getBuildingInteriorSpaceForUnit(unit)
+  const space = getBuildingInteriorSpaceForUnit(unit)
+  if (space) {
     if (
-      !space ||
-      isSleepTime(context) ||
+      shouldUnitRemainAtRest(context, unit) ||
       unit.isDead ||
       unit.isDestroyed ||
       unit.followingHero ||
@@ -269,19 +285,12 @@ export function routeInteriorUnitToExit(
       startedAtMs: context.scheduler?.elapsedMs ?? 0,
       targetCell: space.exitCell,
     }
-    routeUnitOutOfBuildingInteriorSpace(context, unit, space)
-    if (!getBuildingInteriorSpaceForUnit(unit)) {
-      resumeInteriorExitReturnTask(unit, context.scheduler)
-      return
-    }
-    if (!returnTask && !unit.spacePortalState) {
-      clearInteriorExitState(unit, context.scheduler)
-      return
-    }
+    routeRuntimeInteriorExit(game, unit, space)
+    if (!unit.interiorExitState) return
     scheduleInteriorOccupantExitCheck(game, unit)
     return
   }
-  if (isSleepTime(context) || !canRouteInteriorOccupantToExit(game, unit)) return
+  if (shouldUnitRemainAtRest(context, unit) || !canRouteInteriorOccupantToExit(game, unit)) return
   const targetCell = getInteriorExitCell(context.map)
   if (
     targetCell &&
@@ -315,11 +324,11 @@ export function routeInteriorUnitToExit(
 
 export function synchronizeInteriorOccupantsAfterTimeJump(game: BuildingInteriorTravelGame): void {
   const context = game._gameContext()
-  if (game._isBuildingInteriorLayerOpen?.()) {
+  if (game._map().mapType !== 'interior') {
     context.unitRest?.synchronizeAfterTimeJump?.()
     return
   }
-  if (game._map().mapType !== 'interior' || isSleepTime(context)) return
+  if (isSleepTime(context)) return
   if (!game._buildingInteriorSession && !game._campaignSave) return
 
   const currentWorldState = withFogEnabledState(serializeGame(context))

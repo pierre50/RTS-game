@@ -10,6 +10,7 @@ import {
   isBuildingLimitReached,
 } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
+import { getMissingChestResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import { getCellMapPoint, getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
@@ -212,6 +213,7 @@ export class BuildingPlacer {
     }
     if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
     if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
+    if (mouseBuilding.inventoryItem && !this.isInventoryBuildingInHeroPlacementRange(cell, mouseBuilding)) return false
     const passageLookup = createReservedPassageCellLookup(controls.context)
     const placementOptions = {
       requireVisible: true,
@@ -281,6 +283,15 @@ export class BuildingPlacer {
     )
   }
 
+  isInventoryBuildingInHeroPlacementRange(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
+    const hero = this.controls.heroUnit
+    if (!hero || hero.isDead || hero.isDestroyed) return false
+    if (!sameCellMapSpace(hero, cell)) return false
+    const size = typeof building.size === 'number' ? building.size : 1
+    const maxDistance = Math.max(1, Math.floor(size) * 2)
+    return Math.max(Math.abs(hero.i - cell.i), Math.abs(hero.j - cell.j)) <= maxDistance
+  }
+
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
     if (
       !cell ||
@@ -319,9 +330,14 @@ export class BuildingPlacer {
     ) as ResourceLedger
     const ownerLedger: ResourceLedger = owner
     if (!canAfford(ownerLedger, totalCost as ResourceLedger)) {
-      const resource = (Object.keys(totalCost) as Array<keyof ResourceLedger>).find(
-        key => Number(ownerLedger[key]) < Number(totalCost[key])
-      )
+      const missing = hasPlayerResourceChests(owner)
+        ? getMissingChestResources(owner, totalCost)
+        : Object.fromEntries(
+            (Object.keys(totalCost) as Array<keyof ResourceLedger>)
+              .filter(key => Number(ownerLedger[key]) < Number(totalCost[key]))
+              .map(key => [key, totalCost[key]])
+          )
+      const resource = (Object.keys(missing) as Array<keyof ResourceLedger>)[0]
       menu.showMessage(t('needMore', { resource: t(resource ?? '') }), 'warning')
       return false
     }

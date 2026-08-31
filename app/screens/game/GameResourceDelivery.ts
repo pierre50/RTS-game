@@ -2,8 +2,10 @@ import { ACTION_TYPES, BUILDING_TYPES, SOUND_CUES } from '../../constants'
 import { getBuildingInteriorBlueprintType } from '../../lib/buildings/interiors'
 import { createInventoryContainer, moveInventoryResource } from '../../lib/inventory/inventoryContainers'
 import { getEntitySpaceId } from '../../lib/mapSpaces'
+import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
-import { resumeVillagerAutonomy } from '../../lib/units/villagerAutonomy'
+import { resumeVillagerJobIntent } from '../../lib/units/villagerTaskRecovery'
+import { logGoldMinerFlow } from '../../lib/units/villagerJobDiagnostics'
 import {
   buildingAcceptsInventoryResource,
   unitHasDeliverableResourcesForBuilding,
@@ -14,10 +16,10 @@ import {
   routeUnitIntoBuildingInteriorSpace,
   routeUnitOutOfBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
+import { continueRestAfterDelivery } from '../../services/rest/UnitRestLifecycle'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
 
 const RESOURCE_DELIVERY_CHECK_INTERVAL_MS = 250
 
@@ -30,10 +32,6 @@ export type ResourceDeliveryGame = {
 
 function isBuildingEntity(value: UnitEntity['dest'] | RuntimeEntity | null | undefined): value is BuildingEntity {
   return Boolean(value && !('has' in value) && value.family === 'building')
-}
-
-function isRuntimeEntity(value: RuntimeEntity | RuntimeCell | null | undefined): value is RuntimeEntity {
-  return Boolean(value && !('has' in value))
 }
 
 function findInteriorStorageChest(spaceId: string, owner: BuildingEntity['owner']): BuildingEntity | null {
@@ -75,70 +73,29 @@ function depositUnitResourcesIntoChest(unit: UnitEntity, building: BuildingEntit
     moved += moveInventoryResource(source, destination, resource)
   }
   if (moved > 0) {
+    syncPlayerResourceFieldsFromChests(building.owner)
     playAudibleSoundCue(chest, SOUND_CUES.building.chestOpen, { profile: 'surface' })
   }
   if (unit.context?.controls?.heroUnit === unit) unit.context.menu?.refreshInventory?.()
   return moved > 0
 }
 
-function resumeResourceDeliveryReturnTask(unit: UnitEntity): boolean {
-  const returnTask = unit.resourceDeliveryState?.returnTask
-  const dest = returnTask?.dest
-  if (!returnTask || !isRuntimeEntity(dest) || !returnTask.action) return false
-
-  unit.previousDest = null
-  unit.previousWork = null
-  unit.handleChangeDest?.()
-  unit.dest = null
-  unit.path = []
-  if (returnTask.work) unit.work = returnTask.work
-  unit.autonomousJob = returnTask.autonomousJob ?? unit.autonomousJob ?? null
-
-  switch (returnTask.action) {
-    case ACTION_TYPES.farm:
-      if (!unit.getActionCondition?.(dest, ACTION_TYPES.farm)) return false
-      unit.sendToFarm?.(dest, true)
-      return true
-    case ACTION_TYPES.forageberry:
-      if (!unit.getActionCondition?.(dest, ACTION_TYPES.forageberry)) return false
-      unit.sendToBerrybush?.(dest, true)
-      return true
-    case ACTION_TYPES.chopwood:
-      if (!unit.getActionCondition?.(dest, ACTION_TYPES.chopwood)) return false
-      unit.sendToTree?.(dest, true)
-      return true
-    case ACTION_TYPES.takemeat:
-      if (!unit.getActionCondition?.(dest, ACTION_TYPES.takemeat)) return false
-      unit.sendToTakeMeat?.(dest, true)
-      return true
-    case ACTION_TYPES.minestone:
-      if (!unit.getActionCondition?.(dest, ACTION_TYPES.minestone)) return false
-      unit.sendToStone?.(dest, true)
-      return true
-    case ACTION_TYPES.minegold:
-    case ACTION_TYPES.minecopper:
-    case ACTION_TYPES.mineiron:
-      if (!unit.getActionCondition?.(dest, returnTask.action)) return false
-      unit.sendToMineResource?.(dest, true)
-      return true
-    default:
-      if (!unit.getActionCondition?.(dest, returnTask.action)) return false
-      unit.sendToEvt?.(dest, returnTask.action)
-      return true
-  }
-}
-
 function finishResourceDelivery(context: GameContextLike, unit: UnitEntity): void {
-  const resumedReturnTask = resumeResourceDeliveryReturnTask(unit)
+  const returnTask = unit.resourceDeliveryState?.returnTask ?? null
+  logGoldMinerFlow(unit, 'delivery.finishing', {}, returnTask)
   clearResourceDeliveryState(unit)
-  if (!resumedReturnTask) {
-    if (unit.goBackToPrevious) unit.goBackToPrevious()
-    else if (!resumeVillagerAutonomy?.(unit)) unit.stop?.()
-  }
   context.menu?.refreshInventory?.()
+  if (unit.shelterState?.status === 'delivering' && continueRestAfterDelivery(unit)) {
+    logGoldMinerFlow(unit, 'delivery.continued-to-shelter', {}, returnTask)
+    return
+  }
+  const resumed = resumeVillagerJobIntent(unit, returnTask)
+  logGoldMinerFlow(unit, resumed ? 'delivery.work-resumed' : 'delivery.work-stopped', {}, returnTask)
+  if (!resumed) unit.stop?.()
 }
 
 function stopResourceDelivery(context: GameContextLike, unit: UnitEntity): void {
+  logGoldMinerFlow(unit, 'delivery.aborted')
   clearResourceDeliveryState(unit)
   unit.stop?.()
   context.menu?.refreshInventory?.()
@@ -179,6 +136,7 @@ function updateResourceDeliveryState(context: GameContextLike, unit: UnitEntity)
     }
     if (!space || space.id !== state.spaceId) return
     state.phase = 'toChest'
+    logGoldMinerFlow(unit, 'delivery.entered-building')
     unit.sendToEvt?.(chest, ACTION_TYPES.delivery, { forceRepath: true, preserveAutonomy: true })
     return
   }
@@ -252,6 +210,7 @@ export async function routeUnitResourceDelivery(
     returnTask,
     spaceId: space.id,
   }
+  logGoldMinerFlow(unit, 'delivery.interior-ready', { chest: chest.label, interior: space.id }, returnTask)
   scheduleResourceDeliveryUpdate(context, unit)
   return routeUnitIntoBuildingInteriorSpace(context, unit, space)
 }
@@ -264,10 +223,16 @@ export function handleResourceDeliveryAction(context: GameContextLike, unit: Uni
   if (state?.phase === 'toChest' && state.chest === target && state.building) {
     depositUnitResourcesIntoChest(unit, state.building, target)
     state.phase = 'leaving'
+    logGoldMinerFlow(unit, 'delivery.deposited-requesting-exit')
     const space = getBuildingInteriorSpaceForUnit(unit)
-    if (!routeUnitOutOfBuildingInteriorSpace(context, unit, space)) {
-      finishResourceDelivery(context, unit)
-    } else if (space && getEntitySpaceId(unit) !== space.id) {
+    if (
+      !routeUnitOutOfBuildingInteriorSpace(context, unit, space, {
+        onTransferred: () => {
+          logGoldMinerFlow(unit, 'delivery.exit-confirmed')
+          finishResourceDelivery(context, unit)
+        },
+      })
+    ) {
       finishResourceDelivery(context, unit)
     }
     return true

@@ -34,7 +34,8 @@ function loadPathfinding() {
       },
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -77,6 +78,32 @@ test('pathfinding still blocks solid cells occupied by another unit', () => {
   const path = findInstancePath({ i: 0, j: 0, label: 'bandit-1' }, 2, 0, { grid, size: 2 })
 
   assert.deepEqual(path, [])
+})
+
+test('pathfinding can cross an explicitly passable solid passage cell', () => {
+  const { findInstancePath } = loadPathfinding()
+  const grid = makeLineGrid()
+  grid[1][0].solid = true
+  grid[1][0].has = { label: 'other-unit' }
+  grid[1][0].reservedPassage = true
+
+  const path = findInstancePath(
+    { i: 0, j: 0, label: 'villager-1' },
+    2,
+    0,
+    { grid, size: 2 },
+    {
+      canPassThroughSolidCell: cell => cell.reservedPassage === true,
+    }
+  )
+
+  assert.deepEqual(
+    path.map(cell => [cell.i, cell.j]),
+    [
+      [2, 0],
+      [1, 0],
+    ]
+  )
 })
 
 test('pathfinding blocks water cells behind the shoreline', () => {

@@ -314,3 +314,47 @@ test('equipping the same arrow type merges the bag stack into the equipped stack
   assert.equal(hero.inventory.equipped.arrow, 'arrow_copper')
   assert.equal(hero.inventory.equippedCounts.arrow, 5)
 })
+
+test('hero arrow stacks can equip and unequip one item at a time', () => {
+  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
+    '../constants': {
+      SHEET_TYPES: { standing: 'standingSheet', corpse: 'corpseSheet' },
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    './equipmentStats': {
+      getUnitEquipment: () => [],
+      refreshUnitEquipmentStats: () => {},
+    },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const hero = {
+    currentSheet: 'standingSheet',
+    inventory: {
+      equipment: ['arrow_copper', 'arrow_copper', 'arrow_copper'],
+      equipped: {},
+      equippedCounts: {},
+      activeWeapons: {},
+    },
+    syncAppearanceLayers: () => {},
+  }
+
+  assert.equal(equipHeroInventoryItem(hero, 'arrow_copper', 1), true)
+  assert.equal(hero.inventory.equipped.arrow, 'arrow_copper')
+  assert.equal(hero.inventory.equippedCounts.arrow, 1)
+  assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 2)
+
+  assert.equal(equipHeroInventoryItem(hero, 'arrow_copper', 2), true)
+  assert.equal(hero.inventory.equippedCounts.arrow, 3)
+  assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 0)
+
+  assert.equal(unequipHeroInventorySlot(hero, 'arrow', 1), true)
+  assert.equal(hero.inventory.equipped.arrow, 'arrow_copper')
+  assert.equal(hero.inventory.equippedCounts.arrow, 2)
+  assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 1)
+
+  assert.equal(unequipHeroInventorySlot(hero, 'arrow', 2), true)
+  assert.equal(hero.inventory.equipped.arrow, undefined)
+  assert.equal(hero.inventory.equippedCounts.arrow, undefined)
+  assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 3)
+})

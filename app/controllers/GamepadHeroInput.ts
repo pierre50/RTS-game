@@ -1,6 +1,6 @@
 import { GAMEPAD_AXIS, GAMEPAD_BUTTON, GAMEPAD_CURSOR_SPEED, getActiveGamepad, readStick } from '../lib/input/gamepad'
 import { setVirtualCursorPosition, setVirtualCursorVisible } from '../lib/hero/heroCursor'
-import { getGamepadEnabled, type ControlBindingAction } from '../lib/audio/settings'
+import { getGamepadButtonIndex, getGamepadEnabled, type ControlBindingAction } from '../lib/audio/settings'
 
 type GamepadControlsHost = {
   context: { gamebox: HTMLElement }
@@ -76,6 +76,11 @@ export class GamepadHeroInput {
     this.directionLockActive = Boolean(gamepad.buttons[GAMEPAD_BUTTON.interact]?.pressed)
     this.updateVirtualCursor()
 
+    const transferOneButton = getGamepadButtonIndex('inventoryTransferOne')
+    const transferAllButton = getGamepadButtonIndex('inventoryTransferAll')
+    this.dispatchInventoryTransferButton(gamepad, transferOneButton, 'one')
+    this.dispatchInventoryTransferButton(gamepad, transferAllButton, 'all')
+
     const hero = this.controls.heroController
     for (const [index, action] of HERO_ACTION_BUTTONS) {
       this.dispatchButtonEdge(
@@ -129,5 +134,30 @@ export class GamepadHeroInput {
       this.pressedButtons.delete(index)
       onUp?.()
     }
+  }
+
+  private dispatchInventoryTransferButton(gamepad: Gamepad, index: number, mode: 'one' | 'all'): void {
+    const pressed = Boolean(gamepad.buttons[index]?.pressed)
+    const wasPressed = this.pressedButtons.has(index)
+    if (!pressed) {
+      if (wasPressed) this.pressedButtons.delete(index)
+      return
+    }
+    if (wasPressed) return
+
+    const slot = this.getHoveredInventoryTransferSlot()
+    if (!slot) return
+
+    this.pressedButtons.add(index)
+    slot.dispatchEvent(new CustomEvent('inventorytransfergamepad', { bubbles: true, detail: { mode } }))
+  }
+
+  private getHoveredInventoryTransferSlot(): HTMLElement | null {
+    if (typeof document === 'undefined' || typeof document.elementFromPoint !== 'function') return null
+    const { mouse } = this.controls
+    const scrollX = typeof window === 'undefined' ? 0 : window.scrollX
+    const scrollY = typeof window === 'undefined' ? 0 : window.scrollY
+    const element = document.elementFromPoint(mouse.x - scrollX, mouse.y - scrollY)
+    return element?.closest?.('[data-inventory-transfer-slot="true"]') as HTMLElement | null
   }
 }

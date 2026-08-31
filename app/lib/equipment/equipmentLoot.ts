@@ -151,14 +151,8 @@ function pushEquipmentCopies(bag: string[], equipment: string, count: number): v
   }
 }
 
-function removeAllBagEquipment(bag: string[], equipment: string): number {
-  let count = 0
-  for (let i = bag.length - 1; i >= 0; i--) {
-    if (bag[i] !== equipment) continue
-    bag.splice(i, 1)
-    count += 1
-  }
-  return count
+function countBagEquipment(bag: readonly string[], equipment: string): number {
+  return bag.reduce((count, item) => count + (item === equipment ? 1 : 0), 0)
 }
 
 function cleanResourceAmount(resources: ResourceAmount | null | undefined): ResourceAmount {
@@ -239,7 +233,11 @@ export function pickupCorpseEquipment(
   return true
 }
 
-export function equipHeroInventoryItem(hero: UnitEntity | null | undefined, equipment: string): boolean {
+export function equipHeroInventoryItem(
+  hero: UnitEntity | null | undefined,
+  equipment: string,
+  requestedCount?: number
+): boolean {
   if (!hero) return false
   const slot = getEquipmentSlot(equipment)
   if (!slot) return equipHeroWeaponInventoryItem(hero, equipment)
@@ -249,16 +247,19 @@ export function equipHeroInventoryItem(hero: UnitEntity | null | undefined, equi
   const bagIndex = bag.indexOf(equipment)
   if (bagIndex < 0) return false
 
-  let equipCount = slot === 'arrow' ? removeAllBagEquipment(bag, equipment) : 1
-  if (slot !== 'arrow') bag.splice(bagIndex, 1)
+  const availableCount = countBagEquipment(bag, equipment)
+  const defaultCount = slot === 'arrow' ? availableCount : 1
+  const equipCount = Math.min(availableCount, Math.max(1, Math.floor(requestedCount ?? defaultCount)))
+  if (!removeHeroInventoryItem(hero, equipment, equipCount)) return false
   const previous = inventory.equipped![slot]
-  if (previous === equipment && slot === 'arrow') {
-    equipCount += getHeroEquippedItemCount(hero, slot)
+  let nextEquippedCount = equipCount
+  if (previous === equipment) {
+    nextEquippedCount += getHeroEquippedItemCount(hero, slot)
   } else if (previous) {
     pushEquipmentCopies(bag, previous, getHeroEquippedItemCount(hero, slot))
   }
   inventory.equipped![slot] = equipment
-  inventory.equippedCounts![slot] = equipCount
+  inventory.equippedCounts![slot] = nextEquippedCount
   if (slot === 'helmet' && !inventory.equipped!.helmetDecor) {
     const decor = HELMET_DECOR_COMPANIONS[equipment]
     const decorIndex = decor ? bag.indexOf(decor) : -1
@@ -293,15 +294,24 @@ function equipHeroWeaponInventoryItem(hero: UnitEntity | null | undefined, equip
   return true
 }
 
-export function unequipHeroInventorySlot(hero: UnitEntity | null | undefined, slot: HeroEquipmentSlot): boolean {
+export function unequipHeroInventorySlot(
+  hero: UnitEntity | null | undefined,
+  slot: HeroEquipmentSlot,
+  requestedCount?: number
+): boolean {
   if (!hero?.inventory?.equipped?.[slot]) return false
   const inventory = getHeroInventory(hero)
   const equipment = inventory.equipped![slot]
   const count = getHeroEquippedItemCount(hero, slot)
-  delete inventory.equipped![slot]
-  delete inventory.equippedCounts![slot]
-  if (equipment) pushEquipmentCopies(inventory.equipment!, equipment, count)
-  if (slot === 'helmet' && inventory.equipped!.helmetDecor) {
+  const unequipCount = Math.min(count, Math.max(1, Math.floor(requestedCount ?? count)))
+  if (unequipCount >= count) {
+    delete inventory.equipped![slot]
+    delete inventory.equippedCounts![slot]
+  } else {
+    inventory.equippedCounts![slot] = count - unequipCount
+  }
+  if (equipment) pushEquipmentCopies(inventory.equipment!, equipment, unequipCount)
+  if (slot === 'helmet' && unequipCount >= count && inventory.equipped!.helmetDecor) {
     const decor = inventory.equipped!.helmetDecor
     const decorCount = getHeroEquippedItemCount(hero, 'helmetDecor')
     delete inventory.equipped!.helmetDecor

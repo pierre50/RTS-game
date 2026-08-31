@@ -8,7 +8,13 @@ import {
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../../constants'
-import { getInstanceDegree, getMiningActions, instancesDistance, resumeVillagerAutonomy } from '../../../lib'
+import {
+  getInstanceDegree,
+  getMiningActions,
+  instancesDistance,
+  resumeVillagerAutonomy,
+  sendUnitToMiningAction,
+} from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
 import {
@@ -131,8 +137,7 @@ export const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target:
   ...Object.fromEntries(
     getMiningActions().map(action => [
       action,
-      (unit: UnitEntity, target: RuntimeEntity) =>
-        unit.sendToMineResource ? (unit.sendToMineResource(target, true), true) : false,
+      (unit: UnitEntity, target: RuntimeEntity) => sendUnitToMiningAction(unit, target, action, true) !== false,
     ])
   ),
   [ACTION_TYPES.takemeat]: (unit, target) => (unit.sendToTakeMeat(target, true), true),

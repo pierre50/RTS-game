@@ -173,6 +173,9 @@ export default class Menu implements MenuLike {
   rebuildTerrainMiniMapFromViews(): void {
     return this.minimapManager.rebuildTerrainMiniMapFromViews()
   }
+  refreshMiniMap(): void {
+    return this.minimapManager.refreshMiniMap()
+  }
   updateTerrainMiniMap(i: number, j: number): void {
     return this.minimapManager.updateTerrainMiniMap(i, j)
   }
@@ -306,7 +309,10 @@ export default class Menu implements MenuLike {
     return this.inventoryManager.isOpen()
   }
   refreshInventory(): void {
-    return this.inventoryManager.refresh()
+    this.inventoryManager.refresh()
+    this.entityInfoModalManager.syncLiveState()
+    this.heroBuildingMenuManager.refreshInventory()
+    this.npcOrdersManager.refreshInventory()
   }
   setEquippedItem(item: HeroEquippedItem | null): void {
     return this.inventoryManager.render(item)

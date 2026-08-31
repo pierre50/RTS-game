@@ -47,6 +47,7 @@ interface WeatherSystemLike {
   debugState?(): object
   forcePhase?(phase: string): void
   getDarknessLevel?(): number
+  getLightningBrightness?(): number
   phase?: string
 }
 
@@ -120,6 +121,7 @@ export interface MenuLike {
   updateActionTarget(): void
   updateTerrainMiniMap?(i: number, j: number): void
   rebuildTerrainMiniMapFromViews?(): void
+  refreshMiniMap?(): void
   updateResourcesMiniMap(): void
   updateCameraMiniMap?(): void
   updatePlayerMiniMap?(player: PlayerLike): void
@@ -168,6 +170,10 @@ interface EntityPreviewLike {
 
 interface MinimapManagerLike {
   getMinimapFactor(): number
+  getMinimapWorldPoint?(clientX: number, clientY: number, rect: { left: number; top: number; width: number }): {
+    x: number
+    y: number
+  }
   isActive?(): boolean
 }
 

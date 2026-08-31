@@ -13,7 +13,6 @@ import type { GridCell } from '../types/grid'
 import type { RuntimeCell } from '../types/map'
 
 type BuildingListByType = Record<string, AIBuildingLike[]>
-type ResourceLedger = Record<string, number | undefined>
 type BuildActionBuyer = (
   condition: boolean,
   buildingType: string,
@@ -34,15 +33,6 @@ type BuildingStrategy = {
   canSpendWithReserve(cost: AIResourceAmount, reserve?: AIResourceAmount): boolean
 }
 
-function asResourceLedger(player: AIStrategyPlayerLike): ResourceLedger {
-  return {
-    wood: player.wood,
-    food: player.food,
-    gold: player.gold,
-    stone: player.stone,
-  }
-}
-
 export function buyAIBuildingIfNeeded(
   strategy: BuildingStrategy,
   condition: boolean,
@@ -56,7 +46,7 @@ export function buyAIBuildingIfNeeded(
   const building = ai.config.buildings[buildingType]
   if (
     condition &&
-    canAfford(asResourceLedger(ai), building.cost) &&
+    canAfford(ai as Parameters<typeof canAfford>[0], building.cost) &&
     strategy.canSpendWithReserve(building.cost || {}, reserve) &&
     ai.hasNotReachBuildingLimit(buildingType, buildingsByType[buildingType])
   ) {
@@ -82,7 +72,7 @@ export function buyAIWheatFieldIfNeeded(
   if (
     condition &&
     field &&
-    canAfford(asResourceLedger(ai), field.cost) &&
+    canAfford(ai as Parameters<typeof canAfford>[0], field.cost) &&
     strategy.canSpendWithReserve(field.cost || {}, reserve)
   ) {
     const pos = positionCallback()
