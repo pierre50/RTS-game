@@ -7,7 +7,7 @@ function loadHeroProximityInteractions() {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
-        BUILDING_TYPES: { house: 'House', stable: 'Stable', townCenter: 'TownCenter', trap: 'Trap' },
+        BUILDING_TYPES: { chest: 'Chest', house: 'House', stable: 'Stable', townCenter: 'TownCenter', trap: 'Trap' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
       '../chief': {
@@ -138,11 +138,69 @@ test('hero proximity interaction can recover a visible foreign trap', () => {
     y: 248,
   }
 
-  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), {
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: building }), {
     action: 'recoverTrap',
     labelKey: 'heroInteractionRecover',
     target: building,
   })
+})
+
+test('hero proximity interaction ignores a visible trap that is not the facing target', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const building = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    owner: { label: 'other-player' },
+    reachable: true,
+    requiresActiveSightInteraction: true,
+    type: 'Trap',
+    visibleToHero: true,
+    x: 100,
+    y: 248,
+  }
+
+  assert.equal(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero() }), null)
+})
+
+test('hero proximity interaction opens a nearby chest', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const chest = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    reachable: true,
+    type: 'Chest',
+    x: 100,
+    y: 248,
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: chest }), {
+    action: 'open',
+    labelKey: 'heroInteractionOpen',
+    target: chest,
+  })
+})
+
+test('hero proximity interaction ignores a nearby chest that is not the facing target', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const chest = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    reachable: true,
+    type: 'Chest',
+    x: 100,
+    y: 248,
+  }
+
+  assert.equal(resolveHeroProximityInteraction({ buildings: [chest], hero: makeHero() }), null)
 })
 
 test('hero proximity interaction resolves a close companion horse as mount', () => {

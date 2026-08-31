@@ -52,6 +52,14 @@ type SerializableEntity = RuntimeEntityBase & {
   containedAnimalType?: string | null
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string }>
+  inventory?: {
+    resources?: ResourceAmount
+    equipment?: string[]
+    equipped?: NonNullable<SaveEntityState['inventory']>['equipped']
+    equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
+    activeWeapons?: NonNullable<SaveEntityState['inventory']>['activeWeapons']
+  }
+  indestructible?: boolean
   followingHero?: boolean
   inactif?: boolean
   isBuilt?: boolean
@@ -69,13 +77,6 @@ type SerializableEntity = RuntimeEntityBase & {
   realDest?: Destination | null
   isFleeing?: boolean
   isChief?: boolean
-  inventory?: {
-    resources?: ResourceAmount
-    equipment?: string[]
-    equipped?: NonNullable<SaveEntityState['inventory']>['equipped']
-    equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
-    activeWeapons?: NonNullable<SaveEntityState['inventory']>['activeWeapons']
-  }
   lootEquipment?: string[]
   sprite?: SpriteState | null
   technology?: SaveTechnologyState
@@ -323,6 +324,8 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'horseAmount',
       'stableHorses',
       'containedAnimalType',
+      'inventory',
+      'indestructible',
     ]),
     isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
   }

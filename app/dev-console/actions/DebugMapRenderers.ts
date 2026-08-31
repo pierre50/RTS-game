@@ -22,8 +22,9 @@ import {
   drawCellDiamond,
   drawCellStroke,
   getCameraCells,
-  getDebugContainer,
-  getDebugLayer,
+  getDebugContainerForCamera,
+  getDebugLayerForCamera,
+  getDebugMapSpace,
   getSolidDebugColor,
 } from './shared'
 import { ensureDebugOverlay } from './DebugOverlayRenderers'
@@ -61,8 +62,7 @@ const HERO_COLLISION_FAMILY_COLORS: Record<string, number> = {
 }
 
 export function drawSolidDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugLayer(map, DEBUG_SOLID_LAYER, DEBUG_OVERLAY_Z + 1)
+  const layer = getDebugLayerForCamera(context, DEBUG_SOLID_LAYER, DEBUG_OVERLAY_Z + 1)
   layer.clear()
   const hero = context.controls?.heroUnit
 
@@ -71,7 +71,13 @@ export function drawSolidDebug(context: DevConsoleContext): void {
     if (!cell.solid && !cell.border && !cell.inclined && !cell.waterBorder && cell.category !== 'Water') continue
 
     const isHeroOccupancyOnly =
-      hero && cell.has === hero && cell.solid && !cell.border && !cell.inclined && !cell.waterBorder && cell.category !== 'Water'
+      hero &&
+      cell.has === hero &&
+      cell.solid &&
+      !cell.border &&
+      !cell.inclined &&
+      !cell.waterBorder &&
+      cell.category !== 'Water'
     if (isHeroOccupancyOnly) {
       drawCellStroke(layer, cell, getSolidDebugColor(cell), 0.55, 2)
       continue
@@ -87,8 +93,8 @@ export function drawSolidDebug(context: DevConsoleContext): void {
 }
 
 export function drawPathDebug(context: DevConsoleContext): void {
-  const { map, players } = context
-  const layer = getDebugLayer(map, DEBUG_PATH_LAYER, DEBUG_OVERLAY_Z + 2)
+  const { players } = context
+  const layer = getDebugLayerForCamera(context, DEBUG_PATH_LAYER, DEBUG_OVERLAY_Z + 2)
   layer.clear()
 
   const allUnits = players.flatMap(p => p.units).filter(unit => Boolean((unit as DevEntity).path?.length))
@@ -106,8 +112,7 @@ export function drawPathDebug(context: DevConsoleContext): void {
 }
 
 export function drawGridDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugLayer(map, DEBUG_GRID_LAYER, DEBUG_OVERLAY_Z + 3)
+  const layer = getDebugLayerForCamera(context, DEBUG_GRID_LAYER, DEBUG_OVERLAY_Z + 3)
   layer.clear()
 
   for (const cell of getCameraCells(context)) {
@@ -117,8 +122,7 @@ export function drawGridDebug(context: DevConsoleContext): void {
 }
 
 export function drawCoordsDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugContainer(map, DEBUG_COORDS_LAYER, DEBUG_OVERLAY_Z + 4)
+  const layer = getDebugContainerForCamera(context, DEBUG_COORDS_LAYER, DEBUG_OVERLAY_Z + 4)
   layer.removeChildren().forEach(child => child.destroy())
 
   for (const cell of getCameraCells(context)) {
@@ -143,8 +147,8 @@ export function drawCoordsDebug(context: DevConsoleContext): void {
 }
 
 export function drawVisionDebug(context: DevConsoleContext): void {
-  const { map, player } = context
-  const layer = getDebugLayer(map, DEBUG_VISION_LAYER, DEBUG_OVERLAY_Z)
+  const { player } = context
+  const layer = getDebugLayerForCamera(context, DEBUG_VISION_LAYER, DEBUG_OVERLAY_Z)
   layer.clear()
 
   for (const cell of getCameraCells(context)) {
@@ -158,12 +162,17 @@ export function drawVisionDebug(context: DevConsoleContext): void {
 }
 
 function getHeroDebugUnit(context: DevConsoleContext): DevEntity | null {
-  const controlsHero = context.controls && 'heroUnit' in context.controls ? (context.controls.heroUnit as DevEntity | null) : null
+  const controlsHero =
+    context.controls && 'heroUnit' in context.controls ? (context.controls.heroUnit as DevEntity | null) : null
   if (controlsHero) return controlsHero
   return (context.player.units.find(unit => unit.controlMode === 'hero') as DevEntity | undefined) ?? null
 }
 
-function getPointForDegree(origin: { x: number; y: number }, degree: number, distance: number): { x: number; y: number } {
+function getPointForDegree(
+  origin: { x: number; y: number },
+  degree: number,
+  distance: number
+): { x: number; y: number } {
   const radians = ((degree - 180) * Math.PI) / 180
   return {
     x: origin.x + Math.cos(radians) * distance,
@@ -172,7 +181,7 @@ function getPointForDegree(origin: { x: number; y: number }, degree: number, dis
 }
 
 function drawHeroAimSector(
-  layer: ReturnType<typeof getDebugLayer>,
+  layer: ReturnType<typeof getDebugLayerForCamera>,
   origin: { x: number; y: number },
   start: number,
   end: number,
@@ -189,8 +198,7 @@ function drawHeroAimSector(
 }
 
 export function drawHeroAimDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugLayer(map, DEBUG_HERO_AIM_LAYER, DEBUG_OVERLAY_Z + 7)
+  const layer = getDebugLayerForCamera(context, DEBUG_HERO_AIM_LAYER, DEBUG_OVERLAY_Z + 7)
   layer.clear()
 
   const hero = getHeroDebugUnit(context)
@@ -234,9 +242,9 @@ export function drawHeroAimDebug(context: DevConsoleContext): void {
 
 function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEntity): DevEntity[] {
   const entities = new Set<DevEntity>()
-  const { map } = context
+  const grid = getDebugMapSpace(context)?.grid ?? context.map.grid
   for (let i = hero.i - HERO_COLLISION_SCAN_RADIUS; i <= hero.i + HERO_COLLISION_SCAN_RADIUS; i++) {
-    const row = map.grid[i]
+    const row = grid[i]
     if (!row) continue
     for (let j = hero.j - HERO_COLLISION_SCAN_RADIUS; j <= hero.j + HERO_COLLISION_SCAN_RADIUS; j++) {
       const entity = row[j]?.has as DevEntity | null
@@ -257,9 +265,9 @@ function getNearbyHeroCollisionEntities(context: DevConsoleContext, hero: DevEnt
 
 function getNearbyHeroTerrainCollisionCells(context: DevConsoleContext, hero: DevEntity) {
   const cells = []
-  const { map } = context
+  const grid = getDebugMapSpace(context)?.grid ?? context.map.grid
   for (let i = hero.i - HERO_TERRAIN_COLLISION_DEBUG_RADIUS; i <= hero.i + HERO_TERRAIN_COLLISION_DEBUG_RADIUS; i++) {
-    const row = map.grid[i]
+    const row = grid[i]
     if (!row) continue
     for (let j = hero.j - HERO_TERRAIN_COLLISION_DEBUG_RADIUS; j <= hero.j + HERO_TERRAIN_COLLISION_DEBUG_RADIUS; j++) {
       const cell = row[j]
@@ -270,7 +278,8 @@ function getNearbyHeroTerrainCollisionCells(context: DevConsoleContext, hero: De
 }
 
 function getEntityCollisionInfo(context: DevConsoleContext, hero: DevEntity, entity: DevEntity) {
-  const points = getRoundedIsoFootprintPoints(entity, context.map.grid)
+  const grid = getDebugMapSpace(context)?.grid ?? context.map.grid
+  const points = getRoundedIsoFootprintPoints(entity, grid)
   const inside = pointIsInsidePolygon(points, hero)
   const centerDistance = Math.hypot(hero.x - entity.x, hero.y - entity.y)
   return { points, value: centerDistance, inside }
@@ -281,13 +290,19 @@ function formatDirectMoveDebugDetails(details: Record<string, unknown>): string 
     | { i?: unknown; j?: unknown; solid?: unknown; waterBorder?: unknown; border?: unknown; category?: unknown }
     | null
     | undefined
-  const firstTarget = details.firstTarget as { newI?: unknown; newJ?: unknown; crossingCell?: unknown; cell?: unknown } | null | undefined
+  const firstTarget = details.firstTarget as
+    | { newI?: unknown; newJ?: unknown; crossingCell?: unknown; cell?: unknown }
+    | null
+    | undefined
   const firstTargetCell = firstTarget?.cell as
     | { i?: unknown; j?: unknown; solid?: unknown; waterBorder?: unknown; border?: unknown; category?: unknown }
     | null
     | undefined
   const terrainBlocker = details.terrainBlocker as { type?: unknown; pointCount?: unknown } | null | undefined
-  const blocker = details.blocker as { family?: unknown; type?: unknown; i?: unknown; j?: unknown; pointCount?: unknown } | null | undefined
+  const blocker = details.blocker as
+    | { family?: unknown; type?: unknown; i?: unknown; j?: unknown; pointCount?: unknown }
+    | null
+    | undefined
   const cell = target ?? firstTargetCell
   const parts = [
     `raw=${String(details.rawI ?? '?')},${String(details.rawJ ?? '?')}`,
@@ -301,7 +316,8 @@ function formatDirectMoveDebugDetails(details: Record<string, unknown>): string 
       )} wb=${String(cell.waterBorder ?? '?')} border=${String(cell.border ?? '?')}`
     )
   }
-  if (terrainBlocker) parts.push(`terrain=${String(terrainBlocker.type ?? '?')} pts=${String(terrainBlocker.pointCount ?? '?')}`)
+  if (terrainBlocker)
+    parts.push(`terrain=${String(terrainBlocker.type ?? '?')} pts=${String(terrainBlocker.pointCount ?? '?')}`)
   if (blocker) {
     parts.push(
       `blocker=${String(blocker.family ?? '?')}:${String(blocker.type ?? '?')} ${String(blocker.i ?? '?')},${String(
@@ -313,8 +329,7 @@ function formatDirectMoveDebugDetails(details: Record<string, unknown>): string 
 }
 
 export function drawHeroCollisionDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugLayer(map, DEBUG_HERO_COLLISION_LAYER, DEBUG_OVERLAY_Z + 6)
+  const layer = getDebugLayerForCamera(context, DEBUG_HERO_COLLISION_LAYER, DEBUG_OVERLAY_Z + 6)
   layer.clear()
 
   const hero = getHeroDebugUnit(context)
@@ -329,15 +344,26 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
     .sort((a, b) => a.value - b.value)
   const terrainInfos = getNearbyHeroTerrainCollisionCells(context, hero)
     .map(cell => {
-      const blocker = createHeroTerrainCollisionBlocker(cell, context.map as unknown as RuntimeMap)
-      const points = getHeroCollisionFootprintPoints(blocker, context.map as unknown as RuntimeMap)
+      const debugSpace = getDebugMapSpace(context)
+      const collisionMap = {
+        grid: debugSpace?.grid ?? context.map.grid,
+        mapType: debugSpace?.mapType ?? context.map.mapType,
+      } as unknown as RuntimeMap
+      const blocker = createHeroTerrainCollisionBlocker(cell, collisionMap)
+      const points = getHeroCollisionFootprintPoints(blocker, collisionMap)
       const value = Math.hypot((blocker.x ?? cell.x) - hero.x, (blocker.y ?? cell.y) - hero.y)
-      return { blocker, inside: pointIsInsidePolygon(points, hero), points, rawPoints: blocker.collisionPoints ?? [], value }
+      return {
+        blocker,
+        inside: pointIsInsidePolygon(points, hero),
+        points,
+        rawPoints: blocker.collisionPoints ?? [],
+        value,
+      }
     })
     .sort((a, b) => a.value - b.value)
 
   for (const info of infos) {
-    const color = info.inside ? 0xff3050 : HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff
+    const color = info.inside ? 0xff3050 : (HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff)
     const lift = getReliefOffset(info.entity)
     const points = lift ? info.points.map(point => ({ x: point.x, y: point.y + lift })) : info.points
     drawRoundedIsoShape(layer, points)
@@ -359,7 +385,8 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
     })
   }
 
-  const cell = context.map.grid[hero.i]?.[hero.j]
+  const grid = getDebugMapSpace(context)?.grid ?? context.map.grid
+  const cell = grid[hero.i]?.[hero.j]
   if (cell) {
     drawCellStroke(layer, cell, 0xffffff, 0.9, 2)
   }
@@ -409,8 +436,7 @@ function resolveTerrainFrame(cell: TerrainSourceCell): { sheet: string; frame: n
 }
 
 export function drawTerrainFrameDebug(context: DevConsoleContext): void {
-  const { map } = context
-  const layer = getDebugContainer(map, DEBUG_TERRAIN_FRAME_LAYER, DEBUG_OVERLAY_Z + 5)
+  const layer = getDebugContainerForCamera(context, DEBUG_TERRAIN_FRAME_LAYER, DEBUG_OVERLAY_Z + 5)
   layer.removeChildren().forEach(child => child.destroy())
 
   for (const cell of getCameraCells(context)) {

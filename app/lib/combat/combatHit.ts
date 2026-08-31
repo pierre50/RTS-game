@@ -36,7 +36,12 @@ function updateHitPointsDisplay(target: RuntimeEntity, player?: PlayerLike | nul
   syncEntityHealthDisplay(target, { player, menu })
 }
 
-function applyFactionAttackPenalty(attacker: RuntimeEntity, target: RuntimeEntity, killed: boolean, damageDealt: number): void {
+function applyFactionAttackPenalty(
+  attacker: RuntimeEntity,
+  target: RuntimeEntity,
+  killed: boolean,
+  damageDealt: number
+): void {
   if (damageDealt <= 0 || !attacker.owner?.isPlayed) return
   const factionId = target.owner?.factionId
   if (!factionId) return
@@ -65,9 +70,10 @@ export function applyCombatHit(
 ): CombatHitResult {
   const beforeHitPoints = target.hitPoints ?? 0
   const parried = isMelee && attemptAutomaticParry(target)
-  target.hitPoints = parried || target.devInvincible
-    ? beforeHitPoints
-    : getHitPointsWithDamage(source, target, defaultDamage, bonusDamage, damageType)
+  target.hitPoints =
+    parried || target.devInvincible || target.indestructible
+      ? beforeHitPoints
+      : getHitPointsWithDamage(source, target, defaultDamage, bonusDamage, damageType)
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
   const killed = (target.hitPoints ?? 0) <= 0
   applyFactionAttackPenalty(attacker, target, killed, damageDealt)

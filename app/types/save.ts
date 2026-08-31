@@ -62,6 +62,7 @@ export type SaveEntityState = {
     equippedCounts?: Partial<Record<HeroEquipmentSlot, number>>
     activeWeapons?: Partial<Record<HeroWeaponSlot, string>>
   }
+  indestructible?: boolean
   followingHero?: boolean
   isFleeing?: boolean
   isUsedBy?: string | null

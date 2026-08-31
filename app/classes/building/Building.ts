@@ -43,6 +43,7 @@ import type {
   UnitSounds,
 } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import type { ResourceAmount } from '../../types/common'
 import type { BuildingConfig, TechnologyConfig } from '../../types/config'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
 
@@ -55,6 +56,7 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   j: number
   type: string
   spaceId?: string
+  inventory?: BuildingEntity['inventory']
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   isBuilt?: boolean
@@ -110,7 +112,12 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundStopped?: boolean
   increasePopulation?: number
   shelterCapacity?: number
+  indestructible?: boolean
   containedAnimalType?: string | null
+  inventory?: {
+    resources?: ResourceAmount
+    equipment?: string[]
+  }
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {

@@ -4,7 +4,7 @@ import { addEntityToMapSpaceContainer, canPlaceBuildingAt, getMapSpace } from '.
 import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
 import type { RuntimeEntity } from '../../types/entities'
-import type { RuntimeMap } from '../../types/map'
+import type { RuntimeMap, RuntimeMapSpace } from '../../types/map'
 
 export { RESOURCE_NAMES } from '../../constants'
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
@@ -19,6 +19,11 @@ export const DEBUG_OVERLAY_Z = 1e9 + 100
 const DEBUG_CELL_REFRESH_MS = 180
 type DebugTickerName = Extract<keyof DevMapLike, `_${string}Ticker`>
 type DevRuntimeMap = RuntimeMap
+type DebugParent = {
+  addChild<T extends Container>(child: T): T
+  removeChild<T extends Container>(child: T): T
+  getChildByLabel?(label: string): Container | null
+}
 
 export function normalizeToggle(value: string | undefined, currently: boolean): boolean {
   return value === 'on' ? true : value === 'off' ? false : !currently
@@ -59,11 +64,7 @@ export function getSpawnCell(
   const space = getDevMapSpace(context, cursorCell.spaceId)
   const grid = space?.grid ?? map.grid
   if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
-  if (
-    buildingConfig &&
-    canPlaceBuildingAt(grid, cursorCell.i, cursorCell.j, buildingConfig)
-  )
-    return cursorCell
+  if (buildingConfig && canPlaceBuildingAt(grid, cursorCell.i, cursorCell.j, buildingConfig)) return cursorCell
 
   const maxRadius = 8
   for (let radius = 1; radius <= maxRadius; radius++) {
@@ -73,8 +74,7 @@ export function getSpawnCell(
         const cell = grid[cursorCell.i + di]?.[cursorCell.j + dj]
         if (!cell) continue
         if (buildingConfig) {
-          if (canPlaceBuildingAt(grid, cell.i, cell.j, buildingConfig))
-            return cell
+          if (canPlaceBuildingAt(grid, cell.i, cell.j, buildingConfig)) return cell
         } else if (!cellCondition || cellCondition(cell)) {
           return cell
         }
@@ -84,26 +84,26 @@ export function getSpawnCell(
   return null
 }
 
-export function getDebugLayer(map: DevMapLike, label: string, zIndex: number): Graphics {
-  let layer = map.getChildByLabel?.(label)
+export function getDebugLayer(parent: DebugParent, label: string, zIndex: number): Graphics {
+  let layer = parent.getChildByLabel?.(label)
   if (!layer) {
     layer = new Graphics()
     layer.label = label
     layer.eventMode = 'none'
     layer.zIndex = zIndex
-    map.addChild(layer)
+    parent.addChild(layer)
   }
   return layer as Graphics
 }
 
-export function getDebugContainer(map: DevMapLike, label: string, zIndex: number): Container {
-  let layer = map.getChildByLabel?.(label)
+export function getDebugContainer(parent: DebugParent, label: string, zIndex: number): Container {
+  let layer = parent.getChildByLabel?.(label)
   if (!layer) {
     layer = new Container()
     layer.label = label
     layer.eventMode = 'none'
     layer.zIndex = zIndex
-    map.addChild(layer)
+    parent.addChild(layer)
   }
   return layer
 }
@@ -113,6 +113,56 @@ export function getCameraCells(context: DevConsoleContext): Set<DevCell> {
   const cells = controls?.cameraController?.visibleCells
   if (cells?.size) return cells
   return new Set([map.grid[Math.floor(map.size / 2)]?.[Math.floor(map.size / 2)]].filter(Boolean) as DevCell[])
+}
+
+function getFirstCameraCell(cells: Set<DevCell>): DevCell | null {
+  for (const cell of cells) return cell
+  return null
+}
+
+export function getDebugMapSpace(context: DevConsoleContext, cells = getCameraCells(context)): RuntimeMapSpace | null {
+  const visibleCell = getFirstCameraCell(cells)
+  const spaceId = visibleCell?.spaceId ?? context.controls?.heroUnit?.spaceId ?? context.map.activeSpaceId
+  return getDevMapSpace(context, spaceId)
+}
+
+function getDebugParent(context: DevConsoleContext, cells?: Set<DevCell>): DebugParent {
+  return (getDebugMapSpace(context, cells)?.container ?? context.map) as DebugParent
+}
+
+function getDebugParents(context: DevConsoleRuntimeContext): Set<DebugParent> {
+  const parents = new Set<DebugParent>([context.map as DebugParent])
+  for (const space of context.map.spaces?.values?.() ?? []) {
+    if (space.container) parents.add(space.container as DebugParent)
+  }
+  return parents
+}
+
+function removeLayerFromParent(parent: DebugParent, label: string): void {
+  const layer = parent.getChildByLabel?.(label) as Container | null
+  if (!layer) return
+  parent.removeChild(layer)
+  layer.destroy()
+}
+
+function removeDebugLayerFromOtherParents(context: DevConsoleContext, label: string, targetParent: DebugParent): void {
+  for (const parent of getDebugParents(context)) {
+    if (parent !== targetParent) removeLayerFromParent(parent, label)
+  }
+}
+
+export function getDebugLayerForCamera(context: DevConsoleContext, label: string, zIndex: number): Graphics {
+  const cells = getCameraCells(context)
+  const parent = getDebugParent(context, cells)
+  removeDebugLayerFromOtherParents(context, label, parent)
+  return getDebugLayer(parent, label, zIndex)
+}
+
+export function getDebugContainerForCamera(context: DevConsoleContext, label: string, zIndex: number): Container {
+  const cells = getCameraCells(context)
+  const parent = getDebugParent(context, cells)
+  removeDebugLayerFromOtherParents(context, label, parent)
+  return getDebugContainer(parent, label, zIndex)
 }
 
 export function drawCellDiamond(graphics: Graphics, cell: DevCell, color: number, alpha = 0.28): void {
@@ -166,13 +216,8 @@ export function stopDebugTicker(context: DevConsoleRuntimeContext, tickerName: s
 }
 
 export function removeDebugLayer(context: DevConsoleRuntimeContext, layerLabel: string, tickerName: string): void {
-  const { map } = context
   stopDebugTicker(context, tickerName)
-  const layer = map.getChildByLabel?.(layerLabel)
-  if (layer) {
-    map.removeChild(layer)
-    layer.destroy()
-  }
+  getDebugParents(context).forEach(parent => removeLayerFromParent(parent, layerLabel))
 }
 
 export function addDebugTicker<TContext extends DevConsoleRuntimeContext>(
@@ -223,11 +268,7 @@ export function cleanupDebugArtifacts(context: DevConsoleRuntimeContext): void {
   ]
 
   layerLabels.forEach(label => {
-    const layer = context.map?.getChildByLabel?.(label)
-    if (layer) {
-      context.map.removeChild(layer)
-      layer.destroy()
-    }
+    getDebugParents(context).forEach(parent => removeLayerFromParent(parent, label))
   })
 
   document.getElementById('debug-perf')?.remove()

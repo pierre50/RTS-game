@@ -1,10 +1,12 @@
-import { FAMILY_TYPES, SOUND_CUES } from '../constants'
+import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
+import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
 import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
+import { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
@@ -46,6 +48,7 @@ export class HeroBuildingMenuManager {
   stack: MenuButtonSpec[][]
   opened: boolean
   structureSignature: string
+  transferPanel: InventoryTransferPanel | null
 
   constructor(menu: MenuHost) {
     this.menu = menu
@@ -53,6 +56,7 @@ export class HeroBuildingMenuManager {
     this.stack = []
     this.opened = false
     this.structureSignature = ''
+    this.transferPanel = null
 
     this.panel = document.createElement('div')
     this.panel.className = 'hero-building-menu'
@@ -125,6 +129,7 @@ export class HeroBuildingMenuManager {
     this.structureSignature = ''
     this.info.textContent = ''
     this.body.textContent = ''
+    this.transferPanel = null
     modal?.close()
     const player = this.menu.context.player
     if (building && player?.selectedBuilding === building) {
@@ -181,6 +186,18 @@ export class HeroBuildingMenuManager {
         .join(',') || '',
       level.map(item => item.id || '').join(','),
       level.map(item => (item.hide?.() ? '1' : '0')).join(','),
+      this.getContainerSignature(building),
+    ].join('|')
+  }
+
+  getContainerSignature(building: BuildingEntity): string {
+    if (building.type !== BUILDING_TYPES.chest) return ''
+    const hero = this.menu.context.controls.heroUnit
+    return [
+      building.inventory?.equipment?.join(',') || '',
+      JSON.stringify(building.inventory?.resources ?? {}),
+      hero?.inventory?.equipment?.join(',') || '',
+      JSON.stringify(hero?.inventory?.resources ?? {}),
     ].join('|')
   }
 
@@ -202,11 +219,42 @@ export class HeroBuildingMenuManager {
     this.renderInfo()
     this.body.textContent = ''
     this.backButton.classList.toggle('is-visible', this.stack.length > 1)
+    if (this.renderContainerBody(building)) {
+      this.body.classList.toggle('is-empty', false)
+      this.updateProgress()
+      return
+    }
     items
       .filter(button => !button.hide || !button.hide())
       .forEach(button => this.body.appendChild(this.createButton(building, button)))
     this.body.classList.toggle('is-empty', !this.body.children.length)
     this.updateProgress()
+  }
+
+  renderContainerBody(building: BuildingEntity): boolean {
+    if (building.type !== BUILDING_TYPES.chest) return false
+    const hero = this.menu.context.controls.heroUnit
+    if (!hero) return false
+
+    const chestContainer = createInventoryContainer(building, {
+      id: building.label,
+      labelKey: 'inventoryChest',
+    })
+    const heroContainer = createInventoryContainer(hero, {
+      id: hero.label,
+      labelKey: 'inventoryBag',
+    })
+    this.transferPanel = new InventoryTransferPanel({
+      context: this.menu.context,
+      destination: chestContainer,
+      source: heroContainer,
+      onChange: () => {
+        this.structureSignature = this.getStructureSignature()
+        this.renderInfo()
+      },
+    })
+    this.body.appendChild(this.transferPanel.element)
+    return true
   }
 
   renderInfo(): void {

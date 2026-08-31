@@ -908,6 +908,51 @@
   gap: var(--ui-gap-8);
 }
 
+.inventory-transfer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
+}
+
+.inventory-transfer-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+
+.inventory-transfer-title {
+  padding-bottom: 2px;
+  border-bottom: var(--ui-slot-border);
+}
+
+.inventory-transfer-grid {
+  min-height: var(--ui-slot-size);
+}
+
+.inventory-transfer-slot {
+  width: 92px;
+  min-width: 92px;
+  overflow: hidden;
+}
+
+.inventory-resource-icon {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.inventory-transfer-empty {
+  min-height: 54px;
+  padding: 10px;
+  color: var(--color-stone-muted);
+  font-size: var(--font-size-sm);
+  text-shadow: var(--text-shadow-light-ui);
+  border: var(--ui-slot-border);
+  border-radius: var(--main-border-radius);
+  background: rgba(0, 0, 0, 0.14);
+}
+
 .inventory-equipment-slot {
   width: 108px;
   min-width: 108px;

@@ -6,6 +6,7 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadHeroBuildingMenuManager({ reachable = true } = {}) {
+  const transferPanels = []
   const filename = path.join(__dirname, '../app/ui/HeroBuildingMenuManager.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -16,6 +17,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
+      BUILDING_TYPES: { chest: 'Chest' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -36,12 +38,32 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     './EntityInfoModalManager': {
       TITLED_ENTITY_INFO_OPTIONS: {},
     },
+    './inventory/InventoryTransferPanel': {
+      InventoryTransferPanel: class InventoryTransferPanel {
+        constructor(options) {
+          this.options = options
+          this.element = global.document.createElement('div')
+          this.element.className = 'inventory-transfer-panel'
+          transferPanels.push(this)
+        }
+      },
+    },
+    '../lib/inventory/inventoryContainers': {
+      createInventoryContainer: (target, options) => {
+        target.inventory = target.inventory ?? { equipment: [], resources: {} }
+        target.inventory.equipment = target.inventory.equipment ?? []
+        target.inventory.resources = target.inventory.resources ?? {}
+        return { ...options, inventory: target.inventory }
+      },
+    },
     './utils/entityDisplayName': {
       getBuildingDisplayName: building => building.type || 'building',
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  module.exports.HeroBuildingMenuManager.__transferPanels = transferPanels
   return module.exports.HeroBuildingMenuManager
 }
 
@@ -67,6 +89,10 @@ function installMockDocument() {
           this.childElementCount = this.children.length
         },
         addEventListener() {},
+        replaceChildren(...children) {
+          this.children = children
+          this.childElementCount = this.children.length
+        },
         querySelectorAll() {
           return []
         },
@@ -143,6 +169,40 @@ test('hero building menu keeps actions empty for unfinished buildings', () => {
 
     assert.equal(manager.open(building), true)
     assert.deepEqual(manager.stack, [[]])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu renders a reusable inventory transfer panel for chests', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'Chest',
+      label: 'chest-1',
+      inventory: { equipment: ['trap'], resources: { wood: 5 } },
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    const hero = {
+      family: 'unit',
+      label: 'hero',
+      inventory: { equipment: ['chest'], resources: { food: 3 } },
+    }
+    manager.menu.context.controls.heroUnit = hero
+
+    assert.equal(manager.open(building), true)
+
+    const panel = manager.constructor.__transferPanels.at(-1)
+    assert.equal(panel.options.destination.id, 'chest-1')
+    assert.equal(panel.options.destination.inventory, building.inventory)
+    assert.equal(panel.options.source.id, 'hero')
+    assert.equal(panel.options.source.inventory, hero.inventory)
+    assert.equal(manager.body.children.at(-1).className, 'inventory-transfer-panel')
   } finally {
     restoreDocument()
   }

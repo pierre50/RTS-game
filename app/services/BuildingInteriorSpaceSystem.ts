@@ -118,7 +118,11 @@ function findFreeCellNear(
   passageLookup: ReservedPassageCellLookup
 ): RuntimeCell | null {
   if (isCellAvailableForUnit(space, preferred, unit, passageLookup)) return preferred
-  const anchor = preferred ?? space.entryCell ?? space.exitCell ?? space.grid[Math.round(space.size / 2)]?.[Math.round(space.size / 2)]
+  const anchor =
+    preferred ??
+    space.entryCell ??
+    space.exitCell ??
+    space.grid[Math.round(space.size / 2)]?.[Math.round(space.size / 2)]
   if (!anchor) return null
   for (let radius = 1; radius <= Math.max(2, space.size); radius += 1) {
     const cells = getCellsAroundPoint(anchor.i, anchor.j, space.grid, radius, cell =>
@@ -152,19 +156,55 @@ function findInteriorDefaultBuildingCell(
   space: BuildingInteriorRuntimeSpace,
   type: string,
   preferred: { i: number; j: number },
-  blockedCells: Set<string>
+  blockedCells: Set<string>,
+  options: { allowBorderPlacement?: boolean } = {}
 ): RuntimeCell | null {
   const config = space.building.owner?.config?.buildings?.[type]
   if (!config) return null
   const placementConfig = { ...config, type }
-  const canUseCell = (cell: RuntimeCell | null | undefined): cell is RuntimeCell =>
-    Boolean(cell && canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig))
+  const placementSize = Number(config.size ?? 1)
+  const canUseCell = (cell: RuntimeCell | null | undefined): cell is RuntimeCell => {
+    if (!cell) return false
+    if (!options.allowBorderPlacement) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
+    if (Math.floor(placementSize) !== 1) return canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig)
+    return (
+      cell.category !== 'Water' &&
+      !cell.waterBorder &&
+      !cell.solid &&
+      !cell.inclined &&
+      !cell.has &&
+      (cell.border || canPlaceBuildingAt(space.grid, cell.i, cell.j, placementConfig))
+    )
+  }
 
   return findInteriorDecorationCell(
     { grid: space.grid, randomItem: context.map.randomItem.bind(context.map), size: space.size },
     preferred,
     { blockedCells, canUseCell }
   )
+}
+
+function getInteriorDefaultBuildingPreferredCell(
+  space: BuildingInteriorRuntimeSpace,
+  item: ReturnType<typeof getBuildingInteriorDecorationLayout>[number],
+  center: number
+): { i: number; j: number } {
+  if (item.placement === 'oppositeExitBorder' && space.exitCell) {
+    const directionI = Math.sign(center - space.exitCell.i)
+    const directionJ = Math.sign(center - space.exitCell.j)
+    if (directionI === 0 && directionJ === 0) return { i: center + item.offsetI, j: center + item.offsetJ }
+    let i = center
+    let j = center
+    let borderCell: RuntimeCell | null = null
+    while (i >= 0 && i <= space.size && j >= 0 && j <= space.size) {
+      const cell = space.grid[i]?.[j]
+      if (cell?.border) borderCell = cell
+      i += directionI
+      j += directionJ
+    }
+    if (borderCell) return borderCell
+  }
+  return { i: center + item.offsetI, j: center + item.offsetJ }
 }
 
 function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
@@ -182,15 +222,13 @@ function ensureInteriorDefaultBuildings(context: GameContextLike, space: Buildin
   for (const item of getBuildingInteriorDecorationLayout(space.building)) {
     const label = `${space.id}:default:${item.key}`
     if (owner.buildings.some(building => building.label === label && !building.isDestroyed)) continue
-    const cell = findInteriorDefaultBuildingCell(
-      context,
-      space,
-      item.type,
-      { i: center + item.offsetI, j: center + item.offsetJ },
-      blockedCells
-    )
+    const preferred = getInteriorDefaultBuildingPreferredCell(space, item, center)
+    const cell = findInteriorDefaultBuildingCell(context, space, item.type, preferred, blockedCells, {
+      allowBorderPlacement: item.allowBorderPlacement,
+    })
     if (!cell) continue
     owner.createBuilding({
+      ...item.buildingOptions,
       i: cell.i,
       j: cell.j,
       label,
@@ -376,7 +414,9 @@ function getBuildingInteriorSpaceId(building: BuildingEntity): string {
   return `interior:${getBuildingInteriorPortalId(building)}`
 }
 
-function isBuildingInteriorRuntimeSpace(space: RuntimeMapSpace | null | undefined): space is BuildingInteriorRuntimeSpace {
+function isBuildingInteriorRuntimeSpace(
+  space: RuntimeMapSpace | null | undefined
+): space is BuildingInteriorRuntimeSpace {
   return Boolean(space && space.kind === 'interior' && 'renderer' in space)
 }
 
@@ -416,7 +456,8 @@ function buildInteriorSpaceCells(
         },
         cellContext
       ) as RuntimeCell
-      const cellView = cell as RuntimeCell & ContainerChild & { renderable?: boolean; sprite?: { renderable?: boolean } }
+      const cellView = cell as RuntimeCell &
+        ContainerChild & { renderable?: boolean; sprite?: { renderable?: boolean } }
       cell.spaceId = id
       cell.visible = isFloor
       cellView.renderable = isFloor
@@ -445,7 +486,11 @@ function buildInteriorSpaceCells(
   }
 }
 
-function placeRendererNearBuilding(renderer: BuildingInteriorSpaceRenderer, building: BuildingEntity, exitCell: RuntimeCell | null): void {
+function placeRendererNearBuilding(
+  renderer: BuildingInteriorSpaceRenderer,
+  building: BuildingEntity,
+  exitCell: RuntimeCell | null
+): void {
   const anchor = {
     x: building.x,
     y: building.y - CELL_HEIGHT,

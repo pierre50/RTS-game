@@ -28,6 +28,7 @@ import {
   DEBUG_VISION_LAYER,
   addDebugTicker,
   getCameraCells,
+  getDevMapSpace,
   normalizeToggle,
   removeDebugLayer,
   stopDebugTicker,
@@ -229,7 +230,10 @@ function getVisibleEntities(context: DevConsoleContext): Set<DevEntity> {
   const entities = new Set<DevEntity>()
   const addIfVisible = (entity: DevEntity | undefined): void => {
     if (!entity) return
-    const cell = context.map.grid[entity.i]?.[entity.j]
+    const cell =
+      entity.currentCell ??
+      getDevMapSpace(context, entity.spaceId)?.grid[entity.i]?.[entity.j] ??
+      context.map.grid[entity.i]?.[entity.j]
     if (!cell || !visibleCells.has(cell)) return
     entities.add(entity)
   }

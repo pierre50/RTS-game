@@ -174,6 +174,10 @@ export class BuildingLifecycle {
 
   updateHitPoints(action: string): void {
     const building = this.building
+    if (building.indestructible) {
+      building.hitPoints = building.totalHitPoints
+      return
+    }
     if (building.hitPoints > building.totalHitPoints) {
       building.hitPoints = building.totalHitPoints
     }
@@ -268,7 +272,7 @@ export class BuildingLifecycle {
 
   die(): void {
     const building = this.building
-    if (building.isDead) return
+    if (building.isDead || building.indestructible) return
     const {
       context: { map, player, players, menu },
     } = building

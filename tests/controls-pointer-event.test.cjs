@@ -22,6 +22,17 @@ function loadControls() {
         set() {}
         stopMouseMove() {}
         updateMouseMove() {}
+        getViewportRect() {
+          return {
+            zoom: 1,
+            offsetX: 0,
+            offsetY: 0,
+            visibleLeft: 0,
+            visibleTop: 0,
+            visibleWidth: 100,
+            visibleHeight: 100,
+          }
+        }
       },
     },
     '../controllers/BuildingPlacer': {
@@ -102,7 +113,7 @@ function loadControls() {
       },
     },
     '../lib': {
-      isometricToCartesian: () => [0, 0],
+      isometricToCartesian: (x, y) => [Math.round((x / 32 + y / 16) / 2), Math.round((y / 16 - x / 32) / 2)],
       getReliefOffset: () => 0,
       pointsDistance: () => 0,
       instanceContactInstance: () => true,
@@ -147,6 +158,8 @@ function loadControls() {
       pickNpcChatterLine: () => '',
     },
     '../constants': {
+      CELL_HEIGHT: 32,
+      CELL_WIDTH: 64,
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },
       IS_MOBILE: false,
       TOUCH_DRAG_THRESHOLD: 10,
@@ -171,7 +184,10 @@ function loadControls() {
     const source = fs.readFileSync(filename, 'utf8')
     const { code } = babel.transformSync(source, {
       filename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const module = { exports: {} }
     new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -191,7 +207,7 @@ class MockElement {
   addEventListener() {}
   removeEventListener() {}
   getBoundingClientRect() {
-    return { left: 0, right: 100, top: 0, bottom: 100 }
+    return { left: 0, right: 100, top: 0, bottom: 100, width: 100, height: 100 }
   }
 }
 
@@ -250,6 +266,21 @@ function createControls() {
       global.window = previousWindow
     },
   }
+}
+
+function createGrid(size, elevated = new Map()) {
+  return Array.from({ length: size + 1 }, (_, i) =>
+    Array.from({ length: size + 1 }, (_, j) => {
+      const z = elevated.get(`${i},${j}`) ?? 0
+      return {
+        i,
+        j,
+        x: (i - j) * 32,
+        y: (i + j) * 16 - z * 16,
+        z,
+      }
+    })
+  )
 }
 
 test('accepts Pixi pointer events whose DOM target is stored on nativeEvent', () => {
@@ -311,6 +342,21 @@ test('uses uncapped speed-scaled ticker delta for hero-controlled unit movement'
     })
 
     assert.equal(controls.heroController.lastUpdateFrameScale, 8)
+  } finally {
+    restore()
+  }
+})
+
+test('picks the visually elevated terrain cell under the cursor', () => {
+  const { controls, restore } = createControls()
+  try {
+    const grid = createGrid(8, new Map([['4,4', 3]]))
+    controls.context.map.size = 8
+    controls.context.map.grid = grid
+    controls.mouse.x = grid[4][4].x
+    controls.mouse.y = grid[4][4].y
+
+    assert.equal(controls.getCellUnderCursor(), grid[4][4])
   } finally {
     restore()
   }

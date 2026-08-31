@@ -2,10 +2,17 @@ import { BUILDING_TYPES } from '../../constants'
 import type { BuildingEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 
+type InteriorDefaultBuildingOptions = Partial<
+  Pick<BuildingEntity, 'hitPoints' | 'indestructible' | 'inventory' | 'totalHitPoints'>
+>
+
 export type BuildingInteriorDecorationSpec = {
+  allowBorderPlacement?: boolean
+  buildingOptions?: InteriorDefaultBuildingOptions
   key: string
   offsetI: number
   offsetJ: number
+  placement?: 'offset' | 'oppositeExitBorder'
   type: string
 }
 
@@ -14,6 +21,17 @@ type DecorationTemplate = Omit<BuildingInteriorDecorationSpec, 'type'> & {
 }
 
 const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
+  [BUILDING_TYPES.townCenter]: [
+    {
+      key: 'storage-chest',
+      type: 'chest',
+      offsetI: 0,
+      offsetJ: 0,
+      placement: 'oppositeExitBorder',
+      allowBorderPlacement: true,
+      buildingOptions: { indestructible: true },
+    },
+  ],
   [BUILDING_TYPES.stable]: [
     { key: 'bucket-west', type: 'campBucket', offsetI: -2, offsetJ: 1 },
     { key: 'drying-rack-east', type: 'campDryingRack', offsetI: 3, offsetJ: -1 },
@@ -37,10 +55,28 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
     { key: 'jar-se', type: 'campJarLarge', offsetI: 2, offsetJ: 2 },
   ],
   [BUILDING_TYPES.granary]: [
+    {
+      key: 'storage-chest',
+      type: 'chest',
+      offsetI: 0,
+      offsetJ: 0,
+      placement: 'oppositeExitBorder',
+      allowBorderPlacement: true,
+      buildingOptions: { indestructible: true },
+    },
     { key: 'bucket-west', type: 'campBucket', offsetI: -2, offsetJ: 1 },
     { key: 'drying-rack-east', type: 'campDryingRack', offsetI: 2, offsetJ: -1 },
   ],
   [BUILDING_TYPES.storagePit]: [
+    {
+      key: 'storage-chest',
+      type: 'chest',
+      offsetI: 0,
+      offsetJ: 0,
+      placement: 'oppositeExitBorder',
+      allowBorderPlacement: true,
+      buildingOptions: { indestructible: true },
+    },
     { key: 'crate-west', type: 'campCrate', offsetI: -2, offsetJ: 0 },
     { key: 'rock-east', type: 'campRockPile', offsetI: 2, offsetJ: 1 },
   ],

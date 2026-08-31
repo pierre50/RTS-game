@@ -35,7 +35,15 @@ function loadSaveSerializer() {
             if (unit.work === 'woodcutter') assigned.wood++
             if (unit.work === 'farmer' || unit.work === 'forager' || unit.work === 'hunter') assigned.food++
           }
-          return { total, assigned, construction: 0, horseCapture: 0, idle: total - assigned.wood - assigned.food, sleeping: 0, moving: 0 }
+          return {
+            total,
+            assigned,
+            construction: 0,
+            horseCapture: 0,
+            idle: total - assigned.wood - assigned.food,
+            sleeping: 0,
+            moving: 0,
+          }
         },
       }
     }
@@ -283,11 +291,15 @@ test('serializes building production, research, rally points and active user lin
       hitPoints: 500,
       quantity: 3,
       horseAmount: 2,
-      stableHorses: [{ horseColor: 'dark', tamingStatus: 'tamed' }, { horseColor: 'light', tamingStatus: 'tamed' }],
+      stableHorses: [
+        { horseColor: 'dark', tamingStatus: 'tamed' },
+        { horseColor: 'light', tamingStatus: 'tamed' },
+      ],
       rallyPoint: { i: 22, j: 23, direction: 1 },
       assetCiv: 'greek',
       assetAge: 1,
       assetType: 'TownCenter',
+      inventory: { equipment: ['trap'], resources: { wood: 5 } },
       isUsedBy: { label: 'villager-1' },
     },
   ]
@@ -306,11 +318,15 @@ test('serializes building production, research, rally points and active user lin
     hitPoints: 500,
     quantity: 3,
     horseAmount: 2,
-    stableHorses: [{ horseColor: 'dark', tamingStatus: 'tamed' }, { horseColor: 'light', tamingStatus: 'tamed' }],
+    stableHorses: [
+      { horseColor: 'dark', tamingStatus: 'tamed' },
+      { horseColor: 'light', tamingStatus: 'tamed' },
+    ],
     rallyPoint: { i: 22, j: 23, direction: 1 },
     assetCiv: 'greek',
     assetAge: 1,
     assetType: 'TownCenter',
+    inventory: { equipment: ['trap'], resources: { wood: 5 } },
     isUsedBy: 'villager-1',
   })
 })

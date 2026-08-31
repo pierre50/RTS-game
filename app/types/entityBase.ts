@@ -60,6 +60,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   hitPoints?: number
   totalHitPoints?: number
   devInvincible?: boolean
+  indestructible?: boolean
   sight?: number
   quantity?: number
   totalQuantity?: number

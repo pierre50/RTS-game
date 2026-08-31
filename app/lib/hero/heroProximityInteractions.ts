@@ -162,12 +162,31 @@ function isRecoverableTrap(hero: UnitEntity, building: BuildingEntity | null | u
   )
 }
 
-function findNearestRecoverableTrap(
+function resolveFacingRecoverableTrap(
   hero: UnitEntity,
-  buildings: BuildingEntity[] | null | undefined
+  openEntityTarget?: RuntimeEntity | null
 ): BuildingEntity | null {
-  const candidates = (buildings ?? []).filter(building => isRecoverableTrap(hero, building))
-  return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
+  const building = openEntityTarget as BuildingEntity | null | undefined
+  return isRecoverableTrap(hero, building) ? building : null
+}
+
+function isOpenableBuilding(hero: UnitEntity, building: BuildingEntity | null | undefined): building is BuildingEntity {
+  return Boolean(
+    building &&
+      building.type === BUILDING_TYPES.chest &&
+      building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed &&
+      isHeroInteractionTargetReachable(hero, null, building)
+  )
+}
+
+function resolveFacingOpenableBuilding(
+  hero: UnitEntity,
+  openEntityTarget?: RuntimeEntity | null
+): BuildingEntity | null {
+  const building = openEntityTarget as BuildingEntity | null | undefined
+  return isOpenableBuilding(hero, building) ? building : null
 }
 
 function isCommandableNpc(hero: UnitEntity, target: UnitEntity): boolean {
@@ -220,8 +239,11 @@ export function resolveHeroProximityInteraction({
 
   if (isHeroOnInteriorExitCell(hero)) return { action: 'exit', labelKey: 'heroInteractionExit' }
 
-  const trap = findNearestRecoverableTrap(hero, buildings)
+  const trap = resolveFacingRecoverableTrap(hero, openEntityTarget)
   if (trap) return { action: 'recoverTrap', labelKey: 'heroInteractionRecover', target: trap }
+
+  const openableBuilding = resolveFacingOpenableBuilding(hero, openEntityTarget)
+  if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) return { action: 'enter', labelKey: 'heroInteractionEnter', target: building }

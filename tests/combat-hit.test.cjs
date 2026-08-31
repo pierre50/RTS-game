@@ -91,6 +91,30 @@ test('a dev-invincible target receives the hit notification without losing healt
   assert.deepEqual(notified, [attacker])
 })
 
+test('an indestructible target receives the hit notification without losing health', () => {
+  const grantCalls = []
+  const feedbackCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 6, grantCalls, feedbackCalls })
+  const attacker = { label: 'attacker' }
+  const notified = []
+  const target = makeTarget({
+    indestructible: true,
+    isAttacked: hitAttacker => notified.push(hitAttacker),
+  })
+
+  const { damageDealt, killed } = applyCombatHit(attacker, target, {
+    xpCategory: 'melee',
+    xpUnit: 'attacker',
+  })
+
+  assert.equal(target.hitPoints, 20)
+  assert.equal(damageDealt, 0)
+  assert.equal(killed, false)
+  assert.deepEqual(grantCalls, [{ unit: 'attacker', category: 'melee', amount: 0 }])
+  assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 0 }])
+  assert.deepEqual(notified, [attacker])
+})
+
 test('isMelee is required to even attempt a parry — a ranged hit never rolls one', () => {
   let parryAttempts = 0
   const { applyCombatHit } = loadModule('app/lib/combat/combatHit.ts', {

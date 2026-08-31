@@ -1,5 +1,6 @@
 import type { Container } from 'pixi.js'
 import type { ConfigValue, TechnologyConfig } from './config'
+import type { ResourceAmount } from './common'
 import type { RuntimeCell } from './map'
 import type { AssetAge } from './pixi'
 import type { RuntimeEntityBase } from './entityBase'
@@ -45,7 +46,12 @@ export interface BuildingEntity extends RuntimeEntityBase {
   shelterCapacity?: number
   populationCapacityApplied?: boolean
   constructionTime?: number
+  indestructible?: boolean
   containedAnimalType?: string | null
+  inventory?: {
+    resources?: ResourceAmount
+    equipment?: string[]
+  }
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]

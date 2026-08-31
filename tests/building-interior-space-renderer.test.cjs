@@ -80,9 +80,13 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
           campCrate: 'CampCrate',
           campJarSmall: 'CampJarSmall',
           campRockPile: 'CampRockPile',
+          chest: 'Chest',
           fireCamp: 'FireCamp',
+          granary: 'Granary',
           house: 'House',
           stable: 'Stable',
+          storagePit: 'StoragePit',
+          townCenter: 'TownCenter',
         },
         CELL_HEIGHT: 32,
         CELL_WIDTH: 64,
@@ -93,7 +97,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
         getBuildingInteriorPortalId: building => building.label || 'building',
       },
       '../lib/grid/cells': { getCellsAroundPoint: overrides.getCellsAroundPoint ?? (() => []) },
-      '../lib/grid/placement': { canPlaceBuildingAt: () => false },
+      '../lib/grid/placement': { canPlaceBuildingAt: overrides.canPlaceBuildingAt ?? (() => false) },
       '../lib/grid/visibility': {
         updateInstanceRenderVisibility: overrides.updateInstanceRenderVisibility ?? (() => {}),
         updateInstanceVisibility: overrides.updateInstanceVisibility ?? (() => {}),
@@ -135,11 +139,14 @@ test('runtime building interiors sort floor cells and entities in one scene laye
 
   const renderer = new BuildingInteriorSpaceRenderer(context, 'interior:test', [], 12)
 
-  assert.deepEqual(renderer.children.map(child => child.label), ['building-interior-backdrop', 'building-interior-scene'])
-  assert.deepEqual(renderer.sceneLayer.children.map(child => child.label), [
-    'building-interior-terrain',
-    'building-interior-entities',
-  ])
+  assert.deepEqual(
+    renderer.children.map(child => child.label),
+    ['building-interior-backdrop', 'building-interior-scene']
+  )
+  assert.deepEqual(
+    renderer.sceneLayer.children.map(child => child.label),
+    ['building-interior-terrain', 'building-interior-entities']
+  )
   assert.equal(renderer.exitMarker.parent, renderer.entityLayer)
   assert.equal(renderer.entityLayer.sortableChildren, true)
   assert.equal(renderer.sceneLayer.sortableChildren, true)
@@ -268,10 +275,10 @@ test('runtime stable interiors synchronize stored horses without default decorat
       },
     ]
   )
-  assert.deepEqual(createdAnimals.map(horse => horse.label), [
-    `${space.id}:stable-horse:0`,
-    `${space.id}:stable-horse:1`,
-  ])
+  assert.deepEqual(
+    createdAnimals.map(horse => horse.label),
+    [`${space.id}:stable-horse:0`, `${space.id}:stable-horse:1`]
+  )
 
   building.stableHorses = [{ horseColor: 'dark' }]
   syncBuildingStableInteriorHorses(context, building)
@@ -283,6 +290,133 @@ test('runtime stable interiors synchronize stored horses without default decorat
   assert.equal(createdAnimals[2].label, `${space.id}:stable-horse:1`)
   assert.equal(createdAnimals[2].horseColor, 'gold')
   assert.equal(createdAnimals[2].tamingStatus, 'tamed')
+})
+
+test('runtime storage interiors create an indestructible default chest', () => {
+  const createdBuildings = []
+  const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
+    canPlaceBuildingAt: () => false,
+  })
+  const context = {
+    app: { ticker: { add: () => {}, remove: () => {} } },
+    controls: {},
+    map: {
+      addChild: child => {
+        child.parent = context.map
+        return child
+      },
+      addToInstanceBucket: () => {},
+      gaia: { animals: [] },
+      grid: [[{ i: 0, j: 0 }]],
+      random: () => 0,
+      randomItem: items => items[0],
+      randomRange: min => min,
+      removeFromInstanceBucket: () => {},
+      spaces: new Map(),
+      updateInstanceBucket: () => {},
+    },
+  }
+  const owner = {
+    buildings: [],
+    config: {
+      buildings: {
+        CampBucket: { size: 1 },
+        CampDryingRack: { size: 1 },
+        Chest: { size: 1 },
+      },
+    },
+    createBuilding(options) {
+      createdBuildings.push(options)
+      const building = {
+        ...options,
+        isDestroyed: false,
+      }
+      this.buildings.push(building)
+      return building
+    },
+    isPlayed: true,
+  }
+  const building = {
+    context,
+    family: 'building',
+    i: 3,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 4,
+    label: 'granary-1',
+    owner,
+    type: 'Granary',
+    x: 120,
+    y: 160,
+  }
+  const blueprint = {
+    floorMask: [
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+    ],
+    borderMask: [
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [1, 0, 0, 0, 0, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+    ],
+    exits: [{ i: 3, j: 5 }],
+    relief: [
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+    ],
+    size: 6,
+    terrain: [
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+      ['Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt', 'Dirt'],
+    ],
+  }
+
+  const space = ensureBuildingInteriorSpace(context, building, blueprint)
+
+  assert.deepEqual(
+    createdBuildings
+      .filter(item => item.type === 'Chest')
+      .map(item => ({
+        indestructible: item.indestructible,
+        i: item.i,
+        isBuilt: item.isBuilt,
+        j: item.j,
+        label: item.label,
+        spaceId: item.spaceId,
+        type: item.type,
+      })),
+    [
+      {
+        indestructible: true,
+        i: 3,
+        isBuilt: true,
+        j: 0,
+        label: `${space.id}:default:storage-chest`,
+        spaceId: space.id,
+        type: 'Chest',
+      },
+    ]
+  )
 })
 
 test('runtime building interior exit marker sorts above its floor cell inside the scene layer', () => {
@@ -372,12 +506,7 @@ test('runtime building interior activation refreshes both interior and exterior 
   assert.equal(exteriorUnit.shadow.visible, true)
   assert.equal(interiorUnit.visible, false)
   assert.equal(interiorUnit.shadow.visible, false)
-  assert.deepEqual(visibilityUpdates, [
-    'outside-villager',
-    'inside-villager',
-    'outside-villager',
-    'inside-villager',
-  ])
+  assert.deepEqual(visibilityUpdates, ['outside-villager', 'inside-villager', 'outside-villager', 'inside-villager'])
   assert.deepEqual(renderUpdates, ['outside-villager', 'inside-villager', 'outside-villager', 'inside-villager'])
 })
 

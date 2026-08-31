@@ -115,6 +115,7 @@ export type EquipmentStats = {
 
 export interface BuildingConfig extends EntityConfig {
   hideWhenFogged?: boolean
+  indestructible?: boolean
   providesVision?: boolean
   requiresActiveSightInteraction?: boolean
   overheadIndicatorOffsetX?: number

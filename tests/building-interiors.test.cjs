@@ -117,6 +117,7 @@ test('interior decorations vary by building type', () => {
           campSkull: 'CampSkull',
           campTotemHorns: 'CampTotemHorns',
           campTotemPlain: 'CampTotemPlain',
+          chest: 'Chest',
           fireCamp: 'FireCamp',
           granary: 'Granary',
           house: 'House',
@@ -124,26 +125,59 @@ test('interior decorations vary by building type', () => {
           stable: 'Stable',
           storagePit: 'StoragePit',
           temple: 'Temple',
+          townCenter: 'TownCenter',
           watchTower: 'WatchTower',
         },
       },
     },
   })
 
-  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type), [
-    'CampBucket',
-    'CampDryingRack',
-  ])
-  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type), [
-    'FireCamp',
-    'CampCrate',
-    'CampTotemPlain',
-  ])
-  assert.deepEqual(getBuildingInteriorDecorationLayout({ type: 'Temple' }).map(item => item.type), [
-    'CampTotemHorns',
-    'CampJarLarge',
-    'CampJarSmall',
-  ])
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'Stable' }).map(item => item.type),
+    ['CampBucket', 'CampDryingRack']
+  )
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'Barracks' }).map(item => item.type),
+    ['FireCamp', 'CampCrate', 'CampTotemPlain']
+  )
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'TownCenter' }).map(item => ({
+      indestructible: item.buildingOptions?.indestructible,
+      type: item.type,
+    })),
+    [
+      { indestructible: undefined, type: 'FireCamp' },
+      { indestructible: true, type: 'Chest' },
+    ]
+  )
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'Granary' }).find(item => item.key === 'storage-chest'),
+    {
+      key: 'storage-chest',
+      type: 'Chest',
+      offsetI: 0,
+      offsetJ: 0,
+      placement: 'oppositeExitBorder',
+      allowBorderPlacement: true,
+      buildingOptions: { indestructible: true },
+    }
+  )
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'StoragePit' }).find(item => item.key === 'storage-chest'),
+    {
+      key: 'storage-chest',
+      type: 'Chest',
+      offsetI: 0,
+      offsetJ: 0,
+      placement: 'oppositeExitBorder',
+      allowBorderPlacement: true,
+      buildingOptions: { indestructible: true },
+    }
+  )
+  assert.deepEqual(
+    getBuildingInteriorDecorationLayout({ type: 'Temple' }).map(item => item.type),
+    ['CampTotemHorns', 'CampJarLarge', 'CampJarSmall']
+  )
 })
 
 test('building interior entry offset matches the measured exterior door cell', () => {
@@ -212,7 +246,9 @@ test('interior exit cell uses configured exits then falls back to the bottom mid
   const configuredCell = { i: 8, j: 11, category: 'Dirt', terrainHidden: false }
   const fallbackCell = { i: 7, j: 12, category: 'Dirt', terrainHidden: false }
   const map = {
-    grid: Array.from({ length: 16 }, () => Array.from({ length: 16 }, () => ({ category: 'Water', terrainHidden: true }))),
+    grid: Array.from({ length: 16 }, () =>
+      Array.from({ length: 16 }, () => ({ category: 'Water', terrainHidden: true }))
+    ),
     interiorExits: [{ i: 8, j: 11 }],
     mapType: 'interior',
     size: 15,

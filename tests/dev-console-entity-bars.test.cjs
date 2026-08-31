@@ -36,7 +36,9 @@ function loadDebugActions(overrides = {}) {
       isPlayerEliminated: () => false,
       parseTextureRef: texture => texture,
     },
-    '../../lib/entities/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
+    '../../lib/entities/entityHealthDisplay': {
+      syncEntityHealthDisplay: entity => overrides.syncEntityHealthDisplay?.(entity),
+    },
     '../../lib/lpc/lazyEquipmentAssets': {
       getLazyEquipmentLoadStats: () => ({ loaded: 2, pending: 1, total: 5 }),
     },
@@ -75,6 +77,7 @@ function loadDebugActions(overrides = {}) {
       getCameraCells: () => [],
       getDebugContainer: () => ({ removeChildren: () => [] }),
       getDebugLayer: () => ({ clear: () => {} }),
+      getDevMapSpace: () => null,
       getSolidDebugColor: () => 0,
       normalizeToggle: (value, current) => (value === 'on' ? true : value === 'off' ? false : !current),
       removeDebugLayer: () => {},
@@ -82,7 +85,8 @@ function loadDebugActions(overrides = {}) {
       ...overrides.shared,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -140,6 +144,52 @@ test('entity-bars off preserves gameplay health bars on player units', () => {
     ['debug-only-unit', 'removeEnergyBar'],
     ['debug-only-unit', 'shouldKeepHealthBarVisible', false],
     ['debug-only-unit', 'removeHealthBar'],
+  ])
+})
+
+test('entity-bars on resolves visible entities from interior map spaces', () => {
+  const calls = []
+  const interiorCell = { i: 4, j: 5, spaceId: 'interior:house' }
+  const interiorSpace = { grid: [[], [], [], [], []] }
+  interiorSpace.grid[4][5] = interiorCell
+  const { toggleEntityBars } = loadDebugActions({
+    shared: {
+      addDebugTicker: (_context, key) => calls.push(['addDebugTicker', key]),
+      getCameraCells: () => new Set([interiorCell]),
+      getDevMapSpace: (_context, spaceId) => (spaceId === 'interior:house' ? interiorSpace : null),
+    },
+    syncEntityHealthDisplay: entity => calls.push(['syncEntityHealthDisplay', entity.label]),
+  })
+  const context = {
+    map: {
+      debugEntityBarsVisible: false,
+      gaia: { units: [], animals: [] },
+      grid: [[]],
+    },
+    players: [
+      {
+        animals: [],
+        buildings: [],
+        units: [
+          {
+            i: 4,
+            j: 5,
+            label: 'interior-hero',
+            selected: true,
+            spaceId: 'interior:house',
+          },
+        ],
+      },
+    ],
+  }
+
+  const result = toggleEntityBars(context, 'on')
+
+  assert.deepEqual(result, { ok: true, message: 'Entity bars: on' })
+  assert.equal(context.map.debugEntityBarsVisible, true)
+  assert.deepEqual(calls, [
+    ['syncEntityHealthDisplay', 'interior-hero'],
+    ['addDebugTicker', '_debugEntityBarsTicker'],
   ])
 })
 

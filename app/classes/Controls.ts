@@ -1,6 +1,7 @@
 import { Container, Graphics } from 'pixi.js'
 import { getReliefOffset, isometricToCartesian } from '../lib'
 import { getActiveInteractionSpace, getEntityMapPoint, getSpaceLocalPointFromMapPoint } from '../lib/mapSpaces'
+import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
 import { RallyPointController } from '../controllers/RallyPointController'
@@ -28,6 +29,13 @@ type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
 const MAX_CAMERA_FRAME_SCALE = 3
 const TARGET_FRAME_MS = 1000 / 60
+const POINTER_CELL_PICK_RADIUS = 8
+
+function pointIsInCellDiamond(point: PointerPoint, cell: RuntimeCell): boolean {
+  const dx = Math.abs(point.x - cell.x)
+  const dy = Math.abs(point.y - cell.y)
+  return dx / (CELL_WIDTH / 2) + dy / (CELL_HEIGHT / 2) <= 1
+}
 
 export default class Controls extends Container implements ControlsLike {
   context: GameContextLike
@@ -404,7 +412,29 @@ export default class Controls extends Container implements ControlsLike {
     const grid = space?.grid ?? map.grid
     const i = Math.min(Math.max(pos[0], 0), size)
     const j = Math.min(Math.max(pos[1], 0), size)
-    return grid[i]?.[j] || null
+    const fallbackCell = grid[i]?.[j] || null
+    let bestCell: RuntimeCell | null = null
+    let bestDistance = Infinity
+    for (
+      let candidateI = Math.max(0, i - POINTER_CELL_PICK_RADIUS);
+      candidateI <= Math.min(size, i + POINTER_CELL_PICK_RADIUS);
+      candidateI++
+    ) {
+      for (
+        let candidateJ = Math.max(0, j - POINTER_CELL_PICK_RADIUS);
+        candidateJ <= Math.min(size, j + POINTER_CELL_PICK_RADIUS);
+        candidateJ++
+      ) {
+        const cell = grid[candidateI]?.[candidateJ]
+        if (!cell || !pointIsInCellDiamond(pointer, cell)) continue
+        const distance = Math.abs(pointer.x - cell.x) + Math.abs(pointer.y - cell.y)
+        if (distance < bestDistance) {
+          bestCell = cell
+          bestDistance = distance
+        }
+      }
+    }
+    return bestCell || fallbackCell
   }
 
   getFacingEntityTarget(): RuntimeEntity | null {

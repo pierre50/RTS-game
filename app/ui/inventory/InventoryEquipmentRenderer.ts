@@ -12,9 +12,9 @@ import {
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
 import { t } from '../../lib/lang'
-import { BUILDING_TYPES, RESOURCE_NAMES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_ICON_IDS, RESOURCE_NAMES } from '../../constants'
 import { renderBuildingAvatar } from '../../lib/avatar'
-import { getBuildingAsset } from '../../lib'
+import { getBuildingAsset, getIconPath } from '../../lib'
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import type { MenuHost } from '../MenuHost'
 
@@ -51,10 +51,16 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
     slot.className = 'inventory-slot ui-btn inventory-loot-slot'
     slot.disabled = true
 
+    const icon = document.createElement('img')
+    icon.className = 'inventory-resource-icon'
+    icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
+    icon.alt = ''
+
     const label = document.createElement('div')
     label.className = 'inventory-slot-label'
     label.textContent = `${t(resource)} x${amount}`
 
+    slot.appendChild(icon)
     slot.appendChild(label)
     grid.appendChild(slot)
   }

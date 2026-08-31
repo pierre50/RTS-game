@@ -1,6 +1,7 @@
 import type { Container, ContainerChild } from 'pixi.js'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
+import type { RuntimeMap } from '../types/map'
 import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
 import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
@@ -65,6 +66,8 @@ type DebugTickerCallback = (ticker?: { deltaTime?: number; elapsedMS?: number })
 export type DevMapLike = {
   size: number
   grid: RuntimeCell[][]
+  spaces?: RuntimeMap['spaces']
+  activeSpaceId?: RuntimeMap['activeSpaceId']
   mapType?: string
   resources: Set<DevEntity>
   renderChunks?: Array<{
