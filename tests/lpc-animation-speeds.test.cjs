@@ -95,7 +95,7 @@ test('dynamic equipment action sheets stay in sync with slash body sheets', () =
     },
   })
   const aliases = dynamicEquipmentAliases()
-  const pickaxeAction = aliases.find(alias => alias.alias === 'lpc-equipment/pickaxe_ceramic/front/action')
+  const pickaxeAction = aliases.find(alias => alias.alias === 'lpc-equipment/pickaxe_ceramic/front/action/male')
   const bowAction = aliases.find(alias => alias.alias === 'lpc-equipment/bow/front/action')
   const corpse = aliases.find(alias => alias.alias.endsWith('/corpse'))
 

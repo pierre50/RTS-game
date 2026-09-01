@@ -16,6 +16,8 @@ import {
   setShadowsEnabled,
   getResourceWindAnimationEnabled,
   setResourceWindAnimationEnabled,
+  getBloodEffectsEnabled,
+  setBloodEffectsEnabled,
   SPEED_PRESETS,
   CAMERA_ZOOM_PRESETS,
   getControlKeyLabel,
@@ -124,6 +126,8 @@ function createSettingsTabs({
   graphicsPanel.appendChild(
     buildCheckboxRow(t('resourceWindAnimation'), getResourceWindAnimationEnabled(), setResourceWindAnimationEnabled)
   )
+
+  graphicsPanel.appendChild(buildCheckboxRow(t('bloodEffects'), getBloodEffectsEnabled(), setBloodEffectsEnabled))
 
   buildControlsPage(controlsPanel)
 

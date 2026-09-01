@@ -23,49 +23,7 @@ const deathFlashMocks = {
   './spriteTransientEffects': spriteTransientEffects,
 }
 
-test('death flash restores tint if the sprite textures change before completion', () => {
-  const { runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
-  const originalTextures = ['dying-0', 'dying-1']
-  const corpseTextures = ['corpse']
-  const sprite = {
-    currentFrame: 0,
-    onFrameChange: null,
-    textures: originalTextures,
-    tint: 0xabcdef,
-  }
-
-  runAfterDeathFlash(sprite, () => {})
-  assert.equal(sprite.tint, 0xff3030)
-
-  sprite.textures = corpseTextures
-  sprite.onFrameChange(1)
-
-  assert.equal(sprite.tint, 0xabcdef)
-  assert.equal(sprite.onFrameChange, null)
-})
-
-test('death flash can be cleared even if sprite callbacks were replaced', () => {
-  const { clearDeathFlash, runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
-  const replacementFrameChange = () => {}
-  const sprite = {
-    currentFrame: 0,
-    destroyed: false,
-    onFrameChange: null,
-    textures: ['dying-0', 'dying-1'],
-    tint: 0xabcdef,
-  }
-
-  runAfterDeathFlash(sprite, () => {})
-  assert.equal(sprite.tint, 0xff3030)
-
-  sprite.onFrameChange = replacementFrameChange
-  clearDeathFlash(sprite)
-
-  assert.equal(sprite.tint, 0xabcdef)
-  assert.equal(sprite.onFrameChange, replacementFrameChange)
-})
-
-test('starting a new death flash restores the previous flash tint first', () => {
+test('death completion no longer tints the sprite red', () => {
   const { runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
   const sprite = {
     currentFrame: 0,
@@ -75,14 +33,31 @@ test('starting a new death flash restores the previous flash tint first', () => 
     tint: 0xabcdef,
   }
 
-  const stopFirst = runAfterDeathFlash(sprite, () => {})
-  sprite.tint = 0x123456
-  const stopSecond = runAfterDeathFlash(sprite, () => {})
+  const completeDeath = runAfterDeathFlash(sprite, () => {})
 
-  stopFirst()
-  assert.equal(sprite.tint, 0xff3030)
-
-  stopSecond()
   assert.equal(sprite.tint, 0xabcdef)
   assert.equal(sprite.onFrameChange, null)
+
+  completeDeath()
+
+  assert.equal(sprite.tint, 0xabcdef)
+  assert.equal(sprite.onFrameChange, null)
+})
+
+test('death completion still runs the corpse transition callback', () => {
+  const { runAfterDeathFlash } = loadModule('app/lib/entities/deathFlash.ts', deathFlashMocks)
+  const sprite = {
+    currentFrame: 0,
+    destroyed: false,
+    onFrameChange: null,
+    textures: ['dying-0', 'dying-1'],
+    tint: 0xabcdef,
+  }
+  let completed = false
+
+  runAfterDeathFlash(sprite, () => {
+    completed = true
+  })()
+
+  assert.equal(completed, true)
 })

@@ -65,7 +65,7 @@ class MockText extends MockContainer {
   }
 }
 
-function loadDebugMapRenderers() {
+function loadDebugMapRenderers(libOverrides = {}) {
   return loadTsModule(path.join(__dirname, '../app/dev-console/actions/DebugMapRenderers.ts'), {
     mocks: {
       'pixi.js': { Container: MockContainer, Graphics: MockGraphics, Text: MockText },
@@ -82,6 +82,9 @@ function loadDebugMapRenderers() {
       '../../classes/unit/movement/UnitMovementDebug': {
         getLastDirectMoveDebugSnapshot: () => null,
       },
+      './DebugOverlayRenderers': {
+        ensureDebugOverlay: () => ({ textContent: '' }),
+      },
       '../../lib': {
         addEntityToMapSpaceContainer: () => {},
         canPlaceBuildingAt: () => false,
@@ -92,6 +95,7 @@ function loadDebugMapRenderers() {
         getRoundedIsoFootprintPoints: () => [],
         parseTextureRef: () => ({ frame: 0, sheet: 'terrain' }),
         pointIsInsidePolygon: () => false,
+        ...libOverrides,
       },
     },
   })
@@ -140,4 +144,66 @@ test('coords debug renders in the active interior map-space container', () => {
   assert.equal(layer.children.length, 1)
   assert.equal(layer.children[0].text, '2,3\nz1')
   assert.deepEqual([layer.children[0].x, layer.children[0].y], [64, 33])
+})
+
+test('hero collision debug draws resource blockers at their logical collision position', () => {
+  const drawn = []
+  const centers = []
+  const points = [
+    { x: 90, y: 84 },
+    { x: 122, y: 100 },
+    { x: 90, y: 116 },
+    { x: 58, y: 100 },
+  ]
+  const { drawHeroCollisionDebug } = loadDebugMapRenderers({
+    drawRoundedIsoShape: (_layer, shapePoints) => drawn.push(shapePoints),
+    getReliefOffset: entity => entity.reliefLift ?? 0,
+    getRoundedIsoFootprintPoints: () => points,
+  })
+  const map = new MockContainer()
+  const hero = { family: 'unit', i: 2, j: 2, x: 64, y: 64 }
+  const wheat = {
+    family: 'resource',
+    i: 3,
+    isDestroyed: false,
+    j: 3,
+    reliefLift: -24,
+    size: 1,
+    type: 'Wheat',
+    x: 90,
+    y: 100,
+  }
+  map.grid = Array.from({ length: 6 }, (_, i) =>
+    Array.from({ length: 6 }, (_, j) => ({
+      i,
+      j,
+      category: 'Grass',
+      has: null,
+      solid: false,
+      x: i * 10,
+      y: j * 10,
+    }))
+  )
+  map.grid[3][3].has = wheat
+  map.resources = new Set([wheat])
+  map.size = 6
+
+  const originalCircle = MockGraphics.prototype.circle
+  MockGraphics.prototype.circle = function circle(x, y, radius) {
+    centers.push({ x, y, radius })
+  }
+
+  try {
+    drawHeroCollisionDebug({
+      controls: { cameraController: { visibleCells: new Set(map.grid.flat()) }, heroUnit: hero },
+      map,
+      player: { units: [hero] },
+      players: [{ units: [hero] }],
+    })
+  } finally {
+    MockGraphics.prototype.circle = originalCircle
+  }
+
+  assert.deepEqual(drawn[0], points)
+  assert.deepEqual(centers[0], { x: 90, y: 100, radius: 3 })
 })

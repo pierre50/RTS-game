@@ -6,6 +6,7 @@ const CAMERA_ZOOM_KEY = 'camera_zoom'
 const SCREEN_BRIGHTNESS_KEY = 'screen_brightness'
 const SHADOWS_KEY = 'graphics_shadows'
 const RESOURCE_WIND_KEY = 'graphics_resource_wind'
+const BLOOD_EFFECTS_KEY = 'graphics_blood_effects'
 const KEY_BINDINGS_KEY = 'controls_key_bindings'
 const GAMEPAD_ENABLED_KEY = 'controls_gamepad_enabled'
 const GAMEPAD_BINDINGS_KEY = 'controls_gamepad_bindings'
@@ -17,6 +18,7 @@ const DEFAULT_SCREEN_BRIGHTNESS = 1
 export const DISPLAY_SCALE = 1.5
 const DEFAULT_SHADOWS_ENABLED = true
 const DEFAULT_RESOURCE_WIND_ENABLED = true
+const DEFAULT_BLOOD_EFFECTS_ENABLED = true
 const DEFAULT_GAMEPAD_ENABLED = true
 const SETTINGS_CHANGE_EVENT = 'dawn-settings-change'
 const DIGIT_CONTROL_ALIASES: Record<string, string[]> = {
@@ -182,6 +184,7 @@ let _screenBrightness = (() => {
 
 let _shadowsEnabled = getStoredBoolean(SHADOWS_KEY, DEFAULT_SHADOWS_ENABLED)
 let _resourceWindEnabled = getStoredBoolean(RESOURCE_WIND_KEY, DEFAULT_RESOURCE_WIND_ENABLED)
+let _bloodEffectsEnabled = getStoredBoolean(BLOOD_EFFECTS_KEY, DEFAULT_BLOOD_EFFECTS_ENABLED)
 let _gamepadEnabled = getStoredBoolean(GAMEPAD_ENABLED_KEY, DEFAULT_GAMEPAD_ENABLED)
 let _keyBindings = loadKeyBindings()
 let _gamepadBindings = loadGamepadBindings()
@@ -253,6 +256,16 @@ export function getResourceWindAnimationEnabled(): boolean {
 export function setResourceWindAnimationEnabled(value: boolean): void {
   _resourceWindEnabled = value
   localStorage.setItem(RESOURCE_WIND_KEY, String(value))
+  notifySettingsChanged()
+}
+
+export function getBloodEffectsEnabled(): boolean {
+  return _bloodEffectsEnabled
+}
+
+export function setBloodEffectsEnabled(value: boolean): void {
+  _bloodEffectsEnabled = value
+  localStorage.setItem(BLOOD_EFFECTS_KEY, String(value))
   notifySettingsChanged()
 }
 
@@ -391,7 +404,10 @@ function loadKeyBindings(): ControlKeyBindings {
   }
 }
 
-function normalizeGamepadButtonBinding(value: string | undefined, fallback: GamepadButtonBinding): GamepadButtonBinding {
+function normalizeGamepadButtonBinding(
+  value: string | undefined,
+  fallback: GamepadButtonBinding
+): GamepadButtonBinding {
   return /^Button\d+$/.test(value ?? '') ? (value as GamepadButtonBinding) : fallback
 }
 

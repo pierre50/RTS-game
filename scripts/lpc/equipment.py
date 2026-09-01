@@ -67,11 +67,12 @@ def tool_layer(path: str, palette: str | None = None, **kwargs) -> LayerSpec:
 
 
 def smash_tool_equipment(tool: str, palette: str | None = None) -> dict[str, Equipment]:
+    slash_fallback_group = None if tool == "hammer" else f"{tool}_slash"
     return {
-        "walk": Equipment(foreground=(tool_layer(f"tools/smash/universal/male/walk/{tool}.png", palette),)),
+        "walk": Equipment(foreground=(tool_layer(f"tools/smash/universal/{{variant}}/walk/{tool}.png", palette),)),
         "slash": Equipment(
-            background=(tool_layer(f"tools/smash/background/{tool}.png", palette, fallback_group=f"{tool}_slash"),),
-            foreground=(tool_layer(f"tools/smash/foreground/{tool}.png", palette, fallback_group=f"{tool}_slash"),),
+            background=(tool_layer(f"tools/smash/background/{tool}.png", palette, fallback_group=slash_fallback_group),),
+            foreground=(tool_layer(f"tools/smash/foreground/{tool}.png", palette, fallback_group=slash_fallback_group),),
         ),
     }
 

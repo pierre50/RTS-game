@@ -6,11 +6,9 @@ import {
   changeSpriteColorDirectly,
   getBuildingAsset,
   getBuildingAssetOwner,
-  getBuildingTextureNameWithSize,
   getPercentage,
   getBuildingFootprintCells,
   getTexture,
-  getTextureByFrame,
   getTextureSheet,
   textureRefToString,
   updateInstanceVisibility,
@@ -37,6 +35,7 @@ import {
   syncBuildingCampfireDecoration,
   updateBuildingFireDamage,
 } from './BuildingFire'
+import { clearBuildingConstructionReveal, syncBuildingConstructionReveal } from './BuildingVisuals'
 
 type BuildingTexture = Texture & { hitArea?: number[]; defaultAnchor?: { x: number; y: number } }
 type BuildingSpritesheetData = { animationSpeed?: number; loop?: boolean }
@@ -56,17 +55,13 @@ export class BuildingLifecycle {
       context: { menu },
     } = building
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
-    const buildSpritesheetId = getTextureSheet(getBuildingTextureNameWithSize(building.size)!)
 
-    if (percentage >= 33 && percentage < 66) {
-      building.textureName = textureRefToString({ sheet: buildSpritesheetId, frame: 1 })
-      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 1, Assets)
-    } else if (percentage >= 66 && percentage < 99) {
-      building.textureName = textureRefToString({ sheet: buildSpritesheetId, frame: 2 })
-      building.sprite.texture = getTextureByFrame(buildSpritesheetId, 2, Assets)
-    } else if (percentage >= 100) {
+    if (percentage < 100) {
+      syncBuildingConstructionReveal(building, percentage)
+    } else {
       const wasBuilt = building.isBuilt
       building.isBuilt = true
+      clearBuildingConstructionReveal(building)
       building.finalTexture()
       if (!wasBuilt) {
         building.onBuilt()
@@ -85,6 +80,7 @@ export class BuildingLifecycle {
 
   finalTexture(): void {
     const building = this.building
+    clearBuildingConstructionReveal(building)
     const assetOwner = getBuildingAssetOwner(building)
     const effectiveType = building.assetType || building.type
     const assets = getBuildingAsset(effectiveType, assetOwner, Assets)

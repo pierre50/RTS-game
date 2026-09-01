@@ -1,5 +1,6 @@
 import { SHEET_TYPES } from '../constants'
 import { degreeToDirection } from '../maths'
+import { applyActionFrameSequence, getConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
 import type { AnimatedSprite, Ticker } from 'pixi.js'
 
 type Direction = 'south' | 'southwest' | 'west' | 'northwest' | 'north' | 'northeast' | 'east' | 'southeast'
@@ -266,6 +267,8 @@ function isDefaultAnchor(value: unknown): value is DefaultAnchor {
 }
 
 export type UnitTextureInstance = {
+  actionFrameSequence?: number[] | null
+  action?: string | null
   context: { paused?: boolean }
   currentSheet?: string
   degree: number
@@ -273,6 +276,7 @@ export type UnitTextureInstance = {
   sheetDirectionOrders?: Record<string, DirectionOrder>
   spriteScale?: number
   sprite: AnimatedSpriteLike
+  work?: string | null
   walkingSheet?: SheetLike
   actionSheet?: SheetLike
   dyingSheet?: SheetLike
@@ -373,12 +377,17 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     mountedActionSheet && sheet !== SHEET_TYPES.action
       ? (instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null)
       : (instance.sheetDirectionOrders?.[sheet] ?? null)
-  const { textures, mirrored } = getSpriteFrameSelection(
+  const { textures: selectedTextures, mirrored } = getSpriteFrameSelection(
     selectedSheet.textures,
     instance.degree,
     directionCount,
     directionOrderOverride
   )
+  const configuredActionFrameSequence =
+    sheet === SHEET_TYPES.action
+      ? getConfiguredActionFrameSequence(instance)
+      : null
+  const textures = applyActionFrameSequence(selectedTextures, configuredActionFrameSequence)
   const spriteScale = instance.spriteScale ?? 1
   instance.sprite.scale.x = mirrored ? -spriteScale : spriteScale
   instance.sprite.scale.y = spriteScale

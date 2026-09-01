@@ -4,6 +4,8 @@ import {
   attachEntityShadowsToMapSpace,
   cartesianToIsometric,
   clearCellTerrainSet,
+  getBuildingAsset,
+  getBuildingAssetOwner,
   getEntityMapSpace,
   getBuildingFootprintCells,
   getBuildingTextureNameWithSize,
@@ -16,6 +18,7 @@ import {
   textureRefToString,
   updateInstanceVisibility,
 } from '../../lib'
+import { applyBuildingConstructionGhost } from './BuildingVisuals'
 import { BuildingTrainingPreview } from './BuildingTrainingPreview'
 import type { Building, BuildingOptions } from './Building'
 import type { HorseTamingStatus } from '../../lib/horses/horseTaming'
@@ -23,6 +26,13 @@ import type { RuntimeCell } from '../../types/map'
 import type { Texture } from 'pixi.js'
 
 type BuildingTexture = Texture & { hitArea?: number[] }
+
+function getInitialBuildingTextureRef(building: Building) {
+  if (!building.isBuilt) {
+    return getBuildingAsset(building.assetType || building.type, getBuildingAssetOwner(building), Assets).images?.final
+  }
+  return getBuildingTextureNameWithSize(building.size)
+}
 
 export function stableHorsesFromOptions(
   options: BuildingOptions
@@ -61,7 +71,7 @@ export function setupBuildingTransform(building: Building): void {
 }
 
 export function createInitialBuildingSprite(building: Building): void {
-  const spriteSheet = getBuildingTextureNameWithSize(building.size)
+  const spriteSheet = getInitialBuildingTextureRef(building) ?? getBuildingTextureNameWithSize(building.size)
   building.textureName = textureRefToString(spriteSheet!)
   const texture = getTexture(spriteSheet!, Assets) as BuildingTexture
   building.sprite = Sprite.from(texture)
@@ -71,7 +81,9 @@ export function createInitialBuildingSprite(building: Building): void {
   building.sprite.hitArea = texture.hitArea
     ? new Polygon(texture.hitArea)
     : new Polygon([-32 * building.size, 0, 0, -16 * building.size, 32 * building.size, 0, 0, 16 * building.size])
+  if (texture.defaultAnchor) building.sprite.anchor.set(texture.defaultAnchor.x, texture.defaultAnchor.y)
   building.sprite.position.y = building.reliefLift ?? 0
+  if (!building.isBuilt) applyBuildingConstructionGhost(building)
   building.shadow = building.createShadow()
 }
 

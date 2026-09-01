@@ -1,4 +1,4 @@
-import type { AnimatedSprite, Sprite, Texture } from 'pixi.js'
+import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
 import { drawInstanceBlinkingSelection, canUpdateMinimap } from '../../lib'
 import { BuildingInterface } from '../../ui/entity/BuildingInterface'
@@ -82,6 +82,9 @@ export class Building extends Instance implements BuildingEntity {
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
   shadow: BuildingShadow | null
+  shadowWasVisible: boolean
+  constructionRevealSprite: Sprite | null
+  constructionRevealMask: Graphics | null
   intervalId: SchedulerTaskId | null
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
@@ -150,6 +153,9 @@ export class Building extends Instance implements BuildingEntity {
     this.rallyPoint = null
     this.rallyPointFlag = null
     this.shadow = null
+    this.shadowWasVisible = false
+    this.constructionRevealSprite = null
+    this.constructionRevealMask = null
     this.visualSettingsCleanup = null
 
     this.assignProperties(options)

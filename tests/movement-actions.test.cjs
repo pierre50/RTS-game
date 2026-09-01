@@ -254,7 +254,9 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/units/unitExperience') return unitExperienceMock
     if (request === '../../lib/entities/entityHealthDisplay') return entityHealthDisplayMock
     if (request === '../../lib/lang') return { t: value => value }
-    if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
+    if (request === '../../lib/entities/slashRecoveryAnimation') {
+      return { logHeroSlashFrame: () => {}, playReverseSlashRecovery: () => false }
+    }
     if (request === '../../lib/combat/diplomaticAggression') {
       return {
         applyDiplomaticAggression: () => ({ changed: false, hostileNow: false, relation: 'unchanged' }),
@@ -4112,6 +4114,7 @@ test('chopping wood shows damage before wood is gathered', () => {
     getActionCondition: target => target === tree,
     getWorkSound: () => 'chop-wood',
     setTextures: sheet => calls.push(['setTextures', sheet]),
+    getAction: action => calls.push(['getAction', action]),
   }
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
@@ -4224,7 +4227,7 @@ test('chopping a legacy depleted berrybush clamps its health before damage', () 
   }
   const unit = {
     action: constants.ACTION_TYPES.chopwood,
-    context: { menu: {} },
+    context: { controls: { heroActionHeld: true }, menu: {} },
     dest: berrybush,
     owner: { isPlayed: true, wood: 0 },
     sprite: {},
@@ -4415,6 +4418,7 @@ test('hero chopping wood rewinds the work swing after the impact frame', () => {
       updateInstanceVisibility: () => {},
     },
     '../../lib/entities/slashRecoveryAnimation': {
+      logHeroSlashFrame: () => {},
       playReverseSlashRecovery: (unit, options) => {
         reverseCalls.push([unit, options.releaseFrame])
         return true
@@ -4437,7 +4441,7 @@ test('hero chopping wood rewinds the work swing after the impact frame', () => {
   }
   const unit = {
     action: constants.ACTION_TYPES.chopwood,
-    context: { menu: {} },
+    context: { controls: { heroActionHeld: true }, menu: {} },
     dest: tree,
     sprite: { loop: true },
     getActionCondition: target => target === tree,
@@ -4451,6 +4455,95 @@ test('hero chopping wood rewinds the work swing after the impact frame', () => {
   assert.equal(unit.actionLocked, true)
   assert.equal(unit.sprite.loop, false)
   assert.deepEqual(reverseCalls, [[unit, 5]])
+})
+
+test('hero custom tool work waits for the animation release frame before recovery', () => {
+  const calls = []
+  const reverseCalls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wood: 'wood' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, hitPoints: 'hitPoints' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { chopWood: 'chop-wood' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, frame, callback) => {
+        calls.push(['impactFrame', frame])
+        callback()
+      },
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showDamageFeedback: (target, amount) => calls.push(['damage', target.label, amount]),
+      showResourceGainFeedback: () => {},
+      SLASH_IMPACT_FRAME: 5,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/entities/slashRecoveryAnimation': {
+      logHeroSlashFrame: () => {},
+      playReverseSlashRecovery: (unit, options) => {
+        reverseCalls.push([unit, options.releaseFrame])
+        return true
+      },
+    },
+    '../../lib/units/unitControl': {
+      isHeroControlled: () => true,
+      isManualHeroActionReleased: () => false,
+    },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 3,
+    label: 'tree-1',
+    selected: false,
+    totalHitPoints: 5,
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: { controls: { heroActionHeld: true }, menu: {} },
+    dest: tree,
+    sprite: {
+      currentFrame: 5,
+      loop: true,
+      gotoAndPlay: frame => {
+        calls.push(['gotoAndPlay', frame])
+        unit.sprite.currentFrame = frame
+      },
+    },
+    work: constants.WORK_TYPES.woodcutter,
+    getAction: action => calls.push(['getAction', action]),
+    getActionCondition: target => target === tree,
+    getWorkSound: () => 'chop-wood',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
+
+  assert.equal(tree.hitPoints, 2)
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'gotoAndPlay'),
+    [['gotoAndPlay', 0]]
+  )
+  assert.deepEqual(reverseCalls, [])
+  assert.equal(typeof unit.sprite.onFrameChange, 'function')
+
+  unit.sprite.onFrameChange(8)
+  assert.deepEqual(reverseCalls, [])
+
+  unit.sprite.currentFrame = 0
+  unit.sprite.onLoop()
+  assert.deepEqual(reverseCalls, [])
+  assert.deepEqual(calls.filter(([type]) => type === 'getAction'), [['getAction', constants.ACTION_TYPES.chopwood]])
 })
 
 test('hero building health bar refreshes while construction progresses', () => {

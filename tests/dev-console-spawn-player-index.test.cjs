@@ -14,6 +14,8 @@ function loadSpawnActions(sharedOverrides = {}) {
   })
 
   const module = { exports: {} }
+  const fadeInCalls = []
+  const visibleUpdates = []
   const mocks = {}
   const localRequire = request => {
     if (request === './shared') {
@@ -79,6 +81,7 @@ function loadSpawnActions(sharedOverrides = {}) {
     if (request === '../../constants') {
       return {
         BUILDING_TYPES: { farm: 'Farm' },
+        FADE_DURATION_MS: 2000,
         PLAYER_TYPES: { ai: 'AI' },
         RESOURCE_TYPES: { gold: 'Gold', wheat: 'Wheat' },
         UNIT_TYPES: {
@@ -94,17 +97,24 @@ function loadSpawnActions(sharedOverrides = {}) {
           const cells = []
           for (let x = i - 1; x <= i + 2; x++) {
             for (let y = j - 1; y <= j + 2; y++) {
-              cells.push({ i: x, j: y })
+              cells.push({ i: x, j: y, updateVisible: () => visibleUpdates.push([x, y]) })
             }
           }
           return cells
         },
       }
     }
+    if (request === '../../lib/entities/entityFade') {
+      return {
+        fadeIn: (entity, duration) => fadeInCalls.push([entity, duration]),
+      }
+    }
     return requireFromTsFile(request, filename, mocks)
   }
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+  module.exports.fadeInCalls = fadeInCalls
+  module.exports.visibleUpdates = visibleUpdates
   return module.exports
 }
 
@@ -184,7 +194,7 @@ test('bandit aliases spawn on a hidden hostile owner', () => {
 })
 
 test('building farm spawns a mature wheat field instead of a building entity', () => {
-  const { spawnBuilding } = loadSpawnActions()
+  const { fadeInCalls, spawnBuilding, visibleUpdates } = loadSpawnActions()
   const spawned = []
   const currentPlayer = {
     config: { buildings: { Farm: { size: 4 } } },
@@ -214,6 +224,9 @@ test('building farm spawns a mature wheat field instead of a building entity', (
   assert.deepEqual(result, { ok: true, message: 'Spawned Wheat Field' })
   assert.equal(spawned.length, 16)
   assert.equal(context.map.resources.size, 16)
+  assert.equal(visibleUpdates.length, 16)
+  assert.equal(fadeInCalls.length, 16)
+  assert(fadeInCalls.every(([, duration]) => duration === 2000))
   assert.deepEqual(
     spawned.map(resource => [resource.type, resource.startsMature]),
     Array.from({ length: 16 }, () => ['Wheat', true])

@@ -1,6 +1,7 @@
 import { getHitPointsWithDamage, type CombatDamageType, type CombatEntity } from './combat'
 import { showDamageFeedback, showParryFeedback } from './combatFeedback'
 import { syncEntityHealthDisplay } from '../entities/entityHealthDisplay'
+import { spawnCombatBloodImpact } from '../entities/combatBloodImpact'
 import { t } from '../lang'
 import { attemptAutomaticParry } from './parry'
 import { grantUnitXp, XP_KILL_BONUS } from '../units/unitExperience'
@@ -77,6 +78,7 @@ export function applyCombatHit(
   const damageDealt = beforeHitPoints - (target.hitPoints ?? 0)
   const killed = (target.hitPoints ?? 0) <= 0
   applyFactionAttackPenalty(attacker, target, killed, damageDealt)
+  if (damageDealt > 0) spawnCombatBloodImpact(attacker, target, { damage: damageDealt, hitDirection })
 
   if (parried) {
     showParryFeedback(target, t('heroDefenseMissed'))

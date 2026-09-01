@@ -394,6 +394,7 @@ export const EN_TRANSLATIONS = {
   screenBrightness: 'Brightness',
   graphicsShadows: 'Shadows',
   resourceWindAnimation: 'Tree and berry wind',
+  bloodEffects: 'Blood effects',
   zoomVeryClose: 'Very close',
   zoomClose: 'Close',
   zoomStandard: 'Standard',

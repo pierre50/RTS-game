@@ -1,6 +1,6 @@
 import { Container, Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
-import { addEntityToMapSpaceContainer, canPlaceBuildingAt, getMapSpace } from '../../lib'
+import { addEntityToMapSpaceContainer, canPlaceBuildingAt, getMapSpace, hasBuildingPlacementClearance } from '../../lib'
 import type { PlaceableBuildingConfig } from '../../types/entities'
 import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, DevMapLike } from '../types'
 import type { RuntimeEntity } from '../../types/entities'
@@ -64,7 +64,13 @@ export function getSpawnCell(
   const space = getDevMapSpace(context, cursorCell.spaceId)
   const grid = space?.grid ?? map.grid
   if (!buildingConfig && (!cellCondition || cellCondition(cursorCell))) return cursorCell
-  if (buildingConfig && canPlaceBuildingAt(grid, cursorCell.i, cursorCell.j, buildingConfig)) return cursorCell
+  if (
+    buildingConfig &&
+    canPlaceBuildingAt(grid, cursorCell.i, cursorCell.j, buildingConfig) &&
+    hasBuildingPlacementClearance(grid, cursorCell.i, cursorCell.j, buildingConfig)
+  ) {
+    return cursorCell
+  }
 
   const maxRadius = 8
   for (let radius = 1; radius <= maxRadius; radius++) {
@@ -74,7 +80,12 @@ export function getSpawnCell(
         const cell = grid[cursorCell.i + di]?.[cursorCell.j + dj]
         if (!cell) continue
         if (buildingConfig) {
-          if (canPlaceBuildingAt(grid, cell.i, cell.j, buildingConfig)) return cell
+          if (
+            canPlaceBuildingAt(grid, cell.i, cell.j, buildingConfig) &&
+            hasBuildingPlacementClearance(grid, cell.i, cell.j, buildingConfig)
+          ) {
+            return cell
+          }
         } else if (!cellCondition || cellCondition(cell)) {
           return cell
         }

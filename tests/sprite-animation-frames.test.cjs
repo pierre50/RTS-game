@@ -241,6 +241,101 @@ test('unit animation speed uses the selected action sheet speed directly', () =>
   assert.equal(sprite.animationSpeed, 0.4)
 })
 
+test('unit action frame sequence reorders the main sprite textures', () => {
+  const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
+    '../constants': {
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './maths': {
+      degreeToDirection: () => 'south',
+    },
+  })
+  const sprite = {
+    currentFrame: 0,
+    textures: [],
+    anchor: { set: () => {} },
+    scale: { x: 1, y: 1 },
+    play() {},
+  }
+
+  setUnitTexture('actionSheet', {
+    actionFrameSequence: [5, 5, 4, 4, 1, 0, 0, 0, 0],
+    context: {},
+    degree: 180,
+    sheetDirectionCounts: { actionSheet: 3 },
+    sprite,
+    actionSheet: {
+      data: { animationSpeed: 0.25 },
+      textures: Object.fromEntries(
+        Array.from({ length: 18 }, (_, index) => [`${String(index).padStart(3, '0')}.png`, { id: index }])
+      ),
+    },
+  })
+
+  assert.deepEqual(
+    sprite.textures.map(texture => texture.id),
+    [17, 17, 16, 16, 13, 12, 12, 12, 12]
+  )
+})
+
+test('npc and hero hosts derive the same custom action frame sequence from work and action', () => {
+  const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
+    '../constants': {
+      ACTION_TYPES: {},
+      SHEET_TYPES: {
+        action: 'actionSheet',
+        corpse: 'corpseSheet',
+        dying: 'dyingSheet',
+        standing: 'standingSheet',
+        walking: 'walkingSheet',
+      },
+      WORK_TYPES: {},
+    },
+    './maths': {
+      degreeToDirection: () => 'south',
+    },
+  })
+  const makeHost = controlMode => ({
+    action: 'chopwood',
+    context: {},
+    controlMode,
+    degree: 180,
+    sheetDirectionCounts: { actionSheet: 3 },
+    sprite: {
+      currentFrame: 0,
+      textures: [],
+      anchor: { set: () => {} },
+      scale: { x: 1, y: 1 },
+      play() {},
+    },
+    work: 'woodcutter',
+    actionSheet: {
+      data: { animationSpeed: 0.25 },
+      textures: Object.fromEntries(
+        Array.from({ length: 18 }, (_, index) => [`${String(index).padStart(3, '0')}.png`, { id: index }])
+      ),
+    },
+  })
+  const npc = makeHost('unit')
+  const hero = makeHost('hero')
+
+  setUnitTexture('actionSheet', npc)
+  setUnitTexture('actionSheet', hero)
+
+  assert.deepEqual(
+    npc.sprite.textures.map(texture => texture.id),
+    [17, 17, 16, 16, 15, 13, 12, 12, 12, 12]
+  )
+  assert.deepEqual(hero.sprite.textures, npc.sprite.textures)
+})
+
 test('mounted units use action art for idle, walking and animated attack actions', () => {
   const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
     '../constants': {

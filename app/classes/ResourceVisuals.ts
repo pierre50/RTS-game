@@ -143,6 +143,16 @@ export function canApplyWindMotion(
   return Boolean(displayObject && !displayObject.destroyed && displayObject.skew)
 }
 
+function shouldShowResourceShadow(resource: ResourceVisualOwner): boolean {
+  return (
+    getShadowsEnabled() &&
+    resource.visible &&
+    !resource.isDestroyed &&
+    isEntityInActiveMapSpace(resource) &&
+    !(resource.type === RESOURCE_TYPES.wheat && resource.sprite instanceof AnimatedSprite && resource.sprite.currentFrame === 0)
+  )
+}
+
 export function startWindMotion(resource: ResourceVisualOwner): void {
   if (!shouldUseWindMotion(resource) || resource.windTick || !canApplyWindMotion(resource.sprite)) return
   resource.windPhase = ((resource.i * 37 + resource.j * 17) % 360) * (Math.PI / 180)
@@ -218,7 +228,7 @@ export function createShadow(resource: ResourceVisualOwner): ResourceShadow | nu
 
 export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shadow): void {
   if (!shadow || !resource.sprite) return
-  shadow.visible = getShadowsEnabled() && resource.visible && !resource.isDestroyed && isEntityInActiveMapSpace(resource)
+  shadow.visible = shouldShowResourceShadow(resource)
   if (resource.usesTextureShadow && shadow instanceof Sprite) {
     const shadowTexture = resource.textureName
       ? getShadowTexture(resource.textureName, resource.sprite.texture, resource.sprite.anchor)
@@ -267,8 +277,7 @@ export function syncShadow(resource: ResourceVisualOwner, shadow = resource.shad
 
 export function syncVisualSettings(resource: ResourceVisualOwner): void {
   if (resource.shadow) {
-    resource.shadow.visible =
-      getShadowsEnabled() && resource.visible && !resource.isDestroyed && isEntityInActiveMapSpace(resource)
+    resource.shadow.visible = shouldShowResourceShadow(resource)
   }
   if (getResourceWindAnimationEnabled()) {
     startWindMotion(resource)

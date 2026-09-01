@@ -28,7 +28,7 @@ import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
-import { getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
+import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -177,6 +177,7 @@ export class UnitCombat {
     if (!target) return false
     if (unit.action !== action) {
       unit.action = action
+      applyUnitActionFrameSequence(unit, unit.work, unit.action)
       unit.actionSheet = getUnitWorkActionSheet(unit, unit.work, unit.action)
     }
     unit.setDest?.(target.instance)

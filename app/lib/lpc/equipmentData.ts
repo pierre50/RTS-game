@@ -115,6 +115,7 @@ export type EquipmentOptions = Pick<
   | 'civilizations'
   | 'hideForActions'
   | 'hideOnOrAfterFrame'
+  | 'actionFrameSequence'
   | 'minLevel'
   | 'maxLevel'
   | 'mountedCut'
@@ -262,6 +263,18 @@ const SOLDIER_LAYER_EQUIPMENT_KEY_LIST = [
 export const GENDERED_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   ...ARMOR_EQUIPMENT_KEY_LIST,
   ...SOLDIER_LAYER_EQUIPMENT_KEY_LIST.filter(key => !key.startsWith('bracers_')),
+  'axe_ceramic',
+  'axe_copper',
+  'axe_bronze',
+  'axe_iron',
+  'pickaxe_ceramic',
+  'pickaxe_copper',
+  'pickaxe_bronze',
+  'pickaxe_iron',
+  'hammer_ceramic',
+  'hammer_copper',
+  'hammer_bronze',
+  'hammer_iron',
 ])
 
 const WEARABLE_EQUIPMENT_KEY_LIST = [

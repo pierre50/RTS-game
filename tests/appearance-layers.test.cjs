@@ -52,6 +52,7 @@ const constants = {
     chief: 'Chief',
     infantry: 'Fantassin',
     priest: 'Priest',
+    villager: 'Villager',
   },
   WORK_TYPES: {
     attacker: 'attacker',
@@ -176,10 +177,12 @@ test('villager and hero work tools follow civilization metal age', () => {
   )
 
   assert.equal(woodcutterFront?.walkingSheet, 'lpc-equipment/axe_ceramic/front/walking')
+  assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
   assert.deepEqual(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], {})
   assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/axe_copper/front/walking')
   assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/axe_copper/front/action')
   assert.equal(builderFront?.walkingSheet, 'lpc-equipment/hammer_ceramic/front/walking')
+  assert.equal(builderFront?.appearanceVariantKey, 'gender')
   assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/hammer_copper/front/action')
   assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/hammer_bronze/front/action')
   assert.equal(builderFront?.ageSheetOverrides?.['3']?.actionSheet, 'lpc-equipment/hammer_iron/front/action')
@@ -371,6 +374,171 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
   delete unit.inventory.equipped.helmet
   syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking)
   assert.equal(unit.appearanceLayerSprites.size, 1)
+})
+
+test('appearance layers inherit the unit action frame sequence', () => {
+  class AnimatedSprite {
+    constructor(textures) {
+      this.textures = textures
+      this.label = ''
+      this.eventMode = 'none'
+      this.position = { x: 0, y: 0 }
+      this.scale = { x: 1, y: 1 }
+      this.anchor = { set: () => {} }
+      this.roundPixels = false
+      this.loop = true
+      this.updateAnchor = false
+      this.zIndex = 0
+      this.visible = true
+      this.parent = null
+      this.playing = false
+      this.currentFrame = 0
+      this.filters = null
+    }
+    destroy() {}
+    gotoAndStop(frame) { this.currentFrame = frame }
+    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+  }
+  const spritesheet = {
+    data: { animationSpeed: 0.25 },
+    textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
+  }
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          has: id => id === 'hammer/action',
+          get: id => (id === 'hammer/action' ? spritesheet : undefined),
+        },
+      },
+      AnimatedSprite,
+    },
+    '../../constants': constants,
+    '../../lib': {
+      bindAnimatedSpriteToTicker: () => {},
+      changeSpriteColor: () => {},
+      changeSpritePalette: () => {},
+      getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
+    },
+    '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
+    '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
+    '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
+    '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+  })
+  const unit = {
+    actionFrameSequence: [5, 5, 4, 4, 1, 0, 0, 0, 0],
+    appearance: { layers: [{ zIndex: 12, actionSheet: 'hammer/action' }] },
+    appearanceLayerSprites: new Map(),
+    context: { app: {}, map: { ready: true } },
+    degree: 180,
+    currentSheet: constants.SHEET_TYPES.action,
+    sheetDirectionCounts: {},
+    sheetDirectionOrders: {},
+    sprite: { currentFrame: 3, loop: true, playing: false },
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.builder,
+    owner: { civ: 'Greek', color: 'blue' },
+    getMountedRiderX: () => 0,
+    getMountedRiderY: () => 0,
+    getChildIndex: () => 0,
+    addChildAt(sprite) { sprite.parent = this },
+    addChild(sprite) { sprite.parent = this },
+  }
+
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
+  assert.equal(unit.sprite.currentFrame, 3)
+  assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 3)
+  assert.deepEqual(
+    unit.appearanceLayerSprites.get(0).textures.map(texture => texture.id),
+    [5, 5, 4, 4, 1, 0, 0, 0, 0]
+  )
+
+  unit.sprite.currentFrame = 8
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
+  assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 8)
+})
+
+test('appearance layers stay frame-locked to the unit sprite', () => {
+  class AnimatedSprite {
+    constructor(textures) {
+      this.textures = textures
+      this.label = ''
+      this.eventMode = 'none'
+      this.position = { x: 0, y: 0 }
+      this.scale = { x: 1, y: 1 }
+      this.anchor = { set: () => {} }
+      this.roundPixels = false
+      this.loop = true
+      this.updateAnchor = false
+      this.zIndex = 0
+      this.visible = true
+      this.parent = null
+      this.playing = false
+      this.currentFrame = 0
+      this.filters = null
+    }
+    destroy() {}
+    gotoAndStop(frame) { this.currentFrame = frame; this.playing = false }
+    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+  }
+  const spritesheet = {
+    data: { animationSpeed: 0.1 },
+    textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
+  }
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          has: id => id === 'hair/action',
+          get: id => (id === 'hair/action' ? spritesheet : undefined),
+        },
+      },
+      AnimatedSprite,
+    },
+    '../../constants': constants,
+    '../../lib': {
+      bindAnimatedSpriteToTicker: () => {},
+      changeSpriteColor: () => {},
+      changeSpritePalette: () => {},
+      getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
+    },
+    '../../lib/lpc/appearanceLayers': {
+      getAppearanceAgeSheetOverride: () => undefined,
+      getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
+    },
+    '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
+    '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
+    '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    appearance: { layers: [{ zIndex: 11, actionSheet: 'hair/action' }] },
+    appearanceLayerSprites: new Map(),
+    context: { app: {}, map: { ready: true } },
+    degree: 180,
+    currentSheet: constants.SHEET_TYPES.action,
+    sheetDirectionCounts: {},
+    sheetDirectionOrders: {},
+    sprite: { currentFrame: 2, loop: true, playing: true, animationSpeed: 0.25 },
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.attacker,
+    owner: { civ: 'Greek', color: 'blue' },
+    getMountedRiderX: () => 0,
+    getMountedRiderY: () => 0,
+    getChildIndex: () => 0,
+    addChildAt(sprite) { sprite.parent = this },
+    addChild(sprite) { sprite.parent = this },
+  }
+
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
+  const hair = unit.appearanceLayerSprites.get(0)
+  assert.equal(hair.animationSpeed, 0.25)
+  assert.equal(hair.currentFrame, 2)
+
+  hair.currentFrame = 4
+  unit.sprite.currentFrame = 1
+  hair.onFrameChange(4)
+  assert.equal(hair.currentFrame, 1)
 })
 
 test('infantry equipment layers unlock by level and switch metal by civilization age', () => {

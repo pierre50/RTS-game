@@ -1,5 +1,5 @@
-import { AnimatedSprite, Assets, Rectangle, Sprite, Texture } from 'pixi.js'
-import { LABEL_TYPES } from '../../constants'
+import { AnimatedSprite, Assets, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
+import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   attachEntityShadowsToMapSpace,
@@ -13,6 +13,7 @@ import {
   RALLY_POINT_SHEET_ID,
 } from '../../lib'
 import { getShadowsEnabled } from '../../lib/audio/settings'
+import { fadeIn } from '../../lib/entities/entityFade'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 
@@ -22,7 +23,98 @@ const SHADOW_MASK_ALPHA = 1
 const SHADOW_OFFSET_Y = 0
 const SPRITE_SHADOW_SCALE_X = 1.02
 const SPRITE_SHADOW_SCALE_Y = -0.5
+const CONSTRUCTION_GHOST_ALPHA = 0.28
+const CONSTRUCTION_GHOST_TINT = 0x9f9888
 const shadowTextureFrameCache = new Map<string, Texture>()
+
+function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: number; height: number } {
+  const texture = sprite.texture
+  const width = texture.orig?.width || texture.width
+  const height = texture.orig?.height || texture.height
+  return {
+    x: sprite.position.x - sprite.anchor.x * width * sprite.scale.x,
+    y: sprite.position.y - sprite.anchor.y * height * sprite.scale.y,
+    width: width * Math.abs(sprite.scale.x),
+    height: height * Math.abs(sprite.scale.y),
+  }
+}
+
+export function applyBuildingConstructionGhost(building: BuildingControllerHost): void {
+  building.sprite.alpha = CONSTRUCTION_GHOST_ALPHA
+  building.sprite.tint = CONSTRUCTION_GHOST_TINT
+}
+
+export function syncBuildingConstructionReveal(building: BuildingControllerHost, percentage: number): void {
+  const progress = Math.max(0, Math.min(1, percentage / 100))
+  applyBuildingConstructionGhost(building)
+
+  if (!building.constructionRevealSprite) {
+    const reveal = new Sprite(building.sprite.texture)
+    reveal.label = 'construction-reveal'
+    reveal.eventMode = 'none'
+    reveal.roundPixels = building.sprite.roundPixels
+    reveal.anchor.set(building.sprite.anchor.x, building.sprite.anchor.y)
+    reveal.position.copyFrom(building.sprite.position)
+    reveal.scale.copyFrom(building.sprite.scale)
+    reveal.tint = 0xffffff
+    building.constructionRevealSprite = reveal
+    building.addChild(reveal)
+  }
+
+  if (!building.constructionRevealMask) {
+    const mask = new Graphics()
+    mask.label = 'construction-reveal-mask'
+    mask.eventMode = 'none'
+    mask.alpha = 0.001
+    building.constructionRevealMask = mask
+    building.addChild(mask)
+    building.constructionRevealSprite.mask = mask
+  }
+
+  const reveal = building.constructionRevealSprite
+  const mask = building.constructionRevealMask
+  reveal.texture = building.sprite.texture
+  reveal.anchor.set(building.sprite.anchor.x, building.sprite.anchor.y)
+  reveal.position.copyFrom(building.sprite.position)
+  reveal.scale.copyFrom(building.sprite.scale)
+  reveal.visible = progress > 0
+  reveal.alpha = 1
+
+  const bounds = getSpriteParentBounds(building.sprite)
+  const visibleHeight = Math.max(1, bounds.height * progress)
+  const top = bounds.y + bounds.height - visibleHeight
+  mask.clear()
+  mask.rect(bounds.x - 2, top, bounds.width + 4, visibleHeight + 2)
+  mask.fill({ color: 0xffffff })
+}
+
+export function clearBuildingConstructionReveal(building: BuildingControllerHost): void {
+  building.constructionRevealSprite?.parent?.removeChild(building.constructionRevealSprite)
+  building.constructionRevealSprite?.destroy({ children: true, texture: false })
+  building.constructionRevealSprite = null
+  building.constructionRevealMask?.parent?.removeChild(building.constructionRevealMask)
+  building.constructionRevealMask?.destroy({ children: true, texture: false })
+  building.constructionRevealMask = null
+  building.sprite.mask = null
+  building.sprite.alpha = 1
+  building.sprite.tint = 0xffffff
+}
+
+function fadeInBuildingShadow(building: BuildingControllerHost): void {
+  const shadow = building.shadow
+  if (!shadow || shadow.destroyed) return
+  shadow.alpha = SHADOW_MASK_ALPHA
+  fadeIn(
+    {
+      context: building.context,
+      get isDestroyed() {
+        return Boolean(building.isDead || building.isDestroyed)
+      },
+      shadow,
+    },
+    FADE_DURATION_MS
+  )
+}
 
 export function setBuildingRallyPoint(
   building: BuildingControllerHost,
@@ -116,8 +208,10 @@ export function updateBuildingShadow(
     building.shadow?.parent?.removeChild(building.shadow)
     building.shadow?.destroy()
     building.shadow = null
+    building.shadowWasVisible = false
     return
   }
+  const wasVisible = building.shadowWasVisible === true
   if (!shadow) {
     shadow = new Sprite(texture ?? building.sprite.texture)
     shadow.label = LABEL_TYPES.shadow
@@ -140,6 +234,7 @@ export function updateBuildingShadow(
   shadow.visible =
     getShadowsEnabled() &&
     building.visible &&
+    building.isBuilt === true &&
     !building.isDead &&
     !building.isDestroyed &&
     isEntityInActiveMapSpace(building)
@@ -151,6 +246,8 @@ export function updateBuildingShadow(
   )
   const point = getEntityMapPoint(building)
   shadow.position.set(point.x, point.y + (building.reliefLift ?? 0) + SHADOW_OFFSET_Y)
+  building.shadowWasVisible = shadow.visible
+  if (!wasVisible && shadow.visible) fadeInBuildingShadow(building)
 }
 
 export function syncBuildingVisualSettings(building: BuildingControllerHost): void {
@@ -158,6 +255,7 @@ export function syncBuildingVisualSettings(building: BuildingControllerHost): vo
     building.shadow.visible =
       getShadowsEnabled() &&
       building.visible &&
+      building.isBuilt === true &&
       !building.isDead &&
       !building.isDestroyed &&
       isEntityInActiveMapSpace(building)
@@ -166,6 +264,7 @@ export function syncBuildingVisualSettings(building: BuildingControllerHost): vo
 
 export function destroyBuildingVisuals(building: BuildingControllerHost): void {
   clearBuildingRallyPoint(building)
+  clearBuildingConstructionReveal(building)
   building.visualSettingsCleanup?.()
   building.visualSettingsCleanup = null
   building.shadow?.parent?.removeChild(building.shadow)

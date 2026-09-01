@@ -63,7 +63,26 @@ function loadResourceVisuals() {
     }
   }
 
-  class AnimatedSprite extends Sprite {}
+  class AnimatedSprite extends Sprite {
+    constructor(textures = [new Texture()]) {
+      super(textures[0])
+      this.textures = textures
+      this.currentFrame = 0
+      this.animationSpeed = 0
+      this.loop = false
+      this.playing = false
+    }
+
+    gotoAndPlay(frame) {
+      this.currentFrame = frame
+      this.playing = true
+    }
+
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+      this.playing = false
+    }
+  }
 
   const Assets = {
     cache: {
@@ -104,7 +123,7 @@ function loadResourceVisuals() {
   const module = { exports: {} }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
-  return { ...module.exports, Assets, Sprite, Texture }
+  return { ...module.exports, AnimatedSprite, Assets, Sprite, Texture }
 }
 
 test('resource texture shadows use the matching spritesheet frame when metadata is available', () => {
@@ -146,4 +165,55 @@ test('resource texture shadows use the matching spritesheet frame when metadata 
   assert.equal(shadow.anchor.y, 0.41)
   assert.equal(shadow.position.x, 100)
   assert.equal(shadow.position.y, 200)
+})
+
+test('initial wheat growth frame does not render a generated resource shadow', () => {
+  const { AnimatedSprite, Texture, createShadow, syncShadow } = loadResourceVisuals()
+  const sprite = new AnimatedSprite([new Texture(), new Texture()])
+  sprite.anchor = {
+    x: 0.5,
+    y: 0.8,
+    set: (x, y) => {
+      sprite.anchor.x = x
+      sprite.anchor.y = y
+    },
+  }
+  sprite.scale = {
+    x: 1,
+    y: 1,
+    set: (x, y = x) => {
+      sprite.scale.x = x
+      sprite.scale.y = y
+    },
+  }
+  sprite.currentFrame = 0
+
+  const resource = {
+    context: { app: { ticker: { add: () => {}, remove: () => {} } } },
+    i: 10,
+    isDestroyed: false,
+    j: 12,
+    reliefLift: 0,
+    shadow: null,
+    sprite,
+    textureName: '000_resources/wheat',
+    type: 'Wheat',
+    usesTextureShadow: false,
+    visible: true,
+    windPhase: 0,
+    windTick: null,
+    windTime: 0,
+    x: 100,
+    y: 200,
+  }
+
+  const shadow = createShadow(resource)
+
+  assert.equal(shadow.visible, false)
+
+  sprite.currentFrame = 1
+  resource.shadow = shadow
+  syncShadow(resource)
+
+  assert.equal(shadow.visible, true)
 })

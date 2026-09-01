@@ -364,11 +364,9 @@ export function drawHeroCollisionDebug(context: DevConsoleContext): void {
 
   for (const info of infos) {
     const color = info.inside ? 0xff3050 : (HERO_COLLISION_FAMILY_COLORS[info.entity.family] ?? 0x35e0ff)
-    const lift = getReliefOffset(info.entity)
-    const points = lift ? info.points.map(point => ({ x: point.x, y: point.y + lift })) : info.points
-    drawRoundedIsoShape(layer, points)
+    drawRoundedIsoShape(layer, info.points)
     layer.stroke({ color, alpha: info.inside ? 0.95 : 0.75, width: info.inside ? 4 : 2 })
-    layer.circle(info.entity.x, info.entity.y + lift, 3)
+    layer.circle(info.entity.x, info.entity.y, 3)
     layer.fill({ color, alpha: 0.85 })
   }
 

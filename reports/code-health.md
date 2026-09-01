@@ -1,6 +1,6 @@
 # Code Health Report
 
-Generated: 2026-09-01T14:44:55.292Z
+Generated: 2026-09-01T22:39:53.810Z
 
 ## Global Score
 
@@ -40,11 +40,11 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 
 ## Summary
 
-- Files analyzed: 498
-- Total lines: 84256
-- Code lines: 75183
-- Approx branches: 11613
-- Approx functions/methods: 9477
+- Files analyzed: 501
+- Total lines: 84896
+- Code lines: 75772
+- Approx branches: 11695
+- Approx functions/methods: 9519
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -62,11 +62,11 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 
 | File | Kind | Risk | LOC | Branches | Max Block | Churn 90d | Why |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| app/classes/building/BuildingLifecycle.ts | runtime | 189.5 | 361 | 71 | 75 | 37 | souvent modifie |
-| app/lib/combat/combatActionConditions.ts | library | 188.9 | 236 | 114 | 24 | 4 | complexite elevee |
+| app/lib/combat/combatActionConditions.ts | library | 191.9 | 236 | 114 | 24 | 5 | complexite elevee |
+| app/classes/building/BuildingProduction.ts | runtime | 186.2 | 426 | 77 | 58 | 30 | souvent modifie |
 | app/services/BuildingInteriorSpaceSystem.ts | runtime | 185 | 752 | 98 | 65 | 6 | score de risque relatif eleve |
-| app/classes/building/BuildingProduction.ts | runtime | 184.2 | 426 | 77 | 58 | 29 | souvent modifie |
 | app/services/rest/UnitRestRules.ts | runtime | 183.7 | 387 | 106 | 29 | 5 | complexite elevee |
+| app/classes/building/BuildingLifecycle.ts | runtime | 183.4 | 357 | 67 | 75 | 37 | souvent modifie |
 | app/lib/lpc/baked.ts | library | 181.5 | 413 | 60 | 99 | 33 | souvent modifie |
 | app/controllers/HeroController.ts | runtime | 179.4 | 467 | 47 | 55 | 48 | souvent modifie |
 | app/classes/players/Player.ts | runtime | 178.3 | 461 | 76 | 63 | 24 | souvent modifie |
@@ -85,8 +85,8 @@ No risky hotspots currently count against the score.
 
 | File | Kind | LOC | Branches | Imports |
 | --- | --- | --- | --- | --- |
+| app/lib/lpc/equipmentData.ts | data/config | 761 | 2 | 2 |
 | app/services/BuildingInteriorSpaceSystem.ts | runtime | 752 | 98 | 21 |
-| app/lib/lpc/equipmentData.ts | data/config | 748 | 2 | 2 |
 | app/classes/Controls.ts | runtime | 599 | 60 | 20 |
 | app/services/weather/WeatherSystem.ts | runtime | 594 | 54 | 12 |
 | app/ui/PlayerSetupPanel.ts | ui | 570 | 48 | 8 |
@@ -104,9 +104,9 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 
 | File | Kind | LOC | Branches |
 | --- | --- | --- | --- |
-| app/lib/lpc/equipmentData.ts | data/config | 748 | 2 |
-| app/lib/i18n/en.ts | data/config | 443 | 8 |
-| app/lib/i18n/fr.ts | data/config | 443 | 0 |
+| app/lib/lpc/equipmentData.ts | data/config | 761 | 2 |
+| app/lib/i18n/en.ts | data/config | 444 | 8 |
+| app/lib/i18n/fr.ts | data/config | 444 | 0 |
 | app/lib/i18n/entityTooltips.ts | data/config | 288 | 12 |
 | app/config/assetManifest.ts | data/config | 244 | 0 |
 | app/config/playerConfig.ts | data/config | 224 | 16 |
@@ -145,10 +145,10 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/controllers/HeroController.ts | 48 | 179.4 | 467 |
 | app/classes/map/MapGeneration.ts | 48 | 159.2 | 381 |
 | app/classes/unit/UnitActions.ts | 46 | 68.2 | 176 |
-| app/serialization/SaveSerializer.ts | 42 | 126.7 | 447 |
-| app/types/context.ts | 40 | 88.3 | 333 |
-| app/types/save.ts | 38 | 84.1 | 323 |
-| app/classes/building/BuildingLifecycle.ts | 37 | 189.5 | 361 |
+| app/serialization/SaveSerializer.ts | 43 | 128.7 | 447 |
+| app/types/context.ts | 41 | 90.3 | 333 |
+| app/types/save.ts | 39 | 86.1 | 323 |
+| app/classes/building/BuildingLifecycle.ts | 37 | 183.4 | 357 |
 | app/lib/lpc/baked.ts | 33 | 181.5 | 413 |
 
 ## Project Hygiene
@@ -193,7 +193,7 @@ No folder exceeds the current file-count warning.
 | Style | Files |
 | --- | --- |
 | PascalCase | 259 |
-| camelCase | 239 |
+| camelCase | 242 |
 
 ### Naming Mismatches
 

@@ -6,6 +6,7 @@ import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from '../../lib/units/act
 import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../lib/lpc/appearanceLayers'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
+import { applyActionFrameSequence, getConfiguredActionFrameSequence } from '../../lib/animations/actionFrameSequences'
 import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitRuntimeHost } from './UnitTypes'
@@ -150,16 +151,22 @@ function getLayerRenderState(
   const directionOrderOverride = (layer.sheetDirectionOrders?.[mountedRiderSheet] ??
     unit.sheetDirectionOrders?.[mountedRiderSheet] ??
     null) as string[] | null
-  const { textures, mirrored } = getSpriteFrameSelection(
+  const { textures: selectedTextures, mirrored } = getSpriteFrameSelection(
     spritesheet.textures,
     unit.degree,
     directionCount,
     directionOrderOverride
   )
+  const sourceFrame = Math.floor(unit.sprite.currentFrame)
+  const actionFrameSequence = getConfiguredActionFrameSequence(unit, layer.actionFrameSequence)
+  const textures =
+    sheet === SHEET_TYPES.action
+      ? applyActionFrameSequence(selectedTextures, actionFrameSequence)
+      : selectedTextures
   const frameIndex =
     mountedSheetOverride || (unit.mountedOnHorse && sheet !== SHEET_TYPES.action)
       ? 0
-      : Math.min(unit.sprite.currentFrame, Math.max(textures.length - 1, 0))
+      : Math.min(sourceFrame, Math.max(textures.length - 1, 0))
 
   return {
     layer,
@@ -222,13 +229,16 @@ function syncAppearanceLayerSprite(
   const defaultAnchor = (layerSprite.textures[0] as Texture & { defaultAnchor?: { x: number; y: number } })
     .defaultAnchor
   if (defaultAnchor) layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-  layerSprite.animationSpeed = state.spritesheet.data?.animationSpeed ?? 0.2
-  layerSprite.onFrameChange =
-    sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number'
-      ? currentFrame => {
-          layerSprite.visible = currentFrame < state.layer.hideOnOrAfterFrame!
-        }
-      : undefined
+  layerSprite.animationSpeed = unit.sprite.animationSpeed ?? state.spritesheet.data?.animationSpeed ?? 0.2
+  layerSprite.onFrameChange = () => {
+    const frameIndex = Math.min(Math.floor(unit.sprite.currentFrame), Math.max(layerSprite.textures.length - 1, 0))
+    if (layerSprite.currentFrame !== frameIndex) {
+      layerSprite.currentFrame = frameIndex
+    }
+    if (sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number') {
+      layerSprite.visible = frameIndex < state.layer.hideOnOrAfterFrame
+    }
+  }
   layerSprite.currentFrame = state.frameIndex
   layerSprite.visible =
     sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number'

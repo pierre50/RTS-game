@@ -35,6 +35,7 @@ export type UnitAppearanceLayerConfig = {
   appearanceVariantKey?: string
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, string[]>
+  actionFrameSequence?: number[]
   palette?: string
   paletteSource?: string
   paletteSize?: number

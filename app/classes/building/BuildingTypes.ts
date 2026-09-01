@@ -1,4 +1,4 @@
-import type { AnimatedSprite, Container, Sprite } from 'pixi.js'
+import type { AnimatedSprite, Container, Graphics, Sprite } from 'pixi.js'
 import type {
   BuildingEntity,
   CommandSound,
@@ -72,6 +72,9 @@ export type BuildingControllerHost = Omit<
     rallyPoint?: { i: number; j: number; direction: number } | null
     rallyPointFlag?: AnimatedSprite | null
     shadow?: Sprite | null
+    shadowWasVisible?: boolean
+    constructionRevealSprite?: Sprite | null
+    constructionRevealMask?: Graphics | null
     intervalId?: unknown
     attackIntervalId?: unknown
     projectile?: string

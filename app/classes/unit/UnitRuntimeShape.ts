@@ -43,6 +43,7 @@ declare module './Unit' {
     inactif: boolean
     sounds?: UnitEntity['sounds']
     work: UnitEntity['work']
+    actionFrameSequence?: UnitEntity['actionFrameSequence']
     shelterState?: UnitEntity['shelterState']
     sleepVisualState?: UnitEntity['sleepVisualState']
     visualAnimationToken?: UnitEntity['visualAnimationToken']

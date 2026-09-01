@@ -30,7 +30,8 @@ function loadSettings() {
   const mocks = {
     '@pixi/sound': { sound: { volumeAll: 1 } },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return {
     settings: module.exports,
@@ -109,11 +110,17 @@ test('Control is the default hero direction lock key and can be rebound', () => 
   const { settings, restore } = loadSettings()
   try {
     assert.equal(settings.getKeyBindings().heroDirectionLock, 'Control')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
+    assert.equal(
+      settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }),
+      'heroDirectionLock'
+    )
     assert.equal(settings.getControlKeyLabel(settings.getKeyBindings().heroDirectionLock), 'Control')
 
     settings.setKeyBindingFromKeyboardEvent('heroDirectionLock', { code: 'ControlLeft', key: 'Control' })
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }), 'heroDirectionLock')
+    assert.equal(
+      settings.getControlActionForKeyboardEvent({ code: 'ControlLeft', key: 'Control' }),
+      'heroDirectionLock'
+    )
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'ShiftLeft', key: 'Shift' }), 'heroDismountHorse')
   } finally {
     restore()
@@ -145,6 +152,21 @@ test('inventory transfer gamepad bindings can be rebound and reset', () => {
 
     settings.resetGamepadBindings()
     assert.equal(settings.getGamepadBindings().inventoryTransferOne, 'Button0')
+  } finally {
+    restore()
+  }
+})
+
+test('blood effects setting defaults on and can be toggled', () => {
+  const { settings, restore } = loadSettings()
+  try {
+    assert.equal(settings.getBloodEffectsEnabled(), true)
+
+    settings.setBloodEffectsEnabled(false)
+    assert.equal(settings.getBloodEffectsEnabled(), false)
+
+    settings.setBloodEffectsEnabled(true)
+    assert.equal(settings.getBloodEffectsEnabled(), true)
   } finally {
     restore()
   }

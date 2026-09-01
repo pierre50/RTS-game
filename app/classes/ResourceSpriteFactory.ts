@@ -8,11 +8,7 @@ import {
   parseTextureRef,
   textureRefToString,
 } from '../lib'
-import {
-  getTerrainAssets,
-  normalizeResourceTextureRef,
-  type ResourceOptions,
-} from './ResourceTexture'
+import { getTerrainAssets, normalizeResourceTextureRef, type ResourceOptions } from './ResourceTexture'
 import type { Resource } from './Resource'
 import type { TextureWithCacheIds } from './ResourceVisuals'
 
@@ -31,6 +27,7 @@ function createAnimatedResourceSprite(resource: Resource, options: ResourceOptio
   bindAnimatedSpriteToTicker(sprite, resource.context.app)
   sprite.animationSpeed = spritesheetJump.data?.animationSpeed ?? 0.3
   sprite.loop = spritesheetJump.data?.loop ?? true
+  sprite.updateAnchor = true
   if (sprite.texture.defaultAnchor) {
     sprite.anchor.copyFrom(sprite.texture.defaultAnchor)
   }
@@ -48,7 +45,8 @@ function createAnimatedResourceSprite(resource: Resource, options: ResourceOptio
 
 function stopWheatAtInitialGrowthFrame(resource: Resource, sprite: AnimatedSprite, options: ResourceOptions): void {
   const lastFrame = Math.max(0, sprite.textures.length - 1)
-  const frame = options.startsMature === true ? lastFrame : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
+  const frame =
+    options.startsMature === true ? lastFrame : Math.max(0, Math.min(lastFrame, Math.floor(options.currentFrame ?? 0)))
   sprite.gotoAndStop(frame)
   if (resource.isWindAnimatedWheat()) resource.startWindMotion()
 }
@@ -67,7 +65,8 @@ function createStaticResourceSprite(resource: Resource, cell: { type: string }):
   }
   const normalizedTextureRef = normalizeResourceTextureRef(textureRef)
   const texture = getTexture(normalizedTextureRef, Assets)
-  const textureFile = (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(normalizedTextureRef)}.png`
+  const textureFile =
+    (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(normalizedTextureRef)}.png`
   const spritesheet = Assets.cache.get(getTextureSheet(normalizedTextureRef))
   resource.textureName = textureRefToString(normalizedTextureRef)
   const sprite = Sprite.from(texture)
@@ -77,6 +76,7 @@ function createStaticResourceSprite(resource: Resource, cell: { type: string }):
       resource.berrybushFullTextureName = resource.textureName
     }
   }
-  sprite.hitArea = spritesheet?.data?.frames?.[textureFile]?.hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
+  sprite.hitArea =
+    spritesheet?.data?.frames?.[textureFile]?.hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
   return sprite
 }

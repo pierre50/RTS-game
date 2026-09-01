@@ -29,7 +29,13 @@ function loadModule(relativePath, mocks) {
   return module.exports
 }
 
-function loadCombatHit({ rawDamage = 6, parryResult = false, grantCalls = [], feedbackCalls = [] } = {}) {
+function loadCombatHit({
+  rawDamage = 6,
+  parryResult = false,
+  grantCalls = [],
+  feedbackCalls = [],
+  bloodCalls = [],
+} = {}) {
   return loadModule('app/lib/combat/combatHit.ts', {
     '../constants': constants,
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - rawDamage },
@@ -38,6 +44,9 @@ function loadCombatHit({ rawDamage = 6, parryResult = false, grantCalls = [], fe
       showParryFeedback: (target, text) => feedbackCalls.push({ kind: 'parry', target, text }),
     },
     '../entities/entityHealthDisplay': entityHealthDisplayMock,
+    '../entities/combatBloodImpact': {
+      spawnCombatBloodImpact: (attacker, target, options) => bloodCalls.push({ attacker, target, options }),
+    },
     '../lang': { t: key => key },
     './parry': { attemptAutomaticParry: () => parryResult },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
@@ -55,16 +64,19 @@ function makeTarget(extra = {}) {
 test('a non-melee hit deals damage and grants the attacker xp as before', () => {
   const grantCalls = []
   const feedbackCalls = []
-  const { applyCombatHit } = loadCombatHit({ rawDamage: 6, grantCalls, feedbackCalls })
+  const bloodCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 6, grantCalls, feedbackCalls, bloodCalls })
   const target = makeTarget()
+  const attacker = { label: 'attacker' }
 
-  const { damageDealt, killed } = applyCombatHit({}, target, { xpCategory: 'melee', xpUnit: 'attacker' })
+  const { damageDealt, killed } = applyCombatHit(attacker, target, { xpCategory: 'melee', xpUnit: 'attacker' })
 
   assert.equal(target.hitPoints, 14)
   assert.equal(damageDealt, 6)
   assert.equal(killed, false)
   assert.deepEqual(grantCalls, [{ unit: 'attacker', category: 'melee', amount: 6 }])
   assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 6 }])
+  assert.deepEqual(bloodCalls, [{ attacker, target, options: { damage: 6, hitDirection: undefined } }])
 })
 
 test('a dev-invincible target receives the hit notification without losing health', () => {
@@ -130,6 +142,7 @@ test('isMelee is required to even attempt a parry — a ranged hit never rolls o
       },
     },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
+    '../entities/combatBloodImpact': { spawnCombatBloodImpact: () => {} },
     '../units/unitExperience': { XP_KILL_BONUS: 15, grantUnitXp: () => {} },
   })
   const target = makeTarget()
@@ -170,4 +183,26 @@ test('a failed parry roll falls through to the normal damage flow', () => {
   assert.equal(damageDealt, 6)
   assert.deepEqual(grantCalls, [{ unit: 'attacker', category: 'melee', amount: 6 }])
   assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 6 }])
+})
+
+test('blood impact is skipped when a hit deals no damage', () => {
+  const bloodCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 6, bloodCalls })
+  const target = makeTarget({ devInvincible: true })
+
+  applyCombatHit({ label: 'attacker' }, target)
+
+  assert.deepEqual(bloodCalls, [])
+})
+
+test('blood impact receives the hit direction when a melee hit lands', () => {
+  const bloodCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 4, bloodCalls })
+  const target = makeTarget()
+  const attacker = { label: 'attacker' }
+  const hitDirection = { x: 1, y: -0.25 }
+
+  applyCombatHit(attacker, target, { hitDirection, isMelee: true })
+
+  assert.deepEqual(bloodCalls, [{ attacker, target, options: { damage: 4, hitDirection } }])
 })

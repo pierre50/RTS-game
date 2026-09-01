@@ -176,6 +176,7 @@ export interface UnitEntity extends EnergyEntity {
   sounds?: UnitSounds
   gender?: 'male' | 'female'
   work?: string | null
+  actionFrameSequence?: number[] | null
   autonomousJob?: VillagerAutonomyJob | null
   assigningAutonomousJob?: boolean
   campPatrolAnchor?: GridPosition | null

@@ -4,8 +4,9 @@ import type { DevCell, DevConsoleContext, DevPlayer } from '../types'
 import { addDevEntityToMapSpaceContainer, findKey, getAmount, getDevMapSpace, getSpawnCell, normalize } from './shared'
 import { Resource } from '../../classes/Resource'
 import { Player } from '../../classes/players/Player'
-import { BUILDING_TYPES, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, FADE_DURATION_MS, PLAYER_TYPES, RESOURCE_TYPES, UNIT_TYPES } from '../../constants'
 import { getBuildingFootprintCells } from '../../lib'
+import { fadeIn } from '../../lib/entities/entityFade'
 import type { PlayerLike } from '../../types/player'
 
 function canSpawnUnitOnCell(cell: DevCell): boolean {
@@ -207,6 +208,8 @@ function spawnWheatField(
       context as unknown as ConstructorParameters<typeof Resource>[1]
     )
     addDevEntityToMapSpaceContainer(context, wheat)
+    footprintCell.updateVisible?.()
+    fadeIn(wheat, FADE_DURATION_MS)
     map.resources.add(wheat)
   }
   menu.updateTopbar()

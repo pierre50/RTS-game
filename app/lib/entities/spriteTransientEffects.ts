@@ -24,10 +24,6 @@ type StartFilterEffectOptions = {
   taskName?: string
 }
 
-type StartTintFrameEffectOptions = {
-  applyFrame: (frame: number, originalTint: number, clear: () => void) => void
-}
-
 const filterEffectStates = new WeakMap<TransientEffectSprite, FilterEffectState>()
 const filterEffectSprites = new Set<TransientEffectSprite>()
 const tintFrameEffectStates = new WeakMap<AnimatedSprite, TintFrameEffectState>()
@@ -104,31 +100,4 @@ export function clearSpriteTintFrameEffect(sprite: AnimatedSprite | null | undef
   }
   if (!sprite.destroyed) sprite.tint = state.originalTint
   tintFrameEffectStates.delete(sprite)
-}
-
-export function startSpriteTintFrameEffect(
-  sprite: AnimatedSprite | null | undefined,
-  { applyFrame }: StartTintFrameEffectOptions
-): () => void {
-  if (!sprite) return () => {}
-
-  clearSpriteTintFrameEffect(sprite)
-  const originalTint = sprite.tint
-  const previousOnFrameChange = sprite.onFrameChange
-  let state: TintFrameEffectState
-
-  const clear = () => clearSpriteTintFrameEffect(sprite)
-  const onFrameChange = (frame: number): void => {
-    previousOnFrameChange?.(frame)
-    if (tintFrameEffectStates.get(sprite) === state) applyFrame(frame, originalTint, clear)
-  }
-
-  state = { originalTint, previousOnFrameChange, onFrameChange }
-  tintFrameEffectStates.set(sprite, state)
-  applyFrame(sprite.currentFrame ?? 0, originalTint, clear)
-  sprite.onFrameChange = onFrameChange
-
-  return () => {
-    if (tintFrameEffectStates.get(sprite) === state) clearSpriteTintFrameEffect(sprite)
-  }
 }

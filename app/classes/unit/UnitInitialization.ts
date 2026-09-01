@@ -29,7 +29,7 @@ import { applyBakedLpcUnitAssets, resolveLpcAppearanceVariants } from '../../lib
 import { onVisualSettingsChange } from '../../lib/audio/settings'
 import { ensureUnitEnergy } from '../../lib/units/unitEnergy'
 import { ensureUnitHealthRegen } from '../../lib/units/unitHealth'
-import { getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
+import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import { UnitInterface } from '../../ui/entity/UnitInterface'
 import { UnitActions } from './UnitActions'
 import { UnitCombat } from './UnitCombat'
@@ -244,6 +244,7 @@ export function setupUnitInterface(unit: UnitRuntimeHost): void {
 
 export function setupUnitPrimarySprite(unit: UnitRuntimeHost, spawnCell: RuntimeCell): void {
   unit.eventMode = 'static'
+  applyUnitActionFrameSequence(unit, unit.work, unit.action)
   unit.actionSheet = unit.actionSheet || getUnitWorkActionSheet(unit, unit.work, unit.action)
   unit.sprite = new AnimatedSprite(
     getAnimationFrames((unit.standingSheet as { textures: Record<string, Texture> }).textures, 'south') as Texture[]

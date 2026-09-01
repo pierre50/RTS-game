@@ -394,6 +394,7 @@ export const FR_TRANSLATIONS = {
   screenBrightness: 'Luminosité',
   graphicsShadows: 'Ombres',
   resourceWindAnimation: 'Vent sur arbres et baies',
+  bloodEffects: 'Effets de sang',
   zoomVeryClose: 'Très rapproché',
   zoomClose: 'Rapproché',
   zoomStandard: 'Standard',

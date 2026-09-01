@@ -24,8 +24,15 @@ import {
 } from '../../lib/units/unitExperience'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
+import { getActionAnimationReleaseFrame } from '../../lib/animations/actionFrameSequences'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { finishManualHeroWorkSwing, lockManualHeroAction, stopManualHeroAction } from './UnitManualHeroWork'
+import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
+import {
+  finishManualHeroWorkSwing,
+  lockManualHeroAction,
+  restartManualHeroActionAnimation,
+  stopManualHeroAction,
+} from './UnitManualHeroWork'
 import {
   addGatheredResource,
   clampDepletedBerrybushHitPoints,
@@ -44,6 +51,10 @@ import { logGatherVisualState } from './UnitGatherVisualDebug'
 import { shouldSyncBuildHealthDisplay } from './UnitBuildVisuals'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
+
+function getWorkAnimationReleaseFrame(unit: UnitEntity, impactFrame: number): number {
+  return getActionAnimationReleaseFrame(unit.work, unit.action, impactFrame)
+}
 
 export class UnitResourceActions {
   unit: UnitEntity
@@ -69,6 +80,7 @@ export class UnitResourceActions {
     }
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return false
+    restartManualHeroActionAnimation(unit)
     lockManualHeroAction(unit)
     return true
   }
@@ -78,6 +90,7 @@ export class UnitResourceActions {
     if (!config) return
     this.startGathering(config.loadingType, this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre), {
       dieOnEmpty: Boolean(config.dieOnEmpty),
+      onImpact: target => spawnWorkImpactFragments(this.unit, target),
     })
   }
 
@@ -90,6 +103,7 @@ export class UnitResourceActions {
       updateTexture = false,
       releaseFrame = SLASH_IMPACT_FRAME,
       gatherEvery,
+      onImpact,
       onRelease,
       onDepleted,
     }: {
@@ -98,6 +112,7 @@ export class UnitResourceActions {
       updateTexture?: boolean
       releaseFrame?: number
       gatherEvery?: number
+      onImpact?: (target: RuntimeEntity) => void
       onRelease?: () => void
       onDepleted?: (target: RuntimeEntity) => void
     } = {}
@@ -111,6 +126,7 @@ export class UnitResourceActions {
     }
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return
+    restartManualHeroActionAnimation(unit)
     lockManualHeroAction(unit)
     const gatherTick = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
@@ -133,9 +149,10 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
+      onImpact?.(dest)
       if (!shouldReleaseGatheredResource(unit, dest, loadingType, gatherEvery)) {
         this.playSound(soundId)
-        finishManualHeroWorkSwing(unit, releaseFrame)
+        finishManualHeroWorkSwing(unit, releaseFrame, getWorkAnimationReleaseFrame(unit, releaseFrame))
         return
       }
       const gain = addGatheredResource(unit, loadingType, requestedGain)
@@ -161,7 +178,7 @@ export class UnitResourceActions {
       } else if (sendVillagerToDeliveryIfFull(unit, loadingType)) {
         unit.gatherProgressState = null
       }
-      finishManualHeroWorkSwing(unit, releaseFrame)
+      finishManualHeroWorkSwing(unit, releaseFrame, getWorkAnimationReleaseFrame(unit, releaseFrame))
     }
     onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
       onRelease?.()
@@ -171,6 +188,7 @@ export class UnitResourceActions {
 
   handleForageBerryAction() {
     this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
+      onImpact: target => spawnWorkImpactFragments(this.unit, target),
       onDepleted: dest => {
         markBerrybushDepleted(dest)
         showDepletedBerrybushMessage(this.unit, dest)
@@ -217,9 +235,10 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
+      spawnWorkImpactFragments(unit, d)
       this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
       if (!shouldReleaseGatheredResource(unit, d, LOADING_TYPES.wheat)) {
-        finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+        finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
         return
       }
       const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
@@ -240,7 +259,7 @@ export class UnitResourceActions {
       } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) {
         unit.gatherProgressState = null
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
     })
   }
 
@@ -265,6 +284,7 @@ export class UnitResourceActions {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
         return
       }
+      spawnWorkImpactFragments(unit, dest)
       this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
       if ((dest.hitPoints ?? 0) > 0) {
         clampDepletedBerrybushHitPoints(dest)
@@ -287,7 +307,7 @@ export class UnitResourceActions {
       } else if (!isChoppableBerrybush(dest)) {
         const requestedGain = getGatherAmount(unit)
         if (!shouldReleaseGatheredResource(unit, dest, LOADING_TYPES.wood)) {
-          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
           return
         }
         const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
@@ -309,7 +329,7 @@ export class UnitResourceActions {
           unit.gatherProgressState = null
         }
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
     })
   }
 
@@ -333,6 +353,7 @@ export class UnitResourceActions {
           if (isHeroControlled(unit)) stopManualHeroAction(unit)
           return
         }
+        spawnWorkImpactFragments(unit, dest)
         this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
         const beforeHitPoints = dest.hitPoints ?? 0
         dest.hitPoints = Math.min(
@@ -356,7 +377,7 @@ export class UnitResourceActions {
         if (unit.continueBuildingQueue?.()) return
         unit.affectNewDest?.()
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME)
+      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
     })
   }
 
