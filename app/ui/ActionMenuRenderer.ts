@@ -54,7 +54,7 @@ export class ActionMenuRenderer {
     onNavigate: (children: MenuButtonSpec[]) => void
   ): HTMLButtonElement {
     const box = this.createMenuBox(btn.id || `btn-${index}`)
-    const disabled = btn.disabled?.() ?? false
+    const disabled = btn.disabled?.(selection) ?? false
     box.setAttribute('aria-disabled', String(disabled))
     if (typeof btn.onCreate === 'function') {
       btn.onCreate(selection, box)
@@ -71,13 +71,13 @@ export class ActionMenuRenderer {
       const onClick = btn.onClick
       if (children) {
         this.makePressable(box, () => {
-          if (btn.disabled?.()) return
+          if (btn.disabled?.(selection)) return
           this.menu.playUiClick()
           onNavigate(children)
         })
       } else if (typeof onClick === 'function') {
         this.makePressable(box, evt => {
-          if (btn.disabled?.()) return
+          if (btn.disabled?.(selection)) return
           this.menu.playUiClick()
           onClick(selection, evt)
         })
@@ -113,13 +113,13 @@ export class ActionMenuRenderer {
         if (hotkey) {
           if (btn.children) {
             this.activeHotkeys.set(hotkey, () => {
-              if (btn.disabled?.()) return
+              if (btn.disabled?.(selection)) return
               this.menu.playUiClick()
               onNavigate(btn.children!)
             })
           } else if (typeof btn.onClick === 'function') {
             this.activeHotkeys.set(hotkey, () => {
-              if (btn.disabled?.()) return
+              if (btn.disabled?.(selection)) return
               this.menu.playUiClick()
               btn.onClick!(selection, null)
             })

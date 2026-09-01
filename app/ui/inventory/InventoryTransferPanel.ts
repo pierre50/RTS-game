@@ -12,10 +12,20 @@ import { createInventorySection, createInventorySlot } from './InventorySlotRend
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 
+export type InventoryTransferEvent = {
+  amount: number
+  destination: InventoryContainer
+  item: keyof ResourceAmount | string
+  kind: 'equipment' | 'resource'
+  source: InventoryContainer
+}
+
 export type InventoryTransferPanelOptions = {
   context: GameContextLike
   destination: InventoryContainer
+  isTheftTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
   onChange?: () => void
+  onTransfer?: (event: InventoryTransferEvent) => void
   source: InventoryContainer
 }
 
@@ -23,13 +33,17 @@ export class InventoryTransferPanel {
   context: GameContextLike
   destination: InventoryContainer
   element: HTMLDivElement
+  isTheftTransfer?: (source: InventoryContainer, destination: InventoryContainer) => boolean
   onChange?: () => void
+  onTransfer?: (event: InventoryTransferEvent) => void
   source: InventoryContainer
 
   constructor(options: InventoryTransferPanelOptions) {
     this.context = options.context
     this.destination = options.destination
+    this.isTheftTransfer = options.isTheftTransfer
     this.onChange = options.onChange
+    this.onTransfer = options.onTransfer
     this.source = options.source
     this.element = document.createElement('div')
     this.element.className = 'inventory-transfer-panel'
@@ -86,20 +100,32 @@ export class InventoryTransferPanel {
     resource: keyof ResourceAmount,
     amount: number
   ): HTMLButtonElement {
+    const isTheftTransfer = this.isTheftTransfer?.(container, transferTarget) ?? false
     const icon = document.createElement('img')
     icon.className = 'inventory-resource-icon'
     icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
     icon.alt = ''
 
     return createInventorySlot({
-      ariaLabel: t('inventoryTransferMoveItem', { item: `${t(resource)} x${amount}` }),
-      className: 'inventory-loot-slot inventory-transfer-slot',
+      ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', {
+        item: `${t(resource)} x${amount}`,
+      }),
+      className: ['inventory-loot-slot inventory-transfer-slot', isTheftTransfer ? 'is-theft' : '']
+        .filter(Boolean)
+        .join(' '),
       icon,
       label: `${t(resource)} x${amount}`,
       onAction: mode => {
         const amountToMove = mode === 'one' ? 1 : undefined
-        if (moveInventoryResource(container, transferTarget, resource, amountToMove) <= 0) return
-        this.handleTransfer()
+        const moved = moveInventoryResource(container, transferTarget, resource, amountToMove)
+        if (moved <= 0) return
+        this.handleTransfer({
+          amount: moved,
+          destination: transferTarget,
+          item: resource,
+          kind: 'resource',
+          source: container,
+        })
       },
     })
   }
@@ -110,6 +136,7 @@ export class InventoryTransferPanel {
     equipment: string,
     count: number
   ): HTMLButtonElement {
+    const isTheftTransfer = this.isTheftTransfer?.(container, transferTarget) ?? false
     const labelText = formatEquipmentStackLabel(equipment, count)
 
     const icon = document.createElement('canvas')
@@ -119,8 +146,10 @@ export class InventoryTransferPanel {
     renderEquipmentAvatarLazy(this.context.app, equipment, icon, 'inventory transfer', this.context.performance)
 
     return createInventorySlot({
-      ariaLabel: t('inventoryTransferMoveItem', { item: labelText }),
-      className: 'inventory-loot-slot inventory-transfer-slot',
+      ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', { item: labelText }),
+      className: ['inventory-loot-slot inventory-transfer-slot', isTheftTransfer ? 'is-theft' : '']
+        .filter(Boolean)
+        .join(' '),
       icon,
       label: labelText,
       onAction: mode => {
@@ -131,13 +160,20 @@ export class InventoryTransferPanel {
           moved++
         }
         if (moved <= 0) return
-        this.handleTransfer()
+        this.handleTransfer({
+          amount: moved,
+          destination: transferTarget,
+          item: equipment,
+          kind: 'equipment',
+          source: container,
+        })
       },
     })
   }
 
-  private handleTransfer(): void {
+  private handleTransfer(event: InventoryTransferEvent): void {
     this.context.menu.playUiClick?.()
+    this.onTransfer?.(event)
     this.context.menu.refreshInventory?.()
     this.onChange?.()
     this.render()

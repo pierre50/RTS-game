@@ -3,10 +3,7 @@ import type { Point } from '../../types/grid'
 import { isHeroToolAvailable, type HeroEquippedItem } from './heroToolEquipment'
 import { getHeroAimDegree } from './heroTargeting'
 import { performContextActionAt } from './heroContextActions'
-import {
-  playEmptyHandWhiff,
-  triggerInteractMeleeAt,
-} from './heroMeleeTools'
+import { playEmptyHandWhiff, triggerInteractMeleeAt } from './heroMeleeTools'
 import { cancelHeroDefense } from './heroDefense'
 import { beginHeroPowerChargeAt, cancelHeroPowerCharge } from './heroPowerCharge'
 import { finishHeroToolAnimation } from './heroToolAnimation'
@@ -22,6 +19,7 @@ export {
 export {
   aimHeroDefenseAt,
   beginHeroDefense,
+  canHeroDefendWithTool,
   cancelHeroDefense,
   releaseHeroDefense,
   updateHeroDefense,
@@ -36,11 +34,7 @@ export {
   updateHeroPowerCharge,
 } from './heroPowerCharge'
 
-export function triggerToolAttackAt(
-  hero: UnitEntity,
-  tool: HeroEquippedItem | null,
-  destination: Point
-): boolean {
+export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | null, destination: Point): boolean {
   if (!tool || hero.actionLocked) return false
   if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)

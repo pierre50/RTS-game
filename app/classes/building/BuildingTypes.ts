@@ -1,6 +1,14 @@
 import type { AnimatedSprite, Container, Sprite } from 'pixi.js'
-import type { BuildingEntity, CommandSound, RuntimeEntity, UnitEntity, UnitSounds } from '../../types/entities'
+import type {
+  BuildingEntity,
+  CommandSound,
+  RuntimeEntity,
+  UnitCreationExtra,
+  UnitEntity,
+  UnitSounds,
+} from '../../types/entities'
 import type { TechnologyConfig } from '../../types/config'
+import type { ResourceAmount } from '../../types/common'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -9,6 +17,16 @@ import type { FireAnimation } from './BuildingFire'
 type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 type QueuedTechnology = { type: string; config: TechnologyConfig }
+export type QueuedTrainingTrainee = {
+  type: string
+  extra?: UnitCreationExtra
+  trainee: UnitEntity
+  cost?: ResourceAmount
+  loading?: number
+  trainingStartedDay?: number | null
+  trainingCompleteDay?: number | null
+  trainingDayChangeUnsubscribe?: (() => void) | null
+}
 
 export type BuildingControllerHost = Omit<
   BuildingEntity,
@@ -46,6 +64,10 @@ export type BuildingControllerHost = Omit<
     isBuilt?: boolean
     trainingUnit?: UnitEntity | null
     trainingType?: string | null
+    trainingQueue?: QueuedTrainingTrainee[]
+    trainingStartedDay?: number | null
+    trainingCompleteDay?: number | null
+    trainingDayChangeUnsubscribe?: (() => void) | null
     isUsedBy?: RuntimeEntity | null
     rallyPoint?: { i: number; j: number; direction: number } | null
     rallyPointFlag?: AnimatedSprite | null
@@ -60,7 +82,7 @@ export type BuildingControllerHost = Omit<
     flameSoundLoop?: { stop(): void; volume: number } | null
     flameSoundTicker?: ((ticker?: { deltaMS?: number; elapsedMS?: number }) => void) | null
     flameSoundStopped?: boolean
-    mountingTime?: number
+    mountingDays?: number
     visibilityTimeout?: ReturnType<typeof setTimeout>
     populationCapacityApplied?: boolean
     visualSettingsCleanup?: (() => void) | null
@@ -74,7 +96,7 @@ export type BuildingControllerHost = Omit<
     detect(instance: RuntimeEntity): void
     updateHitPoints(action?: string): void
     updateTexture(): void
-    updateInterfaceLoading?(): void
+    updateTrainingPreview?(): void
     updateShadow(shadow?: Sprite | null): void
     finalTexture(): void
     generateFire(spriteId: FireAnimation): void
@@ -82,7 +104,14 @@ export type BuildingControllerHost = Omit<
     die(): void
     clear(): void
     clearRallyPoint(): void
-    buyUnit(type: string, alreadyPaid?: boolean, force?: boolean, extra?: unknown): boolean | undefined | void
+    buyUnit(
+      type: string,
+      alreadyPaid?: boolean,
+      force?: boolean,
+      extra?: UnitCreationExtra,
+      trainee?: UnitEntity | null
+    ): boolean | undefined | void
+    cancelAllUnitTraining?(): boolean
     destroy(options?: { children?: boolean; texture?: boolean }): void
     setRallyPoint?(cell?: RuntimeCell, direction?: number): boolean
   }
@@ -90,5 +119,8 @@ export type BuildingControllerHost = Omit<
 export type TrainingBuilding = BuildingControllerHost & {
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
-  mountingTime?: number
+  trainingQueue?: QueuedTrainingTrainee[]
+  trainingStartedDay?: number | null
+  trainingCompleteDay?: number | null
+  mountingDays?: number
 }

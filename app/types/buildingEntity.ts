@@ -19,16 +19,33 @@ export interface BuildingEntity extends RuntimeEntityBase {
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   trainingUnit?: UnitEntity | null
   trainingType?: string | null
+  trainingQueue?: Array<{
+    type: string
+    extra?: UnitCreationExtra
+    trainee: UnitEntity
+    cost?: ResourceAmount
+    loading?: number
+    trainingStartedDay?: number | null
+    trainingCompleteDay?: number | null
+    trainingDayChangeUnsubscribe?: (() => void) | null
+  }>
+  trainingStartedDay?: number | null
+  trainingCompleteDay?: number | null
   addChild?: Container['addChild']
   setRallyPoint?: (cell: RuntimeCell, direction: number) => void
   clearRallyPoint?: () => void
   displayPopulation?: boolean
   loading?: number | null
-  buyUnit?: (type: string, alreadyPaid?: boolean, force?: boolean, extra?: UnitCreationExtra) => boolean | void
-  requestUnitTraining?: (type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null) => boolean
+  buyUnit?: (
+    type: string,
+    alreadyPaid?: boolean,
+    force?: boolean,
+    extra?: UnitCreationExtra,
+    trainee?: UnitEntity | null
+  ) => boolean | void
   cancelUnits?: (type: string) => void
+  cancelAllUnitTraining?: () => boolean
   startTrainingWithUnit?: (trainee: UnitEntity) => boolean
-  cancelTrainingForUnit?: (trainee: UnitEntity) => boolean
   buyTechnology?: (type: string) => void
   cancelTechnology?: () => void
   upgrade?: (target: string) => void

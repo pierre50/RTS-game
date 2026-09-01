@@ -37,7 +37,10 @@ export interface MenuHost {
   updateActionTarget(): void
   getMessage(cost: ResourceAmount): string
   getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec
+  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionRallyPointButton(): MenuButtonSpec
+  getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec
+  getMountHorseButton(unit: UnitEntity): MenuButtonSpec
   getActionBuildingButton(type: string, ownerOverride?: PlayerLike | null): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getHeroTechnologyButtons(): MenuButtonSpec[]
@@ -58,7 +61,6 @@ export interface MenuHost {
   activateMiniMap(): void
   deactivateMiniMap(): void
   isMiniMapActive(): boolean
-  toggleQueuedActionCancel(target: string, value: boolean): void
   closeHeroBuildingMenu(): void
   syncHeroBuildingMenu?(): void
   updateHeroStatus?(hero?: UnitEntity | null): void

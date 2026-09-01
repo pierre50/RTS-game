@@ -234,6 +234,9 @@ function loadModule(relativePath, mocks) {
     if (request === '../../lib/buildings/interiors') {
       const interiors = mocks[request] ?? {}
       return {
+        getBuildingEntryCell:
+          interiors.getBuildingEntryCell ??
+          (building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null),
         getBuildingInteriorEntryCell:
           interiors.getBuildingInteriorEntryCell ??
           (building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null),
@@ -429,6 +432,7 @@ const constants = {
     type: 'type',
   },
   SHEET_TYPES: {
+    action: 'actionSheet',
     corpse: 'corpseSheet',
     standing: 'standingSheet',
     walking: 'walking',
@@ -586,6 +590,68 @@ test('failed train entry after building cleanup stops without confusion fallback
 
   assert.equal(unit.trainingTargetType, null)
   assert.deepEqual(calls, [['stop']])
+})
+
+test('busy training building leaves arrived trainee waiting without retry loop', () => {
+  const calls = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: () => {},
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.train,
+    context: {
+      scheduler: {
+        addOneShot() {
+          calls.push(['retry'])
+          return 1
+        },
+      },
+    },
+    dest: null,
+    owner: { isPlayed: true, label: 'p1' },
+    path: [],
+    sprite: {
+      stop() {
+        calls.push(['spriteStop'])
+      },
+    },
+    trainingTargetType: 'Fantassin',
+    getActionCondition: () => true,
+    isUnitAtDest: () => true,
+    setTextures: sheet => calls.push(['textures', sheet]),
+    stop: () => calls.push(['stop']),
+  }
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    isBuilt: true,
+    label: 'barracks',
+    loading: 10,
+    owner: unit.owner,
+    queue: ['Fantassin'],
+    technology: null,
+    trainingUnit: {},
+    type: 'Barracks',
+    units: ['Fantassin'],
+    startTrainingWithUnit: () => false,
+  }
+  unit.dest = building
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.train)
+
+  assert.equal(unit.trainingTargetType, 'Fantassin')
+  assert.deepEqual(calls, [['textures', constants.SHEET_TYPES.standing], ['spriteStop']])
 })
 
 test('direct texture recoloring bakes and caches animation frames', () => {
@@ -3183,7 +3249,11 @@ test('solid target approach cells avoid building passage cells as final stops', 
     y: 2,
   }
   grid[target.i][target.j].solid = true
-  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  const context = {
+    map: { grid, size: 4 },
+    performance: { measureSampled: (_name, run) => run(), record: () => {} },
+    players: [],
+  }
   let rejectedPassageCell = false
   let acceptedApproachCell = false
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
@@ -3301,12 +3371,17 @@ test('building arrival actions path through an occupied passage cell without pus
   }
   entryCell.has = blocker
   entryCell.solid = true
-  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  const context = {
+    map: { grid, size: 4 },
+    performance: { measureSampled: (_name, run) => run(), record: () => {} },
+    players: [],
+  }
   const routedBlockers = []
   let pathfinderAcceptedPassage = false
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib/buildings/interiors': {
+      getBuildingEntryCell: () => entryCell,
       getBuildingInteriorEntryCell: () => entryCell,
       isBuildingInteriorSupported: () => true,
     },
@@ -3349,6 +3424,161 @@ test('building arrival actions path through an occupied passage cell without pus
   assert.deepEqual(routedBlockers, [])
   assert.equal(unit.dest, building)
   assert.deepEqual(unit.path, [entryCell])
+})
+
+test('blocked training entry repaths while still allowing the door passage stop', () => {
+  const grid = makePassageMovementGrid()
+  const entryCell = grid[1][0]
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    i: 2,
+    isBuilt: true,
+    isDestroyed: false,
+    j: 0,
+    label: 'barracks-1',
+    type: constants.BUILDING_TYPES.barracks,
+    x: 2,
+    y: 0,
+  }
+  const blocker = {
+    family: constants.FAMILY_TYPES.unit,
+    i: entryCell.i,
+    isDead: false,
+    isDestroyed: false,
+    j: entryCell.j,
+    label: 'blocker-1',
+  }
+  entryCell.has = blocker
+  entryCell.solid = true
+  const sent = []
+  const context = {
+    map: { grid, size: 4 },
+    performance: { measureSampled: (_name, run) => run(), record: () => {} },
+    players: [],
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      cartesianToIsometric: (i, j) => [i, j],
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getGroundReliefLevel: () => 0,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = {
+    ...makePassageMovementUnit(context, grid),
+    action: constants.ACTION_TYPES.train,
+    currentCell: grid[0][0],
+    dest: building,
+    isUnitAtDest: () => false,
+    path: [entryCell],
+    sendToEvt: (target, action, options) => sent.push([target.label, action, options]),
+  }
+
+  new UnitMovement(unit).moveToPath()
+
+  assert.deepEqual(sent, [
+    ['barracks-1', constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }],
+  ])
+})
+
+test('manual building goto paths to the building entry cell', () => {
+  const grid = makePassageMovementGrid()
+  const entryCell = grid[2][2]
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    i: 1,
+    isBuilt: true,
+    isDestroyed: false,
+    j: 0,
+    label: 'barracks-1',
+    type: constants.BUILDING_TYPES.barracks,
+    x: 1,
+    y: 0,
+  }
+  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/interiors': {
+      getBuildingEntryCell: () => entryCell,
+      getBuildingInteriorEntryCell: () => entryCell,
+      isBuildingInteriorSupported: () => true,
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      clearVillagerAutonomy: () => {},
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: (_unit, i, j) => (i === entryCell.i && j === entryCell.j ? [entryCell] : []),
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      updateInstanceVisibility: () => {},
+    },
+  })
+  const unit = makePassageMovementUnit(context, grid)
+
+  new UnitMovement(unit).sendToEvt(building, null, { allowPassageStop: true })
+
+  assert.equal(unit.dest, building)
+  assert.equal(unit.action, null)
+  assert.deepEqual(unit.path, [entryCell])
+})
+
+test('training arrival requires standing on the building entry cell, not only touching the building', () => {
+  const grid = makePassageMovementGrid()
+  const entryCell = grid[2][2]
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    i: 1,
+    isBuilt: true,
+    isDestroyed: false,
+    j: 0,
+    label: 'barracks-1',
+    type: constants.BUILDING_TYPES.barracks,
+    x: 1,
+    y: 0,
+  }
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib/buildings/interiors': {
+      getBuildingEntryCell: () => entryCell,
+      getBuildingInteriorEntryCell: () => entryCell,
+      isBuildingInteriorSupported: () => true,
+    },
+    '../../lib': {
+      instanceContactInstance: () => true,
+      instancesDistance: () => 1,
+    },
+  })
+  const unit = makePassageMovementUnit({ map: { grid, size: 4 }, performance: { record: () => {} } }, grid)
+  unit.i = 1
+  unit.j = 1
+
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.train, building), false)
+
+  unit.i = entryCell.i
+  unit.j = entryCell.j
+
+  assert.equal(new UnitMovement(unit).isUnitAtDest(constants.ACTION_TYPES.train, building), true)
 })
 
 test('force repath restarts a build action when the villager is already in range', () => {
@@ -3675,7 +3905,55 @@ test('an idle builder picks a nearby unfinished building after completing its cu
   assert.equal(unit.work, constants.WORK_TYPES.builder)
 })
 
-test('a villager builds a granary then starts gathering nearby berries', () => {
+test('hero stops cleanly after completing a building without confusion feedback', () => {
+  const completedBuilding = {
+    label: 'house-1',
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 10,
+    isBuilt: true,
+    totalHitPoints: 10,
+  }
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      findInstancesInSight: () => [],
+      getCellsAroundPoint: () => [],
+      getClosestInstanceWithPath: () => null,
+      getFreeCellAroundPoint: () => null,
+      getInstanceClosestFreeCellPath: () => [],
+      getInstanceDegree: () => 0,
+      getInstancePath: () => [],
+      getInstanceZIndex: () => 0,
+      instanceContactInstance: () => false,
+      instancesDistance: () => Infinity,
+      moveTowardPoint: () => {},
+      showConfusionFeedback: () => calls.push(['showConfusionFeedback']),
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/units/unitControl': { isHeroControlled: () => true },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.build,
+    controlMode: 'hero',
+    dest: completedBuilding,
+    previousDest: { label: 'tree-1' },
+    previousWork: constants.WORK_TYPES.woodcutter,
+    stop: () => calls.push(['stop']),
+    stopInterval: () => calls.push(['stopInterval']),
+    work: constants.WORK_TYPES.builder,
+  }
+
+  new UnitMovement(unit).affectNewDest()
+
+  assert.deepEqual(calls, [['stopInterval'], ['stop']])
+  assert.equal(unit.previousDest, null)
+  assert.equal(unit.previousWork, null)
+})
+
+test('a villager completing a building ignores nearby resources and picks a repair/build target', () => {
   const granary = {
     label: 'granary-1',
     family: constants.FAMILY_TYPES.building,
@@ -3683,13 +3961,20 @@ test('a villager builds a granary then starts gathering nearby berries', () => {
     isBuilt: true,
   }
   const berryBush = { label: 'berries-1' }
-  const tree = { label: 'tree-1' }
+  const damagedBuilding = {
+    label: 'house-damaged',
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 5,
+    totalHitPoints: 10,
+    isBuilt: true,
+  }
+  const path = [{ i: 1, j: 1 }]
   const calls = []
   const lib = {
     canUpdateMinimap: () => false,
     degreeToDirection: () => 'south',
-    findInstancesInSight: (_unit, condition) => [tree, berryBush].filter(condition),
-    getClosestInstanceWithPath: (_unit, targets) => ({ instance: targets[0], path: [{ i: 1, j: 1 }] }),
+    findInstancesInSight: (_unit, condition) => [berryBush, damagedBuilding].filter(condition),
+    getClosestInstanceWithPath: (_unit, targets) => ({ instance: targets[0], path }),
     getFreeCellAroundPoint: () => null,
     getInstanceClosestFreeCellPath: () => [],
     getInstanceDegree: () => 0,
@@ -3713,17 +3998,28 @@ test('a villager builds a granary then starts gathering nearby berries', () => {
     type: constants.UNIT_TYPES.villager,
     work: constants.WORK_TYPES.builder,
     stopInterval: () => {},
-    getActionCondition: (target, action) => target === berryBush && action === constants.ACTION_TYPES.forageberry,
+    getActionCondition: (target, action) =>
+      (target === berryBush && action === constants.ACTION_TYPES.forageberry) ||
+      (target === damagedBuilding && action === constants.ACTION_TYPES.build),
     sendToBerrybush: (target, immediate) => calls.push(['sendToBerrybush', target.label, immediate]),
+    setDest: target => {
+      calls.push(['setDest', target.label])
+      unit.dest = target
+    },
+    setPath: targetPath => calls.push(['setPath', targetPath]),
     stop: () => calls.push(['stop']),
   }
 
   new UnitMovement(unit).affectNewDest()
 
-  assert.deepEqual(calls, [['sendToBerrybush', 'berries-1', true]])
+  assert.deepEqual(calls, [
+    ['setDest', 'house-damaged'],
+    ['setPath', path],
+  ])
+  assert.equal(unit.work, constants.WORK_TYPES.builder)
 })
 
-test('a villager builds a town center then starts gathering any nearby compatible resource', () => {
+test('a villager completing a building stops instead of starting nearby resource gathering', () => {
   const townCenter = {
     label: 'town-center-1',
     family: constants.FAMILY_TYPES.building,
@@ -3767,7 +4063,8 @@ test('a villager builds a town center then starts gathering any nearby compatibl
 
   new UnitMovement(unit).affectNewDest()
 
-  assert.deepEqual(calls, [['sendToTree', 'tree-1', true]])
+  assert.deepEqual(calls, [['stop']])
+  assert.equal(unit.work, null)
 })
 
 test('chopping wood shows damage before wood is gathered', () => {
@@ -4177,6 +4474,7 @@ test('hero building health bar refreshes while construction progresses', () => {
       onSpriteLoopAtFrame: (_sprite, _frame, callback) => callback(),
       playerCanSeeInstance: () => false,
       playSoundCue: () => {},
+      showHitPointGainFeedback: (target, amount) => calls.push(['hitPointGain', target.family, amount]),
       showResourceGainFeedback: () => {},
       SLASH_IMPACT_FRAME: 5,
       updateInstanceVisibility: () => {},
@@ -4211,6 +4509,7 @@ test('hero building health bar refreshes while construction progresses', () => {
   assert.equal(building.hitPoints, 2)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
+    ['hitPointGain', constants.FAMILY_TYPES.building, 1],
     ['drawHealthBar'],
     ['updateHitPoints', constants.ACTION_TYPES.build],
   ])

@@ -141,6 +141,8 @@ function validatePlayerBuildings(
         validateSavedHorseTamingStatus(horse, `player ${playerIndex} building ${buildingIndex}.stableHorses ${horseIndex}`)
       )
     }
+    validateOptionalFiniteNumber(building.trainingStartedDay, `player ${playerIndex} building ${buildingIndex}.trainingStartedDay`)
+    validateOptionalFiniteNumber(building.trainingCompleteDay, `player ${playerIndex} building ${buildingIndex}.trainingCompleteDay`)
   })
 }
 

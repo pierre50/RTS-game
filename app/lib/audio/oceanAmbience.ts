@@ -14,8 +14,8 @@ type OceanAmbienceOptions = {
   mapType?: string | null
 }
 
-const OCEAN_AMBIENCE_RADIUS_CELLS = 10
-const OCEAN_AMBIENCE_MAX_VOLUME = 0.38
+const OCEAN_AMBIENCE_RADIUS_CELLS = 8
+const OCEAN_AMBIENCE_MAX_VOLUME = 0.34
 export const OCEAN_AMBIENCE_LERP_PER_SECOND = 1.8
 
 function isOceanAmbienceCell(cell: OceanAmbienceCell | null | undefined): boolean {

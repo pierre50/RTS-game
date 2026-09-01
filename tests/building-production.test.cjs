@@ -56,6 +56,29 @@ function loadModule(relativePath, mocks) {
 }
 
 const buildingTrainingMock = {
+  getBuildingTrainingLoad: building => {
+    const active = building.loading != null || building.trainingUnit ? 1 : 0
+    const queued = Math.max(0, (building.queue?.length ?? 0) - active)
+    const incoming =
+      building.owner?.units?.filter(
+        unit => unit.dest === building && Boolean(unit.trainingTargetType) && !unit.isDead && !unit.isDestroyed
+      ).length ?? 0
+    return active + queued + incoming
+  },
+  hasBuildingTrainingCapacity: (building, { excludeUnit = null } = {}) => {
+    const active = building.loading != null || building.trainingUnit ? 1 : 0
+    const queued = Math.max(0, (building.queue?.length ?? 0) - active)
+    const incoming =
+      building.owner?.units?.filter(
+        unit =>
+          unit !== excludeUnit &&
+          unit.dest === building &&
+          Boolean(unit.trainingTargetType) &&
+          !unit.isDead &&
+          !unit.isDestroyed
+      ).length ?? 0
+    return active + queued + incoming < 5
+  },
   canUnitTrainInto: () => true,
   getMissingResourceNames: (owner, cost = {}) =>
     Object.keys(cost).filter(resource => owner[resource] < (cost[resource] ?? 0)),
@@ -137,9 +160,6 @@ test('resource rally commands keep the spawned unit context', () => {
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   assert.equal(new BuildingProduction(building).placeUnit('Villager'), true)
@@ -225,16 +245,13 @@ test('produced units do not spawn on reserved passage cells', () => {
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   assert.equal(new BuildingProduction(building).placeUnit('Villager'), true)
   assert.deepEqual(calls, [{ i: 0, j: 1, type: 'Villager' }])
 })
 
-test('military unit purchase reserves and sends an existing villager instead of spawning directly', () => {
+test('military unit purchase from a building no longer auto-picks a trainee', () => {
   const calls = []
   const villager = {
     type: 'Villager',
@@ -284,7 +301,7 @@ test('military unit purchase reserves and sends an existing villager instead of 
       units: [villager],
       config: {
         units: {
-          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
         },
       },
       createUnit(options) {
@@ -328,28 +345,25 @@ test('military unit purchase reserves and sends an existing villager instead of 
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
-  assert.equal(new BuildingProduction(building).buyUnit('Fantassin'), true)
+  assert.equal(new BuildingProduction(building).buyUnit('Fantassin'), false)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(building.isUsedBy, undefined)
-  assert.equal(villager.trainingTargetType, 'Fantassin')
+  assert.equal(villager.trainingTargetType, undefined)
   assert.equal(building.owner.food, 50)
   assert.deepEqual(
     calls.filter(call => call[0] === 'created'),
     []
   )
-  assert.deepEqual(
+  assert.equal(
     calls.find(call => call[0] === 'sendToEvt'),
-    ['sendToEvt', 'Barracks', 'train']
+    undefined
   )
 })
 
-test('military unit purchase can reserve compatible trainee training', () => {
+test('stable unit purchase from a building no longer auto-picks a mounted trainee', () => {
   const calls = []
   const bowman = {
     type: 'Bowman',
@@ -400,7 +414,7 @@ test('military unit purchase can reserve compatible trainee training', () => {
       units: [bowman],
       config: {
         units: {
-          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 27 },
         },
       },
       createUnit(options) {
@@ -444,30 +458,26 @@ test('military unit purchase can reserve compatible trainee training', () => {
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
-    },
   })
 
-  assert.equal(new BuildingProduction(building).buyUnit('Bowman'), true)
+  assert.equal(new BuildingProduction(building).buyUnit('Bowman'), false)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(building.isUsedBy, undefined)
-  assert.equal(bowman.trainingTargetType, 'Bowman')
+  assert.equal(bowman.trainingTargetType, undefined)
   assert.equal(building.owner.food, 60)
   assert.equal(building.owner.wood, 30)
   assert.deepEqual(
     calls.filter(call => call[0] === 'created'),
     []
   )
-  assert.deepEqual(
+  assert.equal(
     calls.find(call => call[0] === 'sendToEvt'),
-    ['sendToEvt', 'Stable', 'train']
+    undefined
   )
 })
 
-test('temple priest training reserves and sends an existing villager instead of spawning directly', () => {
+test('temple priest purchase from a building no longer auto-picks a villager', () => {
   const calls = []
   const villager = {
     type: 'Villager',
@@ -517,7 +527,7 @@ test('temple priest training reserves and sends an existing villager instead of 
       units: [villager],
       config: {
         units: {
-          Priest: { category: 'Civilian', cost: { gold: 125 }, trainingTime: 50 },
+          Priest: { category: 'Civilian', cost: { gold: 125 }, trainingDays: 50 },
         },
       },
       createUnit(options) {
@@ -561,29 +571,26 @@ test('temple priest training reserves and sends an existing villager instead of 
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
-  assert.equal(new BuildingProduction(building).buyUnit('Priest'), true)
+  assert.equal(new BuildingProduction(building).buyUnit('Priest'), false)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
   assert.equal(building.isUsedBy, undefined)
-  assert.equal(villager.trainingTargetType, 'Priest')
+  assert.equal(villager.trainingTargetType, undefined)
   assert.equal(building.owner.gold, 125)
   assert.equal(building.owner.population, 1)
   assert.deepEqual(
     calls.filter(call => call[0] === 'created'),
     []
   )
-  assert.deepEqual(
+  assert.equal(
     calls.find(call => call[0] === 'sendToEvt'),
-    ['sendToEvt', 'Temple', 'train']
+    undefined
   )
 })
 
-test('military training is first arrived first served', () => {
+test('military training starts with the first explicitly ordered trainee to enter', () => {
   const calls = []
   const villagerA = {
     type: 'Villager',
@@ -634,7 +641,7 @@ test('military training is first arrived first served', () => {
       units: [villagerA, villagerB],
       config: {
         units: {
-          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
         },
       },
       isPlayed: true,
@@ -676,15 +683,11 @@ test('military training is first arrived first served', () => {
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   const production = new BuildingProduction(building)
-  assert.equal(production.buyUnit('Fantassin'), true)
-  building.owner.selectedUnits = [villagerB]
-  assert.equal(production.buyUnit('Fantassin'), true)
+  villagerA.trainingTargetType = 'Fantassin'
+  villagerB.trainingTargetType = 'Fantassin'
   assert.equal(building.trainingUnit, undefined)
   assert.equal(villagerA.trainingTargetType, 'Fantassin')
   assert.equal(villagerB.trainingTargetType, 'Fantassin')
@@ -697,7 +700,129 @@ test('military training is first arrived first served', () => {
   assert.equal(villagerA.trainingTargetType, 'Fantassin')
 })
 
-test('military training reservation can be cancelled before the unit enters the building', () => {
+test('arrived trainee enters a busy training building queue instead of waiting outside', () => {
+  const calls = []
+  const activeTrainee = {
+    type: 'Villager',
+    label: 'villager-a',
+    owner: null,
+  }
+  const queuedTrainee = {
+    type: 'Villager',
+    label: 'villager-b',
+    context: null,
+    trainingTargetType: 'Fantassin',
+    owner: null,
+    isDead: false,
+    isDestroyed: false,
+    controlMode: null,
+    path: [{ i: 1, j: 1 }],
+    currentCell: {
+      has: null,
+      solid: false,
+    },
+    stopInterval: () => calls.push(['stopInterval']),
+    stopTimeout: () => calls.push(['stopTimeout']),
+    unselect: () => calls.push(['unselect']),
+    destroy: options => calls.push(['destroy', options]),
+  }
+  queuedTrainee.currentCell.has = queuedTrainee
+  const owner = {
+    food: 100,
+    population: 2,
+    populationMax: 10,
+    selectedUnits: [],
+    units: [activeTrainee, queuedTrainee],
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
+      },
+    },
+    isPlayed: true,
+  }
+  activeTrainee.owner = owner
+  queuedTrainee.owner = owner
+  const building = {
+    type: 'Barracks',
+    isBuilt: true,
+    isDead: false,
+    queue: ['Fantassin'],
+    trainingQueue: [],
+    loading: 50,
+    trainingUnit: activeTrainee,
+    trainingType: 'Fantassin',
+    technology: null,
+    units: ['Fantassin'],
+    context: {
+      map: {
+        removeFromInstanceBucket: target => calls.push(['removeFromInstanceBucket', target.label]),
+        removeChild: target => calls.push(['removeChild', target.label]),
+      },
+      menu: {
+        getHeroBuildingMenuTarget: () => building,
+        refreshHeroBuildingMenu: () => calls.push(['refreshHeroBuildingMenu']),
+        updateTopbar: () => calls.push(['topbar']),
+        updateButtonContent: (target, value) => calls.push(['button', target, value]),
+      },
+    },
+    owner,
+    updateTrainingPreview: () => calls.push(['preview']),
+  }
+  queuedTrainee.context = building.context
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => null,
+      getTexture: () => null,
+      payCost: (targetOwner, cost = {}) => {
+        for (const [key, amount] of Object.entries(cost)) targetOwner[key] -= amount
+      },
+      refundCost: () => {},
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+  })
+
+  assert.equal(new BuildingProduction(building).startTrainingWithUnit(queuedTrainee), true)
+  assert.deepEqual(building.queue, ['Fantassin', 'Fantassin'])
+  assert.equal(building.trainingQueue.length, 1)
+  assert.equal(building.trainingQueue[0].trainee, queuedTrainee)
+  assert.equal(building.trainingQueue[0].type, 'Fantassin')
+  assert.equal(owner.units.includes(queuedTrainee), false)
+  assert.equal(owner.food, 65)
+  assert.deepEqual(
+    calls.find(call => call[0] === 'button'),
+    ['button', 'Fantassin', 2]
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'removeFromInstanceBucket'),
+    ['removeFromInstanceBucket', 'villager-b']
+  )
+})
+
+test('per-unit cancellation no longer owns pending trainee orders', () => {
   const calls = []
   const bowman = {
     type: 'Bowman',
@@ -741,7 +866,7 @@ test('military training reservation can be cancelled before the unit enters the 
       units: [bowman],
       config: {
         units: {
-          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+          Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 27 },
         },
       },
       isPlayed: true,
@@ -783,25 +908,21 @@ test('military training reservation can be cancelled before the unit enters the 
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
-    },
   })
 
-  assert.equal(new BuildingProduction(building).cancelUnits('Bowman'), true)
+  assert.equal(new BuildingProduction(building).cancelUnits('Bowman'), false)
   assert.equal(building.trainingUnit, undefined)
   assert.equal(building.trainingType, undefined)
-  assert.equal(bowman.trainingTargetType, null)
+  assert.equal(bowman.trainingTargetType, 'Bowman')
   assert.equal(building.owner.food, 60)
   assert.equal(building.owner.wood, 30)
-  assert.deepEqual(
+  assert.equal(
     calls.find(call => call[0] === 'affectNewDest'),
-    ['affectNewDest']
+    undefined
   )
-  assert.deepEqual(
+  assert.equal(
     calls.find(call => call[0] === 'toggleCancel'),
-    ['toggleCancel', 'Bowman', false]
+    undefined
   )
 })
 
@@ -816,7 +937,7 @@ test('trainee training updates loading even when the building is not classically
     units: [],
     config: {
       units: {
-        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 1 },
       },
     },
     isPlayed: true,
@@ -847,6 +968,15 @@ test('trainee training updates loading even when the building is not classically
     units: ['Bowman'],
     context: {
       map: { instantMode: false },
+      dayNight: {
+        state: { day: 1 },
+        onDayChange(callback) {
+          this.callback = callback
+          return () => {
+            this.callback = null
+          }
+        },
+      },
       menu: {
         updateTopbar() {},
         updateButtonContent() {},
@@ -854,12 +984,9 @@ test('trainee training updates loading even when the building is not classically
       },
     },
     owner,
-    startInterval(callback) {
-      callback()
-    },
     stopInterval() {},
-    updateInterfaceLoading() {
-      calls.push(['loading', this.loading])
+    updateTrainingPreview() {
+      calls.push(['preview', this.loading])
     },
   }
 
@@ -898,18 +1025,19 @@ test('trainee training updates loading even when the building is not classically
     '../../lib/buildings/buildingTraining': {
       canUnitTrainInto: (buildingType, unitType, targetType) => true,
       getMissingResourceNames: () => [],
+      hasBuildingTrainingCapacity: () => true,
       isTraineeTrainingType: () => true,
-    },
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
     },
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), true)
+  assert.deepEqual(calls, [['preview', 0]])
+  building.context.dayNight.state.day = 2
+  building.context.dayNight.callback()
   assert.deepEqual(calls, [
-    ['loading', 0],
-    ['loading', 1],
+    ['preview', 0],
+    ['preview', null],
+    ['preview', null],
   ])
 })
 
@@ -924,7 +1052,7 @@ test('missing resources for trainee training list the exact resources', () => {
     units: [],
     config: {
       units: {
-        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 27 },
       },
     },
     isPlayed: true,
@@ -987,10 +1115,8 @@ test('missing resources for trainee training list the exact resources', () => {
     '../../lib/buildings/buildingTraining': {
       canUnitTrainInto: () => true,
       getMissingResourceNames: () => ['food', 'wood'],
+      hasBuildingTrainingCapacity: () => true,
       isTraineeTrainingType: () => true,
-    },
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => true,
     },
   })
 
@@ -1008,7 +1134,7 @@ test('active military training cannot be cancelled after the unit entered the bu
       food: 15,
       config: {
         units: {
-          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
+          Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
         },
       },
       isPlayed: false,
@@ -1049,15 +1175,207 @@ test('active military training cannot be cancelled after the unit entered the bu
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   assert.equal(new BuildingProduction(building).cancelUnits('Fantassin'), false)
   assert.deepEqual(building.queue, ['Fantassin'])
   assert.equal(building.loading, 12)
   assert.equal(building.owner.food, 15)
+})
+
+test('global unit training cancellation clears active and queued production', () => {
+  const calls = []
+  const owner = {
+    food: 0,
+    wood: 0,
+    population: 1,
+    populationMax: 10,
+    selectedUnits: [],
+    units: [],
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 2 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 2 },
+      },
+    },
+    isPlayed: true,
+  }
+  const pending = {
+    type: 'Villager',
+    dest: null,
+    trainingTargetType: 'Bowman',
+    owner,
+    isDead: false,
+    affectNewDest() {
+      calls.push(['affectNewDest'])
+    },
+  }
+  const building = {
+    type: 'Barracks',
+    i: 0,
+    j: 0,
+    size: 1,
+    isBuilt: true,
+    isDead: false,
+    queue: ['Fantassin', 'Bowman'],
+    loading: 50,
+    trainingStartedDay: 1,
+    trainingCompleteDay: 3,
+    trainingDayChangeUnsubscribe() {
+      calls.push(['unsubscribe'])
+    },
+    technology: null,
+    units: ['Fantassin', 'Bowman'],
+    context: {
+      map: { instantMode: false },
+      menu: {
+        getHeroBuildingMenuTarget: () => building,
+        refreshHeroBuildingMenu: () => calls.push(['refreshHeroBuildingMenu']),
+        updateTopbar: () => calls.push(['topbar']),
+        updateButtonContent: (target, value) => calls.push(['button', target, value]),
+        toggleQueuedActionCancel: (target, value) => calls.push(['toggleCancel', target, value]),
+      },
+    },
+    owner,
+    updateTrainingPreview() {
+      calls.push(['preview', this.loading])
+    },
+  }
+  pending.dest = building
+  owner.units.push(pending)
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => null,
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: (targetOwner, cost = {}) => {
+        for (const [key, amount] of Object.entries(cost)) targetOwner[key] += amount
+      },
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+  })
+
+  assert.equal(new BuildingProduction(building).cancelAllUnitTraining(), true)
+  assert.deepEqual(building.queue, [])
+  assert.equal(building.loading, null)
+  assert.equal(building.trainingStartedDay, null)
+  assert.equal(building.trainingCompleteDay, null)
+  assert.equal(pending.trainingTargetType, null)
+  assert.equal(owner.food, 75)
+  assert.equal(owner.wood, 20)
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'unsubscribe'),
+    [['unsubscribe']]
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'affectNewDest'),
+    [['affectNewDest']]
+  )
+})
+
+test('training building wakes the next waiting trainee when it becomes free', () => {
+  const calls = []
+  const owner = {
+    food: 100,
+    population: 1,
+    populationMax: 10,
+    units: [],
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 2 },
+      },
+    },
+    isPlayed: false,
+  }
+  const waiting = {
+    type: 'Villager',
+    dest: null,
+    trainingTargetType: 'Fantassin',
+    owner,
+    isDead: false,
+    isDestroyed: false,
+    isUnitAtDest: () => true,
+    getAction: action => calls.push(['getAction', action]),
+    sendToEvt: () => calls.push(['sendToEvt']),
+  }
+  const building = {
+    type: 'Barracks',
+    isBuilt: true,
+    isDead: false,
+    queue: [],
+    loading: null,
+    trainingUnit: null,
+    technology: null,
+    units: ['Fantassin'],
+    context: {
+      map: { instantMode: false },
+      menu: {},
+    },
+    owner,
+  }
+  waiting.dest = building
+  owner.units.push(waiting)
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => null,
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: () => {},
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+  })
+
+  new BuildingProduction(building).wakeNextWaitingTrainee()
+
+  assert.deepEqual(calls, [['getAction', 'train']])
 })
 
 test('stable training remounts the same unit type without charging unit cost or population', () => {
@@ -1071,7 +1389,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     units: [],
     config: {
       units: {
-        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingDays: 2 },
       },
     },
     createUnit(options) {
@@ -1119,7 +1437,7 @@ test('stable training remounts the same unit type without charging unit cost or 
     i: 0,
     j: 0,
     size: 1,
-    mountingTime: 20,
+    mountingDays: 1,
     isBuilt: true,
     isDead: false,
     queue: [],
@@ -1129,10 +1447,6 @@ test('stable training remounts the same unit type without charging unit cost or 
     stableHorses: [{ horseColor: 'dark' }],
     context: { map, menu: {} },
     owner,
-    startInterval(callback, delay) {
-      calls.push(['intervalDelay', delay])
-      callback()
-    },
     stopInterval() {
       calls.push(['stopInterval'])
     },
@@ -1172,17 +1486,14 @@ test('stable training remounts the same unit type without charging unit cost or 
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => true,
-    },
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(clubman), true)
   assert.equal(owner.food, 50)
   assert.equal(owner.population, 3)
-  assert.deepEqual(
-    calls.find(call => call[0] === 'intervalDelay'),
-    ['intervalDelay', 20]
+  assert.equal(
+    calls.some(call => call[0] === 'intervalDelay'),
+    false
   )
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
@@ -1216,7 +1527,7 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
     isPlayed: true,
     config: {
       units: {
-        Bowman: { category: 'Bowman', cost: { food: 50 }, trainingTime: 27 },
+        Bowman: { category: 'Bowman', cost: { food: 50 }, trainingDays: 27 },
       },
     },
   }
@@ -1282,13 +1593,11 @@ test('empty stable checks horse stock when the trainee enters, not when ordered'
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => true,
-    },
   })
   const production = new BuildingProduction(building)
 
-  assert.equal(production.requestUnitTraining('Bowman', undefined, bowman), true)
+  bowman.trainingTargetType = 'Bowman'
+  bowman.sendToEvt(building, 'train', { forceRepath: true, allowPassageStop: true })
   assert.equal(bowman.trainingTargetType, 'Bowman')
   assert.deepEqual(calls, [['sendToEvt', 'Stable', 'train', { forceRepath: true, allowPassageStop: true }]])
 
@@ -1308,7 +1617,7 @@ test('chief requirement for trainee training is checked when the unit enters', (
     isPlayed: true,
     config: {
       units: {
-        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 50 }, trainingDays: 27 },
       },
     },
   }
@@ -1378,19 +1687,15 @@ test('chief requirement for trainee training is checked when the unit enters', (
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => true,
-    },
   })
   const production = new BuildingProduction(building)
 
-  assert.equal(production.buyUnit('Fantassin'), true)
+  trainee.trainingTargetType = 'Fantassin'
   assert.equal(trainee.trainingTargetType, 'Fantassin')
-  assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true, allowPassageStop: true }]])
 
   assert.equal(production.startTrainingWithUnit(trainee), false)
   assert.equal(trainee.trainingTargetType, null)
-  assert.deepEqual(calls.slice(1), [['message', 'requiresChief', 'warning']])
+  assert.deepEqual(calls, [['message', 'requiresChief', 'warning']])
 })
 
 test('arrived trainee unit is consumed and trained unit reuses the same population slot', () => {
@@ -1405,7 +1710,7 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
     units: [],
     config: {
       units: {
-        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingTime: 27 },
+        Bowman: { category: 'Archer', cost: { food: 40, wood: 20 }, trainingDays: 27 },
       },
     },
     createUnit(options) {
@@ -1501,10 +1806,6 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: (buildingType, unitType, targetType) =>
-        buildingType === 'Stable' && unitType === 'Bowman' && targetType === 'Bowman',
-    },
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(bowman), true)
@@ -1517,10 +1818,7 @@ test('arrived trainee unit is consumed and trained unit reuses the same populati
   assert.equal(building.trainingUnit, null)
   assert.deepEqual(
     calls.find(call => call[0] === 'created'),
-    [
-      'created',
-      { i: 2, j: 2, type: 'Bowman', name: 'Damon', mountedOnHorse: true, speed: 1.6, experience: {} },
-    ]
+    ['created', { i: 2, j: 2, type: 'Bowman', name: 'Damon', mountedOnHorse: true, speed: 1.6, experience: {} }]
   )
 })
 
@@ -1534,7 +1832,7 @@ test('failed trainee placement clears active military training state', () => {
     units: [],
     config: {
       units: {
-        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
       },
     },
     createUnit() {
@@ -1625,9 +1923,6 @@ test('failed trainee placement clears active military training state', () => {
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)
@@ -1650,7 +1945,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
     units: [],
     config: {
       units: {
-        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingTime: 27 },
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 27 },
       },
     },
     createUnit(options) {
@@ -1744,9 +2039,6 @@ test('arrived villager is consumed and trained unit reuses the same population s
       t: key => key,
     },
     '../../lib/buildings/buildingTraining': buildingTrainingMock,
-    '../../lib/units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-    },
   })
 
   assert.equal(new BuildingProduction(building).startTrainingWithUnit(villager), true)

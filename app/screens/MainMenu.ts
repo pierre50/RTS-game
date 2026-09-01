@@ -81,9 +81,7 @@ export default class MainMenu {
     logoShell.appendChild(logo)
     panel.appendChild(logoShell)
 
-    requestAnimationFrame(() => {
-      logoShell.classList.add('is-loaded')
-    })
+    void this._revealLogoWhenFontsAreReady(logoShell)
 
     const buttons = document.createElement('div')
     buttons.className = 'button-group'
@@ -112,6 +110,19 @@ export default class MainMenu {
     this.el.appendChild(panel)
     this.el.appendChild(heroShell)
     this.el.appendChild(copyright)
+  }
+
+  async _revealLogoWhenFontsAreReady(logoShell: HTMLDivElement): Promise<void> {
+    try {
+      if ('fonts' in document) {
+        await document.fonts.load('400 50px marcellus-sc', 'KAELOR')
+        await document.fonts.ready
+      }
+    } finally {
+      requestAnimationFrame(() => {
+        logoShell.classList.add('is-loaded')
+      })
+    }
   }
 
   _getHomeButtons(): HTMLButtonElement[] {

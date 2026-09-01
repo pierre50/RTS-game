@@ -1,9 +1,6 @@
 import { UNIT_TYPES } from '../../constants'
-import { evaluateCombatMorale } from '../../lib/combat'
-import { findInstancesInSight } from '../../lib/grid/visibility'
-import { instanceIsInInsightRange } from '../../lib/units/insightDetection'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import { getBuildingInteriorSpaceForUnit, settleUnitAtBuildingInteriorSleepCell } from '../BuildingInteriorSpaceSystem'
 import {
   enterShelter,
@@ -30,7 +27,6 @@ import {
   isShelterUnsafe,
   isSleepTime,
   isUsableShelter,
-  markUnitRestAlert,
   REST_MAX_RETRIES,
   REST_ORDER_GRACE_MS,
   shouldRest,
@@ -56,13 +52,6 @@ function retrySleepSpotPath(unit: UnitEntity, state: TimedUnitRestState): boolea
     allowPassageStop: state.location === 'shelter',
   })
   return true
-}
-
-function retryUsableShelterPath(unit: UnitEntity, state: TimedUnitRestState): boolean {
-  if (retryShelterPath(unit, state)) return true
-  if (state.reason !== 'sleep' || !state.shelter || !isUsableShelter(state.shelter, unit.owner)) return false
-  state.retryCount = 0
-  return retryShelterPath(unit, state)
 }
 
 function moveUnitToRestSite(unit: UnitEntity, state: TimedUnitRestState): void {
@@ -160,16 +149,6 @@ function settleMovingRestState(unit: UnitEntity, state: TimedUnitRestState | nul
   return false
 }
 
-function canDetectHeroForRestAlert(unit: UnitEntity, hero: UnitEntity | null): hero is UnitEntity {
-  if (!hero || hero === unit || hero.isDead || hero.isDestroyed) return false
-  if (!unit.owner?.isEnemy?.(hero.owner)) return false
-  return instanceIsInInsightRange(unit, hero, unit.sight ?? 7)
-}
-
-function sameRestAlertGroup(source: UnitEntity, target: UnitEntity): boolean {
-  return Boolean(source.owner && target.owner && source.owner === target.owner)
-}
-
 export function isVillager(unit: UnitEntity): boolean {
   return unit.type === UNIT_TYPES.villager
 }
@@ -197,42 +176,6 @@ export function shouldRouteUnitToInteriorExit(context: GameContextLike, unit: Un
   )
 }
 
-function isActiveThreat(attacker: RuntimeEntity | null | undefined): attacker is RuntimeEntity {
-  return Boolean(attacker && !attacker.isDead && !attacker.isDestroyed)
-}
-
-function fleeFromDanger(unit: UnitEntity, attacker: RuntimeEntity): void {
-  markUnitRestAlert(unit, attacker)
-  const fleeingUnit = unit as UnitEntity & { runaway?: (target: RuntimeEntity) => void }
-  fleeingUnit.runaway?.(attacker)
-}
-
-export function reactUnitToDanger(unit: UnitEntity, attacker: RuntimeEntity): void {
-  markUnitRestAlert(unit, attacker)
-  if (evaluateCombatMorale(unit, attacker) === 'flee') {
-    fleeFromDanger(unit, attacker)
-    return
-  }
-  unit.detect?.(attacker)
-}
-
-export function handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
-  if (!isActiveThreat(attacker)) return false
-  const shouldVillagerReact = isVillager(unit) && canUseUnitRest(unit)
-  if (unit.shelterState?.reason === 'sleep') {
-    markUnitRestAlert(unit, attacker)
-    wakeUnit(unit, {
-      force: true,
-      mode: 'order',
-      onComplete: shouldVillagerReact ? () => reactUnitToDanger(unit, attacker) : undefined,
-    })
-    return shouldVillagerReact
-  }
-  if (!shouldVillagerReact) return false
-  reactUnitToDanger(unit, attacker)
-  return true
-}
-
 export function evacuateUnitsFromShelter(building: BuildingEntity, options: { force?: boolean } = {}): void {
   for (const unit of building.owner?.units ?? []) {
     const state = unit.shelterState
@@ -245,40 +188,6 @@ export function evacuateUnitsFromShelter(building: BuildingEntity, options: { fo
 export function evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void {
   if (!isShelterUnsafe(building)) return
   evacuateUnitsFromShelter(building, { force: true })
-}
-
-function getHeroAlertTarget(context: GameContextLike): UnitEntity | null {
-  const controlsHero = context.controls?.heroUnit
-  if (controlsHero && !controlsHero.isDead && !controlsHero.isDestroyed) return controlsHero
-
-  for (const player of context.players ?? []) {
-    for (const unit of player.units ?? []) {
-      if (!unit.isDead && !unit.isDestroyed && (unit.type === UNIT_TYPES.hero || unit.controlMode === 'hero')) {
-        return unit
-      }
-    }
-  }
-  return null
-}
-
-export function findHeroRestAlertTarget(context: GameContextLike, unit: UnitEntity): RuntimeEntity | null {
-  const hero = getHeroAlertTarget(context)
-  return canDetectHeroForRestAlert(unit, hero) ? hero : null
-}
-
-export function findPropagatedRestAlertSleepers(source: UnitEntity): UnitEntity[] {
-  return findInstancesInSight<UnitEntity, UnitEntity>(
-    source,
-    candidate =>
-      Boolean(
-        candidate !== source &&
-          candidate.family === 'unit' &&
-          candidate.shelterState?.reason === 'sleep' &&
-          sameRestAlertGroup(source, candidate) &&
-          canUseUnitRest(candidate)
-      ),
-    { range: source.sight ?? 7 }
-  )
 }
 
 export function updateMovingRestUnit(unit: UnitEntity): void {
@@ -330,7 +239,7 @@ export function updateMovingRestUnit(unit: UnitEntity): void {
     enterShelter(unit, state.shelter)
   }
   else if (failedPath) {
-    if (retryUsableShelterPath(unit, state)) return
+    if (retryShelterPath(unit, state)) return
     if (isVillager(unit) && !shouldVillagerBeAsleep(unit)) waitOutsideForSleep(unit)
     else sleepOutside(unit, state.reason)
   }

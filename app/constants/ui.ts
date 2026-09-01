@@ -1,11 +1,9 @@
 export const MENU_INFO_IDS = {
-  loading: 'info-loading',
   hitPoints: 'hit-points',
   population: 'population',
   populationText: 'population-text',
   quantity: 'quantity',
   quantityText: 'quantity-text',
-  loadingText: 'loading-text',
   name: 'name',
   type: 'type',
   civ: 'civ',

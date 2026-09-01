@@ -1,25 +1,18 @@
-import { PLAYER_TYPES, POPULATION_MAX } from '../../constants'
-import {
-  canAfford,
-  payCost,
-  refundCost,
-} from '../../lib'
-import { isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
+import { ACTION_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
+import { canAfford, payCost, refundCost } from '../../lib'
+import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { t } from '../../lib/lang'
 import {
-  cancelPendingTraining,
-  cancelTrainingForUnit,
   clearActiveTraining,
   failTraineeEntry,
-  findTrainingUnit,
-  getProductionTime,
+  getTrainingDays,
   getTrainingBuilding,
   isBlockedByMissingChief,
   removeTraineeForTraining as removeTrainingUnitFromMap,
-  requestUnitTraining,
   startTrainingWithUnit,
 } from './BuildingTraineeTraining'
 import { ejectTrainingVillager, placeProducedUnit } from './BuildingProductionPlacement'
+import { cancelAllUnitTraining as cancelAllBuildingUnitTraining } from './BuildingUnitTrainingCancellation'
 import {
   buyBuildingTechnology,
   cancelBuildingTechnology,
@@ -27,13 +20,17 @@ import {
   upgradeBuilding,
 } from './BuildingTechnologyProduction'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
-import type { BuildingControllerHost } from './BuildingTypes'
+import type { BuildingControllerHost, QueuedTrainingTrainee } from './BuildingTypes'
 
 export class BuildingProduction {
   building: BuildingControllerHost
+  activeTrainingExtra: UnitCreationExtra | undefined
+  activeTrainingTrainee: UnitEntity | null
 
   constructor(building: BuildingControllerHost) {
     this.building = building
+    this.activeTrainingExtra = undefined
+    this.activeTrainingTrainee = null
   }
 
   placeUnit(type: string, extra?: UnitCreationExtra, options: { consumePopulationSlot?: boolean } = {}): boolean {
@@ -48,20 +45,8 @@ export class BuildingProduction {
     removeTrainingUnitFromMap(trainee)
   }
 
-  findTrainingUnit(type: string): UnitEntity | null {
-    return findTrainingUnit(this.building, type)
-  }
-
   clearActiveTraining(trainee?: UnitEntity | null): void {
     clearActiveTraining(this.building, trainee)
-  }
-
-  cancelTrainingForUnit(trainee: UnitEntity): boolean {
-    return cancelTrainingForUnit(this.building, trainee)
-  }
-
-  cancelPendingTraining(type?: string): boolean {
-    return cancelPendingTraining(this.building, type)
   }
 
   ejectTrainee(): void {
@@ -72,21 +57,271 @@ export class BuildingProduction {
     const building = getTrainingBuilding(this.building)
     if (building.loading === null || building.queue[0] !== type) return false
     const unit = building.owner.config.units[type]
-    building.stopInterval()
+    building.trainingDayChangeUnsubscribe?.()
+    building.trainingDayChangeUnsubscribe = null
     building.loading = null
+    building.trainingStartedDay = null
+    building.trainingCompleteDay = null
     building.queue.shift()
     refundCost(building.owner, unit.cost)
+    this.activeTrainingExtra = undefined
+    this.activeTrainingTrainee = null
     this.ejectTrainee()
     this.clearActiveTraining()
     if (building.owner.isPlayed) {
       const { menu } = building.context
       menu.updateTopbar()
       menu.updateButtonContent(type, '')
-      menu.toggleQueuedActionCancel(type, false)
-      building.updateInterfaceLoading?.()
+      building.updateTrainingPreview?.()
       refreshOpenBuildingMenu(building)
     }
     return true
+  }
+
+  cancelAllUnitTraining(): boolean {
+    return cancelAllBuildingUnitTraining(getTrainingBuilding(this.building), this)
+  }
+
+  currentTrainingDay(): number {
+    return Math.max(1, Math.floor(this.building.context.dayNight?.state?.day ?? 1))
+  }
+
+  updateTrainingProgress(): void {
+    const building = getTrainingBuilding(this.building)
+    if (building.trainingQueue?.length) {
+      for (const entry of building.trainingQueue) this.updateTrainingEntryProgress(entry)
+      this.syncPrimaryTrainingState()
+      if (building.owner.isPlayed) {
+        building.updateTrainingPreview?.()
+        refreshOpenBuildingMenu(building)
+      }
+      return
+    }
+    if (building.loading === null || building.trainingStartedDay == null || building.trainingCompleteDay == null) return
+    const totalDays = Math.max(1, building.trainingCompleteDay - building.trainingStartedDay)
+    const elapsedDays = Math.max(0, this.currentTrainingDay() - building.trainingStartedDay)
+    building.loading = Math.min(100, Math.floor((elapsedDays / totalDays) * 100))
+    if (building.owner.isPlayed) {
+      building.updateTrainingPreview?.()
+      refreshOpenBuildingMenu(building)
+    }
+  }
+
+  updateTrainingEntryProgress(entry: QueuedTrainingTrainee): void {
+    const totalDays = Math.max(1, (entry.trainingCompleteDay ?? 1) - (entry.trainingStartedDay ?? 0))
+    const elapsedDays = Math.max(0, this.currentTrainingDay() - (entry.trainingStartedDay ?? this.currentTrainingDay()))
+    entry.loading = Math.min(100, Math.floor((elapsedDays / totalDays) * 100))
+  }
+
+  syncPrimaryTrainingState(): void {
+    const building = getTrainingBuilding(this.building)
+    const first = building.trainingQueue?.[0]
+    if (!first) {
+      if (this.activeTrainingTrainee) return
+      building.trainingUnit = null
+      building.trainingType = null
+      building.isUsedBy = null
+      if (!building.queue.length) {
+        building.loading = null
+        building.trainingStartedDay = null
+        building.trainingCompleteDay = null
+      }
+      return
+    }
+    building.trainingUnit = first.trainee
+    building.trainingType = first.type
+    building.loading = first.loading ?? 0
+    building.trainingStartedDay = first.trainingStartedDay ?? null
+    building.trainingCompleteDay = first.trainingCompleteDay ?? null
+  }
+
+  wakeNextWaitingTrainee(): void {
+    const building = getTrainingBuilding(this.building)
+    if (building.loading !== null || building.queue.length || building.technology || building.trainingUnit) return
+    const trainee = building.owner.units?.find(
+      unit =>
+        unit.dest === building &&
+        Boolean(unit.trainingTargetType) &&
+        !unit.isDead &&
+        !unit.isDestroyed &&
+        unit.controlMode !== 'hero'
+    )
+    if (!trainee) return
+    trainee.trainingRetryTaskId = null
+    if (trainee.isUnitAtDest?.(ACTION_TYPES.train, building)) {
+      trainee.getAction?.(ACTION_TYPES.train)
+      return
+    }
+    trainee.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
+  }
+
+  finishUnitTraining(type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null): boolean {
+    const building = getTrainingBuilding(this.building)
+    const {
+      context: { menu, map },
+    } = building
+
+    const trainingEntry = trainee ? building.trainingQueue?.find(entry => entry.trainee === trainee) : null
+    const completeDay = trainingEntry?.trainingCompleteDay ?? building.trainingCompleteDay
+    if (!trainee && building.queue[0] !== type) return false
+    if (!map.instantMode && this.currentTrainingDay() < (completeDay ?? Number.POSITIVE_INFINITY)) {
+      return false
+    }
+    if (!trainee && building.owner.population >= Math.min(POPULATION_MAX, building.owner.populationMax)) {
+      building.loading = 100
+      if (building.owner.isPlayed) {
+        menu.showMessage(t('needHouses'), 'warning')
+        building.updateTrainingPreview?.()
+        refreshOpenBuildingMenu(building)
+      }
+      return false
+    }
+    if (!this.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
+      if (trainee) {
+        this.finishTrainingEntryPlacementFailed(trainee)
+        this.updatePlayedQueueInterface(type)
+        return false
+      }
+      building.trainingDayChangeUnsubscribe?.()
+      building.trainingDayChangeUnsubscribe = null
+      building.loading = null
+      building.trainingStartedDay = null
+      building.trainingCompleteDay = null
+      if (building.queue[0] === type) building.queue.shift()
+      this.clearActiveTraining()
+      this.activeTrainingExtra = undefined
+      this.activeTrainingTrainee = null
+      this.updatePlayedQueueInterface(type)
+      this.wakeNextWaitingTrainee()
+      return false
+    }
+
+    if (trainee) {
+      this.finishTrainingEntry(trainee)
+    } else {
+      building.trainingDayChangeUnsubscribe?.()
+      building.trainingDayChangeUnsubscribe = null
+      building.loading = null
+      building.trainingStartedDay = null
+      building.trainingCompleteDay = null
+      building.queue.shift()
+      this.clearActiveTraining()
+    }
+    this.activeTrainingExtra = undefined
+    this.activeTrainingTrainee = null
+    this.updatePlayedQueueInterface(type)
+    this.wakeNextWaitingTrainee()
+    return true
+  }
+
+  finishTrainingEntry(trainee: UnitEntity): void {
+    const building = getTrainingBuilding(this.building)
+    const index = building.trainingQueue?.findIndex(entry => entry.trainee === trainee) ?? -1
+    if (index >= 0) {
+      const [entry] = building.trainingQueue?.splice(index, 1) ?? []
+      entry?.trainingDayChangeUnsubscribe?.()
+      const queueIndex = building.queue.findIndex(type => type === entry?.type)
+      if (queueIndex >= 0) building.queue.splice(queueIndex, 1)
+    }
+    this.syncPrimaryTrainingState()
+  }
+
+  finishTrainingEntryPlacementFailed(trainee: UnitEntity): void {
+    const building = getTrainingBuilding(this.building)
+    const index = building.trainingQueue?.findIndex(item => item.trainee === trainee) ?? -1
+    if (index >= 0) {
+      const [entry] = building.trainingQueue?.splice(index, 1) ?? []
+      entry?.trainingDayChangeUnsubscribe?.()
+      const queueIndex = building.queue.findIndex(type => type === entry?.type)
+      if (queueIndex >= 0) building.queue.splice(queueIndex, 1)
+      this.syncPrimaryTrainingState()
+    }
+  }
+
+  updatePlayedQueueInterface(type: string): void {
+    const building = this.building
+    if (!building.owner.isPlayed) return
+    const still = building.queue.filter((q: string) => q === type).length
+    building.context.menu.updateButtonContent(type, still || '')
+    building.updateTrainingPreview?.()
+    refreshOpenBuildingMenu(building)
+  }
+
+  startUnitTraining(
+    type: string,
+    unit: { trainingDays?: number },
+    force: boolean,
+    extra?: UnitCreationExtra,
+    trainee?: UnitEntity | null
+  ): void {
+    const building = getTrainingBuilding(this.building)
+    if (trainee) {
+      this.startConcurrentTraineeTraining(type, unit, extra, trainee)
+      return
+    }
+    this.activeTrainingExtra = extra
+    this.activeTrainingTrainee = trainee ?? null
+
+    if (!force || building.trainingStartedDay == null || building.trainingCompleteDay == null) {
+      const startDay = this.currentTrainingDay()
+      const durationDays = Math.max(0, Math.ceil(getTrainingDays(building, unit, trainee, type)))
+      building.trainingStartedDay = startDay
+      building.trainingCompleteDay = startDay + durationDays
+    }
+
+    building.loading = 0
+    this.updateTrainingProgress()
+    building.trainingDayChangeUnsubscribe?.()
+    building.trainingDayChangeUnsubscribe =
+      building.context.dayNight?.onDayChange?.(() => {
+        this.updateTrainingProgress()
+        this.finishUnitTraining(type, this.activeTrainingExtra, this.activeTrainingTrainee)
+      }) ?? null
+
+    this.finishUnitTraining(type, extra, trainee)
+  }
+
+  startConcurrentTraineeTraining(
+    type: string,
+    unit: { trainingDays?: number },
+    extra: UnitCreationExtra | undefined,
+    trainee: UnitEntity
+  ): void {
+    const building = getTrainingBuilding(this.building)
+    const startDay = this.currentTrainingDay()
+    const durationDays = Math.max(0, Math.ceil(getTrainingDays(building, unit, trainee, type)))
+    const entry: QueuedTrainingTrainee = {
+      type,
+      trainee,
+      extra,
+      loading: 0,
+      trainingStartedDay: startDay,
+      trainingCompleteDay: startDay + durationDays,
+    }
+    building.trainingQueue = building.trainingQueue ?? []
+    building.trainingQueue.push(entry)
+    building.queue.push(type)
+    this.updateTrainingEntryProgress(entry)
+    this.syncPrimaryTrainingState()
+    entry.trainingDayChangeUnsubscribe =
+      building.context.dayNight?.onDayChange?.(() => {
+        this.updateTrainingEntryProgress(entry)
+        this.syncPrimaryTrainingState()
+        this.finishUnitTraining(type, extra, trainee)
+        if (building.owner.isPlayed) {
+          building.updateTrainingPreview?.()
+          refreshOpenBuildingMenu(building)
+        }
+      }) ?? null
+    if (building.owner.isPlayed) {
+      building.context.menu.updateButtonContent(
+        type,
+        building.queue.filter((queuedType: string) => queuedType === type).length
+      )
+      building.updateTrainingPreview?.()
+      refreshOpenBuildingMenu(building)
+    }
+    this.finishUnitTraining(type, extra, trainee)
   }
 
   failTraineeEntry(trainee: UnitEntity, message?: string, updateTopbar = false): false {
@@ -99,11 +334,6 @@ export class BuildingProduction {
     )
   }
 
-  requestUnitTraining(type: string, extra?: UnitCreationExtra, traineeOverride?: UnitEntity | null): boolean {
-    void extra
-    return requestUnitTraining(this.building, type, traineeOverride)
-  }
-
   buyUnit(
     type: string,
     alreadyPaid = false,
@@ -113,25 +343,19 @@ export class BuildingProduction {
   ): boolean | undefined {
     const building = this.building
     const {
-      context: { menu, map },
+      context: { menu },
     } = building
     let success = false
     const unit = building.owner.config.units[type]
     const traineeTraining = isTraineeTrainingType(building, type)
     if (traineeTraining && !alreadyPaid && !force) {
-      return this.requestUnitTraining(type, extra)
+      return false
     }
     if (isBlockedByMissingChief(building, type)) {
       if (building.owner.isPlayed) menu.showMessage(t('requiresChief'), 'warning')
       return false
     }
-    const updatePlayedQueueInterface = () => {
-      if (!building.owner.isPlayed) return
-      const still = building.queue.filter((q: string) => q === type).length
-      menu.updateButtonContent(type, still || '')
-      if (still === 0) menu.toggleQueuedActionCancel(type, false)
-      building.updateInterfaceLoading?.()
-    }
+    if (!alreadyPaid && !hasBuildingTrainingCapacity(building, { excludeUnit: trainee ?? null })) return false
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (building.owner.type === PLAYER_TYPES.ai) {
@@ -149,59 +373,14 @@ export class BuildingProduction {
           building.owner.isPlayed && menu.updateTopbar()
           success = true
         }
-      } else if (traineeTraining && trainee && !building.queue.length) {
-        building.queue.push(type)
+      } else if (traineeTraining && trainee) {
+        this.startUnitTraining(type, unit, force, extra, trainee)
+        return true
+      } else if (alreadyPaid) {
         success = true
       }
       if ((building.loading === null && building.queue[0]) || force) {
-        let hasShowedMessage = false
-        building.loading = force ? building.loading : 0
-        if (building.owner.isPlayed) {
-          building.updateInterfaceLoading?.()
-        }
-        building.startInterval(
-          () => {
-            if (building.queue[0] !== type) {
-              building.stopInterval()
-              building.loading = null
-              if (building.queue.length) {
-                building.buyUnit(building.queue[0], true)
-              }
-              hasShowedMessage = false
-              updatePlayedQueueInterface()
-            } else if ((building.loading ?? 0) >= 100 || map.instantMode) {
-              if (!this.placeUnit(type, extra, { consumePopulationSlot: !trainee })) {
-                building.stopInterval()
-                building.loading = null
-                if (building.queue[0] === type) building.queue.shift()
-                if (trainee) this.clearActiveTraining(trainee)
-                updatePlayedQueueInterface()
-                return
-              }
-              building.stopInterval()
-              building.loading = null
-              building.queue.shift()
-              if (trainee) this.clearActiveTraining(trainee)
-              if (building.queue.length) {
-                building.buyUnit(building.queue[0], true)
-              }
-              hasShowedMessage = false
-              updatePlayedQueueInterface()
-            } else if ((building.loading ?? 0) < 100) {
-              if (trainee || building.owner.population < Math.min(POPULATION_MAX, building.owner.populationMax)) {
-                building.loading = (building.loading ?? 0) + 1
-              } else if (building.owner.isPlayed && !hasShowedMessage) {
-                menu.showMessage(t('needHouses'), 'warning')
-                hasShowedMessage = true
-              }
-              if (building.owner.isPlayed) {
-                building.updateInterfaceLoading?.()
-              }
-            }
-          },
-          getProductionTime(building, unit, trainee, type),
-          'building.production'
-        )
+        this.startUnitTraining(type, unit, force, extra, trainee)
       }
       return success
     }
@@ -212,11 +391,7 @@ export class BuildingProduction {
     const unit = building.owner.config.units[type]
     if (!unit) return false
     if (isTraineeTrainingType(building, type)) {
-      if (building.loading !== null && building.queue[0] === type) {
-        return false
-      }
-      if (building.loading !== null || building.queue.length) return false
-      return this.cancelPendingTraining(type)
+      return false
     }
 
     const cancelled = building.queue.filter((queuedType: string) => queuedType === type).length
@@ -231,7 +406,6 @@ export class BuildingProduction {
       const { menu } = building.context
       menu.updateTopbar()
       menu.updateButtonContent(type, '')
-      menu.toggleQueuedActionCancel(type, false)
     }
     return true
   }

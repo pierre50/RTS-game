@@ -111,7 +111,7 @@ export function getUnitTooltip(
     description: t(`${type}Description`),
     meta: [
       t('tooltipCost', { cost: formatActionCost(config.cost) }),
-      t('tooltipTrainTime', { time: config.trainingTime ?? 0 }),
+      t('tooltipTrainTime', { time: config.trainingDays ?? 1 }),
       chiefBlocked ? t('requiresChief') : null,
     ],
   }

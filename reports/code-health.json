@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-31T23:00:45.849Z",
+  "generatedAt": "2026-09-01T14:44:55.292Z",
   "score": 100,
   "grade": "A",
   "qualityGateScore": 80,
   "targetScore": 90,
   "qualityGate": "pass",
   "totals": {
-    "files": 495,
-    "loc": 83426,
-    "codeLines": 74418,
-    "branches": 11474,
-    "functions": 9387
+    "files": 498,
+    "loc": 84256,
+    "codeLines": 75183,
+    "branches": 11613,
+    "functions": 9477
   },
   "checks": [
     {
@@ -144,29 +144,29 @@
     },
     {
       "file": "app/lib/i18n/en.ts",
-      "loc": 434,
-      "codeLines": 432,
-      "branchCount": 9,
+      "loc": 443,
+      "codeLines": 441,
+      "branchCount": 8,
+      "functionCount": 0,
+      "importCount": 1,
+      "exportCount": 1,
+      "maxBlockLines": 0,
+      "churn90d": 10,
+      "category": "data/config",
+      "risk": 43.1
+    },
+    {
+      "file": "app/lib/i18n/fr.ts",
+      "loc": 443,
+      "codeLines": 441,
+      "branchCount": 0,
       "functionCount": 0,
       "importCount": 1,
       "exportCount": 1,
       "maxBlockLines": 0,
       "churn90d": 9,
       "category": "data/config",
-      "risk": 42.4
-    },
-    {
-      "file": "app/lib/i18n/fr.ts",
-      "loc": 434,
-      "codeLines": 432,
-      "branchCount": 0,
-      "functionCount": 0,
-      "importCount": 1,
-      "exportCount": 1,
-      "maxBlockLines": 0,
-      "churn90d": 8,
-      "category": "data/config",
-      "risk": 26.9
+      "risk": 29.1
     },
     {
       "file": "app/lib/i18n/entityTooltips.ts",
@@ -289,37 +289,37 @@
   "folders": {
     "topByFileCount": [
       {
-        "folder": "app/classes/unit",
-        "files": 24,
-        "loc": 4688,
-        "branches": 752,
-        "depth": 3
-      },
-      {
         "folder": "app/ui",
         "files": 24,
-        "loc": 4637,
-        "branches": 469,
+        "loc": 4805,
+        "branches": 504,
         "depth": 2
+      },
+      {
+        "folder": "app/classes/unit",
+        "files": 24,
+        "loc": 4692,
+        "branches": 751,
+        "depth": 3
       },
       {
         "folder": "app/services",
         "files": 24,
-        "loc": 4433,
-        "branches": 741,
+        "loc": 4444,
+        "branches": 744,
         "depth": 2
       },
       {
         "folder": "app/lib/units",
         "files": 24,
-        "loc": 2400,
-        "branches": 436,
+        "loc": 2463,
+        "branches": 457,
         "depth": 3
       },
       {
         "folder": "app/types",
         "files": 23,
-        "loc": 2029,
+        "loc": 2051,
         "branches": 3,
         "depth": 2
       },
@@ -333,7 +333,7 @@
       {
         "folder": "app/lib",
         "files": 18,
-        "loc": 1997,
+        "loc": 2000,
         "branches": 275,
         "depth": 2
       },
@@ -347,22 +347,22 @@
       {
         "folder": "app/classes",
         "files": 16,
-        "loc": 4478,
-        "branches": 513,
+        "loc": 4492,
+        "branches": 514,
         "depth": 2
       },
       {
         "folder": "app/lib/hero",
         "files": 16,
-        "loc": 2203,
-        "branches": 346,
+        "loc": 2194,
+        "branches": 343,
         "depth": 3
       },
       {
         "folder": "app/controllers",
         "files": 15,
-        "loc": 3408,
-        "branches": 588,
+        "loc": 3417,
+        "branches": 590,
         "depth": 2
       },
       {
@@ -441,7 +441,7 @@
     "naming": [
       {
         "style": "PascalCase",
-        "count": 256
+        "count": 259
       },
       {
         "style": "camelCase",
@@ -502,30 +502,43 @@
       "risk": 189.5
     },
     {
-      "file": "app/services/rest/UnitRestStateTransitions.ts",
-      "loc": 345,
-      "codeLines": 310,
-      "branchCount": 112,
-      "functionCount": 40,
-      "importCount": 13,
-      "exportCount": 11,
-      "maxBlockLines": 54,
-      "churn90d": 4,
-      "category": "runtime",
-      "risk": 188.6
-    },
-    {
       "file": "app/lib/combat/combatActionConditions.ts",
-      "loc": 235,
-      "codeLines": 219,
-      "branchCount": 112,
+      "loc": 236,
+      "codeLines": 220,
+      "branchCount": 114,
       "functionCount": 31,
-      "importCount": 10,
+      "importCount": 9,
       "exportCount": 3,
       "maxBlockLines": 24,
       "churn90d": 4,
       "category": "library",
-      "risk": 185.9
+      "risk": 188.9
+    },
+    {
+      "file": "app/services/BuildingInteriorSpaceSystem.ts",
+      "loc": 752,
+      "codeLines": 702,
+      "branchCount": 98,
+      "functionCount": 74,
+      "importCount": 21,
+      "exportCount": 16,
+      "maxBlockLines": 65,
+      "churn90d": 6,
+      "category": "runtime",
+      "risk": 185
+    },
+    {
+      "file": "app/classes/building/BuildingProduction.ts",
+      "loc": 426,
+      "codeLines": 391,
+      "branchCount": 77,
+      "functionCount": 61,
+      "importCount": 10,
+      "exportCount": 1,
+      "maxBlockLines": 58,
+      "churn90d": 29,
+      "category": "runtime",
+      "risk": 184.2
     },
     {
       "file": "app/services/rest/UnitRestRules.ts",
@@ -580,19 +593,6 @@
       "risk": 178.3
     },
     {
-      "file": "app/services/BuildingInteriorSpaceSystem.ts",
-      "loc": 740,
-      "codeLines": 690,
-      "branchCount": 95,
-      "functionCount": 72,
-      "importCount": 21,
-      "exportCount": 16,
-      "maxBlockLines": 65,
-      "churn90d": 4,
-      "category": "runtime",
-      "risk": 174.2
-    },
-    {
       "file": "app/screens/Game.ts",
       "loc": 568,
       "codeLines": 501,
@@ -601,9 +601,22 @@
       "importCount": 32,
       "exportCount": 1,
       "maxBlockLines": 33,
-      "churn90d": 48,
+      "churn90d": 49,
       "category": "ui",
-      "risk": 174.1
+      "risk": 176.1
+    },
+    {
+      "file": "app/services/SpacePortalSystem.ts",
+      "loc": 322,
+      "codeLines": 287,
+      "branchCount": 107,
+      "functionCount": 28,
+      "importCount": 9,
+      "exportCount": 4,
+      "maxBlockLines": 37,
+      "churn90d": 2,
+      "category": "runtime",
+      "risk": 174.6
     },
     {
       "file": "app/controllers/HeroCompanionHorseController.ts",
@@ -617,19 +630,6 @@
       "churn90d": 6,
       "category": "runtime",
       "risk": 172.8
-    },
-    {
-      "file": "app/services/SpacePortalSystem.ts",
-      "loc": 322,
-      "codeLines": 287,
-      "branchCount": 107,
-      "functionCount": 28,
-      "importCount": 9,
-      "exportCount": 4,
-      "maxBlockLines": 37,
-      "churn90d": 1,
-      "category": "runtime",
-      "risk": 171.6
     },
     {
       "file": "app/classes/Controls.ts",
@@ -647,6 +647,19 @@
   ],
   "largest": [
     {
+      "file": "app/services/BuildingInteriorSpaceSystem.ts",
+      "loc": 752,
+      "codeLines": 702,
+      "branchCount": 98,
+      "functionCount": 74,
+      "importCount": 21,
+      "exportCount": 16,
+      "maxBlockLines": 65,
+      "churn90d": 6,
+      "category": "runtime",
+      "risk": 185
+    },
+    {
       "file": "app/lib/lpc/equipmentData.ts",
       "loc": 748,
       "codeLines": 711,
@@ -658,19 +671,6 @@
       "churn90d": 2,
       "category": "data/config",
       "risk": 27.7
-    },
-    {
-      "file": "app/services/BuildingInteriorSpaceSystem.ts",
-      "loc": 740,
-      "codeLines": 690,
-      "branchCount": 95,
-      "functionCount": 72,
-      "importCount": 21,
-      "exportCount": 16,
-      "maxBlockLines": 65,
-      "churn90d": 4,
-      "category": "runtime",
-      "risk": 174.2
     },
     {
       "file": "app/classes/Controls.ts",
@@ -694,9 +694,9 @@
       "importCount": 12,
       "exportCount": 1,
       "maxBlockLines": 41,
-      "churn90d": 0,
+      "churn90d": 1,
       "category": "runtime",
-      "risk": 95.9
+      "risk": 97.9
     },
     {
       "file": "app/ui/PlayerSetupPanel.ts",
@@ -720,9 +720,9 @@
       "importCount": 32,
       "exportCount": 1,
       "maxBlockLines": 33,
-      "churn90d": 48,
+      "churn90d": 49,
       "category": "ui",
-      "risk": 174.1
+      "risk": 176.1
     },
     {
       "file": "app/classes/map/Map.ts",
@@ -772,9 +772,9 @@
       "importCount": 7,
       "exportCount": 1,
       "maxBlockLines": 74,
-      "churn90d": 4,
+      "churn90d": 5,
       "category": "ui",
-      "risk": 129.5
+      "risk": 131.5
     },
     {
       "file": "app/classes/map/fog/MapFog.ts",
@@ -791,8 +791,8 @@
     },
     {
       "file": "app/services/PerformanceMonitor.ts",
-      "loc": 532,
-      "codeLines": 496,
+      "loc": 531,
+      "codeLines": 495,
       "branchCount": 52,
       "functionCount": 56,
       "importCount": 0,
@@ -806,29 +806,16 @@
   "complex": [
     {
       "file": "app/lib/combat/combatActionConditions.ts",
-      "loc": 235,
-      "codeLines": 219,
-      "branchCount": 112,
+      "loc": 236,
+      "codeLines": 220,
+      "branchCount": 114,
       "functionCount": 31,
-      "importCount": 10,
+      "importCount": 9,
       "exportCount": 3,
       "maxBlockLines": 24,
       "churn90d": 4,
       "category": "library",
-      "risk": 185.9
-    },
-    {
-      "file": "app/services/rest/UnitRestStateTransitions.ts",
-      "loc": 345,
-      "codeLines": 310,
-      "branchCount": 112,
-      "functionCount": 40,
-      "importCount": 13,
-      "exportCount": 11,
-      "maxBlockLines": 54,
-      "churn90d": 4,
-      "category": "runtime",
-      "risk": 188.6
+      "risk": 188.9
     },
     {
       "file": "app/services/SpacePortalSystem.ts",
@@ -839,9 +826,9 @@
       "importCount": 9,
       "exportCount": 4,
       "maxBlockLines": 37,
-      "churn90d": 1,
+      "churn90d": 2,
       "category": "runtime",
-      "risk": 171.6
+      "risk": 174.6
     },
     {
       "file": "app/services/rest/UnitRestRules.ts",
@@ -855,6 +842,19 @@
       "churn90d": 5,
       "category": "runtime",
       "risk": 183.7
+    },
+    {
+      "file": "app/services/BuildingInteriorSpaceSystem.ts",
+      "loc": 752,
+      "codeLines": 702,
+      "branchCount": 98,
+      "functionCount": 74,
+      "importCount": 21,
+      "exportCount": 16,
+      "maxBlockLines": 65,
+      "churn90d": 6,
+      "category": "runtime",
+      "risk": 185
     },
     {
       "file": "app/classes/map/terrain/MapTerrainGeneration.ts",
@@ -883,30 +883,17 @@
       "risk": 172.8
     },
     {
-      "file": "app/services/BuildingInteriorSpaceSystem.ts",
-      "loc": 740,
-      "codeLines": 690,
-      "branchCount": 95,
-      "functionCount": 72,
-      "importCount": 21,
-      "exportCount": 16,
-      "maxBlockLines": 65,
-      "churn90d": 4,
-      "category": "runtime",
-      "risk": 174.2
-    },
-    {
       "file": "app/classes/unit/movement/UnitMovementRouting.ts",
-      "loc": 382,
-      "codeLines": 354,
-      "branchCount": 93,
-      "functionCount": 36,
+      "loc": 361,
+      "codeLines": 337,
+      "branchCount": 88,
+      "functionCount": 33,
       "importCount": 11,
       "exportCount": 1,
       "maxBlockLines": 31,
-      "churn90d": 5,
+      "churn90d": 6,
       "category": "runtime",
-      "risk": 164.1
+      "risk": 159
     },
     {
       "file": "app/classes/map/terrain/MapTerrainReliefAppearance.ts",
@@ -943,9 +930,9 @@
       "importCount": 15,
       "exportCount": 2,
       "maxBlockLines": 60,
-      "churn90d": 2,
+      "churn90d": 3,
       "category": "ui",
-      "risk": 142.2
+      "risk": 145.2
     },
     {
       "file": "app/classes/players/PlayerTechnologies.ts",
@@ -959,6 +946,19 @@
       "churn90d": 1,
       "category": "runtime",
       "risk": 136.5
+    },
+    {
+      "file": "app/classes/unit/movement/UnitHeroDirectMovementCollision.ts",
+      "loc": 314,
+      "codeLines": 274,
+      "branchCount": 83,
+      "functionCount": 38,
+      "importCount": 6,
+      "exportCount": 8,
+      "maxBlockLines": 30,
+      "churn90d": 4,
+      "category": "runtime",
+      "risk": 144.4
     }
   ],
   "hotspots": [
@@ -989,6 +989,19 @@
       "risk": 26.1
     },
     {
+      "file": "app/screens/Game.ts",
+      "loc": 568,
+      "codeLines": 501,
+      "branchCount": 33,
+      "functionCount": 86,
+      "importCount": 32,
+      "exportCount": 1,
+      "maxBlockLines": 33,
+      "churn90d": 49,
+      "category": "ui",
+      "risk": 176.1
+    },
+    {
       "file": "app/lib/i18n/translations.ts",
       "loc": 8,
       "codeLines": 6,
@@ -1013,19 +1026,6 @@
       "churn90d": 48,
       "category": "runtime",
       "risk": 179.4
-    },
-    {
-      "file": "app/screens/Game.ts",
-      "loc": 568,
-      "codeLines": 501,
-      "branchCount": 33,
-      "functionCount": 86,
-      "importCount": 32,
-      "exportCount": 1,
-      "maxBlockLines": 33,
-      "churn90d": 48,
-      "category": "ui",
-      "risk": 174.1
     },
     {
       "file": "app/classes/map/MapGeneration.ts",
@@ -1055,8 +1055,8 @@
     },
     {
       "file": "app/serialization/SaveSerializer.ts",
-      "loc": 443,
-      "codeLines": 425,
+      "loc": 447,
+      "codeLines": 429,
       "branchCount": 21,
       "functionCount": 25,
       "importCount": 9,
@@ -1064,25 +1064,25 @@
       "maxBlockLines": 68,
       "churn90d": 42,
       "category": "app",
-      "risk": 126.6
+      "risk": 126.7
     },
     {
       "file": "app/types/context.ts",
-      "loc": 332,
-      "codeLines": 308,
+      "loc": 333,
+      "codeLines": 309,
       "branchCount": 0,
       "functionCount": 87,
       "importCount": 8,
       "exportCount": 14,
       "maxBlockLines": 1,
-      "churn90d": 39,
+      "churn90d": 40,
       "category": "types",
-      "risk": 86.3
+      "risk": 88.3
     },
     {
       "file": "app/types/save.ts",
-      "loc": 321,
-      "codeLines": 295,
+      "loc": 323,
+      "codeLines": 297,
       "branchCount": 0,
       "functionCount": 0,
       "importCount": 9,
@@ -1090,7 +1090,7 @@
       "maxBlockLines": 0,
       "churn90d": 38,
       "category": "types",
-      "risk": 84
+      "risk": 84.1
     },
     {
       "file": "app/classes/building/BuildingLifecycle.ts",

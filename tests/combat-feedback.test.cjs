@@ -425,3 +425,46 @@ test('clearDamageFeedback leaves unrelated sprite filters alone', () => {
 
   assert.deepEqual(sprite.filters, [unrelatedFilter])
 })
+
+test('building hit point gains show a positive floating value', () => {
+  const scheduled = []
+  const scheduler = {
+    elapsedMs: 0,
+    add: (callback, delay, name) => {
+      scheduled.push({ callback, delay, name })
+      return scheduled.length
+    },
+    remove: () => {},
+    addOneShot: () => 1,
+  }
+  const addedDisplays = []
+  const building = {
+    family: 'building',
+    context: { scheduler },
+    isDead: false,
+    isDestroyed: false,
+    sprite: { anchor: { y: 1 }, height: 60 },
+    addChild: display => addedDisplays.push(display),
+  }
+
+  const { showHitPointGainFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
+    'pixi.js': {
+      ColorMatrixFilter: class {},
+      Text: MockText,
+    },
+    '../constants': {
+      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
+    },
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/spriteTransientEffects': spriteTransientEffects,
+  })
+
+  showHitPointGainFeedback(building, 2.6)
+
+  assert.equal(getAddedFeedbackText(addedDisplays[0]), '+3')
+  assert.equal(scheduled[0].name, 'combat.hitPointGainText')
+
+  showHitPointGainFeedback(building, 0.000005)
+
+  assert.equal(addedDisplays.length, 1)
+})

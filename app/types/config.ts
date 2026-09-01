@@ -90,7 +90,7 @@ interface EntityConfig {
 }
 
 export interface UnitConfig extends EntityConfig {
-  trainingTime?: number
+  trainingDays?: number
   equipment?: string[]
   attackRecoveryMs?: number
   meleeArmor?: number
@@ -124,6 +124,7 @@ export interface BuildingConfig extends EntityConfig {
   instantPlacement?: boolean
   inventoryItem?: string
   shelterCapacity?: number
+  mountingDays?: number
   useSpriteShadow?: boolean
   spriteShadowAnchor?: { x?: number; y?: number }
   units?: string[]

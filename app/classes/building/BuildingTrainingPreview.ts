@@ -11,7 +11,12 @@ import {
   UNIT_TYPES,
   WORK_TYPES,
 } from '../../constants'
-import { bindAnimatedSpriteToTicker, changeSpriteTexturesColorDirectly, getAnimationFrames } from '../../lib'
+import {
+  bindAnimatedSpriteToTicker,
+  changeSpriteTexturesColorDirectly,
+  getAnimationFrames,
+  getUnitSpritesheetAnimationSpeed,
+} from '../../lib'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
@@ -31,7 +36,6 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { SpritesheetLike } from '../../types/pixi'
 
 const TRAINING_PREVIEW_SCALE = 1
-const TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR = 0.45
 const MAIN_PREVIEW_Z_INDEX = 10
 const MOUNTED_HORSE_STANDING_SHEET = 'animals/horse/standing'
 const MOUNTED_PREVIEW_DIRECTION = 'south'
@@ -203,7 +207,7 @@ export class BuildingTrainingPreview {
     sprite.roundPixels = true
     sprite.loop = true
     sprite.zIndex = zIndex
-    sprite.animationSpeed = (sheet.data?.animationSpeed ?? 0.4) * TRAINING_PREVIEW_ANIMATION_SPEED_FACTOR
+    sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(sheet, SHEET_TYPES.action)
     sprite.scale.set(scale)
     setDefaultAnchor(sprite)
     const lightFilter = new ColorMatrixFilter()
@@ -392,7 +396,9 @@ export class BuildingTrainingPreview {
       return
     }
 
-    const type = this.building.loading !== null ? (this.building.queue?.[0] ?? null) : null
+    const type =
+      this.building.trainingQueue?.[0]?.type ??
+      (this.building.loading !== null ? (this.building.queue?.[0] ?? null) : null)
     if (!type) {
       this.clear()
       return

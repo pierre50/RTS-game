@@ -199,7 +199,7 @@ test('single-direction dying sheets always use south-facing frames', () => {
 })
 
 test('unit animation speed uses the selected action sheet speed directly', () => {
-  const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
+  const { getUnitSpritesheetAnimationSpeed, setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
     '../constants': {
       SHEET_TYPES: {
         action: 'actionSheet',
@@ -214,6 +214,12 @@ test('unit animation speed uses the selected action sheet speed directly', () =>
       degreeToDirection: () => 'south',
     },
   })
+
+  assert.equal(getUnitSpritesheetAnimationSpeed({ data: { animationSpeed: 0.4 } }, 'actionSheet'), 0.4)
+  assert.equal(getUnitSpritesheetAnimationSpeed({ data: {} }, 'standingSheet'), 0.2)
+  assert.equal(getUnitSpritesheetAnimationSpeed({ data: {} }, 'corpseSheet'), 0)
+  assert.equal(getUnitSpritesheetAnimationSpeed({ data: {} }, 'actionSheet'), 0.4)
+
   const sprite = {
     currentFrame: 0,
     textures: [],

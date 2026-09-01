@@ -307,6 +307,7 @@ function createController({
     applyToolAppearance: () => {},
     beginHeroDefense: () => false,
     cancelHeroActiveToolAction: () => false,
+    canHeroDefendWithTool: tool => tool === 'sword',
     cancelHeroPowerCharge: () => {},
     cancelHeroLasso: hero => hero.heroLasso?.clearLasso({ releaseHorse: true }),
     cancelHeroDefense: () => {},
@@ -744,7 +745,10 @@ test('E refuses to change stable horses while the hero is already mounted', () =
   const stable = {
     family: 'building',
     horseAmount: 2,
-    stableHorses: [{ horseColor: 'light', tamingStatus: 'tamed' }, { horseColor: 'black', tamingStatus: 'tamed' }],
+    stableHorses: [
+      { horseColor: 'light', tamingStatus: 'tamed' },
+      { horseColor: 'black', tamingStatus: 'tamed' },
+    ],
     type: 'Stable',
   }
   map.spaces = new Map([[spaceId, { building: stable, kind: 'interior' }]])
@@ -1499,4 +1503,37 @@ test('defense key interrupts an active hero attack and blocks immediately', () =
   assert.deepEqual(events, ['cancelAction', 'beginDefense'])
   assert.equal(hero.heroDefenseActive, true)
   assert.equal(hero.actionLocked, true)
+})
+
+test('defense key does not interrupt unsupported equipped tools', () => {
+  const events = []
+  const { controller, hero } = createController({
+    heroToolsOverride: {
+      beginHeroDefense: () => {
+        events.push('beginDefense')
+        return false
+      },
+      cancelHeroActiveToolAction: unit => {
+        events.push('cancelAction')
+        unit.actionLocked = false
+        return true
+      },
+    },
+  })
+
+  for (const tool of ['interact', 'bow']) {
+    events.length = 0
+    controller.equippedItem = tool
+    controller.mouseHeld = false
+    hero.actionLocked = true
+    hero.degree = 270
+
+    controller.handleDefenseKeyDown()
+
+    assert.equal(controller.defenseHeld, true)
+    assert.deepEqual(events, [])
+    assert.equal(hero.actionLocked, true)
+    assert.equal(hero.heroDefenseActive, undefined)
+    assert.equal(hero.degree, 270)
+  }
 })

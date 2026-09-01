@@ -10,6 +10,7 @@ import {
   onSpriteLoopAtFrame,
   playAudibleSoundCue,
   showDamageFeedback,
+  showHitPointGainFeedback,
   showResourceGainFeedback,
   SLASH_IMPACT_FRAME,
 } from '../../lib'
@@ -333,13 +334,15 @@ export class UnitResourceActions {
           return
         }
         this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
+        const beforeHitPoints = dest.hitPoints ?? 0
         dest.hitPoints = Math.min(
           Math.round(
-            (dest.hitPoints ?? 0) +
+            beforeHitPoints +
               ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
           ),
           dest.totalHitPoints ?? 0
         )
+        showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - beforeHitPoints)
         grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
         if (shouldSyncBuildHealthDisplay(dest)) {
           syncEntityHealthDisplay(dest, { menu, player, forceInfo: unit.owner?.isPlayed })

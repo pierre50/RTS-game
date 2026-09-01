@@ -101,6 +101,7 @@ function loadUnitMovement(calls) {
     }
     if (request === '../../lib/buildings/interiors') {
       return {
+        getBuildingEntryCell: building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
         getBuildingInteriorEntryCell: building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
         isBuildingInteriorSupported: building => Boolean(building?.isBuilt && building.type === 'Barracks'),
       }

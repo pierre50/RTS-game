@@ -75,6 +75,10 @@ export class Building extends Instance implements BuildingEntity {
   isUsedBy: RuntimeEntity | null
   trainingUnit: UnitEntity | null
   trainingType: string | null
+  trainingQueue: NonNullable<BuildingEntity['trainingQueue']>
+  trainingStartedDay: number | null
+  trainingCompleteDay: number | null
+  trainingDayChangeUnsubscribe: (() => void) | null
   rallyPoint: { i: number; j: number; direction: number } | null
   rallyPointFlag: AnimatedSprite | null
   shadow: BuildingShadow | null
@@ -89,7 +93,7 @@ export class Building extends Instance implements BuildingEntity {
   technologies?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
-  mountingTime?: number
+  mountingDays?: number
   interface!: EntityInterfaceLike
   assetType?: string
   textureName?: string
@@ -137,6 +141,10 @@ export class Building extends Instance implements BuildingEntity {
     this.isUsedBy = null
     this.trainingUnit = null
     this.trainingType = null
+    this.trainingQueue = []
+    this.trainingStartedDay = null
+    this.trainingCompleteDay = null
+    this.trainingDayChangeUnsubscribe = null
     this.stableHorses = []
     this.horseAmount = 0
     this.rallyPoint = null
@@ -262,7 +270,7 @@ export class Building extends Instance implements BuildingEntity {
     } = this
     super.select()
     if (this.rallyPointFlag) this.rallyPointFlag.visible = true
-    if (this.loading !== null && this.owner.isPlayed) this.updateInterfaceLoading()
+    if (this.loading !== null && this.owner.isPlayed) this.updateTrainingPreview()
     canUpdateMinimap(this, player) && menu.isMiniMapActive?.() !== false && menu.updatePlayerMiniMapEvt(this.owner)
   }
 
@@ -306,6 +314,8 @@ export class Building extends Instance implements BuildingEntity {
 
   override destroy(options?: Parameters<Instance['destroy']>[0]): void {
     stopFlameAmbientSound(this)
+    this.trainingDayChangeUnsubscribe?.()
+    this.trainingDayChangeUnsubscribe = null
     this.buildingTrainingPreview?.destroy()
     this.buildingTrainingPreview = null
     destroyBuildingVisuals(this)
@@ -358,20 +368,16 @@ export class Building extends Instance implements BuildingEntity {
     return this.buildingProduction.buyUnit(type, alreadyPaid, force, extra)
   }
 
-  requestUnitTraining(type: string, extra?: UnitCreationExtra, trainee?: UnitEntity | null): boolean {
-    return this.buildingProduction.requestUnitTraining(type, extra, trainee)
-  }
-
   startTrainingWithUnit(trainee: UnitEntity): boolean {
     return this.buildingProduction.startTrainingWithUnit(trainee)
   }
 
-  cancelTrainingForUnit(trainee: UnitEntity): boolean {
-    return this.buildingProduction.cancelTrainingForUnit(trainee)
-  }
-
   cancelUnits(type: string): boolean {
     return this.buildingProduction.cancelUnits(type)
+  }
+
+  cancelAllUnitTraining(): boolean {
+    return this.buildingProduction.cancelAllUnitTraining()
   }
 
   cancelTechnology(): boolean {
@@ -387,13 +393,8 @@ export class Building extends Instance implements BuildingEntity {
   }
 
   // BuildingInterface
-  updateInterfaceLoading(): void {
+  updateTrainingPreview(): void {
     this.buildingTrainingPreview?.update()
-    this.buildingInterface.updateLoading()
-  }
-
-  getLoadingElement(): HTMLDivElement {
-    return this.buildingInterface.getLoadingElement()
   }
 
   setDefaultInterface(element: HTMLElement, data: BuildingConfig, options?: EntityInfoRenderOptions): void {

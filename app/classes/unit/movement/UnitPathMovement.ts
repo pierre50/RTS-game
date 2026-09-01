@@ -1,4 +1,4 @@
-import { SHEET_TYPES } from '../../../constants'
+import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
 import {
   canUpdateMinimap,
   cartesianToIsometric,
@@ -128,7 +128,10 @@ function handleBlockedPathCell(
     pauseCombatRecoveryMove(unit)
     return true
   }
-  unit.sendToEvt?.(dest, unit.action ?? null, { forceRepath: true })
+  unit.sendToEvt?.(dest, unit.action ?? null, {
+    forceRepath: true,
+    allowPassageStop: unit.action === ACTION_TYPES.train,
+  })
   return true
 }
 

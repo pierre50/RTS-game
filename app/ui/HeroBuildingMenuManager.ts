@@ -1,18 +1,19 @@
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
-import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
+import { formatTrainingEntryTimeRemaining, formatTrainingTimeRemaining } from '../lib/buildings/trainingTimeRemaining'
 import { t } from '../lib/lang'
 import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
 import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
-import { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
+import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
 import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
 import type { MenuHost } from './MenuHost'
+import type { InventoryTransferPanel } from './inventory/InventoryTransferPanel'
 
 function isBuildingEntity(value: unknown): value is BuildingEntity {
   return Boolean(value && (value as BuildingEntity).family === FAMILY_TYPES.building)
@@ -189,6 +190,9 @@ export class HeroBuildingMenuManager {
     return [
       building.technology?.type || '',
       building.queue?.join(',') || '',
+      building.trainingQueue
+        ?.map(entry => `${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`)
+        .join(',') || '',
       building.owner?.units
         ?.filter(unit => unit.dest === building && unit.trainingTargetType)
         .map(unit => unit.trainingTargetType)
@@ -235,33 +239,28 @@ export class HeroBuildingMenuManager {
     }
     items
       .filter(button => !button.hide || !button.hide())
-      .forEach(button => this.body.appendChild(this.createButton(building, button)))
+      .forEach(button => {
+        const trainingEntries = building.trainingQueue
+          ?.map((entry, index) => ({ entry, index }))
+          .filter(({ entry }) => entry.type === button.id)
+        if (trainingEntries?.length) {
+          for (const { index } of trainingEntries) {
+            this.body.appendChild(this.createButton(building, button, { trainingIndex: index }))
+          }
+          return
+        }
+        this.body.appendChild(this.createButton(building, button))
+      })
     this.body.classList.toggle('is-empty', !this.body.children.length)
     this.updateProgress()
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
-    if (building.type !== BUILDING_TYPES.chest) return false
-    const hero = this.menu.context.controls.heroUnit
-    if (!hero) return false
-
-    const chestContainer = createInventoryContainer(building, {
-      id: building.label,
-      labelKey: 'inventoryChest',
+    this.transferPanel = createHeroBuildingContainerBody(building, this.menu, () => {
+      this.structureSignature = this.getStructureSignature()
+      this.renderInfo()
     })
-    const heroContainer = createInventoryContainer(hero, {
-      id: hero.label,
-      labelKey: 'inventoryYourBag',
-    })
-    this.transferPanel = new InventoryTransferPanel({
-      context: this.menu.context,
-      destination: chestContainer,
-      source: heroContainer,
-      onChange: () => {
-        this.structureSignature = this.getStructureSignature()
-        this.renderInfo()
-      },
-    })
+    if (!this.transferPanel) return false
     this.body.appendChild(this.transferPanel.element)
     return true
   }
@@ -274,11 +273,17 @@ export class HeroBuildingMenuManager {
     }
   }
 
-  createButton(building: BuildingEntity, button: MenuButtonSpec): HTMLButtonElement {
+  createButton(
+    building: BuildingEntity,
+    button: MenuButtonSpec,
+    options: { trainingIndex?: number } = {}
+  ): HTMLButtonElement {
     const element = document.createElement('button')
     element.type = 'button'
     element.className = 'ui-btn ui-action-row'
-    element.id = button.id ? `hero-${button.id}` : ''
+    element.id = button.id ? `hero-${button.id}${options.trainingIndex == null ? '' : `-${options.trainingIndex}`}` : ''
+    if (button.id) element.dataset.actionId = button.id
+    if (options.trainingIndex != null) element.dataset.trainingIndex = String(options.trainingIndex)
     if (!button.icon && !button.onCreate) element.classList.add('is-text-only')
     if (button.id?.startsWith('stableDebug')) element.classList.add('hero-building-menu-debug')
     const disabled = button.disabled?.() ?? false
@@ -313,14 +318,8 @@ export class HeroBuildingMenuManager {
 
     const status = document.createElement('span')
     status.className = 'hero-building-menu-status'
-    const progress = document.createElement('span')
-    progress.className = 'hero-building-menu-progress'
-    const progressFill = document.createElement('span')
-    progressFill.className = 'hero-building-menu-progress-fill'
     const statusText = document.createElement('span')
     statusText.className = 'hero-building-menu-status-text'
-    progress.appendChild(progressFill)
-    status.appendChild(progress)
     status.appendChild(statusText)
 
     if (icon.childElementCount > 0) element.appendChild(icon)
@@ -358,11 +357,19 @@ export class HeroBuildingMenuManager {
     const building = this.building
     if (!building) return
     this.body.querySelectorAll<HTMLElement>('button.ui-btn').forEach(button => {
-      const id = button.id.replace(/^hero-/, '')
+      const id = button.dataset.actionId || button.id.replace(/^hero-/, '')
       const status = button.querySelector<HTMLElement>('.hero-building-menu-status')
-      const fill = button.querySelector<HTMLElement>('.hero-building-menu-progress-fill')
       const text = button.querySelector<HTMLElement>('.hero-building-menu-status-text')
-      if (!status || !fill || !text) return
+      if (!status || !text) return
+      const trainingIndex = button.dataset.trainingIndex == null ? null : Number(button.dataset.trainingIndex)
+      const trainingEntry =
+        trainingIndex != null && Number.isFinite(trainingIndex) ? building.trainingQueue?.[trainingIndex] : null
+      if (trainingEntry) {
+        const progress = Math.max(0, Math.min(100, Math.floor(trainingEntry.loading ?? 0)))
+        status.classList.toggle('is-visible', true)
+        text.textContent = formatTrainingEntryTimeRemaining(building, trainingEntry) ?? `${progress}%`
+        return
+      }
 
       const queued = building.queue?.filter(type => type === id).length ?? 0
       const reserved = getPendingTrainingCount(building, id)
@@ -372,15 +379,14 @@ export class HeroBuildingMenuManager {
       const progress = active ? Math.max(0, Math.min(100, Math.floor(building.loading ?? 0))) : 0
 
       status.classList.toggle('is-visible', active || queued > 0 || reserved > 0)
-      fill.style.width = `${progress}%`
       text.textContent = active
-        ? `${progress}%${queued > 1 ? ` x${queued}` : ''}`
+        ? activeUnit
+          ? (formatTrainingTimeRemaining(building) ?? `${progress}%`)
+          : `${progress}%`
         : queued > 0
-          ? `x${queued}`
+          ? '...'
           : reserved
-            ? reserved > 1
-              ? `... x${reserved}`
-              : '...'
+            ? '...'
             : ''
     })
   }

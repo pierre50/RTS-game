@@ -8,6 +8,7 @@ const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const transferPanels = []
   const audibleSoundCues = []
+  const theftConsequences = []
   const filename = path.join(__dirname, '../app/ui/HeroBuildingMenuManager.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -35,6 +36,10 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/audio/sound': {
       playAudibleSoundCue: (instance, cue, options) => audibleSoundCues.push({ cue, instance, options }),
+    },
+    '../lib/theft/theft': {
+      applyTheftConsequences: event => theftConsequences.push(event),
+      THEFT_SUBJECT_TYPES: { chest: 'chest' },
     },
     './InspectionPanel': {
       createInspectionModal: () => ({ close() {} }),
@@ -69,6 +74,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.HeroBuildingMenuManager.__transferPanels = transferPanels
   module.exports.HeroBuildingMenuManager.__audibleSoundCues = audibleSoundCues
+  module.exports.HeroBuildingMenuManager.__theftConsequences = theftConsequences
   return module.exports.HeroBuildingMenuManager
 }
 
@@ -80,6 +86,9 @@ function installMockDocument() {
         tagName,
         children: [],
         className: '',
+        dataset: {},
+        id: '',
+        disabled: false,
         textContent: '',
         childElementCount: 0,
         style: { setProperty() {} },
@@ -120,7 +129,7 @@ function createManager({ reachable = true } = {}) {
       player,
     },
     getActionMenuItems: building => (building.isBuilt ? [{ id: 'train' }] : []),
-    menuTooltip: { hide() {} },
+    menuTooltip: { bind() {}, hide() {} },
   })
   return { manager, player, restoreDocument }
 }
@@ -174,6 +183,44 @@ test('hero building menu keeps actions empty for unfinished buildings', () => {
 
     assert.equal(manager.open(building), true)
     assert.deepEqual(manager.stack, [[]])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu renders one row per concurrent training entry', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    manager.menu.getActionMenuItems = () => [
+      {
+        id: 'Fantassin',
+        tooltip: () => ({ title: 'Fantassin', meta: ['cost'] }),
+      },
+    ]
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'Barracks',
+      label: 'barracks-1',
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      queue: ['Fantassin', 'Fantassin'],
+      trainingQueue: [
+        { type: 'Fantassin', loading: 20, trainee: { label: 'villager-a' } },
+        { type: 'Fantassin', loading: 60, trainee: { label: 'villager-b' } },
+      ],
+      interface: { info() {} },
+    }
+
+    assert.equal(manager.open(building), true)
+
+    const rows = manager.body.children.filter(child => child.className.includes('ui-action-row'))
+    assert.equal(rows.length, 2)
+    assert.equal(rows[0].dataset.actionId, 'Fantassin')
+    assert.equal(rows[0].dataset.trainingIndex, '0')
+    assert.equal(rows[1].dataset.actionId, 'Fantassin')
+    assert.equal(rows[1].dataset.trainingIndex, '1')
   } finally {
     restoreDocument()
   }
@@ -245,6 +292,60 @@ test('hero building menu refreshes an open chest when inventory changes external
 
     assert.equal(manager.constructor.__transferPanels.length, initialPanels + 1)
     assert.equal(manager.body.children.at(-1).className, 'inventory-transfer-panel')
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu marks and reports foreign chest theft only when taking from it', () => {
+  const { manager, restoreDocument } = createManager()
+  try {
+    const foreignOwner = { isPlayed: false, label: 'neutral-ai' }
+    const building = {
+      family: 'building',
+      owner: foreignOwner,
+      type: 'Chest',
+      label: 'chest-1',
+      inventory: { equipment: ['trap'], resources: { wood: 5 } },
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    const hero = {
+      family: 'unit',
+      label: 'hero',
+      owner: { isPlayed: true, label: 'player' },
+      inventory: { equipment: ['chest'], resources: { food: 3 } },
+    }
+    manager.menu.context.controls.heroUnit = hero
+
+    assert.equal(manager.open(building), true)
+
+    const panel = manager.constructor.__transferPanels.at(-1)
+    assert.equal(panel.options.isTheftTransfer(panel.options.destination, panel.options.source), true)
+    assert.equal(panel.options.isTheftTransfer(panel.options.source, panel.options.destination), false)
+
+    panel.options.onTransfer({
+      amount: 1,
+      destination: panel.options.source,
+      item: 'wood',
+      kind: 'resource',
+      source: panel.options.destination,
+    })
+    panel.options.onTransfer({
+      amount: 1,
+      destination: panel.options.destination,
+      item: 'food',
+      kind: 'resource',
+      source: panel.options.source,
+    })
+
+    assert.equal(manager.constructor.__theftConsequences.length, 1)
+    assert.equal(manager.constructor.__theftConsequences[0].actor, hero)
+    assert.equal(manager.constructor.__theftConsequences[0].owner, foreignOwner)
+    assert.equal(manager.constructor.__theftConsequences[0].subject, 'chest')
+    assert.equal(manager.constructor.__theftConsequences[0].target, building)
   } finally {
     restoreDocument()
   }

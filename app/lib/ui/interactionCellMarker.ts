@@ -16,7 +16,9 @@ export function interactionCellPulse(elapsedMs: number): number {
 }
 
 export function drawInteractionCellMarker(layer: Graphics, cell: RuntimeCell, pulse: number): void {
-  const [x, y] = cartesianToIsometric(cell.i, cell.j)
+  const [fallbackX, fallbackY] = cartesianToIsometric(cell.i, cell.j)
+  const x = Number.isFinite(cell.x) ? cell.x : fallbackX
+  const y = Number.isFinite(cell.y) ? cell.y : fallbackY
   drawRoundedIsoShape(
     layer,
     getRoundedIsoShapePoints({

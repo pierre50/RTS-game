@@ -3,6 +3,7 @@ import {
   beginHeroDefense,
   cancelHeroActiveToolAction,
   cancelHeroLasso,
+  canHeroDefendWithTool,
   isHeroPowerChargeActiveForTool,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
@@ -56,7 +57,8 @@ export class HeroActionInputController {
       this.host.primaryClickPoint = null
       return
     }
-    this.host.primaryClickPoint = this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor()
+    this.host.primaryClickPoint =
+      this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor()
     const triggered = this.attackTowardPoint(this.host.primaryClickPoint)
     this.host.mouseHeld = triggered
     if (!this.host.mouseHeld) this.host.primaryClickPoint = null
@@ -64,6 +66,7 @@ export class HeroActionInputController {
 
   handleDefenseKeyDown(): void {
     this.host.defenseHeld = true
+    if (!canHeroDefendWithTool(this.host.equippedItem)) return
     const unit = this.host.heroUnit
     if (!unit) return
     if (unit.actionLocked && !unit.heroDefenseActive) {

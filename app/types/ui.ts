@@ -23,7 +23,7 @@ export interface MenuButtonSpec {
   tooltip?: TooltipSource
   acquired?: () => boolean
   hide?: () => boolean
-  disabled?: () => boolean
+  disabled?: (selection?: MenuSelectionLike) => boolean
   onClick?: MenuSelectionHandler<[evt?: Event | null]>
   onCreate?: MenuSelectionHandler<[element: HTMLElement]>
   children?: MenuButtonSpec[]

@@ -21,7 +21,7 @@ function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boo
   return building.owner === player || building.owner.label === player.label
 }
 
-export function getPlayerResourceChests(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
+function getPlayerResourceChests(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
   if (!player) return []
   return (player.buildings ?? []).filter(building => isOwnedChest(building, player))
 }
@@ -62,7 +62,7 @@ export function hasPlayerResourceChests(player: unknown): player is ResourceStor
   return Boolean(player && typeof player === 'object' && Array.isArray((player as ResourceStoreOwner).buildings))
 }
 
-export function getPlayerChestResourceTotals(
+function getPlayerChestResourceTotals(
   player: ResourceStoreOwner | PlayerLike | null | undefined
 ): Record<ResourceName, number> {
   const totals = createEmptyResourceTotals()
@@ -113,19 +113,6 @@ export function getMissingPlayerResources(
   options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
 ): ResourceAmount {
   const totals = getPlayerResourceTotals(player, options)
-  const missing: ResourceAmount = {}
-  for (const [resource, amount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
-    const needed = Math.max(0, Math.floor(amount ?? 0))
-    if (needed > 0 && (totals[resource] ?? 0) < needed) missing[resource] = needed - (totals[resource] ?? 0)
-  }
-  return missing
-}
-
-export function getMissingChestResources(
-  player: ResourceStoreOwner | PlayerLike | null | undefined,
-  cost: ResourceAmount
-): ResourceAmount {
-  const totals = getPlayerChestResourceTotals(player)
   const missing: ResourceAmount = {}
   for (const [resource, amount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
     const needed = Math.max(0, Math.floor(amount ?? 0))

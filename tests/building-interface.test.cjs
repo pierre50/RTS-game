@@ -19,8 +19,6 @@ function loadBuildingInterface() {
       MENU_INFO_IDS: {
         civ: 'civ',
         hitPoints: 'hit-points',
-        loading: 'loading',
-        loadingText: 'loading-text',
         population: 'population',
         populationText: 'population-text',
         quantity: 'quantity',
@@ -168,5 +166,25 @@ test('foreign building info still displays hit points', () => {
     new BuildingInterface(building).renderInfo(element, {})
 
     assert.equal(element.querySelector('.hit-points').textContent, '75/120')
+  })
+})
+
+test('building info does not render the legacy loading row', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const building = {
+      type: 'Barracks',
+      owner: { isPlayed: true, civ: 'Greek' },
+      isBuilt: true,
+      loading: 42,
+      hitPoints: 100,
+      totalHitPoints: 100,
+      context: { menu: {} },
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    assert.equal(element.querySelector('.building-loading'), null)
   })
 })

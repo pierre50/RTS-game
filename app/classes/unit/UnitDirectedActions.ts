@@ -8,7 +8,6 @@ import {
   syncMovedActionTarget,
 } from '../../lib'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { t } from '../../lib/lang'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { getHealingXpBonus, grantUnitXp, XP_CATEGORIES } from '../../lib/units/unitExperience'
@@ -57,7 +56,6 @@ export class UnitDirectedActions {
 
   handleTrainAction(): void {
     const unit = this.unit
-    const menu = unit.context?.menu
     const dest = isBuildingEntity(unit.dest) ? unit.dest : null
     const trainingType = unit.trainingTargetType ?? ''
     if (!trainingType || !dest || !unit.getActionCondition?.(dest, ACTION_TYPES.train, { trainingType })) {
@@ -65,16 +63,22 @@ export class UnitDirectedActions {
       unit.stop?.()
       return
     }
-    if (!dest?.startTrainingWithUnit?.(unit)) {
+    if (unit.isUnitAtDest && !unit.isUnitAtDest(ACTION_TYPES.train, dest)) {
+      unit.sendToEvt?.(dest, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
+      return
+    }
+    if (dest?.startTrainingWithUnit?.(unit)) {
+      unit.trainingRetryTaskId = null
+      return
+    }
+    {
       const buildingBusy = Boolean(
-        dest && (dest.loading !== null || dest.queue?.length || dest.technology || dest.trainingUnit)
+        dest && (dest.loading != null || dest.queue?.length || dest.technology || dest.trainingUnit)
       )
       if (buildingBusy) {
-        unit.trainingTargetType = null
-        if (unit.owner?.isPlayed) {
-          menu?.showMessage(t('buildingAlreadyTraining', { building: t(dest?.type ?? '') }), 'warning')
-        }
-        unit.stop?.()
+        unit.path = []
+        unit.setTextures?.(SHEET_TYPES.standing)
+        unit.sprite?.stop?.()
         return
       }
       unit.trainingTargetType = null

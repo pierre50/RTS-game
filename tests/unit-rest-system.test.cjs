@@ -1049,7 +1049,7 @@ test('villagers retry a fresh shelter entry before sleeping outside', () => {
   assert.notEqual(villager.currentSheet, constants.SHEET_TYPES.dying)
 })
 
-test('villagers keep retrying a usable shelter instead of sleeping outside after path failures', () => {
+test('villagers stop retrying the same unreachable shelter after path failures', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const house = {
@@ -1070,9 +1070,8 @@ test('villagers keep retrying a usable shelter instead of sleeping outside after
       this.path = []
     },
   })
-  const context = createContext(23, [owner], calls)
+  const context = createContext(19, [owner], calls)
   villager.context = context
-  const entry = context.map.grid[6][7]
   const UnitRestSystem = loadUnitRestSystem(calls)
   const system = new UnitRestSystem(context)
 
@@ -1083,11 +1082,10 @@ test('villagers keep retrying a usable shelter instead of sleeping outside after
 
   system.updateRestingUnit(villager)
 
-  assert.equal(villager.shelterState.status, 'movingToRest')
-  assert.equal(villager.shelterState.location, 'shelter')
-  assert.equal(villager.shelterState.retryCount, 1)
-  assert.equal(villager.shelterState.shelter, house)
-  assert.equal(villager.dest, entry)
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.shelterState.location, 'outside')
+  assert.equal(villager.shelterState.shelter, null)
+  assert.equal(villager.dest, null)
   assert.notEqual(villager.currentSheet, constants.SHEET_TYPES.dying)
 })
 
@@ -1888,6 +1886,78 @@ test('awake villagers still flee danger when morale breaks', () => {
   assert.equal(handled, true)
   assert.equal(villager.shelterState, undefined)
   assert.deepEqual(calls.at(-1), ['runaway', 'villager-1', 'enemy'])
+})
+
+test('shelter attack wakes occupants and routes them through existing danger reactions', () => {
+  const calls = []
+  const owner = {
+    units: [],
+    buildings: [],
+    isEnemy(other) {
+      return other?.label === 'enemy'
+    },
+  }
+  const context = createContext(23, [owner], calls)
+  const entry = context.map.grid[6][7]
+  const house = {
+    label: 'house',
+    type: constants.BUILDING_TYPES.house,
+    owner,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    i: 5,
+    j: 5,
+    entryCells: [entry],
+  }
+  const enemy = {
+    label: 'enemy',
+    family: 'unit',
+    owner: { label: 'enemy' },
+    isDead: false,
+    isDestroyed: false,
+  }
+  owner.buildings.push(house)
+  const villager = createUnit(owner, {
+    context,
+    shelterState: { status: 'inside', reason: 'sleep', location: 'shelter', shelter: house },
+    alpha: 0,
+    visible: false,
+    detect(target) {
+      calls.push(['villagerDetect', this.label, target.label])
+    },
+  })
+  const soldier = createUnit(owner, {
+    label: 'soldier-1',
+    type: constants.UNIT_TYPES.infantry,
+    context,
+    shelterState: { status: 'inside', reason: 'sleep', location: 'shelter', shelter: house },
+    alpha: 0,
+    visible: false,
+    detect(target) {
+      calls.push(['soldierDetect', this.label, target.label])
+    },
+  })
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+
+  assert.equal(system.handleShelterAttack(house, enemy), true)
+
+  assert.equal(villager.shelterState, null)
+  assert.equal(soldier.shelterState, null)
+  assert.equal(villager.i, entry.i)
+  assert.equal(villager.j, entry.j)
+  assert.equal(soldier.i, entry.i)
+  assert.equal(soldier.j, entry.j)
+
+  for (let index = 0; index < 10; index += 1) {
+    const task = [...context.scheduler.tasks.values()].find(entry => entry.name === 'unit.sleepWake')
+    if (!task) break
+    task.callback()
+  }
+
+  assert.deepEqual(calls.find(call => call[0] === 'villagerDetect'), ['villagerDetect', 'villager-1', 'enemy'])
+  assert.deepEqual(calls.find(call => call[0] === 'soldierDetect'), ['soldierDetect', 'soldier-1', 'enemy'])
 })
 
 test('critical shelters eject hidden villagers', () => {

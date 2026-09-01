@@ -117,6 +117,11 @@ function buildMocks(calls, context) {
         return { ...options, inventory: target.inventory }
       },
     },
+    '../lib/units/unitTrainingOrders': {
+      findBestTrainingBuildingForUnit: () => null,
+      sendUnitToTraining: (npc, type) => calls.push(['sendUnitToTraining', npc.label, type, `paused=${context.paused}`]),
+      VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
+    },
     '../constants': {
       SHEET_TYPES: { standing: 'standing' },
       SOUND_CUES: { ui: { menuClick: 'menuClick' } },
@@ -373,7 +378,7 @@ test('picking the horse capture order assigns the horseCapture villager job', ()
   })
 })
 
-test('sleeping villagers keep movement orders visible and disable night work', () => {
+test('sleeping villagers keep movement orders visible and hide night work', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -395,23 +400,21 @@ test('sleeping villagers keep movement orders visible and disable night work', (
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('follow').hidden, false)
     assert.equal(manager.buttons.get('cancel').hidden, false)
-    assert.equal(manager.buttons.get('resources').hidden, false)
-    assert.equal(manager.buttons.get('resources').disabled, true)
+    assert.equal(manager.buttons.get('resources').hidden, true)
     assert.equal(manager.buttons.get('food').hidden, true)
     manager.buttons.get('resources').click()
     assert.equal(manager.buttons.get('goto').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
     assert.equal(manager.buttons.get('food').hidden, true)
-    assert.equal(manager.buttons.get('food').disabled, true)
 
-    assert.equal(manager.buttons.get('stay').hidden, false)
+    assert.equal(manager.buttons.get('stay').hidden, true)
     manager.buttons.get('follow').click()
 
     assert.deepEqual(calls, [['startFollowingHero', 'paused=false']])
   })
 })
 
-test('night communication disables the resources parent and villager job buttons but keeps go-to and follow usable', () => {
+test('night communication hides work buttons but keeps go-to and follow usable', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -425,22 +428,21 @@ test('night communication disables the resources parent and villager job buttons
 
     assert.equal(manager.buttons.get('goto').disabled, false)
     assert.equal(manager.buttons.get('follow').disabled, false)
-    assert.equal(manager.buttons.get('resources').disabled, true)
+    assert.equal(manager.buttons.get('resources').hidden, true)
     manager.buttons.get('resources').click()
     assert.equal(manager.buttons.get('back').hidden, true)
     assert.equal(manager.buttons.get('food').hidden, true)
-    assert.equal(manager.buttons.get('food').disabled, true)
-    assert.equal(manager.buttons.get('wood').disabled, true)
-    assert.equal(manager.buttons.get('stone').disabled, true)
-    assert.equal(manager.buttons.get('gold').disabled, true)
-    assert.equal(manager.buttons.get('copper').disabled, true)
-    assert.equal(manager.buttons.get('iron').disabled, true)
-    assert.equal(manager.buttons.get('construction').disabled, true)
-    assert.equal(manager.buttons.get('horseCapture').disabled, true)
+    assert.equal(manager.buttons.get('wood').hidden, true)
+    assert.equal(manager.buttons.get('stone').hidden, true)
+    assert.equal(manager.buttons.get('gold').hidden, true)
+    assert.equal(manager.buttons.get('copper').hidden, true)
+    assert.equal(manager.buttons.get('iron').hidden, true)
+    assert.equal(manager.buttons.get('construction').hidden, true)
+    assert.equal(manager.buttons.get('horseCapture').hidden, true)
   })
 })
 
-test('resting-before-bed villagers use rest chatter and block the resources parent', () => {
+test('resting-before-bed villagers use rest chatter and hide the resources parent', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -460,7 +462,7 @@ test('resting-before-bed villagers use rest chatter and block the resources pare
     manager.open([npc])
 
     assert.equal(manager.chatterContainer.children[0].textContent, 'resting chatter')
-    assert.equal(manager.buttons.get('resources').disabled, true)
+    assert.equal(manager.buttons.get('resources').hidden, true)
     manager.buttons.get('resources').click()
     assert.equal(manager.buttons.get('food').hidden, true)
   })
@@ -519,7 +521,7 @@ test('a foreign sleeping npc gets a distinct "stays asleep" chatter line', () =>
   })
 })
 
-test('solo followers disable the follow order', () => {
+test('solo followers hide the follow order', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -536,13 +538,13 @@ test('solo followers disable the follow order', () => {
     manager.open([npc])
     const followButton = manager.buttons.get('follow')
 
-    assert.equal(followButton.disabled, true)
+    assert.equal(followButton.hidden, true)
     followButton.click()
     assert.deepEqual(calls, [])
   })
 })
 
-test('solo non-followers disable the stop following order', () => {
+test('solo non-followers hide the stop following order', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -559,7 +561,7 @@ test('solo non-followers disable the stop following order', () => {
     manager.open([npc])
     const stayButton = manager.buttons.get('stay')
 
-    assert.equal(stayButton.disabled, true)
+    assert.equal(stayButton.hidden, true)
     stayButton.click()
     assert.deepEqual(calls, [])
   })
@@ -587,12 +589,12 @@ test('mixed follow groups keep follow and stop following orders usable', () => {
 
     manager.open([follower, idle])
 
-    assert.equal(manager.buttons.get('follow').disabled, false)
-    assert.equal(manager.buttons.get('stay').disabled, false)
+    assert.equal(manager.buttons.get('follow').hidden, false)
+    assert.equal(manager.buttons.get('stay').hidden, false)
   })
 })
 
-test('all-follower groups disable follow but keep stop following usable', () => {
+test('all-follower groups hide follow but keep stop following usable', () => {
   withFakeDocument(() => {
     const calls = []
     const context = makeContext(calls)
@@ -604,8 +606,8 @@ test('all-follower groups disable follow but keep stop following usable', () => 
 
     manager.open([first, second])
 
-    assert.equal(manager.buttons.get('follow').disabled, true)
-    assert.equal(manager.buttons.get('stay').disabled, false)
+    assert.equal(manager.buttons.get('follow').hidden, true)
+    assert.equal(manager.buttons.get('stay').hidden, false)
   })
 })
 

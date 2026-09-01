@@ -58,10 +58,6 @@ export class UnitMovement {
     this.directMovement.directMoveClimbFactor = value
   }
 
-  sendToPostBuildResource(): boolean {
-    return this.routing.sendToPostBuildResource()
-  }
-
   findClosestReachableCellNearTarget(
     target: RuntimeEntity | RuntimeCell,
     minDistance = 2,
@@ -145,7 +141,10 @@ export class UnitMovement {
 
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
-    if (!action || !dest) return false
+    if (!dest) return false
+    if (!action && isUnitOnActionArrivalCell(unit, dest, action)) return true
+    if (!action) return false
+    if (action === ACTION_TYPES.train) return isUnitOnActionArrivalCell(unit, dest, action)
     if (isUnitOnActionArrivalCell(unit, dest, action)) return true
     if (isRuntimeEntity(dest) && isHeroActionInRange(unit, action, dest)) return true
     const usesActionRange =
@@ -232,7 +231,7 @@ export class UnitMovement {
   }
 
   affectNewDest() {
-    affectUnitNewDest(this.unit, this)
+    affectUnitNewDest(this.unit)
   }
 
   explore(): boolean {

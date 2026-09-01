@@ -20,11 +20,6 @@ function loadModule(relativePath, mocks) {
     './lang': {
       t: key => key,
     },
-    './buildings/buildingFeedback': {
-      showUnitCannotEnterBuildingMessage: (unit, building) => {
-        unit.context?.menu?.showMessage(`unitCannotEnterBuilding:${unit.type}:${building.type}`, 'warning')
-      },
-    },
     '../entities/overheadIndicator': {
       clearUnitOverheadIndicator: unit => unit.context?.calls?.push(['clearIndicator', unit.label]),
       setUnitOverheadIndicator: (unit, type) => unit.context?.calls?.push(['indicator', unit.label, type]),
@@ -63,9 +58,6 @@ function loadModule(relativePath, mocks) {
         ].filter(Boolean)
         return pick(cells)
       },
-    },
-    './units/unitUpgrades': {
-      getUnitUpgradeTargetForBuilding: () => null,
     },
     './units/unitCrouchPose': {
       applyUnitCrouchPose: () => {},
@@ -117,6 +109,8 @@ const constants = {
     ai: 'AI',
   },
   UNIT_TYPES: {
+    bowman: 'Bowman',
+    infantry: 'Fantassin',
     priest: 'Priest',
     villager: 'Villager',
   },
@@ -136,18 +130,6 @@ function angleDelta(a, b) {
 function loadNpcInteraction(target, overrides = {}) {
   return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: (building, unit) => {
-        if (building.type === constants.BUILDING_TYPES.temple && unit.type === constants.UNIT_TYPES.villager) {
-          return constants.UNIT_TYPES.priest
-        }
-        if (unit.type === constants.UNIT_TYPES.villager) return building.units?.[0] || null
-        return null
-      },
-    },
-    './units/unitUpgrades': {
-      getUnitUpgradeTargetForBuilding: () => null,
-    },
     './grid/visibility': {
       findInstancesInSight: () => (target ? [target] : []),
     },
@@ -343,7 +325,7 @@ test('"aller vers" sends villagers to hunt a live animal under the cursor', () =
   assert.deepEqual(calls, [['hunt', target]])
 })
 
-test('"aller vers" sends a communicated villager into a training building', () => {
+test('"aller vers" sends a communicated villager to a training building', () => {
   const owner = {
     config: {
       units: {
@@ -363,10 +345,6 @@ test('"aller vers" sends a communicated villager into a training building', () =
     units: ['Fantassin'],
     x: 100,
     y: 100,
-    requestUnitTraining(type, extra, villager) {
-      calls.push(['train', type, extra, villager])
-      return true
-    },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const calls = []
@@ -375,12 +353,16 @@ test('"aller vers" sends a communicated villager into a training building', () =
     i: 1,
     j: 1,
     owner,
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
+    },
     type: constants.UNIT_TYPES.villager,
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['train', 'Fantassin', undefined, npc]])
+  assert.equal(npc.trainingTargetType, 'Fantassin')
+  assert.deepEqual(calls, [['move', target, constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }]])
 })
 
 test('"aller vers" sends a communicated villager to harvest wheat', () => {
@@ -502,7 +484,7 @@ test('"aller vers" still lets villagers attack enemies at night', () => {
   assert.deepEqual(calls, [['attack', target]])
 })
 
-test('"aller vers" sends a communicated villager into a temple to train a priest', () => {
+test('"aller vers" sends a communicated villager to a temple instead of training', () => {
   const owner = {
     config: {
       units: {
@@ -522,10 +504,6 @@ test('"aller vers" sends a communicated villager into a temple to train a priest
     units: [constants.UNIT_TYPES.priest],
     x: 100,
     y: 100,
-    requestUnitTraining(type, extra, villager) {
-      calls.push(['train', type, extra, villager])
-      return true
-    },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const calls = []
@@ -534,15 +512,18 @@ test('"aller vers" sends a communicated villager into a temple to train a priest
     i: 1,
     j: 1,
     owner,
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
+    },
     type: constants.UNIT_TYPES.villager,
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['train', constants.UNIT_TYPES.priest, undefined, npc]])
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
-test('"aller vers" warns instead of moving a villager to an incompatible own building', () => {
+test('"aller vers" sends a villager to an incompatible own building', () => {
   const calls = []
   const owner = {
     config: {
@@ -561,18 +542,8 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     units: ['Fantassin'],
     x: 100,
     y: 100,
-    requestUnitTraining() {
-      throw new Error('villager must not enter incompatible stable training')
-    },
   }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: () => null,
-    },
-    './lang': {
-      t: (key, vars) => (vars ? `${key}:${vars.unit}:${vars.building}` : key),
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const npc = {
     context: {
       map: { grid: [] },
@@ -585,18 +556,51 @@ test('"aller vers" warns instead of moving a villager to an incompatible own bui
     i: 1,
     j: 1,
     owner,
-    sendTo(cell) {
-      calls.push(['move', cell.i, cell.j])
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
     },
     type: constants.UNIT_TYPES.villager,
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['message', 'unitCannotEnterBuilding:Villager:Stable', 'warning']])
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
-test('"aller vers" moves specialized infantry when no barracks upgrade is available', () => {
+test('"aller vers" recognizes restored owner labels for own building goto', () => {
+  const calls = []
+  const owner = { label: 'player' }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner: { label: 'player' },
+    type: 'Barracks',
+    units: ['Fantassin'],
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const npc = {
+    context: { map: { grid: [] } },
+    i: 1,
+    j: 1,
+    owner,
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
+    },
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
+})
+
+test('"aller vers" sends specialized infantry to barracks when no upgrade is available', () => {
   const calls = []
   const owner = {
     config: {
@@ -617,9 +621,6 @@ test('"aller vers" moves specialized infantry when no barracks upgrade is availa
     units: ['Fantassin'],
     x: 100,
     y: 100,
-    requestUnitTraining(type, extra, unit) {
-      throw new Error('infantry must not enter barracks training as an upgrade')
-    },
   }
   const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const npc = {
@@ -634,18 +635,18 @@ test('"aller vers" moves specialized infantry when no barracks upgrade is availa
     i: 1,
     j: 1,
     owner,
-    sendTo(cell) {
-      calls.push(['move', cell.i, cell.j])
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
     },
     type: 'Fantassin',
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['move', 5, 5]])
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
-test('"aller vers" shows a warning when a soldier targets an empty stable', () => {
+test('"aller vers" sends a soldier to an empty stable', () => {
   const calls = []
   const owner = {
     config: {
@@ -666,18 +667,8 @@ test('"aller vers" shows a warning when a soldier targets an empty stable', () =
     units: ['Fantassin'],
     x: 100,
     y: 100,
-    requestUnitTraining(type, extra, unit) {
-      calls.push(['requestUnitTraining', type, unit.type])
-      unit.context.menu.showMessage('stableNeedsHorse', 'warning')
-      return false
-    },
   }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: (building, unit) =>
-        building.type === 'Stable' && unit.type === 'Fantassin' ? 'Fantassin' : null,
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const npc = {
     context: {
       map: { grid: [] },
@@ -690,21 +681,18 @@ test('"aller vers" shows a warning when a soldier targets an empty stable', () =
     i: 1,
     j: 1,
     owner,
-    sendTo() {
-      calls.push(['move'])
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
     },
     type: 'Fantassin',
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [
-    ['requestUnitTraining', 'Fantassin', 'Fantassin'],
-    ['message', 'stableNeedsHorse', 'warning'],
-  ])
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
-test('"aller vers" sends a bowman to the stable even before a horse is available', () => {
+test('"aller vers" sends a bowman to the stable instead of mounting', () => {
   const calls = []
   const owner = {
     config: {
@@ -725,17 +713,8 @@ test('"aller vers" sends a bowman to the stable even before a horse is available
     units: ['Bowman'],
     x: 100,
     y: 100,
-    requestUnitTraining(type, extra, unit) {
-      calls.push(['requestUnitTraining', type, unit.type])
-      return true
-    },
   }
-  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: (building, unit) =>
-        building.type === 'Stable' && unit.type === 'Bowman' ? 'Bowman' : null,
-    },
-  })
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
   const npc = {
     context: {
       map: { grid: [] },
@@ -748,15 +727,15 @@ test('"aller vers" sends a bowman to the stable even before a horse is available
     i: 1,
     j: 1,
     owner,
-    sendTo() {
-      calls.push(['move'])
+    sendToEvt(orderTarget, action, options) {
+      calls.push(['move', orderTarget, action, options])
     },
     type: 'Bowman',
   }
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.deepEqual(calls, [['requestUnitTraining', 'Bowman', 'Bowman']])
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
 test('closing communication resumes a pending training order', () => {
@@ -969,9 +948,6 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
 function loadCommModule(instances, getInstanceDegree) {
   return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: () => null,
-    },
     './grid/visibility': {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
@@ -1151,7 +1127,10 @@ test('communication indicator cells use the hero runtime map space grid', () => 
   const cells = getCommCellsInRadius(hero, 1)
 
   assert.ok(cells.length > 0)
-  assert.equal(cells.every(cell => cell.spaceId === 'interior:house'), true)
+  assert.equal(
+    cells.every(cell => cell.spaceId === 'interior:house'),
+    true
+  )
 })
 
 test('hidden communication release only takes the ally in front of the hero even with a charged radius', () => {
@@ -1182,9 +1161,6 @@ test('hidden communication release finds nothing when no ally is in front of the
 function loadNpcFollowModule(instances) {
   return loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: () => null,
-    },
     './grid/visibility': {
       findInstancesInSight: (instance, condition) => instances.filter(condition),
     },
@@ -1283,9 +1259,6 @@ test('followers match the hero walking pace while following', () => {
 test('stationary followers copy the hero crouch pose without needing to move', () => {
   const { updateNpcFollow } = loadModule('app/lib/npc/npcInteraction.ts', {
     '../constants': constants,
-    './buildings/buildingTraining': {
-      getTrainingTargetForUnit: () => null,
-    },
     './grid/visibility': {
       findInstancesInSight: () => [],
     },

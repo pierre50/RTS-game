@@ -9,6 +9,7 @@ import {
   aimHeroDefenseAt,
   aimHeroPowerChargeAt,
   beginHeroDefense,
+  canHeroDefendWithTool,
   isHeroPowerChargeActiveForTool,
   updateHeroDefense,
   updateHeroPowerCharge,
@@ -90,7 +91,12 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   updateHeroCursor(controller.equippedItem, hoverTarget, Boolean(controller.pendingGoToNpcs))
   controller.updateProximityInteractionPrompt()
   const attacking = Boolean(unit.actionLocked)
-  if (controller.defenseHeld && !attacking && !unit.heroDefenseActive) {
+  if (
+    controller.defenseHeld &&
+    canHeroDefendWithTool(controller.equippedItem) &&
+    !attacking &&
+    !unit.heroDefenseActive
+  ) {
     controller.facePoint?.(controller.getShiftMoveLockedAimPoint() ?? aimPoint)
     if (beginHeroDefense(unit, controller.equippedItem)) controller.mouseHeld = true
   }

@@ -53,3 +53,22 @@ test('own horses are not theft', () => {
     }
   )
 })
+
+test('foreign chest transfers apply chest theft consequences', () => {
+  const { applyTheftConsequences, THEFT_SUBJECT_TYPES } = loadTheft()
+  const actorOwner = { isPlayed: true, label: 'player' }
+  const chestOwner = { label: 'neutral-ai' }
+
+  assert.deepEqual(
+    applyTheftConsequences({
+      actor: { owner: actorOwner },
+      owner: chestOwner,
+      subject: THEFT_SUBJECT_TYPES.chest,
+    }),
+    {
+      diplomatic: { changed: true, hostileNow: false, relation: 'neutral', reason: 'theft:chest' },
+      stolen: true,
+      subject: 'chest',
+    }
+  )
+})

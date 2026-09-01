@@ -44,15 +44,29 @@ function entryOffsetForBuilding(building: BuildingWithInteriorConfig): GridPosit
   }
 }
 
-export function getBuildingInteriorEntryPosition(
-  building: BuildingEntity | null | undefined
-): GridPosition | null {
-  if (!building || building.isBuilt === false || !BUILDING_INTERIOR_TYPES.has(building.type)) return null
+function getBuildingEntryPosition(building: BuildingEntity | null | undefined): GridPosition | null {
+  if (!building || building.isBuilt === false) return null
   const offset = entryOffsetForBuilding(building as BuildingWithInteriorConfig)
   return {
     i: building.i + offset.i,
     j: building.j + offset.j,
   }
+}
+
+export function getBuildingInteriorEntryPosition(
+  building: BuildingEntity | null | undefined
+): GridPosition | null {
+  if (!building || building.isBuilt === false || !BUILDING_INTERIOR_TYPES.has(building.type)) return null
+  return getBuildingEntryPosition(building)
+}
+
+export function getBuildingEntryCell(
+  building: BuildingEntity | null | undefined,
+  grid: RuntimeCell[][] | null | undefined = building?.context?.map?.grid
+): RuntimeCell | null {
+  if (!building || building.isBuilt === false || !grid) return null
+  const position = getBuildingEntryPosition(building)
+  return position ? grid[position.i]?.[position.j] ?? null : null
 }
 
 export function getBuildingInteriorEntryCell(

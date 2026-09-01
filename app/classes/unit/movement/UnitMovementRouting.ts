@@ -1,9 +1,7 @@
-import { UNIT_TYPES } from '../../../constants'
+import { ACTION_TYPES, UNIT_TYPES } from '../../../constants'
 import {
   clearVillagerAutonomy,
-  findInstancesInSight,
   getCellsAroundPoint,
-  getClosestInstanceWithPath,
   getInstanceClosestFreeCellPath,
   getInstanceDegree,
   getInstancePath,
@@ -22,9 +20,7 @@ import {
 } from '../../../lib/buildings/passageCells'
 import {
   BLOCKED_GATHER_APPROACH_ACTIONS,
-  GATHER_SEND_TO_BY_ACTION,
   MAX_BLOCKED_GATHER_APPROACH_DISTANCE,
-  POST_BUILD_GATHER_ACTIONS,
   isDestroyedEntity,
   isRuntimeEntity,
   resumeAutonomyBeforeStopping,
@@ -60,27 +56,6 @@ export class UnitMovementRouting {
   targetIsInUnitSpace(dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     if (!dest) return false
     return isRuntimeEntity(dest) ? sameMapSpace(this.unit, dest) : sameCellMapSpace(this.unit, dest)
-  }
-
-  sendToPostBuildResource(): boolean {
-    const unit = this.unit
-    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-    const actions = dest?.type ? POST_BUILD_GATHER_ACTIONS[dest.type] : undefined
-    if (!actions || !(dest as { isBuilt?: boolean } | undefined)?.isBuilt || dest?.isDead || dest?.isDestroyed)
-      return false
-
-    const unitAsInstance = unit
-    const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      actions.some(action => unit.getActionCondition?.(instance, action))
-    )
-    if (!targets.length) return false
-
-    const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
-    if (!target) return false
-
-    const action = actions.find(candidate => unit.getActionCondition?.(target.instance, candidate))
-    const sendTo = action ? GATHER_SEND_TO_BY_ACTION[action] : undefined
-    return sendTo ? sendTo(unit, target.instance) : false
   }
 
   findClosestReachableCellNearTarget(
@@ -281,6 +256,10 @@ export class UnitMovementRouting {
       return
     }
     unit.handleChangeDest?.()
+    if (action !== ACTION_TYPES.train) {
+      unit.trainingTargetType = null
+      unit.trainingRetryTaskId = null
+    }
     unit.stopInterval?.()
     unit.blockedGatherApproach = null
     let path: RuntimeCell[] = []

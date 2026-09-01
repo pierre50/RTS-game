@@ -5,6 +5,7 @@ export {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
   getSpriteFrameSelection,
+  getUnitSpritesheetAnimationSpeed,
   setUnitTexture,
 } from './entities/spriteTextures'
 export type { UnitTextureInstance } from './entities/spriteTextures'

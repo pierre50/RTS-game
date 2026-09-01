@@ -26,16 +26,19 @@ import {
 import {
   evacuateUnitsFromShelter,
   evacuateUnitsIfShelterUnsafe,
-  findHeroRestAlertTarget,
-  findPropagatedRestAlertSleepers,
-  handleUnitDanger,
   isVillager,
-  reactUnitToDanger,
   settleSleepState,
   shouldRouteUnitToInteriorExit,
   updateMovingRestUnit,
   wakeRestingUnitInstant,
 } from './UnitRestStateTransitions'
+import {
+  findHeroRestAlertTarget,
+  findPropagatedRestAlertSleepers,
+  handleShelterAttack,
+  handleUnitDanger,
+  reactUnitToDanger,
+} from './UnitRestDanger'
 
 type RestUnitBuckets = {
   livingUnits: UnitEntity[]
@@ -178,6 +181,10 @@ export class UnitRestSystem {
 
   handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean {
     return handleUnitDanger(unit, attacker)
+  }
+
+  handleShelterAttack(building: BuildingEntity, attacker: RuntimeEntity | null | undefined): boolean {
+    return handleShelterAttack(building, attacker)
   }
 
   // True while a unit is up on "borrowed time" after a talk/danger-triggered wake — it'll settle

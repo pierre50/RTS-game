@@ -1,6 +1,5 @@
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
   FAMILY_TYPES,
   MINING_RESOURCE_CONFIG,
   RELIEF_CLIMB_SPEED_MULTIPLIER,
@@ -13,7 +12,6 @@ import {
   getMiningActions,
   instancesDistance,
   resumeVillagerAutonomy,
-  sendUnitToMiningAction,
 } from '../../../lib'
 import { isHeroControlled } from '../../../lib/units/unitControl'
 import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
@@ -112,36 +110,6 @@ export function usesCautiousAnimalApproach(
 }
 
 export { getRequestedMoveSpeedFactor, clearRequestedMoveSpeedFactor }
-
-export const POST_BUILD_GATHER_ACTIONS: Record<string, string[]> = {
-  [BUILDING_TYPES.granary]: [ACTION_TYPES.forageberry],
-  [BUILDING_TYPES.storagePit]: [ACTION_TYPES.chopwood, ...getMiningActions()],
-  [BUILDING_TYPES.townCenter]: [
-    ACTION_TYPES.chopwood,
-    ACTION_TYPES.forageberry,
-    ...getMiningActions(),
-    ACTION_TYPES.farm,
-    ACTION_TYPES.hunt,
-    ACTION_TYPES.takemeat,
-  ],
-}
-
-export const GATHER_SEND_TO_BY_ACTION: Record<string, (unit: UnitEntity, target: RuntimeEntity) => boolean> = {
-  [ACTION_TYPES.chopwood]: (unit, target) => (unit.sendToTree ? (unit.sendToTree(target, true), true) : false),
-  [ACTION_TYPES.farm]: (unit, target) => (unit.sendToFarm(target, true), true),
-  [ACTION_TYPES.forageberry]: (unit, target) =>
-    unit.sendToBerrybush ? (unit.sendToBerrybush(target, true), true) : false,
-  [ACTION_TYPES.hunt]: (unit, target) => (unit.sendToHunt(target, true), true),
-  [ACTION_TYPES.captureHorse]: (unit, target) =>
-    unit.sendToCaptureHorse ? unit.sendToCaptureHorse(target, true) !== false : false,
-  ...Object.fromEntries(
-    getMiningActions().map(action => [
-      action,
-      (unit: UnitEntity, target: RuntimeEntity) => sendUnitToMiningAction(unit, target, action, true) !== false,
-    ])
-  ),
-  [ACTION_TYPES.takemeat]: (unit, target) => (unit.sendToTakeMeat(target, true), true),
-}
 
 export const BLOCKED_GATHER_APPROACH_ACTIONS = new Set([
   ACTION_TYPES.chopwood,

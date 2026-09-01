@@ -58,6 +58,7 @@ interface TributeRaidSystemLike {
 
 interface UnitRestSystemLike {
   handleUnitDanger(unit: UnitEntity, attacker: RuntimeEntity | null | undefined): boolean
+  handleShelterAttack?(building: BuildingEntity, attacker: RuntimeEntity | null | undefined): boolean
   evacuateUnitsFromShelter(building: BuildingEntity, options?: { force?: boolean }): void
   evacuateUnitsIfShelterUnsafe(building: BuildingEntity): void
   sendUnitToSleep(unit: UnitEntity): boolean
@@ -129,8 +130,8 @@ export interface MenuLike {
   isMiniMapActive?(): boolean
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
-  toggleQueuedActionCancel(id: string, enabled: boolean): void
   getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec
+  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getHeroTechnologyButtons?(): MenuButtonSpec[]
   getActionRallyPointButton(): MenuButtonSpec

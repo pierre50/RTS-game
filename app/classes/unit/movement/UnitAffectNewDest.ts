@@ -12,11 +12,25 @@ import { isRecoveringAttack, isRuntimeEntity, pauseCombatRecoveryMove } from './
 import type { RuntimeEntity, UnitEntity } from '../../../types/entities'
 import type { RuntimeCell } from '../../../types/map'
 
-type UnitAffectNewDestRouting = {
-  sendToPostBuildResource(): boolean
+type BuildTarget = RuntimeEntity & {
+  isBuilt?: boolean
+  totalHitPoints?: number
 }
 
-export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRouting): void {
+function isBuildTarget(dest: RuntimeEntity | null): dest is BuildTarget {
+  return dest?.family === FAMILY_TYPES.building
+}
+
+function isCompletedBuildTarget(unit: UnitEntity): boolean {
+  const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+  return Boolean(
+    unit.action === ACTION_TYPES.build &&
+      isBuildTarget(dest) &&
+      (dest.isBuilt || ((dest.hitPoints ?? 0) >= (dest.totalHitPoints ?? 0) && (dest.totalHitPoints ?? 0) > 0))
+  )
+}
+
+export function affectNewDest(unit: UnitEntity): void {
   unit.stopInterval?.()
   if (!unit.action) {
     if (isRecoveringAttack(unit)) {
@@ -28,6 +42,12 @@ export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRoutin
     return
   }
   if (isHeroControlled(unit)) {
+    if (isCompletedBuildTarget(unit)) {
+      unit.previousDest = null
+      unit.previousWork = null
+      unit.stop?.()
+      return
+    }
     showConfusionFeedback(unit)
     unit.previousDest = null
     unit.previousWork = null
@@ -62,8 +82,6 @@ export function affectNewDest(unit: UnitEntity, routing: UnitAffectNewDestRoutin
       unit.goBackToPrevious?.()
       return
     }
-
-    if (routing.sendToPostBuildResource()) return
 
     const unitAsInstance = unit
     const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>

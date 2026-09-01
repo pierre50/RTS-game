@@ -151,7 +151,7 @@ function knownConstructionTargets(unit: UnitEntity): BuildingEntity[] {
     building =>
       building.owner === unit.owner &&
       isAliveEntity(building) &&
-      !building.isBuilt &&
+      (!building.isBuilt || (building.hitPoints ?? 0) < (building.totalHitPoints ?? 0)) &&
       unit.getActionCondition?.(building, ACTION_TYPES.build)
   )
 }

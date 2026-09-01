@@ -12,10 +12,17 @@ import {
 import { renderUnitTypeAvatar } from '../lib/avatar'
 import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
-import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
-import { isTraineeTrainingType } from '../lib/buildings/buildingTraining'
+import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
+import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../lib/buildings/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/audio/uiSound'
+import {
+  canShowMountHorseAction,
+  canShowVillagerTrainingMenu,
+  findBestTrainingBuildingForUnit,
+  sendUnitToTraining,
+  VILLAGER_TRAINING_UNIT_TYPES,
+} from '../lib/units/unitTrainingOrders'
 import {
   formatActionCost,
   getBuildingTooltip as buildBuildingTooltip,
@@ -23,20 +30,33 @@ import {
   getTechnologyTooltip as buildTechnologyTooltip,
   getUnitTooltip as buildUnitTooltip,
 } from './ActionTooltipFactory'
-import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity } from '../types/entities'
+import type { BuildingEntity, PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { MenuButtonSpec, TooltipContent } from '../types/ui'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { ResourceAmount } from '../types/common'
 import type { MenuHost } from './MenuHost'
 
-function isBuildingEntity(selection: RuntimeEntity | null | undefined): selection is BuildingEntity {
-  return selection?.family === FAMILY_TYPES.building
+function isBuildingEntity(selection: unknown): selection is BuildingEntity {
+  return (selection as RuntimeEntity | null | undefined)?.family === FAMILY_TYPES.building
+}
+
+function isUnitEntity(selection: unknown): selection is UnitEntity {
+  return (selection as RuntimeEntity | null | undefined)?.family === FAMILY_TYPES.unit
 }
 
 function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolean {
   return Boolean(
-    selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
+    selection.trainingQueue?.some(item => item.type === type) ||
+      selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
+  )
+}
+
+function hasAnyUnitTraining(selection: BuildingEntity): boolean {
+  return Boolean(
+    selection.queue?.length ||
+      selection.trainingQueue?.length ||
+      selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType && !unit.isDead)
   )
 }
 
@@ -133,7 +153,10 @@ export class ActionSpecFactory {
     return {
       id: type,
       tooltip: () => this.getUnitTooltip(type, unit, building),
-      disabled: () => this.isChiefTrainingBlocked(type, building) || !canPayActionCost(player, unit.cost),
+      disabled: () =>
+        this.isChiefTrainingBlocked(type, building) ||
+        !canPayActionCost(player, unit.cost) ||
+        Boolean(building && !isTraineeTrainingType(building, type) && !hasBuildingTrainingCapacity(building)),
       hide: () => {
         if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
         return (unit.conditions || []).some(condition => !isValidCondition(condition, player))
@@ -151,7 +174,6 @@ export class ActionSpecFactory {
           menu.showMessage(t('needHouses'), 'warning')
           return
         }
-        menu.toggleQueuedActionCancel(type, true)
         selection.buyUnit?.(type)
       },
       onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
@@ -159,21 +181,6 @@ export class ActionSpecFactory {
         const unitSelection = selection
         const div = document.createElement('div')
         div.className = 'action-menu-column'
-        const cancel = this.createActionIcon(getIconPath('003_50721'))
-        cancel.id = `${type}-cancel`
-        const hasReservedTraining = hasPendingTrainingUnit(unitSelection, type)
-        const hasActiveTraining = unitSelection.loading !== null && unitSelection.queue?.[0] === type
-        const hasQueuedTraining = unitSelection.queue?.some(q => q === type)
-        const showCancel = isTraineeTrainingType(unitSelection, type)
-          ? hasReservedTraining || hasActiveTraining
-          : hasQueuedTraining
-        if (!showCancel) {
-          cancel.classList.add('hidden')
-        }
-        cancel.addEventListener('pointerup', () => {
-          this.playUiClick()
-          unitSelection.cancelUnits?.(type)
-        })
         const img = document.createElement('img')
         img.className = 'img'
         img.alt = ''
@@ -198,18 +205,27 @@ export class ActionSpecFactory {
               menu.showMessage(t('needHouses'), 'warning')
               return
             }
-            menu.toggleQueuedActionCancel(type, true)
             unitSelection.buyUnit?.(type)
           })
         }
-        const queue = unitSelection.queue?.filter(q => q === type).length ?? 0
-        const counter = document.createElement('div')
-        counter.classList.add('content')
-        counter.textContent = queue ? String(queue) : ''
         div.appendChild(img)
-        div.appendChild(cancel)
         element.appendChild(div)
-        element.appendChild(counter)
+      },
+    }
+  }
+
+  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
+    return {
+      id: 'cancelUnitTraining',
+      icon: getIconPath('003_50721'),
+      tooltip: () => ({
+        title: t('cancelUnitTraining'),
+        description: t('cancelUnitTrainingDescription'),
+      }),
+      hide: () => !hasAnyUnitTraining(building),
+      onClick: selection => {
+        if (selection?.family !== FAMILY_TYPES.building) return
+        ;(selection as BuildingEntity).cancelAllUnitTraining?.()
       },
     }
   }
@@ -225,6 +241,68 @@ export class ActionSpecFactory {
       onClick: (selection: RuntimeEntity) => {
         this.menu.closeHeroBuildingMenu()
         this.menu.context.controls.rallyPointController?.start(selection)
+      },
+    }
+  }
+
+  getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
+    return {
+      id: 'unitTraining',
+      icon: getIconPath('010_50721'),
+      tooltip: () => ({
+        title: t('unitTrainingMenu'),
+        description: t('unitTrainingMenuDescription'),
+      }),
+      hide: () => !canShowVillagerTrainingMenu(unit),
+      children: VILLAGER_TRAINING_UNIT_TYPES.map(type => this.getUnitTrainingOrderButton(type)),
+    }
+  }
+
+  getUnitTrainingOrderButton(type: string): MenuButtonSpec {
+    const unitConfig = this.menu.context.player.config.units[type]
+    return {
+      id: `train-${type}`,
+      tooltip: () => this.getUnitTooltip(type, unitConfig),
+      disabled: selection => !isUnitEntity(selection) || !findBestTrainingBuildingForUnit(selection, type),
+      onClick: selection => {
+        if (!isUnitEntity(selection)) return
+        sendUnitToTraining(selection, type)
+      },
+      onCreate: (selection, element) => {
+        if (!isUnitEntity(selection)) return
+        const img = document.createElement('img')
+        img.className = 'img'
+        img.alt = ''
+        const avatarCanvas = document.createElement('canvas')
+        avatarCanvas.width = 92
+        avatarCanvas.height = 92
+        if (
+          renderUnitTypeAvatar(this.menu.context.app, type, selection.owner ?? this.menu.context.player, avatarCanvas)
+        ) {
+          img.src = avatarCanvas.toDataURL()
+        }
+        img.addEventListener('pointerup', () => {
+          this.playUiClick()
+          if (!findBestTrainingBuildingForUnit(selection, type)) return
+          sendUnitToTraining(selection, type)
+        })
+        element.appendChild(img)
+      },
+    }
+  }
+
+  getMountHorseButton(unit: UnitEntity): MenuButtonSpec {
+    return {
+      id: 'mountHorse',
+      icon: getIconPath('001_50721'),
+      tooltip: () => ({
+        title: t('mountHorseTraining'),
+        description: t('mountHorseTrainingDescription'),
+      }),
+      hide: () => !canShowMountHorseAction(unit),
+      onClick: selection => {
+        if (!isUnitEntity(selection)) return
+        sendUnitToTraining(selection, selection.type)
       },
     }
   }
@@ -341,6 +419,13 @@ export class ActionSpecFactory {
 
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[] {
     if (!selection.interface) return []
+    if (isUnitEntity(selection)) {
+      return [
+        ...(selection.interface.menu || []),
+        ...(selection.type === UNIT_TYPES.villager ? [this.getUnitTrainingMenuButton(selection)] : []),
+        ...(selection.type !== UNIT_TYPES.villager ? [this.getMountHorseButton(selection)] : []),
+      ]
+    }
     if (!isBuildingEntity(selection)) return selection.interface.menu || []
     if (!selection.isBuilt) return []
     const debugItems = selection.type === BUILDING_TYPES.stable ? [this.getStableDebugAddHorseButton(selection)] : []

@@ -236,6 +236,18 @@ type SheetLike<TTexture = AnimatedSprite['textures'][number]> = {
   textures: TextureMap<TTexture>
 }
 
+const UNIT_SHEET_FALLBACK_ANIMATION_SPEED: Record<string, number> = {
+  [SHEET_TYPES.standing]: 0.2,
+  [SHEET_TYPES.corpse]: 0,
+}
+
+export function getUnitSpritesheetAnimationSpeed(
+  sheet: { data?: { animationSpeed?: number } } | null | undefined,
+  sheetType?: string | null
+): number {
+  return sheet?.data?.animationSpeed ?? (sheetType ? UNIT_SHEET_FALLBACK_ANIMATION_SPEED[sheetType] : undefined) ?? 0.4
+}
+
 function getDefaultAnchor(texture: unknown): DefaultAnchor | null {
   if (typeof texture !== 'object' || texture === null) return null
   const directAnchor = (texture as { defaultAnchor?: unknown }).defaultAnchor
@@ -286,10 +298,6 @@ function getWalkingFallbackTexture(
 
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   const sheets = instance as UnitTextureInstance & MutableSheetObject
-  const animationSpeed: Record<string, number> = {
-    standingSheet: 0.2,
-    corpseSheet: 0,
-  }
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheetToReset.includes(sheet)) {
     instance.sprite.onLoop = null
@@ -379,7 +387,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
   if (defaultAnchor) {
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
-  instance.sprite.animationSpeed = selectedSheet.data.animationSpeed ?? animationSpeed[sheet] ?? 0.4
+  instance.sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
   // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
   // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
   // (e.g. wildlife idle animations) is real art and should play normally.

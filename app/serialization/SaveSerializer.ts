@@ -65,6 +65,8 @@ type SerializableEntity = RuntimeEntityBase & {
   isBuilt?: boolean
   isUsedBy?: string | { label?: string } | null
   loading?: number | null
+  trainingStartedDay?: number | null
+  trainingCompleteDay?: number | null
   loop?: boolean
   mountedOnHorse?: boolean
   path?: GridPoint[]
@@ -312,6 +314,8 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'queue',
       'technology',
       'loading',
+      'trainingStartedDay',
+      'trainingCompleteDay',
       'isDead',
       'isDestroyed',
       'isBuilt',

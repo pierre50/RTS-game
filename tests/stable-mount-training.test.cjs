@@ -22,17 +22,12 @@ function loadModule(relativePath, mocks) {
 }
 
 test('Stable trains only unmounted matching military units into mounted units', () => {
-  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildings/buildingTraining.ts', {
+  const { canUnitTrainInto } = loadModule('app/lib/buildings/buildingTraining.ts', {
     '../constants': {
       BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
-    '../combat': { isValidCondition: () => true },
     '../horses/stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
-    '../units/unitUpgrades': {
-      canUpgradeUnitAtBuilding: () => false,
-      getUnitUpgradeTargetForBuilding: () => null,
-    },
   })
 
   const owner = {}
@@ -50,36 +45,18 @@ test('Stable trains only unmounted matching military units into mounted units', 
   const villager = { type: 'Villager', owner }
 
   assert.equal(canUnitTrainInto(stable, clubman, 'Fantassin'), true)
-  assert.equal(getTrainingTargetForUnit(stable, clubman), 'Fantassin')
   assert.equal(canUnitTrainInto(stable, bowman, 'Bowman'), true)
-  assert.equal(getTrainingTargetForUnit(stable, bowman), 'Bowman')
   assert.equal(canUnitTrainInto(stable, mountedInfantry, 'Fantassin'), false)
-  assert.equal(getTrainingTargetForUnit(stable, mountedInfantry), null)
   assert.equal(canUnitTrainInto(stable, villager, 'Fantassin'), false)
-  assert.equal(getTrainingTargetForUnit(stable, villager), null)
 })
 
 test('Barracks and archery range no longer upgrade trained soldiers', () => {
-  const { canUnitTrainInto, getTrainingTargetForUnit } = loadModule('app/lib/buildings/buildingTraining.ts', {
+  const { canUnitTrainInto } = loadModule('app/lib/buildings/buildingTraining.ts', {
     '../constants': {
       BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
       UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
     },
-    '../combat': { isValidCondition: () => true },
     '../horses/stableHorses': { getStableHorseAmount: building => building.stableHorses?.length ?? 0 },
-    '../units/unitUpgrades': loadModule('app/lib/units/unitUpgrades.ts', {
-      '../constants': {
-        BUILDING_TYPES: { stable: 'Stable', barracks: 'Barracks', archeryRange: 'ArcheryRange' },
-        UNIT_TYPES: {
-          clubman: 'Fantassin',
-          axeman: 'Fantassin',
-          shortSwordsman: 'Fantassin',
-          broadSwordsman: 'Fantassin',
-          longSwordsman: 'Fantassin',
-          bowman: 'Bowman',
-        },
-      },
-    }),
   })
 
   const owner = {
@@ -96,7 +73,41 @@ test('Barracks and archery range no longer upgrade trained soldiers', () => {
   const bowman = { type: 'Bowman', owner }
 
   assert.equal(canUnitTrainInto(barracks, clubman, 'Fantassin'), false)
-  assert.equal(getTrainingTargetForUnit(barracks, clubman), null)
   assert.equal(canUnitTrainInto(archeryRange, bowman, 'Bowman'), false)
-  assert.equal(getTrainingTargetForUnit(archeryRange, bowman), null)
+})
+
+test('training building load counts active queued and incoming units up to shared capacity', () => {
+  const { getBuildingTrainingLoad, hasBuildingTrainingCapacity } = loadModule(
+    'app/lib/buildings/buildingTraining.ts',
+    {
+      '../constants': {
+        BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+        UNIT_TYPES: { villager: 'Villager', priest: 'Priest' },
+      },
+      '../resources/playerResourceTotals': {
+        getMissingPlayerResources: () => ({}),
+        hasPlayerResourceChests: () => false,
+      },
+    }
+  )
+
+  const owner = { units: [] }
+  const building = {
+    loading: 40,
+    queue: ['Fantassin', 'Bowman'],
+    owner,
+  }
+  const incomingA = { dest: building, trainingTargetType: 'Fantassin' }
+  const incomingB = { dest: building, trainingTargetType: 'Bowman' }
+  const ignoredDeadIncoming = { dest: building, trainingTargetType: 'Fantassin', isDead: true }
+  owner.units.push(incomingA, incomingB, ignoredDeadIncoming)
+
+  assert.equal(getBuildingTrainingLoad(building), 4)
+  assert.equal(hasBuildingTrainingCapacity(building), true)
+
+  owner.units.push({ dest: building, trainingTargetType: 'Fantassin' })
+
+  assert.equal(getBuildingTrainingLoad(building), 5)
+  assert.equal(hasBuildingTrainingCapacity(building), false)
+  assert.equal(hasBuildingTrainingCapacity(building, { excludeUnit: incomingA }), true)
 })

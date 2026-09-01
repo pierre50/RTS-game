@@ -84,6 +84,13 @@ function formatDamageFeedback(damage: number): string | null {
   return `-${rounded}`
 }
 
+function formatHitPointGainFeedback(amount: number): string | null {
+  if (!Number.isFinite(amount)) return null
+  const rounded = Math.round(amount)
+  if (rounded <= 0) return null
+  return `+${rounded}`
+}
+
 function canShowCombatFeedback(target: RuntimeEntity): boolean {
   return (
     target.family === FAMILY_TYPES.unit ||
@@ -368,6 +375,17 @@ export function showResourceGainFeedback(target: RuntimeEntity, amount: number):
     fill: 0xb8ff7a,
     stroke: 0x22591f,
     taskLabel: 'resource.gainText',
+  })
+}
+
+export function showHitPointGainFeedback(target: RuntimeEntity, amount: number): void {
+  const text = formatHitPointGainFeedback(amount)
+  if (!text || !canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed || target.isDead) return
+  showFloatingText(target, {
+    text,
+    fill: 0xb8ff7a,
+    stroke: 0x22591f,
+    taskLabel: 'combat.hitPointGainText',
   })
 }
 

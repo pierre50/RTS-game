@@ -2,7 +2,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
   fr: {
     tooltipCost: 'Coût : {cost}',
     tooltipBuildTime: 'Construction : {time} s',
-    tooltipTrainTime: 'Entraînement : {time} s',
+    tooltipTrainTime: 'Entraînement : {time} j',
     tooltipResearchTime: 'Recherche : {time} s',
     tooltipRequiresAge: 'Requis : {age}',
     tooltipRequiresTechnology: 'Requis : {technology}',
@@ -145,7 +145,7 @@ export const ENTITY_TOOLTIP_TRANSLATIONS = {
   en: {
     tooltipCost: 'Cost: {cost}',
     tooltipBuildTime: 'Build time: {time}s',
-    tooltipTrainTime: 'Train time: {time}s',
+    tooltipTrainTime: 'Train time: {time}d',
     tooltipResearchTime: 'Research time: {time}s',
     tooltipRequiresAge: 'Requires: {age}',
     tooltipRequiresTechnology: 'Requires: {technology}',

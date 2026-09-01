@@ -198,6 +198,7 @@ export interface UnitEntity extends EnergyEntity {
   cancelUnits?: (type: string) => void
   upgrade?: (target: string) => void
   trainingTargetType?: string | null
+  trainingRetryTaskId?: number | null
   realDest?: UnitRealDest | null
   previousDest?: RuntimeEntity | RuntimeCell | null
   previousWork?: string | null

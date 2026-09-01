@@ -2,12 +2,11 @@ import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, UNIT_TYPES } from '../constant
 import { applyDiplomaticAggression } from '../combat/diplomaticAggression'
 import { drawInstanceBlinkingSelection } from '../graphics/selection'
 import { findInstancesInSight } from '../grid/visibility'
-import { getTrainingTargetForUnit } from '../buildings/buildingTraining'
-import { showUnitCannotEnterBuildingMessage } from '../buildings/buildingFeedback'
 import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
 import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
+import { VILLAGER_TRAINING_UNIT_TYPES, findTrainingTypeForUnitAtBuilding } from '../units/unitTrainingOrders'
 import type { SelectableInstance } from '../graphics/selection'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -51,8 +50,7 @@ function getNightWorkFallbackCell(npc: UnitEntity, cell: RuntimeCell, target: Ru
       grid,
       cells =>
         [...cells].sort(
-          (a, b) =>
-            Math.abs(a.i - npc.i) + Math.abs(a.j - npc.j) - (Math.abs(b.i - npc.i) + Math.abs(b.j - npc.j))
+          (a, b) => Math.abs(a.i - npc.i) + Math.abs(a.j - npc.j) - (Math.abs(b.i - npc.i) + Math.abs(b.j - npc.j))
         )[0]
     ) ?? cell
   )
@@ -148,6 +146,13 @@ function isEnemyTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
   return Boolean(target.owner && hero.owner?.isEnemy?.(target.owner))
 }
 
+function hasSameOwner(source: UnitEntity, target: RuntimeEntity): boolean {
+  return Boolean(
+    target.owner === source.owner ||
+      (target.owner?.label && source.owner?.label && target.owner.label === source.owner.label)
+  )
+}
+
 function isClickDispatchable(hero: UnitEntity, target: RuntimeEntity): boolean {
   if (target.family === FAMILY_TYPES.resource || target.family === FAMILY_TYPES.building) return true
   if (target.family === FAMILY_TYPES.animal) return true
@@ -192,18 +197,18 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     }
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
-      if (building.owner === npc.owner && building.isBuilt) {
-        const trainingType = getTrainingTargetForUnit(building, npc)
+      if (hasSameOwner(npc, building) && building.isBuilt) {
+        const trainingType =
+          npc.type === UNIT_TYPES.villager
+            ? findTrainingTypeForUnitAtBuilding(npc, building, VILLAGER_TRAINING_UNIT_TYPES)
+            : null
         if (trainingType) {
-          if (refuseNightWorkIfNeeded(npc, cell, target)) return false
-          return Boolean(building.requestUnitTraining?.(trainingType, undefined, npc))
+          npc.trainingTargetType = trainingType
+          npc.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
+          return true
         }
-        if (npc.type !== UNIT_TYPES.villager) {
-          npc.sendTo?.(cell)
-          return false
-        }
-        showUnitCannotEnterBuildingMessage(npc, building)
-        return false
+        npc.sendToEvt?.(building, null, { allowPassageStop: true })
+        return true
       }
     }
     if (target.family === FAMILY_TYPES.animal) {

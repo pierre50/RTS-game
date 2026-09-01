@@ -15,7 +15,7 @@ function loadResourceTotals() {
 }
 
 test('player chest resource totals sum only owned living chests', () => {
-  const { getPlayerChestResourceTotals } = loadResourceTotals()
+  const { getPlayerResourceTotals } = loadResourceTotals()
   const player = { label: 'p1', buildings: [] }
   const other = { label: 'p2' }
   player.buildings = [
@@ -47,7 +47,7 @@ test('player chest resource totals sum only owned living chests', () => {
     },
   ]
 
-  assert.deepEqual(getPlayerChestResourceTotals(player), { wood: 7, food: 3, stone: 4 })
+  assert.deepEqual(getPlayerResourceTotals(player, { includeHero: false }), { wood: 7, food: 3, stone: 4 })
 })
 
 test('player resource totals include the hero bag and starting town center stock', () => {
@@ -64,11 +64,14 @@ test('player resource totals include the hero bag and starting town center stock
 })
 
 test('missing chest resources compares costs against stored chest totals', () => {
-  const { getMissingChestResources } = loadResourceTotals()
+  const { getMissingPlayerResources } = loadResourceTotals()
   const player = {
     label: 'p1',
     buildings: [{ owner: { label: 'p1' }, type: 'Chest', inventory: { resources: { wood: 7, food: 1 } } }],
   }
 
-  assert.deepEqual(getMissingChestResources(player, { wood: 5, food: 3, stone: 2 }), { food: 2, stone: 2 })
+  assert.deepEqual(getMissingPlayerResources(player, { wood: 5, food: 3, stone: 2 }, { includeHero: false }), {
+    food: 2,
+    stone: 2,
+  })
 })

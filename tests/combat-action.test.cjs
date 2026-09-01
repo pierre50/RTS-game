@@ -83,7 +83,6 @@ function loadModule(relativePath, mocks) {
       getCombatMoraleRoll: unit =>
         typeof unit?.combatMoraleRoll === 'number' ? unit.combatMoraleRoll : unit?.label ? 0.5 : 1,
     },
-    './units/unitUpgrades': { canUpgradeUnitAtBuilding: () => false },
     '../../lib/combat/combatBehavior': {
       markCombatAttack: unit => {
         unit.combatMode = 'attack'

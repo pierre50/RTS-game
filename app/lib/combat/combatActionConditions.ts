@@ -1,8 +1,7 @@
-import { ACTION_TYPES, FAMILY_TYPES, MINING_RESOURCE_CONFIG, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, MINING_RESOURCE_CONFIG, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
 import { getEntityWeaponPower } from '../equipment/equipmentStats'
 import { isWildHorse } from '../horses/horseTaming'
 import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
-import { canUpgradeUnitAtBuilding } from '../units/unitUpgrades'
 import { isBanditOwner, isBanditUnitType } from './bandits'
 import { isFriendlyTarget } from './combatRelations'
 import type { ActionProps, CombatEntity } from '../../types/combat'
@@ -199,7 +198,9 @@ export const getActionCondition = (
       Boolean(
         target &&
           (source.type === UNIT_TYPES.villager ||
-            canUpgradeUnitAtBuilding(target.type, source.type, props?.trainingType)) &&
+            (target.type === BUILDING_TYPES.stable &&
+              source.type === props?.trainingType &&
+              !(source as UnitEntity).mountedOnHorse)) &&
           target.family === FAMILY_TYPES.building &&
           target.owner?.label === source.owner?.label &&
           target.isBuilt &&

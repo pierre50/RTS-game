@@ -14,8 +14,6 @@ function loadNpcGoToDispatch(isSleepTime = false) {
       '../combat/diplomaticAggression': { applyDiplomaticAggression: () => false },
       '../graphics/selection': { drawInstanceBlinkingSelection: () => {} },
       '../grid/visibility': { findInstancesInSight: () => [] },
-      '../buildings/buildingTraining': { getTrainingTargetForUnit: () => null },
-      '../buildings/buildingFeedback': { showUnitCannotEnterBuildingMessage: () => {} },
       '../units/villagerSchedule': { isVillagerSleepTime: () => isSleepTime },
       '../../services/rest/UnitRestRules': {
         delayUnitRestAfterActivity: unit => {

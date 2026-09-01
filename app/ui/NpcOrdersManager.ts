@@ -1,6 +1,11 @@
 import { assignVillagerAutonomy, hasVillagerAutonomyTarget } from '../lib'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
+import {
+  findBestTrainingBuildingForUnit,
+  sendUnitToTraining,
+  VILLAGER_TRAINING_UNIT_TYPES,
+} from '../lib/units/unitTrainingOrders'
 import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
@@ -30,14 +35,16 @@ import type { NpcOrdersOpenOptions } from '../types/context'
 import type { UnitEntity, VillagerAutonomyJob } from '../types/entities'
 import type { MenuHost } from './MenuHost'
 
-type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | VillagerAutonomyJob
-type NpcOrderMenuId = NpcOrderId | 'resources' | 'bag'
+type NpcOrderId = 'stay' | 'follow' | 'goto' | 'cancel' | 'mountHorse' | VillagerAutonomyJob | `train-${string}`
+type NpcOrderMenuId = NpcOrderId | 'resources' | 'training' | 'bag'
 
 type NpcOrderSpec = {
   id: NpcOrderId
   labelKey: string
   run?: (npc: UnitEntity) => void
   villagerJob?: VillagerAutonomyJob
+  trainingType?: string
+  mountHorse?: boolean
   startsPicking?: boolean
 }
 
@@ -59,7 +66,12 @@ const NPC_RESOURCE_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 
   { id: 'iron', labelKey: 'npcOrderIron', villagerJob: 'iron' },
 ]
 
-const ALL_NPC_ORDER_SPECS: NpcOrderSpec[] = [...NPC_ORDER_SPECS, ...NPC_RESOURCE_ORDER_SPECS]
+const NPC_TRAINING_ORDER_SPECS: Required<Pick<NpcOrderSpec, 'id' | 'labelKey' | 'trainingType'>>[] =
+  VILLAGER_TRAINING_UNIT_TYPES.map(type => ({
+    id: `train-${type}`,
+    labelKey: type,
+    trainingType: type,
+  }))
 
 function isSleepingNpc(npc: UnitEntity | null | undefined): boolean {
   return npc?.shelterState?.reason === 'sleep' && npc.sleepVisualState === 'sleeping'
@@ -202,32 +214,10 @@ export class NpcOrdersManager {
 
     this.updateDebugControls(soloTarget)
 
-    const hasFollower = npcs.some(npc => npc.followingHero === true)
-    const hasNonFollower = npcs.some(npc => npc.followingHero !== true)
-    const stayButton = this.buttons.get('stay')
-    if (stayButton) {
-      stayButton.disabled = !hasFollower
+    for (const [id, button] of this.buttons) {
+      if (id !== 'back') button.disabled = false
     }
-    const followButton = this.buttons.get('follow')
-    if (followButton) {
-      followButton.disabled = !hasNonFollower
-    }
-    const hasVillager = npcs.some(npc => npc.type === UNIT_TYPES.villager)
-    const resourcesButton = this.buttons.get('resources')
-    const nightWorkBlocked = hasVillager && isVillagerSleepTime(this.menu.context)
-    if (resourcesButton) {
-      resourcesButton.disabled = !hasVillager || nightWorkBlocked
-    }
-    for (const spec of ALL_NPC_ORDER_SPECS) {
-      if (!spec.villagerJob) continue
-      const button = this.buttons.get(spec.id)
-      if (!button) continue
-      const needsKnownTarget = spec.villagerJob === 'construction' || spec.villagerJob === 'horseCapture'
-      const hasTarget =
-        !needsKnownTarget ||
-        npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, spec.villagerJob!))
-      button.disabled = !hasVillager || !hasTarget || nightWorkBlocked
-    }
+    this.orderMenu.syncVisibility()
     if (this.modal) {
       setModalTitle(this.modal, title)
       setInspectionMode(this.modal, hasInfo)
@@ -318,7 +308,20 @@ export class NpcOrdersManager {
         {
           id: 'resources',
           label: t('npcOrderResources'),
+          hidden: () => !this.canShowResourcesButton(),
           children: NPC_RESOURCE_ORDER_SPECS.map(resourceSpec => this.createOrderMenuItem(resourceSpec)),
+        },
+        {
+          id: 'training',
+          label: t('unitTrainingMenu'),
+          hidden: () => !this.canShowTrainingButton(),
+          children: NPC_TRAINING_ORDER_SPECS.map(trainingSpec => this.createOrderMenuItem(trainingSpec)),
+        },
+        {
+          id: 'mountHorse',
+          label: t('mountHorseTraining'),
+          hidden: () => !this.canShowMountHorseButton(),
+          onClick: () => this.runOrder({ id: 'mountHorse', labelKey: 'mountHorseTraining', mountHorse: true }),
         },
       ]
     })
@@ -328,8 +331,68 @@ export class NpcOrdersManager {
     return {
       id: spec.id,
       label: t(spec.labelKey),
+      hidden: () => !this.canShowOrder(spec),
       onClick: () => this.runOrder(spec),
     }
+  }
+
+  private hasVillager(): boolean {
+    return this.npcs.some(npc => npc.type === UNIT_TYPES.villager)
+  }
+
+  private hasNightWorkBlock(): boolean {
+    return this.hasVillager() && isVillagerSleepTime(this.menu.context)
+  }
+
+  private canShowOrder(spec: NpcOrderSpec): boolean {
+    if (spec.id === 'follow') return this.npcs.some(npc => npc.followingHero !== true)
+    if (spec.id === 'stay') return this.npcs.some(npc => npc.followingHero === true)
+    if (spec.villagerJob) return this.canShowVillagerJobOrder(spec.villagerJob)
+    if (spec.trainingType) return this.canShowTrainingOrder(spec.trainingType)
+    if (spec.mountHorse) return this.canShowMountHorseButton()
+    return true
+  }
+
+  private canShowResourcesButton(): boolean {
+    return this.hasVillager() && !this.hasNightWorkBlock()
+  }
+
+  private canShowTrainingButton(): boolean {
+    return (
+      this.hasVillager() &&
+      !this.hasNightWorkBlock() &&
+      this.npcs.some(
+        npc =>
+          npc.type === UNIT_TYPES.villager &&
+          VILLAGER_TRAINING_UNIT_TYPES.some(type => findBestTrainingBuildingForUnit(npc, type))
+      )
+    )
+  }
+
+  private canShowTrainingOrder(trainingType: string): boolean {
+    return (
+      !this.hasNightWorkBlock() &&
+      this.npcs.some(
+        npc => npc.type === UNIT_TYPES.villager && Boolean(findBestTrainingBuildingForUnit(npc, trainingType))
+      )
+    )
+  }
+
+  private canShowMountHorseButton(): boolean {
+    return this.npcs.some(
+      npc =>
+        npc.type !== UNIT_TYPES.villager &&
+        !npc.mountedOnHorse &&
+        Boolean(findBestTrainingBuildingForUnit(npc, npc.type))
+    )
+  }
+
+  private canShowVillagerJobOrder(job: VillagerAutonomyJob): boolean {
+    if (!this.hasVillager() || this.hasNightWorkBlock()) return false
+    const needsKnownTarget = job === 'construction' || job === 'horseCapture'
+    return (
+      !needsKnownTarget || this.npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, job))
+    )
   }
 
   refreshInventory(): void {
@@ -404,6 +467,20 @@ export class NpcOrdersManager {
         clearNpcCommunicationFocus(npc)
         npc.previousDest = null
         assignVillagerAutonomy(npc, spec.villagerJob)
+      }
+    } else if (spec.trainingType) {
+      for (const npc of npcs) {
+        if (npc.type !== UNIT_TYPES.villager) continue
+        clearNpcCommunicationFocus(npc)
+        npc.previousDest = null
+        sendUnitToTraining(npc, spec.trainingType)
+      }
+    } else if (spec.mountHorse) {
+      for (const npc of npcs) {
+        if (npc.type === UNIT_TYPES.villager || npc.mountedOnHorse) continue
+        clearNpcCommunicationFocus(npc)
+        npc.previousDest = null
+        sendUnitToTraining(npc, npc.type)
       }
     } else {
       for (const npc of npcs) spec.run?.(npc)

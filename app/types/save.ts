@@ -69,6 +69,8 @@ export type SaveEntityState = {
   j: number
   label?: string
   loading?: number | null
+  trainingStartedDay?: number | null
+  trainingCompleteDay?: number | null
   loop?: boolean
   lootEquipment?: string[]
   mountedOnHorse?: boolean

@@ -451,7 +451,6 @@
 }
 
 .selection-info .resource-quantity,
-.selection-info .building-loading,
 .selection-info .population,
 .selection-info .stable-horses {
   position: static;
@@ -468,7 +467,6 @@
   border: 1px solid var(--border-divider-subtle);
 }
 
-.selection-info .building-loading:empty,
 .selection-info .info:empty,
 .selection-info .resource-quantity:empty,
 .selection-info .population:empty,
@@ -477,7 +475,6 @@
 }
 
 .selection-info .resource-quantity-icon,
-.selection-info .building-loading-icon,
 .selection-info .population img {
   width: 18px;
   height: 18px;
@@ -948,6 +945,23 @@
   overflow: hidden;
 }
 
+.inventory-transfer-slot.is-theft {
+  border-color: rgba(255, 138, 114, 0.68);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .inventory-transfer-slot.is-theft:not(:disabled, .disabled, [aria-disabled='true']):hover {
+    color: #ffd7d7;
+    background:
+      var(--ui-button-sheen),
+      linear-gradient(180deg, rgba(112, 18, 28, 0.94), rgba(64, 10, 20, 0.96));
+    border-color: #ff8a72;
+    box-shadow:
+      var(--ui-button-shadow-raised),
+      0 0 0 1px rgba(255, 138, 114, 0.42);
+  }
+}
+
 .inventory-resource-icon {
   width: 42px;
   height: 42px;
@@ -1336,7 +1350,6 @@
   grid-column: 2;
   display: none;
   align-items: center;
-  gap: var(--ui-gap-5);
   min-width: 0;
 }
 
@@ -1344,30 +1357,9 @@
   display: flex;
 }
 
-.hero-building-menu-progress {
-  position: relative;
-  flex: 1;
-  height: 8px;
-  overflow: hidden;
-  border: var(--border-slot);
-  background: var(--form-surface-color);
-  box-shadow: var(--ui-inset-shadow);
-}
-
-.hero-building-menu-progress-fill {
-  display: block;
-  width: 0%;
-  height: 100%;
-  background: var(--status-progress-background);
-  box-shadow: var(--status-progress-inset-shadow);
-  transition: width var(--ui-transition-fast);
-}
-
 .hero-building-menu-status-text {
-  min-width: 42px;
   color: white;
   font-size: var(--font-size-sm);
-  text-align: right;
   text-shadow: var(--text-shadow-none);
 }
 
@@ -1624,7 +1616,6 @@ body.hero-cursor-hidden {
   gap: var(--ui-gap-5);
 }
 
-.building-loading,
 .population {
   position: absolute;
   top: 32px;

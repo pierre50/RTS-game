@@ -726,3 +726,28 @@ test('construction autonomy only targets own unfinished buildings', () => {
   assert.equal(assignVillagerAutonomy(villager, 'construction'), true)
   assert.equal(villager.dest, ownBuilding)
 })
+
+test('construction autonomy repairs own damaged completed buildings', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const owner = createOwner()
+  const damagedBuilding = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 60,
+    i: 4,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 4,
+    label: 'damaged-house',
+    owner,
+    totalHitPoints: 100,
+    type: 'House',
+  }
+  owner.buildings.push(damagedBuilding)
+  const villager = createVillager(owner)
+
+  assert.equal(hasVillagerAutonomyTarget(villager, 'construction'), true)
+  assert.equal(assignVillagerAutonomy(villager, 'construction'), true)
+  assert.equal(villager.dest, damagedBuilding)
+  assert.equal(villager.action, constants.ACTION_TYPES.build)
+})

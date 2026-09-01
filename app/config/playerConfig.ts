@@ -52,7 +52,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sight: 7,
     speed: 1.2,
     attackRecoveryMs: 760,
-    trainingTime: 0,
+    trainingDays: 0,
     equipment: [
       'axe_ceramic',
       'armor_leather',
@@ -71,7 +71,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sight: 7,
     speed: 1.3,
     attackRecoveryMs: 640,
-    trainingTime: 0,
+    trainingDays: 0,
     equipment: ['sword_ceramic', 'helmet_barbarian_nasal_ceramic', 'round_shield_ceramic_slash'],
     combatBehaviorPreset: 'meleeAggressive',
     sounds: {
@@ -86,7 +86,7 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     sight: 8,
     speed: 1.3,
     attackRecoveryMs: 800,
-    trainingTime: 0,
+    trainingDays: 0,
     equipment: ['quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
     projectile: 'Arrow',
     combatBehaviorPreset: 'rangedKite',
@@ -117,7 +117,7 @@ const BUILDING_OVERRIDES: Record<string, Partial<BuildingConfig>> = {
   },
   Stable: {
     units: ['Fantassin', 'Bowman'],
-    mountingTime: 16,
+    mountingDays: 1,
   },
 }
 

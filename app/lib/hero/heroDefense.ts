@@ -96,7 +96,7 @@ function showHeroDefenseParryEffect(hero: UnitEntity): void {
   )
 }
 
-function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
+export function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined): boolean {
   return tool === 'sword'
 }
 

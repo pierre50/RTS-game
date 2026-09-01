@@ -3,7 +3,7 @@ import { getIconPath } from '../../lib'
 import { HORSE_COLOR_PALETTES, isHorseColor } from '../../lib/horses/horseColors'
 import { t } from '../../lib/lang'
 import { getStableHorseAmount, getStableHorses, STABLE_HORSE_CAPACITY } from '../../lib/horses/stableHorses'
-import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage, createInfoText } from './BaseEntityInterface'
+import { appendBaseEntityInfo, appendQuantityInfo, createInfoImage } from './BaseEntityInterface'
 import { getBuildingDisplayName } from '../utils/entityDisplayName'
 import type { BuildingEntity, EntityInfoRenderOptions } from '../../types/entities'
 import type { BuildingConfig } from '../../types/config'
@@ -25,7 +25,6 @@ export class BuildingInterface {
     if (building.type === BUILDING_TYPES.stable && building.isBuilt) {
       element.appendChild(this.getStableHorseElement())
     }
-    element.appendChild(this.getLoadingElement())
   }
 
   getPopulationElement(): HTMLDivElement {
@@ -68,28 +67,6 @@ export class BuildingInterface {
     }
     horseDiv.appendChild(avatars)
     return horseDiv
-  }
-
-  updateLoading(): void {
-    const building = this.building
-    const menu = (building.context as { menu: MenuLike }).menu
-    if (!building.owner?.isPlayed) return
-    if (menu.getHeroBuildingMenuTarget?.() === building) {
-      menu.syncHeroBuildingMenu?.()
-    }
-  }
-
-  getLoadingElement(): HTMLDivElement {
-    const building = this.building
-    const loadingDiv = document.createElement('div')
-    loadingDiv.className = 'building-loading'
-    loadingDiv.classList.add(MENU_INFO_IDS.loading)
-
-    if (building.loading !== null && building.owner?.isPlayed) {
-      loadingDiv.appendChild(createInfoImage('building-loading-icon', getIconPath('009_50731')))
-      loadingDiv.appendChild(createInfoText(MENU_INFO_IDS.loadingText, building.loading + '%'))
-    }
-    return loadingDiv
   }
 
   setDefaultInterface(element: HTMLElement, _data: BuildingConfig, options?: EntityInfoRenderOptions): void {

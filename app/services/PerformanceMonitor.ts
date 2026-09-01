@@ -11,7 +11,6 @@ const RUNTIME_SAMPLE_RATES = new Map([
   ['unit.step', 8],
   ['unit.move', 8],
   ['visibility.update', 4],
-  ['building.production', 8],
   ['projectile.step', 8],
 ])
 

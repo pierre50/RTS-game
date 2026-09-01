@@ -4,6 +4,7 @@ import type { PlayerLike } from '../../types/player'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 export const THEFT_SUBJECT_TYPES = {
+  chest: 'chest',
   horse: 'horse',
 } as const
 
@@ -29,6 +30,7 @@ export type TheftResult = {
 }
 
 const THEFT_REASONS: Record<TheftSubjectType, string> = {
+  chest: 'theft:chest',
   horse: 'theft:horse',
 }
 

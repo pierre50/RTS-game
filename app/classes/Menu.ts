@@ -66,6 +66,7 @@ export default class Menu implements MenuLike {
   selection: RuntimeEntity | null
   private lastMessageText: string | null = null
   private lastMessageAt = 0
+  private syncingLivePanelsFromTopbar = false
 
   constructor(context: GameContextLike) {
     this.context = context
@@ -131,6 +132,14 @@ export default class Menu implements MenuLike {
 
   updateTopbar(): void {
     this.topbarView.update()
+    if (this.syncingLivePanelsFromTopbar) return
+    this.syncingLivePanelsFromTopbar = true
+    try {
+      this.entityInfoModalManager.syncLiveState()
+      this.heroBuildingMenuManager.syncLiveState()
+    } finally {
+      this.syncingLivePanelsFromTopbar = false
+    }
   }
 
   updateAgeTheme(): void {
@@ -233,10 +242,6 @@ export default class Menu implements MenuLike {
     void target
     void action
   }
-  toggleQueuedActionCancel(target: string, value: boolean): void {
-    void target
-    void value
-  }
   updateActionTarget(): void {
     const { controls, player } = this.context
     this.selection = controls.heroUnit ?? player.selectedBuilding ?? player.selectedUnit ?? null
@@ -255,8 +260,17 @@ export default class Menu implements MenuLike {
   getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getActionUnitButton(type, building)
   }
+  getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
+    return this.actionSpecs.getCancelUnitTrainingButton(building)
+  }
   getActionRallyPointButton(): MenuButtonSpec {
     return this.actionSpecs.getActionRallyPointButton()
+  }
+  getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec {
+    return this.actionSpecs.getUnitTrainingMenuButton(unit)
+  }
+  getMountHorseButton(unit: UnitEntity): MenuButtonSpec {
+    return this.actionSpecs.getMountHorseButton(unit)
   }
   getActionBuildingButton(type: string, ownerOverride: PlayerLike | null = null): MenuButtonSpec {
     return this.actionSpecs.getActionBuildingButton(type, ownerOverride)

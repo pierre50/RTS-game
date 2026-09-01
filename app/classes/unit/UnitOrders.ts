@@ -65,9 +65,6 @@ export function flushUnitPendingOrder(unit: UnitOrderHost): boolean {
 
 export function handleUnitChangeDest(unit: UnitEntity): void {
   const dest = unit.dest
-  if (dest && 'cancelTrainingForUnit' in dest) {
-    dest.cancelTrainingForUnit?.(unit)
-  }
   if (dest && 'isUsedBy' in dest && dest.isUsedBy === unit) {
     dest.isUsedBy = null
   }

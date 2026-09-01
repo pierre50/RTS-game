@@ -119,6 +119,7 @@ export class BuildingCombat {
     const range = getBuildingCombatRange(building)
     if (building.isDead || !getActionCondition(building, instance, ACTION_TYPES.attack)) return
     building.owner.reportThreat?.(building, instance)
+    building.context.unitRest?.handleShelterAttack?.(building, instance)
     if (
       building.isBuilt &&
       range &&

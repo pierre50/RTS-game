@@ -46,7 +46,11 @@ function loadActionSpecFactory(options = {}) {
         light: [],
       },
     },
-    '../lib/buildings/buildingTraining': { getMissingResourceNames: () => [], isTraineeTrainingType: () => false },
+    '../lib/buildings/buildingTraining': {
+      getMissingResourceNames: () => [],
+      hasBuildingTrainingCapacity: () => true,
+      isTraineeTrainingType: () => false,
+    },
     '../lib/chief': {
       hasLivingChief: () => true,
       heroCanCommand: () => true,
@@ -54,8 +58,16 @@ function loadActionSpecFactory(options = {}) {
     },
     '../lib/lang': { t: key => key },
     '../lib/audio/uiSound': { playUiSound: () => {} },
+    '../lib/units/unitTrainingOrders': {
+      canShowMountHorseAction: () => false,
+      canShowVillagerTrainingMenu: () => false,
+      findBestTrainingBuildingForUnit: () => null,
+      sendUnitToTraining: () => false,
+      VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
+    },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.ActionSpecFactory
 }
@@ -110,10 +122,7 @@ test('stable debug horse button adds a stored horse without linking it to the he
 
   assert.equal(hero.companionHorseColor, undefined)
   assert.equal(hero.horseColor, undefined)
-  assert.deepEqual(stable.stableHorses, [
-    { horseColor: 'dark' },
-    { horseColor: 'dark', tamingStatus: 'tamed' },
-  ])
+  assert.deepEqual(stable.stableHorses, [{ horseColor: 'dark' }, { horseColor: 'dark', tamingStatus: 'tamed' }])
   assert.deepEqual(messages, [['stableDebugHorseAdded', 'success']])
   assert.equal(button.disabled(), false)
 })
@@ -178,6 +187,43 @@ test('own building actions survive owner object restore by label', () => {
     factory.getActionMenuItems(stable).map(item => item.id),
     ['stableDebugAddHorse', 'train']
   )
+})
+
+test('cancel training button is a single global building action', () => {
+  const messages = []
+  const { factory, player } = createFactory({ hero: {}, messages })
+  const calls = []
+  const building = {
+    family: 'building',
+    type: 'Barracks',
+    owner: player,
+    queue: ['Fantassin', 'Bowman'],
+    interface: { menu: [] },
+    cancelAllUnitTraining: () => {
+      calls.push('cancelAll')
+      return true
+    },
+  }
+
+  const button = factory.getCancelUnitTrainingButton(building)
+  assert.equal(button.hide(), false)
+  button.onClick(building)
+  assert.deepEqual(calls, ['cancelAll'])
+})
+
+test('cancel training button hides when no unit training exists', () => {
+  const messages = []
+  const { factory, player } = createFactory({ hero: {}, messages })
+  const building = {
+    family: 'building',
+    type: 'Barracks',
+    owner: player,
+    queue: [],
+    interface: { menu: [] },
+  }
+
+  const button = factory.getCancelUnitTrainingButton(building)
+  assert.equal(button.hide(), true)
 })
 
 test('resource-gated unit button is disabled without showing a missing resource alert', () => {
