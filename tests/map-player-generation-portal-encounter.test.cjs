@@ -20,9 +20,15 @@ function loadMapPlayerGeneration() {
       '../../lib': { playerColors: ['blue', 'red', 'green'] },
       '../../constants': {
         BUILDING_TYPES: { townCenter: 'TownCenter' },
+        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
         PLAYER_TYPES: { ai: 'AI', bandits: 'Bandits' },
         POPULATION_MAX: 200,
         UNIT_TYPES: { chief: 'Chief', hero: 'Hero', villager: 'Villager' },
+      },
+      '../../lib/resources/playerResourceTotals': {
+        syncPlayerResourceFieldsFromChests: player => {
+          player.syncedResources = true
+        },
       },
       '../players': { AI, Human },
       './BanditCampGeneration': {
@@ -57,6 +63,7 @@ function createMap(portalEncounter) {
     portalEncounter,
     randomItem: items => items[0],
     startingAge: 0,
+    startingResources: { wood: 200, food: 200, stone: 150, gold: 0, copper: 0, iron: 0 },
     startingUnits: 3,
   }
 }
@@ -91,4 +98,27 @@ test('bandit portal encounters turn the non-human spawn into a bandit camp', () 
   )
   assert.deepEqual(map.banditCampPositions, [{ i: 40, j: 50 }])
   assert.deepEqual(calls.ensureBanditCampOwner, [{ anchor: { i: 40, j: 50 }, civ: 'Greek' }])
+})
+
+test('starting town center receives the map starting resources in its inventory', () => {
+  const { placePlayers } = loadMapPlayerGeneration()
+  const townCenter = {
+    inventory: null,
+    placeUnit: () => true,
+    type: 'TownCenter',
+  }
+  const player = {
+    i: 4,
+    isPlayed: true,
+    j: 5,
+    spawnBuilding: () => townCenter,
+    type: 'Human',
+  }
+  const map = createMap('village')
+  map.context.players = [player]
+
+  placePlayers(map)
+
+  assert.deepEqual(townCenter.inventory.resources, map.startingResources)
+  assert.equal(player.syncedResources, true)
 })

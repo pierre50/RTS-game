@@ -1,4 +1,5 @@
 import { getHeroInventory } from '../equipment/equipmentLoot'
+import { getMissingPlayerResources, withdrawChestResources } from '../resources/playerResourceTotals'
 import type { ResourceAmount } from '../../types/common'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -62,17 +63,16 @@ export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   },
 ]
 
-export function getMissingCraftResources(player: PlayerLike, cost: ResourceAmount): ResourceAmount {
-  const missing: ResourceAmount = {}
-  for (const [resource, amount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
-    const needed = Math.max(0, Math.floor(amount ?? 0))
-    if (needed > 0 && (player[resource] ?? 0) < needed) missing[resource] = needed - (player[resource] ?? 0)
-  }
-  return missing
+export function getMissingCraftResources(
+  player: PlayerLike,
+  cost: ResourceAmount,
+  hero?: UnitEntity | null
+): ResourceAmount {
+  return getMissingPlayerResources(player, cost, { hero })
 }
 
-export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe): boolean {
-  return Object.keys(getMissingCraftResources(player, recipe.cost)).length === 0
+export function canCraftHeroRecipe(player: PlayerLike, recipe: HeroCraftRecipe, hero?: UnitEntity | null): boolean {
+  return Object.keys(getMissingCraftResources(player, recipe.cost, hero)).length === 0
 }
 
 export function craftHeroRecipe(
@@ -80,11 +80,8 @@ export function craftHeroRecipe(
   hero: UnitEntity | null | undefined,
   recipe: HeroCraftRecipe
 ): boolean {
-  if (!hero || !canCraftHeroRecipe(player, recipe)) return false
-
-  for (const [resource, amount] of Object.entries(recipe.cost) as [keyof ResourceAmount, number][]) {
-    player[resource] -= Math.max(0, Math.floor(amount ?? 0))
-  }
+  if (!hero || !canCraftHeroRecipe(player, recipe, hero)) return false
+  if (!withdrawChestResources(player, recipe.cost, { hero })) return false
 
   const inventory = getHeroInventory(hero)
   for (let i = 0; i < recipe.outputCount; i++) {

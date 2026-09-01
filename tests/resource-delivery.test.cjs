@@ -55,6 +55,7 @@ function loadGameResourceDelivery(overrides = {}) {
         SOUND_CUES: {
           building: { chestOpen: 'building/chest-open' },
         },
+        UNIT_TYPES: { hero: 'Hero' },
       },
       '../../lib/audio/sound': {
         playAudibleSoundCue,

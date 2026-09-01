@@ -1,12 +1,13 @@
-import { BUILDING_TYPES, RESOURCE_NAMES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_NAMES, UNIT_TYPES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
-import type { BuildingEntity } from '../../types/entities'
+import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
 export type ResourceStoreOwner = {
   buildings?: BuildingEntity[]
   label?: string
+  units?: UnitEntity[]
 }
 
 function createEmptyResourceTotals(): Record<ResourceName, number> {
@@ -20,9 +21,41 @@ function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boo
   return building.owner === player || building.owner.label === player.label
 }
 
-function getPlayerResourceChests(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
+export function getPlayerResourceChests(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
   if (!player) return []
   return (player.buildings ?? []).filter(building => isOwnedChest(building, player))
+}
+
+function isOwnedStartingResourceDepot(building: BuildingEntity, player: ResourceStoreOwner): boolean {
+  if (building.type !== BUILDING_TYPES.townCenter) return false
+  if (building.isDead || building.isDestroyed) return false
+  if (!building.inventory?.resources) return false
+  if (!building.owner) return true
+  return building.owner === player || building.owner.label === player.label
+}
+
+function getPlayerStartingResourceDepots(player: ResourceStoreOwner | null | undefined): BuildingEntity[] {
+  if (!player) return []
+  return (player.buildings ?? []).filter(building => isOwnedStartingResourceDepot(building, player))
+}
+
+function isOwnedHero(unit: UnitEntity, player: ResourceStoreOwner): boolean {
+  if (unit.type !== UNIT_TYPES.hero) return false
+  if (unit.isDead || unit.isDestroyed) return false
+  if (!unit.owner) return true
+  return unit.owner === player || unit.owner.label === player.label
+}
+
+function getPlayerResourceHeroes(player: ResourceStoreOwner | null | undefined, extraHero?: UnitEntity | null): UnitEntity[] {
+  if (!player && !extraHero) return []
+  const heroes = new Set<UnitEntity>()
+  if (player) {
+    for (const unit of player.units ?? []) {
+      if (isOwnedHero(unit, player)) heroes.add(unit)
+    }
+  }
+  if (extraHero && (!player || isOwnedHero(extraHero, player))) heroes.add(extraHero)
+  return [...heroes]
 }
 
 export function hasPlayerResourceChests(player: unknown): player is ResourceStoreOwner {
@@ -46,6 +79,48 @@ export function getPlayerChestResourceTotals(
   return totals
 }
 
+export function getPlayerResourceTotals(
+  player: ResourceStoreOwner | PlayerLike | null | undefined,
+  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
+): Record<ResourceName, number> {
+  const totals = getPlayerChestResourceTotals(player)
+  if (!player) return totals
+
+  for (const building of getPlayerStartingResourceDepots(player)) {
+    const resources = building.inventory?.resources
+    if (!resources) continue
+    for (const resource of RESOURCE_NAMES) {
+      totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
+    }
+  }
+
+  if (options.includeHero !== false) {
+    for (const hero of getPlayerResourceHeroes(player, options.hero)) {
+      const resources = hero.inventory?.resources
+      if (!resources) continue
+      for (const resource of RESOURCE_NAMES) {
+        totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
+      }
+    }
+  }
+
+  return totals
+}
+
+export function getMissingPlayerResources(
+  player: ResourceStoreOwner | PlayerLike | null | undefined,
+  cost: ResourceAmount,
+  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
+): ResourceAmount {
+  const totals = getPlayerResourceTotals(player, options)
+  const missing: ResourceAmount = {}
+  for (const [resource, amount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
+    const needed = Math.max(0, Math.floor(amount ?? 0))
+    if (needed > 0 && (totals[resource] ?? 0) < needed) missing[resource] = needed - (totals[resource] ?? 0)
+  }
+  return missing
+}
+
 export function getMissingChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
   cost: ResourceAmount
@@ -61,7 +136,7 @@ export function getMissingChestResources(
 
 export function syncPlayerResourceFieldsFromChests(player: ResourceStoreOwner | PlayerLike | null | undefined): void {
   if (!player || typeof player !== 'object') return
-  const totals = getPlayerChestResourceTotals(player)
+  const totals = getPlayerResourceTotals(player)
   for (const resource of RESOURCE_NAMES) {
     ;(player as ResourceAmount)[resource] = totals[resource]
   }
@@ -69,10 +144,11 @@ export function syncPlayerResourceFieldsFromChests(player: ResourceStoreOwner | 
 
 export function withdrawChestResources(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
-  cost: ResourceAmount | null | undefined
+  cost: ResourceAmount | null | undefined,
+  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
 ): boolean {
   if (!player || !cost) return false
-  const missing = getMissingChestResources(player, cost)
+  const missing = getMissingPlayerResources(player, cost, options)
   if (Object.keys(missing).length > 0) return false
 
   for (const [resource, rawAmount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
@@ -91,6 +167,34 @@ export function withdrawChestResources(
       remaining -= consumed
       if (remaining <= 0) break
     }
+
+    for (const depot of getPlayerStartingResourceDepots(player)) {
+      if (remaining <= 0) break
+      const resources = depot.inventory?.resources
+      if (!resources) continue
+      const available = Math.max(0, Math.floor(resources[resource] ?? 0))
+      if (available <= 0) continue
+
+      const consumed = Math.min(available, remaining)
+      resources[resource] = available - consumed
+      if ((resources[resource] ?? 0) <= 0) delete resources[resource]
+      remaining -= consumed
+    }
+
+    if (options.includeHero !== false) {
+      for (const hero of getPlayerResourceHeroes(player, options.hero)) {
+        if (remaining <= 0) break
+        const resources = hero.inventory?.resources
+        if (!resources) continue
+        const available = Math.max(0, Math.floor(resources[resource] ?? 0))
+        if (available <= 0) continue
+
+        const consumed = Math.min(available, remaining)
+        resources[resource] = available - consumed
+        if ((resources[resource] ?? 0) <= 0) delete resources[resource]
+        remaining -= consumed
+      }
+    }
   }
 
   syncPlayerResourceFieldsFromChests(player)
@@ -103,14 +207,15 @@ export function depositChestResources(
 ): boolean {
   if (!player || !resourcesToDeposit) return false
   const chest = getPlayerResourceChests(player)[0]
-  if (!chest) return false
+  const destination = chest ?? getPlayerStartingResourceDepots(player)[0]
+  if (!destination) return false
 
-  chest.inventory = chest.inventory ?? {}
-  chest.inventory.resources = chest.inventory.resources ?? {}
+  destination.inventory = destination.inventory ?? {}
+  destination.inventory.resources = destination.inventory.resources ?? {}
   for (const [resource, rawAmount] of Object.entries(resourcesToDeposit) as [keyof ResourceAmount, number][]) {
     const amount = Math.max(0, Math.floor(rawAmount ?? 0))
     if (amount <= 0) continue
-    chest.inventory.resources[resource] = (chest.inventory.resources[resource] ?? 0) + amount
+    destination.inventory.resources[resource] = (destination.inventory.resources[resource] ?? 0) + amount
   }
   syncPlayerResourceFieldsFromChests(player)
   return true

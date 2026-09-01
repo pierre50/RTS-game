@@ -6,8 +6,9 @@ function loadResourceTotals() {
   return loadTsModule('app/lib/resources/playerResourceTotals.ts', {
     mocks: {
       '../../constants': {
-        BUILDING_TYPES: { chest: 'Chest' },
+        BUILDING_TYPES: { chest: 'Chest', townCenter: 'TownCenter' },
         RESOURCE_NAMES: ['wood', 'food', 'stone'],
+        UNIT_TYPES: { hero: 'Hero' },
       },
     },
   })
@@ -47,6 +48,19 @@ test('player chest resource totals sum only owned living chests', () => {
   ]
 
   assert.deepEqual(getPlayerChestResourceTotals(player), { wood: 7, food: 3, stone: 4 })
+})
+
+test('player resource totals include the hero bag and starting town center stock', () => {
+  const { getPlayerResourceTotals } = loadResourceTotals()
+  const player = { label: 'p1', buildings: [], units: [] }
+  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 4, stone: 1 } } }
+  player.units = [hero]
+  player.buildings = [
+    { owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
+    { owner: player, type: 'TownCenter', inventory: { resources: { food: 8 } } },
+  ]
+
+  assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, food: 8, stone: 1 })
 })
 
 test('missing chest resources compares costs against stored chest totals', () => {

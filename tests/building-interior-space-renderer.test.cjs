@@ -346,6 +346,7 @@ test('runtime storage interiors create an indestructible default chest', () => {
     isBuilt: true,
     isDead: false,
     isDestroyed: false,
+    inventory: { resources: { food: 25, wood: 5 } },
     j: 4,
     label: 'granary-1',
     owner,
@@ -403,6 +404,7 @@ test('runtime storage interiors create an indestructible default chest', () => {
         indestructible: item.indestructible,
         i: item.i,
         isBuilt: item.isBuilt,
+        inventory: item.inventory,
         j: item.j,
         label: item.label,
         spaceId: item.spaceId,
@@ -413,6 +415,7 @@ test('runtime storage interiors create an indestructible default chest', () => {
         indestructible: true,
         i: 3,
         isBuilt: true,
+        inventory: { resources: { food: 25, wood: 5 } },
         j: 0,
         label: `${space.id}:default:storage-chest`,
         spaceId: space.id,
@@ -420,6 +423,7 @@ test('runtime storage interiors create an indestructible default chest', () => {
       },
     ]
   )
+  assert.deepEqual(building.inventory.resources, {})
 })
 
 test('runtime building interior exit marker sorts above its floor cell inside the scene layer', () => {

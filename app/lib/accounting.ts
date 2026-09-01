@@ -1,6 +1,6 @@
 import {
   depositChestResources,
-  getPlayerChestResourceTotals,
+  getPlayerResourceTotals,
   hasPlayerResourceChests,
   withdrawChestResources,
 } from './resources/playerResourceTotals'
@@ -51,8 +51,9 @@ export function payCost(player: ResourceLedger | null | undefined, cost: Resourc
  * @returns {boolean} - True if the player can afford the costs, false otherwise.
  */
 export function canAfford(player: ResourceLedger | null | undefined, cost: ResourceLedger | null | undefined): boolean {
-  if (!player || typeof player !== 'object' || !cost || typeof cost !== 'object') return false
-  const resources = hasPlayerResourceChests(player) ? getPlayerChestResourceTotals(player) : player
+  if (!cost || typeof cost !== 'object') return true
+  if (!player || typeof player !== 'object') return false
+  const resources = hasPlayerResourceChests(player) ? getPlayerResourceTotals(player) : player
   for (const [prop, amount] of resourceEntries(cost)) {
     if ((resources[prop] || 0) < amount) return false
   }

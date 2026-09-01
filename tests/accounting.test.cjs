@@ -6,6 +6,7 @@ function loadAccounting() {
   const constants = {
     BUILDING_TYPES: { chest: 'Chest' },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+    UNIT_TYPES: { hero: 'Hero' },
   }
   return loadTsModule('app/lib/accounting.ts', {
     mocks: {
@@ -39,6 +40,21 @@ test('payCost withdraws player costs from owned chests', () => {
 
   assert.deepEqual(player.buildings[0].inventory.resources, {})
   assert.deepEqual(player.buildings[1].inventory.resources, { wood: 2, stone: 1 })
+})
+
+test('payCost can complete player costs from the hero bag', () => {
+  const { canAfford, payCost } = loadAccounting()
+  const player = { label: 'p1', buildings: [], units: [] }
+  const hero = { owner: player, type: 'Hero', inventory: { resources: { wood: 4 } } }
+  player.buildings = [{ owner: player, type: 'Chest', inventory: { resources: { wood: 3 } } }]
+  player.units = [hero]
+
+  assert.equal(canAfford(player, { wood: 5 }), true)
+  payCost(player, { wood: 5 })
+
+  assert.deepEqual(player.buildings[0].inventory.resources, {})
+  assert.deepEqual(hero.inventory.resources, { wood: 2 })
+  assert.equal(player.wood, 2)
 })
 
 test('plain resource ledgers keep the legacy accounting behavior', () => {

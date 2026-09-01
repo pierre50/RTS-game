@@ -77,9 +77,6 @@ export function getBuildingTooltip(options: {
     description: t(`${options.type}Description`),
     meta: [
       t('tooltipCost', { cost: formatActionCost(options.config.cost) }),
-      (options.config.constructionTime ?? 0) > 0
-        ? t('tooltipBuildTime', { time: options.config.constructionTime ?? 0 })
-        : null,
       options.commandBlocked ? t('requiresChief') : null,
       options.isLimitReached ? t('buildingLimitReached') : null,
     ],

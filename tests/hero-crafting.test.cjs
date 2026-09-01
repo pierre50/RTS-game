@@ -33,15 +33,14 @@ function loadCrafting() {
   })
 }
 
-test('hero arrow craft recipes spend global resources and add arrows to the hero bag', () => {
+test('hero arrow craft recipes spend hero bag resources and add arrows to the hero bag', () => {
   const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
   const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
-  const player = { wood: 8, food: 0, stone: 0, gold: 0, copper: 3, iron: 0 }
-  const hero = {}
+  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
+  const hero = { type: 'Hero', inventory: { resources: { wood: 8, copper: 3 } } }
 
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.equal(player.wood, 3)
-  assert.equal(player.copper, 1)
+  assert.deepEqual(hero.inventory.resources, { wood: 3, copper: 1 })
   assert.equal(hero.inventory.equipment.length, 20)
   assert(hero.inventory.equipment.every(item => item === 'arrow_copper'))
 })
@@ -49,24 +48,26 @@ test('hero arrow craft recipes spend global resources and add arrows to the hero
 test('hero craft refuses missing resources without changing inventory or resources', () => {
   const { HERO_ARROW_CRAFT_RECIPES, canCraftHeroRecipe, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
   const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'arrow_iron')
-  const player = { wood: 4, food: 0, stone: 0, gold: 0, copper: 0, iron: 1 }
-  const hero = { inventory: { equipment: ['arrow_ceramic'] } }
+  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
+  const hero = { type: 'Hero', inventory: { equipment: ['arrow_ceramic'], resources: { wood: 4, iron: 1 } } }
 
-  assert.equal(canCraftHeroRecipe(player, recipe), false)
-  assert.deepEqual(getMissingCraftResources(player, recipe.cost), { wood: 1, iron: 1 })
+  assert.equal(canCraftHeroRecipe(player, recipe, hero), false)
+  assert.deepEqual(getMissingCraftResources(player, recipe.cost, hero), { wood: 1, iron: 1 })
   assert.equal(craftHeroRecipe(player, hero, recipe), false)
-  assert.deepEqual(player, { wood: 4, food: 0, stone: 0, gold: 0, copper: 0, iron: 1 })
+  assert.deepEqual(player, { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 })
+  assert.deepEqual(hero.inventory.resources, { wood: 4, iron: 1 })
   assert.deepEqual(hero.inventory.equipment, ['arrow_ceramic'])
 })
 
-test('hero chest craft spends wood and adds a placeable chest to the bag', () => {
+test('hero chest craft can spend chest resources and adds a placeable chest to the bag', () => {
   const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
   const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'chest')
-  const player = { wood: 12, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
-  const hero = {}
+  const player = { label: 'p1', wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, buildings: [] }
+  player.buildings = [{ owner: player, type: 'Chest', inventory: { resources: { wood: 12 } } }]
+  const hero = { owner: player, type: 'Hero' }
 
   assert.equal(craftHeroRecipe(player, hero, recipe), true)
-  assert.equal(player.wood, 7)
+  assert.deepEqual(player.buildings[0].inventory.resources, { wood: 7 })
   assert.deepEqual(hero.inventory.equipment, ['chest'])
 })
 

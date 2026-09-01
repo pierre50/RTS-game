@@ -66,9 +66,11 @@ test('topbar displays and themes all civilization ages', () => {
       '../constants': { RESOURCE_NAMES: ['wood', 'food'] },
       '../lib/lang': { t: key => key },
       '../lib/resources/playerResourceTotals': {
-        getPlayerChestResourceTotals: player => ({
+        getPlayerResourceTotals: player => ({
           wood: player.buildings.reduce((total, building) => total + (building.inventory?.resources?.wood ?? 0), 0),
-          food: player.buildings.reduce((total, building) => total + (building.inventory?.resources?.food ?? 0), 0),
+          food:
+            player.buildings.reduce((total, building) => total + (building.inventory?.resources?.food ?? 0), 0) +
+            (player.units[0].inventory?.resources?.food ?? 0),
         }),
       },
       '../lib/units/villagerAssignments': {
@@ -88,7 +90,7 @@ test('topbar displays and themes all civilization ages', () => {
       age: 0,
       wood: 99,
       food: 99,
-      units: [{ work: 'woodcutter' }, { work: 'idle' }],
+      units: [{ work: 'woodcutter', inventory: { resources: { food: 4 } } }, { work: 'idle' }],
       buildings: [
         { inventory: { resources: { wood: 7, food: 2 } } },
         { inventory: { resources: { wood: 5, food: 3 } } },
@@ -114,6 +116,7 @@ test('topbar displays and themes all civilization ages', () => {
       assert.equal(menu.gameHud.classList.contains(`ui-age-${age}`), true)
     }
     assert.equal(topbar.resourceEls.wood.textContent, '12')
+    assert.equal(topbar.resourceEls.food.textContent, '9')
     assert.equal(topbar.resourceWorkerEls.wood.textContent, ' (1)')
     assert.equal(topbar.villagerTotalEl.textContent, 'V: 2')
   })

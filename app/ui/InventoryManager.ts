@@ -369,7 +369,8 @@ export class InventoryManager {
 
   getCraftMissingResourceMessage(cost: ResourceAmount): string {
     const { player } = this.menu.context
-    const missing = getMissingCraftResources(player, cost)
+    const hero = this.menu.context.controls.heroUnit
+    const missing = getMissingCraftResources(player, cost, hero)
     const resource = Object.keys(missing)
       .map(key => t(key))
       .join(', ')
@@ -379,7 +380,7 @@ export class InventoryManager {
   createCraftButton(recipe: HeroCraftRecipe): HTMLButtonElement {
     const { app, player } = this.menu.context
     const hero = this.menu.context.controls.heroUnit
-    const disabled = !hero || !canCraftHeroRecipe(player, recipe)
+    const disabled = !hero || !canCraftHeroRecipe(player, recipe, hero)
     const element = document.createElement('button')
     element.type = 'button'
     element.className = 'ui-btn ui-action-row inventory-craft-row'

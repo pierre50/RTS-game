@@ -1,5 +1,6 @@
 import { playerColors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
+import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { AI, Human } from '../players'
 import { ensureBanditCampOwner } from './BanditCampGeneration'
 import { applyCivilizationLevelStartingKit as applyCivilizationLevelStartingKitToMap } from './CivilizationStartingKit'
@@ -92,6 +93,9 @@ export function placePlayers(map: MapGenerationMap): void {
       isBuilt: true,
     })
     if (!towncenter) continue
+    towncenter.inventory = towncenter.inventory ?? {}
+    towncenter.inventory.resources = { ...map.startingResources }
+    syncPlayerResourceFieldsFromChests(player)
 
     placeStartingUnits(map, player, towncenter)
     if (player.civilizationLevel) applyCivilizationLevelStartingKit(map, player, player.civilizationLevel, towncenter)

@@ -10,7 +10,7 @@ import {
   isBuildingLimitReached,
 } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
-import { getMissingChestResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
+import { getMissingPlayerResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import { getCellMapPoint, getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
@@ -331,7 +331,7 @@ export class BuildingPlacer {
     const ownerLedger: ResourceLedger = owner
     if (!canAfford(ownerLedger, totalCost as ResourceLedger)) {
       const missing = hasPlayerResourceChests(owner)
-        ? getMissingChestResources(owner, totalCost)
+        ? getMissingPlayerResources(owner, totalCost)
         : Object.fromEntries(
             (Object.keys(totalCost) as Array<keyof ResourceLedger>)
               .filter(key => Number(ownerLedger[key]) < Number(totalCost[key]))

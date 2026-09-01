@@ -1,6 +1,6 @@
 import { BUILDING_TYPES, UNIT_TYPES } from '../constants'
 import { isValidCondition } from '../combat'
-import { getMissingChestResources, hasPlayerResourceChests } from '../resources/playerResourceTotals'
+import { getMissingPlayerResources, hasPlayerResourceChests } from '../resources/playerResourceTotals'
 import { canUpgradeUnitAtBuilding, getUnitUpgradeTargetForBuilding } from '../units/unitUpgrades'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
@@ -50,7 +50,7 @@ function getDefaultTraineeTrainingType(building: BuildingEntity): string | null 
 
 export function getMissingResourceNames(owner: PlayerLike, cost: ResourceAmount = {}): (keyof ResourceAmount)[] {
   if (hasPlayerResourceChests(owner)) {
-    return Object.keys(getMissingChestResources(owner, cost)) as (keyof ResourceAmount)[]
+    return Object.keys(getMissingPlayerResources(owner, cost)) as (keyof ResourceAmount)[]
   }
   return (Object.keys(cost) as (keyof ResourceAmount)[]).filter(resource => owner[resource] < (cost[resource] ?? 0))
 }

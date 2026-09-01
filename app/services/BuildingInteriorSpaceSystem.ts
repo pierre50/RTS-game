@@ -229,8 +229,16 @@ function ensureInteriorDefaultBuildings(context: GameContextLike, space: Buildin
       allowBorderPlacement: item.allowBorderPlacement,
     })
     if (!cell) continue
-    owner.createBuilding({
-      ...item.buildingOptions,
+    const buildingOptions = { ...item.buildingOptions }
+    const pendingResources = item.key === 'storage-chest' ? (space.building.inventory?.resources ?? {}) : null
+    if (pendingResources != null) {
+      buildingOptions.inventory = {
+        ...(buildingOptions.inventory ?? {}),
+        resources: { ...pendingResources },
+      }
+    }
+    const defaultBuilding = owner.createBuilding({
+      ...buildingOptions,
       i: cell.i,
       j: cell.j,
       label,
@@ -239,6 +247,10 @@ function ensureInteriorDefaultBuildings(context: GameContextLike, space: Buildin
       isBuilt: true,
       skipBuiltEffects: true,
     })
+    if (defaultBuilding && pendingResources != null) {
+      space.building.inventory = space.building.inventory ?? {}
+      space.building.inventory.resources = {}
+    }
     blockedCells.add(interiorCellKey(cell))
   }
   space.defaultBuildingsPlaced = true

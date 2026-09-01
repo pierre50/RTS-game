@@ -1,6 +1,6 @@
 import { RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
-import { getPlayerChestResourceTotals } from '../lib/resources/playerResourceTotals'
+import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import { createResourceIconMaps } from './utils/resourceIcons'
 import type { UnitEntity } from '../types/entities'
@@ -97,7 +97,7 @@ export class TopbarView {
       },
     } = this
     const assignments = summarizeVillagerAssignments(player?.units ?? [])
-    const storedResources = getPlayerChestResourceTotals(player)
+    const storedResources = getPlayerResourceTotals(player)
     RESOURCE_NAMES.forEach(prop => {
       const val = Math.min(storedResources[prop] || 0, 99999)
       const valueEl = this.resourceEls[prop]
