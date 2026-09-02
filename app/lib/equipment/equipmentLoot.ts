@@ -184,6 +184,15 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
   return unit.lootEquipment
 }
 
+export function initializeUnitCorpseLootEquipment(unit: UnitEntity): string[] {
+  const previousLoot = unit.lootEquipment
+  unit.lootEquipment = undefined
+  const loot = getUnitCorpseLootEquipment(unit)
+  if (loot.length || !Array.isArray(previousLoot)) return loot
+  unit.lootEquipment = previousLoot
+  return previousLoot
+}
+
 export function getUnitCorpseLootResources(unit: UnitEntity): ResourceAmount {
   if (!unit.isDead || unit.isDestroyed) return {}
   const resources = cleanResourceAmount(unit.inventory?.resources)

@@ -54,7 +54,6 @@ export type HeroProximityInteractionOptions = {
   openEntityTarget?: RuntimeEntity | null
 }
 
-const OPENABLE_CORPSE_CELL_RADIUS = 2
 const MOUNTABLE_HORSE_CELL_RADIUS = 2
 
 function isOpenableEntity(target: RuntimeEntity | null | undefined): target is RuntimeEntity {
@@ -68,27 +67,13 @@ function getEntityDistance(hero: UnitEntity, target: RuntimeEntity): number {
   return Math.hypot((target.x ?? 0) - hero.x, (target.y ?? 0) - hero.y)
 }
 
-function findNearestOpenableEntity(hero: UnitEntity, openEntityTarget?: RuntimeEntity | null): RuntimeEntity | null {
-  const candidates: RuntimeEntity[] = []
-  const seen = new Set<RuntimeEntity>()
-
-  const addCandidate = (target: RuntimeEntity | null | undefined) => {
-    if (!target || seen.has(target) || !isOpenableEntity(target)) return
-    if (!isHeroInteractionTargetReachable(hero, null, target)) return
-    seen.add(target)
-    candidates.push(target)
-  }
-
-  addCandidate(openEntityTarget)
-
-  const grid = getEntitySpaceMapLike(hero, hero.context?.map)?.grid
-  if (grid) {
-    for (const cell of getCellsInCellRadius(hero.i ?? 0, hero.j ?? 0, grid, OPENABLE_CORPSE_CELL_RADIUS)) {
-      for (const corpse of cell.corpses ?? []) addCandidate(corpse)
-    }
-  }
-
-  return candidates.sort((a, b) => getEntityDistance(hero, a) - getEntityDistance(hero, b))[0] ?? null
+function resolveFacingOpenableEntity(
+  hero: UnitEntity,
+  openEntityTarget?: RuntimeEntity | null
+): RuntimeEntity | null {
+  if (!isOpenableEntity(openEntityTarget)) return null
+  if (!isHeroInteractionTargetReachable(hero, null, openEntityTarget)) return null
+  return openEntityTarget
 }
 
 function getStableInteriorHorseOwner(hero: UnitEntity, horse: RuntimeEntity) {
@@ -274,7 +259,7 @@ export function resolveHeroProximityInteraction({
     }
   }
 
-  const openEntity = findNearestOpenableEntity(hero, openEntityTarget)
+  const openEntity = resolveFacingOpenableEntity(hero, openEntityTarget)
   if (openEntity) return { action: 'open', labelKey: 'heroInteractionOpen', target: openEntity }
 
   const npcInteraction = resolveHeroNpcProximityInteraction(hero, openEntityTarget)

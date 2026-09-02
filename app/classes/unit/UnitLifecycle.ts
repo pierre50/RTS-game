@@ -3,6 +3,7 @@ import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVis
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
+import { initializeUnitCorpseLootEquipment } from '../../lib/equipment/equipmentLoot'
 import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
 import { clearSleepingVisualState } from '../../services/rest/UnitSleepVisuals'
@@ -93,6 +94,7 @@ export class UnitLifecycle {
     unit.path = []
     unit.action = null
     unit.isDead = true
+    initializeUnitCorpseLootEquipment(unit)
     unit.removeHealthBar?.()
     unit.context?.map.removeFromInstanceBucket(unit)
     unit.unselect?.()

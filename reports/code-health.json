@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T22:39:53.810Z",
+  "generatedAt": "2026-09-02T09:05:04.376Z",
   "score": 100,
   "grade": "A",
   "qualityGateScore": 80,
@@ -7,10 +7,10 @@
   "qualityGate": "pass",
   "totals": {
     "files": 501,
-    "loc": 84896,
-    "codeLines": 75772,
+    "loc": 84902,
+    "codeLines": 75779,
     "branches": 11695,
-    "functions": 9519
+    "functions": 9518
   },
   "checks": [
     {
@@ -138,9 +138,9 @@
       "importCount": 2,
       "exportCount": 34,
       "maxBlockLines": 7,
-      "churn90d": 2,
+      "churn90d": 3,
       "category": "data/config",
-      "risk": 28
+      "risk": 31
     },
     {
       "file": "app/lib/i18n/en.ts",
@@ -151,9 +151,9 @@
       "importCount": 1,
       "exportCount": 1,
       "maxBlockLines": 0,
-      "churn90d": 11,
+      "churn90d": 12,
       "category": "data/config",
-      "risk": 45.1
+      "risk": 47.1
     },
     {
       "file": "app/lib/i18n/fr.ts",
@@ -164,9 +164,9 @@
       "importCount": 1,
       "exportCount": 1,
       "maxBlockLines": 0,
-      "churn90d": 10,
+      "churn90d": 11,
       "category": "data/config",
-      "risk": 31.1
+      "risk": 33.1
     },
     {
       "file": "app/lib/i18n/entityTooltips.ts",
@@ -291,7 +291,7 @@
       {
         "folder": "app/classes/unit",
         "files": 24,
-        "loc": 4806,
+        "loc": 4808,
         "branches": 764,
         "depth": 3
       },
@@ -354,8 +354,8 @@
       {
         "folder": "app/lib/hero",
         "files": 16,
-        "loc": 2194,
-        "branches": 343,
+        "loc": 2179,
+        "branches": 338,
         "depth": 3
       },
       {
@@ -368,8 +368,8 @@
       {
         "folder": "app/controllers",
         "files": 15,
-        "loc": 3417,
-        "branches": 590,
+        "loc": 3427,
+        "branches": 593,
         "depth": 2
       }
     ],
@@ -515,6 +515,19 @@
       "risk": 186.2
     },
     {
+      "file": "app/classes/building/BuildingLifecycle.ts",
+      "loc": 357,
+      "codeLines": 331,
+      "branchCount": 67,
+      "functionCount": 40,
+      "importCount": 12,
+      "exportCount": 1,
+      "maxBlockLines": 75,
+      "churn90d": 38,
+      "category": "runtime",
+      "risk": 185.4
+    },
+    {
       "file": "app/services/BuildingInteriorSpaceSystem.ts",
       "loc": 752,
       "codeLines": 702,
@@ -539,19 +552,6 @@
       "churn90d": 5,
       "category": "runtime",
       "risk": 183.7
-    },
-    {
-      "file": "app/classes/building/BuildingLifecycle.ts",
-      "loc": 357,
-      "codeLines": 331,
-      "branchCount": 67,
-      "functionCount": 40,
-      "importCount": 12,
-      "exportCount": 1,
-      "maxBlockLines": 75,
-      "churn90d": 37,
-      "category": "runtime",
-      "risk": 183.4
     },
     {
       "file": "app/lib/lpc/baked.ts",
@@ -655,9 +655,9 @@
       "importCount": 2,
       "exportCount": 34,
       "maxBlockLines": 7,
-      "churn90d": 2,
+      "churn90d": 3,
       "category": "data/config",
-      "risk": 28
+      "risk": 31
     },
     {
       "file": "app/services/BuildingInteriorSpaceSystem.ts",
@@ -1101,9 +1101,9 @@
       "importCount": 12,
       "exportCount": 1,
       "maxBlockLines": 75,
-      "churn90d": 37,
+      "churn90d": 38,
       "category": "runtime",
-      "risk": 183.4
+      "risk": 185.4
     },
     {
       "file": "app/lib/lpc/baked.ts",

@@ -1,4 +1,4 @@
-import { FAMILY_TYPES } from '../constants'
+import { FAMILY_TYPES, SHEET_TYPES } from '../constants'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
 import {
   resolveHeroNpcProximityInteraction,
@@ -12,6 +12,12 @@ type HeroInteractionHost = {
   context: GameContextLike
   heroUnit: UnitEntity | null
   isHeroControlActive(): boolean
+}
+
+function isCorpseInteractionTarget(target: RuntimeEntity): boolean {
+  return Boolean(
+    target.family === FAMILY_TYPES.unit && (target.isDead || (target as UnitEntity).currentSheet === SHEET_TYPES.corpse)
+  )
 }
 
 export class HeroInteractionController {
@@ -67,6 +73,10 @@ export class HeroInteractionController {
     }
 
     if (!hero || !isHeroInteractionTargetReachable(hero, null, target)) return false
+
+    if (isCorpseInteractionTarget(target)) {
+      return Boolean(menu?.openEntityInfoModal?.(target))
+    }
 
     const npcInteraction = resolveHeroNpcProximityInteraction(hero, target)
     if (npcInteraction) {

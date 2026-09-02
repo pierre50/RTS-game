@@ -317,20 +317,29 @@ test('mounted hero ignores a tamed horse inside a stable interior', () => {
   assert.equal(resolveHeroProximityInteraction({ hero }), null)
 })
 
-test('hero proximity interaction resolves the nearest openable corpse as open', () => {
+test('hero proximity interaction resolves a facing openable corpse as open', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
-  const farCorpse = { currentSheet: 'corpseSheet', family: 'unit', isDead: true, type: 'Scout', x: 160, y: 100 }
   const nearCorpse = { currentSheet: 'corpseSheet', family: 'unit', isDead: true, type: 'Scout', x: 105, y: 100 }
   const hero = makeHero({
-    context: { map: { grid: [[{ corpses: new Set([farCorpse, nearCorpse]) }]] } },
     y: 100,
   })
 
-  assert.deepEqual(resolveHeroProximityInteraction({ hero }), {
+  assert.deepEqual(resolveHeroProximityInteraction({ hero, openEntityTarget: nearCorpse }), {
     action: 'open',
     labelKey: 'heroInteractionOpen',
     target: nearCorpse,
   })
+})
+
+test('hero proximity interaction ignores a nearby corpse that is not the facing target', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const corpse = { currentSheet: 'corpseSheet', family: 'unit', isDead: true, type: 'Scout', x: 105, y: 100 }
+  const hero = makeHero({
+    context: { map: { grid: [[{ corpses: new Set([corpse]) }]] } },
+    y: 100,
+  })
+
+  assert.equal(resolveHeroProximityInteraction({ hero }), null)
 })
 
 test('hero proximity interaction resolves a facing talkable npc as communicate', () => {

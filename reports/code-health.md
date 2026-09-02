@@ -1,6 +1,6 @@
 # Code Health Report
 
-Generated: 2026-09-01T22:39:53.810Z
+Generated: 2026-09-02T09:05:04.376Z
 
 ## Global Score
 
@@ -41,10 +41,10 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 ## Summary
 
 - Files analyzed: 501
-- Total lines: 84896
-- Code lines: 75772
+- Total lines: 84902
+- Code lines: 75779
 - Approx branches: 11695
-- Approx functions/methods: 9519
+- Approx functions/methods: 9518
 - Duplication: 0 clones, 0%
 - Import cycles: 0 cycles / baseline 0
 
@@ -64,9 +64,9 @@ Main blocker: **0 risky hotspot(s)**. The hotspot score is **10/10**, so this is
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | app/lib/combat/combatActionConditions.ts | library | 191.9 | 236 | 114 | 24 | 5 | complexite elevee |
 | app/classes/building/BuildingProduction.ts | runtime | 186.2 | 426 | 77 | 58 | 30 | souvent modifie |
+| app/classes/building/BuildingLifecycle.ts | runtime | 185.4 | 357 | 67 | 75 | 38 | souvent modifie |
 | app/services/BuildingInteriorSpaceSystem.ts | runtime | 185 | 752 | 98 | 65 | 6 | score de risque relatif eleve |
 | app/services/rest/UnitRestRules.ts | runtime | 183.7 | 387 | 106 | 29 | 5 | complexite elevee |
-| app/classes/building/BuildingLifecycle.ts | runtime | 183.4 | 357 | 67 | 75 | 37 | souvent modifie |
 | app/lib/lpc/baked.ts | library | 181.5 | 413 | 60 | 99 | 33 | souvent modifie |
 | app/controllers/HeroController.ts | runtime | 179.4 | 467 | 47 | 55 | 48 | souvent modifie |
 | app/classes/players/Player.ts | runtime | 178.3 | 461 | 76 | 63 | 24 | souvent modifie |
@@ -148,7 +148,7 @@ Large data/config/type-heavy files are useful to track, but they should not driv
 | app/serialization/SaveSerializer.ts | 43 | 128.7 | 447 |
 | app/types/context.ts | 41 | 90.3 | 333 |
 | app/types/save.ts | 39 | 86.1 | 323 |
-| app/classes/building/BuildingLifecycle.ts | 37 | 183.4 | 357 |
+| app/classes/building/BuildingLifecycle.ts | 38 | 185.4 | 357 |
 | app/lib/lpc/baked.ts | 33 | 181.5 | 413 |
 
 ## Project Hygiene

@@ -78,6 +78,39 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
   assert.ok(calls.some(call => call[0] === 'syncAppearanceLayers' && call[1] === 'corpseSheet'))
 })
 
+test('unit corpse loot can be frozen at death even after an empty transient cache', () => {
+  const { initializeUnitCorpseLootEquipment } = loadModule('app/lib/equipment/equipmentLoot.ts', {
+    '../constants': {
+      SHEET_TYPES: { corpse: 'corpseSheet' },
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    './equipmentStats': {
+      refreshUnitEquipmentStats: () => {},
+      getUnitEquipment: () => ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'],
+    },
+    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const corpse = {
+    isDead: true,
+    isDestroyed: false,
+    lootEquipment: [],
+    owner: {
+      age: 0,
+      civ: 'Bandit',
+      config: {
+        units: {
+          BanditSword: { category: 'Bandit' },
+        },
+      },
+    },
+    type: 'BanditSword',
+  }
+
+  assert.deepEqual(initializeUnitCorpseLootEquipment(corpse), ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'])
+  assert.deepEqual(corpse.lootEquipment, ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'])
+})
+
 test('equipment loot labels humanize runtime ids', () => {
   const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule(
     'app/lib/equipment/equipmentLoot.ts',
