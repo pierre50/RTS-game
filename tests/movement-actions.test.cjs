@@ -3115,13 +3115,14 @@ test('manual move orders cancel autonomy resume before routing', () => {
   assert.equal(unit.energyWaitTaskId, null)
   assert.equal(unit.dest, targetCell)
   assert.equal(unit.action, null)
+  assert.equal(unit.work, null)
   assert.equal(unit.previousDest, null)
   assert.equal(unit.previousWork, null)
   assert.deepEqual(calls, [
     ['handleChangeDest'],
     ['stopInterval'],
-    ['cancelEnergyWait', constants.ACTION_TYPES.chopwood, 'tree-1'],
     ['clearVillagerAutonomy', 'villager-1'],
+    ['cancelEnergyWait', constants.ACTION_TYPES.chopwood, 'tree-1'],
     ['setDest', 1, 0],
     ['setPath', [targetCell]],
   ])
@@ -3499,6 +3500,7 @@ test('blocked training entry repaths while still allowing the door passage stop'
 test('manual building goto paths to the building entry cell', () => {
   const grid = makePassageMovementGrid()
   const entryCell = grid[2][2]
+  const oldResource = { family: constants.FAMILY_TYPES.resource, isUsedBy: null, label: 'berries-1' }
   const building = {
     family: constants.FAMILY_TYPES.building,
     i: 1,
@@ -3510,7 +3512,13 @@ test('manual building goto paths to the building entry cell', () => {
     x: 1,
     y: 0,
   }
-  const context = { map: { grid, size: 4 }, performance: { record: () => {} }, players: [] }
+  const calls = []
+  const context = {
+    map: { grid, size: 4 },
+    menu: { updateTopbar: () => calls.push(['updateTopbar']) },
+    performance: { record: () => {} },
+    players: [],
+  }
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib/buildings/interiors': {
@@ -3520,7 +3528,10 @@ test('manual building goto paths to the building entry cell', () => {
     },
     '../../lib': {
       canUpdateMinimap: () => false,
-      clearVillagerAutonomy: () => {},
+      clearVillagerAutonomy: unit => {
+        calls.push(['clearVillagerAutonomy', unit.label])
+        unit.autonomousJob = null
+      },
       degreeToDirection: () => 'south',
       findInstancesInSight: () => [],
       getCellsAroundPoint: () => [],
@@ -3537,12 +3548,147 @@ test('manual building goto paths to the building entry cell', () => {
     },
   })
   const unit = makePassageMovementUnit(context, grid)
+  unit.autonomousJob = 'food'
+  unit.dest = oldResource
+  unit.gatherProgressState = {
+    action: constants.ACTION_TYPES.forageberry,
+    gatherEvery: 1,
+    loadingType: 'berry',
+    progress: 1,
+    target: oldResource,
+  }
+  unit.previousDest = oldResource
+  unit.previousWork = constants.WORK_TYPES.forager
+  unit.resourceDeliveryState = {
+    building,
+    phase: 'toBuilding',
+    returnTask: {
+      action: constants.ACTION_TYPES.forageberry,
+      autonomousJob: 'food',
+      dest: oldResource,
+      work: constants.WORK_TYPES.forager,
+    },
+  }
+  unit.owner = { isPlayed: true }
+  unit.work = constants.WORK_TYPES.forager
 
   new UnitMovement(unit).sendToEvt(building, null, { allowPassageStop: true })
 
   assert.equal(unit.dest, building)
   assert.equal(unit.action, null)
+  assert.equal(unit.autonomousJob, null)
+  assert.equal(unit.gatherProgressState, null)
+  assert.equal(unit.previousDest, null)
+  assert.equal(unit.previousWork, null)
+  assert.equal(unit.resourceDeliveryState, null)
+  assert.equal(unit.work, null)
   assert.deepEqual(unit.path, [entryCell])
+  assert.deepEqual(calls, [
+    ['clearVillagerAutonomy', 'villager-1'],
+    ['updateTopbar'],
+  ])
+})
+
+test('manual building goto clears every resource assignment type', () => {
+  const cases = [
+    { job: 'food', work: constants.WORK_TYPES.forager },
+    { job: 'wood', work: constants.WORK_TYPES.woodcutter },
+    { job: 'stone', work: constants.WORK_TYPES.stoneminer },
+    { job: 'gold', work: constants.WORK_TYPES.goldminer },
+    { job: 'copper', work: constants.WORK_TYPES.goldminer, resourceType: 'Copper' },
+    { job: 'iron', work: constants.WORK_TYPES.goldminer, resourceType: 'Iron' },
+  ]
+
+  for (const resourceCase of cases) {
+    const grid = makePassageMovementGrid()
+    const entryCell = grid[2][2]
+    const oldResource = {
+      family: constants.FAMILY_TYPES.resource,
+      isUsedBy: null,
+      label: `${resourceCase.job}-resource`,
+      type: resourceCase.resourceType ?? resourceCase.job,
+    }
+    const building = {
+      family: constants.FAMILY_TYPES.building,
+      i: 1,
+      isBuilt: true,
+      isDestroyed: false,
+      j: 0,
+      label: `${resourceCase.job}-storage`,
+      type: constants.BUILDING_TYPES.storagePit,
+      x: 1,
+      y: 0,
+    }
+    const context = {
+      map: { grid, size: 4 },
+      menu: { updateTopbar: () => {} },
+      performance: { record: () => {} },
+      players: [],
+    }
+    const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+      '../../constants': constants,
+      '../../lib/buildings/interiors': {
+        getBuildingEntryCell: () => entryCell,
+        getBuildingInteriorEntryCell: () => entryCell,
+        isBuildingInteriorSupported: () => true,
+      },
+      '../../lib': {
+        canUpdateMinimap: () => false,
+        clearVillagerAutonomy: unit => {
+          unit.autonomousJob = null
+        },
+        degreeToDirection: () => 'south',
+        findInstancesInSight: () => [],
+        getCellsAroundPoint: () => [],
+        getClosestInstanceWithPath: () => null,
+        getFreeCellAroundPoint: () => null,
+        getInstanceClosestFreeCellPath: () => [],
+        getInstanceDegree: () => 0,
+        getInstancePath: (_unit, i, j) => (i === entryCell.i && j === entryCell.j ? [entryCell] : []),
+        getInstanceZIndex: () => 0,
+        instanceContactInstance: () => false,
+        instancesDistance: () => Infinity,
+        moveTowardPoint: () => {},
+        updateInstanceVisibility: () => {},
+      },
+    })
+    const unit = makePassageMovementUnit(context, grid)
+    unit.autonomousJob = resourceCase.job
+    unit.dest = oldResource
+    unit.gatherProgressState = {
+      action: 'gather',
+      gatherEvery: 1,
+      loadingType: resourceCase.job,
+      progress: 1,
+      target: oldResource,
+    }
+    unit.owner = { isPlayed: true }
+    unit.previousDest = oldResource
+    unit.previousWork = resourceCase.work
+    unit.resourceDeliveryState = {
+      building,
+      phase: 'toBuilding',
+      returnTask: {
+        action: 'gather',
+        autonomousJob: resourceCase.job,
+        dest: oldResource,
+        work: resourceCase.work,
+      },
+    }
+    unit.work = resourceCase.work
+
+    new UnitMovement(unit).sendToEvt(building, null, { allowPassageStop: true })
+
+    assert.equal(unit.dest, building, resourceCase.job)
+    assert.equal(unit.action, null, resourceCase.job)
+    assert.equal(unit.autonomousJob, null, resourceCase.job)
+    assert.equal(unit.gatherProgressState, null, resourceCase.job)
+    assert.equal(unit.previousDest, null, resourceCase.job)
+    assert.equal(unit.previousWork, null, resourceCase.job)
+    assert.equal(unit.resourceDeliveryState, null, resourceCase.job)
+    assert.equal(unit.work, null, resourceCase.job)
+    assert.deepEqual(unit.path, [entryCell], resourceCase.job)
+  }
 })
 
 test('training arrival requires standing on the building entry cell, not only touching the building', () => {
@@ -4388,6 +4534,77 @@ test('felled tree wood gathering uses the shared cadence after the tree is cut',
   )
 })
 
+test('felled tree wood gathering waits for the axe animation release frame', () => {
+  const calls = []
+  const frameCallbacks = []
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { wood: 'wood' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      RESOURCE_GATHER_SWINGS: { wood: 2 },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { chopWood: 'chop-wood' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, frame, callback) => {
+        calls.push(['releaseFrame', frame])
+        frameCallbacks.push(callback)
+      },
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showDamageFeedback: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      updateInstanceVisibility: () => {},
+      SLASH_IMPACT_FRAME: 5,
+    },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const tree = {
+    family: constants.FAMILY_TYPES.resource,
+    hitPoints: 0,
+    label: 'tree-1',
+    quantity: 5,
+    selected: false,
+    totalHitPoints: 5,
+    type: 'Tree',
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.chopwood,
+    context: { menu: {} },
+    dest: tree,
+    gatherAmount: { woodcutter: 2 },
+    label: 'villager-1',
+    owner: { isPlayed: true, wood: 3 },
+    sprite: {},
+    work: constants.WORK_TYPES.woodcutter,
+    getActionCondition: target => target === tree && tree.quantity > 0,
+    getWorkSound: () => 'chop-wood',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
+
+  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 9]])
+  assert.equal(tree.quantity, 5)
+
+  frameCallbacks[0]()
+  assert.equal(tree.quantity, 5)
+
+  frameCallbacks[0]()
+  assert.deepEqual(unit.inventory.resources, { wood: 2 })
+  assert.equal(tree.quantity, 3)
+  assert.deepEqual(calls.filter(([type]) => type === 'feedback'), [['feedback', 'villager-1', 2]])
+})
+
 test('hero chopping wood rewinds the work swing after the impact frame', () => {
   const calls = []
   const reverseCalls = []
@@ -4605,6 +4822,75 @@ test('hero building health bar refreshes while construction progresses', () => {
     ['hitPointGain', constants.FAMILY_TYPES.building, 1],
     ['drawHealthBar'],
     ['updateHitPoints', constants.ACTION_TYPES.build],
+  ])
+})
+
+test('building work waits for the hammer animation release frame', () => {
+  const calls = []
+  let buildTick = null
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: {},
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, hitPoints: 'hitPoints' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { buildLoop: 'build-loop' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      changeSpriteColor: () => {},
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, frame, callback) => {
+        calls.push(['releaseFrame', frame])
+        buildTick = callback
+      },
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showHitPointGainFeedback: (target, amount) => calls.push(['hitPointGain', target.family, amount]),
+      showResourceGainFeedback: () => {},
+      SLASH_IMPACT_FRAME: 5,
+      updateInstanceVisibility: () => {},
+    },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 1,
+    totalHitPoints: 10,
+    constructionTime: 10,
+    selected: false,
+    isBuilt: false,
+    shouldKeepHealthBarVisible: () => true,
+    drawHealthBar: () => calls.push(['drawHealthBar']),
+    updateHitPoints: action => calls.push(['updateHitPoints', action]),
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.build,
+    context: { menu: {} },
+    dest: building,
+    owner: { isPlayed: true },
+    sprite: {},
+    work: constants.WORK_TYPES.builder,
+    getActionCondition: target => target === building,
+    getWorkSound: () => 'build-loop',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.build)
+
+  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 8]])
+  assert.equal(building.hitPoints, 1)
+
+  buildTick()
+
+  assert.equal(building.hitPoints, 2)
+  assert.deepEqual(calls.filter(([type]) => type === 'hitPointGain'), [
+    ['hitPointGain', constants.FAMILY_TYPES.building, 1],
   ])
 })
 
@@ -5259,6 +5545,85 @@ test('hero mining progress survives manual action restarts for slower ores', () 
       ['updateInfo', 'quantityText', 19],
     ]
   )
+})
+
+test('mining waits for the pickaxe animation release frame', () => {
+  const calls = []
+  let mineTick = null
+  const { UnitActions } = loadModule('app/classes/unit/UnitActions.ts', {
+    'pixi.js': { Assets: { cache: { get: () => null } } },
+    '../../constants': {
+      ...constants,
+      ACTION_TYPES: {
+        ...constants.ACTION_TYPES,
+        minestone: 'minestone',
+      },
+      LOADING_FOOD_TYPES: [],
+      LOADING_TYPES: { stone: 'stone' },
+      MENU_INFO_IDS: { ...constants.MENU_INFO_IDS, quantityText: 'quantityText' },
+      MINING_RESOURCE_CONFIG: {
+        Stone: {
+          action: 'minestone',
+          loadingType: 'stone',
+          work: constants.WORK_TYPES.stoneminer,
+          sound: 'mineStone',
+          gatherEvery: 1,
+          dieOnEmpty: true,
+        },
+      },
+      RESOURCE_TYPES: { ...constants.RESOURCE_TYPES, stone: 'Stone' },
+      SHEET_TYPES: { ...constants.SHEET_TYPES, action: 'action' },
+      SOUND_CUES: { villager: { mineOre: 'mine-ore' } },
+      TYPE_ACTION: {},
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      degreeToDirection: () => 'south',
+      getInstanceDegree: () => 0,
+      onSpriteLoopAtFrame: (_sprite, frame, callback) => {
+        calls.push(['releaseFrame', frame])
+        mineTick = callback
+      },
+      playerCanSeeInstance: () => false,
+      playSoundCue: () => {},
+      showResourceGainFeedback: (target, amount) => calls.push(['feedback', target.label, amount]),
+      SLASH_IMPACT_FRAME: 5,
+      updateInstanceVisibility: () => {},
+    },
+    '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
+    '../Projectile': { Projectile: class {} },
+    '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
+  })
+  const rock = {
+    family: constants.FAMILY_TYPES.resource,
+    label: 'stone-1',
+    quantity: 20,
+    selected: false,
+    type: 'Stone',
+  }
+  const unit = {
+    action: constants.ACTION_TYPES.minestone,
+    context: { menu: {} },
+    dest: rock,
+    label: 'villager-1',
+    owner: { isPlayed: true, stone: 0 },
+    sprite: {},
+    work: constants.WORK_TYPES.stoneminer,
+    getActionCondition: target => target === rock && rock.quantity > 0,
+    getWorkSound: () => 'mine-stone',
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+
+  new UnitActions(unit).getAction(constants.ACTION_TYPES.minestone)
+
+  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 9]])
+  assert.equal(rock.quantity, 20)
+
+  mineTick()
+
+  assert.deepEqual(unit.inventory.resources, { stone: 1 })
+  assert.equal(rock.quantity, 19)
+  assert.deepEqual(calls.filter(([type]) => type === 'feedback'), [['feedback', 'villager-1', 1]])
 })
 
 test('depleted berrybushes stay on the map as empty bushes', () => {

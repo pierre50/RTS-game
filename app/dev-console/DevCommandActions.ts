@@ -29,6 +29,7 @@ export {
   applyTechnology,
   healAll,
   killEntities,
+  listGlobalPlayers,
   setAge,
   setCiv,
   setGameSpeed,

@@ -6,7 +6,6 @@ import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
 import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
-import { VILLAGER_TRAINING_UNIT_TYPES, findTrainingTypeForUnitAtBuilding } from '../units/unitTrainingOrders'
 import type { SelectableInstance } from '../graphics/selection'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
@@ -198,15 +197,6 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (hasSameOwner(npc, building) && building.isBuilt) {
-        const trainingType =
-          npc.type === UNIT_TYPES.villager
-            ? findTrainingTypeForUnitAtBuilding(npc, building, VILLAGER_TRAINING_UNIT_TYPES)
-            : null
-        if (trainingType) {
-          npc.trainingTargetType = trainingType
-          npc.sendToEvt?.(building, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
-          return true
-        }
         npc.sendToEvt?.(building, null, { allowPassageStop: true })
         return true
       }

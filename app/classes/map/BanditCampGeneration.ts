@@ -1,19 +1,36 @@
-import { Player } from '../players'
+import { AI } from '../players'
 import { canPlaceBuildingAt, getPlainCellsAroundPoint } from '../../lib'
+import { BANDIT_FACTION_COLOR, BANDIT_FACTION_NAME } from '../../lib/campaign/playerRoster'
 import { getUnitOverallLevel } from '../../lib/units/unitExperience'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
 import type { GameContextLike } from '../../types/context'
+import type { BuildingEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { MapGenerationMap } from './MapGenerationTypes'
 
-const BANDIT_CAMP_OWNER_NAME = 'Bandits'
 const BANDIT_CAMP_FIRE_OFFSETS: GridPosition[] = [
   { i: 0, j: 0 },
   { i: -3, j: 1 },
   { i: 2, j: -3 },
   { i: 3, j: 2 },
+]
+const BANDIT_CHEST_OFFSETS: GridPosition[] = [
+  { i: -2, j: -3 },
+  { i: 3, j: 3 },
+  { i: -5, j: 2 },
+  { i: 5, j: -3 },
+]
+const BANDIT_CHEST_EQUIPMENT_LOOT: Array<{ item: string; chance: number; min?: number; max?: number }> = [
+  { item: 'arrow_ceramic', chance: 100, min: 6, max: 16 },
+  { item: 'trap', chance: 55 },
+  { item: 'sword_ceramic', chance: 35 },
+  { item: 'bow', chance: 28 },
+  { item: 'quiver', chance: 28 },
+  { item: 'round_shield_ceramic_slash', chance: 22 },
+  { item: 'helmet_barbarian_nasal_ceramic', chance: 18 },
 ]
 const CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
   { type: BUILDING_TYPES.campMeatRack, offset: { i: -4, j: 3 } },
@@ -33,26 +50,37 @@ const CAMP_DECORATION_LAYOUT: Array<{ type: string; offset: GridPosition }> = [
 ]
 
 export type BanditCampOwner = PlayerLike & { banditCampOwner?: true }
+type BanditCampOwnerOptions = {
+  civ?: string | null
+  color?: string | null
+  factionId?: string | null
+  name?: string | null
+}
+type CampBuildingOptions = Parameters<PlayerLike['createBuilding']>[0] & {
+  inventory?: BuildingEntity['inventory']
+}
 
 export function ensureBanditCampOwner(
   map: MapGenerationMap,
   context: GameContextLike,
   anchor: GridPosition,
   civilization: string = context.player?.civ ?? 'Greek',
-  players: PlayerLike[] = map.context.players
+  players: PlayerLike[] = map.context.players,
+  options: BanditCampOwnerOptions = {}
 ): BanditCampOwner {
   const existing = players.find(player => player.type === PLAYER_TYPES.bandits) as BanditCampOwner | undefined
   if (existing) return existing
 
-  const owner = new Player(
+  const owner = new AI(
     {
       i: anchor.i,
       j: anchor.j,
-      name: BANDIT_CAMP_OWNER_NAME,
+      name: options.name ?? BANDIT_FACTION_NAME,
       type: PLAYER_TYPES.bandits,
       isPlayed: false,
-      color: 'grey',
-      civ: civilization,
+      color: options.color ?? BANDIT_FACTION_COLOR,
+      civ: options.civ ?? civilization,
+      factionId: options.factionId ?? null,
       gender: 'male',
       team: null,
       diplomacy: null,
@@ -84,6 +112,7 @@ export function placeBanditCamps(map: MapGenerationMap, context: GameContextLike
     const fireCamps = placeBanditCampFires(map, owner, anchor, getBanditCampFireCount(unitTypes.length, heroLevel))
     if (!fireCamps.length) continue
     placeCampDecorations(map, owner, anchor, unitTypes.length, heroLevel)
+    placeBanditCampChest(map, owner, anchor, index, unitTypes.length, heroLevel)
     placeBanditCampUnits(map, owner, fireCamps, unitTypes)
   }
 }
@@ -100,7 +129,8 @@ function placeCampBuildingNear(
   anchor: RuntimeCell,
   type: string,
   offset: GridPosition,
-  searchRadius = 1
+  searchRadius = 1,
+  options: Partial<CampBuildingOptions> = {}
 ): RuntimeCell | null {
   const targetI = anchor.i + offset.i
   const targetJ = anchor.j + offset.j
@@ -110,7 +140,7 @@ function placeCampBuildingNear(
     )
     if (!cells.length) continue
     const cell = distance === 0 ? cells[0] : map.randomItem(cells)
-    owner.createBuilding({ i: cell.i, j: cell.j, type, isBuilt: true })
+    owner.createBuilding({ ...options, i: cell.i, j: cell.j, type, isBuilt: true })
     return cell
   }
   return null
@@ -166,6 +196,45 @@ function placeCampDecorations(
     if (placed >= targetCount) break
     if (placeCampBuildingNear(map, owner, anchor, entry.type, entry.offset, 1)) placed++
   }
+}
+
+function placeBanditCampChest(
+  map: MapGenerationMap,
+  owner: PlayerLike,
+  anchor: RuntimeCell,
+  campIndex: number,
+  unitCount: number,
+  heroLevel: number
+): void {
+  const offset = BANDIT_CHEST_OFFSETS[campIndex % BANDIT_CHEST_OFFSETS.length]
+  placeCampBuildingNear(map, owner, anchor, BUILDING_TYPES.chest, offset, 2, {
+    inventory: createBanditCampChestInventory(map, unitCount, heroLevel),
+  })
+}
+
+function createBanditCampChestInventory(
+  map: MapGenerationMap,
+  unitCount: number,
+  heroLevel: number
+): NonNullable<BuildingEntity['inventory']> {
+  const resources: ResourceAmount = {
+    food: map.randomRange(8, 16 + unitCount * 2),
+    gold: map.randomRange(2, 5 + Math.floor(heroLevel / 3)),
+    wood: map.randomRange(3, 10),
+  }
+  if (heroLevel >= 5 && map.randomRange(1, 100) <= 35) resources.copper = map.randomRange(1, 3)
+  if (heroLevel >= 10 && map.randomRange(1, 100) <= 20) resources.iron = 1
+
+  const equipment: string[] = []
+  for (const loot of BANDIT_CHEST_EQUIPMENT_LOOT) {
+    if (map.randomRange(1, 100) > loot.chance) continue
+    const count = map.randomRange(loot.min ?? 1, loot.max ?? 1)
+    for (let index = 0; index < count; index++) {
+      equipment.push(loot.item)
+    }
+  }
+
+  return { resources, equipment }
 }
 
 function getBanditCampUnitTypes(map: MapGenerationMap, campIndex: number, heroLevel: number): string[] {

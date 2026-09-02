@@ -2,12 +2,14 @@ import { POPULATION_MAX, SHEET_TYPES } from '../../constants'
 import { capitalizeFirstLetter, isValidCondition } from '../../lib'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/audio/settings'
+import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { RESOURCE_NAMES, findKey, normalizeToggle } from './shared'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import type { ResourceAmount } from '../../types/common'
 import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
+import type { FactionSave } from '../../types/save'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
 
@@ -41,6 +43,53 @@ function refreshPlayerUnitEquipmentVisuals(player: DevPlayer): void {
 }
 
 type ResourceName = (typeof RESOURCE_NAMES)[number]
+
+function formatFactionRelation(faction: FactionSave): string {
+  return `${faction.relationState} (${Math.round(faction.relationScore)})`
+}
+
+function formatKnownWorlds(faction: FactionSave, currentWorldId: string | null | undefined): string {
+  const knownWorldIds = faction.knownWorldIds ?? []
+  if (!knownWorldIds.length) return 'undiscovered'
+  return knownWorldIds.map(worldId => (worldId === currentWorldId ? `${worldId}*` : worldId)).join(',')
+}
+
+export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
+  const factions = context.getCampaignFactions?.()
+  if (!factions || !Object.keys(factions).length) {
+    const lines = context.players.map((player, index) => {
+      const relation = context.player === player ? 'self' : context.player.isEnemy?.(player) ? 'hostile' : 'neutral'
+      const civ = player.civ ?? '-'
+      const color = player.color ?? '-'
+      const name = player.name || player.label || `player-${index}`
+      return `${index + 1}. ${name} | civ=${civ} | color=${color} | relation=${relation} | local`
+    })
+    return { ok: true, message: lines.length ? lines.join('\n') : 'No players found' }
+  }
+
+  const currentWorldId = context.getCurrentWorldId?.() ?? null
+  const lines = Object.values(factions)
+    .sort((a, b) => {
+      if (a.id === BANDIT_FACTION_ID) return 1
+      if (b.id === BANDIT_FACTION_ID) return -1
+      return (a.civilization || a.name).localeCompare(b.civilization || b.name)
+    })
+    .map((faction, index) => {
+      const localPlayer = context.players.find(player => player.factionId === faction.id)
+      const presence = localPlayer ? `local units=${localPlayer.units.length} buildings=${localPlayer.buildings.length}` : 'not local'
+      return [
+        `${index + 1}. ${faction.name}`,
+        `id=${faction.id}`,
+        `civ=${faction.civilization ?? '-'}`,
+        `color=${faction.color ?? '-'}`,
+        `relation=${formatFactionRelation(faction)}`,
+        `worlds=${formatKnownWorlds(faction, currentWorldId)}`,
+        presence,
+      ].join(' | ')
+    })
+
+  return { ok: true, message: lines.length ? lines.join('\n') : 'No global players found' }
+}
 
 function isResourceName(value: string): value is ResourceName {
   return (RESOURCE_NAMES as readonly string[]).includes(value)

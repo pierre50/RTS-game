@@ -12,6 +12,7 @@ import { getEntityCell, getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
+import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { playSpriteAnimationFromStart } from '../../lib/entities/spriteAnimation'
 import type { SchedulerTaskId } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
@@ -113,6 +114,7 @@ export class AnimalLifecycle {
     animal.owner.population = Math.max(0, animal.owner.population - 1)
     animal.stopInterval()
     animal.stopTimeout()
+    clearCombatAttackRecovery(animal)
     animal.animalBehavior.stop()
     clearEntityVisualFeedback(animal)
     if (animal.companionOwner) {

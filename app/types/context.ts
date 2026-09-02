@@ -77,7 +77,7 @@ interface TimeSkipSystemLike {
   cancel(options?: { silent?: boolean }): void
   destroy(): void
   getProgress(): number
-  start(hours: number): { ok: boolean; message: string }
+  start(hours: number, options?: { completedMessage?: string; onComplete?: () => void }): { ok: boolean; message: string }
 }
 
 export type SchedulerTaskId = number
@@ -287,6 +287,7 @@ export interface GameContextLike {
   devConsoleOpen?: boolean
   defeat?: boolean
   checkDefeat?: () => boolean
+  autosave?: () => void
   save: () => object | void
   load: (event: object) => void
   pause: () => void

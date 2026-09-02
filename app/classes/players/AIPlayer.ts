@@ -1,7 +1,7 @@
 import { Player } from './Player'
 import type { PlayerOptions } from './Player'
 
-import { isPlayerEliminated } from '../../lib'
+import { isPlayerEliminated, transferDefeatedPlayerBuildings } from '../../lib'
 import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES, BUILDING_TYPES, RESOURCE_TYPES } from '../../constants'
 import { AIStrategy } from '../../ai/AIStrategy'
 import { AIEconomy } from '../../ai/AIEconomy'
@@ -81,7 +81,7 @@ export class AI extends Player {
   _stepTaskId!: SchedulerTaskId | null
 
   constructor({ ...props }: PlayerOptions, context: GameContextLike) {
-    super({ ...props, isPlayed: false, type: PLAYER_TYPES.ai }, context)
+    super({ ...props, isPlayed: false, type: props.type ?? PLAYER_TYPES.ai }, context)
     this.foundedTrees = new Set()
     this.foundedBerrybushs = new Set()
     this.foundedWheats = new Set()
@@ -358,6 +358,7 @@ export class AI extends Player {
     // Player losing condition
     if (isPlayerEliminated(this)) {
       if (DEBUG) console.log('Player can no longer act. Dying...')
+      transferDefeatedPlayerBuildings(this)
       this.die()
       return 0
     }

@@ -90,7 +90,9 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
         },
         CELL_HEIGHT: 32,
         CELL_WIDTH: 64,
+        FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
         LABEL_TYPES: { interiorExit: 'interiorExit' },
+        SHEET_TYPES: { standing: 'standing' },
       },
       '../lib/buildings/interiors': {
         getBuildingInteriorEntryCell: () => null,
@@ -106,6 +108,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
         OUTSIDE_SPACE_ID: 'outside',
         ensureMapSpaces: map => (map.spaces ??= new Map()),
         getEntityMapSpace: () => null,
+        getEntitySpaceId: entity => entity?.spaceId || 'outside',
         getMapSpace: (map, spaceId = 'outside') => map?.spaces?.get(spaceId || 'outside') ?? null,
         moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
         sameMapSpace: () => true,
@@ -426,6 +429,85 @@ test('runtime storage interiors create an indestructible default chest', () => {
   assert.deepEqual(building.inventory.resources, {})
 })
 
+test('destroyed building interiors merge every interior chest inventory into one drop', () => {
+  const removedBuckets = []
+  const { extractBuildingInteriorChestInventory } = loadBuildingInteriorSpaceSystem()
+  const context = {
+    map: {
+      grid: [[{ i: 0, j: 0 }]],
+      removeFromInstanceBucket: building => removedBuckets.push(building.label),
+      spaces: new Map(),
+    },
+  }
+  const owner = { buildings: [] }
+  const space = {
+    id: 'interior:granary-1',
+    kind: 'interior',
+    renderer: {},
+  }
+  context.map.spaces.set(space.id, space)
+  const parent = {
+    context,
+    inventory: { resources: { food: 2 }, equipment: ['basket'] },
+    label: 'granary-1',
+    owner,
+    type: 'Granary',
+  }
+  const firstCell = { has: null, solid: true }
+  const secondCell = { has: null, solid: true }
+  const firstChest = {
+    currentCell: firstCell,
+    destroy: () => {},
+    inventory: { resources: { food: 3, wood: 4 }, equipment: ['trap'] },
+    isDead: false,
+    isDestroyed: false,
+    label: `${space.id}:default:storage-chest`,
+    owner,
+    parent: { removeChild: () => {} },
+    spaceId: space.id,
+    type: 'Chest',
+  }
+  const secondChest = {
+    currentCell: secondCell,
+    destroy: () => {},
+    inventory: { resources: { food: 5, gold: 1 } },
+    isDead: false,
+    isDestroyed: false,
+    label: `${space.id}:extra:storage-chest`,
+    owner,
+    parent: { removeChild: () => {} },
+    spaceId: space.id,
+    type: 'Chest',
+  }
+  const outsideChest = {
+    inventory: { resources: { food: 999 } },
+    isDead: false,
+    isDestroyed: false,
+    label: 'outside-chest',
+    owner,
+    spaceId: 'outside',
+    type: 'Chest',
+  }
+  firstCell.has = firstChest
+  secondCell.has = secondChest
+  owner.buildings.push(parent, firstChest, secondChest, outsideChest)
+
+  const inventory = extractBuildingInteriorChestInventory(context, parent)
+
+  assert.deepEqual(inventory, {
+    resources: { food: 10, wood: 4, gold: 1 },
+    equipment: ['basket', 'trap'],
+  })
+  assert.deepEqual(owner.buildings, [parent, outsideChest])
+  assert.deepEqual(removedBuckets, [firstChest.label, secondChest.label])
+  assert.equal(firstChest.isDestroyed, true)
+  assert.equal(secondChest.isDestroyed, true)
+  assert.deepEqual(parent.inventory, { resources: {}, equipment: [] })
+  assert.deepEqual(firstChest.inventory, { resources: {}, equipment: [] })
+  assert.equal(firstCell.has, null)
+  assert.equal(firstCell.solid, false)
+})
+
 test('runtime building interior exit marker sorts above its floor cell inside the scene layer', () => {
   const { BuildingInteriorSpaceRenderer } = loadBuildingInteriorSpaceSystem()
   const context = {
@@ -570,4 +652,103 @@ test('runtime interior sleep fallback never settles a unit on the exit passage c
 
   assert.equal(unit.currentCell, fallbackCell)
   assert.equal(exitCell.has, null)
+})
+
+test('destroyed building interiors expel living units back outside', () => {
+  const calls = []
+  const outsideGrid = Array.from({ length: 4 }, (_, i) =>
+    Array.from({ length: 4 }, (_, j) => ({
+      border: false,
+      category: 'Land',
+      has: null,
+      i,
+      j,
+      solid: false,
+      terrainHidden: false,
+      waterBorder: false,
+    }))
+  )
+  const entryCell = outsideGrid[1][1]
+  const secondCell = outsideGrid[1][2]
+  const building = { i: 1, j: 1, isBuilt: true, label: 'town-center-1', owner: {}, size: 3, type: 'TownCenter' }
+  const renderer = {
+    setActive: active => calls.push(['setActive', active]),
+  }
+  const container = { sortChildren: () => calls.push(['sortInterior']) }
+  const space = {
+    building,
+    container,
+    exteriorEntryCell: entryCell,
+    grid: [],
+    id: 'interior:town-center-1',
+    kind: 'interior',
+    renderer,
+    size: 15,
+  }
+  const outsideSpace = { container: { sortChildren: () => calls.push(['sortOutside']) }, grid: outsideGrid, id: 'outside', kind: 'outside' }
+  const context = {
+    map: {
+      activeSpaceId: space.id,
+      grid: outsideGrid,
+      spaces: new Map([
+        ['outside', outsideSpace],
+        [space.id, space],
+      ]),
+    },
+    players: [],
+  }
+  const villager = {
+    context,
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    label: 'villager-1',
+    owner: null,
+    shelterState: { status: 'inside', reason: 'sleep', shelter: building },
+    spaceId: space.id,
+    sprite: { stop: () => calls.push(['stopSprite', 'villager-1']) },
+    syncAppearanceLayers: sheet => calls.push(['syncAppearance', sheet]),
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+  }
+  const secondVillager = {
+    context,
+    family: 'unit',
+    isDead: false,
+    isDestroyed: false,
+    label: 'villager-2',
+    spaceId: space.id,
+  }
+  const outsideVillager = { family: 'unit', isDead: false, isDestroyed: false, label: 'villager-3', spaceId: 'outside' }
+  context.players.push({ units: [villager, secondVillager, outsideVillager] })
+
+  const { expelBuildingInteriorOccupants } = loadBuildingInteriorSpaceSystem({
+    getCellsAroundPoint: (_i, _j, _grid, _radius, condition) => [entryCell, secondCell].filter(condition),
+    moveEntityToMapSpace: (_map, unit, targetSpace, cell) => {
+      calls.push(['move', unit.label, targetSpace.id, cell.i, cell.j])
+      unit.spaceId = targetSpace.id
+      unit.currentCell = cell
+      cell.has = unit
+      cell.solid = true
+    },
+    prepareUnitForSpaceTransfer: unit => calls.push(['prepare', unit.label]),
+    updateInstanceRenderVisibility: unit => calls.push(['renderVisibility', unit.label]),
+    updateInstanceVisibility: unit => calls.push(['visibility', unit.label]),
+  })
+
+  const evacuated = expelBuildingInteriorOccupants(context, building)
+
+  assert.deepEqual(
+    evacuated.map(unit => unit.label),
+    ['villager-1', 'villager-2']
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'move'),
+    [
+      ['move', 'villager-1', 'outside', 1, 1],
+      ['move', 'villager-2', 'outside', 1, 2],
+    ]
+  )
+  assert.equal(villager.shelterState, null)
+  assert.equal(context.map.activeSpaceId, null)
+  assert.deepEqual(calls.find(call => call[0] === 'setActive'), ['setActive', false])
 })

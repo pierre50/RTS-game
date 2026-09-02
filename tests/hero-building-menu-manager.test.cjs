@@ -8,6 +8,7 @@ const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const transferPanels = []
   const audibleSoundCues = []
+  const campfireSleepCalls = []
   const theftConsequences = []
   const filename = path.join(__dirname, '../app/ui/HeroBuildingMenuManager.ts')
   const source = fs.readFileSync(filename, 'utf8')
@@ -19,7 +20,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
-      BUILDING_TYPES: { chest: 'Chest' },
+      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp' },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -27,6 +28,13 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/hero/heroActionRange': {
       isHeroInteractionTargetReachable: () => reachable,
+    },
+    '../lib/hero/heroCampfireSleep': {
+      canHeroSleepAtFireCamp: hero => hero?.canSleepAtCampfire !== false,
+      sleepHeroAtFireCamp: (hero, building) => {
+        campfireSleepCalls.push({ hero, building })
+        return hero?.canSleepAtCampfire !== false
+      },
     },
     '../lib/lang': {
       t: key => key,
@@ -74,6 +82,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   module.exports.HeroBuildingMenuManager.__transferPanels = transferPanels
   module.exports.HeroBuildingMenuManager.__audibleSoundCues = audibleSoundCues
+  module.exports.HeroBuildingMenuManager.__campfireSleepCalls = campfireSleepCalls
   module.exports.HeroBuildingMenuManager.__theftConsequences = theftConsequences
   return module.exports.HeroBuildingMenuManager
 }
@@ -91,6 +100,7 @@ function installMockDocument() {
         disabled: false,
         textContent: '',
         childElementCount: 0,
+        listeners: new Map(),
         style: { setProperty() {} },
         classList: { add() {}, toggle() {} },
         appendChild(child) {
@@ -102,7 +112,14 @@ function installMockDocument() {
           this.children.push(...children)
           this.childElementCount = this.children.length
         },
-        addEventListener() {},
+        addEventListener(type, listener) {
+          const listeners = this.listeners.get(type) ?? []
+          listeners.push(listener)
+          this.listeners.set(type, listeners)
+        },
+        dispatch(type) {
+          for (const listener of this.listeners.get(type) ?? []) listener({ type, currentTarget: this })
+        },
         replaceChildren(...children) {
           this.children = children
           this.childElementCount = this.children.length
@@ -259,6 +276,64 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
     assert.deepEqual(manager.constructor.__audibleSoundCues, [
       { cue: 'building/chest-open', instance: building, options: { profile: 'surface' } },
     ])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu adds a sleep button for fire camps', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    manager.menu.getActionMenuItems = () => []
+    const hero = { family: 'unit', canSleepAtCampfire: true }
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'FireCamp',
+      label: 'campfire-1',
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    manager.menu.context.controls.heroUnit = hero
+
+    assert.equal(manager.open(building), true)
+
+    const button = manager.body.children[0]
+    assert.equal(button.id, 'hero-heroCampfireSleep')
+    assert.equal(button.dataset.actionId, 'heroCampfireSleep')
+    assert.equal(button.disabled, false)
+
+    button.dispatch('click')
+
+    assert.deepEqual(manager.constructor.__campfireSleepCalls, [{ hero, building }])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu disables campfire sleep while blocked', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    manager.menu.getActionMenuItems = () => []
+    manager.menu.context.controls.heroUnit = { family: 'unit', canSleepAtCampfire: false }
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'FireCamp',
+      label: 'campfire-1',
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+
+    assert.equal(manager.open(building), true)
+
+    const button = manager.body.children[0]
+    assert.equal(button.id, 'hero-heroCampfireSleep')
+    assert.equal(button.disabled, true)
   } finally {
     restoreDocument()
   }

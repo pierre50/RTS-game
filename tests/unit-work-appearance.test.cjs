@@ -15,6 +15,7 @@ function loadUnitWorkAppearance(cacheGets) {
       bowman: 'Bowman',
     },
     WORK_TYPES: {
+      attacker: 'attacker',
       builder: 'builder',
       goldminer: 'goldminer',
       hunter: 'hunter',
@@ -22,6 +23,7 @@ function loadUnitWorkAppearance(cacheGets) {
       woodcutter: 'woodcutter',
     },
     ACTION_TYPES: {
+      attack: 'attack',
       build: 'build',
       chopwood: 'chopwood',
       hunt: 'hunt',
@@ -48,6 +50,22 @@ function loadUnitWorkAppearance(cacheGets) {
       '../constants': constants,
       './equipment/equipmentStats': {
         refreshUnitEquipmentStats: () => {},
+      },
+      '../equipment/equipmentStats': {
+        refreshUnitEquipmentStats: () => {},
+      },
+      '../lpc/equipment': {
+        dynamicEquipmentForWork: (work, age = 0) => {
+          const metals = {
+            axe: ['axe_ceramic', 'axe_copper', 'axe_bronze', 'axe_iron'],
+            hammer: ['hammer_ceramic', 'hammer_copper', 'hammer_bronze', 'hammer_iron'],
+            pickaxe: ['pickaxe_ceramic', 'pickaxe_copper', 'pickaxe_bronze', 'pickaxe_iron'],
+          }
+          if (work === 'woodcutter') return [metals.axe[age] ?? metals.axe[0]]
+          if (work === 'builder') return [metals.hammer[age] ?? metals.hammer[0]]
+          if (work === 'stoneminer' || work === 'goldminer') return [metals.pickaxe[age] ?? metals.pickaxe[0]]
+          return []
+        },
       },
     },
   })
@@ -139,4 +157,18 @@ test('woodcutting and mining actions apply the axe-style custom frame sequence',
     applyUnitActionFrameSequence(unit, work, action)
     assert.deepEqual(unit.actionFrameSequence, axeSequence)
   }
+})
+
+test('attack action frame sequence follows equipped tool instead of work', () => {
+  const cacheGets = []
+  const { applyUnitActionFrameSequence } = loadUnitWorkAppearance(cacheGets)
+  const axeSequence = [5, 5, 4, 4, 3, 1, 0, 0, 0, 0]
+  const bareHand = { type: 'Villager' }
+  const bandit = { type: 'BanditChief', equipment: ['axe_ceramic', 'armor_leather'] }
+
+  applyUnitActionFrameSequence(bareHand, 'attacker', 'attack')
+  assert.equal(bareHand.actionFrameSequence, null)
+
+  applyUnitActionFrameSequence(bandit, 'attacker', 'attack')
+  assert.deepEqual(bandit.actionFrameSequence, axeSequence)
 })

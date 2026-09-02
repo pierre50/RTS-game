@@ -15,8 +15,17 @@ export type HeroCraftRecipe = {
 
 export const HERO_TRAP_ITEM = 'trap'
 export const HERO_CHEST_ITEM = 'chest'
+export const HERO_CAMPFIRE_ITEM = 'campfire'
 
 export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
+  {
+    id: HERO_CAMPFIRE_ITEM,
+    labelKey: 'craftCampfire',
+    descriptionKey: 'craftCampfireDescription',
+    outputEquipment: HERO_CAMPFIRE_ITEM,
+    outputCount: 1,
+    cost: { wood: 8, stone: 2 },
+  },
   {
     id: HERO_TRAP_ITEM,
     labelKey: 'craftTrap',

@@ -17,13 +17,6 @@ type TintFrameEffectState = {
   onFrameChange: NonNullable<AnimatedSprite['onFrameChange']>
 }
 
-type StartFilterEffectOptions = {
-  durationMs: number
-  filter: Filter
-  scheduler: Pick<SchedulerLike, 'addOneShot' | 'remove'>
-  taskName?: string
-}
-
 const filterEffectStates = new WeakMap<TransientEffectSprite, FilterEffectState>()
 const filterEffectSprites = new Set<TransientEffectSprite>()
 const tintFrameEffectStates = new WeakMap<AnimatedSprite, TintFrameEffectState>()
@@ -40,28 +33,6 @@ export function setSpriteFiltersPreservingTransientEffect(
 
   state.baseFilters = filters ? [...filters] : null
   sprite.filters = [...(state.baseFilters ?? []), state.effect]
-}
-
-export function startSpriteFilterEffect(
-  sprite: TransientEffectSprite,
-  { durationMs, filter, scheduler, taskName = 'sprite.filterEffect' }: StartFilterEffectOptions
-): void {
-  const previous = filterEffectStates.get(sprite)
-  const token = (previous?.token ?? 0) + 1
-  const baseFilters = previous ? previous.baseFilters : (sprite.filters ?? null)
-  if (previous?.taskId != null) previous.scheduler.remove(previous.taskId)
-
-  const state: FilterEffectState = { baseFilters, effect: filter, scheduler, taskId: null, token }
-  filterEffectStates.set(sprite, state)
-  filterEffectSprites.add(sprite)
-  sprite.filters = [...(baseFilters ?? []), filter]
-  state.taskId = scheduler.addOneShot(
-    () => {
-      clearSpriteFilterEffect(sprite, token)
-    },
-    durationMs,
-    taskName
-  )
 }
 
 export function clearSpriteFilterEffect(sprite: TransientEffectSprite | null | undefined, token?: number): void {

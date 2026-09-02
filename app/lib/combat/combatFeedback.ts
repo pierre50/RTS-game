@@ -1,4 +1,4 @@
-import { ColorMatrixFilter, Graphics, Text } from 'pixi.js'
+import { Graphics, Text } from 'pixi.js'
 import { FAMILY_TYPES } from '../constants'
 import { getReliefOffset } from '../maths'
 import {
@@ -6,7 +6,6 @@ import {
   clearSpriteFilterEffect,
   hasSpriteFilterEffect,
   setSpriteFiltersPreservingTransientEffect,
-  startSpriteFilterEffect,
 } from '../entities/spriteTransientEffects'
 import { getEntityHudTopY } from '../entities/entityHudPosition'
 import { createStatusBubble } from '../entities/statusBubble'
@@ -33,7 +32,6 @@ type FloatingTextRecord = {
   taskId: SchedulerTaskId | null
 }
 
-const FLASH_MS = 90
 const FLOAT_STEP_MS = 35
 const FLOAT_STEPS = 14
 const FLOAT_RISE = 18
@@ -100,7 +98,7 @@ function canShowCombatFeedback(target: RuntimeEntity): boolean {
   )
 }
 
-function canFlashDamage(target: RuntimeEntity): boolean {
+function canShowConversionFlash(target: RuntimeEntity): boolean {
   return target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal
 }
 
@@ -112,7 +110,7 @@ export function setSpriteFiltersPreservingDamageFeedback(
 }
 
 function parseFlashColor(color: string | null | undefined): [number, number, number] {
-  const normalized = color?.startsWith('#') ? color : PLAYER_FLASH_COLORS[color ?? ''] ?? '#ffffff'
+  const normalized = color?.startsWith('#') ? color : (PLAYER_FLASH_COLORS[color ?? ''] ?? '#ffffff')
   const match = /^#?([0-9a-f]{6})$/i.exec(normalized)
   if (!match) return [1, 1, 1]
   const value = Number.parseInt(match[1], 16)
@@ -167,7 +165,7 @@ function startConversionWave(target: RuntimeEntity, color?: string | null): void
         sprite.destroyed ||
         target.isDestroyed ||
         target.context?.defeat ||
-        (conversionFlashStates.get(sprite)?.token !== token)
+        conversionFlashStates.get(sprite)?.token !== token
       ) {
         stopConversionFlash(sprite, token)
         return
@@ -195,27 +193,6 @@ function startConversionWave(target: RuntimeEntity, color?: string | null): void
     'combat.conversionWave'
   )
   conversionFlashStates.set(sprite, state)
-}
-
-function flashColor(target: RuntimeEntity, color?: string | null): void {
-  const sprite = target.sprite
-  const scheduler = target.context?.scheduler
-  if (!sprite || !scheduler) return
-
-  const [r, g, b] = parseFlashColor(color)
-  const flash = new ColorMatrixFilter()
-  flash.matrix = [0, 0, 0, 0, r, 0, 0, 0, 0, g, 0, 0, 0, 0, b, 0, 0, 0, 1, 0]
-
-  startSpriteFilterEffect(sprite, {
-    durationMs: FLASH_MS,
-    filter: flash,
-    scheduler,
-    taskName: 'combat.flash',
-  })
-}
-
-function flashWhite(target: RuntimeEntity): void {
-  flashColor(target, '#ffffff')
 }
 
 export function clearDamageFeedback(target: RuntimeEntity): void {
@@ -345,16 +322,9 @@ function statusBubbleFeedback(options: FloatingTextOptions): FloatingTextOptions
 
 export function showDamageFeedback(target: RuntimeEntity, damage: number): void {
   const text = formatDamageFeedback(damage)
-  if (
-    !text ||
-    !canShowCombatFeedback(target) ||
-    target.context?.defeat ||
-    target.isDestroyed ||
-    target.isDead
-  ) {
+  if (!text || !canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed || target.isDead) {
     return
   }
-  if (canFlashDamage(target)) flashWhite(target)
   showFloatingText(target, {
     text,
     fill: 0xffffff,
@@ -365,7 +335,7 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
 
 export function showConversionFeedback(target: RuntimeEntity, color?: string | null): void {
   if (!canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed) return
-  if (canFlashDamage(target)) startConversionWave(target, color)
+  if (canShowConversionFlash(target)) startConversionWave(target, color)
 }
 
 export function showResourceGainFeedback(target: RuntimeEntity, amount: number): void {
@@ -431,12 +401,15 @@ export function showFatigueFeedback(target: RuntimeEntity): void {
   const previous = fatigueFeedbackTimes.get(target) ?? -Infinity
   if (now - previous < FATIGUE_FEEDBACK_COOLDOWN_MS) return
   fatigueFeedbackTimes.set(target, now)
-  showFloatingText(target, statusBubbleFeedback({
-    text: '...',
-    fontSize: 13,
-    yOffset: STATUS_BUBBLE_Y_OFFSET,
-    taskLabel: 'unit.fatigueText',
-  }))
+  showFloatingText(
+    target,
+    statusBubbleFeedback({
+      text: '...',
+      fontSize: 13,
+      yOffset: STATUS_BUBBLE_Y_OFFSET,
+      taskLabel: 'unit.fatigueText',
+    })
+  )
 }
 
 function showAlertFeedbackNow(target: RuntimeEntity): boolean {
@@ -445,12 +418,15 @@ function showAlertFeedbackNow(target: RuntimeEntity): boolean {
   const previous = alertFeedbackTimes.get(target) ?? -Infinity
   if (now - previous < ALERT_FEEDBACK_COOLDOWN_MS) return false
   alertFeedbackTimes.set(target, now)
-  showFloatingText(target, statusBubbleFeedback({
-    text: '!',
-    fontSize: 14,
-    yOffset: STATUS_BUBBLE_Y_OFFSET,
-    taskLabel: 'unit.alertText',
-  }))
+  showFloatingText(
+    target,
+    statusBubbleFeedback({
+      text: '!',
+      fontSize: 14,
+      yOffset: STATUS_BUBBLE_Y_OFFSET,
+      taskLabel: 'unit.alertText',
+    })
+  )
   return true
 }
 
@@ -464,12 +440,16 @@ export function showAggressionFeedback(target: RuntimeEntity): void {
     target.context?.scheduler?.remove(pendingTaskId)
     sequencedAggressionTaskIds.delete(target)
   }
-  showCooldownStatusFeedback(target, aggressionFeedbackTimes, statusBubbleFeedback({
-    text: '!!',
-    fontSize: 14,
-    yOffset: STATUS_BUBBLE_Y_OFFSET,
-    taskLabel: 'unit.aggressionText',
-  }))
+  showCooldownStatusFeedback(
+    target,
+    aggressionFeedbackTimes,
+    statusBubbleFeedback({
+      text: '!!',
+      fontSize: 14,
+      yOffset: STATUS_BUBBLE_Y_OFFSET,
+      taskLabel: 'unit.aggressionText',
+    })
+  )
 }
 
 export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggression?: AlertAggressionCallback): void {
@@ -496,28 +476,40 @@ export function showAlertThenAggressionFeedback(target: RuntimeEntity, onAggress
 }
 
 export function showHealingFeedback(target: RuntimeEntity): void {
-  showCooldownStatusFeedback(target, healingFeedbackTimes, statusBubbleFeedback({
-    text: '♥',
-    fontSize: 12,
-    yOffset: 16,
-    taskLabel: 'unit.healingText',
-  }))
+  showCooldownStatusFeedback(
+    target,
+    healingFeedbackTimes,
+    statusBubbleFeedback({
+      text: '♥',
+      fontSize: 12,
+      yOffset: 16,
+      taskLabel: 'unit.healingText',
+    })
+  )
 }
 
 export function showConfusionFeedback(target: RuntimeEntity): void {
-  showCooldownStatusFeedback(target, confusionFeedbackTimes, statusBubbleFeedback({
-    text: '?',
-    fontSize: 13,
-    yOffset: 20,
-    taskLabel: 'unit.confusionText',
-  }))
+  showCooldownStatusFeedback(
+    target,
+    confusionFeedbackTimes,
+    statusBubbleFeedback({
+      text: '?',
+      fontSize: 13,
+      yOffset: 20,
+      taskLabel: 'unit.confusionText',
+    })
+  )
 }
 
 export function showBlockedFeedback(target: RuntimeEntity): void {
-  showCooldownStatusFeedback(target, blockedFeedbackTimes, statusBubbleFeedback({
-    text: 'X',
-    fontSize: 12,
-    yOffset: 20,
-    taskLabel: 'unit.blockedText',
-  }))
+  showCooldownStatusFeedback(
+    target,
+    blockedFeedbackTimes,
+    statusBubbleFeedback({
+      text: 'X',
+      fontSize: 12,
+      yOffset: 20,
+      taskLabel: 'unit.blockedText',
+    })
+  )
 }

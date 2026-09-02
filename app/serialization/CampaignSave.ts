@@ -224,7 +224,7 @@ export function updateCurrentWorldState(campaign: CampaignSave, state: Serialize
                 environment: worldEnvironment(state) ?? node.environment ?? null,
                 encounter,
                 banditsCleared: areWorldBanditsCleared(state),
-                factionIds: encounter === 'bandit' ? [] : node.factionIds,
+                factionIds: node.factionIds,
                 visitedAt: now,
               },
             }
@@ -260,7 +260,7 @@ export function addChildWorldToCampaign(
   const existingNode = campaign.worldGraph.nodes[id]
   const nextParentChildren = parentNode?.children.includes(id) ? parentNode.children : [...(parentNode?.children ?? []), id]
   const encounter = worldEncounter(childState) ?? existingNode?.encounter ?? null
-  const nextFactionIds = encounter === 'bandit' ? [] : [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
+  const nextFactionIds = [...new Set([...(existingNode?.factionIds ?? []), ...factionIds])]
 
   return {
     ...campaign,

@@ -40,6 +40,42 @@ const constants = {
 }
 
 function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
+  const buildingInteriorOverrides = moduleOverrides['../BuildingInteriorSpaceSystem'] ?? {}
+  const buildingInteriorMock = {
+    ensureRuntimeBuildingInteriorSpace: (_context, building) => ({ building, id: `space-${building.label || building.type}` }),
+    expelBuildingInteriorOccupants: () => [],
+    getBuildingInteriorSpaceForBuilding: (_context, building) => ({ building, id: `space-${building.label || building.type}` }),
+    getBuildingInteriorSpaceForUnit: unit =>
+      unit.spaceId ? { building: unit.shelterState?.shelter ?? null, id: unit.spaceId } : null,
+    moveUnitToBuildingInteriorSleep: (_context, unit, space, _options) => {
+      unit.spaceId = space.id
+      unit.alpha = 1
+      unit.visible = true
+      unit.shelterState = {
+        ...(unit.shelterState ?? {}),
+        status: 'inside',
+        location: 'shelter',
+        shelter: space.building,
+        targetCell: unit.currentCell ?? unit.shelterState?.targetCell ?? null,
+      }
+      return true
+    },
+    settleUnitAtBuildingInteriorSleepCell: (unit, space, cell) => {
+      unit.spaceId = space.id
+      unit.currentCell = cell ?? unit.currentCell
+      unit.shelterState = {
+        ...(unit.shelterState ?? {}),
+        status: 'inside',
+        location: 'shelter',
+        shelter: space.building,
+        targetCell: cell ?? unit.currentCell ?? null,
+      }
+    },
+    ...buildingInteriorOverrides,
+  }
+  const remainingModuleOverrides = { ...moduleOverrides }
+  delete remainingModuleOverrides['../BuildingInteriorSpaceSystem']
+
   return loadModule('app/services/rest/UnitRestSystem.ts', {
     '../constants': constants,
     '../lib': {
@@ -95,7 +131,8 @@ function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
     '../../lib/combat': {
       evaluateCombatMorale: () => 'fight',
     },
-    ...moduleOverrides,
+    '../BuildingInteriorSpaceSystem': buildingInteriorMock,
+    ...remainingModuleOverrides,
   }).UnitRestSystem
 }
 
@@ -886,7 +923,7 @@ test('rest tick returns early during quiet daytime', () => {
   assert.deepEqual(calls, [])
 })
 
-test('villagers move to nearest house entry and disappear inside on arrival', () => {
+test('villagers move to nearest house entry and enter the building interior on arrival', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
   const house = { label: 'house', type: constants.BUILDING_TYPES.house, owner, isBuilt: true, i: 5, j: 5 }
@@ -907,13 +944,10 @@ test('villagers move to nearest house entry and disappear inside on arrival', ()
   system.updateRestingUnit(villager)
 
   assert.equal(villager.shelterState.status, 'inside')
-  assert.equal(villager.alpha, 0)
-  assert.equal(villager.visible, false)
-  assert.equal(villager.shadow.visible, false)
-  assert.deepEqual(
-    calls.find(call => call[0] === 'removeBucket'),
-    ['removeBucket', 'villager-1']
-  )
+  assert.equal(villager.spaceId, 'space-house')
+  assert.equal(villager.alpha, 1)
+  assert.equal(villager.visible, true)
+  assert.equal(calls.some(call => call[0] === 'removeBucket'), false)
 })
 
 test('active runtime interiors route shelter entry through the space portal', () => {
@@ -1608,8 +1642,9 @@ test('time jump to night settles awake villagers into shelters immediately', () 
 
   assert.equal(villager.shelterState.status, 'inside')
   assert.equal(villager.shelterState.shelter, house)
-  assert.equal(villager.visible, false)
-  assert.equal(villager.alpha, 0)
+  assert.equal(villager.spaceId, 'space-house')
+  assert.equal(villager.visible, true)
+  assert.equal(villager.alpha, 1)
 })
 
 test('time jump to night bypasses shelter fade-out', () => {
@@ -1640,8 +1675,9 @@ test('time jump to night bypasses shelter fade-out', () => {
   system.synchronizeAfterTimeJump()
 
   assert.equal(villager.shelterState.status, 'inside')
-  assert.equal(villager.visible, false)
-  assert.equal(villager.alpha, 0)
+  assert.equal(villager.spaceId, 'space-house')
+  assert.equal(villager.visible, true)
+  assert.equal(villager.alpha, 1)
   assert.equal(
     calls.some(call => call[0] === 'fadeOut'),
     false

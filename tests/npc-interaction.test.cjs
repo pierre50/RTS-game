@@ -325,7 +325,7 @@ test('"aller vers" sends villagers to hunt a live animal under the cursor', () =
   assert.deepEqual(calls, [['hunt', target]])
 })
 
-test('"aller vers" sends a communicated villager to a training building', () => {
+test('"aller vers" sends a communicated villager to a training building without starting training', () => {
   const owner = {
     config: {
       units: {
@@ -361,8 +361,48 @@ test('"aller vers" sends a communicated villager to a training building', () => 
 
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
-  assert.equal(npc.trainingTargetType, 'Fantassin')
-  assert.deepEqual(calls, [['move', target, constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }]])
+  assert.equal(npc.trainingTargetType, undefined)
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
+})
+
+test('"aller vers" sends a resource-carrying villager beside a storage building without delivering', () => {
+  const owner = { label: 'player' }
+  const target = {
+    family: constants.FAMILY_TYPES.building,
+    i: 5,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    owner,
+    type: 'StoragePit',
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: { map: { grid: [] } },
+    getActionCondition: (orderTarget, action) => orderTarget === target && action === constants.ACTION_TYPES.delivery,
+    i: 1,
+    inventory: { resources: { wood: 5 } },
+    j: 1,
+    owner,
+    sendToDelivery: orderTarget => calls.push(['delivery', orderTarget]),
+    sendToEvt(orderTarget, action, options) {
+      npc.dest = orderTarget
+      npc.action = action
+      calls.push(['move', orderTarget, action, options])
+    },
+    type: constants.UNIT_TYPES.villager,
+    work: 'woodcutter',
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.equal(npc.action, null)
+  assert.equal(npc.dest, target)
+  assert.deepEqual(calls, [['move', target, null, { allowPassageStop: true }]])
 })
 
 test('"aller vers" sends a communicated villager to harvest wheat', () => {

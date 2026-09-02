@@ -26,6 +26,7 @@ import {
   applyPortableUnitState,
   configForPortalWorld,
   extractPortalParty,
+  ensureCampaignPlayerRoster,
   heroTravelSpriteSources,
   portalWorldId,
   withFogEnabledState,
@@ -108,7 +109,7 @@ export function configForRuntimePortalWorld(
   now: number
 ): PortalWorldConfig {
   const { player, map } = game._gameContext()
-  return configForPortalWorld({ color, map, now, player, worldId })
+  return configForPortalWorld({ campaign: game._campaignSave, color, map, now, player, worldId })
 }
 
 export function runtimeHeroUnit(game: PortalTravelGame): UnitEntity | null {
@@ -329,9 +330,10 @@ export async function travelThroughPortal(
   const party = extractPortalParty(currentWorldState)
   const previousEquippedItem = game._gameContext().controls.equippedItem ?? null
   const departureHero = runtimeHeroUnit(game)
-  const campaign = game._campaignSave
+  let campaign = game._campaignSave
     ? updateCurrentWorldState(game._campaignSave, currentWorldState, now)
     : createInitialCampaignSave(currentWorldState, { now })
+  campaign = ensureCampaignPlayerRoster(campaign, now)
   const currentCampaignWorld = campaign.worlds[campaign.currentWorldId]
   const shouldReturnToParent = Boolean(currentCampaignWorld?.parentWorldId && currentCampaignWorld.color === color)
   const targetWorldId = portalWorldId(campaign.currentWorldId, portal, color)
@@ -373,7 +375,8 @@ export async function travelThroughPortal(
       arrivalRevealPoint = arrival.revealPoint
     } else {
       const parentWorldId = campaign.currentWorldId
-      const portalWorld = configForRuntimePortalWorld(game, color, targetWorldId, now)
+      const { player, map } = game._gameContext()
+      const portalWorld = configForPortalWorld({ campaign, color, map, now, player, worldId: targetWorldId })
       game._destroyRuntime({ preserveLoadingScreen: true })
       await game._bootFromConfig(portalWorld.config, { dayNightElapsedMs: campaign.clock?.dayNightElapsedMs })
       game._map().revealEverything = false
@@ -385,12 +388,11 @@ export async function travelThroughPortal(
       arrivalHeroProtection = protectPortalHero(arrivalHero)
       arrivalRevealPoint = getPortalRevealPoint(game, arrivalHero)
       const childState = withFogEnabledState(serializeGame(game._gameContext()))
-      const isBanditEncounter = portalWorld.config.portalEncounter === 'bandit'
       const nextCampaign = addChildWorldToCampaign(campaign, childState, {
         color,
         entryPortalId: portal.label || `${portal.i},${portal.j}`,
-        factionIds: isBanditEncounter ? [] : [portalWorld.factionId],
-        factions: isBanditEncounter ? {} : { [portalWorld.factionId]: portalWorld.faction },
+        factionIds: [portalWorld.factionId],
+        factions: { [portalWorld.factionId]: portalWorld.faction },
         name: `Monde ${color}`,
         now,
         parentWorldId,

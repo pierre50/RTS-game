@@ -162,6 +162,12 @@ function loadHeroController({
     '../services/world/TrapHarvestSystem': {
       recoverTrapBuilding: () => false,
     },
+    '../services/TimeSkipSystem': {
+      getHoursUntilNextMorning: (hour, minute) => hour + minute / 60,
+    },
+    '../lib/lang': {
+      t: key => key,
+    },
   }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
@@ -196,6 +202,7 @@ function createController({
   ownerBuildings = [],
   resolveCommGroup,
   resolveHeroProximityInteraction = () => null,
+  timeSkipStart = () => ({ ok: false, message: 'Time skip system unavailable' }),
   theft,
   wakeOwnSleepingNpcForCommunication = () => {},
   withScheduler = false,
@@ -377,6 +384,11 @@ function createController({
         setHeroInteractionPrompt: actionKey => calls.push(['setHeroInteractionPrompt', actionKey]),
         showMessage: (message, tone) => calls.push(['showMessage', message, tone]),
       },
+      dayNight: { state: { hour: 23, minute: 30 } },
+      timeSkip: {
+        start: (hours, options) => timeSkipStart(hours, options),
+      },
+      autosave: () => calls.push('autosave'),
     },
     getCellUnderCursor: () => null,
     getFacingEntityTarget: () => null,
@@ -1215,6 +1227,20 @@ test('E opens direct interaction when the hero is not a chief', () => {
   assert.equal(controller.handleKeyDown('heroInteract'), true)
   assert.equal(controller.commCharging, false)
   assert.deepEqual(calls, ['openHeroEntityInteraction'])
+})
+
+test('E opens fire camp usage instead of sleeping directly', () => {
+  const fireCamp = { label: 'campfire-1' }
+  const { calls, controller } = createController({
+    resolveHeroProximityInteraction: () => ({
+      action: 'open',
+      labelKey: 'heroInteractionUseFire',
+      target: fireCamp,
+    }),
+  })
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+  assert.deepEqual(calls, [['setHeroInteractionPrompt', 'heroInteractionUseFire'], 'openHeroEntityInteraction'])
 })
 
 test('E shows communication radius even when no villagers are nearby', () => {

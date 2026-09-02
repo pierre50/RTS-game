@@ -11,6 +11,7 @@ import { getEntitySpaceMapLike, getMapSpace } from '../mapSpaces'
 import { pickForeignNpcChatterLine, pickNpcChatterLine, pickNpcRestingChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { shouldVillagerRestBeforeBed } from '../units/villagerSchedule'
+import { isUsableFireCamp } from './heroCampfireSleep'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 
 type HeroProximityInteractionAction = 'communicate' | 'enter' | 'exit' | 'mount' | 'open' | 'recoverTrap'
@@ -38,7 +39,7 @@ export type HeroProximityInteraction =
     }
   | {
       action: 'open'
-      labelKey: 'heroInteractionOpen'
+      labelKey: 'heroInteractionOpen' | 'heroInteractionUseFire'
       target: RuntimeEntity
     }
   | {
@@ -246,6 +247,9 @@ export function resolveHeroProximityInteraction({
 
   const openableBuilding = resolveFacingOpenableBuilding(hero, openEntityTarget)
   if (openableBuilding) return { action: 'open', labelKey: 'heroInteractionOpen', target: openableBuilding }
+
+  const fireCamp = openEntityTarget as BuildingEntity | null | undefined
+  if (isUsableFireCamp(hero, fireCamp)) return { action: 'open', labelKey: 'heroInteractionUseFire', target: fireCamp }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
   if (building) return { action: 'enter', labelKey: 'heroInteractionEnter', target: building }

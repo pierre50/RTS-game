@@ -374,7 +374,7 @@ function playerData(player: SerializablePlayer) {
     selectedOtherLabel: !player.isPlayed ? player.selectedOther?.label : undefined,
   }
 
-  if (player.type === 'AI') {
+  if (player.type === 'AI' || player.type === 'Bandits') {
     const savedAt = player.getNow?.() ?? 0
     const serializeMemory = (memory: ThreatMemory) => ({
       instance: memory.instance?.label || memory.label || null,

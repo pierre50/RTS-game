@@ -1,62 +1,21 @@
-import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
+import { ACTION_TYPES, SHEET_TYPES } from '../../constants'
 import {
-  canUpdateMinimap,
   isBanditOwner,
   playAudibleSoundCue,
   showConversionFeedback,
   syncMovedActionTarget,
-  updateInstanceVisibility,
 } from '../../lib'
 import { grantUnitXp, XP_CATEGORIES, XP_CONVERT_SUCCESS } from '../../lib/units/unitExperience'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
-import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { PlayerLike } from '../../types/player'
+import { isConvertibleEntity, transferEntityOwner } from '../../lib/entities/entityOwnerTransfer'
+import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const BASE_CONVERSION_MIN_CHANTS = 3
 const BASE_CONVERSION_CHANCE = 0.3
 const ASTROLOGY_CONVERSION_CHANCE = 0.39
 
-type OwnerListKey = 'units' | 'buildings'
-type ConvertibleEntity = (UnitEntity | BuildingEntity) & Partial<UnitEntity & BuildingEntity>
-
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
-}
-
-function isUnitEntity(value: UnitEntity['dest'] | null | undefined): value is UnitEntity {
-  return isRuntimeEntity(value) && value.family === FAMILY_TYPES.unit
-}
-
-function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): value is BuildingEntity {
-  return isRuntimeEntity(value) && value.family === FAMILY_TYPES.building
-}
-
-const ownerList = (owner: PlayerLike | null | undefined, key: OwnerListKey): RuntimeEntity[] | undefined => {
-  if (!owner) return undefined
-  return key === 'units' ? owner.units : owner.buildings
-}
-
-function removeFromOwnerList(
-  owner: PlayerLike | null | undefined,
-  key: 'units' | 'buildings',
-  instance: RuntimeEntity
-) {
-  const list = ownerList(owner, key)
-  if (!Array.isArray(list)) return
-  const index = list.indexOf(instance)
-  if (index >= 0) list.splice(index, 1)
-}
-
-function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity) {
-  const list = ownerList(owner, key)
-  if (!Array.isArray(list) || list.includes(instance)) return
-  list.push(instance)
-}
-
-function isConvertibleEntity(target: RuntimeEntity): target is ConvertibleEntity {
-  return isUnitEntity(target) || isBuildingEntity(target)
 }
 
 const lastConversionDebugAt = new Map<string, number>()
@@ -93,33 +52,6 @@ function debugConversionFailure(
   })
 }
 
-function clearConvertedUnitRuntimeState(target: ConvertibleEntity): void {
-  target.stopInterval?.()
-  if (target.energyWaitTaskId != null) {
-    target.context?.scheduler?.remove(target.energyWaitTaskId)
-    target.energyWaitTaskId = null
-  }
-  if (target.sprite) {
-    target.sprite.onLoop = undefined
-    target.sprite.onFrameChange = undefined
-    target.sprite.onComplete = undefined
-  }
-  target.path = []
-  target.action = null
-  target.dest = null
-  target.realDest = null
-  target.previousDest = null
-  target.previousWork = null
-  target.waitingForEnergyAction = null
-  target.waitingForEnergyTarget = null
-  target.combatMode = null
-  target.lastCombatRecoveryMoveAt = null
-  target.actionLocked = false
-  target.pendingOrder = null
-  target.blockedGatherApproach = null
-  target.inactif = true
-}
-
 export class UnitConversionAction {
   unit: UnitEntity
 
@@ -150,8 +82,7 @@ export class UnitConversionAction {
       debugConversionFailure(unit, target, 'target-not-convertible')
       return false
     }
-    const t = target
-    const oldOwner = t.owner
+    const oldOwner = target.owner
     const newOwner = unit.owner
     if (!oldOwner || !newOwner || oldOwner.label === newOwner.label) {
       debugConversionFailure(unit, target, 'invalid-owner', {
@@ -166,62 +97,7 @@ export class UnitConversionAction {
       })
       return false
     }
-
-    if (t.selected) {
-      t.select?.()
-      if (player?.selectedOther === target) player.selectedOther = null
-    }
-
-    clearConvertedUnitRuntimeState(t)
-    t.assetCiv = t.assetCiv || oldOwner.civ
-    t.assetAge = t.assetAge ?? oldOwner.age
-    t.owner = newOwner
-
-    if (t.family === FAMILY_TYPES.unit) {
-      removeFromOwnerList(oldOwner, 'units', t)
-      addToOwnerList(newOwner, 'units', t)
-      oldOwner.population = Math.max(0, oldOwner.population - 1)
-      newOwner.population += 1
-      t.setTextures?.(SHEET_TYPES.standing)
-    } else if (t.family === FAMILY_TYPES.building) {
-      t.assetType = t.assetType || t.type
-      removeFromOwnerList(oldOwner, 'buildings', t)
-      addToOwnerList(newOwner, 'buildings', t)
-      const populationCapacity = getBuildingShelterCapacity(t) || t.increasePopulation || 0
-      if (populationCapacity && t.populationCapacityApplied) {
-        oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
-        newOwner.populationMax += populationCapacity
-      }
-      t.clearRallyPoint?.()
-      t.queue = []
-      t.technology = null
-      t.loading = null
-      t.finalTexture?.()
-      if (t.interface) {
-        const units = newOwner.isPlayed && menu ? (t.units || []).map(key => menu.getActionUnitButton?.(key, t)) : []
-        t.interface.menu = newOwner.isPlayed
-          ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
-              (item): item is NonNullable<typeof item> => Boolean(item)
-            )
-          : []
-      }
-      if (t.isBuilt && !newOwner.hasBuilt?.includes(t.type)) {
-        newOwner.hasBuilt?.push(t.type)
-      }
-    } else {
-      return false
-    }
-
-    updateInstanceVisibility(t)
-    showConversionFeedback?.(t, newOwner.color ?? newOwner.colorHex)
-    if (t.selected || t.shouldKeepHealthBarVisible?.()) {
-      syncEntityHealthDisplay(t, { menu, player: newOwner })
-    } else {
-      t.removeHealthBar?.()
-    }
-    canUpdateMinimap(t, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMapEvt?.(oldOwner)
-    canUpdateMinimap(t, player) && menu?.isMiniMapActive?.() !== false && menu?.updatePlayerMiniMapEvt?.(newOwner)
-    if (newOwner.isPlayed) menu?.updateTopbar()
+    if (!transferEntityOwner(target, newOwner, { menu, player, showConversionFeedback })) return false
     if (grantXpOnSuccess) grantUnitXp(unit, XP_CATEGORIES.healing, XP_CONVERT_SUCCESS)
     if (stopConverter) unit.stop?.()
     return true

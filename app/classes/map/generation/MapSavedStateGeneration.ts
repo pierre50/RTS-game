@@ -59,7 +59,7 @@ export function restoreSavedPlayers(
   const classMap: Record<string, typeof Human | typeof AI | typeof Player> = {
     Human,
     AI,
-    [PLAYER_TYPES.bandits]: Player,
+    [PLAYER_TYPES.bandits]: AI,
   }
   const context = runtimeContext(map)
   map.context.players = players.map((player: SavedPlayer) => {
@@ -70,7 +70,7 @@ export function restoreSavedPlayers(
         corpses: [],
         buildings: [],
         units: [],
-        ...(player.type === PLAYER_TYPES.ai ? { difficulty: map.difficulty } : {}),
+        ...(player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits ? { difficulty: map.difficulty } : {}),
       },
       context
     )

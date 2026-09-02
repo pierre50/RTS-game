@@ -1,6 +1,6 @@
 import { Assets, AnimatedSprite } from 'pixi.js'
 import { Polygon } from 'pixi.js'
-import { ACTION_TYPES, LABEL_TYPES, MENU_INFO_IDS, PLAYER_TYPES, POPULATION_MAX, SOUND_CUES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, LABEL_TYPES, MENU_INFO_IDS, POPULATION_MAX, SOUND_CUES } from '../../constants'
 import {
   canUpdateMinimap,
   changeSpriteColorDirectly,
@@ -16,10 +16,16 @@ import {
   getAnimationFrames,
   playAudibleSoundCue,
   spawnSpriteFragmentBurst,
+  isAIControlledPlayer,
 } from '../../lib'
 import { getEntityMapSpace } from '../../lib/mapSpaces'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
 import { getBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import {
+  expelBuildingInteriorOccupants,
+  extractBuildingInteriorChestInventory,
+} from '../../services/BuildingInteriorSpaceSystem'
+import type { BuildingEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 import type { Texture } from 'pixi.js'
@@ -173,7 +179,6 @@ export class BuildingLifecycle {
     const percentage = getPercentage(building.hitPoints, building.totalHitPoints)
 
     if (building.hitPoints <= 0) {
-      building.context.unitRest?.evacuateUnitsFromShelter(building, { force: true })
       building.die()
     }
     if (action === ACTION_TYPES.build && !building.isBuilt) {
@@ -242,9 +247,41 @@ export class BuildingLifecycle {
       maxSpeed: 0.09,
       upwardVelocity: 0.045,
       settleToBottom: true,
+      lockX: true,
       settleSpread: 34,
       settleStrength: 0.00006,
       groundBounce: 0.09,
+    })
+  }
+
+  private spawnRuinsChest(inventory: BuildingEntity['inventory'] | null): void {
+    const building = this.building
+    if (!inventory || !building.owner?.createBuilding) return
+    const space = getEntityMapSpace(building, building.context.map)
+    const grid = space?.grid ?? building.context.map.grid
+    const footprintCells = getBuildingFootprintCells(building.i, building.j, grid, building.size)
+    const centerI = building.i
+    const centerJ = building.j
+    const cell = footprintCells
+      .filter(candidate => {
+        if (candidate.terrainHidden || candidate.border || candidate.waterBorder || candidate.category === 'Water') return false
+        return !candidate.solid && !candidate.has
+      })
+      .sort((a, b) => {
+        const aDistance = Math.abs(a.i - centerI) + Math.abs(a.j - centerJ)
+        const bDistance = Math.abs(b.i - centerI) + Math.abs(b.j - centerJ)
+        return aDistance - bDistance
+      })[0]
+    if (!cell) return
+
+    building.owner.createBuilding({
+      i: cell.i,
+      j: cell.j,
+      type: BUILDING_TYPES.chest,
+      isBuilt: true,
+      skipBuiltEffects: true,
+      label: `${building.label}:ruins:storage-chest`,
+      inventory,
     })
   }
 
@@ -271,6 +308,8 @@ export class BuildingLifecycle {
     clearTimeout(building.visibilityTimeout)
     building.stopInterval()
     building.clearRallyPoint()
+    const ruinsChestInventory = extractBuildingInteriorChestInventory(building.context, building)
+    expelBuildingInteriorOccupants(building.context, building)
     if (building.context.controls.rallyPointController?.building === building) {
       building.context.controls.rallyPointController.cancel()
     }
@@ -302,7 +341,7 @@ export class BuildingLifecycle {
     }
 
     for (let i = 0; i < players.length; i++) {
-      if (players[i].type === PLAYER_TYPES.ai) {
+      if (isAIControlledPlayer(players[i])) {
         players[i].foundedEnemyBuildings?.delete(building)
       }
     }
@@ -327,6 +366,7 @@ export class BuildingLifecycle {
       }
       return true
     })
+    this.spawnRuinsChest(ruinsChestInventory)
     adjacentWalls.forEach(wall => updateWallTexture(wall))
     building.startTimeout(() => building.clear(), BUILDING_DESTRUCTION_CLEAR_MS)
     canUpdateMinimap(building, player) &&

@@ -70,7 +70,11 @@ function getAddedFeedbackText(display) {
 
 function createMockStatusBubble(options) {
   const bubble = new MockContainer()
-  bubble.addChild(new MockGraphics(), new MockGraphics(), new MockText({ ...options, style: { fontSize: options.fontSize } }))
+  bubble.addChild(
+    new MockGraphics(),
+    new MockGraphics(),
+    new MockText({ ...options, style: { fontSize: options.fontSize } })
+  )
   return bubble
 }
 
@@ -98,7 +102,6 @@ test('alert-then-aggression feedback sequences emotes instead of stacking them',
 
   const { showAlertThenAggressionFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter: class {},
       Container: MockContainer,
       Graphics: MockGraphics,
       Text: MockText,
@@ -159,7 +162,6 @@ test('status bubble feedback fades in place and lasts longer than damage text', 
 
   const { showFatigueFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter: class {},
       Text: MockText,
     },
     '../constants': {
@@ -187,7 +189,7 @@ test('status bubble feedback fades in place and lasts longer than damage text', 
   assert.equal(display.destroyed, true)
 })
 
-test('clearAllCombatFeedback removes active hit flashes without waiting for scheduler callbacks', () => {
+test('damage feedback no longer adds a white hit flash filter', () => {
   const scheduler = {
     elapsedMs: 0,
     add: () => 1,
@@ -210,157 +212,8 @@ test('clearAllCombatFeedback removes active hit flashes without waiting for sche
     addChild: () => {},
   }
 
-  const { clearAllCombatFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
-    'pixi.js': {
-      ColorMatrixFilter: class {},
-      Text: MockText,
-    },
-    '../constants': {
-      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
-    },
-    '../maths': { getReliefOffset: () => 0 },
-    '../entities/spriteTransientEffects': spriteTransientEffects,
-  })
-
-  showDamageFeedback(target, 3)
-  assert.equal(sprite.filters.length, 2)
-
-  clearAllCombatFeedback()
-
-  assert.deepEqual(sprite.filters, originalFilters)
-})
-
-test('base filter updates preserve an active hit flash until its scheduled cleanup', () => {
-  const scheduled = []
-  const scheduler = {
-    elapsedMs: 0,
-    add: () => 1,
-    remove: () => {},
-    addOneShot: (callback, delay, name) => {
-      scheduled.push({ callback, delay, name })
-      return scheduled.length
-    },
-  }
-  const originalFilters = [{ name: 'base' }]
-  const sprite = {
-    anchor: { y: 1 },
-    destroyed: false,
-    filters: originalFilters,
-    height: 40,
-  }
-  const target = {
-    family: 'unit',
-    context: { scheduler },
-    isDead: false,
-    isDestroyed: false,
-    sprite,
-    addChild: () => {},
-  }
-
-  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
-    'pixi.js': {
-      ColorMatrixFilter: class {},
-      Text: MockText,
-    },
-    '../constants': {
-      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
-    },
-    '../maths': { getReliefOffset: () => 0 },
-    '../entities/spriteTransientEffects': spriteTransientEffects,
-  })
-
-  showDamageFeedback(target, 3)
-  assert.equal(sprite.filters.length, 2)
-
-  setSpriteFiltersPreservingDamageFeedback(sprite, null)
-
-  assert.equal(sprite.filters.length, 1)
-  assert.notEqual(sprite.filters[0], originalFilters[0])
-
-  scheduled[0].callback()
-
-  assert.equal(sprite.filters, null)
-})
-
-test('animal hit flash survives animation texture resets and then clears', () => {
-  const scheduled = []
-  const scheduler = {
-    elapsedMs: 0,
-    add: () => 1,
-    remove: () => {},
-    addOneShot: (callback, delay, name) => {
-      scheduled.push({ callback, delay, name })
-      return scheduled.length
-    },
-  }
-  const sprite = {
-    anchor: { y: 1 },
-    destroyed: false,
-    filters: null,
-    height: 40,
-  }
-  const target = {
-    family: 'animal',
-    context: { scheduler },
-    isDead: false,
-    isDestroyed: false,
-    sprite,
-    addChild: () => {},
-  }
-
-  const { setSpriteFiltersPreservingDamageFeedback, showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
-    'pixi.js': {
-      ColorMatrixFilter: class {},
-      Text: MockText,
-    },
-    '../constants': {
-      FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' },
-    },
-    '../maths': { getReliefOffset: () => 0 },
-    '../entities/spriteTransientEffects': spriteTransientEffects,
-  })
-
-  showDamageFeedback(target, 3)
-  assert.equal(sprite.filters.length, 1)
-
-  setSpriteFiltersPreservingDamageFeedback(sprite, null)
-  assert.equal(sprite.filters.length, 1)
-
-  scheduled[0].callback()
-
-  assert.equal(sprite.filters, null)
-})
-
-test('repeated hit flashes cancel stale cleanup tasks for the same sprite', () => {
-  const scheduled = []
-  const removed = []
-  const scheduler = {
-    elapsedMs: 0,
-    add: () => 1,
-    remove: taskId => removed.push(taskId),
-    addOneShot: (callback, delay, name) => {
-      scheduled.push({ callback, delay, name })
-      return scheduled.length
-    },
-  }
-  const sprite = {
-    anchor: { y: 1 },
-    destroyed: false,
-    filters: null,
-    height: 40,
-  }
-  const target = {
-    family: 'animal',
-    context: { scheduler },
-    isDead: false,
-    isDestroyed: false,
-    sprite,
-    addChild: () => {},
-  }
-
   const { showDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter: class {},
       Text: MockText,
     },
     '../constants': {
@@ -371,19 +224,8 @@ test('repeated hit flashes cancel stale cleanup tasks for the same sprite', () =
   })
 
   showDamageFeedback(target, 3)
-  const firstFlash = sprite.filters[0]
-  showDamageFeedback(target, 2)
 
-  assert.deepEqual(removed, [1])
-  assert.equal(scheduled.length, 2)
-  assert.equal(sprite.filters.length, 1)
-  assert.notEqual(sprite.filters[0], firstFlash)
-
-  scheduled[0].callback()
-  assert.equal(sprite.filters.length, 1)
-
-  scheduled[1].callback()
-  assert.equal(sprite.filters, null)
+  assert.deepEqual(sprite.filters, originalFilters)
 })
 
 test('clearDamageFeedback leaves unrelated sprite filters alone', () => {
@@ -411,7 +253,6 @@ test('clearDamageFeedback leaves unrelated sprite filters alone', () => {
 
   const { clearDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter: class {},
       Text: MockText,
     },
     '../constants': {
@@ -449,7 +290,6 @@ test('building hit point gains show a positive floating value', () => {
 
   const { showHitPointGainFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter: class {},
       Text: MockText,
     },
     '../constants': {

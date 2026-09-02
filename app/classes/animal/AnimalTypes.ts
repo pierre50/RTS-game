@@ -22,6 +22,7 @@ export type AnimalControllerHost = AnimalEntity & {
   ambientWalkRange?: number
   altitude: number
   animalBehavior: { stop(): void }
+  attackRecoveryAnimationTaskId?: SchedulerTaskId | null
   attackRecoveryTaskId?: SchedulerTaskId | null
   attackImpactFrame?: number
   context: GameContextLike

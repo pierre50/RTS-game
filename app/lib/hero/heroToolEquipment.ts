@@ -1,10 +1,7 @@
 import { SHEET_TYPES, WORK_TYPES } from '../constants'
 import { applyBakedLpcUnitAssets } from '../lpc/baked'
 import type { DynamicEquipmentKey } from '../lpc/equipment'
-import {
-  getUnitWorkEquipment,
-  refreshUnitEquipmentStats,
-} from '../equipment/equipmentStats'
+import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
 import { applyUnitWorkAssets } from '../units/unitWorkAppearance'
 import type { UnitEntity } from '../../types/entities'
 import type { HeroEquippedItem } from '../../types/heroTools'
@@ -53,7 +50,6 @@ export function isHeroToolAvailable(
 }
 
 export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): string[] {
-  const fallback = getUnitWorkEquipment(EQUIPPED_ITEM_WORK[tool], hero.owner?.age)
   const activeWeapons = hero.inventory?.activeWeapons ?? {}
   if (tool === 'sword') {
     return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(isEquipmentKey)
@@ -62,7 +58,7 @@ export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): 
     return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(isEquipmentKey)
   }
   if (tool === 'lasso') return [activeWeapons.lasso].filter(isEquipmentKey)
-  return fallback
+  return []
 }
 
 function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {

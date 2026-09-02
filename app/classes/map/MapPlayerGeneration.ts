@@ -40,6 +40,7 @@ export function generatePlayers(
 ): PlayerLike[] {
   const context = runtimeContext(map.context)
   const players: PlayerLike[] = []
+  let banditCampOwnerConfig: PlayerOptions | undefined
   map.banditCampPositions = []
 
   const poses = shuffleSpawnIndexes(map)
@@ -53,6 +54,7 @@ export function generatePlayers(
     } else if (!map.noAI) {
       if (map.portalEncounter === 'bandit') {
         map.banditCampPositions.push({ i: position.i, j: position.j })
+        banditCampOwnerConfig = playersConfig?.[i]
       } else {
         players.push(createAIPlayer(map, context, position.i, position.j, i, playersConfig?.[i]))
       }
@@ -62,7 +64,12 @@ export function generatePlayers(
   if (!map.noAI && map.banditCampPositions.length) {
     const anchor = map.banditCampPositions[0]
     const human = players.find(player => player.isPlayed)
-    ensureBanditCampOwner(map, context, anchor, human?.civ ?? 'Greek', players)
+    ensureBanditCampOwner(map, context, anchor, human?.civ ?? 'Greek', players, {
+      civ: banditCampOwnerConfig?.civ,
+      color: banditCampOwnerConfig?.color,
+      factionId: banditCampOwnerConfig?.factionId,
+      name: banditCampOwnerConfig?.name,
+    })
   }
 
   players

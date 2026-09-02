@@ -60,12 +60,15 @@ export type ThreatManagerPlayer = {
     homeThreatRadius?: number
     villageCoreRadius?: number
   }
-  strategy: { military: { getCombatPower(unit: AIEntityLike): number; getGroupCombatPower(units: AIEntityLike[]): number } }
+  strategy: {
+    military: { getCombatPower(unit: AIEntityLike): number; getGroupCombatPower(units: AIEntityLike[]): number }
+  }
   enemyUnitMemory: Map<string, EnemyMemory>
   enemyBuildingMemory: Map<string, EnemyMemory>
   threatenedTargets: Map<string, StoredThreat>
   isEnemy(owner: unknown): boolean
   buildingsByTypes(types: string[]): AIBuildingLike[]
+  getHomeAnchor(): AIEntityLike | null
   getNow(): number
 }
 

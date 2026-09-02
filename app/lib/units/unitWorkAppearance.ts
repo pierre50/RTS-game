@@ -1,7 +1,7 @@
 import { Assets } from 'pixi.js'
 import { SHEET_TYPES } from '../constants'
 import { getActionVisualSheetKey, SHOOTING_SHEET_KEY } from './actionVisualSheet'
-import { getActionFrameSequence } from '../animations/actionFrameSequences'
+import { getConfiguredActionFrameSequence } from '../animations/actionFrameSequences'
 import { refreshUnitEquipmentStats } from '../equipment/equipmentStats'
 import type { UnitEntity } from '../../types/entities'
 
@@ -15,7 +15,7 @@ export function applyUnitActionFrameSequence(
   work: string | null | undefined,
   action?: string | null
 ): void {
-  unit.actionFrameSequence = getActionFrameSequence(work, action)
+  unit.actionFrameSequence = getConfiguredActionFrameSequence({ ...unit, work, action })
 }
 
 export function getUnitWorkActionSheet(unit: UnitEntity, work: string | null | undefined, action?: string | null) {

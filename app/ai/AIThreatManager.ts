@@ -113,7 +113,7 @@ export class AIThreatManager {
         continue
       }
 
-      const hostiles = this.getVisibleHostilesNear(target)
+      const hostiles = this.getThreatHostiles(threat)
       if (hostiles.length > 0) {
         threat.lastSeenAt = now
         threat.attacker = hostiles[0]
@@ -126,6 +126,23 @@ export class AIThreatManager {
         this.player.threatenedTargets.delete(key)
       }
     }
+  }
+
+  getThreatHostiles(threat: StoredThreat): AIEntityLike[] {
+    const hostiles = this.getVisibleHostilesNear(threat.target)
+    const reportedAttacker = threat.attacker
+    if (
+      reportedAttacker &&
+      !reportedAttacker.isDead &&
+      !reportedAttacker.isDestroyed &&
+      (reportedAttacker.hitPoints ?? 1) > 0 &&
+      (reportedAttacker.family === FAMILY_TYPES.animal || this.player.isEnemy(reportedAttacker.owner)) &&
+      this.player.views.isVisible(reportedAttacker.i, reportedAttacker.j) &&
+      !hostiles.some(hostile => hostile.label === reportedAttacker.label)
+    ) {
+      hostiles.unshift(reportedAttacker)
+    }
+    return hostiles
   }
 
   getVisibleHostilesNear(target: AIEntityLike, radius = 10): AIEntityLike[] {
@@ -176,7 +193,7 @@ export class AIThreatManager {
     return [...this.player.threatenedTargets.values()]
       .filter((threat: StoredThreat) => threat?.target && !threat.target.isDead && !threat.target.isDestroyed)
       .map((threat: StoredThreat): ActiveThreat => {
-        const hostiles = this.getVisibleHostilesNear(threat.target)
+        const hostiles = this.getThreatHostiles(threat)
         const profile = this.getThreatProfile({ ...threat, hostiles })
         return { ...threat, hostiles, profile }
       })

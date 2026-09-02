@@ -38,11 +38,6 @@ const HELMET_DECOR_PREFIXES = [
   'legion_plumage',
   'crest',
 ]
-const HELMET_DECOR_COMPANIONS: Partial<Record<string, string>> = {
-  helmet_barbarian_ceramic: 'upward_horns_ceramic',
-  helmet_norman_bronze: 'upward_horns_white',
-  helmet_norman_iron: 'upward_horns_white',
-}
 
 export type EquipmentStack = {
   equipment: string
@@ -269,15 +264,6 @@ export function equipHeroInventoryItem(
   }
   inventory.equipped![slot] = equipment
   inventory.equippedCounts![slot] = nextEquippedCount
-  if (slot === 'helmet' && !inventory.equipped!.helmetDecor) {
-    const decor = HELMET_DECOR_COMPANIONS[equipment]
-    const decorIndex = decor ? bag.indexOf(decor) : -1
-    if (decor && decorIndex >= 0) {
-      bag.splice(decorIndex, 1)
-      inventory.equipped!.helmetDecor = decor
-      inventory.equippedCounts!.helmetDecor = 1
-    }
-  }
   refreshUnitEquipmentStats(hero)
   applyBakedLpcUnitAssets(hero)
   hero.syncAppearanceLayers?.(hero.currentSheet ?? SHEET_TYPES.standing)

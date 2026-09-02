@@ -5,6 +5,7 @@ import type { RuntimeMap } from '../types/map'
 import type { PlayerLike, PlayerUnitCreationOptions } from '../types/player'
 import type { TechnologyConfig, UnitConfig, BuildingConfig } from '../types/config'
 import type { DayNightColorAdjustment, DayNightStateLike } from '../types/context'
+import type { FactionSave } from '../types/save'
 
 export type DevWeatherPhase =
   | 'sunny'
@@ -258,6 +259,8 @@ export type DevConsoleContext = {
   map: DevMapLike
   player: DevPlayer
   players: DevPlayer[]
+  getCampaignFactions?: () => Record<string, FactionSave> | null
+  getCurrentWorldId?: () => string | null
   menu: DevMenuLike
   controls?: DevControlsLike
   devConsoleOpen?: boolean

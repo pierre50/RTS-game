@@ -10,6 +10,7 @@ import { unitHasDeliverableResources } from '../../lib/resources/resourceDeliver
 import { shouldVillagerBeAsleep } from '../../lib/units/villagerSchedule'
 import { cancelFade, fadeIn, fadeOut } from '../../lib/entities/entityFade'
 import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
+import { isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { getMapSpace, moveEntityToMapSpace } from '../../lib/mapSpaces'
 import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitRestReason, UnitRestState } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -33,7 +34,7 @@ import {
   setDetachedShadowsVisible,
 } from './UnitSleepVisuals'
 import {
-  getBuildingInteriorSpaceForBuilding,
+  ensureRuntimeBuildingInteriorSpace,
   getBuildingInteriorSpaceForUnit,
   moveUnitToBuildingInteriorSleep,
 } from '../BuildingInteriorSpaceSystem'
@@ -92,8 +93,12 @@ function hideUnitInsideShelter(unit: UnitEntity, shelter: BuildingEntity): void 
   if (state?.status !== 'inside' || state.shelter !== shelter) return
   const map = unit.context?.map as RuntimeMapWithBuckets | undefined
   if (unit.context) {
-    const space = getBuildingInteriorSpaceForBuilding(unit.context, shelter)
+    const space = ensureRuntimeBuildingInteriorSpace(unit.context, shelter)
     if (space && moveUnitToBuildingInteriorSleep(unit.context, unit, space, { mode: 'route' })) return
+  }
+  if (isBuildingInteriorSupported(shelter)) {
+    sleepOutside(unit, state.reason)
+    return
   }
   clearUnitCell(unit)
   map?.removeFromInstanceBucket?.(unit)

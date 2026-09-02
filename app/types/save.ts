@@ -196,6 +196,7 @@ export type FactionRelationState = 'hostile' | 'wary' | 'neutral' | 'friendly' |
 export type FactionSave = {
   id: string
   civilization?: string
+  color?: string
   name: string
   relationScore: number
   relationState: FactionRelationState

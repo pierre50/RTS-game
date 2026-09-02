@@ -1,11 +1,9 @@
 import type { SavedGameData } from '../../classes/map/MapGeneration'
-import { CIVILIZATIONS } from '../../config/civilizations'
 import { getEnvironmentForCiv } from '../../config/environments'
 import { DEFAULT_MAP_TYPE } from '../../config/mapTypes'
 import { CELL_HEIGHT, CELL_WIDTH, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
-import { playerColors } from '../../lib'
-import { createFactionSave, FACTION_SCORE } from '../../lib/combat/factions'
-import type { FactionSave, GameConfig, PortalEncounterKind, SaveEntityState, SerializedSave } from '../../types/save'
+import { pickCampaignPortalFaction } from '../../lib/campaign/playerRoster'
+import type { CampaignSave, FactionSave, GameConfig, PortalEncounterKind, SaveEntityState, SerializedSave } from '../../types/save'
 import type { PlayerLike } from '../../types/player'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeMap } from '../../types/map'
@@ -40,13 +38,13 @@ export type PortalPartyState = {
   hero: SaveEntityState | null
 }
 
-type PortalEncounterRelation = 'hostile' | 'neutral'
-
 export type PortalWorldConfig = {
   config: GameConfig
   faction: FactionSave
   factionId: string
 }
+
+export { ensureCampaignPlayerRoster } from '../../lib/campaign/playerRoster'
 
 function assignDefined(target: Record<string, unknown>, values: Record<string, unknown>): void {
   for (const [key, value] of Object.entries(values)) {
@@ -96,23 +94,10 @@ export function heroTravelSpriteSources(player: PlayerLike | null | undefined): 
   }
 }
 
-function randomAICiv(): string {
-  return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
-}
-
-function randomPlayerColorExcept(excludedColor?: string | null): string {
-  const pool = playerColors.filter(playerColor => playerColor !== excludedColor)
-  return pool[Math.floor(Math.random() * pool.length)] || 'red'
-}
-
 function randomPortalEnvironment(currentEnvironment?: string | null): EnvironmentId {
   const choices = ENVIRONMENT_IDS.filter(environment => environment !== currentEnvironment)
   const pool = choices.length ? choices : ENVIRONMENT_IDS
   return pool[Math.floor(Math.random() * pool.length)] || 'Temperate'
-}
-
-function portalEncounterRelationForColor(color: 'blue' | 'yellow' | 'red'): PortalEncounterRelation {
-  return color === 'blue' ? 'neutral' : 'hostile'
 }
 
 function portalEncounterKindForColor(color: 'blue' | 'yellow' | 'red'): PortalEncounterKind {
@@ -243,33 +228,29 @@ export function portalWorldId(
 }
 
 export function configForPortalWorld({
+  campaign,
   color,
   map,
   now,
   player,
   worldId,
 }: {
+  campaign?: CampaignSave | null
   color: 'blue' | 'yellow' | 'red'
   map: RuntimeMap
   now: number
   player: PlayerLike
   worldId: string
 }): PortalWorldConfig {
-  const relation = portalEncounterRelationForColor(color)
+  const encounter = portalEncounterKindForColor(color)
   const playerTeam = player.team ?? null
   const aiTeam = null
   const playerColor = player.color || color
-  const aiColor = randomPlayerColorExcept(playerColor)
-  const aiCiv = randomAICiv()
-  const factionId = `${worldId}-tribe`
-  const initialScore = relation === 'neutral' ? FACTION_SCORE.neutral : FACTION_SCORE.hostile
-  const faction = createFactionSave({
-    civilization: aiCiv,
-    homeWorldId: worldId,
-    id: factionId,
-    initialScore,
-    now,
-  })
+  const faction = pickCampaignPortalFaction({ campaign, encounter, now, player, portalColor: color, worldId })
+  const aiCiv = faction.civilization || player.civ || 'Greek'
+  const factionId = faction.id
+  const aiColor = faction.color || 'red'
+  const aiDiplomacy = faction.relationState === 'neutral' ? 'neutral' : null
   return {
     config: {
       size: map.size,
@@ -282,7 +263,7 @@ export function configForPortalWorld({
       revealTerrain: map.revealTerrain,
       instantMode: map.instantMode,
       humanStartsWithoutBase: true,
-      portalEncounter: portalEncounterKindForColor(color),
+      portalEncounter: encounter,
       startingResources: map.startingResources,
       resourceDensity: map.resourceDensity,
       difficulty: map.difficulty,
@@ -299,7 +280,7 @@ export function configForPortalWorld({
         {
           civ: aiCiv,
           color: aiColor,
-          diplomacy: relation === 'neutral' ? 'neutral' : null,
+          diplomacy: aiDiplomacy,
           factionId,
           gender: 'male',
           isHuman: false,

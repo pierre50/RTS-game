@@ -15,7 +15,7 @@ function loadBuildingInterface() {
   const module = { exports: {} }
   const mocks = {
     '../../constants': {
-      BUILDING_TYPES: { stable: 'Stable' },
+      BUILDING_TYPES: { chest: 'Chest', stable: 'Stable', trap: 'Trap' },
       MENU_INFO_IDS: {
         civ: 'civ',
         hitPoints: 'hit-points',
@@ -25,6 +25,7 @@ function loadBuildingInterface() {
         quantityText: 'quantity-text',
         type: 'type',
       },
+      PLAYER_TYPES: { bandits: 'bandits' },
       POPULATION_MAX: 200,
     },
     '../../lib': { getIconPath: id => id },
@@ -81,6 +82,8 @@ class MockElement {
     this.textContent = ''
     this.className = ''
     this.title = ''
+    this.type = ''
+    this.listeners = new Map()
     this.styles = new Map()
     this.style = { setProperty: (key, value) => this.styles.set(key, value) }
     this.classList = {
@@ -96,6 +99,16 @@ class MockElement {
   appendChild(child) {
     this.children.push(child)
     return child
+  }
+
+  addEventListener(type, listener) {
+    const listeners = this.listeners.get(type) ?? []
+    listeners.push(listener)
+    this.listeners.set(type, listeners)
+  }
+
+  dispatch(type) {
+    for (const listener of this.listeners.get(type) ?? []) listener({ type, currentTarget: this })
   }
 
   querySelectorAll(selector) {
@@ -186,5 +199,130 @@ test('building info does not render the legacy loading row', () => {
     new BuildingInterface(building).renderInfo(element, {})
 
     assert.equal(element.querySelector('.building-loading'), null)
+  })
+})
+
+test('hero team building info renders a red delete button that destroys the building', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    let died = false
+    let closed = false
+    let heroMenuClosed = false
+    let clicked = false
+    const building = {
+      type: 'House',
+      owner: { isPlayed: false, civ: 'Greek', team: 2 },
+      isBuilt: true,
+      loading: null,
+      hitPoints: 100,
+      totalHitPoints: 100,
+      context: {
+        controls: { heroUnit: { owner: heroOwner } },
+        menu: {
+          closeEntityInfoModal: () => {
+            closed = true
+          },
+          closeHeroBuildingMenu: () => {
+            heroMenuClosed = true
+          },
+          playUiClick: () => {
+            clicked = true
+          },
+        },
+      },
+      die: () => {
+        died = true
+      },
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    const button = element.querySelector('.entity-delete-building-button')
+    assert.ok(button)
+    assert.equal(button.textContent, 'deleteEntity')
+    assert.ok(button.classList.contains('ui-btn'))
+
+    button.dispatch('click')
+
+    assert.equal(clicked, true)
+    assert.equal(closed, true)
+    assert.equal(heroMenuClosed, true)
+    assert.equal(died, true)
+  })
+})
+
+test('foreign team building info does not render the delete button', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const building = {
+      type: 'House',
+      owner: { isPlayed: false, civ: 'Greek', team: 3 },
+      isBuilt: true,
+      loading: null,
+      hitPoints: 100,
+      totalHitPoints: 100,
+      context: {
+        controls: { heroUnit: { owner: { isPlayed: true, civ: 'Greek', team: 2 } } },
+        menu: {},
+      },
+      die: () => {},
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    assert.equal(element.querySelector('.entity-delete-building-button'), null)
+  })
+})
+
+test('hero team trap info does not render the delete button', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    const building = {
+      label: 'trap-1',
+      type: 'Trap',
+      owner: heroOwner,
+      isBuilt: true,
+      hitPoints: 100,
+      totalHitPoints: 100,
+      context: {
+        controls: { heroUnit: { owner: heroOwner } },
+        menu: {},
+      },
+      die: () => {},
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    assert.equal(element.querySelector('.entity-delete-building-button'), null)
+  })
+})
+
+test('original interior storage chest info does not render the delete button', () => {
+  withMockDocument(() => {
+    const { BuildingInterface } = loadBuildingInterface()
+    const element = document.createElement('div')
+    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    const building = {
+      label: 'interior:town-center-1:default:storage-chest',
+      type: 'Chest',
+      owner: heroOwner,
+      isBuilt: true,
+      hitPoints: 100,
+      totalHitPoints: 100,
+      context: {
+        controls: { heroUnit: { owner: heroOwner } },
+        menu: {},
+      },
+      die: () => {},
+    }
+
+    new BuildingInterface(building).renderInfo(element, {})
+
+    assert.equal(element.querySelector('.entity-delete-building-button'), null)
   })
 })

@@ -710,7 +710,6 @@ export const VILLAGER_WORK_EQUIPMENT: readonly {
     workType: WORK_TYPES.woodcutter,
     equipment: 'axe_ceramic',
     ageEquipment: metalAgeEquipment('axe_copper', 'axe_bronze', 'axe_iron'),
-    options: { actionWorkSheetOverrides: { [`${WORK_TYPES.attacker}:${ACTION_TYPES.attack}`]: {} } },
   },
   {
     workType: WORK_TYPES.stoneminer,

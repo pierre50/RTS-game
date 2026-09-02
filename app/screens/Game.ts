@@ -24,6 +24,7 @@ import {
 } from './game/runtimeServices'
 import {
   applyMapConfig,
+  ensureCampaignPlayerRoster,
   getGameScreenRect,
   getMapWorldBounds,
   type PortalPartyState,
@@ -416,9 +417,27 @@ export default class Game extends Container {
         return saveRecordToStorage(buildingInteriorRecord)
       }
       const record = buildSaveRecord(this._gameContext(), this._campaignSave)
-      this._campaignSave = isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
+      this._campaignSave = ensureCampaignPlayerRoster(
+        isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
+      )
       this._restartSaveData = structuredClone(this._campaignSave)
       return saveRecordToStorage(this._campaignSave)
+    })
+  }
+
+  autosave(): { key: string; name: string } | null {
+    return this._withBuildingInteriorLayerRuntimeRestored(() => {
+      const buildingInteriorRecord = buildBuildingInteriorSessionSaveRecord(this as BuildingInteriorTravelGame)
+      if (buildingInteriorRecord) {
+        this._restartSaveData = structuredClone(buildingInteriorRecord)
+        return autosaveRecord(buildingInteriorRecord, t('autosave'))
+      }
+      const record = buildSaveRecord(this._gameContext(), this._campaignSave)
+      this._campaignSave = ensureCampaignPlayerRoster(
+        isCampaignSave(record) ? structuredClone(record) : createInitialCampaignSave(record)
+      )
+      this._restartSaveData = structuredClone(this._campaignSave)
+      return autosaveRecord(this._campaignSave, t('autosave'))
     })
   }
 

@@ -1,3 +1,4 @@
+import { PLAYER_TYPES } from '../constants'
 import type { RuntimeEntity } from '../types/entities'
 
 type UnitState = {
@@ -22,7 +23,12 @@ type BuildingState = UnitState & {
 
 type PlayerState = {
   buildings?: BuildingState[]
+  type?: string
   units?: UnitState[]
+}
+
+export function isAIControlledPlayer(player?: PlayerState | null): boolean {
+  return player?.type === PLAYER_TYPES.ai || player?.type === PLAYER_TYPES.bandits
 }
 
 function isOperationalBuilding(building?: BuildingState | null): boolean {

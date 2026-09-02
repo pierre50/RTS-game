@@ -2,6 +2,14 @@ import { ACTION_TYPES, WORK_TYPES } from '../constants'
 
 const TOOL_AXE_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 3, 1, 0, 0, 0, 0]
 const TOOL_HAMMER_ACTION_FRAME_SEQUENCE = [5, 5, 4, 4, 1, 0, 0, 0, 0]
+type ActionToolKind = 'axe' | 'hammer' | 'pickaxe'
+
+const TOOL_ACTION_FRAME_SEQUENCES: Record<ActionToolKind, number[]> = {
+  axe: TOOL_AXE_ACTION_FRAME_SEQUENCE,
+  hammer: TOOL_HAMMER_ACTION_FRAME_SEQUENCE,
+  pickaxe: TOOL_AXE_ACTION_FRAME_SEQUENCE,
+}
+
 const ACTION = {
   build: ACTION_TYPES?.build ?? 'build',
   chopwood: ACTION_TYPES?.chopwood ?? 'chopwood',
@@ -29,10 +37,60 @@ const ACTION_FRAME_SEQUENCES: Record<string, number[]> = {
 type ActionFrameSequenceContext = {
   action?: string | null
   actionFrameSequence?: number[] | null
+  equipment?: string[] | null
+  inventory?: {
+    activeWeapons?: Partial<Record<string, string>>
+    equipped?: Partial<Record<string, string>>
+  } | null
+  owner?: { age?: number | null } | null
   work?: string | null
 }
 
-export function getActionFrameSequence(work: string | null | undefined, action?: string | null): number[] | null {
+function getActionToolKindForEquipment(equipment: string | null | undefined): ActionToolKind | null {
+  if (!equipment) return null
+  if (equipment === 'axe' || equipment.startsWith('axe_')) return 'axe'
+  if (equipment === 'hammer' || equipment.startsWith('hammer_')) return 'hammer'
+  if (equipment === 'pickaxe' || equipment.startsWith('pickaxe_')) return 'pickaxe'
+  return null
+}
+
+function getHeroActiveWeaponEquipment(context: ActionFrameSequenceContext): string[] {
+  const activeWeapons = context.inventory?.activeWeapons ?? {}
+  const equipped = context.inventory?.equipped ?? {}
+  if (context.work === 'heroSword') {
+    return [activeWeapons.melee, activeWeapons.offhand, equipped.offhand].filter(
+      (item): item is string => typeof item === 'string' && item.length > 0
+    )
+  }
+  if (context.work === (WORK_TYPES?.hunter ?? 'hunter')) {
+    return [activeWeapons.ranged, activeWeapons.quiver, equipped.arrow].filter(
+      (item): item is string => typeof item === 'string' && item.length > 0
+    )
+  }
+  return [activeWeapons.lasso].filter((item): item is string => typeof item === 'string' && item.length > 0)
+}
+
+function getContextActionEquipment(context: ActionFrameSequenceContext): string[] {
+  if (Array.isArray(context.equipment) && context.equipment.length) return context.equipment
+
+  const heroActiveEquipment = getHeroActiveWeaponEquipment(context)
+  if (heroActiveEquipment.length) return heroActiveEquipment
+
+  return []
+}
+
+function getActionToolKind(context: ActionFrameSequenceContext): ActionToolKind | null {
+  for (const equipment of getContextActionEquipment(context)) {
+    const kind = getActionToolKindForEquipment(equipment)
+    if (kind) return kind
+  }
+  if (context.work === WORK.builder) return 'hammer'
+  if (context.work === WORK.woodcutter) return 'axe'
+  if (context.work === WORK.stoneminer || context.work === WORK.goldminer) return 'pickaxe'
+  return null
+}
+
+function getActionFrameSequence(work: string | null | undefined, action?: string | null): number[] | null {
   if (!work || !action) return null
   return ACTION_FRAME_SEQUENCES[`${work}:${action}`] ?? null
 }
@@ -43,6 +101,9 @@ export function getConfiguredActionFrameSequence(
   { preferExplicit = false }: { preferExplicit?: boolean } = {}
 ): number[] | null {
   if (preferExplicit && explicitSequence?.length) return explicitSequence
+
+  const toolKind = getActionToolKind(context)
+  if (context.action && toolKind) return TOOL_ACTION_FRAME_SEQUENCES[toolKind]
 
   const hasWorkActionContext = context.work !== undefined && context.action !== undefined
   if (hasWorkActionContext) {
@@ -67,10 +128,13 @@ export function applyActionFrameSequence<T>(frames: T[], sequence?: number[] | n
 }
 
 export function getActionAnimationReleaseFrame(
-  work: string | null | undefined,
+  workOrContext: string | ActionFrameSequenceContext | null | undefined,
   action: string | null | undefined,
   fallbackFrame: number
 ): number {
-  const sequence = getActionFrameSequence(work, action)
+  const sequence =
+    typeof workOrContext === 'object' && workOrContext !== null
+      ? getConfiguredActionFrameSequence(workOrContext)
+      : getActionFrameSequence(workOrContext, action)
   return sequence?.length ? sequence.length - 1 : fallbackFrame
 }

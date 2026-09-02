@@ -61,12 +61,14 @@ function loadAI() {
     }
     if (request === './AIThreatProfiles') return loadAiTsModule('AIThreatProfiles')
     if (request === './AIThreatResponses') return loadAiTsModule('AIThreatResponses')
-    if (request === '../../ai/unitGroups') return { classifyMilitaryUnits: () => ({ infantry: [], archers: [], cavalry: [] }), isAliveUnit: () => true }
+    if (request === '../../ai/unitGroups')
+      return { classifyMilitaryUnits: () => ({ infantry: [], archers: [], cavalry: [] }), isAliveUnit: () => true }
     if (request === '../../lib/chief' || request === '../lib/chief') {
       return {
         AI_CHIEF_SUCCESSION_DELAY_MS: 180000,
         isChiefUnit: unit => Boolean(unit?.isChief || unit?.type === 'Chief'),
-        isLivingChief: unit => Boolean((unit?.isChief || unit?.type === 'Chief') && !unit?.isDead && !unit?.isDestroyed),
+        isLivingChief: unit =>
+          Boolean((unit?.isChief || unit?.type === 'Chief') && !unit?.isDead && !unit?.isDestroyed),
       }
     }
     if (request === '../../lib/lpc') return { refreshBakedLpcUnitAssets: () => {} }
@@ -89,6 +91,7 @@ function createAi({ hero, hostile = false } = {}) {
     chiefWanderReadyAt: new Map(),
     getNow: () => 0,
     getVisibleHostilesNear: () => [],
+    getActiveThreats: () => [],
     isEnemy: () => hostile,
   })
 }
@@ -129,6 +132,32 @@ test('neutral ai chief does not leave the forum zone to greet the hero', () => {
 
   assert.equal(ai.handleChiefGuard([forum]), 0)
   assert.deepEqual(calls, [])
+})
+
+test('hostile ai chief attacks active village threats before guarding the forum', () => {
+  const heroOwner = { isEnemy: () => true }
+  const hero = { label: 'hero', i: 12, j: 0, owner: heroOwner }
+  const ai = createAi({ hero, hostile: true })
+  ai.getActiveThreats = () => [
+    {
+      target: { i: 6, j: 0 },
+      hostiles: [hero],
+      profile: { isNearHome: true, isDirectVillageAssault: true },
+    },
+  ]
+  const calls = []
+  const chief = {
+    label: 'chief',
+    type: 'Chief',
+    i: 0,
+    j: 0,
+    sendTo: (target, action) => calls.push([target, action]),
+  }
+  ai.getLivingChiefs = () => [chief]
+  const forum = { i: 0, j: 0, isBuilt: true }
+
+  assert.equal(ai.handleChiefGuard([forum]), 1)
+  assert.deepEqual(calls, [[hero, 'attack']])
 })
 
 test('hostile ai chief does not greet the hero diplomatically', () => {

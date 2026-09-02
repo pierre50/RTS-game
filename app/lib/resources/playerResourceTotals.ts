@@ -9,6 +9,11 @@ export type ResourceStoreOwner = {
   label?: string
   units?: UnitEntity[]
 }
+type ResourceTotalOptions = {
+  includeHero?: boolean
+  hero?: UnitEntity | null
+  visibleOnly?: boolean
+}
 
 function createEmptyResourceTotals(): Record<ResourceName, number> {
   return Object.fromEntries(RESOURCE_NAMES.map(resource => [resource, 0])) as Record<ResourceName, number>
@@ -58,17 +63,28 @@ function getPlayerResourceHeroes(player: ResourceStoreOwner | null | undefined, 
   return [...heroes]
 }
 
+function isVisibleStorageBuilding(building: BuildingEntity, player: ResourceStoreOwner | PlayerLike): boolean {
+  const map = building.context?.map
+  if (map?.revealEverything) return true
+  const views = (player as PlayerLike).views
+  if (!views) return building.visible !== false
+  const checkVisible = () => views.isVisible(building.i, building.j)
+  return views.withSpace?.(building.spaceId, checkVisible) ?? checkVisible()
+}
+
 export function hasPlayerResourceChests(player: unknown): player is ResourceStoreOwner {
   return Boolean(player && typeof player === 'object' && Array.isArray((player as ResourceStoreOwner).buildings))
 }
 
 function getPlayerChestResourceTotals(
-  player: ResourceStoreOwner | PlayerLike | null | undefined
+  player: ResourceStoreOwner | PlayerLike | null | undefined,
+  options: ResourceTotalOptions = {}
 ): Record<ResourceName, number> {
   const totals = createEmptyResourceTotals()
   if (!player) return totals
 
   for (const building of getPlayerResourceChests(player)) {
+    if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
     for (const resource of RESOURCE_NAMES) {
@@ -81,12 +97,13 @@ function getPlayerChestResourceTotals(
 
 export function getPlayerResourceTotals(
   player: ResourceStoreOwner | PlayerLike | null | undefined,
-  options: { includeHero?: boolean; hero?: UnitEntity | null } = {}
+  options: ResourceTotalOptions = {}
 ): Record<ResourceName, number> {
-  const totals = getPlayerChestResourceTotals(player)
+  const totals = getPlayerChestResourceTotals(player, options)
   if (!player) return totals
 
   for (const building of getPlayerStartingResourceDepots(player)) {
+    if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
     for (const resource of RESOURCE_NAMES) {

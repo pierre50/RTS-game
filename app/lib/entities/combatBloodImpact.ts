@@ -27,6 +27,11 @@ const BLOOD_GRAVITY = 0.0017
 const BLOOD_COLORS = [0x8f1010, 0x6e0909, 0xb01b16]
 const bloodImpactTimes = new WeakMap<RuntimeEntity, number>()
 
+function getCombatBloodDropCount(damage: number): number {
+  const safeDamage = Math.max(1, Number.isFinite(damage) ? damage : 1)
+  return Math.max(3, Math.min(10, 2 + Math.ceil(Math.sqrt(safeDamage) * 1.5)))
+}
+
 function canShowBloodImpact(target: RuntimeEntity): boolean {
   return (
     (target.family === FAMILY_TYPES.unit || target.family === FAMILY_TYPES.animal) &&
@@ -62,7 +67,8 @@ function createBloodDrops(
   const sprite = target.sprite
   if (!sprite) return []
   const direction = getImpactDirection(attacker, target, hitDirection)
-  const amount = Math.max(3, Math.min(8, 3 + Math.round(Math.sqrt(Math.max(1, damage)))))
+  const amount = getCombatBloodDropCount(damage)
+  const force = Math.min(1.8, 0.75 + Math.sqrt(Math.max(1, damage)) * 0.16)
   const startX = sprite.x
   const startY = sprite.y - sprite.height * sprite.anchor.y * 0.45
   const groundY = sprite.y + sprite.height * (1 - sprite.anchor.y)
@@ -76,7 +82,7 @@ function createBloodDrops(
     graphic.eventMode = 'none'
     graphic.zIndex = (target.zIndex ?? 0) + 0.55 + random() * 0.08
 
-    const speed = 0.06 + random() * 0.075
+    const speed = (0.06 + random() * 0.075) * force
     return {
       graphic,
       vx: direction.x * speed + (random() - 0.5) * 0.035,

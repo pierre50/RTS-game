@@ -272,6 +272,12 @@ export type UnitTextureInstance = {
   context: { paused?: boolean }
   currentSheet?: string
   degree: number
+  equipment?: string[] | null
+  inventory?: {
+    activeWeapons?: Partial<Record<string, string>>
+    equipped?: Partial<Record<string, string>>
+  } | null
+  owner?: { age?: number | null } | null
   sheetDirectionCounts?: Record<string, number>
   sheetDirectionOrders?: Record<string, DirectionOrder>
   spriteScale?: number

@@ -53,7 +53,15 @@ import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { CommandSound } from '../../types/entities'
 
 function getWorkAnimationReleaseFrame(unit: UnitEntity, impactFrame: number): number {
-  return getActionAnimationReleaseFrame(unit.work, unit.action, impactFrame)
+  return getActionAnimationReleaseFrame(unit, unit.action, impactFrame)
+}
+
+function finishWorkSwing(
+  unit: UnitEntity,
+  impactFrame: number,
+  animationReleaseFrame = getWorkAnimationReleaseFrame(unit, impactFrame)
+): void {
+  finishManualHeroWorkSwing(unit, impactFrame, animationReleaseFrame)
 }
 
 export class UnitResourceActions {
@@ -128,6 +136,7 @@ export class UnitResourceActions {
     if (!unit.sprite) return
     restartManualHeroActionAnimation(unit)
     lockManualHeroAction(unit)
+    const workTickFrame = getWorkAnimationReleaseFrame(unit, releaseFrame)
     const gatherTick = () => {
       const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
@@ -152,7 +161,7 @@ export class UnitResourceActions {
       onImpact?.(dest)
       if (!shouldReleaseGatheredResource(unit, dest, loadingType, gatherEvery)) {
         this.playSound(soundId)
-        finishManualHeroWorkSwing(unit, releaseFrame, getWorkAnimationReleaseFrame(unit, releaseFrame))
+        finishWorkSwing(unit, workTickFrame, workTickFrame)
         return
       }
       const gain = addGatheredResource(unit, loadingType, requestedGain)
@@ -178,9 +187,9 @@ export class UnitResourceActions {
       } else if (sendVillagerToDeliveryIfFull(unit, loadingType)) {
         unit.gatherProgressState = null
       }
-      finishManualHeroWorkSwing(unit, releaseFrame, getWorkAnimationReleaseFrame(unit, releaseFrame))
+      finishWorkSwing(unit, workTickFrame, workTickFrame)
     }
-    onSpriteLoopAtFrame(unit.sprite, releaseFrame, () => {
+    onSpriteLoopAtFrame(unit.sprite, workTickFrame, () => {
       onRelease?.()
       gatherTick()
     })
@@ -209,7 +218,8 @@ export class UnitResourceActions {
     if (!this.prepareLoopingWorkAction()) return
     const sprite = unit.sprite
     if (!sprite) return
-    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
+    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
       const d = isFarmHarvestTarget(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(d)) {
         if ((d?.quantity ?? 0) <= 0) {
@@ -238,7 +248,7 @@ export class UnitResourceActions {
       spawnWorkImpactFragments(unit, d)
       this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
       if (!shouldReleaseGatheredResource(unit, d, LOADING_TYPES.wheat)) {
-        finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
+        finishWorkSwing(unit, SLASH_IMPACT_FRAME)
         return
       }
       const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
@@ -259,7 +269,7 @@ export class UnitResourceActions {
       } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) {
         unit.gatherProgressState = null
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
+      finishWorkSwing(unit, workTickFrame, workTickFrame)
     })
   }
 
@@ -270,7 +280,8 @@ export class UnitResourceActions {
     if (!this.prepareLoopingWorkAction()) return
     const sprite = unit.sprite
     if (!sprite) return
-    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
+    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
       const dest = isResourceEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
         if ((dest?.quantity ?? 0) <= 0) {
@@ -307,7 +318,7 @@ export class UnitResourceActions {
       } else if (!isChoppableBerrybush(dest)) {
         const requestedGain = getGatherAmount(unit)
         if (!shouldReleaseGatheredResource(unit, dest, LOADING_TYPES.wood)) {
-          finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
+          finishWorkSwing(unit, workTickFrame, workTickFrame)
           return
         }
         const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
@@ -329,7 +340,7 @@ export class UnitResourceActions {
           unit.gatherProgressState = null
         }
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
+      finishWorkSwing(unit, workTickFrame, workTickFrame)
     })
   }
 
@@ -340,7 +351,8 @@ export class UnitResourceActions {
     if (!this.prepareLoopingWorkAction()) return
     const sprite = unit.sprite
     if (!sprite) return
-    onSpriteLoopAtFrame(sprite, SLASH_IMPACT_FRAME, () => {
+    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
+    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
       const dest = isBuildingEntity(unit.dest) ? unit.dest : null
       if (!unit.getActionCondition?.(dest)) {
         if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
@@ -377,7 +389,7 @@ export class UnitResourceActions {
         if (unit.continueBuildingQueue?.()) return
         unit.affectNewDest?.()
       }
-      finishManualHeroWorkSwing(unit, SLASH_IMPACT_FRAME, getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME))
+      finishWorkSwing(unit, workTickFrame, workTickFrame)
     })
   }
 

@@ -47,6 +47,16 @@ type AIPlayerBehaviorHost = {
   getNow(): number
   getLivingChiefs(): AIEntityLike[]
   getVisibleHostilesNear(target: AIEntityLike, radius?: number): AIEntityLike[]
+  getActiveThreats?: () => Array<{
+    target: AIEntityLike
+    hostiles: AIEntityLike[]
+    profile?: {
+      isNearHome?: boolean
+      isInVillageCore?: boolean
+      isDirectVillageAssault?: boolean
+      isCriticalBuilding?: boolean
+    }
+  }>
   isEnemy(owner?: unknown): boolean
   _refreshEnemyMemory(memoryMap: Map<string, EnemyMemory>): void
 }
@@ -64,7 +74,8 @@ export function cleanupAITrackingSets(ai: AIPlayerBehaviorHost) {
     if (animal.isDestroyed || (animal.quantity ?? 0) <= 0) ai.foundedDeadAnimals.delete(animal)
   }
   for (const building of ai.foundedEnemyBuildings) {
-    if (building.isDead || building.isDestroyed || !ai.isEnemy(building.owner)) ai.foundedEnemyBuildings.delete(building)
+    if (building.isDead || building.isDestroyed || !ai.isEnemy(building.owner))
+      ai.foundedEnemyBuildings.delete(building)
   }
   for (const unit of ai.foundedEnemyUnits) {
     if (unit.isDead || unit.isDestroyed || (unit.hitPoints ?? 0) <= 0 || !ai.isEnemy(unit.owner)) {
@@ -75,11 +86,7 @@ export function cleanupAITrackingSets(ai: AIPlayerBehaviorHost) {
   ai._refreshEnemyMemory(ai.enemyUnitMemory)
 }
 
-export function createAIUnitExtraOptions(
-  ai: AIPlayerBehaviorHost,
-  type: string,
-  debug = false
-): UnitCreationExtra {
+export function createAIUnitExtraOptions(ai: AIPlayerBehaviorHost, type: string, debug = false): UnitCreationExtra {
   return {
     handleSetDest: (target: RuntimeEntity | RuntimeCell) => {
       if (!('family' in target)) return
@@ -95,7 +102,10 @@ export function createAIUnitExtraOptions(
       }
       if (!ai.hasNotReachBuildingLimit(buildingType, buildings)) return
 
-      const closestBuilding = getClosestInstance(target, [...buildings, ...ai.buildingsByTypes([BUILDING_TYPES.townCenter])])
+      const closestBuilding = getClosestInstance(target, [
+        ...buildings,
+        ...ai.buildingsByTypes([BUILDING_TYPES.townCenter]),
+      ])
       if (closestBuilding && instancesDistance(closestBuilding, target) <= 5) return
 
       const pos = getPositionInGridAroundInstance(target, ai.context.map.grid, [1, 5], 1)
@@ -140,8 +150,25 @@ export function handleAIChiefGuard(ai: AIPlayerBehaviorHost, towncenters: AIBuil
   let actions = 0
   const now = ai.getNow()
   const hero = getApproachableHeroNearChiefAnchor(ai, anchor)
+  const activeVillageThreat = ai
+    .getActiveThreats?.()
+    .find(
+      threat =>
+        threat.hostiles[0] &&
+        (threat.profile?.isNearHome ||
+          threat.profile?.isInVillageCore ||
+          threat.profile?.isDirectVillageAssault ||
+          threat.profile?.isCriticalBuilding)
+    )
   for (const chief of ai.getLivingChiefs()) {
     if (chief.controlMode === 'hero') continue
+    const activeThreatTarget = activeVillageThreat?.hostiles[0]
+    if (activeThreatTarget && chief.dest !== activeThreatTarget) {
+      chief.sendTo?.(activeThreatTarget, ACTION_TYPES.attack)
+      actions++
+      continue
+    }
+
     const hostiles = ai.getVisibleHostilesNear(anchor, 12)
     const target = hostiles[0]
     if (target && chief.action !== ACTION_TYPES.attack) {

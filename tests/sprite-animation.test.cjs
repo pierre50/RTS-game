@@ -116,6 +116,8 @@ test('unit death starts the dying animation through the shared helper', () => {
     },
     '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
     '../../lib/entities/entityFade': { fadeOutThenClear: () => {} },
+    '../../lib/combat/combatAttackLoop': { clearCombatAttackRecovery: () => {} },
+    '../../lib/equipment/equipmentLoot': { initializeUnitCorpseLootEquipment: () => {} },
     '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
   })
   const sprite = {
@@ -134,7 +136,10 @@ test('unit death starts the dying animation through the shared helper', () => {
     owner: { corpses: [] },
     sprite,
     zIndex: 4,
-    setTextures: sheet => calls.push(['setTextures', sheet]),
+    setTextures(sheet) {
+      calls.push(['setTextures', sheet])
+      this.currentSheet = sheet
+    },
     syncShadow: () => calls.push(['syncShadow']),
     syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
   }
@@ -177,6 +182,8 @@ test('stale unit death callbacks do not decompose after another visual transitio
     },
     '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
     '../../lib/entities/entityFade': { fadeOutThenClear: () => calls.push(['fadeOutThenClear']) },
+    '../../lib/combat/combatAttackLoop': { clearCombatAttackRecovery: () => {} },
+    '../../lib/equipment/equipmentLoot': { initializeUnitCorpseLootEquipment: () => {} },
     '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
   })
   const sprite = {
@@ -205,7 +212,10 @@ test('stale unit death callbacks do not decompose after another visual transitio
     sprite,
     visualAnimationToken: 0,
     zIndex: 4,
-    setTextures: sheet => calls.push(['setTextures', sheet]),
+    setTextures(sheet) {
+      calls.push(['setTextures', sheet])
+      this.currentSheet = sheet
+    },
     syncShadow: () => calls.push(['syncShadow']),
     syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
   }
@@ -218,4 +228,91 @@ test('stale unit death callbacks do not decompose after another visual transitio
   assert.equal(unit.owner.corpses.length, 0)
   assert.equal(calls.some(call => call[0] === 'updateInstanceVisibility'), false)
   assert.equal(calls.some(call => call[0] === 'fadeOutThenClear'), false)
+})
+
+test('unit die clears pending combat recovery before playing dying animation', () => {
+  const calls = []
+  const { UnitLifecycle } = loadModule('app/classes/unit/UnitLifecycle.ts', {
+    '../../constants': {
+      CORPSE_TIME: 60,
+      FADE_DURATION_MS: 2000,
+      MENU_INFO_IDS: { hitPoints: 'hitPoints', populationText: 'populationText' },
+      POPULATION_MAX: 50,
+      SHEET_TYPES: { corpse: 'corpseSheet', dying: 'dyingSheet' },
+    },
+    '../../lib': {
+      canUpdateMinimap: () => false,
+      playAudibleSoundCue: () => calls.push(['sound']),
+      updateInstanceVisibility: () => calls.push(['updateInstanceVisibility']),
+    },
+    '../../lib/entities/deathFlash': {
+      runAfterDeathFlash: (_sprite, onComplete) => onComplete,
+    },
+    '../../lib/entities/entityVisualFeedback': { clearEntityVisualFeedback: () => {} },
+    '../../lib/entities/entityFade': { fadeOutThenClear: () => {} },
+    '../../lib/combat/combatAttackLoop': {
+      clearCombatAttackRecovery: unit => {
+        calls.push(['clearCombatAttackRecovery', unit.attackRecoveryTaskId, unit.attackRecoveryAnimationTaskId])
+        unit.attackRecoveryTaskId = null
+        unit.attackRecoveryAnimationTaskId = null
+        unit.sprite.onLoop = undefined
+      },
+    },
+    '../../lib/equipment/equipmentLoot': { initializeUnitCorpseLootEquipment: () => calls.push(['loot']) },
+    '../../lib/entities/entityHealthDisplay': { getEntityHitPointsText: () => '0/10' },
+  })
+  const sprite = {
+    loop: true,
+    onFrameChange: () => calls.push(['staleFrameChange']),
+    onLoop: () => calls.push(['staleLoop']),
+    gotoAndPlay(frame) {
+      calls.push(['gotoAndPlay', frame])
+      this.currentFrame = frame
+    },
+  }
+  const unit = {
+    action: 'attack',
+    attackRecoveryAnimationTaskId: 24,
+    attackRecoveryTaskId: 23,
+    context: {
+      map: { removeFromInstanceBucket: entity => calls.push(['removeBucket', entity.label]) },
+    },
+    dest: null,
+    hitPoints: 3,
+    isDead: false,
+    label: 'bandit-2',
+    owner: { corpses: [], isPlayed: false, population: 1, units: [] },
+    path: [{ i: 1, j: 1 }],
+    removeHealthBar: () => calls.push(['removeHealthBar']),
+    setTextures(sheet) {
+      calls.push(['setTextures', sheet])
+      this.currentSheet = sheet
+    },
+    sprite,
+    stopInterval: () => calls.push(['stopInterval']),
+    syncAppearanceLayers: sheet => calls.push(['syncAppearanceLayers', sheet]),
+    syncShadow: () => calls.push(['syncShadow']),
+    unselect: () => calls.push(['unselect']),
+    zIndex: 4,
+  }
+
+  new UnitLifecycle(unit).die()
+
+  assert.equal(unit.isDead, true)
+  assert.equal(unit.attackRecoveryTaskId, null)
+  assert.equal(unit.attackRecoveryAnimationTaskId, null)
+  assert.equal(unit.currentSheet, 'dyingSheet')
+  assert.equal(sprite.onLoop, undefined)
+  assert.ok(
+    calls.findIndex(call => call[0] === 'clearCombatAttackRecovery') <
+      calls.findIndex(call => call[0] === 'setTextures' && call[1] === 'dyingSheet')
+  )
+  assert.deepEqual(calls.slice(0, 4), [
+    ['sound'],
+    ['stopInterval'],
+    ['clearCombatAttackRecovery', 23, 24],
+    ['loot'],
+  ])
+  assert.ok(calls.some(call => call[0] === 'setTextures' && call[1] === 'dyingSheet'))
+  assert.ok(calls.some(call => call[0] === 'gotoAndPlay' && call[1] === 0))
 })

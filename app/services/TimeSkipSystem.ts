@@ -19,16 +19,34 @@ type TimeSkipSnapshot = {
 
 type TimeSkipEndReason = 'completed' | 'cancelled'
 
+export type TimeSkipStartOptions = {
+  completedMessage?: string
+  onComplete?: () => void
+}
+
 export type TimeSkipStartResult = {
   ok: boolean
   message: string
 }
 
+export function getHoursUntilNextMorning(hour: number, minute = 0, targetHour = 7): number {
+  const currentHour = hour + minute / 60
+  const normalizedTargetHour = ((targetHour % DAY_NIGHT_CONFIG.hoursPerDay) + DAY_NIGHT_CONFIG.hoursPerDay) %
+    DAY_NIGHT_CONFIG.hoursPerDay
+  const hoursUntilTarget =
+    currentHour < normalizedTargetHour
+      ? normalizedTargetHour - currentHour
+      : DAY_NIGHT_CONFIG.hoursPerDay - currentHour + normalizedTargetHour
+  return hoursUntilTarget || DAY_NIGHT_CONFIG.hoursPerDay
+}
+
 export class TimeSkipSystem {
   active: boolean
   context: GameContextLike
+  completedMessage: string | null
   dayNightMaxDeltaMs: number | undefined
   hours: number
+  onComplete: (() => void) | null
   overlay: TimeSkipOverlay | null
   snapshot: TimeSkipSnapshot | null
   startElapsedMs: number
@@ -41,8 +59,10 @@ export class TimeSkipSystem {
   constructor(context: GameContextLike) {
     this.context = context
     this.active = false
+    this.completedMessage = null
     this.dayNightMaxDeltaMs = undefined
     this.hours = 0
+    this.onComplete = null
     this.overlay = null
     this.snapshot = null
     this.startElapsedMs = 0
@@ -53,7 +73,7 @@ export class TimeSkipSystem {
     this._onTick = () => this.onTick()
   }
 
-  start(hours: number): TimeSkipStartResult {
+  start(hours: number, options: TimeSkipStartOptions = {}): TimeSkipStartResult {
     if (!this.context.dayNight?.getElapsedMs) return { ok: false, message: 'Day/night system unavailable' }
     if (!this.context.app?.ticker) return { ok: false, message: 'Ticker unavailable' }
     if (this.context.paused) return { ok: false, message: 'Resume the game before using next <1-12>' }
@@ -61,7 +81,9 @@ export class TimeSkipSystem {
     this.cancel({ silent: true })
 
     this.active = true
+    this.completedMessage = options.completedMessage ?? null
     this.hours = hours
+    this.onComplete = options.onComplete ?? null
     this.startElapsedMs = this.context.dayNight.getElapsedMs()
     this.targetElapsedMs = this.startElapsedMs + (hours / DAY_NIGHT_CONFIG.hoursPerDay) * DAY_NIGHT_CONFIG.dayLengthMs
     this.snapshot = {
@@ -134,12 +156,15 @@ export class TimeSkipSystem {
     if (snapshot) setGameplaySoundSuppressed(snapshot.previousSoundSuppressed)
     this.context.controls?.stopKeyboardMove?.()
     this.overlay?.root.remove()
+    const onComplete = reason === 'completed' ? this.onComplete : null
+    const completedMessage = this.completedMessage
     this.resetState()
     this.context.menu?.updateTopbar?.()
     if (options.silent) return
     if (reason === 'completed') {
+      onComplete?.()
       const label = `${this.context.dayNight?.getDayLabel?.() ?? 'Day'} ${this.context.dayNight?.getTimeLabel?.() ?? ''}`.trim()
-      this.context.menu?.showMessage?.(`Time advanced to ${label}`, 'success')
+      this.context.menu?.showMessage?.(completedMessage ?? `Time advanced to ${label}`, 'success')
     } else {
       this.context.menu?.showMessage?.('Time skip cancelled', 'warning')
     }
@@ -147,8 +172,10 @@ export class TimeSkipSystem {
 
   private resetState(): void {
     this.active = false
+    this.completedMessage = null
     this.dayNightMaxDeltaMs = undefined
     this.hours = 0
+    this.onComplete = null
     this.overlay = null
     this.snapshot = null
     this.startElapsedMs = 0

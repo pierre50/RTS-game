@@ -35,6 +35,8 @@ export type GameRuntimeContext = Omit<
 export type GameRuntimeContextHost = {
   _campaignSave: CampaignSave | null
   _changeFactionRelation(factionId: string, delta: number): void
+  _autosaveCampaign(): void
+  autosave(): { key: string; name: string } | null
   applyZoom(): void
   checkDefeat(): boolean
   load(evt: SaveRecord): Promise<void>
@@ -75,6 +77,7 @@ export function createGameRuntimeContext(
     defeat: false,
     scheduler: null,
     performance: null,
+    autosave: () => host.autosave(),
     save: () => host.save(),
     load: (evt: object) => host.load(evt as SaveRecord),
     pause: () => host.togglePause(true),

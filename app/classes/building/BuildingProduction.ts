@@ -1,5 +1,5 @@
-import { ACTION_TYPES, PLAYER_TYPES, POPULATION_MAX } from '../../constants'
-import { canAfford, payCost, refundCost } from '../../lib'
+import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
+import { canAfford, isAIControlledPlayer, payCost, refundCost } from '../../lib'
 import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { t } from '../../lib/lang'
 import {
@@ -358,7 +358,7 @@ export class BuildingProduction {
     if (!alreadyPaid && !hasBuildingTrainingCapacity(building, { excludeUnit: trainee ?? null })) return false
     if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
       if (!alreadyPaid) {
-        if (building.owner.type === PLAYER_TYPES.ai) {
+        if (isAIControlledPlayer(building.owner)) {
           if (!building.queue.length && building.loading === null) {
             payCost(building.owner, unit.cost)
             building.queue.push(type)

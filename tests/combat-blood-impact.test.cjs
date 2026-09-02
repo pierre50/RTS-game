@@ -92,7 +92,7 @@ test('combat blood impact spawns drops when enabled', () => {
 
   spawnCombatBloodImpact({ x: 0, y: 0 }, target, { damage: 6, random: () => 0.5 })
 
-  assert.equal(target.added.length, 5)
+  assert.equal(target.added.length, 6)
 })
 
 test('combat blood impact drops stop at the victim feet', () => {
@@ -106,6 +106,20 @@ test('combat blood impact drops stop at the victim feet', () => {
     target.animationSteps[0]()
   }
 
-  assert.equal(target.added.length, 5)
+  assert.equal(target.added.length, 6)
   assert.equal(Math.max(...target.added.map(drop => drop.y)), feetY)
+})
+
+test('combat blood impact drop count scales with damage', () => {
+  const { spawnCombatBloodImpact } = loadCombatBloodImpact({ enabled: true })
+
+  for (const [damage, expectedDrops] of [
+    [1, 4],
+    [9, 7],
+    [64, 10],
+  ]) {
+    const target = makeTarget()
+    spawnCombatBloodImpact({ x: 0, y: 0 }, target, { damage, random: () => 0.5 })
+    assert.equal(target.added.length, expectedDrops)
+  }
 })

@@ -1,7 +1,11 @@
 import { UNIT_TYPES } from '../../constants'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
-import { getBuildingInteriorSpaceForUnit, settleUnitAtBuildingInteriorSleepCell } from '../BuildingInteriorSpaceSystem'
+import {
+  expelBuildingInteriorOccupants,
+  getBuildingInteriorSpaceForUnit,
+  settleUnitAtBuildingInteriorSleepCell,
+} from '../BuildingInteriorSpaceSystem'
 import {
   enterShelter,
   enterShelterInstant,
@@ -177,10 +181,11 @@ export function shouldRouteUnitToInteriorExit(context: GameContextLike, unit: Un
 }
 
 export function evacuateUnitsFromShelter(building: BuildingEntity, options: { force?: boolean } = {}): void {
+  const expelled = building.context ? expelBuildingInteriorOccupants(building.context, building) : []
   for (const unit of building.owner?.units ?? []) {
     const state = unit.shelterState
     if (state?.shelter !== building) continue
-    wakeUnit(unit, { force: options.force ?? true })
+    if (!expelled.includes(unit)) wakeUnit(unit, { force: options.force ?? true })
     if (isSleepTime(unit.context!) && !unit.shelterState) sendUnitToRest(unit, 'sleep')
   }
 }

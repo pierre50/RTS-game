@@ -14,6 +14,7 @@ import {
   highlightInstances,
   killEntities,
   killResources,
+  listGlobalPlayers,
   performanceReport,
   setFpsCapDebug,
   setAge,
@@ -71,10 +72,11 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
   registry.register({
     name: 'list',
     aliases: ['ls'],
-    usage: 'list <units|buildings|techs|resources|inventories>',
+    usage: 'list <units|buildings|techs|resources|inventories|players|factions>',
     describe: 'List available items for a category',
-    complete: () => ['units', 'buildings', 'techs', 'resources', 'inventories'],
-    run: ([category], { player }) => {
+    complete: () => ['units', 'buildings', 'techs', 'resources', 'inventories', 'players', 'factions'],
+    run: ([category], context) => {
+      const { player } = context
       switch (category?.toLowerCase()) {
         case 'units':
           return { ok: true, message: Object.keys(player.config.units).join('  ') }
@@ -87,8 +89,11 @@ function registerCoreCommands(registry: DevCommandRegistry): void {
         case 'inventories':
         case 'inventory':
           return { ok: true, message: getAllHeroInventoryItems().join('  ') }
+        case 'players':
+        case 'factions':
+          return listGlobalPlayers(context)
         default:
-          return { ok: false, message: 'Usage: list <units|buildings|techs|resources|inventories>' }
+          return { ok: false, message: 'Usage: list <units|buildings|techs|resources|inventories|players|factions>' }
       }
     },
   })

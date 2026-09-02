@@ -9,6 +9,7 @@ import {
   getTexture,
   getEntityMapSpace,
   getEntityCell,
+  isAIControlledPlayer,
   parseTextureRef,
   spawnSpriteFragmentBurst,
   textureRefToString,
@@ -18,7 +19,6 @@ import {
   CELL_HEIGHT,
   FADE_DURATION_MS,
   FAMILY_TYPES,
-  PLAYER_TYPES,
   LABEL_TYPES,
   RESOURCE_TYPES,
 } from '../constants'
@@ -171,7 +171,7 @@ export class Resource extends Instance implements ResourceEntity {
     }
     const listName = 'founded' + this.type + 's'
     for (let i = 0; i < players.length; i++) {
-      if (players[i].type === PLAYER_TYPES.ai) {
+      if (isAIControlledPlayer(players[i])) {
         const list = (players[i] as PlayerWithResourceMemory)[listName]
         if (list) {
           list.delete(this)

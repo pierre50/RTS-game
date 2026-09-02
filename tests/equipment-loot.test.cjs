@@ -200,9 +200,9 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
   assert.equal(equipHeroInventoryItem(hero, 'helmet_barbarian_ceramic'), true)
   assert.deepEqual(hero.inventory.equipped, {
     helmet: 'helmet_barbarian_ceramic',
-    helmetDecor: 'upward_horns_ceramic',
   })
   assert.deepEqual(hero.inventory.equipment, [
+    'upward_horns_ceramic',
     'helmet_barbarian_nasal_ceramic',
     'sword_ceramic',
     'sword_bronze',
@@ -211,6 +211,13 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
     'arrow_copper',
     'arrow_copper',
   ])
+
+  assert.equal(equipHeroInventoryItem(hero, 'upward_horns_ceramic'), true)
+  assert.deepEqual(hero.inventory.equipped, {
+    helmet: 'helmet_barbarian_ceramic',
+    helmetDecor: 'upward_horns_ceramic',
+  })
+  assert.equal(hero.inventory.equipment.includes('upward_horns_ceramic'), false)
 
   assert.equal(equipHeroInventoryItem(hero, 'helmet_barbarian_nasal_ceramic'), true)
   assert.deepEqual(hero.inventory.equipped, {

@@ -12,6 +12,7 @@ const LEGACY_PLAYER_COLOR_ALIASES: Record<string, string> = {
   blue: PLAYER_COLORS[0].name,
   cyan: 'teal',
   grey: PLAYER_COLORS[0].name,
+  gray: PLAYER_COLORS[0].name,
 }
 
 export function normalizePlayerColor(color?: string): string {

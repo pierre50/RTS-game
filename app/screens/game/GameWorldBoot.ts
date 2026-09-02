@@ -8,7 +8,7 @@ import type { MapBlueprint } from '../../classes/map/MapGenerationTypes'
 import type { RuntimeMap } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../../types/save'
-import { hasSerializedGrid, saveConfig, savedRuntimeState } from './GameStateHelpers'
+import { ensureCampaignPlayerRoster, hasSerializedGrid, saveConfig, savedRuntimeState } from './GameStateHelpers'
 import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './GameMapBlueprintRuntime'
 
 type LoadedMapBlueprint = MapBlueprint & {
@@ -118,7 +118,7 @@ export async function bootGameFromConfig(
 
   measure(game, 'boot.mountRuntime', () => game._mountRuntime(options.dayNightElapsedMs))
   game.context.performance?.setPhase?.('runtime')
-  game._campaignSave = createInitialCampaignSave(serializeGame(game._gameContext()))
+  game._campaignSave = ensureCampaignPlayerRoster(createInitialCampaignSave(serializeGame(game._gameContext())))
   game._autosaveCampaign()
 }
 

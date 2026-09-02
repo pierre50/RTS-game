@@ -36,6 +36,17 @@ import type { PathfindingOptions } from '../../../services/Pathfinding'
 
 type PassageLookup = ReturnType<typeof createReservedPassageCellLookup>
 
+function clearManualMoveWorkState(unit: UnitEntity, preserveAutonomy: boolean): void {
+  if (preserveAutonomy) return
+  unit.previousDest = null
+  unit.previousWork = null
+  unit.gatherProgressState = null
+  unit.resourceDeliveryState = null
+  if (unit.type === UNIT_TYPES.villager) unit.work = null
+  clearVillagerAutonomy?.(unit)
+  if (unit.owner?.isPlayed) unit.context?.menu?.updateTopbar?.()
+}
+
 function createPassagePathfindingOptions(passageLookup: PassageLookup): PathfindingOptions<RuntimeCell> {
   return {
     canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passageLookup),
@@ -271,6 +282,7 @@ export class UnitMovementRouting {
     const passageLookup = createReservedPassageCellLookup(unit.context)
     const passageStopAllowed =
       allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(unit, dest))
+    if (!action) clearManualMoveWorkState(unit, preserveAutonomy)
     if (this.routeToActionArrivalCell(dest, action, passageLookup)) return
     if (
       !action &&
@@ -285,11 +297,6 @@ export class UnitMovementRouting {
       dest = waitingCell.cell
     }
     cancelEnergyWait(unit)
-    if (!action && !preserveAutonomy) {
-      unit.previousDest = null
-      unit.previousWork = null
-      clearVillagerAutonomy?.(unit)
-    }
     syncVillagerWorkForAction(unit, action)
     if (
       unit.isUnitAtDest?.(action, dest) &&

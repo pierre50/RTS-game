@@ -1,12 +1,10 @@
 import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
-import { getFreeLandCellAroundInstance } from '../../lib'
-import { hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
+import { getBuildingShelterCapacity, hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { isBanditUnit } from '../../lib/combat/bandits'
 import {
   canUnitUseCellAsIdleDestination,
-  createNonReservedPassageCellCondition,
   createReservedPassageCellLookup,
 } from '../../lib/buildings/passageCells'
 import { getCellsAroundPoint } from '../../lib/grid/cells'
@@ -26,10 +24,6 @@ const REST_OUTSIDE_SEARCH_RADIUS = 4
 const DEFAULT_UNIT_SIGHT = 7
 const BANDIT_HOME_SLEEP_RADIUS = 8
 const GAME_HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
-
-const SHELTER_TYPES = new Set<string>(
-  [BUILDING_TYPES.house, BUILDING_TYPES.townCenter].filter((type): type is string => typeof type === 'string')
-)
 
 export type UnitRestSite = {
   location: 'shelter' | 'outside'
@@ -74,7 +68,8 @@ export function isUsableShelter(
   return Boolean(
     building &&
       building.owner === owner &&
-      SHELTER_TYPES.has(building.type) &&
+      isBuildingInteriorSupported(building) &&
+      getBuildingShelterCapacity(building) > 0 &&
       building.isBuilt &&
       !building.isDead &&
       !building.isDestroyed
@@ -98,23 +93,7 @@ export function getShelterEntryCell(unit: UnitEntity, shelter: BuildingEntity): 
     const entryCell = getBuildingInteriorEntryCell(shelter, grid)
     if (entryCell && !entryCell.terrainHidden && entryCell.category !== 'Water' && !entryCell.border) return entryCell
   }
-  return getFreeLandCellAroundInstance(
-    shelter,
-    grid,
-    (items: RuntimeCell[]) => {
-      let best: RuntimeCell | null = null
-      let bestDistance = Infinity
-      for (const cell of items) {
-        const dist = Math.abs(cell.i - unit.i) + Math.abs(cell.j - unit.j)
-        if (dist < bestDistance) {
-          best = cell
-          bestDistance = dist
-        }
-      }
-      return best ?? items[0]
-    },
-    createNonReservedPassageCellCondition(unit.context)
-  )
+  return null
 }
 
 function getShelterScore(unit: UnitEntity, building: BuildingEntity): number {

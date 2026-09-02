@@ -93,11 +93,14 @@ export class TopbarView {
   update(): void {
     const {
       menu: {
-        context: { player },
+        context: { controls, player },
       },
     } = this
     const assignments = summarizeVillagerAssignments(player?.units ?? [])
-    const storedResources = getPlayerResourceTotals(player)
+    const storedResources = getPlayerResourceTotals(player, {
+      hero: controls?.heroUnit,
+      visibleOnly: true,
+    })
     RESOURCE_NAMES.forEach(prop => {
       const val = Math.min(storedResources[prop] || 0, 99999)
       const valueEl = this.resourceEls[prop]

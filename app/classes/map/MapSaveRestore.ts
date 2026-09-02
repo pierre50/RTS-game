@@ -1,5 +1,6 @@
 import type { ContainerChild } from 'pixi.js'
-import { FAMILY_TYPES, PLAYER_TYPES } from '../../constants'
+import { FAMILY_TYPES } from '../../constants'
+import { isAIControlledPlayer } from '../../lib/playerState'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -162,7 +163,7 @@ export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, c
 }
 
 export function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
-  if (player.type !== PLAYER_TYPES.ai || !savedPlayer?.aiState) return
+  if (!isAIControlledPlayer(player) || !savedPlayer?.aiState) return
 
   const state = savedPlayer.aiState
   // Narrowed to the concrete AI player's bookkeeping fields — see AIPlayerMemoryState.

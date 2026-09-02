@@ -13,7 +13,7 @@ import {
 import type { SchedulerLike } from '../../types/context'
 import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
 import type { UnitEntity } from '../../types/entities'
-import { worldStateWithCampaignClock } from './GameStateHelpers'
+import { ensureCampaignPlayerRoster, worldStateWithCampaignClock } from './GameStateHelpers'
 
 type BootFlowContext = {
   app: Application
@@ -126,9 +126,9 @@ export async function loadGameRuntime(game: GameBootFlowHost, json: SaveRecord):
   let booted = false
   try {
     const saveData = validateSaveData(json)
-    game._campaignSave = isCampaignSave(saveData)
-      ? structuredClone(saveData)
-      : createInitialCampaignSave(structuredClone(saveData))
+    game._campaignSave = ensureCampaignPlayerRoster(
+      isCampaignSave(saveData) ? structuredClone(saveData) : createInitialCampaignSave(structuredClone(saveData))
+    )
     game._restartSaveData = structuredClone(game._campaignSave)
     game._destroyRuntime()
     applyConfiguredSpeed(game)

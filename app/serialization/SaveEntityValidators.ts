@@ -90,7 +90,7 @@ function validatePlayerRecord(player: unknown, index: number, size: number, conf
   if (typeof player.isPlayed !== 'boolean') {
     fail(`Invalid save file: player ${index} has an invalid isPlayed flag.`)
   }
-  if (player.type === PLAYER_TYPES.ai) validateAIState(player.aiState, index)
+  if (player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits) validateAIState(player.aiState, index)
 
   const buildings = player.buildings ?? []
   const units = player.units ?? []

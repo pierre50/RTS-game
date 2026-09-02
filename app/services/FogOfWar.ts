@@ -1,4 +1,5 @@
-import { FAMILY_TYPES, PLAYER_TYPES } from '../constants'
+import { FAMILY_TYPES } from '../constants'
+import { isAIControlledPlayer } from '../lib/playerState'
 import { instanceIsInInsightRange } from '../lib/units/insightDetection'
 import { OUTSIDE_SPACE_ID, getMapSpace } from '../lib/mapSpaces'
 import type { PerformanceMonitorLike } from '../types/context'
@@ -99,7 +100,7 @@ function updateAIKnowledge(globalCell: RuntimeCell, viewer: PlayerLike, { static
 }
 
 export function rehydrateAIKnowledge(viewer: PlayerLike, map: RuntimeMap): void {
-  if (viewer.type !== PLAYER_TYPES.ai) return
+  if (!isAIControlledPlayer(viewer)) return
 
   for (let i = 0; i < map.grid.length; i++) {
     const row = map.grid[i]
@@ -191,7 +192,7 @@ function updateVisibilityNow(instance: VisibilityEntity): void {
       if (withPlayerViewSpace(ownerPlayer, currentSpace, () => ownerPlayer.views.setViewed(i, j))) {
         ownerPlayer.cellViewed++
       }
-      if (ownerPlayer.type === PLAYER_TYPES.ai) {
+      if (isAIControlledPlayer(ownerPlayer)) {
         withPlayerViewSpace(ownerPlayer, currentSpace, () => updateAIKnowledge(globalCell, ownerPlayer))
       }
       withPlayerViewSpace(player, currentSpace, () => syncVisibleSet(globalCell.viewBy, player.views.getViewers(i, j)))

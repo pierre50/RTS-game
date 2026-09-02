@@ -54,12 +54,76 @@ function loadPlayerActions() {
         normalizeToggle: (value, current) => (value === 'on' ? true : value === 'off' ? false : !current),
       }
     }
-    return requireFromTsFile(request, filename, mocks)
+    return requireFromTsFile(request, filename, {})
   }
 
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
+
+test('listGlobalPlayers prints campaign roster relations and local presence', () => {
+  const { listGlobalPlayers } = loadPlayerActions()
+  const result = listGlobalPlayers({
+    getCampaignFactions: () => ({
+      bandits: {
+        id: 'bandits',
+        name: 'Bandits',
+        color: 'grey',
+        relationState: 'hostile',
+        relationScore: -65,
+        homeWorldId: 'root',
+        knownWorldIds: ['yellow-world'],
+        discoveredAt: 1,
+        updatedAt: 1,
+      },
+      'civ-roman': {
+        id: 'civ-roman',
+        civilization: 'Roman',
+        name: 'House Roman',
+        color: 'red',
+        relationState: 'neutral',
+        relationScore: 0,
+        homeWorldId: 'root',
+        knownWorldIds: ['roman-world'],
+        discoveredAt: 1,
+        updatedAt: 1,
+      },
+    }),
+    getCurrentWorldId: () => 'roman-world',
+    player: { isEnemy: () => false },
+    players: [{ factionId: 'civ-roman', units: [{}, {}], buildings: [{}] }],
+  })
+
+  assert.equal(result.ok, true)
+  assert.match(result.message, /House Roman .* civ=Roman .* color=red .* relation=neutral \(0\)/)
+  assert.match(result.message, /worlds=roman-world\*/)
+  assert.match(result.message, /local units=2 buildings=1/)
+  assert.match(result.message, /Bandits .* color=grey .* relation=hostile \(-65\)/)
+  assert.match(result.message, /not local/)
+})
+
+test('listGlobalPlayers falls back to runtime players without campaign roster', () => {
+  const { listGlobalPlayers } = loadPlayerActions()
+  const enemy = { buildings: [], civ: 'Roman', color: 'red', label: 'enemy', name: 'Enemy', units: [] }
+  const hero = {
+    buildings: [],
+    civ: 'Greek',
+    color: 'green',
+    isEnemy: target => target === enemy,
+    label: 'hero',
+    name: 'Hero',
+    units: [],
+  }
+  const result = listGlobalPlayers({
+    getCampaignFactions: () => null,
+    player: hero,
+    players: [hero, enemy],
+  })
+
+  assert.equal(result.ok, true)
+  assert.match(result.message, /Hero .* relation=self .* local/)
+  assert.match(result.message, /Enemy .* relation=hostile .* local/)
+})
 
 test('tech all unlocks only technologies available at the current age', () => {
   const { applyAllTechnologies } = loadPlayerActions()

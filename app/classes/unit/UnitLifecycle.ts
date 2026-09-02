@@ -3,6 +3,7 @@ import { canUpdateMinimap, getEntityCell, playAudibleSoundCue, updateInstanceVis
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
 import { fadeOutThenClear } from '../../lib/entities/entityFade'
+import { clearCombatAttackRecovery } from '../../lib/combat/combatAttackLoop'
 import { initializeUnitCorpseLootEquipment } from '../../lib/equipment/equipmentLoot'
 import { getEntityHitPointsText } from '../../lib/entities/entityHealthDisplay'
 import { isUnitVisualAnimationCurrent, setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
@@ -80,6 +81,7 @@ export class UnitLifecycle {
     playAudibleSoundCue(unit, unit.sounds?.die, { profile: 'combat' })
 
     unit.stopInterval?.()
+    clearCombatAttackRecovery(unit)
     clearSleepingVisualState(unit)
     clearTimeout(unit.visibilityTimeout as number | undefined)
     clearEntityVisualFeedback(unit)

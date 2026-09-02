@@ -71,12 +71,24 @@ test('hero chest craft can spend chest resources and adds a placeable chest to t
   assert.deepEqual(hero.inventory.equipment, ['chest'])
 })
 
-test('crafted chest item resolves to the Chest building placement', () => {
+test('hero campfire craft spends resources and adds a placeable campfire to the bag', () => {
+  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'campfire')
+  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
+  const hero = { type: 'Hero', inventory: { resources: { wood: 8, stone: 2 } } }
+
+  assert.equal(craftHeroRecipe(player, hero, recipe), true)
+  assert.deepEqual(hero.inventory.resources, {})
+  assert.deepEqual(hero.inventory.equipment, ['campfire'])
+})
+
+test('crafted placeable items resolve to their building placements', () => {
   const { getPlaceableInventoryBuildingType } = loadModule('app/lib/hero/placeableInventoryItems.ts', {
-    '../../constants': { BUILDING_TYPES: { chest: 'Chest', trap: 'Trap' } },
-    './heroCrafting': { HERO_CHEST_ITEM: 'chest', HERO_TRAP_ITEM: 'trap' },
+    '../../constants': { BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', trap: 'Trap' } },
+    './heroCrafting': { HERO_CAMPFIRE_ITEM: 'campfire', HERO_CHEST_ITEM: 'chest', HERO_TRAP_ITEM: 'trap' },
   })
 
+  assert.equal(getPlaceableInventoryBuildingType('campfire'), 'FireCamp')
   assert.equal(getPlaceableInventoryBuildingType('chest'), 'Chest')
   assert.equal(getPlaceableInventoryBuildingType('trap'), 'Trap')
 })

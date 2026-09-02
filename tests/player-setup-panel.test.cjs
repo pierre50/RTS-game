@@ -62,6 +62,23 @@ test('AI colors are reassigned to free colors when the human color conflicts', (
   assert.equal(new Set(panel.players.map(player => player.color)).size, panel.players.length)
 })
 
+test('human setup normalizes grey to a playable color', () => {
+  const panel = setupPanel([])
+
+  const player = panel._normalizePlayer({
+    name: 'You',
+    color: 'grey',
+    civ: 'Greek',
+    gender: 'male',
+    isHuman: true,
+    team: null,
+  })
+
+  assert.notEqual(player.color, 'grey')
+  assert.notEqual(player.color, 'gray')
+  assert.equal(player.color, 'violet')
+})
+
 test('generated human name changes when civilization changes', () => {
   const panel = setupPanel([
     { name: 'Greek-male-name', color: 'blue', civ: 'Greek', gender: 'male', team: null, isHuman: true },

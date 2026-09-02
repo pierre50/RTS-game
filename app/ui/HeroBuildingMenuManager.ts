@@ -1,6 +1,7 @@
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
+import { canHeroSleepAtFireCamp, sleepHeroAtFireCamp } from '../lib/hero/heroCampfireSleep'
 import { formatTrainingEntryTimeRemaining, formatTrainingTimeRemaining } from '../lib/buildings/trainingTimeRemaining'
 import { t } from '../lib/lang'
 import { playAudibleSoundCue } from '../lib/audio/sound'
@@ -34,6 +35,10 @@ function getPendingTrainingCount(building: BuildingEntity, type: string): number
     building.owner?.units?.filter(unit => unit.dest === building && unit.trainingTargetType === type && !unit.isDead)
       .length ?? 0
   )
+}
+
+function isFireCamp(building: BuildingEntity): boolean {
+  return building.type === BUILDING_TYPES.fireCamp
 }
 
 export class HeroBuildingMenuManager {
@@ -105,7 +110,7 @@ export class HeroBuildingMenuManager {
       return true
     }
     if (this.opened) this.close()
-    const items = this.menu.getActionMenuItems(building)
+    const items = this.getBuildingActionMenuItems(building)
     this.building = building
     this.stack = [items]
     this.opened = true
@@ -158,7 +163,7 @@ export class HeroBuildingMenuManager {
       this.close()
       return
     }
-    this.stack[0] = this.menu.getActionMenuItems(this.building)
+    this.stack[0] = this.getBuildingActionMenuItems(this.building)
     this.structureSignature = this.getStructureSignature()
     this.render()
   }
@@ -212,6 +217,28 @@ export class HeroBuildingMenuManager {
       hero?.inventory?.equipment?.join(',') || '',
       JSON.stringify(hero?.inventory?.resources ?? {}),
     ].join('|')
+  }
+
+  getBuildingActionMenuItems(building: BuildingEntity): MenuButtonSpec[] {
+    const items = this.menu.getActionMenuItems(building)
+    if (!isFireCamp(building)) return items
+    return [this.getCampfireSleepButton(building), ...items]
+  }
+
+  getCampfireSleepButton(building: BuildingEntity): MenuButtonSpec {
+    return {
+      id: 'heroCampfireSleep',
+      disabled: () => !canHeroSleepAtFireCamp(this.menu.context.controls.heroUnit, building),
+      tooltip: () => ({
+        title: t('heroCampfireSleep'),
+        description: canHeroSleepAtFireCamp(this.menu.context.controls.heroUnit, building)
+          ? t('heroCampfireSleepDescription')
+          : t('heroCampfireSleepBlockedDescription'),
+      }),
+      onClick: () => {
+        if (sleepHeroAtFireCamp(this.menu.context.controls.heroUnit, building)) this.close()
+      },
+    }
   }
 
   render(): void {

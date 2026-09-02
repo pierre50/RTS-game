@@ -35,6 +35,7 @@ function loadCombatHit({
   grantCalls = [],
   feedbackCalls = [],
   bloodCalls = [],
+  buildingFragmentCalls = [],
 } = {}) {
   return loadModule('app/lib/combat/combatHit.ts', {
     '../constants': constants,
@@ -46,6 +47,9 @@ function loadCombatHit({
     '../entities/entityHealthDisplay': entityHealthDisplayMock,
     '../entities/combatBloodImpact': {
       spawnCombatBloodImpact: (attacker, target, options) => bloodCalls.push({ attacker, target, options }),
+    },
+    '../entities/combatBuildingImpactFragments': {
+      spawnCombatBuildingImpactFragments: (target, damage) => buildingFragmentCalls.push({ target, damage }),
     },
     '../lang': { t: key => key },
     './parry': { attemptAutomaticParry: () => parryResult },
@@ -143,6 +147,7 @@ test('isMelee is required to even attempt a parry — a ranged hit never rolls o
     },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
     '../entities/combatBloodImpact': { spawnCombatBloodImpact: () => {} },
+    '../entities/combatBuildingImpactFragments': { spawnCombatBuildingImpactFragments: () => {} },
     '../units/unitExperience': { XP_KILL_BONUS: 15, grantUnitXp: () => {} },
   })
   const target = makeTarget()
@@ -205,4 +210,24 @@ test('blood impact receives the hit direction when a melee hit lands', () => {
   applyCombatHit(attacker, target, { hitDirection, isMelee: true })
 
   assert.deepEqual(bloodCalls, [{ attacker, target, options: { damage: 4, hitDirection } }])
+})
+
+test('building impact fragments spawn when a building takes damage', () => {
+  const buildingFragmentCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 7, buildingFragmentCalls })
+  const target = makeTarget({ family: 'building' })
+
+  applyCombatHit({ label: 'attacker' }, target)
+
+  assert.deepEqual(buildingFragmentCalls, [{ target, damage: 7 }])
+})
+
+test('building impact fragments are skipped when a building takes no damage', () => {
+  const buildingFragmentCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 7, buildingFragmentCalls })
+  const target = makeTarget({ devInvincible: true, family: 'building' })
+
+  applyCombatHit({ label: 'attacker' }, target)
+
+  assert.deepEqual(buildingFragmentCalls, [])
 })

@@ -32,9 +32,9 @@ function loadMapPlayerGeneration() {
       },
       '../players': { AI, Human },
       './BanditCampGeneration': {
-        ensureBanditCampOwner: (_map, _context, anchor, civ, players) => {
-          calls.ensureBanditCampOwner.push({ anchor, civ })
-          players.push({ type: 'Bandits', isPlayed: false, civ })
+        ensureBanditCampOwner: (_map, _context, anchor, civ, players, options = {}) => {
+          calls.ensureBanditCampOwner.push({ anchor, civ, options })
+          players.push({ type: 'Bandits', isPlayed: false, civ: options.civ ?? civ, ...options })
         },
       },
       './CivilizationStartingKit': { applyCivilizationLevelStartingKit: () => {} },
@@ -89,7 +89,7 @@ test('bandit portal encounters turn the non-human spawn into a bandit camp', () 
   const map = createMap('bandit')
   const players = generatePlayers(map, [
     { civ: 'Greek', isHuman: true },
-    { civ: 'Egyptian', isHuman: false },
+    { civ: 'Egyptian', color: 'grey', factionId: 'bandits', isHuman: false, name: 'Bandits' },
   ])
 
   assert.deepEqual(
@@ -97,7 +97,14 @@ test('bandit portal encounters turn the non-human spawn into a bandit camp', () 
     ['Human', 'Bandits']
   )
   assert.deepEqual(map.banditCampPositions, [{ i: 40, j: 50 }])
-  assert.deepEqual(calls.ensureBanditCampOwner, [{ anchor: { i: 40, j: 50 }, civ: 'Greek' }])
+  assert.deepEqual(calls.ensureBanditCampOwner, [
+    {
+      anchor: { i: 40, j: 50 },
+      civ: 'Greek',
+      options: { civ: 'Egyptian', color: 'grey', factionId: 'bandits', name: 'Bandits' },
+    },
+  ])
+  assert.equal(players[1].factionId, 'bandits')
 })
 
 test('starting town center receives the map starting resources in its inventory', () => {

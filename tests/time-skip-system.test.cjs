@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadTimeSkipSystem(soundState = { suppressed: false }) {
+function loadTimeSkipModule(soundState = { suppressed: false }) {
   return loadTsModule('app/services/TimeSkipSystem.ts', {
     mocks: {
       '../lib/audio/sound': {
@@ -12,7 +12,11 @@ function loadTimeSkipSystem(soundState = { suppressed: false }) {
         },
       },
     },
-  }).TimeSkipSystem
+  })
+}
+
+function loadTimeSkipSystem(soundState = { suppressed: false }) {
+  return loadTimeSkipModule(soundState).TimeSkipSystem
 }
 
 function createFakeElement() {
@@ -182,4 +186,33 @@ test('time skip cancels on Escape and restores previous suppressed audio state',
     assert.ok(calls.some(call => call[0] === 'removeEventListener' && call[2] === true && call[3] === true))
     assert.ok(setup.calls.some(call => call[0] === 'message' && call[1] === 'Time skip cancelled'))
   })
+})
+
+test('time skip completion callback runs only after completed skips', () => {
+  withDocument(({ getKeydownHandler }) => {
+    const TimeSkipSystem = loadTimeSkipSystem()
+    const { calls, context, getTick, setElapsedMs } = createContext()
+    const timeSkip = new TimeSkipSystem(context)
+    context.timeSkip = timeSkip
+
+    assert.equal(timeSkip.start(1, { completedMessage: 'Slept until morning', onComplete: () => calls.push(['complete']) }).ok, true)
+    setElapsedMs(60 * 1000)
+    getTick()()
+
+    assert.ok(calls.some(call => call[0] === 'complete'))
+    assert.ok(calls.some(call => call[0] === 'message' && call[1] === 'Slept until morning'))
+
+    assert.equal(timeSkip.start(1, { onComplete: () => calls.push(['cancelled-complete']) }).ok, true)
+    getKeydownHandler()({ key: 'Escape', preventDefault: () => {}, stopImmediatePropagation: () => {} })
+
+    assert.equal(calls.some(call => call[0] === 'cancelled-complete'), false)
+  })
+})
+
+test('next morning hours target the next 07:00', () => {
+  const { getHoursUntilNextMorning } = loadTimeSkipModule()
+
+  assert.equal(getHoursUntilNextMorning(23, 30), 7.5)
+  assert.equal(getHoursUntilNextMorning(6, 45), 0.25)
+  assert.equal(getHoursUntilNextMorning(7, 0), 24)
 })

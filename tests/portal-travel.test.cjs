@@ -11,13 +11,23 @@ const constants = {
 function loadGameStateHelpers() {
   return loadTsModule('app/screens/game/GameStateHelpers.ts', {
     mocks: {
-      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
+      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }, { value: 'Roman' }, { value: 'Egyptian' }] },
       '../../config/environments': { getEnvironmentForCiv: () => 'Temperate' },
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
       '../../lib': { playerColors: ['blue', 'red'] },
       '../../lib/combat/factions': {
-        createFactionSave: ({ id, initialScore }) => ({ id, name: 'Faction', relationScore: initialScore }),
+        createFactionSave: ({ civilization, homeWorldId, id, initialScore, name, now }) => ({
+          civilization,
+          discoveredAt: now,
+          homeWorldId,
+          id,
+          knownWorldIds: [homeWorldId],
+          name: name || 'Faction',
+          relationScore: initialScore,
+          relationState: initialScore < 0 ? 'hostile' : 'neutral',
+          updatedAt: now,
+        }),
         FACTION_SCORE: { allied: 1, hostile: -1, neutral: 0 },
       },
     },
@@ -49,7 +59,7 @@ function loadGamePortalTravel(overrides = {}) {
       '../../ui/PortalTravelTransition': {
         PortalTravelTransition: class {},
       },
-      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
+      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }, { value: 'Roman' }, { value: 'Egyptian' }] },
       '../../config/environments': { getEnvironmentForCiv: () => 'Temperate' },
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
@@ -61,7 +71,17 @@ function loadGamePortalTravel(overrides = {}) {
         updateInstanceVisibility: () => {},
       },
       '../../lib/combat/factions': {
-        createFactionSave: ({ id }) => ({ id, name: 'Faction' }),
+        createFactionSave: ({ civilization, homeWorldId, id, initialScore, name, now }) => ({
+          civilization,
+          discoveredAt: now,
+          homeWorldId,
+          id,
+          knownWorldIds: [homeWorldId],
+          name: name || 'Faction',
+          relationScore: initialScore,
+          relationState: initialScore < 0 ? 'hostile' : 'neutral',
+          updatedAt: now,
+        }),
         FACTION_SCORE: { allied: 1, hostile: -1, neutral: 0 },
       },
     },
@@ -116,15 +136,128 @@ test('portal colors select debug encounter destinations', () => {
 
   assert.equal(yellow.config.portalEncounter, 'bandit')
   assert.equal(yellow.config.players[1].diplomacy, null)
-  assert.equal(yellow.faction.relationScore, -1)
+  assert.equal(yellow.config.players[1].factionId, 'bandits')
+  assert.equal(yellow.config.players[1].name, 'Bandits')
+  assert.equal(yellow.faction.relationState, 'hostile')
 
   assert.equal(blue.config.portalEncounter, 'village')
-  assert.equal(blue.config.players[1].diplomacy, 'neutral')
-  assert.equal(blue.faction.relationScore, 0)
 
   assert.equal(red.config.portalEncounter, 'village')
-  assert.equal(red.config.players[1].diplomacy, null)
-  assert.equal(red.faction.relationScore, -1)
+})
+
+test('campaign roster creates one global faction per non-hero civilization plus bandits', () => {
+  const { ensureCampaignPlayerRoster } = loadGameStateHelpers()
+  const campaign = {
+    currentWorldId: 'root',
+    factions: {},
+    worlds: {
+      root: {
+        state: {
+          players: [{ civ: 'Greek', color: 'green', isPlayed: true }],
+        },
+      },
+    },
+    worldGraph: { rootWorldId: 'root', nodes: {} },
+  }
+
+  const next = ensureCampaignPlayerRoster(campaign, 1000)
+
+  assert.equal(next.factions['civ-greek'], undefined)
+  assert.equal(next.factions['civ-roman'].civilization, 'Roman')
+  assert.equal(next.factions['civ-roman'].relationState, 'neutral')
+  assert.notEqual(next.factions['civ-roman'].color, 'green')
+  assert.notEqual(next.factions['civ-roman'].color, 'grey')
+  assert.equal(next.factions['civ-egyptian'].civilization, 'Egyptian')
+  assert.equal(next.factions['civ-egyptian'].relationState, 'hostile')
+  assert.notEqual(next.factions['civ-egyptian'].color, 'green')
+  assert.notEqual(next.factions['civ-egyptian'].color, 'grey')
+  assert.notEqual(next.factions['civ-roman'].color, next.factions['civ-egyptian'].color)
+  assert.equal(next.factions.bandits.name, 'Bandits')
+  assert.equal(next.factions.bandits.relationState, 'hostile')
+  assert.equal(next.factions.bandits.color, 'grey')
+  assert.deepEqual(next.factions['civ-roman'].knownWorldIds, [])
+})
+
+test('portal config reuses an undiscovered campaign roster faction', () => {
+  const { ensureCampaignPlayerRoster, configForPortalWorld } = loadGameStateHelpers()
+  const map = {
+    allTechnologies: false,
+    difficulty: 'normal',
+    environment: 'Temperate',
+    instantMode: false,
+    mapType: 'continent',
+    random: () => 0.5,
+    revealTerrain: false,
+    size: 144,
+    startingAge: 1,
+    startingResources: { food: 100, wood: 100, stone: 0, gold: 0 },
+    resourceDensity: 'normal',
+  }
+  const player = { civ: 'Greek', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
+  const campaign = ensureCampaignPlayerRoster(
+    {
+      currentWorldId: 'root',
+      factions: {},
+      worlds: {
+        root: {
+          state: {
+            players: [{ civ: 'Greek', isPlayed: true }],
+          },
+        },
+      },
+      worldGraph: { rootWorldId: 'root', nodes: {} },
+    },
+    1000
+  )
+
+  const portalWorld = configForPortalWorld({ campaign, color: 'blue', map, now: 2000, player, worldId: 'egyptian-world' })
+
+  assert.equal(portalWorld.factionId, 'civ-egyptian')
+  assert.equal(portalWorld.config.players[1].civ, 'Egyptian')
+  assert.equal(portalWorld.config.players[1].color, portalWorld.faction.color)
+  assert.deepEqual(portalWorld.faction.knownWorldIds, ['egyptian-world'])
+  assert.equal(portalWorld.faction.relationState, 'hostile')
+  assert.equal(portalWorld.config.players[1].diplomacy, null)
+})
+
+test('portal config keeps neutral relation from the global roster', () => {
+  const { ensureCampaignPlayerRoster, configForPortalWorld } = loadGameStateHelpers()
+  const map = {
+    allTechnologies: false,
+    difficulty: 'normal',
+    environment: 'Temperate',
+    instantMode: false,
+    mapType: 'continent',
+    random: () => 0.5,
+    revealTerrain: false,
+    size: 144,
+    startingAge: 1,
+    startingResources: { food: 100, wood: 100, stone: 0, gold: 0 },
+    resourceDensity: 'normal',
+  }
+  const player = { civ: 'Greek', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
+  const campaign = ensureCampaignPlayerRoster(
+    {
+      currentWorldId: 'root',
+      factions: {},
+      worlds: {
+        root: {
+          state: {
+            players: [{ civ: 'Greek', isPlayed: true }],
+          },
+        },
+      },
+      worldGraph: { rootWorldId: 'root', nodes: {} },
+    },
+    1000
+  )
+
+  const portalWorld = configForPortalWorld({ campaign, color: 'red', map, now: 2000, player, worldId: 'roman-world' })
+
+  assert.equal(portalWorld.factionId, 'civ-roman')
+  assert.equal(portalWorld.faction.relationState, 'neutral')
+  assert.equal(portalWorld.config.players[1].color, portalWorld.faction.color)
+  assert.equal(portalWorld.config.players[1].diplomacy, 'neutral')
 })
 
 test('applying a portal party restores the selected hero tool after controls init', () => {

@@ -178,7 +178,7 @@ test('villager and hero work tools follow civilization metal age', () => {
 
   assert.equal(woodcutterFront?.walkingSheet, 'lpc-equipment/axe_ceramic/front/walking')
   assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
-  assert.deepEqual(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], {})
+  assert.equal(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], undefined)
   assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/axe_copper/front/walking')
   assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/axe_copper/front/action')
   assert.equal(builderFront?.walkingSheet, 'lpc-equipment/hammer_ceramic/front/walking')

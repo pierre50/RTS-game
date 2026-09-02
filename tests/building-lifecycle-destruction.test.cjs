@@ -4,6 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 test('destroyed buildings burst into fragments and immediately drop sprite, shadow, and solid footprint', () => {
   const calls = []
+  const createdBuildings = []
   let timeoutCallback = null
   const shadow = {
     destroyed: false,
@@ -23,6 +24,12 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   ]
   const owner = {
     buildings: [],
+    createBuilding: options => {
+      createdBuildings.push(options)
+      const chest = { ...options, isDestroyed: false, isDead: false }
+      owner.buildings.push(chest)
+      return chest
+    },
     isPlayed: false,
     populationMax: 0,
   }
@@ -37,7 +44,8 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
     unselectAll: () => calls.push(['unselectAll']),
   }
   const building = {
-    type: 'Barracks',
+    type: 'Granary',
+    label: 'granary-1',
     i: 5,
     j: 5,
     size: 2,
@@ -100,7 +108,7 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
       },
       '../../constants': {
         ACTION_TYPES: { attack: 'attack', build: 'build' },
-        BUILDING_TYPES: { fireCamp: 'FireCamp' },
+        BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp' },
         LABEL_TYPES: {
           color: 'color',
           deco: 'deco',
@@ -142,6 +150,13 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
         updateWallAndNeighbours: () => {},
         updateWallTexture: () => {},
       },
+      '../../services/BuildingInteriorSpaceSystem': {
+        expelBuildingInteriorOccupants: (_context, target) => calls.push(['expelBuildingInteriorOccupants', target.type]),
+        extractBuildingInteriorChestInventory: (_context, target) => {
+          calls.push(['extractBuildingInteriorChestInventory', target.type])
+          return { resources: { food: 9, wood: 3 }, equipment: ['trap'] }
+        },
+      },
     },
   })
 
@@ -154,8 +169,10 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   assert.equal(shadow.destroyed, true)
   assert.equal(building.shadow, null)
   assert.equal(building.textureName, undefined)
-  assert.equal(owner.buildings.length, 0)
+  assert.equal(owner.buildings.length, 1)
   assert.equal(typeof timeoutCallback, 'function')
+  assert.ok(calls.some(call => call[0] === 'extractBuildingInteriorChestInventory'))
+  assert.ok(calls.some(call => call[0] === 'expelBuildingInteriorOccupants'))
   assert.deepEqual(
     footprintCells.map(cell => ({ has: cell.has, solid: cell.solid, hasCorpse: cell.corpses.has(building) })),
     [
@@ -168,6 +185,18 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   const burstCall = calls.find(call => call[0] === 'spawnSpriteFragmentBurst')
   assert.equal(burstCall?.[1].host, building)
   assert.equal(burstCall?.[1].sprite, building.sprite)
+  assert.equal(burstCall?.[1].lockX, true)
+  assert.deepEqual(createdBuildings, [
+    {
+      i: 5,
+      j: 5,
+      type: 'Chest',
+      isBuilt: true,
+      skipBuiltEffects: true,
+      label: `${building.label}:ruins:storage-chest`,
+      inventory: { resources: { food: 9, wood: 3 }, equipment: ['trap'] },
+    },
+  ])
   assert.ok(calls.some(call => call[0] === 'destroySprite'))
   assert.ok(calls.some(call => call[0] === 'destroyShadow'))
   assert.ok(calls.some(call => call[0] === 'updateInstanceVisibility'))

@@ -7,7 +7,14 @@ function loadHeroProximityInteractions() {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
-        BUILDING_TYPES: { chest: 'Chest', house: 'House', stable: 'Stable', townCenter: 'TownCenter', trap: 'Trap' },
+        BUILDING_TYPES: {
+          chest: 'Chest',
+          fireCamp: 'FireCamp',
+          house: 'House',
+          stable: 'Stable',
+          townCenter: 'TownCenter',
+          trap: 'Trap',
+        },
         SHEET_TYPES: { corpse: 'corpseSheet' },
         UNIT_TYPES: { villager: 'Villager' },
       },
@@ -21,6 +28,7 @@ function loadHeroProximityInteractions() {
         getCellsInCellRadius: (_i, _j, grid) => grid.flat(),
       },
       '../grid/visibility': {
+        findInstancesInSight: hero => hero.hostilesInSight ?? [],
         instanceIsInActiveOrTeamSight: building => building.visibleToHero === true,
       },
       '../horses/horseTaming': {
@@ -44,6 +52,9 @@ function loadHeroProximityInteractions() {
           const hour = unit?.context?.dayNight?.state?.hour ?? 12
           return hour >= 18 && hour < 22
         },
+      },
+      './heroCampfireSleep': {
+        isUsableFireCamp: (_hero, building) => building?.type === 'FireCamp' && building.reachable !== false,
       },
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
@@ -209,6 +220,58 @@ test('hero proximity interaction ignores a nearby chest that is not the facing t
   }
 
   assert.equal(resolveHeroProximityInteraction({ buildings: [chest], hero: makeHero() }), null)
+})
+
+test('hero proximity interaction opens any reachable fire camp as fire usage', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const fireCamp = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    owner: { label: 'other-player' },
+    reachable: true,
+    type: 'FireCamp',
+    x: 100,
+    y: 248,
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero: makeHero(), openEntityTarget: fireCamp }), {
+    action: 'open',
+    labelKey: 'heroInteractionUseFire',
+    target: fireCamp,
+  })
+})
+
+test('hero proximity interaction still opens fire camp usage when a hostile is in hero sight', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const enemyOwner = { label: 'enemy-player' }
+  const heroOwner = { label: 'hero-player', isEnemy: owner => owner === enemyOwner }
+  const fireCamp = {
+    i: 6,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 7,
+    reachable: true,
+    type: 'FireCamp',
+    x: 100,
+    y: 248,
+  }
+  const hostile = { family: 'unit', isDead: false, isDestroyed: false, owner: enemyOwner }
+
+  assert.deepEqual(
+    resolveHeroProximityInteraction({
+      hero: makeHero({ hostilesInSight: [hostile], owner: heroOwner }),
+      openEntityTarget: fireCamp,
+    }),
+    {
+      action: 'open',
+      labelKey: 'heroInteractionUseFire',
+      target: fireCamp,
+    }
+  )
 })
 
 test('hero proximity interaction resolves a close companion horse as mount', () => {

@@ -1,6 +1,6 @@
 import { Container, Graphics, type ContainerChild } from 'pixi.js'
 import { Cell } from '../classes/cell'
-import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, LABEL_TYPES, SHEET_TYPES } from '../constants'
+import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES } from '../constants'
 import { sameBuilding } from '../lib/buildings/identity'
 import {
   findInteriorDecorationCell,
@@ -15,6 +15,7 @@ import {
   OUTSIDE_SPACE_ID,
   ensureMapSpaces,
   getEntityMapSpace,
+  getEntitySpaceId,
   getMapSpace,
   moveEntityToMapSpace,
   sameMapSpace,
@@ -41,11 +42,13 @@ import {
 } from './SpacePortalSystem'
 import { syncStableInteriorHorses } from './buildingInterior/StableInteriorHorses'
 import type { GameContextLike } from '../types/context'
-import type { BuildingEntity, UnitEntity } from '../types/entities'
+import type { ResourceAmount } from '../types/common'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../types/entities'
 import type { RuntimeCell, RuntimeMap, RuntimeMapSpace, RuntimeMapSpacePortal } from '../types/map'
 import type { MapBlueprint } from '../classes/map/MapGeneration'
 
 type TickerLike = { deltaMS?: number; elapsedMS?: number }
+type BuildingInventory = NonNullable<BuildingEntity['inventory']>
 type InteriorSpaceMapAdapter = Pick<
   RuntimeMap,
   | 'grid'
@@ -89,6 +92,10 @@ const INTERIOR_SCENE_LAYER_Z_INDEX = 0
 const INTERIOR_TERRAIN_LAYER_Z_INDEX = -0.5
 const INTERIOR_ENTITY_LAYER_Z_INDEX = 1
 const BACKDROP_ALPHA = 1
+const DEFAULT_INTERIOR_SIZE_BY_TYPE: Record<string, number> = {
+  [BUILDING_TYPES.townCenter]: 15,
+  [BUILDING_TYPES.watchTower]: 11,
+}
 
 function maskValue(mask: MapBlueprint['floorMask'], i: number, j: number): boolean {
   return mask?.[i]?.[j] === 1
@@ -96,6 +103,65 @@ function maskValue(mask: MapBlueprint['floorMask'], i: number, j: number): boole
 
 function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: number): boolean {
   return Boolean(blueprint.exits?.some(exit => exit?.i === i && exit?.j === j))
+}
+
+function createDefaultBuildingInteriorBlueprint(building: BuildingEntity): MapBlueprint {
+  const size = DEFAULT_INTERIOR_SIZE_BY_TYPE[building.type] ?? 13
+  const width = size + 1
+  const center = size / 2
+  const radius = Math.max(4, Math.floor(width * 0.31))
+  const terrain = Array.from({ length: width }, () => Array.from({ length: width }, () => 'Water'))
+  const relief = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
+  const floorMask = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
+  const borderMask = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
+
+  for (let i = 0; i <= size; i += 1) {
+    for (let j = 0; j <= size; j += 1) {
+      if (Math.hypot(i - center, j - center) > radius) continue
+      terrain[i][j] = 'Dirt'
+      floorMask[i][j] = 1
+    }
+  }
+
+  for (let i = 0; i <= size; i += 1) {
+    for (let j = 0; j <= size; j += 1) {
+      if (!floorMask[i][j]) continue
+      let touchesOutside = false
+      for (let di = -1; di <= 1 && !touchesOutside; di += 1) {
+        for (let dj = -1; dj <= 1; dj += 1) {
+          if (di === 0 && dj === 0) continue
+          const ni = i + di
+          const nj = j + dj
+          if (ni < 0 || nj < 0 || ni > size || nj > size || !floorMask[ni][nj]) {
+            touchesOutside = true
+            break
+          }
+        }
+      }
+      if (touchesOutside) borderMask[i][j] = 1
+    }
+  }
+
+  const exit = {
+    i: Math.round(center),
+    j: Math.min(size - 1, Math.round(center + radius * 0.76)),
+  }
+  borderMask[exit.i][exit.j] = 0
+
+  return {
+    seed: building.context?.map?.seed,
+    kind: 'interior',
+    mapType: 'interior',
+    interiorType: building.type,
+    size,
+    terrain,
+    relief,
+    floorMask,
+    borderMask,
+    spawns: [{ i: exit.i, j: exit.j }],
+    exits: [exit],
+    resources: [],
+  }
 }
 
 function isInteriorFloorCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
@@ -141,6 +207,132 @@ function findSleepCell(space: BuildingInteriorRuntimeSpace, unit: UnitEntity): R
     if (isCellAvailableForUnit(space, cell, unit, passageLookup)) return cell
   }
   return findFreeCellNear(space, space.entryCell, unit, passageLookup)
+}
+
+function evacuationCellKey(cell: RuntimeCell): string {
+  return `${cell.spaceId ?? OUTSIDE_SPACE_ID}:${cell.i}:${cell.j}`
+}
+
+function canUseExteriorEvacuationCell(
+  cell: RuntimeCell | null | undefined,
+  entity: RuntimeEntity,
+  claimedCells: Set<string>
+): boolean {
+  if (!cell || claimedCells.has(evacuationCellKey(cell))) return false
+  if (cell.terrainHidden || cell.border || cell.waterBorder || cell.category === 'Water') return false
+  const occupant = cell.has
+  return Boolean(!cell.solid || occupant === entity || occupant?.label === entity.label || occupant?.isDestroyed)
+}
+
+function findExteriorEvacuationCell(
+  context: GameContextLike,
+  anchor: RuntimeCell | null,
+  searchSize: number,
+  entity: RuntimeEntity,
+  claimedCells: Set<string>
+): RuntimeCell | null {
+  const outsideSpace = getMapSpace(context.map, OUTSIDE_SPACE_ID)
+  const exteriorGrid = outsideSpace?.grid ?? context.map.grid
+  if (canUseExteriorEvacuationCell(anchor, entity, claimedCells)) return anchor
+  if (!anchor) return null
+
+  for (let radius = 1; radius <= Math.max(2, searchSize, 8); radius += 1) {
+    const cells = getCellsAroundPoint(anchor.i, anchor.j, exteriorGrid, radius, cell =>
+      canUseExteriorEvacuationCell(cell, entity, claimedCells)
+    )
+    if (cells.length) return cells[0]
+  }
+  return null
+}
+
+function collectBuildingInteriorOccupants(
+  context: GameContextLike,
+  building: BuildingEntity,
+  space: BuildingInteriorRuntimeSpace | null
+): RuntimeEntity[] {
+  const occupants = new Set<RuntimeEntity>()
+  for (const column of space?.instanceBuckets ?? []) {
+    for (const bucket of column) {
+      for (const entity of bucket) {
+        if (entity.isDead || entity.isDestroyed) continue
+        if (entity.family === FAMILY_TYPES.unit || entity.family === FAMILY_TYPES.animal) occupants.add(entity)
+      }
+    }
+  }
+  for (const player of context.players ?? []) {
+    for (const unit of player.units ?? []) {
+      if (unit.isDead || unit.isDestroyed) continue
+      if ((space && getEntitySpaceId(unit) === space.id) || sameBuilding(unit.shelterState?.shelter, building)) {
+        occupants.add(unit)
+      }
+    }
+  }
+  for (const animal of context.map.gaia?.animals ?? []) {
+    if (animal.isDead || animal.isDestroyed) continue
+    if (space && getEntitySpaceId(animal) === space.id) occupants.add(animal)
+  }
+  return [...occupants]
+}
+
+function restoreUnitAfterBuildingExpulsion(unit: UnitEntity): void {
+  unit.shelterState = null
+  unit.suspendedRestState = null
+  clearUnitOverheadIndicator(unit)
+  unit.setTextures?.(SHEET_TYPES.standing)
+  unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
+  unit.sprite?.stop?.()
+}
+
+function mergeInventoryResources(target: BuildingInventory, resources: ResourceAmount | null | undefined): void {
+  if (!resources) return
+  for (const [resource, amount] of Object.entries(resources)) {
+    if (!amount || amount <= 0) continue
+    target.resources = target.resources ?? {}
+    target.resources[resource as keyof ResourceAmount] = (target.resources[resource as keyof ResourceAmount] ?? 0) + amount
+  }
+}
+
+function mergeInventoryEquipment(target: BuildingInventory, equipment: string[] | null | undefined): void {
+  if (!equipment?.length) return
+  target.equipment = [...(target.equipment ?? []), ...equipment]
+}
+
+function mergeBuildingInventory(target: BuildingInventory, source: BuildingInventory | null | undefined): void {
+  mergeInventoryResources(target, source?.resources)
+  mergeInventoryEquipment(target, source?.equipment)
+}
+
+function hasInventoryContent(inventory: BuildingInventory): boolean {
+  return Boolean(
+    Object.values(inventory.resources ?? {}).some(amount => (amount ?? 0) > 0) || (inventory.equipment?.length ?? 0) > 0
+  )
+}
+
+function clearBuildingInventory(inventory: BuildingInventory | null | undefined): void {
+  if (!inventory) return
+  inventory.resources = {}
+  inventory.equipment = []
+}
+
+function removeInteriorChest(context: GameContextLike, chest: BuildingEntity): void {
+  if (chest.currentCell?.has === chest) {
+    chest.currentCell.has = null
+    chest.currentCell.solid = false
+  }
+  context.map.removeFromInstanceBucket?.(chest)
+  const buildings = chest.owner?.buildings
+  const index = buildings?.indexOf(chest) ?? -1
+  if (index >= 0) buildings?.splice(index, 1)
+  chest.isDead = true
+  chest.isDestroyed = true
+  ;(chest as { parent?: { removeChild?: (child: BuildingEntity) => void } }).parent?.removeChild?.(chest)
+  chest.destroy?.({ children: true, texture: false })
+}
+
+function buildingHasConfiguredInteriorChest(building: BuildingEntity): boolean {
+  return getBuildingInteriorDecorationLayout(building, { includeFireCamp: false }).some(
+    item => item.type === BUILDING_TYPES.chest
+  )
 }
 
 function sortCellsForSleep(cells: RuntimeCell[], exitCell: RuntimeCell | null, center: number): RuntimeCell[] {
@@ -576,12 +768,49 @@ export function ensureBuildingInteriorSpace(
   return space
 }
 
+export function ensureRuntimeBuildingInteriorSpace(
+  context: GameContextLike,
+  building: BuildingEntity
+): BuildingInteriorRuntimeSpace | null {
+  const existing = getBuildingInteriorSpaceForBuilding(context, building)
+  if (existing) return existing
+  if (!building.isBuilt || building.isDead || building.isDestroyed) return null
+  return ensureBuildingInteriorSpace(context, building, createDefaultBuildingInteriorBlueprint(building))
+}
+
 export function getBuildingInteriorSpaceForBuilding(
   context: GameContextLike,
   building: BuildingEntity
 ): BuildingInteriorRuntimeSpace | null {
   const space = getMapSpace(context.map, getBuildingInteriorSpaceId(building))
   return isBuildingInteriorRuntimeSpace(space) ? space : null
+}
+
+export function extractBuildingInteriorChestInventory(
+  context: GameContextLike,
+  building: BuildingEntity
+): BuildingInventory | null {
+  const space = getBuildingInteriorSpaceForBuilding(context, building)
+  const interiorChests = space
+    ? [...(building.owner?.buildings ?? [])].filter(chest => {
+        if (chest.type !== BUILDING_TYPES.chest) return false
+        if (chest.isDead || chest.isDestroyed) return false
+        return getEntitySpaceId(chest) === space.id
+      })
+    : []
+  if (!buildingHasConfiguredInteriorChest(building) && interiorChests.length === 0) return null
+
+  const merged: BuildingInventory = {}
+  mergeBuildingInventory(merged, building.inventory)
+  clearBuildingInventory(building.inventory)
+
+  for (const chest of interiorChests) {
+    mergeBuildingInventory(merged, chest.inventory)
+    clearBuildingInventory(chest.inventory)
+    removeInteriorChest(context, chest)
+  }
+
+  return hasInventoryContent(merged) ? merged : null
 }
 
 export function activateBuildingInteriorSpace(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
@@ -679,6 +908,40 @@ export function syncBuildingInteriorShelterOccupants(
     }
     moveUnitToBuildingInteriorSleep(context, unit, space)
   }
+}
+
+export function expelBuildingInteriorOccupants(context: GameContextLike, building: BuildingEntity): RuntimeEntity[] {
+  const space = getBuildingInteriorSpaceForBuilding(context, building)
+  const outsideSpace = getMapSpace(context.map, OUTSIDE_SPACE_ID)
+  if (!outsideSpace) return []
+  const anchor =
+    space?.exteriorEntryCell ?? getBuildingInteriorEntryCell(building, context.map.grid) ?? context.map.grid[building.i]?.[building.j] ?? null
+
+  const claimedCells = new Set<string>()
+  const expelled: RuntimeEntity[] = []
+  for (const entity of collectBuildingInteriorOccupants(context, building, space)) {
+    const cell = findExteriorEvacuationCell(context, anchor, building.size ?? 1, entity, claimedCells)
+    if (!cell) continue
+    if (entity.family === FAMILY_TYPES.unit) {
+      prepareUnitForSpaceTransfer(entity as UnitEntity)
+      restoreUnitAfterBuildingExpulsion(entity as UnitEntity)
+    } else {
+      entity.stopInterval?.()
+      entity.stopTimeout?.()
+    }
+    moveEntityToMapSpace(context.map, entity, outsideSpace, cell)
+    updateInstanceVisibility(entity)
+    updateInstanceRenderVisibility(entity)
+    claimedCells.add(evacuationCellKey(cell))
+    expelled.push(entity)
+  }
+
+  if (space && context.map.activeSpaceId === space.id) {
+    context.map.activeSpaceId = null
+    space.renderer.setActive(false)
+    refreshMapSpaceEntityVisibility(context)
+  }
+  return expelled
 }
 
 function moveUnitIntoBuildingInteriorSpace(

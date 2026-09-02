@@ -510,6 +510,15 @@
   border-color: rgba(255, 255, 255, 0.22);
 }
 
+.selection-info .entity-delete-building-button {
+  width: 100%;
+  color: #ffe9e3;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    linear-gradient(180deg, #9e241b, #5f120e);
+  border-color: #f05d49;
+}
+
 .portal-info-modal-content {
   display: flex;
   flex-direction: column;
