@@ -17,6 +17,7 @@ import {
   playAudibleSoundCue,
   spawnSpriteFragmentBurst,
   isAIControlledPlayer,
+  type SpriteFragmentBurstGroundTarget,
 } from '../../lib'
 import { getEntityMapSpace } from '../../lib/mapSpaces'
 import { getAdjacentWalls, isWall, updateWallAndNeighbours, updateWallTexture } from '../../lib/buildings/walls'
@@ -234,13 +235,26 @@ export class BuildingLifecycle {
 
   private spawnDestructionBurst(): void {
     const building = this.building
+    const space = getEntityMapSpace(building, building.context.map)
+    const footprintCells = getBuildingFootprintCells(
+      building.i,
+      building.j,
+      space?.grid ?? building.context.map.grid,
+      building.size
+    )
+    const groundTargets: SpriteFragmentBurstGroundTarget[] = footprintCells.map(cell => ({
+      x: cell.x,
+      y: cell.y,
+      zIndex: cell.zIndex,
+    }))
+    const footprintArea = Math.max(1, footprintCells.length)
     spawnSpriteFragmentBurst({
       context: building.context,
       host: building,
       sprite: building.sprite,
       layer: building.parent,
       fragmentSize: 14,
-      maxFragments: 52,
+      maxFragments: Math.min(96, 28 + footprintArea * 8),
       durationMs: BUILDING_DESTRUCTION_CLEAR_MS,
       gravity: 0.0026,
       minSpeed: 0.014,
@@ -248,7 +262,8 @@ export class BuildingLifecycle {
       upwardVelocity: 0.045,
       settleToBottom: true,
       lockX: true,
-      settleSpread: 34,
+      groundTargets,
+      settleSpread: Math.max(34, Math.sqrt(footprintArea) * 24),
       settleStrength: 0.00006,
       groundBounce: 0.09,
     })
@@ -264,7 +279,8 @@ export class BuildingLifecycle {
     const centerJ = building.j
     const cell = footprintCells
       .filter(candidate => {
-        if (candidate.terrainHidden || candidate.border || candidate.waterBorder || candidate.category === 'Water') return false
+        if (candidate.terrainHidden || candidate.border || candidate.waterBorder || candidate.category === 'Water')
+          return false
         return !candidate.solid && !candidate.has
       })
       .sort((a, b) => {
@@ -287,6 +303,7 @@ export class BuildingLifecycle {
 
   private clearDestroyedSprite(): void {
     const building = this.building
+    clearBuildingConstructionReveal(building)
     building.sprite.eventMode = 'none'
     building.sprite.visible = false
     building.sprite.parent?.removeChild(building.sprite)

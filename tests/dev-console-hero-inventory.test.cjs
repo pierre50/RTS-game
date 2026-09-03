@@ -48,6 +48,7 @@ function loadHeroInventoryAction() {
     }
     if (request === './shared') {
       return {
+        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold'],
         findKey: (object, query) =>
           Object.keys(object || {}).find(key => key.toLowerCase() === String(query).toLowerCase()),
       }
@@ -153,5 +154,45 @@ test('hero inventory dev command can add a requested quantity', () => {
   assert.deepEqual(addHeroInventoryEquipment(context, 'arrow_copper', '0'), {
     ok: false,
     message: 'Quantity must be a positive integer: 0',
+  })
+})
+
+test('hero resources dev command fills the hero bag resources', () => {
+  const { addHeroInventoryResources } = loadHeroInventoryAction()
+  let inventoryRefreshes = 0
+  let topbarUpdates = 0
+  const hero = {
+    controlMode: 'hero',
+    inventory: {
+      resources: { wood: 2 },
+    },
+  }
+  const context = {
+    controls: { heroUnit: hero },
+    player: { units: [hero], wood: 99 },
+    menu: {
+      refreshInventory: () => inventoryRefreshes++,
+      updateTopbar: () => topbarUpdates++,
+    },
+  }
+
+  assert.deepEqual(addHeroInventoryResources(context, 'wood', 5), {
+    ok: true,
+    message: 'Added 5 wood to hero resources',
+  })
+  assert.deepEqual(hero.inventory.resources, { wood: 7 })
+  assert.equal(context.player.wood, 99)
+
+  assert.deepEqual(addHeroInventoryResources(context, 'all', 3), {
+    ok: true,
+    message: 'Added 3 to all hero resources',
+  })
+  assert.deepEqual(hero.inventory.resources, { wood: 10, food: 3, stone: 3, gold: 3 })
+  assert.equal(inventoryRefreshes, 2)
+  assert.equal(topbarUpdates, 2)
+
+  assert.deepEqual(addHeroInventoryResources(context, 'not_real', 5), {
+    ok: false,
+    message: 'Unknown hero resource: not_real',
   })
 })

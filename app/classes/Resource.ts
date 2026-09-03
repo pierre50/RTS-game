@@ -9,19 +9,14 @@ import {
   getTexture,
   getEntityMapSpace,
   getEntityCell,
+  getBuildingFootprintCells,
   isAIControlledPlayer,
   parseTextureRef,
   spawnSpriteFragmentBurst,
   textureRefToString,
+  type SpriteFragmentBurstGroundTarget,
 } from '../lib'
-import {
-  CELL_WIDTH,
-  CELL_HEIGHT,
-  FADE_DURATION_MS,
-  FAMILY_TYPES,
-  LABEL_TYPES,
-  RESOURCE_TYPES,
-} from '../constants'
+import { CELL_WIDTH, CELL_HEIGHT, FADE_DURATION_MS, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
@@ -57,6 +52,7 @@ import {
 import type { GameContextLike } from '../types/context'
 import type { ResourceConfig } from '../types/config'
 import type { EntityInfoRenderOptions, EntityInterfaceLike, ResourceEntity, UnitSounds } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
 
 export type { ResourceOptions } from './ResourceTexture'
 
@@ -283,6 +279,28 @@ export class Resource extends Instance implements ResourceEntity {
     this.prepareFadeOut()
   }
 
+  getFootprintCells(): RuntimeCell[] {
+    const { map } = this.context
+    const space = getEntityMapSpace(this, map)
+    const grid = space?.grid ?? map.grid
+    const cells = getBuildingFootprintCells(this.i, this.j, grid, this.size ?? 1)
+    if (cells.length) return cells
+    const cell = getEntityCell(this, map)
+    return cell ? [cell] : []
+  }
+
+  getSolidFootprintCells(): RuntimeCell[] {
+    return this.getFootprintCells().filter(cell => cell.has === this)
+  }
+
+  getFragmentGroundTargets(): SpriteFragmentBurstGroundTarget[] {
+    return this.getSolidFootprintCells().map(cell => ({
+      x: cell.x,
+      y: cell.y,
+      zIndex: cell.zIndex,
+    }))
+  }
+
   spawnTreeFragmentBurst() {
     spawnSpriteFragmentBurst({
       context: this.context,
@@ -298,6 +316,7 @@ export class Resource extends Instance implements ResourceEntity {
       upwardVelocity: 0.035,
       settleToBottom: true,
       lockX: true,
+      groundTargets: this.getFragmentGroundTargets(),
       settleSpread: 22,
       settleStrength: 0.00007,
       groundBounce: 0.12,
@@ -320,6 +339,7 @@ export class Resource extends Instance implements ResourceEntity {
         upwardVelocity: 0.018,
         settleToBottom: true,
         lockX: true,
+        groundTargets: this.getFragmentGroundTargets(),
         groundBounce: 0.08,
       })
       return true
@@ -345,6 +365,7 @@ export class Resource extends Instance implements ResourceEntity {
         upwardVelocity: 0.01,
         settleToBottom: true,
         lockX: true,
+        groundTargets: this.getFragmentGroundTargets(),
         groundBounce: 0.05,
       })
       return true
@@ -358,13 +379,9 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   prepareFadeOut() {
-    const {
-      context: { map },
-    } = this
     this.eventMode = 'none'
     if (this.sprite) this.sprite.eventMode = 'none'
-    const cell = getEntityCell(this, map)
-    if (cell?.has === this) {
+    for (const cell of this.getSolidFootprintCells()) {
       cell.has = null
       cell.corpses.add(this)
       cell.solid = false
@@ -375,17 +392,15 @@ export class Resource extends Instance implements ResourceEntity {
     if (this.isDestroyed) {
       return
     }
-    const {
-      context: { map },
-    } = this
     this.isDestroyed = true
     this.stopWindMotion()
-    const cell = getEntityCell(this, map)
-    if (cell?.has === this) {
-      cell.has = null
-      cell.solid = false
+    for (const cell of this.getFootprintCells()) {
+      if (cell.has === this) {
+        cell.has = null
+        cell.solid = false
+      }
+      cell.corpses.delete(this)
     }
-    cell?.corpses.delete(this)
     this.parent?.removeChild(this)
     this.destroy({ children: true, texture: false })
   }

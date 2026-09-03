@@ -2,6 +2,7 @@ import { FAMILY_TYPES } from '../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import { spawnSpriteFragmentBurst } from './spriteFragmentBurst'
 import type { Container } from 'pixi.js'
+import { getEntityFragmentGroundTargets } from './fragmentGroundTargets'
 
 const BUILDING_FRAGMENT_IMPACT_THROTTLE_MS = 95
 const buildingImpactTimes = new WeakMap<RuntimeEntity, number>()
@@ -49,6 +50,7 @@ export function spawnCombatBuildingImpactFragments(target: RuntimeEntity, damage
     maxSpeed: 0.035 * force,
     upwardVelocity: 0.022 * force,
     settleToBottom: true,
+    groundTargets: getEntityFragmentGroundTargets(target),
     settleSpread: 14 + fragmentCount,
     settleStrength: 0.00005,
     groundBounce: 0.07,

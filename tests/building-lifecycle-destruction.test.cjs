@@ -2,10 +2,30 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-test('destroyed buildings burst into fragments and immediately drop sprite, shadow, and solid footprint', () => {
+test('destroyed buildings burst into fragments and immediately drop sprite, construction reveal, shadow, and solid footprint', () => {
   const calls = []
   const createdBuildings = []
   let timeoutCallback = null
+  const constructionRevealSprite = {
+    destroyed: false,
+    parent: {
+      removeChild: child => calls.push(['removeConstructionRevealChild', child === constructionRevealSprite]),
+    },
+    destroy: options => {
+      constructionRevealSprite.destroyed = true
+      calls.push(['destroyConstructionReveal', options])
+    },
+  }
+  const constructionRevealMask = {
+    destroyed: false,
+    parent: {
+      removeChild: child => calls.push(['removeConstructionRevealMaskChild', child === constructionRevealMask]),
+    },
+    destroy: options => {
+      constructionRevealMask.destroyed = true
+      calls.push(['destroyConstructionRevealMask', options])
+    },
+  }
   const shadow = {
     destroyed: false,
     parent: {
@@ -17,10 +37,10 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
     },
   }
   const footprintCells = [
-    { i: 4, j: 4, has: null, solid: true, corpses: new Set() },
-    { i: 4, j: 5, has: null, solid: true, corpses: new Set() },
-    { i: 5, j: 4, has: null, solid: true, corpses: new Set() },
-    { i: 5, j: 5, has: null, solid: true, corpses: new Set() },
+    { i: 4, j: 4, x: 0, y: 128, zIndex: 8, has: null, solid: true, corpses: new Set() },
+    { i: 4, j: 5, x: -32, y: 144, zIndex: 9, has: null, solid: true, corpses: new Set() },
+    { i: 5, j: 4, x: 32, y: 144, zIndex: 9, has: null, solid: true, corpses: new Set() },
+    { i: 5, j: 5, x: 0, y: 160, zIndex: 10, has: null, solid: true, corpses: new Set() },
   ]
   const owner = {
     buildings: [],
@@ -71,6 +91,9 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
       texture: null,
       visible: true,
       destroyed: false,
+      mask: constructionRevealMask,
+      alpha: 0.28,
+      tint: 0x9f9888,
       destroy: options => {
         building.sprite.destroyed = true
         calls.push(['destroySprite', options])
@@ -80,6 +103,8 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
       },
     },
     shadow,
+    constructionRevealSprite,
+    constructionRevealMask,
     getChildByLabel: () => null,
     stopInterval: () => calls.push(['stopInterval']),
     clearRallyPoint: () => calls.push(['clearRallyPoint']),
@@ -152,7 +177,8 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
         updateWallTexture: () => {},
       },
       '../../services/BuildingInteriorSpaceSystem': {
-        expelBuildingInteriorOccupants: (_context, target) => calls.push(['expelBuildingInteriorOccupants', target.type]),
+        expelBuildingInteriorOccupants: (_context, target) =>
+          calls.push(['expelBuildingInteriorOccupants', target.type]),
         extractBuildingInteriorChestInventory: (_context, target) => {
           calls.push(['extractBuildingInteriorChestInventory', target.type])
           return { resources: { food: 9, wood: 3 }, equipment: ['trap'] }
@@ -167,6 +193,13 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   assert.equal(building.sprite.eventMode, 'none')
   assert.equal(building.sprite.visible, false)
   assert.equal(building.sprite.destroyed, true)
+  assert.equal(constructionRevealSprite.destroyed, true)
+  assert.equal(constructionRevealMask.destroyed, true)
+  assert.equal(building.constructionRevealSprite, null)
+  assert.equal(building.constructionRevealMask, null)
+  assert.equal(building.sprite.mask, null)
+  assert.equal(building.sprite.alpha, 1)
+  assert.equal(building.sprite.tint, 0xffffff)
   assert.equal(shadow.destroyed, true)
   assert.equal(building.shadow, null)
   assert.equal(building.textureName, undefined)
@@ -195,6 +228,13 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   assert.equal(burstCall?.[1].host, building)
   assert.equal(burstCall?.[1].sprite, building.sprite)
   assert.equal(burstCall?.[1].lockX, true)
+  assert.equal(burstCall?.[1].maxFragments, 60)
+  assert.deepEqual(burstCall?.[1].groundTargets, [
+    { x: 0, y: 128, zIndex: 8 },
+    { x: -32, y: 144, zIndex: 9 },
+    { x: 32, y: 144, zIndex: 9 },
+    { x: 0, y: 160, zIndex: 10 },
+  ])
   assert.deepEqual(createdBuildings, [
     {
       i: 5,

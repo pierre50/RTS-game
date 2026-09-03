@@ -23,18 +23,22 @@ function loadCombatBuildingImpactFragments(calls, nowRef = { value: 1000 }) {
   }
 }
 
-function makeBuilding() {
+function makeBuilding(overrides = {}) {
   const parent = { label: 'map-layer' }
   return {
-    context: { app: {}, scheduler: {} },
+    context: { app: {}, scheduler: {}, ...overrides.context },
     family: 'building',
+    i: overrides.i ?? 5,
     isDead: false,
     isDestroyed: false,
+    j: overrides.j ?? 5,
     parent,
+    size: overrides.size,
     sprite: { parent: { label: 'building-container' }, texture: { source: {} } },
     type: 'House',
     x: 10,
     y: 20,
+    ...overrides,
   }
 }
 
@@ -80,6 +84,44 @@ test('combat building impact fragments throttle repeated hits on the same buildi
     spawnCombatBuildingImpactFragments(building, 8)
 
     assert.equal(calls.length, 2)
+  } finally {
+    restorePerformance()
+  }
+})
+
+test('combat building impact fragments settle onto the building isometric footprint', () => {
+  const calls = []
+  const nowRef = { value: 3000 }
+  const { restorePerformance, spawnCombatBuildingImpactFragments } = loadCombatBuildingImpactFragments(calls, nowRef)
+
+  try {
+    const building = makeBuilding({ i: 4, j: 4, size: 2 })
+    const footprintCells = [
+      { i: 4, j: 4, x: 0, y: 128, zIndex: 8, has: building },
+      { i: 4, j: 5, x: -32, y: 144, zIndex: 9, has: building },
+      { i: 5, j: 4, x: 32, y: 144, zIndex: 9, has: building },
+      { i: 5, j: 5, x: 0, y: 160, zIndex: 10, has: building },
+    ]
+    building.context.map = {
+      grid: [
+        [],
+        [],
+        [],
+        [],
+        [undefined, undefined, undefined, undefined, footprintCells[0], footprintCells[1]],
+        [undefined, undefined, undefined, undefined, footprintCells[2], footprintCells[3]],
+      ],
+      size: 12,
+    }
+
+    spawnCombatBuildingImpactFragments(building, 8)
+
+    assert.deepEqual(calls[0].groundTargets, [
+      { x: 0, y: 128, zIndex: 8 },
+      { x: -32, y: 144, zIndex: 9 },
+      { x: 32, y: 144, zIndex: 9 },
+      { x: 0, y: 160, zIndex: 10 },
+    ])
   } finally {
     restorePerformance()
   }

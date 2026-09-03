@@ -16,8 +16,8 @@ const targetImpactTimes = new WeakMap<RuntimeEntity, Map<string, number>>()
 
 const WOOD_CHIP_PRESET: ImpactFragmentPreset = {
   fragmentSize: 8,
-  maxFragments: 5,
-  durationMs: 560,
+  maxFragments: 3,
+  durationMs: 360,
   gravity: 0.0022,
   minSpeed: 0.012,
   maxSpeed: 0.06,
@@ -32,8 +32,8 @@ const WOOD_CHIP_PRESET: ImpactFragmentPreset = {
 
 const STONE_CHIP_PRESET: ImpactFragmentPreset = {
   fragmentSize: 7,
-  maxFragments: 6,
-  durationMs: 620,
+  maxFragments: 4,
+  durationMs: 400,
   gravity: 0.003,
   minSpeed: 0.01,
   maxSpeed: 0.052,
@@ -48,8 +48,8 @@ const STONE_CHIP_PRESET: ImpactFragmentPreset = {
 
 const BUILD_SPARK_PRESET: ImpactFragmentPreset = {
   fragmentSize: 8,
-  maxFragments: 5,
-  durationMs: 480,
+  maxFragments: 3,
+  durationMs: 320,
   gravity: 0.0024,
   minSpeed: 0.008,
   maxSpeed: 0.04,
@@ -64,8 +64,8 @@ const BUILD_SPARK_PRESET: ImpactFragmentPreset = {
 
 const PLANT_CUT_PRESET: ImpactFragmentPreset = {
   fragmentSize: 6,
-  maxFragments: 7,
-  durationMs: 500,
+  maxFragments: 4,
+  durationMs: 340,
   gravity: 0.0017,
   minSpeed: 0.008,
   maxSpeed: 0.045,

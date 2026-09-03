@@ -49,17 +49,21 @@ function loadWorkImpactFragments(calls, nowRef = { value: 1000 }) {
   }
 }
 
-function makeTarget(type, family = 'resource') {
+function makeTarget(type, family = 'resource', overrides = {}) {
   return {
-    context: { app: {}, scheduler: {} },
+    context: { app: {}, scheduler: {}, ...overrides.context },
     family,
+    i: overrides.i ?? 5,
     isDead: false,
     isDestroyed: false,
+    j: overrides.j ?? 5,
     parent: { label: 'map-layer' },
+    size: overrides.size,
     sprite: { texture: { source: {} } },
     type,
     x: 12,
     y: 24,
+    ...overrides,
   }
 }
 
@@ -87,11 +91,11 @@ test('work impact fragments map tool actions to reusable fragment bursts', () =>
     assert.deepEqual(
       calls.map(call => [call.host.type, call.maxFragments, call.lockX, call.layer?.label]),
       [
-        ['Tree', 5, true, 'map-layer'],
-        ['Stone', 6, true, 'map-layer'],
-        ['House', 5, true, 'map-layer'],
-        ['Wheat', 7, true, 'map-layer'],
-        ['Berrybush', 7, true, 'map-layer'],
+        ['Tree', 3, true, 'map-layer'],
+        ['Stone', 4, true, 'map-layer'],
+        ['House', 3, true, 'map-layer'],
+        ['Wheat', 4, true, 'map-layer'],
+        ['Berrybush', 4, true, 'map-layer'],
       ]
     )
   } finally {
@@ -113,6 +117,22 @@ test('work impact fragments throttle repeated bursts on the same target and acti
     spawnWorkImpactFragments({ action: 'chopwood' }, tree)
 
     assert.equal(calls.length, 2)
+  } finally {
+    restorePerformance()
+  }
+})
+
+test('work impact fragments stay flat instead of targeting the acting unit position', () => {
+  const calls = []
+  const { restorePerformance, spawnWorkImpactFragments } = loadWorkImpactFragments(calls)
+
+  try {
+    const building = makeTarget('House', 'building')
+    spawnWorkImpactFragments({ action: 'build', x: 88, y: 144, reliefLift: -8, zIndex: 12 }, building)
+
+    assert.equal(calls[0].sourcePoint, undefined)
+    assert.equal(calls[0].groundTargets, undefined)
+    assert.equal(calls[0].durationMs, 320)
   } finally {
     restorePerformance()
   }

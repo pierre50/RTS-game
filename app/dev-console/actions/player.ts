@@ -5,9 +5,8 @@ import { GAME_SPEED_USAGE, isGameSpeedPreset } from '../../lib/audio/settings'
 import { BANDIT_FACTION_ID } from '../../lib/campaign/playerRoster'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
-import { RESOURCE_NAMES, findKey, normalizeToggle } from './shared'
+import { findKey, normalizeToggle } from './shared'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
-import type { ResourceAmount } from '../../types/common'
 import type { ConfigOperation, ConfigValue, TechnologyConfig as BaseTechnologyConfig } from '../../types/config'
 import type { FactionSave } from '../../types/save'
 
@@ -41,8 +40,6 @@ function refreshPlayerUnitEquipmentVisuals(player: DevPlayer): void {
     unit.setTextures?.(unit.currentSheet ?? SHEET_TYPES.standing)
   }
 }
-
-type ResourceName = (typeof RESOURCE_NAMES)[number]
 
 function formatFactionRelation(faction: FactionSave): string {
   return `${faction.relationState} (${Math.round(faction.relationScore)})`
@@ -91,10 +88,6 @@ export function listGlobalPlayers(context: DevConsoleContext): CommandResult {
   return { ok: true, message: lines.length ? lines.join('\n') : 'No global players found' }
 }
 
-function isResourceName(value: string): value is ResourceName {
-  return (RESOURCE_NAMES as readonly string[]).includes(value)
-}
-
 function getTechConfig(player: DevTechnologyPlayer, type: string): DevTechnologyConfig | null {
   return (player.techs[type] as DevTechnologyConfig | undefined) ?? null
 }
@@ -125,21 +118,6 @@ function applyEligibleTechnologies(context: DevConsoleContext): string[] {
   }
 
   return unlocked
-}
-
-export function addResources(player: DevPlayer, resourceName: string, amount: number): string {
-  const ledger: ResourceAmount = player
-  if (resourceName === 'all') {
-    RESOURCE_NAMES.forEach(name => {
-      ledger[name] = Number(ledger[name] ?? 0) + amount
-    })
-    return `Added ${amount} to all resources`
-  }
-  if (!isResourceName(resourceName)) {
-    return `Unknown resource: ${resourceName}`
-  }
-  ledger[resourceName] = Number(ledger[resourceName] ?? 0) + amount
-  return `Added ${amount} ${resourceName}`
 }
 
 export function applyAllTechnologies(context: DevConsoleContext): CommandResult {

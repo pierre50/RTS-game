@@ -24,7 +24,6 @@ export {
 } from './actions/map'
 
 export {
-  addResources,
   applyAllTechnologies,
   applyTechnology,
   healAll,
@@ -40,7 +39,7 @@ export {
 
 export { spawnAnimal, spawnBuilding, spawnUnits, DECO_BUILDING_COMPLETIONS } from './actions/spawn'
 
-export { addHeroInventoryEquipment } from './actions/heroInventory'
+export { addHeroInventoryEquipment, addHeroInventoryResources } from './actions/heroInventory'
 
 export { advanceTime } from './actions/timeSkip'
 export { forceNextDay, setWeatherPhase, WEATHER_PHASES } from './actions/world'

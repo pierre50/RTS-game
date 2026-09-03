@@ -3,8 +3,8 @@ import { DevCommandRegistry } from './DevCommandRegistry'
 import { POPULATION_MAX, RESOURCE_NAMES as PLAYER_RESOURCE_NAMES } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/audio/settings'
 import {
-  addResources,
   addHeroInventoryEquipment,
+  addHeroInventoryResources,
   aiInfo,
   applyAllTechnologies,
   applyTechnology,
@@ -163,17 +163,15 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
   })
 
   registry.register({
-    name: 'resources',
-    aliases: ['res'],
-    usage: `resources [${RESOURCE_NAMES.join('|')}] [amount]`,
-    describe: 'Add resources to player',
+    name: 'hero-resources',
+    aliases: ['resources', 'res', 'hres'],
+    usage: `hero-resources [${RESOURCE_NAMES.join('|')}] [amount]`,
+    describe: 'Add resources to the hero bag',
     complete: () => RESOURCE_NAMES,
     run: ([resource = 'all', amount = 1000], context) => {
       const parsedAmount = Number(amount)
       if (!Number.isFinite(parsedAmount)) return { ok: false, message: 'Amount must be a number' }
-      const message = addResources(context.player, resource.toLowerCase(), parsedAmount)
-      context.menu.updateTopbar()
-      return { ok: !message.startsWith('Unknown'), message }
+      return addHeroInventoryResources(context, resource.toLowerCase(), parsedAmount)
     },
   })
 

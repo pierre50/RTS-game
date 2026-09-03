@@ -3,7 +3,8 @@ import { getEquipmentSlot, getWeaponSlot } from '../../lib/equipment/equipmentLo
 import { DYNAMIC_EQUIPMENT_KEYS } from '../../lib/lpc/equipment'
 import type { CommandResult } from '../DevCommandRegistry'
 import type { DevConsoleContext } from '../types'
-import { findKey } from './shared'
+import { RESOURCE_NAMES, findKey } from './shared'
+import type { ResourceAmount } from '../../types/common'
 
 const SPECIAL_HERO_INVENTORY_ITEMS = ['lasso'] as const
 const HERO_INVENTORY_COMMAND_EXCLUDED_ITEMS = new Set(['longsword', 'quiver'])
@@ -14,6 +15,40 @@ function getHero(context: DevConsoleContext) {
     context.player.units.find(unit => unit.controlMode === 'hero' || unit.type === UNIT_TYPES.hero) ??
     null
   )
+}
+
+type ResourceName = (typeof RESOURCE_NAMES)[number]
+
+function isResourceName(value: string): value is ResourceName {
+  return (RESOURCE_NAMES as readonly string[]).includes(value)
+}
+
+export function addHeroInventoryResources(
+  context: DevConsoleContext,
+  resourceName: string,
+  amount: number
+): CommandResult {
+  const inventory = ensureHeroInventory(context)
+  if (!inventory) return { ok: false, message: 'No hero found' }
+
+  const resources: ResourceAmount = inventory.resources!
+  if (resourceName === 'all') {
+    RESOURCE_NAMES.forEach(name => {
+      resources[name] = Number(resources[name] ?? 0) + amount
+    })
+    context.menu.refreshInventory?.()
+    context.menu.updateTopbar()
+    return { ok: true, message: `Added ${amount} to all hero resources` }
+  }
+
+  if (!isResourceName(resourceName)) {
+    return { ok: false, message: `Unknown hero resource: ${resourceName}` }
+  }
+
+  resources[resourceName] = Number(resources[resourceName] ?? 0) + amount
+  context.menu.refreshInventory?.()
+  context.menu.updateTopbar()
+  return { ok: true, message: `Added ${amount} ${resourceName} to hero resources` }
 }
 
 export function getAllHeroInventoryItems(): string[] {
@@ -30,6 +65,7 @@ function ensureHeroInventory(context: DevConsoleContext): NonNullable<ReturnType
 
   hero.inventory = hero.inventory ?? {}
   hero.inventory.equipment = hero.inventory.equipment ?? []
+  hero.inventory.resources = hero.inventory.resources ?? {}
   hero.inventory.equipped = hero.inventory.equipped ?? {}
   hero.inventory.equippedCounts = hero.inventory.equippedCounts ?? {}
   hero.inventory.activeWeapons = hero.inventory.activeWeapons ?? {}
