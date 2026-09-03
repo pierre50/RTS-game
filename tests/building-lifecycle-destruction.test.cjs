@@ -84,6 +84,7 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
     stopInterval: () => calls.push(['stopInterval']),
     clearRallyPoint: () => calls.push(['clearRallyPoint']),
     stopTimeout: () => calls.push(['stopTimeout']),
+    cancelAllUnitTraining: () => calls.push(['cancelAllUnitTraining', building.isDead]),
     startTimeout(callback, time) {
       timeoutCallback = callback
       calls.push(['startTimeout', time])
@@ -173,6 +174,14 @@ test('destroyed buildings burst into fragments and immediately drop sprite, shad
   assert.equal(typeof timeoutCallback, 'function')
   assert.ok(calls.some(call => call[0] === 'extractBuildingInteriorChestInventory'))
   assert.ok(calls.some(call => call[0] === 'expelBuildingInteriorOccupants'))
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'cancelAllUnitTraining'),
+    [['cancelAllUnitTraining', false]]
+  )
+  assert.ok(
+    calls.findIndex(call => call[0] === 'cancelAllUnitTraining') <
+      calls.findIndex(call => call[0] === 'expelBuildingInteriorOccupants')
+  )
   assert.deepEqual(
     footprintCells.map(cell => ({ has: cell.has, solid: cell.solid, hasCorpse: cell.corpses.has(building) })),
     [

@@ -47,18 +47,14 @@ type AIPlayerBehaviorHost = {
   getNow(): number
   getLivingChiefs(): AIEntityLike[]
   getVisibleHostilesNear(target: AIEntityLike, radius?: number): AIEntityLike[]
-  getActiveThreats?: () => Array<{
-    target: AIEntityLike
-    hostiles: AIEntityLike[]
-    profile?: {
-      isNearHome?: boolean
-      isInVillageCore?: boolean
-      isDirectVillageAssault?: boolean
-      isCriticalBuilding?: boolean
-    }
-  }>
+  getEnemyMemories(options?: { family?: string | null; freshWithin?: number; visibleOnly?: boolean }): EnemyMemory[]
   isEnemy(owner?: unknown): boolean
   _refreshEnemyMemory(memoryMap: Map<string, EnemyMemory>): void
+}
+
+export type AIVillageDefenseResult = {
+  actions: number
+  active: boolean
 }
 
 export function cleanupAITrackingSets(ai: AIPlayerBehaviorHost) {
@@ -144,31 +140,79 @@ export function refreshAIChiefSuccession(ai: AIPlayerBehaviorHost, villagers: AI
   return 1
 }
 
+function isAliveCombatUnit(unit: AIEntityLike | null | undefined): unit is AIEntityLike {
+  return Boolean(unit && !unit.isDead && !unit.isDestroyed && (unit.hitPoints ?? 1) > 0)
+}
+
+function getVisibleEnemyUnits(ai: AIPlayerBehaviorHost): AIEntityLike[] {
+  const seen = new Set<string>()
+  const enemies: AIEntityLike[] = []
+  for (const memory of ai.getEnemyMemories({ family: FAMILY_TYPES.unit, visibleOnly: true, freshWithin: 2000 })) {
+    const enemy = memory.instance
+    if (!isAliveCombatUnit(enemy) || !enemy.owner || !ai.isEnemy(enemy.owner) || seen.has(enemy.label)) continue
+    seen.add(enemy.label)
+    enemies.push(enemy)
+  }
+  return enemies
+}
+
+function getPrimaryVillageDefenseTarget(ai: AIPlayerBehaviorHost, anchor: AIBuildingLike): AIEntityLike | null {
+  const enemies = getVisibleEnemyUnits(ai)
+  if (!enemies.length) return null
+  return enemies.sort(
+    (a, b) =>
+      Math.abs(a.i - anchor.i) + Math.abs(a.j - anchor.j) - (Math.abs(b.i - anchor.i) + Math.abs(b.j - anchor.j))
+  )[0]
+}
+
+function sendUnitToDefend(unit: AIEntityLike, target: AIEntityLike): boolean {
+  if (!isAliveCombatUnit(unit) || unit.controlMode === 'hero') return false
+  if (unit.dest === target && unit.action === ACTION_TYPES.attack) return false
+  if (unit.type === UNIT_TYPES.villager) {
+    unit.sendToAttack?.(target, { keepPrevious: true })
+  } else {
+    unit.sendTo?.(target, ACTION_TYPES.attack)
+  }
+  return true
+}
+
+export function handleAIVisibleEnemyDefense(
+  ai: AIPlayerBehaviorHost,
+  {
+    villagers,
+    military,
+    towncenters,
+  }: {
+    villagers: AIEntityLike[]
+    military: AIEntityLike[]
+    towncenters: AIBuildingLike[]
+  }
+): AIVillageDefenseResult {
+  const anchor = towncenters.find(towncenter => towncenter.isBuilt && !towncenter.isDead && !towncenter.isDestroyed)
+  if (!anchor) return { actions: 0, active: false }
+
+  const target = getPrimaryVillageDefenseTarget(ai, anchor)
+  if (!target) return { actions: 0, active: false }
+
+  let actions = 0
+  const defenders = [...ai.getLivingChiefs(), ...military, ...villagers]
+  const assigned = new Set<string>()
+  for (const defender of defenders) {
+    if (!defender.label || assigned.has(defender.label)) continue
+    assigned.add(defender.label)
+    if (sendUnitToDefend(defender, target)) actions++
+  }
+  return { actions, active: true }
+}
+
 export function handleAIChiefGuard(ai: AIPlayerBehaviorHost, towncenters: AIBuildingLike[]): number {
   const anchor = towncenters.find(towncenter => towncenter.isBuilt && !towncenter.isDead && !towncenter.isDestroyed)
   if (!anchor) return 0
   let actions = 0
   const now = ai.getNow()
   const hero = getApproachableHeroNearChiefAnchor(ai, anchor)
-  const activeVillageThreat = ai
-    .getActiveThreats?.()
-    .find(
-      threat =>
-        threat.hostiles[0] &&
-        (threat.profile?.isNearHome ||
-          threat.profile?.isInVillageCore ||
-          threat.profile?.isDirectVillageAssault ||
-          threat.profile?.isCriticalBuilding)
-    )
   for (const chief of ai.getLivingChiefs()) {
     if (chief.controlMode === 'hero') continue
-    const activeThreatTarget = activeVillageThreat?.hostiles[0]
-    if (activeThreatTarget && chief.dest !== activeThreatTarget) {
-      chief.sendTo?.(activeThreatTarget, ACTION_TYPES.attack)
-      actions++
-      continue
-    }
-
     const hostiles = ai.getVisibleHostilesNear(anchor, 12)
     const target = hostiles[0]
     if (target && chief.action !== ACTION_TYPES.attack) {

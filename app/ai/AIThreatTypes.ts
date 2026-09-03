@@ -68,7 +68,6 @@ export type ThreatManagerPlayer = {
   threatenedTargets: Map<string, StoredThreat>
   isEnemy(owner: unknown): boolean
   buildingsByTypes(types: string[]): AIBuildingLike[]
-  getHomeAnchor(): AIEntityLike | null
   getNow(): number
 }
 

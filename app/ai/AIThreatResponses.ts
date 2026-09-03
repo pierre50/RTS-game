@@ -49,15 +49,11 @@ function getNearbyVillagers(
   assignedVillagers: Set<string>
 ): AIEntityLike[] {
   const responseRadius = getResponseRadius(threat)
-  const homeAnchor = manager.player.getHomeAnchor()
-  const coreRadius = manager.player.difficultyConfig.villageCoreRadius || 10
   return villagers
     .filter((villager: AIEntityLike) => {
       if (assignedVillagers.has(villager.label) || villager === manager.player.scout || villager.isDead) return false
       if ((villager.hitPoints ?? 0) <= (villager.totalHitPoints ?? 1) * 0.35) return false
-      if (getDistanceToThreat(villager, threat) <= responseRadius) return true
-      if (!homeAnchor || (!threat.profile.isDirectVillageAssault && !threat.profile.isCriticalBuilding)) return false
-      return Math.abs(villager.i - homeAnchor.i) + Math.abs(villager.j - homeAnchor.j) <= coreRadius
+      return getDistanceToThreat(villager, threat) <= responseRadius
     })
     .sort((a: AIEntityLike, b: AIEntityLike) => getDistanceToThreat(a, threat) - getDistanceToThreat(b, threat))
 }

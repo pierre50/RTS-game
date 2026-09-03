@@ -309,6 +309,7 @@ export class BuildingLifecycle {
     building.stopInterval()
     building.clearRallyPoint()
     const ruinsChestInventory = extractBuildingInteriorChestInventory(building.context, building)
+    building.cancelAllUnitTraining?.()
     expelBuildingInteriorOccupants(building.context, building)
     if (building.context.controls.rallyPointController?.building === building) {
       building.context.controls.rallyPointController.cancel()

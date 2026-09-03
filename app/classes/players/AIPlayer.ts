@@ -13,6 +13,7 @@ import {
   createAIUnitExtraOptions,
   getApproachableHeroNearChiefAnchor,
   handleAIChiefGuard,
+  handleAIVisibleEnemyDefense,
   refreshAIChiefSuccession,
 } from './AIPlayerBehavior'
 import type {
@@ -287,6 +288,18 @@ export class AI extends Player {
     return handleAIChiefGuard(this, towncenters)
   }
 
+  handleVisibleEnemyDefense({
+    villagers,
+    military,
+    towncenters,
+  }: {
+    villagers: AIEntityLike[]
+    military: AIEntityLike[]
+    towncenters: AIBuildingLike[]
+  }) {
+    return handleAIVisibleEnemyDefense(this, { villagers, military, towncenters })
+  }
+
   getApproachableHeroNearChiefAnchor(anchor: AIBuildingLike): UnitEntity | null {
     return getApproachableHeroNearChiefAnchor(this, anchor)
   }
@@ -366,6 +379,14 @@ export class AI extends Player {
     // Remove depleted resources and destroyed enemies from tracked sets
     this.cleanupSets()
     this.cleanupThreats()
+
+    const visibleEnemyDefense = this.handleVisibleEnemyDefense({
+      villagers,
+      military,
+      towncenters,
+    })
+    actions += visibleEnemyDefense.actions
+    if (visibleEnemyDefense.active) return actions
 
     actions += this.handleThreatResponses({
       villagers,

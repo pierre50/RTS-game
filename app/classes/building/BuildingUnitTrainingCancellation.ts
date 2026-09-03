@@ -1,4 +1,7 @@
+import { BUILDING_TYPES } from '../../constants'
 import { refundCost } from '../../lib'
+import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'
+import { returnStableHorse } from '../../lib/horses/stableHorses'
 import { refreshOpenBuildingMenu } from './BuildingTechnologyProduction'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
@@ -27,6 +30,11 @@ function restoreCancelledTrainee(host: TrainingCancellationHost, trainee: UnitEn
   host.placeUnit(trainee.type, createRestoredTraineeExtra(trainee), { consumePopulationSlot: false })
 }
 
+function restoreCancelledStableHorse(building: BuildingControllerHost, extra: UnitCreationExtra | undefined): void {
+  if (building.type !== BUILDING_TYPES.stable || !extra?.mountedOnHorse) return
+  returnStableHorse(building, { horseColor: extra.horseColor, tamingStatus: HORSE_TAMING_STATUS.tamed })
+}
+
 function cancelPendingTraineeOrders(building: BuildingControllerHost): boolean {
   let cancelled = false
   for (const unit of [...(building.owner.units ?? [])]) {
@@ -49,6 +57,7 @@ function cancelConcurrentTrainingEntries(
     const unit = building.owner.config.units[entry.type]
     if (unit) refundCost(building.owner, entry.cost ?? unit.cost)
     restoreCancelledTrainee(host, entry.trainee)
+    restoreCancelledStableHorse(building, entry.extra)
     typeCounts.set(entry.type, (typeCounts.get(entry.type) ?? 0) + 1)
     cancelled = true
   }

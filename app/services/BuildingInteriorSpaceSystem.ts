@@ -34,6 +34,9 @@ import {
   type ReservedPassageCellLookup,
 } from '../lib/buildings/passageCells'
 import { setDetachedShadowsVisible, setSleepingOutsideFinalVisual } from './rest/UnitSleepVisuals'
+import { HORSE_TAMING_STATUS } from '../lib/horses/horseTaming'
+import { spookWildHorse } from '../lib/horses/wildHorseBehavior'
+import { getStableHorses, type StableHorse } from '../lib/horses/stableHorses'
 import {
   prepareUnitForSpaceTransfer,
   routeUnitThroughSpacePortal,
@@ -281,6 +284,42 @@ function restoreUnitAfterBuildingExpulsion(unit: UnitEntity): void {
   unit.setTextures?.(SHEET_TYPES.standing)
   unit.syncAppearanceLayers?.(SHEET_TYPES.standing)
   unit.sprite?.stop?.()
+}
+
+function isHorseEntity(entity: RuntimeEntity): boolean {
+  return entity.family === FAMILY_TYPES.animal && entity.type === 'Horse'
+}
+
+function releaseStableHorseEntity(entity: RuntimeEntity): void {
+  Object.assign(entity, {
+    ambientMovement: true,
+    strategy: 'runaway',
+    tamingStatus: HORSE_TAMING_STATUS.wild,
+  })
+  spookWildHorse(entity)
+  entity.updateTexture?.()
+}
+
+function createReleasedStableHorse(
+  context: GameContextLike,
+  horse: StableHorse,
+  outsideSpace: RuntimeMapSpace,
+  cell: RuntimeCell
+): RuntimeEntity | null {
+  const createAnimal = context.map.gaia?.createAnimal
+  if (typeof createAnimal !== 'function') return null
+  const entity = createAnimal.call(context.map.gaia, {
+    i: cell.i,
+    j: cell.j,
+    spaceId: outsideSpace.id,
+    type: 'Horse',
+    horseColor: horse.horseColor,
+    tamingStatus: HORSE_TAMING_STATUS.wild,
+    ambientMovement: true,
+    strategy: 'runaway',
+  })
+  releaseStableHorseEntity(entity)
+  return entity
 }
 
 function mergeInventoryResources(target: BuildingInventory, resources: ResourceAmount | null | undefined): void {
@@ -919,6 +958,8 @@ export function expelBuildingInteriorOccupants(context: GameContextLike, buildin
 
   const claimedCells = new Set<string>()
   const expelled: RuntimeEntity[] = []
+  const stableHorseRecords = building.type === BUILDING_TYPES.stable ? [...getStableHorses(building)] : []
+  let releasedStableHorses = 0
   for (const entity of collectBuildingInteriorOccupants(context, building, space)) {
     const cell = findExteriorEvacuationCell(context, anchor, building.size ?? 1, entity, claimedCells)
     if (!cell) continue
@@ -930,10 +971,36 @@ export function expelBuildingInteriorOccupants(context: GameContextLike, buildin
       entity.stopTimeout?.()
     }
     moveEntityToMapSpace(context.map, entity, outsideSpace, cell)
+    if (building.type === BUILDING_TYPES.stable && isHorseEntity(entity)) {
+      releaseStableHorseEntity(entity)
+      releasedStableHorses += 1
+    }
     updateInstanceVisibility(entity)
     updateInstanceRenderVisibility(entity)
     claimedCells.add(evacuationCellKey(cell))
     expelled.push(entity)
+  }
+
+  for (const [index, horse] of stableHorseRecords.slice(releasedStableHorses).entries()) {
+    const probe = {
+      family: FAMILY_TYPES.animal,
+      isDestroyed: false,
+      label: `${building.label}:released-stable-horse:${index}`,
+      type: 'Horse',
+    } as RuntimeEntity
+    const cell = findExteriorEvacuationCell(context, anchor, building.size ?? 1, probe, claimedCells)
+    if (!cell) continue
+    const entity = createReleasedStableHorse(context, horse, outsideSpace, cell)
+    if (!entity) continue
+    updateInstanceVisibility(entity)
+    updateInstanceRenderVisibility(entity)
+    claimedCells.add(evacuationCellKey(cell))
+    expelled.push(entity)
+  }
+
+  if (building.type === BUILDING_TYPES.stable) {
+    building.stableHorses = []
+    building.horseAmount = 0
   }
 
   if (space && context.map.activeSpaceId === space.id) {

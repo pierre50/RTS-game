@@ -46,7 +46,7 @@ function loadAI() {
       return {
         ACTION_TYPES: { attack: 'attack' },
         BUILDING_TYPES: { townCenter: 'TownCenter' },
-        FAMILY_TYPES: {},
+        FAMILY_TYPES: { unit: 'unit' },
         PLAYER_TYPES: { ai: 'AI' },
         RESOURCE_TYPES: {},
         UNIT_TYPES: { chief: 'Chief', villager: 'Villager' },
@@ -91,7 +91,7 @@ function createAi({ hero, hostile = false } = {}) {
     chiefWanderReadyAt: new Map(),
     getNow: () => 0,
     getVisibleHostilesNear: () => [],
-    getActiveThreats: () => [],
+    getEnemyMemories: () => [],
     isEnemy: () => hostile,
   })
 }
@@ -134,17 +134,11 @@ test('neutral ai chief does not leave the forum zone to greet the hero', () => {
   assert.deepEqual(calls, [])
 })
 
-test('hostile ai chief attacks active village threats before guarding the forum', () => {
+test('visible enemy defense sends chief, military and villagers to attack', () => {
   const heroOwner = { isEnemy: () => true }
-  const hero = { label: 'hero', i: 12, j: 0, owner: heroOwner }
+  const hero = { label: 'hero', family: 'unit', type: 'Hero', i: 12, j: 0, hitPoints: 30, owner: heroOwner }
   const ai = createAi({ hero, hostile: true })
-  ai.getActiveThreats = () => [
-    {
-      target: { i: 6, j: 0 },
-      hostiles: [hero],
-      profile: { isNearHome: true, isDirectVillageAssault: true },
-    },
-  ]
+  ai.getEnemyMemories = () => [{ instance: hero, visible: true, lastSeenAt: 0 }]
   const calls = []
   const chief = {
     label: 'chief',
@@ -153,11 +147,32 @@ test('hostile ai chief attacks active village threats before guarding the forum'
     j: 0,
     sendTo: (target, action) => calls.push([target, action]),
   }
+  const soldier = {
+    label: 'soldier',
+    type: 'Fantassin',
+    i: 1,
+    j: 0,
+    sendTo: (target, action) => calls.push([target, action]),
+  }
+  const villager = {
+    label: 'villager',
+    type: 'Villager',
+    i: 2,
+    j: 0,
+    sendToAttack: (target, options) => calls.push([target, 'sendToAttack', options]),
+  }
   ai.getLivingChiefs = () => [chief]
   const forum = { i: 0, j: 0, isBuilt: true }
 
-  assert.equal(ai.handleChiefGuard([forum]), 1)
-  assert.deepEqual(calls, [[hero, 'attack']])
+  assert.deepEqual(ai.handleVisibleEnemyDefense({ villagers: [villager], military: [soldier], towncenters: [forum] }), {
+    actions: 3,
+    active: true,
+  })
+  assert.deepEqual(calls, [
+    [hero, 'attack'],
+    [hero, 'attack'],
+    [hero, 'sendToAttack', { keepPrevious: true }],
+  ])
 })
 
 test('hostile ai chief does not greet the hero diplomatically', () => {

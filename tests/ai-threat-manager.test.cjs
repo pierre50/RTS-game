@@ -49,7 +49,6 @@ test('reported visible attacker remains an active threat even away from the hit 
     threatenedTargets,
     isEnemy: owner => owner === attackerOwner,
     buildingsByTypes: () => [],
-    getHomeAnchor: () => building,
     getNow: () => 0,
   })
 

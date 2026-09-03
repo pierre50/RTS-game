@@ -1,9 +1,12 @@
-import { PLAYER_TYPES } from '../constants'
+import { ACTION_TYPES, PLAYER_TYPES } from '../constants'
 import type { RuntimeEntity } from '../types/entities'
 
 type UnitState = {
+  action?: string | null
+  combatMode?: string | null
   hitPoints?: number
   isDead?: boolean
+  isDestroyed?: boolean
 }
 
 type GaiaState = {
@@ -43,8 +46,24 @@ function isOperationalBuilding(building?: BuildingState | null): boolean {
   return Array.isArray(building.units) && building.units.length > 0
 }
 
+export function isUnitAlive(unit?: UnitState | null): boolean {
+  return Boolean(unit && !unit.isDead && !unit.isDestroyed && (unit.hitPoints ?? 0) > 0)
+}
+
+export function isUnitFleeing(unit?: UnitState | null): boolean {
+  return Boolean(unit && (unit.combatMode === 'flee' || unit.action === ACTION_TYPES.flee))
+}
+
+export function isUnitAbleToHoldPlayerBuildings(unit?: UnitState | null): boolean {
+  return isUnitAlive(unit) && !isUnitFleeing(unit)
+}
+
 function hasLivingUnits(player?: PlayerState | null): boolean {
-  return !!player?.units?.some(unit => unit && !unit.isDead && (unit.hitPoints ?? 0) > 0)
+  return !!player?.units?.some(isUnitAlive)
+}
+
+function hasActiveUnits(player?: PlayerState | null): boolean {
+  return !!player?.units?.some(isUnitAbleToHoldPlayerBuildings)
 }
 
 function hasOperationalBuildings(player?: PlayerState | null): boolean {
@@ -56,6 +75,7 @@ export function canPlayerStillAct(player?: PlayerState | null): boolean {
 }
 
 export function isPlayerEliminated(player?: PlayerState | null): boolean {
+  if (isAIControlledPlayer(player)) return !hasActiveUnits(player)
   return !canPlayerStillAct(player)
 }
 

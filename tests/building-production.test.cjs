@@ -926,6 +926,137 @@ test('per-unit cancellation no longer owns pending trainee orders', () => {
   )
 })
 
+test('cancelling stable mount training restores the original unmounted soldier', () => {
+  const calls = []
+  const spawnCell = { i: 4, j: 5, category: 'Land', solid: false }
+  const trainee = {
+    type: 'Fantassin',
+    name: 'Aias',
+    gender: 'male',
+    mountedOnHorse: false,
+    speed: 1,
+    experience: { attack: 3 },
+  }
+  const owner = {
+    food: 10,
+    population: 1,
+    populationMax: 10,
+    units: [],
+    config: {
+      units: {
+        Fantassin: { category: 'Fantassin', cost: { food: 35 }, trainingDays: 2 },
+      },
+    },
+    createUnit: options => {
+      calls.push(['createUnit', options])
+      return options
+    },
+    getUnitExtraOptions: () => ({ appearanceVariants: { body: 'default' } }),
+    isPlayed: true,
+  }
+  const building = {
+    type: 'Stable',
+    i: 3,
+    j: 4,
+    size: 2,
+    isBuilt: true,
+    isDead: false,
+    stableHorses: [],
+    queue: ['Fantassin'],
+    trainingQueue: [
+      {
+        type: 'Fantassin',
+        trainee,
+        extra: { mountedOnHorse: true, horseColor: 'dark' },
+        cost: {},
+        trainingDayChangeUnsubscribe: () => calls.push(['unsubscribe']),
+      },
+    ],
+    loading: 40,
+    trainingUnit: trainee,
+    trainingType: 'Fantassin',
+    trainingStartedDay: 1,
+    trainingCompleteDay: 3,
+    technology: null,
+    units: ['Fantassin'],
+    context: {
+      map: {
+        grid: [[spawnCell]],
+        randomItem: items => items[0],
+      },
+      menu: {
+        getHeroBuildingMenuTarget: () => building,
+        refreshHeroBuildingMenu: () => calls.push(['refreshHeroBuildingMenu']),
+        updateTopbar: () => calls.push(['topbar']),
+        updateButtonContent: (target, value) => calls.push(['button', target, value]),
+      },
+    },
+    owner,
+    updateTrainingPreview: () => calls.push(['preview', building.loading]),
+  }
+
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      FAMILY_TYPES: {
+        animal: 'animal',
+        building: 'building',
+        resource: 'resource',
+        unit: 'unit',
+      },
+      LABEL_TYPES: {},
+      MENU_INFO_IDS: { populationText: 'populationText' },
+      PLAYER_TYPES: { ai: 'AI' },
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      changeSpriteColorDirectly: () => {},
+      getActionCondition: () => false,
+      getBuildingAsset: () => null,
+      getFreeLandCellAroundInstance: () => spawnCell,
+      getTexture: () => null,
+      payCost: () => {},
+      refundCost: () => calls.push(['refund']),
+    },
+    '../../lib/lang': {
+      t: key => key,
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+  })
+
+  assert.equal(new BuildingProduction(building).cancelAllUnitTraining(), true)
+
+  assert.deepEqual(building.queue, [])
+  assert.equal(building.loading, null)
+  assert.equal(building.trainingUnit, null)
+  assert.equal(building.trainingType, null)
+  assert.deepEqual(building.stableHorses, [{ horseColor: 'dark', tamingStatus: 'tamed' }])
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'createUnit'),
+    [
+      [
+        'createUnit',
+        {
+          i: 4,
+          j: 5,
+          type: 'Fantassin',
+          appearanceVariants: { body: 'default' },
+          name: 'Aias',
+          gender: 'male',
+          experience: { attack: 3 },
+          speed: 1,
+        },
+      ],
+    ]
+  )
+  assert.equal(calls.some(call => call[0] === 'createUnit' && call[1].mountedOnHorse), false)
+  assert.ok(calls.some(call => call[0] === 'preview' && call[1] === null))
+})
+
 test('trainee training updates loading even when the building is not classically selected', () => {
   const calls = []
   const owner = {
