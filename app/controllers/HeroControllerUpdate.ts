@@ -41,6 +41,7 @@ export type HeroControllerUpdateHost = {
   defenseHeld: boolean
   equippedItem: HeroEquippedItem | null
   heroUnit: UnitEntity | null
+  interactInputOwner: 'mouse' | 'movement' | null
   keysPressed: Set<ControlBindingAction>
   mouseHeld: boolean
   pendingGoToNpcs: UnitEntity[] | null
@@ -90,7 +91,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   )
   updateHeroCursor(controller.equippedItem, hoverTarget, Boolean(controller.pendingGoToNpcs))
   controller.updateProximityInteractionPrompt()
-  const attacking = Boolean(unit.actionLocked)
+  let attacking = Boolean(unit.actionLocked)
   if (
     controller.defenseHeld &&
     canHeroDefendWithTool(controller.equippedItem) &&
@@ -103,6 +104,7 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   if (
     controller.mouseHeld &&
     controller.primaryClickPoint &&
+    !(controller.equippedItem === 'interact' && controller.interactInputOwner === 'movement') &&
     !attacking &&
     controller.equippedItem !== 'bow' &&
     controller.equippedItem !== 'lasso' &&
@@ -110,7 +112,9 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   ) {
     const nextPoint = controller.getShiftMoveLockedAimPoint() ?? aimPoint
     controller.primaryClickPoint = nextPoint
-    if (!controller.attackTowardPoint(nextPoint)) {
+    if (controller.attackTowardPoint(nextPoint)) {
+      attacking = Boolean(unit.actionLocked)
+    } else {
       controller.mouseHeld = false
       controller.primaryClickPoint = null
     }
@@ -122,6 +126,10 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   const gamepadMove = controller.controls.getGamepadMoveVector()
   dx += gamepadMove.dx
   dy += gamepadMove.dy
+  if (controller.equippedItem === 'interact' && controller.interactInputOwner === 'mouse') {
+    dx = 0
+    dy = 0
+  }
   const isMoving = dx !== 0 || dy !== 0
   const walkSpeedFactor = getUnitWalkSpeedFactor(Boolean(controller.controls.shiftKeyActive && !unit.mountedOnHorse))
   unit.isCrouching = stealthMode

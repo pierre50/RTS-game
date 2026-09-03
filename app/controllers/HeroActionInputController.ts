@@ -20,6 +20,7 @@ type HeroActionInputHost = {
   equippedItem: HeroEquippedItem | null
   defenseHeld: boolean
   heroUnit: UnitEntity | null
+  interactInputOwner: 'mouse' | 'movement' | null
   mouseHeld: boolean
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
@@ -57,6 +58,7 @@ export class HeroActionInputController {
       this.host.primaryClickPoint = null
       return
     }
+    if (this.host.equippedItem === 'interact') this.host.interactInputOwner = 'mouse'
     this.host.primaryClickPoint =
       this.host.getShiftMoveLockedAimPoint() ?? this.host.controls.getWorldPointUnderCursor()
     const triggered = this.attackTowardPoint(this.host.primaryClickPoint)
@@ -110,6 +112,7 @@ export class HeroActionInputController {
     }
     this.host.mouseHeld = false
     this.host.primaryClickPoint = null
+    this.host.interactInputOwner = null
     if (!unit || unit.actionLocked || unit.currentSheet !== SHEET_TYPES.action) return
     const sprite = unit.sprite
     if (!sprite) {

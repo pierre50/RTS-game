@@ -2,6 +2,7 @@ import type { Graphics } from 'pixi.js'
 import { updateInstanceRenderVisibility } from '../lib'
 import { SHEET_TYPES } from '../constants'
 import {
+  cancelHeroActiveToolAction,
   cancelHeroPowerCharge,
   cancelHeroLasso,
   cancelHeroDefense,
@@ -54,6 +55,8 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool4: 3,
 }
 
+export type InteractInputOwner = 'mouse' | 'movement' | null
+
 export class HeroController {
   controls: ControlsLike
   heroUnit: UnitEntity | null
@@ -67,6 +70,7 @@ export class HeroController {
   commIndicator: Graphics | null
   pendingGoToNpcs: UnitEntity[] | null
   primaryClickPoint: HeroAimPoint | null
+  interactInputOwner: InteractInputOwner
   shiftMoveLockedDegree: number | null
   actionInputController: HeroActionInputController
   companionHorseController: HeroCompanionHorseController
@@ -89,6 +93,7 @@ export class HeroController {
     this.commIndicator = null
     this.pendingGoToNpcs = null
     this.primaryClickPoint = null
+    this.interactInputOwner = null
     this.shiftMoveLockedDegree = null
     this.actionInputController = new HeroActionInputController(this)
     this.companionHorseController = new HeroCompanionHorseController(controls, () => this.heroUnit)
@@ -187,6 +192,10 @@ export class HeroController {
     }
 
     if (isHeroMoveAction(action)) {
+      if (this.equippedItem === 'interact' && this.mouseHeld && this.primaryClickPoint) {
+        this.interactInputOwner = 'movement'
+        if (this.heroUnit?.actionLocked) cancelHeroActiveToolAction(this.heroUnit)
+      }
       if (this.keysPressed.size === 0 && !this.heroUnit?.actionLocked) this.heroUnit?.stop?.()
       this.keysPressed.add(action)
       return true
@@ -332,7 +341,13 @@ export class HeroController {
   }
 
   handleKeyUp(action: ControlBindingAction): void {
-    if (isHeroMoveAction(action)) this.keysPressed.delete(action)
+    if (isHeroMoveAction(action)) {
+      this.keysPressed.delete(action)
+      if (!this.hasMoveKeyPressed()) {
+        this.interactInputOwner =
+          this.equippedItem === 'interact' && this.mouseHeld && this.primaryClickPoint ? 'mouse' : null
+      }
+    }
     if (action === 'heroInteract') {
       this.keyboardInteractHeld = false
       if (this.commCharging) this.endCommCharge()
@@ -393,6 +408,7 @@ export class HeroController {
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {
+    if (item !== 'interact') this.interactInputOwner = null
     this.equipmentController.setEquippedItem(item)
   }
 
@@ -415,12 +431,20 @@ export class HeroController {
       this.controls.context.menu?.setHeroInteractionPrompt?.(null)
     }
     this.primaryClickPoint = null
+    this.interactInputOwner = null
     this.cancelMountTransition()
     if (this.heroUnit) cancelHeroPowerCharge(this.heroUnit)
     if (this.heroUnit) cancelHeroLasso(this.heroUnit)
     if (this.heroUnit) cancelHeroDefense(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()
     if (this.pendingGoToNpcs) this.cancelGoToPicking()
+  }
+
+  private hasMoveKeyPressed(): boolean {
+    for (const action of this.keysPressed) {
+      if (isHeroMoveAction(action)) return true
+    }
+    return false
   }
 
   updateCriticalHealthEffects(elapsedMs: number, active = true): void {

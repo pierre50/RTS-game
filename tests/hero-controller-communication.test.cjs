@@ -565,6 +565,103 @@ test('keyboard movement during sword release keeps the attack planted', () => {
   assert.equal(moveCalls.length, 0)
 })
 
+test('primary interact click owns controls over already-held keyboard movement', () => {
+  const { calls, controller, hero } = createController()
+  const moveCalls = []
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.equippedItem = 'interact'
+  controller.handlePrimaryPointerDown()
+  hero.actionLocked = true
+  controller.update(1)
+
+  assert.equal(controller.mouseHeld, true)
+  assert.deepEqual(controller.primaryClickPoint, { x: 10, y: 20 })
+  assert.equal(moveCalls.length, 0)
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'attack'),
+    [['attack', { x: 10, y: 20 }]]
+  )
+
+  controller.handlePointerUp(0)
+  hero.actionLocked = false
+  controller.update(1)
+
+  assert.equal(moveCalls.length, 1)
+  assert.equal(controller.mouseHeld, false)
+  assert.equal(controller.primaryClickPoint, null)
+})
+
+test('keyboard movement temporarily owns controls over already-held primary interact click', () => {
+  const events = []
+  const { calls, controller, hero } = createController({
+    heroToolsOverride: {
+      cancelHeroActiveToolAction: unit => {
+        events.push('cancelAction')
+        unit.actionLocked = false
+        return true
+      },
+      triggerToolAttackAt: (unit, _tool, destination) => {
+        calls.push(['attack', destination])
+        unit.actionLocked = true
+        unit.currentSheet = 'action'
+        return true
+      },
+    },
+  })
+  const moveCalls = []
+  hero.speed = 100 / 6
+  hero.moveDirect = (...args) => {
+    moveCalls.push(args)
+    hero.x += args[0] * args[2]
+    hero.y += args[1] * args[2]
+    return true
+  }
+
+  controller.equippedItem = 'interact'
+  controller.handlePrimaryPointerDown()
+
+  assert.equal(controller.mouseHeld, true)
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'attack'),
+    [['attack', { x: 10, y: 20 }]]
+  )
+
+  hero.actionLocked = true
+  assert.equal(controller.handleKeyDown('heroRight'), true)
+  controller.update(1)
+
+  assert.deepEqual(events, ['cancelAction'])
+  assert.equal(controller.mouseHeld, true)
+  assert.equal(controller.interactInputOwner, 'movement')
+  assert.equal(moveCalls.length, 1)
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'attack'),
+    [['attack', { x: 10, y: 20 }]]
+  )
+
+  controller.handleKeyUp('heroRight')
+  controller.update(1)
+
+  assert.equal(controller.interactInputOwner, 'mouse')
+  assert.equal(hero.actionLocked, true)
+  assert.equal(hero.currentSheet, 'action')
+  assert.deepEqual(
+    calls.filter(call => Array.isArray(call) && call[0] === 'attack'),
+    [
+      ['attack', { x: 10, y: 20 }],
+      ['attack', { x: 10, y: 20 }],
+    ]
+  )
+})
+
 test('switching tools during bow charge cancels the charge before pointer release', () => {
   const { controller, hero } = createController({
     heroToolsOverride: {
