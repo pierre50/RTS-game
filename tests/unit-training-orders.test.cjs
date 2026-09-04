@@ -6,12 +6,14 @@ function loadTrainingOrders() {
   return loadTsModule('app/lib/units/unitTrainingOrders.ts', {
     '../../constants': {
       ACTION_TYPES: { train: 'train' },
-      BUILDING_TYPES: { stable: 'Stable' },
-      UNIT_TYPES: { bowman: 'Bowman', infantry: 'Fantassin', villager: 'Villager' },
+      BUILDING_TYPES: { stable: 'Stable', temple: 'Temple' },
+      UNIT_TYPES: { bowman: 'Bowman', infantry: 'Fantassin', priest: 'Priest', villager: 'Villager' },
     },
     '../buildings/buildingTraining': {
       canUnitTrainInto: (building, unit, type) =>
-        building.units?.includes(type) && (building.type !== 'Stable' || unit.type === type),
+        building.units?.includes(type) &&
+        (type !== 'Priest' || building.type === 'Temple') &&
+        (building.type !== 'Stable' || unit.type === type),
       getBuildingTrainingLoad: building => {
         const active = building.loading != null || building.trainingUnit ? 1 : 0
         const queued = Math.max(0, (building.queue?.length ?? 0) - active)
@@ -144,6 +146,42 @@ test('unit training order fills one training building up to five units', () => {
   assert.equal(findBestTrainingBuildingForUnit(villagers[5], 'Fantassin'), null)
   assert.equal(sendUnitToTraining(villagers[5], 'Fantassin'), false)
   assert.equal(villagers[5].trainingTargetType, undefined)
+})
+
+test('villager training menu includes priest only when a usable temple is available', () => {
+  const { canShowVillagerTrainingMenu, findBestTrainingBuildingForUnit, VILLAGER_TRAINING_UNIT_TYPES } =
+    loadTrainingOrders()
+  const temple = {
+    family: 'building',
+    i: 1,
+    isBuilt: true,
+    j: 0,
+    loading: null,
+    owner: null,
+    queue: [],
+    type: 'Temple',
+    units: ['Priest'],
+  }
+  const owner = createOwner([temple])
+  owner.config.units.Priest = { category: 'Civilian' }
+  temple.owner = owner
+  const villager = {
+    context: { menu: { showMessage() {} } },
+    family: 'unit',
+    i: 0,
+    j: 0,
+    owner,
+    type: 'Villager',
+  }
+  owner.units.push(villager)
+
+  assert.deepEqual([...VILLAGER_TRAINING_UNIT_TYPES], ['Fantassin', 'Bowman', 'Priest'])
+  assert.equal(findBestTrainingBuildingForUnit(villager, 'Priest'), temple)
+  assert.equal(canShowVillagerTrainingMenu(villager), true)
+
+  temple.isBuilt = false
+
+  assert.equal(findBestTrainingBuildingForUnit(villager, 'Priest'), null)
 })
 
 test('unit training type lookup respects the caller allowed types', () => {

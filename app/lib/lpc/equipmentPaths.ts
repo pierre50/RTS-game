@@ -1,7 +1,7 @@
 import type { DynamicEquipmentKey, EquipmentLayer, EquipmentLoadSheet } from './equipmentData'
 
-const EQUIPMENT_BASE_ALIAS = 'lpc-equipment'
-const EQUIPMENT_BASE_URL = 'assets/graphics/lpc-equipment'
+const EQUIPMENT_BASE_ALIAS = 'equipments'
+const EQUIPMENT_BASE_URL = 'assets/graphics/equipments'
 
 export function equipmentAlias(equipment: DynamicEquipmentKey, layer: EquipmentLayer, sheet: EquipmentLoadSheet): string {
   return `${EQUIPMENT_BASE_ALIAS}/${equipment}/${layer}/${sheet}`

@@ -64,7 +64,7 @@ export function ensureBanditCampOwner(
   map: MapGenerationMap,
   context: GameContextLike,
   anchor: GridPosition,
-  civilization: string = context.player?.civ ?? 'Greek',
+  civilization: string = context.player?.civ ?? 'Hellas',
   players: PlayerLike[] = map.context.players,
   options: BanditCampOwnerOptions = {}
 ): BanditCampOwner {

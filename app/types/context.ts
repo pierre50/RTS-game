@@ -77,7 +77,10 @@ interface TimeSkipSystemLike {
   cancel(options?: { silent?: boolean }): void
   destroy(): void
   getProgress(): number
-  start(hours: number, options?: { completedMessage?: string; onComplete?: () => void }): { ok: boolean; message: string }
+  start(
+    hours: number,
+    options?: { completedMessage?: string; onCancel?: () => void; onComplete?: () => void }
+  ): { ok: boolean; message: string }
 }
 
 export type SchedulerTaskId = number

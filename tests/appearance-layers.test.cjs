@@ -84,19 +84,19 @@ test('helmet decor renders above head and helmet on death sheets', () => {
   const hornBack = chiefLayers.find(
     layer =>
       layer.equipmentKey === 'upward_horns_ceramic' &&
-      layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/back/walking'
+      layer.walkingSheet === 'equipments/upward_horns_ceramic/back/walking'
   )
   const hornFront = chiefLayers.find(
     layer =>
       layer.equipmentKey === 'upward_horns_ceramic' &&
-      layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/front/walking'
+      layer.walkingSheet === 'equipments/upward_horns_ceramic/front/walking'
   )
 
   assert.equal(helmet?.zIndex, 11)
   assert.equal(hornBack?.zIndex, 8)
   assert.equal(hornFront?.zIndex, 12)
-  assert.equal(hornBack?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/back/shooting')
-  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/front/shooting')
+  assert.equal(hornBack?.shootingSheet, 'equipments/upward_horns_ceramic/back/shooting')
+  assert.equal(hornFront?.shootingSheet, 'equipments/upward_horns_ceramic/front/shooting')
   assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.walking }), 8)
   assert.equal(getAppearanceLayerZIndex({ layer: hornBack, sheet: constants.SHEET_TYPES.dying }), 13)
   assert.equal(getAppearanceLayerZIndex({ layer: hornFront, sheet: constants.SHEET_TYPES.corpse }), 13)
@@ -107,33 +107,33 @@ test('helmet decor with hurt art exposes death sheets', () => {
     '../../constants': constants,
   })
 
-  const romanLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Roman')
-  const romanPlumage = romanLayers.find(layer => layer.equipmentKey === 'centurion_plumage')
-  assert.equal(romanPlumage?.dyingSheet, 'lpc-equipment/centurion_plumage/front/dying')
-  assert.equal(romanPlumage?.corpseSheet, 'lpc-equipment/centurion_plumage/front/corpse')
+  const latiumLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Latium')
+  const latiumPlumage = latiumLayers.find(layer => layer.equipmentKey === 'centurion_plumage')
+  assert.equal(latiumPlumage?.dyingSheet, 'equipments/centurion_plumage/front/dying')
+  assert.equal(latiumPlumage?.corpseSheet, 'equipments/centurion_plumage/front/corpse')
 
-  const babylonianLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Babylonian')
+  const babylonianLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Sumeria')
   const legionPlumage = babylonianLayers.find(layer => layer.equipmentKey === 'legion_plumage')
-  assert.equal(legionPlumage?.dyingSheet, 'lpc-equipment/legion_plumage/front/dying')
-  assert.equal(legionPlumage?.corpseSheet, 'lpc-equipment/legion_plumage/front/corpse')
+  assert.equal(legionPlumage?.dyingSheet, 'equipments/legion_plumage/front/dying')
+  assert.equal(legionPlumage?.corpseSheet, 'equipments/legion_plumage/front/corpse')
 
-  const nordicLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nordic')
-  const hornBack = nordicLayers.find(
+  const nordLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
+  const hornBack = nordLayers.find(
     layer =>
       layer.equipmentKey === 'upward_horns_white' &&
-      layer.walkingSheet === 'lpc-equipment/upward_horns_white/back/walking'
+      layer.walkingSheet === 'equipments/upward_horns_white/back/walking'
   )
-  const hornFront = nordicLayers.find(
+  const hornFront = nordLayers.find(
     layer =>
       layer.equipmentKey === 'upward_horns_white' &&
-      layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'
+      layer.walkingSheet === 'equipments/upward_horns_white/front/walking'
   )
-  assert.equal(hornBack?.dyingSheet, 'lpc-equipment/upward_horns_white/back/dying')
-  assert.equal(hornBack?.corpseSheet, 'lpc-equipment/upward_horns_white/back/corpse')
-  assert.equal(hornBack?.shootingSheet, 'lpc-equipment/upward_horns_white/back/shooting')
-  assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_white/front/dying')
-  assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_white/front/corpse')
-  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_white/front/shooting')
+  assert.equal(hornBack?.dyingSheet, 'equipments/upward_horns_white/back/dying')
+  assert.equal(hornBack?.corpseSheet, 'equipments/upward_horns_white/back/corpse')
+  assert.equal(hornBack?.shootingSheet, 'equipments/upward_horns_white/back/shooting')
+  assert.equal(hornFront?.dyingSheet, 'equipments/upward_horns_white/front/dying')
+  assert.equal(hornFront?.corpseSheet, 'equipments/upward_horns_white/front/corpse')
+  assert.equal(hornFront?.shootingSheet, 'equipments/upward_horns_white/front/shooting')
 })
 
 test('back-worn equipment lifts above body on death sheets', () => {
@@ -152,13 +152,13 @@ test('back-worn equipment lifts above body on death sheets', () => {
 
   const infantryLayers = dynamicEquipmentLayersForUnit('Fantassin')
   const capeBack = infantryLayers.find(
-    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'lpc-equipment/cape_solid/back/walking'
+    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'equipments/cape_solid/back/walking'
   )
   const capeFront = infantryLayers.find(
-    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking'
+    layer => layer.equipmentKey === 'cape_solid' && layer.walkingSheet === 'equipments/cape_solid/front/walking'
   )
-  assert.equal(capeBack?.shootingSheet, 'lpc-equipment/cape_solid/back/shooting')
-  assert.equal(capeFront?.shootingSheet, 'lpc-equipment/cape_solid/front/shooting')
+  assert.equal(capeBack?.shootingSheet, 'equipments/cape_solid/back/shooting')
+  assert.equal(capeFront?.shootingSheet, 'equipments/cape_solid/front/shooting')
   assert.equal(getAppearanceLayerZIndex({ layer: capeBack, sheet: constants.SHEET_TYPES.corpse }), 11)
   assert.equal(getAppearanceLayerZIndex({ layer: capeFront, sheet: constants.SHEET_TYPES.corpse }), 12)
 })
@@ -176,16 +176,16 @@ test('villager and hero work tools follow civilization metal age', () => {
     layer => layer.workTypes?.includes(constants.WORK_TYPES.builder) && layer.zIndex === 12
   )
 
-  assert.equal(woodcutterFront?.walkingSheet, 'lpc-equipment/axe_ceramic/front/walking')
+  assert.equal(woodcutterFront?.walkingSheet, 'equipments/axe_ceramic/front/walking')
   assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
   assert.equal(woodcutterFront?.actionWorkSheetOverrides?.['attacker:attack'], undefined)
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/axe_copper/front/walking')
-  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/axe_copper/front/action')
-  assert.equal(builderFront?.walkingSheet, 'lpc-equipment/hammer_ceramic/front/walking')
+  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/axe_copper/front/walking')
+  assert.equal(woodcutterFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/axe_copper/front/action')
+  assert.equal(builderFront?.walkingSheet, 'equipments/hammer_ceramic/front/walking')
   assert.equal(builderFront?.appearanceVariantKey, 'gender')
-  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/hammer_copper/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/hammer_bronze/front/action')
-  assert.equal(builderFront?.ageSheetOverrides?.['3']?.actionSheet, 'lpc-equipment/hammer_iron/front/action')
+  assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_copper/front/action')
+  assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/hammer_bronze/front/action')
+  assert.equal(builderFront?.ageSheetOverrides?.['3']?.actionSheet, 'equipments/hammer_iron/front/action')
 
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 0), ['sword_ceramic'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_copper'])
@@ -194,7 +194,7 @@ test('villager and hero work tools follow civilization metal age', () => {
 })
 
 test('hero baked appearance includes inventory equipped layers', () => {
-  const cachedAliases = new Set(['lpc-baked/hero/greek/male/body/walking'])
+  const cachedAliases = new Set(['units/hero/hellas/male/body/walking'])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
@@ -218,7 +218,7 @@ test('hero baked appearance includes inventory equipped layers', () => {
     isChief: true,
     controlMode: 'hero',
     work: 'heroSword',
-    owner: { civ: 'Greek', label: 'P1', gender: 'male' },
+    owner: { civ: 'Hellas', label: 'P1', gender: 'male' },
     inventory: {
       equipped: {
         helmet: 'helmet_barbuta_ceramic',
@@ -251,13 +251,13 @@ test('hero baked appearance includes inventory equipped layers', () => {
 })
 
 test('runtime equipment preload collection deduplicates used equipment atlases', () => {
-  const cachedAliases = new Set(['lpc-baked/infantry/greek/male/walking'])
+  const cachedAliases = new Set(['units/infantry/hellas/male/walking'])
   const { collectBakedLpcRuntimeEquipmentAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
     './equipment': {
       dynamicEquipmentAsset: equipment => ({
-        alias: equipment.startsWith('sword_') ? 'lpc-equipment/weapon/sword' : `lpc-equipment/${equipment}`,
+        alias: equipment.startsWith('sword_') ? 'equipments/weapon/sword' : `equipments/${equipment}`,
         src: `${equipment}.json`,
       }),
       dynamicEquipmentAssets: () => [],
@@ -278,15 +278,15 @@ test('runtime equipment preload collection deduplicates used equipment atlases',
   })
   const unit = {
     type: 'Fantassin',
-    owner: { civ: 'Greek', label: 'P1' },
+    owner: { civ: 'Hellas', label: 'P1' },
     label: 'unit',
     i: 1,
     j: 1,
   }
 
   assert.deepEqual(collectBakedLpcRuntimeEquipmentAssets([{ units: [unit] }]), [
-    { alias: 'lpc-equipment/weapon/sword', src: 'sword_ceramic.json' },
-    { alias: 'lpc-equipment/helmet_pointed_ceramic', src: 'helmet_pointed_ceramic.json' },
+    { alias: 'equipments/weapon/sword', src: 'sword_ceramic.json' },
+    { alias: 'equipments/helmet_pointed_ceramic', src: 'helmet_pointed_ceramic.json' },
   ])
 })
 
@@ -349,7 +349,7 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
     },
     appearanceLayerSprites: new Map(),
     inventory: { equipped: {} },
-    owner: { civ: 'Greek', color: 'blue' },
+    owner: { civ: 'Hellas', color: 'blue' },
     sprite: { currentFrame: 0, loop: true, playing: false },
     context: { app: {} },
     degree: 180,
@@ -437,7 +437,7 @@ test('appearance layers inherit the unit action frame sequence', () => {
     sprite: { currentFrame: 3, loop: true, playing: false },
     type: constants.UNIT_TYPES.villager,
     work: constants.WORK_TYPES.builder,
-    owner: { civ: 'Greek', color: 'blue' },
+    owner: { civ: 'Hellas', color: 'blue' },
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     getChildIndex: () => 0,
@@ -522,7 +522,7 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
     sprite: { currentFrame: 2, loop: true, playing: true, animationSpeed: 0.25 },
     type: constants.UNIT_TYPES.villager,
     work: constants.WORK_TYPES.attacker,
-    owner: { civ: 'Greek', color: 'blue' },
+    owner: { civ: 'Hellas', color: 'blue' },
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     getChildIndex: () => 0,
@@ -605,30 +605,29 @@ test('infantry equipment layers unlock by level and switch metal by civilization
     'helmet_barbuta_bronze',
     'centurion_crest',
   ])
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Roman').includes('helmet_legion_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Roman').includes('centurion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Babylonian').includes('helmet_nasal_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Babylonian').includes('legion_plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Egyptian').includes('helmet_bascinet_round_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Asian').includes('plumage'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Celtic').includes('helmet_wings'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nordic').includes('helmet_norman_bronze'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nordic').includes('upward_horns_white'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Viking').includes('upward_horns_white'), true)
-  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nubian').includes('helmet_nasal_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Latium').includes('helmet_legion_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Latium').includes('centurion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Sumeria').includes('helmet_nasal_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Sumeria').includes('legion_plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Kemet').includes('helmet_bascinet_round_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Xia').includes('plumage'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Alba').includes('helmet_wings'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nord').includes('helmet_norman_bronze'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nord').includes('upward_horns_white'), true)
+  assert.equal(dynamicEquipmentForUnit('Fantassin', 2, 20, 'Nobatia').includes('helmet_nasal_bronze'), true)
 
   const layers = dynamicEquipmentLayersForUnit('Fantassin')
-  const sword = layers.find(layer => layer.walkingSheet === 'lpc-equipment/sword_ceramic/front/walking')
-  const shield = layers.find(layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking')
-  const leather = layers.find(layer => layer.walkingSheet === 'lpc-equipment/armor_leather/front/walking')
-  const mail = layers.find(layer => layer.walkingSheet === 'lpc-equipment/armor_mail_ceramic/front/walking')
-  const pointed = layers.find(layer => layer.walkingSheet === 'lpc-equipment/helmet_pointed_ceramic/front/walking')
-  const barbuta = layers.find(layer => layer.walkingSheet === 'lpc-equipment/helmet_barbuta_ceramic/front/walking')
-  const bracers = layers.find(layer => layer.walkingSheet === 'lpc-equipment/bracers_ceramic/front/walking')
-  const cape = layers.find(layer => layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking')
-  const crest = layers.find(layer => layer.walkingSheet === 'lpc-equipment/crest/front/walking')
-  const centurionCrest = layers.find(layer => layer.walkingSheet === 'lpc-equipment/centurion_crest/front/walking')
-  const centurionPlumage = layers.find(layer => layer.walkingSheet === 'lpc-equipment/centurion_plumage/front/walking')
+  const sword = layers.find(layer => layer.walkingSheet === 'equipments/sword_ceramic/front/walking')
+  const shield = layers.find(layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking')
+  const leather = layers.find(layer => layer.walkingSheet === 'equipments/armor_leather/front/walking')
+  const mail = layers.find(layer => layer.walkingSheet === 'equipments/armor_mail_ceramic/front/walking')
+  const pointed = layers.find(layer => layer.walkingSheet === 'equipments/helmet_pointed_ceramic/front/walking')
+  const barbuta = layers.find(layer => layer.walkingSheet === 'equipments/helmet_barbuta_ceramic/front/walking')
+  const bracers = layers.find(layer => layer.walkingSheet === 'equipments/bracers_ceramic/front/walking')
+  const cape = layers.find(layer => layer.walkingSheet === 'equipments/cape_solid/front/walking')
+  const crest = layers.find(layer => layer.walkingSheet === 'equipments/crest/front/walking')
+  const centurionCrest = layers.find(layer => layer.walkingSheet === 'equipments/centurion_crest/front/walking')
+  const centurionPlumage = layers.find(layer => layer.walkingSheet === 'equipments/centurion_plumage/front/walking')
 
   assert.equal(sword?.zIndex, 12)
   assert.equal(sword?.mountedCut, false)
@@ -643,38 +642,38 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   assert.equal(mail?.mountedCut, undefined)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.maxLevel, 17)
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'lpc-equipment/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/armor_mail_iron/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(pointed?.zIndex, 11)
   assert.equal(pointed?.mountedCut, false)
   assert.equal(pointed?.minLevel, 6)
   assert.equal(pointed?.maxLevel, 14)
-  assert.equal(pointed?.ageSheetOverrides?.['2']?.walkingSheet, 'lpc-equipment/helmet_pointed_bronze/front/walking')
-  assert.equal(pointed?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/helmet_pointed_iron/front/walking')
+  assert.equal(pointed?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/helmet_pointed_bronze/front/walking')
+  assert.equal(pointed?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/helmet_pointed_iron/front/walking')
   assert.equal(barbuta?.minLevel, 15)
-  assert.equal(barbuta?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/helmet_barbuta_bronze/front/action')
+  assert.equal(barbuta?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/helmet_barbuta_bronze/front/action')
   assert.equal(bracers?.minLevel, 5)
   assert.equal(bracers?.mountedCut, undefined)
-  assert.equal(bracers?.ageSheetOverrides?.['2']?.walkingSheet, 'lpc-equipment/bracers_bronze/front/walking')
-  assert.equal(bracers?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/bracers_iron/front/walking')
+  assert.equal(bracers?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/bracers_bronze/front/walking')
+  assert.equal(bracers?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/bracers_iron/front/walking')
   assert.equal(cape?.minLevel, 14)
   assert.equal(cape?.palette, 'player')
   assert.equal(crest, undefined)
   assert.equal(centurionCrest?.minLevel, 16)
   assert.equal(centurionCrest?.maxLevel, undefined)
   assert.equal(centurionCrest?.palette, 'player')
-  assert.equal(centurionCrest?.mountedSheet, 'lpc-equipment/centurion_crest/front/walking')
+  assert.equal(centurionCrest?.mountedSheet, 'equipments/centurion_crest/front/walking')
   assert.equal(centurionPlumage, undefined)
-  const nordicLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nordic')
-  const nordicHorns = nordicLayers.find(
-    layer => layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'
+  const nordLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
+  const nordHorns = nordLayers.find(
+    layer => layer.walkingSheet === 'equipments/upward_horns_white/front/walking'
   )
-  assert.equal(nordicHorns?.minLevel, 16)
-  assert.equal(nordicHorns?.palette, undefined)
-  assert.equal(nordicHorns?.mountedSheet, 'lpc-equipment/upward_horns_white/front/walking')
-  const vikingLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Viking')
+  assert.equal(nordHorns?.minLevel, 16)
+  assert.equal(nordHorns?.palette, undefined)
+  assert.equal(nordHorns?.mountedSheet, 'equipments/upward_horns_white/front/walking')
+  const nordOnlyLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
   assert.equal(
-    vikingLayers.some(layer => layer.walkingSheet === 'lpc-equipment/upward_horns_white/front/walking'),
+    nordOnlyLayers.some(layer => layer.walkingSheet === 'equipments/upward_horns_white/front/walking'),
     true
   )
 })
@@ -716,38 +715,38 @@ test('archer equipment follows soldier armor progression without shield', () => 
   assert.equal(dynamicEquipmentForUnit('Bowman', 3, 20).includes('round_shield_iron_slash'), false)
 
   const layers = dynamicEquipmentLayersForUnit('Bowman')
-  const bow = layers.find(layer => layer.walkingSheet === 'lpc-equipment/bow/front/walking')
-  const arrow = layers.find(layer => layer.actionSheet === 'lpc-equipment/arrow_ceramic/front/action')
-  const quiver = layers.find(layer => layer.walkingSheet === 'lpc-equipment/quiver/back/walking')
-  const mail = layers.find(layer => layer.walkingSheet === 'lpc-equipment/armor_mail_ceramic/front/walking')
-  const shield = layers.find(layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'lpc-equipment/bow_great/front/walking')
-  assert.equal(bow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/bow_recurve/front/action')
-  assert.equal(bow?.shootingSheet, 'lpc-equipment/bow/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'lpc-equipment/bow_great/front/action')
-  assert.equal(bow?.ageSheetOverrides?.['2']?.shootingSheet, 'lpc-equipment/bow_recurve/front/action')
+  const bow = layers.find(layer => layer.walkingSheet === 'equipments/bow/front/walking')
+  const arrow = layers.find(layer => layer.actionSheet === 'equipments/arrow_ceramic/front/action')
+  const quiver = layers.find(layer => layer.walkingSheet === 'equipments/quiver/back/walking')
+  const mail = layers.find(layer => layer.walkingSheet === 'equipments/armor_mail_ceramic/front/walking')
+  const shield = layers.find(layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.walkingSheet, 'equipments/bow_great/front/walking')
+  assert.equal(bow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/bow_recurve/front/action')
+  assert.equal(bow?.shootingSheet, 'equipments/bow/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/bow_great/front/action')
+  assert.equal(bow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/bow_recurve/front/action')
   assert.equal(bow?.mountedCut, false)
   assert.equal(arrow?.walkingSheet, undefined)
-  assert.equal(arrow?.shootingSheet, 'lpc-equipment/arrow_ceramic/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'lpc-equipment/arrow_copper/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'lpc-equipment/arrow_copper/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'lpc-equipment/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'lpc-equipment/arrow_bronze/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['3']?.actionSheet, 'lpc-equipment/arrow_iron/front/action')
-  assert.equal(arrow?.ageSheetOverrides?.['3']?.shootingSheet, 'lpc-equipment/arrow_iron/front/action')
+  assert.equal(arrow?.shootingSheet, 'equipments/arrow_ceramic/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/arrow_copper/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['1']?.shootingSheet, 'equipments/arrow_copper/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['2']?.shootingSheet, 'equipments/arrow_bronze/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['3']?.actionSheet, 'equipments/arrow_iron/front/action')
+  assert.equal(arrow?.ageSheetOverrides?.['3']?.shootingSheet, 'equipments/arrow_iron/front/action')
   assert.equal(arrow?.mountedCut, false)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
-  assert.equal(quiver?.shootingSheet, 'lpc-equipment/quiver/back/action')
+  assert.equal(quiver?.shootingSheet, 'equipments/quiver/back/action')
   assert.equal(quiver?.mountedCut, false)
   assert.equal(mail?.minLevel, 10)
   assert.equal(mail?.mountedCut, undefined)
-  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'lpc-equipment/armor_mail_bronze/front/walking')
-  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'lpc-equipment/armor_mail_iron/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['2']?.walkingSheet, 'equipments/armor_mail_bronze/front/walking')
+  assert.equal(mail?.ageSheetOverrides?.['3']?.walkingSheet, 'equipments/armor_mail_iron/front/walking')
   assert.equal(shield, undefined)
 
   const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/weapon/arrow'))
   assert.deepEqual(arrowAssets.map(asset => asset.alias).sort(), [
-    'lpc-equipment/weapon/arrow',
+    'equipments/weapon/arrow',
   ])
 })
 
@@ -777,46 +776,46 @@ test('bandit units use fixed runtime equipment loadouts', () => {
   ])
 
   const chiefLayers = dynamicEquipmentLayersForUnit('BanditChief')
-  const hornFront = chiefLayers.find(layer => layer.walkingSheet === 'lpc-equipment/upward_horns_ceramic/front/walking')
+  const hornFront = chiefLayers.find(layer => layer.walkingSheet === 'equipments/upward_horns_ceramic/front/walking')
   const helmet = chiefLayers.find(
-    layer => layer.walkingSheet === 'lpc-equipment/helmet_barbarian_ceramic/front/walking'
+    layer => layer.walkingSheet === 'equipments/helmet_barbarian_ceramic/front/walking'
   )
-  const capeFront = chiefLayers.find(layer => layer.walkingSheet === 'lpc-equipment/cape_solid/front/walking')
+  const capeFront = chiefLayers.find(layer => layer.walkingSheet === 'equipments/cape_solid/front/walking')
   const shield = chiefLayers.find(
-    layer => layer.walkingSheet === 'lpc-equipment/round_shield_ceramic_slash/front/walking'
+    layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking'
   )
-  assert.equal(hornFront?.mountedSheet, 'lpc-equipment/upward_horns_ceramic/front/walking')
-  assert.equal(hornFront?.shootingSheet, 'lpc-equipment/upward_horns_ceramic/front/shooting')
-  assert.equal(hornFront?.dyingSheet, 'lpc-equipment/upward_horns_ceramic/front/dying')
-  assert.equal(hornFront?.corpseSheet, 'lpc-equipment/upward_horns_ceramic/front/corpse')
+  assert.equal(hornFront?.mountedSheet, 'equipments/upward_horns_ceramic/front/walking')
+  assert.equal(hornFront?.shootingSheet, 'equipments/upward_horns_ceramic/front/shooting')
+  assert.equal(hornFront?.dyingSheet, 'equipments/upward_horns_ceramic/front/dying')
+  assert.equal(hornFront?.corpseSheet, 'equipments/upward_horns_ceramic/front/corpse')
   assert.equal(helmet?.zIndex, 11)
-  assert.equal(helmet?.dyingSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/dying')
-  assert.equal(helmet?.corpseSheet, 'lpc-equipment/helmet_barbarian_ceramic/front/corpse')
+  assert.equal(helmet?.dyingSheet, 'equipments/helmet_barbarian_ceramic/front/dying')
+  assert.equal(helmet?.corpseSheet, 'equipments/helmet_barbarian_ceramic/front/corpse')
   assert.equal(capeFront?.zIndex, 12)
   assert.equal(capeFront?.palette, 'player')
-  assert.equal(capeFront?.shootingSheet, 'lpc-equipment/cape_solid/front/shooting')
-  assert.equal(capeFront?.dyingSheet, 'lpc-equipment/cape_solid/front/dying')
-  assert.equal(capeFront?.corpseSheet, 'lpc-equipment/cape_solid/front/corpse')
+  assert.equal(capeFront?.shootingSheet, 'equipments/cape_solid/front/shooting')
+  assert.equal(capeFront?.dyingSheet, 'equipments/cape_solid/front/dying')
+  assert.equal(capeFront?.corpseSheet, 'equipments/cape_solid/front/corpse')
   assert.equal(shield?.dyingSheet, undefined)
   assert.equal(shield?.corpseSheet, undefined)
 
   const swordLayers = dynamicEquipmentLayersForUnit('BanditSword')
-  const sword = swordLayers.find(layer => layer.walkingSheet === 'lpc-equipment/sword_ceramic/front/walking')
-  assert.equal(sword?.dyingSheet, 'lpc-equipment/sword_ceramic/front/dying')
-  assert.equal(sword?.corpseSheet, 'lpc-equipment/sword_ceramic/front/corpse')
+  const sword = swordLayers.find(layer => layer.walkingSheet === 'equipments/sword_ceramic/front/walking')
+  assert.equal(sword?.dyingSheet, 'equipments/sword_ceramic/front/dying')
+  assert.equal(sword?.corpseSheet, 'equipments/sword_ceramic/front/corpse')
 
   const archerLayers = dynamicEquipmentLayersForUnit('BanditArcher')
-  const hood = archerLayers.find(layer => layer.walkingSheet === 'lpc-equipment/sack_cloth_hood_leather/front/walking')
-  const arrow = archerLayers.find(layer => layer.actionSheet === 'lpc-equipment/arrow_ceramic/front/action')
-  assert.equal(hood?.actionSheet, 'lpc-equipment/sack_cloth_hood_leather/front/action')
-  assert.equal(hood?.dyingSheet, 'lpc-equipment/sack_cloth_hood_leather/front/dying')
-  assert.equal(hood?.corpseSheet, 'lpc-equipment/sack_cloth_hood_leather/front/corpse')
+  const hood = archerLayers.find(layer => layer.walkingSheet === 'equipments/sack_cloth_hood_leather/front/walking')
+  const arrow = archerLayers.find(layer => layer.actionSheet === 'equipments/arrow_ceramic/front/action')
+  assert.equal(hood?.actionSheet, 'equipments/sack_cloth_hood_leather/front/action')
+  assert.equal(hood?.dyingSheet, 'equipments/sack_cloth_hood_leather/front/dying')
+  assert.equal(hood?.corpseSheet, 'equipments/sack_cloth_hood_leather/front/corpse')
   assert.equal(hood?.zIndex, 11)
   assert.equal(arrow?.hideOnOrAfterFrame, 9)
 })
 
 test('unique bandit baked units do not include civilization in asset paths', () => {
-  const cachedAliases = new Set(['lpc-baked/bandit_archer/male/walking'])
+  const cachedAliases = new Set(['units/bandit_archer/male/walking'])
   const { applyBakedLpcUnitAssets, getBakedUnitStandingSheetAlias } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
@@ -831,7 +830,7 @@ test('unique bandit baked units do not include civilization in asset paths', () 
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
-  const owner = { civ: 'Egyptian', label: 'P1', gender: 'female' }
+  const owner = { civ: 'Kemet', label: 'P1', gender: 'female' }
   const unit = {
     type: 'BanditArcher',
     owner,
@@ -840,18 +839,18 @@ test('unique bandit baked units do not include civilization in asset paths', () 
     j: 1,
   }
 
-  assert.equal(getBakedUnitStandingSheetAlias('BanditArcher', owner), 'lpc-baked/bandit_archer/male/walking')
+  assert.equal(getBakedUnitStandingSheetAlias('BanditArcher', owner), 'units/bandit_archer/male/walking')
   assert.equal(applyBakedLpcUnitAssets(unit), true)
-  assert.equal(unit.assets.walkingSheet, 'lpc-baked/bandit_archer/male/walking')
-  assert.equal(unit.assets.actionSheet, 'lpc-baked/bandit_archer/male/action')
+  assert.equal(unit.assets.walkingSheet, 'units/bandit_archer/male/walking')
+  assert.equal(unit.assets.actionSheet, 'units/bandit_archer/male/action')
   assert.deepEqual(unit.appearanceVariants, { gender: 'male' })
   assert.deepEqual(unit.appearance.layers, [{ unitType: 'BanditArcher' }])
 })
 
 test('helmeted infantry swaps to no-hair baked base', () => {
   const cachedAliases = new Set([
-    'lpc-baked/infantry/greek/male/walking',
-    'lpc-baked/infantry_nohair/greek/male/walking',
+    'units/infantry/hellas/male/walking',
+    'units/infantry_nohair/hellas/male/walking',
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
@@ -869,7 +868,7 @@ test('helmeted infantry swaps to no-hair baked base', () => {
   })
   const baseUnit = {
     type: 'Fantassin',
-    owner: { civ: 'Greek', label: 'P1' },
+    owner: { civ: 'Hellas', label: 'P1' },
     label: 'unit',
     i: 1,
     j: 1,
@@ -878,17 +877,17 @@ test('helmeted infantry swaps to no-hair baked base', () => {
   const helmetedUnit = { ...baseUnit, level: 6 }
 
   assert.equal(applyBakedLpcUnitAssets(baseUnit), true)
-  assert.equal(baseUnit.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
-  assert.equal(baseUnit.assets.actionSheet, 'lpc-baked/infantry/greek/male/action')
+  assert.equal(baseUnit.assets.walkingSheet, 'units/infantry/hellas/male/walking')
+  assert.equal(baseUnit.assets.actionSheet, 'units/infantry/hellas/male/action')
   assert.equal(applyBakedLpcUnitAssets(helmetedUnit), true)
-  assert.equal(helmetedUnit.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
-  assert.equal(helmetedUnit.assets.actionSheet, 'lpc-baked/infantry_nohair/greek/male/action')
+  assert.equal(helmetedUnit.assets.walkingSheet, 'units/infantry_nohair/hellas/male/walking')
+  assert.equal(helmetedUnit.assets.actionSheet, 'units/infantry_nohair/hellas/male/action')
 })
 
 test('helmeted archer swaps to no-hair baked base', () => {
   const cachedAliases = new Set([
-    'lpc-baked/infantry/greek/male/walking',
-    'lpc-baked/infantry_nohair/greek/male/walking',
+    'units/infantry/hellas/male/walking',
+    'units/infantry_nohair/hellas/male/walking',
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
@@ -906,7 +905,7 @@ test('helmeted archer swaps to no-hair baked base', () => {
   })
   const baseUnit = {
     type: 'Bowman',
-    owner: { civ: 'Greek', label: 'P1' },
+    owner: { civ: 'Hellas', label: 'P1' },
     label: 'unit',
     i: 1,
     j: 1,
@@ -915,17 +914,17 @@ test('helmeted archer swaps to no-hair baked base', () => {
   const helmetedUnit = { ...baseUnit, level: 6 }
 
   assert.equal(applyBakedLpcUnitAssets(baseUnit), true)
-  assert.equal(baseUnit.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
-  assert.equal(baseUnit.assets.actionSheet, 'lpc-baked/infantry/greek/male/action/shoot')
+  assert.equal(baseUnit.assets.walkingSheet, 'units/infantry/hellas/male/walking')
+  assert.equal(baseUnit.assets.actionSheet, 'units/infantry/hellas/male/action/shoot')
   assert.equal(applyBakedLpcUnitAssets(helmetedUnit), true)
-  assert.equal(helmetedUnit.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
-  assert.equal(helmetedUnit.assets.actionSheet, 'lpc-baked/infantry_nohair/greek/male/action/shoot')
+  assert.equal(helmetedUnit.assets.walkingSheet, 'units/infantry_nohair/hellas/male/walking')
+  assert.equal(helmetedUnit.assets.actionSheet, 'units/infantry_nohair/hellas/male/action/shoot')
 })
 
 test('looted corpse swaps back to hair baked base when helmet is removed', () => {
   const cachedAliases = new Set([
-    'lpc-baked/infantry/greek/male/walking',
-    'lpc-baked/infantry_nohair/greek/male/walking',
+    'units/infantry/hellas/male/walking',
+    'units/infantry_nohair/hellas/male/walking',
   ])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
@@ -943,7 +942,7 @@ test('looted corpse swaps back to hair baked base when helmet is removed', () =>
   })
   const corpse = {
     type: 'Fantassin',
-    owner: { civ: 'Greek', label: 'P1' },
+    owner: { civ: 'Hellas', label: 'P1' },
     label: 'unit',
     i: 1,
     j: 1,
@@ -953,11 +952,11 @@ test('looted corpse swaps back to hair baked base when helmet is removed', () =>
   }
 
   assert.equal(applyBakedLpcUnitAssets(corpse), true)
-  assert.equal(corpse.assets.walkingSheet, 'lpc-baked/infantry_nohair/greek/male/walking')
+  assert.equal(corpse.assets.walkingSheet, 'units/infantry_nohair/hellas/male/walking')
   assert.ok(corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'))
 
   corpse.lootEquipment = ['sword_ceramic']
   assert.equal(applyBakedLpcUnitAssets(corpse), true)
-  assert.equal(corpse.assets.walkingSheet, 'lpc-baked/infantry/greek/male/walking')
+  assert.equal(corpse.assets.walkingSheet, 'units/infantry/hellas/male/walking')
   assert.equal(corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'), false)
 })

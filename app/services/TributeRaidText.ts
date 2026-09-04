@@ -26,6 +26,21 @@ export function getTributeDemand(raid: TributeRaid): string {
   return t('banditTributeDemand', { cost: formatCost(raid.tribute) })
 }
 
+export function getTributePayLabel(raid: TributeRaid): string {
+  if (raid.kind === 'faction') return t('factionTributePay')
+  return t('banditTributePay')
+}
+
+export function getTributeRefuseLabel(raid: TributeRaid): string {
+  if (raid.kind === 'faction') return t('factionTributeRefuse')
+  return t('banditTributeRefuse')
+}
+
+export function getTributeCannotPayLabel(raid: TributeRaid): string {
+  if (raid.kind === 'faction') return t('factionTributeCannotPay')
+  return t('banditTributeCannotPay')
+}
+
 export function getTributePaidMessage(raid: TributeRaid): string {
   if (raid.kind === 'faction') return t('factionTributePaid', { name: raid.faction?.name ?? t('computer') })
   return t('banditTributePaid')

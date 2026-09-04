@@ -76,27 +76,27 @@ test('listGlobalPlayers prints campaign roster relations and local presence', ()
         discoveredAt: 1,
         updatedAt: 1,
       },
-      'civ-roman': {
-        id: 'civ-roman',
-        civilization: 'Roman',
-        name: 'House Roman',
+      'civ-latium': {
+        id: 'civ-latium',
+        civilization: 'Latium',
+        name: 'House Latium',
         color: 'red',
         relationState: 'neutral',
         relationScore: 0,
         homeWorldId: 'root',
-        knownWorldIds: ['roman-world'],
+        knownWorldIds: ['latium-world'],
         discoveredAt: 1,
         updatedAt: 1,
       },
     }),
-    getCurrentWorldId: () => 'roman-world',
+    getCurrentWorldId: () => 'latium-world',
     player: { isEnemy: () => false },
-    players: [{ factionId: 'civ-roman', units: [{}, {}], buildings: [{}] }],
+    players: [{ factionId: 'civ-latium', units: [{}, {}], buildings: [{}] }],
   })
 
   assert.equal(result.ok, true)
-  assert.match(result.message, /House Roman .* civ=Roman .* color=red .* relation=neutral \(0\)/)
-  assert.match(result.message, /worlds=roman-world\*/)
+  assert.match(result.message, /House Latium .* civ=Latium .* color=red .* relation=neutral \(0\)/)
+  assert.match(result.message, /worlds=latium-world\*/)
   assert.match(result.message, /local units=2 buildings=1/)
   assert.match(result.message, /Bandits .* color=grey .* relation=hostile \(-65\)/)
   assert.match(result.message, /not local/)
@@ -104,10 +104,10 @@ test('listGlobalPlayers prints campaign roster relations and local presence', ()
 
 test('listGlobalPlayers falls back to runtime players without campaign roster', () => {
   const { listGlobalPlayers } = loadPlayerActions()
-  const enemy = { buildings: [], civ: 'Roman', color: 'red', label: 'enemy', name: 'Enemy', units: [] }
+  const enemy = { buildings: [], civ: 'Latium', color: 'red', label: 'enemy', name: 'Enemy', units: [] }
   const hero = {
     buildings: [],
-    civ: 'Greek',
+    civ: 'Hellas',
     color: 'green',
     isEnemy: target => target === enemy,
     label: 'hero',

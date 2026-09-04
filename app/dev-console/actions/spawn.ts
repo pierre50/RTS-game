@@ -107,7 +107,7 @@ function getOrCreateBanditOwner(context: DevConsoleContext): BanditPlayer {
       type: PLAYER_TYPES.ai,
       isPlayed: false,
       color: 'red',
-      civ: context.player.civ ?? 'Greek',
+      civ: context.player.civ ?? 'Hellas',
       gender: 'male',
       team: null,
       diplomacy: null,

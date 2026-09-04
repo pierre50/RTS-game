@@ -1,6 +1,6 @@
 # LPC — sprite bake pipeline
 
-Generates the baked spritesheets (`public/assets/graphics/lpc-baked/`) from the
+Generates the baked spritesheets (`public/assets/graphics/units/`) from the
 Universal LPC source spritesheets (`scripts/lpc/spritesheets/`), for every
 unit / civilization / job defined in `config.py`, `jobs.py` and `equipment.py`.
 Villager jobs only bake their job-specific movement/action/loaded sheets; death
@@ -15,7 +15,7 @@ python3 scripts/lpc/build.py
 ```
 
 The build is incremental by default. It writes
-`public/assets/graphics/lpc-baked/.build-cache.json` and skips sheets whose
+`public/assets/graphics/units/.build-cache.json` and skips sheets whose
 source layers and visual pipeline settings did not change.
 
 What it does, in order:
@@ -45,7 +45,7 @@ it and re-run `pnpm assets:lpc:build` to compare.
 To test on a single already-baked sheet without rerunning the full build:
 
 ```bash
-python3 scripts/lpc/outline_style.py public/assets/graphics/lpc-baked/infantry/asian/male/walking/texture.png --mode remove
+python3 scripts/lpc/outline_style.py public/assets/graphics/units/infantry/xia/male/walking/texture.png --mode remove
 ```
 
 Options:

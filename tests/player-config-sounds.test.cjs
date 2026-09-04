@@ -63,7 +63,7 @@ test('BanditSword uses the sword attack sound cues for melee impacts', () => {
       units: {},
     },
     {},
-    'Greek'
+    'Hellas'
   )
 
   assert.deepEqual(config.units.BanditSword.sounds.hit, soundCues.unit.swordAttack)
@@ -78,7 +78,7 @@ test('LPC arrows spawn lower when fired toward the left', () => {
       units: {},
     },
     {},
-    'Greek'
+    'Hellas'
   )
 
   assert.deepEqual(config.projectiles.Arrow.directionalSpawnOffsets.west, { x: -10, y: 8 })
@@ -99,7 +99,7 @@ test('camp decoration buildings do not fade over the hero and use sprite shadows
       units: {},
     },
     {},
-    'Greek'
+    'Hellas'
   )
 
   assert.equal(config.buildings.FireCamp.occlusionFade, false)

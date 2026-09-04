@@ -80,7 +80,7 @@ test('hunter action sheet falls back to actionSheet when shootingSheet is absent
       type: 'Villager',
       allAssets: {
         hunter: {
-          actionSheet: 'lpc-baked/villager/greek/male/action/shoot',
+          actionSheet: 'units/villager/hellas/male/action/shoot',
         },
       },
     },
@@ -88,8 +88,8 @@ test('hunter action sheet falls back to actionSheet when shootingSheet is absent
     'hunt'
   )
 
-  assert.equal(sheet.id, 'lpc-baked/villager/greek/male/action/shoot')
-  assert.deepEqual(cacheGets, ['lpc-baked/villager/greek/male/action/shoot'])
+  assert.equal(sheet.id, 'units/villager/hellas/male/action/shoot')
+  assert.deepEqual(cacheGets, ['units/villager/hellas/male/action/shoot'])
 })
 
 test('missing work action asset does not query Pixi cache with an empty id', () => {

@@ -55,6 +55,7 @@ test('building interior entry ignores unfinished and unsupported buildings', () 
 
   assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: false, j: 5, type: 'TownCenter' }]), null)
   assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: true, j: 5, type: 'Farm' }]), null)
+  assert.equal(findBuildingInteriorEntryTarget(hero, [{ i: 5, isBuilt: true, j: 5, type: 'Market' }]), null)
 })
 
 test('house interior entry uses the same grid cell flow', () => {

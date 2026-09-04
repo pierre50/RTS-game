@@ -1,24 +1,24 @@
-import asian from './asian'
-import babylonian from './babylonian'
-import celtic from './celtic'
-import egyptian from './egyptian'
-import greek from './greek'
-import nordic from './nordic'
-import nubian from './nubian'
-import roman from './roman'
+import xia from './xia'
+import sumeria from './sumeria'
+import alba from './alba'
+import kemet from './kemet'
+import hellas from './hellas'
+import nord from './nord'
+import nobatia from './nobatia'
+import latium from './latium'
 
 type UnitNameGender = 'male' | 'female'
 type UnitNamesByGender = Record<UnitNameGender, string[]>
 
 const NAMES_BY_CIV: Record<string, UnitNamesByGender> = {
-  Asian: asian,
-  Babylonian: babylonian,
-  Celtic: celtic,
-  Egyptian: egyptian,
-  Greek: greek,
-  Nordic: nordic,
-  Nubian: nubian,
-  Roman: roman,
+  Xia: xia,
+  Sumeria: sumeria,
+  Alba: alba,
+  Kemet: kemet,
+  Hellas: hellas,
+  Nord: nord,
+  Nobatia: nobatia,
+  Latium: latium,
 }
 
 function normalizeGender(gender: string | null | undefined): UnitNameGender {
@@ -30,7 +30,7 @@ export function getRandomUnitName(
   gender?: string | null,
   random = Math.random
 ): string | undefined {
-  const namesByGender = NAMES_BY_CIV[civ || ''] ?? NAMES_BY_CIV.Greek
+  const namesByGender = NAMES_BY_CIV[civ || ''] ?? NAMES_BY_CIV.Hellas
   const names = namesByGender[normalizeGender(gender)]
   if (!names.length) return undefined
 

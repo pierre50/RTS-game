@@ -411,7 +411,7 @@ test('entering a building interior opens the runtime layer and removes stale chi
   }
   const sourcePlayer = {
     buildings: [townCenter],
-    civ: 'Greek',
+    civ: 'Hellas',
     color: 'blue',
     factionId: null,
     gender: 'female',

@@ -7,7 +7,7 @@ from pathlib import Path
 SCRIPT_ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_ROOT.parents[1]
 DEFAULT_SOURCE_ROOT = SCRIPT_ROOT / "spritesheets"
-DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/lpc-baked"
+DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/units"
 
 FRAME_SIZE = 64
 OUTPUT_SCALE = 1.0
@@ -24,8 +24,8 @@ ANCHORS_BY_OUTPUT_SIZE = {
 PALETTES: dict[str, list[str]] = {
     # ── Skin tones ──────────────────────────────────────────────────────────
     "fair":        ["#1D1D21", "#453125", "#784C49", "#AE6B60", "#D89F75", "#EBBD9D"],
-    "celtic_fair": ["#492129", "#633432", "#8A5258", "#BD7D64", "#EBBD9D", "#FEDFB1"],
-    "nordic_fair": ["#1D1D21", "#3B303C", "#76524E", "#B87A68", "#E6B58D", "#F8DEC0"],
+    "alba_fair": ["#492129", "#633432", "#8A5258", "#BD7D64", "#EBBD9D", "#FEDFB1"],
+    "nord_fair": ["#1D1D21", "#3B303C", "#76524E", "#B87A68", "#E6B58D", "#F8DEC0"],
     "olive":       ["#1D1D21", "#492129", "#885041", "#AD6E51", "#D58D6B", "#E59A7C"],
     "brown":       ["#1D1D21", "#49251C", "#662B29", "#9E6520", "#AD6E51", "#D58D6B"],
     "deep_brown":  ["#000000", "#1D1D21", "#222323", "#31222A", "#4A353C", "#5E4646"],
@@ -107,24 +107,24 @@ PALETTES: dict[str, list[str]] = {
 }
 
 SKIN_TONES = {
-    "fair": "Light skin used by Babylonian variants.",
-    "celtic_fair": "Warm fair skin used by Celtic variants.",
-    "nordic_fair": "Cool fair skin used by Nordic variants.",
-    "olive": "Mediterranean olive skin used by Greek variants.",
-    "brown": "Brown skin used by Egyptian variants.",
-    "deep_brown": "Deep brown skin used by Nubian variants.",
-    "golden": "Warm tan skin used by Asian variants.",
+    "fair": "Light skin used by Sumeria variants.",
+    "alba_fair": "Warm fair skin used by Alba variants.",
+    "nord_fair": "Cool fair skin used by Nord variants.",
+    "olive": "Mediterranean olive skin used by Hellas variants.",
+    "brown": "Brown skin used by Kemet variants.",
+    "deep_brown": "Deep brown skin used by Nobatia variants.",
+    "golden": "Warm tan skin used by Xia variants.",
 }
 
 CIVS = {
-    "greek": {"skin": "olive", "hair": "dark_brown"},
-    "roman": {"skin": "olive", "hair": "dark_brown"},
-    "egyptian": {"skin": "brown", "hair": "black"},
-    "babylonian": {"skin": "fair", "hair": "black"},
-    "asian": {"skin": "golden", "hair": "black"},
-    "celtic": {"skin": "celtic_fair", "hair": "brown_hair"},
-    "nordic": {"skin": "nordic_fair", "hair": "blond"},
-    "nubian": {"skin": "deep_brown", "hair": "black"},
+    "hellas": {"skin": "olive", "hair": "dark_brown"},
+    "latium": {"skin": "olive", "hair": "dark_brown"},
+    "kemet": {"skin": "brown", "hair": "black"},
+    "sumeria": {"skin": "fair", "hair": "black"},
+    "xia": {"skin": "golden", "hair": "black"},
+    "alba": {"skin": "alba_fair", "hair": "brown_hair"},
+    "nord": {"skin": "nord_fair", "hair": "blond"},
+    "nobatia": {"skin": "deep_brown", "hair": "black"},
 }
 
 BANDIT_CIV = {"skin": "olive", "hair": "dark_brown"}
@@ -202,9 +202,9 @@ SLIT_DRESS = DressItem("dress/slit/female/{animation}/walnut.png")
 MALE_SHORT_SKIRT_SLEEVELESS = (SANDALS, SKIRT_SHORT, SLEEVELESS_SHIRT)
 MALE_LONG_SKIRT_SLEEVELESS = (SANDALS, SKIRT_PLAIN, SLEEVELESS_SHIRT)
 MALE_SLIT_SKIRT_NO_SHIRT = (SANDALS, SLIT_SKIRT)
-MALE_NUBIAN_SLIT_SKIRT_NO_SHIRT = (SLIT_SKIRT,)
+MALE_NOBATIA_SLIT_SKIRT_NO_SHIRT = (SLIT_SKIRT,)
 MALE_SLIT_SKIRT_OBI = (SANDALS, SLIT_SKIRT, OBI)
-MALE_NUBIAN_SLIT_SKIRT_OBI = (SLIT_SKIRT, OBI)
+MALE_NOBATIA_SLIT_SKIRT_OBI = (SLIT_SKIRT, OBI)
 
 FEMALE_KIMONO_SANDALS = (SANDALS_FEMALE, KIMONO, OBI_THIN)
 FEMALE_KIMONO_LONGSLEEVE_SANDALS = (SANDALS_FEMALE, KIMONO, KIMONO_LONGSLEEVE, KIMONO_LONGSLEEVE_FRONT, OBI_THIN)
@@ -216,9 +216,9 @@ FEMALE_KIMONO_LONGSLEEVE_SHOES = (
     KIMONO_LONGSLEEVE_FRONT,
     OBI_THIN,
 )
-FEMALE_NUBIAN_SLIT_DRESS = (SLIT_DRESS, OBI_THIN)
+FEMALE_NOBATIA_SLIT_DRESS = (SLIT_DRESS, OBI_THIN)
 FEMALE_SLIT_DRESS_OBI = (SANDALS_FEMALE, SLIT_DRESS, OBI_THIN)
-FEMALE_NUBIAN_SLIT_DRESS_OBI = (SLIT_DRESS, OBI_THIN)
+FEMALE_NOBATIA_SLIT_DRESS_OBI = (SLIT_DRESS, OBI_THIN)
 
 # Hero outfit pieces. Unlike SHORTS/APRON_BROWN (pre-colored files picked by name),
 # shortsleeve/pantaloons/shoes only ship one colorless template per animation
@@ -381,40 +381,40 @@ def civs_for_unit(unit: str, selected_civs: dict[str, dict[str, str]] | None = N
 
 
 CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
-    "greek": {
+    "hellas": {
         "villager": {"hair": "page2", "beard": "beard/medium", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "infantry": {"hair": "long_messy", "beard": "beard/winter/male", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
     },
-    "roman": {
+    "latium": {
         "villager": {"hair": "plain", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
         "infantry": {"hair": "buzzcut", "dress": MALE_SHORT_SKIRT_SLEEVELESS},
     },
-    "babylonian": {
+    "sumeria": {
         "villager": {"hair": "jewfro", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
         "infantry": {"hair": "curly_short", "beard": "beard/winter/male", "dress": MALE_LONG_SKIRT_SLEEVELESS},
     },
-    "asian": {
+    "xia": {
         "villager": {"hair": "ponytail", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
         "infantry": {"hair": "ponytail2", "hair_split": True, "dress": MALE_LONG_SKIRT_LONGSLEEVE},
     },
-    "celtic": {
+    "alba": {
         "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
         "infantry": {"hair": "bangslong", "beard": "beard/basic", "dress": MALE_STRIPED_PANTS_LONGSLEEVE},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
-    "nordic": {
+    "nord": {
         "villager": {"hair": "swoop", "beard": "beard/basic", "dress": MALE_PANTS_LONGSLEEVE},
         "infantry": {"hair": "bangslong", "beard": "beard/winter/male", "dress": MALE_PANTS_LONGSLEEVE},
         "priest": {"hair": "curly_long", "hair_palette": "white", "beard": "beard/winter/male", "beard_palette": "white"},
     },
-    "egyptian": {
+    "kemet": {
         "villager": {"hair": "bob", "dress": MALE_SLIT_SKIRT_OBI},
         "infantry": {"hair": "buzzcut", "dress": MALE_SLIT_SKIRT_OBI},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
-    "nubian": {
-        "villager": {"hair": "cornrows", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
-        "infantry": {"hair": "dreadlocks_short", "dress": MALE_NUBIAN_SLIT_SKIRT_OBI},
+    "nobatia": {
+        "villager": {"hair": "cornrows", "dress": MALE_NOBATIA_SLIT_SKIRT_OBI},
+        "infantry": {"hair": "dreadlocks_short", "dress": MALE_NOBATIA_SLIT_SKIRT_OBI},
         "priest": {"hair": None, "hair_palette": None, "beard": None, "beard_palette": None},
     },
 }
@@ -430,53 +430,56 @@ FEMALE_BASE_LOOK_OVERRIDES = {
 
 
 FEMALE_CIV_UNIT_LOOK_OVERRIDES: dict[str, dict[str, dict]] = {
-    "babylonian": {
+    "sumeria": {
         "villager": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
         "infantry": {"hair": None, "hat": HIJAB_TEAM, "dress": FEMALE_KIMONO_LONGSLEEVE_SANDALS},
         "priest": {"hair": None, "hat": HIJAB_TEAM, "hair_palette": None},
     },
-    "egyptian": {
+    "kemet": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_SLIT_DRESS_OBI},
         "priest": {"hair": None, "hair_palette": None},
     },
-    "greek": {
+    "hellas": {
         "villager": {"hair": "braid", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
-    "roman": {
+    "latium": {
         "villager": {"hair": "long_center_part", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "infantry": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_SANDALS},
         "priest": {"hair": "long_tied", "hair_body_type": "female", "hair_palette": "white"},
     },
-    "asian": {
+    "xia": {
         "villager": {"hair": "long_tied", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "ponytail", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "single", "hair_body_type": "female", "hair_palette": "white"},
     },
-    "celtic": {
+    "alba": {
         "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "bangslong2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
-    "nordic": {
+    "nord": {
         "villager": {"hair": "wavy", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "infantry": {"hair": "braid2", "hair_body_type": "female", "dress": FEMALE_KIMONO_LONGSLEEVE_SHOES},
         "priest": {"hair": "curly_long", "hair_body_type": "female", "hair_palette": "white"},
     },
-    "nubian": {
-        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
-        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NUBIAN_SLIT_DRESS_OBI},
+    "nobatia": {
+        "villager": {"hair": "xlong", "hair_body_type": "female", "dress": FEMALE_NOBATIA_SLIT_DRESS_OBI},
+        "infantry": {"hair": "dreadlocks_long", "hair_body_type": "female", "dress": FEMALE_NOBATIA_SLIT_DRESS_OBI},
         "priest": {"hair": "dreadlocks_long", "hair_body_type": "female", "hair_palette": "white"},
     },
 }
 
 
-def remove_hair(look: UnitLook) -> UnitLook:
+# Used by infantry_nohair (helmet-wearing infantry) instead of a bare scalp: a
+# short buzzcut still reads under a helmet. hair_palette stays unset so it
+# defaults to the civilization's hair color (see image_pipeline.layer_paths).
+def buzzcut_hair(look: UnitLook) -> UnitLook:
     return replace(
         look,
-        hair=None,
+        hair="buzzcut",
         hair_split=False,
         hair_body_type="adult",
         hair_palette=None,
@@ -521,7 +524,7 @@ def unit_look_for_civ(unit: str, civ_key: str) -> UnitLook:
     look = UNIT_LOOKS[base_unit]
     overrides = CIV_UNIT_LOOK_OVERRIDES.get(civ_key, {}).get(base_unit)
     look = replace(look, **overrides) if overrides else look
-    return remove_hair(look) if unit == "infantry_nohair" else look
+    return buzzcut_hair(look) if unit == "infantry_nohair" else look
 
 
 def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitLook:
@@ -555,9 +558,9 @@ def variant_look_for_civ(unit: str, civ_key: str, variant: UnitVariant) -> UnitL
     if look.dress:
         look = replace(look, dress=tuple(female_dress_map.get(item, item) for item in look.dress))
     if overrides and "dress" in overrides:
-        return remove_hair(look) if unit == "infantry_nohair" else look
+        return buzzcut_hair(look) if unit == "infantry_nohair" else look
     look = replace(look, dress=(female_top, *look.dress))
-    return remove_hair(look) if unit == "infantry_nohair" else look
+    return buzzcut_hair(look) if unit == "infantry_nohair" else look
 
 
 @dataclass(frozen=True)

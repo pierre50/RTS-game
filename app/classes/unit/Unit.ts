@@ -68,6 +68,7 @@ export type { UnitSpawnOptions } from './UnitTypes'
 export class Unit extends Instance implements UnitEntity {
   declare sprite: AnimatedSprite
   declare reliefLift: number
+  private isMovingStep = false
 
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
     super(context)
@@ -238,7 +239,8 @@ export class Unit extends Instance implements UnitEntity {
     this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
-    this.startInterval(() => this.step(), STEP_TIME, true, 'unit.step')
+    const runImmediate = !this.isMovingStep
+    this.startInterval(() => this.step(), STEP_TIME, runImmediate, 'unit.step')
   }
 
   queueOrder(orderOrDest: (() => void) | RuntimeEntity | RuntimeCell, action: string | null = null): boolean {
@@ -319,16 +321,22 @@ export class Unit extends Instance implements UnitEntity {
   }
 
   override step(): void {
+    if (this.isMovingStep) return
+    this.isMovingStep = true
     const beforeX = this.x
     const beforeY = this.y
     updateUnitEnergy(this)
     updateUnitHealthRegen(this)
-    if (resumeEnergyWaitIfReady(this)) {
+    try {
+      if (resumeEnergyWaitIfReady(this)) {
+        watchBanditStep(this, beforeX, beforeY)
+        return
+      }
+      super.step()
       watchBanditStep(this, beforeX, beforeY)
-      return
+    } finally {
+      this.isMovingStep = false
     }
-    super.step()
-    watchBanditStep(this, beforeX, beforeY)
   }
 
   moveDirect(

@@ -144,7 +144,7 @@ test('stable info displays horse amount and stored horse color avatars', () => {
     const element = document.createElement('div')
     const building = {
       type: 'Stable',
-      owner: { isPlayed: true, civ: 'Greek' },
+      owner: { isPlayed: true, civ: 'Hellas' },
       isBuilt: true,
       loading: null,
       hitPoints: 100,
@@ -168,7 +168,7 @@ test('foreign building info still displays hit points', () => {
     const element = document.createElement('div')
     const building = {
       type: 'House',
-      owner: { isPlayed: false, civ: 'Greek' },
+      owner: { isPlayed: false, civ: 'Hellas' },
       isBuilt: true,
       loading: null,
       hitPoints: 75,
@@ -188,7 +188,7 @@ test('building info does not render the legacy loading row', () => {
     const element = document.createElement('div')
     const building = {
       type: 'Barracks',
-      owner: { isPlayed: true, civ: 'Greek' },
+      owner: { isPlayed: true, civ: 'Hellas' },
       isBuilt: true,
       loading: 42,
       hitPoints: 100,
@@ -206,14 +206,14 @@ test('hero team building info renders a red delete button that destroys the buil
   withMockDocument(() => {
     const { BuildingInterface } = loadBuildingInterface()
     const element = document.createElement('div')
-    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    const heroOwner = { isPlayed: true, civ: 'Hellas', team: 2 }
     let died = false
     let closed = false
     let heroMenuClosed = false
     let clicked = false
     const building = {
       type: 'House',
-      owner: { isPlayed: false, civ: 'Greek', team: 2 },
+      owner: { isPlayed: false, civ: 'Hellas', team: 2 },
       isBuilt: true,
       loading: null,
       hitPoints: 100,
@@ -259,13 +259,13 @@ test('foreign team building info does not render the delete button', () => {
     const element = document.createElement('div')
     const building = {
       type: 'House',
-      owner: { isPlayed: false, civ: 'Greek', team: 3 },
+      owner: { isPlayed: false, civ: 'Hellas', team: 3 },
       isBuilt: true,
       loading: null,
       hitPoints: 100,
       totalHitPoints: 100,
       context: {
-        controls: { heroUnit: { owner: { isPlayed: true, civ: 'Greek', team: 2 } } },
+        controls: { heroUnit: { owner: { isPlayed: true, civ: 'Hellas', team: 2 } } },
         menu: {},
       },
       die: () => {},
@@ -281,7 +281,7 @@ test('hero team trap info does not render the delete button', () => {
   withMockDocument(() => {
     const { BuildingInterface } = loadBuildingInterface()
     const element = document.createElement('div')
-    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    const heroOwner = { isPlayed: true, civ: 'Hellas', team: 2 }
     const building = {
       label: 'trap-1',
       type: 'Trap',
@@ -306,7 +306,7 @@ test('original interior storage chest info does not render the delete button', (
   withMockDocument(() => {
     const { BuildingInterface } = loadBuildingInterface()
     const element = document.createElement('div')
-    const heroOwner = { isPlayed: true, civ: 'Greek', team: 2 }
+    const heroOwner = { isPlayed: true, civ: 'Hellas', team: 2 }
     const building = {
       label: 'interior:town-center-1:default:storage-chest',
       type: 'Chest',

@@ -39,7 +39,7 @@ function loadWalls() {
 const { getWallLevel, getWallTexture, updateWallTexture } = loadWalls()
 
 test('wall technology levels progress independently from player age', () => {
-  const owner = { age: 3, civ: 'Greek', technologies: [] }
+  const owner = { age: 3, civ: 'Hellas', technologies: [] }
   assert.equal(getWallLevel(owner), 1)
   assert.deepEqual(getWallTexture(owner, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 
@@ -54,9 +54,9 @@ test('wall technology levels progress independently from player age', () => {
 
 test('all architectures reuse the shared wall sheet until wall age art is added', () => {
   const technologies = ['UpgradeMediumWall']
-  assert.deepEqual(getWallTexture({ civ: 'Egyptian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
-  assert.deepEqual(getWallTexture({ civ: 'Asian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
-  assert.deepEqual(getWallTexture({ civ: 'Babylonian', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
+  assert.deepEqual(getWallTexture({ civ: 'Kemet', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
+  assert.deepEqual(getWallTexture({ civ: 'Xia', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
+  assert.deepEqual(getWallTexture({ civ: 'Sumeria', technologies }, 0), { sheet: 'buildings/wall/level-1', frame: 0 })
 })
 
 test('isolated walls and wall endpoints use the tower block frame', () => {

@@ -4,14 +4,14 @@ import { DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../constants'
 // constant (rather than data on Civilization) since it's a game-setup concern,
 // not a civ-balance one.
 const CIV_ENVIRONMENTS: Record<string, EnvironmentId> = {
-  Greek: 'Temperate',
-  Roman: 'Temperate',
-  Egyptian: 'Desert',
-  Babylonian: 'Desert',
-  Nubian: 'Desert',
-  Asian: 'Jungle',
-  Celtic: 'BlackForest',
-  Nordic: 'BlackForest',
+  Hellas: 'Temperate',
+  Latium: 'Temperate',
+  Kemet: 'Desert',
+  Sumeria: 'Desert',
+  Nobatia: 'Desert',
+  Xia: 'Jungle',
+  Alba: 'BlackForest',
+  Nord: 'BlackForest',
 }
 
 export function getEnvironmentForCiv(civ?: string | null): EnvironmentId {

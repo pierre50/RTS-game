@@ -388,7 +388,7 @@ const equipmentAvatarCache = new Map<string, HTMLCanvasElement>()
 function getEquipmentLayerTexture(equipment: string, layer: string, sheet: string): Texture | null {
   let sheetData: SpritesheetLike | undefined
   for (const variant of EQUIPMENT_VARIANTS) {
-    const sheetId = `lpc-equipment/${equipment}/${layer}/${sheet}${variant ? `/${variant}` : ''}`
+    const sheetId = `equipments/${equipment}/${layer}/${sheet}${variant ? `/${variant}` : ''}`
     sheetData = Assets.cache.has(sheetId) ? (Assets.cache.get(sheetId) as SpritesheetLike | undefined) : undefined
     if (sheetData?.textures) break
   }

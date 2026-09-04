@@ -55,16 +55,6 @@
       "exits": 1
     },
     {
-      "id": "market-circle-001",
-      "interiorType": "Market",
-      "kind": "interior",
-      "path": "market/market-circle-001.map",
-      "seed": 1120194016,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
       "id": "granary-circle-001",
       "interiorType": "Granary",
       "kind": "interior",

@@ -1,6 +1,7 @@
 import type { AssetAge } from '../../types/pixi'
 import type { ConfigValue } from '../../types/config'
 import type { TextureRef } from './textures'
+import { civilizationAssetSlug } from '../civilizationAlias'
 
 export type BuildingAsset = {
   animated?: boolean
@@ -93,7 +94,7 @@ export function getBuildingAsset(type: string, owner: AssetOwner, assets: AssetC
   const decoAsset = DECO_BUILDING_ASSETS[type]
   if (decoAsset) return decoAsset
 
-  const path = assets.cache.get((owner.civ || '').toLowerCase())?.buildings ?? assets.cache.get('greek').buildings
+  const path = assets.cache.get(civilizationAssetSlug(owner.civ))?.buildings ?? assets.cache.get('hellas').buildings
   const assetAt = (age: number) => path[age]?.[type]
   const fallbackAges = [owner.age, owner.age - 1, owner.age - 2, 0, owner.age + 1, owner.age + 2, owner.age + 3]
 

@@ -49,19 +49,19 @@ test('LPC slash speed maps to the recovery frame delay', () => {
 
 test('hero hair slash aliases use the same speed as the hero body slash', () => {
   const cache = new Map()
-  const atlasAlias = 'lpc-hero/hair/page2/male'
+  const atlasAlias = 'hero/hair/page2/male'
   cache.set(atlasAlias, {
     data: {
       frames: {
-        '000_graphics_lpc-hero_hair_page2_male_front_action_slash.png': {},
-        '000_graphics_lpc-hero_hair_page2_male_front_action_shoot.png': {},
-        '000_graphics_lpc-hero_hair_page2_male_front_corpse.png': {},
+        '000_graphics_hero_hair_page2_male_front_action_slash.png': {},
+        '000_graphics_hero_hair_page2_male_front_action_shoot.png': {},
+        '000_graphics_hero_hair_page2_male_front_corpse.png': {},
       },
     },
     textures: {
-      '000_graphics_lpc-hero_hair_page2_male_front_action_slash.png': {},
-      '000_graphics_lpc-hero_hair_page2_male_front_action_shoot.png': {},
-      '000_graphics_lpc-hero_hair_page2_male_front_corpse.png': {},
+      '000_graphics_hero_hair_page2_male_front_action_slash.png': {},
+      '000_graphics_hero_hair_page2_male_front_action_shoot.png': {},
+      '000_graphics_hero_hair_page2_male_front_corpse.png': {},
     },
   })
 
@@ -80,12 +80,12 @@ test('hero hair slash aliases use the same speed as the hero body slash', () => 
   })
 
   registerHeroAppearanceAliasesForPlayers([
-    { civ: 'Greek', gender: 'male', heroAppearance: { hairStyle: 'page2', hairColor: 'dark_brown' } },
+    { civ: 'Hellas', gender: 'male', heroAppearance: { hairStyle: 'page2', hairColor: 'dark_brown' } },
   ])
 
-  assert.equal(cache.get('lpc-hero/hair/page2/male/front/action/slash').data.animationSpeed, 0.25)
-  assert.equal(cache.get('lpc-hero/hair/page2/male/front/action/shoot').data.animationSpeed, 0.3)
-  assert.equal(cache.get('lpc-hero/hair/page2/male/front/corpse').data.animationSpeed, 0)
+  assert.equal(cache.get('hero/hair/page2/male/front/action/slash').data.animationSpeed, 0.25)
+  assert.equal(cache.get('hero/hair/page2/male/front/action/shoot').data.animationSpeed, 0.3)
+  assert.equal(cache.get('hero/hair/page2/male/front/corpse').data.animationSpeed, 0)
 })
 
 test('dynamic equipment action sheets stay in sync with slash body sheets', () => {
@@ -95,8 +95,8 @@ test('dynamic equipment action sheets stay in sync with slash body sheets', () =
     },
   })
   const aliases = dynamicEquipmentAliases()
-  const pickaxeAction = aliases.find(alias => alias.alias === 'lpc-equipment/pickaxe_ceramic/front/action/male')
-  const bowAction = aliases.find(alias => alias.alias === 'lpc-equipment/bow/front/action')
+  const pickaxeAction = aliases.find(alias => alias.alias === 'equipments/pickaxe_ceramic/front/action/male')
+  const bowAction = aliases.find(alias => alias.alias === 'equipments/bow/front/action')
   const corpse = aliases.find(alias => alias.alias.endsWith('/corpse'))
 
   assert.equal(pickaxeAction?.animationSpeed, 0.25)
@@ -183,7 +183,7 @@ test('appearance layers use harvest art for taking meat instead of hunter shooti
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     inventory: { equipped: {} },
-    owner: { civ: 'Greek', color: 'blue' },
+    owner: { civ: 'Hellas', color: 'blue' },
     sheetDirectionCounts: {},
     sheetDirectionOrders: {},
     sprite: { currentFrame: 0, loop: true, playing: false },
@@ -275,7 +275,7 @@ test('appearance layers use shooting art for hero bow charge even without a hunt
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     inventory: { equipped: {} },
-    owner: { civ: 'Greek', color: 'blue' },
+    owner: { civ: 'Hellas', color: 'blue' },
     sheetDirectionCounts: {},
     sheetDirectionOrders: {},
     sprite: { currentFrame: 0, loop: true, playing: false },

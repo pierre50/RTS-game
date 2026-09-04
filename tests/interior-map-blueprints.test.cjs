@@ -33,7 +33,7 @@ test('interior generator writes circular dirt blueprints for supported buildings
 
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
     assert.equal(manifest.format, 'interior-map-manifest')
-    assert.equal(manifest.interiors.length, 10)
+    assert.equal(manifest.interiors.length, 9)
     assert.deepEqual(
       manifest.interiors.map(interior => [interior.interiorType, interior.size]),
       [
@@ -42,7 +42,6 @@ test('interior generator writes circular dirt blueprints for supported buildings
         ['Barracks', 13],
         ['ArcheryRange', 13],
         ['Temple', 13],
-        ['Market', 13],
         ['Granary', 13],
         ['StoragePit', 13],
         ['Stable', 13],

@@ -48,7 +48,7 @@ function heroColorFromCampaign(campaign: CampaignSave): string | null {
 }
 
 function randomAICiv(): string {
-  return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
+  return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Hellas'
 }
 
 function randomPlayerColorExcept(excludedColor?: string | null): string {

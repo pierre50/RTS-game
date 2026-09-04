@@ -1,5 +1,6 @@
 import type { SavedGameData } from '../../classes/map/MapGeneration'
 import { getEnvironmentForCiv } from '../../config/environments'
+import { civilizationAssetSlug } from '../../lib/civilizationAlias'
 import { DEFAULT_MAP_TYPE } from '../../config/mapTypes'
 import { CELL_HEIGHT, CELL_WIDTH, ENVIRONMENT_IDS, type EnvironmentId } from '../../constants'
 import { pickCampaignPortalFaction } from '../../lib/campaign/playerRoster'
@@ -80,17 +81,17 @@ export type PortalTravelSpriteSources = {
 }
 
 export function heroTravelSpriteSources(player: PlayerLike | null | undefined): PortalTravelSpriteSources {
-  const civ = (player?.civ || 'Greek').toLowerCase()
+  const civ = civilizationAssetSlug(player?.civ)
   const gender = normalizeHeroAppearanceGender(player?.gender)
   const appearance = normalizeHeroAppearance(player?.heroAppearance, player?.civ, gender)
   return {
-    body: `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`,
-    bodyAtlas: `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.json`,
+    body: `assets/graphics/units/hero/${civ}/${gender}/texture.png`,
+    bodyAtlas: `assets/graphics/units/hero/${civ}/${gender}/texture.json`,
     hairBack: null,
     hairBackAtlas: null,
     hairColor: appearance.hairColor,
-    hairFront: `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.png`,
-    hairFrontAtlas: `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.json`,
+    hairFront: `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.png`,
+    hairFrontAtlas: `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.json`,
   }
 }
 
@@ -247,7 +248,7 @@ export function configForPortalWorld({
   const aiTeam = null
   const playerColor = player.color || color
   const faction = pickCampaignPortalFaction({ campaign, encounter, now, player, portalColor: color, worldId })
-  const aiCiv = faction.civilization || player.civ || 'Greek'
+  const aiCiv = faction.civilization || player.civ || 'Hellas'
   const factionId = faction.id
   const aiColor = faction.color || 'red'
   const aiDiplomacy = faction.relationState === 'neutral' ? 'neutral' : null

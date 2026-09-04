@@ -9,33 +9,37 @@ export const FACTION_SCORE = {
 } as const
 
 const CIV_TRIBE_NAMES: Record<string, { prefixes: string[]; roots: string[] }> = {
-  Greek: {
+  Hellas: {
     prefixes: ['factionPrefixHouse', 'factionPrefixLeague', 'factionPrefixClan', 'factionPrefixCircle'],
     roots: ['Athros', 'Myron', 'Helika', 'Dorien', 'Ephyra', 'Kallias'],
   },
-  Egyptian: {
+  Kemet: {
     prefixes: ['factionPrefixHouse', 'factionPrefixNomads', 'factionPrefixGuardians', 'factionPrefixChildren'],
     roots: ['Akhet', 'Menka', 'Sobek', 'Nehesi', 'Aset', 'Kem'],
   },
-  Babylonian: {
+  Sumeria: {
     prefixes: ['factionPrefixCity', 'factionPrefixHouse', 'factionPrefixClan', 'factionPrefixWatchers'],
     roots: ['Ur-Nammu', 'Ishtar', 'Nabur', 'Enlil', 'Kish', 'Sippar'],
   },
-  Celtic: {
+  Alba: {
     prefixes: ['factionPrefixClan', 'factionPrefixCircle', 'factionPrefixHouse', 'factionPrefixWatchers'],
     roots: ['Brennos', 'Epona', 'Nemeton', 'Lugos', 'Arduenna', 'Cernun'],
   },
-  Roman: {
+  Latium: {
     prefixes: ['factionPrefixHouse', 'factionPrefixCohort', 'factionPrefixPeople', 'factionPrefixGuards'],
     roots: ['Valeria', 'Aquila', 'Marcellus', 'Sabina', 'Rufus', 'Livia'],
   },
-  Nubian: {
+  Nobatia: {
     prefixes: ['factionPrefixHouse', 'factionPrefixGuards', 'factionPrefixClan', 'factionPrefixChildren'],
     roots: ['Kush', 'Amani', 'Napata', 'Meroe', 'Taharka', 'Kandake'],
   },
-  Asian: {
+  Xia: {
     prefixes: ['factionPrefixHouse', 'factionPrefixClan', 'factionPrefixGarden', 'factionPrefixGuards'],
     roots: ['Shen', 'Yun', 'Qiao', 'Han', 'Lin', 'Ming'],
+  },
+  Nord: {
+    prefixes: ['factionPrefixHouse', 'factionPrefixClan', 'factionPrefixCircle', 'factionPrefixGuards'],
+    roots: ['Ragnar', 'Sigrun', 'Ulfar', 'Thyra', 'Vidar', 'Freya'],
   },
 }
 
@@ -61,7 +65,7 @@ function getFactionRelationState(score: number): FactionRelationState {
 }
 
 function createFactionName(civilization: string | undefined, seed: string): string {
-  const names = CIV_TRIBE_NAMES[civilization || ''] ?? CIV_TRIBE_NAMES.Greek
+  const names = CIV_TRIBE_NAMES[civilization || ''] ?? CIV_TRIBE_NAMES.Hellas
   return `${t(pickStable(names.prefixes, seed, 'prefix'))} ${pickStable(names.roots, seed, 'root')}`
 }
 

@@ -45,7 +45,7 @@ const LIGHT_FADE_OUT_MS = FADE_DURATION_MS * 0.35
 const HERO_LIGHT_RADIUS = 320
 const HERO_LIGHT_CENTER_OFFSET_Y = -22
 const HERO_LIGHT_VERTICAL_SCALE = 0.76
-const VILLAGER_LIGHT: EntityLightSourceConfig = {
+const PLAYED_UNIT_LIGHT: EntityLightSourceConfig = {
   color: '#ffc06f',
   flicker: 0.05,
   intensity: 0.82,
@@ -83,17 +83,19 @@ function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
   return Boolean(value && typeof value === 'object')
 }
 
-function isPlayedVillager(unit: RuntimeEntity): unit is UnitEntity {
-  return unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
+function isPlayedUnit(unit: RuntimeEntity): unit is UnitEntity {
+  return (
+    unit.family === FAMILY_TYPES.unit && unit.type !== UNIT_TYPES.hero && unit.owner?.isPlayed === true
+  )
 }
 
-function shouldUseVillagerLight(unit: RuntimeEntity): boolean {
-  if (!isPlayedVillager(unit)) return false
+function shouldUseUnitLight(unit: RuntimeEntity): boolean {
+  if (!isPlayedUnit(unit)) return false
   if (isSleepingUnitLightSuppressed(unit)) return false
   return !(unit.shelterState?.status === 'outside' && unit.shelterState.reason === 'sleep')
 }
 
-function shouldFadeMissingVillagerLight(unit: UnitEntity): boolean {
+function shouldFadeMissingUnitLight(unit: UnitEntity): boolean {
   return unit.shelterState?.location !== 'shelter'
 }
 
@@ -288,12 +290,11 @@ export class LightSystem {
     zoom: number,
     now: number
   ): void {
-    if (!isPlayedVillager(instance) || !shouldUseVillagerLight(instance) || isLightSourceConfig(instance.lightSource))
-      return
+    if (!isPlayedUnit(instance) || !shouldUseUnitLight(instance) || isLightSourceConfig(instance.lightSource)) return
     const unit = instance
-    this.addConfiguredLightSource(unit, VILLAGER_LIGHT, 0, 0, visibleLeft, visibleTop, zoom, now, {
-      key: `villager:${unit.label}`,
-      shouldFadeWhenMissing: () => shouldFadeMissingVillagerLight(unit),
+    this.addConfiguredLightSource(unit, PLAYED_UNIT_LIGHT, 0, 0, visibleLeft, visibleTop, zoom, now, {
+      key: `unit:${unit.label}`,
+      shouldFadeWhenMissing: () => shouldFadeMissingUnitLight(unit),
     })
   }
 

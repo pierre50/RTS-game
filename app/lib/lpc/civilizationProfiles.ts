@@ -13,49 +13,49 @@ const DEFAULT_LPC_CIVILIZATION_PROFILE: LpcCivilizationVisualProfile = {
 }
 
 const LPC_CIVILIZATION_PROFILES: Record<string, LpcCivilizationVisualProfile> = {
-  Greek: {
+  Hellas: {
     skinPalettes: ['olive'],
     hairPalettes: ['dark_brown'],
     hairstyles: ['messy3', 'curtains', 'parted', 'long'],
     beardStyles: ['beard/basic', 'beard/trimmed', 'mustache/basic', 'mustache/chevron'],
   },
-  Roman: {
+  Latium: {
     skinPalettes: ['olive'],
     hairPalettes: ['dark_brown'],
     hairstyles: ['page2', 'parted', 'curtains_long', 'long_messy'],
     beardStyles: ['beard/basic', 'beard/medium', 'beard/trimmed', 'mustache/chevron'],
   },
-  Egyptian: {
+  Kemet: {
     skinPalettes: ['brown'],
     hairPalettes: ['black'],
     hairstyles: ['plain', 'bangs', 'balding', 'messy3'],
     beardStyles: ['beard/trimmed', 'beard/5oclock_shadow', 'mustache/basic', 'mustache/chevron'],
   },
-  Babylonian: {
+  Sumeria: {
     skinPalettes: ['fair'],
     hairPalettes: ['black'],
     hairstyles: ['parted', 'long', 'curtains', 'messy3'],
     beardStyles: ['beard/basic', 'beard/medium', 'beard/trimmed', 'mustache/bigstache'],
   },
-  Asian: {
+  Xia: {
     skinPalettes: ['golden'],
     hairPalettes: ['black'],
     hairstyles: ['plain', 'long', 'bangs', 'parted'],
     beardStyles: ['beard/5oclock_shadow', 'beard/trimmed', 'mustache/basic'],
   },
-  Celtic: {
+  Alba: {
     skinPalettes: ['fair'],
     hairPalettes: ['brown_hair', 'dark_brown'],
     hairstyles: ['long', 'messy3', 'curtains', 'parted'],
     beardStyles: ['beard/basic', 'beard/medium', 'beard/trimmed', 'mustache/chevron'],
   },
-  Nordic: {
-    skinPalettes: ['nordic_fair'],
+  Nord: {
+    skinPalettes: ['nord_fair'],
     hairPalettes: ['blond', 'light_brown'],
     hairstyles: ['long', 'long_messy', 'swoop', 'bangslong'],
     beardStyles: ['beard/basic', 'beard/medium', 'beard/winter/male', 'mustache/chevron'],
   },
-  Nubian: {
+  Nobatia: {
     skinPalettes: ['deep_brown'],
     hairPalettes: ['black'],
     hairstyles: ['plain', 'bangs', 'messy3', 'balding'],

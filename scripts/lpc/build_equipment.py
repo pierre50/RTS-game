@@ -20,7 +20,7 @@ from simple_darken_border import DARKEN_FACTOR, darken_border
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
-OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "lpc-equipment"
+OUTPUT_ROOT = DEFAULT_OUTPUT_ROOT.parent / "equipments"
 PROJECTILE_OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/projectiles"
 PROJECTILE_EQUIPMENT_KEYS = {f"arrow_{variant}" for variant in ARROW_VARIANTS}
 ATLAS_MAX_WIDTH = 4096

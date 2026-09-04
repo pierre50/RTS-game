@@ -1,6 +1,7 @@
 import { t } from '../lib/lang'
 import { renderUnitHeadCanvasAvatar } from '../lib/avatar'
 import { recolorCanvasByPalette } from '../lib/graphics/colors'
+import { civilizationAssetSlug } from '../lib/civilizationAlias'
 import {
   HERO_HAIR_COLOR_OPTIONS,
   HERO_HAIR_STYLE_OPTIONS,
@@ -24,21 +25,21 @@ type HeroAppearanceHost = {
 }
 
 function heroPreviewSrc(player: PlayerSetupConfigWithAge): string {
-  const civ = (player.civ || 'Greek').toLowerCase()
+  const civ = civilizationAssetSlug(player.civ)
   const gender = player.gender === 'female' ? 'female' : 'male'
-  return `assets/graphics/lpc-baked/hero/${civ}/${gender}/texture.png`
+  return `assets/graphics/units/hero/${civ}/${gender}/texture.png`
 }
 
 function heroHairPreviewSrc(player: PlayerSetupConfigWithAge): string {
   const gender = normalizeHeroAppearanceGender(player.gender)
   const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
-  return `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.png`
+  return `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.png`
 }
 
 function heroHairPreviewJsonSrc(player: PlayerSetupConfigWithAge): string {
   const gender = normalizeHeroAppearanceGender(player.gender)
   const appearance = normalizeHeroAppearance(player.heroAppearance, player.civ, gender)
-  return `assets/graphics/lpc-hero/hair/${appearance.hairStyle}/${gender}/texture.json`
+  return `assets/graphics/hero/hair/${appearance.hairStyle}/${gender}/texture.json`
 }
 
 function drawHeroPreviewFrame(
@@ -134,7 +135,7 @@ function renderHeroPreview(
     if (!ctx) return
     ctx.imageSmoothingEnabled = false
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    img.src = `assets/graphics/lpc-baked/hero/greek/male/texture.png`
+    img.src = `assets/graphics/units/hero/hellas/male/texture.png`
   }
   img.src = heroPreviewSrc(player)
 }

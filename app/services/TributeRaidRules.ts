@@ -19,6 +19,7 @@ export const RAID_UPDATE_MS = 350
 export const RAID_SPAWN_MIN_RADIUS = 4
 export const RAID_SPAWN_MAX_RADIUS = 9
 export const PORTAL_RESOURCE_TYPE = 'Portal'
+const TRIBUTE_ROUNDING_STEP = 10
 
 export type TributeRaidKind = 'bandit' | 'faction'
 type TributeRaidPhase = 'approaching' | 'parley' | 'hostile' | 'leaving'
@@ -66,6 +67,21 @@ export function getRaidCellDistance(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<R
 
 export function livingRaidUnits(raid: TributeRaid): TributeRaidUnit[] {
   return raid.units.filter(unit => !unit.isDead && !unit.isDestroyed)
+}
+
+export function roundTributeValue(value: number): number {
+  if (value <= 0) return 0
+  return Math.max(TRIBUTE_ROUNDING_STEP, Math.round(value / TRIBUTE_ROUNDING_STEP) * TRIBUTE_ROUNDING_STEP)
+}
+
+export function roundTributeCost(cost: ResourceAmount): ResourceAmount {
+  const rounded: ResourceAmount = {}
+  for (const resource of Object.keys(cost) as Array<keyof ResourceAmount>) {
+    const value = cost[resource]
+    if (value == null) continue
+    rounded[resource] = roundTributeValue(value)
+  }
+  return rounded
 }
 
 export function getRaidUnitTypes(count: number, kind: TributeRaidKind, playerAge: number): string[] {

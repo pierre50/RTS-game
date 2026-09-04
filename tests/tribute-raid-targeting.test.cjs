@@ -33,6 +33,22 @@ function loadTributeRaidTargeting() {
   })
 }
 
+function loadTributeRaidRules() {
+  return loadTsModule('app/services/TributeRaidRules.ts', {
+    mocks: {
+      '../constants': constants,
+    },
+  })
+}
+
+test('tribute demands are rounded to clean resource amounts', () => {
+  const { roundTributeCost, roundTributeValue } = loadTributeRaidRules()
+
+  assert.equal(roundTributeValue(54), 50)
+  assert.equal(roundTributeValue(61), 60)
+  assert.deepEqual(roundTributeCost({ food: 61, gold: 196 }), { food: 60, gold: 200 })
+})
+
 test('bandit raids are blocked when an active bandit camp already controls the map', () => {
   const { hasActiveBanditCampPresence } = loadTributeRaidTargeting()
   const context = {

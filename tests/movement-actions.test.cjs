@@ -1234,20 +1234,20 @@ test('converted buildings keep their source civilization and age assets', () => 
   const oldOwner = {
     age: 1,
     buildings: [],
-    civ: 'Egyptian',
+    civ: 'Kemet',
     color: 'red',
     hasBuilt: [],
-    label: 'egypt',
+    label: 'kemet',
     populationMax: 0,
   }
   const newOwner = {
     age: 3,
     buildings: [],
-    civ: 'Greek',
+    civ: 'Hellas',
     color: 'blue',
     hasBuilt: [],
     isPlayed: true,
-    label: 'greek',
+    label: 'hellas',
     populationMax: 0,
   }
   const target = {
@@ -1282,12 +1282,12 @@ test('converted buildings keep their source civilization and age assets', () => 
 
   assert.equal(converted, true)
   assert.equal(target.owner, newOwner)
-  assert.equal(target.assetCiv, 'Egyptian')
+  assert.equal(target.assetCiv, 'Kemet')
   assert.equal(target.assetAge, 1)
   assert.equal(target.assetType, 'TownCenter')
   assert.deepEqual(
     calls.filter(([name]) => name === 'finalTexture'),
-    [['finalTexture', 'Egyptian', 1, 'TownCenter']]
+    [['finalTexture', 'Kemet', 1, 'TownCenter']]
   )
   assert.equal(oldOwner.buildings.includes(target), false)
   assert.equal(newOwner.buildings.includes(target), true)

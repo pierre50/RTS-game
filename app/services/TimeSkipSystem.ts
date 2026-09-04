@@ -21,6 +21,7 @@ type TimeSkipEndReason = 'completed' | 'cancelled'
 
 export type TimeSkipStartOptions = {
   completedMessage?: string
+  onCancel?: () => void
   onComplete?: () => void
 }
 
@@ -46,6 +47,7 @@ export class TimeSkipSystem {
   completedMessage: string | null
   dayNightMaxDeltaMs: number | undefined
   hours: number
+  onCancel: (() => void) | null
   onComplete: (() => void) | null
   overlay: TimeSkipOverlay | null
   snapshot: TimeSkipSnapshot | null
@@ -62,6 +64,7 @@ export class TimeSkipSystem {
     this.completedMessage = null
     this.dayNightMaxDeltaMs = undefined
     this.hours = 0
+    this.onCancel = null
     this.onComplete = null
     this.overlay = null
     this.snapshot = null
@@ -83,6 +86,7 @@ export class TimeSkipSystem {
     this.active = true
     this.completedMessage = options.completedMessage ?? null
     this.hours = hours
+    this.onCancel = options.onCancel ?? null
     this.onComplete = options.onComplete ?? null
     this.startElapsedMs = this.context.dayNight.getElapsedMs()
     this.targetElapsedMs = this.startElapsedMs + (hours / DAY_NIGHT_CONFIG.hoursPerDay) * DAY_NIGHT_CONFIG.dayLengthMs
@@ -157,6 +161,7 @@ export class TimeSkipSystem {
     this.context.controls?.stopKeyboardMove?.()
     this.overlay?.root.remove()
     const onComplete = reason === 'completed' ? this.onComplete : null
+    const onCancel = reason === 'cancelled' ? this.onCancel : null
     const completedMessage = this.completedMessage
     this.resetState()
     this.context.menu?.updateTopbar?.()
@@ -166,6 +171,7 @@ export class TimeSkipSystem {
       const label = `${this.context.dayNight?.getDayLabel?.() ?? 'Day'} ${this.context.dayNight?.getTimeLabel?.() ?? ''}`.trim()
       this.context.menu?.showMessage?.(completedMessage ?? `Time advanced to ${label}`, 'success')
     } else {
+      onCancel?.()
       this.context.menu?.showMessage?.('Time skip cancelled', 'warning')
     }
   }
@@ -175,6 +181,7 @@ export class TimeSkipSystem {
     this.completedMessage = null
     this.dayNightMaxDeltaMs = undefined
     this.hours = 0
+    this.onCancel = null
     this.onComplete = null
     this.overlay = null
     this.snapshot = null

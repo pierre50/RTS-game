@@ -1,11 +1,12 @@
 import { Assets } from 'pixi.js'
 import { lpcAnimationSpeedForAlias } from './animationSpeeds'
+import { normalizeCivilization } from '../civilizationAlias'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { PlayerLike } from '../../types/player'
 import type { SpritesheetLike } from '../../types/pixi'
 
-const HERO_APPEARANCE_BASE_URL = 'assets/graphics/lpc-hero'
-const HERO_APPEARANCE_ALIAS_PREFIX = 'lpc-hero'
+const HERO_APPEARANCE_BASE_URL = 'assets/graphics/hero'
+const HERO_APPEARANCE_ALIAS_PREFIX = 'hero'
 const HERO_HAIR_SOURCE_PALETTE = 'brown_hair'
 
 export type HeroHairColor = 'black' | 'dark_brown' | 'brown_hair' | 'light_brown' | 'blond' | 'white'
@@ -56,42 +57,38 @@ export const HERO_HAIR_STYLE_OPTIONS: Record<HeroAppearanceGender, readonly stri
 }
 
 const HERO_CIV_DEFAULT_HAIR: Record<string, Record<HeroAppearanceGender, HeroAppearanceConfig>> = {
-  greek: {
+  Hellas: {
     male: { hairStyle: 'page2', hairColor: 'dark_brown' },
     female: { hairStyle: 'braid', hairColor: 'dark_brown' },
   },
-  roman: {
+  Latium: {
     male: { hairStyle: 'buzzcut', hairColor: 'dark_brown' },
     female: { hairStyle: 'long_center_part', hairColor: 'dark_brown' },
   },
-  egyptian: {
+  Kemet: {
     male: { hairStyle: 'bob', hairColor: 'black' },
     female: { hairStyle: 'long_center_part', hairColor: 'black' },
   },
-  babylonian: {
+  Sumeria: {
     male: { hairStyle: 'jewfro', hairColor: 'black' },
     female: { hairStyle: 'long_center_part', hairColor: 'black' },
   },
-  asian: {
+  Xia: {
     male: { hairStyle: 'ponytail', hairColor: 'black' },
     female: { hairStyle: 'long_tied', hairColor: 'black' },
   },
-  celtic: {
+  Alba: {
     male: { hairStyle: 'swoop', hairColor: 'brown_hair' },
     female: { hairStyle: 'wavy', hairColor: 'brown_hair' },
   },
-  nordic: {
+  Nord: {
     male: { hairStyle: 'bob_side_part', hairColor: 'blond' },
     female: { hairStyle: 'braid', hairColor: 'blond' },
   },
-  nubian: {
+  Nobatia: {
     male: { hairStyle: 'cornrows', hairColor: 'black' },
     female: { hairStyle: 'xlong', hairColor: 'black' },
   },
-}
-
-function normalizeCiv(civ?: string | null): string {
-  return (civ || 'Greek').toLowerCase()
 }
 
 export function normalizeHeroAppearanceGender(gender?: string | null): HeroAppearanceGender {
@@ -100,8 +97,8 @@ export function normalizeHeroAppearanceGender(gender?: string | null): HeroAppea
 
 export function defaultHeroAppearance(civ?: string | null, gender?: string | null): HeroAppearanceConfig {
   const normalizedGender = normalizeHeroAppearanceGender(gender)
-  const defaults = HERO_CIV_DEFAULT_HAIR[normalizeCiv(civ)]?.[normalizedGender]
-  return { ...(defaults ?? HERO_CIV_DEFAULT_HAIR.greek[normalizedGender]) }
+  const defaults = HERO_CIV_DEFAULT_HAIR[normalizeCivilization(civ)]?.[normalizedGender]
+  return { ...(defaults ?? HERO_CIV_DEFAULT_HAIR.Hellas[normalizedGender]) }
 }
 
 export function normalizeHeroAppearance(

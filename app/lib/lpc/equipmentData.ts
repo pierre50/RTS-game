@@ -1,5 +1,6 @@
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
+import { normalizeCivilization } from '../civilizationAlias'
 
 const EQUIPMENT_DEATH_SHEETS = ['walking', 'action', 'dying', 'corpse'] as const
 export const EQUIPMENT_SHOOTING_SHEET = 'shooting'
@@ -536,22 +537,11 @@ const metalAgeEquipment = (
   bronze: DynamicEquipmentKey,
   iron: DynamicEquipmentKey
 ): AgeEquipmentOverrides => ({ 1: copper, 2: bronze, 3: iron })
-const DEFAULT_CIVILIZATION = 'Greek'
-const CIVILIZATION_ALIASES: Record<string, string> = {
-  greek: 'Greek',
-  roman: 'Roman',
-  egyptian: 'Egyptian',
-  babylonian: 'Babylonian',
-  asian: 'Asian',
-  celtic: 'Celtic',
-  nordic: 'Nordic',
-  viking: 'Nordic',
-  nubian: 'Nubian',
-}
+const DEFAULT_CIVILIZATION = 'Hellas'
 const HIDE_ARROW_LAYER_FROM_SHOOT_RELEASE_FRAME = 9
 
 export function civilizationKey(civilization: string | null | undefined): string {
-  return CIVILIZATION_ALIASES[(civilization || DEFAULT_CIVILIZATION).toLowerCase()] ?? DEFAULT_CIVILIZATION
+  return normalizeCivilization(civilization || DEFAULT_CIVILIZATION)
 }
 
 export function isEquipmentEnabledForCivilization(
@@ -586,19 +576,19 @@ const SOLDIER_CIVILIZATION_HELMET_EQUIPMENT: readonly UnitEquipmentDefinition[] 
   {
     equipment: 'helmet_barbuta_ceramic',
     ageEquipment: metalAgeEquipment('helmet_barbuta_copper', 'helmet_barbuta_bronze', 'helmet_barbuta_iron'),
-    civilizations: ['Greek'],
+    civilizations: ['Hellas'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_legion_ceramic',
     ageEquipment: metalAgeEquipment('helmet_legion_copper', 'helmet_legion_bronze', 'helmet_legion_iron'),
-    civilizations: ['Roman'],
+    civilizations: ['Latium'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_nasal_ceramic',
     ageEquipment: metalAgeEquipment('helmet_nasal_copper', 'helmet_nasal_bronze', 'helmet_nasal_iron'),
-    civilizations: ['Babylonian', 'Nubian'],
+    civilizations: ['Sumeria', 'Nobatia'],
     minLevel: 15,
   },
   {
@@ -608,24 +598,24 @@ const SOLDIER_CIVILIZATION_HELMET_EQUIPMENT: readonly UnitEquipmentDefinition[] 
       'helmet_bascinet_round_bronze',
       'helmet_bascinet_round_iron'
     ),
-    civilizations: ['Egyptian', 'Asian', 'Celtic'],
+    civilizations: ['Kemet', 'Xia', 'Alba'],
     minLevel: 15,
   },
   {
     equipment: 'helmet_norman_ceramic',
     ageEquipment: metalAgeEquipment('helmet_norman_copper', 'helmet_norman_bronze', 'helmet_norman_iron'),
-    civilizations: ['Nordic'],
+    civilizations: ['Nord'],
     minLevel: 15,
   },
 ]
 
 const SOLDIER_CIVILIZATION_DECORATION_EQUIPMENT: readonly UnitEquipmentDefinition[] = [
-  { equipment: 'centurion_crest', civilizations: ['Greek'], minLevel: 16 },
-  { equipment: 'centurion_plumage', civilizations: ['Roman'], minLevel: 16 },
-  { equipment: 'legion_plumage', civilizations: ['Babylonian'], minLevel: 16 },
-  { equipment: 'plumage', civilizations: ['Egyptian', 'Asian', 'Nubian'], minLevel: 16 },
-  { equipment: 'helmet_wings', civilizations: ['Celtic'], minLevel: 16 },
-  { equipment: 'upward_horns_white', civilizations: ['Nordic'], minLevel: 16 },
+  { equipment: 'centurion_crest', civilizations: ['Hellas'], minLevel: 16 },
+  { equipment: 'centurion_plumage', civilizations: ['Latium'], minLevel: 16 },
+  { equipment: 'legion_plumage', civilizations: ['Sumeria'], minLevel: 16 },
+  { equipment: 'plumage', civilizations: ['Kemet', 'Xia', 'Nobatia'], minLevel: 16 },
+  { equipment: 'helmet_wings', civilizations: ['Alba'], minLevel: 16 },
+  { equipment: 'upward_horns_white', civilizations: ['Nord'], minLevel: 16 },
 ]
 
 const SOLDIER_HEAVY_ARMOR_EQUIPMENT: readonly UnitEquipmentDefinition[] = [

@@ -42,73 +42,73 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "corpseSheet": "units/villager/greek/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/shoot",
-        "harvestSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/shoot",
+        "harvestSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "farmer": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "forager": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/villager/greek/male/body/walking"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse",
+        "loadedSheet": "units/villager/greek/male/body/walking"
       },
       "builder": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse"
       }
     },
     "gatheringRate": {
@@ -202,65 +202,65 @@
     },
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse"
       },
       "hunter": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/shoot",
-        "harvestSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/greek/male/action/shoot",
+        "harvestSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse",
+        "loadedSheet": "units/hero/greek/male/body/walking"
       },
       "forager": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse",
+        "loadedSheet": "units/hero/greek/male/body/walking"
       },
       "stoneminer": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse",
+        "loadedSheet": "units/hero/greek/male/body/walking"
       },
       "goldminer": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse",
+        "loadedSheet": "units/hero/greek/male/body/walking"
       },
       "woodcutter": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse",
-        "loadedSheet": "lpc-baked/hero/greek/male/body/walking"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse",
+        "loadedSheet": "units/hero/greek/male/body/walking"
       },
       "builder": {
-        "actionSheet": "lpc-baked/hero/greek/male/action/slash",
-        "standingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/hero/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/hero/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/hero/greek/male/body/corpse"
+        "actionSheet": "units/hero/greek/male/action/slash",
+        "standingSheet": "units/hero/greek/male/body/walking",
+        "walkingSheet": "units/hero/greek/male/body/walking",
+        "dyingSheet": "units/hero/greek/male/body/dying",
+        "corpseSheet": "units/hero/greek/male/body/corpse"
       }
     },
     "gatherAmount": {
@@ -315,17 +315,17 @@
     "showLoading": false,
     "allAssets": {
       "default": {
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse"
       },
       "attacker": {
-        "actionSheet": "lpc-baked/villager/greek/male/action/slash",
-        "standingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "walkingSheet": "lpc-baked/villager/greek/male/body/walking",
-        "dyingSheet": "lpc-baked/villager/greek/male/body/dying",
-        "corpseSheet": "lpc-baked/villager/greek/male/body/corpse"
+        "actionSheet": "units/villager/greek/male/action/slash",
+        "standingSheet": "units/villager/greek/male/body/walking",
+        "walkingSheet": "units/villager/greek/male/body/walking",
+        "dyingSheet": "units/villager/greek/male/body/dying",
+        "corpseSheet": "units/villager/greek/male/body/corpse"
       }
     },
     "sounds": {
@@ -353,11 +353,11 @@
       "food": 50
     },
     "assets": {
-      "standingSheet": "lpc-baked/infantry/greek/male/walking",
-      "walkingSheet": "lpc-baked/infantry/greek/male/walking",
-      "actionSheet": "lpc-baked/infantry/greek/male/action",
-      "dyingSheet": "lpc-baked/infantry/greek/male/dying",
-      "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
+      "standingSheet": "units/infantry/greek/male/walking",
+      "walkingSheet": "units/infantry/greek/male/walking",
+      "actionSheet": "units/infantry/greek/male/action",
+      "dyingSheet": "units/infantry/greek/male/dying",
+      "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
       "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
@@ -392,11 +392,11 @@
       "wood": 20
     },
     "assets": {
-      "standingSheet": "lpc-baked/infantry/greek/male/walking",
-      "walkingSheet": "lpc-baked/infantry/greek/male/walking",
-      "actionSheet": "lpc-baked/infantry/greek/male/action",
-      "dyingSheet": "lpc-baked/infantry/greek/male/dying",
-      "corpseSheet": "lpc-baked/infantry/greek/male/corpse"
+      "standingSheet": "units/infantry/greek/male/walking",
+      "walkingSheet": "units/infantry/greek/male/walking",
+      "actionSheet": "units/infantry/greek/male/action",
+      "dyingSheet": "units/infantry/greek/male/dying",
+      "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
@@ -430,11 +430,11 @@
       "gold": 125
     },
     "assets": {
-      "standingSheet": "lpc-baked/priest/greek/male/walking",
-      "walkingSheet": "lpc-baked/priest/greek/male/walking",
-      "actionSheet": "lpc-baked/priest/greek/male/action",
-      "dyingSheet": "lpc-baked/priest/greek/male/dying",
-      "corpseSheet": "lpc-baked/priest/greek/male/corpse"
+      "standingSheet": "units/priest/greek/male/walking",
+      "walkingSheet": "units/priest/greek/male/walking",
+      "actionSheet": "units/priest/greek/male/action",
+      "dyingSheet": "units/priest/greek/male/dying",
+      "corpseSheet": "units/priest/greek/male/corpse"
     },
     "sounds": {
       "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],

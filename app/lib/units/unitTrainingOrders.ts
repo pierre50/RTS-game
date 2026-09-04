@@ -4,7 +4,7 @@ import { instancesDistance } from '../maths'
 import { t } from '../lang'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
-export const VILLAGER_TRAINING_UNIT_TYPES = [UNIT_TYPES.infantry, UNIT_TYPES.bowman] as const
+export const VILLAGER_TRAINING_UNIT_TYPES = [UNIT_TYPES.infantry, UNIT_TYPES.bowman, UNIT_TYPES.priest] as const
 
 function sameOwner(building: BuildingEntity, unit: UnitEntity): boolean {
   return Boolean(

@@ -11,7 +11,7 @@ const constants = {
 function loadGameStateHelpers() {
   return loadTsModule('app/screens/game/GameStateHelpers.ts', {
     mocks: {
-      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }, { value: 'Roman' }, { value: 'Egyptian' }] },
+      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }, { value: 'Latium' }, { value: 'Kemet' }] },
       '../../config/environments': { getEnvironmentForCiv: () => 'Temperate' },
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
@@ -59,7 +59,7 @@ function loadGamePortalTravel(overrides = {}) {
       '../../ui/PortalTravelTransition': {
         PortalTravelTransition: class {},
       },
-      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }, { value: 'Roman' }, { value: 'Egyptian' }] },
+      '../../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }, { value: 'Latium' }, { value: 'Kemet' }] },
       '../../config/environments': { getEnvironmentForCiv: () => 'Temperate' },
       '../../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
       '../../constants': constants,
@@ -92,15 +92,15 @@ test('portal travel sprite sources include customized hero hair', () => {
   const { heroTravelSpriteSources } = loadGameStateHelpers()
 
   const sources = heroTravelSpriteSources({
-    civ: 'Nordic',
+    civ: 'Nord',
     gender: 'female',
     heroAppearance: { hairStyle: 'wavy', hairColor: 'blond' },
   })
 
-  assert.equal(sources.body, 'assets/graphics/lpc-baked/hero/nordic/female/texture.png')
-  assert.equal(sources.bodyAtlas, 'assets/graphics/lpc-baked/hero/nordic/female/texture.json')
-  assert.equal(sources.hairFront, 'assets/graphics/lpc-hero/hair/wavy/female/texture.png')
-  assert.equal(sources.hairFrontAtlas, 'assets/graphics/lpc-hero/hair/wavy/female/texture.json')
+  assert.equal(sources.body, 'assets/graphics/units/hero/nord/female/texture.png')
+  assert.equal(sources.bodyAtlas, 'assets/graphics/units/hero/nord/female/texture.json')
+  assert.equal(sources.hairFront, 'assets/graphics/hero/hair/wavy/female/texture.png')
+  assert.equal(sources.hairFrontAtlas, 'assets/graphics/hero/hair/wavy/female/texture.json')
   assert.equal(sources.hairColor, 'blond')
   assert.equal(sources.hairBack, null)
   assert.equal(sources.hairBackAtlas, null)
@@ -122,7 +122,7 @@ test('portal colors select debug encounter destinations', () => {
     resourceDensity: 'normal',
   }
   const player = {
-    civ: 'Greek',
+    civ: 'Hellas',
     color: 'green',
     factionId: 'human-faction',
     gender: 'female',
@@ -153,7 +153,7 @@ test('campaign roster creates one global faction per non-hero civilization plus 
     worlds: {
       root: {
         state: {
-          players: [{ civ: 'Greek', color: 'green', isPlayed: true }],
+          players: [{ civ: 'Hellas', color: 'green', isPlayed: true }],
         },
       },
     },
@@ -162,20 +162,20 @@ test('campaign roster creates one global faction per non-hero civilization plus 
 
   const next = ensureCampaignPlayerRoster(campaign, 1000)
 
-  assert.equal(next.factions['civ-greek'], undefined)
-  assert.equal(next.factions['civ-roman'].civilization, 'Roman')
-  assert.equal(next.factions['civ-roman'].relationState, 'neutral')
-  assert.notEqual(next.factions['civ-roman'].color, 'green')
-  assert.notEqual(next.factions['civ-roman'].color, 'grey')
-  assert.equal(next.factions['civ-egyptian'].civilization, 'Egyptian')
-  assert.equal(next.factions['civ-egyptian'].relationState, 'hostile')
-  assert.notEqual(next.factions['civ-egyptian'].color, 'green')
-  assert.notEqual(next.factions['civ-egyptian'].color, 'grey')
-  assert.notEqual(next.factions['civ-roman'].color, next.factions['civ-egyptian'].color)
+  assert.equal(next.factions['civ-hellas'], undefined)
+  assert.equal(next.factions['civ-latium'].civilization, 'Latium')
+  assert.equal(next.factions['civ-latium'].relationState, 'neutral')
+  assert.notEqual(next.factions['civ-latium'].color, 'green')
+  assert.notEqual(next.factions['civ-latium'].color, 'grey')
+  assert.equal(next.factions['civ-kemet'].civilization, 'Kemet')
+  assert.equal(next.factions['civ-kemet'].relationState, 'hostile')
+  assert.notEqual(next.factions['civ-kemet'].color, 'green')
+  assert.notEqual(next.factions['civ-kemet'].color, 'grey')
+  assert.notEqual(next.factions['civ-latium'].color, next.factions['civ-kemet'].color)
   assert.equal(next.factions.bandits.name, 'Bandits')
   assert.equal(next.factions.bandits.relationState, 'hostile')
   assert.equal(next.factions.bandits.color, 'grey')
-  assert.deepEqual(next.factions['civ-roman'].knownWorldIds, [])
+  assert.deepEqual(next.factions['civ-latium'].knownWorldIds, [])
 })
 
 test('portal config reuses an undiscovered campaign roster faction', () => {
@@ -193,7 +193,7 @@ test('portal config reuses an undiscovered campaign roster faction', () => {
     startingResources: { food: 100, wood: 100, stone: 0, gold: 0 },
     resourceDensity: 'normal',
   }
-  const player = { civ: 'Greek', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
+  const player = { civ: 'Hellas', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
   const campaign = ensureCampaignPlayerRoster(
     {
       currentWorldId: 'root',
@@ -201,7 +201,7 @@ test('portal config reuses an undiscovered campaign roster faction', () => {
       worlds: {
         root: {
           state: {
-            players: [{ civ: 'Greek', isPlayed: true }],
+            players: [{ civ: 'Hellas', isPlayed: true }],
           },
         },
       },
@@ -210,12 +210,12 @@ test('portal config reuses an undiscovered campaign roster faction', () => {
     1000
   )
 
-  const portalWorld = configForPortalWorld({ campaign, color: 'blue', map, now: 2000, player, worldId: 'egyptian-world' })
+  const portalWorld = configForPortalWorld({ campaign, color: 'blue', map, now: 2000, player, worldId: 'kemet-realm' })
 
-  assert.equal(portalWorld.factionId, 'civ-egyptian')
-  assert.equal(portalWorld.config.players[1].civ, 'Egyptian')
+  assert.equal(portalWorld.factionId, 'civ-kemet')
+  assert.equal(portalWorld.config.players[1].civ, 'Kemet')
   assert.equal(portalWorld.config.players[1].color, portalWorld.faction.color)
-  assert.deepEqual(portalWorld.faction.knownWorldIds, ['egyptian-world'])
+  assert.deepEqual(portalWorld.faction.knownWorldIds, ['kemet-realm'])
   assert.equal(portalWorld.faction.relationState, 'hostile')
   assert.equal(portalWorld.config.players[1].diplomacy, null)
 })
@@ -235,7 +235,7 @@ test('portal config keeps neutral relation from the global roster', () => {
     startingResources: { food: 100, wood: 100, stone: 0, gold: 0 },
     resourceDensity: 'normal',
   }
-  const player = { civ: 'Greek', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
+  const player = { civ: 'Hellas', color: 'green', factionId: 'human-faction', gender: 'female', name: 'Hero', team: 7 }
   const campaign = ensureCampaignPlayerRoster(
     {
       currentWorldId: 'root',
@@ -243,7 +243,7 @@ test('portal config keeps neutral relation from the global roster', () => {
       worlds: {
         root: {
           state: {
-            players: [{ civ: 'Greek', isPlayed: true }],
+            players: [{ civ: 'Hellas', isPlayed: true }],
           },
         },
       },
@@ -252,9 +252,9 @@ test('portal config keeps neutral relation from the global roster', () => {
     1000
   )
 
-  const portalWorld = configForPortalWorld({ campaign, color: 'red', map, now: 2000, player, worldId: 'roman-world' })
+  const portalWorld = configForPortalWorld({ campaign, color: 'red', map, now: 2000, player, worldId: 'latium-realm' })
 
-  assert.equal(portalWorld.factionId, 'civ-roman')
+  assert.equal(portalWorld.factionId, 'civ-latium')
   assert.equal(portalWorld.faction.relationState, 'neutral')
   assert.equal(portalWorld.config.players[1].color, portalWorld.faction.color)
   assert.equal(portalWorld.config.players[1].diplomacy, 'neutral')

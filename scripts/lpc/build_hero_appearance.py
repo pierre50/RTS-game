@@ -15,7 +15,7 @@ from retro_palette import find_hex_palette, load_hex_palette
 
 SHEET_BY_KEY = {sheet.key: sheet for sheet in SHEETS}
 SHEET_BY_ANIMATION = {sheet.source_animation: sheet for sheet in SHEETS}
-OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/lpc-hero"
+OUTPUT_ROOT = PROJECT_ROOT / "public/assets/graphics/hero"
 SOURCE_HAIR_PALETTE = "brown_hair"
 
 HERO_HAIR_TASKS = [

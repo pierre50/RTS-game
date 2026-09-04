@@ -125,7 +125,7 @@ function freezeSleepingOutsideVisual(unit: UnitEntity): void {
   syncHurtFrameShadow(unit, frame)
 }
 
-export function playSleepingOutsideVisual(unit: UnitEntity): void {
+export function playSleepingOutsideVisual(unit: UnitEntity, onComplete?: () => void): void {
   cancelSleepingWakeVisual(unit)
   setSleepVisualState(unit, 'sleeping')
   const token = setUnitVisualSheet(unit, SHEET_TYPES.dying, {
@@ -134,10 +134,14 @@ export function playSleepingOutsideVisual(unit: UnitEntity): void {
     play: 'play',
     syncShadow: false,
   })
-  if (!unit.sprite) return
+  if (!unit.sprite) {
+    onComplete?.()
+    return
+  }
   unit.sprite.onComplete = () => {
     if (!isUnitVisualAnimationCurrent(unit, token)) return
     freezeSleepingOutsideVisual(unit)
+    onComplete?.()
   }
   syncSleepingAppearanceLayers(unit, 0, true)
   syncSleepingShadow(unit)

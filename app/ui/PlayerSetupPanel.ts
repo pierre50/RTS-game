@@ -207,7 +207,7 @@ export class PlayerSetupPanel {
   }
 
   _randomCiv(): string {
-    return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Greek'
+    return CIVILIZATIONS[Math.floor(Math.random() * CIVILIZATIONS.length)]?.value || 'Hellas'
   }
 
   _shouldRegeneratePlayerName(player: PlayerSetupConfigWithAge): boolean {

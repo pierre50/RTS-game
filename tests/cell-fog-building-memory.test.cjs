@@ -21,7 +21,7 @@ function loadCellFog() {
       Texture: { from: canvas => ({ canvas }) },
     },
     '../../lib': {
-      getBuildingAsset: () => ({ images: { final: '000_buildings/greek/house/multi-age' } }),
+      getBuildingAsset: () => ({ images: { final: '000_buildings/hellas/house/multi-age' } }),
       getBuildingAssetOwner: () => ({}),
       getTexture: texture => texture,
       changeSpriteColorDirectly: (sprite, color) => {

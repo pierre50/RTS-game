@@ -1,9 +1,10 @@
 import { hashLpcAppearanceSeed } from './appearance'
 import { UNIT_TYPES } from '../../constants'
+import { civilizationAssetSlug } from '../civilizationAlias'
 import type { PlayerLike } from '../../types/player'
 
-const BAKED_LPC_BASE_URL = 'assets/graphics/lpc-baked'
-const BAKED_LPC_ALIAS_PREFIX = 'lpc-baked'
+const BAKED_UNITS_BASE_URL = 'assets/graphics/units'
+const BAKED_UNITS_ALIAS_PREFIX = 'units'
 const BAKED_GENDERS = ['male', 'female'] as const
 export type BakedGender = (typeof BAKED_GENDERS)[number]
 
@@ -55,7 +56,7 @@ export const BAKED_UNITS: readonly BakedUnitType[] = [
 ] as BakedUnitType[]
 
 function civKey(civilization: string | null | undefined): string {
-  return (civilization || 'Greek').toLowerCase()
+  return civilizationAssetSlug(civilization)
 }
 
 function genderKey(seed: string, preferredGender?: string | null): string {
@@ -85,19 +86,19 @@ export function bakedVariantKey(
 }
 
 function bakedAlias(unit: BakedUnitType, variant: string, job: string, sheet: string): string {
-  return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}/${job}/${sheet}`
+  return `${BAKED_UNITS_ALIAS_PREFIX}/${unit}/${variant}/${job}/${sheet}`
 }
 
 export function bakedVariantAtlasAlias(unit: BakedUnitType, variant: string): string {
-  return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}`
+  return `${BAKED_UNITS_ALIAS_PREFIX}/${unit}/${variant}`
 }
 
 export function bakedVariantAtlasSrc(unit: BakedUnitType, variant: string): string {
-  return `${BAKED_LPC_BASE_URL}/${unit}/${variant}/texture.json`
+  return `${BAKED_UNITS_BASE_URL}/${unit}/${variant}/texture.json`
 }
 
 export function bakedUnitAlias(unit: BakedUnitType, variant: string, sheet: string): string {
-  return `${BAKED_LPC_ALIAS_PREFIX}/${unit}/${variant}/${sheet}`
+  return `${BAKED_UNITS_ALIAS_PREFIX}/${unit}/${variant}/${sheet}`
 }
 
 export function bakedUnitActionAlias(unit: BakedUnitType, variant: string, animation: string): string {

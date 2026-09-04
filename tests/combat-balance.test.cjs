@@ -72,7 +72,7 @@ function createCombatConfig() {
       units,
     },
     technologies,
-    'Greek'
+    'Hellas'
   ).config
 }
 

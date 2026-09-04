@@ -48,7 +48,7 @@ test('faction name prefixes are translated in French', () => {
 
   assert.match(
     createFactionSave({
-      civilization: 'Greek',
+      civilization: 'Hellas',
       homeWorldId: 'world',
       id: 'seed2',
       initialScore: 0,
@@ -61,7 +61,7 @@ test('faction name prefixes are translated in French', () => {
 test('faction name prefixes are translated in English', () => {
   const { createFactionSave } = loadFactionsWithLang('en')
   const name = createFactionSave({
-    civilization: 'Greek',
+    civilization: 'Hellas',
     homeWorldId: 'world',
     id: 'seed2',
     initialScore: 0,

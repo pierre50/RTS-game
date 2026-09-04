@@ -190,8 +190,15 @@ export function getBuildingShadowTexture(building: BuildingControllerHost): Text
 
 export function createBuildingShadow(building: BuildingControllerHost): BuildingShadow | null {
   const texture = getBuildingShadowTexture(building)
-  if (!texture && !building.useSpriteShadow) return null
-  const shadow = new Sprite(texture ?? building.sprite.texture)
+  const spriteTexture = building.sprite?.texture
+  if ((!texture && !building.useSpriteShadow) || !spriteTexture) {
+    building.shadow?.parent?.removeChild(building.shadow)
+    building.shadow?.destroy()
+    building.shadow = null
+    building.shadowWasVisible = false
+    return null
+  }
+  const shadow = new Sprite(texture ?? spriteTexture)
   shadow.label = LABEL_TYPES.shadow
   shadow.eventMode = 'none'
   shadow.roundPixels = true
@@ -213,7 +220,15 @@ export function updateBuildingShadow(
   }
   const wasVisible = building.shadowWasVisible === true
   if (!shadow) {
-    shadow = new Sprite(texture ?? building.sprite.texture)
+    const spriteTexture = building.sprite?.texture
+    if (!spriteTexture) {
+      building.shadow?.parent?.removeChild(building.shadow)
+      building.shadow?.destroy()
+      building.shadow = null
+      building.shadowWasVisible = false
+      return
+    }
+    shadow = new Sprite(texture ?? spriteTexture)
     shadow.label = LABEL_TYPES.shadow
     shadow.eventMode = 'none'
     shadow.roundPixels = true

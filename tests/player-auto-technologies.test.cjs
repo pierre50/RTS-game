@@ -133,7 +133,7 @@ test('unit creation passes unit gender to random civilization names', () => {
     },
   })
   const player = {
-    civ: 'Roman',
+    civ: 'Latium',
     gender: 'male',
     isPlayed: false,
     units: [],
@@ -152,8 +152,8 @@ test('unit creation passes unit gender to random civilization names', () => {
 
   const unit = player.createUnit({ type: 'Villager', gender: 'female' })
 
-  assert.equal(unit.name, 'Roman-female-unit')
-  assert.deepEqual(calls, [{ civ: 'Roman', gender: 'female', sample: 0.25 }])
+  assert.equal(unit.name, 'Latium-female-unit')
+  assert.deepEqual(calls, [{ civ: 'Latium', gender: 'female', sample: 0.25 }])
 })
 
 test('age-based auto technologies stop before age 3 wall upgrades', () => {
@@ -259,7 +259,7 @@ test('captured buildings keep their civ but advance visual age on owner age chan
     buildings: [
       {
         assetAge: 1,
-        assetCiv: 'Egyptian',
+        assetCiv: 'Kemet',
         finalTexture() {
           calls.push(['captured', this.assetCiv, this.assetAge])
         },
@@ -286,10 +286,10 @@ test('captured buildings keep their civ but advance visual age on owner age chan
   player.onAgeChange()
 
   assert.equal(player.buildings[0].assetAge, 3)
-  assert.equal(player.buildings[0].assetCiv, 'Egyptian')
+  assert.equal(player.buildings[0].assetCiv, 'Kemet')
   assert.equal(player.buildings[1].assetAge, undefined)
   assert.deepEqual(calls, [
-    ['captured', 'Egyptian', 3],
+    ['captured', 'Kemet', 3],
     ['native', undefined, undefined],
   ])
 })

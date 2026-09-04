@@ -155,7 +155,7 @@ test('bandit aliases spawn on a hidden hostile owner', () => {
   const { spawnUnits } = loadSpawnActions()
   const currentPlayer = {
     label: 'player',
-    civ: 'Greek',
+    civ: 'Hellas',
     config: { units: { BanditChief: { category: 'Bandit' } } },
     population: 0,
     isEnemy: () => false,

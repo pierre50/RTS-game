@@ -50,10 +50,6 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
     { key: 'jar-west', type: 'campJarLarge', offsetI: -2, offsetJ: 2 },
     { key: 'jar-east', type: 'campJarSmall', offsetI: 2, offsetJ: 2 },
   ],
-  [BUILDING_TYPES.market]: [
-    { key: 'crate-nw', type: 'campCrate', offsetI: -2, offsetJ: -2 },
-    { key: 'jar-se', type: 'campJarLarge', offsetI: 2, offsetJ: 2 },
-  ],
   [BUILDING_TYPES.granary]: [
     {
       key: 'storage-chest',

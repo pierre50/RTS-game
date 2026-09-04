@@ -19,7 +19,6 @@ const INTERIOR_TYPE_ORDER = [
   'barracks',
   'archery-range',
   'temple',
-  'market',
   'granary',
   'storage-pit',
   'stable',
@@ -49,10 +48,6 @@ const INTERIOR_TYPES = {
   temple: {
     directory: 'temple',
     interiorType: 'Temple',
-  },
-  market: {
-    directory: 'market',
-    interiorType: 'Market',
   },
   granary: {
     directory: 'granary',
@@ -85,7 +80,7 @@ function usage(error = '') {
   console.log(`Usage: pnpm interiors:generate -- --type all --count 1
 
   --type <name>          all, town-center, house, barracks, archery-range, temple,
-                         market, granary, storage-pit, stable, watch-tower (default: all)
+                         granary, storage-pit, stable, watch-tower (default: all)
   --count <n>            interior variants to generate (default: 1)
   --seed <n>             reproducible batch seed (default: current time)
   --size <n>             override blueprint size for a single type

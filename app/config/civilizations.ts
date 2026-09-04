@@ -6,14 +6,14 @@ export interface Civilization {
 }
 
 export const CIVILIZATIONS: Civilization[] = [
-  { labelKey: 'civGreek', value: 'Greek', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civRoman', value: 'Roman', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civEgyptian', value: 'Egyptian', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civBabylonian', value: 'Babylonian', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civAsian', value: 'Asian', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civCeltic', value: 'Celtic', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civNordic', value: 'Nordic', disabledUnits: [], disabledTechnologies: [] },
-  { labelKey: 'civNubian', value: 'Nubian', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civHellas', value: 'Hellas', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civLatium', value: 'Latium', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civKemet', value: 'Kemet', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civSumeria', value: 'Sumeria', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civXia', value: 'Xia', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civAlba', value: 'Alba', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civNord', value: 'Nord', disabledUnits: [], disabledTechnologies: [] },
+  { labelKey: 'civNobatia', value: 'Nobatia', disabledUnits: [], disabledTechnologies: [] },
 ]
 
 const CIVILIZATION_BY_NAME: Record<string, Civilization> = CIVILIZATIONS.reduce(
@@ -25,5 +25,5 @@ const CIVILIZATION_BY_NAME: Record<string, Civilization> = CIVILIZATIONS.reduce(
 )
 
 export function getCivilizationDefinition(name: string): Civilization {
-  return CIVILIZATION_BY_NAME[name] || CIVILIZATION_BY_NAME.Greek
+  return CIVILIZATION_BY_NAME[name] || CIVILIZATION_BY_NAME.Hellas
 }

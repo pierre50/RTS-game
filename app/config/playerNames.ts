@@ -1,35 +1,35 @@
 type PlayerNameGender = 'male' | 'female'
 
 const CIVILIZATION_PLAYER_NAMES: Record<string, Record<PlayerNameGender, string[]>> = {
-  Greek: {
+  Hellas: {
     male: ['Alexios', 'Damon', 'Leonidas', 'Nikandros', 'Theron', 'Xenon'],
     female: ['Ariadne', 'Callista', 'Daphne', 'Helena', 'Lysandra', 'Thalia'],
   },
-  Roman: {
+  Latium: {
     male: ['Cassius', 'Decimus', 'Gaius', 'Lucius', 'Marcus', 'Titus'],
     female: ['Aelia', 'Claudia', 'Cornelia', 'Flavia', 'Julia', 'Livia'],
   },
-  Egyptian: {
+  Kemet: {
     male: ['Ahmose', 'Hori', 'Khaemwaset', 'Menes', 'Nakht', 'Ramose'],
     female: ['Ahhotep', 'Henut', 'Iset', 'Merit', 'Nefret', 'Tia'],
   },
-  Babylonian: {
+  Sumeria: {
     male: ['Amel-Marduk', 'Belshunu', 'Iddin', 'Nabu-zer', 'Nergal', 'Sin-iddin'],
     female: ['Amat-Nabu', 'Beltani', 'Damqatum', 'Lamassi', 'Ninaya', 'Tabni'],
   },
-  Asian: {
+  Xia: {
     male: ['Akira', 'Jian', 'Kenji', 'Min-jun', 'Takumi', 'Wei'],
     female: ['Aiko', 'Hana', 'Mei', 'Sora', 'Yuna', 'Zhen'],
   },
-  Celtic: {
+  Alba: {
     male: ['Aedan', 'Brennus', 'Caradoc', 'Cian', 'Lugus', 'Taran'],
     female: ['Aife', 'Brigid', 'Cartimandua', 'Epona', 'Maeve', 'Nessa'],
   },
-  Nordic: {
+  Nord: {
     male: ['Arne', 'Bjorn', 'Eirik', 'Gunnar', 'Leif', 'Ragnar'],
     female: ['Astrid', 'Freydis', 'Gudrun', 'Ingrid', 'Sigrid', 'Thyra'],
   },
-  Nubian: {
+  Nobatia: {
     male: ['Akinidad', 'Amankhar', 'Arakamani', 'Harsiotef', 'Nastasen', 'Teriteqas'],
     female: ['Amanitore', 'Amanishakheto', 'Bartare', 'Kandake', 'Maletasen', 'Shanakdakhete'],
   },
@@ -47,7 +47,7 @@ export function randomPlayerNameForCivilization(
   civilization: string | null | undefined,
   gender?: string | null
 ): string {
-  const namesByGender = CIVILIZATION_PLAYER_NAMES[civilization || ''] ?? CIVILIZATION_PLAYER_NAMES.Greek
+  const namesByGender = CIVILIZATION_PLAYER_NAMES[civilization || ''] ?? CIVILIZATION_PLAYER_NAMES.Hellas
   const names = namesByGender[normalizeGender(gender)]
   return names[Math.floor(Math.random() * names.length)] || 'Alexios'
 }

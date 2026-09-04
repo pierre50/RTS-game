@@ -27,6 +27,7 @@ import {
   isRaidBanditOwner,
   isRaidFactionOwner,
   livingRaidUnits,
+  roundTributeCost,
   type TributeRaid,
   type TributeRaidKind,
   type TributeRaidOwner,
@@ -38,6 +39,9 @@ import {
   getLocalTributeRefusedMessage,
   getLocalTributeTargetMessage,
   getTributeDemand,
+  getTributePayLabel,
+  getTributeRefuseLabel,
+  getTributeCannotPayLabel,
   getTributePaidMessage,
   getTributeTitle,
 } from './TributeRaidText'
@@ -133,27 +137,39 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const unitTypes = this.getRaidUnitTypes(spawnCells.length, options.kind)
     for (let index = 0; index < unitTypes.length; index++) {
       const cell = spawnCells[index]
-      const unit = owner.createUnit?.({
-        i: cell.i,
-        j: cell.j,
-        type: unitTypes[index],
-        gender: 'male',
-        appearanceVariants: { gender: 'male' },
-        handleIsAttacked: attacker => {
-          if (attacker?.owner === this.context.player && raid.phase !== 'hostile') {
-            this.makeRaidHostile(raid)
-            return true
-          }
-          return false
-        },
-      }) as TributeRaidUnit | undefined
+      let unit: TributeRaidUnit | undefined
+      try {
+        unit = owner.createUnit?.({
+          i: cell.i,
+          j: cell.j,
+          type: unitTypes[index],
+          gender: 'male',
+          appearanceVariants: { gender: 'male' },
+          handleIsAttacked: attacker => {
+            if (attacker?.owner === this.context.player && raid.phase !== 'hostile') {
+              this.makeRaidHostile(raid)
+              return true
+            }
+            return false
+          },
+        }) as TributeRaidUnit | undefined
+      } catch (error) {
+        if (this.context.player?.isPlayed) {
+          this.context.menu?.showMessage(`Unable to spawn a tribute raid unit (${unitTypes[index]}).`, 'warning')
+        }
+        console.error('Unable to spawn tribute raid unit', { type: unitTypes[index], error })
+        unit = undefined
+      }
       if (!unit) continue
       unit.tributeRaidId = raid.id
       raid.units.push(unit)
       if (unit.type === UNIT_TYPES.banditChief || unit.type === UNIT_TYPES.chief) raid.chief = unit
     }
 
-    if (!raid.units.length || !raid.chief) return false
+    if (!raid.units.length || !raid.chief) {
+      for (const unit of raid.units) this.removeUnitFromRuntime(unit)
+      return false
+    }
     setUnitOverheadIndicator(raid.chief, 'exclamation')
     this.raids.push(raid)
     this.sendRaidToTarget(raid, { forceRepath: true })
@@ -177,7 +193,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
 
     const owner = this.createTemporaryRaidOwner({
-      civ: this.context.player?.civ ?? 'Greek',
+      civ: this.context.player?.civ ?? 'Hellas',
       name: BANDIT_OWNER_NAME,
     })
     owner.banditRaidOwner = true
@@ -193,7 +209,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
 
     const owner = this.createTemporaryRaidOwner({
-      civ: faction.civilization ?? this.context.player?.civ ?? 'Greek',
+      civ: this.context.player?.civ ?? faction.civilization ?? 'Hellas',
       factionId: null,
       name: faction.name,
     })
@@ -270,10 +286,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   getBanditTributeCost(): ResourceAmount {
     const day = this.context.dayNight?.state?.day ?? 1
     const age = this.context.player?.age ?? 0
-    return {
+    return roundTributeCost({
       food: 40 + day * 5 + age * 20,
       gold: 25 + day * 4 + age * 15,
-    }
+    })
   }
 
   getFactionTributeCost(faction: FactionSave): ResourceAmount {
@@ -282,10 +298,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const age = player?.age ?? 0
     const hate = Math.max(0, Math.abs(Math.min(0, faction.relationScore)))
     const soldiers = this.getLivingPlayerMilitaryCount()
-    return {
+    return roundTributeCost({
       food: 45 + day * 4 + age * 20 + soldiers * 8 + Math.floor(hate * 0.8),
       gold: 25 + day * 3 + age * 18 + soldiers * 5 + Math.floor(hate * 0.6),
-    }
+    })
   }
 
   getLivingPlayerMilitaryCount(): number {
@@ -401,12 +417,12 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const payButton = document.createElement('button')
     payButton.type = 'button'
     payButton.className = 'ui-btn'
-    payButton.textContent = t('banditTributePay')
+    payButton.textContent = getTributePayLabel(raid)
     payButton.disabled = !canPayTribute
-    if (!canPayTribute) payButton.title = t('banditTributeCannotPay')
+    if (!canPayTribute) payButton.title = getTributeCannotPayLabel(raid)
     payButton.addEventListener('click', () => {
       if (!canAfford(this.context.player, raid.tribute)) {
-        this.context.menu?.showMessage(t('banditTributeCannotPay'), 'warning')
+        this.context.menu?.showMessage(getTributeCannotPayLabel(raid), 'warning')
         return
       }
       resolved = true
@@ -421,7 +437,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     const refuseButton = document.createElement('button')
     refuseButton.type = 'button'
     refuseButton.className = 'ui-btn'
-    refuseButton.textContent = t('banditTributeRefuse')
+    refuseButton.textContent = getTributeRefuseLabel(raid)
     refuseButton.addEventListener('click', () => {
       resolved = true
       raid.modal?.close()

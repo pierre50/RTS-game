@@ -64,7 +64,7 @@ export function generatePlayers(
   if (!map.noAI && map.banditCampPositions.length) {
     const anchor = map.banditCampPositions[0]
     const human = players.find(player => player.isPlayed)
-    ensureBanditCampOwner(map, context, anchor, human?.civ ?? 'Greek', players, {
+    ensureBanditCampOwner(map, context, anchor, human?.civ ?? 'Hellas', players, {
       civ: banditCampOwnerConfig?.civ,
       color: banditCampOwnerConfig?.color,
       factionId: banditCampOwnerConfig?.factionId,
@@ -142,7 +142,7 @@ function createHumanPlayer(
       i,
       j,
       age: 0,
-      civ: config?.civ ?? 'Greek',
+      civ: config?.civ ?? 'Hellas',
       color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
       factionId: config?.factionId ?? null,
@@ -171,7 +171,7 @@ function createAIPlayer(
       i,
       j,
       age: 0,
-      civ: config?.civ ?? 'Greek',
+      civ: config?.civ ?? 'Hellas',
       color: config?.color ?? playerColors[playerIndex],
       diplomacy: config?.diplomacy ?? null,
       factionId: config?.factionId ?? null,

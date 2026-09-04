@@ -1,6 +1,8 @@
 import { BUILDING_TYPES } from '../../constants'
 import { getHoursUntilNextMorning } from '../../services/TimeSkipSystem'
+import { playSleepingOutsideVisual, playSleepingWakeVisual } from '../../services/rest/UnitSleepVisuals'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
 import { findInstancesInSight } from '../grid/visibility'
 import { t } from '../lang'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
@@ -35,15 +37,34 @@ export function canHeroSleepAtFireCamp(hero: UnitEntity | null | undefined, buil
   return Boolean(hero && isUsableFireCamp(hero, building) && !hasHostileInHeroSight(hero))
 }
 
-export function sleepHeroAtFireCamp(hero: UnitEntity | null | undefined, building: BuildingEntity): boolean {
-  if (!hero || !canHeroSleepAtFireCamp(hero, building)) return false
-  const context = hero.context
-  const dayNightState = context?.dayNight?.state
-  const hours = getHoursUntilNextMorning(dayNightState?.hour ?? 7, dayNightState?.minute ?? 0)
-  const result = context?.timeSkip?.start?.(hours, {
-    completedMessage: t('heroSleepComplete'),
-    onComplete: () => context.autosave?.(),
+function wakeHeroFromFireCamp(hero: UnitEntity): void {
+  clearUnitOverheadIndicator(hero)
+  playSleepingWakeVisual(hero, () => {
+    hero.actionLocked = false
   })
-  if (!result?.ok) context?.menu?.showMessage?.(result?.message ?? t('heroSleepUnavailable'), 'warning')
-  return Boolean(result?.ok)
+}
+
+export function sleepHeroAtFireCamp(hero: UnitEntity | null | undefined, building: BuildingEntity): boolean {
+  if (!hero || hero.actionLocked || !canHeroSleepAtFireCamp(hero, building)) return false
+  const context = hero.context
+
+  hero.actionLocked = true
+  setUnitOverheadIndicator(hero, 'sleep')
+  playSleepingOutsideVisual(hero, () => {
+    const dayNightState = context?.dayNight?.state
+    const hours = getHoursUntilNextMorning(dayNightState?.hour ?? 7, dayNightState?.minute ?? 0)
+    const result = context?.timeSkip?.start?.(hours, {
+      completedMessage: t('heroSleepComplete'),
+      onCancel: () => wakeHeroFromFireCamp(hero),
+      onComplete: () => {
+        context.autosave?.()
+        wakeHeroFromFireCamp(hero)
+      },
+    })
+    if (!result?.ok) {
+      context?.menu?.showMessage?.(result?.message ?? t('heroSleepUnavailable'), 'warning')
+      wakeHeroFromFireCamp(hero)
+    }
+  })
+  return true
 }

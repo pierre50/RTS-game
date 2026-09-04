@@ -246,7 +246,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
       },
     },
     '../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
-    '../config/civilizations': { CIVILIZATIONS: [{ value: 'Greek' }] },
+    '../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }] },
     '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
     '../lib/maths': {
       cartesianToIsometric: (i, j) => [(i - j) * 32, (i + j) * 16],

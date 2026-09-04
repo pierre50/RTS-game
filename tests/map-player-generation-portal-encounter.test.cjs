@@ -71,15 +71,15 @@ function createMap(portalEncounter) {
 test('village portal encounters spawn a real AI village player', () => {
   const { generatePlayers, calls } = loadMapPlayerGeneration()
   const players = generatePlayers(createMap('village'), [
-    { civ: 'Greek', isHuman: true },
-    { civ: 'Egyptian', isHuman: false, name: 'Delta' },
+    { civ: 'Hellas', isHuman: true },
+    { civ: 'Kemet', isHuman: false, name: 'Delta' },
   ])
 
   assert.deepEqual(
     players.map(player => player.type),
     ['Human', 'AI']
   )
-  assert.equal(players[1].civ, 'Egyptian')
+  assert.equal(players[1].civ, 'Kemet')
   assert.equal(players[1].difficulty, 'hard')
   assert.equal(calls.ensureBanditCampOwner.length, 0)
 })
@@ -88,8 +88,8 @@ test('bandit portal encounters turn the non-human spawn into a bandit camp', () 
   const { generatePlayers, calls } = loadMapPlayerGeneration()
   const map = createMap('bandit')
   const players = generatePlayers(map, [
-    { civ: 'Greek', isHuman: true },
-    { civ: 'Egyptian', color: 'grey', factionId: 'bandits', isHuman: false, name: 'Bandits' },
+    { civ: 'Hellas', isHuman: true },
+    { civ: 'Kemet', color: 'grey', factionId: 'bandits', isHuman: false, name: 'Bandits' },
   ])
 
   assert.deepEqual(
@@ -100,8 +100,8 @@ test('bandit portal encounters turn the non-human spawn into a bandit camp', () 
   assert.deepEqual(calls.ensureBanditCampOwner, [
     {
       anchor: { i: 40, j: 50 },
-      civ: 'Greek',
-      options: { civ: 'Egyptian', color: 'grey', factionId: 'bandits', name: 'Bandits' },
+      civ: 'Hellas',
+      options: { civ: 'Kemet', color: 'grey', factionId: 'bandits', name: 'Bandits' },
     },
   ])
   assert.equal(players[1].factionId, 'bandits')

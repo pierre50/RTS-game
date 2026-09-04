@@ -1674,12 +1674,12 @@ test('fully charged sword release keeps the slash sheets and flashes the sword l
         layers: [
           {
             equipmentKey: 'sword_ceramic',
-            actionSheet: 'lpc-equipment/sword_ceramic/front/action',
+            actionSheet: 'equipments/sword_ceramic/front/action',
           },
         ],
       },
       appearanceLayerSprites: new Map([[0, { tint: 0x123456, alpha: 0.5, blendMode: 'normal', visible: true }]]),
-      assets: { actionSheet: 'lpc-baked/hero/greek/male/action/slash' },
+      assets: { actionSheet: 'units/hero/hellas/male/action/slash' },
       actionSheet: { id: 'hero-slash' },
       context: {
         scheduler: {
@@ -1703,7 +1703,7 @@ test('fully charged sword release keeps the slash sheets and flashes the sword l
 
     const swordLayerSprite = hero.appearanceLayerSprites.get(0)
     assert.equal(hero.actionSheetUsedForAttack, 'hero-slash')
-    assert.equal(hero.swordLayerUsedForAttack, 'lpc-equipment/sword_ceramic/front/action')
+    assert.equal(hero.swordLayerUsedForAttack, 'equipments/sword_ceramic/front/action')
     assert.equal(swordLayerSprite.tint, 0xfff06a)
     assert.equal(swordLayerSprite.alpha, 1)
     assert.equal(swordLayerSprite.blendMode, 'add')
@@ -1716,8 +1716,8 @@ test('fully charged sword release keeps the slash sheets and flashes the sword l
     hero.sprite.onComplete()
 
     assert.equal(hero.actionSheet.id, 'hero-slash')
-    assert.equal(hero.assets.actionSheet, 'lpc-baked/hero/greek/male/action/slash')
-    assert.equal(hero.appearance.layers[0].actionSheet, 'lpc-equipment/sword_ceramic/front/action')
+    assert.equal(hero.assets.actionSheet, 'units/hero/hellas/male/action/slash')
+    assert.equal(hero.appearance.layers[0].actionSheet, 'equipments/sword_ceramic/front/action')
   } finally {
     global.performance = originalPerformance
   }
