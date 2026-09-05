@@ -304,6 +304,8 @@ export interface GameContextLike {
   getCurrentWorldId?: () => string | null
   travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
+  getBuildingInteriorEntryTargetForCell?: (cell: RuntimeCell) => BuildingEntity | null
+  routeUnitIntoBuildingInterior?: (unit: UnitEntity, building: BuildingEntity) => boolean
   travelOutOfBuildingInterior?: () => void
   routeUnitResourceDelivery?: (unit: UnitEntity, building: BuildingEntity) => void
   routeInteriorUnitToExit?: (unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null) => void

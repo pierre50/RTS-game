@@ -16,7 +16,7 @@ function loadResourceDelivery() {
           meat: 'meat',
           wheat: 'wheat',
         },
-        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+        RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
         UNIT_TYPES: {
           hero: 'Hero',
           villager: 'Villager',
@@ -51,7 +51,7 @@ function loadGameResourceDelivery(overrides = {}) {
         BUILDING_TYPES: {
           chest: 'Chest',
         },
-        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+        RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
         SOUND_CUES: {
           building: { chestOpen: 'building/chest-open' },
         },
@@ -175,11 +175,11 @@ test('loading types fill local resource pockets with a capacity of ten', () => {
   const { getResourceKeyForLoadingType, getUnitResourceCapacityRemaining, unitShouldDeliverResource } =
     loadResourceDelivery()
   const villager = {
-    inventory: { resources: { food: 10, stone: 4 } },
+    inventory: { resources: { meat: 10, stone: 4 } },
     type: 'Villager',
   }
 
-  assert.equal(getResourceKeyForLoadingType('meat'), 'food')
+  assert.equal(getResourceKeyForLoadingType('meat'), 'meat')
   assert.equal(getResourceKeyForLoadingType('stone'), 'stone')
   assert.equal(getUnitResourceCapacityRemaining(villager, 'stone'), 6)
   assert.equal(getUnitResourceCapacityRemaining(villager, 'meat'), 0)
@@ -205,10 +205,10 @@ test('delivery targets match the carried resource family', () => {
   }
   owner.buildings = [granary, storagePit]
 
-  assert.equal(buildingAcceptsInventoryResource(granary, 'food'), true)
+  assert.equal(buildingAcceptsInventoryResource(granary, 'berry'), true)
   assert.equal(buildingAcceptsInventoryResource(granary, 'stone'), false)
   assert.equal(buildingAcceptsInventoryResource(storagePit, 'stone'), true)
-  assert.equal(buildingAcceptsInventoryResource(storagePit, 'food'), false)
+  assert.equal(buildingAcceptsInventoryResource(storagePit, 'berry'), false)
   assert.equal(
     findResourceDeliveryTarget({
       inventory: { resources: { stone: 10 } },
@@ -247,7 +247,7 @@ test('delivery target prefers a building that accepts the whole carried pocket',
 
   assert.equal(
     findResourceDeliveryTarget({
-      inventory: { resources: { food: 3, stone: 4 } },
+      inventory: { resources: { wheat: 3, stone: 4 } },
       owner,
       type: 'Villager',
     }),
@@ -272,7 +272,7 @@ test('hero-controlled units do not auto-select a delivery target', () => {
   owner.buildings[0].owner = owner
   const hero = {
     controlMode: 'hero',
-    inventory: { resources: { food: 10 } },
+    inventory: { resources: { meat: 10 } },
     owner,
     type: 'Villager',
   }
@@ -406,7 +406,7 @@ test('resource delivery plays a distant chest open cue when a villager deposits 
   const unit = {
     action: 'delivery',
     dest: chest,
-    inventory: { resources: { food: 6 } },
+    inventory: { resources: { wheat: 6 } },
     owner,
     path: [],
     resourceDeliveryState: {

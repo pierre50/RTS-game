@@ -7,7 +7,7 @@ function loadResourceTotals() {
     mocks: {
       '../../constants': {
         BUILDING_TYPES: { chest: 'Chest', townCenter: 'TownCenter' },
-        RESOURCE_NAMES: ['wood', 'food', 'stone'],
+        RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone'],
         UNIT_TYPES: { hero: 'Hero' },
       },
     },
@@ -22,7 +22,7 @@ test('player chest resource totals sum only owned living chests', () => {
     {
       owner: player,
       type: 'Chest',
-      inventory: { resources: { wood: 5.8, food: 3 } },
+      inventory: { resources: { wood: 5.8, wheat: 3 } },
     },
     {
       owner: { label: 'p1' },
@@ -43,11 +43,18 @@ test('player chest resource totals sum only owned living chests', () => {
       isDestroyed: true,
       owner: player,
       type: 'Chest',
-      inventory: { resources: { food: 99 } },
+      inventory: { resources: { wheat: 99 } },
     },
   ]
 
-  assert.deepEqual(getPlayerResourceTotals(player, { includeHero: false }), { wood: 7, food: 3, stone: 4 })
+  assert.deepEqual(getPlayerResourceTotals(player, { includeHero: false }), {
+    wood: 7,
+    berry: 0,
+    meat: 0,
+    wheat: 3,
+    stone: 4,
+    food: 3,
+  })
 })
 
 test('player resource totals include the hero bag and starting town center stock', () => {
@@ -57,10 +64,10 @@ test('player resource totals include the hero bag and starting town center stock
   player.units = [hero]
   player.buildings = [
     { owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
-    { owner: player, type: 'TownCenter', inventory: { resources: { food: 8 } } },
+    { owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
   ]
 
-  assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, food: 8, stone: 1 })
+  assert.deepEqual(getPlayerResourceTotals(player), { wood: 11, berry: 0, meat: 0, wheat: 8, stone: 1, food: 8 })
 })
 
 test('visible player resource totals hide unseen storage but keep the hero bag', () => {
@@ -78,18 +85,25 @@ test('visible player resource totals hide unseen storage but keep the hero bag',
   player.units = [hero]
   player.buildings = [
     { i: 2, j: 3, owner: player, type: 'Chest', inventory: { resources: { wood: 7 } } },
-    { i: 8, j: 9, owner: player, type: 'Chest', inventory: { resources: { wood: 99, food: 99 } } },
-    { i: 8, j: 9, owner: player, type: 'TownCenter', inventory: { resources: { food: 8 } } },
+    { i: 8, j: 9, owner: player, type: 'Chest', inventory: { resources: { wood: 99, wheat: 99 } } },
+    { i: 8, j: 9, owner: player, type: 'TownCenter', inventory: { resources: { wheat: 8 } } },
   ]
 
-  assert.deepEqual(getPlayerResourceTotals(player, { visibleOnly: true }), { wood: 11, food: 0, stone: 1 })
+  assert.deepEqual(getPlayerResourceTotals(player, { visibleOnly: true }), {
+    wood: 11,
+    berry: 0,
+    meat: 0,
+    wheat: 0,
+    stone: 1,
+    food: 0,
+  })
 })
 
 test('missing chest resources compares costs against stored chest totals', () => {
   const { getMissingPlayerResources } = loadResourceTotals()
   const player = {
     label: 'p1',
-    buildings: [{ owner: { label: 'p1' }, type: 'Chest', inventory: { resources: { wood: 7, food: 1 } } }],
+    buildings: [{ owner: { label: 'p1' }, type: 'Chest', inventory: { resources: { wood: 7, wheat: 1 } } }],
   }
 
   assert.deepEqual(getMissingPlayerResources(player, { wood: 5, food: 3, stone: 2 }, { includeHero: false }), {

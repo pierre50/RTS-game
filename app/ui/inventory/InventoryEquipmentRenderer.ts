@@ -12,7 +12,7 @@ import {
 } from '../../lib/equipment/equipmentLoot'
 import { getPlaceableInventoryBuildingType } from '../../lib/hero/placeableInventoryItems'
 import { t } from '../../lib/lang'
-import { BUILDING_TYPES, RESOURCE_ICON_IDS, RESOURCE_NAMES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES } from '../../constants'
 import { renderBuildingAvatar } from '../../lib/avatar'
 import { getBuildingAsset, getIconPath } from '../../lib'
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
@@ -33,7 +33,7 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
   const hero = menu.context.controls.heroUnit
   const equipment = hero?.inventory?.equipment ?? []
   const resources = hero?.inventory?.resources ?? {}
-  const resourceEntries = RESOURCE_NAMES.map(resource => ({
+  const resourceEntries = RESOURCE_STORAGE_NAMES.map(resource => ({
     amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
     resource,
   })).filter(entry => entry.amount > 0)

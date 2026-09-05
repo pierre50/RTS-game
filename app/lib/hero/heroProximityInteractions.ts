@@ -1,6 +1,7 @@
 import { ACTION_TYPES, BUILDING_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
 import { findBuildingInteriorEntryTarget } from '../buildings/interiors'
 import { isHeroOnInteriorExitCell } from '../buildings/interiorExits'
 import { heroCanCommand } from '../chief'
@@ -25,7 +26,7 @@ export type HeroProximityInteraction =
     }
   | {
       action: 'enter'
-      labelKey: 'heroInteractionEnter'
+      labelKey: 'heroInteractionEnter' | 'heroInteractionForceEntry'
       target: BuildingEntity
     }
   | {
@@ -252,7 +253,13 @@ export function resolveHeroProximityInteraction({
   if (isUsableFireCamp(hero, fireCamp)) return { action: 'open', labelKey: 'heroInteractionUseFire', target: fireCamp }
 
   const building = findBuildingInteriorEntryTarget(hero, buildings)
-  if (building) return { action: 'enter', labelKey: 'heroInteractionEnter', target: building }
+  if (building) {
+    return {
+      action: 'enter',
+      labelKey: canUnitEnterBuildingInterior(hero, building) ? 'heroInteractionEnter' : 'heroInteractionForceEntry',
+      target: building,
+    }
+  }
 
   const mountableHorse = findNearestMountableHorse(hero, companionHorse, openEntityTarget)
   if (mountableHorse) {

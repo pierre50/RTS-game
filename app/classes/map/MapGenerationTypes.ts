@@ -111,6 +111,7 @@ type BlueprintResource = {
 export type MapBlueprint = {
   seed?: string | number
   size: number
+  buildingSize?: number
   kind?: string
   mapType?: string
   interiorType?: string

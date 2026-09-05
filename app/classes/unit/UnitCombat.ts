@@ -27,6 +27,11 @@ import { getUnitCombatRange, getUnitWorkEquipment } from '../../lib/equipment/eq
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
 import { playReverseSlashRecovery } from '../../lib/entities/slashRecoveryAnimation'
 import { markCombatAttack, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
+import { canUnitEnterBuildingInteriorForAssault } from '../../lib/buildings/interiorAccess'
+import {
+  ensureRuntimeBuildingInteriorSpace,
+  routeUnitIntoBuildingInteriorSpace,
+} from '../../services/BuildingInteriorSpaceSystem'
 import { attachProjectileToMapSpace } from '../../lib/projectiles'
 import { applyUnitActionFrameSequence, getUnitWorkActionSheet } from '../../lib/units/unitWorkAppearance'
 import { setUnitVisualSheet } from '../../lib/units/unitVisualTransition'
@@ -104,6 +109,7 @@ export class UnitCombat {
           dest.die?.()
         }
         if (phase === 'preflight') {
+          if (this.tryEnterBuildingInteriorAssault(dest)) return
           unit.affectNewDest?.()
           return
         }
@@ -115,6 +121,15 @@ export class UnitCombat {
 
   playReverseSlashRecovery(releaseFrame: number, onComplete: () => void): boolean {
     return playReverseSlashRecovery(this.unit, { onComplete, releaseFrame })
+  }
+
+  tryEnterBuildingInteriorAssault(target: RuntimeEntity | null): boolean {
+    const unit = this.unit
+    if (!target || target.family !== FAMILY_TYPES.building || !unit.context) return false
+    if (!canUnitEnterBuildingInteriorForAssault(unit, target)) return false
+    const space = ensureRuntimeBuildingInteriorSpace(unit.context, target)
+    if (!space) return false
+    return routeUnitIntoBuildingInteriorSpace(unit.context, unit, space)
   }
 
   finishAttackAfterCurrentLoop() {

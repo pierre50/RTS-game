@@ -112,7 +112,7 @@ test('bandit camps place a bandit-owned chest with loot', () => {
   const chest = owner.buildings.find(building => building.type === 'Chest')
   assert.ok(chest)
   assert.equal(chest.isBuilt, true)
-  assert.deepEqual(chest.inventory.resources, { food: 8, gold: 2, wood: 3 })
+  assert.deepEqual(chest.inventory.resources, { berry: 2, meat: 2, wheat: 4, gold: 2, wood: 3 })
   assert.equal(chest.inventory.equipment.filter(item => item === 'arrow_ceramic').length, 6)
   assert.ok(chest.inventory.equipment.includes('trap'))
   assert.ok(chest.inventory.equipment.includes('sword_ceramic'))

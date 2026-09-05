@@ -8,6 +8,7 @@ const path = require('node:path')
 
 const ROOT = path.resolve(__dirname, '..')
 const OUTPUT = path.join(ROOT, 'public', 'maps', 'interiors')
+const BUILDINGS_CONFIG_PATH = path.join(ROOT, 'public', 'assets', 'data', 'gameplay', 'buildings.json')
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
 const DIRT = TERRAIN_INDEX.get('Dirt')
@@ -25,54 +26,47 @@ const INTERIOR_TYPE_ORDER = [
   'watch-tower',
 ]
 
-const INTERIOR_TYPES = {
-  'town-center': {
-    directory: 'town-center',
-    idPrefix: 'town-center-circle',
-    interiorType: 'TownCenter',
-    minSize: 15,
-    size: 15,
-  },
-  house: {
-    directory: 'house',
-    interiorType: 'House',
-  },
-  barracks: {
-    directory: 'barracks',
-    interiorType: 'Barracks',
-  },
-  'archery-range': {
-    directory: 'archery-range',
-    interiorType: 'ArcheryRange',
-  },
-  temple: {
-    directory: 'temple',
-    interiorType: 'Temple',
-  },
-  granary: {
-    directory: 'granary',
-    interiorType: 'Granary',
-  },
-  'storage-pit': {
-    directory: 'storage-pit',
-    interiorType: 'StoragePit',
-  },
-  stable: {
-    directory: 'stable',
-    interiorType: 'Stable',
-  },
-  'watch-tower': {
-    directory: 'watch-tower',
-    interiorType: 'WatchTower',
-    minSize: 11,
-    size: 11,
-  },
+const INTERIOR_TYPES = Object.fromEntries(
+  INTERIOR_TYPE_ORDER.map(type => [type, { interiorType: toBuildingType(type) }])
+)
+
+function toBuildingType(type) {
+  return type
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
 }
 
-for (const [type, profile] of Object.entries(INTERIOR_TYPES)) {
-  profile.idPrefix ??= `${type}-circle`
-  profile.minSize ??= 13
-  profile.size ??= 13
+function readBuildingsConfig() {
+  return JSON.parse(fs.readFileSync(BUILDINGS_CONFIG_PATH, 'utf8'))
+}
+
+function getBuildingSizeByInteriorType() {
+  const buildings = readBuildingsConfig()
+  return Object.fromEntries(
+    INTERIOR_TYPE_ORDER.map(type => {
+      const interiorType = INTERIOR_TYPES[type].interiorType
+      const buildingSize = Number(buildings[interiorType]?.size)
+      if (!Number.isInteger(buildingSize) || buildingSize < 1) {
+        throw new Error(`Missing building size for ${interiorType}`)
+      }
+      return [interiorType, buildingSize]
+    })
+  )
+}
+
+function mapSizeForBuildingSize(buildingSize) {
+  return buildingSize * 2 + 7
+}
+
+function profileForBuildingSize(buildingSize) {
+  return {
+    buildingSize,
+    directory: `size-${buildingSize}`,
+    idPrefix: `building-size-${buildingSize}`,
+    minSize: mapSizeForBuildingSize(buildingSize),
+    size: mapSizeForBuildingSize(buildingSize),
+  }
 }
 
 function usage(error = '') {
@@ -112,8 +106,13 @@ function argumentsFrom(argv) {
   if (options.type === 'all' && options.size != null) throw new Error('--size can only be used with one --type')
   if (!Number.isInteger(options.count) || options.count < 1) throw new Error('--count must be positive')
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
-  if (options.size != null && (!Number.isInteger(options.size) || options.size < INTERIOR_TYPES[options.type].minSize)) {
-    throw new Error(`--size must be an integer >= ${INTERIOR_TYPES[options.type].minSize}`)
+  if (options.size != null) {
+    const buildingSizeByType = getBuildingSizeByInteriorType()
+    const interiorType = INTERIOR_TYPES[options.type].interiorType
+    const minSize = mapSizeForBuildingSize(buildingSizeByType[interiorType])
+    if (!Number.isInteger(options.size) || options.size < minSize) {
+      throw new Error(`--size must be an integer >= ${minSize}`)
+    }
   }
   return options
 }
@@ -142,10 +141,10 @@ function encode(array) {
   return Buffer.from(array.buffer, array.byteOffset, array.byteLength).toString('base64')
 }
 
-function buildingInterior({ id, interiorType, seed, size }) {
+function buildingInterior({ buildingSize, id, seed, size }) {
   const width = size + 1
   const center = size / 2
-  const radius = Math.max(4, Math.floor(width * 0.31))
+  const radius = Math.max(3, Math.floor(width * 0.29))
   const terrain = new Uint8Array(width * width).fill(WATER)
   const relief = new Int8Array(width * width)
   const floorMask = new Uint8Array(width * width)
@@ -197,7 +196,7 @@ function buildingInterior({ id, interiorType, seed, size }) {
     version: 1,
     id,
     kind: 'interior',
-    interiorType,
+    buildingSize,
     size,
     seed,
     encoding: 'base64',
@@ -230,41 +229,70 @@ async function main() {
 
   const random = randomFrom(options.seed)
   const selectedTypes = options.type === 'all' ? INTERIOR_TYPE_ORDER : [options.type]
+  const buildingSizeByType = getBuildingSizeByInteriorType()
+  const profilesBySize = new Map()
   const manifest = {
     format: 'interior-map-manifest',
     version: 1,
-    generatedAt: new Date().toISOString(),
     batchSeed: options.seed,
-    interiors: [],
+    blueprints: [],
+    buildingTypes: [],
   }
 
   for (const type of selectedTypes) {
-    const profile = INTERIOR_TYPES[type]
+    const interiorType = INTERIOR_TYPES[type].interiorType
+    const buildingSize = buildingSizeByType[interiorType]
+    const profile = profileForBuildingSize(buildingSize)
+    profilesBySize.set(buildingSize, profile)
+  }
+
+  const blueprintsBySize = new Map()
+  for (const [buildingSize, profile] of profilesBySize) {
     const size = options.size ?? profile.size
     const directory = path.join(options.out, profile.directory)
     fs.mkdirSync(directory, { recursive: true })
     for (let index = 0; index < options.count; index++) {
       const seed = Math.floor(random() * 0x7fffffff)
       const id = `${profile.idPrefix}-${String(index + 1).padStart(3, '0')}`
-      const map = buildingInterior({ id, interiorType: profile.interiorType, seed, size })
+      const map = buildingInterior({ buildingSize, id, seed, size })
       const relativePath = `${profile.directory}/${id}.map`
       fs.writeFileSync(path.join(options.out, relativePath), `${JSON.stringify(map)}\n`)
-      manifest.interiors.push({
+      const blueprint = {
+        buildingSize,
+        exits: map.exits.length,
         id,
-        interiorType: map.interiorType,
         kind: map.kind,
         path: relativePath,
         seed,
         size: map.size,
         spawns: map.spawns.length,
-        exits: map.exits.length,
+      }
+      manifest.blueprints.push(blueprint)
+      const variants = blueprintsBySize.get(buildingSize) || []
+      variants.push({ ...blueprint, index })
+      blueprintsBySize.set(buildingSize, variants)
+    }
+  }
+
+  for (const type of selectedTypes) {
+    const buildingType = INTERIOR_TYPES[type].interiorType
+    const buildingSize = buildingSizeByType[buildingType]
+    for (const blueprint of blueprintsBySize.get(buildingSize) || []) {
+      manifest.buildingTypes.push({
+        blueprintId: blueprint.id,
+        buildingSize,
+        buildingType,
+        id: `${type}-size-${buildingSize}-${String(blueprint.index + 1).padStart(3, '0')}`,
+        legacyId: `${type}-circle-${String(blueprint.index + 1).padStart(3, '0')}`,
       })
     }
   }
 
   fs.mkdirSync(options.out, { recursive: true })
   fs.writeFileSync(path.join(options.out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-  console.log(`Generated ${options.count * selectedTypes.length} interior map(s): ${selectedTypes.join(', ')}`)
+  console.log(
+    `Generated ${blueprintsBySize.size * options.count} interior blueprint file(s) for ${selectedTypes.length} building type(s): ${selectedTypes.join(', ')}`
+  )
   console.log(`Manifest: ${path.relative(ROOT, path.join(options.out, 'manifest.json'))}`)
 }
 

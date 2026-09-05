@@ -6,16 +6,7 @@ import type { RuntimeEntity, UnitCreationExtra, UnitEntity } from '../../types/e
 import type { RuntimeCell } from '../../types/map'
 import type { BuildingControllerHost } from './BuildingTypes'
 
-type DynamicUnitCommand = (target: RuntimeEntity) => void
-type UnitWithDynamicCommands = UnitEntity & Record<string, DynamicUnitCommand | undefined>
-
 function sendUnitToEntity(unit: UnitEntity, target: RuntimeEntity): void {
-  if (target.family === FAMILY_TYPES.resource) {
-    const sendToFunc = `sendTo${target.category || target.type}`
-    const command = (unit as UnitWithDynamicCommands)[sendToFunc]
-    if (typeof command === 'function') return command.call(unit, target)
-    return unit.sendTo(target)
-  }
   if (target.family === FAMILY_TYPES.animal) {
     if (getActionCondition(unit, target, ACTION_TYPES.hunt)) return unit.sendToHunt(target)
     if (getActionCondition(unit, target, ACTION_TYPES.takemeat)) return unit.sendToTakeMeat(target)
@@ -74,7 +65,10 @@ export function placeProducedUnit(
   const space = getEntityMapSpace(building, map)
   const rallyCell = rallyPoint && (space?.grid ?? map.grid)[rallyPoint.i]?.[rallyPoint.j]
   if (rallyCell) {
-    const rallyTarget = rallyCell.has && !rallyCell.has.isDestroyed ? rallyCell.has : null
+    const rallyTarget =
+      rallyCell.has && !rallyCell.has.isDestroyed && rallyCell.has.family !== FAMILY_TYPES.resource
+        ? rallyCell.has
+        : null
     rallyTarget ? sendUnitToEntity(unit, rallyTarget) : unit.sendTo(rallyCell)
   }
 

@@ -1,5 +1,6 @@
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
 import { TrapHarvestSystem } from './world/TrapHarvestSystem'
+import { VillagerUpkeepSystem } from './world/VillagerUpkeepSystem'
 import type { GameContextLike } from '../types/context'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
@@ -17,6 +18,7 @@ export class DailyWorldEventSystem {
       context.dayNight?.onDayChange?.((day, previousDay) => this.handleDayChange({ day, previousDay })) ?? null
     this.register(new NaturalRegrowthSystem(context))
     this.register(new TrapHarvestSystem(context))
+    this.register(new VillagerUpkeepSystem(context))
   }
 
   register(handler: DailyWorldEventHandler): () => void {

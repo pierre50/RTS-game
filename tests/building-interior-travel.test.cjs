@@ -197,6 +197,37 @@ function extractTestPortalParty(state) {
   }
 }
 
+test('entering a defended enemy building interior warns instead of travelling', async () => {
+  const messages = []
+  const enemy = { label: 'enemy' }
+  const player = { isEnemy: owner => owner === enemy, label: 'player-1' }
+  const building = {
+    hitPoints: 30,
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    label: 'tc-1',
+    owner: enemy,
+    totalHitPoints: 100,
+    type: 'TownCenter',
+  }
+  const { travelIntoBuildingInterior } = loadBuildingInteriorTravel()
+  const game = {
+    _isRestarting: false,
+    _openBuildingInteriorLayer: async () => {
+      throw new Error('should not open')
+    },
+    _gameContext: () => ({
+      controls: { heroUnit: { owner: player } },
+      menu: { showMessage: (message, tone) => messages.push([message, tone]) },
+    }),
+  }
+
+  await travelIntoBuildingInterior(game, building)
+
+  assert.deepEqual(messages, [['heroEnemyBuildingInteriorDefended', 'warning']])
+})
+
 test('entering a building interior through the runtime layer does not boot a separate map', async () => {
   const opened = []
   const autosaves = []

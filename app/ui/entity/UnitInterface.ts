@@ -1,4 +1,4 @@
-import { MENU_INFO_IDS, RESOURCE_ICON_IDS, RESOURCE_NAMES, UNIT_TYPES } from '../../constants'
+import { MENU_INFO_IDS, RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import { getIconPath } from '../../lib'
 import {
   formatEquipmentStackLabel,
@@ -17,6 +17,7 @@ import {
 import type { EquipmentCombatStats } from '../../lib/equipment/equipmentStats'
 import {
   formatXpProgressText,
+  getUnitEquipmentTier,
   getUnitExperienceEntries,
   getUnitOverallLevel,
   getXpInfoId,
@@ -149,7 +150,7 @@ function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[
     if (!hero) return
 
     let pickedCount = 0
-    for (const resource of RESOURCE_NAMES) {
+    for (const resource of RESOURCE_STORAGE_NAMES) {
       if (pickupCorpseResource(unit, hero, resource) > 0) pickedCount += 1
     }
     for (const item of [...equipment]) {
@@ -168,7 +169,7 @@ function createCorpseTakeAllButton(unit: UnitEntity, equipment: readonly string[
 function appendCorpseEquipmentLoot(element: HTMLElement, unit: UnitEntity, menu: MenuLike): void {
   const equipment = getUnitCorpseLootEquipment(unit)
   const resources = getUnitCorpseLootResources(unit)
-  const resourceEntries = RESOURCE_NAMES.map(resource => ({
+  const resourceEntries = RESOURCE_STORAGE_NAMES.map(resource => ({
     amount: Math.max(0, Math.floor(resources[resource] ?? 0)),
     resource,
   })).filter(entry => entry.amount > 0)
@@ -220,6 +221,13 @@ export class UnitInterface {
       // A single glanceable global level, then per-category rows that explain where
       // that level came from.
       element.appendChild(createInfoText('unit-level', `${t('unitLevelLabel')} ${getUnitOverallLevel(unit)}`))
+
+      // Independent from the level above: only soldier units (Fantassin/Archer) progress
+      // through this track, gating equipment unlocks instead of reflex/energy/defense.
+      const equipmentTier = getUnitEquipmentTier(unit)
+      if (equipmentTier > 0) {
+        element.appendChild(createInfoText('unit-equipment-tier', `${t('equipmentTierLabel')} ${equipmentTier}`))
+      }
     }
 
     const infosDiv = document.createElement('div')

@@ -9,6 +9,11 @@ import {
 import { hasWaterBorderWithin } from '../../../lib'
 import { generateForestAroundPlayer as generateForestAroundPlayerResources } from './MapForestResources'
 import { hasSpacedResourceAround } from './MapResourceSpacing'
+import {
+  NEUTRAL_RESOURCE_QUANTITY_RANGES,
+  SCATTERED_STONE_QUANTITY_RANGE,
+  rollResourceQuantity,
+} from './ResourceQuantityRanges'
 import type { ContainerChild } from 'pixi.js'
 import type { GridPosition } from '../../../types/grid'
 import type { RuntimeCell } from '../../../types/map'
@@ -34,6 +39,7 @@ type ResourcePlacementOptions = {
   isNaturalResource?: boolean
   textureName?: string
   quantity?: number
+  totalQuantity?: number
   startsMature?: boolean
 }
 type MapResourcesMap = {
@@ -115,12 +121,14 @@ const NEUTRAL_RESOURCE_GROUPS: NeutralResourceGroup[] = [
     minNeutralDistance: 22,
   },
   {
+    // Gold is a rare one-tile "vein" rather than a multi-tile mine: see
+    // NEUTRAL_RESOURCE_QUANTITY_RANGES for its (tiny) per-tile amount.
     type: RESOURCE_TYPES.gold,
     profileKey: 'gold',
-    quantity: 5,
-    clusterRadius: 2,
-    playerSafeDistance: 32,
-    minNeutralDistance: 26,
+    quantity: 1,
+    clusterRadius: 1,
+    playerSafeDistance: 40,
+    minNeutralDistance: 34,
   },
 ]
 
@@ -140,6 +148,7 @@ function createResource(
         isNaturalResource: options.isNaturalResource ?? true,
         textureName: options.textureName,
         quantity: options.quantity,
+        totalQuantity: options.totalQuantity,
         startsMature: options.startsMature,
       },
       map.context as ConstructorParameters<typeof Resource>[1]
@@ -153,26 +162,28 @@ function berryBushTextureName(frame: number): string {
 
 const RESOURCE_DENSITY_PROFILES = {
   low: {
-    neutralGroups: { berrybush: 2, wheat: 2, stone: 4, copper: 3, iron: 2, gold: 1, tree: 4 },
+    // Gold is intentionally near-absent at low density: it's a rare find, not a resource
+    // a game is expected to always provide.
+    neutralGroups: { berrybush: 2, wheat: 2, stone: 3, copper: 2, iron: 2, gold: 0, tree: 4 },
     minNeutralDistance: 28,
     playerSafeDistance: 34,
   },
   moderate: {
-    neutralGroups: { berrybush: 4, wheat: 4, stone: 8, copper: 6, iron: 4, gold: 3, tree: 7 },
+    neutralGroups: { berrybush: 4, wheat: 4, stone: 6, copper: 4, iron: 3, gold: 1, tree: 7 },
     minNeutralDistance: 24,
     playerSafeDistance: 30,
   },
   high: {
-    neutralGroups: { berrybush: 7, wheat: 7, stone: 12, copper: 10, iron: 7, gold: 5, tree: 11 },
+    neutralGroups: { berrybush: 7, wheat: 7, stone: 9, copper: 7, iron: 5, gold: 2, tree: 11 },
     minNeutralDistance: 20,
     playerSafeDistance: 26,
   },
 }
 
 const SCATTERED_STONE_PROFILES: Record<ResourceDensity, number> = {
-  low: 14,
-  moderate: 32,
-  high: 52,
+  low: 10,
+  moderate: 20,
+  high: 34,
 }
 
 const SCATTERED_STONE_ENVIRONMENT_MULTIPLIERS: Record<string, number> = {
@@ -184,7 +195,6 @@ const SCATTERED_STONE_ENVIRONMENT_MULTIPLIERS: Record<string, number> = {
 
 const SCATTERED_STONE_PLAYER_SAFE_DISTANCE = 20
 const SCATTERED_STONE_RESOURCE_CLEARANCE = 4
-const SCATTERED_STONE_QUANTITY = 55
 
 const ENVIRONMENT_NEUTRAL_RESOURCE_MULTIPLIERS: Record<string, Partial<Record<NeutralResourceProfileKey, number>>> = {
   Temperate: {
@@ -369,8 +379,12 @@ export class MapResources {
       const tooCloseToPlayer = playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
       if (tooCloseToPlayer) continue
 
+      const rolledQuantity = rollResourceQuantity(() => this.map.random(), SCATTERED_STONE_QUANTITY_RANGE)
       this.map.resources.add(
-        createResource(this.map, i, j, RESOURCE_TYPES.stone, { quantity: SCATTERED_STONE_QUANTITY })
+        createResource(this.map, i, j, RESOURCE_TYPES.stone, {
+          quantity: rolledQuantity,
+          totalQuantity: rolledQuantity,
+        })
       )
       placed++
 
@@ -467,11 +481,14 @@ export class MapResources {
 
     const sharedTextureName = options.textureName ?? this.getSharedGroupTextureName(instance)
     for (const cell of cellsToPlace) {
+      const rolledQuantity =
+        options.quantity ?? rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[instance])
       this.map.resources.add(
         createResource(this.map, cell.i, cell.j, instance, {
           textureName: sharedTextureName,
           isNaturalResource: options.isNaturalResource ?? true,
-          quantity: options.quantity,
+          quantity: rolledQuantity,
+          totalQuantity: rolledQuantity,
           startsMature: options.startsMature,
         })
       )
@@ -491,10 +508,13 @@ export class MapResources {
       if (hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
       if (hasSpacedResourceAround(this.map.grid, i, j)) continue
 
+      const rolledQuantity = rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
       this.map.resources.add(
         createResource(this.map, i, j, slot.type, {
           isNaturalResource: true,
           textureName: slot.type === RESOURCE_TYPES.berrybush ? slot.textureName : undefined,
+          quantity: rolledQuantity,
+          totalQuantity: rolledQuantity,
           startsMature: slot.type === RESOURCE_TYPES.wheat ? true : undefined,
         })
       )
@@ -538,7 +558,16 @@ export class MapResources {
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
-          this.map.resources.add(createResource(this.map, i, j, RESOURCE_TYPES.tree))
+          const rolledQuantity = rollResourceQuantity(
+            () => this.map.random(),
+            NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.tree]
+          )
+          this.map.resources.add(
+            createResource(this.map, i, j, RESOURCE_TYPES.tree, {
+              quantity: rolledQuantity,
+              totalQuantity: rolledQuantity,
+            })
+          )
         }
       }
       if (i % 8 === 0) await yieldFrame()

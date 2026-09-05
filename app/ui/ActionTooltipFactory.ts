@@ -102,6 +102,7 @@ export function getTechnologyTooltip(
 export function getUnitTooltip(
   type: string,
   config: UnitConfig,
+  cost: ResourceAmount,
   commandBlocked: boolean,
   building?: BuildingEntity
 ): TooltipContent {
@@ -110,7 +111,7 @@ export function getUnitTooltip(
     title: t(type),
     description: t(`${type}Description`),
     meta: [
-      t('tooltipCost', { cost: formatActionCost(config.cost) }),
+      t('tooltipCost', { cost: formatActionCost(cost) }),
       t('tooltipTrainTime', { time: config.trainingDays ?? 1 }),
       chiefBlocked ? t('requiresChief') : null,
     ],

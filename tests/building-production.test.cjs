@@ -85,17 +85,17 @@ const buildingTrainingMock = {
   isTraineeTrainingType: (_building, type) => type !== 'Villager',
 }
 
-test('resource rally commands keep the spawned unit context', () => {
+test('rally point on a resource just moves the spawned unit to the cell', () => {
   const spawnCell = { i: 1, j: 1, category: 'Land', solid: false }
   const tree = { family: 'resource', category: 'Tree', type: 'Tree', isDestroyed: false }
   const rallyCell = { i: 2, j: 2, category: 'Land', solid: false, has: tree }
   const calls = []
   const unit = {
-    sendToTree(target) {
-      calls.push([this, target])
+    sendToTree() {
+      throw new Error('did not expect the resource-specific command to be used')
     },
-    sendTo() {
-      throw new Error('expected the resource-specific command')
+    sendTo(target) {
+      calls.push([this, target])
     },
   }
   const building = {
@@ -166,7 +166,7 @@ test('resource rally commands keep the spawned unit context', () => {
 
   assert.equal(calls[0][0], 'created')
   assert.deepEqual(calls[0][1], { i: 1, j: 1, type: 'Villager' })
-  assert.deepEqual(calls[1], [unit, tree])
+  assert.deepEqual(calls[1], [unit, rallyCell])
 })
 
 test('produced units do not spawn on reserved passage cells', () => {

@@ -48,8 +48,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
     }
   }
 
-  return loadTsModule('app/services/BuildingInteriorSpaceSystem.ts', {
-    mocks: {
+  const mocks = {
       'pixi.js': { Container, Graphics },
       '../classes/cell': {
         Cell: class {
@@ -147,12 +146,22 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
       '../lib/horses/stableHorses': {
         getStableHorses: building => building.stableHorses ?? [],
       },
-      './SpacePortalSystem': {
-        prepareUnitForSpaceTransfer: overrides.prepareUnitForSpaceTransfer ?? (() => {}),
-        routeUnitThroughSpacePortal: () => false,
-        transferUnitThroughSpacePortal: () => false,
-      },
+    './SpacePortalSystem': {
+      prepareUnitForSpaceTransfer: overrides.prepareUnitForSpaceTransfer ?? (() => {}),
+      routeUnitThroughSpacePortal: () => false,
+      transferUnitThroughSpacePortal: () => false,
     },
+  }
+  const engineMocks = Object.fromEntries(
+    Object.entries(mocks).map(([key, value]) => {
+      if (key.startsWith('../')) return [key.replace(/^\.\./, '../../app'), value]
+      if (key.startsWith('./')) return [key.replace(/^\./, '../../app/services'), value]
+      return [key, value]
+    })
+  )
+
+  return loadTsModule('app/services/BuildingInteriorSpaceSystem.ts', {
+    mocks: { ...mocks, ...engineMocks },
   })
 }
 
@@ -672,6 +681,39 @@ test('runtime interior sleep fallback never settles a unit on the exit passage c
 
   assert.equal(unit.currentCell, fallbackCell)
   assert.equal(exitCell.has, null)
+})
+
+test('interior idle facing gives villagers at the back varied standing angles', () => {
+  const targetCell = { i: 0, j: 1, x: 0, y: 16 }
+  const centerCell = { i: 1, j: 1, x: 32, y: 16 }
+  const textures = []
+  const space = {
+    entryCell: centerCell,
+    grid: [[null, targetCell], [null, centerCell]],
+    size: 2,
+  }
+  const firstUnit = {
+    i: targetCell.i,
+    j: targetCell.j,
+    label: 'villager-1',
+    setTextures: sheet => textures.push(['villager-1', sheet]),
+  }
+  const secondUnit = {
+    i: targetCell.i,
+    j: targetCell.j,
+    label: 'villager-2',
+    setTextures: sheet => textures.push(['villager-2', sheet]),
+  }
+  const { applyBuildingInteriorIdleFacing } = loadBuildingInteriorSpaceSystem()
+
+  applyBuildingInteriorIdleFacing(firstUnit, space, targetCell)
+  applyBuildingInteriorIdleFacing(secondUnit, space, targetCell)
+
+  assert.notEqual(firstUnit.degree, secondUnit.degree)
+  assert.deepEqual(textures, [
+    ['villager-1', 'standing'],
+    ['villager-2', 'standing'],
+  ])
 })
 
 test('destroyed building interiors expel living units back outside', () => {

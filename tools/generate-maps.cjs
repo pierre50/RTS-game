@@ -258,6 +258,7 @@ function loadRuntimeGenerators() {
     filename.endsWith('/MapTerrain.ts') ||
     filename.endsWith('/MapForestResources.ts') ||
     filename.endsWith('/MapResourceSpacing.ts') ||
+    filename.endsWith('/ResourceQuantityRanges.ts') ||
     filename.endsWith('/MapResources.ts')
   class HeadlessContainer {
     constructor() {
@@ -304,6 +305,7 @@ function loadRuntimeGenerators() {
     RESOURCE_TYPES: {
       tree: 'Tree',
       berrybush: 'Berrybush',
+      wheat: 'Wheat',
       stone: 'Stone',
       gold: 'Gold',
       copper: 'Copper',
@@ -360,6 +362,9 @@ function loadRuntimeGenerators() {
       }
       if (request === './MapResourceSpacing') {
         return originalLoad(path.join(ROOT, 'app/classes/map/resources/MapResourceSpacing.ts'), parent, isMain)
+      }
+      if (request === './ResourceQuantityRanges') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/resources/ResourceQuantityRanges.ts'), parent, isMain)
       }
       if (request === 'pixi.js') return pixi
       if (request === '../Resource' || request === '../../Resource') return { Resource: HeadlessResource }

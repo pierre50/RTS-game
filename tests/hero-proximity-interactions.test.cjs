@@ -90,6 +90,48 @@ test('hero proximity interaction resolves a town center door as enter', () => {
   })
 })
 
+test('hero proximity interaction offers to force entry on defended enemy interiors', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const enemy = { label: 'enemy' }
+  const player = { isEnemy: owner => owner === enemy, label: 'player' }
+  const building = {
+    hitPoints: 30,
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    owner: enemy,
+    totalHitPoints: 100,
+    type: 'TownCenter',
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ owner: player }) }), {
+    action: 'enter',
+    labelKey: 'heroInteractionForceEntry',
+    target: building,
+  })
+})
+
+test('hero proximity interaction allows entry once an enemy interior is weakened', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const enemy = { label: 'enemy' }
+  const player = { isEnemy: owner => owner === enemy, label: 'player' }
+  const building = {
+    hitPoints: 20,
+    i: 5,
+    isBuilt: true,
+    j: 5,
+    owner: enemy,
+    totalHitPoints: 100,
+    type: 'TownCenter',
+  }
+
+  assert.deepEqual(resolveHeroProximityInteraction({ buildings: [building], hero: makeHero({ owner: player }) }), {
+    action: 'enter',
+    labelKey: 'heroInteractionEnter',
+    target: building,
+  })
+})
+
 test('hero proximity interaction resolves a house door as enter', () => {
   const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
   const building = { i: 5, isBuilt: true, j: 5, type: 'House' }

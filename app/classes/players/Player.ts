@@ -15,6 +15,7 @@ import {
   hasBuildingPlacementClearance,
 } from '../../lib'
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
+import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import { addEntityToMapSpaceContainer, getMapSpace } from '../../lib/mapSpaces'
 import { Building } from '../building/Building'
 import type { BuildingOptions } from '../building/Building'
@@ -84,6 +85,9 @@ export class Player implements PlayerLike {
   type!: string
   wood!: number
   food!: number
+  berry!: number
+  meat!: number
+  wheat!: number
   stone!: number
   gold!: number
   copper!: number
@@ -132,6 +136,10 @@ export class Player implements PlayerLike {
     for (const resource of RESOURCE_NAMES) {
       this[resource] = res[resource] ?? 0
     }
+    const splitFood = expandLegacyFoodAmount(res)
+    this.berry = splitFood.berry ?? 0
+    this.meat = splitFood.meat ?? 0
+    this.wheat = splitFood.wheat ?? 0
     this.corpses = []
     this.units = []
     this.buildings = []

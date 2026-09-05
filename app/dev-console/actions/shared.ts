@@ -6,7 +6,7 @@ import type { DevCell, DevConsoleContext, DevConsoleRuntimeContext, DevEntity, D
 import type { RuntimeEntity } from '../../types/entities'
 import type { RuntimeMap, RuntimeMapSpace } from '../../types/map'
 
-export { RESOURCE_NAMES } from '../../constants'
+export { RESOURCE_STORAGE_NAMES as RESOURCE_NAMES } from '../../constants'
 export const DEBUG_SOLID_LAYER = 'debugSolidLayer'
 export const DEBUG_PATH_LAYER = 'debugPathLayer'
 export const DEBUG_VISION_LAYER = 'debugVisionLayer'

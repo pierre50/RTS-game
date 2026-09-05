@@ -10,6 +10,12 @@ export const RESOURCE_TYPES = {
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
 
+// Real, storable resource kinds. 'food' from RESOURCE_NAMES is a virtual aggregate (berry + meat + wheat)
+// used only for costs/display — it is never physically stored in an inventory.resources bag.
+export const FOOD_RESOURCE_NAMES = ['berry', 'meat', 'wheat'] as const
+
+export const RESOURCE_STORAGE_NAMES = ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'] as const
+
 export const BUILDING_TYPES = {
   house: 'House',
   townCenter: 'TownCenter',
@@ -147,8 +153,8 @@ export const TYPE_ACTION = {
 
 export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.tree]: 'wood',
-  [RESOURCE_TYPES.berrybush]: 'food',
-  [RESOURCE_TYPES.wheat]: 'food',
+  [RESOURCE_TYPES.berrybush]: 'berry',
+  [RESOURCE_TYPES.wheat]: 'wheat',
   [RESOURCE_TYPES.stone]: 'stone',
   [RESOURCE_TYPES.gold]: 'gold',
   [RESOURCE_TYPES.copper]: 'copper',
@@ -169,6 +175,10 @@ export const RESOURCE_GATHER_SWINGS = {
 export const RESOURCE_ICON_IDS = {
   wood: { commodity: '000_50732', attribute: '000_50731' },
   food: { commodity: '002_50732', attribute: '002_50731' },
+  // Placeholder: berry/meat/wheat reuse the generic food icon until dedicated art exists.
+  berry: { commodity: '002_50732', attribute: '002_50731' },
+  meat: { commodity: '002_50732', attribute: '002_50731' },
+  wheat: { commodity: '002_50732', attribute: '002_50731' },
   stone: { commodity: '001_50732', attribute: '001_50731' },
   gold: { commodity: '003_50732', attribute: '003_50731' },
   copper: { commodity: '003_50732', attribute: '003_50731' },

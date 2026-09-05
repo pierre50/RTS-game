@@ -1,4 +1,4 @@
-import { RESOURCE_ICON_IDS, RESOURCE_NAMES } from '../../constants'
+import { RESOURCE_ICON_IDS, RESOURCE_STORAGE_NAMES } from '../../constants'
 import { getIconPath } from '../../lib'
 import { formatEquipmentStackLabel, getEquipmentStacks } from '../../lib/equipment/equipmentLoot'
 import {
@@ -77,7 +77,7 @@ export class InventoryTransferPanel {
     transferTarget: InventoryContainer
   ): void {
     const resources = container.inventory.resources ?? {}
-    for (const resource of RESOURCE_NAMES) {
+    for (const resource of RESOURCE_STORAGE_NAMES) {
       const amount = Math.max(0, Math.floor(resources[resource] ?? 0))
       if (amount <= 0) continue
       grid.appendChild(this.createResourceButton(container, transferTarget, resource, amount))

@@ -1,16 +1,25 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["preload.js", "webpack.env.js", "tools/**/*.cjs", "tests/**/*.cjs"],
-  "project": ["app/**/*.ts", "tools/**/*.cjs", "*.js", "tests/**/*.cjs"],
+  "project": ["app/**/*.ts", "engine/**/*.ts", "tools/**/*.cjs", "*.js", "tests/**/*.cjs"],
   "ignoreIssues": {
     "app/classes/map/fog/ViewportFogRenderer.ts": ["exports"],
     "app/classes/map/resources/MapResources.ts": ["exports"],
     "app/constants/environments.ts": ["exports"],
+    "app/constants/entities.ts": ["exports"],
+    "app/lib/buildings/interiorAccess.ts": ["exports"],
     "app/lib/combat/parry.ts": ["exports"],
+    "app/lib/entities/entityOwnerTransfer.ts": ["exports"],
+    "app/lib/entities/spriteFragmentBurst.ts": ["exports", "types"],
+    "app/lib/hero/heroCampfireSleep.ts": ["exports"],
+    "app/lib/playerState.ts": ["exports"],
     "app/lib/units/unitExperience.ts": ["exports"],
+    "app/lib/units/unitTrainingOrders.ts": ["exports"],
     "app/lib/lpc/baked.ts": ["exports"],
     "app/screens/game/BuildingInteriorOccupants.ts": ["exports"],
     "app/services/BuildingInteriorSpaceSystem.ts": ["exports"],
+    "engine/services/BuildingInteriorSpaceSystemRuntime.ts": ["exports"],
+    "app/services/TributeRaidRules.ts": ["exports"],
     "app/serialization/CampaignSave.ts": ["exports"]
   }
 }

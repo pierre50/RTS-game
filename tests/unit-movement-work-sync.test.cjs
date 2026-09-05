@@ -146,6 +146,9 @@ function loadUnitMovement(calls) {
     if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
+    if (request === './UnitMovementRoutingRuntime') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRoutingRuntime.ts'))
+    }
     if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
     }

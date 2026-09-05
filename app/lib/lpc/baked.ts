@@ -14,7 +14,7 @@ import {
 } from './heroAppearance'
 import { isAssetCached, loadBakedUnitVariant, registerDynamicEquipmentAliases } from './bakedAliasCache'
 import { isChiefUnit } from '../chief'
-import { getUnitEquipmentLevel } from '../units/unitExperience'
+import { getUnitEquipmentTier } from '../units/unitExperience'
 import { SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import {
   BAKED_UNITS,
@@ -115,7 +115,7 @@ function resolveBakedUnitForRuntime(unit: UnitEntity): BakedUnitType | undefined
   if (bakedUnit !== 'infantry' || !isBakedInfantryRuntimeType(unit.type)) return bakedUnit
   const corpseEquipment = getCorpseAppearanceEquipment(unit)
   if (corpseEquipment) return corpseEquipment.some(isHelmetEquipmentKey) ? 'infantry_nohair' : 'infantry'
-  return getUnitEquipmentLevel(unit) >= INFANTRY_HELMET_MIN_LEVEL ? 'infantry_nohair' : 'infantry'
+  return getUnitEquipmentTier(unit) >= INFANTRY_HELMET_MIN_LEVEL ? 'infantry_nohair' : 'infantry'
 }
 
 function resolveBakedRuntimeVariant(unit: UnitEntity, bakedUnit: BakedUnitType): string | null {

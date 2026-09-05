@@ -96,6 +96,8 @@ export interface UnitConfig extends EntityConfig {
   attackRecoveryMs?: number
   meleeArmor?: number
   pierceArmor?: number
+  totalEnergy?: number
+  energyRegenRate?: number
   sounds?: UnitSounds
   appearance?: UnitAppearanceConfig
   spriteScale?: number

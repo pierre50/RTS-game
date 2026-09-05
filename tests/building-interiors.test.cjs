@@ -79,7 +79,7 @@ test('house interior entry uses the same grid cell flow', () => {
   assert.equal(findBuildingInteriorEntryTarget({ ...hero, j: 6 }, [house]), null)
 })
 
-test('stable interior entry uses the same size and entry flow as a house', () => {
+test('stable interior entry uses the shared building entry flow', () => {
   const { findBuildingInteriorEntryTarget, getBuildingInteriorBlueprintType, isBuildingInteriorSupported } =
     loadBuildingInteriors()
   const grid = makeGrid(12)

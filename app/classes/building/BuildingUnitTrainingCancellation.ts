@@ -2,6 +2,7 @@ import { BUILDING_TYPES } from '../../constants'
 import { refundCost } from '../../lib'
 import { HORSE_TAMING_STATUS } from '../../lib/horses/horseTaming'
 import { returnStableHorse } from '../../lib/horses/stableHorses'
+import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import { refreshOpenBuildingMenu } from './BuildingTechnologyProduction'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { BuildingControllerHost } from './BuildingTypes'
@@ -55,7 +56,7 @@ function cancelConcurrentTrainingEntries(
   for (const entry of building.trainingQueue ?? []) {
     entry.trainingDayChangeUnsubscribe?.()
     const unit = building.owner.config.units[entry.type]
-    if (unit) refundCost(building.owner, entry.cost ?? unit.cost)
+    if (unit) refundCost(building.owner, entry.cost ?? getUnitTrainingCost(building.owner, entry.type))
     restoreCancelledTrainee(host, entry.trainee)
     restoreCancelledStableHorse(building, entry.extra)
     typeCounts.set(entry.type, (typeCounts.get(entry.type) ?? 0) + 1)
@@ -68,8 +69,7 @@ function cancelConcurrentTrainingEntries(
 function cancelClassicActiveTraining(building: BuildingControllerHost, host: TrainingCancellationHost): boolean {
   const activeType = building.loading !== null ? building.queue[0] : null
   if (!activeType || host.activeTrainingTrainee) return false
-  const unit = building.owner.config.units[activeType]
-  refundCost(building.owner, unit.cost)
+  refundCost(building.owner, getUnitTrainingCost(building.owner, activeType))
   building.trainingDayChangeUnsubscribe?.()
   building.trainingDayChangeUnsubscribe = null
   building.loading = null
@@ -94,7 +94,7 @@ function refundRemainingQueue(
       continue
     }
     const unit = building.owner.config.units[type]
-    if (unit) refundCost(building.owner, unit.cost)
+    if (unit) refundCost(building.owner, getUnitTrainingCost(building.owner, type))
     cancelled = true
   }
   return cancelled

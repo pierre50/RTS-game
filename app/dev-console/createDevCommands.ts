@@ -1,6 +1,6 @@
 import { Assets } from 'pixi.js'
 import { DevCommandRegistry } from './DevCommandRegistry'
-import { POPULATION_MAX, RESOURCE_NAMES as PLAYER_RESOURCE_NAMES } from '../constants'
+import { POPULATION_MAX, RESOURCE_STORAGE_NAMES } from '../constants'
 import { GAME_SPEED_USAGE, SPEED_VALUES } from '../lib/audio/settings'
 import {
   addHeroInventoryEquipment,
@@ -48,7 +48,7 @@ import { toggleHeroCollisionDebug, toggleUnitMovementDebug } from './actions/deb
 import { getAllHeroInventoryItems } from './actions/heroInventory'
 import type { DevEntity, DevPlayer } from './types'
 
-const RESOURCE_NAMES = ['all', ...PLAYER_RESOURCE_NAMES]
+const RESOURCE_NAMES = ['all', 'food', ...RESOURCE_STORAGE_NAMES]
 
 function registerCoreCommands(registry: DevCommandRegistry): void {
   registry.register({

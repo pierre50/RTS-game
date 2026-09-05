@@ -374,6 +374,9 @@ function loadModule(relativePath, mocks) {
     if (request === './movement/UnitMovementRouting' || request === './UnitMovementRouting') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRouting.ts'))
     }
+    if (request === './UnitMovementRoutingRuntime') {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitMovementRoutingRuntime.ts'))
+    }
     if (request === './movement/UnitPathMovement' || request === './UnitPathMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitPathMovement.ts'))
     }
@@ -5219,7 +5222,7 @@ test('hero farming does not claim or replace the farm worker slot', () => {
 
   assert.equal(farm.isUsedBy, occupant)
   assert.equal(unit.owner.food ?? 0, 0)
-  assert.deepEqual(unit.inventory.resources, { food: 1 })
+  assert.deepEqual(unit.inventory.resources, { wheat: 1 })
   assert.equal(farm.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
@@ -5283,7 +5286,7 @@ test('hero gathering adds food to local inventory without global resource bookke
   new UnitActions(unit).getAction(constants.ACTION_TYPES.farm)
 
   assert.equal(unit.owner.food, 0)
-  assert.deepEqual(unit.inventory.resources, { food: 1 })
+  assert.deepEqual(unit.inventory.resources, { wheat: 1 })
   assert.equal(wheat.quantity, 19)
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
@@ -5356,7 +5359,7 @@ test('farm gather cadence is the same for hero and villagers', () => {
 
     actor.actions.getAction(constants.ACTION_TYPES.farm)
     assert.equal(actor.unit.owner.food, 0)
-    assert.deepEqual(actor.unit.inventory.resources, { food: 1 })
+    assert.deepEqual(actor.unit.inventory.resources, { wheat: 1 })
     assert.equal(actor.wheat.quantity, 19)
   }
 
@@ -5687,7 +5690,7 @@ test('depleted berrybushes stay on the map as empty bushes', () => {
   assert.equal(berrybush.quantity, 0)
   assert.equal(berrybush.isDead, false)
   assert.equal(unit.owner.food, 0)
-  assert.deepEqual(unit.inventory.resources, { food: 1 })
+  assert.deepEqual(unit.inventory.resources, { berry: 1 })
   assert.deepEqual(calls, [
     ['setTextures', 'action'],
     ['feedback', 'villager-1', 1],

@@ -138,6 +138,9 @@ export type SavePlayerState = PlayerSetupConfig & {
   corpses?: SaveEntityState[]
   copper?: number
   food?: number
+  berry?: number
+  meat?: number
+  wheat?: number
   gold?: number
   iron?: number
   hasBuilt?: string[]

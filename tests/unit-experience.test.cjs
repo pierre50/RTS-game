@@ -133,6 +133,66 @@ test('equipment level follows role skills instead of unrelated expertise', () =>
   assert.equal(getUnitEquipmentLevel(archer), 4)
 })
 
+test('equipment tier follows a flat xp curve, soldier-only, capped by age', () => {
+  const { getUnitEquipmentTier, XP_MAX_LEVEL } = loadExperience()
+  const infantry = makeUnit({ type: 'Fantassin', category: 'Fantassin', owner: { age: 3 } })
+  const archer = makeUnit({ type: 'Bowman', category: 'Archer', owner: { age: 3 } })
+  const priest = makeUnit({ type: 'Priest', category: 'Priest', owner: { age: 3 } })
+  const villager = makeUnit({ type: 'Villager', category: 'Villager', owner: { age: 3 } })
+
+  assert.equal(getUnitEquipmentTier(infantry), 0)
+  infantry.experience.melee = 200
+  infantry.experience.defense = 199
+  assert.equal(getUnitEquipmentTier(infantry), 1)
+  infantry.experience.defense = 200
+  assert.equal(getUnitEquipmentTier(infantry), 2)
+
+  archer.experience.ranged = 300
+  archer.experience.defense = 100
+  assert.equal(getUnitEquipmentTier(archer), 2)
+
+  // Priest and villagers never progress this track, no matter how much xp they log elsewhere.
+  priest.experience.healing = 100_000
+  villager.experience.woodcutting = 100_000
+  assert.equal(getUnitEquipmentTier(priest), 0)
+  assert.equal(getUnitEquipmentTier(villager), 0)
+
+  // The player's current age caps the tier even when the xp curve would allow more.
+  infantry.experience.melee = 100_000
+  infantry.experience.defense = 100_000
+  assert.equal(getUnitEquipmentTier(infantry), XP_MAX_LEVEL)
+  infantry.owner.age = 0
+  assert.equal(getUnitEquipmentTier(infantry), 5)
+  infantry.owner.age = 1
+  assert.equal(getUnitEquipmentTier(infantry), 10)
+})
+
+test('overall level drives reflex, energy and defense multipliers', () => {
+  const {
+    getEnergyRegenLevelMultiplier,
+    getEnergyTotalLevelMultiplier,
+    getParryChanceBonus,
+    getReflexAttackRecoveryMultiplier,
+    getXpForLevel,
+  } = loadExperience()
+  const unit = makeUnit()
+
+  assert.equal(getReflexAttackRecoveryMultiplier(unit), 1)
+  assert.equal(getEnergyTotalLevelMultiplier(unit), 1)
+  assert.equal(getEnergyRegenLevelMultiplier(unit), 1)
+  assert.equal(getParryChanceBonus(unit), 0)
+
+  unit.experience.melee = getXpForLevel(10)
+  assert.equal(getReflexAttackRecoveryMultiplier(unit), 1 - 10 * 0.025)
+  assert.equal(getEnergyTotalLevelMultiplier(unit), 1 + 10 * 0.04)
+  assert.equal(getEnergyRegenLevelMultiplier(unit), 1 + 10 * 0.02)
+  assert.equal(getParryChanceBonus(unit), 10 * 0.035)
+
+  // The reflex multiplier never drops below its floor, however high the level climbs.
+  unit.experience.melee = getXpForLevel(20)
+  assert.equal(getReflexAttackRecoveryMultiplier(unit), 0.5)
+})
+
 test('debug level setter writes exact melee xp and clamps to the max level', () => {
   const { getUnitLevel, setUnitDebugLevel, XP_CATEGORIES, XP_MAX_LEVEL, getXpForLevel } = loadExperience()
   const unit = makeUnit()
@@ -177,6 +237,27 @@ test('grantUnitXp accumulates per category and ignores invalid grants', () => {
   const tower = makeUnit({ family: constants.FAMILY_TYPES.building })
   grantUnitXp(tower, 'ranged', 10)
   assert.deepEqual(tower.experience, {})
+})
+
+test('grantUnitXp triggers the registered refresh handler only on an overall level-up', () => {
+  const { grantUnitXp, setLevelUpRefreshHandler } = loadExperience()
+  const refreshedUnits = []
+  setLevelUpRefreshHandler(unit => refreshedUnits.push(unit))
+  const unit = makeUnit()
+
+  try {
+    grantUnitXp(unit, 'mining', 49)
+    assert.deepEqual(refreshedUnits, [])
+
+    grantUnitXp(unit, 'mining', 1)
+    assert.deepEqual(refreshedUnits, [unit])
+
+    // A different category's xp can also push the combined total past the next overall threshold.
+    grantUnitXp(unit, 'farming', 100)
+    assert.deepEqual(refreshedUnits, [unit, unit])
+  } finally {
+    setLevelUpRefreshHandler(null)
+  }
 })
 
 test('a unit without an experience record still receives xp', () => {
@@ -255,6 +336,19 @@ test('combat, healing and build bonuses scale with the category level', () => {
   assert.equal(getBuildRateXpMultiplier(unit), 1)
   unit.experience.building = getXpForLevel(4)
   assert.equal(getBuildRateXpMultiplier(unit), 1.2)
+})
+
+test('critical hit chance starts low, scales with combat level, and caps', () => {
+  const { getCriticalHitChance, getXpForLevel, XP_MAX_LEVEL } = loadExperience()
+  const unit = makeUnit()
+
+  assert.equal(getCriticalHitChance(unit, 'melee'), 0.05)
+  unit.experience.melee = getXpForLevel(5)
+  assert.equal(getCriticalHitChance(unit, 'melee'), 0.1)
+  assert.equal(getCriticalHitChance(unit, 'ranged'), 0.05)
+
+  unit.experience.melee = getXpForLevel(XP_MAX_LEVEL)
+  assert.equal(getCriticalHitChance(unit, 'melee'), 0.25)
 })
 
 test('loading types and works map to the expected xp categories', () => {
@@ -362,7 +456,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
 
   // base gatherAmount 1 + xp bonus 2 = 3 berries per swing, all granted as xp
   assert.equal(unit.owner.food, 0)
-  assert.deepEqual(unit.inventory.resources, { food: 3 })
+  assert.deepEqual(unit.inventory.resources, { berry: 3 })
   assert.equal(berryBush.quantity, 7)
   assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
 })

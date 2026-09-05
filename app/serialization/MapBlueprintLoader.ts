@@ -17,16 +17,40 @@ type BlueprintManifest = {
 }
 
 type InteriorBlueprintManifestEntry = {
+  buildingSize?: number
+  buildingType?: string
   exits?: number
   id?: string
   interiorType?: string
   kind?: string
+  legacyId?: string
   path: string
   size: number
   spawns?: number
 }
 
+type InteriorBlueprintManifestBuildingType = {
+  blueprintId: string
+  buildingSize?: number
+  buildingType?: string
+  id?: string
+  legacyId?: string
+}
+
+type InteriorBlueprintManifestBlueprint = {
+  buildingSize?: number
+  exits?: number
+  id: string
+  kind?: string
+  path: string
+  seed?: string | number
+  size: number
+  spawns?: number
+}
+
 type InteriorBlueprintManifest = {
+  blueprints?: InteriorBlueprintManifestBlueprint[]
+  buildingTypes?: InteriorBlueprintManifestBuildingType[]
   interiors?: InteriorBlueprintManifestEntry[]
 }
 
@@ -51,6 +75,8 @@ type LoadBlueprintOptions = {
 }
 
 type LoadInteriorBlueprintOptions = {
+  buildingSize?: number
+  buildingType?: string
   id?: string
   interiorType?: string
   random?: () => number
@@ -112,6 +138,71 @@ function toGrid<TValue extends Uint8Array | Int8Array, TResult>(
 
 function normalizeInteriorType(type: string | null | undefined): string {
   return String(type || '').toLowerCase()
+}
+
+function normalizeBuildingType(type: string | null | undefined): string {
+  return normalizeInteriorType(type)
+}
+
+function findInteriorBlueprintById(
+  manifest: InteriorBlueprintManifest,
+  id: string
+): {
+  blueprint: InteriorBlueprintManifestBlueprint | InteriorBlueprintManifestEntry
+  buildingType?: string
+  id?: string
+} | null {
+  const buildingType = manifest.buildingTypes?.find(entry => entry.id === id || entry.legacyId === id)
+  const blueprint = buildingType
+    ? manifest.blueprints?.find(entry => entry.id === buildingType.blueprintId)
+    : manifest.blueprints?.find(entry => entry.id === id)
+  if (blueprint) return { blueprint, buildingType: buildingType?.buildingType, id: buildingType?.id ?? blueprint.id }
+
+  const legacyBlueprint = manifest.interiors?.find(entry => entry.id === id || entry.legacyId === id)
+  return legacyBlueprint
+    ? { blueprint: legacyBlueprint, buildingType: legacyBlueprint.interiorType, id: legacyBlueprint.id }
+    : null
+}
+
+function compatibleInteriorEntries(
+  manifest: InteriorBlueprintManifest,
+  { buildingSize, interiorType }: LoadInteriorBlueprintOptions
+): Array<{
+  blueprint: InteriorBlueprintManifestBlueprint | InteriorBlueprintManifestEntry
+  buildingType?: string
+  id?: string
+}> {
+  const wantedType = normalizeBuildingType(interiorType)
+  const mappings =
+    manifest.buildingTypes?.filter(entry => {
+      return (
+        (!buildingSize || entry.buildingSize === buildingSize) &&
+        (!wantedType || normalizeBuildingType(entry.buildingType) === wantedType)
+      )
+    }) ?? []
+
+  const mapped = mappings.flatMap(entry => {
+    const blueprint = manifest.blueprints?.find(candidate => candidate.id === entry.blueprintId)
+    return blueprint ? [{ blueprint, buildingType: entry.buildingType, id: entry.id }] : []
+  })
+  if (mapped.length) return mapped
+
+  const sizeBlueprints =
+    buildingSize && manifest.blueprints
+      ? manifest.blueprints
+          .filter(blueprint => blueprint.buildingSize === buildingSize)
+          .map(blueprint => ({ blueprint, buildingType: interiorType, id: blueprint.id }))
+      : []
+  if (sizeBlueprints.length) return sizeBlueprints
+
+  return (manifest.interiors ?? [])
+    .filter(entry => {
+      return (
+        (!buildingSize || entry.buildingSize === buildingSize) &&
+        (!wantedType || normalizeBuildingType(entry.interiorType) === wantedType)
+      )
+    })
+    .map(entry => ({ blueprint: entry, buildingType: entry.interiorType, id: entry.id }))
 }
 
 function compatibleMaps(
@@ -214,10 +305,13 @@ export async function loadPregeneratedMapBlueprint({
 }
 
 export async function loadPregeneratedInteriorBlueprint({
+  buildingSize,
+  buildingType,
   id,
   interiorType,
   random = Math.random,
 }: LoadInteriorBlueprintOptions = {}) {
+  const requestedBuildingType = buildingType ?? interiorType
   let manifest: InteriorBlueprintManifest | undefined
   let manifestResponse: Response
   try {
@@ -235,26 +329,39 @@ export async function loadPregeneratedInteriorBlueprint({
     if (error instanceof MapBlueprintLoadError) throw error
     fail('manifest-invalid', 'maps/interiors/manifest.json is not valid JSON')
   }
-  if (!Array.isArray(manifest?.interiors)) fail('manifest-invalid', 'maps/interiors/manifest.json is invalid')
+  const hasCompactManifest = Array.isArray(manifest?.blueprints) && Array.isArray(manifest?.buildingTypes)
+  const hasLegacyManifest = Array.isArray(manifest?.interiors)
+  if (!hasCompactManifest && !hasLegacyManifest) fail('manifest-invalid', 'maps/interiors/manifest.json is invalid')
+  if (!manifest) fail('manifest-invalid', 'maps/interiors/manifest.json is invalid')
+  const interiorManifest = manifest
 
-  let selected: InteriorBlueprintManifestEntry | undefined
+  let selected:
+    | {
+        blueprint: InteriorBlueprintManifestBlueprint | InteriorBlueprintManifestEntry
+        buildingType?: string
+        id?: string
+      }
+    | undefined
   if (id) {
-    selected = manifest.interiors.find(map => map.id === id)
-    if (!selected)
+    selected = findInteriorBlueprintById(interiorManifest, id) ?? undefined
+    if (!selected) {
       fail('blueprint-id-missing', `Interior blueprint "${id}" is not listed in maps/interiors/manifest.json`)
+    }
   } else {
-    const wantedType = normalizeInteriorType(interiorType)
-    const candidates = manifest.interiors.filter(map => normalizeInteriorType(map.interiorType) === wantedType)
-    if (!candidates.length) fail('no-compatible-map', `No interior blueprint matches ${interiorType || 'unknown'}`)
+    const candidates = compatibleInteriorEntries(interiorManifest, { buildingSize, interiorType: requestedBuildingType })
+    if (!candidates.length)
+      fail('no-compatible-map', `No interior blueprint matches ${requestedBuildingType || 'unknown'}`)
     selected = candidates[Math.floor(random() * candidates.length)]
   }
+  const selectedBlueprint = selected.blueprint
 
   try {
-    const response = await fetch(`maps/interiors/${selected.path}`, { cache: 'no-store' })
-    if (!response.ok) fail('map-fetch-failed', `Unable to load maps/interiors/${selected.path} (${response.status})`)
+    const response = await fetch(`maps/interiors/${selectedBlueprint.path}`, { cache: 'no-store' })
+    if (!response.ok)
+      fail('map-fetch-failed', `Unable to load maps/interiors/${selectedBlueprint.path} (${response.status})`)
     const payload = await response.json()
     if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.kind !== 'interior') {
-      fail('map-invalid', `Interior blueprint "${selected.path}" is invalid`)
+      fail('map-invalid', `Interior blueprint "${selectedBlueprint.path}" is invalid`)
     }
 
     const size = Number(payload.size)
@@ -271,13 +378,14 @@ export async function loadPregeneratedInteriorBlueprint({
       (floorMaskValues && floorMaskValues.length !== expectedCells) ||
       (borderMaskValues && borderMaskValues.length !== expectedCells)
     ) {
-      fail('map-invalid', `Interior blueprint "${selected.path}" has invalid terrain data`)
+      fail('map-invalid', `Interior blueprint "${selectedBlueprint.path}" has invalid terrain data`)
     }
 
     return {
-      id: payload.id || selected.id,
+      id: selected.id || selectedBlueprint.id || payload.id,
+      buildingSize: payload.buildingSize ?? selectedBlueprint.buildingSize,
       kind: 'interior',
-      interiorType: payload.interiorType || selected.interiorType,
+      interiorType: requestedBuildingType || selected.buildingType || payload.interiorType,
       mapType: 'interior',
       size,
       seed: payload.seed,

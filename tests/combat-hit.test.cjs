@@ -6,7 +6,9 @@ const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 const constants = {
+  FAMILY_TYPES: { unit: 'unit' },
   MENU_INFO_IDS: { hitPoints: 'hitPoints' },
+  UNIT_TYPES: { villager: 'Villager' },
 }
 
 const entityHealthDisplayMock = {
@@ -23,6 +25,7 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === '../buildings/interiorAccess') return { getBuildingInteriorAssaultMinimumHitPoints: () => null }
     return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -32,6 +35,7 @@ function loadModule(relativePath, mocks) {
 function loadCombatHit({
   rawDamage = 6,
   parryResult = false,
+  criticalChance = 0,
   grantCalls = [],
   feedbackCalls = [],
   bloodCalls = [],
@@ -42,6 +46,7 @@ function loadCombatHit({
     './combat': { getHitPointsWithDamage: (source, target) => (target.hitPoints ?? 0) - rawDamage },
     './combatFeedback': {
       showDamageFeedback: (target, damage) => feedbackCalls.push({ kind: 'damage', target, damage }),
+      showCriticalDamageFeedback: (target, damage) => feedbackCalls.push({ kind: 'critical', target, damage }),
       showParryFeedback: (target, text) => feedbackCalls.push({ kind: 'parry', target, text }),
     },
     '../entities/entityHealthDisplay': entityHealthDisplayMock,
@@ -55,7 +60,9 @@ function loadCombatHit({
     './parry': { attemptAutomaticParry: () => parryResult },
     './companionHorseCombat': { handleCompanionHorseDamage: () => false },
     '../units/unitExperience': {
+      CRITICAL_HIT_MULTIPLIER: 2,
       XP_KILL_BONUS: 15,
+      getCriticalHitChance: () => criticalChance,
       grantUnitXp: (unit, category, amount) => grantCalls.push({ unit, category, amount }),
     },
   })
@@ -188,6 +195,70 @@ test('a failed parry roll falls through to the normal damage flow', () => {
   assert.equal(damageDealt, 6)
   assert.deepEqual(grantCalls, [{ unit: 'attacker', category: 'melee', amount: 6 }])
   assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 6 }])
+})
+
+test('a critical hit doubles final damage and uses critical feedback', () => {
+  const grantCalls = []
+  const feedbackCalls = []
+  const bloodCalls = []
+  const { applyCombatHit } = loadCombatHit({
+    rawDamage: 5,
+    criticalChance: 1,
+    grantCalls,
+    feedbackCalls,
+    bloodCalls,
+  })
+  const target = makeTarget()
+  const attacker = { family: 'unit', label: 'hero', type: 'Hero' }
+
+  const { damageDealt, critical, killed } = applyCombatHit(attacker, target, {
+    xpCategory: 'melee',
+    xpUnit: attacker,
+  })
+
+  assert.equal(target.hitPoints, 10)
+  assert.equal(damageDealt, 10)
+  assert.equal(critical, true)
+  assert.equal(killed, false)
+  assert.deepEqual(grantCalls, [{ unit: attacker, category: 'melee', amount: 10 }])
+  assert.deepEqual(feedbackCalls, [{ kind: 'critical', target, damage: 10 }])
+  assert.deepEqual(bloodCalls, [{ attacker, target, options: { damage: 10, hitDirection: undefined } }])
+})
+
+test('villagers do not roll critical hits', () => {
+  const feedbackCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 5, criticalChance: 1, feedbackCalls })
+  const target = makeTarget()
+  const attacker = { family: 'unit', label: 'villager', type: 'Villager' }
+
+  const { damageDealt, critical } = applyCombatHit(attacker, target, {
+    xpCategory: 'melee',
+    xpUnit: attacker,
+  })
+
+  assert.equal(target.hitPoints, 15)
+  assert.equal(damageDealt, 5)
+  assert.equal(critical, false)
+  assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 5 }])
+})
+
+test('a zero-damage hit does not report a critical hit', () => {
+  const feedbackCalls = []
+  const bloodCalls = []
+  const { applyCombatHit } = loadCombatHit({ rawDamage: 0, criticalChance: 1, feedbackCalls, bloodCalls })
+  const target = makeTarget()
+  const attacker = { family: 'unit', label: 'hero', type: 'Hero' }
+
+  const { damageDealt, critical } = applyCombatHit(attacker, target, {
+    xpCategory: 'melee',
+    xpUnit: attacker,
+  })
+
+  assert.equal(target.hitPoints, 20)
+  assert.equal(damageDealt, 0)
+  assert.equal(critical, false)
+  assert.deepEqual(feedbackCalls, [{ kind: 'damage', target, damage: 0 }])
+  assert.deepEqual(bloodCalls, [])
 })
 
 test('blood impact is skipped when a hit deals no damage', () => {

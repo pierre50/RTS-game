@@ -1,4 +1,4 @@
-import { RESOURCE_NAMES } from '../constants'
+import { DAILY_CONSUMPTION_PER_VILLAGER, RESOURCE_NAMES } from '../constants'
 import { t } from '../lib/lang'
 import { getPlayerResourceTotals } from '../lib/resources/playerResourceTotals'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
@@ -14,12 +14,14 @@ export class TopbarView {
   menu: MenuHost
   resourceEls: Record<string, HTMLDivElement>
   resourceWorkerEls: Record<string, HTMLSpanElement>
+  resourceConsumptionEls: Record<string, HTMLDivElement>
   villagerTotalEl: HTMLDivElement | null
 
   constructor(menu: MenuHost) {
     this.menu = menu
     this.resourceEls = {}
     this.resourceWorkerEls = {}
+    this.resourceConsumptionEls = {}
     this.villagerTotalEl = null
   }
 
@@ -85,8 +87,15 @@ export class TopbarView {
     workerEl.title = 'Villageois affectes'
     this.resourceWorkerEls[name] = workerEl
     valueEl.appendChild(workerEl)
+
+    const consumptionEl = document.createElement('div')
+    consumptionEl.className = 'resource-consumption'
+    consumptionEl.title = 'Consommation journaliere'
+    this.resourceConsumptionEls[name] = consumptionEl
+
     box.appendChild(img)
     box.appendChild(valueEl)
+    box.appendChild(consumptionEl)
     menu.resources.appendChild(box)
   }
 
@@ -109,6 +118,11 @@ export class TopbarView {
       if (workerEl) {
         workerEl.textContent = ` (${assignments.assigned[prop] ?? 0})`
         valueEl.appendChild(workerEl)
+      }
+      const consumptionEl = this.resourceConsumptionEls[prop]
+      if (consumptionEl) {
+        const rate = DAILY_CONSUMPTION_PER_VILLAGER[prop]
+        consumptionEl.textContent = rate ? `-${rate * assignments.total}/j` : ''
       }
     })
     if (this.villagerTotalEl) this.villagerTotalEl.textContent = `V: ${assignments.total}`

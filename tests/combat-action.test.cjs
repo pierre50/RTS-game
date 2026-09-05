@@ -90,6 +90,13 @@ function loadModule(relativePath, mocks) {
       shouldSuppressAggroDuringCombatRecovery: unit =>
         unit.combatMode === 'recover' && unit.waitingForEnergyAction === constants.ACTION_TYPES.attack,
     },
+    '../../lib/buildings/interiorAccess': {
+      canUnitEnterBuildingInteriorForAssault: () => false,
+    },
+    '../../services/BuildingInteriorSpaceSystem': {
+      ensureRuntimeBuildingInteriorSpace: () => null,
+      routeUnitIntoBuildingInteriorSpace: () => false,
+    },
     '../../lib/units/unitEnergy': { spendOrWaitForEnergy: () => true },
     '../../lib/units/unitWorkAppearance': unitWorkAppearanceMock,
     '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
@@ -242,6 +249,241 @@ test('animals cannot attack buildings', () => {
 
   assert.equal(getActionCondition(boar, enemyHouse, 'attack'), false)
   assert.equal(getActionCondition(boar, enemyVillager, 'attack'), true)
+})
+
+test('units only attack building interiors to force access to sheltered enemies', () => {
+  const buildingTypes = {
+    archeryRange: 'ArcheryRange',
+    barracks: 'Barracks',
+    granary: 'Granary',
+    house: 'House',
+    market: 'Market',
+    stable: 'Stable',
+    storagePit: 'StoragePit',
+    temple: 'Temple',
+    townCenter: 'TownCenter',
+    watchTower: 'WatchTower',
+  }
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
+    '../constants': { ...constants, BUILDING_TYPES: buildingTypes },
+    '../../constants': { ...constants, BUILDING_TYPES: buildingTypes },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0 },
+  })
+  const enemy = { label: 'enemy' }
+  const player = { isEnemy: targetOwner => targetOwner === enemy, label: 'player' }
+  const emptyHouse = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 80,
+    isBuilt: true,
+    isDead: false,
+    label: 'empty-house',
+    owner: enemy,
+    totalHitPoints: 100,
+    type: 'House',
+  }
+  const occupiedHouse = { ...emptyHouse, label: 'occupied-house' }
+  const shelteredEnemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: enemy,
+    shelterState: { location: 'shelter', status: 'inside', shelter: occupiedHouse },
+    type: 'Villager',
+  }
+  const attacker = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 40,
+    i: 5,
+    isDead: false,
+    j: 5,
+    owner: player,
+    type: 'Fantassin',
+    weaponPower: 5,
+    context: { players: [player, { label: 'enemy-player', units: [shelteredEnemy] }] },
+  }
+
+  assert.equal(getActionCondition(attacker, emptyHouse, 'attack'), false)
+  assert.equal(getActionCondition(attacker, occupiedHouse, 'attack'), true)
+  assert.equal(getActionCondition(attacker, { ...occupiedHouse, hitPoints: 20 }, 'attack'), false)
+})
+
+test('units prefer outside enemies before attacking an occupied building', () => {
+  const buildingTypes = {
+    archeryRange: 'ArcheryRange',
+    barracks: 'Barracks',
+    granary: 'Granary',
+    house: 'House',
+    market: 'Market',
+    stable: 'Stable',
+    storagePit: 'StoragePit',
+    temple: 'Temple',
+    townCenter: 'TownCenter',
+    watchTower: 'WatchTower',
+  }
+  const { getActionCondition } = loadModule('app/lib/combat/combat.ts', {
+    '../constants': { ...constants, BUILDING_TYPES: buildingTypes },
+    '../../constants': { ...constants, BUILDING_TYPES: buildingTypes },
+    './equipment/equipmentStats': { getEntityWeaponPower: entity => entity?.weaponPower ?? 0 },
+  })
+  const enemy = { label: 'enemy' }
+  const player = { isEnemy: targetOwner => targetOwner === enemy, label: 'player' }
+  const occupiedHouse = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 80,
+    i: 9,
+    isBuilt: true,
+    isDead: false,
+    j: 9,
+    label: 'occupied-house',
+    owner: enemy,
+    totalHitPoints: 100,
+    type: 'House',
+  }
+  const shelteredEnemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    isDead: false,
+    owner: enemy,
+    shelterState: { location: 'shelter', status: 'inside', shelter: occupiedHouse },
+    type: 'Villager',
+  }
+  const outsideEnemy = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 20,
+    i: 7,
+    isDead: false,
+    j: 5,
+    owner: enemy,
+    type: 'Villager',
+  }
+  const attacker = {
+    family: constants.FAMILY_TYPES.unit,
+    hitPoints: 40,
+    i: 5,
+    isDead: false,
+    j: 5,
+    owner: player,
+    type: 'Fantassin',
+    weaponPower: 5,
+    context: { players: [player, { label: 'enemy-player', units: [shelteredEnemy, outsideEnemy] }] },
+  }
+
+  assert.equal(getActionCondition(attacker, occupiedHouse, 'attack'), false)
+  assert.equal(getActionCondition(attacker, outsideEnemy, 'attack'), true)
+})
+
+test('building interior assault damage stops at the entry threshold', () => {
+  const { applyCombatHit } = loadModule('app/lib/combat/combatHit.ts', {
+    '../buildings/interiorAccess': { getBuildingInteriorAssaultMinimumHitPoints: () => 20 },
+    '../constants': constants,
+    './combat': {
+      getHitPointsWithDamage: () => 0,
+    },
+    './combatFeedback': {
+      showCriticalDamageFeedback: () => {},
+      showDamageFeedback: () => {},
+      showParryFeedback: () => {},
+    },
+    './parry': { attemptAutomaticParry: () => false },
+    '../entities/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
+    '../entities/combatBuildingImpactFragments': { spawnCombatBuildingImpactFragments: () => {} },
+    '../entities/combatBloodImpact': { spawnCombatBloodImpact: () => {} },
+    '../lang': { t: key => key },
+    '../units/unitExperience': {
+      CRITICAL_HIT_MULTIPLIER: 2,
+      XP_KILL_BONUS: 15,
+      getCriticalHitChance: () => 0,
+      grantUnitXp: () => {},
+    },
+    './companionHorseCombat': { handleCompanionHorseDamage: () => false },
+  })
+  const attacker = { family: constants.FAMILY_TYPES.unit, owner: { isPlayed: false }, type: 'Fantassin' }
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 25,
+    isDead: false,
+    owner: { label: 'enemy' },
+    totalHitPoints: 100,
+    type: 'House',
+  }
+
+  const result = applyCombatHit(attacker, building)
+
+  assert.equal(building.hitPoints, 20)
+  assert.equal(result.damageDealt, 5)
+  assert.equal(result.killed, false)
+})
+
+test('attackers route into an assault-ready building interior instead of retargeting', () => {
+  const calls = []
+  const building = {
+    family: constants.FAMILY_TYPES.building,
+    hitPoints: 20,
+    isDead: false,
+    type: 'House',
+  }
+  const interiorSpace = { id: 'interior:house' }
+  const { UnitCombat } = loadModule('app/classes/unit/UnitCombat.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      applyCombatHit: () => ({ damageDealt: 0, killed: false }),
+      evaluateCombatMorale: () => 'fight',
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      getInstanceDegree: () => 0,
+      instanceContactInstance: () => false,
+      playAudibleSoundCue: () => {},
+      BOW_SHOOT_RELEASE_FRAME: 8,
+      SLASH_IMPACT_FRAME: 5,
+      syncMovedActionTarget: () => {},
+    },
+    '../../lib/combat/combatAttackLoop': {
+      runAttackLoopOnFrame: (_attacker, callbacks) => {
+        callbacks.onTargetUnavailable(building, 'preflight')
+      },
+    },
+    '../../lib/buildings/interiorAccess': {
+      canUnitEnterBuildingInteriorForAssault: (_unit, target) => target === building,
+    },
+    '../../services/BuildingInteriorSpaceSystem': {
+      ensureRuntimeBuildingInteriorSpace: (_context, target) => {
+        calls.push(['ensureInterior', target])
+        return interiorSpace
+      },
+      routeUnitIntoBuildingInteriorSpace: (_context, unit, space) => {
+        calls.push(['routeInterior', unit.label, space])
+        return true
+      },
+    },
+    '../../lib/combat/combatFeedback': { showAlertThenAggressionFeedback: () => {} },
+    '../../lib/equipment/equipmentStats': { getUnitCombatRange: () => 0, getUnitWorkEquipment: () => [] },
+    '../../lib/entities/slashRecoveryAnimation': { playReverseSlashRecovery: () => false },
+    '../../lib/projectiles': { attachProjectileToMapSpace: () => {} },
+    '../../lib/units/unitControl': { canAutoAcquireTarget: () => true },
+    '../../lib/units/unitExperience': { XP_CATEGORIES: { melee: 'melee' }, getCombatXpBonus: () => 0 },
+    '../../lib/units/unitVisualTransition': { setUnitVisualSheet: () => {} },
+    '../../lib/units/unitWorkAppearance': {
+      applyUnitActionFrameSequence: () => {},
+      getUnitWorkActionSheet: () => null,
+    },
+    '../Projectile': { Projectile: class {} },
+  })
+  const unit = {
+    action: constants.ACTION_TYPES.attack,
+    context: {},
+    dest: building,
+    label: 'raider-1',
+    sprite: {},
+    affectNewDest: () => calls.push(['affectNewDest']),
+    getActionCondition: () => true,
+  }
+
+  new UnitCombat(unit).handleAttackAction()
+
+  assert.deepEqual(calls, [
+    ['ensureInterior', building],
+    ['routeInterior', 'raider-1', interiorSpace],
+  ])
 })
 
 test('sendToAttack does not issue an attack order against neutral berry bushes', () => {
@@ -1556,14 +1798,8 @@ test('melee slash recovery rewinds Pixi frames before completing', () => {
 test('damage feedback can be cleared before its timer fires', () => {
   let scheduled = null
   const texts = []
-  class ColorMatrixFilter {
-    constructor() {
-      this.matrix = []
-    }
-  }
   const { showDamageFeedback, clearDamageFeedback } = loadModule('app/lib/combat/combatFeedback.ts', {
     'pixi.js': {
-      ColorMatrixFilter,
       Text: class {
         constructor(options) {
           this.text = options.text
@@ -1584,11 +1820,11 @@ test('damage feedback can be cleared before its timer fires', () => {
     addChild: () => {},
     context: {
       scheduler: {
-        add: () => 2,
-        addOneShot: callback => {
+        add: callback => {
           scheduled = callback
-          return 1
+          return 2
         },
+        addOneShot: () => 1,
         remove: () => {},
       },
     },
@@ -1598,7 +1834,7 @@ test('damage feedback can be cleared before its timer fires', () => {
   }
 
   showDamageFeedback(target, 4)
-  assert.equal(sprite.filters.length, 2)
+  assert.deepEqual(sprite.filters, originalFilters)
 
   clearDamageFeedback(target)
 

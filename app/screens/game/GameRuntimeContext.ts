@@ -10,7 +10,7 @@ import type { GameContextLike, PerformanceMonitorLike, SchedulerLike, VisionChan
 import type { BuildingEntity, ResourceEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
-import type { RuntimeMap } from '../../types/map'
+import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import { getRealWorldGraph } from '../../serialization/CampaignSave'
 
 type DestroyableRuntimeMap = RuntimeMap & {
@@ -45,6 +45,8 @@ export type GameRuntimeContextHost = {
   save(): { key: string; name: string }
   togglePause(pause: boolean): void
   travelIntoBuildingInterior(building: BuildingEntity): Promise<void>
+  getBuildingInteriorEntryTargetForCell(cell: RuntimeCell): BuildingEntity | null
+  routeUnitIntoBuildingInterior(unit: UnitEntity, building: BuildingEntity): boolean
   travelOutOfBuildingInterior(): Promise<void>
   routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean>
   routeInteriorUnitToExit(unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null): void
@@ -113,6 +115,9 @@ export function createGameRuntimeContext(
         context.menu?.showMessage(t('corruptSave'))
       })
     },
+    getBuildingInteriorEntryTargetForCell: (cell: RuntimeCell) => host.getBuildingInteriorEntryTargetForCell(cell),
+    routeUnitIntoBuildingInterior: (unit: UnitEntity, building: BuildingEntity) =>
+      host.routeUnitIntoBuildingInterior(unit, building),
     travelOutOfBuildingInterior: () => {
       host.travelOutOfBuildingInterior().catch(error => {
         console.error('Unable to travel out of building interior', error)

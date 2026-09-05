@@ -10,6 +10,7 @@ import {
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { t } from '../../lib/lang'
 import { consumeStableHorse, returnStableHorse, type StableHorse } from '../../lib/horses/stableHorses'
+import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import type { UnitCreationExtra, UnitEntity } from '../../types/entities'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingControllerHost, TrainingBuilding } from './BuildingTypes'
@@ -32,11 +33,10 @@ function isStableMountTraining(
 
 function getTrainingCost(
   building: BuildingControllerHost,
-  unit: { cost?: ResourceAmount },
   trainee: UnitEntity,
   type: string
 ): ResourceAmount {
-  return isStableMountTraining(building, trainee, type) ? {} : (unit.cost ?? {})
+  return isStableMountTraining(building, trainee, type) ? {} : getUnitTrainingCost(building.owner, type)
 }
 
 export function getTrainingDays(
@@ -161,13 +161,12 @@ export function startTrainingWithUnit(
   if (isBlockedByMissingChief(building, type)) return failTraineeEntry(building, trainee, t('requiresChief'))
   if (building.technology) return false
 
-  const unit = building.owner.config.units[type]
   const stableHorse = isStableMountTraining(building, trainee, type) ? consumeStableHorse(building) : null
   if (isStableMountTraining(building, trainee, type) && !stableHorse) {
     return failTraineeEntry(building, trainee, t('stableNeedsHorse'))
   }
 
-  const cost = getTrainingCost(building, unit, trainee, type)
+  const cost = getTrainingCost(building, trainee, type)
   if (!canAfford(building.owner, cost)) {
     returnStableHorse(building, stableHorse)
     return failTraineeEntry(

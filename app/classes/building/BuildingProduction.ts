@@ -2,6 +2,7 @@ import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
 import { canAfford, isAIControlledPlayer, payCost, refundCost } from '../../lib'
 import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { t } from '../../lib/lang'
+import { getUnitTrainingCost } from '../../lib/training/unitTrainingCost'
 import {
   clearActiveTraining,
   failTraineeEntry,
@@ -56,14 +57,13 @@ export class BuildingProduction {
   cancelActiveTraining(type: string): boolean {
     const building = getTrainingBuilding(this.building)
     if (building.loading === null || building.queue[0] !== type) return false
-    const unit = building.owner.config.units[type]
     building.trainingDayChangeUnsubscribe?.()
     building.trainingDayChangeUnsubscribe = null
     building.loading = null
     building.trainingStartedDay = null
     building.trainingCompleteDay = null
     building.queue.shift()
-    refundCost(building.owner, unit.cost)
+    refundCost(building.owner, getUnitTrainingCost(building.owner, type))
     this.activeTrainingExtra = undefined
     this.activeTrainingTrainee = null
     this.ejectTrainee()
@@ -347,6 +347,7 @@ export class BuildingProduction {
     } = building
     let success = false
     const unit = building.owner.config.units[type]
+    const cost = getUnitTrainingCost(building.owner, type)
     const traineeTraining = isTraineeTrainingType(building, type)
     if (traineeTraining && !alreadyPaid && !force) {
       return false
@@ -356,16 +357,16 @@ export class BuildingProduction {
       return false
     }
     if (!alreadyPaid && !hasBuildingTrainingCapacity(building, { excludeUnit: trainee ?? null })) return false
-    if (building.isBuilt && !building.isDead && (canAfford(building.owner, unit.cost) || alreadyPaid)) {
+    if (building.isBuilt && !building.isDead && (canAfford(building.owner, cost) || alreadyPaid)) {
       if (!alreadyPaid) {
         if (isAIControlledPlayer(building.owner)) {
           if (!building.queue.length && building.loading === null) {
-            payCost(building.owner, unit.cost)
+            payCost(building.owner, cost)
             building.queue.push(type)
             success = true
           }
         } else {
-          payCost(building.owner, unit.cost)
+          payCost(building.owner, cost)
           building.queue.push(type)
           if (building.selected && building.owner.isPlayed) {
             menu.updateButtonContent(type, building.queue.filter((q: string) => q === type).length)
@@ -397,8 +398,9 @@ export class BuildingProduction {
     const cancelled = building.queue.filter((queuedType: string) => queuedType === type).length
     if (!cancelled) return false
 
+    const cost = getUnitTrainingCost(building.owner, type)
     for (let index = 0; index < cancelled; index++) {
-      refundCost(building.owner, unit.cost)
+      refundCost(building.owner, cost)
     }
     building.queue = building.queue.filter((queuedType: string) => queuedType !== type)
 

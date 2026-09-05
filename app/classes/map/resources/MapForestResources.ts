@@ -10,6 +10,7 @@ import type { GridPosition } from '../../../types/grid'
 import type { RuntimeCell } from '../../../types/map'
 import { Resource } from '../../Resource'
 import { hasSpacedResourceAround } from './MapResourceSpacing'
+import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from './ResourceQuantityRanges'
 
 type ResourceCenter = GridPosition
 
@@ -50,6 +51,7 @@ function isSoloTreeCandidate(grid: RuntimeCell[][], i: number, j: number): boole
 }
 
 function createTree(map: ForestResourceMap, i: number, j: number): ResourceEntity {
+  const rolledQuantity = rollResourceQuantity(() => map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.tree])
   return map.addChild(
     new Resource(
       {
@@ -57,6 +59,8 @@ function createTree(map: ForestResourceMap, i: number, j: number): ResourceEntit
         j,
         type: RESOURCE_TYPES.tree,
         isNaturalResource: true,
+        quantity: rolledQuantity,
+        totalQuantity: rolledQuantity,
       },
       map.context as ConstructorParameters<typeof Resource>[1]
     )

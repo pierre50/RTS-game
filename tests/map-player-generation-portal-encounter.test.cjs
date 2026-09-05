@@ -26,6 +26,12 @@ function loadMapPlayerGeneration() {
         UNIT_TYPES: { chief: 'Chief', hero: 'Hero', villager: 'Villager' },
       },
       '../../lib/resources/playerResourceTotals': {
+        expandLegacyFoodAmount: amount => {
+          const { food, ...rest } = amount
+          if (!food) return rest
+          const third = Math.floor(food / 3)
+          return { ...rest, berry: third, meat: third, wheat: food - third * 2 }
+        },
         syncPlayerResourceFieldsFromChests: player => {
           player.syncedResources = true
         },
@@ -126,6 +132,7 @@ test('starting town center receives the map starting resources in its inventory'
 
   placePlayers(map)
 
-  assert.deepEqual(townCenter.inventory.resources, map.startingResources)
+  const { food, ...rest } = map.startingResources
+  assert.deepEqual(townCenter.inventory.resources, { ...rest, berry: 66, meat: 66, wheat: 68 })
   assert.equal(player.syncedResources, true)
 })

@@ -27,7 +27,12 @@ type InteriorBlueprint = Parameters<typeof ensureBuildingInteriorSpace>[2]
 
 export type ResourceDeliveryGame = {
   _gameContext(): GameContextLike
-  _loadRequiredInteriorBlueprint(options?: { interiorType?: string; random?: () => number }): Promise<InteriorBlueprint>
+  _loadRequiredInteriorBlueprint(options?: {
+    buildingSize?: number
+    buildingType?: string
+    interiorType?: string
+    random?: () => number
+  }): Promise<InteriorBlueprint>
 }
 
 function isBuildingEntity(value: UnitEntity['dest'] | RuntimeEntity | null | undefined): value is BuildingEntity {
@@ -191,7 +196,8 @@ export async function routeUnitResourceDelivery(
   if (!unitHasDeliverableResourcesForBuilding(unit, building)) return false
 
   const blueprint = await game._loadRequiredInteriorBlueprint({
-    interiorType: getBuildingInteriorBlueprintType(building),
+    buildingSize: building.size,
+    buildingType: getBuildingInteriorBlueprintType(building),
     random: () => context.map.random(),
   })
   const space = ensureBuildingInteriorSpace(context, building, blueprint)

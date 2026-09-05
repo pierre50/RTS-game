@@ -1,9 +1,48 @@
-import { BUILDING_TYPES, RESOURCE_NAMES, UNIT_TYPES } from '../../constants'
+import { BUILDING_TYPES, RESOURCE_STORAGE_NAMES, UNIT_TYPES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-type ResourceName = (typeof RESOURCE_NAMES)[number]
+type StorageResourceName = (typeof RESOURCE_STORAGE_NAMES)[number]
+type ResourceName = StorageResourceName | 'food'
+
+const FOOD_DEDUCTION_ORDER: readonly ('wheat' | 'meat' | 'berry')[] = ['wheat', 'meat', 'berry']
+
+export function expandLegacyFoodAmount(amount: ResourceAmount | null | undefined): ResourceAmount {
+  const { food, ...rest } = amount ?? {}
+  const legacyFood = Math.max(0, Math.floor(food ?? 0))
+  if (legacyFood <= 0) return rest
+  const third = Math.floor(legacyFood / 3)
+  return {
+    ...rest,
+    berry: (rest.berry ?? 0) + third,
+    meat: (rest.meat ?? 0) + third,
+    wheat: (rest.wheat ?? 0) + (legacyFood - third * 2),
+  }
+}
+
+function expandFoodCost(cost: ResourceAmount, totals: Record<ResourceName, number>): ResourceAmount {
+  const foodAmount = Math.max(0, Math.floor(cost.food ?? 0))
+  if (foodAmount <= 0) return cost
+  const { food: _food, ...expanded } = cost
+  let remaining = foodAmount
+  for (const sub of FOOD_DEDUCTION_ORDER) {
+    if (remaining <= 0) break
+    const available = totals[sub] ?? 0
+    const taken = Math.min(available, remaining)
+    if (taken > 0) expanded[sub] = (expanded[sub] ?? 0) + taken
+    remaining -= taken
+  }
+  return expanded
+}
+
+function expandFoodDeposit(resources: ResourceAmount): ResourceAmount {
+  const foodAmount = Math.max(0, Math.floor(resources.food ?? 0))
+  if (foodAmount <= 0) return resources
+  const { food: _food, ...expanded } = resources
+  expanded.wheat = (expanded.wheat ?? 0) + foodAmount
+  return expanded
+}
 export type ResourceStoreOwner = {
   buildings?: BuildingEntity[]
   label?: string
@@ -16,7 +55,10 @@ type ResourceTotalOptions = {
 }
 
 function createEmptyResourceTotals(): Record<ResourceName, number> {
-  return Object.fromEntries(RESOURCE_NAMES.map(resource => [resource, 0])) as Record<ResourceName, number>
+  return Object.fromEntries([...RESOURCE_STORAGE_NAMES, 'food'].map(resource => [resource, 0])) as Record<
+    ResourceName,
+    number
+  >
 }
 
 function isOwnedChest(building: BuildingEntity, player: ResourceStoreOwner): boolean {
@@ -87,7 +129,7 @@ function getPlayerChestResourceTotals(
     if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
-    for (const resource of RESOURCE_NAMES) {
+    for (const resource of RESOURCE_STORAGE_NAMES) {
       totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
     }
   }
@@ -106,7 +148,7 @@ export function getPlayerResourceTotals(
     if (options.visibleOnly && !isVisibleStorageBuilding(building, player)) continue
     const resources = building.inventory?.resources
     if (!resources) continue
-    for (const resource of RESOURCE_NAMES) {
+    for (const resource of RESOURCE_STORAGE_NAMES) {
       totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
     }
   }
@@ -115,11 +157,13 @@ export function getPlayerResourceTotals(
     for (const hero of getPlayerResourceHeroes(player, options.hero)) {
       const resources = hero.inventory?.resources
       if (!resources) continue
-      for (const resource of RESOURCE_NAMES) {
+      for (const resource of RESOURCE_STORAGE_NAMES) {
         totals[resource] += Math.max(0, Math.floor(resources[resource] ?? 0))
       }
     }
   }
+
+  totals.food = totals.berry + totals.meat + totals.wheat
 
   return totals
 }
@@ -141,7 +185,7 @@ export function getMissingPlayerResources(
 export function syncPlayerResourceFieldsFromChests(player: ResourceStoreOwner | PlayerLike | null | undefined): void {
   if (!player || typeof player !== 'object') return
   const totals = getPlayerResourceTotals(player)
-  for (const resource of RESOURCE_NAMES) {
+  for (const resource of [...RESOURCE_STORAGE_NAMES, 'food'] as ResourceName[]) {
     ;(player as ResourceAmount)[resource] = totals[resource]
   }
 }
@@ -155,7 +199,10 @@ export function withdrawChestResources(
   const missing = getMissingPlayerResources(player, cost, options)
   if (Object.keys(missing).length > 0) return false
 
-  for (const [resource, rawAmount] of Object.entries(cost) as [keyof ResourceAmount, number][]) {
+  const totals = getPlayerResourceTotals(player, options)
+  const expandedCost = expandFoodCost(cost, totals)
+
+  for (const [resource, rawAmount] of Object.entries(expandedCost) as [keyof ResourceAmount, number][]) {
     let remaining = Math.max(0, Math.floor(rawAmount ?? 0))
     if (remaining <= 0) continue
 
@@ -216,7 +263,8 @@ export function depositChestResources(
 
   destination.inventory = destination.inventory ?? {}
   destination.inventory.resources = destination.inventory.resources ?? {}
-  for (const [resource, rawAmount] of Object.entries(resourcesToDeposit) as [keyof ResourceAmount, number][]) {
+  const expandedDeposit = expandFoodDeposit(resourcesToDeposit)
+  for (const [resource, rawAmount] of Object.entries(expandedDeposit) as [keyof ResourceAmount, number][]) {
     const amount = Math.max(0, Math.floor(rawAmount ?? 0))
     if (amount <= 0) continue
     destination.inventory.resources[resource] = (destination.inventory.resources[resource] ?? 0) + amount

@@ -1,7 +1,13 @@
 import { Assets } from 'pixi.js'
 import { FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { dynamicEquipmentForUnit, dynamicEquipmentForWork } from '../lpc/equipment'
-import { getUnitEquipmentLevel } from '../units/unitExperience'
+import {
+  getEnergyRegenLevelMultiplier,
+  getEnergyTotalLevelMultiplier,
+  getReflexAttackRecoveryMultiplier,
+  getUnitEquipmentTier,
+  setLevelUpRefreshHandler,
+} from '../units/unitExperience'
 import type { EquipmentStats, UnitConfig } from '../../types/config'
 import type { UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
@@ -280,7 +286,7 @@ export function getUnitRuntimeCombatStats(unit: UnitEntity, config: UnitConfig):
     config,
     unit.work,
     unit.owner?.age,
-    getUnitEquipmentLevel(unit, config.category),
+    getUnitEquipmentTier(unit, config.category),
     unit.owner?.civ
   )
 }
@@ -303,15 +309,31 @@ export function isUnitMeleeWeaponEquipped(unit: UnitEntity): boolean {
     unit.type,
     config,
     unit.owner?.age,
-    getUnitEquipmentLevel(unit, config?.category),
+    getUnitEquipmentTier(unit, config?.category),
     unit.owner?.civ
   )
   return equipment.some(key => MELEE_WEAPON_EQUIPMENT_KEYS.has(key))
 }
 
+// Reflex/energy always derive from the same stable per-unit-type base (config), never from the
+// unit's current (possibly already-scaled) field — recomputing from itself here would compound
+// the level bonus every time this refresh runs (spawn, loot, level-up, ...).
+function applyLevelDerivedUnitStats(unit: UnitEntity, config: UnitConfig): void {
+  if (config.attackRecoveryMs != null) {
+    unit.attackRecoveryMs = config.attackRecoveryMs * getReflexAttackRecoveryMultiplier(unit)
+  }
+  if (config.totalEnergy != null) {
+    unit.totalEnergy = config.totalEnergy * getEnergyTotalLevelMultiplier(unit)
+  }
+  if (config.energyRegenRate != null) {
+    unit.energyRegenRate = config.energyRegenRate * getEnergyRegenLevelMultiplier(unit)
+  }
+}
+
 export function refreshUnitEquipmentStats(unit: UnitEntity): void {
   const config = unit.owner?.config.units[unit.type]
   if (!config) return
+  applyLevelDerivedUnitStats(unit, config)
   if (usesHeroInventoryEquipment(unit)) {
     const stats = getHeroInventoryEffectiveCombatStats(unit, config)
     unit.weaponPower = stats.weaponPower
@@ -326,13 +348,18 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
     config,
     useWorkEquipment ? unit.work : undefined,
     unit.owner?.age,
-    getUnitEquipmentLevel(unit, config.category),
+    getUnitEquipmentTier(unit, config.category),
     unit.owner?.civ
   )
   for (const stat of COMBAT_STAT_KEYS) {
     unit[stat] = stats[stat]
   }
 }
+
+// Break the circular import between this module and unitExperience.ts: grantUnitXp calls this
+// handler on level-up so reflex/energy/equipment-tier caches stay in sync without a level-up
+// happening only at the next spawn/loot/portal-travel refresh.
+setLevelUpRefreshHandler(refreshUnitEquipmentStats)
 
 export function getUnitCombatRange(unit: UnitEntity): number | undefined {
   const age = unit.owner?.age ?? 0
@@ -352,7 +379,7 @@ export function getUnitCombatRange(unit: UnitEntity): number | undefined {
     if (workRange != null) return workRange
   }
 
-  const level = getUnitEquipmentLevel(unit, config?.category)
+  const level = getUnitEquipmentTier(unit, config?.category)
   const unitEquipment = getUnitEquipment(unit.type, config, age, level, unit.owner?.civ)
   return getWeaponRangeFromEquipment(unitEquipment)
 }
@@ -377,7 +404,7 @@ function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
     ? dynamicEquipmentForUnit(
         entity.type,
         entity.owner?.age,
-        getUnitEquipmentLevel(entity as UnitEntity, config?.category),
+        getUnitEquipmentTier(entity as UnitEntity, config?.category),
         entity.owner?.civ
       )
     : []

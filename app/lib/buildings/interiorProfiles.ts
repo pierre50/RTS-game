@@ -13,3 +13,7 @@ const BUILDING_INTERIOR_TYPE_ORDER = [
 ] as const
 
 export const BUILDING_INTERIOR_TYPES = new Set<string>(BUILDING_INTERIOR_TYPE_ORDER)
+
+export function getInteriorMapSizeForBuildingSize(buildingSize: number | null | undefined): number {
+  return Math.max(9, (buildingSize ?? 2) * 2 + 7)
+}

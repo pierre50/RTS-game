@@ -333,6 +333,21 @@ export function showDamageFeedback(target: RuntimeEntity, damage: number): void 
   })
 }
 
+export function showCriticalDamageFeedback(target: RuntimeEntity, damage: number): void {
+  const text = formatDamageFeedback(damage)
+  if (!text || !canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed || target.isDead) {
+    return
+  }
+  showFloatingText(target, {
+    text: `CRIT ${text}`,
+    fill: 0xffd35a,
+    stroke: 0x6b2300,
+    taskLabel: 'combat.criticalDamageText',
+    fontSize: 15,
+    yOffset: 18,
+  })
+}
+
 export function showConversionFeedback(target: RuntimeEntity, color?: string | null): void {
   if (!canShowCombatFeedback(target) || target.context?.defeat || target.isDestroyed) return
   if (canShowConversionFlash(target)) startConversionWave(target, color)

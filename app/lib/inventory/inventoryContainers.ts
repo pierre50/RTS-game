@@ -1,4 +1,4 @@
-import { RESOURCE_NAMES } from '../../constants'
+import { RESOURCE_STORAGE_NAMES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 
 export type InventoryStorage = {
@@ -53,7 +53,7 @@ export function moveInventoryResource(
   resource: keyof ResourceAmount,
   requestedAmount?: number
 ): number {
-  if (!RESOURCE_NAMES.includes(resource)) return 0
+  if (!RESOURCE_STORAGE_NAMES.includes(resource as (typeof RESOURCE_STORAGE_NAMES)[number])) return 0
   const sourceResources = source.inventory.resources ?? {}
   const available = Math.max(0, Math.floor(sourceResources[resource] ?? 0))
   const amount = requestedAmount == null ? available : Math.min(available, Math.max(0, Math.floor(requestedAmount)))

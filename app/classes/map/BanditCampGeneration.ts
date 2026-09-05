@@ -2,6 +2,7 @@ import { AI } from '../players'
 import { canPlaceBuildingAt, getPlainCellsAroundPoint } from '../../lib'
 import { BANDIT_FACTION_COLOR, BANDIT_FACTION_NAME } from '../../lib/campaign/playerRoster'
 import { getUnitOverallLevel } from '../../lib/units/unitExperience'
+import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import { BUILDING_TYPES, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
@@ -218,7 +219,7 @@ function createBanditCampChestInventory(
   heroLevel: number
 ): NonNullable<BuildingEntity['inventory']> {
   const resources: ResourceAmount = {
-    food: map.randomRange(8, 16 + unitCount * 2),
+    ...expandLegacyFoodAmount({ food: map.randomRange(8, 16 + unitCount * 2) }),
     gold: map.randomRange(2, 5 + Math.floor(heroLevel / 3)),
     wood: map.randomRange(3, 10),
   }

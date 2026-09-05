@@ -1,98 +1,92 @@
 {
   "format": "interior-map-manifest",
   "version": 1,
-  "generatedAt": "2026-08-30T19:56:24.645Z",
   "batchSeed": 12345,
-  "interiors": [
+  "blueprints": [
     {
-      "id": "town-center-circle-001",
-      "interiorType": "TownCenter",
+      "buildingSize": 3,
+      "exits": 1,
+      "id": "building-size-3-001",
       "kind": "interior",
-      "path": "town-center/town-center-circle-001.map",
+      "path": "size-3/building-size-3-001.map",
       "seed": 1563891744,
-      "size": 15,
-      "spawns": 1,
-      "exits": 1
+      "size": 13,
+      "spawns": 1
     },
     {
-      "id": "house-circle-001",
-      "interiorType": "House",
+      "buildingSize": 2,
+      "exits": 1,
+      "id": "building-size-2-001",
       "kind": "interior",
-      "path": "house/house-circle-001.map",
+      "path": "size-2/building-size-2-001.map",
       "seed": 1493591785,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "barracks-circle-001",
-      "interiorType": "Barracks",
-      "kind": "interior",
-      "path": "barracks/barracks-circle-001.map",
-      "seed": 2131564054,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "archery-range-circle-001",
-      "interiorType": "ArcheryRange",
-      "kind": "interior",
-      "path": "archery-range/archery-range-circle-001.map",
-      "seed": 1350861951,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "temple-circle-001",
-      "interiorType": "Temple",
-      "kind": "interior",
-      "path": "temple/temple-circle-001.map",
-      "seed": 642816218,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "granary-circle-001",
-      "interiorType": "Granary",
-      "kind": "interior",
-      "path": "granary/granary-circle-001.map",
-      "seed": 2001954608,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "storage-pit-circle-001",
-      "interiorType": "StoragePit",
-      "kind": "interior",
-      "path": "storage-pit/storage-pit-circle-001.map",
-      "seed": 416111585,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "stable-circle-001",
-      "interiorType": "Stable",
-      "kind": "interior",
-      "path": "stable/stable-circle-001.map",
-      "seed": 2066548094,
-      "size": 13,
-      "spawns": 1,
-      "exits": 1
-    },
-    {
-      "id": "watch-tower-circle-001",
-      "interiorType": "WatchTower",
-      "kind": "interior",
-      "path": "watch-tower/watch-tower-circle-001.map",
-      "seed": 1126687244,
       "size": 11,
-      "spawns": 1,
-      "exits": 1
+      "spawns": 1
+    }
+  ],
+  "buildingTypes": [
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "TownCenter",
+      "id": "town-center-size-3-001",
+      "legacyId": "town-center-circle-001"
+    },
+    {
+      "blueprintId": "building-size-2-001",
+      "buildingSize": 2,
+      "buildingType": "House",
+      "id": "house-size-2-001",
+      "legacyId": "house-circle-001"
+    },
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "Barracks",
+      "id": "barracks-size-3-001",
+      "legacyId": "barracks-circle-001"
+    },
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "ArcheryRange",
+      "id": "archery-range-size-3-001",
+      "legacyId": "archery-range-circle-001"
+    },
+    {
+      "blueprintId": "building-size-2-001",
+      "buildingSize": 2,
+      "buildingType": "Temple",
+      "id": "temple-size-2-001",
+      "legacyId": "temple-circle-001"
+    },
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "Granary",
+      "id": "granary-size-3-001",
+      "legacyId": "granary-circle-001"
+    },
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "StoragePit",
+      "id": "storage-pit-size-3-001",
+      "legacyId": "storage-pit-circle-001"
+    },
+    {
+      "blueprintId": "building-size-3-001",
+      "buildingSize": 3,
+      "buildingType": "Stable",
+      "id": "stable-size-3-001",
+      "legacyId": "stable-circle-001"
+    },
+    {
+      "blueprintId": "building-size-2-001",
+      "buildingSize": 2,
+      "buildingType": "WatchTower",
+      "id": "watch-tower-size-2-001",
+      "legacyId": "watch-tower-circle-001"
     }
   ]
 }

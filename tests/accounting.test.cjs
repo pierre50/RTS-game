@@ -6,6 +6,7 @@ function loadAccounting() {
   const constants = {
     BUILDING_TYPES: { chest: 'Chest' },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+    RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
     UNIT_TYPES: { hero: 'Hero' },
   }
   return loadTsModule('app/lib/accounting.ts', {

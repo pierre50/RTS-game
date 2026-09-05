@@ -2,6 +2,7 @@ import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, MINING_RESOURCE_CONFIG, RES
 import { getEntityWeaponPower } from '../equipment/equipmentStats'
 import { isWildHorse } from '../horses/horseTaming'
 import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
+import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
 import { isBanditOwner, isBanditUnitType } from './bandits'
 import { isFriendlyTarget } from './combatRelations'
 import type { ActionProps, CombatEntity } from '../../types/combat'
@@ -191,6 +192,8 @@ export const getActionCondition = (
           (source.owner?.isEnemy?.(target.owner as never) || target.family === FAMILY_TYPES.animal) &&
           (source.family !== FAMILY_TYPES.animal || target.family !== FAMILY_TYPES.building) &&
           [FAMILY_TYPES.building, FAMILY_TYPES.unit, FAMILY_TYPES.animal].includes(target.family ?? '') &&
+          (target.family !== FAMILY_TYPES.building ||
+            shouldAttackBuildingForInteriorAccess(source as UnitEntity, target as BuildingEntity)) &&
           (target.hitPoints ?? 0) > 0 &&
           !target.isDead
       ),

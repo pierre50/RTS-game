@@ -51,7 +51,12 @@ export type GameWorldBootHost = {
     positionsCount?: number
     size?: number
   }): Promise<LoadedMapBlueprint>
-  _loadRequiredInteriorBlueprint(options?: { id?: string; interiorType?: string }): Promise<LoadedMapBlueprint>
+  _loadRequiredInteriorBlueprint(options?: {
+    buildingSize?: number
+    buildingType?: string
+    id?: string
+    interiorType?: string
+  }): Promise<LoadedMapBlueprint>
   _map(): RuntimeMapInstance
   _mountRuntime(dayNightElapsedMs?: number | null): void
   _updateLoading(messageKey: string, progress: number): Promise<void>

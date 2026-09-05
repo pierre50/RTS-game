@@ -23,6 +23,7 @@ import {
   sendUnitToTraining,
   VILLAGER_TRAINING_UNIT_TYPES,
 } from '../lib/units/unitTrainingOrders'
+import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
 import {
   formatActionCost,
   getBuildingTooltip as buildBuildingTooltip,
@@ -109,7 +110,8 @@ export class ActionSpecFactory {
   }
 
   getUnitTooltip(type: string, config: UnitConfig, building?: BuildingEntity): TooltipContent {
-    return buildUnitTooltip(type, config, this.isChiefCommandBlocked(), building)
+    const cost = getUnitTrainingCost(this.menu.context.player, type)
+    return buildUnitTooltip(type, config, cost, this.isChiefCommandBlocked(), building)
   }
 
   isChiefCommandBlocked(): boolean {
@@ -155,7 +157,7 @@ export class ActionSpecFactory {
       tooltip: () => this.getUnitTooltip(type, unit, building),
       disabled: () =>
         this.isChiefTrainingBlocked(type, building) ||
-        !canPayActionCost(player, unit.cost) ||
+        !canPayActionCost(player, getUnitTrainingCost(player, type)) ||
         Boolean(building && !isTraineeTrainingType(building, type) && !hasBuildingTrainingCapacity(building)),
       hide: () => {
         if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
@@ -169,7 +171,7 @@ export class ActionSpecFactory {
         }
         // Trainee units aren't bought directly: send a villager to the building instead.
         if (isTraineeTrainingType(selection, type)) return
-        if (!canPayActionCost(player, unit.cost)) return
+        if (!canPayActionCost(player, getUnitTrainingCost(player, type))) return
         if (player.population >= player.populationMax) {
           menu.showMessage(t('needHouses'), 'warning')
           return
@@ -200,7 +202,7 @@ export class ActionSpecFactory {
               menu.showMessage(t('requiresChief'), 'warning')
               return
             }
-            if (!canPayActionCost(player, unit.cost)) return
+            if (!canPayActionCost(player, getUnitTrainingCost(player, type))) return
             if (player.population >= player.populationMax) {
               menu.showMessage(t('needHouses'), 'warning')
               return

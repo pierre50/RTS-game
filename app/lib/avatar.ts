@@ -6,7 +6,7 @@ import { recolorCanvasByPalette, recolorCanvasPixels, SOURCE_COLORS } from './gr
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
-import { getUnitEquipmentLevel } from './units/unitExperience'
+import { getUnitEquipmentTier } from './units/unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
 import type { AnimalEntity, RuntimeEntityBase, UnitEntity } from '../types/entities'
@@ -178,7 +178,7 @@ function getCachedSpritesheet(id: string): SpritesheetLike | undefined {
 }
 
 function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLayerConfig): Texture | null {
-  const level = getUnitEquipmentLevel(unit as UnitEntity)
+  const level = getUnitEquipmentTier(unit as UnitEntity)
   if (level < (layer.minLevel ?? 0) || level > (layer.maxLevel ?? Number.POSITIVE_INFINITY)) return null
   if (layer.workTypes?.length && (!unit.work || !layer.workTypes.includes(unit.work))) return null
 

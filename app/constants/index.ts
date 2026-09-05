@@ -6,6 +6,8 @@ export * from './ambient'
 export * from './heroControls'
 export * from './environments'
 export * from './terrain'
+export * from './consumption'
+export * from './unitTrainingAgeCost'
 
 export const SHEET_TYPES = {
   walking: 'walkingSheet',

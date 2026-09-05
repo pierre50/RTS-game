@@ -18,7 +18,17 @@ import type {
 
 type GridPoint = { i: number; j: number }
 const DEFAULT_SERIALIZED_MAP_TYPE = 'continent'
-const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
+const SERIALIZED_RESOURCE_NAMES = [
+  'wood',
+  'food',
+  'berry',
+  'meat',
+  'wheat',
+  'stone',
+  'gold',
+  'copper',
+  'iron',
+] as const
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {

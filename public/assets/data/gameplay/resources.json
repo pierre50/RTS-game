@@ -1,6 +1,6 @@
 {
   "Berrybush": {
-    "totalQuantity": 100,
+    "totalQuantity": 55,
     "totalHitPoints": 4,
     "color": "#7B9051",
     "assets": [
@@ -23,7 +23,7 @@
   },
   "Tree": {
     "selectionFactor": 2,
-    "totalQuantity": 300,
+    "totalQuantity": 180,
     "totalHitPoints": 25,
     "color": "#274F1F",
     "assets": {
@@ -113,7 +113,7 @@
   },
   "Gold": {
     "selectionFactor": 1.5,
-    "totalQuantity": 400,
+    "totalQuantity": 4,
     "color": "#DECF10",
     "assets": [
       {
@@ -132,7 +132,7 @@
   },
   "Stone": {
     "selectionFactor": 1.5,
-    "totalQuantity": 220,
+    "totalQuantity": 95,
     "color": "#B3B3B3",
     "assets": [
       {
@@ -151,7 +151,7 @@
   },
   "Copper": {
     "selectionFactor": 1.5,
-    "totalQuantity": 260,
+    "totalQuantity": 42,
     "color": "#B87333",
     "assets": [
       {
@@ -170,7 +170,7 @@
   },
   "Iron": {
     "selectionFactor": 1.5,
-    "totalQuantity": 320,
+    "totalQuantity": 47,
     "color": "#6F7378",
     "assets": [
       {

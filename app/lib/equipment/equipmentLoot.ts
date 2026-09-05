@@ -1,6 +1,6 @@
-import { RESOURCE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
+import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
-import { getUnitEquipmentLevel } from '../units/unitExperience'
+import { getUnitEquipmentTier } from '../units/unitExperience'
 import { applyBakedLpcUnitAssets } from '../lpc'
 import type { ResourceAmount } from '../../types/common'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
@@ -152,7 +152,7 @@ function countBagEquipment(bag: readonly string[], equipment: string): number {
 
 function cleanResourceAmount(resources: ResourceAmount | null | undefined): ResourceAmount {
   const clean: ResourceAmount = {}
-  for (const resource of RESOURCE_NAMES) {
+  for (const resource of RESOURCE_STORAGE_NAMES) {
     const amount = Math.max(0, Math.floor(resources?.[resource] ?? 0))
     if (amount > 0) clean[resource] = amount
   }
@@ -171,7 +171,7 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
         unit.type,
         config,
         unit.owner?.age,
-        getUnitEquipmentLevel(unit, config?.category),
+        getUnitEquipmentTier(unit, config?.category),
         unit.owner?.civ
       )
 

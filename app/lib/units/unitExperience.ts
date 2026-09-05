@@ -38,7 +38,27 @@ const GATHER_BONUS_LEVEL_STEP = 3 // +1 resource per swing every 3 levels
 const COMBAT_BONUS_LEVEL_STEP = 2 // +1 damage per hit every 2 levels
 const HEAL_BONUS_LEVEL_STEP = 2 // +1 hit point healed per chant every 2 levels
 const BUILD_RATE_BONUS_PER_LEVEL = 0.05
-const PARRY_CHANCE_PER_LEVEL = 0.035 // +3.5% automatic parry chance per defense level
+const PARRY_CHANCE_PER_LEVEL = 0.035 // +3.5% automatic parry chance per overall level
+const CRITICAL_HIT_BASE_CHANCE = 0.05
+const CRITICAL_HIT_CHANCE_PER_LEVEL = 0.01
+const CRITICAL_HIT_MAX_CHANCE = 0.25
+export const CRITICAL_HIT_MULTIPLIER = 2
+
+// Reflexe: the overall level shrinks the pause between two attack swings (attackRecoveryMs).
+// Movement/attack orders share that same recovery lock (see combatAttackLoop.ts's actionLocked),
+// so a faster reflex also makes a unit respond quicker to a new order — no separate system needed.
+const REFLEX_RECOVERY_REDUCTION_PER_LEVEL = 0.025 // -2.5% attack recovery time per overall level
+const MIN_REFLEX_RECOVERY_MULTIPLIER = 0.5 // never faster than half the base recovery time
+
+// Energie: the overall level raises max stamina and how fast it regenerates.
+const ENERGY_TOTAL_BONUS_PER_LEVEL = 0.04 // +4% max energy per overall level
+const ENERGY_REGEN_BONUS_PER_LEVEL = 0.02 // +2% energy regen rate per overall level
+
+// Palier d'équipement : piste indépendante du niveau de combat, réservée aux unités soldat
+// (Fantassin/Archer). Alimentée par le même XP de combat (melee/ranged/defense) mais avec une
+// courbe plate au lieu de la courbe accélérée du niveau — l'age du joueur plafonne la progression.
+const EQUIPMENT_TIER_XP_PER_LEVEL = 200
+const EQUIPMENT_TIER_CAP_BY_AGE: Record<number, number> = { 0: 5, 1: 10, 2: 15, 3: 20 }
 
 export const WORK_XP_CATEGORY: Record<string, string> = {
   [WORK_TYPES.farmer]: XP_CATEGORIES.farming,
@@ -106,7 +126,30 @@ export function getUnitEquipmentLevel(unit: UnitEntity, category = unit.category
   return getUnitOverallLevel(unit)
 }
 
-// Kept for legacy/debug summaries only. Gameplay unlocks should use getUnitEquipmentLevel,
+function getEquipmentTierCapForAge(age: number): number {
+  const ages = Object.keys(EQUIPMENT_TIER_CAP_BY_AGE)
+    .map(Number)
+    .sort((a, b) => a - b)
+  let cap = 0
+  for (const a of ages) {
+    if (age >= a) cap = EQUIPMENT_TIER_CAP_BY_AGE[a]
+  }
+  return cap
+}
+
+// The new, independent equipment-unlock track: linear XP curve, soldier-only (everything else —
+// villagers, Priest — has no level-gated equipment anyway), capped by the player's current age.
+export function getUnitEquipmentTier(unit: UnitEntity, category = unit.category || unit.type): number {
+  let totalXp = 0
+  if (category === 'Fantassin') totalXp = getUnitXp(unit, XP_CATEGORIES.melee) + getUnitXp(unit, XP_CATEGORIES.defense)
+  else if (category === 'Archer') totalXp = getUnitXp(unit, XP_CATEGORIES.ranged) + getUnitXp(unit, XP_CATEGORIES.defense)
+  else return 0
+
+  const tierFromXp = Math.min(XP_MAX_LEVEL, Math.floor(totalXp / EQUIPMENT_TIER_XP_PER_LEVEL))
+  return Math.min(tierFromXp, getEquipmentTierCapForAge(unit.owner?.age ?? 0))
+}
+
+// Kept for legacy/debug summaries only. Gameplay unlocks should use getUnitEquipmentTier,
 // and user-facing "unit level" should use getUnitOverallLevel.
 function getDebugLevelCategories(unit: UnitEntity, category = unit.category || unit.type): string[] {
   if (category === 'Fantassin') return [XP_CATEGORIES.melee, XP_CATEGORIES.defense]
@@ -175,7 +218,25 @@ export function getBuildRateXpMultiplier(unit: UnitEntity): number {
 }
 
 export function getParryChanceBonus(unit: UnitEntity): number {
-  return getUnitLevel(unit, XP_CATEGORIES.defense) * PARRY_CHANCE_PER_LEVEL
+  return getUnitOverallLevel(unit) * PARRY_CHANCE_PER_LEVEL
+}
+
+export function getCriticalHitChance(unit: UnitEntity, category: string): number {
+  const level = getUnitLevel(unit, category)
+  return Math.min(CRITICAL_HIT_MAX_CHANCE, CRITICAL_HIT_BASE_CHANCE + level * CRITICAL_HIT_CHANCE_PER_LEVEL)
+}
+
+export function getReflexAttackRecoveryMultiplier(unit: UnitEntity): number {
+  const level = getUnitOverallLevel(unit)
+  return Math.max(MIN_REFLEX_RECOVERY_MULTIPLIER, 1 - level * REFLEX_RECOVERY_REDUCTION_PER_LEVEL)
+}
+
+export function getEnergyTotalLevelMultiplier(unit: UnitEntity): number {
+  return 1 + getUnitOverallLevel(unit) * ENERGY_TOTAL_BONUS_PER_LEVEL
+}
+
+export function getEnergyRegenLevelMultiplier(unit: UnitEntity): number {
+  return 1 + getUnitOverallLevel(unit) * ENERGY_REGEN_BONUS_PER_LEVEL
 }
 
 export function getXpInfoId(category: string): string {
@@ -199,16 +260,30 @@ function syncExperienceInterface(unit: UnitEntity, category: string, leveledUp: 
   menu.updateInfo(getXpInfoId(category), formatXpProgressText(unit, category))
 }
 
+// Registered by equipmentStats.ts (which already imports this module) so that reflex/energy/
+// equipment-tier caches refresh the moment a level is gained, without this module importing
+// equipmentStats.ts back (that would be a circular import).
+type LevelUpRefreshHandler = (unit: UnitEntity) => void
+let levelUpRefreshHandler: LevelUpRefreshHandler | null = null
+
+export function setLevelUpRefreshHandler(handler: LevelUpRefreshHandler | null): void {
+  levelUpRefreshHandler = handler
+}
+
 export function grantUnitXp(unit: UnitEntity, category: string | null | undefined, amount: number): void {
   if (!category || !(amount > 0) || unit.isDead || unit.isDestroyed) return
   if (unit.type === UNIT_TYPES.villager) return
   if (unit.family !== FAMILY_TYPES.unit) return
+  const overallLevelBefore = getUnitOverallLevel(unit)
   const levelBefore = getUnitLevel(unit, category)
   unit.experience = unit.experience ?? {}
   unit.experience[category] = getUnitXp(unit, category) + Math.round(amount)
   const levelAfter = getUnitLevel(unit, category)
   if (levelAfter > levelBefore) {
     showLevelUpFeedback(unit, `${t('levelShort')} ${levelAfter}`)
+  }
+  if (getUnitOverallLevel(unit) > overallLevelBefore) {
+    levelUpRefreshHandler?.(unit)
   }
   syncExperienceInterface(unit, category, levelAfter > levelBefore)
 }

@@ -41,6 +41,14 @@ export function addHeroInventoryResources(
     return { ok: true, message: `Added ${amount} to all hero resources` }
   }
 
+  // 'food' is a virtual aggregate (berry + meat + wheat) — route convenience gives into wheat.
+  if (resourceName === 'food') {
+    resources.wheat = Number(resources.wheat ?? 0) + amount
+    context.menu.refreshInventory?.()
+    context.menu.updateTopbar()
+    return { ok: true, message: `Added ${amount} food (as wheat) to hero resources` }
+  }
+
   if (!isResourceName(resourceName)) {
     return { ok: false, message: `Unknown hero resource: ${resourceName}` }
   }

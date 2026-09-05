@@ -19,7 +19,7 @@ import {
 } from '../../lib'
 import { applyBakedLpcUnitAssets } from '../../lib/lpc'
 import { civilizationKey } from '../../lib/lpc/equipment'
-import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
+import { getUnitEquipmentTier } from '../../lib/units/unitExperience'
 import {
   MOUNTED_HORSE_BOB,
   MOUNTED_RIDER_CUT_Y,
@@ -86,7 +86,7 @@ function isHorseSheet(sheetId: string): boolean {
 
 function isLayerUnlockedForPreview(layer: UnitAppearanceLayerConfig, unit: PreviewUnit): boolean {
   if (layer.civilizations?.length && !layer.civilizations.includes(civilizationKey(unit.owner?.civ))) return false
-  const level = getUnitEquipmentLevel(unit as UnitEntity)
+  const level = getUnitEquipmentTier(unit as UnitEntity)
   return level >= (layer.minLevel ?? 0) && level <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
 }
 

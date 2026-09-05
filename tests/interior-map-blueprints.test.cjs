@@ -11,7 +11,18 @@ const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt
 const DIRT_INDEX = TERRAIN_TYPES.indexOf('Dirt')
 const WATER_INDEX = TERRAIN_TYPES.indexOf('Water')
 
-test('interior generator writes circular dirt blueprints for supported buildings', () => {
+function installInteriorMapFetch(root) {
+  const originalFetch = global.fetch
+  global.fetch = async url => {
+    const filePath = path.join(root, String(url).replace(/^maps\/interiors\//, ''))
+    return new Response(fs.readFileSync(filePath, 'utf8'), { status: 200 })
+  }
+  return () => {
+    global.fetch = originalFetch
+  }
+}
+
+test('interior generator writes size-based circular dirt blueprints for supported buildings', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'interior-blueprint-'))
 
   try {
@@ -33,23 +44,32 @@ test('interior generator writes circular dirt blueprints for supported buildings
 
     const manifest = JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8'))
     assert.equal(manifest.format, 'interior-map-manifest')
-    assert.equal(manifest.interiors.length, 9)
+    assert.equal(manifest.blueprints.length, 2)
+    assert.equal(manifest.buildingTypes.length, 9)
+    assert.equal(Object.hasOwn(manifest, 'generatedAt'), false)
     assert.deepEqual(
-      manifest.interiors.map(interior => [interior.interiorType, interior.size]),
+      manifest.blueprints.map(blueprint => [blueprint.id, blueprint.buildingSize, blueprint.size, blueprint.path]),
       [
-        ['TownCenter', 15],
-        ['House', 13],
-        ['Barracks', 13],
-        ['ArcheryRange', 13],
-        ['Temple', 13],
-        ['Granary', 13],
-        ['StoragePit', 13],
-        ['Stable', 13],
-        ['WatchTower', 11],
+        ['building-size-3-001', 3, 13, 'size-3/building-size-3-001.map'],
+        ['building-size-2-001', 2, 11, 'size-2/building-size-2-001.map'],
+      ]
+    )
+    assert.deepEqual(
+      manifest.buildingTypes.map(entry => [entry.buildingType, entry.buildingSize, entry.blueprintId, entry.id]),
+      [
+        ['TownCenter', 3, 'building-size-3-001', 'town-center-size-3-001'],
+        ['House', 2, 'building-size-2-001', 'house-size-2-001'],
+        ['Barracks', 3, 'building-size-3-001', 'barracks-size-3-001'],
+        ['ArcheryRange', 3, 'building-size-3-001', 'archery-range-size-3-001'],
+        ['Temple', 2, 'building-size-2-001', 'temple-size-2-001'],
+        ['Granary', 3, 'building-size-3-001', 'granary-size-3-001'],
+        ['StoragePit', 3, 'building-size-3-001', 'storage-pit-size-3-001'],
+        ['Stable', 3, 'building-size-3-001', 'stable-size-3-001'],
+        ['WatchTower', 2, 'building-size-2-001', 'watch-tower-size-2-001'],
       ]
     )
 
-    for (const entry of manifest.interiors) {
+    for (const entry of manifest.blueprints) {
       const blueprintPath = path.join(out, entry.path)
       const blueprint = JSON.parse(fs.readFileSync(blueprintPath, 'utf8'))
       const expectedCells = (blueprint.size + 1) ** 2
@@ -59,7 +79,7 @@ test('interior generator writes circular dirt blueprints for supported buildings
       const borderMask = Buffer.from(blueprint.borderMask, 'base64')
 
       assert.equal(blueprint.kind, 'interior')
-      assert.equal(blueprint.interiorType, entry.interiorType)
+      assert.equal(blueprint.buildingSize, entry.buildingSize)
       assert.equal(blueprint.size, entry.size)
       assert.equal(blueprint.floorShape.type, 'circle')
       assert.equal(blueprint.cellCount, expectedCells)
@@ -78,19 +98,49 @@ test('interior generator writes circular dirt blueprints for supported buildings
         if (floorMask[index]) assert.equal(terrain[index], DIRT_INDEX)
         else assert.equal(terrain[index], WATER_INDEX)
       }
-      if (entry.interiorType === 'TownCenter') {
-        assert.deepEqual(blueprint.spawns, [{ i: 8, j: 11 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 8, j: 11, direction: 'south' }])
-      } else if (entry.interiorType === 'WatchTower') {
-        assert.deepEqual(blueprint.spawns, [{ i: 6, j: 9 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 6, j: 9, direction: 'south' }])
+      if (entry.buildingSize === 2) {
+        assert.deepEqual(blueprint.spawns, [{ i: 6, j: 8 }])
+        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 6, j: 8, direction: 'south' }])
       } else {
         assert.deepEqual(blueprint.spawns, [{ i: 7, j: 10 }])
         assert.deepEqual(blueprint.exits, [{ id: 'main', i: 7, j: 10, direction: 'south' }])
       }
     }
+
+    for (const entry of manifest.buildingTypes) {
+      assert.match(entry.legacyId, /-circle-001$/)
+    }
   } finally {
     fs.rmSync(out, { recursive: true, force: true })
+  }
+})
+
+test('interior blueprint loader selects by building size while keeping type-specific ids', async () => {
+  const restoreFetch = installInteriorMapFetch(path.join(ROOT, 'public/maps/interiors'))
+
+  try {
+    const { loadPregeneratedInteriorBlueprint } = loadTsModule('app/serialization/MapBlueprintLoader.ts', {
+      mocks: {
+        '../constants': { DEFAULT_ENVIRONMENT_ID: 'temperate' },
+      },
+    })
+
+    const stable = await loadPregeneratedInteriorBlueprint({
+      buildingSize: 3,
+      buildingType: 'Stable',
+      random: () => 0,
+    })
+    assert.equal(stable.id, 'stable-size-3-001')
+    assert.equal(stable.interiorType, 'Stable')
+    assert.equal(stable.buildingSize, 3)
+    assert.equal(stable.size, 13)
+
+    const legacyStable = await loadPregeneratedInteriorBlueprint({ id: 'stable-circle-001' })
+    assert.equal(legacyStable.id, 'stable-size-3-001')
+    assert.equal(legacyStable.interiorType, 'Stable')
+    assert.equal(legacyStable.buildingSize, 3)
+  } finally {
+    restoreFetch()
   }
 })
 
@@ -117,7 +167,11 @@ test('interior blueprint masks make cells beyond the dirt floor solid', () => {
     }))
   )
   const map = { grid, size: 2 }
-  const generation = new MapBlueprintGeneration(map, async () => {}, () => {})
+  const generation = new MapBlueprintGeneration(
+    map,
+    async () => {},
+    () => {}
+  )
 
   generation.applyInteriorMasks({
     kind: 'interior',
@@ -164,7 +218,11 @@ test('interior blueprint exits remain passable when placed on the dirt border', 
     }))
   )
   const map = { grid, size: 2 }
-  const generation = new MapBlueprintGeneration(map, async () => {}, () => {})
+  const generation = new MapBlueprintGeneration(
+    map,
+    async () => {},
+    () => {}
+  )
 
   generation.applyInteriorMasks({
     exits: [{ i: 1, j: 1 }],

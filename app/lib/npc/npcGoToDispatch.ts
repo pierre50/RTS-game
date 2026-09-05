@@ -242,6 +242,21 @@ function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity
   return false
 }
 
+function routeNpcGroupThroughBuildingInteriorEntry(npcs: UnitEntity[], cell: RuntimeCell): boolean {
+  const context = npcs[0].context
+  const building = context?.getBuildingInteriorEntryTargetForCell?.(cell)
+  const route = context?.routeUnitIntoBuildingInterior
+  if (!building || !route) return false
+
+  for (const npc of npcs) {
+    resetNpcDirectives(npc)
+    delayUnitRestAfterActivity(npc)
+    if (!route(npc, building)) npc.sendTo?.(cell)
+  }
+
+  return true
+}
+
 export function sendNpcGroupToTarget(
   npcs: UnitEntity[],
   cell: RuntimeCell,
@@ -259,6 +274,7 @@ export function sendNpcGroupToTarget(
     if (hasTargetAction) drawInstanceBlinkingSelection(target as SelectableInstance)
     return
   }
+  if (routeNpcGroupThroughBuildingInteriorEntry(npcs, cell)) return
   const map = npcs[0].context?.map
   const targetSpace = map ? getMapSpace(map, cell.spaceId) : null
   const grid = targetSpace?.grid ?? map?.grid

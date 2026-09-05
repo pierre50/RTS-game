@@ -5,7 +5,9 @@ import Map from '../classes/map/Map'
 import { getReliefOffset } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { adjustFactionRelation } from '../lib/combat/factions'
-import { getBuildingInteriorBlueprintType } from '../lib/buildings/interiors'
+import { getBuildingInteriorBlueprintType, getBuildingInteriorEntryCell } from '../lib/buildings/interiors'
+import { canUnitEnterBuildingInterior } from '../lib/buildings/interiorAccess'
+import { getKnownBuildings } from '../lib/buildings/knownBuildings'
 import { getEntityMapPoint } from '../lib/mapSpaces'
 import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } from '../serialization/SaveStorage'
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
@@ -81,10 +83,12 @@ import {
   activateBuildingInteriorSpace,
   deactivateBuildingInteriorSpace,
   ensureBuildingInteriorSpace,
+  ensureRuntimeBuildingInteriorSpace,
   getBuildingInteriorSpaceForUnit,
   moveHeroPartyIntoBuildingInteriorSpace,
   moveHeroPartyOutOfBuildingInteriorSpace,
   refreshMapSpaceEntityVisibility,
+  routeUnitIntoBuildingInteriorSpaceAndMoveBack,
   syncBuildingInteriorShelterOccupants,
   syncBuildingStableInteriorHorses,
   type BuildingInteriorRuntimeSpace,
@@ -106,12 +110,6 @@ type MapInstance = RuntimeMapInstance & {
 
 type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
 type RequiredInteriorBlueprintOptions = Parameters<typeof loadPregeneratedInteriorBlueprint>[0]
-
-/**
- * Main Display Object
- * @exports Game
- * @extends Container
- */
 
 export default class Game extends Container {
   _pausedByVisibility: boolean
@@ -307,7 +305,8 @@ export default class Game extends Container {
     const context = this._gameContext()
     const hero = this._runtimeHeroUnit()
     const blueprint = await this._loadRequiredInteriorBlueprint({
-      interiorType: getBuildingInteriorBlueprintType(building),
+      buildingSize: building.size,
+      buildingType: getBuildingInteriorBlueprintType(building),
       random: () => context.map.random(),
     })
     const space = ensureBuildingInteriorSpace(context, building, blueprint)
@@ -524,13 +523,26 @@ export default class Game extends Container {
     await travelThroughPortalRuntime(this as PortalTravelGame, portal, color)
   }
 
-  async travelIntoBuildingInterior(building: BuildingEntity): Promise<void> {
-    await travelIntoBuildingInteriorRuntime(this as BuildingInteriorTravelGame, building)
+  async travelIntoBuildingInterior(building: BuildingEntity): Promise<void> { await travelIntoBuildingInteriorRuntime(this as BuildingInteriorTravelGame, building) }
+
+  getBuildingInteriorEntryTargetForCell(cell: RuntimeCell): BuildingEntity | null {
+    const context = this._gameContext()
+    for (const building of getKnownBuildings(context)) {
+      const entryCell = getBuildingInteriorEntryCell(building, context.map.grid)
+      if (entryCell !== cell) continue
+      return building
+    }
+    return null
   }
 
-  async travelOutOfBuildingInterior(): Promise<void> {
-    await travelOutOfBuildingInteriorRuntime(this as BuildingInteriorTravelGame)
+  routeUnitIntoBuildingInterior(unit: UnitEntity, building: BuildingEntity): boolean {
+    if (!canUnitEnterBuildingInterior(unit, building)) return false
+    const context = this._gameContext()
+    const space = ensureRuntimeBuildingInteriorSpace(context, building)
+    return space ? routeUnitIntoBuildingInteriorSpaceAndMoveBack(context, unit, space) : false
   }
+
+  async travelOutOfBuildingInterior(): Promise<void> { await travelOutOfBuildingInteriorRuntime(this as BuildingInteriorTravelGame) }
 
   async routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean> {
     return routeUnitResourceDeliveryRuntime(this as ResourceDeliveryGame, unit, building)

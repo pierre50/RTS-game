@@ -1,1 +1,3 @@
-export type ResourceAmount = Partial<Record<'wood' | 'food' | 'stone' | 'gold' | 'copper' | 'iron', number>>
+export type ResourceAmount = Partial<
+  Record<'wood' | 'food' | 'berry' | 'meat' | 'wheat' | 'stone' | 'gold' | 'copper' | 'iron', number>
+>

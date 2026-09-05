@@ -6,7 +6,7 @@ function loadInventoryContainers() {
   return loadTsModule('app/lib/inventory/inventoryContainers.ts', {
     mocks: {
       '../../constants': {
-        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+        RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
       },
     },
   })
@@ -28,14 +28,14 @@ test('inventory containers move equipment between reusable inventories', () => {
 test('inventory containers move resources between reusable inventories', () => {
   const { createInventoryContainer, moveInventoryResource } = loadInventoryContainers()
   const hero = { inventory: { resources: { wood: 12 } } }
-  const chest = { inventory: { resources: { food: 3 } } }
+  const chest = { inventory: { resources: { wheat: 3 } } }
   const heroContainer = createInventoryContainer(hero, { id: 'hero', labelKey: 'inventoryBag' })
   const chestContainer = createInventoryContainer(chest, { id: 'chest', labelKey: 'inventoryChest' })
 
   assert.equal(moveInventoryResource(heroContainer, chestContainer, 'wood', 5), 5)
 
   assert.deepEqual(hero.inventory.resources, { wood: 7 })
-  assert.deepEqual(chest.inventory.resources, { food: 3, wood: 5 })
+  assert.deepEqual(chest.inventory.resources, { wheat: 3, wood: 5 })
 })
 
 test('inventory containers respect destination acceptance rules', () => {

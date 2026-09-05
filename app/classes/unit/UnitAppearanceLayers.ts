@@ -7,7 +7,7 @@ import { getAppearanceAgeSheetOverride, getAppearanceLayerZIndex } from '../../l
 import { civilizationKey } from '../../lib/lpc/equipment'
 import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
 import { applyActionFrameSequence, getConfiguredActionFrameSequence } from '../../lib/animations/actionFrameSequences'
-import { getUnitEquipmentLevel } from '../../lib/units/unitExperience'
+import { getUnitEquipmentTier } from '../../lib/units/unitExperience'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
 import type { UnitRuntimeHost } from './UnitTypes'
 import type { DynamicEquipmentKey } from '../../lib/lpc/equipmentData'
@@ -86,7 +86,7 @@ function getLayerRenderState(
     !layer.workTypes?.length || (unit.work ? layer.workTypes.includes(unit.work) : false) || hasActionWorkSheetOverride
   const isLayerEnabledForCivilization =
     !layer.civilizations?.length || layer.civilizations.includes(civilizationKey(unit.owner?.civ))
-  const unitLevel = getUnitEquipmentLevel(unit)
+  const unitLevel = getUnitEquipmentTier(unit)
   const isLayerEnabledForLevel =
     unitLevel >= (layer.minLevel ?? 0) && unitLevel <= (layer.maxLevel ?? Number.POSITIVE_INFINITY)
   const isLayerHiddenByAction = Boolean(unit.action && layer.hideForActions?.includes(unit.action))

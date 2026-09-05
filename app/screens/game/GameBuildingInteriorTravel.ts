@@ -2,6 +2,7 @@ import {
   getBuildingInteriorPortalId,
   isBuildingInteriorSupported,
 } from '../../lib/buildings/interiors'
+import { canUnitEnterBuildingInterior } from '../../lib/buildings/interiorAccess'
 import { BUILDING_TYPES } from '../../constants'
 import { t } from '../../lib/lang'
 import {
@@ -154,7 +155,12 @@ export async function travelIntoBuildingInterior(
   if (game._isRestarting || !isBuildingInteriorSupported(building)) return
   if (!game._openBuildingInteriorLayer) return
   const context = game._gameContext()
-  if (context.controls.heroUnit?.mountedOnHorse && building.type !== BUILDING_TYPES.stable) {
+  const hero = context.controls.heroUnit
+  if (!canUnitEnterBuildingInterior(hero, building)) {
+    context.menu?.showMessage?.(t('heroEnemyBuildingInteriorDefended'), 'warning')
+    return
+  }
+  if (hero?.mountedOnHorse && building.type !== BUILDING_TYPES.stable) {
     context.menu?.showMessage?.(t('heroCannotEnterMounted'), 'warning')
     return
   }

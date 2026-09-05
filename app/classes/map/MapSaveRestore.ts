@@ -1,6 +1,7 @@
 import type { ContainerChild } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
 import { isAIControlledPlayer } from '../../lib/playerState'
+import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
@@ -124,6 +125,12 @@ export function processUnit(unit: RestoringMobileEntity, context: MapGenerationM
   }
 }
 
+function migrateLegacyFoodInventory(entity: BuildingEntity | UnitEntity): void {
+  const resources = entity.inventory?.resources
+  if (!resources || !resources.food) return
+  entity.inventory!.resources = expandLegacyFoodAmount(resources)
+}
+
 export function restorePlayerEntitiesFromSave(player: PlayerLike, savedPlayer: SavedPlayer): void {
   const { buildings, units, corpses } = savedPlayer
   player.buildings = (buildings || []).map(building => player.createBuilding({ ...building, skipBuiltEffects: true }))
@@ -133,6 +140,10 @@ export function restorePlayerEntitiesFromSave(player: PlayerLike, savedPlayer: S
   player.corpses = (corpses || [])
     .map(unit => player.createUnit?.({ ...unit, suppressCreateSound: true }, { preserveType: true }))
     .filter((unit): unit is NonNullable<typeof unit> => Boolean(unit))
+
+  // Old saves stored food as one pooled amount per bag; spread it across berry/meat/wheat so it stays visible/spendable.
+  for (const entity of [...player.buildings, ...player.units, ...player.corpses]) migrateLegacyFoodInventory(entity)
+  syncPlayerResourceFieldsFromChests(player)
 }
 
 export function restoreBuildingAssignments(

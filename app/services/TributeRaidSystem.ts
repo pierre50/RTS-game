@@ -3,7 +3,6 @@ import { ACTION_TYPES, FADE_DURATION_MS, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } 
 import { canAfford, getCellsAroundPoint, getFreeLandCellAroundInstance, payCost } from '../lib'
 import { createNonReservedPassageCellCondition } from '../lib/buildings/passageCells'
 import { fadeOut } from '../lib/entities/entityFade'
-import { t } from '../lib/lang'
 import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
 import { createInspectionModal } from '../ui/InspectionPanel'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'

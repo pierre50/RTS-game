@@ -97,6 +97,9 @@ export class Resource extends Instance implements ResourceEntity {
     this.assignProperties(options)
     const config = getResourceConfig()
     this.assignProperties(config.resources[this.type])
+    // Config is applied after options and would otherwise clobber a per-instance
+    // totalQuantity override (e.g. a randomized node capacity) with the JSON default.
+    if (typeof options.totalQuantity === 'number') this.totalQuantity = options.totalQuantity
     const space = getEntityMapSpace(this, map)
     const grid = space?.grid ?? map.grid
     const cell = grid[this.i][this.j]

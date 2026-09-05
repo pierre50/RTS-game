@@ -28,6 +28,7 @@ function loadAIStrategy(options = {}) {
       watchTower: 'WatchTower',
     },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+    RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
     UNIT_TYPES: {
       chief: 'Chief',
       villager: 'Villager',

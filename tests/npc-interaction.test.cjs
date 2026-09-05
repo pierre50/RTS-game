@@ -225,6 +225,73 @@ test('"aller vers" keeps empty go-to targets inside the clicked runtime map spac
   assert.notEqual(calls[0], outsideCellAtSameCoords)
 })
 
+test('"aller vers" on a building entry routes the npc inside instead of stopping on the door', () => {
+  const grid = createNpcTestGrid(6)
+  const entryCell = grid[4][4]
+  const calls = []
+  const npc = {
+    context: {
+      map: { grid },
+      getBuildingInteriorEntryTargetForCell: cell => {
+        calls.push(['resolve-entry', cell])
+        return { label: 'house-1' }
+      },
+      routeUnitIntoBuildingInterior: (unit, building) => {
+        calls.push(['enter', unit.label, building.label])
+        return true
+      },
+    },
+    i: 2,
+    j: 2,
+    label: 'npc-1',
+    owner: {},
+    sendTo: orderCell => calls.push(['move', orderCell]),
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null)
+
+  sendNpcGroupToTarget([npc], entryCell, { x: 4, y: 4 })
+
+  assert.deepEqual(calls, [
+    ['resolve-entry', entryCell],
+    ['enter', 'npc-1', 'house-1'],
+  ])
+})
+
+test('"aller vers" does not reset npc activity before knowing the cell is a building entry', () => {
+  const grid = createNpcTestGrid(6)
+  const targetCell = grid[4][4]
+  const calls = []
+  const npc = {
+    context: {
+      dayNight: { state: { hour: 23 } },
+      getBuildingInteriorEntryTargetForCell: cell => {
+        calls.push(['resolve-entry', cell])
+        return null
+      },
+      map: { grid },
+      routeUnitIntoBuildingInterior: () => {
+        calls.push(['enter'])
+        return true
+      },
+      scheduler: { elapsedMs: 2000 },
+    },
+    i: 2,
+    j: 2,
+    owner: {},
+    sendTo: orderCell => calls.push(['move', orderCell]),
+    type: constants.UNIT_TYPES.villager,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null)
+
+  sendNpcGroupToTarget([npc], targetCell, { x: 4, y: 4 })
+
+  assert.deepEqual(calls, [
+    ['resolve-entry', targetCell],
+    ['move', targetCell],
+  ])
+  assert.equal(npc.restWakeLockUntilMs, 14000)
+})
+
 test('"aller vers" delays night rest after an empty go-to order', () => {
   const grid = createNpcTestGrid(6)
   const targetCell = grid[4][4]

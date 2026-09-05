@@ -74,7 +74,11 @@ function loadEquipmentStats({ unitEquipment = {}, workEquipment = {} } = {}) {
       },
     },
     './units/unitExperience': {
-      getUnitEquipmentLevel: unit => unit.level ?? 0,
+      getUnitEquipmentTier: unit => unit.level ?? 0,
+      getReflexAttackRecoveryMultiplier: () => 1,
+      getEnergyTotalLevelMultiplier: () => 1,
+      getEnergyRegenLevelMultiplier: () => 1,
+      setLevelUpRefreshHandler: () => {},
     },
   })
 }

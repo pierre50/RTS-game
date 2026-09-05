@@ -63,7 +63,7 @@ function withFakeDocument(fn) {
 test('topbar displays and themes all civilization ages', () => {
   withFakeDocument(() => {
     const { TopbarView } = loadModule('app/ui/TopbarView.ts', {
-      '../constants': { RESOURCE_NAMES: ['wood', 'food'] },
+      '../constants': { RESOURCE_NAMES: ['wood', 'food'], DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 } },
       '../lib/lang': { t: key => key },
       '../lib/resources/playerResourceTotals': {
         getPlayerResourceTotals: player => ({
@@ -119,5 +119,7 @@ test('topbar displays and themes all civilization ages', () => {
     assert.equal(topbar.resourceEls.food.textContent, '9')
     assert.equal(topbar.resourceWorkerEls.wood.textContent, ' (1)')
     assert.equal(topbar.villagerTotalEl.textContent, 'V: 2')
+    assert.equal(topbar.resourceConsumptionEls.food.textContent, '-8/j')
+    assert.equal(topbar.resourceConsumptionEls.wood.textContent, '')
   })
 })

@@ -36,8 +36,8 @@ test('unit corpse loot initializes from resolved equipment and transfers to hero
       },
     },
     '../units/unitExperience': {
-      getUnitEquipmentLevel: unit => {
-        calls.push(['getUnitEquipmentLevel', unit.label])
+      getUnitEquipmentTier: unit => {
+        calls.push(['getUnitEquipmentTier', unit.label])
         return 2
       },
     },
@@ -88,7 +88,7 @@ test('unit corpse loot can be frozen at death even after an empty transient cach
       refreshUnitEquipmentStats: () => {},
       getUnitEquipment: () => ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'],
     },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const corpse = {
@@ -120,7 +120,7 @@ test('equipment loot labels humanize runtime ids', () => {
         UNIT_TYPES: { villager: 'Villager' },
       },
       './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
-      '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+      '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
       '../lpc': { applyBakedLpcUnitAssets: () => {} },
     }
   )
@@ -136,12 +136,12 @@ test('equipment loot labels humanize runtime ids', () => {
 test('unit corpse loot transfers pocket resources to hero inventory', () => {
   const { getUnitCorpseLootResources, pickupCorpseResource } = loadModule('app/lib/equipment/equipmentLoot.ts', {
     '../constants': {
-      RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
+      RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
       SHEET_TYPES: { corpse: 'corpseSheet' },
       UNIT_TYPES: { villager: 'Villager' },
     },
     './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const corpse = {
@@ -171,7 +171,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
     },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': {
       applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
     },
@@ -290,7 +290,7 @@ test('helmet decor requires an equipped helmet and is removed with the helmet', 
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: unit => calls.push(['refreshUnitEquipmentStats', unit.label]),
     },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': {
       applyBakedLpcUnitAssets: unit => calls.push(['applyBakedLpcUnitAssets', unit.label]),
     },
@@ -335,7 +335,7 @@ test('equipping the same arrow type merges the bag stack into the equipped stack
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: () => {},
     },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const hero = {
@@ -365,7 +365,7 @@ test('hero arrow stacks can equip and unequip one item at a time', () => {
       getUnitEquipment: () => [],
       refreshUnitEquipmentStats: () => {},
     },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../lpc': { applyBakedLpcUnitAssets: () => {} },
   })
   const hero = {

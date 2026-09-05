@@ -209,7 +209,7 @@ test('hero baked appearance includes inventory equipped layers', () => {
       ],
     },
     '../chief': { isChiefUnit: unit => Boolean(unit.isChief) },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
@@ -272,7 +272,7 @@ test('runtime equipment preload collection deduplicates used equipment atlases',
       isDynamicEquipmentKey: equipment => equipment !== 'not_dynamic',
     },
     '../chief': { isChiefUnit: () => false },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
@@ -341,7 +341,7 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
     },
     '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
     '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
-    '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
   })
   const unit = {
     appearance: {
@@ -423,7 +423,7 @@ test('appearance layers inherit the unit action frame sequence', () => {
     '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
     '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
     '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
-    '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
   })
   const unit = {
     actionFrameSequence: [5, 5, 4, 4, 1, 0, 0, 0, 0],
@@ -508,7 +508,7 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
     },
     '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
     '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
-    '../../lib/units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
   })
   const unit = {
     action: constants.ACTION_TYPES.attack,
@@ -826,7 +826,7 @@ test('unique bandit baked units do not include civilization in asset paths', () 
       dynamicEquipmentLayersForVillager: () => [],
     },
     '../chief': { isChiefUnit: () => false },
-    '../units/unitExperience': { getUnitEquipmentLevel: () => 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
@@ -862,7 +862,7 @@ test('helmeted infantry swaps to no-hair baked base', () => {
       dynamicEquipmentLayersForVillager: () => [],
     },
     '../chief': { isChiefUnit: () => false },
-    '../units/unitExperience': { getUnitEquipmentLevel: unit => unit.level ?? 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: unit => unit.level ?? 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
@@ -899,7 +899,7 @@ test('helmeted archer swaps to no-hair baked base', () => {
       dynamicEquipmentLayersForVillager: () => [],
     },
     '../chief': { isChiefUnit: () => false },
-    '../units/unitExperience': { getUnitEquipmentLevel: unit => unit.level ?? 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: unit => unit.level ?? 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })
@@ -936,7 +936,7 @@ test('looted corpse swaps back to hair baked base when helmet is removed', () =>
       dynamicEquipmentLayersForVillager: () => [],
     },
     '../chief': { isChiefUnit: () => false },
-    '../units/unitExperience': { getUnitEquipmentLevel: unit => unit.level ?? 0 },
+    '../units/unitExperience': { getUnitEquipmentTier: unit => unit.level ?? 0 },
     '../../constants': constants,
     'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
   })

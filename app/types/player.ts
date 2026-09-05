@@ -78,6 +78,9 @@ export interface PlayerLike {
   cellViewed: number
   wood: number
   food: number
+  berry: number
+  meat: number
+  wheat: number
   stone: number
   gold: number
   copper: number
