@@ -1,12 +1,21 @@
-import { RESOURCE_GATHER_SWINGS, RESOURCE_TYPES } from '../../constants'
+import {
+  LOADING_TYPES,
+  RESOURCE_GATHER_SWINGS,
+  RESOURCE_STOCKPILE_TYPES,
+  RESOURCE_TYPES,
+  SOUND_CUES,
+  WILDGRASS_RESOURCE_TYPES,
+} from '../../constants'
 import {
   getResourceKeyForLoadingType,
   getUnitResourceCapacityRemaining,
   unitShouldDeliverResource,
 } from '../../lib/resources/resourceDelivery'
 import { getGatherXpBonus } from '../../lib/units/unitExperience'
+import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
 import { t } from '../../lib/lang'
 import type { BuildingEntity, ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { UnitResourceActions } from './UnitResourceActions'
 
 const DEPLETED_BERRYBUSH_HIT_POINTS = 4
 
@@ -20,6 +29,32 @@ export function isBuildingEntity(value: UnitEntity['dest'] | null | undefined): 
 
 export function isResourceEntity(value: UnitEntity['dest'] | null | undefined): value is ResourceEntity {
   return isRuntimeEntity(value) && value.family === 'resource'
+}
+
+function isWildgrassResource(value: RuntimeEntity | null | undefined): boolean {
+  return Boolean(value && WILDGRASS_RESOURCE_TYPES.has(value.type))
+}
+
+function getForageLoadingType(target: RuntimeEntity | null): string {
+  return (target?.type && RESOURCE_STOCKPILE_TYPES[target.type as keyof typeof RESOURCE_STOCKPILE_TYPES]) || LOADING_TYPES.berry
+}
+
+export function startForageResourceAction(actions: UnitResourceActions): void {
+  const { unit } = actions
+  const target = isResourceEntity(unit.dest) ? unit.dest : null
+  const sound = isWildgrassResource(target)
+    ? actions.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood)
+    : actions.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry)
+  actions.startGathering(getForageLoadingType(target), sound, {
+    dieOnEmpty: target?.type !== RESOURCE_TYPES.berrybush,
+    onImpact: target => spawnWorkImpactFragments(unit, target),
+    onDepleted: dest => {
+      if (dest.type === RESOURCE_TYPES.berrybush) {
+        markBerrybushDepleted(dest)
+        showDepletedBerrybushMessage(unit, dest)
+      }
+    },
+  })
 }
 
 function isDepletedBerrybush(value: RuntimeEntity | null | undefined): value is RuntimeEntity {
@@ -41,7 +76,7 @@ export function showDepletedBerrybushMessage(unit: UnitEntity, target: RuntimeEn
   }
 }
 
-export function markBerrybushDepleted(target: RuntimeEntity): void {
+function markBerrybushDepleted(target: RuntimeEntity): void {
   if (!isDepletedBerrybush(target)) return
   target.totalHitPoints = Math.min(
     target.totalHitPoints ?? DEPLETED_BERRYBUSH_HIT_POINTS,

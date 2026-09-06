@@ -1,4 +1,5 @@
 import type { DayNightColorAdjustment } from '../types/context'
+import { RESOURCE_TYPES } from '../constants'
 
 export const DAY_NIGHT_CONFIG = {
   dayLengthMs: 24 * 60 * 1000,
@@ -44,7 +45,46 @@ export const DAY_NIGHT_COLOR_TIMELINE: Array<{ hour: number; color: DayNightColo
 ]
 
 export const NATURAL_REGROWTH_CONFIG = {
-  berryRegrowRatioPerDay: 0.25,
+  berryRegrowRatioPerDay: 0.1,
   wheatGrowthFramesPerDay: 1,
-  wheatRegrowRatioPerDay: 0.33,
+  wheatRegrowRatioPerDay: 0.2,
 }
+
+export const NATURAL_RESOURCE_REGROWTH_BY_TYPE = {
+  [RESOURCE_TYPES.berrybush]: {
+    respawnDelayDays: 3,
+    respawnQuantityRatio: 0.5,
+  },
+  [RESOURCE_TYPES.wheat]: {
+    respawnDelayDays: 2,
+    respawnQuantityRatio: 0.5,
+  },
+  [RESOURCE_TYPES.medicinalHerb]: {
+    respawnDelayDays: 2,
+    respawnQuantityRatio: 0.5,
+  },
+  [RESOURCE_TYPES.toxicHerb]: {
+    respawnDelayDays: 2,
+    respawnQuantityRatio: 0.5,
+  },
+  [RESOURCE_TYPES.fiberPlant]: {
+    respawnDelayDays: 2,
+    respawnQuantityRatio: 0.5,
+  },
+  [RESOURCE_TYPES.stone]: {
+    respawnDelayDays: 7,
+    respawnQuantityRatio: 0.2,
+  },
+  [RESOURCE_TYPES.gold]: {
+    respawnDelayDays: 14,
+    respawnQuantityRatio: 0.15,
+  },
+  [RESOURCE_TYPES.copper]: {
+    respawnDelayDays: 10,
+    respawnQuantityRatio: 0.15,
+  },
+  [RESOURCE_TYPES.iron]: {
+    respawnDelayDays: 14,
+    respawnQuantityRatio: 0.15,
+  },
+} as const

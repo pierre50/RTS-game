@@ -3,14 +3,14 @@ import { resumeVillagerAutonomy } from '../../lib'
 import { getEntityCell } from '../../lib/mapSpaces'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 
-const RESOURCE_SEND_TO_BY_TYPE: Record<keyof typeof TYPE_ACTION, (unit: UnitEntity, dest: RuntimeEntity) => boolean> = {
-  Stone: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
-  Gold: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
-  Copper: (unit, dest) => (unit.sendToCopper ? (unit.sendToCopper(dest, true), true) : false),
-  Iron: (unit, dest) => (unit.sendToIron ? (unit.sendToIron(dest, true), true) : false),
-  Berrybush: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
-  Wheat: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),
-  Tree: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
+const RESOURCE_SEND_TO_BY_ACTION: Partial<Record<string, (unit: UnitEntity, dest: RuntimeEntity) => boolean>> = {
+  [ACTION_TYPES.minestone]: (unit, dest) => (unit.sendToStone ? (unit.sendToStone(dest, true), true) : false),
+  [ACTION_TYPES.minegold]: (unit, dest) => (unit.sendToGold ? (unit.sendToGold(dest, true), true) : false),
+  [ACTION_TYPES.minecopper]: (unit, dest) => (unit.sendToCopper ? (unit.sendToCopper(dest, true), true) : false),
+  [ACTION_TYPES.mineiron]: (unit, dest) => (unit.sendToIron ? (unit.sendToIron(dest, true), true) : false),
+  [ACTION_TYPES.forageberry]: (unit, dest) => (unit.sendToBerrybush ? (unit.sendToBerrybush(dest, true), true) : false),
+  [ACTION_TYPES.farm]: (unit, dest) => (unit.sendToFarm ? (unit.sendToFarm(dest, true), true) : false),
+  [ACTION_TYPES.chopwood]: (unit, dest) => (unit.sendToTree ? (unit.sendToTree(dest, true), true) : false),
 }
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
@@ -85,7 +85,7 @@ function routeBackToResource(unit: UnitEntity, dest: RuntimeEntity, type: string
   const action = TYPE_ACTION[type as keyof typeof TYPE_ACTION]
   if (!action) return false
   if (unit.getActionCondition?.(dest, action)) {
-    const sendTo = RESOURCE_SEND_TO_BY_TYPE[type as keyof typeof TYPE_ACTION]
+    const sendTo = RESOURCE_SEND_TO_BY_ACTION[action]
     if (!sendTo?.(unit, dest)) sendBackToPreviousDestinationCell(unit, dest, action)
   } else {
     sendBackToPreviousDestinationCell(unit, dest, action)

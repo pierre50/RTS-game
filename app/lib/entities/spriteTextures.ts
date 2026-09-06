@@ -199,6 +199,7 @@ function getSortedTextureNames<TTexture>(textures: TextureMap<TTexture>): string
 }
 
 type AnimatedSpriteLike<TTexture = AnimatedSprite['textures'][number]> = {
+  _afterAnimationUpdate?: (() => void) | null
   _usesAppTicker?: boolean
   anchor: { set: (x: number, y: number) => void }
   animationSpeed?: number
@@ -389,10 +390,7 @@ export function setUnitTexture(sheet: string, instance: UnitTextureInstance): vo
     directionCount,
     directionOrderOverride
   )
-  const configuredActionFrameSequence =
-    sheet === SHEET_TYPES.action
-      ? getConfiguredActionFrameSequence(instance)
-      : null
+  const configuredActionFrameSequence = sheet === SHEET_TYPES.action ? getConfiguredActionFrameSequence(instance) : null
   const textures = applyActionFrameSequence(selectedTextures, configuredActionFrameSequence)
   const spriteScale = instance.spriteScale ?? 1
   instance.sprite.scale.x = mirrored ? -spriteScale : spriteScale
@@ -444,6 +442,7 @@ export function bindAnimatedSpriteToTicker<TSprite extends AnimatedSpriteLike | 
   const tick = (ticker: Ticker) => {
     if (displayObjectCanUpdateAnimation(sprite)) {
       sprite.update(ticker)
+      sprite._afterAnimationUpdate?.()
     }
   }
 

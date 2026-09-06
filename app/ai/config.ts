@@ -59,10 +59,10 @@ export const MAX_VILLAGER_PER_AGE = {
 }
 
 export const VILLAGE_TARGET_PERCENTAGE_BY_AGE = {
-  0: { wood: 40, food: 60, gold: 0, stone: 0 },
-  1: { wood: 45, food: 45, gold: 10, stone: 0 },
-  2: { wood: 35, food: 35, gold: 20, stone: 10 },
-  3: { wood: 30, food: 30, gold: 25, stone: 15 },
+  0: { wood: 35, food: 50, gold: 0, stone: 15 },
+  1: { wood: 35, food: 45, gold: 5, stone: 15 },
+  2: { wood: 30, food: 35, gold: 15, stone: 20 },
+  3: { wood: 25, food: 30, gold: 20, stone: 25 },
 }
 
 export const MAX_BUILDING_BY_AGE = {

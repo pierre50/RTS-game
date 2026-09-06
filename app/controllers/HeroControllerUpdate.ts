@@ -17,6 +17,7 @@ import {
 } from '../lib/hero/heroTools'
 import { updateHeroCursor } from '../lib/hero/heroCursor'
 import { applyUnitCrouchPose } from '../lib/units/unitCrouchPose'
+import { resolveNpcGoToCursorState } from '../lib/npc/npcGoToCursor'
 import { resolveHoverTarget, updateNpcFollow } from '../lib/npc/npcInteraction'
 import type { ControlBindingAction } from '../lib/audio/settings'
 import { getEnergyMoveSpeedMultiplier, updateUnitEnergy } from '../lib/units/unitEnergy'
@@ -68,9 +69,35 @@ function isHeroMeleeChargeAiming(unit: UnitEntity): boolean {
   return unit.heroPowerChargeStart != null && unit.heroPowerChargeTool === 'sword' && !unit.heroPowerReleaseQueued
 }
 
+function syncHeroLocomotionVisual(unit: UnitEntity, moving: boolean, animationSpeedFactor: number): void {
+  if (moving) {
+    if (unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
+    if (unit.sprite) {
+      unit.sprite.loop = true
+    }
+    applyUnitWalkingAnimationSpeed(unit, animationSpeedFactor)
+    if (!unit.sprite?.playing) unit.sprite?.play?.()
+    return
+  }
+  if (unit.currentSheet !== SHEET_TYPES.standing) unit.setTextures?.(SHEET_TYPES.standing)
+  unit.sprite?.stop?.()
+}
+
 export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost, frameScale: number): void {
   const unit = controller.heroUnit
   if (!unit) return
+  if (unit.isDead || unit.isDestroyed) {
+    if (unit.isDirectMoving) {
+      unit.isDirectMoving = false
+      unit.syncMountedHorseSprite?.()
+    }
+    controller.wasMoving = false
+    controller.mouseHeld = false
+    controller.defenseHeld = false
+    controller.primaryClickPoint = null
+    controller.interactInputOwner = null
+    return
+  }
   updateUnitEnergy(unit, TARGET_FRAME_MS * frameScale)
   updateUnitHealthRegen(unit, TARGET_FRAME_MS * frameScale)
   controller.updateCriticalHealthEffects(TARGET_FRAME_MS * frameScale, !controller.controls.context.paused)
@@ -84,22 +111,26 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   const defenseAiming = aimHeroDefenseAt(unit, aimPoint)
   updateHeroPowerCharge(unit)
   updateHeroDefense(unit)
-  const hoverTarget = resolveHoverTarget(
-    unit,
-    controller.controls.getWorldPointUnderCursor(),
-    controller.controls.getCellUnderCursor()
-  )
-  updateHeroCursor(controller.equippedItem, hoverTarget, Boolean(controller.pendingGoToNpcs))
+  const hoverCell = controller.controls.getCellUnderCursor()
+  const hoverTarget = resolveHoverTarget(unit, controller.controls.getWorldPointUnderCursor(), hoverCell)
+  const goToCursorState = controller.pendingGoToNpcs
+    ? resolveNpcGoToCursorState(controller.pendingGoToNpcs, hoverTarget, hoverCell, controller.controls.context)
+    : null
+  updateHeroCursor(controller.equippedItem, goToCursorState)
   controller.updateProximityInteractionPrompt()
   let attacking = Boolean(unit.actionLocked)
   if (
     controller.defenseHeld &&
     canHeroDefendWithTool(controller.equippedItem) &&
     !attacking &&
-    !unit.heroDefenseActive
+    !unit.heroDefenseActive &&
+    !unit.heroDefenseEnergyExhausted
   ) {
     controller.facePoint?.(controller.getShiftMoveLockedAimPoint() ?? aimPoint)
-    if (beginHeroDefense(unit, controller.equippedItem)) controller.mouseHeld = true
+    if (beginHeroDefense(unit, controller.equippedItem)) {
+      controller.mouseHeld = true
+      attacking = Boolean(unit.actionLocked)
+    }
   }
   if (
     controller.mouseHeld &&
@@ -198,17 +229,12 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     }
   }
   if (moved) {
-    const canUseMoveAnimation = !attacking || isHeroMeleeChargeAiming(unit)
-    if (canUseMoveAnimation && unit.currentSheet !== SHEET_TYPES.walking) unit.setTextures?.(SHEET_TYPES.walking)
-    if (canUseMoveAnimation) applyUnitWalkingAnimationSpeed(unit, moveAnimationSpeedFactor)
-    if (canUseMoveAnimation && !unit.sprite?.playing) unit.sprite?.play?.()
     controller.wasMoving = true
-  } else if (controller.wasMoving) {
+  } else {
     controller.wasMoving = false
-    if (!attacking || isHeroMeleeChargeAiming(unit)) {
-      unit.setTextures?.(SHEET_TYPES.standing)
-      unit.sprite?.stop?.()
-    }
+  }
+  if (!attacking || isHeroMeleeChargeAiming(unit)) {
+    syncHeroLocomotionVisual(unit, moved, moved ? moveAnimationSpeedFactor : 1)
   }
   applyUnitCrouchPose(unit, stealthMode)
 }

@@ -5,6 +5,7 @@ const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const test = require('node:test')
 const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
@@ -21,6 +22,72 @@ function loadPlainTsModule(relativePath) {
 }
 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
+
+test('blueprint resources accept direct sheet/frame texture assets', () => {
+  class Resource {
+    constructor(options) {
+      Object.assign(this, options)
+    }
+  }
+  const { MapBlueprintGeneration } = loadTsModule('app/classes/map/generation/MapBlueprintGeneration.ts', {
+    mocks: {
+      'pixi.js': {
+        Assets: {
+          cache: {
+            get: () => ({
+              cells: {},
+              resources: {
+                MedicinalHerb: {
+                  assets: { sheet: 'resources/wildgrass', frame: 0 },
+                },
+              },
+            }),
+          },
+        },
+      },
+      '../../Resource': { Resource },
+      '../../cell': { Cell: class {}, GenerationCell: class {} },
+      '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
+    },
+  })
+  const grid = Array.from({ length: 3 }, (_, i) =>
+    Array.from({ length: 3 }, (_, j) => ({
+      i,
+      j,
+      border: false,
+      category: 'Land',
+      has: null,
+      solid: false,
+      type: 'Grass',
+    }))
+  )
+  const map = {
+    context: {
+      app: {},
+      gamebox: {},
+      map: null,
+      performance: { record: () => {} },
+      scheduler: {},
+    },
+    grid,
+    resources: new Set(),
+    size: 2,
+    addChild: child => child,
+  }
+  map.context.map = map
+  const generation = new MapBlueprintGeneration(
+    map,
+    async () => {},
+    () => {}
+  )
+
+  generation.loadBlueprintResources({
+    resources: [{ type: 'MedicinalHerb', i: 1, j: 1, quantity: 2 }],
+  })
+
+  assert.equal(map.resources.size, 1)
+  assert.equal([...map.resources][0].type, 'MedicinalHerb')
+})
 
 function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   if (w && n) return '001'

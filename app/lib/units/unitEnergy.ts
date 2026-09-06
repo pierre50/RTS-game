@@ -13,7 +13,6 @@ import { isHeroControlled } from './unitControl'
 import type { EnergyEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-export const HERO_ENERGY_COLOR = '#2f8cff'
 const DEFAULT_UNIT_TOTAL_ENERGY = 10
 const DEFAULT_UNIT_ENERGY_REGEN_PER_SECOND = 2
 const DEFAULT_UNIT_ENERGY_REGEN_DELAY_MS = 650

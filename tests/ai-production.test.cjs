@@ -13,7 +13,7 @@ function loadAIStrategy(options = {}) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const constants = {
-    ACTION_TYPES: {},
+    ACTION_TYPES: { attack: 'attack', train: 'train' },
     BUILDING_TYPES: {
       archeryRange: 'ArcheryRange',
       barracks: 'Barracks',
@@ -29,9 +29,16 @@ function loadAIStrategy(options = {}) {
     },
     RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold', 'copper', 'iron'],
     RESOURCE_STORAGE_NAMES: ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'],
+    DAILY_CONSUMPTION_PER_VILLAGER: { food: 4 },
     UNIT_TYPES: {
       chief: 'Chief',
       villager: 'Villager',
+    },
+    VILLAGER_ARRIVAL_CONFIG: {
+      currentPopulationReserveDays: 3,
+      growthRate: 0.12,
+      maxArrivalsPerDay: 5,
+      newVillagerReserveDays: 5,
     },
     WORK_TYPES: {},
   }
@@ -127,7 +134,7 @@ test('ai production does not train villagers without a living chief', () => {
   const strategy = new AIStrategy(ai)
   const requested = []
   strategy.getEconomicDemand = () => ({})
-  strategy.buyUnits = (_current, _max, _buildings, unitType) => {
+  strategy.trainUnits = (_current, _max, _buildings, unitType) => {
     requested.push(unitType)
     return 1
   }
@@ -198,7 +205,7 @@ test('ai building strategy plants wheat fields after farming is unlocked', () =>
     houses: [],
     farms: [],
     granarys: [{ i: 9, j: 9, isBuilt: true }],
-    storagepits: [],
+    storagepits: [{}],
     markets: [{}],
     watchTowers: [],
     notBuiltHouses: [],
@@ -258,7 +265,7 @@ test('ai building strategy can spend resources stored in chests', () => {
     houses: [],
     farms: [],
     granarys: [{ i: 9, j: 9, isBuilt: true }],
-    storagepits: [],
+    storagepits: [{}],
     markets: [{}],
     watchTowers: [],
     notBuiltHouses: [],
@@ -284,6 +291,114 @@ test('ai reserve checks can read resources stored in chests', () => {
 
   assert.equal(strategy.canSpendWithReserve({ wood: 75 }, { wood: 5 }), true)
   assert.equal(strategy.canSpendWithReserve({ wood: 76 }, { wood: 5 }), false)
+})
+
+test('ai economic demand reserves food for automatic villager growth', () => {
+  const AIStrategy = loadAIStrategy()
+  const ai = {
+    age: 0,
+    buildings: [{ type: 'TownCenter', inventory: { resources: { wheat: 40 } } }],
+    config: { buildings: {}, units: {} },
+    difficultyConfig: { popCapMultiplier: 1 },
+    food: 40,
+    gold: 0,
+    phase: 'economy',
+    population: 10,
+    populationMax: 20,
+    stone: 0,
+    technologies: [],
+    units: [],
+    wood: 0,
+  }
+  const strategy = new AIStrategy(ai)
+
+  assert.equal(strategy.getEconomicDemand().food, 100)
+})
+
+test('ai economic demand includes stone-heavy core infrastructure', () => {
+  const AIStrategy = loadAIStrategy()
+  const ai = {
+    age: 0,
+    buildings: [{ type: 'TownCenter', inventory: { resources: { wheat: 999 } } }],
+    config: {
+      buildings: {
+        Granary: { cost: { stone: 50, wood: 180 } },
+        Market: { cost: { stone: 90, wood: 225 } },
+        StoragePit: { cost: { stone: 80, wood: 180 } },
+      },
+      units: {},
+    },
+    difficultyConfig: { popCapMultiplier: 1 },
+    food: 999,
+    gold: 0,
+    phase: 'economy',
+    population: 8,
+    populationMax: 20,
+    stone: 0,
+    technologies: [],
+    units: [],
+    wood: 0,
+  }
+  const strategy = new AIStrategy(ai)
+
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 0, gold: 0, stone: 220, wood: 585 })
+})
+
+test('ai building strategy anticipates automatic villager waves before adding houses', () => {
+  const bought = []
+  const AIStrategy = loadAIStrategy({
+    lib: {
+      getPositionInGridAroundInstance: () => ({ i: 10, j: 11 }),
+    },
+  })
+  const ai = {
+    age: 0,
+    buyBuilding: (i, j, type) => {
+      bought.push([i, j, type])
+      return true
+    },
+    config: { buildings: { House: { cost: { stone: 15, wood: 45 }, size: 2 } } },
+    food: 200,
+    gold: 0,
+    hasNotReachBuildingLimit: () => true,
+    phase: 'economy',
+    population: 17,
+    populationMax: 20,
+    stone: 20,
+    technologies: [],
+    units: [{ type: 'Chief', hitPoints: 10 }],
+    wood: 100,
+  }
+  const strategy = new AIStrategy(ai)
+
+  const actions = strategy.handleBuildingActions({
+    map: { grid: [] },
+    otherPlayers: [],
+    villagers: [],
+    maxVillagers: 16,
+    towncenters: [{ i: 8, j: 8 }],
+    infantry: [],
+    maxInfantry: 0,
+    barracks: [],
+    infantryUnit: null,
+    archers: [],
+    maxArcher: 0,
+    archeryRanges: [],
+    archerUnit: null,
+    cavalry: [],
+    maxCavalry: 0,
+    stables: [],
+    houses: [],
+    farms: [],
+    granarys: [],
+    storagepits: [],
+    markets: [],
+    watchTowers: [],
+    notBuiltHouses: [],
+  })
+
+  assert.equal(actions, 1)
+  assert.deepEqual(bought, [[10, 11, 'House']])
 })
 
 test('ai building strategy adds passage clearance to construction searches', () => {
@@ -336,8 +451,8 @@ test('ai building strategy adds passage clearance to construction searches', () 
     stables: [],
     houses: [],
     farms: [],
-    granarys: [],
-    storagepits: [],
+    granarys: [{}],
+    storagepits: [{}],
     markets: [{}],
     watchTowers: [],
     notBuiltHouses: [],
@@ -346,7 +461,7 @@ test('ai building strategy adds passage clearance to construction searches', () 
   assert.deepEqual(calls, [{ size: 1, blocksPassage: true, allowsOpenCell: true }])
 })
 
-test('ai production trains villagers again when a chief is alive', () => {
+test('ai production no longer buys villagers even when a chief is alive', () => {
   const AIStrategy = loadAIStrategy()
   const ai = {
     config: { units: { Villager: { cost: {} }, Fantassin: { cost: {} } } },
@@ -356,7 +471,7 @@ test('ai production trains villagers again when a chief is alive', () => {
   const strategy = new AIStrategy(ai)
   const requested = []
   strategy.getEconomicDemand = () => ({})
-  strategy.buyUnits = (_current, _max, _buildings, unitType) => {
+  strategy.trainUnits = (_current, _max, _buildings, unitType) => {
     requested.push(unitType)
     return 1
   }
@@ -376,5 +491,44 @@ test('ai production trains villagers again when a chief is alive', () => {
     academies: [],
   })
 
-  assert.equal(requested.includes('Villager'), true)
+  assert.equal(requested.includes('Villager'), false)
+  assert.equal(requested.includes('Fantassin'), true)
+})
+
+test('ai military production sends a villager to train instead of buying from the building', () => {
+  const AIStrategy = loadAIStrategy()
+  const calls = []
+  const ai = {
+    config: { units: { Fantassin: { cost: { food: 50 } } } },
+    food: 100,
+    technologies: [],
+    units: [],
+  }
+  const villager = {
+    type: 'Villager',
+    label: 'villager-1',
+    owner: ai,
+    action: null,
+    sendToEvt: (target, action, options) => {
+      calls.push(['sendToEvt', target.type, action, options])
+      return true
+    },
+  }
+  ai.units.push(villager)
+  const barracks = {
+    type: 'Barracks',
+    units: ['Fantassin'],
+    queue: [],
+    buyUnit: () => {
+      throw new Error('AI should not buy directly from the building')
+    },
+  }
+  const strategy = new AIStrategy(ai)
+  strategy.getEconomicDemand = () => ({})
+
+  const actions = strategy.trainUnits(0, 1, [barracks], 'Fantassin', [villager], {})
+
+  assert.equal(actions, 1)
+  assert.equal(villager.trainingTargetType, 'Fantassin')
+  assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true, allowPassageStop: true }]])
 })

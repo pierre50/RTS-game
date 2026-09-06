@@ -6,6 +6,7 @@ function loadModule(relativePath, mocks) {
   const defaultMocks = {
     './graphics/selection': {
       createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawCellBlinkingSelection: () => {},
       drawInstanceBlinkingSelection: () => {},
       getSelectionMarkerOffset: () => 0,
     },
@@ -71,10 +72,15 @@ const constants = {
   ACTION_TYPES: {
     attack: 'attack',
     build: 'build',
+    captureHorse: 'captureHorse',
     chopwood: 'chopwood',
+    convert: 'convert',
     farm: 'farm',
     forageberry: 'forageberry',
+    heal: 'heal',
     hunt: 'hunt',
+    minegold: 'minegold',
+    minestone: 'minestone',
     takemeat: 'takemeat',
     train: 'train',
   },
@@ -89,8 +95,23 @@ const constants = {
   },
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
+    fiberPlant: 'FiberPlant',
+    gold: 'Gold',
+    medicinalHerb: 'MedicinalHerb',
+    stone: 'Stone',
+    toxicHerb: 'ToxicHerb',
     tree: 'Tree',
     wheat: 'Wheat',
+  },
+  TYPE_ACTION: {
+    Berrybush: 'forageberry',
+    FiberPlant: 'forageberry',
+    Gold: 'minegold',
+    MedicinalHerb: 'forageberry',
+    Stone: 'minestone',
+    ToxicHerb: 'forageberry',
+    Tree: 'chopwood',
+    Wheat: 'farm',
   },
   COLOR_WHITE: 0xffffff,
   CELL_WIDTH: 64,
@@ -257,6 +278,68 @@ test('"aller vers" on a building entry routes the npc inside instead of stopping
   ])
 })
 
+test('"aller vers" on a building entry blinks the entry cell', () => {
+  const grid = createNpcTestGrid(6)
+  const entryCell = grid[4][4]
+  const blinkCalls = []
+  const npc = {
+    context: {
+      map: { grid },
+      getBuildingInteriorEntryTargetForCell: () => ({ label: 'house-1' }),
+      routeUnitIntoBuildingInterior: () => true,
+    },
+    i: 2,
+    j: 2,
+    label: 'npc-1',
+    owner: {},
+    sendTo: () => {},
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null, {
+    './graphics/selection': {
+      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawCellBlinkingSelection: cell => blinkCalls.push(cell),
+      drawInstanceBlinkingSelection: () => {},
+      getSelectionMarkerOffset: () => 0,
+    },
+  })
+
+  sendNpcGroupToTarget([npc], entryCell, { x: 4, y: 4 })
+
+  assert.deepEqual(blinkCalls, [entryCell])
+})
+
+test('"aller vers" on a building entry does not blink when no selected npc can enter', () => {
+  const grid = createNpcTestGrid(6)
+  const entryCell = grid[4][4]
+  const blinkCalls = []
+  const moveCalls = []
+  const npc = {
+    context: {
+      map: { grid },
+      getBuildingInteriorEntryTargetForCell: () => ({ label: 'house-1' }),
+      routeUnitIntoBuildingInterior: () => false,
+    },
+    i: 2,
+    j: 2,
+    label: 'npc-1',
+    owner: {},
+    sendTo: cell => moveCalls.push(cell),
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(null, {
+    './graphics/selection': {
+      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawCellBlinkingSelection: cell => blinkCalls.push(cell),
+      drawInstanceBlinkingSelection: () => {},
+      getSelectionMarkerOffset: () => 0,
+    },
+  })
+
+  sendNpcGroupToTarget([npc], entryCell, { x: 4, y: 4 })
+
+  assert.deepEqual(moveCalls, [entryCell])
+  assert.deepEqual(blinkCalls, [])
+})
+
 test('"aller vers" does not reset npc activity before knowing the cell is a building entry', () => {
   const grid = createNpcTestGrid(6)
   const targetCell = grid[4][4]
@@ -362,6 +445,46 @@ test('"aller vers" blinks the target once when any communicated NPC has a target
     ['move', { i: 5, j: 5, has: target }],
   ])
   assert.deepEqual(blinkCalls, [target])
+})
+
+test('"aller vers" does not blink a target when selected npcs only move toward it', () => {
+  const grid = createNpcTestGrid(6)
+  const targetCell = grid[4][4]
+  const target = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 4,
+    isDead: false,
+    isDestroyed: false,
+    j: 4,
+    type: constants.RESOURCE_TYPES.tree,
+    x: 100,
+    y: 100,
+  }
+  targetCell.has = target
+  const blinkCalls = []
+  const moveCalls = []
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target, {
+    './graphics/selection': {
+      createIsoSelectionMarker: options => ({ ...options, label: options.label, position: { y: 0 } }),
+      drawCellBlinkingSelection: () => {},
+      drawInstanceBlinkingSelection: instance => blinkCalls.push(instance),
+      getSelectionMarkerOffset: () => 0,
+    },
+  })
+  const infantry = {
+    context: { map: { grid } },
+    getActionCondition: () => false,
+    i: 2,
+    j: 2,
+    owner: {},
+    sendTo: cell => moveCalls.push(cell),
+    type: constants.UNIT_TYPES.infantry,
+  }
+
+  sendNpcGroupToTarget([infantry], targetCell, { x: 100, y: 100 })
+
+  assert.deepEqual(moveCalls, [targetCell])
+  assert.deepEqual(blinkCalls, [])
 })
 
 test('"aller vers" sends villagers to hunt a live animal under the cursor', () => {
@@ -502,6 +625,38 @@ test('"aller vers" sends a communicated villager to harvest wheat', () => {
   sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
 
   assert.deepEqual(calls, [['farm', target]])
+})
+
+test('"aller vers" sends a communicated villager to harvest wildgrass plants', () => {
+  const owner = { label: 'player' }
+  const target = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 5,
+    isDead: false,
+    isDestroyed: false,
+    j: 5,
+    quantity: 2,
+    type: constants.RESOURCE_TYPES.medicinalHerb,
+    x: 100,
+    y: 100,
+  }
+  const { sendNpcGroupToTarget } = loadNpcInteraction(target)
+  const calls = []
+  const npc = {
+    context: { map: { grid: [] } },
+    getActionCondition: (orderTarget, action) =>
+      orderTarget === target && action === constants.ACTION_TYPES.forageberry,
+    i: 1,
+    j: 1,
+    label: 'villager-1',
+    owner,
+    sendToBerrybush: orderTarget => calls.push(['forage', orderTarget]),
+    type: constants.UNIT_TYPES.villager,
+  }
+
+  sendNpcGroupToTarget([npc], { i: 5, j: 5, has: target }, { x: 100, y: 100 })
+
+  assert.deepEqual(calls, [['forage', target]])
 })
 
 test('"aller vers" refuses night resource work without moving villagers', () => {
@@ -945,7 +1100,7 @@ test('closing without an order after a real wake does not resume the old day job
   assert.deepEqual(calls, [])
 })
 
-test('"aller vers" cursor shows combat feedback over combat targets', () => {
+test('"aller vers" cursor shows combat feedback only when a selected npc can attack the target', () => {
   const classes = new Set()
   global.document = {
     body: {
@@ -962,7 +1117,15 @@ test('"aller vers" cursor shows combat feedback over combat targets', () => {
     const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
-    updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, true)
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
+    const target = { family: constants.FAMILY_TYPES.unit, hitPoints: 10, owner: { label: 'enemy' } }
+    const npc = {
+      getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.attack,
+    }
+
+    updateHeroCursor(null, resolveNpcGoToCursorState([npc], target, null, null))
 
     assert.equal(classes.has('hero-cursor-combat'), true)
     resetHeroCursor()
@@ -971,7 +1134,7 @@ test('"aller vers" cursor shows combat feedback over combat targets', () => {
   }
 })
 
-test('"aller vers" cursor shows the resource hand over buildings', () => {
+test('"aller vers" cursor shows the resource hand over actionable building work', () => {
   const classes = new Set()
   global.document = {
     body: {
@@ -988,7 +1151,15 @@ test('"aller vers" cursor shows the resource hand over buildings', () => {
     const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
-    updateHeroCursor(null, { family: constants.FAMILY_TYPES.building }, true)
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
+    const target = { family: constants.FAMILY_TYPES.building, hitPoints: 25, isBuilt: false, owner: { label: 'own' } }
+    const npc = {
+      getActionCondition: (candidate, action) => candidate === target && action === constants.ACTION_TYPES.build,
+    }
+
+    updateHeroCursor(null, resolveNpcGoToCursorState([npc], target, null, null))
 
     assert.equal(classes.has('hero-cursor-resource'), true)
     resetHeroCursor()
@@ -997,8 +1168,9 @@ test('"aller vers" cursor shows the resource hand over buildings', () => {
   }
 })
 
-test('"aller vers" cursor shows the pointer only while choosing an empty go-to target', () => {
+test('"aller vers" cursor shows enter feedback over building interior entry cells', () => {
   const classes = new Set()
+  const entryCell = { i: 4, j: 4 }
   global.document = {
     body: {
       classList: {
@@ -1014,18 +1186,28 @@ test('"aller vers" cursor shows the pointer only while choosing an empty go-to t
     const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
-    updateHeroCursor(null, null, false)
-    assert.equal(classes.has('hero-cursor-pointer'), false)
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
 
-    updateHeroCursor(null, null, true)
-    assert.equal(classes.has('hero-cursor-pointer'), true)
+    updateHeroCursor(
+      null,
+      resolveNpcGoToCursorState(
+        [{ owner: { label: 'own' } }],
+        { family: constants.FAMILY_TYPES.building, label: 'house-1' },
+        entryCell,
+        { getBuildingInteriorEntryTargetForCell: cell => (cell === entryCell ? { label: 'house-1' } : null) }
+      )
+    )
+
+    assert.equal(classes.has('hero-cursor-enter'), true)
     resetHeroCursor()
   } finally {
     delete global.document
   }
 })
 
-test('combat hover does not change the cursor outside "aller vers" picking', () => {
+test('"aller vers" cursor shows movement over empty go-to targets', () => {
   const classes = new Set()
   global.document = {
     body: {
@@ -1042,10 +1224,85 @@ test('combat hover does not change the cursor outside "aller vers" picking', () 
     const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
       '../constants': constants,
     })
-    updateHeroCursor(null, { family: constants.FAMILY_TYPES.unit }, false)
-
-    assert.equal(classes.has('hero-cursor-combat'), false)
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
+    updateHeroCursor(null)
     assert.equal(classes.has('hero-cursor-pointer'), false)
+
+    updateHeroCursor(null, resolveNpcGoToCursorState([{}], null, { i: 4, j: 4 }, null))
+    assert.equal(classes.has('hero-cursor-move'), true)
+    resetHeroCursor()
+  } finally {
+    delete global.document
+  }
+})
+
+test('"aller vers" cursor shows movement, not resource, when selected npcs cannot gather a resource', () => {
+  const classes = new Set()
+  global.document = {
+    body: {
+      classList: {
+        add: className => classes.add(className),
+        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
+      },
+      appendChild: () => {},
+    },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
+  }
+
+  try {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
+      '../constants': constants,
+    })
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
+    const tree = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.tree }
+    const infantry = {
+      getActionCondition: () => false,
+      type: constants.UNIT_TYPES.infantry,
+    }
+
+    updateHeroCursor(null, resolveNpcGoToCursorState([infantry], tree, null, null))
+
+    assert.equal(classes.has('hero-cursor-resource'), false)
+    assert.equal(classes.has('hero-cursor-move'), true)
+    resetHeroCursor()
+  } finally {
+    delete global.document
+  }
+})
+
+test('"aller vers" cursor shows the resource hand when a selected npc can gather a resource', () => {
+  const classes = new Set()
+  global.document = {
+    body: {
+      classList: {
+        add: className => classes.add(className),
+        remove: (...classNames) => classNames.forEach(className => classes.delete(className)),
+      },
+      appendChild: () => {},
+    },
+    createElement: () => ({ classList: { add: () => {}, remove: () => {}, toggle: () => {} }, style: {} }),
+  }
+
+  try {
+    const { resetHeroCursor, updateHeroCursor } = loadModule('app/lib/hero/heroCursor.ts', {
+      '../constants': constants,
+    })
+    const { resolveNpcGoToCursorState } = loadModule('app/lib/npc/npcGoToCursor.ts', {
+      '../constants': constants,
+    })
+    const tree = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.tree }
+    const villager = {
+      getActionCondition: (candidate, action) => candidate === tree && action === constants.ACTION_TYPES.chopwood,
+      type: constants.UNIT_TYPES.villager,
+    }
+
+    updateHeroCursor(null, resolveNpcGoToCursorState([villager], tree, null, null))
+
+    assert.equal(classes.has('hero-cursor-resource'), true)
     resetHeroCursor()
   } finally {
     delete global.document

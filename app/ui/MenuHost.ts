@@ -36,7 +36,7 @@ export interface MenuHost {
   updateTopbar?(): void
   updateActionTarget(): void
   getMessage(cost: ResourceAmount): string
-  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec
+  getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionRallyPointButton(): MenuButtonSpec
   getUnitTrainingMenuButton(unit: UnitEntity): MenuButtonSpec
@@ -47,6 +47,7 @@ export interface MenuHost {
   getActionMenuItems(selection: RuntimeEntity): MenuButtonSpec[]
   createActionIcon(src: string): HTMLImageElement
   playUiClick(): void
+  refreshInventory?(): void
   clearActionHotkeys(): void
   assignActionHotkey(id: string, usedKeys: Set<string>): string | null
   createActionMenuButton(

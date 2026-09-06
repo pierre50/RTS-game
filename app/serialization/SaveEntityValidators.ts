@@ -64,6 +64,8 @@ export function validateNaturalResourceRespawnSlots(slots: unknown, size: number
     if (!isObject(slot) || typeof slot.type !== 'string' || !config.resources?.[slot.type]) {
       fail(`Invalid save file: natural resource respawn slot ${index} has an unsupported type.`)
     }
+    validateOptionalFiniteNumber(slot.depletedDay, `natural resource respawn slot ${index} depletedDay`)
+    validateOptionalFiniteNumber(slot.totalQuantity, `natural resource respawn slot ${index} totalQuantity`)
   })
 }
 

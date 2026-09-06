@@ -227,6 +227,16 @@ export const BIOME_DURATION_OVERRIDES: Record<EnvironmentId, Partial<Record<Weat
     snow: [80, 160],
     sandstorm: [65, 180],
   },
+  Steppe: {
+    sunny: [380, 760],
+    clouding: [45, 110],
+    stormBuildUp: [22, 60],
+    rainLight: [70, 170],
+    rainHeavy: [30, 100],
+    clearing: [65, 150],
+    snow: [90, 210],
+    sandstorm: [45, 120],
+  },
 }
 
 export const BIOME_WEATHER_PROFILES: Record<EnvironmentId, WeatherBiomeProfile> = {
@@ -249,6 +259,11 @@ export const BIOME_WEATHER_PROFILES: Record<EnvironmentId, WeatherBiomeProfile> 
     precipMultiplier: 0.18,
     veilMultiplier: 0.45,
     windMultiplier: 0.65,
+  },
+  Steppe: {
+    precipMultiplier: 0.55,
+    veilMultiplier: 0.75,
+    windMultiplier: 1.25,
   },
 }
 
@@ -418,6 +433,50 @@ export const BIOME_TRANSITION_OVERRIDES: Record<EnvironmentId, TransitionMap> = 
       { chance: 0.56, phase: 'clearing' },
       { chance: 0.78, phase: 'sunny' },
       { chance: 1, phase: 'sandstorm' },
+    ],
+  },
+  Steppe: {
+    sunny: [
+      { chance: 0.24, phase: 'clouding' },
+      { chance: 0.34, phase: 'snow' },
+      { chance: 1, phase: 'sunny' },
+    ],
+    clouding: [
+      { chance: 0.28, phase: 'clearing' },
+      { chance: 0.44, phase: 'snow' },
+      { chance: 0.58, phase: 'rainLight' },
+      { chance: 0.72, phase: 'stormBuildUp' },
+      { chance: 1, phase: 'sunny' },
+    ],
+    stormBuildUp: [
+      { chance: 0.26, phase: 'clearing' },
+      { chance: 0.52, phase: 'snow' },
+      { chance: 0.7, phase: 'rainLight' },
+      { chance: 0.86, phase: 'rainHeavy' },
+      { chance: 1, phase: 'clouding' },
+    ],
+    rainLight: [
+      { chance: 0.36, phase: 'clearing' },
+      { chance: 0.58, phase: 'snow' },
+      { chance: 0.82, phase: 'clouding' },
+      { chance: 1, phase: 'rainHeavy' },
+    ],
+    rainHeavy: [
+      { chance: 0.22, phase: 'snow' },
+      { chance: 0.56, phase: 'rainLight' },
+      { chance: 0.84, phase: 'clearing' },
+      { chance: 1, phase: 'clouding' },
+    ],
+    clearing: [
+      { chance: 0.58, phase: 'sunny' },
+      { chance: 0.72, phase: 'snow' },
+      { chance: 1, phase: 'clouding' },
+    ],
+    snow: [
+      { chance: 0.38, phase: 'clearing' },
+      { chance: 0.62, phase: 'clouding' },
+      { chance: 0.8, phase: 'rainLight' },
+      { chance: 1, phase: 'snow' },
     ],
   },
 }

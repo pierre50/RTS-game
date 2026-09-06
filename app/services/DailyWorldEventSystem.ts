@@ -1,5 +1,8 @@
+import { DailyWorldReport } from './DailyWorldReport'
 import { NaturalRegrowthSystem } from './NaturalRegrowthSystem'
+import { MarketRestockSystem } from './world/MarketRestockSystem'
 import { TrapHarvestSystem } from './world/TrapHarvestSystem'
+import { VillagerArrivalSystem } from './world/VillagerArrivalSystem'
 import { VillagerUpkeepSystem } from './world/VillagerUpkeepSystem'
 import type { GameContextLike } from '../types/context'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
@@ -18,7 +21,9 @@ export class DailyWorldEventSystem {
       context.dayNight?.onDayChange?.((day, previousDay) => this.handleDayChange({ day, previousDay })) ?? null
     this.register(new NaturalRegrowthSystem(context))
     this.register(new TrapHarvestSystem(context))
+    this.register(new MarketRestockSystem(context))
     this.register(new VillagerUpkeepSystem(context))
+    this.register(new VillagerArrivalSystem(context))
   }
 
   register(handler: DailyWorldEventHandler): () => void {
@@ -30,7 +35,10 @@ export class DailyWorldEventSystem {
   }
 
   handleDayChange(event: DailyWorldEvent): void {
-    for (const handler of this.handlers) handler.handleDailyWorldEvent(event)
+    const report = new DailyWorldReport(this.context, event.day)
+    const eventWithReport = { ...event, report }
+    for (const handler of this.handlers) handler.handleDailyWorldEvent(eventWithReport)
+    report.flush()
   }
 
   destroy(): void {

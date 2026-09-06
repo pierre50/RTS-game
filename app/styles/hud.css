@@ -305,10 +305,6 @@
   color: #dbe7ff;
 }
 
-.hero-status-energy-fill {
-  opacity: 0;
-}
-
 .selection-info {
   position: relative;
   display: flex;
@@ -989,6 +985,56 @@
   background: rgba(0, 0, 0, 0.14);
 }
 
+.hero-market-panel,
+.market-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-8);
+}
+
+.hero-market-panel {
+  gap: var(--ui-gap-12);
+}
+
+.hero-market-wallet,
+.hero-market-sell-copy {
+  color: var(--color-stone-light);
+  font-size: var(--font-size-sm);
+  text-shadow: var(--text-shadow-light-ui);
+}
+
+.market-title {
+  padding-bottom: 2px;
+  border-bottom: var(--ui-slot-border);
+}
+
+.market-grid {
+  min-height: var(--ui-slot-size);
+}
+
+.market-slot {
+  position: relative;
+  width: 104px;
+  min-width: 104px;
+  padding-bottom: 24px;
+  overflow: hidden;
+}
+
+.market-gold-badge {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  left: 6px;
+  overflow: hidden;
+  color: #ffd979;
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow: var(--text-shadow-dark-ui);
+}
+
 .inventory-equipment-slot {
   width: 108px;
   min-width: 108px;
@@ -1079,12 +1125,20 @@
 }
 
 .action-menu-technologies-page > .ui-action-row,
-.action-menu-craft-page > .ui-action-row {
+.action-menu-craft-page > .ui-action-row,
+.action-menu-technologies-page > .menu-tooltip-hitbox > .ui-action-row,
+.action-menu-craft-page > .menu-tooltip-hitbox > .ui-action-row {
   position: relative;
   gap: 2px var(--ui-gap-8);
 }
 
-.action-menu-technologies-page > .ui-action-row.is-acquired {
+.action-menu-technologies-page > .menu-tooltip-hitbox,
+.action-menu-craft-page > .menu-tooltip-hitbox {
+  width: 100%;
+}
+
+.action-menu-technologies-page > .ui-action-row.is-acquired,
+.action-menu-technologies-page > .menu-tooltip-hitbox > .ui-action-row.is-acquired {
   color: var(--msg-success-color);
   border-color: var(--msg-success-border);
   background: var(--msg-success-bg);
@@ -1180,6 +1234,18 @@
 
 .npc-orders-options .ui-btn {
   width: 100%;
+}
+
+.npc-orders-options .nested-button-menu-label,
+.npc-orders-options .nested-button-menu-detail {
+  display: block;
+  width: 100%;
+}
+
+.npc-orders-options .nested-button-menu-detail {
+  margin-top: 4px;
+  color: var(--main-accent-hover);
+  font-size: var(--font-size-sm);
 }
 
 .hero-building-menu {
@@ -1290,16 +1356,23 @@
   display: none;
 }
 
-.hero-building-menu-body > .ui-action-row {
+.hero-building-menu-body > .ui-action-row,
+.hero-building-menu-body > .menu-tooltip-hitbox > .ui-action-row {
   gap: 2px var(--ui-gap-10);
 }
 
-.hero-building-menu-body > .ui-action-row.is-text-only {
+.hero-building-menu-body > .menu-tooltip-hitbox {
+  width: 100%;
+}
+
+.hero-building-menu-body > .ui-action-row.is-text-only,
+.hero-building-menu-body > .menu-tooltip-hitbox > .ui-action-row.is-text-only {
   grid-template-columns: minmax(0, 1fr);
   min-height: 0;
 }
 
-.hero-building-menu-body > .ui-action-row.hero-building-menu-debug {
+.hero-building-menu-body > .ui-action-row.hero-building-menu-debug,
+.hero-building-menu-body > .menu-tooltip-hitbox > .ui-action-row.hero-building-menu-debug {
   padding: 8px 10px;
 }
 
@@ -1406,6 +1479,12 @@ body.hero-game-cursor.hero-cursor-move {
     auto;
 }
 
+body.hero-game-cursor.hero-cursor-enter {
+  cursor:
+    url('../../public/assets/interface/pointers/main/000.png') 2 2,
+    auto;
+}
+
 body.hero-game-cursor.hero-cursor-bow {
   cursor:
     url('../../public/assets/interface/pointers/main/005.png') 27 14,
@@ -1455,6 +1534,11 @@ body.hero-cursor-hidden {
   transform: translate(-21px, -11px);
 }
 
+#hero-virtual-cursor.hero-cursor-enter {
+  background-image: url('../../public/assets/interface/pointers/main/000.png');
+  transform: translate(-2px, -2px);
+}
+
 #hero-virtual-cursor.hero-cursor-bow {
   background-image: url('../../public/assets/interface/pointers/main/005.png');
   transform: translate(-27px, -14px);
@@ -1500,7 +1584,7 @@ body.hero-cursor-hidden {
 
 .message {
   position: fixed;
-  top: 50px;
+  top: max(64px, calc(env(safe-area-inset-top) + 64px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;

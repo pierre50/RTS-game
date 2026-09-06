@@ -1,20 +1,29 @@
-import { UNIT_TYPES } from '../constants'
-import { hasLivingChief } from '../lib/chief'
-import type { UnitCreationExtra } from '../types/entities'
 import type { AIBuildingLike, AIResourceAmount, AIStrategyPlayerLike, AIStrategySnapshot } from './types'
 
 type ProductionStrategy = {
   ai: AIStrategyPlayerLike
-  buyUnits(
+  trainUnits(
     currentCount: number,
     maxCount: number,
     buildingList: AIBuildingLike[],
     unitType: string,
-    extra: UnitCreationExtra | undefined,
+    villagers: AIStrategySnapshot['villagers'],
     reserve?: AIResourceAmount,
     debug?: boolean
   ): number
   getEconomicDemand(): AIResourceAmount
+}
+
+function addReservedTrainingCost(
+  reserve: AIResourceAmount,
+  cost: AIResourceAmount = {},
+  count: number
+): AIResourceAmount {
+  const next = { ...reserve }
+  for (const [resource, amount] of Object.entries(cost) as Array<[keyof AIResourceAmount, number | undefined]>) {
+    if (typeof amount === 'number') next[resource] = (next[resource] ?? 0) + amount * count
+  }
+  return next
 }
 
 export function handleAIProductionActions(
@@ -22,36 +31,17 @@ export function handleAIProductionActions(
   snapshot: AIStrategySnapshot,
   debug: boolean = false
 ): number {
-  const {
-    villagers,
-    maxVillagers,
-    towncenters,
-    infantry,
-    maxInfantry,
-    barracks,
-    infantryUnit,
-    archers,
-    maxArcher,
-    archeryRanges,
-    archerUnit,
-  } = snapshot
+  const { villagers, infantry, maxInfantry, barracks, infantryUnit, archers, maxArcher, archeryRanges, archerUnit } =
+    snapshot
 
   let actions = 0
-  const reserve = strategy.getEconomicDemand()
-  const chiefAlive = hasLivingChief(strategy.ai)
+  let reserve = strategy.getEconomicDemand()
 
-  if (chiefAlive) {
-    actions += strategy.buyUnits(
-      villagers.length,
-      maxVillagers,
-      towncenters,
-      UNIT_TYPES.villager,
-      undefined,
-      reserve,
-      debug
-    )
-  }
-  actions += strategy.buyUnits(infantry.length, maxInfantry, barracks, infantryUnit, undefined, reserve, debug)
-  actions += strategy.buyUnits(archers.length, maxArcher, archeryRanges, archerUnit, undefined, reserve, debug)
+  const infantryOrders = strategy.trainUnits(infantry.length, maxInfantry, barracks, infantryUnit, villagers, reserve, debug)
+  actions += infantryOrders
+  reserve = addReservedTrainingCost(reserve, strategy.ai.config.units[infantryUnit]?.cost, infantryOrders)
+
+  const archerOrders = strategy.trainUnits(archers.length, maxArcher, archeryRanges, archerUnit, villagers, reserve, debug)
+  actions += archerOrders
   return actions
 }

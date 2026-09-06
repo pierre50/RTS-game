@@ -1,6 +1,6 @@
 import { ACTION_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { getHeroInteractionTargetPoint, isHeroActionInRange } from './heroActionRange'
-import { getActionCondition, type CombatEntity } from '../combat'
+import { getActionCondition, prepareAutomaticParry, type CombatEntity } from '../combat'
 import { applyCombatHit } from '../combat/combatHit'
 import { applyDiplomaticAggression, canTriggerDiplomaticAggression } from '../combat/diplomaticAggression'
 import { getEquipmentCombatStats, getUnitWorkEquipment, UNARMED_UNIT_WEAPON_POWER } from '../equipment/equipmentStats'
@@ -86,9 +86,14 @@ function findHeroMeleeTargetInAim(hero: UnitEntity, tool: HeroEquippedItem): Run
 
 export function playEmptyHandWhiff(hero: UnitEntity): boolean {
   if (!spendHeroEnergy(hero, HERO_WHIFF_ENERGY_ACTION)) return false
-  playHeroToolAnimation(hero, () => playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' }), SLASH_IMPACT_FRAME, {
-    recoveryAnimation: 'reverseSlash',
-  })
+  playHeroToolAnimation(
+    hero,
+    () => playAudibleSoundCue(hero, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' }),
+    SLASH_IMPACT_FRAME,
+    {
+      recoveryAnimation: 'reverseSlash',
+    }
+  )
   return true
 }
 
@@ -139,6 +144,7 @@ function strikeHeroMeleeTarget(
   if (!spendHeroEnergy(hero, ACTION_TYPES.attack)) return 'blocked'
   hero.action = ACTION_TYPES.attack
   hero.setDest?.(resolvedTarget)
+  prepareAutomaticParry?.(resolvedTarget)
   playHeroToolAnimation(
     hero,
     () => {

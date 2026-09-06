@@ -120,8 +120,7 @@ test('helmet decor with hurt art exposes death sheets', () => {
   const nordLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
   const hornBack = nordLayers.find(
     layer =>
-      layer.equipmentKey === 'upward_horns_white' &&
-      layer.walkingSheet === 'equipments/upward_horns_white/back/walking'
+      layer.equipmentKey === 'upward_horns_white' && layer.walkingSheet === 'equipments/upward_horns_white/back/walking'
   )
   const hornFront = nordLayers.find(
     layer =>
@@ -237,17 +236,29 @@ test('hero baked appearance includes inventory equipped layers', () => {
   }
 
   assert.equal(applyBakedLpcUnitAssets(hero), true)
-  assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'sword_ceramic'), false)
+  assert.equal(
+    hero.appearance.layers.some(layer => layer.equipmentKey === 'sword_ceramic'),
+    false
+  )
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'sword_bronze'))
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'))
 
   hero.work = constants.WORK_TYPES.hunter
   assert.equal(applyBakedLpcUnitAssets(hero), true)
-  assert.equal(hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'bow'), false)
-  assert.equal(hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'quiver'), false)
+  assert.equal(
+    hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'bow'),
+    false
+  )
+  assert.equal(
+    hero.appearance.layers.some(layer => layer.workTypes?.includes('hunter') && layer.equipmentKey === 'quiver'),
+    false
+  )
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'bow'))
   assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'arrow_copper'))
-  assert.equal(hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'), false)
+  assert.equal(
+    hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'),
+    false
+  )
 })
 
 test('runtime equipment preload collection deduplicates used equipment atlases', () => {
@@ -315,8 +326,13 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
       this.filters = null
     }
     destroy() {}
-    gotoAndStop(frame) { this.currentFrame = frame }
-    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+    }
+    gotoAndPlay(frame) {
+      this.currentFrame = frame
+      this.playing = true
+    }
   }
   const spritesheet = {
     data: { animationSpeed: 0.2 },
@@ -339,7 +355,10 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
       changeSpritePalette: () => {},
       getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
     },
-    '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
+    '../../lib/lpc/appearanceLayers': {
+      getAppearanceAgeSheetOverride: () => undefined,
+      getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
+    },
     '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
     '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
   })
@@ -359,9 +378,15 @@ test('hero hair appearance layer is hidden while a helmet is equipped and restor
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     getChildIndex: () => 0,
-    addChildAt(sprite) { sprite.parent = this },
-    addChild(sprite) { sprite.parent = this },
-    removeChild(sprite) { sprite.parent = null },
+    addChildAt(sprite) {
+      sprite.parent = this
+    },
+    addChild(sprite) {
+      sprite.parent = this
+    },
+    removeChild(sprite) {
+      sprite.parent = null
+    },
   }
 
   syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.walking)
@@ -396,8 +421,13 @@ test('appearance layers inherit the unit action frame sequence', () => {
       this.filters = null
     }
     destroy() {}
-    gotoAndStop(frame) { this.currentFrame = frame }
-    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+    }
+    gotoAndPlay(frame) {
+      this.currentFrame = frame
+      this.playing = true
+    }
   }
   const spritesheet = {
     data: { animationSpeed: 0.25 },
@@ -420,7 +450,10 @@ test('appearance layers inherit the unit action frame sequence', () => {
       changeSpritePalette: () => {},
       getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
     },
-    '../../lib/lpc/appearanceLayers': { getAppearanceAgeSheetOverride: () => undefined, getAppearanceLayerZIndex: ({ layer }) => layer.zIndex },
+    '../../lib/lpc/appearanceLayers': {
+      getAppearanceAgeSheetOverride: () => undefined,
+      getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
+    },
     '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
     '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
     '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
@@ -441,8 +474,12 @@ test('appearance layers inherit the unit action frame sequence', () => {
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     getChildIndex: () => 0,
-    addChildAt(sprite) { sprite.parent = this },
-    addChild(sprite) { sprite.parent = this },
+    addChildAt(sprite) {
+      sprite.parent = this
+    },
+    addChild(sprite) {
+      sprite.parent = this
+    },
   }
 
   syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
@@ -456,6 +493,97 @@ test('appearance layers inherit the unit action frame sequence', () => {
   unit.sprite.currentFrame = 8
   syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
   assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 8)
+})
+
+test('appearance layers keep explicit action frame sequences when the unit uses a tool sequence', () => {
+  class AnimatedSprite {
+    constructor(textures) {
+      this.textures = textures
+      this.label = ''
+      this.eventMode = 'none'
+      this.position = { x: 0, y: 0 }
+      this.scale = { x: 1, y: 1 }
+      this.anchor = { set: () => {} }
+      this.roundPixels = false
+      this.loop = true
+      this.updateAnchor = false
+      this.zIndex = 0
+      this.visible = true
+      this.parent = null
+      this.playing = false
+      this.currentFrame = 0
+      this.filters = null
+    }
+    destroy() {}
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+    }
+    gotoAndPlay(frame) {
+      this.currentFrame = frame
+      this.playing = true
+    }
+  }
+  const spritesheet = {
+    data: { animationSpeed: 0.25 },
+    textures: Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`00${index}.png`, { id: index }])),
+  }
+  const { syncUnitAppearanceLayers } = loadModule('app/classes/unit/UnitAppearanceLayers.ts', {
+    'pixi.js': {
+      Assets: {
+        cache: {
+          has: id => id === 'hair/action',
+          get: id => (id === 'hair/action' ? spritesheet : undefined),
+        },
+      },
+      AnimatedSprite,
+    },
+    '../../constants': constants,
+    '../../lib': {
+      bindAnimatedSpriteToTicker: () => {},
+      changeSpriteColor: () => {},
+      changeSpritePalette: () => {},
+      getSpriteFrameSelection: textures => ({ textures: Object.values(textures), mirrored: false }),
+    },
+    '../../lib/lpc/appearanceLayers': {
+      getAppearanceAgeSheetOverride: () => undefined,
+      getAppearanceLayerZIndex: ({ layer }) => layer.zIndex,
+    },
+    '../../lib/lpc/equipment': { civilizationKey: civ => String(civ || '').toLowerCase() },
+    '../../lib/lpc/lazyEquipmentAssets': { loadDynamicEquipmentAssetQueued: () => Promise.resolve() },
+    '../../lib/units/unitExperience': { getUnitEquipmentTier: () => 0 },
+  })
+  const unit = {
+    action: 'minestone',
+    actionFrameSequence: [5, 5, 4, 4, 3, 1, 0, 0, 0, 0],
+    appearance: { layers: [{ zIndex: 11, actionSheet: 'hair/action', actionFrameSequence: [2, 1, 0] }] },
+    appearanceLayerSprites: new Map(),
+    context: { app: {}, map: { ready: true } },
+    degree: 180,
+    currentSheet: constants.SHEET_TYPES.action,
+    sheetDirectionCounts: {},
+    sheetDirectionOrders: {},
+    sprite: { currentFrame: 1, loop: true, playing: false },
+    type: constants.UNIT_TYPES.villager,
+    work: constants.WORK_TYPES.stoneminer,
+    owner: { civ: 'Hellas', color: 'blue' },
+    getMountedRiderX: () => 0,
+    getMountedRiderY: () => 0,
+    getChildIndex: () => 0,
+    addChildAt(sprite) {
+      sprite.parent = this
+    },
+    addChild(sprite) {
+      sprite.parent = this
+    },
+  }
+
+  syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
+
+  assert.deepEqual(
+    unit.appearanceLayerSprites.get(0).textures.map(texture => texture.id),
+    [2, 1, 0]
+  )
+  assert.equal(unit.appearanceLayerSprites.get(0).currentFrame, 1)
 })
 
 test('appearance layers stay frame-locked to the unit sprite', () => {
@@ -478,8 +606,14 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
       this.filters = null
     }
     destroy() {}
-    gotoAndStop(frame) { this.currentFrame = frame; this.playing = false }
-    gotoAndPlay(frame) { this.currentFrame = frame; this.playing = true }
+    gotoAndStop(frame) {
+      this.currentFrame = frame
+      this.playing = false
+    }
+    gotoAndPlay(frame) {
+      this.currentFrame = frame
+      this.playing = true
+    }
   }
   const spritesheet = {
     data: { animationSpeed: 0.1 },
@@ -526,18 +660,25 @@ test('appearance layers stay frame-locked to the unit sprite', () => {
     getMountedRiderX: () => 0,
     getMountedRiderY: () => 0,
     getChildIndex: () => 0,
-    addChildAt(sprite) { sprite.parent = this },
-    addChild(sprite) { sprite.parent = this },
+    addChildAt(sprite) {
+      sprite.parent = this
+    },
+    addChild(sprite) {
+      sprite.parent = this
+    },
   }
 
   syncUnitAppearanceLayers(unit, constants.SHEET_TYPES.action)
   const hair = unit.appearanceLayerSprites.get(0)
   assert.equal(hair.animationSpeed, 0.25)
   assert.equal(hair.currentFrame, 2)
+  assert.equal(hair.playing, false)
+  assert.equal(hair.onFrameChange, undefined)
+  assert.equal(typeof unit.sprite._afterAnimationUpdate, 'function')
 
   hair.currentFrame = 4
   unit.sprite.currentFrame = 1
-  hair.onFrameChange(4)
+  unit.sprite._afterAnimationUpdate()
   assert.equal(hair.currentFrame, 1)
 })
 
@@ -665,9 +806,7 @@ test('infantry equipment layers unlock by level and switch metal by civilization
   assert.equal(centurionCrest?.mountedSheet, 'equipments/centurion_crest/front/walking')
   assert.equal(centurionPlumage, undefined)
   const nordLayers = dynamicEquipmentLayersForUnit('Fantassin', 'Nord')
-  const nordHorns = nordLayers.find(
-    layer => layer.walkingSheet === 'equipments/upward_horns_white/front/walking'
-  )
+  const nordHorns = nordLayers.find(layer => layer.walkingSheet === 'equipments/upward_horns_white/front/walking')
   assert.equal(nordHorns?.minLevel, 16)
   assert.equal(nordHorns?.palette, undefined)
   assert.equal(nordHorns?.mountedSheet, 'equipments/upward_horns_white/front/walking')
@@ -745,9 +884,7 @@ test('archer equipment follows soldier armor progression without shield', () => 
   assert.equal(shield, undefined)
 
   const arrowAssets = dynamicEquipmentAssets().filter(asset => asset.alias.includes('/weapon/arrow'))
-  assert.deepEqual(arrowAssets.map(asset => asset.alias).sort(), [
-    'equipments/weapon/arrow',
-  ])
+  assert.deepEqual(arrowAssets.map(asset => asset.alias).sort(), ['equipments/weapon/arrow'])
 })
 
 test('bandit units use fixed runtime equipment loadouts', () => {
@@ -777,13 +914,9 @@ test('bandit units use fixed runtime equipment loadouts', () => {
 
   const chiefLayers = dynamicEquipmentLayersForUnit('BanditChief')
   const hornFront = chiefLayers.find(layer => layer.walkingSheet === 'equipments/upward_horns_ceramic/front/walking')
-  const helmet = chiefLayers.find(
-    layer => layer.walkingSheet === 'equipments/helmet_barbarian_ceramic/front/walking'
-  )
+  const helmet = chiefLayers.find(layer => layer.walkingSheet === 'equipments/helmet_barbarian_ceramic/front/walking')
   const capeFront = chiefLayers.find(layer => layer.walkingSheet === 'equipments/cape_solid/front/walking')
-  const shield = chiefLayers.find(
-    layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking'
-  )
+  const shield = chiefLayers.find(layer => layer.walkingSheet === 'equipments/round_shield_ceramic_slash/front/walking')
   assert.equal(hornFront?.mountedSheet, 'equipments/upward_horns_ceramic/front/walking')
   assert.equal(hornFront?.shootingSheet, 'equipments/upward_horns_ceramic/front/shooting')
   assert.equal(hornFront?.dyingSheet, 'equipments/upward_horns_ceramic/front/dying')
@@ -848,10 +981,7 @@ test('unique bandit baked units do not include civilization in asset paths', () 
 })
 
 test('helmeted infantry swaps to no-hair baked base', () => {
-  const cachedAliases = new Set([
-    'units/infantry/hellas/male/walking',
-    'units/infantry_nohair/hellas/male/walking',
-  ])
+  const cachedAliases = new Set(['units/infantry/hellas/male/walking', 'units/infantry_nohair/hellas/male/walking'])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
@@ -885,10 +1015,7 @@ test('helmeted infantry swaps to no-hair baked base', () => {
 })
 
 test('helmeted archer swaps to no-hair baked base', () => {
-  const cachedAliases = new Set([
-    'units/infantry/hellas/male/walking',
-    'units/infantry_nohair/hellas/male/walking',
-  ])
+  const cachedAliases = new Set(['units/infantry/hellas/male/walking', 'units/infantry_nohair/hellas/male/walking'])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
@@ -922,10 +1049,7 @@ test('helmeted archer swaps to no-hair baked base', () => {
 })
 
 test('looted corpse swaps back to hair baked base when helmet is removed', () => {
-  const cachedAliases = new Set([
-    'units/infantry/hellas/male/walking',
-    'units/infantry_nohair/hellas/male/walking',
-  ])
+  const cachedAliases = new Set(['units/infantry/hellas/male/walking', 'units/infantry_nohair/hellas/male/walking'])
   const { applyBakedLpcUnitAssets } = loadModule('app/lib/lpc/baked.ts', {
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
@@ -958,5 +1082,8 @@ test('looted corpse swaps back to hair baked base when helmet is removed', () =>
   corpse.lootEquipment = ['sword_ceramic']
   assert.equal(applyBakedLpcUnitAssets(corpse), true)
   assert.equal(corpse.assets.walkingSheet, 'units/infantry/hellas/male/walking')
-  assert.equal(corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'), false)
+  assert.equal(
+    corpse.appearance.layers.some(layer => layer.equipmentKey === 'helmet_pointed_ceramic'),
+    false
+  )
 })

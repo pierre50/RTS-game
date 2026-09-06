@@ -34,6 +34,7 @@ const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
   DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Horse: 0.75 },
   Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Horse: 0.65 },
   Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Horse: 0.9 },
+  Steppe: { Deer: 0.8, Hare: 1.2, BlackGrouse: 1.05, Fox: 0.8, Boar: 0.35, Horse: 3.2 },
 }
 
 function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {

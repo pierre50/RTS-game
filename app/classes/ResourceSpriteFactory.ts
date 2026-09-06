@@ -1,5 +1,5 @@
 import { AnimatedSprite, Assets, Polygon, Sprite, type Texture } from 'pixi.js'
-import { RESOURCE_TYPES } from '../constants'
+import { RESOURCE_TYPES, WILDGRASS_RESOURCE_TYPES } from '../constants'
 import {
   bindAnimatedSpriteToTicker,
   getAnimationFrames,
@@ -11,6 +11,21 @@ import {
 import { getTerrainAssets, normalizeResourceTextureRef, type ResourceOptions } from './ResourceTexture'
 import type { Resource } from './Resource'
 import type { TextureWithCacheIds } from './ResourceVisuals'
+
+const WILDGRASS_ANCHOR_Y = 0.82
+
+function isWildgrassResource(resource: Resource): boolean {
+  return WILDGRASS_RESOURCE_TYPES.has(resource.type)
+}
+
+function applyStaticResourceAnchor(sprite: Sprite, resource: Resource, texture: Texture): void {
+  if (texture.defaultAnchor) {
+    sprite.anchor.copyFrom(texture.defaultAnchor)
+  }
+  if (isWildgrassResource(resource)) {
+    sprite.anchor.set(0.5, WILDGRASS_ANCHOR_Y)
+  }
+}
 
 export function createResourceSprite(
   resource: Resource,
@@ -70,6 +85,7 @@ function createStaticResourceSprite(resource: Resource, cell: { type: string }):
   const spritesheet = Assets.cache.get(getTextureSheet(normalizedTextureRef))
   resource.textureName = textureRefToString(normalizedTextureRef)
   const sprite = Sprite.from(texture)
+  applyStaticResourceAnchor(sprite, resource, texture)
   if (resource.type === RESOURCE_TYPES.berrybush && resource.berrybushFullTextureName == null) {
     const berrybushTextureRef = parseTextureRef(resource.textureName)
     if (berrybushTextureRef.frame > 0) {

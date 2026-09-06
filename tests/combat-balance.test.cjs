@@ -36,7 +36,8 @@ function loadPlayerConfig() {
     '../constants/sounds': { SOUND_CUES: soundCues },
     '../lib/equipment/equipmentStats': { applyEquipmentStatsToUnitConfig: () => {} },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }

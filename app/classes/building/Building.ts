@@ -57,6 +57,7 @@ export type BuildingOptions = Partial<BuildingConfig> & {
   type: string
   spaceId?: string
   inventory?: BuildingEntity['inventory']
+  marketStock?: string[]
   horseAmount?: number
   stableHorses?: Array<{ horseColor?: string; tamingStatus?: HorseTamingStatus }>
   isBuilt?: boolean
@@ -125,6 +126,7 @@ export class Building extends Instance implements BuildingEntity {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  marketStock?: string[]
   visualSettingsCleanup: (() => void) | null
 
   constructor(options: BuildingOptions, context: GameContextLike) {

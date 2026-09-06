@@ -3,10 +3,12 @@ import { isUnitMeleeWeaponEquipped } from '../equipment/equipmentStats'
 import { chance } from '../random'
 import { isHeroControlled } from '../units/unitControl'
 import { getParryChanceBonus, grantUnitXp, XP_CATEGORIES, XP_PARRY_SUCCESS } from '../units/unitExperience'
+import { showAutomaticParryVisual } from './parryVisual'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 
 const BASE_PARRY_CHANCE = 0.08
 const MAX_PARRY_CHANCE = 0.45
+const AUTOMATIC_PARRY_ACTIVE_MS = 700
 // A streak of successful parries gets progressively harder to keep up — the
 // same unit blocking every hit in a flurry would trivialize melee combat.
 const PARRY_FATIGUE_WINDOW_MS = 4000
@@ -28,19 +30,39 @@ export function getParryChance(unit: UnitEntity, now = performance.now()): numbe
 
 function registerParrySuccess(unit: UnitEntity, now: number): void {
   const withinWindow = unit.lastParrySuccessAt != null && now - unit.lastParrySuccessAt < PARRY_FATIGUE_WINDOW_MS
-  unit.parryStreak = Math.min((withinWindow ? unit.parryStreak ?? 0 : 0) + 1, PARRY_FATIGUE_MAX_STACKS)
+  unit.parryStreak = Math.min((withinWindow ? (unit.parryStreak ?? 0) : 0) + 1, PARRY_FATIGUE_MAX_STACKS)
   unit.lastParrySuccessAt = now
+}
+
+function canUseAutomaticParry(target: RuntimeEntity): target is UnitEntity {
+  if (target.family !== FAMILY_TYPES.unit) return false
+  const unit = target as UnitEntity
+  return (unit.hitPoints ?? 0) > 0 && !unit.isDead && !unit.isDestroyed && !isHeroControlled(unit)
 }
 
 // The automatic, chance-based counterpart to the player-controlled hero's manual
 // hold-right-click block (see beginHeroDefense/heroDefenseActive in heroTools.ts) —
-// used by every unit that isn't currently under direct hero control.
-export function attemptAutomaticParry(target: RuntimeEntity, now = performance.now()): boolean {
-  if (target.family !== FAMILY_TYPES.unit) return false
+// used by every unit that isn't currently under direct hero control. The unit
+// must first enter the guard window while the incoming melee swing is preparing.
+export function prepareAutomaticParry(target: RuntimeEntity, now = performance.now()): boolean {
+  if (!canUseAutomaticParry(target)) return false
   const unit = target as UnitEntity
-  if ((unit.hitPoints ?? 0) <= 0 || unit.isDead || isHeroControlled(unit)) return false
+  if (unit.automaticParryActiveUntil != null && unit.automaticParryActiveUntil > now) return true
   if (!chance(getParryChance(unit, now))) return false
+  unit.automaticParryActiveUntil = now + AUTOMATIC_PARRY_ACTIVE_MS
+  showAutomaticParryVisual(unit, AUTOMATIC_PARRY_ACTIVE_MS)
+  return true
+}
+
+export function attemptAutomaticParry(target: RuntimeEntity, now = performance.now()): boolean {
+  if (!canUseAutomaticParry(target)) return false
+  const unit = target as UnitEntity
+  if (unit.automaticParryActiveUntil == null || unit.automaticParryActiveUntil < now) {
+    unit.automaticParryActiveUntil = null
+    return false
+  }
   registerParrySuccess(unit, now)
   grantUnitXp(unit, XP_CATEGORIES.defense, XP_PARRY_SUCCESS)
+  unit.automaticParryActiveUntil = null
   return true
 }

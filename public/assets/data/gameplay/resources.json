@@ -21,6 +21,42 @@
     "isAnimated": true,
     "spriteScale": 0.875
   },
+  "MedicinalHerb": {
+    "occlusionFade": false,
+    "selectionFactor": 1.1,
+    "totalQuantity": 2,
+    "totalHitPoints": 1,
+    "color": "#5FAE45",
+    "spriteScale": 1.25,
+    "assets": {
+      "sheet": "resources/wildgrass",
+      "frame": 0
+    }
+  },
+  "ToxicHerb": {
+    "occlusionFade": false,
+    "selectionFactor": 1.1,
+    "totalQuantity": 2,
+    "totalHitPoints": 1,
+    "color": "#7B4CC5",
+    "spriteScale": 1.25,
+    "assets": {
+      "sheet": "resources/wildgrass",
+      "frame": 1
+    }
+  },
+  "FiberPlant": {
+    "occlusionFade": false,
+    "selectionFactor": 1.1,
+    "totalQuantity": 3,
+    "totalHitPoints": 1,
+    "color": "#87A94B",
+    "spriteScale": 1.25,
+    "assets": {
+      "sheet": "resources/wildgrass",
+      "frame": 2
+    }
+  },
   "Tree": {
     "selectionFactor": 2,
     "totalQuantity": 180,

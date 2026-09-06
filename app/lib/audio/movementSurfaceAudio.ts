@@ -27,7 +27,13 @@ const UNIT_FOOTSTEP_VOLUME = 0.11
 const MOVEMENT_SURFACE_AUDIO_RULES: SurfaceAudioRule[] = [
   {
     key: 'bush-rustle',
-    resourceTypes: new Set([RESOURCE_TYPES.wheat, RESOURCE_TYPES.berrybush]),
+    resourceTypes: new Set([
+      RESOURCE_TYPES.wheat,
+      RESOURCE_TYPES.berrybush,
+      RESOURCE_TYPES.medicinalHerb,
+      RESOURCE_TYPES.toxicHerb,
+      RESOURCE_TYPES.fiberPlant,
+    ]),
     cue: SOUND_CUES.surface.bushRustle,
     cooldownMs: 360,
     profile: 'surface',

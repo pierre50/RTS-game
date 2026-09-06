@@ -152,9 +152,6 @@ export default class Menu implements MenuLike {
     this.lastMessageText = message
     this.lastMessageAt = now
 
-    const {
-      context: { gamebox },
-    } = this
     if (document.getElementById('msg')) {
       document.getElementById('msg')?.remove()
     }
@@ -166,7 +163,7 @@ export default class Menu implements MenuLike {
     msg.className = `message-content message-content--${type}`
 
     box.appendChild(msg)
-    gamebox.appendChild(box)
+    this.gameHud.appendChild(box)
     setTimeout(() => {
       box.remove()
     }, 3000)
@@ -257,8 +254,8 @@ export default class Menu implements MenuLike {
   getMessage(cost: ResourceAmount): string {
     return this.actionSpecs.getMessage(cost)
   }
-  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec {
-    return this.actionSpecs.getActionUnitButton(type, building)
+  getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
+    return this.actionSpecs.getBuildingTrainingStatusButton(type, building)
   }
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec {
     return this.actionSpecs.getCancelUnitTrainingButton(building)

@@ -69,6 +69,7 @@ type SerializableEntity = RuntimeEntityBase & {
     equippedCounts?: NonNullable<SaveEntityState['inventory']>['equippedCounts']
     activeWeapons?: NonNullable<SaveEntityState['inventory']>['activeWeapons']
   }
+  marketStock?: string[]
   indestructible?: boolean
   followingHero?: boolean
   inactif?: boolean
@@ -194,6 +195,7 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
       'type',
       'isDead',
       'quantity',
+      'totalQuantity',
       'isDestroyed',
       'isNaturalResource',
       'size',
@@ -339,6 +341,7 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'stableHorses',
       'containedAnimalType',
       'inventory',
+      'marketStock',
       'indestructible',
     ]),
     isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
@@ -363,6 +366,7 @@ function playerData(player: SerializablePlayer) {
       'population',
       'populationMax',
       'technologies',
+      'discoveredEquipment',
       'researchTechnology',
       'researchLoading',
       'cellViewed',

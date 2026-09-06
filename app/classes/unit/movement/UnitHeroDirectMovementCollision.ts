@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, FAMILY_TYPES, SHEET_TYPES } from '../../../constants'
+import { CELL_HEIGHT, FAMILY_TYPES, PASSABLE_RESOURCE_TYPES, SHEET_TYPES } from '../../../constants'
 import {
   cartesianToIsometric,
   distanceToPolygon,
@@ -34,6 +34,7 @@ function blocksHeroDirectMove(entity: RuntimeEntity | null | undefined): boolean
   if (entity.family === FAMILY_TYPES.unit) {
     return !entity.isDead || (entity as UnitEntity).currentSheet === SHEET_TYPES.corpse
   }
+  if (entity.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(entity.type)) return false
   return entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource
 }
 
@@ -41,6 +42,7 @@ export function blocksHeroDirectMoveWithRoundedFootprint(
   entity: HeroDirectMoveBlocker | null | undefined
 ): boolean {
   if (!entity) return false
+  if (entity.family === FAMILY_TYPES.resource && PASSABLE_RESOURCE_TYPES.has(entity.type)) return false
   if (entity.family === FAMILY_TYPES.building || entity.family === FAMILY_TYPES.resource) return true
   if (entity.family === 'terrain') return (entity.collisionPoints?.length ?? 0) >= 3
   return false

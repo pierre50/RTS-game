@@ -42,10 +42,10 @@ import {
   isFarmHarvestTarget,
   isResourceEntity,
   isRuntimeEntity,
-  markBerrybushDepleted,
   sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
   showDepletedBerrybushMessage,
+  startForageResourceAction,
 } from './UnitResourceGathering'
 import { logGatherVisualState } from './UnitGatherVisualDebug'
 import { shouldSyncBuildHealthDisplay } from './UnitBuildVisuals'
@@ -113,6 +113,7 @@ export class UnitResourceActions {
       gatherEvery,
       onImpact,
       onRelease,
+      onGathered,
       onDepleted,
     }: {
       dieOnEmpty?: boolean
@@ -122,6 +123,7 @@ export class UnitResourceActions {
       gatherEvery?: number
       onImpact?: (target: RuntimeEntity) => void
       onRelease?: () => void
+      onGathered?: (target: RuntimeEntity, gain: number) => void
       onDepleted?: (target: RuntimeEntity) => void
     } = {}
   ) {
@@ -172,6 +174,7 @@ export class UnitResourceActions {
         return
       }
       grantUnitXp(unit, LOADING_XP_CATEGORY[loadingType], gain)
+      onGathered?.(dest, gain)
       this.playSound(soundId)
       if (updateTexture) dest.updateTexture?.()
       dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
@@ -196,13 +199,7 @@ export class UnitResourceActions {
   }
 
   handleForageBerryAction() {
-    this.startGathering(LOADING_TYPES.berry, this.getWorkSound('forageBerry', SOUND_CUES.villager.forageBerry), {
-      onImpact: target => spawnWorkImpactFragments(this.unit, target),
-      onDepleted: dest => {
-        markBerrybushDepleted(dest)
-        showDepletedBerrybushMessage(this.unit, dest)
-      },
-    })
+    startForageResourceAction(this)
   }
 
   handleFarmAction() {

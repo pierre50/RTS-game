@@ -17,6 +17,13 @@ function loadHeroInventoryAction() {
     if (request === '../../constants') return { UNIT_TYPES: { hero: 'Hero' } }
     if (request === '../../lib/equipment/equipmentLoot') {
       return {
+        addHeroInventoryItem: (hero, item, count = 1) => {
+          hero.inventory = hero.inventory ?? {}
+          hero.inventory.equipment = hero.inventory.equipment ?? []
+          for (let index = 0; index < count; index++) hero.inventory.equipment.push(item)
+          hero.onAddHeroInventoryItem?.(item)
+          return true
+        },
         getEquipmentSlot: item =>
           item.startsWith('helmet_') ||
           item.startsWith('armor_') ||
@@ -48,7 +55,20 @@ function loadHeroInventoryAction() {
     }
     if (request === './shared') {
       return {
-        RESOURCE_NAMES: ['wood', 'food', 'stone', 'gold'],
+        RESOURCE_NAMES: [
+          'wood',
+          'berry',
+          'meat',
+          'wheat',
+          'herb',
+          'toxicHerb',
+          'fiber',
+          'feather',
+          'leather',
+          'sinew',
+          'stone',
+          'gold',
+        ],
         findKey: (object, query) =>
           Object.keys(object || {}).find(key => key.toLowerCase() === String(query).toLowerCase()),
       }
@@ -83,7 +103,7 @@ test('hero inventory dev command fills the hero bag with assignable equipment on
     'all'
   )
 
-  assert.deepEqual(result, { ok: true, message: 'Added 9 hero inventory items' })
+  assert.deepEqual(result, { ok: true, message: 'Added 12 hero inventory items' })
   assert.deepEqual(hero.inventory.equipment, [
     'bow',
     'sword_ceramic',
@@ -95,6 +115,9 @@ test('hero inventory dev command fills the hero bag with assignable equipment on
     'leg_armor_ceramic',
     'round_shield_ceramic_slash',
     'lasso',
+    'healing_poultice',
+    'poison_vial',
+    'fiber_bandage',
   ])
   assert.equal(inventoryRefreshes, 1)
 })
@@ -127,6 +150,30 @@ test('hero inventory dev command can add one requested item', () => {
     ok: false,
     message: 'Unknown hero inventory item: not_real',
   })
+})
+
+test('hero inventory dev command routes bows through the inventory item hook', () => {
+  const { addHeroInventoryEquipment } = loadHeroInventoryAction()
+  const discovered = []
+  const hero = {
+    controlMode: 'hero',
+    onAddHeroInventoryItem: item => discovered.push(item),
+  }
+  const context = {
+    controls: { heroUnit: hero },
+    player: { units: [hero] },
+    menu: {
+      refreshInventory: () => {},
+      updateActionTarget: () => {},
+    },
+  }
+
+  assert.deepEqual(addHeroInventoryEquipment(context, 'bow'), {
+    ok: true,
+    message: 'Added bow to hero inventory',
+  })
+  assert.deepEqual(hero.inventory.equipment, ['bow'])
+  assert.deepEqual(discovered, ['bow'])
 })
 
 test('hero inventory dev command can add a requested quantity', () => {
@@ -187,9 +234,40 @@ test('hero resources dev command fills the hero bag resources', () => {
     ok: true,
     message: 'Added 3 to all hero resources',
   })
-  assert.deepEqual(hero.inventory.resources, { wood: 10, food: 3, stone: 3, gold: 3 })
+  assert.deepEqual(hero.inventory.resources, {
+    wood: 10,
+    berry: 3,
+    meat: 3,
+    wheat: 3,
+    herb: 3,
+    toxicHerb: 3,
+    fiber: 3,
+    feather: 3,
+    leather: 3,
+    sinew: 3,
+    stone: 3,
+    gold: 3,
+  })
   assert.equal(inventoryRefreshes, 2)
   assert.equal(topbarUpdates, 2)
+
+  assert.deepEqual(addHeroInventoryResources(context, 'feather', 4), {
+    ok: true,
+    message: 'Added 4 feather to hero resources',
+  })
+  assert.equal(hero.inventory.resources.feather, 7)
+
+  assert.deepEqual(addHeroInventoryResources(context, 'leather', 5), {
+    ok: true,
+    message: 'Added 5 leather to hero resources',
+  })
+  assert.equal(hero.inventory.resources.leather, 8)
+
+  assert.deepEqual(addHeroInventoryResources(context, 'sinew', 6), {
+    ok: true,
+    message: 'Added 6 sinew to hero resources',
+  })
+  assert.equal(hero.inventory.resources.sinew, 9)
 
   assert.deepEqual(addHeroInventoryResources(context, 'not_real', 5), {
     ok: false,

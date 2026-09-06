@@ -66,6 +66,7 @@ function loadHeroTools(overrides = {}) {
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
       FAMILY_TYPES: { animal: 'animal', building: 'building', resource: 'resource', unit: 'unit' },
+      FORAGE_RESOURCE_TYPES: new Set(['Berrybush', 'MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
       LOADING_TYPES: {
         berry: 'berry',
         gold: 'gold',
@@ -75,6 +76,13 @@ function loadHeroTools(overrides = {}) {
         wood: 'wood',
       },
       RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' },
+      TYPE_ACTION: {
+        Berrybush: 'forageberry',
+        FiberPlant: 'forageberry',
+        MedicinalHerb: 'forageberry',
+        ToxicHerb: 'forageberry',
+        Wheat: 'farm',
+      },
       SHEET_TYPES: {
         action: 'actionSheet',
         harvest: 'harvestSheet',
@@ -92,6 +100,7 @@ function loadHeroTools(overrides = {}) {
         attacker: 'attacker',
         builder: 'builder',
         farmer: 'farmer',
+        forager: 'forager',
         hunter: 'hunter',
         goldminer: 'goldminer',
         stoneminer: 'stoneminer',
@@ -861,6 +870,55 @@ test('hero defense releases by reversing back to standing', () => {
   assert.equal(scheduled.size, 0)
 })
 
+test('hero defense exhaustion unlocks action visuals immediately', () => {
+  const { beginHeroDefense, updateHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    hero.energy = 2.1
+    hero.totalEnergy = 10
+
+    assert.equal(beginHeroDefense(hero, 'sword'), true)
+    hero.sprite.currentFrame = 2
+    hero.heroDefenseVisualLocked = true
+
+    now += 736
+    updateHeroDefense(hero)
+
+    assert.equal(hero.energy, 0)
+    assert.equal(hero.heroDefenseActive, false)
+    assert.equal(hero.heroDefenseVisualLocked, false)
+    assert.equal(hero.heroDefenseEnergyExhausted, true)
+    assert.equal(hero.actionLocked, false)
+    assert.equal(hero.currentSheet, 'actionSheet')
+    assert.equal(hero.sprite.onFrameChange, undefined)
+    assert.equal(hero.sprite.onComplete, undefined)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('hero defense does not restart from partial regenerated energy', () => {
+  const { beginHeroDefense } = loadHeroTools()
+  const { hero } = makeHero()
+  hero.energy = 0.5
+  hero.totalEnergy = 10
+
+  assert.equal(beginHeroDefense(hero, 'sword'), false)
+  assert.equal(hero.actionLocked, false)
+  assert.equal(hero.heroDefenseActive, undefined)
+  assert.equal(hero.heroDefenseEnergyExhausted, true)
+  assert.equal(hero.currentSheet, 'standingSheet')
+
+  hero.energy = 10
+  assert.equal(beginHeroDefense(hero, 'sword'), false)
+  hero.heroDefenseEnergyExhausted = false
+  assert.equal(beginHeroDefense(hero, 'sword'), true)
+})
+
 test('hero defense release fallback clears a stuck reverse animation', () => {
   const { beginHeroDefense, releaseHeroDefense } = loadHeroTools()
   const { hero } = makeHero()
@@ -1246,6 +1304,44 @@ test('hero interact can gather from an aimed resource target', () => {
   assert.equal(hero.dest, carcass)
   assert.equal(hero.actionLocked, false)
   assert.deepEqual(messages, [])
+})
+
+test('hero interact click can forage an aimed wildgrass plant', () => {
+  const herb = {
+    family: 'resource',
+    i: 1,
+    isDestroyed: false,
+    j: 0,
+    quantity: 2,
+    type: 'MedicinalHerb',
+    x: 10,
+    y: 0,
+  }
+  const { triggerToolAttackAt } = loadHeroTools({
+    './combat/combat': { getActionCondition: (_hero, target, action) => target === herb && action === 'forageberry' },
+    './grid/visibility': { findInstancesInSight: (_hero, predicate) => [herb].filter(predicate) },
+  })
+  const { hero } = makeHero()
+  Object.assign(hero, {
+    context: {
+      map: { addChild: () => {} },
+      menu: { showMessage: () => {} },
+    },
+    i: 0,
+    j: 0,
+    isUnitAtDest: () => true,
+    getAction: action => {
+      hero.startedAction = action
+    },
+    setDest: target => {
+      hero.dest = target
+    },
+  })
+
+  assert.equal(triggerToolAttackAt(hero, 'interact', { x: 10, y: 0 }), true)
+  assert.equal(hero.startedAction, 'forageberry')
+  assert.equal(hero.dest, herb)
+  assert.equal(hero.work, 'forager')
 })
 
 test('civil tools are no longer equipped combat weapons', () => {

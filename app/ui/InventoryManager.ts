@@ -1,4 +1,5 @@
 import { Modal } from '../lib'
+import { getIconPath } from '../lib/graphics/assets'
 import { formatEquipmentLootLabel } from '../lib/equipment/equipmentLoot'
 import {
   HERO_ARROW_CRAFT_RECIPES,
@@ -10,7 +11,7 @@ import {
 import { getPlaceableInventoryBuildingType } from '../lib/hero/placeableInventoryItems'
 import { t } from '../lib/lang'
 import { playUiSound } from '../lib/audio/uiSound'
-import { SOUND_CUES } from '../constants'
+import { RESOURCE_ICON_IDS, SOUND_CUES } from '../constants'
 import { createEntityInfoContent } from './EntityInfoModalManager'
 import {
   EQUIPPED_ITEM_WEAPON,
@@ -23,7 +24,10 @@ import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
-import { renderInventoryEquippedEquipment, renderInventoryLootedEquipment } from './inventory/InventoryEquipmentRenderer'
+import {
+  renderInventoryEquippedEquipment,
+  renderInventoryLootedEquipment,
+} from './inventory/InventoryEquipmentRenderer'
 import { renderEquipmentAvatarLazy } from './equipment/EquipmentAvatar'
 import { renderBuildingAvatar } from '../lib/avatar'
 import type { RuntimeEntity } from '../types/entities'
@@ -389,17 +393,25 @@ export class InventoryManager {
 
     const icon = document.createElement('span')
     icon.className = 'technology-menu-icon inventory-craft-icon'
-    const canvas = document.createElement('canvas')
-    canvas.className = 'unit-avatar-frame inventory-slot-icon'
-    canvas.width = 64
-    canvas.height = 64
     const placeableBuildingType = getPlaceableInventoryBuildingType(recipe.outputEquipment)
-    if (placeableBuildingType) {
-      renderBuildingAvatar(app, placeableBuildingType, player, canvas)
+    if (recipe.iconResource) {
+      const resourceIcon = document.createElement('img')
+      resourceIcon.className = 'inventory-slot-icon'
+      resourceIcon.src = getIconPath(RESOURCE_ICON_IDS[recipe.iconResource].commodity)
+      resourceIcon.alt = ''
+      icon.appendChild(resourceIcon)
     } else {
-      renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
+      const canvas = document.createElement('canvas')
+      canvas.className = 'unit-avatar-frame inventory-slot-icon'
+      canvas.width = 64
+      canvas.height = 64
+      if (placeableBuildingType) {
+        renderBuildingAvatar(app, placeableBuildingType, player, canvas)
+      } else {
+        renderEquipmentAvatarLazy(app, recipe.outputEquipment, canvas, 'craft', this.menu.context.performance)
+      }
+      icon.appendChild(canvas)
     }
-    icon.appendChild(canvas)
 
     const label = document.createElement('span')
     label.className = 'technology-menu-label'

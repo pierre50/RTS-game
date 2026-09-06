@@ -1,5 +1,13 @@
 import { Assets } from 'pixi.js'
-import { ACTION_TYPES, FAMILY_TYPES, LOADING_TYPES, MINING_RESOURCE_CONFIG, WORK_TYPES } from '../constants'
+import {
+  ACTION_TYPES,
+  FAMILY_TYPES,
+  FORAGE_RESOURCE_TYPES,
+  LOADING_TYPES,
+  MINING_RESOURCE_CONFIG,
+  TYPE_ACTION,
+  WORK_TYPES,
+} from '../constants'
 import { getActionVisualSheetKey } from '../units/actionVisualSheet'
 import { isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, isWheatMature } from '../combat'
@@ -19,6 +27,15 @@ function resourceKind(target: RuntimeEntity): string | undefined {
 
 function isDepletedBerrybush(target: RuntimeEntity): boolean {
   return resourceKind(target) === 'Berrybush' && (target.quantity ?? 0) <= 0
+}
+
+function getResourceAction(target: RuntimeEntity): string | null {
+  const kind = resourceKind(target)
+  return kind ? (TYPE_ACTION[kind as keyof typeof TYPE_ACTION] ?? null) : null
+}
+
+function isForageResource(target: RuntimeEntity): boolean {
+  return target.family === FAMILY_TYPES.resource && FORAGE_RESOURCE_TYPES.has(resourceKind(target) ?? '')
 }
 
 type HeroContextActionConfig = {
@@ -97,14 +114,14 @@ const HERO_CONTEXT_ACTIONS: HeroContextActionConfig[] = [
   {
     action: 'gather',
     matches: target =>
-      (resourceKind(target) === 'Berrybush' && !isDepletedBerrybush(target)) ||
+      (isForageResource(target) && !isDepletedBerrybush(target)) ||
       resourceKind(target) === 'Wheat' ||
       (target.family === FAMILY_TYPES.animal && Boolean(target.isDead)),
     resolve: (hero, target) => {
       if (resourceKind(target) === 'Wheat') {
         return resolveHeroGatherAction(hero, target, ACTION_TYPES.farm, WORK_TYPES.farmer)
       }
-      if (resourceKind(target) === 'Berrybush') {
+      if (isForageResource(target)) {
         if (isDepletedBerrybush(target)) return null
         return getActionCondition(hero, target, ACTION_TYPES.forageberry)
           ? resolveHeroGatherAction(hero, target, ACTION_TYPES.forageberry, WORK_TYPES.forager)
@@ -161,8 +178,9 @@ function runContextAction(
 }
 
 function getContextActionForTarget(contextAction: HeroContextAction, target: RuntimeEntity): string | null {
-  if (contextAction === 'gather' && resourceKind(target) === 'Wheat') return ACTION_TYPES.farm
-  if (contextAction === 'gather' && resourceKind(target) === 'Berrybush') return ACTION_TYPES.forageberry
+  if (contextAction === 'gather' && (resourceKind(target) === 'Wheat' || isForageResource(target))) {
+    return getResourceAction(target)
+  }
   if (contextAction === 'gather' && target.family === FAMILY_TYPES.animal && target.isDead) return ACTION_TYPES.takemeat
   if (contextAction === 'chop' && (resourceKind(target) === 'Tree' || isDepletedBerrybush(target)))
     return ACTION_TYPES.chopwood

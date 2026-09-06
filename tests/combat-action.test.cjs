@@ -748,13 +748,13 @@ test('early resource actions require only their remaining unlocking technologies
     type: 'Wheat',
   }
 
-  assert.equal(getActionCondition(source, deer, 'hunt'), true)
+  assert.equal(getActionCondition(source, deer, 'hunt'), false)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)
   assert.equal(getActionCondition(source, stone, 'minestone'), false)
   assert.equal(getActionCondition(source, gold, 'minegold'), false)
   assert.equal(getActionCondition(source, wheat, 'farm'), false)
 
-  source.owner.technologies.push('Pickaxe', 'Farming')
+  source.owner.technologies.push('Pickaxe', 'Farming', 'BowCrafting')
 
   assert.equal(getActionCondition(source, deer, 'hunt'), true)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)

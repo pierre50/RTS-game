@@ -331,6 +331,7 @@ test('unlocking age technology calls age change handler with player context', ()
 test('planting wheat fields refreshes each planted cell before fading resources in', () => {
   const updated = []
   const faded = []
+  const randomValues = [0, 0.25, 0.75, 1]
   const grid = Array.from({ length: 2 }, (_, i) =>
     Array.from({ length: 2 }, (_, j) => ({
       i,
@@ -360,6 +361,7 @@ test('planting wheat fields refreshes each planted cell before fading resources 
         grid,
         resources: new Set(),
         addChild: resource => resource,
+        random: () => randomValues.shift() ?? 0,
       },
       menu: {
         updateTopbar: () => {},
@@ -374,4 +376,8 @@ test('planting wheat fields refreshes each planted cell before fading resources 
   assert.equal(player.plantWheatField(0, 0), true)
   assert.deepEqual(updated, ['0,0', '0,1', '1,0', '1,1'])
   assert.deepEqual(faded, ['0,0', '0,1', '1,0', '1,1'])
+  assert.deepEqual(
+    [...player.context.map.resources].map(wheat => wheat.quantity),
+    [8, 9, 11, 12]
+  )
 })

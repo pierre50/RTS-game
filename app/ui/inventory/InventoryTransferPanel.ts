@@ -9,6 +9,7 @@ import {
 import { t } from '../../lib/lang'
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import { createInventorySection, createInventorySlot } from './InventorySlotRenderer'
+import { createEquipmentTooltip, createResourceTooltip } from './InventoryTooltips'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 
@@ -106,7 +107,7 @@ export class InventoryTransferPanel {
     icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
     icon.alt = ''
 
-    return createInventorySlot({
+    const slot = createInventorySlot({
       ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', {
         item: `${t(resource)} x${amount}`,
       }),
@@ -128,6 +129,8 @@ export class InventoryTransferPanel {
         })
       },
     })
+    this.context.menu.menuTooltip?.bind(slot, createResourceTooltip(resource, amount))
+    return slot
   }
 
   private createEquipmentButton(
@@ -145,7 +148,7 @@ export class InventoryTransferPanel {
     icon.height = 64
     renderEquipmentAvatarLazy(this.context.app, equipment, icon, 'inventory transfer', this.context.performance)
 
-    return createInventorySlot({
+    const slot = createInventorySlot({
       ariaLabel: t(isTheftTransfer ? 'inventoryTransferStealItem' : 'inventoryTransferMoveItem', { item: labelText }),
       className: ['inventory-loot-slot inventory-transfer-slot', isTheftTransfer ? 'is-theft' : '']
         .filter(Boolean)
@@ -169,6 +172,8 @@ export class InventoryTransferPanel {
         })
       },
     })
+    this.context.menu.menuTooltip?.bind(slot, createEquipmentTooltip(equipment, count))
+    return slot
   }
 
   private handleTransfer(event: InventoryTransferEvent): void {

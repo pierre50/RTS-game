@@ -111,6 +111,46 @@ test('unit corpse loot can be frozen at death even after an empty transient cach
   assert.deepEqual(corpse.lootEquipment, ['sword_ceramic', 'helmet_barbarian_nasal_ceramic'])
 })
 
+test('archer corpses loot a random carried arrow stack', () => {
+  const { initializeUnitCorpseLootEquipment } = loadModule('app/lib/equipment/equipmentLoot.ts', {
+    '../constants': {
+      SHEET_TYPES: { corpse: 'corpseSheet' },
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    './equipmentStats': {
+      refreshUnitEquipmentStats: () => {},
+      getUnitEquipment: () => ['quiver', 'bow', 'arrow_copper'],
+    },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const corpse = {
+    context: { map: { randomRange: (min, max) => Math.min(max, min + 2) } },
+    isDead: true,
+    isDestroyed: false,
+    owner: {
+      age: 1,
+      civ: 'Hellas',
+      config: {
+        units: {
+          Bowman: { category: 'Archer', corpseLootArrowMin: 3, corpseLootArrowMax: 8 },
+        },
+      },
+    },
+    type: 'Bowman',
+  }
+
+  assert.deepEqual(initializeUnitCorpseLootEquipment(corpse), [
+    'quiver',
+    'bow',
+    'arrow_copper',
+    'arrow_copper',
+    'arrow_copper',
+    'arrow_copper',
+    'arrow_copper',
+  ])
+})
+
 test('equipment loot labels humanize runtime ids', () => {
   const { formatEquipmentLootLabel, formatEquipmentStackLabel, getEquipmentStacks } = loadModule(
     'app/lib/equipment/equipmentLoot.ts',

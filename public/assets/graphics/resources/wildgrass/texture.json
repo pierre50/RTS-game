@@ -1,0 +1,36 @@
+{
+  "frames": {
+    "000_graphics_resources_wildgrass_medicinal.png": {
+      "frame": { "x": 0, "y": 0, "w": 36, "h": 36 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 36, "h": 36 },
+      "sourceSize": { "w": 36, "h": 36 },
+      "anchor": { "x": 0.5, "y": 0.5 }
+    },
+    "001_graphics_resources_wildgrass_toxic.png": {
+      "frame": { "x": 36, "y": 0, "w": 36, "h": 36 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 36, "h": 36 },
+      "sourceSize": { "w": 36, "h": 36 },
+      "anchor": { "x": 0.5, "y": 0.5 }
+    },
+    "002_graphics_resources_wildgrass_fiber.png": {
+      "frame": { "x": 72, "y": 0, "w": 36, "h": 36 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 36, "h": 36 },
+      "sourceSize": { "w": 36, "h": 36 },
+      "anchor": { "x": 0.5, "y": 0.5 }
+    }
+  },
+  "meta": {
+    "app": "manual",
+    "version": "1.0.0",
+    "image": "texture.png",
+    "format": "RGBA8888",
+    "size": { "w": 109, "h": 36 },
+    "scale": 1
+  }
+}

@@ -18,7 +18,13 @@ function loadMovementSurfaceAudio({ heroControlled = false, played = [] } = {}) 
       FAMILY_TYPES: { resource: 'resource' },
       CELL_HEIGHT: 32,
       CELL_WIDTH: 64,
-      RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' },
+      RESOURCE_TYPES: {
+        berrybush: 'Berrybush',
+        fiberPlant: 'FiberPlant',
+        medicinalHerb: 'MedicinalHerb',
+        toxicHerb: 'ToxicHerb',
+        wheat: 'Wheat',
+      },
       SOUND_CUES: {
         hero: {
           footstepGrass: [
@@ -108,7 +114,7 @@ function createUnit({
   return { unit, resource }
 }
 
-test('movement surface audio plays rustle sounds for visible movers contacting wheat or bushes', () => {
+test('movement surface audio plays rustle sounds for visible movers contacting wheat, bushes, or wildgrass', () => {
   const played = []
   const { playMovementSurfaceAudio } = loadMovementSurfaceAudio({ played })
   const { unit } = createUnit()
@@ -118,6 +124,16 @@ test('movement surface audio plays rustle sounds for visible movers contacting w
   assert.equal(played.length, 1)
   assert.deepEqual(played[0].cue, ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'])
   assert.ok(Math.abs(played[0].options.volume - 0.58) < 0.001)
+})
+
+test('movement surface audio uses the wheat rustle cue when the hero passes through wildgrass', () => {
+  const played = []
+  const { playMovementSurfaceAudio } = loadMovementSurfaceAudio({ heroControlled: true, played })
+  const { unit } = createUnit({ resourceType: 'MedicinalHerb' })
+
+  playMovementSurfaceAudio(unit, 4)
+
+  assert.deepEqual(played[1].cue, ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'])
 })
 
 test('movement surface audio selects hero footsteps from terrain type', () => {

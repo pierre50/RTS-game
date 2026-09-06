@@ -19,7 +19,7 @@ function loadRuntimeServices() {
 
   const module = loadTsModule('app/screens/game/runtimeServices.ts', {
     mocks: {
-      '../../services/BuildingInteriorEntryMarkerSystem': {
+      '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem': {
         BuildingInteriorEntryMarkerSystem: service('buildingInteriorEntryMarker'),
       },
       '../../services/patrol/CampPatrolSystem': { CampPatrolSystem: service('campPatrols') },

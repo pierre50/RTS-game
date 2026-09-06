@@ -93,6 +93,8 @@ interface EntityConfig {
 export interface UnitConfig extends EntityConfig {
   trainingDays?: number
   equipment?: string[]
+  corpseLootArrowMin?: number
+  corpseLootArrowMax?: number
   attackRecoveryMs?: number
   meleeArmor?: number
   pierceArmor?: number

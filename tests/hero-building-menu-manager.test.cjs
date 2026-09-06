@@ -20,7 +20,7 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
   const mocks = {
     '../constants': {
       FAMILY_TYPES: { building: 'building' },
-      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp' },
+      BUILDING_TYPES: { chest: 'Chest', fireCamp: 'FireCamp', market: 'Market' },
       SOUND_CUES: { building: { chestOpen: 'building/chest-open' }, ui: { menuClick: 'menuClick' } },
     },
     '../lib/avatar': {
@@ -63,6 +63,15 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
           this.element.className = 'inventory-transfer-panel'
           transferPanels.push(this)
         }
+      },
+    },
+    './hero-building/HeroMarketBody': {
+      createHeroMarketBody: (building, _menu, onChange) => {
+        const element = global.document.createElement('div')
+        element.className = 'hero-market-panel'
+        element.dataset.marketBuilding = building.label
+        element.onChange = onChange
+        return element
       },
     },
     '../lib/inventory/inventoryContainers': {
@@ -236,8 +245,10 @@ test('hero building menu renders one row per concurrent training entry', () => {
     assert.equal(rows.length, 2)
     assert.equal(rows[0].dataset.actionId, 'Fantassin')
     assert.equal(rows[0].dataset.trainingIndex, '0')
+    assert.equal(rows[0].children[1].textContent, '')
     assert.equal(rows[1].dataset.actionId, 'Fantassin')
     assert.equal(rows[1].dataset.trainingIndex, '1')
+    assert.equal(rows[1].children[1].textContent, '')
   } finally {
     restoreDocument()
   }
@@ -276,6 +287,35 @@ test('hero building menu renders a reusable inventory transfer panel for chests'
     assert.deepEqual(manager.constructor.__audibleSoundCues, [
       { cue: 'building/chest-open', instance: building, options: { profile: 'surface' } },
     ])
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('hero building menu renders market body for markets', () => {
+  const { manager, player, restoreDocument } = createManager()
+  try {
+    const building = {
+      family: 'building',
+      owner: player,
+      type: 'Market',
+      label: 'market-1',
+      isBuilt: true,
+      isDead: false,
+      isDestroyed: false,
+      interface: { info() {} },
+    }
+    manager.menu.context.controls.heroUnit = {
+      family: 'unit',
+      label: 'hero',
+      inventory: { equipment: ['bow'], resources: { gold: 12 } },
+    }
+
+    assert.equal(manager.open(building), true)
+
+    assert.equal(manager.transferPanel, null)
+    assert.equal(manager.body.children.at(-1).className, 'hero-market-panel')
+    assert.equal(manager.body.children.at(-1).dataset.marketBuilding, 'market-1')
   } finally {
     restoreDocument()
   }

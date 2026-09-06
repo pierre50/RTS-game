@@ -65,7 +65,8 @@ function argumentsFrom(argv) {
     if (key === '--help') return { help: true }
     const value = argv[++index]
     if (!value) throw new Error(`Missing value for ${key}`)
-    if (key === '--size') throw new Error(`--size was removed; map blueprints use the standard ${BLUEPRINT_MAP_SIZE} size`)
+    if (key === '--size')
+      throw new Error(`--size was removed; map blueprints use the standard ${BLUEPRINT_MAP_SIZE} size`)
     else if (key === '--count') options.count = Number(value)
     else if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
@@ -259,6 +260,7 @@ function loadRuntimeGenerators() {
     filename.endsWith('/MapForestResources.ts') ||
     filename.endsWith('/MapResourceSpacing.ts') ||
     filename.endsWith('/ResourceQuantityRanges.ts') ||
+    filename.endsWith('/TreeResourceTextures.ts') ||
     filename.endsWith('/MapResources.ts')
   class HeadlessContainer {
     constructor() {
@@ -306,13 +308,27 @@ function loadRuntimeGenerators() {
       tree: 'Tree',
       berrybush: 'Berrybush',
       wheat: 'Wheat',
+      medicinalHerb: 'MedicinalHerb',
+      toxicHerb: 'ToxicHerb',
+      fiberPlant: 'FiberPlant',
       stone: 'Stone',
       gold: 'Gold',
       copper: 'Copper',
       iron: 'Iron',
       salmon: 'Salmon',
     },
-    SPACED_RESOURCE_TYPES: ['Berrybush', 'Wheat', 'Stone', 'Copper', 'Iron', 'Gold', 'Tree'],
+    SPACED_RESOURCE_TYPES: [
+      'Berrybush',
+      'Wheat',
+      'MedicinalHerb',
+      'ToxicHerb',
+      'FiberPlant',
+      'Stone',
+      'Copper',
+      'Iron',
+      'Gold',
+      'Tree',
+    ],
     // Kept in sync with app/constants/ambient.ts: DarkForest/Jungle have no entry since
     // EnvironmentTerrainParams.groundTreeChance/patchwork.treeChance/lakes.shoreTreeChance
     // always override them.
@@ -320,7 +336,7 @@ function loadRuntimeGenerators() {
       Grass: 0,
       Desert: 0,
     },
-    BIOME_TREE_PLAYER_SAFE_DIST: 22,
+    BIOME_TREE_PLAYER_SAFE_DIST: 6,
     WATER_BORDER_PLACEMENT_CLEARANCE: 2,
     ENVIRONMENT_TERRAIN_PARAMS,
     DEFAULT_ENVIRONMENT_ID,
@@ -365,6 +381,9 @@ function loadRuntimeGenerators() {
       }
       if (request === './ResourceQuantityRanges') {
         return originalLoad(path.join(ROOT, 'app/classes/map/resources/ResourceQuantityRanges.ts'), parent, isMain)
+      }
+      if (request === './TreeResourceTextures') {
+        return originalLoad(path.join(ROOT, 'app/classes/map/resources/TreeResourceTextures.ts'), parent, isMain)
       }
       if (request === 'pixi.js') return pixi
       if (request === '../Resource' || request === '../../Resource') return { Resource: HeadlessResource }
@@ -426,21 +445,23 @@ const runtimeEnforceReliefStepContinuity = MapTerrain.prototype.enforceReliefSte
 const runtimeFormatCellsWaterBorder = MapTerrain.prototype.formatCellsWaterBorder
 const runtimeFormatCellsRelief = MapTerrain.prototype.formatCellsRelief
 const runtimeSpawns = MapGeneration.prototype.findPlayerPlaces
-const runtimePlayerResources = MapResources.prototype.generateResourcesAroundPlayersAsync
 const runtimeNeutralResources = MapResources.prototype.generateNeutralResourceGroupsAsync
 const runtimeBiomeTrees = MapResources.prototype.generateBiomeTreesAsync
 const runtimeGenerateForestAroundPlayer = MapResources.prototype.generateForestAroundPlayer
 const runtimeFindNeutralResourceCenter = MapResources.prototype.findNeutralResourceCenter
-const runtimePlaceResourceGroup = MapResources.prototype.placeResourceGroup
 const runtimePlaceResourceGroupAt = MapResources.prototype.placeResourceGroupAt
 const runtimeGetSharedGroupTextureName = MapResources.prototype.getSharedGroupTextureName
+const runtimePickTreeTextureName = MapResources.prototype.pickTreeTextureName
 const runtimeGenerateScatteredStone = MapResources.prototype.generateScatteredStoneAsync
+const runtimeGenerateScatteredHerbs = MapResources.prototype.generateScatteredHerbsAsync
 
 function createResourceScope(map) {
   const resourcesScope = {
     map,
     getSharedGroupTextureName: (...args) => runtimeGetSharedGroupTextureName.apply(resourcesScope, args),
+    pickTreeTextureName: (...args) => runtimePickTreeTextureName.apply(resourcesScope, args),
     generateScatteredStoneAsync: (...args) => runtimeGenerateScatteredStone.apply(resourcesScope, args),
+    generateScatteredHerbsAsync: (...args) => runtimeGenerateScatteredHerbs.apply(resourcesScope, args),
   }
   return resourcesScope
 }
@@ -567,9 +588,9 @@ function buildHeadlessMap(
   const resourcesScope = createResourceScope(map)
   map.generateForestAroundPlayer = (...args) => runtimeGenerateForestAroundPlayer.apply(resourcesScope, args)
   map.findNeutralResourceCenter = (...args) => runtimeFindNeutralResourceCenter.apply(resourcesScope, args)
-  map.placeResourceGroup = (...args) => runtimePlaceResourceGroup.apply(resourcesScope, args)
   map.placeResourceGroupAt = (...args) => runtimePlaceResourceGroupAt.apply(resourcesScope, args)
   map.generateScatteredStoneAsync = (...args) => runtimeGenerateScatteredStone.apply(resourcesScope, args)
+  map.generateScatteredHerbsAsync = (...args) => runtimeGenerateScatteredHerbs.apply(resourcesScope, args)
   return map
 }
 
@@ -773,9 +794,9 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   // check cell.inclined, which only formatCellsRelief() ever sets.
   map.formatCellsRelief()
   const resourcesScope = createResourceScope(map)
-  await runtimePlayerResources.call(resourcesScope, spawns)
-  await runtimeNeutralResources.call(resourcesScope, spawns)
-  await runtimeBiomeTrees.call(resourcesScope, spawns)
+  const resourceOptions = { treeTextureFamily: params.treeTextureFamily }
+  await runtimeNeutralResources.call(resourcesScope, spawns, resourceOptions)
+  await runtimeBiomeTrees.call(resourcesScope, spawns, resourceOptions)
   const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
   if (resourcesOnReliefBorders.length) {
     console.warn(
@@ -833,8 +854,7 @@ async function main() {
     let written = 0,
       attempts = 0
     while (written < options.count) {
-      if (++attempts > options.count * 30)
-        throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
+      if (++attempts > options.count * 30) throw new Error(`Could not find enough valid ${size} ${environmentId} maps`)
       const seed = Math.floor(random() * 0x7fffffff),
         map = await blueprint(size, seed, environmentId)
       if (!map) continue

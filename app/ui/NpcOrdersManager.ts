@@ -6,11 +6,15 @@ import {
   sendUnitToTraining,
   VILLAGER_TRAINING_UNIT_TYPES,
 } from '../lib/units/unitTrainingOrders'
+import { getUnitTrainingCost } from '../lib/training/unitTrainingCost'
+import { formatUnitTrainingDuration, getUnitTrainingDurationDays } from '../lib/training/unitTrainingDuration'
+import { formatActionCost } from './ActionTooltipFactory'
 import { getUnitEquipmentLevel, setUnitDebugLevel, XP_MAX_LEVEL } from '../lib/units/unitExperience'
 import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
+import { discoverHeroEquipment } from '../lib/equipment/equipmentDiscoveries'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
@@ -331,9 +335,19 @@ export class NpcOrdersManager {
     return {
       id: spec.id,
       label: t(spec.labelKey),
+      detail: spec.trainingType ? () => this.getTrainingOrderDetail(spec.trainingType!) : undefined,
       hidden: () => !this.canShowOrder(spec),
       onClick: () => this.runOrder(spec),
     }
+  }
+
+  private getTrainingOrderDetail(trainingType: string): string {
+    const owner = this.npcs.find(npc => npc.type === UNIT_TYPES.villager)?.owner ?? this.menu.context.player
+    const unitConfig = owner?.config?.units?.[trainingType]
+    return [
+      formatActionCost(getUnitTrainingCost(owner, trainingType)),
+      formatUnitTrainingDuration(getUnitTrainingDurationDays(unitConfig)),
+    ].join(' | ')
   }
 
   private hasVillager(): boolean {
@@ -436,6 +450,7 @@ export class NpcOrdersManager {
     const heroContainer = createInventoryContainer(hero, {
       id: hero.label,
       labelKey: 'inventoryYourBag',
+      onReceiveEquipment: equipment => discoverHeroEquipment(hero, equipment),
     })
     this.transferPanel = new InventoryTransferPanel({
       context: this.menu.context,

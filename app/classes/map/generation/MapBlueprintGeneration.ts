@@ -8,7 +8,8 @@ import type { GameContextLike } from '../../../types/context'
 import type { CellDefinition, MapBlueprint, MapGenerationContext, MapGenerationMap } from '../MapGenerationTypes'
 
 type ProgressCallback = (stage: string, progress: number) => Promise<void> | void
-type ResourceAssets = string | string[] | Record<string, string[]>
+type ResourceAssetRef = { sheet: string; frame?: number }
+type ResourceAssets = string | ResourceAssetRef | ResourceAssetRef[] | Record<string, ResourceAssetRef[]>
 type ResourceDefinition = {
   category?: string
   assets?: ResourceAssets
@@ -31,8 +32,12 @@ function gameConfig(): BlueprintGameConfig {
   return Assets.cache.get('config') as BlueprintGameConfig
 }
 
-function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record<string, string[]> {
-  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets))
+function isTextureRefAsset(assets: ResourceAssets | undefined): assets is ResourceAssetRef {
+  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets) && typeof assets.sheet === 'string')
+}
+
+function isTerrainAssetMap(assets: ResourceAssets | undefined): assets is Record<string, ResourceAssetRef[]> {
+  return Boolean(assets && typeof assets === 'object' && !Array.isArray(assets) && !isTextureRefAsset(assets))
 }
 
 function createResourceFromState(resource: BlueprintResourceState, map: MapGenerationMap): ResourceEntity {
@@ -225,6 +230,7 @@ export class MapBlueprintGeneration {
         definition?.isAnimated ||
         Array.isArray(assets) ||
         typeof assets === 'string' ||
+        isTextureRefAsset(assets) ||
         (isTerrainAssetMap(assets) && Boolean(assets[cell.type]))
       if (!hasCompatibleTexture) continue
       try {

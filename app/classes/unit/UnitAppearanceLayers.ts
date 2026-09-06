@@ -16,6 +16,10 @@ type RuntimeAppearanceLayer = UnitAppearanceLayerConfig & {
   sprite?: AnimatedSprite
 }
 
+type AppearanceSyncSprite = AnimatedSprite & {
+  _afterAnimationUpdate?: (() => void) | null
+}
+
 type AppearanceLayerRenderState = {
   layer: RuntimeAppearanceLayer
   mountedRiderSheet: string
@@ -28,6 +32,18 @@ type AppearanceLayerRenderState = {
 }
 
 const MAIN_SPRITE_LAYER_Z_INDEX = 10
+
+function getSyncedFrameIndex(unit: UnitRuntimeHost, textureCount: number): number {
+  return Math.min(Math.floor(unit.sprite.currentFrame), Math.max(textureCount - 1, 0))
+}
+
+function syncLayerSpriteFrame(unit: UnitRuntimeHost, layerSprite: AnimatedSprite): number {
+  const frameIndex = getSyncedFrameIndex(unit, layerSprite.textures.length)
+  if (layerSprite.currentFrame !== frameIndex) {
+    layerSprite.currentFrame = frameIndex
+  }
+  return frameIndex
+}
 
 function shouldRequestMissingEquipmentLayer(unit: UnitRuntimeHost): boolean {
   if (!unit.context.map.ready) return false
@@ -69,6 +85,21 @@ function clearAppearanceLayers(unit: UnitRuntimeHost): void {
     sprite.destroy({ children: true, texture: false })
   }
   unit.appearanceLayerSprites.clear()
+  ;(unit.sprite as AppearanceSyncSprite)._afterAnimationUpdate = null
+}
+
+function syncUnitAppearanceLayerFrames(unit: UnitRuntimeHost, sheet = unit.currentSheet): void {
+  for (const [spriteKey, layerSprite] of unit.appearanceLayerSprites.entries()) {
+    const frameIndex = syncLayerSpriteFrame(unit, layerSprite)
+    const layer = unit.appearance?.layers?.[spriteKey]
+    if (sheet === SHEET_TYPES.action && typeof layer?.hideOnOrAfterFrame === 'number') {
+      layerSprite.visible = frameIndex < layer.hideOnOrAfterFrame
+    }
+  }
+}
+
+function bindUnitAppearanceFrameSync(unit: UnitRuntimeHost): void {
+  ;(unit.sprite as AppearanceSyncSprite)._afterAnimationUpdate = () => syncUnitAppearanceLayerFrames(unit)
 }
 
 function getLayerRenderState(
@@ -158,11 +189,11 @@ function getLayerRenderState(
     directionOrderOverride
   )
   const sourceFrame = Math.floor(unit.sprite.currentFrame)
-  const actionFrameSequence = getConfiguredActionFrameSequence(unit, layer.actionFrameSequence)
+  const actionFrameSequence = getConfiguredActionFrameSequence(unit, layer.actionFrameSequence, {
+    preferExplicit: true,
+  })
   const textures =
-    sheet === SHEET_TYPES.action
-      ? applyActionFrameSequence(selectedTextures, actionFrameSequence)
-      : selectedTextures
+    sheet === SHEET_TYPES.action ? applyActionFrameSequence(selectedTextures, actionFrameSequence) : selectedTextures
   const frameIndex =
     mountedSheetOverride || (unit.mountedOnHorse && sheet !== SHEET_TYPES.action)
       ? 0
@@ -230,25 +261,24 @@ function syncAppearanceLayerSprite(
     .defaultAnchor
   if (defaultAnchor) layerSprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   layerSprite.animationSpeed = unit.sprite.animationSpeed ?? state.spritesheet.data?.animationSpeed ?? 0.2
-  layerSprite.onFrameChange = () => {
-    const frameIndex = Math.min(Math.floor(unit.sprite.currentFrame), Math.max(layerSprite.textures.length - 1, 0))
-    if (layerSprite.currentFrame !== frameIndex) {
-      layerSprite.currentFrame = frameIndex
-    }
-    if (sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number') {
-      layerSprite.visible = frameIndex < state.layer.hideOnOrAfterFrame
-    }
-  }
   layerSprite.currentFrame = state.frameIndex
   layerSprite.visible =
     sheet === SHEET_TYPES.action && typeof state.layer.hideOnOrAfterFrame === 'number'
       ? state.frameIndex < state.layer.hideOnOrAfterFrame
       : true
-  if (state.mountedSheetOverride || (unit.mountedOnHorse && sheet !== SHEET_TYPES.action)) {
+  if (sheet === SHEET_TYPES.action) {
+    layerSprite.onFrameChange = undefined
+    layerSprite.gotoAndStop(state.frameIndex)
+  } else if (state.mountedSheetOverride || (unit.mountedOnHorse && sheet !== SHEET_TYPES.action)) {
+    layerSprite.onFrameChange = undefined
     layerSprite.gotoAndStop(state.frameIndex)
   } else if (unit.sprite.playing) {
+    layerSprite.onFrameChange = () => {
+      syncLayerSpriteFrame(unit, layerSprite)
+    }
     layerSprite.gotoAndPlay(state.frameIndex)
   } else {
+    layerSprite.onFrameChange = undefined
     layerSprite.gotoAndStop(state.frameIndex)
   }
 }
@@ -279,4 +309,7 @@ export function syncUnitAppearanceLayers(unit: UnitRuntimeHost, sheet: string): 
     sprite.destroy({ children: true, texture: false })
     unit.appearanceLayerSprites.delete(spriteKey)
   }
+
+  bindUnitAppearanceFrameSync(unit)
+  syncUnitAppearanceLayerFrames(unit, sheet)
 }

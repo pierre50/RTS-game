@@ -13,6 +13,7 @@ export type InventoryContainer = {
   labelKey: string
   canAcceptEquipment?: (equipment: string) => boolean
   canAcceptResource?: (resource: keyof ResourceAmount, amount: number) => boolean
+  onReceiveEquipment?: (equipment: string) => void
 }
 
 function ensureInventoryStorage(target: { inventory?: InventoryStorage | null }): InventoryStorage {
@@ -44,6 +45,7 @@ export function moveInventoryEquipment(
   sourceEquipment.splice(index, 1)
   destination.inventory.equipment = destination.inventory.equipment ?? []
   destination.inventory.equipment.push(equipment)
+  destination.onReceiveEquipment?.(equipment)
   return true
 }
 

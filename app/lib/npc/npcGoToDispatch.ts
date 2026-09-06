@@ -1,6 +1,6 @@
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, UNIT_TYPES } from '../constants'
+import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, TYPE_ACTION, UNIT_TYPES } from '../constants'
 import { applyDiplomaticAggression } from '../combat/diplomaticAggression'
-import { drawInstanceBlinkingSelection } from '../graphics/selection'
+import { drawCellBlinkingSelection, drawInstanceBlinkingSelection } from '../graphics/selection'
 import { findInstancesInSight } from '../grid/visibility'
 import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
@@ -14,12 +14,12 @@ import type { Point } from '../../types/grid'
 const CLICK_TARGET_SEARCH_RANGE = 15
 const CLICK_TARGET_TOLERANCE_PX = 60
 
-const RESOURCE_SEND_TO: Partial<Record<string, (npc: UnitEntity, target: RuntimeEntity) => void>> = {
-  Tree: (npc, target) => npc.sendToTree?.(target),
-  Stone: (npc, target) => npc.sendToStone?.(target),
-  Gold: (npc, target) => npc.sendToGold?.(target),
-  Berrybush: (npc, target) => npc.sendToBerrybush?.(target),
-  Wheat: (npc, target) => npc.sendToFarm?.(target),
+const RESOURCE_SEND_TO_BY_ACTION: Partial<Record<string, (npc: UnitEntity, target: RuntimeEntity) => void>> = {
+  [ACTION_TYPES.chopwood]: (npc, target) => npc.sendToTree?.(target),
+  [ACTION_TYPES.minestone]: (npc, target) => npc.sendToStone?.(target),
+  [ACTION_TYPES.minegold]: (npc, target) => npc.sendToGold?.(target),
+  [ACTION_TYPES.forageberry]: (npc, target) => npc.sendToBerrybush?.(target),
+  [ACTION_TYPES.farm]: (npc, target) => npc.sendToFarm?.(target),
 }
 const NIGHT_WORK_REFUSAL_MS = 1200
 
@@ -57,6 +57,10 @@ function getNightWorkFallbackCell(npc: UnitEntity, cell: RuntimeCell, target: Ru
 
 type NightWorkRefusalOptions = {
   moveToFallback?: boolean
+}
+
+type NpcGoToDispatchResult = {
+  blinkTarget: boolean
 }
 
 function refuseNightWorkIfNeeded(
@@ -178,68 +182,69 @@ export function resolveHoverTarget(
   )
 }
 
-function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): boolean {
+function sendNpcToCell(npc: UnitEntity, cell: RuntimeCell, target: RuntimeEntity | null): NpcGoToDispatchResult {
   resetNpcDirectives(npc)
   delayUnitRestAfterActivity(npc)
   if (target) {
     const kind = target.category || target.type
-    const resourceSend = kind ? RESOURCE_SEND_TO[kind] : undefined
-    if (resourceSend) {
-      if (refuseNightWorkIfNeeded(npc, cell, target, { moveToFallback: false })) return false
+    const resourceAction = kind ? TYPE_ACTION[kind as keyof typeof TYPE_ACTION] : undefined
+    const resourceSend = resourceAction ? RESOURCE_SEND_TO_BY_ACTION[resourceAction] : undefined
+    if (resourceSend && resourceAction && npc.getActionCondition?.(target, resourceAction)) {
+      if (refuseNightWorkIfNeeded(npc, cell, target, { moveToFallback: false })) return { blinkTarget: false }
       resourceSend(npc, target)
-      return true
+      return { blinkTarget: true }
     }
     if (target.family === FAMILY_TYPES.building && npc.getActionCondition?.(target, ACTION_TYPES.build)) {
-      if (refuseNightWorkIfNeeded(npc, cell, target)) return false
+      if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
       npc.sendToBuilding?.(target as BuildingEntity)
-      return true
+      return { blinkTarget: true }
     }
     if (target.family === FAMILY_TYPES.building) {
       const building = target as BuildingEntity
       if (hasSameOwner(npc, building) && building.isBuilt) {
         npc.sendToEvt?.(building, null, { allowPassageStop: true })
-        return true
+        return { blinkTarget: false }
       }
     }
     if (target.family === FAMILY_TYPES.animal) {
       if (target.type === 'Horse' && npc.type === UNIT_TYPES.villager) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
         const captureAttemptResult = npc.sendToCaptureHorse?.(target)
-        return captureAttemptResult !== false
+        return { blinkTarget: captureAttemptResult !== false }
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.hunt)) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
         npc.sendToHunt?.(target)
-        return true
+        return { blinkTarget: true }
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.takemeat)) {
-        if (refuseNightWorkIfNeeded(npc, cell, target)) return false
+        if (refuseNightWorkIfNeeded(npc, cell, target)) return { blinkTarget: false }
         npc.sendToTakeMeat?.(target)
-        return true
+        return { blinkTarget: true }
       }
     }
     if (npc.type === UNIT_TYPES.priest) {
       if (npc.getActionCondition?.(target, ACTION_TYPES.heal)) {
         npc.sendTo?.(target, ACTION_TYPES.heal)
-        return true
+        return { blinkTarget: true }
       }
       if (npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
         npc.sendToConvert?.(target)
-        return true
+        return { blinkTarget: true }
       }
       if (applyDiplomaticAggression(npc, target).changed && npc.getActionCondition?.(target, ACTION_TYPES.convert)) {
         npc.sendToConvert?.(target)
-        return true
+        return { blinkTarget: true }
       }
     }
     const attackableFamilies = [FAMILY_TYPES.unit, FAMILY_TYPES.building, FAMILY_TYPES.animal]
     if (attackableFamilies.includes(target.family) && npc.getActionCondition?.(target, ACTION_TYPES.attack)) {
       npc.sendToAttack?.(target)
-      return true
+      return { blinkTarget: true }
     }
   }
   npc.sendTo?.(cell)
-  return false
+  return { blinkTarget: false }
 }
 
 function routeNpcGroupThroughBuildingInteriorEntry(npcs: UnitEntity[], cell: RuntimeCell): boolean {
@@ -248,11 +253,17 @@ function routeNpcGroupThroughBuildingInteriorEntry(npcs: UnitEntity[], cell: Run
   const route = context?.routeUnitIntoBuildingInterior
   if (!building || !route) return false
 
+  let routedAnyNpc = false
   for (const npc of npcs) {
     resetNpcDirectives(npc)
     delayUnitRestAfterActivity(npc)
-    if (!route(npc, building)) npc.sendTo?.(cell)
+    if (route(npc, building)) {
+      routedAnyNpc = true
+    } else {
+      npc.sendTo?.(cell)
+    }
   }
+  if (routedAnyNpc) drawCellBlinkingSelection(cell)
 
   return true
 }
@@ -265,16 +276,16 @@ export function sendNpcGroupToTarget(
 ): void {
   if (!npcs.length) return
   playOrderSound(npcs)
+  if (routeNpcGroupThroughBuildingInteriorEntry(npcs, cell)) return
   const target = resolveClickTarget(npcs[0], worldPoint, cell)
   if (target) {
-    let hasTargetAction = false
+    let shouldBlinkTarget = false
     for (const npc of npcs) {
-      if (sendNpcToCell(npc, cell, target)) hasTargetAction = true
+      if (sendNpcToCell(npc, cell, target).blinkTarget) shouldBlinkTarget = true
     }
-    if (hasTargetAction) drawInstanceBlinkingSelection(target as SelectableInstance)
+    if (shouldBlinkTarget) drawInstanceBlinkingSelection(target as SelectableInstance)
     return
   }
-  if (routeNpcGroupThroughBuildingInteriorEntry(npcs, cell)) return
   const map = npcs[0].context?.map
   const targetSpace = map ? getMapSpace(map, cell.spaceId) : null
   const grid = targetSpace?.grid ?? map?.grid

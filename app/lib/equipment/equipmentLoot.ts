@@ -1,8 +1,10 @@
 import { RESOURCE_STORAGE_NAMES, SHEET_TYPES, UNIT_TYPES } from '../constants'
 import { getUnitEquipment, refreshUnitEquipmentStats } from './equipmentStats'
+import { discoverHeroEquipment } from './equipmentDiscoveries'
 import { getUnitEquipmentTier } from '../units/unitExperience'
 import { applyBakedLpcUnitAssets } from '../lpc'
 import type { ResourceAmount } from '../../types/common'
+import type { UnitConfig } from '../../types/config'
 import type { HeroEquipmentSlot, HeroWeaponSlot, UnitEntity } from '../../types/entities'
 
 export const HERO_EQUIPMENT_SLOTS: readonly HeroEquipmentSlot[] = [
@@ -93,6 +95,24 @@ function cleanEquipment(items: readonly string[]): string[] {
   return items.filter(item => typeof item === 'string' && item.length > 0)
 }
 
+function randomArrowLootCount(unit: UnitEntity, config?: Pick<UnitConfig, 'corpseLootArrowMin' | 'corpseLootArrowMax'>): number {
+  const min = Math.max(1, Math.floor(config?.corpseLootArrowMin ?? 1))
+  const max = Math.max(min, Math.floor(config?.corpseLootArrowMax ?? min))
+  return unit.context?.map?.randomRange?.(min, max) ?? Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+function expandCorpseLootArrowStack(
+  unit: UnitEntity,
+  equipment: string[],
+  config?: Pick<UnitConfig, 'corpseLootArrowMin' | 'corpseLootArrowMax'>
+): string[] {
+  const arrowCount = randomArrowLootCount(unit, config)
+  if (arrowCount <= 1) return equipment
+  const arrow = equipment.find(item => item.startsWith('arrow_'))
+  if (!arrow) return equipment
+  return [...equipment, ...Array.from({ length: arrowCount - 1 }, () => arrow)]
+}
+
 export function getEquipmentStacks(items: readonly string[]): EquipmentStack[] {
   const counts = new Map<string, number>()
   for (const item of cleanEquipment(items)) {
@@ -119,6 +139,7 @@ export function addHeroInventoryItem(hero: UnitEntity | null | undefined, item: 
   if (!hero || !item) return false
   const inventory = getHeroInventory(hero)
   pushEquipmentCopies(inventory.equipment!, item, Math.max(1, Math.floor(count)))
+  discoverHeroEquipment(hero, item)
   return true
 }
 
@@ -175,7 +196,7 @@ export function getUnitCorpseLootEquipment(unit: UnitEntity): string[] {
         unit.owner?.civ
       )
 
-  unit.lootEquipment = cleanEquipment(equipment)
+  unit.lootEquipment = expandCorpseLootArrowStack(unit, cleanEquipment(equipment), config)
   return unit.lootEquipment
 }
 
@@ -231,7 +252,7 @@ export function pickupCorpseEquipment(
     if (equipmentIndex >= 0) corpse.equipment.splice(equipmentIndex, 1)
   }
 
-  getHeroInventory(hero).equipment!.push(equipment)
+  addHeroInventoryItem(hero, equipment)
   applyBakedLpcUnitAssets(corpse)
   corpse.syncAppearanceLayers?.(corpse.currentSheet ?? SHEET_TYPES.corpse)
   return true

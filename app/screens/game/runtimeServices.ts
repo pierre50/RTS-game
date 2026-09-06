@@ -1,5 +1,5 @@
 import type { ContainerChild } from 'pixi.js'
-import { BuildingInteriorEntryMarkerSystem } from '../../services/BuildingInteriorEntryMarkerSystem'
+import { BuildingInteriorEntryMarkerSystem } from '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem'
 import { CampPatrolSystem } from '../../services/patrol/CampPatrolSystem'
 import { DailyWorldEventSystem } from '../../services/DailyWorldEventSystem'
 import { DayNightSystem } from '../../services/DayNightSystem'

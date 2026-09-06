@@ -8,7 +8,11 @@ function loadNaturalRegrowthSystem(calls) {
       '../constants': {
         RESOURCE_TYPES: {
           berrybush: 'Berrybush',
+          copper: 'Copper',
           wheat: 'Wheat',
+          gold: 'Gold',
+          iron: 'Iron',
+          stone: 'Stone',
         },
         SHEET_TYPES: { standing: 'standingSheet' },
         UNIT_TYPES: { villager: 'Villager' },
@@ -18,6 +22,14 @@ function loadNaturalRegrowthSystem(calls) {
           berryRegrowRatioPerDay: 0.2,
           wheatGrowthFramesPerDay: 1,
           wheatRegrowRatioPerDay: 0.2,
+        },
+        NATURAL_RESOURCE_REGROWTH_BY_TYPE: {
+          Berrybush: { respawnDelayDays: 3, respawnQuantityRatio: 0.5 },
+          Wheat: { respawnDelayDays: 2, respawnQuantityRatio: 0.5 },
+          Stone: { respawnDelayDays: 7, respawnQuantityRatio: 0.2 },
+          Gold: { respawnDelayDays: 14, respawnQuantityRatio: 0.15 },
+          Copper: { respawnDelayDays: 10, respawnQuantityRatio: 0.15 },
+          Iron: { respawnDelayDays: 14, respawnQuantityRatio: 0.15 },
         },
       },
       '../lib': {
@@ -42,7 +54,7 @@ function loadNaturalRegrowthSystem(calls) {
   }).NaturalRegrowthSystem
 }
 
-test('daily natural regrowth resumes idle strict autonomous villagers after resources return', () => {
+test('daily natural regrowth waits for mineral respawn delays before resources return', () => {
   const calls = []
   const NaturalRegrowthSystem = loadNaturalRegrowthSystem(calls)
   const unit = {
@@ -59,7 +71,7 @@ test('daily natural regrowth resumes idle strict autonomous villagers after reso
     dayNight: { state: { hour: 8 } },
     map: {
       gaia: { animals: [] },
-      naturalResourceRespawnSlots: [{ i: 2, j: 2, type: 'Gold' }],
+      naturalResourceRespawnSlots: [{ depletedDay: 3, i: 2, j: 2, totalQuantity: 4, type: 'Gold' }],
       resources: new Set(),
       respawnNaturalResource: () => true,
     },
@@ -70,11 +82,47 @@ test('daily natural regrowth resumes idle strict autonomous villagers after reso
     players: [{ units: [unit] }],
   }
 
-  new NaturalRegrowthSystem(context).applyDailyRegrowth()
+  const system = new NaturalRegrowthSystem(context)
+
+  system.applyDailyRegrowth({ day: 16, previousDay: 15 })
+
+  assert.deepEqual(calls, [])
+  assert.equal(context.map.naturalResourceRespawnSlots.length, 1)
+
+  system.applyDailyRegrowth({ day: 17, previousDay: 16 })
 
   assert.deepEqual(calls, [
     ['updateResourcesMiniMap'],
     ['resumeAutonomy', 'gold-miner', 'gold', { exploreWhenNoTarget: false }],
   ])
   assert.deepEqual(context.map.naturalResourceRespawnSlots, [])
+})
+
+test('daily natural regrowth starts legacy mineral slots from the current day', () => {
+  const calls = []
+  const NaturalRegrowthSystem = loadNaturalRegrowthSystem(calls)
+  const slot = { i: 2, j: 2, totalQuantity: 4, type: 'Gold' }
+  const context = {
+    dayNight: { state: { hour: 8 } },
+    map: {
+      gaia: { animals: [] },
+      naturalResourceRespawnSlots: [slot],
+      resources: new Set(),
+      respawnNaturalResource: () => {
+        calls.push(['respawn'])
+        return true
+      },
+    },
+    menu: {
+      isMiniMapActive: () => true,
+      updateResourcesMiniMap: () => calls.push(['updateResourcesMiniMap']),
+    },
+    players: [],
+  }
+
+  new NaturalRegrowthSystem(context).applyDailyRegrowth({ day: 4, previousDay: 3 })
+
+  assert.deepEqual(calls, [])
+  assert.equal(slot.depletedDay, 4)
+  assert.deepEqual(context.map.naturalResourceRespawnSlots, [slot])
 })

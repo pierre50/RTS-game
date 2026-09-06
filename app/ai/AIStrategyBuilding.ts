@@ -1,4 +1,4 @@
-import { BUILDING_TYPES } from '../constants'
+import { BUILDING_TYPES, VILLAGER_ARRIVAL_CONFIG } from '../constants'
 import { canAfford, getBuildingPlacementSearchSize, getPositionInGridAroundInstance, instancesDistance } from '../lib'
 import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
 import type {
@@ -44,6 +44,7 @@ export function buyAIBuildingIfNeeded(
 ): boolean {
   const { ai } = strategy
   const building = ai.config.buildings[buildingType]
+  if (!building) return false
   if (
     condition &&
     canAfford(ai as Parameters<typeof canAfford>[0], building.cost) &&
@@ -110,24 +111,65 @@ function buyCoreInfrastructure(options: {
   barracks: AIBuildingLike[]
   buy: BuildActionBuyer
   desiredBarracks: number
+  granarys: AIBuildingLike[]
   map: AIStrategySnapshot['map']
   markets: AIBuildingLike[]
   notBuiltHouses: AIBuildingLike[]
   otherPlayers: AIStrategySnapshot['otherPlayers']
   placementCondition: PlacementConditionFactory
+  storagepits: AIBuildingLike[]
 }): number {
-  const { ai, anchor, barracks, buy, desiredBarracks, map, markets, notBuiltHouses, otherPlayers, placementCondition } =
-    options
+  const {
+    ai,
+    anchor,
+    barracks,
+    buy,
+    desiredBarracks,
+    granarys,
+    map,
+    markets,
+    notBuiltHouses,
+    otherPlayers,
+    placementCondition,
+    storagepits,
+  } = options
   const isEnemyFacing = (origin: AIGridPosition) => (cell: AIGridPosition) =>
     otherPlayers.every(player => instancesDistance(cell, player) <= instancesDistance(origin, player))
   const defensivePlacement = () => placementCondition(isEnemyFacing(anchor))
   let actions = 0
+  const expectedArrivalWave =
+    ai.population > 0
+      ? Math.min(
+          VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay,
+          Math.max(1, Math.floor(ai.population * VILLAGER_ARRIVAL_CONFIG.growthRate))
+        )
+      : 0
 
   if (
     buy(
-      ai.population + 2 > ai.populationMax && !notBuiltHouses.length,
+      ai.population + expectedArrivalWave + 2 > ai.populationMax && !notBuiltHouses.length,
       BUILDING_TYPES.house,
       () => findBuildingPosition(anchor, map, [6, 10], 0, placementCondition()),
+      false
+    )
+  )
+    actions++
+
+  if (
+    buy(
+      storagepits.length === 0,
+      BUILDING_TYPES.storagePit,
+      () => findBuildingPosition(anchor, map, [4, 12], 1, placementCondition()),
+      false
+    )
+  )
+    actions++
+
+  if (
+    buy(
+      granarys.length === 0,
+      BUILDING_TYPES.granary,
+      () => findBuildingPosition(anchor, map, [4, 12], 1, placementCondition()),
       false
     )
   )
@@ -141,7 +183,7 @@ function buyCoreInfrastructure(options: {
     actions++
 
   if (
-    buy(markets.length === 0, BUILDING_TYPES.market, () =>
+    buy(storagepits.length > 0 && granarys.length > 0 && markets.length === 0, BUILDING_TYPES.market, () =>
       findBuildingPosition(anchor, map, [6, 20], 1, defensivePlacement())
     )
   )
@@ -240,11 +282,13 @@ export function handleAIBuildingActions(
     barracks,
     buy,
     desiredBarracks,
+    granarys,
     map,
     markets,
     notBuiltHouses,
     otherPlayers,
     placementCondition,
+    storagepits,
   })
 
   const livingWheatTiles = farms.filter(farm => !farm.isDead && !farm.isDestroyed && (farm.quantity ?? 0) > 0)

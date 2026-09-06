@@ -104,7 +104,11 @@ function getWorkImpactPreset(action: string | null | undefined, target: RuntimeE
   if (
     target.family === FAMILY_TYPES.resource &&
     ((action === ACTION_TYPES.farm && target.type === RESOURCE_TYPES.wheat) ||
-      (action === ACTION_TYPES.forageberry && target.type === RESOURCE_TYPES.berrybush))
+      (action === ACTION_TYPES.forageberry &&
+        (target.type === RESOURCE_TYPES.berrybush ||
+          target.type === RESOURCE_TYPES.medicinalHerb ||
+          target.type === RESOURCE_TYPES.toxicHerb ||
+          target.type === RESOURCE_TYPES.fiberPlant)))
   ) {
     return PLANT_CUT_PRESET
   }

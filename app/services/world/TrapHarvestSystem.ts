@@ -162,15 +162,16 @@ export class TrapHarvestSystem implements DailyWorldEventHandler {
     this.syncTrapIndicators()
   }
 
-  handleDailyWorldEvent(_event: DailyWorldEvent): void {
-    this.fillTraps()
+  handleDailyWorldEvent(event: DailyWorldEvent): void {
+    this.fillTraps(event)
   }
 
-  fillTraps(): void {
+  fillTraps(event?: DailyWorldEvent): void {
     const { players, menu } = this.context
 
     let filled = false
     for (const player of players) {
+      let playerFilled = 0
       for (const building of player.buildings ?? []) {
         if (!isTrap(building)) continue
         if (building.containedAnimalType) continue
@@ -178,7 +179,9 @@ export class TrapHarvestSystem implements DailyWorldEventHandler {
         building.containedAnimalType = pickPreyType(this.context)
         this.syncTrapIndicator(building)
         filled = true
+        playerFilled++
       }
+      event?.report?.add({ count: playerFilled, player, type: 'trap-filled' })
     }
 
     if (filled && menu.isMiniMapActive?.() !== false) {

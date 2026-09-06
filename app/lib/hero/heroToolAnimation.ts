@@ -142,7 +142,7 @@ export function playHeroToolAnimation(
   })
 }
 
-export function finishHeroToolAnimation(hero: UnitEntity): void {
+export function finishHeroToolAnimation(hero: UnitEntity, { restoreStanding = true }: { restoreStanding?: boolean } = {}): void {
   const sprite = hero.sprite
   logHeroSlashFrame(hero, 'tool:finish:start')
   if (hero.attackRecoveryAnimationTaskId != null) {
@@ -157,7 +157,7 @@ export function finishHeroToolAnimation(hero: UnitEntity): void {
   hero.actionLocked = false
   hero.contextAction = null
   const hadPendingOrder = hero.flushPendingOrder?.()
-  if (!hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
+  if (restoreStanding && !hadPendingOrder && !hero.isDead) hero.setTextures?.(SHEET_TYPES.standing)
   logHeroSlashFrame(hero, 'tool:finish:end', { hadPendingOrder: Boolean(hadPendingOrder) })
   hero.syncShadow?.()
 }

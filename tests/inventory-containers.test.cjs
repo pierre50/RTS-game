@@ -59,6 +59,24 @@ test('inventory containers respect destination acceptance rules', () => {
   assert.deepEqual(locked.inventory.resources, {})
 })
 
+test('inventory containers notify the destination when equipment enters it', () => {
+  const { createInventoryContainer, moveInventoryEquipment } = loadInventoryContainers()
+  const hero = {}
+  const chest = { inventory: { equipment: ['bow'] } }
+  const received = []
+  const heroContainer = createInventoryContainer(hero, {
+    id: 'hero',
+    labelKey: 'inventoryBag',
+    onReceiveEquipment: equipment => received.push(equipment),
+  })
+  const chestContainer = createInventoryContainer(chest, { id: 'chest', labelKey: 'inventoryChest' })
+
+  assert.equal(moveInventoryEquipment(chestContainer, heroContainer, 'bow'), true)
+
+  assert.deepEqual(hero.inventory.equipment, ['bow'])
+  assert.deepEqual(received, ['bow'])
+})
+
 test('inventory containers default resource moves still move the whole stack', () => {
   const { createInventoryContainer, moveInventoryResource } = loadInventoryContainers()
   const hero = { inventory: { resources: { wood: 12 } } }

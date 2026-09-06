@@ -25,6 +25,8 @@ function worldEnvironmentLabel(environment?: string | null): string | null {
       return t('worldMapEnvironmentJungle')
     case 'Desert':
       return t('worldMapEnvironmentDesert')
+    case 'Steppe':
+      return t('worldMapEnvironmentSteppe')
     default:
       return null
   }

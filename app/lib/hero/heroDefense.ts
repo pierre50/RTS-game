@@ -5,9 +5,10 @@ import { onSpriteLoopAtFrame } from '../graphics'
 import { t } from '../lang'
 import { degreeToDirection, getReliefOffset } from '../maths'
 import { playAudibleSoundCue } from '../audio/sound'
-import { drainTimedHeroEnergy, hasEnergyToStartTimedHeroAction } from './heroEnergy'
+import { drainTimedHeroEnergy } from './heroEnergy'
 import { finishHeroToolAnimation, flashHeroLayers, type FlashableLayer } from './heroToolAnimation'
 import { getHeroAimDegree } from './heroTargeting'
+import { hasEnergyForAction } from '../units/unitEnergy'
 import type { UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { HeroEquippedItem } from './heroToolEquipment'
@@ -101,12 +102,12 @@ export function canHeroDefendWithTool(tool: HeroEquippedItem | null | undefined)
 }
 
 function hasEnergyToStartDefense(hero: UnitEntity): boolean {
-  return hasEnergyToStartTimedHeroAction(hero, HERO_DEFENSE_ENERGY_ACTION)
+  return hasEnergyForAction(hero, HERO_DEFENSE_ENERGY_ACTION)
 }
 
 function drainHeroDefenseEnergy(hero: UnitEntity, now = performance.now()): boolean {
   if (!hero.heroDefenseActive) return true
-  return drainTimedHeroEnergy(
+  const hadEnergyForElapsedTime = drainTimedHeroEnergy(
     hero,
     HERO_DEFENSE_ENERGY_ACTION,
     hero.heroDefenseStart,
@@ -115,6 +116,7 @@ function drainHeroDefenseEnergy(hero: UnitEntity, now = performance.now()): bool
     HERO_POWER_CHARGE_MS,
     now
   )
+  return hadEnergyForElapsedTime && (hero.energy ?? 0) > 0
 }
 
 function stopHeroDefenseReverse(hero: UnitEntity): void {
@@ -229,7 +231,11 @@ function showHeroDefenseFlash(hero: UnitEntity): void {
 export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
   const sprite = hero.sprite
   if (!sprite || hero.actionLocked || !canHeroDefendWithTool(tool)) return false
-  if (!hasEnergyToStartDefense(hero)) return false
+  if (hero.heroDefenseEnergyExhausted) return false
+  if (!hasEnergyToStartDefense(hero)) {
+    hero.heroDefenseEnergyExhausted = true
+    return false
+  }
   stopHeroDefenseReverse(hero)
   stopHeroDefenseReleaseFallback(hero)
   hero.actionLocked = true
@@ -238,6 +244,7 @@ export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null
   hero.heroDefenseLastEnergyAt = now
   hero.heroDefenseActive = true
   hero.heroDefenseVisualLocked = false
+  hero.heroDefenseEnergyExhausted = false
   hero.showHeroDefenseFlash = () => showHeroDefenseFlash(hero)
   hero.setTextures?.(SHEET_TYPES.action)
   sprite.loop = false
@@ -251,7 +258,7 @@ export function beginHeroDefense(hero: UnitEntity, tool: HeroEquippedItem | null
 export function updateHeroDefense(hero: UnitEntity, now = performance.now()): void {
   if (!hero.heroDefenseActive) return
   if (!drainHeroDefenseEnergy(hero, now)) {
-    releaseHeroDefense(hero)
+    cancelHeroDefense(hero, { energyExhausted: true, restoreStanding: false })
     return
   }
   continueHeroDefenseAnimation(hero)
@@ -285,7 +292,10 @@ export function releaseHeroDefense(hero: UnitEntity): boolean {
   return true
 }
 
-export function cancelHeroDefense(hero: UnitEntity): void {
+export function cancelHeroDefense(
+  hero: UnitEntity,
+  { energyExhausted = false, restoreStanding = true }: { energyExhausted?: boolean; restoreStanding?: boolean } = {}
+): void {
   if (
     !hero.heroDefenseActive &&
     hero.heroDefenseReverseTaskId == null &&
@@ -296,11 +306,12 @@ export function cancelHeroDefense(hero: UnitEntity): void {
   stopHeroDefenseReverse(hero)
   stopHeroDefenseReleaseFallback(hero)
   clearHeroDefense(hero)
+  hero.heroDefenseEnergyExhausted = energyExhausted
   const sprite = hero.sprite
   if (sprite) {
     sprite.onComplete = undefined
     sprite.onFrameChange = undefined
     sprite.loop = true
   }
-  finishHeroToolAnimation(hero)
+  finishHeroToolAnimation(hero, { restoreStanding })
 }

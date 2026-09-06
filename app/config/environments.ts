@@ -9,7 +9,7 @@ const CIV_ENVIRONMENTS: Record<string, EnvironmentId> = {
   Kemet: 'Desert',
   Sumeria: 'Desert',
   Nobatia: 'Desert',
-  Xia: 'Jungle',
+  Xia: 'Steppe',
   Alba: 'BlackForest',
   Nord: 'BlackForest',
 }

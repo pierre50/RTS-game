@@ -88,6 +88,8 @@ const EXTRA_UNIT_DEFINITIONS: Record<string, UnitConfig> = {
     attackRecoveryMs: 800,
     trainingDays: 0,
     equipment: ['quiver', 'bow', 'arrow_ceramic', 'sack_cloth_hood_leather'],
+    corpseLootArrowMin: 3,
+    corpseLootArrowMax: 8,
     projectile: 'Arrow',
     combatBehaviorPreset: 'rangedKite',
     cost: {},
@@ -126,9 +128,7 @@ const BUILDING_TYPES_WITHOUT_HERO_OCCLUSION_FADE = new Set<string>([
   ...CAMP_DECORATION_BUILDING_TYPES,
 ])
 
-const BUILDING_TYPES_WITH_SPRITE_SHADOW = new Set<string>([
-  ...CAMP_DECORATION_BUILDING_TYPES,
-])
+const BUILDING_TYPES_WITH_SPRITE_SHADOW = new Set<string>([...CAMP_DECORATION_BUILDING_TYPES])
 
 const EXTRA_PROJECTILES: Record<string, ProjectileConfig> = {
   Arrow: arrowProjectileConfig('projectiles/arrow_ceramic', LPC_ARROW_PROJECTILE_CONFIG),
@@ -194,6 +194,9 @@ export function createPlayerData(
     }
     if (BUILDING_TYPES_WITH_SPRITE_SHADOW.has(buildingName)) {
       building.useSpriteShadow = true
+    }
+    if (Array.isArray(building.units)) {
+      building.units = building.units.filter((unitName: string) => unitName !== 'Villager')
     }
   }
 

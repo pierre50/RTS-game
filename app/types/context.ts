@@ -9,7 +9,7 @@ import type {
   ResourceEntity,
   UnitResourceDeliveryReturnTask,
 } from './entities'
-import type { MenuButtonSpec, MinimapPlayerCanvas } from './ui'
+import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent, TooltipSource } from './ui'
 import type { HeroEquippedItem } from './heroTools'
 import type { FactionSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
@@ -117,6 +117,9 @@ export interface MenuLike {
   selection?: RuntimeEntity | null
   icons?: Record<string, string>
   infoIcons?: Record<string, string>
+  menuTooltip?: {
+    bind(element: HTMLElement, content: TooltipContent | TooltipSource): void
+  }
   handleHotkey?(key: string): void
   playUiClick?(): void
   showMessage(message: string, type?: string): void
@@ -133,7 +136,7 @@ export interface MenuLike {
   isMiniMapActive?(): boolean
   updateInfo(id: string, value: string | number | ((element: HTMLElement) => void)): void
   updateButtonContent(id: string, value: string | number | ((element: HTMLElement) => void)): void
-  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec
+  getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec
   getCancelUnitTrainingButton(building: BuildingEntity): MenuButtonSpec
   getActionTechnologyButton(type: string): MenuButtonSpec
   getHeroTechnologyButtons?(): MenuButtonSpec[]
@@ -174,7 +177,11 @@ interface EntityPreviewLike {
 
 interface MinimapManagerLike {
   getMinimapFactor(): number
-  getMinimapWorldPoint?(clientX: number, clientY: number, rect: { left: number; top: number; width: number }): {
+  getMinimapWorldPoint?(
+    clientX: number,
+    clientY: number,
+    rect: { left: number; top: number; width: number }
+  ): {
     x: number
     y: number
   }

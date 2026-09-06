@@ -353,10 +353,10 @@ export function showConversionFeedback(target: RuntimeEntity, color?: string | n
   if (canShowConversionFlash(target)) startConversionWave(target, color)
 }
 
-export function showResourceGainFeedback(target: RuntimeEntity, amount: number): void {
+export function showResourceGainFeedback(target: RuntimeEntity, amount: number, label?: string): void {
   if (amount <= 0) return
   showFloatingText(target, {
-    text: `+${amount}`,
+    text: label ? `+${amount} ${label}` : `+${amount}`,
     fill: 0xb8ff7a,
     stroke: 0x22591f,
     taskLabel: 'resource.gainText',

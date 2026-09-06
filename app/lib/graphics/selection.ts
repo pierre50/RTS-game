@@ -3,6 +3,7 @@ import { COLOR_GREEN, LABEL_TYPES } from '../../constants'
 import { cartesianToIsometric } from '../maths'
 import { getBuildingFootprintCells } from '../grid/cells'
 import type { Grid, GridCell } from '../../types/grid'
+import type { RuntimeCell } from '../../types/map'
 
 const ISO_FOOTPRINT_HALF_WIDTH = 32
 const ISO_FOOTPRINT_HALF_HEIGHT = 16
@@ -158,6 +159,19 @@ export function drawInstanceBlinkingSelection(instance: SelectableInstance): voi
   selection.position.y = markerOffset.y + (instance.reliefLift ?? 0)
   instance.addChildAt(selection, 0)
 
+  blinkSelection(selection, () => instance.removeChild(selection))
+}
+
+export function drawCellBlinkingSelection(cell: RuntimeCell): void {
+  if (!cell.addChild) return
+  const selection = createIsoSelectionMarker({ factor: 1 })
+  const removableCell = cell as RuntimeCell & { removeChild?: (child: Graphics) => void }
+  cell.addChild(selection)
+
+  blinkSelection(selection, () => removableCell.removeChild?.(selection))
+}
+
+function blinkSelection(selection: Graphics, remove: () => void): void {
   const blink = (alpha: number, duration: number): Promise<void> =>
     new Promise(resolve => {
       selection.alpha = alpha
@@ -170,7 +184,7 @@ export function drawInstanceBlinkingSelection(instance: SelectableInstance): voi
     await blink(1, 300)
     await blink(0, 300)
     await blink(1, 300)
-    instance.removeChild(selection)
+    remove()
   }
 
   blinkSequence()

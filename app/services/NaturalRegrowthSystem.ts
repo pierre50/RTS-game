@@ -6,7 +6,7 @@ import type { GameContextLike } from '../types/context'
 import type { AnimalEntity, ResourceEntity, RuntimeEntity } from '../types/entities'
 import type { PlayerLike } from '../types/player'
 import type { SaveEntityState } from '../types/save'
-import { NATURAL_REGROWTH_CONFIG } from '../config/gameplay'
+import { NATURAL_REGROWTH_CONFIG, NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventTypes'
 
 type AnimalSlot = Partial<AnimalEntity> & {
@@ -117,6 +117,17 @@ function resumeIdleAutonomousVillagersAfterRegrowth(context: GameContextLike): v
   }
 }
 
+function isNaturalResourceRespawnDue(slot: SaveEntityState, day: number): boolean {
+  const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
+  if (!config) return false
+  const depletedDay = Number(slot.depletedDay)
+  if (!Number.isFinite(depletedDay)) {
+    slot.depletedDay = day
+    return false
+  }
+  return day - depletedDay >= config.respawnDelayDays
+}
+
 export class NaturalRegrowthSystem implements DailyWorldEventHandler {
   context: GameContextLike
 
@@ -124,18 +135,20 @@ export class NaturalRegrowthSystem implements DailyWorldEventHandler {
     this.context = context
   }
 
-  handleDailyWorldEvent(_event: DailyWorldEvent): void {
-    this.applyDailyRegrowth()
+  handleDailyWorldEvent(event: DailyWorldEvent): void {
+    this.applyDailyRegrowth(event)
   }
 
-  applyDailyRegrowth(): void {
+  applyDailyRegrowth(event?: DailyWorldEvent): void {
     const { map, menu } = this.context
+    const day = event?.day ?? this.context.dayNight?.state?.day ?? 1
     let resourcesChanged = false
     const respawnMap = map as MapWithNaturalResourceRespawn
     const respawnSlots = respawnMap.naturalResourceRespawnSlots ?? []
 
     for (let index = respawnSlots.length - 1; index >= 0; index--) {
       const slot = respawnSlots[index]
+      if (!isNaturalResourceRespawnDue(slot, day)) continue
       if (respawnMap.respawnNaturalResource?.(slot)) {
         respawnSlots.splice(index, 1)
         resourcesChanged = true

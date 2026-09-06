@@ -78,6 +78,11 @@ export type AIEntityLike = {
   sendToCaptureHorse?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToFarm?(target: AIEntityLike | RuntimeEntity): boolean | void
   sendToBuilding?(target: AIEntityLike | RuntimeEntity): boolean | void
+  sendToEvt?(
+    target: AIEntityLike | RuntimeEntity | RuntimeCell | null,
+    action?: string | null,
+    options?: { forceRepath?: boolean; allowPassageStop?: boolean }
+  ): boolean | void
   sendToAttack?(target: AIEntityLike | RuntimeEntity, options?: UnitCommandOptions): boolean | void
   runaway?(target: AIEntityLike | RuntimeEntity): boolean | void
   stop?(): void
@@ -98,12 +103,13 @@ export type AIEntityLike = {
 }
 
 export type AIBuildingLike = AIEntityLike & {
+  units?: string[]
   queue?: string[]
+  trainingQueue?: Array<{ type?: string; trainee?: AIEntityLike | RuntimeEntity | null }>
   loading?: number | null
   technology?: { type?: string } | null
   trainingUnit?: AIEntityLike | RuntimeEntity | null
   trainingType?: string | null
-  buyUnit?(unitType: string, immediate?: boolean, paid?: boolean, extra?: UnitCreationExtra): boolean | void
   buyTechnology?(technology: string): boolean | void
 }
 

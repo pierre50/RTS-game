@@ -518,6 +518,19 @@
     "researchTime": 0,
     "cost": {}
   },
+  "BowCrafting": {
+    "icon": "076_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "discoveredEquipment",
+        "op": "includes",
+        "value": "bow"
+      }
+    ],
+    "researchTime": 0,
+    "cost": {}
+  },
   "Woodworking": {
     "icon": "076_50729",
     "key": "technologies",

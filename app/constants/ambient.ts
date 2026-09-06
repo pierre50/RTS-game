@@ -8,8 +8,9 @@ export const BIOME_TREE_CHANCE = {
   Grass: 0,
   Desert: 0,
 }
-// Player safe radius (cells) — no biome trees placed within this distance of any spawn
-export const BIOME_TREE_PLAYER_SAFE_DIST = 22
+// Tiny technical clearance around the exact spawn footprint. Large empty start zones
+// are avoided by resource generation; future city placement can clean resources locally.
+export const BIOME_TREE_PLAYER_SAFE_DIST = 6
 // Player safe radius (cells) — no animals spawned within this distance of any spawn,
 // above the highest runaway sight (Deer: 8) so the camp start isn't a stampede
 export const ANIMAL_PLAYER_SAFE_DIST = 14

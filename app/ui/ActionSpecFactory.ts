@@ -13,7 +13,6 @@ import { renderUnitTypeAvatar } from '../lib/avatar'
 import { HORSE_COLOR_PALETTES, type HorseColor } from '../lib/horses/horseColors'
 import { t } from '../lib/lang'
 import { AGE_TECHNOLOGIES, AGE_UP_ENABLED, BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES, UNIT_TYPES } from '../constants'
-import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../lib/buildings/buildingTraining'
 import { hasLivingChief, heroCanCommand, playerNeedsChiefForCommand } from '../lib/chief'
 import { playUiSound } from '../lib/audio/uiSound'
 import {
@@ -46,19 +45,16 @@ function isUnitEntity(selection: unknown): selection is UnitEntity {
   return (selection as RuntimeEntity | null | undefined)?.family === FAMILY_TYPES.unit
 }
 
-function hasPendingTrainingUnit(selection: BuildingEntity, type: string): boolean {
+function hasQueuedTrainingType(selection: BuildingEntity, type: string): boolean {
   return Boolean(
     selection.trainingQueue?.some(item => item.type === type) ||
-      selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType === type && !unit.isDead)
+      (selection.loading != null && selection.queue?.[0] === type) ||
+      selection.queue?.some(item => item === type)
   )
 }
 
 function hasAnyUnitTraining(selection: BuildingEntity): boolean {
-  return Boolean(
-    selection.queue?.length ||
-      selection.trainingQueue?.length ||
-      selection.owner?.units?.some(unit => unit.dest === selection && unit.trainingTargetType && !unit.isDead)
-  )
+  return Boolean(selection.queue?.length || selection.trainingQueue?.length || selection.loading != null)
 }
 
 function isOwnedByPlayer(building: BuildingEntity, player: PlayerLike): boolean {
@@ -120,11 +116,6 @@ export class ActionSpecFactory {
     return !heroCanCommand(controls.heroUnit) || !hasLivingChief(player)
   }
 
-  isChiefTrainingBlocked(type: string, building?: BuildingEntity): boolean {
-    if (!this.isChiefCommandBlocked()) return false
-    return type === 'Villager' || Boolean(building && isTraineeTrainingType(building, type))
-  }
-
   preloadIcons(player: PlayerLike): void {
     const preload = (src: string) => {
       new Image().src = src
@@ -142,42 +133,17 @@ export class ActionSpecFactory {
     })
   }
 
-  getActionUnitButton(type: string, building?: BuildingEntity): MenuButtonSpec {
+  getBuildingTrainingStatusButton(type: string, building: BuildingEntity): MenuButtonSpec {
     const { menu } = this
     const {
       context: { player },
     } = menu
-    const unit = player.config.units[type]
-    const isTraineeBuildingOngoing = (): boolean => {
-      if (!building || !isTraineeTrainingType(building, type)) return false
-      return hasPendingTrainingUnit(building, type) || (building.loading !== null && building.queue?.[0] === type)
-    }
     return {
       id: type,
-      tooltip: () => this.getUnitTooltip(type, unit, building),
-      disabled: () =>
-        this.isChiefTrainingBlocked(type, building) ||
-        !canPayActionCost(player, getUnitTrainingCost(player, type)) ||
-        Boolean(building && !isTraineeTrainingType(building, type) && !hasBuildingTrainingCapacity(building)),
-      hide: () => {
-        if (building && isTraineeTrainingType(building, type)) return !isTraineeBuildingOngoing()
-        return (unit.conditions || []).some(condition => !isValidCondition(condition, player))
-      },
-      onClick: (selection: RuntimeEntity) => {
-        if (!isBuildingEntity(selection)) return
-        if (this.isChiefTrainingBlocked(type, selection)) {
-          menu.showMessage(t('requiresChief'), 'warning')
-          return
-        }
-        // Trainee units aren't bought directly: send a villager to the building instead.
-        if (isTraineeTrainingType(selection, type)) return
-        if (!canPayActionCost(player, getUnitTrainingCost(player, type))) return
-        if (player.population >= player.populationMax) {
-          menu.showMessage(t('needHouses'), 'warning')
-          return
-        }
-        selection.buyUnit?.(type)
-      },
+      tooltip: () => ({
+        title: t(type),
+      }),
+      hide: () => !hasQueuedTrainingType(building, type),
       onCreate: (selection: RuntimeEntity, element: HTMLElement) => {
         if (!isBuildingEntity(selection)) return
         const unitSelection = selection
@@ -192,24 +158,7 @@ export class ActionSpecFactory {
         if (renderUnitTypeAvatar(menu.context.app, type, unitSelection.owner ?? player, avatarCanvas)) {
           img.src = avatarCanvas.toDataURL()
         }
-        const isTrainee = isTraineeTrainingType(unitSelection, type)
-        if (isTrainee || this.isChiefTrainingBlocked(type, unitSelection)) {
-          img.classList.add('is-passive')
-        } else {
-          img.addEventListener('pointerup', () => {
-            this.playUiClick()
-            if (this.isChiefTrainingBlocked(type, unitSelection)) {
-              menu.showMessage(t('requiresChief'), 'warning')
-              return
-            }
-            if (!canPayActionCost(player, getUnitTrainingCost(player, type))) return
-            if (player.population >= player.populationMax) {
-              menu.showMessage(t('needHouses'), 'warning')
-              return
-            }
-            unitSelection.buyUnit?.(type)
-          })
-        }
+        img.classList.add('is-passive')
         div.appendChild(img)
         element.appendChild(div)
       },

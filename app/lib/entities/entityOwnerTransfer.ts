@@ -157,7 +157,10 @@ export function transferEntityOwner(
     target.loading = null
     target.finalTexture?.()
     if (target.interface) {
-      const units = newOwner.isPlayed && menu ? (target.units || []).map(key => menu.getActionUnitButton?.(key, target)) : []
+      const units =
+        newOwner.isPlayed && menu
+          ? (target.units || []).map(key => menu.getBuildingTrainingStatusButton?.(key, target))
+          : []
       target.interface.menu = newOwner.isPlayed
         ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
             (item): item is NonNullable<typeof item> => Boolean(item)

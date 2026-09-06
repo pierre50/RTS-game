@@ -27,8 +27,24 @@ function loadResourceSpriteFactory() {
   }
 
   class Sprite {
+    constructor(texture = {}) {
+      this.texture = texture
+      this.anchor = {
+        x: texture.defaultAnchor?.x ?? 0,
+        y: texture.defaultAnchor?.y ?? 0,
+        copyFrom: anchor => {
+          this.anchor.x = anchor.x
+          this.anchor.y = anchor.y
+        },
+        set: (x, y) => {
+          this.anchor.x = x
+          this.anchor.y = y
+        },
+      }
+    }
+
     static from(texture) {
-      return { texture }
+      return new Sprite(texture)
     }
   }
 
@@ -49,17 +65,26 @@ function loadResourceSpriteFactory() {
   const module = loadTsModule('app/classes/ResourceSpriteFactory.ts', {
     mocks: {
       'pixi.js': { AnimatedSprite, Assets, Polygon: class {}, Sprite },
-      '../constants': { RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' } },
+      '../constants': {
+        RESOURCE_TYPES: {
+          berrybush: 'Berrybush',
+          fiberPlant: 'FiberPlant',
+          medicinalHerb: 'MedicinalHerb',
+          toxicHerb: 'ToxicHerb',
+          wheat: 'Wheat',
+        },
+        WILDGRASS_RESOURCE_TYPES: new Set(['MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
+      },
       '../lib': {
         bindAnimatedSpriteToTicker: () => {},
         getAnimationFrames: sourceTextures => sourceTextures,
-        getTexture: () => ({}),
+        getTexture: () => ({ defaultAnchor: { x: 0.5, y: 0.5 } }),
         getTextureSheet: () => 'sheet',
         parseTextureRef: textureRef => textureRef,
         textureRefToString: () => 'texture',
       },
       './ResourceTexture': {
-        getTerrainAssets: () => null,
+        getTerrainAssets: assets => assets,
         normalizeResourceTextureRef: textureRef => textureRef,
       },
     },
@@ -84,4 +109,19 @@ test('mature wheat applies the mature frame anchor during sprite creation', () =
   assert.equal(sprite.currentFrame, 2)
   assert.equal(sprite.anchor.x, 0.75)
   assert.equal(sprite.anchor.y, 0.8)
+})
+
+test('wildgrass static sprites anchor at their base for shadows and wind', () => {
+  const { createResourceSprite } = loadResourceSpriteFactory()
+  const resource = {
+    assets: { sheet: 'resources/wildgrass', frame: 0 },
+    context: { app: {}, map: {} },
+    isAnimated: false,
+    type: 'MedicinalHerb',
+  }
+
+  const sprite = createResourceSprite(resource, { i: 1, j: 1, type: 'MedicinalHerb' }, { type: 'Grass' })
+
+  assert.equal(sprite.anchor.x, 0.5)
+  assert.equal(sprite.anchor.y, 0.82)
 })

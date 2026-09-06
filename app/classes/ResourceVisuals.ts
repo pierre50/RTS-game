@@ -7,7 +7,7 @@ import {
   isEntityInActiveMapSpace,
   parseTextureRef,
 } from '../lib'
-import { LABEL_TYPES, RESOURCE_TYPES } from '../constants'
+import { LABEL_TYPES, RESOURCE_TYPES, WILDGRASS_RESOURCE_TYPES } from '../constants'
 import { getResourceWindAnimationEnabled, getShadowsEnabled } from '../lib/audio/settings'
 import type { RuntimeMap } from '../types/map'
 
@@ -109,6 +109,10 @@ export function isWindAnimatedWheat(resource: ResourceVisualOwner): boolean {
   )
 }
 
+function isWildgrassResource(resource: ResourceVisualOwner): boolean {
+  return WILDGRASS_RESOURCE_TYPES.has(resource.type)
+}
+
 export function isCutOrFallenTree(resource: ResourceVisualOwner): boolean {
   if (resource.type !== RESOURCE_TYPES.tree || !resource.textureName) return false
   const sheet = getTextureSheet(resource.textureName)
@@ -124,6 +128,7 @@ export function isWindMotionEligible(resource: ResourceVisualOwner): boolean {
     !isCutOrFallenTree(resource) &&
     (resource.type === RESOURCE_TYPES.tree ||
       resource.type === RESOURCE_TYPES.berrybush ||
+      isWildgrassResource(resource) ||
       isWindAnimatedWheat(resource))
   )
 }

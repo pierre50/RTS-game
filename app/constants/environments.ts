@@ -1,22 +1,24 @@
 // One generated map now represents a single coherent environment. Decorative
 // patchwork and lake/oasis shapes stay small and controlled per environment.
-export type EnvironmentId = 'Temperate' | 'BlackForest' | 'Jungle' | 'Desert'
+export type EnvironmentId = 'Temperate' | 'BlackForest' | 'Jungle' | 'Desert' | 'Steppe'
 
 export const DEFAULT_ENVIRONMENT_ID: EnvironmentId = 'Temperate'
 
-export const ENVIRONMENT_IDS: EnvironmentId[] = ['Temperate', 'BlackForest', 'Jungle', 'Desert']
+export const ENVIRONMENT_IDS: EnvironmentId[] = ['Temperate', 'BlackForest', 'Jungle', 'Desert', 'Steppe']
 
 // Palette source: scripts/retro_palette/duel.hex.
 const TEMPERATE_WATER_BACKGROUND_COLOR = 0x006b6d
 const BLACK_FOREST_WATER_BACKGROUND_COLOR = 0x07487c
 const JUNGLE_WATER_BACKGROUND_COLOR = 0x008279
 const DESERT_WATER_BACKGROUND_COLOR = 0x328ca7
+const STEPPE_WATER_BACKGROUND_COLOR = TEMPERATE_WATER_BACKGROUND_COLOR
 
 const WATER_BACKGROUND_COLORS_BY_ENVIRONMENT: Record<EnvironmentId, number> = {
   Temperate: TEMPERATE_WATER_BACKGROUND_COLOR,
   BlackForest: BLACK_FOREST_WATER_BACKGROUND_COLOR,
   Jungle: JUNGLE_WATER_BACKGROUND_COLOR,
   Desert: DESERT_WATER_BACKGROUND_COLOR,
+  Steppe: STEPPE_WATER_BACKGROUND_COLOR,
 }
 
 export interface EnvironmentTerrainParams {
@@ -78,6 +80,7 @@ export interface EnvironmentTerrainParams {
   // environment is now single-type ground, these can no longer place a wrong-sprite tree —
   // this is purely a density knob (e.g. Desert's "peu de foret").
   forestDensity: number
+  treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null
   waterBackgroundColor: number
 }
 
@@ -90,6 +93,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.8, maxRadius: 7.2, shoreRadius: 2.5, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.2,
+    treeTextureFamily: null,
     waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Temperate,
   },
   // Beaucoup de foret (noire), quelques lacs et petites zones de terre.
@@ -100,6 +104,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
+    treeTextureFamily: null,
     waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.BlackForest,
   },
   // Beaucoup de foret palmier, quelques lacs et petites zones de terre.
@@ -110,6 +115,7 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.6, maxRadius: 6.8, shoreRadius: 2.2, shoreType: null, shoreTreeChance: null },
     reliefAmplitude: 1,
     forestDensity: 0.3,
+    treeTextureFamily: null,
     waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Jungle,
   },
   // Peu de foret, sol en desert, quelques points d'eau (oasis: herbe + arbres palmier autour),
@@ -123,7 +129,19 @@ export const ENVIRONMENT_TERRAIN_PARAMS: Record<EnvironmentId, EnvironmentTerrai
     lakes: { count: 2, minRadius: 3.2, maxRadius: 6.2, shoreRadius: 6.5, shoreType: 'Jungle', shoreTreeChance: 0.28 },
     reliefAmplitude: 0.3,
     forestDensity: 0.1,
+    treeTextureFamily: null,
     waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Desert,
+  },
+  // Grande prairie d'herbe, tres peu de forets regroupees en pins noirs, et des plaques de neige.
+  Steppe: {
+    groundType: 'Grass',
+    groundTreeChance: 0,
+    patchwork: { count: 10, minRadius: 2.4, maxRadius: 6.2, terrainType: 'Snow', treeChance: null },
+    lakes: { count: 1, minRadius: 3.2, maxRadius: 6.0, shoreRadius: 2.0, shoreType: null, shoreTreeChance: null },
+    reliefAmplitude: 0.65,
+    forestDensity: 1,
+    treeTextureFamily: 'DarkForest',
+    waterBackgroundColor: WATER_BACKGROUND_COLORS_BY_ENVIRONMENT.Steppe,
   },
 }
 

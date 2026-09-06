@@ -17,7 +17,9 @@ export function createBuildingEntityInterface(building: BuildingInterfaceHost): 
   const {
     context: { editor, map, menu },
   } = building
-  const units = editor ? [] : (building.units || []).map((key: string) => menu.getActionUnitButton(key, building))
+  const units = editor
+    ? []
+    : (building.units || []).map((key: string) => menu.getBuildingTrainingStatusButton(key, building))
 
   return {
     info: (element: HTMLElement, options?: EntityInfoRenderOptions) => {

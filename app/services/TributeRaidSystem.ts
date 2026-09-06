@@ -1,8 +1,6 @@
 import { Player } from '../classes/players/Player'
-import { ACTION_TYPES, FADE_DURATION_MS, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { canAfford, getCellsAroundPoint, getFreeLandCellAroundInstance, payCost } from '../lib'
-import { createNonReservedPassageCellCondition } from '../lib/buildings/passageCells'
-import { fadeOut } from '../lib/entities/entityFade'
+import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
+import { canAfford, payCost } from '../lib'
 import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
 import { createInspectionModal } from '../ui/InspectionPanel'
 import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'
@@ -17,12 +15,9 @@ import {
   PORTAL_RESOURCE_TYPE,
   RAID_APPROACH_RANGE,
   RAID_RETURN_RANGE,
-  RAID_SPAWN_MAX_RADIUS,
-  RAID_SPAWN_MIN_RADIUS,
   RAID_UPDATE_MS,
   getRaidCellDistance,
   getRaidUnitTypes,
-  isOpenRaidLandCell,
   isRaidBanditOwner,
   isRaidFactionOwner,
   livingRaidUnits,
@@ -45,6 +40,7 @@ import {
   getTributeTitle,
 } from './TributeRaidText'
 import { findRaidTarget, hasActiveBanditCampPresence } from './TributeRaidTargeting'
+import { findTributeRaidSpawnCells, removeTributeRaidUnitFromRuntime } from './tribute/TributeRaidSpawning'
 import type { GameContextLike } from '../types/context'
 import type { ResourceAmount } from '../types/common'
 import type { RuntimeEntity, UnitEntity } from '../types/entities'
@@ -316,31 +312,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   findSpawnCells(target: UnitEntity, count: number): RuntimeCell[] {
-    const grid = this.context.map?.grid
-    if (!grid) return []
-    const portal = this.findPortal()
-    const anchor = portal ?? target
-    const cells: RuntimeCell[] = []
-    const nonPassageCell = createNonReservedPassageCellCondition(this.context)
-    for (let distance = RAID_SPAWN_MIN_RADIUS; distance <= RAID_SPAWN_MAX_RADIUS; distance++) {
-      const ring = getCellsAroundPoint(
-        anchor.i,
-        anchor.j,
-        grid,
-        distance,
-        cell => isOpenRaidLandCell(cell) && nonPassageCell(cell)
-      )
-      ring.sort(() => (this.context.map.random?.() ?? Math.random()) - 0.5)
-      for (const cell of ring) {
-        if (cells.includes(cell)) continue
-        if (portal && getRaidCellDistance(cell, target) < 8) continue
-        cells.push(cell)
-        if (cells.length >= count) return cells
-      }
-    }
-    const fallback = getFreeLandCellAroundInstance(target, grid, undefined, nonPassageCell)
-    if (fallback) cells.push(fallback)
-    return cells
+    return findTributeRaidSpawnCells(this.context, target, count)
   }
 
   startRaidUpdates(raid: TributeRaid): void {
@@ -522,23 +494,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   removeUnitFromRuntime(unit: TributeRaidUnit): void {
-    unit.stop?.()
-    setUnitOverheadIndicator(unit, null)
-    const cell = unit.currentCell
-    if (cell?.has === unit) {
-      cell.has = null
-      cell.solid = false
-    }
-    unit.context?.map?.removeFromInstanceBucket(unit)
-    const ownerUnits = unit.owner?.units
-    const index = ownerUnits?.indexOf(unit) ?? -1
-    if (index >= 0) ownerUnits?.splice(index, 1)
-    if (unit.owner) unit.owner.population = Math.max(0, (unit.owner.population ?? 0) - 1)
-    fadeOut(unit, FADE_DURATION_MS, () => {
-      unit.isDestroyed = true
-      unit.context?.map?.removeChild(unit)
-      unit.destroy?.({ children: true, texture: false })
-    })
+    removeTributeRaidUnitFromRuntime(unit)
   }
 
   cleanupRaid(raid: TributeRaid): void {

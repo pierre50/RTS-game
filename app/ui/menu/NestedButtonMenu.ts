@@ -1,6 +1,7 @@
 export type NestedButtonMenuItem<TId extends string> = {
   id: TId
   label: string
+  detail?: string | (() => string)
   className?: string
   children?: NestedButtonMenuItem<TId>[]
   hidden?: () => boolean
@@ -81,7 +82,16 @@ export class NestedButtonMenu<TId extends string> {
       const button = document.createElement('button')
       button.type = 'button'
       button.className = item.className ? `${buttonClassName} ${item.className}` : buttonClassName
-      button.textContent = item.label
+      const label = document.createElement('span')
+      label.className = 'nested-button-menu-label'
+      label.textContent = item.label
+      button.appendChild(label)
+      if (item.detail) {
+        const detail = document.createElement('span')
+        detail.className = 'nested-button-menu-detail'
+        detail.textContent = typeof item.detail === 'function' ? item.detail() : item.detail
+        button.appendChild(detail)
+      }
       button.addEventListener('click', () => {
         if (button.disabled || button.hidden) return
         if (item.children?.length) {

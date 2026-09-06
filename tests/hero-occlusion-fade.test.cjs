@@ -63,6 +63,20 @@ test('hero occlusion fade still applies to standing resource sprites', () => {
   assert.equal(new HeroOcclusionFade().findOccluders(createHero()).has(standingTree), true)
 })
 
+test('hero occlusion fade ignores wildgrass plant resources', () => {
+  const herb = {
+    family: constants.FAMILY_TYPES.resource,
+    isCutOrFallenTree: () => false,
+    occlusionFade: false,
+    sprite: {},
+    type: 'MedicinalHerb',
+    zIndex: 2,
+  }
+  const { HeroOcclusionFade } = loadHeroOcclusionFade([herb])
+
+  assert.equal(new HeroOcclusionFade().findOccluders(createHero()).has(herb), false)
+})
+
 test('hero occlusion fade keeps built buildings fadeable', () => {
   const building = {
     family: constants.FAMILY_TYPES.building,

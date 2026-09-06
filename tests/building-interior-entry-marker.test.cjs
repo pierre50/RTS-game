@@ -17,14 +17,14 @@ function loadEntryMarker() {
     destroy() {}
   }
 
-  const module = loadTsModule('app/services/BuildingInteriorEntryMarkerSystem.ts', {
+  const module = loadTsModule('app/services/buildingInterior/BuildingInteriorEntryMarkerSystem.ts', {
     mocks: {
       'pixi.js': { Graphics },
-      '../constants': {
+      '../../constants': {
         BUILDING_TYPES: { house: 'House', townCenter: 'TownCenter' },
         LABEL_TYPES: { buildingInteriorEntry: 'buildingInteriorEntry' },
       },
-      '../lib/ui/InteractionCellMarker': {
+      '../../lib/ui/InteractionCellMarker': {
         INTERACTION_CELL_MARKER_PULSE_MS: 1400,
         INTERACTION_CELL_MARKER_Z_INDEX: -0.25,
         drawInteractionCellMarker: (_layer, cell, pulse) => drawn.push(['draw', cell.i, cell.j, pulse]),

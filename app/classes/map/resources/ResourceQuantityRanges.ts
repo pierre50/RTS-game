@@ -9,6 +9,9 @@ export type ResourceQuantityRange = [min: number, max: number]
 export const NEUTRAL_RESOURCE_QUANTITY_RANGES: Partial<Record<string, ResourceQuantityRange>> = {
   [RESOURCE_TYPES.berrybush]: [40, 70],
   [RESOURCE_TYPES.wheat]: [8, 12],
+  [RESOURCE_TYPES.medicinalHerb]: [1, 2],
+  [RESOURCE_TYPES.toxicHerb]: [1, 2],
+  [RESOURCE_TYPES.fiberPlant]: [2, 3],
   [RESOURCE_TYPES.stone]: [70, 120],
   [RESOURCE_TYPES.copper]: [30, 55],
   [RESOURCE_TYPES.iron]: [35, 60],
@@ -18,7 +21,10 @@ export const NEUTRAL_RESOURCE_QUANTITY_RANGES: Partial<Record<string, ResourceQu
 
 export const SCATTERED_STONE_QUANTITY_RANGE: ResourceQuantityRange = [15, 30]
 
-export function rollResourceQuantity(random: () => number, range: ResourceQuantityRange | undefined): number | undefined {
+export function rollResourceQuantity(
+  random: () => number,
+  range: ResourceQuantityRange | undefined
+): number | undefined {
   if (!range) return undefined
   const [min, max] = range
   return Math.round(min + random() * (max - min))

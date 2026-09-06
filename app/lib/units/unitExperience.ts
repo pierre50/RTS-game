@@ -76,6 +76,9 @@ export const WORK_XP_CATEGORY: Record<string, string> = {
 export const LOADING_XP_CATEGORY: Record<string, string> = {
   [LOADING_TYPES.wheat]: XP_CATEGORIES.farming,
   [LOADING_TYPES.berry]: XP_CATEGORIES.farming,
+  [LOADING_TYPES.herb]: XP_CATEGORIES.farming,
+  [LOADING_TYPES.toxicHerb]: XP_CATEGORIES.farming,
+  [LOADING_TYPES.fiber]: XP_CATEGORIES.farming,
   [LOADING_TYPES.wood]: XP_CATEGORIES.woodcutting,
   ...Object.fromEntries(getMiningLoadingTypes().map(loadingType => [loadingType, XP_CATEGORIES.mining])),
   [LOADING_TYPES.meat]: XP_CATEGORIES.hunting,

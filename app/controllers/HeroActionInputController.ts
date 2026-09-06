@@ -67,10 +67,12 @@ export class HeroActionInputController {
   }
 
   handleDefenseKeyDown(): void {
+    const wasHeld = this.host.defenseHeld
     this.host.defenseHeld = true
     if (!canHeroDefendWithTool(this.host.equippedItem)) return
     const unit = this.host.heroUnit
     if (!unit) return
+    if (!wasHeld) unit.heroDefenseEnergyExhausted = false
     if (unit.actionLocked && !unit.heroDefenseActive) {
       cancelHeroActiveToolAction(unit)
     }
@@ -82,6 +84,7 @@ export class HeroActionInputController {
 
   handleDefenseKeyUp(): void {
     this.host.defenseHeld = false
+    if (this.host.heroUnit) this.host.heroUnit.heroDefenseEnergyExhausted = false
     this.releaseDefense()
   }
 

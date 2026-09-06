@@ -71,6 +71,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/age-1',
       'buildings/wall/dithered',
       'resources/berrybush',
+      'resources/wildgrass',
       'projectiles',
       'buildings/construction/size-2',
       'buildings/construction/size-3',
@@ -110,10 +111,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
     'resources/minerals/shadow': 'assets/graphics/resources/minerals/texture_shadow.json',
   },
   sounds: {
-    ...toOggSoundFolderBundle('ui', [
-      'button-selected',
-      'attack-warning',
-    ]),
+    ...toOggSoundFolderBundle('ui', ['button-selected', 'attack-warning']),
     ...toOggSoundFolderBundle('player', ['next-age-reached']),
     ...toOggSoundFolderBundle('hero', ['heartbeat']),
     ...toOggSoundFolderBundle('combat', [
@@ -201,10 +199,7 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'catapult-weapon-destroyed',
       'artifact-war-chest-moving',
     ]),
-    ...toOggSoundFolderBundle('surface/water', [
-      'water',
-      'small-splash',
-    ]),
+    ...toOggSoundFolderBundle('surface/water', ['water', 'small-splash']),
     ...toOggSoundBundle([
       'weather/light-rain',
       'weather/heavy-rain',

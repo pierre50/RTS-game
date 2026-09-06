@@ -28,7 +28,8 @@ function loadCombatAttackLoop(unitEnergyOverrides = {}) {
       ...unitEnergyOverrides,
     },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -125,6 +126,24 @@ test('attack loop spends energy on the release frame after preparing animation',
     ['spendOrWaitForEnergy', attacker, 'attack', target],
     ['readyToAttack', target],
   ])
+})
+
+test('attack loop lets the target prepare a guard before the release frame', () => {
+  const calls = []
+  const { attacker, target } = makeAttackLoopSubject()
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+
+  runAttackLoopOnFrame(attacker, {
+    releaseFrame: 1,
+    prepareAttackSheet: () => calls.push(['prepareAttackSheet']),
+    onAttackPrepared: preparedTarget => calls.push(['prepareParry', preparedTarget]),
+    onOutOfRange: () => calls.push(['outOfRange']),
+    onTargetUnavailable: () => calls.push(['targetUnavailable']),
+    onReadyToAttack: readyTarget => calls.push(['readyToAttack', readyTarget]),
+  })
+  attacker.sprite.onFrameChange(1)
+
+  assert.deepEqual(calls, [['prepareAttackSheet'], ['prepareParry', target], ['readyToAttack', target]])
 })
 
 test('attack loop applies configured recovery before rearming the next swing', () => {

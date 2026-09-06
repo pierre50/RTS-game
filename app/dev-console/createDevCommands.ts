@@ -164,7 +164,7 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
 
   registry.register({
     name: 'hero-resources',
-    aliases: ['resources', 'res', 'hres'],
+    aliases: ['resources', 'ressources', 'res', 'hres', 'hero-ressources'],
     usage: `hero-resources [${RESOURCE_NAMES.join('|')}] [amount]`,
     describe: 'Add resources to the hero bag',
     complete: () => RESOURCE_NAMES,

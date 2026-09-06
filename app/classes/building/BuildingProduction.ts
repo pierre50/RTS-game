@@ -1,4 +1,4 @@
-import { ACTION_TYPES, POPULATION_MAX } from '../../constants'
+import { ACTION_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import { canAfford, isAIControlledPlayer, payCost, refundCost } from '../../lib'
 import { hasBuildingTrainingCapacity, isTraineeTrainingType } from '../../lib/buildings/buildingTraining'
 import { t } from '../../lib/lang'
@@ -341,6 +341,7 @@ export class BuildingProduction {
     extra?: UnitCreationExtra,
     trainee?: UnitEntity | null
   ): boolean | undefined {
+    if (type === UNIT_TYPES.villager) return false
     const building = this.building
     const {
       context: { menu },

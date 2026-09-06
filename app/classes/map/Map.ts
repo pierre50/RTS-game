@@ -396,16 +396,18 @@ export default class Map extends Container {
     )
   }
 
-  generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void> {
-    return this.mapResources.generateResourcesAroundPlayersAsync(compactPositions(playersPos))
+  generateNeutralResourceGroupsAsync(
+    playersPos: GeneratedPosition[],
+    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+  ): Promise<void> {
+    return this.mapResources.generateNeutralResourceGroupsAsync(compactPositions(playersPos), options)
   }
 
-  generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void> {
-    return this.mapResources.generateNeutralResourceGroupsAsync(compactPositions(playersPos))
-  }
-
-  generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void> {
-    return this.mapResources.generateBiomeTreesAsync(compactPositions(playersPos))
+  generateBiomeTreesAsync(
+    playersPos: GeneratedPosition[],
+    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+  ): Promise<void> {
+    return this.mapResources.generateBiomeTreesAsync(compactPositions(playersPos), options)
   }
 
   findNeutralResourceCenter(
@@ -422,16 +424,18 @@ export default class Map extends Container {
     )
   }
 
-  placeResourceGroup(player: PlayerLike, instance: string, quantity: number, range: [number, number]): boolean {
-    return this.mapResources.placeResourceGroup(player, instance, quantity, range)
-  }
-
   placeResourceGroupAt(
     center: GridPosition,
     instance: string,
     quantity: number,
     clusterRadius?: number,
-    options?: { isNaturalResource?: boolean; textureName?: string; quantity?: number; startsMature?: boolean }
+    options?: {
+      isNaturalResource?: boolean
+      textureName?: string
+      quantity?: number
+      totalQuantity?: number
+      startsMature?: boolean
+    }
   ): boolean {
     return this.mapResources.placeResourceGroupAt(center, instance, quantity, clusterRadius, options)
   }

@@ -1,12 +1,7 @@
 import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { getClosestInstance, instancesDistance, isWheatMature } from '../lib'
 import { isVillagerSleepTime } from '../lib/units/villagerSchedule'
-import {
-  assignBuilders,
-  getBuildersNeeded,
-  isValidBuildAssignment,
-  recoverInvalidBuilder,
-} from './AIEconomyBuilders'
+import { assignBuilders, getBuildersNeeded, isValidBuildAssignment, recoverInvalidBuilder } from './AIEconomyBuilders'
 import { AIEconomyFoodManager } from './AIEconomyFoodManager'
 import {
   assignHorseCaptures,
@@ -14,6 +9,7 @@ import {
   getAvailableStableForCapture,
   getCapturableHorses,
 } from './AIEconomyHorseCapture'
+import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { RuntimeMap } from '../types/map'
 import type {
   AIBuildingLike,
@@ -33,6 +29,24 @@ type GatheringResource = {
   set: Set<AIEntityLike>
   max: number
   cb: (villager: AIEntityLike, resource: AIEntityLike) => void
+}
+
+type DemandResource = 'food' | 'wood' | 'gold' | 'stone'
+
+function getAIResourceSnapshot(ai: AIStrategyPlayerLike): Record<DemandResource, number> {
+  const resources = hasPlayerResourceChests(ai) ? getPlayerResourceTotals(ai) : ai
+  return {
+    food: resources.food ?? 0,
+    gold: resources.gold ?? 0,
+    stone: resources.stone ?? 0,
+    wood: resources.wood ?? 0,
+  }
+}
+
+function getDemandBoost(demand: number, available: number): number {
+  const shortage = Math.max(0, demand - available)
+  if (shortage <= 0) return 0
+  return Math.min(30, Math.max(10, Math.ceil(shortage / 50) * 5))
 }
 
 export class AIEconomy {
@@ -90,14 +104,17 @@ export class AIEconomy {
   getResourceTargets(villagersCount: number): AIWorkerTargets {
     const { ai } = this
     const demand = ai.strategy.getEconomicDemand()
+    const resources = getAIResourceSnapshot(ai)
     const base = ai.villageTargetPercentageByAge[ai.age]
     const demandWood = demand.wood || 0
     const demandFood = demand.food || 0
     const demandGold = demand.gold || 0
     const demandStone = demand.stone || 0
 
-    const woodBoost = (ai.wood < 50 ? 15 : 0) + (demandWood > 0 ? 10 : 0)
-    const foodBoost = (ai.food < 50 ? 15 : 0) + (demandFood > 0 ? 10 : 0)
+    const woodBoost = (resources.wood < 50 ? 15 : 0) + getDemandBoost(demandWood, resources.wood)
+    const foodBoost = (resources.food < 50 ? 15 : 0) + getDemandBoost(demandFood, resources.food)
+    const goldBoost = getDemandBoost(demandGold, resources.gold)
+    const stoneBoost = getDemandBoost(demandStone, resources.stone)
     const shouldProspectGold = ai.foundedGolds.size > 0 || demandGold > 0
     const shouldProspectStone = ai.foundedStones.size > 0 || demandStone > 0
 
@@ -105,8 +122,8 @@ export class AIEconomy {
       food: base.food + foodBoost,
       wood: base.wood + woodBoost,
       // Allow unmet demand to trigger prospecting for undiscovered ore nodes.
-      gold: shouldProspectGold ? base.gold + (demandGold > 0 ? 10 : 0) : 0,
-      stone: shouldProspectStone ? base.stone + (demandStone > 0 ? 10 : 0) : 0,
+      gold: shouldProspectGold ? base.gold + goldBoost : 0,
+      stone: shouldProspectStone ? base.stone + stoneBoost : 0,
     }
 
     const totalWeight = weights.food + weights.wood + weights.gold + weights.stone

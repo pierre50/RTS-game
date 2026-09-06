@@ -177,6 +177,15 @@ button,
   pointer-events: none;
 }
 
+.menu-tooltip-hitbox {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.menu-tooltip-hitbox > .ui-btn {
+  width: 100%;
+}
+
 .home-btn {
   min-height: var(--ui-control-height);
   padding: 10px 24px;

@@ -16,7 +16,16 @@ import {
   textureRefToString,
   type SpriteFragmentBurstGroundTarget,
 } from '../lib'
-import { CELL_WIDTH, CELL_HEIGHT, FADE_DURATION_MS, FAMILY_TYPES, LABEL_TYPES, RESOURCE_TYPES } from '../constants'
+import {
+  CELL_WIDTH,
+  CELL_HEIGHT,
+  FADE_DURATION_MS,
+  FAMILY_TYPES,
+  LABEL_TYPES,
+  PASSABLE_RESOURCE_TYPES,
+  RESOURCE_TYPES,
+} from '../constants'
+import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
@@ -113,8 +122,8 @@ export class Resource extends Instance implements ResourceEntity {
     this.zIndex = getInstanceZIndex(this)
     this.visible = false
 
-    // Set solid zone
-    cell.solid = true
+    // Set occupancy zone
+    cell.solid = !PASSABLE_RESOURCE_TYPES.has(this.type)
     cell.has = this
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
 
@@ -217,15 +226,17 @@ export class Resource extends Instance implements ResourceEntity {
 
   registerNaturalRespawnSlot(): void {
     if (!this.isNaturalResource) return
-    if (this.type !== RESOURCE_TYPES.berrybush && this.type !== RESOURCE_TYPES.wheat) return
+    if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, this.type)) return
     const slots = this.context.map.naturalResourceRespawnSlots ?? (this.context.map.naturalResourceRespawnSlots = [])
     slots.push({
+      depletedDay: this.context.dayNight?.state?.day ?? 1,
       i: this.i,
       isDestroyed: true,
       isNaturalResource: true,
       j: this.j,
       label: this.label,
       textureName: this.type === RESOURCE_TYPES.berrybush ? this.textureName : undefined,
+      totalQuantity: this.totalQuantity,
       type: this.type,
     })
   }

@@ -1,5 +1,6 @@
 import { Gaia } from '../players'
 import { updateInstanceVisibility } from '../../lib'
+import { getEnvironmentTerrainParams } from '../../constants'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
 import type { GameContextLike } from '../../types/context'
 import type { GenerationTimer, MapGenerationMap, ProgressCallback, GenerateMapOptions } from './MapGenerationTypes'
@@ -64,13 +65,12 @@ export async function generateStylishMap(
   measure('playerPlacement', () => map.placePlayers())
   await onProgress('generatingResources', 0.58)
   if (map.pregeneratedResourcesLoaded) {
-    timings.playerResources = 0
     timings.neutralResources = 0
     timings.biomeTrees = 0
   } else {
-    await measureAsync('playerResources', () => map.generateResourcesAroundPlayersAsync(map.playersPos))
-    await measureAsync('neutralResources', () => map.generateNeutralResourceGroupsAsync(map.playersPos))
-    await measureAsync('biomeTrees', () => map.generateBiomeTreesAsync(map.playersPos))
+    const resourceOptions = { treeTextureFamily: getEnvironmentTerrainParams(map.environment).treeTextureFamily }
+    await measureAsync('neutralResources', () => map.generateNeutralResourceGroupsAsync(map.playersPos, resourceOptions))
+    await measureAsync('biomeTrees', () => map.generateBiomeTreesAsync(map.playersPos, resourceOptions))
   }
   measure('banditCampPlacement', callbacks.placeBanditCamps)
   measure('portalPlacement', callbacks.placePortal)

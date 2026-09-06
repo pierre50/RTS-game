@@ -82,6 +82,27 @@ test('keeps hidden gameplay animations running when they have callbacks', () => 
   assert.equal(sprite.updates, 1)
 })
 
+test('runs post animation hooks after sprite updates', () => {
+  let hookCalls = 0
+  const sprite = {
+    playing: true,
+    visible: true,
+    renderable: true,
+    destroyed: false,
+    parent: null,
+    updates: 0,
+    _afterAnimationUpdate: () => {
+      hookCalls += 1
+    },
+  }
+  const tick = bindSprite(sprite)
+
+  tick()
+
+  assert.equal(sprite.updates, 1)
+  assert.equal(hookCalls, 1)
+})
+
 test('renders an explored resource only while it is inside the camera', () => {
   let inCamera = false
   const resource = {

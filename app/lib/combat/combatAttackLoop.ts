@@ -103,6 +103,7 @@ type AttackFrameCallbacks = {
   releaseFrame: number
   prepareAttackSheet: () => void
   prepareRecoverySheet?: () => void
+  onAttackPrepared?: (target: RuntimeEntity) => void
   playRecoveryAnimation?: (releaseFrame: number, onComplete: () => void) => boolean | void
   syncMovingTargetDirection?: () => void
   onOutOfRange: (target: RuntimeEntity | null) => void
@@ -298,11 +299,13 @@ export function runAttackLoopOnFrame(attacker: AttackFrameActor, callbacks: Atta
     if ('onLoop' in sprite) sprite.onLoop = undefined
   }
 
-  if (resolveReadyAttackTarget(attacker, callbacks, 'preflight').status !== 'ready') return
+  const readiness = resolveReadyAttackTarget(attacker, callbacks, 'preflight')
+  if (readiness.status !== 'ready') return
 
   sprite.loop = true
   if ('onComplete' in sprite) sprite.onComplete = undefined
   callbacks.prepareAttackSheet()
+  callbacks.onAttackPrepared?.(readiness.target)
 
   onSpriteLoopAtFrame(sprite, callbacks.releaseFrame, () => {
     const actor = getAttackLoopActorState(attacker)

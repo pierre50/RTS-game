@@ -182,7 +182,6 @@
       },
       "activeWeapons": {
         "melee": "sword_ceramic",
-        "ranged": "bow",
         "lasso": "lasso"
       }
     },
@@ -385,6 +384,8 @@
     "meleeArmor": 0,
     "pierceArmor": 0,
     "projectile": "Arrow",
+    "corpseLootArrowMin": 3,
+    "corpseLootArrowMax": 8,
     "cost": {
       "food": 40,
       "wood": 25

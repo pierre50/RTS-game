@@ -445,8 +445,13 @@ const constants = {
   RELIEF_CLIMB_SPEED_MULTIPLIER: 0.7,
   RELIEF_LIFT_SMOOTHING: 1,
   RESOURCE_TYPES: {
+    fiberPlant: 'FiberPlant',
+    medicinalHerb: 'MedicinalHerb',
+    toxicHerb: 'ToxicHerb',
     wheat: 'Wheat',
   },
+  PASSABLE_RESOURCE_TYPES: new Set(['MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
+  WILDGRASS_RESOURCE_TYPES: new Set(['MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
   RESOURCE_STOCKPILE_TYPES: {
     copper: 'copper',
     gold: 'gold',
@@ -490,6 +495,9 @@ test('resource gather cadence values are centralized by carried resource type', 
 
   assert.deepEqual(RESOURCE_GATHER_SWINGS, {
     [LOADING_TYPES.berry]: 2,
+    [LOADING_TYPES.herb]: 2,
+    [LOADING_TYPES.toxicHerb]: 2,
+    [LOADING_TYPES.fiber]: 2,
     [LOADING_TYPES.wheat]: 2,
     [LOADING_TYPES.wood]: 2,
     [LOADING_TYPES.meat]: 3,
@@ -2124,6 +2132,41 @@ test('hero rounded-footprint collision keeps global padding beyond the raw edge'
 
     assert.equal(getHeroDirectMoveBlockerAtPoint(unit, grid[0][0], 0, -15), blocker)
   }
+})
+
+test('hero direct movement ignores passable wildgrass resources', () => {
+  const { getHeroDirectMoveBlockerAtPoint } = loadModule(
+    'app/classes/unit/movement/UnitHeroDirectMovementCollision.ts',
+    {
+      '../../constants': constants,
+      '../../lib': {
+        getRoundedIsoFootprintPoints: mockRoundedIsoShapePoints,
+        pointIsInsidePolygon: () => true,
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => true,
+      },
+    }
+  )
+  const herb = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 0,
+    isDestroyed: false,
+    j: 0,
+    label: 'herb-1',
+    size: 1,
+    type: constants.RESOURCE_TYPES.medicinalHerb,
+    x: 0,
+    y: 0,
+  }
+  const grid = [[{ i: 0, j: 0, has: herb, corpses: [] }]]
+  const unit = {
+    context: { map: { grid } },
+    x: 0,
+    y: -30,
+  }
+
+  assert.equal(getHeroDirectMoveBlockerAtPoint(unit, grid[0][0], 0, -15), null)
 })
 
 test('hero soft-body collision keeps global padding around units and animals', () => {

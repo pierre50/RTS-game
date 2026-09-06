@@ -1053,7 +1053,10 @@ test('cancelling stable mount training restores the original unmounted soldier',
       ],
     ]
   )
-  assert.equal(calls.some(call => call[0] === 'createUnit' && call[1].mountedOnHorse), false)
+  assert.equal(
+    calls.some(call => call[0] === 'createUnit' && call[1].mountedOnHorse),
+    false
+  )
   assert.ok(calls.some(call => call[0] === 'preview' && call[1] === null))
 })
 
@@ -2183,4 +2186,55 @@ test('arrived villager is consumed and trained unit reuses the same population s
     calls.find(call => call[0] === 'created'),
     ['created', { i: 2, j: 2, type: 'Fantassin', name: 'Damon', experience: {} }]
   )
+})
+
+test('villagers cannot be bought from building production anymore', () => {
+  const calls = []
+  const building = {
+    isBuilt: true,
+    isDead: false,
+    queue: [],
+    loading: null,
+    context: {
+      dayNight: { state: { day: 1 }, onDayChange: () => () => {} },
+      menu: {
+        updateTopbar: () => calls.push('topbar'),
+        updateButtonContent: () => calls.push('button'),
+      },
+    },
+    owner: {
+      config: {
+        units: {
+          Villager: { cost: { food: 50 }, trainingDays: 1 },
+        },
+      },
+      isPlayed: true,
+      population: 1,
+      populationMax: 10,
+    },
+  }
+  const { BuildingProduction } = loadModule('app/classes/building/BuildingProduction.ts', {
+    'pixi.js': { Assets: {} },
+    '../../constants': {
+      ACTION_TYPES: { train: 'train' },
+      BUILDING_TYPES: {},
+      FAMILY_TYPES: {},
+      POPULATION_MAX: 200,
+      UNIT_TYPES: { villager: 'Villager' },
+    },
+    '../../lib': {
+      canAfford: () => true,
+      isAIControlledPlayer: () => false,
+      payCost: () => calls.push('pay'),
+      refundCost: () => {},
+    },
+    '../../lib/buildings/buildingTraining': buildingTrainingMock,
+    '../../lib/lang': { t: key => key },
+    '../../lib/training/unitTrainingCost': { getUnitTrainingCost: () => ({ food: 50 }) },
+  })
+  const production = new BuildingProduction(building)
+
+  assert.equal(production.buyUnit('Villager'), false)
+  assert.deepEqual(building.queue, [])
+  assert.deepEqual(calls, [])
 })

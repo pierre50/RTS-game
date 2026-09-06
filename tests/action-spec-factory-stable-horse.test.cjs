@@ -48,7 +48,6 @@ function loadActionSpecFactory(options = {}) {
     },
     '../lib/buildings/buildingTraining': {
       getMissingResourceNames: () => [],
-      hasBuildingTrainingCapacity: () => true,
       isTraineeTrainingType: () => false,
     },
     '../lib/chief': {
@@ -226,10 +225,27 @@ test('cancel training button hides when no unit training exists', () => {
   assert.equal(button.hide(), true)
 })
 
-test('resource-gated unit button is disabled without showing a missing resource alert', () => {
+test('cancel training button ignores villagers only heading to training', () => {
   const messages = []
-  const { factory, player } = createFactory({ canAfford: () => false, hero: {}, messages })
-  player.config.units.Villager = { cost: { food: 50 } }
+  const { factory, player } = createFactory({ hero: {}, messages })
+  const building = {
+    family: 'building',
+    type: 'Barracks',
+    owner: player,
+    queue: [],
+    trainingQueue: [],
+    loading: null,
+    interface: { menu: [] },
+  }
+  player.units = [{ dest: building, trainingTargetType: 'Fantassin', isDead: false }]
+
+  const button = factory.getCancelUnitTrainingButton(building)
+  assert.equal(button.hide(), true)
+})
+
+test('building training status button is hidden without an active queue and has no buy action', () => {
+  const { factory, player } = createFactory({ hero: {}, messages: [] })
+  player.config.units.Fantassin = { cost: { food: 50 } }
   const building = {
     buyUnit: () => {
       throw new Error('buyUnit should not run')
@@ -237,13 +253,13 @@ test('resource-gated unit button is disabled without showing a missing resource 
     family: 'building',
     owner: player,
     queue: [],
-    type: 'TownCenter',
+    type: 'Barracks',
   }
 
-  const button = factory.getActionUnitButton('Villager', building)
-  assert.equal(button.disabled(), true)
-  button.onClick(building)
-  assert.deepEqual(messages, [])
+  const button = factory.getBuildingTrainingStatusButton('Fantassin', building)
+  assert.equal(button.hide(), true)
+  assert.equal(button.onClick, undefined)
+  assert.equal(button.disabled, undefined)
 })
 
 test('resource-gated building button is disabled without showing a missing resource alert', () => {

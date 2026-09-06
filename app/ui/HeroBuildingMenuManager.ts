@@ -10,6 +10,8 @@ import { createInspectionModal } from './InspectionPanel'
 import { TITLED_ENTITY_INFO_OPTIONS } from './EntityInfoModalManager'
 import { getBuildingDisplayName } from './utils/entityDisplayName'
 import { createHeroBuildingContainerBody } from './hero-building/HeroBuildingContainerBody'
+import { getHeroBuildingInteractiveInventorySignature } from './hero-building/HeroBuildingInventorySignature'
+import { createHeroMarketBody } from './hero-building/HeroMarketBody'
 import type { Modal } from '../lib'
 import type { BuildingEntity } from '../types/entities'
 import type { MenuButtonSpec } from '../types/ui'
@@ -25,16 +27,10 @@ function buttonTitle(button: MenuButtonSpec): string {
   return tooltip?.title || (button.id ? t(button.id) : '')
 }
 
-function buttonMeta(button: MenuButtonSpec): string {
+function buttonMeta(button: MenuButtonSpec, options: { hideMeta?: boolean } = {}): string {
+  if (options.hideMeta) return ''
   const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
   return tooltip?.meta?.filter(Boolean).join(' | ') || tooltip?.description || ''
-}
-
-function getPendingTrainingCount(building: BuildingEntity, type: string): number {
-  return (
-    building.owner?.units?.filter(unit => unit.dest === building && unit.trainingTargetType === type && !unit.isDead)
-      .length ?? 0
-  )
 }
 
 function isFireCamp(building: BuildingEntity): boolean {
@@ -184,7 +180,7 @@ export class HeroBuildingMenuManager {
   }
 
   refreshInventory(): void {
-    if (this.building?.type !== BUILDING_TYPES.chest) return
+    if (this.building?.type !== BUILDING_TYPES.chest && this.building?.type !== BUILDING_TYPES.market) return
     this.syncLiveState()
   }
 
@@ -198,24 +194,9 @@ export class HeroBuildingMenuManager {
       building.trainingQueue
         ?.map(entry => `${entry.type}:${entry.trainingStartedDay ?? ''}:${entry.trainingCompleteDay ?? ''}`)
         .join(',') || '',
-      building.owner?.units
-        ?.filter(unit => unit.dest === building && unit.trainingTargetType)
-        .map(unit => unit.trainingTargetType)
-        .join(',') || '',
       level.map(item => item.id || '').join(','),
       level.map(item => (item.hide?.() ? '1' : '0')).join(','),
-      this.getContainerSignature(building),
-    ].join('|')
-  }
-
-  getContainerSignature(building: BuildingEntity): string {
-    if (building.type !== BUILDING_TYPES.chest) return ''
-    const hero = this.menu.context.controls.heroUnit
-    return [
-      building.inventory?.equipment?.join(',') || '',
-      JSON.stringify(building.inventory?.resources ?? {}),
-      hero?.inventory?.equipment?.join(',') || '',
-      JSON.stringify(hero?.inventory?.resources ?? {}),
+      getHeroBuildingInteractiveInventorySignature(building, this.menu.context.controls.heroUnit),
     ].join('|')
   }
 
@@ -283,6 +264,17 @@ export class HeroBuildingMenuManager {
   }
 
   renderContainerBody(building: BuildingEntity): boolean {
+    if (building.type === BUILDING_TYPES.market) {
+      const marketBody = createHeroMarketBody(building, this.menu, () => {
+        this.structureSignature = this.getStructureSignature()
+        this.renderInfo()
+      })
+      if (!marketBody) return false
+      this.transferPanel = null
+      this.body.appendChild(marketBody)
+      return true
+    }
+
     this.transferPanel = createHeroBuildingContainerBody(building, this.menu, () => {
       this.structureSignature = this.getStructureSignature()
       this.renderInfo()
@@ -341,7 +333,7 @@ export class HeroBuildingMenuManager {
 
     const meta = document.createElement('span')
     meta.className = 'hero-building-menu-meta'
-    meta.textContent = buttonMeta(button)
+    meta.textContent = buttonMeta(button, { hideMeta: options.trainingIndex != null })
 
     const status = document.createElement('span')
     status.className = 'hero-building-menu-status'
@@ -399,22 +391,19 @@ export class HeroBuildingMenuManager {
       }
 
       const queued = building.queue?.filter(type => type === id).length ?? 0
-      const reserved = getPendingTrainingCount(building, id)
       const activeUnit = building.queue?.[0] === id
       const activeTechnology = building.technology?.type === id || id === `${building.technology?.type}-cancel`
       const active = activeUnit || activeTechnology
       const progress = active ? Math.max(0, Math.min(100, Math.floor(building.loading ?? 0))) : 0
 
-      status.classList.toggle('is-visible', active || queued > 0 || reserved > 0)
+      status.classList.toggle('is-visible', active || queued > 0)
       text.textContent = active
         ? activeUnit
           ? (formatTrainingTimeRemaining(building) ?? `${progress}%`)
           : `${progress}%`
         : queued > 0
           ? '...'
-          : reserved
-            ? '...'
-            : ''
+          : ''
     })
   }
 

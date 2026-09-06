@@ -136,7 +136,13 @@
       "wood": 225,
       "stone": 65
     },
-    "conditions": [],
+    "conditions": [
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BowCrafting"
+      }
+    ],
     "units": [
       "Bowman"
     ],
@@ -382,9 +388,6 @@
       "wood": 350,
       "stone": 220
     },
-    "units": [
-      "Villager"
-    ],
     "technologies": [
       "ToolAge",
       "BronzeAge",

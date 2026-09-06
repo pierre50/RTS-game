@@ -27,6 +27,7 @@ export type SaveEntityState = {
   controlMode?: UnitControlMode
   degree?: number
   dest?: SaveReference | SaveDestination | null
+  depletedDay?: number
   direction?: number
   experience?: Record<string, number>
   gender?: 'male' | 'female'
@@ -73,6 +74,7 @@ export type SaveEntityState = {
   trainingCompleteDay?: number | null
   loop?: boolean
   lootEquipment?: string[]
+  marketStock?: string[]
   mountedOnHorse?: boolean
   name?: string
   path?: SaveGridPoint[]
@@ -88,6 +90,7 @@ export type SaveEntityState = {
   textureName?: string
   berrybushFullTextureName?: string
   totalHitPoints?: number
+  totalQuantity?: number
   type: string
   work?: string | null
   x?: number
@@ -143,6 +146,7 @@ export type SavePlayerState = PlayerSetupConfig & {
   wheat?: number
   gold?: number
   iron?: number
+  discoveredEquipment?: string[]
   hasBuilt?: string[]
   isPlayed?: boolean
   label?: string

@@ -93,7 +93,7 @@ function loadMapGeneration() {
   }).MapGeneration
 }
 
-function createGenerator({ random = () => 0, randomRange } = {}) {
+function createGenerator({ random = () => 0, randomRange, environment } = {}) {
   const placed = []
   const size = 20
   const grid = Array.from({ length: size + 1 }, (_, i) =>
@@ -111,6 +111,7 @@ function createGenerator({ random = () => 0, randomRange } = {}) {
   const map = {
     grid,
     size,
+    environment,
     playersPos: [],
     context: {},
     random,
@@ -151,6 +152,12 @@ test('ambient foxes usually spawn isolated', () => {
 
 test('ambient selection excludes wolves and can pick horses', () => {
   const { generation } = createGenerator({ random: () => 0.999 })
+
+  assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
+})
+
+test('steppe ambient selection favors horses over open grass defaults', () => {
+  const { generation } = createGenerator({ environment: 'Steppe', random: () => 0.75 })
 
   assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
 })

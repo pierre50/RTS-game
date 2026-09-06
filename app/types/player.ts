@@ -81,6 +81,12 @@ export interface PlayerLike {
   berry: number
   meat: number
   wheat: number
+  herb: number
+  toxicHerb: number
+  fiber: number
+  feather: number
+  leather: number
+  sinew: number
   stone: number
   gold: number
   copper: number
@@ -91,6 +97,7 @@ export interface PlayerLike {
   views: VisionGridLike
   config: PlayerConfigLike
   technologies: string[]
+  discoveredEquipment?: string[]
   researchTechnology?: { type?: string; config?: TechnologyConfig } | null
   researchLoading?: number | null
   techs: Record<string, TechnologyConfig>
@@ -127,7 +134,7 @@ export interface PlayerLike {
     strategy?: string
   }) => RuntimeEntity
   getUnitExtraOptions?: (type: string) => UnitCreationExtra
-  unlockTechnology?: (type: string) => void
+  unlockTechnology?: (type: string) => boolean
   buyTechnology?: (type: string, alreadyPaid?: boolean, force?: boolean) => boolean
   cancelTechnology?: () => boolean
   isTechnologyEligible?: (type: string) => boolean

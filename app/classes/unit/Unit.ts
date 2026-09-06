@@ -195,9 +195,7 @@ export class Unit extends Instance implements UnitEntity {
     this.shadow?.play()
     this.horseSprite?.play()
     this.horseShadow?.play()
-    for (const sprite of this.appearanceLayerSprites.values()) {
-      sprite.play()
-    }
+    this.syncAppearanceLayers(this.currentSheet)
   }
 
   override select() {

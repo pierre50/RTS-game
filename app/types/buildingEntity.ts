@@ -69,6 +69,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
     resources?: ResourceAmount
     equipment?: string[]
   }
+  marketStock?: string[]
   updateHitPoints?: (action: string) => void
   units?: string[]
   technologies?: string[]

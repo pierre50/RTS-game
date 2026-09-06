@@ -1,4 +1,12 @@
-import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, MINING_RESOURCE_CONFIG, RESOURCE_TYPES, UNIT_TYPES } from '../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  FAMILY_TYPES,
+  FORAGE_RESOURCE_TYPES,
+  MINING_RESOURCE_CONFIG,
+  RESOURCE_TYPES,
+  UNIT_TYPES,
+} from '../constants'
 import { getEntityWeaponPower } from '../equipment/equipmentStats'
 import { isWildHorse } from '../horses/horseTaming'
 import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
@@ -70,6 +78,11 @@ function isDepletedBerrybush(target?: CombatEntity | null): boolean {
   )
 }
 
+function isForageResource(target?: CombatEntity | null): boolean {
+  const type = target?.type
+  return type ? FORAGE_RESOURCE_TYPES.has(type) : false
+}
+
 function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
   return Boolean(source.owner?.technologies?.includes(technology))
 }
@@ -88,6 +101,7 @@ export const isValidCondition = (condition: Condition | null | undefined, values
   const expectedValue = (values as Record<string, ConfigValue>)[key]
 
   if (expectedValue === undefined) {
+    if (key === 'discoveredEquipment') return false
     throw new Error(`Key not found in values: ${key}`)
   }
 
@@ -136,6 +150,7 @@ export const getActionCondition = (
       ),
     hunt: () =>
       isVillagerOrHero(source) &&
+      (source.type === UNIT_TYPES.hero || ownerHasTechnology(source, 'BowCrafting')) &&
       target.family === FAMILY_TYPES.animal &&
       (target.quantity ?? 0) > 0 &&
       (target.hitPoints ?? 0) > 0 &&
@@ -162,10 +177,7 @@ export const getActionCondition = (
       (source.type === UNIT_TYPES.hero || !target.isUsedBy || target.isUsedBy === source) &&
       !target.isDead,
     forageberry: () =>
-      isVillagerOrHero(source) &&
-      target.type === RESOURCE_TYPES.berrybush &&
-      (target.quantity ?? 0) > 0 &&
-      !target.isDead,
+      isVillagerOrHero(source) && isForageResource(target) && (target.quantity ?? 0) > 0 && !target.isDead,
     ...Object.fromEntries(
       getMiningActionEntries().map(([resourceType, config]) => [
         config.action,

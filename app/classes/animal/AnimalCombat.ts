@@ -9,13 +9,22 @@ import {
   instanceContactInstance,
   isometricToCartesian,
   playAudibleSoundCue,
+  prepareAutomaticParry,
   SLASH_IMPACT_FRAME,
 } from '../../lib'
 import { createReservedPassageCellLookup, shouldEntityAvoidPassageStop } from '../../lib/buildings/passageCells'
 import { getEntitySpaceGrid } from '../../lib/mapSpaces'
 import { runAttackLoopOnFrame } from '../../lib/combat/combatAttackLoop'
-import { markCombatAttack, markCombatFlee, shouldSuppressAggroDuringCombatRecovery } from '../../lib/combat/combatBehavior'
-import { showAggressionFeedback, showAlertFeedback, showAlertThenAggressionFeedback } from '../../lib/combat/combatFeedback'
+import {
+  markCombatAttack,
+  markCombatFlee,
+  shouldSuppressAggroDuringCombatRecovery,
+} from '../../lib/combat/combatBehavior'
+import {
+  showAggressionFeedback,
+  showAlertFeedback,
+  showAlertThenAggressionFeedback,
+} from '../../lib/combat/combatFeedback'
 import type { RuntimeEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
 import type { RuntimeCell } from '../../types/map'
@@ -222,6 +231,7 @@ export class AnimalCombat {
           prepareRecoverySheet: () => {
             animal.setTextures(SHEET_TYPES.standing)
           },
+          onAttackPrepared: target => prepareAutomaticParry?.(target),
           syncMovingTargetDirection: () => {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
             if (!target || !animal.destHasMoved()) return

@@ -17,6 +17,7 @@ import {
 import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
 import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
 import { addEntityToMapSpaceContainer, getMapSpace } from '../../lib/mapSpaces'
+import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from '../map/resources/ResourceQuantityRanges'
 import { Building } from '../building/Building'
 import type { BuildingOptions } from '../building/Building'
 import { Resource } from '../Resource'
@@ -88,6 +89,12 @@ export class Player implements PlayerLike {
   berry!: number
   meat!: number
   wheat!: number
+  herb!: number
+  toxicHerb!: number
+  fiber!: number
+  feather!: number
+  leather!: number
+  sinew!: number
   stone!: number
   gold!: number
   copper!: number
@@ -101,6 +108,7 @@ export class Player implements PlayerLike {
   buildings: BuildingEntity[]
   population: number
   technologies: string[]
+  discoveredEquipment: string[]
   researchTechnology: QueuedTechnology | null
   researchLoading: number | null
   researchIntervalId: number | null
@@ -140,11 +148,18 @@ export class Player implements PlayerLike {
     this.berry = splitFood.berry ?? 0
     this.meat = splitFood.meat ?? 0
     this.wheat = splitFood.wheat ?? 0
+    this.herb = res.herb ?? 0
+    this.toxicHerb = res.toxicHerb ?? 0
+    this.fiber = res.fiber ?? 0
+    this.feather = res.feather ?? 0
+    this.leather = res.leather ?? 0
+    this.sinew = res.sinew ?? 0
     this.corpses = []
     this.units = []
     this.buildings = []
     this.population = 0
     this.technologies = []
+    this.discoveredEquipment = []
     this.researchTechnology = null
     this.researchLoading = null
     this.researchIntervalId = null
@@ -152,6 +167,7 @@ export class Player implements PlayerLike {
     this.age = 0
     this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
+    this.discoveredEquipment = this.discoveredEquipment || []
     const rawTeam = options.team
     this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
     if (!Number.isFinite(this.team)) this.team = null
@@ -371,8 +387,19 @@ export class Player implements PlayerLike {
       if (!options.alreadyPaid) payCost(this, config.cost)
       const size = typeof config.size === 'number' ? config.size : 4
       for (const cell of getBuildingFootprintCells(i, j, grid, size)) {
+        const quantity = rollResourceQuantity(
+          () => map.random(),
+          NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.wheat]
+        )
         const wheat = new Resource(
-          { i: cell.i, j: cell.j, spaceId: cell.spaceId, type: RESOURCE_TYPES.wheat },
+          {
+            i: cell.i,
+            j: cell.j,
+            spaceId: cell.spaceId,
+            type: RESOURCE_TYPES.wheat,
+            quantity,
+            totalQuantity: quantity,
+          },
           this.context
         )
         addEntityToMapSpaceContainer(map, wheat)

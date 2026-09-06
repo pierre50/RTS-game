@@ -115,9 +115,17 @@ function loadResourceVisuals() {
     },
     '../constants': {
       LABEL_TYPES: { shadow: 'shadow' },
-      RESOURCE_TYPES: { tree: 'Tree', berrybush: 'Berrybush', wheat: 'Wheat' },
+      RESOURCE_TYPES: {
+        tree: 'Tree',
+        berrybush: 'Berrybush',
+        fiberPlant: 'FiberPlant',
+        medicinalHerb: 'MedicinalHerb',
+        toxicHerb: 'ToxicHerb',
+        wheat: 'Wheat',
+      },
+      WILDGRASS_RESOURCE_TYPES: new Set(['MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
     },
-    '../lib/audio/settings': { getResourceWindAnimationEnabled: () => false, getShadowsEnabled: () => true },
+    '../lib/audio/settings': { getResourceWindAnimationEnabled: () => true, getShadowsEnabled: () => true },
   }
 
   const module = { exports: {} }
@@ -216,4 +224,42 @@ test('initial wheat growth frame does not render a generated resource shadow', (
   syncShadow(resource)
 
   assert.equal(shadow.visible, true)
+})
+
+test('wildgrass resources use wind motion and keep generated shadows visible', () => {
+  const { Sprite, Texture, createShadow, isWindMotionEligible, updateWindMotion } = loadResourceVisuals()
+  const sprite = new Sprite(new Texture({ defaultAnchor: { x: 0.5, y: 0.82 } }))
+  sprite.anchor.set(0.5, 0.82)
+
+  const resource = {
+    context: {
+      app: { ticker: { add: () => {}, remove: () => {} } },
+      paused: false,
+    },
+    i: 10,
+    isDead: false,
+    isDestroyed: false,
+    j: 12,
+    reliefLift: 0,
+    shadow: null,
+    sprite,
+    textureName: '000_resources/wildgrass',
+    type: 'MedicinalHerb',
+    usesTextureShadow: false,
+    visible: true,
+    windPhase: 0,
+    windTick: null,
+    windTime: 0,
+    x: 100,
+    y: 200,
+  }
+
+  const shadow = createShadow(resource)
+  resource.shadow = shadow
+  updateWindMotion(resource, 500)
+
+  assert.equal(isWindMotionEligible(resource), true)
+  assert.equal(shadow.visible, true)
+  assert.notEqual(sprite.skew.x, 0)
+  assert.notEqual(shadow.skew.x, 0)
 })

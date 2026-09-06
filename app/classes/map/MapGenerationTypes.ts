@@ -67,9 +67,14 @@ export type MapGenerationMap = RuntimeMap & {
   formatCellsWaterBorder(): void
   rebuildTerrainAppearance(protectedReliefCells?: Set<RuntimeCell>): void
   generateMapRelief(): void
-  generateResourcesAroundPlayersAsync(playersPos: GeneratedPosition[]): Promise<void>
-  generateNeutralResourceGroupsAsync(playersPos: GeneratedPosition[]): Promise<void>
-  generateBiomeTreesAsync(playersPos: GeneratedPosition[]): Promise<void>
+  generateNeutralResourceGroupsAsync(
+    playersPos: GeneratedPosition[],
+    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+  ): Promise<void>
+  generateBiomeTreesAsync(
+    playersPos: GeneratedPosition[],
+    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+  ): Promise<void>
   placePlayers(): void
   _initFogChunks(): void
   _indexFogChunkCells(): void

@@ -2,11 +2,24 @@ export const RESOURCE_TYPES = {
   tree: 'Tree',
   berrybush: 'Berrybush',
   wheat: 'Wheat',
+  medicinalHerb: 'MedicinalHerb',
+  toxicHerb: 'ToxicHerb',
+  fiberPlant: 'FiberPlant',
   stone: 'Stone',
   gold: 'Gold',
   copper: 'Copper',
   iron: 'Iron',
 }
+
+export const WILDGRASS_RESOURCE_TYPES = new Set<string>([
+  RESOURCE_TYPES.medicinalHerb,
+  RESOURCE_TYPES.toxicHerb,
+  RESOURCE_TYPES.fiberPlant,
+])
+
+export const FORAGE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, ...WILDGRASS_RESOURCE_TYPES])
+
+export const PASSABLE_RESOURCE_TYPES = new Set<string>(WILDGRASS_RESOURCE_TYPES)
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
 
@@ -14,7 +27,22 @@ export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'
 // used only for costs/display — it is never physically stored in an inventory.resources bag.
 export const FOOD_RESOURCE_NAMES = ['berry', 'meat', 'wheat'] as const
 
-export const RESOURCE_STORAGE_NAMES = ['wood', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'] as const
+export const RESOURCE_STORAGE_NAMES = [
+  'wood',
+  'berry',
+  'meat',
+  'wheat',
+  'herb',
+  'toxicHerb',
+  'fiber',
+  'feather',
+  'leather',
+  'sinew',
+  'stone',
+  'gold',
+  'copper',
+  'iron',
+] as const
 
 export const BUILDING_TYPES = {
   house: 'House',
@@ -134,6 +162,9 @@ export const LOADING_TYPES = {
   meat: 'meat',
   wheat: 'wheat',
   berry: 'berry',
+  herb: 'herb',
+  toxicHerb: 'toxicHerb',
+  fiber: 'fiber',
   stone: 'stone',
   gold: 'gold',
   copper: 'copper',
@@ -147,6 +178,9 @@ export const TYPE_ACTION = {
   Copper: ACTION_TYPES.minecopper,
   Iron: ACTION_TYPES.mineiron,
   Berrybush: ACTION_TYPES.forageberry,
+  MedicinalHerb: ACTION_TYPES.forageberry,
+  ToxicHerb: ACTION_TYPES.forageberry,
+  FiberPlant: ACTION_TYPES.forageberry,
   Wheat: ACTION_TYPES.farm,
   Tree: ACTION_TYPES.chopwood,
 }
@@ -155,6 +189,9 @@ export const RESOURCE_STOCKPILE_TYPES = {
   [RESOURCE_TYPES.tree]: 'wood',
   [RESOURCE_TYPES.berrybush]: 'berry',
   [RESOURCE_TYPES.wheat]: 'wheat',
+  [RESOURCE_TYPES.medicinalHerb]: 'herb',
+  [RESOURCE_TYPES.toxicHerb]: 'toxicHerb',
+  [RESOURCE_TYPES.fiberPlant]: 'fiber',
   [RESOURCE_TYPES.stone]: 'stone',
   [RESOURCE_TYPES.gold]: 'gold',
   [RESOURCE_TYPES.copper]: 'copper',
@@ -163,6 +200,9 @@ export const RESOURCE_STOCKPILE_TYPES = {
 
 export const RESOURCE_GATHER_SWINGS = {
   [LOADING_TYPES.berry]: 2,
+  [LOADING_TYPES.herb]: 2,
+  [LOADING_TYPES.toxicHerb]: 2,
+  [LOADING_TYPES.fiber]: 2,
   [LOADING_TYPES.wheat]: 2,
   [LOADING_TYPES.wood]: 2,
   [LOADING_TYPES.meat]: 3,
@@ -175,10 +215,16 @@ export const RESOURCE_GATHER_SWINGS = {
 export const RESOURCE_ICON_IDS = {
   wood: { commodity: '000_50732', attribute: '000_50731' },
   food: { commodity: '002_50732', attribute: '002_50731' },
-  // Placeholder: berry/meat/wheat reuse the generic food icon until dedicated art exists.
+  // Placeholder: gathered plants reuse the generic food icon until dedicated art exists.
   berry: { commodity: '002_50732', attribute: '002_50731' },
   meat: { commodity: '002_50732', attribute: '002_50731' },
   wheat: { commodity: '002_50732', attribute: '002_50731' },
+  herb: { commodity: '002_50732', attribute: '002_50731' },
+  toxicHerb: { commodity: '002_50732', attribute: '002_50731' },
+  fiber: { commodity: '002_50732', attribute: '002_50731' },
+  feather: { commodity: '002_50732', attribute: '002_50731' },
+  leather: { commodity: '002_50732', attribute: '002_50731' },
+  sinew: { commodity: '002_50732', attribute: '002_50731' },
   stone: { commodity: '001_50732', attribute: '001_50731' },
   gold: { commodity: '003_50732', attribute: '003_50731' },
   copper: { commodity: '003_50732', attribute: '003_50731' },
@@ -215,6 +261,9 @@ export const MINING_RESOURCE_CONFIG = {
 
 export const SPACED_RESOURCE_TYPES = [
   RESOURCE_TYPES.berrybush,
+  RESOURCE_TYPES.medicinalHerb,
+  RESOURCE_TYPES.toxicHerb,
+  RESOURCE_TYPES.fiberPlant,
   RESOURCE_TYPES.wheat,
   RESOURCE_TYPES.gold,
   RESOURCE_TYPES.stone,

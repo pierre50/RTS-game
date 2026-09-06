@@ -29,17 +29,39 @@ export class MenuTooltip {
     return typeof content === 'function' ? content() : content
   }
 
+  getDisabledTooltipHost(element: HTMLElement): HTMLElement {
+    if (!('disabled' in element) || !(element as HTMLButtonElement).disabled) return element
+
+    const existingHost = element.parentElement?.classList.contains('menu-tooltip-hitbox') ? element.parentElement : null
+    if (existingHost) return existingHost
+
+    const host = document.createElement('span')
+    host.className = 'menu-tooltip-hitbox'
+
+    const wrap = () => {
+      const parent = element.parentElement
+      if (!parent || parent.classList.contains('menu-tooltip-hitbox')) return
+      parent.insertBefore(host, element)
+      host.appendChild(element)
+    }
+
+    wrap()
+    if (!element.parentElement || element.parentElement !== host) window.queueMicrotask(wrap)
+    return host
+  }
+
   bind(element: HTMLElement, content: TooltipSource): void {
     if (!content) return
+    const target = this.getDisabledTooltipHost(element)
 
     const show = () => {
       const resolved = this.resolveContent(content)
       if (!resolved) return
       element.setAttribute('aria-label', resolved.title)
-      this.show(element, resolved)
+      this.show(target, resolved)
     }
     const hide = () => {
-      if (this.activeTarget === element) this.hide()
+      if (this.activeTarget === target) this.hide()
     }
     const onPointerDown = (evt: PointerEvent) => {
       if (evt.pointerType === 'mouse') return
@@ -59,13 +81,13 @@ export class MenuTooltip {
     }
 
     element.setAttribute('aria-describedby', this.element.id)
-    element.addEventListener('pointerenter', show)
-    element.addEventListener('pointerleave', hide)
-    element.addEventListener('focus', show)
-    element.addEventListener('blur', hide)
-    element.addEventListener('pointerdown', onPointerDown)
-    element.addEventListener('pointerup', onPointerEnd)
-    element.addEventListener('pointercancel', onPointerEnd)
+    target.addEventListener('pointerenter', show)
+    target.addEventListener('pointerleave', hide)
+    target.addEventListener('focus', show)
+    target.addEventListener('blur', hide)
+    target.addEventListener('pointerdown', onPointerDown)
+    target.addEventListener('pointerup', onPointerEnd)
+    target.addEventListener('pointercancel', onPointerEnd)
   }
 
   show(target: HTMLElement, { title, description, meta = [] }: TooltipContent): void {

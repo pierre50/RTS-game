@@ -189,6 +189,9 @@ export interface UnitEntity extends EnergyEntity {
   suspendedRestState?: UnitRestState | null
   sleepVisualState?: UnitSleepVisualState | null
   visualAnimationToken?: number
+  automaticParryActiveUntil?: number | null
+  automaticParryVisualTaskId?: number | null
+  automaticParryVisualToken?: number | null
   restWakeLockUntilMs?: number | null
   restAlertTargetLabel?: string | null
   interiorExitState?: UnitInteriorExitState | null
@@ -247,6 +250,7 @@ export interface UnitEntity extends EnergyEntity {
   heroDefenseLastEnergyAt?: number
   heroDefenseActive?: boolean
   heroDefenseVisualLocked?: boolean
+  heroDefenseEnergyExhausted?: boolean
   heroDefenseReverseTaskId?: number | null
   heroDefenseReleaseFallbackTaskId?: number | null
   showHeroDefenseFlash?: () => void

@@ -21,6 +21,7 @@ const BIOME_ENVIRONMENTS = {
   blackforest: 'BlackForest',
   jungle: 'Jungle',
   desert: 'Desert',
+  steppe: 'Steppe',
 }
 
 function usage(error = '') {
@@ -31,7 +32,7 @@ function usage(error = '') {
 
   --seed <n>              reproducible world seed (default: current time)
   --out <directory>       output root (default: public/maps/worlds)
-  --biomes <a,b,c>        macro biome sectors (default: blackforest,jungle,desert,temperate)
+  --biomes <a,b,c>        macro biome sectors (default: blackforest,jungle,desert,temperate,steppe)
   --no-preview-labels     hide region coordinates on the macro preview`)
 }
 
@@ -39,7 +40,7 @@ function argumentsFrom(argv) {
   const options = {
     seed: Date.now(),
     out: DEFAULT_OUTPUT,
-    biomes: 'blackforest,jungle,desert,temperate',
+    biomes: 'blackforest,jungle,desert,temperate,steppe',
     labels: true,
   }
   for (let index = 0; index < argv.length; index++) {

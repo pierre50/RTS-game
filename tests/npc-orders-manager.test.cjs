@@ -84,7 +84,16 @@ function makeContext(calls) {
   const context = {
     paused: false,
     app: {},
-    player: { name: 'Hero', isPlayed: true },
+    player: {
+      name: 'Hero',
+      isPlayed: true,
+      config: {
+        units: {
+          Fantassin: { cost: { food: 50, wood: 15 }, trainingDays: 2 },
+          Bowman: { cost: { food: 40, wood: 25 }, trainingDays: 1 },
+        },
+      },
+    },
     dayNight: { state: { hour: 12 } },
     controls: { beginNpcGoTo: () => {} },
     pause() {
@@ -121,6 +130,19 @@ function buildMocks(calls, context) {
       findBestTrainingBuildingForUnit: () => null,
       sendUnitToTraining: (npc, type) => calls.push(['sendUnitToTraining', npc.label, type, `paused=${context.paused}`]),
       VILLAGER_TRAINING_UNIT_TYPES: ['Fantassin', 'Bowman'],
+    },
+    '../lib/training/unitTrainingCost': {
+      getUnitTrainingCost: (owner, type) => owner?.config?.units?.[type]?.cost ?? {},
+    },
+    '../lib/training/unitTrainingDuration': {
+      formatUnitTrainingDuration: days => (days === 1 ? '1 day' : `${days} days`),
+      getUnitTrainingDurationDays: unitConfig => unitConfig?.trainingDays ?? unitConfig?.trainingTime ?? 1,
+    },
+    './ActionTooltipFactory': {
+      formatActionCost: cost =>
+        Object.entries(cost || {})
+          .map(([resource, amount]) => `${amount} ${resource}`)
+          .join(', '),
     },
     '../constants': {
       SHEET_TYPES: { standing: 'standing' },
@@ -496,6 +518,28 @@ test('resource orders live behind a resources submenu without a visible back but
     assert.equal(manager.buttons.get('copper').hidden, false)
     assert.equal(manager.buttons.get('iron').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
+  })
+})
+
+test('communication training buttons show cost and training duration details', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    const mocks = buildMocks(calls, context)
+    mocks['../lib/units/unitTrainingOrders'].findBestTrainingBuildingForUnit = (_npc, type) =>
+      type === 'Fantassin' ? { type: 'Barracks' } : null
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', mocks)
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+    manager.buttons.get('training').click()
+
+    const fantassinButton = manager.buttons.get('train-Fantassin')
+    assert.equal(fantassinButton.hidden, false)
+    assert.equal(fantassinButton.children[0].textContent, 'Fantassin')
+    assert.equal(fantassinButton.children[1].textContent, '50 food, 15 wood | 2 days')
   })
 })
 

@@ -1,4 +1,12 @@
-import { AGE_GATE_MAX_UNLOCKABLE_VALUE, AGE_UP_ENABLED, BUILDING_TYPES } from '../constants'
+import {
+  ACTION_TYPES,
+  AGE_GATE_MAX_UNLOCKABLE_VALUE,
+  AGE_UP_ENABLED,
+  BUILDING_TYPES,
+  DAILY_CONSUMPTION_PER_VILLAGER,
+  UNIT_TYPES,
+  VILLAGER_ARRIVAL_CONFIG,
+} from '../constants'
 import { AIMilitary } from './AIMilitary'
 import { buyAIBuildingIfNeeded, buyAIWheatFieldIfNeeded, handleAIBuildingActions } from './AIStrategyBuilding'
 import { handleAIProductionActions } from './AIStrategyProduction'
@@ -20,7 +28,6 @@ import {
   VILLAGE_TARGET_PERCENTAGE_BY_AGE,
 } from './config'
 import { ARCHER_TECH_UPGRADES, getBestUnitFromTechs } from './unitGroups'
-import type { UnitCreationExtra } from '../types/entities'
 import type {
   AIAge,
   AIBuildingLike,
@@ -40,11 +47,47 @@ type MilitaryOptions = Parameters<AIMilitary['handleActions']>[0]
 type MilitaryActionsResult = ReturnType<AIMilitary['handleActions']>
 
 const RESOURCE_NAMES: AIResourceName[] = ['wood', 'food', 'gold', 'stone']
+const AI_BUILDING_TRAINING_CAPACITY = 5
 
 function resourceEntries(cost: AIResourceAmount = {}): [AIResourceName, number][] {
   return RESOURCE_NAMES.map(resource => [resource, cost[resource]] as [AIResourceName, number | undefined]).filter(
     (entry): entry is [AIResourceName, number] => typeof entry[1] === 'number'
   )
+}
+
+function livingBuildings(buildings: AIBuildingLike[] = [], type: string): AIBuildingLike[] {
+  return buildings.filter(building => building.type === type && !building.isDead && !building.isDestroyed)
+}
+
+function getExpectedVillagerArrivalWave(population: number): number {
+  if (population <= 0) return 0
+  return Math.min(
+    Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate)),
+    VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay
+  )
+}
+
+function addResourceAmounts(a: AIResourceAmount, b: AIResourceAmount): AIResourceAmount {
+  const result = { ...a }
+  for (const [resource, amount] of resourceEntries(b)) {
+    result[resource] = (result[resource] ?? 0) + amount
+  }
+  return result
+}
+
+function canAiVillagerTrainAtBuilding(building: AIBuildingLike, villager: AIEntityLike, unitType: string): boolean {
+  return villager.type === UNIT_TYPES.villager && Boolean(building.units?.includes(unitType))
+}
+
+function hasAiBuildingTrainingCapacity(building: AIBuildingLike): boolean {
+  const active = building.loading != null || building.trainingUnit ? 1 : 0
+  const queued = Math.max(0, (building.queue?.length ?? 0) - active)
+  const concurrent = building.trainingQueue?.length ?? 0
+  const incoming =
+    building.owner?.units?.filter(
+      unit => unit.dest === building && Boolean(unit.trainingTargetType) && !unit.isDead && !unit.isDestroyed
+    ).length ?? 0
+  return active + queued + concurrent + incoming < AI_BUILDING_TRAINING_CAPACITY
 }
 
 export class AIStrategy {
@@ -166,33 +209,71 @@ export class AIStrategy {
     return desired
   }
 
+  getCurrentResources(): AIResourceAmount {
+    const resources = hasPlayerResourceChests(this.ai) ? getPlayerResourceTotals(this.ai) : this.ai
+    return {
+      food: resources.food ?? 0,
+      gold: resources.gold ?? 0,
+      stone: resources.stone ?? 0,
+      wood: resources.wood ?? 0,
+    }
+  }
+
+  getVillagerGrowthFoodReserve(): number {
+    const dailyFood = DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0
+    if (dailyFood <= 0 || this.ai.population <= 0) return 0
+    const expectedArrivals = Math.min(
+      getExpectedVillagerArrivalWave(this.ai.population),
+      Math.max(0, this.ai.populationMax - this.ai.population)
+    )
+    return (
+      dailyFood * this.ai.population * VILLAGER_ARRIVAL_CONFIG.currentPopulationReserveDays +
+      dailyFood * expectedArrivals * VILLAGER_ARRIVAL_CONFIG.newVillagerReserveDays
+    )
+  }
+
+  addBuildingReserve(demand: AIResourceAmount, buildingType: string, count: number = 1): void {
+    const cost = this.ai.config.buildings[buildingType]?.cost ?? {}
+    for (const [resource, amount] of resourceEntries(cost)) {
+      demand[resource] = (demand[resource] ?? 0) + amount * count
+    }
+  }
+
   getEconomicDemand(): AIResourceAmount {
     const { ai } = this
     const demand: Record<keyof AIResourceAmount, number> = { food: 0, wood: 0, gold: 0, stone: 0 }
+    const resources = this.getCurrentResources()
+    const growthReserveFood = this.getVillagerGrowthFoodReserve()
+    if (growthReserveFood > 0) demand.food += Math.max(0, growthReserveFood - (resources.food ?? 0))
+
     const nextAgeKey = ai.age + 1
     const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[nextAgeKey]
     if (AGE_UP_ENABLED && nextAgeCost) {
-      const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+      const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
       const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
       for (const [resource, amount] of resourceEntries(nextAgeCost)) {
-        demand[resource] += shouldReserveAgeUp ? amount : Math.max(0, amount - ai[resource])
+        demand[resource] += shouldReserveAgeUp ? amount : Math.max(0, amount - (resources[resource] ?? 0))
       }
     }
 
-    if (ai.population + 2 > ai.populationMax) {
-      demand.wood += ai.config.buildings[BUILDING_TYPES.house]?.cost?.wood || 0
+    const expectedArrivals = getExpectedVillagerArrivalWave(ai.population)
+    if (ai.population + expectedArrivals + 2 > ai.populationMax) {
+      this.addBuildingReserve(demand, BUILDING_TYPES.house)
     }
-    const currentBarracks = ai.buildings.filter(
-      (building: AIBuildingLike) =>
-        building.type === BUILDING_TYPES.barracks && !building.isDead && !building.isDestroyed
-    ).length
+    if (!livingBuildings(ai.buildings, BUILDING_TYPES.storagePit).length) {
+      this.addBuildingReserve(demand, BUILDING_TYPES.storagePit)
+    }
+    if (!livingBuildings(ai.buildings, BUILDING_TYPES.granary).length) {
+      this.addBuildingReserve(demand, BUILDING_TYPES.granary)
+    }
+
+    const currentBarracks = livingBuildings(ai.buildings, BUILDING_TYPES.barracks).length
     const desiredBarracks = this.getDesiredBarracksCount()
     if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
-      demand.wood +=
-        (ai.config.buildings[BUILDING_TYPES.barracks]?.cost?.wood || 0) * (desiredBarracks - currentBarracks)
+      this.addBuildingReserve(demand, BUILDING_TYPES.barracks, desiredBarracks - currentBarracks)
     }
-    if (!ai.buildings.some((building: AIBuildingLike) => building.type === BUILDING_TYPES.market)) {
-      demand.wood += ai.config.buildings[BUILDING_TYPES.market]?.cost?.wood || 0
+    if (!livingBuildings(ai.buildings, BUILDING_TYPES.market).length) {
+      this.addBuildingReserve(demand, BUILDING_TYPES.market)
     }
 
     return demand
@@ -204,41 +285,69 @@ export class AIStrategy {
     const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[ai.age + 1]
     if (!nextAgeCost) return {}
 
-    const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * ai.difficultyConfig.popCapMultiplier)
+    const maxVillagers = Math.floor(this.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
     return ai.population >= Math.floor(maxVillagers * 0.7) ? nextAgeCost : {}
   }
 
   canSpendWithReserve(cost: AIResourceAmount, reserve: AIResourceAmount = {}): boolean {
     const { ai } = this
     const resources = hasPlayerResourceChests(ai) ? getPlayerResourceTotals(ai) : ai
-    return resourceEntries(cost).every(([resource, amount]) => (resources[resource] ?? 0) - amount >= (reserve[resource] || 0))
+    return resourceEntries(cost).every(
+      ([resource, amount]) => (resources[resource] ?? 0) - amount >= (reserve[resource] || 0)
+    )
   }
 
-  buyUnits(
+  trainUnits(
     currentCount: number,
     maxCount: number,
     buildingList: AIBuildingLike[],
     unitType: string,
-    extra: UnitCreationExtra | undefined,
+    villagers: AIEntityLike[],
     reserve: AIResourceAmount = {},
     debug: boolean = false
   ): number {
     const unitsNeeded = maxCount - currentCount
-    let unitsBought = 0
+    let trainingOrders = 0
     if (unitsNeeded <= 0) return 0
     const unitCost = this.ai.config.units[unitType]?.cost || {}
-    for (const building of buildingList) {
-      if (unitsBought >= unitsNeeded) break
-      if (
-        building &&
-        this.canSpendWithReserve(unitCost, reserve) &&
-        building.buyUnit?.(unitType, false, false, extra)
-      ) {
-        unitsBought++
-        if (debug) console.log(`Buying ${unitType} from ${building.type}, Total Bought: ${unitsBought}`)
+    let reservedForOrders = reserve
+    const candidates = villagers.filter(
+      villager =>
+        villager.type === UNIT_TYPES.villager &&
+        !villager.isDead &&
+        !villager.isDestroyed &&
+        villager.action !== ACTION_TYPES.attack &&
+        !villager.trainingTargetType
+    )
+
+    for (const villager of candidates) {
+      if (trainingOrders >= unitsNeeded) break
+      if (!this.canSpendWithReserve(unitCost, reservedForOrders)) break
+      const building = buildingList.find(
+        candidate =>
+          candidate &&
+          !candidate.isDead &&
+          !candidate.isDestroyed &&
+          hasAiBuildingTrainingCapacity(candidate) &&
+          canAiVillagerTrainAtBuilding(candidate, villager, unitType)
+      )
+      if (!building) break
+
+      if (!villager.sendToEvt) continue
+      villager.trainingTargetType = unitType
+      const sent = villager.sendToEvt(building, ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true })
+      if (sent === false) {
+        villager.trainingTargetType = null
+        continue
       }
+      trainingOrders++
+      reservedForOrders = addResourceAmounts(reservedForOrders, unitCost)
+      if (debug)
+        console.log(
+          `Sending ${villager.label} to train ${unitType} at ${building.type}, Total Orders: ${trainingOrders}`
+        )
     }
-    return unitsBought
+    return trainingOrders
   }
 
   handleProductionActions(snapshot: AIStrategySnapshot, debug: boolean = false): number {

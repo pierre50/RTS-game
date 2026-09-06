@@ -143,9 +143,10 @@ export class MapGeneration {
   }
 
   pickAmbientAnimalType(i: number, j: number): string {
+    const environment = this.map.environment ?? ''
     return pickAmbientAnimalType({
       animals: gameConfig().animals,
-      biome: this.map.grid[i]?.[j]?.type ?? '',
+      biome: environment === 'Steppe' ? environment : (this.map.grid[i]?.[j]?.type ?? ''),
       isInPlayerStartSafeZone: radius => this.isInPlayerStartSafeZone(i, j, radius),
       random: () => this.map.random(),
     })

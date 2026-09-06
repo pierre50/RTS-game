@@ -6,6 +6,7 @@ import {
   playerCanSeeInstance,
   showHealingFeedback,
   syncMovedActionTarget,
+  showResourceGainFeedback,
 } from '../../lib'
 import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
 import { refreshBakedLpcUnitAssets } from '../../lib/lpc'
@@ -17,6 +18,39 @@ import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/enti
 import type { CommandSound } from '../../types/entities'
 import { Projectile } from '../Projectile'
 import { stopManualHeroAction } from './UnitManualHeroWork'
+import { addGatheredResource } from './UnitResourceGathering'
+import { t } from '../../lib/lang'
+
+type MeatGatherBonusResource = 'feather' | 'leather' | 'sinew'
+type MeatGatherBonusDrop = { chance: number; resource: MeatGatherBonusResource }
+
+const MEAT_GATHER_BONUS_DROPS: Record<string, MeatGatherBonusDrop[]> = {
+  BlackGrouse: [{ chance: 0.2, resource: 'feather' }],
+  Boar: [
+    { chance: 0.08, resource: 'leather' },
+    { chance: 0.06, resource: 'sinew' },
+  ],
+  Deer: [
+    { chance: 0.08, resource: 'leather' },
+    { chance: 0.05, resource: 'sinew' },
+  ],
+  Fox: [
+    { chance: 0.06, resource: 'leather' },
+    { chance: 0.04, resource: 'sinew' },
+  ],
+  Hare: [
+    { chance: 0.03, resource: 'leather' },
+    { chance: 0.02, resource: 'sinew' },
+  ],
+  Horse: [
+    { chance: 0.08, resource: 'leather' },
+    { chance: 0.05, resource: 'sinew' },
+  ],
+  Wolf: [
+    { chance: 0.06, resource: 'leather' },
+    { chance: 0.07, resource: 'sinew' },
+  ],
+}
 
 function isRuntimeEntity(value: UnitEntity['dest'] | null | undefined): value is RuntimeEntity {
   return Boolean(value && !('has' in value && 'corpses' in value))
@@ -206,10 +240,26 @@ export class UnitDirectedActions {
     return this.unit.sounds?.work?.[key] ?? fallback
   }
 
-  startTakeMeatGathering(startGathering: (loadingType: string, soundId: CommandSound, options: object) => void): void {
+  startTakeMeatGathering(
+    startGathering: (
+      loadingType: string,
+      soundId: CommandSound,
+      options: { checkOwner?: boolean; updateTexture?: boolean; onGathered?: (target: RuntimeEntity) => void }
+    ) => void
+  ): void {
     startGathering(LOADING_TYPES.meat, this.getWorkSound('takeMeat', SOUND_CUES.villager.takeMeat), {
       checkOwner: true,
       updateTexture: true,
+      onGathered: target => {
+        const bonusDrops = MEAT_GATHER_BONUS_DROPS[target.type]
+        if (!bonusDrops?.length) return
+        for (const bonusDrop of bonusDrops) {
+          const roll = this.unit.context?.map?.random?.() ?? Math.random()
+          if (roll >= bonusDrop.chance) continue
+          const gain = addGatheredResource(this.unit, bonusDrop.resource, 1)
+          if (gain > 0) showResourceGainFeedback(this.unit, gain, t(bonusDrop.resource))
+        }
+      },
     })
   }
 }

@@ -11,6 +11,7 @@ import type { RuntimeCell } from '../../../types/map'
 import { Resource } from '../../Resource'
 import { hasSpacedResourceAround } from './MapResourceSpacing'
 import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from './ResourceQuantityRanges'
+import { pickTreeTextureNameForFamily, type TreeTextureFamily } from './TreeResourceTextures'
 
 type ResourceCenter = GridPosition
 
@@ -20,7 +21,12 @@ type ForestResourceMap = {
   size: number
   resources: Set<ResourceEntity>
   random(): number
+  randomItem<T>(items: T[]): T
   addChild<T extends ContainerChild>(child: T): T
+}
+
+type ForestGenerationOptions = {
+  treeTextureFamily?: TreeTextureFamily | null
 }
 
 function isForestCellCandidate(grid: RuntimeCell[][], i: number, j: number): boolean {
@@ -50,7 +56,7 @@ function isSoloTreeCandidate(grid: RuntimeCell[][], i: number, j: number): boole
   )
 }
 
-function createTree(map: ForestResourceMap, i: number, j: number): ResourceEntity {
+function createTree(map: ForestResourceMap, i: number, j: number, options: ForestGenerationOptions = {}): ResourceEntity {
   const rolledQuantity = rollResourceQuantity(() => map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.tree])
   return map.addChild(
     new Resource(
@@ -59,6 +65,7 @@ function createTree(map: ForestResourceMap, i: number, j: number): ResourceEntit
         j,
         type: RESOURCE_TYPES.tree,
         isNaturalResource: true,
+        textureName: pickTreeTextureNameForFamily(options.treeTextureFamily, items => map.randomItem(items)),
         quantity: rolledQuantity,
         totalQuantity: rolledQuantity,
       },
@@ -149,7 +156,8 @@ export function generateForestAroundPlayer(
   minClusterRadius: number = 5,
   maxClusterRadius: number = 10,
   safeDistance: number = BIOME_TREE_PLAYER_SAFE_DIST,
-  clearingProbability: number = 0.6
+  clearingProbability: number = 0.6,
+  options: ForestGenerationOptions = {}
 ): void {
   const { grid } = map
   let forestCells: ResourceCenter[] = []
@@ -204,6 +212,7 @@ export function generateForestAroundPlayer(
   const cellsToPlace = pickRandomCells(removePathCells(forestCells, pathCells), treeCount, () => map.random())
   for (const cell of cellsToPlace) {
     if (
+      distanceSquared(cell.i, cell.j, player.i, player.j) >= safeDistanceSq &&
       grid[cell.i][cell.j].category !== 'Water' &&
       !grid[cell.i][cell.j].waterBorder &&
       !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
@@ -211,7 +220,7 @@ export function generateForestAroundPlayer(
       !grid[cell.i][cell.j].inclined &&
       !hasSpacedResourceAround(grid, cell.i, cell.j)
     ) {
-      map.resources.add(createTree(map, cell.i, cell.j))
+      map.resources.add(createTree(map, cell.i, cell.j, options))
     }
   }
 }

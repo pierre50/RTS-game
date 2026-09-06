@@ -1,5 +1,12 @@
 import { Assets } from 'pixi.js'
 import {
+  HERO_FIBER_BANDAGE_ITEM,
+  HERO_HEALING_POULTICE_ITEM,
+  HERO_POISON_VIAL_ITEM,
+  getHeroConsumableHealing,
+  useHeroConsumableItem,
+} from '../../lib/hero/heroCrafting'
+import {
   equipHeroInventoryItem,
   formatEquipmentStackLabel,
   getEquipmentSlot,
@@ -17,7 +24,14 @@ import { renderBuildingAvatar } from '../../lib/avatar'
 import { getBuildingAsset, getIconPath } from '../../lib'
 import { renderEquipmentAvatarLazy } from '../equipment/EquipmentAvatar'
 import { bindInventoryItemEvents, createInventorySection, createInventorySlot } from './InventorySlotRenderer'
+import { createEquipmentTooltip, createResourceTooltip } from './InventoryTooltips'
 import type { MenuHost } from '../MenuHost'
+
+const BAG_ITEM_ICON_RESOURCES = {
+  [HERO_HEALING_POULTICE_ITEM]: 'herb',
+  [HERO_POISON_VIAL_ITEM]: 'toxicHerb',
+  [HERO_FIBER_BANDAGE_ITEM]: 'fiber',
+} as const
 
 export type InventoryEquipmentRendererHost = {
   close(): void
@@ -47,14 +61,14 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
           icon.className = 'inventory-resource-icon'
           icon.src = getIconPath(RESOURCE_ICON_IDS[resource].commodity)
           icon.alt = ''
-          grid.appendChild(
-            createInventorySlot({
-              className: 'inventory-loot-slot',
-              disabled: true,
-              icon,
-              label: `${t(resource)} x${amount}`,
-            })
-          )
+          const slot = createInventorySlot({
+            className: 'inventory-loot-slot',
+            disabled: true,
+            icon,
+            label: `${t(resource)} x${amount}`,
+          })
+          menu.menuTooltip.bind(slot, createResourceTooltip(resource, amount))
+          grid.appendChild(slot)
         }
         for (const stack of getEquipmentStacks(equipment)) {
           grid.appendChild(createBagEquipmentSlot(host, stack.equipment, stack.count))
@@ -64,28 +78,35 @@ export function renderInventoryLootedEquipment(host: InventoryEquipmentRendererH
   )
 }
 
-function createBagEquipmentSlot(
-  host: InventoryEquipmentRendererHost,
-  item: string,
-  count: number
-): HTMLButtonElement {
+function createBagEquipmentSlot(host: InventoryEquipmentRendererHost, item: string, count: number): HTMLButtonElement {
   const { menu } = host
   const hero = menu.context.controls.heroUnit
   const equipmentSlot = getEquipmentSlot(item)
   const weaponSlot = getWeaponSlot(item)
   const placeableBuildingType = getPlaceableInventoryBuildingType(item)
+  const consumableHealing = getHeroConsumableHealing(item)
+  const canUseConsumable = Boolean(hero && consumableHealing > 0)
   const canEquip = Boolean(
     (equipmentSlot && (equipmentSlot !== 'helmetDecor' || hero?.inventory?.equipped?.helmet)) || weaponSlot
   )
   const canPlace = Boolean(hero && placeableBuildingType)
-  const icon = document.createElement('canvas')
-  icon.className = 'unit-avatar-frame inventory-slot-icon'
-  icon.width = 64
-  icon.height = 64
-  if (placeableBuildingType) {
-    renderBuildingAvatar(menu.context.app, placeableBuildingType, menu.context.player, icon)
+  const iconResource = BAG_ITEM_ICON_RESOURCES[item as keyof typeof BAG_ITEM_ICON_RESOURCES]
+  let icon: HTMLCanvasElement | HTMLImageElement
+  if (iconResource) {
+    icon = document.createElement('img')
+    icon.className = 'inventory-slot-icon'
+    icon.src = getIconPath(RESOURCE_ICON_IDS[iconResource].commodity)
+    icon.alt = ''
   } else {
-    renderEquipmentAvatarLazy(menu.context.app, item, icon, 'inventory', menu.context.performance)
+    icon = document.createElement('canvas')
+    icon.className = 'unit-avatar-frame inventory-slot-icon'
+    icon.width = 64
+    icon.height = 64
+    if (placeableBuildingType) {
+      renderBuildingAvatar(menu.context.app, placeableBuildingType, menu.context.player, icon)
+    } else {
+      renderEquipmentAvatarLazy(menu.context.app, item, icon, 'inventory', menu.context.performance)
+    }
   }
 
   const label = placeableBuildingType
@@ -94,12 +115,19 @@ function createBagEquipmentSlot(
       : t(placeableBuildingType)
     : formatEquipmentStackLabel(item, count)
 
-  return createInventorySlot({
+  const slot = createInventorySlot({
     className: 'inventory-loot-slot',
-    disabled: !canEquip && !canPlace,
+    disabled: !canEquip && !canPlace && !canUseConsumable,
     icon,
     label,
     onAction: mode => {
+      if (canUseConsumable) {
+        if (!hero || !useHeroConsumableItem(hero, item)) return
+        menu.playUiClick()
+        menu.updateHeroStatus?.(hero)
+        host.close()
+        return
+      }
       if (canPlace) {
         if (!hero || !placeableBuildingType) return
         const config = menu.context.player.config.buildings[placeableBuildingType]
@@ -126,6 +154,8 @@ function createBagEquipmentSlot(
       host.renderTools()
     },
   })
+  menu.menuTooltip.bind(slot, createEquipmentTooltip(item, count))
+  return slot
 }
 
 export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendererHost): void {
@@ -181,6 +211,9 @@ export function renderInventoryEquippedEquipment(host: InventoryEquipmentRendere
           button.appendChild(iconWrap)
           button.appendChild(slotLabel)
           button.appendChild(label)
+          if (equipment) {
+            menu.menuTooltip.bind(button, createEquipmentTooltip(equipment, getHeroEquippedItemCount(hero, slotId)))
+          }
           grid.appendChild(button)
         }
       },

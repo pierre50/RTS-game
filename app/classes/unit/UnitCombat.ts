@@ -14,8 +14,9 @@ import {
   getClosestInstanceWithPath,
   getInstanceDegree,
   instanceContactInstance,
-  playAudibleSoundCue,
   BOW_SHOOT_RELEASE_FRAME,
+  playAudibleSoundCue,
+  prepareAutomaticParry,
   SLASH_IMPACT_FRAME,
   syncMovedActionTarget,
 } from '../../lib'
@@ -61,6 +62,7 @@ function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): Co
 }
 
 type AttackLoopVisualOptions = {
+  onAttackPrepared?: (target: RuntimeEntity) => void
   playRecoveryAnimation?: (releaseFrame: number, onComplete: () => void) => boolean | void
 }
 
@@ -100,6 +102,7 @@ export class UnitCombat {
           syncShadow: false,
         })
       },
+      onAttackPrepared: visualOptions.onAttackPrepared,
       playRecoveryAnimation: visualOptions.playRecoveryAnimation,
       onOutOfRange: dest => {
         unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
@@ -264,6 +267,7 @@ export class UnitCombat {
           }
         },
         {
+          onAttackPrepared: target => prepareAutomaticParry?.(target),
           playRecoveryAnimation: (releaseFrame, onComplete) => this.playReverseSlashRecovery(releaseFrame, onComplete),
         }
       )

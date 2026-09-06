@@ -6,18 +6,21 @@ function loadHeroInteractionController(calls) {
   return loadTsModule('app/controllers/HeroInteractionController.ts', {
     mocks: {
       '../constants': {
-        FAMILY_TYPES: { building: 'building', unit: 'unit' },
+        FAMILY_TYPES: { building: 'building', resource: 'resource', unit: 'unit' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
       },
       '../lib/hero/heroActionRange': {
         isHeroInteractionTargetReachable: () => true,
       },
       '../lib/hero/heroProximityInteractions': {
-        resolveHeroNpcProximityInteraction: (_hero, target) => ({
-          action: 'communicate',
-          labelKey: 'heroInteractionCommunicate',
-          target,
-        }),
+        resolveHeroNpcProximityInteraction: (_hero, target) =>
+          target.family === 'unit'
+            ? {
+                action: 'communicate',
+                labelKey: 'heroInteractionCommunicate',
+                target,
+              }
+            : null,
         wakeOwnSleepingNpcForCommunication: (_hero, target) => calls.push(['wakeNpc', target]),
       },
       '../lib/hero/heroTools': {
@@ -63,4 +66,12 @@ test('living npc direct interaction still opens communication', () => {
 
   assert.equal(controller.openHeroEntityInteraction(target), true)
   assert.deepEqual(calls, [['wakeNpc', target], ['openNpcOrders', [target]]])
+})
+
+test('wildgrass direct interaction opens info instead of starting forage work', () => {
+  const target = { family: 'resource', label: 'herb-1', quantity: 2, type: 'MedicinalHerb' }
+  const { calls, controller } = createController(target)
+
+  assert.equal(controller.openHeroEntityInteraction(target), true)
+  assert.deepEqual(calls, [['openEntityInfoModal', target]])
 })

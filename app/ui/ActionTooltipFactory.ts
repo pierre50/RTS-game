@@ -1,6 +1,7 @@
 import { t } from '../lib/lang'
 import { isValidCondition } from '../lib'
 import { getMissingResourceNames, isTraineeTrainingType } from '../lib/buildings/buildingTraining'
+import { formatUnitTrainingDuration, getUnitTrainingDurationDays } from '../lib/training/unitTrainingDuration'
 import type { ResourceAmount } from '../types/common'
 import type { BuildingConfig, TechnologyConfig, UnitConfig } from '../types/config'
 import type { BuildingEntity } from '../types/entities'
@@ -55,6 +56,10 @@ function getTechnologyRequirementText(condition: Condition, player: PlayerLike):
     return condition.op === 'notincludes'
       ? t('tooltipBlockedByTechnology', { technology })
       : t('tooltipRequiresTechnology', { technology })
+  }
+
+  if (condition.key === 'discoveredEquipment' && condition.value === 'bow') {
+    return t('tooltipRequiresAnyBow')
   }
 
   if (condition.key === 'hasBuilt' || condition.key === 'buildings') {
@@ -112,7 +117,7 @@ export function getUnitTooltip(
     description: t(`${type}Description`),
     meta: [
       t('tooltipCost', { cost: formatActionCost(cost) }),
-      t('tooltipTrainTime', { time: config.trainingDays ?? 1 }),
+      t('tooltipTrainTime', { time: formatUnitTrainingDuration(getUnitTrainingDurationDays(config)) }),
       chiefBlocked ? t('requiresChief') : null,
     ],
   }
