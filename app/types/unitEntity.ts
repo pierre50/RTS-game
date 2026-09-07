@@ -178,6 +178,7 @@ export interface UnitEntity extends EnergyEntity {
   work?: string | null
   actionFrameSequence?: number[] | null
   autonomousJob?: VillagerAutonomyJob | null
+  exploringForAutonomy?: boolean
   assigningAutonomousJob?: boolean
   campPatrolAnchor?: GridPosition | null
   campPatrolTaskId?: number | null

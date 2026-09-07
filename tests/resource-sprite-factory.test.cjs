@@ -73,12 +73,13 @@ function loadResourceSpriteFactory() {
           toxicHerb: 'ToxicHerb',
           wheat: 'Wheat',
         },
-        WILDGRASS_RESOURCE_TYPES: new Set(['MedicinalHerb', 'ToxicHerb', 'FiberPlant']),
       },
       '../lib': {
         bindAnimatedSpriteToTicker: () => {},
         getAnimationFrames: sourceTextures => sourceTextures,
-        getTexture: () => ({ defaultAnchor: { x: 0.5, y: 0.5 } }),
+        getTexture: textureRef => ({
+          defaultAnchor: textureRef.sheet === 'resources/wildgrass' ? { x: 0.5, y: 0.82 } : { x: 0.5, y: 0.5 },
+        }),
         getTextureSheet: () => 'sheet',
         parseTextureRef: textureRef => textureRef,
         textureRefToString: () => 'texture',
@@ -111,7 +112,7 @@ test('mature wheat applies the mature frame anchor during sprite creation', () =
   assert.equal(sprite.anchor.y, 0.8)
 })
 
-test('wildgrass static sprites anchor at their base for shadows and wind', () => {
+test('static resource sprites use their atlas anchors for shadows and wind', () => {
   const { createResourceSprite } = loadResourceSpriteFactory()
   const resource = {
     assets: { sheet: 'resources/wildgrass', frame: 0 },

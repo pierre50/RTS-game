@@ -126,6 +126,7 @@ function moveTowardNextCell(
   const nextCell = grid[next.i][next.j]
   if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
   moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
+  animal.zIndex = getInstanceZIndex(animal)
   if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
     animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
   }

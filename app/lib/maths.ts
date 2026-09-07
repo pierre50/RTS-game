@@ -150,8 +150,7 @@ export function instancesDistance(a: PositionLike, b: PositionLike, useCartesian
  * @param {object} instance
  */
 export function getInstanceZIndex(instance: Point & { z?: number | null; zIndexOffset?: number }): number {
-  const pos = isometricToCartesian(instance.x, instance.y + getReliefLiftPixels(instance.z))
-  return pos[0] + pos[1] + (instance.zIndexOffset ?? 0)
+  return (instance.y + getReliefLiftPixels(instance.z)) / HALF_CELL_HEIGHT + (instance.zIndexOffset ?? 0)
 }
 
 /**

@@ -38,6 +38,7 @@ type PassageLookup = ReturnType<typeof createReservedPassageCellLookup>
 
 function clearManualMoveWorkState(unit: UnitEntity, preserveAutonomy: boolean): void {
   if (preserveAutonomy) return
+  unit.exploringForAutonomy = false
   unit.previousDest = null
   unit.previousWork = null
   unit.gatherProgressState = null
@@ -282,6 +283,7 @@ export class UnitMovementRouting {
     const passageLookup = createReservedPassageCellLookup(unit.context)
     const passageStopAllowed =
       allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(unit, dest))
+    if (!(preserveAutonomy && !action)) unit.exploringForAutonomy = false
     if (!action) clearManualMoveWorkState(unit, preserveAutonomy)
     if (this.routeToActionArrivalCell(dest, action, passageLookup)) return
     if (

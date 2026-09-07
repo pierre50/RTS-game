@@ -65,6 +65,13 @@ test('relief keeps the logical isometric draw depth stable', () => {
   assert.equal(getInstanceZIndex(raisedUnit), getInstanceZIndex(flatUnit))
 })
 
+test('moving units get fractional draw depth between cells', () => {
+  const unit = instanceAt(10, 10, 'unit')
+  unit.y += 8
+
+  assert.equal(getInstanceZIndex(unit), 20.5)
+})
+
 test('terrain sets render below units and animals on the same tile', () => {
   const cell = { i: 10, j: 10 }
   const unit = instanceAt(10, 10, 'unit')

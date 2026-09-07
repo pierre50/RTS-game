@@ -1,4 +1,4 @@
-import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES, WORK_TYPES } from '../../../constants'
+import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES, WORK_TYPES } from '../../../constants'
 import {
   findInstancesInSight,
   getClosestInstanceWithPath,
@@ -33,6 +33,16 @@ function isCompletedBuildTarget(unit: UnitEntity): boolean {
 export function affectNewDest(unit: UnitEntity): void {
   unit.stopInterval?.()
   if (!unit.action) {
+    if (unit.exploringForAutonomy) {
+      unit.exploringForAutonomy = false
+      unit.dest = null
+      unit.realDest = null
+      unit.path = []
+      unit.inactif = true
+      unit.sprite?.stop()
+      unit.setTextures?.(SHEET_TYPES.standing)
+      return
+    }
     if (isRecoveringAttack(unit)) {
       pauseCombatRecoveryMove(unit)
       return

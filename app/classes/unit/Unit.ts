@@ -68,6 +68,7 @@ export type { UnitSpawnOptions } from './UnitTypes'
 export class Unit extends Instance implements UnitEntity {
   declare sprite: AnimatedSprite
   declare reliefLift: number
+  exploringForAutonomy = false
   private isMovingStep = false
 
   constructor(options: UnitSpawnOptions, context: GameContextLike) {
@@ -237,7 +238,7 @@ export class Unit extends Instance implements UnitEntity {
     this.setTextures(SHEET_TYPES.walking)
     this.inactif = false
     this.path = path
-    const runImmediate = !this.isMovingStep
+    const runImmediate = !this.isMovingStep && !this.exploringForAutonomy
     this.startInterval(() => this.step(), STEP_TIME, runImmediate, 'unit.step')
   }
 

@@ -274,11 +274,13 @@ export class UnitMovement {
     for (const { cell } of candidates.slice(0, 12)) {
       const path = getInstancePath(unit, cell.i, cell.j, map)
       if (path.length) {
+        unit.exploringForAutonomy = true
         unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
         return true
       }
     }
 
+    unit.exploringForAutonomy = false
     unit.stop?.()
     return false
   }

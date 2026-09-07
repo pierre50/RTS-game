@@ -5175,6 +5175,45 @@ test('exploration skips water and coast cells', () => {
   assert.deepEqual(calls, [['sendToEvt', landCell, null, { forceRepath: true, preserveAutonomy: true }]])
 })
 
+test('completed autonomy exploration pauses instead of recursively resuming autonomy', () => {
+  const calls = []
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      findInstancesInSight: () => [],
+      getClosestInstanceWithPath: () => null,
+      instanceContactInstance: () => false,
+      resumeVillagerAutonomy: () => {
+        calls.push(['resumeVillagerAutonomy'])
+        return true
+      },
+      showConfusionFeedback: () => calls.push(['showConfusionFeedback']),
+    },
+    '../../lib/units/unitControl': { isHeroControlled: () => false },
+  })
+  const unit = {
+    action: null,
+    autonomousJob: 'wood',
+    dest: { i: 1, j: 1 },
+    exploringForAutonomy: true,
+    inactif: false,
+    path: [{ i: 1, j: 1 }],
+    realDest: { i: 1, j: 1 },
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sprite: { stop: () => calls.push(['sprite.stop']) },
+    stop: () => calls.push(['stop']),
+    stopInterval: () => calls.push(['stopInterval']),
+  }
+
+  new UnitMovement(unit).affectNewDest()
+
+  assert.deepEqual(calls, [['stopInterval'], ['sprite.stop'], ['setTextures', constants.SHEET_TYPES.standing]])
+  assert.equal(unit.exploringForAutonomy, false)
+  assert.equal(unit.dest, null)
+  assert.deepEqual(unit.path, [])
+  assert.equal(unit.inactif, true)
+})
+
 test('runaway units use the shared reachable flee cell selection', () => {
   const calls = []
   const escapeCell = { i: 2, j: 5, solid: false, category: 'Land', border: false }

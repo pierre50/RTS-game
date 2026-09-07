@@ -459,6 +459,7 @@ export class UnitDirectMovement {
     unit.degree = getInstanceDegree(unit, unit.x + facingDirX, unit.y + facingDirY)
     unit.x = candidateX
     unit.y = candidateY
+    unit.zIndex = getInstanceZIndex(unit)
 
     if (crossingCell && targetCell) {
       unit.z = targetCell.z

@@ -207,6 +207,7 @@ function advanceTowardPathCell(
   const beforeX = unit.x
   const beforeY = unit.y
   moveTowardPoint(unit, nextFlatX, nextFlatY, moveSpeed)
+  unit.zIndex = getInstanceZIndex(unit)
   if (unit.x === beforeX && unit.y === beforeY) {
     debugCombatMove(unit, 'no-position-progress', nextCell, {
       stage: 'path-step',
