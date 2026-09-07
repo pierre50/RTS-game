@@ -71,8 +71,7 @@ function makeContext(mapOverrides = {}) {
     map: {
       seed: 42,
       size: 144,
-      mapType: 'continent',
-      positionsCount: 2,
+      mapType: 'world-region',
       pregeneratedBlueprintId: null,
       resources: new Set(),
       gaia: { units: [] },
@@ -90,7 +89,7 @@ test('seeded saves omit the full map grid', () => {
   assert.equal(save.version, 2)
   assert.equal(save.world.seed, 42)
   assert.equal(save.world.size, 144)
-  assert.equal(save.world.mapType, 'continent')
+  assert.equal(save.world.mapType, 'world-region')
   assert.equal(Object.hasOwn(save, 'map'), false)
 })
 
@@ -106,29 +105,29 @@ test('serializes resources with remaining quantity, size, health and stable text
     makeContext({
       resources: new Set([
         {
-          label: 'portal-1',
+          label: 'stone-1',
           family: 'resource',
-          type: 'Portal',
+          type: 'Stone',
           i: 4,
           j: 5,
           quantity: 1,
           hitPoints: 12,
           size: 3,
-          textureName: 'resources/portal.png',
+          textureName: 'resources/minerals/stone.png',
         },
       ]),
     })
   )
 
   assert.deepEqual(save.resources[0], {
-    label: 'portal-1',
+    label: 'stone-1',
     i: 4,
     j: 5,
-    type: 'Portal',
+    type: 'Stone',
     quantity: 1,
     size: 3,
     hitPoints: 12,
-    textureName: 'resources/portal',
+    textureName: 'resources/minerals/stone',
   })
 })
 

@@ -19,6 +19,28 @@ const BLUEPRINT_MAP_SPAWN_RANGE = [2, 4]
 // Index must match MapGeneration#generateTerrain's raw output.
 const TERRAIN = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 const TERRAIN_INDEX = new Map(TERRAIN.map((type, index) => [type, index]))
+const MACRO_TERRAIN_CODE_TO_TYPE = {
+  W: 'Water',
+  T: 'Grass',
+  F: 'DarkForest',
+  J: 'Jungle',
+  D: 'Desert',
+  S: 'Grass',
+}
+const MACRO_TREE_FAMILY_BY_CODE = {
+  T: 'Grass',
+  F: 'DarkForest',
+  J: 'Jungle',
+  D: 'Desert',
+  S: 'DarkForest',
+}
+const MACRO_FOREST_PROFILE_BY_CODE = {
+  T: { threshold: 0.64, coreChance: 0.22, edgeChance: 0.04, scale: 0.048, seedOffset: 1103 },
+  F: { threshold: 0.34, coreChance: 0.36, edgeChance: 0.11, scale: 0.052, seedOffset: 1201 },
+  J: { threshold: 0.3, coreChance: 0.42, edgeChance: 0.13, scale: 0.056, seedOffset: 1301 },
+  D: { threshold: 0.82, coreChance: 0.09, edgeChance: 0.015, scale: 0.06, seedOffset: 1409 },
+  S: { threshold: 0.76, coreChance: 0.16, edgeChance: 0.025, scale: 0.05, seedOffset: 1511 },
+}
 
 // app/constants/environments.ts is plain data (no pixi/DOM deps), so it can be loaded
 // directly instead of duplicating its thresholds here like the mocks below have to.
@@ -101,6 +123,44 @@ function randomFrom(seed) {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61)
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296
   }
+}
+
+function smoothstep(value) {
+  return value * value * (3 - 2 * value)
+}
+
+function valueNoise(x, y, seed = 0) {
+  const xi = Math.floor(x)
+  const yi = Math.floor(y)
+  const xf = x - xi
+  const yf = y - yi
+  const u = smoothstep(xf)
+  const v = smoothstep(yf)
+  const sample = (sx, sy) => {
+    let hash = hashSeed(seed)
+    hash ^= Math.imul(sx + 1, 374761393)
+    hash = Math.imul(hash, 668265263)
+    hash ^= Math.imul(sy + 1, 1274126177)
+    hash = Math.imul(hash, 2246822519)
+    return (hash >>> 0) / 4294967296
+  }
+  const a = sample(xi, yi)
+  const b = sample(xi + 1, yi)
+  const c = sample(xi, yi + 1)
+  const d = sample(xi + 1, yi + 1)
+  const top = a + (b - a) * u
+  const bottom = c + (d - c) * u
+  return top + (bottom - top) * v
+}
+
+function macroForestNoise(i, j, seed, scale, seedOffset) {
+  const nx = i * scale
+  const ny = j * scale
+  return (
+    valueNoise(nx, ny, seed + seedOffset) * 0.58 +
+    valueNoise(nx * 2.1 + 19.7, ny * 2.1 - 13.3, seed + seedOffset + 37) * 0.28 +
+    valueNoise(nx * 4.6 - 8.1, ny * 4.6 + 5.9, seed + seedOffset + 73) * 0.14
+  )
 }
 
 function getDeterministicCellVariantIndex(i, j, count, seed = 0) {
@@ -249,7 +309,6 @@ function loadRuntimeGenerators() {
     filename.endsWith('/MapGeneration.ts') ||
     filename.endsWith('/MapCellGeneration.ts') ||
     filename.endsWith('/MapSavedStateGeneration.ts') ||
-    filename.endsWith('/MapPortalPlacement.ts') ||
     filename.endsWith('/MapSpawnPlacement.ts') ||
     filename.endsWith('/MapTerrainGeneration.ts') ||
     filename.endsWith('/MapTerrainAppearance.ts') ||
@@ -354,9 +413,6 @@ function loadRuntimeGenerators() {
       }
       if (request === './generation/MapSavedStateGeneration') {
         return originalLoad(path.join(ROOT, 'app/classes/map/generation/MapSavedStateGeneration.ts'), parent, isMain)
-      }
-      if (request === './MapPortalPlacement') {
-        return originalLoad(path.join(ROOT, 'app/classes/map/MapPortalPlacement.ts'), parent, isMain)
       }
       if (request === './MapSpawnPlacement') {
         return originalLoad(path.join(ROOT, 'app/classes/map/MapSpawnPlacement.ts'), parent, isMain)
@@ -501,13 +557,127 @@ function coastDistances(map) {
   return distances
 }
 
+function compactPositions(positions = []) {
+  return positions.filter(position => position && Number.isFinite(position.i) && Number.isFinite(position.j))
+}
+
+function removeBorderConnectedWater(terrain, params) {
+  const gridSize = terrain.length
+  const terrainValueByType = {
+    Grass: 0,
+    Desert: 1,
+    Jungle: 3,
+    DarkForest: 4,
+    Dirt: 5,
+    Snow: 7,
+  }
+  const groundTypeValue = terrainValueByType[params.groundType ?? 'Grass'] ?? 0
+  const visited = new Uint8Array(gridSize * gridSize)
+  const queue = []
+  const enqueue = (i, j) => {
+    if (i < 0 || j < 0 || i >= gridSize || j >= gridSize) return
+    const index = i * gridSize + j
+    if (visited[index] || terrain[i]?.[j] !== 2) return
+    visited[index] = 1
+    queue.push(index)
+  }
+
+  for (let index = 0; index < gridSize; index++) {
+    enqueue(0, index)
+    enqueue(gridSize - 1, index)
+    enqueue(index, 0)
+    enqueue(index, gridSize - 1)
+  }
+
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const index = queue[cursor]
+    const i = Math.floor(index / gridSize)
+    const j = index % gridSize
+    terrain[i][j] = groundTypeValue
+    enqueue(i - 1, j)
+    enqueue(i + 1, j)
+    enqueue(i, j - 1)
+    enqueue(i, j + 1)
+  }
+}
+
+function applyMacroTerrainRows(terrain, rows) {
+  if (!Array.isArray(rows) || !rows.length) return false
+  const height = Math.min(terrain.length, rows.length)
+  for (let i = 0; i < height; i++) {
+    const row = String(rows[i] || '')
+    const width = Math.min(terrain[i]?.length || 0, row.length)
+    for (let j = 0; j < width; j++) {
+      const terrainType = MACRO_TERRAIN_CODE_TO_TYPE[row[j]]
+      const terrainIndex = TERRAIN_INDEX.get(terrainType)
+      if (terrainIndex !== undefined) terrain[i][j] = terrainIndex
+    }
+  }
+  return true
+}
+
+function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0) {
+  if (!Array.isArray(rows) || !rows.length) return { treeTextureFamily: fallbackFamily }
+  const codeForCell = cell => String(rows[cell.i] || '')[cell.j]
+  return {
+    treeTextureFamily: fallbackFamily,
+    treeTextureFamilyForCell: cell => MACRO_TREE_FAMILY_BY_CODE[codeForCell(cell)] ?? fallbackFamily,
+    treeChanceForCell: cell => {
+      const profile = MACRO_FOREST_PROFILE_BY_CODE[codeForCell(cell)]
+      if (!profile) return 0
+      const mask = macroForestNoise(cell.i, cell.j, seed, profile.scale, profile.seedOffset)
+      if (mask >= profile.threshold) return profile.coreChance
+      if (mask >= profile.threshold - 0.08) return profile.edgeChance
+      return 0
+    },
+  }
+}
+
+function resolveProtectedPosition(map, position, zoneRadius = 5, searchRadius = 18, padding = 0) {
+  const canUseCell = cell => !cell.border && !cell.solid && !cell.inclined && cell.category !== 'Water'
+  const clamped = {
+    i: Math.max(padding, Math.min(map.size - padding, Math.round(position.i))),
+    j: Math.max(padding, Math.min(map.size - padding, Math.round(position.j))),
+  }
+  for (let radius = 0; radius <= searchRadius; radius++) {
+    const candidate = getZoneInGridWithCondition(
+      {
+        minX: Math.max(padding, clamped.i - radius),
+        maxX: Math.min(map.size - padding, clamped.i + radius),
+        minY: Math.max(padding, clamped.j - radius),
+        maxY: Math.min(map.size - padding, clamped.j + radius),
+      },
+      map.grid,
+      zoneRadius,
+      canUseCell
+    )
+    if (candidate) return { i: candidate.i, j: candidate.j }
+  }
+  return null
+}
+
+function withResolvedSettlementLocals(settlements = [], spawns = [], banditCampPositions = []) {
+  let spawnIndex = 0
+  let banditIndex = 0
+  return settlements.map(settlement => {
+    if (settlement.kind === 'village' || settlement.kind === 'city') {
+      return { ...settlement, local: spawns[spawnIndex++] ?? settlement.local }
+    }
+    if (settlement.kind === 'banditCamp') {
+      return { ...settlement, local: banditCampPositions[banditIndex++] ?? settlement.local }
+    }
+    return settlement
+  })
+}
+
 function buildHeadlessMap(
   terrain,
   size,
   seed,
   playersPos,
   positionsCount = playersPos.length,
-  environment = DEFAULT_ENVIRONMENT_ID
+  environment = DEFAULT_ENVIRONMENT_ID,
+  protectedPositions = playersPos
 ) {
   const map = {
     size,
@@ -567,7 +737,7 @@ function buildHeadlessMap(
       }
   }
   map.flattenPlayerStartZones = () => {
-    for (const pos of playersPos) {
+    for (const pos of compactPositions(protectedPositions)) {
       for (let i = Math.max(0, pos.i - 6); i <= Math.min(size, pos.i + 6); i++) {
         for (let j = Math.max(0, pos.j - 6); j <= Math.min(size, pos.j + 6); j++) {
           if (map.grid[i][j].category !== 'Water') map.grid[i][j].z = 0
@@ -685,7 +855,7 @@ function enforceGeneratedReliefContinuity(map, protectedCells = new Set()) {
   }
 }
 
-function flattenFinalProtectedZones(map, spawns, waterRadius = RELIEF_WATER_BUFFER_RADIUS, spawnRadius = 6) {
+function flattenFinalProtectedZones(map, protectedPositions, waterRadius = RELIEF_WATER_BUFFER_RADIUS, spawnRadius = 6) {
   const protectedCells = new Set()
   const distances = coastDistances(map)
   const n = map.size + 1
@@ -700,7 +870,7 @@ function flattenFinalProtectedZones(map, spawns, waterRadius = RELIEF_WATER_BUFF
     }
   }
 
-  for (const spawn of spawns) {
+  for (const spawn of compactPositions(protectedPositions)) {
     for (let i = Math.max(0, spawn.i - spawnRadius); i <= Math.min(map.size, spawn.i + spawnRadius); i++) {
       for (let j = Math.max(0, spawn.j - spawnRadius); j <= Math.min(map.size, spawn.j + spawnRadius); j++) {
         const cell = map.grid[i][j]
@@ -761,16 +931,37 @@ function unsupportedReliefCells(map) {
   return cells
 }
 
-async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
+async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, options = {}) {
   const [minSpawns, maxSpawns] = BLUEPRINT_MAP_SPAWN_RANGE
-  const spawnCount = Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
+  const requestedSpawns = compactPositions(options.spawns)
+  const requestedBanditCampPositions = compactPositions(options.banditCampPositions)
+  const spawnCount = requestedSpawns.length
+    ? requestedSpawns.length
+    : Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
   const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
   const context = { map: { seed, positionsCount: spawnCount } }
   const terrain = runtimeTerrain.call(context, size + 1, seed, params)
+  const hasMacroTerrain = applyMacroTerrainRows(terrain, options.macroTerrainRows)
+  if (options.worldRegion && !hasMacroTerrain) removeBorderConnectedWater(terrain, params)
   const spawnMap = buildHeadlessMap(terrain, size, seed, [], spawnCount, environmentId)
-  const spawns = runtimeSpawns.call({ map: spawnMap })
+  const forcedSpawns = requestedSpawns
+    .map(position => resolveProtectedPosition(spawnMap, position, 5, 24, 28))
+    .filter(Boolean)
+  const banditCampPositions = requestedBanditCampPositions
+    .map(position => resolveProtectedPosition(spawnMap, position, 3, 24, 18))
+    .filter(Boolean)
+  const protectedPositions = [...forcedSpawns, ...banditCampPositions]
+  const spawns = forcedSpawns.length ? forcedSpawns : runtimeSpawns.call({ map: spawnMap })
   if (spawns.length !== spawnCount) return null
-  const map = buildHeadlessMap(terrain, size, seed, spawns, spawnCount, environmentId)
+  const map = buildHeadlessMap(
+    terrain,
+    size,
+    seed,
+    spawns,
+    spawnCount,
+    environmentId,
+    protectedPositions.length ? protectedPositions : spawns
+  )
   runtimeRelief.call({ map })
   const waterLevelBounds = map.clampReliefAroundWaterLevels()
   const unrestrictedReliefDistances = new Int16Array((map.size + 1) ** 2).fill(map.size + 4)
@@ -778,7 +969,7 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   map.formatCellsWaterBorder()
   const protectedShoreCells = normalizeShoreRelief(map)
   enforceGeneratedReliefContinuity(map, protectedShoreCells)
-  const flattenedCells = flattenFinalProtectedZones(map, spawns)
+  const flattenedCells = flattenFinalProtectedZones(map, protectedPositions.length ? protectedPositions : spawns)
   // The runtime skips relief sanitization for pregenerated blueprints, so nothing
   // may mutate relief after this final atlas-aware continuity pass.
   map.enforceReliefStepContinuity(unrestrictedReliefDistances, flattenedCells, waterLevelBounds)
@@ -794,9 +985,11 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
   // check cell.inclined, which only formatCellsRelief() ever sets.
   map.formatCellsRelief()
   const resourcesScope = createResourceScope(map)
-  const resourceOptions = { treeTextureFamily: params.treeTextureFamily }
-  await runtimeNeutralResources.call(resourcesScope, spawns, resourceOptions)
-  await runtimeBiomeTrees.call(resourcesScope, spawns, resourceOptions)
+  const resourceOptions = hasMacroTerrain
+    ? createMacroTreeOptions(options.macroTerrainRows, params.treeTextureFamily, seed)
+    : { treeTextureFamily: params.treeTextureFamily }
+  await runtimeNeutralResources.call(resourcesScope, protectedPositions.length ? protectedPositions : spawns, resourceOptions)
+  await runtimeBiomeTrees.call(resourcesScope, protectedPositions.length ? protectedPositions : spawns, resourceOptions)
   const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
   if (resourcesOnReliefBorders.length) {
     console.warn(
@@ -818,12 +1011,17 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID) {
     version: 1,
     size,
     seed,
+    ...(options.worldRegion ? { mapType: 'world-region' } : {}),
     environment: environmentId,
     encoding: 'base64',
     cellCount: flatTerrain.length,
     terrain: encode(flatTerrain),
     relief: encode(relief),
     spawns,
+    ...(banditCampPositions.length ? { banditCampPositions } : {}),
+    ...(Array.isArray(options.settlements) && options.settlements.length
+      ? { settlements: withResolvedSettlementLocals(options.settlements, spawns, banditCampPositions) }
+      : {}),
     resources,
   }
 }

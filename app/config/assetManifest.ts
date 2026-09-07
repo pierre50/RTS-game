@@ -95,7 +95,6 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
       'buildings/wall/construction-flag',
       'buildings/wall/level-1',
       'resources/tree/dead',
-      'buildings/portal',
       'buildings/deco',
     ]),
     ...toBuildingShadowBundle([

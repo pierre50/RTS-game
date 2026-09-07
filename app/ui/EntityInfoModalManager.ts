@@ -1,7 +1,5 @@
 import { FAMILY_TYPES } from '../constants'
-import { changeSpriteColor } from '../lib'
 import { renderAnimalAvatar, renderResourceAvatar, renderUnitHeadAvatar } from '../lib/avatar'
-import { t } from '../lib/lang'
 import { createInspectionModal } from './InspectionPanel'
 import { getEntityDisplayName } from './utils/entityDisplayName'
 import type { Application } from 'pixi.js'
@@ -14,16 +12,7 @@ import type {
   RuntimeEntity,
   UnitEntity,
 } from '../types/entities'
-import type { RecolorableSprite } from '../lib'
 import type { MenuHost } from './MenuHost'
-
-const PORTAL_RESOURCE_TYPE = 'Portal'
-const PORTAL_COLOR_CHOICES = ['blue', 'yellow', 'red'] as const
-const PORTAL_COLOR_LABEL_KEYS: Record<(typeof PORTAL_COLOR_CHOICES)[number], string> = {
-  blue: 'portalColorBlue',
-  yellow: 'portalColorYellow',
-  red: 'portalColorRed',
-}
 
 function getEntityTitle(entity: RuntimeEntity): string {
   return getEntityDisplayName(entity)
@@ -96,58 +85,6 @@ export function createTitledEntityInfoContent(
   return createEntityInfoContent(app, entity, { ...options, ...TITLED_ENTITY_INFO_OPTIONS })
 }
 
-function createPortalColorOptions(menu: MenuHost, portal: ResourceEntity): HTMLDivElement {
-  const currentColor = portal.color || 'blue'
-  const group = document.createElement('div')
-  group.className = 'portal-color-options npc-orders-options'
-
-  for (const color of PORTAL_COLOR_CHOICES) {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'portal-color-option ui-btn'
-    button.textContent = t(PORTAL_COLOR_LABEL_KEYS[color])
-    button.classList.toggle('is-selected', currentColor === color)
-    button.addEventListener('click', () => {
-      portal.color = color
-      if (portal.sprite) changeSpriteColor(portal.sprite as RecolorableSprite, color)
-      for (const sibling of group.querySelectorAll('.portal-color-option')) {
-        sibling.classList.toggle('is-selected', sibling === button)
-      }
-      menu.playUiClick()
-      menu.closeEntityInfoModal?.()
-      menu.context.travelThroughPortal?.(portal, color)
-    })
-    group.appendChild(button)
-  }
-
-  return group
-}
-
-function createPortalInfoModalContent(menu: MenuHost, portal: ResourceEntity): HTMLElement {
-  const content = document.createElement('div')
-  content.className = 'portal-info-modal-content'
-  const infoContent = createTitledEntityInfoContent(menu.context.app, portal)
-  appendPortalDescription(infoContent)
-  content.appendChild(infoContent)
-
-  content.appendChild(createPortalColorOptions(menu, portal))
-  return content
-}
-
-function appendPortalDescription(infoContent: HTMLElement): void {
-  const description = document.createElement('p')
-  description.className = 'portal-description'
-  description.textContent = t('portalDescriptionMysterious')
-  const infoPanel = infoContent.classList.contains('selection-info')
-    ? infoContent
-    : infoContent.querySelector<HTMLElement>('.selection-info')
-  if (infoPanel) {
-    infoPanel.appendChild(description)
-  } else {
-    infoContent.appendChild(description)
-  }
-}
-
 export class EntityInfoModalManager {
   menu: MenuHost
   modal?: Modal
@@ -178,10 +115,7 @@ export class EntityInfoModalManager {
       player.selectedOther = entity
     }
 
-    const modalContent =
-      isResourceEntity(entity) && entity.type === PORTAL_RESOURCE_TYPE
-        ? createPortalInfoModalContent(this.menu, entity)
-        : createTitledEntityInfoContent(this.menu.context.app, entity)
+    const modalContent = createTitledEntityInfoContent(this.menu.context.app, entity)
 
     this.entity = entity
     this.infoPanel = this.getInfoPanel(modalContent)
@@ -221,7 +155,6 @@ export class EntityInfoModalManager {
     if (!this.modal || !entity || !infoPanel || entity.isDestroyed) return
     infoPanel.replaceChildren()
     entity.interface?.info?.(infoPanel, TITLED_ENTITY_INFO_OPTIONS)
-    if (isResourceEntity(entity) && entity.type === PORTAL_RESOURCE_TYPE) appendPortalDescription(infoPanel)
   }
 
   getInfoPanel(content: HTMLElement): HTMLElement | null {

@@ -102,36 +102,36 @@ test('hero interaction range accepts the long side of an isometric building foot
 test('hero interaction aim uses the closest footprint edge for large resources', () => {
   const { getHeroInteractionTargetPoint } = loadHeroActionRange()
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -70 }
-  const portal = {
+  const stoneDeposit = {
     family: 'resource',
     i: 0,
     isDestroyed: false,
     j: 0,
     size: 3,
-    type: 'Portal',
+    type: 'Stone',
     x: 0,
     y: 0,
   }
 
-  assert.deepEqual(getHeroInteractionTargetPoint(hero, portal), { x: 0, y: -48 })
+  assert.deepEqual(getHeroInteractionTargetPoint(hero, stoneDeposit), { x: 0, y: -48 })
 })
 
 test('hero interaction keeps a forgiving band around large building-like resources', () => {
   const { isHeroInteractionTargetReachable } = loadHeroActionRange()
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -112 }
-  const portal = {
+  const stoneDeposit = {
     family: 'resource',
     i: 0,
     isDestroyed: false,
     j: 0,
     selectionFactor: 3,
     size: 3,
-    type: 'Portal',
+    type: 'Stone',
     x: 0,
     y: 0,
   }
 
-  assert.equal(isHeroInteractionTargetReachable(hero, null, portal), true)
+  assert.equal(isHeroInteractionTargetReachable(hero, null, stoneDeposit), true)
 })
 
 test('hero resource interaction footprint can be widened independently from pathing size', () => {

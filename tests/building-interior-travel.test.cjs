@@ -32,7 +32,7 @@ function loadBuildingInteriorOccupants(overrides = {}) {
         isSleepTime: context => context.dayNight?.state?.hour >= 18,
       },
       './GameStateHelpers': { applyPortableUnitState: () => {} },
-      './GamePortalTravel': { refreshPortalPartyFog: () => {} },
+      './GameTravelParty': { refreshTravelPartyFog: () => {} },
     },
   })
 }
@@ -133,7 +133,7 @@ function loadBuildingInteriorTravel(overrides = {}) {
         playBuildingInteriorDoorTransition: async callback => callback(),
       },
       './GameStateHelpers': {
-        extractPortalParty: overrides.extractPortalParty ?? (() => ({ followers: [], hero: null })),
+        extractTravelParty: overrides.extractTravelParty ?? (() => ({ followers: [], hero: null })),
         withFogEnabledState: state => state,
         worldStateWithCampaignClock:
           overrides.worldStateWithCampaignClock ??
@@ -142,8 +142,9 @@ function loadBuildingInteriorTravel(overrides = {}) {
               ? { ...state, runtime: { ...(state.runtime ?? {}), dayNightElapsedMs: Math.max(0, elapsedMs) } }
               : state),
       },
-      './GamePortalTravel': {
-        applyPortalPartyToRuntime: overrides.applyPortalPartyToRuntime ?? (() => {}),
+      './GameTravelParty': {
+        applyTravelPartyToRuntime: overrides.applyTravelPartyToRuntime ?? (() => {}),
+        extractTravelParty: overrides.extractTravelParty ?? (() => ({ followers: [], hero: null })),
         runtimeHeroUnit: overrides.runtimeHeroUnit ?? (() => null),
         teleportRuntimeUnit: overrides.teleportRuntimeUnit ?? (() => {}),
       },
@@ -235,9 +236,9 @@ test('entering a building interior through the runtime layer does not boot a sep
   const building = { i: 5, j: 5, isBuilt: true, label: 'tc-1', owner, type: 'TownCenter' }
   const exteriorState = {
     camera: { x: 0, y: 0 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 1234 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [{ buildings: [building], isPlayed: true, label: 'player-1', units: [] }],
     resources: [],
     animals: [],
@@ -260,7 +261,7 @@ test('entering a building interior through the runtime layer does not boot a sep
     _restartSaveData: null,
     context: {
       controls: {},
-      map: { grid: makeGrid(16), mapType: 'continent', random: () => 0, size: 15 },
+      map: { grid: makeGrid(16), mapType: 'world-region', random: () => 0, size: 15 },
       menu: {},
       player: { buildings: [building], units: [] },
       players: [],
@@ -342,9 +343,9 @@ test('leaving a building interior runtime layer keeps the exterior map alive', a
   const autosaves = []
   const exteriorState = {
     camera: { x: 10, y: 20 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 4321 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [{ buildings: [], isPlayed: true, label: 'player-1', units: [] }],
     resources: [],
     animals: [],
@@ -367,7 +368,7 @@ test('leaving a building interior runtime layer keeps the exterior map alive', a
     _restartSaveData: null,
     context: {
       controls: {},
-      map: { grid: makeGrid(16), mapType: 'continent', random: () => 0, size: 15 },
+      map: { grid: makeGrid(16), mapType: 'world-region', random: () => 0, size: 15 },
       menu: {},
       player: { buildings: [], units: [] },
       players: [],
@@ -404,9 +405,9 @@ test('entering a building interior opens the runtime layer and removes stale chi
   const townCenter = { i: 5, j: 5, label: 'tc-1', owner, type: 'TownCenter' }
   const exteriorState = {
     camera: { x: 0, y: 0 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 1234 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [
       {
         buildings: [townCenter],
@@ -453,7 +454,7 @@ test('entering a building interior opens the runtime layer and removes stale chi
   }
   const context = {
     controls: { equippedItem: null, init() {} },
-    map: { grid: makeGrid(16), mapType: 'continent', random: () => 0, size: 15 },
+    map: { grid: makeGrid(16), mapType: 'world-region', random: () => 0, size: 15 },
     menu: { init() {}, show() {} },
     player: sourcePlayer,
     players: [sourcePlayer],
@@ -485,7 +486,7 @@ test('entering a building interior opens the runtime layer and removes stale chi
     }
   }
   const { travelIntoBuildingInterior } = loadBuildingInteriorTravel({
-    extractPortalParty: extractTestPortalParty,
+    extractTravelParty: extractTestPortalParty,
     serializeGame: serializeRuntime,
   })
   const game = {
@@ -596,7 +597,7 @@ test('entering a building interior opens the runtime layer and removes stale chi
   await travelIntoBuildingInterior(game, townCenter)
 
   assert.deepEqual(opened, ['tc-1'])
-  assert.equal(context.map.mapType, 'continent')
+  assert.equal(context.map.mapType, 'world-region')
   assert.equal(game._campaignSave.currentWorldId, 'root')
   assert.equal(game._campaignSave.worlds[legacyInteriorWorldId], undefined)
   assert.equal(game._campaignSave.worldGraph.nodes[legacyInteriorWorldId], undefined)
@@ -613,9 +614,9 @@ test('session interior sleepers can leave without a campaign child world', () =>
   const townCenter = { i: 5, j: 5, label: 'tc-1', owner, type: 'TownCenter' }
   const sourceState = {
     camera: { x: 0, y: 0 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 2000 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [
       {
         buildings: [townCenter],
@@ -677,7 +678,7 @@ test('session interior sleepers can leave without a campaign child world', () =>
     scheduler: { remove() {} },
   }
   const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
-    extractPortalParty: extractTestPortalParty,
+    extractTravelParty: extractTestPortalParty,
     serializeGame: () => interiorState,
   })
   const game = {
@@ -751,9 +752,9 @@ test('session occupants that exit before the hero are restored around the parent
   const townCenter = { i: 5, j: 5, label: 'tc-1', owner, type: 'TownCenter' }
   const sourceState = {
     camera: { x: 0, y: 0 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 2000 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [
       {
         buildings: [townCenter],
@@ -827,14 +828,14 @@ test('session occupants that exit before the hero are restored around the parent
     animals: [],
   })
   const { routeInteriorUnitToExit, travelOutOfBuildingInterior } = loadBuildingInteriorTravel({
-    applyPortalPartyToRuntime: (_game, party, arrivalCell) => {
+    applyTravelPartyToRuntime: (_game, party, arrivalCell) => {
       const runtimeHero = context.player.units.find(unit => unit.label === party.hero?.label)
       if (runtimeHero && arrivalCell) {
         runtimeHero.i = arrivalCell.i
         runtimeHero.j = arrivalCell.j
       }
     },
-    extractPortalParty: state => ({ followers: [], hero: state.players[0].units.find(unit => unit.label === 'hero') }),
+    extractTravelParty: state => ({ followers: [], hero: state.players[0].units.find(unit => unit.label === 'hero') }),
     getBuildingInteriorEntryCell: () => ({ i: 6, j: 7 }),
     getFreeLandCellAroundInstance: (_anchor, runtimeGrid) => runtimeGrid[6][8],
     runtimeHeroUnit: () => hero,
@@ -870,7 +871,7 @@ test('session occupants that exit before the hero are restored around the parent
     _autosaveCampaign() {},
     async _bootFromSave(state) {
       bootedStates.push(structuredClone(state))
-      context.map = { grid: makeRuntimeGrid(12), mapType: 'continent', random: () => 0, size: 11 }
+      context.map = { grid: makeRuntimeGrid(12), mapType: 'world-region', random: () => 0, size: 11 }
       context.player.buildings = [townCenter]
       context.players = [context.player]
       context.player.units = structuredClone(state.players[0].units)
@@ -915,9 +916,9 @@ test('saving during a building interior session writes the parent world as the c
   const townCenter = { i: 5, j: 5, label: 'tc-1', owner, type: 'TownCenter' }
   const sourceState = {
     camera: { x: 0, y: 0 },
-    config: { mapType: 'continent', size: 64 },
+    config: { mapType: 'world-region', size: 64 },
     runtime: { dayNightElapsedMs: 1000 },
-    world: { mapType: 'continent', size: 64 },
+    world: { mapType: 'world-region', size: 64 },
     players: [
       {
         buildings: [townCenter],
@@ -947,7 +948,7 @@ test('saving during a building interior session writes the parent world as the c
     animals: [],
   }
   const { buildBuildingInteriorSessionSaveRecord } = loadBuildingInteriorTravel({
-    extractPortalParty: extractTestPortalParty,
+    extractTravelParty: extractTestPortalParty,
     serializeGame: () => interiorState,
   })
   const campaign = {
@@ -984,7 +985,7 @@ test('saving during a building interior session writes the parent world as the c
   const record = buildBuildingInteriorSessionSaveRecord(game, 5000)
 
   assert.equal(record.currentWorldId, 'root')
-  assert.equal(record.worlds.root.state.config.mapType, 'continent')
+  assert.equal(record.worlds.root.state.config.mapType, 'world-region')
   assert.equal(record.worlds.root.state.runtime.dayNightElapsedMs, 4000)
   assert.deepEqual(
     record.worlds.root.state.players[0].units.map(unit => [unit.label, unit.hitPoints, unit.i, unit.j]),
@@ -1045,7 +1046,7 @@ test('leaving an interior returns passive occupants to the parent world for time
     },
   }
   const { travelOutOfBuildingInterior } = loadBuildingInteriorTravel({
-    extractPortalParty: () => ({
+    extractTravelParty: () => ({
       followers: [],
       hero: { i: 7, j: 11, label: 'hero', type: 'Hero', controlMode: 'hero' },
     }),
@@ -1074,7 +1075,7 @@ test('leaving an interior returns passive occupants to the parent world for time
     _autosaveCampaign() {},
     async _bootFromSave(state) {
       bootedStates.push(state)
-      context.map.mapType = 'continent'
+      context.map.mapType = 'world-region'
       context.player.buildings = [townCenter]
       context.players = [context.player]
       context.player.units = structuredClone(state.players[0].units)
@@ -1179,7 +1180,7 @@ test('daytime time jump inside an interior moves passive occupants back to the p
     },
   }
   const { synchronizeInteriorOccupantsAfterTimeJump } = loadBuildingInteriorTravel({
-    extractPortalParty: () => ({
+    extractTravelParty: () => ({
       followers: [],
       hero: { i: 7, j: 11, label: 'hero', type: 'Hero', controlMode: 'hero' },
     }),
@@ -1446,7 +1447,7 @@ test('runtime occupants route out through their local interior space even while 
   }
   const context = {
     dayNight: { state: { hour: 10 } },
-    map: { grid: makeGrid(16), mapType: 'continent', size: 15 },
+    map: { grid: makeGrid(16), mapType: 'world-region', size: 15 },
   }
   const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
     getBuildingInteriorSpaceForUnit: unit => (unit === sleeper ? space : null),
@@ -1514,7 +1515,7 @@ test('runtime sleepers resume stored work from the local exit transfer completio
   }
   const context = {
     dayNight: { state: { hour: 10 } },
-    map: { grid: makeGrid(16), mapType: 'continent', size: 15 },
+    map: { grid: makeGrid(16), mapType: 'world-region', size: 15 },
     scheduler,
   }
   const { routeInteriorUnitToExit } = loadBuildingInteriorTravel({
@@ -1559,7 +1560,7 @@ test('daytime time jump wakes local interior occupants while the interior layer 
   const calls = []
   const context = {
     dayNight: { state: { hour: 9 } },
-    map: { grid: makeGrid(16), mapType: 'continent', size: 15 },
+    map: { grid: makeGrid(16), mapType: 'world-region', size: 15 },
     unitRest: { synchronizeAfterTimeJump: () => calls.push('synchronizeRest') },
   }
   const { synchronizeInteriorOccupantsAfterTimeJump } = loadBuildingInteriorTravel()
@@ -1663,8 +1664,8 @@ test('occupants that exited before the hero stay available on the parent exterio
     ],
   })
   const { routeInteriorUnitToExit, travelOutOfBuildingInterior } = loadBuildingInteriorTravel({
-    extractPortalParty: state => ({ followers: [], hero: state.players[0].units.find(unit => unit.label === 'hero') }),
-    applyPortalPartyToRuntime: (_game, party, arrivalCell) => {
+    extractTravelParty: state => ({ followers: [], hero: state.players[0].units.find(unit => unit.label === 'hero') }),
+    applyTravelPartyToRuntime: (_game, party, arrivalCell) => {
       const runtimeHero = context.player.units.find(unit => unit.label === party.hero?.label)
       if (runtimeHero && arrivalCell) {
         runtimeHero.i = arrivalCell.i
@@ -1702,7 +1703,7 @@ test('occupants that exited before the hero stay available on the parent exterio
     _autosaveCampaign() {},
     async _bootFromSave(state) {
       bootedStates.push(structuredClone(state))
-      context.map.mapType = 'continent'
+      context.map.mapType = 'world-region'
       context.player.buildings = [townCenter]
       context.players = [context.player]
       context.player.units = structuredClone(state.players[0].units)

@@ -33,7 +33,7 @@ test('desert sand water borders include four animation phases for every shorelin
   }
 })
 
-function loadMapModule() {
+function loadMapModule({ waterOverlayFramesAvailable = false } = {}) {
   const filename = path.join(__dirname, '../app/classes/map/Map.ts')
   const { code } = babel.transformSync(fs.readFileSync(filename, 'utf8'), {
     filename,
@@ -43,6 +43,7 @@ function loadMapModule() {
   class Container {
     constructor() {
       this.children = []
+      this.destroyed = false
     }
     addChild(child) {
       this.children.push(child)
@@ -54,10 +55,16 @@ function loadMapModule() {
       this.children = []
       return children
     }
-    destroy() {}
+    destroy() {
+      this.destroyed = true
+    }
   }
   class Graphics extends Container {
     rect() {
+      return this
+    }
+    poly(points) {
+      this.polyPoints = points
       return this
     }
     fill(options) {
@@ -66,16 +73,19 @@ function loadMapModule() {
     }
   }
   class TilingSprite extends Container {
-    constructor({ texture }) {
+    constructor({ texture, width, height }) {
       super()
       this.texture = texture
+      this.width = width
+      this.height = height
       this.position = { set: () => {} }
     }
   }
+  const assetsMock = { cache: { has: () => waterOverlayFramesAvailable } }
   const localRequire = request => {
     if (request === 'pixi.js') {
       return {
-        Assets: { cache: { has: () => false } },
+        Assets: assetsMock,
         Container,
         Graphics,
         TilingSprite,
@@ -117,7 +127,7 @@ function loadMapModule() {
     if (request === './MapWaterOverlay') {
       return requireFromTsFile(request, filename, {
         'pixi.js': {
-          Assets: { cache: { has: () => false } },
+          Assets: assetsMock,
           Graphics,
           TilingSprite,
         },
@@ -158,6 +168,65 @@ test('interior maps use a static black background instead of the water overlay',
   assert.equal(map.waterOverlay, null)
   assert.equal(map.waterBackground.label, 'interiorBackground')
   assert.deepEqual(map.waterBackground.fillStyle, { color: 0x000000 })
+})
+
+test('land-only maps do not create a water background or animation', () => {
+  const Map = loadMapModule({ waterOverlayFramesAvailable: true })
+  const map = new Map({
+    app: {
+      ticker: {
+        add() {
+          assert.fail('land-only maps should not register a water animation ticker')
+        },
+        remove() {},
+      },
+    },
+    players: [],
+  })
+  map.size = 2
+  map.grid = [
+    [{ category: 'Land' }, { category: 'Land' }, { category: 'Land' }],
+    [{ category: 'Land' }, { category: 'Land' }, { category: 'Land' }],
+    [{ category: 'Land' }, { category: 'Land' }, { category: 'Land' }],
+  ]
+
+  map.updateWaterOverlay()
+
+  assert.equal(map.waterOverlay, null)
+  assert.equal(map.waterBackground, null)
+  assert.equal(map.waterOverlayMask, null)
+})
+
+test('water overlay is clipped to the isometric map grid', () => {
+  const Map = loadMapModule({ waterOverlayFramesAvailable: true })
+  let tick = null
+  const map = new Map({
+    app: {
+      ticker: {
+        add(callback) {
+          tick = callback
+        },
+        remove() {},
+      },
+    },
+    players: [],
+  })
+  map.size = 2
+  map.grid = [
+    [{ category: 'Land' }, { category: 'Water' }, { category: 'Land' }],
+    [{ category: 'Land' }, { category: 'Land' }, { category: 'Land' }],
+    [{ category: 'Land' }, { category: 'Land' }, { category: 'Land' }],
+  ]
+
+  map.updateWaterOverlay()
+
+  assert.ok(map.waterOverlay)
+  assert.ok(map.waterBackground)
+  assert.equal(map.waterOverlayMask.label, 'waterOverlayMask')
+  assert.equal(map.waterOverlay.mask, map.waterOverlayMask)
+  assert.equal(map.waterBackground.mask, map.waterOverlayMask)
+  assert.deepEqual(map.waterOverlayMask.polyPoints, [0, -16, 96, 32, 0, 80, -96, 32])
+  assert.equal(typeof tick, 'function')
 })
 
 test('registered water border surfaces advance on the water animation ticker', () => {

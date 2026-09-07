@@ -15,13 +15,35 @@ const {
 const ROOT = path.resolve(__dirname, '..')
 const DEFAULT_OUTPUT = path.join(ROOT, 'public', 'maps', 'worlds')
 const DEFAULT_MACRO_SCRIPT = path.join(ROOT, 'tools', 'generate-macro-world.py')
+const DEFAULT_CIVILIZATIONS_CONFIG = path.join(ROOT, 'app', 'config', 'civilizations.ts')
+const DEFAULT_BIOMES = 'blackforest,desert,temperate,steppe'
 
 const BIOME_ENVIRONMENTS = {
   temperate: 'Temperate',
   blackforest: 'BlackForest',
   jungle: 'Jungle',
   desert: 'Desert',
+  step: 'Steppe',
   steppe: 'Steppe',
+}
+
+const BIOME_ALIASES = {
+  step: 'steppe',
+}
+
+function configuredCivilizations() {
+  if (!fs.existsSync(DEFAULT_CIVILIZATIONS_CONFIG)) return []
+  const source = fs.readFileSync(DEFAULT_CIVILIZATIONS_CONFIG, 'utf8')
+  return [...source.matchAll(/value:\s*['"]([^'"]+)['"]/g)].map(match => match[1])
+}
+
+function resolvedCivilizations(value) {
+  const civilizations = String(value || '')
+    .split(',')
+    .map(civilization => civilization.trim())
+    .filter(Boolean)
+  if (civilizations.length === 1 && civilizations[0].toLowerCase() === 'all') return configuredCivilizations()
+  return civilizations
 }
 
 function usage(error = '') {
@@ -32,7 +54,11 @@ function usage(error = '') {
 
   --seed <n>              reproducible world seed (default: current time)
   --out <directory>       output root (default: public/maps/worlds)
-  --biomes <a,b,c>        macro biome sectors (default: blackforest,jungle,desert,temperate,steppe)
+  --biomes <a,b,c>        macro biome sectors (default: ${DEFAULT_BIOMES})
+  --players <n>           civilization starting villages to plan (default: civilization count, or 0)
+  --civilizations <a,b,c> civilization names for planned starting villages, or "all"
+  --bandit-camps <n>      bandit camps to plan (default: 0)
+  --settlement-disparity <n> settlement spread variance, 0.0 to 0.85 (default: 0.35)
   --no-preview-labels     hide region coordinates on the macro preview`)
 }
 
@@ -40,7 +66,11 @@ function argumentsFrom(argv) {
   const options = {
     seed: Date.now(),
     out: DEFAULT_OUTPUT,
-    biomes: 'blackforest,jungle,desert,temperate,steppe',
+    biomes: DEFAULT_BIOMES,
+    players: 0,
+    civilizations: '',
+    banditCamps: 0,
+    settlementDisparity: 0.35,
     labels: true,
   }
   for (let index = 0; index < argv.length; index++) {
@@ -56,9 +86,26 @@ function argumentsFrom(argv) {
     if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
     else if (key === '--biomes') options.biomes = value
+    else if (key === '--players') options.players = Number(value)
+    else if (key === '--civilizations') options.civilizations = value
+    else if (key === '--bandit-camps') options.banditCamps = Number(value)
+    else if (key === '--settlement-disparity') options.settlementDisparity = Number(value)
     else throw new Error(`Unknown option: ${key}`)
   }
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
+  if (!Number.isInteger(options.players) || options.players < 0) throw new Error('--players must be a positive integer or zero')
+  if (!Number.isInteger(options.banditCamps) || options.banditCamps < 0) {
+    throw new Error('--bandit-camps must be a positive integer or zero')
+  }
+  if (!Number.isFinite(options.settlementDisparity)) throw new Error('--settlement-disparity must be numeric')
+  options.resolvedCivilizations = resolvedCivilizations(options.civilizations)
+  if (!options.players && options.resolvedCivilizations.length) options.players = options.resolvedCivilizations.length
+  if (options.resolvedCivilizations.length) options.civilizations = options.resolvedCivilizations.join(',')
+  options.biomes = options.biomes
+    .split(',')
+    .map(biome => BIOME_ALIASES[biome.trim()] || biome.trim())
+    .filter(Boolean)
+    .join(',')
   const unknownBiomes = options.biomes
     .split(',')
     .map(biome => biome.trim())
@@ -84,7 +131,7 @@ function environmentForRegion(region) {
   return BIOME_ENVIRONMENTS[region.dominantBiome] ?? DEFAULT_ENVIRONMENT_ID
 }
 
-function createMacroPlan({ seed, out, biomes, labels }) {
+function createMacroPlan({ seed, out, biomes, labels, players, civilizations, banditCamps, settlementDisparity }) {
   const worldDirectory = path.join(out, `world-${seed}`)
   const previewPath = path.join(worldDirectory, 'macro-world-preview.png')
   const planPath = path.join(worldDirectory, 'macro-world-regions.json')
@@ -100,7 +147,14 @@ function createMacroPlan({ seed, out, biomes, labels }) {
     planPath,
     '--biomes',
     biomes,
+    '--players',
+    String(players),
+    '--bandit-camps',
+    String(banditCamps),
+    '--settlement-disparity',
+    String(settlementDisparity),
   ]
+  if (civilizations) args.push('--civilizations', civilizations)
   if (!labels) args.push('--no-labels')
   const result = spawnSync('python3', args, { cwd: ROOT, encoding: 'utf8' })
   if (result.status !== 0) {
@@ -113,10 +167,23 @@ function createMacroPlan({ seed, out, biomes, labels }) {
 
 async function generateRegionMap(region, worldSeed, mapsDirectory) {
   const environment = environmentForRegion(region)
+  const settlements = Array.isArray(region.settlements) ? region.settlements : []
+  const spawns = settlements
+    .filter(settlement => settlement.kind === 'village' || settlement.kind === 'city')
+    .map(settlement => settlement.local)
+  const banditCampPositions = settlements
+    .filter(settlement => settlement.kind === 'banditCamp')
+    .map(settlement => settlement.local)
   const random = randomFrom(`${worldSeed}:${region.x}:${region.y}:${environment}`)
   for (let attempt = 1; attempt <= 30; attempt++) {
     const seed = Math.floor(random() * 0x7fffffff)
-    const map = await blueprint(BLUEPRINT_MAP_SIZE, seed, environment)
+    const map = await blueprint(BLUEPRINT_MAP_SIZE, seed, environment, {
+      spawns,
+      banditCampPositions,
+      macroTerrainRows: region.terrainRows,
+      settlements,
+      worldRegion: true,
+    })
     if (!map) continue
     const id = `world-${worldSeed}-${regionId(region)}-${slug(environment)}`
     const relativePath = `${BLUEPRINT_MAP_SIZE}/${id}.map`
@@ -127,6 +194,7 @@ async function generateRegionMap(region, worldSeed, mapsDirectory) {
       environment,
       dominantBiome: region.dominantBiome,
       biomeWeights: region.biomeWeights,
+      settlements,
       waterRatio: region.waterRatio,
       region: { x: region.x, y: region.y },
       path: relativePath,
@@ -162,12 +230,18 @@ async function main() {
     regionsWide: plan.regionsWide,
     regionsHigh: plan.regionsHigh,
     biomeSectors: plan.biomeSectors,
+    settlements: plan.settlements || [],
     macroPreviewPath: path.relative(worldDirectory, previewPath),
+    macroIsoPreviewPath: plan.isoPreview?.path || path.basename(previewPath).replace(/(\.[^.]+)$/, '-iso$1'),
+    isoPreview: plan.isoPreview || null,
     macroRegionsPath: path.relative(worldDirectory, planPath),
     maps: [],
   }
 
   for (const region of plan.regions) {
+    region.settlements = (plan.settlements || []).filter(
+      settlement => settlement.region?.x === region.x && settlement.region?.y === region.y
+    )
     const entry = await generateRegionMap(region, options.seed, mapsDirectory)
     manifest.maps.push(entry)
     console.log(`Generated ${entry.id}: ${entry.environment}`)

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedMapBlueprint } = {}) {
+function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBlueprint, loadPregeneratedWorldMapBlueprint } = {}) {
   class MapBlueprintLoadError extends Error {
     constructor(reason, message) {
       super(message)
@@ -77,13 +77,13 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     },
     '../serialization/MapBlueprintLoader': {
       MapBlueprintLoadError,
-      loadPregeneratedMapBlueprint:
-        loadPregeneratedMapBlueprint ||
+      loadPregeneratedWorldMapBlueprint:
+        loadPregeneratedWorldMapBlueprint ||
         (async () => {
           if (blueprintFailureReason) {
-            throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test blueprint')
+            throw new MapBlueprintLoadError(blueprintFailureReason, 'missing test world blueprint')
           }
-          return { id: 'test-blueprint', size: 144, terrain: [], spawns: [], timings: {} }
+          return { id: 'test-world-blueprint', size: 144, terrain: [], spawns: [], timings: {} }
         }),
       loadPregeneratedInteriorBlueprint:
         loadPregeneratedInteriorBlueprint ||
@@ -228,13 +228,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../ui/PortalTravelTransition': {
-      PortalTravelTransition: class PortalTravelTransition {
-        async playDeparture() {}
-        async finish() {}
-        play() {}
-        destroy() {}
-      },
+    '../ui/WorldRevealTransition': {
       WorldRevealTransition: class WorldRevealTransition {
         async revealFrom() {}
         destroy() {}
@@ -245,7 +239,6 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../config/mapTypes': { DEFAULT_MAP_TYPE: 'continent' },
     '../config/civilizations': { CIVILIZATIONS: [{ value: 'Hellas' }] },
     '../config/environments': { getEnvironmentForCiv: () => 'temperate' },
     '../lib/maths': {
@@ -272,7 +265,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
-    '../../ui/PortalTravelTransition': mocks['../ui/PortalTravelTransition'],
+    '../../ui/WorldRevealTransition': mocks['../ui/WorldRevealTransition'],
     '../../services/weather/WeatherSystem': mocks['../services/weather/WeatherSystem'],
     '../../services/lighting/LightSystem': mocks['../services/lighting/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],
@@ -363,7 +356,7 @@ test('restored saves initialize hero controls before mounting runtime', async ()
   assert.deepEqual(calls, ['createRuntime', 'createUiRuntime', 'generateFromJSON', 'controls.init', 'mountRuntime'])
 })
 
-test('new games fail when the maps folder has no compatible blueprint', async () => {
+test('new games fail when the world has no compatible region blueprint', async () => {
   const previousConsoleError = console.error
   console.error = () => {}
 
@@ -392,37 +385,143 @@ test('new games fail when the maps folder has no compatible blueprint', async ()
   }
 })
 
-test('seed saves without a blueprint id do not fall back to runtime generation', async () => {
-  const Game = loadGame()
+test('world-region boot keeps the played civilization as the active player', async () => {
+  const Game = loadGame({
+    loadPregeneratedWorldMapBlueprint: async () => ({
+      id: 'world-4242-r0-0-steppe',
+      size: 144,
+      terrain: [],
+      spawns: [],
+      settlements: [
+        { civ: 'Norse', kind: 'village', local: { i: 20, j: 20 } },
+        { civ: 'Hellas', kind: 'village', local: { i: 80, j: 80 } },
+      ],
+      timings: {},
+    }),
+  })
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  const players = [
+    { civ: 'Norse', isPlayed: false },
+    { civ: 'Hellas', isPlayed: true },
+  ]
+  const generatedConfigs = []
+  const map = {
+    size: 144,
+    generateFromBlueprint: async () => {},
+    generatePlayers: configs => {
+      generatedConfigs.push(...configs)
+      return players
+    },
+    stylishMap: async () => {},
+  }
+
+  game._createRuntime = () => {}
+  game._map = () => map
+  game._applyMapConfig = (_map, config) => {
+    _map.size = config.size
+  }
+  game._createUiRuntime = () => {
+    game.context.menu = { init() {} }
+    game.context.controls = { init() {} }
+  }
+  game._mountRuntime = () => {}
+  game._gameContext = () => ({ map, player: game.context.player, players: game.context.players })
+  game._autosaveCampaign = () => {}
+  game._updateLoading = async () => {}
+  game._campaignSave = {
+    factions: {
+      'civ-norse': {
+        id: 'civ-norse',
+        civilization: 'Norse',
+        color: 'red',
+        homeWorldId: 'world-4242-r2-2-steppe',
+        knownWorldIds: [],
+        name: 'Clan Nord',
+      },
+      'civ-hellas': {
+        id: 'civ-hellas',
+        civilization: 'Hellas',
+        color: 'blue',
+        homeWorldId: 'world-4242-r2-2-steppe',
+        knownWorldIds: [],
+        name: 'Maison Hellas',
+      },
+    },
+    worldGraph: { rootWorldId: 'world-4242-r2-2-steppe' },
+    worlds: {},
+  }
+
+  await game._bootFromConfig({
+    size: 144,
+    players: [{ civ: 'Hellas', isHuman: true }],
+    worldId: 'world-4242',
+    worldRegionId: 'world-4242-r0-0-steppe',
+  })
+
+  assert.equal(game.context.player.civ, 'Hellas')
+  assert.equal(game.context.player.isPlayed, true)
+  assert.deepEqual(
+    generatedConfigs.map(config => ({
+      civ: config.civ,
+      color: config.color,
+      factionId: config.factionId,
+      isHuman: config.isHuman,
+      name: config.name,
+    })),
+    [
+      { civ: 'Norse', color: 'red', factionId: 'civ-norse', isHuman: false, name: 'Clan Nord' },
+      { civ: 'Hellas', color: 'blue', factionId: 'civ-hellas', isHuman: true, name: undefined },
+    ]
+  )
+})
+
+test('seed saves without a blueprint id load a world region blueprint', async () => {
+  const calls = []
+  const Game = loadGame({
+    loadPregeneratedWorldMapBlueprint: async options => {
+      calls.push(['world', options])
+      return { id: 'world-4242-r0-0-steppe', size: 144, terrain: [], spawns: [], timings: {} }
+    },
+  })
   const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
   let runtimeGenerationCalls = 0
   const map = {
     size: 144,
     generateMapAsync: async () => runtimeGenerationCalls++,
-    generateFromBlueprint: async () => {},
+    generateFromBlueprint: async blueprint => calls.push(['generate', blueprint.id]),
+    mapGeneration: { applySavedStateToGeneratedMap: () => calls.push(['applySavedState']) },
+    prepareTerrainForSavedState: async () => calls.push(['prepareTerrain']),
   }
 
-  game._createRuntime = () => {}
+  game._createRuntime = () => calls.push(['createRuntime'])
   game._map = () => map
-  game._applyMapConfig = () => {}
-  game._createUiRuntime = () => {}
+  game._applyMapConfig = (_map, config) => {
+    calls.push(['applyMapConfig', config.worldId])
+    _map.size = config.size
+  }
+  game._createUiRuntime = () => {
+    calls.push(['createUiRuntime'])
+    game.context.controls = { init: () => calls.push(['controls.init']) }
+  }
+  game._mountRuntime = () => calls.push(['mountRuntime'])
 
-  await assert.rejects(
-    () =>
-      game._bootFromSeedSave({
-        version: 2,
-        runtime: { elapsedMs: 0 },
-        world: { seed: 42, size: 144, positionsCount: 2, pregeneratedBlueprintId: null },
-        config: { seed: 42, size: 144 },
-        players: [],
-        camera: { x: 0, y: 0 },
-        resources: [],
-        animals: [],
-      }),
-    /mapBlueprintUnavailable/
-  )
+  await game._bootFromSeedSave({
+    version: 2,
+    runtime: { elapsedMs: 0 },
+    world: { seed: 42, size: 144, pregeneratedBlueprintId: null, worldId: 'world-4242' },
+    config: { seed: 42, size: 144 },
+    players: [],
+    camera: { x: 0, y: 0 },
+    resources: [],
+    animals: [],
+  })
 
   assert.equal(runtimeGenerationCalls, 0)
+  assert.deepEqual(calls.find(call => call[0] === 'world'), [
+    'world',
+    { size: 144, playerCiv: undefined, worldId: 'world-4242', worldRegionId: undefined },
+  ])
+  assert.deepEqual(calls.find(call => call[0] === 'generate'), ['generate', 'world-4242-r0-0-steppe'])
 })
 
 test('interior seed saves load their blueprint from the interior manifest', async () => {
@@ -432,7 +531,7 @@ test('interior seed saves load their blueprint from the interior manifest', asyn
       calls.push(['interior', options])
       return { id: options.id, kind: 'interior', mapType: 'interior', size: 13, terrain: [], spawns: [] }
     },
-    loadPregeneratedMapBlueprint: async options => {
+    loadPregeneratedWorldMapBlueprint: async options => {
       calls.push(['world', options])
       return { id: options.id, size: 144, terrain: [], spawns: [], timings: {} }
     },
@@ -465,7 +564,6 @@ test('interior seed saves load their blueprint from the interior manifest', asyn
       seed: 42,
       size: 13,
       mapType: 'interior',
-      positionsCount: 1,
       pregeneratedBlueprintId: 'house-circle-001',
     },
     config: { seed: 42, size: 13, mapType: 'interior' },

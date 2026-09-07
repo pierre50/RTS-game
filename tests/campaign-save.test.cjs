@@ -21,8 +21,8 @@ function worldSave(seed = 42) {
     version: 2,
     runtime: { elapsedMs: 0 },
     camera: { x: 0, y: 0 },
-    world: { seed, size: 144, mapType: 'continent', positionsCount: 3, pregeneratedBlueprintId: null },
-    config: { seed, size: 144, mapType: 'continent' },
+    world: { seed, size: 144, mapType: 'world-region', positionsCount: 3, pregeneratedBlueprintId: null },
+    config: { seed, size: 144, mapType: 'world-region' },
     players: [{ label: 'player-1', type: 'Human', isPlayed: true, buildings: [], units: [], corpses: [], views: [[{}]] }],
     resources: [],
     animals: [],
@@ -73,32 +73,31 @@ test('updates the current world state while preserving graph data', () => {
   assert.equal(updated.heroParty.playerLabel, 'hero-player')
 })
 
-test('adds a child world and records the portal tree path', () => {
+test('adds a child world and records the world tree path', () => {
   const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
   const childState = worldSave(456)
 
   const next = addChildWorldToCampaign(campaign, childState, {
     color: 'red',
-    entryPortalId: 'portal-red-root',
+    entryPortalId: 'entry-red-root',
     name: 'Ruines rouges',
     now: 2000,
-    returnPortalId: 'portal-return',
+    returnPortalId: 'entry-return',
     worldId: 'child-red',
   })
 
   assert.equal(next.currentWorldId, 'child-red')
   assert.equal(next.worlds['child-red'].parentWorldId, 'root')
-  assert.equal(next.worlds['child-red'].entryPortalId, 'portal-red-root')
-  assert.equal(next.worlds['child-red'].returnPortalId, 'portal-return')
+  assert.equal(next.worlds['child-red'].entryPortalId, 'entry-red-root')
+  assert.equal(next.worlds['child-red'].returnPortalId, 'entry-return')
   assert.deepEqual(next.worldGraph.nodes.root.children, ['child-red'])
   assert.equal(next.worldGraph.nodes['child-red'].parentId, 'root')
   assert.equal(getCurrentWorldState(next), childState)
 })
 
-test('records bandit portal encounters with faction labels while bandits are alive', () => {
+test('records bandit worlds with faction labels while bandits are alive', () => {
   const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
   const childState = worldSave(456)
-  childState.config.portalEncounter = 'bandit'
   childState.players.push({
     label: 'bandits',
     type: 'Bandits',
@@ -115,20 +114,17 @@ test('records bandit portal encounters with faction labels while bandits are ali
     worldId: 'bandit-world',
   })
 
-  assert.equal(next.worldGraph.nodes['bandit-world'].encounter, 'bandit')
   assert.equal(next.worldGraph.nodes['bandit-world'].banditsCleared, false)
   assert.deepEqual(next.worldGraph.nodes['bandit-world'].factionIds, ['wrong-faction'])
 })
 
-test('marks bandit portal worlds cleared without dropping their faction label', () => {
+test('marks bandit worlds cleared without dropping their faction label', () => {
   const campaign = createInitialCampaignSave(worldSave(123), { now: 1000, worldId: 'root' })
   const childState = worldSave(456)
-  childState.config.portalEncounter = 'bandit'
   const next = addChildWorldToCampaign(campaign, childState, { now: 2000, worldId: 'bandit-world' })
   next.worldGraph.nodes['bandit-world'].factionIds = ['old-faction']
   const updated = updateCurrentWorldState(next, childState, 3000)
 
-  assert.equal(updated.worldGraph.nodes['bandit-world'].encounter, 'bandit')
   assert.equal(updated.worldGraph.nodes['bandit-world'].banditsCleared, true)
   assert.deepEqual(updated.worldGraph.nodes['bandit-world'].factionIds, ['old-faction'])
 })

@@ -85,7 +85,7 @@ function isLightSourceConfig(value: unknown): value is EntityLightSourceConfig {
 
 function isPlayedUnit(unit: RuntimeEntity): unit is UnitEntity {
   return (
-    unit.family === FAMILY_TYPES.unit && unit.type !== UNIT_TYPES.hero && unit.owner?.isPlayed === true
+    unit.family === FAMILY_TYPES.unit && unit.type === UNIT_TYPES.villager && unit.owner?.isPlayed === true
   )
 }
 

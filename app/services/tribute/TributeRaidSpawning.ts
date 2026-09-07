@@ -7,32 +7,21 @@ import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell } from '../../types/map'
 import type { UnitEntity } from '../../types/entities'
 import {
-  PORTAL_RESOURCE_TYPE,
   RAID_SPAWN_MAX_RADIUS,
   RAID_SPAWN_MIN_RADIUS,
-  getRaidCellDistance,
   isOpenRaidLandCell,
   type TributeRaidUnit,
 } from '../TributeRaidRules'
 
-function findPortal(context: GameContextLike): UnitEntity | null {
-  const resources = context.map?.resources
-  if (!resources) return null
-  return ([...resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE && !resource.isDestroyed) ??
-    null) as UnitEntity | null
-}
-
 export function findTributeRaidSpawnCells(context: GameContextLike, target: UnitEntity, count: number): RuntimeCell[] {
   const grid = context.map?.grid
   if (!grid) return []
-  const portal = findPortal(context)
-  const anchor = portal ?? target
   const cells: RuntimeCell[] = []
   const nonPassageCell = createNonReservedPassageCellCondition(context)
   for (let distance = RAID_SPAWN_MIN_RADIUS; distance <= RAID_SPAWN_MAX_RADIUS; distance++) {
     const ring = getCellsAroundPoint(
-      anchor.i,
-      anchor.j,
+      target.i,
+      target.j,
       grid,
       distance,
       cell => isOpenRaidLandCell(cell) && nonPassageCell(cell)
@@ -40,7 +29,6 @@ export function findTributeRaidSpawnCells(context: GameContextLike, target: Unit
     ring.sort(() => (context.map.random?.() ?? Math.random()) - 0.5)
     for (const cell of ring) {
       if (cells.includes(cell)) continue
-      if (portal && getRaidCellDistance(cell, target) < 8) continue
       cells.push(cell)
       if (cells.length >= count) return cells
     }

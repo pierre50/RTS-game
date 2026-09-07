@@ -1,5 +1,6 @@
 import { t } from '../../lib/lang'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
+import { DEFAULT_WORLD_ID } from '../../config/worlds'
 import { serializeGame } from '../../serialization/SaveSerializer'
 import { createInitialCampaignSave } from '../../serialization/CampaignSave'
 import { PLAYER_TYPES } from '../../constants'
@@ -10,6 +11,7 @@ import type { PlayerLike } from '../../types/player'
 import type { GameConfig, PlayerSetupConfig, SerializedSave } from '../../types/save'
 import { ensureCampaignPlayerRoster, hasSerializedGrid, saveConfig, savedRuntimeState } from './GameStateHelpers'
 import { recordLoadedMapBlueprint, type BlueprintRuntimeMap } from './GameMapBlueprintRuntime'
+import { buildWorldRegionPlayerConfigs, humanPlayerConfig, selectActivePlayer } from './WorldRegionPlayers'
 
 type LoadedMapBlueprint = MapBlueprint & {
   id: string | number
@@ -45,11 +47,11 @@ export type GameWorldBootHost = {
   _createRuntime(): void
   _createUiRuntime(): void
   _gameContext(): GameContextLike
-  _loadRequiredMapBlueprint(options?: {
-    environment?: string
-    id?: string
-    positionsCount?: number
+  _loadRequiredWorldMapBlueprint(options: {
+    playerCiv?: string | null
     size?: number
+    worldId: string
+    worldRegionId?: string
   }): Promise<LoadedMapBlueprint>
   _loadRequiredInteriorBlueprint(options?: {
     buildingSize?: number
@@ -96,21 +98,26 @@ export async function bootGameFromConfig(
   measure(game, 'boot.createUiRuntime', () => game._createUiRuntime())
 
   const mapGenerationStartedAt = performance.now()
+  const human = humanPlayerConfig(config)
+  const worldId = config.worldId ?? DEFAULT_WORLD_ID
   const blueprint = await measureAsync(game, 'boot.loadMapBlueprint', () =>
-    game._loadRequiredMapBlueprint({
+    game._loadRequiredWorldMapBlueprint({
       size: map.size,
-      environment: map.environment,
+      playerCiv: human.civ,
+      worldId,
+      worldRegionId: config.worldRegionId ?? undefined,
     })
   )
+  if (blueprint.environment) map.environment = blueprint.environment
   await measureAsync(game, 'boot.generateFromBlueprint', () =>
     map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
   )
   recordLoadedMapBlueprint(map, blueprint, 'pregenerated-blueprint', mapGenerationStartedAt)
   await game._updateLoading('generatingPlayers', 0.2)
   game.context.players = measure(game, 'boot.generatePlayers', () =>
-    map.generatePlayers((config.players as Array<Partial<PlayerLike> & PlayerSetupConfig>) || null)
+    map.generatePlayers(buildWorldRegionPlayerConfigs(config, blueprint, game._campaignSave?.factions))
   )
-  game.context.player = game.context.players[0]
+  game.context.player = selectActivePlayer(game.context.players)
   measure(game, 'boot.menuInit', () => game.context.menu?.init?.())
   await measureAsync(game, 'boot.preloadUnits', () =>
     preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {
@@ -140,6 +147,8 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
     size: world.size ?? savedConfig.size,
     mapType: world.mapType ?? savedConfig.mapType,
     environment: world.environment ?? savedConfig.environment,
+    worldId: world.worldId ?? savedConfig.worldId ?? DEFAULT_WORLD_ID,
+    worldRegionId: world.worldRegionId ?? savedConfig.worldRegionId ?? undefined,
     players: savedPlayers.map(player => ({
       civ: player.civ,
       gender: player.gender,
@@ -149,21 +158,17 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   }
   measure(game, 'seedSave.applyMapConfig', () => game._applyMapConfig(map, seedConfig))
   measure(game, 'seedSave.createUiRuntime', () => game._createUiRuntime())
-  const positionsCount =
-    Number.isFinite(world.positionsCount) && Number(world.positionsCount) > 0
-      ? Number(world.positionsCount)
-      : savedPlayers.length || null
-
   const blueprintId = world.pregeneratedBlueprintId
-  if (!blueprintId) throw new Error(t('mapBlueprintUnavailable'))
   const isInteriorWorld = world.mapType === 'interior' || savedConfig.mapType === 'interior'
+  if (isInteriorWorld && !blueprintId) throw new Error(t('mapBlueprintUnavailable'))
   const blueprint = await measureAsync(game, 'seedSave.loadBlueprint', () =>
     isInteriorWorld
       ? game._loadRequiredInteriorBlueprint({ id: String(blueprintId) })
-      : game._loadRequiredMapBlueprint({
+      : game._loadRequiredWorldMapBlueprint({
           size: map.size,
-          id: String(blueprintId),
-          positionsCount: positionsCount ?? undefined,
+          playerCiv: seedConfig.players.find(player => player.isHuman)?.civ ?? seedConfig.players[0]?.civ,
+          worldId: seedConfig.worldId ?? DEFAULT_WORLD_ID,
+          worldRegionId: seedConfig.worldRegionId ?? undefined,
         })
   )
   await measureAsync(game, 'seedSave.generateFromBlueprint', () =>

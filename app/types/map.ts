@@ -3,12 +3,30 @@ import type { GridCell, Grid, GridPosition } from './grid'
 import type { ResourceEntity, RuntimeEntity } from './entities'
 import type { ResourceAmount } from './common'
 import type { FogSpriteMemory } from './fog'
-import type { PortalEncounterKind, SaveEntityState } from './save'
+import type { SaveEntityState } from './save'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib/graphics/textures'
 
 export type { FogSpriteMemory } from './fog'
+
+export type RuntimeWorldManifest = {
+  isoPreview?: {
+    halfHeight?: number
+    halfWidth?: number
+    height?: number
+    offsetX?: number
+    offsetY?: number
+    path?: string
+    width?: number
+  } | null
+  macroIsoPreviewPath?: string
+  maps?: Array<{ id?: string; region: { x: number; y: number }; size: number }>
+  regionsHigh?: number
+  regionsWide?: number
+  settlements?: unknown[]
+  worldSeed?: string | number
+}
 
 export interface RuntimeCell extends GridCell {
   map?: object
@@ -78,8 +96,7 @@ export interface RuntimeMap {
   environment?: string
   ready?: boolean
   instantMode: boolean
-  humanStartsWithoutBase?: boolean
-  portalEncounter?: PortalEncounterKind | null
+  heroOnlyStart?: boolean
   revealEverything: boolean
   revealTerrain: boolean
   showResources?: boolean
@@ -90,6 +107,10 @@ export interface RuntimeMap {
   difficulty?: string
   positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
+  worldId?: string | null
+  worldRegionId?: string | null
+  worldRegion?: { x: number; y: number } | null
+  worldManifest?: RuntimeWorldManifest | null
   interiorExits?: Array<GridPosition | null>
   startingResources: ResourceAmount
   resources: Set<ResourceEntity>

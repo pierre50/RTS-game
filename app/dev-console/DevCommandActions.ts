@@ -18,7 +18,6 @@ export {
 export {
   toggleFog,
   toggleResourcesVisibility,
-  teleportHeroToPortal,
   highlightInstances,
   killResources,
 } from './actions/map'

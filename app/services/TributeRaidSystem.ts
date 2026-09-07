@@ -12,9 +12,7 @@ import {
   FACTION_RAID_FIRST_DAY,
   FACTION_RAID_INTERVAL_DAYS,
   FACTION_RAID_MIN_HATE,
-  PORTAL_RESOURCE_TYPE,
   RAID_APPROACH_RANGE,
-  RAID_RETURN_RANGE,
   RAID_UPDATE_MS,
   getRaidCellDistance,
   getRaidUnitTypes,
@@ -43,7 +41,7 @@ import { findRaidTarget, hasActiveBanditCampPresence } from './TributeRaidTarget
 import { findTributeRaidSpawnCells, removeTributeRaidUnitFromRuntime } from './tribute/TributeRaidSpawning'
 import type { GameContextLike } from '../types/context'
 import type { ResourceAmount } from '../types/common'
-import type { RuntimeEntity, UnitEntity } from '../types/entities'
+import type { UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { FactionSave } from '../types/save'
 
@@ -114,7 +112,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     if (!spawnCells.length) return false
 
     const owner = options.owner
-    const portal = this.findPortal()
     const raid: TributeRaid = {
       id: `${options.kind}-raid-${Date.now()}-${Math.round((this.context.map.random?.() ?? Math.random()) * 100000)}`,
       kind: options.kind,
@@ -123,7 +120,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       target,
       units: [],
       phase: 'approaching',
-      portal,
       tribute: options.tribute,
       modal: null,
       updateTaskId: null,
@@ -305,12 +301,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     ).length
   }
 
-  findPortal(): RuntimeEntity | null {
-    const resources = this.context.map?.resources
-    if (!resources) return null
-    return [...resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE && !resource.isDestroyed) ?? null
-  }
-
   findSpawnCells(target: UnitEntity, count: number): RuntimeCell[] {
     return findTributeRaidSpawnCells(this.context, target, count)
   }
@@ -337,10 +327,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     }
 
     if (raid.phase === 'leaving') {
-      const portal = raid.portal
-      if (!portal || units.every(unit => getRaidCellDistance(unit, portal) <= RAID_RETURN_RANGE)) {
-        this.despawnRaid(raid)
-      }
+      this.despawnRaid(raid)
     }
   }
 
@@ -351,18 +338,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       unit.work = WORK_TYPES.attacker
       unit.action = null
       unit.sendToEvt?.(target, null, options)
-    }
-  }
-
-  sendRaidToPortal(raid: TributeRaid): void {
-    const portal = raid.portal ?? this.findPortal()
-    raid.portal = portal
-    if (!portal) {
-      this.despawnRaid(raid)
-      return
-    }
-    for (const unit of livingRaidUnits(raid)) {
-      unit.sendToEvt?.(portal, null, { forceRepath: true })
     }
   }
 
@@ -377,7 +352,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     content.appendChild(createTitledEntityInfoContent(this.context.app, raid.chief))
 
     const speech = document.createElement('p')
-    speech.className = 'bandit-tribute-text portal-description'
+    speech.className = 'bandit-tribute-text'
     speech.textContent = getTributeDemand(raid)
     content.appendChild(speech)
 
@@ -461,7 +436,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     if (raid.kind === 'faction' && raid.faction)
       this.context.changeFactionRelation?.(raid.faction.id, 8, 'tribute-paid')
     this.context.menu?.showMessage(getTributePaidMessage(raid), 'success')
-    this.sendRaidToPortal(raid)
+    this.despawnRaid(raid)
   }
 
   makeRaidHostile(raid: TributeRaid): void {

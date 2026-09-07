@@ -13,9 +13,10 @@ import { autosaveRecord, buildSaveRecord, saveRecord as saveRecordToStorage } fr
 import { createInitialCampaignSave, isCampaignSave } from '../serialization/CampaignSave'
 import {
   MapBlueprintLoadError,
+  loadPregeneratedWorldMapBlueprint,
   loadPregeneratedInteriorBlueprint,
-  loadPregeneratedMapBlueprint,
 } from '../serialization/MapBlueprintLoader'
+import { type RegionEdge } from '../services/world/WorldRegionTravelSystem'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
 import {
   addRuntimeServiceLayers,
@@ -29,25 +30,12 @@ import {
   ensureCampaignPlayerRoster,
   getGameScreenRect,
   getMapWorldBounds,
-  type PortalPartyState,
-  type PortalWorldConfig,
 } from './game/GameStateHelpers'
 import {
-  applyFogStateToCell,
-  applyPortalPartyToRuntime,
   applyRuntimePortableUnitState,
-  clearTravelUnitFogViewers,
-  configForRuntimePortalWorld,
-  findPartyFollowerArrivalCell,
-  findPortalArrivalCell,
-  refreshPortalPartyFog,
-  removeExistingTravelFollowers,
-  resetPlayedFogForFreshWorld,
   runtimeHeroUnit,
-  teleportRuntimeUnit,
-  travelThroughPortal as travelThroughPortalRuntime,
-  type PortalTravelGame,
-} from './game/GamePortalTravel'
+  type TravelPartyGame,
+} from './game/GameTravelParty'
 import {
   buildBuildingInteriorSessionSaveRecord,
   routeInteriorUnitToExit as routeInteriorUnitToExitRuntime,
@@ -73,12 +61,19 @@ import { type BlueprintRuntimeMap } from './game/GameMapBlueprintRuntime'
 import { bootGameFromConfig, bootGameFromSave, bootGameFromSeedSave } from './game/GameWorldBoot'
 import { createGameRuntimeContext, createGameUiRuntime, type GameRuntimeContext } from './game/GameRuntimeContext'
 import {
+  debugTeleportWorldMap as debugTeleportWorldMapRuntime,
+  preloadWorldRegion as preloadWorldRegionRuntime,
+  travelToWorldRegion as travelToWorldRegionRuntime,
+  type WorldMapDebugTeleportTarget,
+  type WorldRegionTravelGame,
+} from './game/GameWorldRegionTravel'
+import {
   routeUnitResourceDelivery as routeUnitResourceDeliveryRuntime,
   type ResourceDeliveryGame,
 } from './game/GameResourceDelivery'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
-import type { PortalRevealPoint, PortalTravelTransition } from '../ui/PortalTravelTransition'
+import type { WorldRevealPoint } from '../ui/WorldRevealTransition'
 import {
   activateBuildingInteriorSpace,
   deactivateBuildingInteriorSpace,
@@ -96,7 +91,7 @@ import {
 import type { GameContextLike } from '../types/context'
 import type { CampaignSave, GameConfig, SaveEntityState, SaveRecord, SerializedSave } from '../types/save'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
-import type { BuildingEntity, ResourceEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../types/entities'
+import type { BuildingEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../types/entities'
 import type { DevConsoleRuntimeContext } from '../dev-console/types'
 
 type RuntimeMapInstance = InstanceType<typeof Map> &
@@ -108,7 +103,7 @@ type MapInstance = RuntimeMapInstance & {
   pregeneratedBlueprintId?: BlueprintRuntimeMap['pregeneratedBlueprintId']
 }
 
-type RequiredBlueprintOptions = Parameters<typeof loadPregeneratedMapBlueprint>[0]
+type RequiredWorldBlueprintOptions = Parameters<typeof loadPregeneratedWorldMapBlueprint>[0]
 type RequiredInteriorBlueprintOptions = Parameters<typeof loadPregeneratedInteriorBlueprint>[0]
 
 export default class Game extends Container {
@@ -122,13 +117,15 @@ export default class Game extends Container {
   config: GameConfig | null
   onQuit: (() => void) | null
   context: GameRuntimeContext
-  _loadingScreen?: GameLoadingScreen | PortalTravelTransition | BuildingInteriorTransition | null
+  _loadingScreen?: GameLoadingScreen | BuildingInteriorTransition | null
   _wakeLock?: WakeLockSentinel | null
   _onVisibilityChange?: () => void
   _onKeydown?: (evt: KeyboardEvent) => void
   _onResize?: () => void
   _onDocumentVisibilityChange?: () => void
   _runtimeServices: RuntimeServices
+  _worldRegionBlueprintCache: globalThis.Map<string, Promise<Awaited<ReturnType<typeof loadPregeneratedWorldMapBlueprint>>>>
+  _worldRegionTransitioning: boolean
 
   constructor(
     app: Application,
@@ -145,6 +142,8 @@ export default class Game extends Container {
     this._campaignSave = null
     this._isRestarting = false
     this._runtimeServices = createEmptyRuntimeServices()
+    this._worldRegionBlueprintCache = new globalThis.Map()
+    this._worldRegionTransitioning = false
     this.config = config
     this.onQuit = onQuit
     this.context = createGameRuntimeContext(this, app, gamebox) as GameRuntimeContext
@@ -182,7 +181,7 @@ export default class Game extends Container {
     return this.context.map as MapInstance
   }
 
-  _getHeroRevealPoint(): PortalRevealPoint | null {
+  _getWorldRevealPoint(): WorldRevealPoint | null {
     const { controls } = this.context
     const hero = this._runtimeHeroUnit()
     if (!controls || !hero) return null
@@ -195,16 +194,39 @@ export default class Game extends Container {
     await this._yieldToBrowser()
   }
 
-  async _loadRequiredMapBlueprint(options: RequiredBlueprintOptions = {}) {
+  async _loadRequiredWorldMapBlueprint(options: RequiredWorldBlueprintOptions) {
+    const cacheKey =
+      options.worldRegionId && options.worldId
+        ? `${options.worldId}:${options.size ?? 144}:${options.playerCiv ?? ''}:${options.worldRegionId}`
+        : null
+    if (cacheKey) {
+      const cached = this._worldRegionBlueprintCache.get(cacheKey)
+      if (cached) return cached
+    }
     try {
-      return await loadPregeneratedMapBlueprint(options)
+      const promise = loadPregeneratedWorldMapBlueprint(options)
+      if (cacheKey) this._worldRegionBlueprintCache.set(cacheKey, promise)
+      return await promise
     } catch (error) {
+      if (cacheKey) this._worldRegionBlueprintCache.delete(cacheKey)
       if (error instanceof MapBlueprintLoadError) {
-        console.error(`[maps] ${error.reason}: ${error.message}`)
+        console.error(`[world maps] ${error.reason}: ${error.message}`)
         throw new Error(t('mapBlueprintUnavailable'))
       }
       throw error
     }
+  }
+
+  async preloadWorldRegion(worldRegionId: string): Promise<void> {
+    await preloadWorldRegionRuntime(this as WorldRegionTravelGame, worldRegionId)
+  }
+
+  async travelToWorldRegion(worldRegionId: string, edge: RegionEdge): Promise<void> {
+    await travelToWorldRegionRuntime(this as WorldRegionTravelGame, worldRegionId, edge)
+  }
+
+  async debugTeleportWorldMap({ worldI, worldJ, worldRegionId }: WorldMapDebugTeleportTarget): Promise<void> {
+    await debugTeleportWorldMapRuntime(this as WorldRegionTravelGame, { worldI, worldJ, worldRegionId })
   }
 
   async _loadRequiredInteriorBlueprint(options: RequiredInteriorBlueprintOptions = {}) {
@@ -288,7 +310,8 @@ export default class Game extends Container {
       this._gameContext(),
       map,
       () => this._getScreenRect(),
-      dayNightElapsedMs
+      dayNightElapsedMs,
+      this
     )
     addRuntimeServiceLayers(this, this._runtimeServices)
     this.addChild(controls)
@@ -463,52 +486,8 @@ export default class Game extends Container {
     this._restartSaveData = structuredClone(this._campaignSave)
   }
 
-  _configForPortalWorld(color: 'blue' | 'yellow' | 'red', worldId: string, now: number): PortalWorldConfig {
-    return configForRuntimePortalWorld(this as PortalTravelGame, color, worldId, now)
-  }
-
   _runtimeHeroUnit(): UnitEntity | null {
-    return runtimeHeroUnit(this as PortalTravelGame)
-  }
-
-  _removeExistingTravelFollowers(): void {
-    removeExistingTravelFollowers(this as PortalTravelGame)
-  }
-
-  _findPortalArrivalCell(): RuntimeCell | null {
-    return findPortalArrivalCell(this as PortalTravelGame)
-  }
-
-  _findPartyFollowerArrivalCell(anchor: UnitEntity): RuntimeCell | null {
-    return findPartyFollowerArrivalCell(this as PortalTravelGame, anchor)
-  }
-
-  _teleportRuntimeUnitToCell(unit: UnitEntity, cell: RuntimeCell): void {
-    teleportRuntimeUnit(this as PortalTravelGame, unit, cell)
-  }
-
-  _refreshPortalPartyFog(units: UnitEntity[]): void {
-    refreshPortalPartyFog(this as PortalTravelGame, units)
-  }
-
-  _applyFogStateToCell(i: number, j: number): void {
-    applyFogStateToCell(this as PortalTravelGame, i, j)
-  }
-
-  _clearTravelUnitFogViewers(units: UnitEntity[]): void {
-    clearTravelUnitFogViewers(this as PortalTravelGame, units)
-  }
-
-  _resetPlayedFogForFreshWorld(): void {
-    resetPlayedFogForFreshWorld(this as PortalTravelGame)
-  }
-
-  _applyPortalPartyToRuntime(
-    party: PortalPartyState,
-    arrivalCell: RuntimeCell | null = null,
-    { freshWorld = false }: { freshWorld?: boolean } = {}
-  ): void {
-    applyPortalPartyToRuntime(this as PortalTravelGame, party, arrivalCell, { freshWorld })
+    return runtimeHeroUnit(this as TravelPartyGame)
   }
 
   _applyPortableUnitState(
@@ -517,10 +496,6 @@ export default class Game extends Container {
     options?: { keepAlive?: boolean }
   ): void {
     applyRuntimePortableUnitState(target, source, options)
-  }
-
-  async travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void> {
-    await travelThroughPortalRuntime(this as PortalTravelGame, portal, color)
   }
 
   async travelIntoBuildingInterior(building: BuildingEntity): Promise<void> { await travelIntoBuildingInteriorRuntime(this as BuildingInteriorTravelGame, building) }

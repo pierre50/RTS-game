@@ -8,7 +8,7 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { PlayerOptions } from '../players/Player'
-import type { MapGenerationContext, MapGenerationMap } from './MapGenerationTypes'
+import type { MapGenerationContext, MapGenerationMap, MapSettlement } from './MapGenerationTypes'
 
 const STARTING_CIVILIAN_GENDERS: Array<'male' | 'female'> = ['male', 'male', 'female', 'female']
 
@@ -40,8 +40,59 @@ export function generatePlayers(
 ): PlayerLike[] {
   const context = runtimeContext(map.context)
   const players: PlayerLike[] = []
-  let banditCampOwnerConfig: PlayerOptions | undefined
-  map.banditCampPositions = []
+  map.banditCampPositions = [...(map.banditCampPositions || [])]
+  const settlementStarts = (map.settlements || []).filter(
+    settlement => (settlement.kind === 'village' || settlement.kind === 'city') && settlement.local
+  )
+
+  if (map.heroOnlyStart) {
+    const humanConfig = playersConfig?.find(player => player.isHuman) ?? playersConfig?.[0]
+    const humanStart = findHeroOnlyStart(map, settlementStarts, humanConfig)
+    players.push(createHumanPlayer(context, humanStart.i, humanStart.j, 0, humanConfig))
+
+    if (!map.noAI) {
+      const humanCiv = humanConfig?.civ
+      for (const settlement of settlementStarts) {
+        if (humanCiv && settlement.civ === humanCiv) continue
+        const position = settlement.local
+        const config = playersConfig?.find(player => player.civ === settlement.civ)
+        if (!position) continue
+        players.push(createAIPlayer(map, context, position.i, position.j, players.length, config))
+      }
+    }
+
+    players
+      .filter(player => player.type !== PLAYER_TYPES.bandits)
+      .forEach((player, index) =>
+        applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
+      )
+
+    return players
+  }
+
+  if (settlementStarts.length) {
+    const playerCount = Math.min(playersConfig?.length || settlementStarts.length, settlementStarts.length)
+    for (let i = 0; i < playerCount; i++) {
+      const settlement = settlementStarts[i]
+      const position = settlement.local
+      const config = playersConfig?.find(player => player.civ === settlement.civ) ?? playersConfig?.[i]
+      if (!position) continue
+
+      if (config?.isHuman || (!players.some(player => player.isPlayed) && i === 0)) {
+        players.push(createHumanPlayer(context, position.i, position.j, i, config))
+      } else if (!map.noAI) {
+        players.push(createAIPlayer(map, context, position.i, position.j, i, config))
+      }
+    }
+
+    players
+      .filter(player => player.type !== PLAYER_TYPES.bandits)
+      .forEach((player, index) =>
+        applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
+      )
+
+    return players
+  }
 
   const poses = shuffleSpawnIndexes(map)
   const playerCount = Math.min(playersConfig?.length || 1, map.playersPos.length)
@@ -52,12 +103,7 @@ export function generatePlayers(
     if (!i) {
       players.push(createHumanPlayer(context, position.i, position.j, i, playersConfig?.[i]))
     } else if (!map.noAI) {
-      if (map.portalEncounter === 'bandit') {
-        map.banditCampPositions.push({ i: position.i, j: position.j })
-        banditCampOwnerConfig = playersConfig?.[i]
-      } else {
-        players.push(createAIPlayer(map, context, position.i, position.j, i, playersConfig?.[i]))
-      }
+      players.push(createAIPlayer(map, context, position.i, position.j, i, playersConfig?.[i]))
     }
   }
 
@@ -65,10 +111,7 @@ export function generatePlayers(
     const anchor = map.banditCampPositions[0]
     const human = players.find(player => player.isPlayed)
     ensureBanditCampOwner(map, context, anchor, human?.civ ?? 'Hellas', players, {
-      civ: banditCampOwnerConfig?.civ,
-      color: banditCampOwnerConfig?.color,
-      factionId: banditCampOwnerConfig?.factionId,
-      name: banditCampOwnerConfig?.name,
+      civ: 'Hellas',
     })
   }
 
@@ -81,6 +124,34 @@ export function generatePlayers(
   return players
 }
 
+function findHeroOnlyStart(
+  map: MapGenerationMap,
+  settlementStarts: MapSettlement[],
+  humanConfig: PlayerOptions | undefined
+): { i: number; j: number } {
+  const humanCiv = humanConfig?.civ
+  const matchingSettlement = humanCiv ? settlementStarts.find(settlement => settlement.civ === humanCiv)?.local : null
+  if (matchingSettlement) return matchingSettlement
+
+  const center = Math.floor(map.size / 2)
+  const canUse = (i: number, j: number) => {
+    const cell = map.grid[i]?.[j]
+    return Boolean(cell && !cell.solid && !cell.has && !cell.border && !cell.waterBorder && cell.category !== 'Water')
+  }
+  for (let radius = 0; radius <= Math.max(8, Math.ceil(map.size / 2)); radius += 1) {
+    for (let di = -radius; di <= radius; di += 1) {
+      for (let dj = -radius; dj <= radius; dj += 1) {
+        if (Math.max(Math.abs(di), Math.abs(dj)) !== radius) continue
+        const i = Math.max(1, Math.min(map.size - 1, center + di))
+        const j = Math.max(1, Math.min(map.size - 1, center + dj))
+        if (canUse(i, j)) return { i, j }
+      }
+    }
+  }
+
+  return map.playersPos[0] ?? settlementStarts[0]?.local ?? { i: center, j: center }
+}
+
 export function placePlayers(map: MapGenerationMap): void {
   const {
     context: { players },
@@ -88,7 +159,7 @@ export function placePlayers(map: MapGenerationMap): void {
 
   for (const player of players) {
     if (player.type === PLAYER_TYPES.bandits) continue
-    if (player.isPlayed && map.humanStartsWithoutBase) {
+    if (player.isPlayed && map.heroOnlyStart) {
       player.createUnit?.({ i: player.i, j: player.j, type: UNIT_TYPES.hero })
       continue
     }

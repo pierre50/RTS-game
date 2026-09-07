@@ -1,19 +1,39 @@
-import { DEFAULT_ENVIRONMENT_ID } from '../constants'
+import type { MapBlueprint, MapSettlement } from '../classes/map/MapGenerationTypes'
+import { regionIdFromEntry, selectWorldMap } from './WorldMapBlueprintSelection'
 
 // Must match tools/generate-maps.cjs's TERRAIN encoding order exactly.
 const TERRAIN_TYPES = ['Grass', 'Desert', 'Water', 'Jungle', 'DarkForest', 'Dirt', '', 'Snow']
 
-type BlueprintManifestEntry = {
+type WorldManifestEntry = {
+  dominantBiome?: string
+  environment?: string
   id?: string
   mapType?: string
-  environment?: string
   path: string
+  region: { x: number; y: number }
+  settlements?: unknown[]
   size: number
   spawns: number
+  waterRatio?: number
 }
 
-type BlueprintManifest = {
-  maps?: BlueprintManifestEntry[]
+type WorldManifest = {
+  format?: string
+  isoPreview?: {
+    halfHeight?: number
+    halfWidth?: number
+    height?: number
+    offsetX?: number
+    offsetY?: number
+    path?: string
+    width?: number
+  } | null
+  macroIsoPreviewPath?: string
+  maps?: WorldManifestEntry[]
+  regionsHigh?: number
+  regionsWide?: number
+  settlements?: unknown[]
+  worldSeed?: string | number
 }
 
 type InteriorBlueprintManifestEntry = {
@@ -66,12 +86,16 @@ type BlueprintTimings = Partial<
   >
 >
 
-type LoadBlueprintOptions = {
-  positionsCount?: number
-  random?: () => number
+type LoadedBlueprint = MapBlueprint & {
+  id: string | number
+  timings: BlueprintTimings
+}
+
+type LoadWorldBlueprintOptions = {
   size?: number
-  id?: string
-  environment?: string
+  playerCiv?: string | null
+  worldId: string
+  worldRegionId?: string
 }
 
 type LoadInteriorBlueprintOptions = {
@@ -205,41 +229,70 @@ function compatibleInteriorEntries(
     .map(entry => ({ blueprint: entry, buildingType: entry.interiorType, id: entry.id }))
 }
 
-function compatibleMaps(
-  manifest: BlueprintManifest | undefined,
-  { size, positionsCount, environment }: LoadBlueprintOptions
-) {
-  const wantedEnvironment = environment ?? DEFAULT_ENVIRONMENT_ID
-  return (manifest?.maps || []).filter(map => {
-    return (
-      map.size === size &&
-      !map.mapType &&
-      (map.environment ?? DEFAULT_ENVIRONMENT_ID) === wantedEnvironment &&
-      (!positionsCount || map.spawns >= positionsCount)
-    )
-  })
+function stringOrNumber(value: unknown): string | number | undefined {
+  return typeof value === 'string' || typeof value === 'number' ? value : undefined
 }
 
-export async function loadPregeneratedMapBlueprint({
-  size,
-  positionsCount,
-  random = Math.random,
-  id,
-  environment,
-}: LoadBlueprintOptions = {}) {
+async function decodeMapBlueprintPayload(
+  payload: Record<string, unknown>,
+  selected: { id?: string; path: string; size: number },
+  timings: BlueprintTimings
+): Promise<LoadedBlueprint> {
+  const size = selected.size
+  if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.size !== size) {
+    fail('map-invalid', `Map blueprint "${selected.path}" is invalid`)
+  }
+
+  const decodeStartedAt = performance.now()
+  const terrainValues = decodeBase64Bytes(String(payload.terrain), Uint8Array)
+  const reliefValues = decodeBase64Bytes(String(payload.relief), Int8Array)
+  timings.blueprintDecode = performance.now() - decodeStartedAt
+  const expectedCells = (size + 1) ** 2
+  if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) {
+    fail('map-invalid', `Map blueprint "${selected.path}" has invalid terrain data`)
+  }
+
+  const gridStartedAt = performance.now()
+  const terrain = toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'))
+  const relief = toGrid(reliefValues, size, value => value)
+  timings.blueprintGridInflate = performance.now() - gridStartedAt
+
+  const payloadSpawns = Array.isArray(payload.spawns) ? payload.spawns : []
+  return {
+    id: stringOrNumber(payload.id) ?? selected.id ?? selected.path,
+    size,
+    mapType: typeof payload.mapType === 'string' ? payload.mapType : 'world-region',
+    seed: stringOrNumber(payload.seed),
+    terrain,
+    relief,
+    spawns: payloadSpawns,
+    banditCampPositions: Array.isArray(payload.banditCampPositions) ? payload.banditCampPositions : [],
+    settlements: Array.isArray(payload.settlements) ? (payload.settlements as MapSettlement[]) : [],
+    resources: Array.isArray(payload.resources) ? payload.resources : undefined,
+    timings,
+  }
+}
+
+export async function loadPregeneratedWorldMapBlueprint({
+  playerCiv,
+  size = 144,
+  worldId,
+  worldRegionId,
+}: LoadWorldBlueprintOptions) {
   const timings: BlueprintTimings = {}
-  let manifest: BlueprintManifest | undefined
+  let manifest: WorldManifest | undefined
   let manifestResponse: Response
+  const manifestPath = `maps/worlds/${worldId}/manifest.json`
   try {
     const manifestStartedAt = performance.now()
-    manifestResponse = await fetch('maps/manifest.json', { cache: 'no-store' })
+    manifestResponse = await fetch(manifestPath, { cache: 'no-store' })
     if (!manifestResponse.ok) {
-      fail('manifest-fetch-failed', `Unable to load maps/manifest.json (${manifestResponse.status})`)
+      fail('manifest-fetch-failed', `Unable to load ${manifestPath} (${manifestResponse.status})`)
     }
     timings.blueprintManifestFetch = performance.now() - manifestStartedAt
   } catch (error) {
     if (error instanceof MapBlueprintLoadError) throw error
-    fail('manifest-fetch-failed', 'Unable to load maps/manifest.json')
+    fail('manifest-fetch-failed', `Unable to load ${manifestPath}`)
   }
   try {
     const manifestParseStartedAt = performance.now()
@@ -247,60 +300,46 @@ export async function loadPregeneratedMapBlueprint({
     timings.blueprintManifestParse = performance.now() - manifestParseStartedAt
   } catch (error) {
     if (error instanceof MapBlueprintLoadError) throw error
-    fail('manifest-invalid', 'maps/manifest.json is not valid JSON')
+    fail('manifest-invalid', `${manifestPath} is not valid JSON`)
   }
-  if (!Array.isArray(manifest?.maps)) fail('manifest-invalid', 'maps/manifest.json is invalid')
-  if (size == null) fail('size-missing', 'Cannot load a map blueprint without a size')
+  if (!Array.isArray(manifest?.maps)) fail('manifest-invalid', `${manifestPath} is invalid`)
 
-  let selected: BlueprintManifestEntry | undefined
-  if (id) {
-    selected = (manifest?.maps || []).find(map => map.id === id && !map.mapType)
-    if (!selected) fail('blueprint-id-missing', `Map blueprint "${id}" is not listed in maps/manifest.json`)
-  } else {
-    const candidates = compatibleMaps(manifest, { size, positionsCount, environment })
-    if (!candidates.length) fail('no-compatible-map', `No map blueprint matches size ${size}`)
-    selected = candidates[Math.floor(random() * candidates.length)]
-  }
+  const selected = selectWorldMap(manifest, { playerCiv, size, worldRegionId })
+  if (!selected) fail('no-compatible-map', `No world map blueprint matches ${worldId}`)
+
   try {
+    const mapPath = `maps/worlds/${worldId}/maps/${selected.path}`
     const mapFetchStartedAt = performance.now()
-    const response = await fetch(`maps/${selected.path}`, { cache: 'no-store' })
-    if (!response.ok) fail('map-fetch-failed', `Unable to load maps/${selected.path} (${response.status})`)
+    const response = await fetch(mapPath, { cache: 'no-store' })
+    if (!response.ok) fail('map-fetch-failed', `Unable to load ${mapPath} (${response.status})`)
     timings.blueprintMapFetch = performance.now() - mapFetchStartedAt
     const mapParseStartedAt = performance.now()
     const payload = await response.json()
     timings.blueprintMapParse = performance.now() - mapParseStartedAt
-    if (payload.format !== 'map-blueprint' || payload.version !== 1 || payload.size !== size) {
-      fail('map-invalid', `Map blueprint "${selected.path}" is invalid`)
-    }
-
-    const decodeStartedAt = performance.now()
-    const terrainValues = decodeBase64Bytes(payload.terrain, Uint8Array)
-    const reliefValues = decodeBase64Bytes(payload.relief, Int8Array)
-    timings.blueprintDecode = performance.now() - decodeStartedAt
-    const expectedCells = (size + 1) ** 2
-    if (terrainValues.length !== expectedCells || reliefValues.length !== expectedCells) {
-      fail('map-invalid', `Map blueprint "${selected.path}" has invalid terrain data`)
-    }
-
-    const gridStartedAt = performance.now()
-    const terrain = toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass'))
-    const relief = toGrid(reliefValues, size, value => value)
-    timings.blueprintGridInflate = performance.now() - gridStartedAt
-
+    const blueprint = await decodeMapBlueprintPayload(payload, selected, timings)
     return {
-      id: payload.id || selected.id,
-      size,
-      mapType: 'continent',
-      seed: payload.seed,
-      terrain,
-      relief,
-      spawns: (payload.spawns || []).slice(0, positionsCount || payload.spawns?.length || 0),
-      resources: Array.isArray(payload.resources) ? payload.resources : null,
-      timings,
+      ...blueprint,
+      environment: selected.environment,
+      worldId,
+      worldRegionId: selected.id || regionIdFromEntry(selected),
+      worldRegion: selected.region,
+      worldManifest: {
+        isoPreview: manifest.isoPreview ?? null,
+        macroIsoPreviewPath: manifest.macroIsoPreviewPath,
+        maps: manifest.maps.map(map => ({
+          id: map.id || regionIdFromEntry(map),
+          region: map.region,
+          size: map.size,
+        })),
+        regionsHigh: manifest.regionsHigh,
+        regionsWide: manifest.regionsWide,
+        settlements: manifest.settlements || [],
+        worldSeed: manifest.worldSeed,
+      },
     }
   } catch (error) {
     if (error instanceof MapBlueprintLoadError) throw error
-    throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated map blueprint')
+    throw new MapBlueprintLoadError('map-invalid', 'Unable to parse pregenerated world map blueprint')
   }
 }
 

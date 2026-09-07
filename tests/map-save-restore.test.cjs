@@ -19,6 +19,13 @@ function loadMapSaveRestore() {
         PLAYER_TYPES: { ai: 'AI' },
       }
     }
+    if (id === '../../lib/playerState') return { isAIControlledPlayer: () => false }
+    if (id === '../../lib/resources/playerResourceTotals') {
+      return {
+        expandLegacyFoodAmount: resources => resources,
+        syncPlayerResourceFieldsFromChests: () => {},
+      }
+    }
     return require(id)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)

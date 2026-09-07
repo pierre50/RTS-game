@@ -72,6 +72,7 @@ type PlayerResourceMemory = {
 
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
   difficulty?: string
+  isHuman?: boolean
   team?: number | string | null
   views?: VisionGridLike | SerializedVisionGrid
 }

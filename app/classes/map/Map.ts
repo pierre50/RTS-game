@@ -5,6 +5,7 @@ import {
   MapGeneration,
   type GenerateMapOptions,
   type MapBlueprint,
+  type MapSettlement,
   type SavedGameData,
   type TerrainGrid,
 } from './MapGeneration'
@@ -37,7 +38,7 @@ import type { RuntimeCell, RenderChunk, RuntimeMap, RuntimeMapSpace } from '../.
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
-import type { PlayerSetupConfig, PortalEncounterKind, SaveEntityState } from '../../types/save'
+import type { PlayerSetupConfig, SaveEntityState } from '../../types/save'
 import type { MapRuntimeContext } from '../../types/context'
 
 export type MapContext = MapRuntimeContext
@@ -63,8 +64,7 @@ export default class Map extends Container {
   allTechnologies: boolean
   startingAge: number
   noAI: boolean
-  humanStartsWithoutBase: boolean
-  portalEncounter: PortalEncounterKind | null
+  heroOnlyStart: boolean
   instantMode: boolean
   difficulty: string
   startingResources: ResourceAmount
@@ -83,6 +83,17 @@ export default class Map extends Container {
   playersPos: GeneratedPosition[]
   interiorExits: GeneratedPosition[]
   banditCampPositions: GridPosition[]
+  settlements: MapSettlement[]
+  worldId: string | null
+  worldRegionId: string | null
+  worldRegion: { x: number; y: number } | null
+  worldManifest: {
+    maps?: Array<{ id?: string; region: { x: number; y: number }; size: number }>
+    regionsHigh?: number
+    regionsWide?: number
+    settlements?: unknown[]
+    worldSeed?: string | number
+  } | null
   positionsCount: number
   gaia: PlayerLike | null
   resources: Set<ResourceEntity>
@@ -99,6 +110,7 @@ export default class Map extends Container {
   waterOverlay: TilingSprite | null
   waterOverlayFrame: number
   waterOverlayElapsed: number
+  waterOverlayMask: Graphics | null
   waterOverlayPaused: boolean
   waterOverlayTick: ((ticker: Ticker) => void) | null
   waterBorderSurfaces: Set<WaterBorderSurface>
@@ -122,8 +134,7 @@ export default class Map extends Container {
     this.allTechnologies = false
     this.startingAge = 0
     this.noAI = false
-    this.humanStartsWithoutBase = false
-    this.portalEncounter = null
+    this.heroOnlyStart = false
 
     this.instantMode = false
     this.difficulty = 'medium'
@@ -147,6 +158,11 @@ export default class Map extends Container {
     this.playersPos = []
     this.interiorExits = []
     this.banditCampPositions = []
+    this.settlements = []
+    this.worldId = null
+    this.worldRegionId = null
+    this.worldRegion = null
+    this.worldManifest = null
     this.positionsCount = 2
     this.gaia = null
     this.resources = new Set()
@@ -169,6 +185,7 @@ export default class Map extends Container {
     this.waterOverlay = null
     this.waterOverlayFrame = 0
     this.waterOverlayElapsed = 0
+    this.waterOverlayMask = null
     this.waterOverlayPaused = false
     this.waterOverlayTick = null
     this.waterBorderSurfaces = new Set()
@@ -398,14 +415,22 @@ export default class Map extends Container {
 
   generateNeutralResourceGroupsAsync(
     playersPos: GeneratedPosition[],
-    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+    options?: {
+      treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null
+      treeTextureFamilyForCell?: (cell: RuntimeCell) => 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null | undefined
+      treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
+    }
   ): Promise<void> {
     return this.mapResources.generateNeutralResourceGroupsAsync(compactPositions(playersPos), options)
   }
 
   generateBiomeTreesAsync(
     playersPos: GeneratedPosition[],
-    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+    options?: {
+      treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null
+      treeTextureFamilyForCell?: (cell: RuntimeCell) => 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null | undefined
+      treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
+    }
   ): Promise<void> {
     return this.mapResources.generateBiomeTreesAsync(compactPositions(playersPos), options)
   }

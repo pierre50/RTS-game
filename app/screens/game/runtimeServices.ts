@@ -13,6 +13,7 @@ import { TributeRaidSystem } from '../../services/TributeRaidSystem'
 import { UnitEnergyRegenSystem } from '../../services/UnitEnergyRegenSystem'
 import { UnitRestSystem } from '../../services/rest/UnitRestSystem'
 import { WeatherSystem } from '../../services/weather/WeatherSystem'
+import { WorldRegionTravelSystem, type RegionTravelHost } from '../../services/world/WorldRegionTravelSystem'
 import { ResourceDeliverySystem } from './GameResourceDelivery'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
@@ -40,6 +41,7 @@ export type RuntimeServices = {
   unitEnergyRegen: UnitEnergyRegenSystem | null
   unitRest: UnitRestSystem | null
   weather: WeatherSystem | null
+  worldRegionTravel: WorldRegionTravelSystem | null
 }
 
 export function createEmptyRuntimeServices(): RuntimeServices {
@@ -59,6 +61,7 @@ export function createEmptyRuntimeServices(): RuntimeServices {
     unitEnergyRegen: null,
     unitRest: null,
     weather: null,
+    worldRegionTravel: null,
   }
 }
 
@@ -66,7 +69,8 @@ export function createRuntimeServices(
   context: GameContextLike,
   map: RuntimeMap,
   getScreenRect: () => ScreenRect,
-  dayNightElapsedMs: number | null | undefined = null
+  dayNightElapsedMs: number | null | undefined = null,
+  worldRegionTravelHost?: RegionTravelHost | null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
   const timeSkip = new TimeSkipSystem(context)
@@ -93,6 +97,8 @@ export function createRuntimeServices(
   const interiorExitMarker = isInterior ? new InteriorExitMarkerSystem(context, map) : null
   const weather = isInterior ? null : new WeatherSystem(context, map, getScreenRect)
   context.weather = weather
+  const worldRegionTravel =
+    !isInterior && worldRegionTravelHost ? new WorldRegionTravelSystem(context, worldRegionTravelHost) : null
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
   const services = {
@@ -111,6 +117,7 @@ export function createRuntimeServices(
     unitEnergyRegen,
     unitRest,
     weather,
+    worldRegionTravel,
   }
 
   exposeRuntimeServiceDebugGlobals(services)
@@ -143,6 +150,7 @@ export function destroyRuntimeServices(services: RuntimeServices, context: Runti
   services.resourceDelivery?.destroy()
   services.dayNight?.destroy()
   services.weather?.destroy()
+  services.worldRegionTravel?.destroy()
 
   context.dayNight = null
   context.weather = null

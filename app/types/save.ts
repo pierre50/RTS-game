@@ -187,8 +187,9 @@ type SaveWorldState = {
   seed?: string | number
   size?: number
   mapType?: string
-  positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
+  worldId?: string | null
+  worldRegionId?: string | null
 }
 
 export type WorldColor = 'blue' | 'yellow' | 'red' | 'neutral'
@@ -219,7 +220,6 @@ export type WorldGraphNode = {
   color: WorldColor
   kind?: 'world' | 'interior'
   environment?: string | null
-  encounter?: PortalEncounterKind | null
   banditsCleared?: boolean
   factionIds?: string[]
   parentId?: string | null
@@ -269,13 +269,12 @@ export type GameConfig = {
   bots?: number
   difficulty?: string
   environment?: string
+  heroOnlyStart?: boolean
   humanStartsWithoutBase?: boolean
   instantMode?: boolean
   mapType?: string
   name?: string
   players?: PlayerSetupConfig[]
-  portalEncounter?: PortalEncounterKind
-  positionsCount?: number
   pregeneratedBlueprintId?: string | number | null
   resourceDensity?: string
   revealEverything?: boolean
@@ -284,9 +283,9 @@ export type GameConfig = {
   size?: number
   startingAge?: number
   startingResources?: ResourceAmount
+  worldId?: string | null
+  worldRegionId?: string | null
 }
-
-export type PortalEncounterKind = 'village' | 'bandit'
 
 export type PlayerSetupConfig = {
   civ?: string

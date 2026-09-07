@@ -40,7 +40,6 @@ import {
   toggleResourcesVisibility,
   toggleSolidDebug,
   toggleTerrainFrameDebug,
-  teleportHeroToPortal,
   toggleVisionDebug,
   WEATHER_PHASES,
 } from './DevCommandActions'
@@ -116,7 +115,7 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'bandit-raid',
     aliases: ['raid', 'bandits'],
     usage: 'bandit-raid',
-    describe: 'Trigger a bandit tribute raid near the portal',
+    describe: 'Trigger a bandit tribute raid near the target',
     run: (_args, context) => {
       const started = context.tributeRaids?.triggerRaid({ source: 'dev-console' }) ?? false
       return started
@@ -129,7 +128,7 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     name: 'faction-raid',
     aliases: ['frraid', 'envoy'],
     usage: 'faction-raid',
-    describe: 'Trigger a hostile known faction tribute raid near the portal',
+    describe: 'Trigger a hostile known faction tribute raid near the target',
     run: (_args, context) => {
       const started =
         context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }) ?? false
@@ -294,13 +293,6 @@ function registerGameplayCommands(registry: DevCommandRegistry): void {
     run: ([value], context) => toggleResourcesVisibility(context, value),
   })
 
-  registry.register({
-    name: 'portal',
-    aliases: ['tpportal'],
-    usage: 'portal',
-    describe: 'Teleport the hero next to the current world portal',
-    run: (_args, context) => teleportHeroToPortal(context),
-  })
 }
 
 function registerDebugOverlayCommands(registry: DevCommandRegistry): void {

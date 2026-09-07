@@ -3,6 +3,7 @@ import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
   attachEntityShadowsToMapSpace,
+  changeSpriteColorDirectly,
   getRallyPointFrames,
   getEntityMapPoint,
   getTextureByFrame,
@@ -77,6 +78,7 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
   reveal.anchor.set(building.sprite.anchor.x, building.sprite.anchor.y)
   reveal.position.copyFrom(building.sprite.position)
   reveal.scale.copyFrom(building.sprite.scale)
+  changeSpriteColorDirectly(reveal, building.owner.color ?? '')
   reveal.visible = progress > 0
   reveal.alpha = 1
 

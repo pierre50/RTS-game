@@ -277,7 +277,10 @@ function createController({
     isDestroyed: false,
     loading: 0,
     currentSheet: 'standing',
-    setTextures: sheet => calls.push(['setTextures', sheet]),
+    setTextures: sheet => {
+      hero.currentSheet = sheet
+      calls.push(['setTextures', sheet])
+    },
     sendToEvt: (target, action, options) => calls.push(['hero.sendToEvt', target.label, action, options]),
     syncMountedHorseSprite: () => {
       hero.syncMountedHorseSpriteCalls = (hero.syncMountedHorseSpriteCalls ?? 0) + 1

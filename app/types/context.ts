@@ -6,12 +6,11 @@ import type {
   PlaceableBuildingConfig,
   UnitEntity,
   BuildingEntity,
-  ResourceEntity,
   UnitResourceDeliveryReturnTask,
 } from './entities'
 import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent, TooltipSource } from './ui'
 import type { HeroEquippedItem } from './heroTools'
-import type { FactionSave, WorldGraphSave } from './save'
+import type { FactionSave, SerializedSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
 export interface DayNightStateLike {
@@ -306,10 +305,11 @@ export interface GameContextLike {
   quit: () => void
   applyZoom: () => void
   getWorldGraph?: () => WorldGraphSave | null
+  getCampaignWorldState?: (worldId: string) => SerializedSave | null
   getCampaignFactions?: () => Record<string, FactionSave> | null
   changeFactionRelation?: (factionId: string, delta: number, reason?: string) => void
+  debugTeleportWorldMap?: (target: { worldI: number; worldJ: number; worldRegionId: string }) => void
   getCurrentWorldId?: () => string | null
-  travelThroughPortal?: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => void
   travelIntoBuildingInterior?: (building: BuildingEntity) => void
   getBuildingInteriorEntryTargetForCell?: (cell: RuntimeCell) => BuildingEntity | null
   routeUnitIntoBuildingInterior?: (unit: UnitEntity, building: BuildingEntity) => boolean

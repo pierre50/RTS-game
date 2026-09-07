@@ -14,12 +14,10 @@ import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { CampaignSave, SaveEntityState, SerializedSave } from '../../types/save'
 import {
-  extractPortalParty,
   withFogEnabledState,
   worldStateWithCampaignClock,
-  type PortalPartyState,
 } from './GameStateHelpers'
-import { teleportRuntimeUnit, type PortalTravelGame } from './GamePortalTravel'
+import { extractTravelParty, teleportRuntimeUnit, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
 import { removeBuildingInteriorOccupants, type BuildingInteriorOccupantState } from './BuildingInteriorOccupants'
 import type { BuildingInteriorSession, BuildingInteriorTravelGame } from './BuildingInteriorTravelTypes'
 
@@ -86,7 +84,7 @@ export function updateCampaignWorldState(
   }
 }
 
-function partyLabels(party: PortalPartyState): Set<string> {
+function partyLabels(party: TravelPartyState): Set<string> {
   const labels = new Set<string>()
   if (party.hero?.label) labels.add(party.hero.label)
   for (const follower of party.followers) {
@@ -97,7 +95,7 @@ function partyLabels(party: PortalPartyState): Set<string> {
 
 export function extractInteriorReturnOccupants(
   state: SerializedSave,
-  party: PortalPartyState,
+  party: TravelPartyState,
   runtimeUnits: UnitEntity[] = []
 ): BuildingInteriorOccupantState[] {
   const played = state.players.find(player => player.isPlayed)
@@ -220,7 +218,7 @@ export function mergeInteriorReturnOccupantsIntoParentState(
 
 function mergeInteriorPartyIntoParentState(
   state: SerializedSave,
-  party: PortalPartyState,
+  party: TravelPartyState,
   entryPortalId: string | null | undefined
 ): SerializedSave {
   const building = findParentBuildingState(state, entryPortalId)
@@ -263,7 +261,7 @@ function mergeInteriorPartyIntoParentState(
 export function buildSessionParentStateFromInterior(
   session: BuildingInteriorSession,
   interiorState: SerializedSave,
-  party: PortalPartyState,
+  party: TravelPartyState,
   runtimeUnits: UnitEntity[] = []
 ): SerializedSave {
   const returningOccupants = extractInteriorReturnOccupants(interiorState, party, runtimeUnits)
@@ -284,7 +282,7 @@ export function buildBuildingInteriorSessionSaveRecord(
   if (!session) return null
   const campaign = game._campaignSave ?? session.sourceCampaign
   const interiorState = withFogEnabledState(serializeGame(game._gameContext()))
-  const party = extractPortalParty(interiorState)
+  const party = extractTravelParty(interiorState)
   const parentState = worldStateWithCampaignClock(
     buildSessionParentStateFromInterior(session, interiorState, party, game._gameContext().player?.units ?? []),
     interiorState.runtime?.dayNightElapsedMs ?? session.sourceWorldState.runtime?.dayNightElapsedMs
@@ -392,7 +390,7 @@ export function sameGridPosition(
 
 export function placeParentDoorOccupants(
   game: BuildingInteriorTravelGame,
-  party: PortalPartyState,
+  party: TravelPartyState,
   returningOccupants: BuildingInteriorOccupantState[],
   arrivalCell: RuntimeCell | null
 ): void {
@@ -420,7 +418,7 @@ export function placeParentDoorOccupants(
         cells => cells[Math.floor(map.random() * cells.length)],
         createNonReservedPassageCellCondition(context)
       ) ?? arrivalCell
-    teleportRuntimeUnit(game as PortalTravelGame, unit, cell)
+    teleportRuntimeUnit(game as TravelPartyGame, unit, cell)
     if (!isSleepTime(context) && unit.autonomousJob) resumeVillagerAutonomy?.(unit)
   })
   context.unitRest?.synchronizeAfterTimeJump?.()

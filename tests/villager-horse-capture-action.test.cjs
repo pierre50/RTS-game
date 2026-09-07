@@ -124,8 +124,12 @@ function loadUnitActions(calls, captureHorse) {
       }
     }
     if (request === '../../lib/entities/entityHealthDisplay') return { syncEntityHealthDisplay: () => {} }
+    if (request === '../../lib/entities/entityOwnerTransfer') return { transferEntityOwner: () => true }
     if (request === '../../lib/buildings/buildingOccupancy') return { getBuildingShelterCapacity: () => 0 }
     if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
+    if (request === '../../lib/entities/workImpactFragments') return { emitWorkImpactFragments: () => {} }
+    if (request === '../../lib/graphics') return { onSpriteLoopAtFrame: () => {} }
+    if (request === '../../lib/animations/actionFrameSequences') return { getActionFrameSequence: () => [] }
     if (request === './UnitCaptureHorseAction') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitCaptureHorseAction.ts'))
     }

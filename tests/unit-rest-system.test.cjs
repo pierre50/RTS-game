@@ -26,6 +26,17 @@ const constants = {
   BUILDING_TYPES: { fireCamp: 'FireCamp', house: 'House', townCenter: 'TownCenter' },
   FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
   PLAYER_TYPES: { bandits: 'Bandits' },
+  RESOURCE_TYPES: {
+    berrybush: 'Berrybush',
+    copper: 'Copper',
+    fiberPlant: 'FiberPlant',
+    gold: 'Gold',
+    iron: 'Iron',
+    medicinalHerb: 'MedicinalHerb',
+    stone: 'Stone',
+    toxicHerb: 'ToxicHerb',
+    wheat: 'Wheat',
+  },
   SHEET_TYPES: { dying: 'dyingSheet', standing: 'standingSheet' },
   UNIT_TYPES: {
     banditArcher: 'BanditArcher',
@@ -398,7 +409,7 @@ test('awake late risers do not go back to sleep when the map starts at 8h', () =
   assert.equal(villager.actionLocked, undefined)
 })
 
-test('player villagers stay awake at night in an undominated portal world', () => {
+test('player villagers stay awake at night in an undominated world', () => {
   const calls = []
   const owner = { units: [], buildings: [], isPlayed: true }
   const villager = createUnit(owner)
@@ -428,7 +439,7 @@ test('player villagers stay awake at night in an undominated portal world', () =
   assert.equal(villager.shelterState, undefined)
 })
 
-test('local faction villagers can sleep in their dominated portal world', () => {
+test('local faction villagers can sleep in their dominated world', () => {
   const calls = []
   const owner = { units: [], buildings: [], factionId: 'local-faction' }
   const villager = createUnit(owner)
@@ -1487,7 +1498,7 @@ test('runtime interior sleepers wake in place before routing through the space e
   villager.j = interiorCell.j
   villager.spaceId = 'space-house'
   const context = createContext(9, [owner], calls)
-  context.map.mapType = 'continent'
+  context.map.mapType = 'world-region'
   context.routeInteriorUnitToExit = (unit, returnTask) => routed.push([unit.label, returnTask])
   villager.context = context
   const UnitRestSystem = loadUnitRestSystem(

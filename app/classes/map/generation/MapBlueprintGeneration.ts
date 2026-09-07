@@ -181,9 +181,15 @@ export class MapBlueprintGeneration {
   applyBlueprintMetadata(blueprint: MapBlueprint): void {
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
-    this.map.mapType = isInteriorBlueprint(blueprint) ? 'interior' : (blueprint.mapType ?? 'continent')
+    this.map.mapType = isInteriorBlueprint(blueprint) ? 'interior' : (blueprint.mapType ?? 'world-region')
     this.map.playersPos = blueprint.spawns || []
     this.map.interiorExits = blueprint.exits || []
+    this.map.banditCampPositions = blueprint.banditCampPositions || []
+    this.map.settlements = blueprint.settlements || []
+    this.map.worldId = blueprint.worldId ?? null
+    this.map.worldRegionId = blueprint.worldRegionId ?? null
+    this.map.worldRegion = blueprint.worldRegion ?? null
+    this.map.worldManifest = blueprint.worldManifest ?? null
     this.map.positionsCount = this.map.playersPos.length || this.map.positionsCount
     this.map.resetRandom()
     this.map.invalidateReliefCoastDistances()

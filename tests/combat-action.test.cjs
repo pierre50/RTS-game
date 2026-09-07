@@ -121,6 +121,7 @@ const constants = {
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
   },
+  FORAGE_RESOURCE_TYPES: new Set(['Berrybush']),
   PLAYER_TYPES: {
     bandits: 'Bandits',
   },

@@ -161,6 +161,9 @@ function buildMocks(calls, context) {
     '../lib/equipment/equipmentStats': {
       refreshUnitEquipmentStats: npc => calls.push(['refreshUnitEquipmentStats', npc.label]),
     },
+    '../lib/equipment/equipmentDiscoveries': {
+      discoverHeroEquipment: () => {},
+    },
     '../lib/lpc': {
       ensureAndRefreshBakedLpcUnitAssets: async npc => {
         calls.push(['ensureAndRefreshBakedLpcUnitAssets', npc.label])

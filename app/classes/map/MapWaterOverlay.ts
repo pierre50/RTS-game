@@ -23,8 +23,13 @@ type WaterOverlayHost = {
   waterOverlay: TilingSprite | null
   waterOverlayElapsed: number
   waterOverlayFrame: number
+  waterOverlayMask: Graphics | null
   waterOverlayPaused: boolean
   waterOverlayTick: ((ticker: Ticker) => void) | null
+}
+
+type WaterOverlayCell = {
+  category?: string
 }
 
 const WATER_OVERLAY_SHEET = 'water-surface-filter'
@@ -67,6 +72,10 @@ export function updateWaterOverlay(map: WaterOverlayHost): void {
     if (!map.waterBackground) createInteriorBackground(map)
     return
   }
+  if (!mapHasWaterCells(map)) {
+    if (map.waterOverlay || map.waterBackground || map.waterOverlayMask) destroyWaterOverlay(map)
+    return
+  }
   if (!map.waterOverlay || !map.waterBackground) createWaterOverlay(map)
 }
 
@@ -75,10 +84,12 @@ export function createWaterOverlay(map: WaterOverlayHost): void {
     createInteriorBackground(map)
     return
   }
+  if (!mapHasWaterCells(map)) return
   const frames = getWaterOverlayFrames()
   if (!frames.length || map.waterOverlay) return
   const bounds = getWaterOverlayBounds(map)
   const background = createBackgroundGraphics(bounds, getEnvironmentTerrainParams(map.environment).waterBackgroundColor)
+  const mask = createMapGridMask(map)
 
   const overlay = new TilingSprite({ texture: frames[0], width: bounds.width, height: bounds.height })
   overlay.label = 'waterOverlayFilter'
@@ -86,11 +97,15 @@ export function createWaterOverlay(map: WaterOverlayHost): void {
   overlay.alpha = WATER_OVERLAY_ALPHA
   overlay.eventMode = 'none'
   overlay.zIndex = WATER_OVERLAY_Z_INDEX
+  background.mask = mask
+  overlay.mask = mask
 
   map.addChild(background)
   map.addChild(overlay)
+  map.addChild(mask)
   map.waterBackground = background
   map.waterOverlay = overlay
+  map.waterOverlayMask = mask
   ensureWaterAnimationTicker(map)
 }
 
@@ -105,6 +120,37 @@ function createInteriorBackground(map: WaterOverlayHost): void {
   background.label = 'interiorBackground'
   map.addChild(background)
   map.waterBackground = background
+}
+
+function mapHasWaterCells(map: Pick<WaterOverlayHost, 'grid'>): boolean {
+  for (const row of map.grid as WaterOverlayCell[][]) {
+    for (const cell of row) {
+      if (cell?.category === 'Water') return true
+    }
+  }
+  return false
+}
+
+function createMapGridMask(map: Pick<WaterOverlayHost, 'size'>): Graphics {
+  const halfWidth = CELL_WIDTH / 2
+  const halfHeight = CELL_HEIGHT / 2
+  const mask = new Graphics()
+  mask.label = 'waterOverlayMask'
+  mask.eventMode = 'none'
+  mask.zIndex = WATER_BACKGROUND_Z_INDEX - 0.1
+  mask
+    .poly([
+      0,
+      -halfHeight,
+      map.size * halfWidth + halfWidth,
+      map.size * halfHeight,
+      0,
+      map.size * CELL_HEIGHT + halfHeight,
+      -map.size * halfWidth - halfWidth,
+      map.size * halfHeight,
+    ])
+    .fill({ color: 0xffffff })
+  return mask
 }
 
 function createBackgroundGraphics(bounds: Bounds, color: number): Graphics {
@@ -163,8 +209,12 @@ export function registerWaterBorderSurface(
 export function destroyWaterOverlay(map: WaterOverlayHost): void {
   const ticker = map.context.app?.ticker as WaterOverlayTicker | undefined
   if (ticker && map.waterOverlayTick) ticker.remove(map.waterOverlayTick)
+  map.waterOverlay?.destroy({ texture: false, textureSource: false })
+  map.waterBackground?.destroy()
+  map.waterOverlayMask?.destroy()
   map.waterOverlayTick = null
   map.waterOverlay = null
+  map.waterOverlayMask = null
   map.waterBorderSurfaces.clear()
   map.waterBackground = null
 }

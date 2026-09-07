@@ -265,6 +265,63 @@ test('forced tree groups vary frames inside the same texture family', () => {
   ])
 })
 
+test('biome tree generation can use per-cell macro biome rules', async () => {
+  global.requestAnimationFrame ??= callback => setImmediate(callback)
+  const size = 4
+  const terrainRows = [
+    ['Grass', 'Grass', 'Grass', 'Grass', 'Grass'],
+    ['Grass', 'Grass', 'Jungle', 'Desert', 'DarkForest'],
+    ['Grass', 'Jungle', 'Desert', 'DarkForest', 'Grass'],
+    ['Grass', 'Desert', 'DarkForest', 'Grass', 'Jungle'],
+    ['Grass', 'Grass', 'Grass', 'Grass', 'Grass'],
+  ]
+  const grid = Array.from({ length: size + 1 }, (_, i) =>
+    Array.from({ length: size + 1 }, (_, j) => ({
+      i,
+      j,
+      solid: false,
+      category: 'Land',
+      type: terrainRows[i][j],
+      has: null,
+      border: false,
+      inclined: false,
+    }))
+  )
+  const familyByType = {
+    Grass: 'Grass',
+    Jungle: 'Jungle',
+    DarkForest: 'DarkForest',
+    Desert: 'Desert',
+  }
+  const map = {
+    context: {},
+    grid,
+    size,
+    environment: 'Temperate',
+    resources: new Set(),
+    random: () => 0,
+    randomItem: items => items[0],
+    addChild(child) {
+      grid[child.i][child.j].has = child
+      grid[child.i][child.j].solid = true
+      return child
+    },
+  }
+  const mapResources = new MapResources(map)
+
+  await mapResources.generateBiomeTreesAsync([], {
+    treeTextureFamilyForCell: cell => familyByType[cell.type],
+    treeChanceForCell: cell => (cell.type === 'Desert' ? 0 : 1),
+  })
+
+  const trees = [...map.resources]
+  assert.equal(trees.length, 6)
+  assert.equal(trees.some(tree => grid[tree.i][tree.j].type === 'Desert'), false)
+  assert(trees.some(tree => tree.textureName === '000_resources/tree/grass'))
+  assert(trees.some(tree => tree.textureName === '000_resources/tree/palm'))
+  assert(trees.some(tree => tree.textureName === '000_resources/tree/dark-forest'))
+})
+
 test('scattered herbs are isolated and use biome-weighted plant types', async () => {
   global.requestAnimationFrame ??= callback => setImmediate(callback)
   const size = 120

@@ -1,0 +1,229 @@
+import type { Container } from 'pixi.js'
+import { getReliefOffset } from '../../lib'
+import { getEntityMapPoint } from '../../lib/mapSpaces'
+import {
+  addChildWorldToCampaign,
+  createInitialCampaignSave,
+  updateCurrentWorldState,
+} from '../../serialization/CampaignSave'
+import { serializeGame } from '../../serialization/SaveSerializer'
+import {
+  arrivalCellForRegionEdge,
+  findOpenWorldTravelCell,
+  type RegionEdge,
+} from '../../services/world/WorldRegionTravelSystem'
+import type { GameContextLike } from '../../types/context'
+import type { RuntimeCell, RuntimeMap } from '../../types/map'
+import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
+import { WorldRevealTransition, type WorldRevealPoint } from '../../ui/WorldRevealTransition'
+import {
+  applyTravelPartyToRuntime,
+  extractTravelParty,
+  runtimeHeroUnit,
+  type TravelPartyGame,
+} from './GameTravelParty'
+
+type RuntimeMapInstance = RuntimeMap & {
+  destroy(options?: Parameters<Container['destroy']>[0]): void
+}
+
+export type WorldMapDebugTeleportTarget = { worldI: number; worldJ: number; worldRegionId: string }
+
+export type WorldRegionTravelGame = TravelPartyGame & {
+  _campaignSave: CampaignSave | null
+  _restartSaveData: SaveRecord | null
+  _worldRegionTransitioning: boolean
+  config: GameConfig | null
+  context: {
+    controls?: GameContextLike['controls'] | null
+    dayNight?: GameContextLike['dayNight'] | null
+    map?: RuntimeMapInstance | null
+    menu?: GameContextLike['menu'] | null
+    player?: GameContextLike['player'] | null
+  }
+  _autosaveCampaign(): void
+  _bootFromConfig(config: GameConfig, options?: { dayNightElapsedMs?: number | null }): Promise<void>
+  _destroyRuntime(options?: { preserveLoadingScreen?: boolean }): void
+  _gameContext(): GameContextLike
+  _loadRequiredWorldMapBlueprint(options: {
+    playerCiv?: string | null
+    size?: number
+    worldId: string
+    worldRegionId?: string
+  }): Promise<unknown>
+  _map(): RuntimeMapInstance
+}
+
+function getWorldRevealPoint(game: WorldRegionTravelGame): WorldRevealPoint | null {
+  const { controls } = game.context
+  const hero = runtimeHeroUnit(game)
+  if (!controls || !hero) return null
+  const point = getEntityMapPoint(hero)
+  return controls.localToScreen(point.x - controls.camera.x, point.y + getReliefOffset(hero) - controls.camera.y)
+}
+
+function worldRegionTravelConfig(snapshot: SerializedSave, worldRegionId: string): GameConfig {
+  return {
+    ...snapshot.config,
+    heroOnlyStart: true,
+    players: snapshot.players.map(player => ({
+      civ: player.civ,
+      color: player.color,
+      factionId: player.factionId,
+      gender: player.gender,
+      heroAppearance: player.heroAppearance,
+      isHuman: Boolean(player.isPlayed),
+      name: player.name,
+      team: player.team,
+    })),
+    worldId: snapshot.world?.worldId ?? snapshot.config?.worldId,
+    worldRegionId,
+  }
+}
+
+function focusTravelHero(game: WorldRegionTravelGame): void {
+  const hero = runtimeHeroUnit(game)
+  if (!hero) return
+  const point = getEntityMapPoint(hero)
+  game.context.controls?.setCamera?.(point.x, point.y, true)
+  game.context.controls?.updateVisibleCells?.()
+  game.context.menu?.updateHeroStatus?.(hero)
+}
+
+function finishWorldRegionArrival(
+  game: WorldRegionTravelGame,
+  previousCampaign: CampaignSave | null,
+  departureState: SerializedSave,
+  worldRegionId: string
+): void {
+  const arrivedState = serializeGame(game._gameContext())
+  const baseCampaign = previousCampaign ?? createInitialCampaignSave(departureState)
+  game._campaignSave = baseCampaign.worlds[worldRegionId]
+    ? updateCurrentWorldState({ ...baseCampaign, currentWorldId: worldRegionId }, arrivedState)
+    : addChildWorldToCampaign(baseCampaign, arrivedState, {
+        kind: 'world',
+        name: worldRegionId,
+        parentWorldId: baseCampaign.currentWorldId,
+        worldId: worldRegionId,
+      })
+  game._restartSaveData = structuredClone(game._campaignSave)
+  focusTravelHero(game)
+  ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
+  game.context.menu?.refreshMiniMap?.()
+  game._autosaveCampaign()
+}
+
+async function bootWorldRegionForTravel(
+  game: WorldRegionTravelGame,
+  snapshot: SerializedSave,
+  worldRegionId: string,
+  dayNightElapsedMs: number | null
+): Promise<void> {
+  const nextConfig = worldRegionTravelConfig(snapshot, worldRegionId)
+  game._destroyRuntime({ preserveLoadingScreen: true })
+  game.config = nextConfig
+  await game._bootFromConfig(nextConfig, { dayNightElapsedMs })
+}
+
+function findDebugTeleportCell(game: WorldRegionTravelGame, worldI: number, worldJ: number): RuntimeCell | null {
+  const map = game._map()
+  const region = map.worldRegion
+  const regionMapSize = map.size
+  const targetI = Math.round(worldI - (region?.y ?? 0) * regionMapSize)
+  const targetJ = Math.round(worldJ - (region?.x ?? 0) * regionMapSize)
+  const inset = 1
+  const start = {
+    i: Math.max(inset, Math.min(map.size - inset, targetI)),
+    j: Math.max(inset, Math.min(map.size - inset, targetJ)),
+  }
+  return findOpenWorldTravelCell(map, start, Math.max(8, Math.ceil(map.size / 2)), inset)
+}
+
+export async function preloadWorldRegion(game: WorldRegionTravelGame, worldRegionId: string): Promise<void> {
+  const map = game.context.map
+  if (!map?.worldId) return
+  await game._loadRequiredWorldMapBlueprint({
+    playerCiv: game.context.player?.civ,
+    size: map.size,
+    worldId: map.worldId,
+    worldRegionId,
+  })
+}
+
+export async function travelToWorldRegion(
+  game: WorldRegionTravelGame,
+  worldRegionId: string,
+  edge: RegionEdge
+): Promise<void> {
+  if (game._worldRegionTransitioning) return
+  game._worldRegionTransitioning = true
+  const context = game._gameContext()
+  const hero = runtimeHeroUnit(game)
+  const previousCell = { i: hero?.i ?? Math.floor(context.map.size / 2), j: hero?.j ?? Math.floor(context.map.size / 2) }
+  const dayNightElapsedMs = context.dayNight?.getElapsedMs?.() ?? null
+  const snapshot = serializeGame(context)
+  const party = extractTravelParty(snapshot)
+  const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
+  const departurePoint = getWorldRevealPoint(game)
+  const transition = new WorldRevealTransition(departurePoint)
+  context.controls?.setRuntimeInputEnabled?.(false)
+  try {
+    await transition.concealTo(departurePoint)
+    await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+    const arrivalCell = arrivalCellForRegionEdge(game._map(), edge, previousCell)
+    applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld: true })
+    finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
+    await transition.revealFrom(getWorldRevealPoint(game))
+  } finally {
+    transition.destroy()
+    game.context.controls?.setRuntimeInputEnabled?.(true)
+    game._worldRegionTransitioning = false
+  }
+}
+
+export async function debugTeleportWorldMap(
+  game: WorldRegionTravelGame,
+  { worldI, worldJ, worldRegionId }: WorldMapDebugTeleportTarget
+): Promise<void> {
+  if (game._worldRegionTransitioning) return
+  const context = game._gameContext()
+  if (!context.map.worldId || context.map.mapType === 'interior') return
+  const snapshot = serializeGame(context)
+  const party = extractTravelParty(snapshot)
+  const currentRegionId = context.map.worldRegionId ?? null
+  if (currentRegionId === worldRegionId) {
+    const cell = findDebugTeleportCell(game, worldI, worldJ)
+    if (!cell) {
+      context.menu?.showMessage?.('Aucune cellule libre ici.', 'error')
+      return
+    }
+    applyTravelPartyToRuntime(game, party, cell)
+    const hero = runtimeHeroUnit(game)
+    if (hero) {
+      const point = getEntityMapPoint(hero)
+      context.controls?.setCamera?.(point.x, point.y, true)
+      context.controls?.updateVisibleCells?.()
+      context.menu?.updateHeroStatus?.(hero)
+    }
+    context.menu?.refreshMiniMap?.()
+    if (game._campaignSave) game._campaignSave = updateCurrentWorldState(game._campaignSave, serializeGame(game._gameContext()))
+    game._restartSaveData = game._campaignSave ? structuredClone(game._campaignSave) : game._restartSaveData
+    game._autosaveCampaign()
+    return
+  }
+
+  game._worldRegionTransitioning = true
+  const dayNightElapsedMs = context.dayNight?.getElapsedMs?.() ?? null
+  const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
+
+  context.controls?.setRuntimeInputEnabled?.(false)
+  try {
+    await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+    const cell = findDebugTeleportCell(game, worldI, worldJ)
+    applyTravelPartyToRuntime(game, party, cell, { freshWorld: true })
+    finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
+  } finally {
+    game.context.controls?.setRuntimeInputEnabled?.(true)
+    game._worldRegionTransitioning = false
+  }
+}

@@ -32,6 +32,12 @@ function getMiningLoadingTypes(): string[] {
   return [LOADING_TYPES.stone, LOADING_TYPES.gold].filter((loadingType): loadingType is string => Boolean(loadingType))
 }
 
+function getLoadingXpEntries(loadingTypes: Array<string | undefined>, category: string): Array<[string, string]> {
+  return loadingTypes
+    .filter((loadingType): loadingType is string => Boolean(loadingType))
+    .map(loadingType => [loadingType, category])
+}
+
 // Cumulative XP required to reach a level: 25·L·(L+1) → 50, 150, 300, 500…
 const XP_LEVEL_FACTOR = 25
 const GATHER_BONUS_LEVEL_STEP = 3 // +1 resource per swing every 3 levels
@@ -74,14 +80,15 @@ export const WORK_XP_CATEGORY: Record<string, string> = {
 }
 
 export const LOADING_XP_CATEGORY: Record<string, string> = {
-  [LOADING_TYPES.wheat]: XP_CATEGORIES.farming,
-  [LOADING_TYPES.berry]: XP_CATEGORIES.farming,
-  [LOADING_TYPES.herb]: XP_CATEGORIES.farming,
-  [LOADING_TYPES.toxicHerb]: XP_CATEGORIES.farming,
-  [LOADING_TYPES.fiber]: XP_CATEGORIES.farming,
-  [LOADING_TYPES.wood]: XP_CATEGORIES.woodcutting,
+  ...Object.fromEntries(
+    getLoadingXpEntries(
+      [LOADING_TYPES.wheat, LOADING_TYPES.berry, LOADING_TYPES.herb, LOADING_TYPES.toxicHerb, LOADING_TYPES.fiber],
+      XP_CATEGORIES.farming
+    )
+  ),
+  ...Object.fromEntries(getLoadingXpEntries([LOADING_TYPES.wood], XP_CATEGORIES.woodcutting)),
   ...Object.fromEntries(getMiningLoadingTypes().map(loadingType => [loadingType, XP_CATEGORIES.mining])),
-  [LOADING_TYPES.meat]: XP_CATEGORIES.hunting,
+  ...Object.fromEntries(getLoadingXpEntries([LOADING_TYPES.meat], XP_CATEGORIES.hunting)),
 }
 
 export type XpProgress = {

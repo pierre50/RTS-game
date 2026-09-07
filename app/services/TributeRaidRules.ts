@@ -18,7 +18,6 @@ export const RAID_RETURN_RANGE = 3
 export const RAID_UPDATE_MS = 350
 export const RAID_SPAWN_MIN_RADIUS = 4
 export const RAID_SPAWN_MAX_RADIUS = 9
-export const PORTAL_RESOURCE_TYPE = 'Portal'
 const TRIBUTE_ROUNDING_STEP = 10
 
 export type TributeRaidKind = 'bandit' | 'faction'
@@ -42,7 +41,6 @@ export type TributeRaid = {
   target: TributeRaidUnit
   units: TributeRaidUnit[]
   phase: TributeRaidPhase
-  portal: RuntimeEntity | null
   tribute: ResourceAmount
   modal?: Modal | null
   updateTaskId?: SchedulerTaskId | null

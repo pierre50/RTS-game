@@ -71,7 +71,7 @@ test('runtime services skip weather inside interior maps', () => {
 test('runtime services keep weather outside interior maps', () => {
   const { addRuntimeServiceLayers, calls, createRuntimeServices } = loadRuntimeServices()
   const context = {}
-  const map = { mapType: 'continent' }
+  const map = { mapType: 'world-region' }
 
   const services = createRuntimeServices(context, map, () => ({ height: 100, width: 100, x: 0, y: 0 }))
 

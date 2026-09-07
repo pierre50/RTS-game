@@ -181,7 +181,6 @@ function isDominatedSleepWorld(unit: UnitEntity): boolean {
   if (context?.map?.mapType === 'interior' || node?.kind === 'interior') return true
   if (isBanditUnit(unit)) return isBanditAtHome(unit)
   if (unit.owner?.isPlayed && currentWorldId === worldGraph.rootWorldId) return true
-  if (unit.owner?.isPlayed && node?.encounter === 'bandit' && node.banditsCleared) return true
   if (unit.owner?.factionId && node?.factionIds?.includes(unit.owner.factionId)) return true
   return hasDominantLocalBase(unit)
 }

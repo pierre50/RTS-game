@@ -48,6 +48,7 @@ export interface MenuHost {
   createActionIcon(src: string): HTMLImageElement
   playUiClick(): void
   refreshInventory?(): void
+  closeInventory?(): void
   clearActionHotkeys(): void
   assignActionHotkey(id: string, usedKeys: Set<string>): string | null
   createActionMenuButton(

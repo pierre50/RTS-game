@@ -12,7 +12,8 @@ import type { GameContextLike } from '../../types/context'
 import type { UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { SaveEntityState, SaveReference } from '../../types/save'
-import { extractPortalParty, withFogEnabledState } from './GameStateHelpers'
+import { withFogEnabledState } from './GameStateHelpers'
+import { extractTravelParty } from './GameTravelParty'
 import {
   extractInteriorReturnOccupants,
   extractInteriorReturnOccupantsByLabel,
@@ -332,7 +333,7 @@ export function synchronizeInteriorOccupantsAfterTimeJump(game: BuildingInterior
   if (!game._buildingInteriorSession && !game._campaignSave) return
 
   const currentWorldState = withFogEnabledState(serializeGame(context))
-  const party = extractPortalParty(currentWorldState)
+  const party = extractTravelParty(currentWorldState)
   const returningOccupants = extractInteriorReturnOccupants(currentWorldState, party, context.player?.units ?? [])
   if (!returningOccupants.length) return
 

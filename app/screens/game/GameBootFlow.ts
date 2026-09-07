@@ -5,11 +5,7 @@ import { validateSaveData } from '../../serialization/SaveValidator'
 import { createInitialCampaignSave, getCurrentWorldState, isCampaignSave } from '../../serialization/CampaignSave'
 import { getGameSpeed } from '../../lib/audio/settings'
 import { GameLoadingScreen } from '../../ui/GameLoadingScreen'
-import {
-  WorldRevealTransition,
-  type PortalRevealPoint,
-  type PortalTravelTransition,
-} from '../../ui/PortalTravelTransition'
+import { WorldRevealTransition, type WorldRevealPoint } from '../../ui/WorldRevealTransition'
 import type { SchedulerLike } from '../../types/context'
 import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
 import type { UnitEntity } from '../../types/entities'
@@ -29,7 +25,7 @@ type LoadingScreenLike = {
 export type GameBootFlowHost = {
   _campaignSave: CampaignSave | null
   _isRestarting: boolean
-  _loadingScreen?: LoadingScreenLike | PortalTravelTransition | null
+  _loadingScreen?: LoadingScreenLike | null
   _restartSaveData: SaveRecord | null
   config: GameConfig | null
   context: BootFlowContext
@@ -37,7 +33,7 @@ export type GameBootFlowHost = {
   _bootFromConfig(config: GameConfig): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
   _destroyRuntime(): void
-  _getHeroRevealPoint(): PortalRevealPoint | null
+  _getWorldRevealPoint(): WorldRevealPoint | null
   _measure<T>(name: string, callback: () => T): T
   _runtimeHeroUnit(): UnitEntity | null
   _yieldToBrowser(): Promise<void>
@@ -83,7 +79,7 @@ function restoreHeroInvincibility(hero: UnitEntity, previousDevInvincible: boole
 }
 
 async function finishInitialBoot(game: GameBootFlowHost, booted: boolean): Promise<void> {
-  const revealPoint = booted ? game._getHeroRevealPoint() : null
+  const revealPoint = booted ? game._getWorldRevealPoint() : null
   const initialReveal = booted ? new WorldRevealTransition(revealPoint) : null
   const hero = booted ? game._runtimeHeroUnit() : null
   const previousDevInvincible = hero?.devInvincible
@@ -96,7 +92,7 @@ async function finishInitialBoot(game: GameBootFlowHost, booted: boolean): Promi
   }
   game._measure('menu.show', () => game.context.menu?.show?.())
   try {
-    await initialReveal?.revealFrom(game._getHeroRevealPoint() ?? revealPoint)
+    await initialReveal?.revealFrom(game._getWorldRevealPoint() ?? revealPoint)
   } finally {
     if (hero) restoreHeroInvincibility(hero, previousDevInvincible)
   }

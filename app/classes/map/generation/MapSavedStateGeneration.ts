@@ -12,7 +12,6 @@ import {
   restorePlayerViewsAndFog,
   restoreSelection,
 } from '../MapSaveRestore'
-import { PORTAL_RESOURCE_TYPE, reservePortalFootprint } from '../MapPortalPlacement'
 import type { GameContextLike } from '../../../types/context'
 import type { PlayerLike } from '../../../types/player'
 import type { ResourceOptions } from '../../Resource'
@@ -44,11 +43,7 @@ function createResourceFromState(resource: ResourceOptions, map: MapGenerationMa
     resource.type === RESOURCE_TYPES.wheat && resource.currentFrame == null && resource.startsMature == null
       ? { ...resource, startsMature: true }
       : resource
-  const instance = map.addChild(new Resource(resourceState, runtimeContext(map)))
-  if (instance.type === PORTAL_RESOURCE_TYPE) {
-    reservePortalFootprint(instance, map.grid)
-  }
-  return instance
+  return map.addChild(new Resource(resourceState, runtimeContext(map)))
 }
 
 export function restoreSavedPlayers(

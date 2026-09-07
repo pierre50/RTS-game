@@ -37,7 +37,6 @@ import {
 } from './MapGenerationTypes'
 import type { EnvironmentTerrainParams } from '../../constants'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
-import { placePortal } from './MapPortalPlacement'
 import { findPlayerPlaces } from './MapSpawnPlacement'
 import {
   generateCells,
@@ -66,6 +65,7 @@ export type {
   GenerateMapOptions,
   MapBlueprint,
   MapGenerationMap,
+  MapSettlement,
   ProgressCallback,
   SavedGameData,
   TerrainGrid,
@@ -243,7 +243,6 @@ export class MapGeneration {
     return {
       generateSetsAsync: () => this.generateSetsAsync(),
       placeBanditCamps: () => this.placeBanditCamps(),
-      placePortal: () => this.placePortal(),
       prepareBaseTerrain: (
         context: GameContextLike,
         timer: Pick<GenerationTimer, 'measure' | 'timings'>,
@@ -369,10 +368,6 @@ export class MapGeneration {
       placeGroup: (i, j, type) => this.placeAmbientAnimalGroup(i, j, type),
       yieldToBrowser: () => this.yieldToBrowser(),
     })
-  }
-
-  placePortal(): void {
-    placePortal(this.map)
   }
 
   findPlayerPlaces() {

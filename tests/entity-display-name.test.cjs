@@ -50,9 +50,9 @@ test('building display names humanize missing translation keys', () => {
 })
 
 test('non-building display names keep authored names', () => {
-  const { getEntityDisplayName } = loadDisplayName(key => (key === 'Portal' ? 'Portail' : key))
+  const { getEntityDisplayName } = loadDisplayName(key => (key === 'Gold' ? 'Or' : key))
 
-  assert.equal(getEntityDisplayName({ family: 'resource', type: 'Portal', name: 'resource-id' }), 'Portail')
+  assert.equal(getEntityDisplayName({ family: 'resource', type: 'Gold', name: 'resource-id' }), 'Or')
   assert.equal(getEntityDisplayName({ family: 'unit', type: 'Villager', name: 'Ada' }), 'Ada')
 })
 

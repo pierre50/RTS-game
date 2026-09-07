@@ -162,6 +162,7 @@ function loadControls() {
       CELL_WIDTH: 64,
       FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal' },
       IS_MOBILE: false,
+      SHEET_TYPES: { corpse: 'corpse' },
       TOUCH_DRAG_THRESHOLD: 10,
     },
   }

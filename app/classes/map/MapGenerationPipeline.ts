@@ -8,7 +8,6 @@ import type { GenerationTimer, MapGenerationMap, ProgressCallback, GenerateMapOp
 type PipelineCallbacks = {
   generateSetsAsync: () => Promise<void>
   placeBanditCamps: () => void
-  placePortal: () => void
   prepareBaseTerrain: (
     context: GameContextLike,
     timer: Pick<GenerationTimer, 'measure' | 'timings'>,
@@ -73,7 +72,6 @@ export async function generateStylishMap(
     await measureAsync('biomeTrees', () => map.generateBiomeTreesAsync(map.playersPos, resourceOptions))
   }
   measure('banditCampPlacement', callbacks.placeBanditCamps)
-  measure('portalPlacement', callbacks.placePortal)
   await onProgress('generatingDecorations', 0.74)
   await measureAsync('decorations', callbacks.generateSetsAsync)
   for (const viewer of map.context.players || []) {

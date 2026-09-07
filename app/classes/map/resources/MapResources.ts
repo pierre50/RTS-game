@@ -43,7 +43,7 @@ type ResourceCenter = GridPosition
 type ResourcePlacementOptions = {
   isNaturalResource?: boolean
   textureName?: string
-  textureNameFactory?: () => string | undefined
+  textureNameFactory?: (cell?: RuntimeCell) => string | undefined
   playerAvoidPositions?: GridPosition[]
   playerClearance?: number
   quantity?: number
@@ -52,6 +52,8 @@ type ResourcePlacementOptions = {
 }
 type TreeResourceGenerationOptions = {
   treeTextureFamily?: TreeTextureFamily | null
+  treeTextureFamilyForCell?: (cell: RuntimeCell) => TreeTextureFamily | null | undefined
+  treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
 }
 
 const RELOCATED_RESPAWN_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.wheat])
@@ -424,7 +426,8 @@ export class MapResources {
       if (group.type === RESOURCE_TYPES.wheat) {
         placementOptions.startsMature = true
       } else if (group.type === RESOURCE_TYPES.tree) {
-        placementOptions.textureNameFactory = () => this.pickTreeTextureName(options.treeTextureFamily)
+        placementOptions.textureNameFactory = cell =>
+          this.pickTreeTextureName((cell && options.treeTextureFamilyForCell?.(cell)) ?? options.treeTextureFamily)
       }
       if (
         center &&
@@ -598,7 +601,7 @@ export class MapResources {
         options.quantity ?? rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[instance])
       this.map.resources.add(
         createResource(this.map, cell.i, cell.j, instance, {
-          textureName: options.textureNameFactory?.() ?? sharedTextureName,
+          textureName: options.textureNameFactory?.(grid[cell.i]?.[cell.j]) ?? sharedTextureName,
           isNaturalResource: options.isNaturalResource ?? true,
           quantity: rolledQuantity,
           totalQuantity: rolledQuantity,
@@ -696,11 +699,12 @@ export class MapResources {
         let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
         if (cell.type === params.groundType && params.groundTreeChance != null) {
           chance = params.groundTreeChance
-        } else if (cell.type === params.patchwork.terrainType && params.patchwork.treeChance != null) {
+        } else if (cell.type === params.patchwork?.terrainType && params.patchwork.treeChance != null) {
           chance = params.patchwork.treeChance
-        } else if (cell.type === params.lakes.shoreType && params.lakes.shoreTreeChance != null) {
+        } else if (cell.type === params.lakes?.shoreType && params.lakes.shoreTreeChance != null) {
           chance = params.lakes.shoreTreeChance
         }
+        chance = options.treeChanceForCell?.(cell) ?? chance
         if (chance === 0) continue
         if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
         if (this.map.random() < chance) {
@@ -710,7 +714,7 @@ export class MapResources {
           )
           this.map.resources.add(
             createResource(this.map, i, j, RESOURCE_TYPES.tree, {
-              textureName: this.pickTreeTextureName(options.treeTextureFamily),
+              textureName: this.pickTreeTextureName(options.treeTextureFamilyForCell?.(cell) ?? options.treeTextureFamily),
               quantity: rolledQuantity,
               totalQuantity: rolledQuantity,
             })

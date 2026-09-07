@@ -33,8 +33,8 @@ function loadTsModule(filename) {
 test('Latium unit names use female pool when gender is female', () => {
   const { getRandomUnitName } = loadTsModule(path.join(__dirname, '../app/config/name/index.ts'))
 
-  assert.equal(getRandomUnitName('Latium', 'male', () => 0.74), 'Rufus')
-  assert.equal(getRandomUnitName('Latium', 'female', () => 0), 'Aelia')
+  assert.equal(getRandomUnitName('Latium', 'male', () => 0.76), 'Rufus')
+  assert.equal(getRandomUnitName('Latium', 'female', () => 0), 'Aemilia')
 })
 
 test('Nord unit names are registered for both genders', () => {

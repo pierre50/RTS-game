@@ -3,6 +3,7 @@ const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadBuildingVisuals() {
+  const calls = []
   class Texture {
     constructor(options = {}) {
       Object.assign(this, options)
@@ -25,6 +26,10 @@ function loadBuildingVisuals() {
       this.scale = {
         x: 1,
         y: 1,
+        copyFrom: other => {
+          this.scale.x = other.x
+          this.scale.y = other.y
+        },
         set: (x, y = x) => {
           this.scale.x = x
           this.scale.y = y
@@ -33,6 +38,10 @@ function loadBuildingVisuals() {
       this.position = {
         x: 0,
         y: 0,
+        copyFrom: other => {
+          this.position.x = other.x
+          this.position.y = other.y
+        },
         set: (x, y) => {
           this.position.x = x
           this.position.y = y
@@ -47,6 +56,25 @@ function loadBuildingVisuals() {
   }
 
   class AnimatedSprite extends Sprite {}
+  class Graphics {
+    clear() {
+      return this
+    }
+
+    rect(x, y, width, height) {
+      this.lastRect = { x, y, width, height }
+      return this
+    }
+
+    fill(options) {
+      this.lastFill = options
+      return this
+    }
+
+    destroy() {
+      this.destroyed = true
+    }
+  }
   class Rectangle {}
 
   return {
@@ -55,6 +83,7 @@ function loadBuildingVisuals() {
         'pixi.js': {
           AnimatedSprite,
           Assets: { cache: { has: () => false, get: () => null } },
+          Graphics,
           Rectangle,
           Sprite,
           Texture,
@@ -62,6 +91,7 @@ function loadBuildingVisuals() {
         '../../constants': { LABEL_TYPES: { shadow: 'shadow' } },
         '../../lib': {
           bindAnimatedSpriteToTicker: () => {},
+          changeSpriteColorDirectly: (sprite, color) => calls.push(['changeSpriteColorDirectly', sprite, color]),
           getEntityMapPoint: building => {
             const space = building.context?.map?.spaces?.get?.(building.spaceId ?? 'outside')
             const origin = space?.origin ?? { x: 0, y: 0 }
@@ -78,9 +108,60 @@ function loadBuildingVisuals() {
         '../../lib/audio/settings': { getShadowsEnabled: () => true },
       },
     }),
+    calls,
     Texture,
   }
 }
+
+test('construction reveal sprite is recolored to the building owner color', () => {
+  const { calls, syncBuildingConstructionReveal, Texture } = loadBuildingVisuals()
+  const texture = new Texture({
+    defaultAnchor: { x: 0.5, y: 0.8 },
+    frame: { x: 0, y: 0, width: 64, height: 96 },
+  })
+  const children = []
+  const building = {
+    addChild: child => children.push(child),
+    constructionRevealMask: null,
+    constructionRevealSprite: null,
+    owner: { color: 'red' },
+    sprite: {
+      alpha: 1,
+      tint: 0xffffff,
+      texture,
+      anchor: { x: 0.5, y: 0.8 },
+      position: {
+        x: 4,
+        y: -6,
+        copyFrom(other) {
+          this.x = other.x
+          this.y = other.y
+        },
+      },
+      scale: {
+        x: 1,
+        y: 1,
+        copyFrom(other) {
+          this.x = other.x
+          this.y = other.y
+        },
+      },
+      roundPixels: true,
+    },
+  }
+
+  syncBuildingConstructionReveal(building, 50)
+
+  assert.ok(building.constructionRevealSprite)
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'changeSpriteColorDirectly'),
+    [['changeSpriteColorDirectly', building.constructionRevealSprite, 'red']]
+  )
+  assert.equal(building.constructionRevealSprite.texture, texture)
+  assert.equal(building.constructionRevealSprite.mask, building.constructionRevealMask)
+  assert.equal(children.includes(building.constructionRevealSprite), true)
+  assert.equal(children.includes(building.constructionRevealMask), true)
+})
 
 test('building sprite shadows can fall back to a flattened source sprite mask', () => {
   const { createBuildingShadow, Texture } = loadBuildingVisuals()
@@ -121,6 +202,7 @@ test('building shadows only render in the active map space', () => {
   const texture = new Texture()
   const building = {
     context: { map: { activeSpaceId: null, shadowLayer: { addChild: () => {} } } },
+    isBuilt: true,
     isDead: false,
     isDestroyed: false,
     reliefLift: 0,

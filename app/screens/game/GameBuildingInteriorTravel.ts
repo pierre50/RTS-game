@@ -17,16 +17,16 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { CampaignSave, SerializedSave } from '../../types/save'
 import {
-  extractPortalParty,
   withFogEnabledState,
   worldStateWithCampaignClock,
-  type PortalPartyState,
 } from './GameStateHelpers'
 import {
-  applyPortalPartyToRuntime,
+  applyTravelPartyToRuntime,
+  extractTravelParty,
   runtimeHeroUnit,
-  type PortalTravelGame,
-} from './GamePortalTravel'
+  type TravelPartyGame,
+  type TravelPartyState,
+} from './GameTravelParty'
 import {
   removeBuildingInteriorOccupants,
   type BuildingInteriorOccupantState,
@@ -128,7 +128,7 @@ async function bootBuildingInteriorParentWorld(
   game: BuildingInteriorTravelGame,
   campaign: CampaignSave,
   worldState: SerializedSave,
-  party: PortalPartyState,
+  party: TravelPartyState,
   entryPortalId: string | null | undefined,
   now: number,
   equippedItem: GameContextLike['controls']['equippedItem'] = null,
@@ -140,8 +140,8 @@ async function bootBuildingInteriorParentWorld(
   await game._bootFromSave(withFogEnabledState(structuredClone(worldState)))
   const arrivalCell = findBuildingInteriorParentArrivalCell(game, entryPortalId)
   placeParentDoorOccupants(game, party, returningOccupants, arrivalCell)
-  applyPortalPartyToRuntime(game as PortalTravelGame, party, arrivalCell, { equippedItem })
-  const arrivalHero = runtimeHeroUnit(game as PortalTravelGame)
+  applyTravelPartyToRuntime(game as TravelPartyGame, party, arrivalCell, { equippedItem })
+  const arrivalHero = runtimeHeroUnit(game as TravelPartyGame)
   commitBuildingInteriorCampaign(game, saveRuntimeToCurrentCampaign(game, campaign, now))
   return {
     heroProtection: protectBuildingInteriorHero(arrivalHero),
@@ -191,7 +191,7 @@ async function travelOutOfBuildingInteriorSession(
   let arrivalHeroProtection: BuildingInteriorHeroInvincibility | null = null
   const now = Date.now()
   const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
-  const party = extractPortalParty(currentWorldState)
+  const party = extractTravelParty(currentWorldState)
   const currentReturningOccupants = extractInteriorReturnOccupants(
     currentWorldState,
     party,
@@ -203,7 +203,7 @@ async function travelOutOfBuildingInteriorSession(
     currentWorldState.runtime?.dayNightElapsedMs ?? session.sourceCampaign.clock?.dayNightElapsedMs
   )
   const previousEquippedItem = game._gameContext().controls.equippedItem ?? null
-  const departureHero = runtimeHeroUnit(game as PortalTravelGame)
+  const departureHero = runtimeHeroUnit(game as TravelPartyGame)
   const campaign = updateCampaignWorldState(
     game._campaignSave ?? session.sourceCampaign,
     session.sourceWorldId,
@@ -270,7 +270,7 @@ export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGa
   let arrivalHeroProtection: BuildingInteriorHeroInvincibility | null = null
   const now = Date.now()
   const currentWorldState = withFogEnabledState(serializeGame(game._gameContext()))
-  const party = extractPortalParty(currentWorldState)
+  const party = extractTravelParty(currentWorldState)
   const returningOccupants = extractInteriorReturnOccupants(
     currentWorldState,
     party,
@@ -281,7 +281,7 @@ export async function travelOutOfBuildingInterior(game: BuildingInteriorTravelGa
     returningOccupants
   )
   const previousEquippedItem = game._gameContext().controls.equippedItem ?? null
-  const departureHero = runtimeHeroUnit(game as PortalTravelGame)
+  const departureHero = runtimeHeroUnit(game as TravelPartyGame)
   const campaign = updateCurrentWorldState(game._campaignSave, currentWorldStateWithoutReturningOccupants, now)
   const entryPortalId = campaign.worlds[campaign.currentWorldId]?.entryPortalId
   const nextCampaign = returnToParentWorld(campaign, now)

@@ -2,7 +2,7 @@ import { playClickSound } from '../lib/audio/uiSound'
 import { Modal } from '../lib'
 import { t } from '../lib/lang'
 import { buildSelectRow } from '../ui/utils/formUtils'
-import { DEFAULT_MAP_TYPE } from '../config/mapTypes'
+import { DEFAULT_WORLD_ID } from '../config/worlds'
 import { PlayerSetupPanel } from '../ui/PlayerSetupPanel'
 import { RESOURCES_MAP } from '../config/resourcePresets'
 import type { GameConfig } from '../types/save'
@@ -27,7 +27,6 @@ export default class MapConfig {
 
     this.config = {
       size: 144,
-      mapType: DEFAULT_MAP_TYPE,
       startingAge: 0,
       allTechnologies: false,
       revealEverything: false,
@@ -36,6 +35,7 @@ export default class MapConfig {
       startingResources: RESOURCES_MAP.standard,
       resourceDensity: 'moderate',
       difficulty: 'medium',
+      worldId: DEFAULT_WORLD_ID,
     }
 
     this._modal = new Modal({

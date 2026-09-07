@@ -17,7 +17,7 @@ import type {
 } from '../types/save'
 
 type GridPoint = { i: number; j: number }
-const DEFAULT_SERIALIZED_MAP_TYPE = 'continent'
+const DEFAULT_SERIALIZED_MAP_TYPE = 'world-region'
 const SERIALIZED_RESOURCE_NAMES = [
   'wood',
   'food',
@@ -420,8 +420,9 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     size: context.map.size,
     mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
     environment: context.map.environment,
-    positionsCount: context.map.positionsCount,
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
+    worldId: context.map.worldId ?? null,
+    worldRegionId: context.map.worldRegionId ?? null,
   }
   const data: SerializedSave = {
     version: 2,
@@ -439,14 +440,15 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       environment: context.map.environment,
       instantMode: context.map.instantMode,
       allTechnologies: context.map.allTechnologies,
-      humanStartsWithoutBase: context.map.humanStartsWithoutBase,
-      portalEncounter: context.map.portalEncounter ?? undefined,
+      heroOnlyStart: context.map.heroOnlyStart,
       startingAge: context.map.startingAge,
       revealEverything: context.map.revealEverything,
       revealTerrain: context.map.revealTerrain,
       startingResources: context.map.startingResources,
       resourceDensity: context.map.resourceDensity,
       difficulty: context.map.difficulty,
+      worldId: context.map.worldId ?? undefined,
+      worldRegionId: context.map.worldRegionId ?? undefined,
     },
     players: (context.players ?? []).map(player => playerData(player)),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),

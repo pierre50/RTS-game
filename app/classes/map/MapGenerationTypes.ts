@@ -3,10 +3,10 @@ import type { EnvironmentTerrainParams, FAMILY_TYPES } from '../../constants'
 import type { GameContextLike, MapRuntimeContext } from '../../types/context'
 import type { RuntimeEntity } from '../../types/entities'
 import type { GridPosition } from '../../types/grid'
-import type { RuntimeCell, RuntimeMap } from '../../types/map'
+import type { RuntimeCell, RuntimeMap, RuntimeWorldManifest } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
 import type { AnimalConfig } from '../../types/config'
-import type { PortalEncounterKind, SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
+import type { SaveCellState, SaveEntityState, SerializedSave } from '../../types/save'
 import type { TextureRef } from '../../lib'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
 
@@ -26,10 +26,10 @@ export type MapGenerationMap = RuntimeMap & {
   playersPos: GeneratedPosition[]
   interiorExits?: GeneratedPosition[]
   banditCampPositions: GridPosition[]
+  settlements?: MapSettlement[]
   positionsCount: number
   noAI?: boolean
-  humanStartsWithoutBase?: boolean
-  portalEncounter?: PortalEncounterKind | null
+  heroOnlyStart?: boolean
   startingUnits: number
   generationTimings?: Record<string, number>
   difficulty: string
@@ -69,11 +69,19 @@ export type MapGenerationMap = RuntimeMap & {
   generateMapRelief(): void
   generateNeutralResourceGroupsAsync(
     playersPos: GeneratedPosition[],
-    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+    options?: {
+      treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null
+      treeTextureFamilyForCell?: (cell: RuntimeCell) => 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null | undefined
+      treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
+    }
   ): Promise<void>
   generateBiomeTreesAsync(
     playersPos: GeneratedPosition[],
-    options?: { treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null }
+    options?: {
+      treeTextureFamily?: 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null
+      treeTextureFamilyForCell?: (cell: RuntimeCell) => 'Grass' | 'Desert' | 'Jungle' | 'DarkForest' | null | undefined
+      treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
+    }
   ): Promise<void>
   placePlayers(): void
   _initFogChunks(): void
@@ -113,6 +121,20 @@ type BlueprintResource = {
   startsMature?: boolean
 }
 
+export type MapSettlement = {
+  id: string
+  kind: 'village' | 'city' | 'banditCamp'
+  world?: GridPosition
+  region?: { x: number; y: number }
+  local: GridPosition
+  radius?: number
+  biome?: string
+  civ?: string
+  playerIndex?: number
+  strength?: number
+  importance?: number
+}
+
 export type MapBlueprint = {
   seed?: string | number
   size: number
@@ -120,6 +142,7 @@ export type MapBlueprint = {
   kind?: string
   mapType?: string
   interiorType?: string
+  environment?: string
   spawns?: GeneratedPosition[]
   exits?: GeneratedPosition[]
   terrain: BlueprintTerrainValue[][]
@@ -127,6 +150,12 @@ export type MapBlueprint = {
   floorMask?: number[][]
   borderMask?: number[][]
   resources?: BlueprintResource[]
+  settlements?: MapSettlement[]
+  banditCampPositions?: GridPosition[]
+  worldId?: string | null
+  worldRegionId?: string | null
+  worldRegion?: { x: number; y: number }
+  worldManifest?: RuntimeWorldManifest
 }
 
 export type SavedGameData = Omit<

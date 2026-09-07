@@ -76,8 +76,7 @@ function makeFakeElement() {
       this._attributes[name] = value
     },
     querySelectorAll(selector) {
-      if (selector !== '.portal-color-option') return []
-      return this.children.filter(child => child.classList?.contains('portal-color-option'))
+      return this.children.filter(child => child.classList?.contains(selector.replace(/^\./, '')))
     },
     querySelector(selector) {
       if (selector !== '.modal-title') return null
@@ -108,87 +107,6 @@ function withFakeDocument(fn) {
   }
 }
 
-test('portal modal renders its description and color actions outside the info block', () => {
-  withFakeDocument(() => {
-    const recolorCalls = []
-    const clickCalls = []
-    let capturedContent = null
-    const { EntityInfoModalManager } = loadModule('app/ui/EntityInfoModalManager.ts', {
-      '../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit', animal: 'animal', resource: 'resource' } },
-      '../lib': {
-        changeSpriteColor: (sprite, color) => {
-          recolorCalls.push([sprite, color])
-          sprite.color = color
-        },
-      },
-      '../lib/avatar': {
-        renderAnimalAvatar: () => false,
-        renderResourceAvatar: () => false,
-        renderUnitHeadAvatar: () => false,
-      },
-      '../lib/lang': { t: key => key },
-      './utils/entityDisplayName': { getEntityDisplayName: entity => entity.type },
-      './InspectionPanel': {
-        createInspectionModal: options => {
-          capturedContent = options.content
-          return { close() {} }
-        },
-      },
-    })
-    const sprite = {}
-    const player = { unselectAll() {} }
-    const menu = {
-      context: {
-        app: {},
-        controls: {},
-        player,
-      },
-      playUiClick: () => clickCalls.push('click'),
-    }
-    const portal = {
-      family: 'resource',
-      type: 'Portal',
-      sprite,
-      interface: {
-        info: element => {
-          const info = makeFakeElement()
-          info.className = 'base-info'
-          element.appendChild(info)
-        },
-      },
-      select() {},
-    }
-
-    new EntityInfoModalManager(menu).open(portal)
-
-    assert.equal(capturedContent.classList.contains('portal-info-modal-content'), true)
-    const infoBlock = capturedContent.children[0]
-    const colorGroup = capturedContent.children[1]
-    const description = infoBlock.children[1]
-    assert.equal(infoBlock.classList.contains('selection-info'), true)
-    assert.equal(infoBlock.querySelectorAll('.portal-color-option').length, 0)
-    assert.equal(description.textContent, 'portalDescriptionMysterious')
-    assert.equal(colorGroup.classList.contains('npc-orders-options'), true)
-    assert.equal(colorGroup.children.length, 3)
-    assert.deepEqual(
-      colorGroup.children.map(button => button.textContent),
-      ['portalColorBlue', 'portalColorYellow', 'portalColorRed']
-    )
-    assert.equal(
-      colorGroup.children.every(button => button.classList.contains('ui-btn')),
-      true
-    )
-
-    colorGroup.children[2].click()
-
-    assert.equal(portal.color, 'red')
-    assert.deepEqual(recolorCalls, [[sprite, 'red']])
-    assert.deepEqual(clickCalls, ['click'])
-    assert.equal(colorGroup.children[2].classList.contains('is-selected'), true)
-    assert.equal(colorGroup.children[0].classList.contains('is-selected'), false)
-  })
-})
-
 test('resource info modal title uses translated resource type instead of technical resource name', () => {
   withFakeDocument(() => {
     let capturedTitle = null
@@ -200,9 +118,9 @@ test('resource info modal title uses translated resource type instead of technic
         renderResourceAvatar: () => false,
         renderUnitHeadAvatar: () => false,
       },
-      '../lib/lang': { t: key => (key === 'Portal' ? 'Portail' : key) },
+      '../lib/lang': { t: key => (key === 'Gold' ? 'Or' : key) },
       './utils/entityDisplayName': {
-        getEntityDisplayName: entity => (entity.type === 'Portal' ? 'Portail' : entity.type),
+        getEntityDisplayName: entity => (entity.type === 'Gold' ? 'Or' : entity.type),
       },
       './InspectionPanel': {
         createInspectionModal: options => {
@@ -219,18 +137,18 @@ test('resource info modal title uses translated resource type instead of technic
         player,
       },
     }
-    const portal = {
+    const gold = {
       family: 'resource',
-      type: 'Portal',
+      type: 'Gold',
       name: '4f3b-resource-id',
       interface: { info: () => {} },
       select() {},
     }
 
-    const opened = new EntityInfoModalManager(menu).open(portal)
+    const opened = new EntityInfoModalManager(menu).open(gold)
 
     assert.equal(opened, true)
-    assert.equal(capturedTitle, 'Portail')
+    assert.equal(capturedTitle, 'Or')
   })
 })
 

@@ -7,7 +7,7 @@ import { t } from '../../lib/lang'
 import { PerformanceMonitor } from '../../services/PerformanceMonitor'
 import type { DevConsoleRuntimeContext } from '../../dev-console/types'
 import type { GameContextLike, PerformanceMonitorLike, SchedulerLike, VisionChangeEvent } from '../../types/context'
-import type { BuildingEntity, ResourceEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
+import type { BuildingEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { CampaignSave, SaveRecord } from '../../types/save'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -49,10 +49,10 @@ export type GameRuntimeContextHost = {
   routeUnitIntoBuildingInterior(unit: UnitEntity, building: BuildingEntity): boolean
   travelOutOfBuildingInterior(): Promise<void>
   routeUnitResourceDelivery(unit: UnitEntity, building: BuildingEntity): Promise<boolean>
+  debugTeleportWorldMap(target: { worldI: number; worldJ: number; worldRegionId: string }): Promise<void>
   routeInteriorUnitToExit(unit: UnitEntity, returnTask?: UnitResourceDeliveryReturnTask | null): void
   synchronizeBuildingInteriorAfterTimeJump(): void
   syncStableInteriorHorses(building: BuildingEntity): void
-  travelThroughPortal(portal: ResourceEntity, color: 'blue' | 'yellow' | 'red'): Promise<void>
 }
 
 export function createGameRuntimeContext(
@@ -91,8 +91,15 @@ export function createGameRuntimeContext(
     checkDefeat: () => host.checkDefeat(),
     applyZoom: () => host.applyZoom(),
     getWorldGraph: () => (host._campaignSave ? getRealWorldGraph(host._campaignSave) : null),
+    getCampaignWorldState: worldId => host._campaignSave?.worlds?.[worldId]?.state ?? null,
     getCampaignFactions: () => host._campaignSave?.factions ?? null,
     changeFactionRelation: (factionId: string, delta: number) => host._changeFactionRelation(factionId, delta),
+    debugTeleportWorldMap: target => {
+      host.debugTeleportWorldMap(target).catch(error => {
+        console.error('Unable to debug teleport on world map', error)
+        context.menu?.showMessage(t('corruptSave'))
+      })
+    },
     notifyVisionChange: event => {
       for (const listener of visionChangeListeners) listener(event)
     },
@@ -103,12 +110,6 @@ export function createGameRuntimeContext(
       }
     },
     getCurrentWorldId: () => host._campaignSave?.currentWorldId ?? null,
-    travelThroughPortal: (portal: ResourceEntity, color: 'blue' | 'yellow' | 'red') => {
-      host.travelThroughPortal(portal, color).catch(error => {
-        console.error('Unable to travel through portal', error)
-        context.menu?.showMessage(t('corruptSave'))
-      })
-    },
     travelIntoBuildingInterior: (building: BuildingEntity) => {
       host.travelIntoBuildingInterior(building).catch(error => {
         console.error('Unable to travel into building interior', error)

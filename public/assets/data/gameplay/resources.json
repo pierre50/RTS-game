@@ -222,14 +222,5 @@
         "frame": 11
       }
     ]
-  },
-  "Portal": {
-    "size": 3,
-    "selectionFactor": 3,
-    "color": "#8a4fd6",
-    "assets": {
-      "sheet": "buildings/portal",
-      "frame": 0
-    }
   }
 }

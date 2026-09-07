@@ -358,7 +358,7 @@ export function refreshUnitEquipmentStats(unit: UnitEntity): void {
 
 // Break the circular import between this module and unitExperience.ts: grantUnitXp calls this
 // handler on level-up so reflex/energy/equipment-tier caches stay in sync without a level-up
-// happening only at the next spawn/loot/portal-travel refresh.
+// happening only at the next spawn or loot refresh.
 setLevelUpRefreshHandler(refreshUnitEquipmentStats)
 
 export function getUnitCombatRange(unit: UnitEntity): number | undefined {

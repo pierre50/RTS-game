@@ -10,8 +10,8 @@ import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
-import { applyPortableUnitState, type PortalPartyState } from './GameStateHelpers'
-import { refreshPortalPartyFog, type PortalTravelGame } from './GamePortalTravel'
+import { applyPortableUnitState } from './GameStateHelpers'
+import { refreshTravelPartyFog, type TravelPartyGame, type TravelPartyState } from './GameTravelParty'
 
 export type BuildingInteriorOccupantState = SaveEntityState & {
   sleepInInterior?: boolean
@@ -27,7 +27,7 @@ function footprintKey(i: number, j: number): string {
   return `${i}:${j}`
 }
 
-function getPartyLabels(party: PortalPartyState): Set<string> {
+function getPartyLabels(party: TravelPartyState): Set<string> {
   const labels = new Set<string>()
   if (party.hero?.label) labels.add(party.hero.label)
   for (const follower of party.followers) {
@@ -46,7 +46,7 @@ export function extractBuildingInteriorOccupants(
   state: SerializedSave,
   map: RuntimeMap,
   building: BuildingEntity,
-  party: PortalPartyState,
+  party: TravelPartyState,
   runtimeUnits: UnitEntity[] = []
 ): BuildingInteriorOccupantState[] {
   const played = state.players.find(player => player.isPlayed)
@@ -85,7 +85,7 @@ export function extractBuildingInteriorOccupants(
 export function extractBuildingInteriorSleepArrivals(
   state: SerializedSave,
   building: BuildingEntity,
-  party: PortalPartyState,
+  party: TravelPartyState,
   runtimeUnits: UnitEntity[] = [],
   immediateOccupants: BuildingInteriorOccupantState[] = []
 ): BuildingInteriorOccupantState[] {
@@ -250,7 +250,7 @@ export function addInteriorOccupantsToRuntime(
     created.push(occupant)
   }
 
-  if (created.length) refreshPortalPartyFog(game as PortalTravelGame, created)
+  if (created.length) refreshTravelPartyFog(game as TravelPartyGame, created)
   return created
 }
 

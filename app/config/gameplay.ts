@@ -1,5 +1,5 @@
 import type { DayNightColorAdjustment } from '../types/context'
-import { RESOURCE_TYPES } from '../constants'
+import { RESOURCE_TYPES } from '../constants/entities'
 
 export const DAY_NIGHT_CONFIG = {
   dayLengthMs: 24 * 60 * 1000,

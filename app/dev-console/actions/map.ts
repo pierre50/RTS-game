@@ -1,16 +1,10 @@
 import {
   drawInstanceBlinkingSelection,
-  getFreeLandCellAroundInstance,
   getGaiaAnimals,
-  teleportRuntimeUnitToCell,
-  updateInstanceVisibility,
 } from '../../lib'
-import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import type { CommandResult } from '../DevCommandRegistry'
-import type { DevCell, DevConsoleContext, DevEntity, DevPlayer } from '../types'
+import type { DevConsoleContext, DevEntity, DevPlayer } from '../types'
 import { getInstancesByCategory, normalize, normalizeToggle } from './shared'
-
-const PORTAL_RESOURCE_TYPE = 'Portal'
 
 function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
   const { map, player, controls } = context
@@ -26,72 +20,6 @@ function refreshAnimalsAndCameraVisibility(context: DevConsoleContext): void {
 
   controls?.cameraController?.visibleCells?.clear()
   controls?.updateVisibleCells?.()
-}
-
-function getHero(context: DevConsoleContext): DevEntity | null {
-  return (
-    (context.controls as { heroUnit?: DevEntity | null } | undefined)?.heroUnit ||
-    context.player.units.find(unit => unit.controlMode === 'hero' || unit.type === 'Hero') ||
-    context.player.units.find(unit => unit.isChief) ||
-    context.player.units[0] ||
-    null
-  )
-}
-
-function getCurrentWorldPortal(context: DevConsoleContext): DevEntity | null {
-  const { map } = context
-  const portalFromResources = [...map.resources].find(resource => resource.type === PORTAL_RESOURCE_TYPE)
-  if (portalFromResources) return portalFromResources
-
-  for (const row of map.grid) {
-    for (const cell of row) {
-      const occupant = cell.has as DevEntity | null | undefined
-      if (occupant?.type === PORTAL_RESOURCE_TYPE) return occupant
-    }
-  }
-  return null
-}
-
-function teleportUnitToCell(context: DevConsoleContext, unit: DevEntity, cell: DevCell): void {
-  teleportRuntimeUnitToCell(context.map, unit, cell)
-}
-
-function findPortalArrivalCell(context: DevConsoleContext, portal: DevEntity): DevCell | null {
-  const { map } = context
-  return getFreeLandCellAroundInstance(
-    portal,
-    map.grid,
-    cells => cells[0],
-    createNonReservedPassageCellCondition(context)
-  )
-}
-
-export function teleportHeroToPortal(context: DevConsoleContext): CommandResult {
-  const { map, menu, controls } = context
-  const portal = getCurrentWorldPortal(context)
-  if (!portal) return { ok: false, message: 'No portal on current map' }
-
-  const hero = getHero(context)
-  if (!hero) return { ok: false, message: 'No hero unit found' }
-
-  const cell = findPortalArrivalCell(context, portal)
-  if (!cell) return { ok: false, message: 'No free land cell around portal' }
-
-  controls?.stopKeyboardMove?.()
-  teleportUnitToCell(context, hero, cell)
-  updateInstanceVisibility(hero)
-  map._fogQueue?.clear()
-  map.mapFog?.viewportRenderer.invalidate()
-  map.mapFog?.viewportRenderer.update(controls?.cameraController?.getViewportRect())
-  if (controls?.cameraController?.set) controls.cameraController.set(hero.x, hero.y)
-  else controls?.setCamera?.(hero.x, hero.y)
-  controls?.cameraController?.visibleCells?.clear()
-  controls?.updateVisibleCells?.()
-  if (menu.isMiniMapActive?.() !== false) {
-    menu.updatePlayerMiniMapEvt?.(context.player)
-    menu.updateCameraMiniMapEvt?.()
-  }
-  return { ok: true, message: `Hero teleported near portal ${portal.i},${portal.j} -> ${cell.i},${cell.j}` }
 }
 
 export function toggleFog(context: DevConsoleContext, value: string): CommandResult {
