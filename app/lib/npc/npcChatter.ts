@@ -9,8 +9,8 @@ const NPC_CHATTER_LINES: Record<string, string[]> = {
   fr: [
     "Tu crois que le chef a déjà mangé aujourd'hui ?",
     "J'ai encore rêvé de sangliers cette nuit.",
-    "Il paraît que la pierre là-bas porte malheur.",
-    "Franchement, cette hache a une drôle de tête.",
+    'Il paraît que la pierre là-bas porte malheur.',
+    'Franchement, cette hache a une drôle de tête.',
   ],
   en: [
     'Think the chief has eaten today?',
@@ -32,12 +32,12 @@ const FOREIGN_NPC_CHATTER_LINES: Record<string, Record<ForeignNpcMood, string[]>
     wary: [
       'Gardez vos armes baissées, étranger.',
       'Notre village vous regarde.',
-      "Un pas de travers, et les choses changeront vite.",
+      'Un pas de travers, et les choses changeront vite.',
       "Si vous cherchez la paix, parlez d'abord au chef.",
     ],
     neutral: [
       'Nous ne cherchons pas les ennuis.',
-      "Vous êtes loin de chez vous, étranger.",
+      'Vous êtes loin de chez vous, étranger.',
       'Le chef écoute ceux qui respectent nos terres.',
       'Nos champs ont déjà vu assez de soldats.',
     ],
@@ -116,35 +116,29 @@ type GenderedNpcLines = {
 const NPC_RESTING_CHATTER_LINES: Record<string, GenderedNpcLines> = {
   fr: {
     shared: [
-      'Belle journée, chef. Le feu m’appelle plus fort que les champs.',
-      'Les outils dorment déjà. Moi, je les rejoins doucement.',
-      'Le jour a donné ce qu’il pouvait. Ce soir, je garde mes forces.',
-      'Encore un peu de calme avant la paillasse, chef.',
+      'Je me pose un moment, chef. Je reprendrai demain.',
+      'Je range mes outils pour ce soir, chef.',
+      'Je garde mes forces pour demain, chef.',
+      'Je souffle un peu avant de dormir, chef.',
     ],
     male: [
-      'Mes épaules ont bien travaillé aujourd’hui. Je reste près des miens ce soir.',
+      'J’ai assez porté pour aujourd’hui, chef. Je reste près des miens.',
       'Je souffle un moment, chef. Demain, je reprends avant l’aube.',
     ],
-    female: [
-      'Je laisse mes mains se reposer ce soir. Demain, elles sauront quoi faire.',
-      'Je reste au chaud près de la maison, chef. La nuit arrive doucement.',
-    ],
+    female: ['Je laisse mes mains se reposer ce soir, chef.', 'Je reste près de la maison ce soir, chef.'],
   },
   en: {
     shared: [
-      'Good day, chief. The hearth is calling louder than the fields.',
-      'The tools are resting already. I am almost ready to join them.',
-      'The day gave what it could. Tonight, I keep my strength close.',
-      'A little quiet before the straw bed, chief.',
+      'I am taking a moment, chief. I will work again tomorrow.',
+      'I am putting my tools away for tonight, chief.',
+      'I am saving my strength for tomorrow, chief.',
+      'Let me rest a little before sleep, chief.',
     ],
     male: [
-      'My shoulders carried enough today. I am staying close to my people tonight.',
+      'I have carried enough for today, chief. I am staying near my people.',
       'Let me breathe a moment, chief. I will be ready before dawn.',
     ],
-    female: [
-      'I am letting my hands rest tonight. Tomorrow, they will know their work.',
-      'I will stay warm near home, chief. Night is settling in softly.',
-    ],
+    female: ['I am resting my hands tonight, chief.', 'I am staying near home tonight, chief.'],
   },
 }
 
@@ -194,13 +188,7 @@ const FOREIGN_NPC_SLEEPING_CHATTER_LINES: Record<string, string[]> = {
     '...zzz... du pain...',
     'Mmh... zzz zzz...',
   ],
-  en: [
-    'Zzz... zzz...',
-    'Mmh... sheep...',
-    'Zzz... not now...',
-    '...zzz... bread...',
-    'Mmh... zzz zzz...',
-  ],
+  en: ['Zzz... zzz...', 'Mmh... sheep...', 'Zzz... not now...', '...zzz... bread...', 'Mmh... zzz zzz...'],
 }
 
 export function pickForeignNpcSleepingChatterLine(): string {

@@ -7,11 +7,8 @@ import {
   settleUnitRestForTimeJump,
   wakeUnit,
 } from './UnitRestLifecycle'
-import {
-  shouldVillagerBeAsleep,
-  shouldVillagerReturnHome,
-  shouldVillagerWork,
-} from '../../lib/units/villagerSchedule'
+import { setUnitOverheadIndicator } from '../../lib/entities/overheadIndicator'
+import { shouldVillagerBeAsleep, shouldVillagerReturnHome, shouldVillagerWork } from '../../lib/units/villagerSchedule'
 import { keepSleepingOutsideVisual, playSleepingOutsideVisual, playSleepingWakeVisual } from './UnitSleepVisuals'
 import {
   canUseUnitRest,
@@ -256,6 +253,7 @@ export class UnitRestSystem {
       if (unit.shelterState?.status !== 'outside') continue
       if (unit.sleepVisualState !== 'sleeping') continue
       keepSleepingOutsideVisual(unit)
+      setUnitOverheadIndicator(unit, 'sleep')
     }
   }
 

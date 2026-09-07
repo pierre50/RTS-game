@@ -46,7 +46,7 @@ function nearestEdge(hero: UnitEntity, map: RuntimeMap, margin: number): RegionE
 }
 
 export function arrivalCellForRegionEdge(map: RuntimeMap, edge: RegionEdge, previousCell: { i: number; j: number }): RuntimeCell | null {
-  const inset = 4
+  const inset = 1
   const center = Math.floor(map.size / 2)
   const target =
     edge === 'west'

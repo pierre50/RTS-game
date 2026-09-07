@@ -22,9 +22,12 @@ function loadModule(relativePath, mocks) {
 }
 
 const constants = {
+  CELL_HEIGHT: 32,
+  CELL_WIDTH: 64,
+  STEP_TIME: 20,
   ACTION_TYPES: { attack: 'attack', delivery: 'delivery' },
   BUILDING_TYPES: { fireCamp: 'FireCamp', house: 'House', townCenter: 'TownCenter' },
-  FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+  FAMILY_TYPES: { animal: 'animal', building: 'building', unit: 'unit' },
   PLAYER_TYPES: { bandits: 'Bandits' },
   RESOURCE_TYPES: {
     berrybush: 'Berrybush',
@@ -53,9 +56,15 @@ const constants = {
 function loadUnitRestSystem(calls, fadeOverrides = {}, moduleOverrides = {}) {
   const buildingInteriorOverrides = moduleOverrides['../BuildingInteriorSpaceSystem'] ?? {}
   const buildingInteriorMock = {
-    ensureRuntimeBuildingInteriorSpace: (_context, building) => ({ building, id: `space-${building.label || building.type}` }),
+    ensureRuntimeBuildingInteriorSpace: (_context, building) => ({
+      building,
+      id: `space-${building.label || building.type}`,
+    }),
     expelBuildingInteriorOccupants: () => [],
-    getBuildingInteriorSpaceForBuilding: (_context, building) => ({ building, id: `space-${building.label || building.type}` }),
+    getBuildingInteriorSpaceForBuilding: (_context, building) => ({
+      building,
+      id: `space-${building.label || building.type}`,
+    }),
     getBuildingInteriorSpaceForUnit: unit =>
       unit.spaceId ? { building: unit.shelterState?.shelter ?? null, id: unit.spaceId } : null,
     moveUnitToBuildingInteriorSleep: (_context, unit, space, _options) => {
@@ -186,16 +195,18 @@ function createCell(i, j) {
   }
 }
 
-function createContext(hour, players, calls) {
+function createContext(hour, players, calls, options = {}) {
   const scheduler = createScheduler()
-  const grid = Array.from({ length: 20 }, (_, i) => Array.from({ length: 20 }, (_, j) => createCell(i, j)))
+  const size = options.size ?? 20
+  const grid = Array.from({ length: size }, (_, i) => Array.from({ length: size }, (_, j) => createCell(i, j)))
   return {
-    dayNight: { state: { hour } },
+    dayNight: { state: { hour, minute: options.minute ?? 0 } },
     players,
     controls: { heroUnit: null },
     scheduler,
     map: {
       grid,
+      size,
       addChild: unit => calls.push(['addChild', unit.label]),
       addToInstanceBucket: unit => calls.push(['addBucket', unit.label]),
       removeFromInstanceBucket: unit => calls.push(['removeBucket', unit.label]),
@@ -306,6 +317,27 @@ test('villagers sleep outside on the final hurt pose with zZzZ when no shelter e
   )
 })
 
+test('sleeping outside maintenance restores the sleep overhead indicator', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const villager = createUnit(owner, {
+    shelterState: { status: 'outside', reason: 'sleep', location: 'outside', shelter: null, targetCell: null },
+    sleepVisualState: 'sleeping',
+  })
+  const context = createContext(23, [owner], calls)
+  villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+  const system = new UnitRestSystem(context)
+  calls.length = 0
+
+  system.updateSleepingOutsideVisuals([villager])
+
+  assert.deepEqual(
+    calls.find(call => call[0] === 'indicator'),
+    ['indicator', 'villager-1', 'sleep']
+  )
+})
+
 test('sleeping equipped units play the hurt pose on every appearance layer', () => {
   const calls = []
   const owner = { units: [], buildings: [] }
@@ -338,7 +370,10 @@ test('sleeping equipped units play the hurt pose on every appearance layer', () 
 
   new UnitRestSystem(context)
 
-  assert.deepEqual(calls.find(call => call[0] === 'layerPlay'), ['layerPlay', 0])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'layerPlay'),
+    ['layerPlay', 0]
+  )
   villager.sprite.onComplete()
   assert.equal(equipmentLayer.loop, false)
   assert.equal(equipmentLayer.playing, false)
@@ -409,11 +444,18 @@ test('awake late risers do not go back to sleep when the map starts at 8h', () =
   assert.equal(villager.actionLocked, undefined)
 })
 
-test('player villagers stay awake at night in an undominated world', () => {
+test('player villagers can sleep at night in an undominated world without nearby visible enemies', () => {
   const calls = []
-  const owner = { units: [], buildings: [], isPlayed: true }
+  const owner = {
+    units: [],
+    buildings: [],
+    isPlayed: true,
+    isEnemy: other => other?.label === 'enemy',
+    views: { isVisible: () => false },
+  }
   const villager = createUnit(owner)
   const context = createContext(23, [owner], calls)
+  context.player = owner
   context.getCurrentWorldId = () => 'hostile-world'
   context.getWorldGraph = () => ({
     rootWorldId: 'home-world',
@@ -431,6 +473,36 @@ test('player villagers stay awake at night in an undominated world', () => {
     },
   })
   villager.context = context
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  const system = new UnitRestSystem(context)
+  system.sendUnitToSleep(villager)
+
+  assert.equal(villager.shelterState.reason, 'sleep')
+})
+
+test('player villagers stay awake at night while a nearby enemy is visible to the player', () => {
+  const calls = []
+  const enemyOwner = { label: 'enemy', units: [], buildings: [] }
+  const owner = {
+    units: [],
+    buildings: [],
+    isPlayed: true,
+    isEnemy: other => other === enemyOwner,
+    views: { isVisible: (i, j) => i === 2 && j === 1 },
+  }
+  const villager = createUnit(owner, { family: constants.FAMILY_TYPES.unit, sight: 7 })
+  const enemy = createUnit(enemyOwner, {
+    family: constants.FAMILY_TYPES.unit,
+    i: 2,
+    j: 1,
+    label: 'enemy-scout',
+    type: constants.UNIT_TYPES.infantry,
+  })
+  const context = createContext(23, [owner, enemyOwner], calls)
+  context.player = owner
+  villager.context = context
+  enemy.context = context
   const UnitRestSystem = loadUnitRestSystem(calls)
 
   const system = new UnitRestSystem(context)
@@ -958,7 +1030,10 @@ test('villagers move to nearest house entry and enter the building interior on a
   assert.equal(villager.spaceId, 'space-house')
   assert.equal(villager.alpha, 1)
   assert.equal(villager.visible, true)
-  assert.equal(calls.some(call => call[0] === 'removeBucket'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'removeBucket'),
+    false
+  )
 })
 
 test('active runtime interiors route shelter entry through the space portal', () => {
@@ -1025,6 +1100,32 @@ test('villagers skip full shelters when going to sleep', () => {
   assert.equal(villager.shelterState.status, 'outside')
   assert.equal(villager.shelterState.location, 'outside')
   assert.notEqual(villager.dest, entry)
+})
+
+test('villagers sleep outside when shelter travel would reach after bedtime', () => {
+  const calls = []
+  const owner = { units: [], buildings: [] }
+  const house = {
+    label: 'far-house',
+    type: constants.BUILDING_TYPES.house,
+    owner,
+    isBuilt: true,
+    i: 105,
+    j: 105,
+  }
+  owner.buildings.push(house)
+  const villager = createUnit(owner, { i: 0, j: 0, speed: 1 })
+  const context = createContext(21, [owner], calls, { minute: 59, size: 120 })
+  for (const unit of owner.units) unit.context = context
+  villager.currentCell = context.map.grid[0][0]
+  context.map.grid[0][0].place(villager)
+  const UnitRestSystem = loadUnitRestSystem(calls)
+
+  new UnitRestSystem(context)
+
+  assert.equal(villager.shelterState.status, 'outside')
+  assert.equal(villager.shelterState.location, 'outside')
+  assert.notEqual(villager.dest?.label, 'far-house')
 })
 
 test('villagers keep shelter order while movement command is still pending', () => {
@@ -1712,7 +1813,10 @@ test('sleeping villagers preview the reversed hurt animation and lie back down o
   assert.equal(villager.sprite.frame, 2)
   assert.equal(villager.shadow.visible, false)
   system.updateSleepingOutsideVisuals()
-  assert.equal([...context.scheduler.tasks.values()].some(task => task.name === 'unit.sleepWake'), true)
+  assert.equal(
+    [...context.scheduler.tasks.values()].some(task => task.name === 'unit.sleepWake'),
+    true
+  )
   assert.equal(villager.currentSheet, constants.SHEET_TYPES.dying)
   assert.equal(villager.shelterState.reason, 'sleep')
 
@@ -2003,8 +2107,14 @@ test('shelter attack wakes occupants and routes them through existing danger rea
     task.callback()
   }
 
-  assert.deepEqual(calls.find(call => call[0] === 'villagerDetect'), ['villagerDetect', 'villager-1', 'enemy'])
-  assert.deepEqual(calls.find(call => call[0] === 'soldierDetect'), ['soldierDetect', 'soldier-1', 'enemy'])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'villagerDetect'),
+    ['villagerDetect', 'villager-1', 'enemy']
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'soldierDetect'),
+    ['soldierDetect', 'soldier-1', 'enemy']
+  )
 })
 
 test('critical shelters eject hidden villagers', () => {

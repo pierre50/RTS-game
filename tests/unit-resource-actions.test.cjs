@@ -53,8 +53,9 @@ function loadUnitResourceActions() {
       '../../lib/entities/entityHealthDisplay': { syncEntityHealthDisplay: () => {} },
       '../../lib/entities/workImpactFragments': { spawnWorkImpactFragments: () => {} },
       '../../lib/resources/resourceDelivery': {
+        getUnitCarriedResourceAmount: unit => unit.inventory?.resources?.wood ?? 0,
         getResourceKeyForLoadingType: loadingType => loadingType,
-        getUnitResourceCapacityRemaining: () => 10,
+        getUnitResourceCapacityRemaining: () => Number.POSITIVE_INFINITY,
         unitShouldDeliverResource: () => false,
       },
       '../../lib/units/unitControl': { isHeroControlled: () => false },
@@ -81,6 +82,32 @@ function loadUnitResourceActions() {
   }).UnitResourceActions
 }
 
+function loadUnitResourceGathering() {
+  return loadTsModule('app/classes/unit/UnitResourceGathering.ts', {
+    mocks: {
+      '../../constants': {
+        LOADING_TYPES: { wood: 'wood' },
+        RESOURCE_GATHER_SWINGS: {},
+        RESOURCE_STOCKPILE_TYPES: {},
+        RESOURCE_TYPES: { berrybush: 'Berrybush', wheat: 'Wheat' },
+        SOUND_CUES: { villager: {} },
+        WILDGRASS_RESOURCE_TYPES: new Set(),
+      },
+      '../../lib/entities/workImpactFragments': { spawnWorkImpactFragments: () => {} },
+      '../../lib/lang': { t: key => key },
+      '../../lib/resources/resourceDelivery': {
+        getResourceKeyForLoadingType: loadingType => loadingType,
+        getUnitCarriedResourceAmount: unit => unit.inventory?.resources?.wood ?? 0,
+        getUnitResourceCapacityRemaining: () => Number.POSITIVE_INFINITY,
+        unitShouldDeliverResource: (_unit, _loadingType, previousAmount) => previousAmount < 10,
+      },
+      '../../lib/units/unitExperience': {
+        getGatherXpBonus: () => 0,
+      },
+    },
+  })
+}
+
 function captureForageSound(targetType) {
   const UnitResourceActions = loadUnitResourceActions()
   const action = new UnitResourceActions({
@@ -105,4 +132,18 @@ test('wildgrass forage uses the wheat contact sound', () => {
 
 test('berrybush forage keeps the berry gathering sound', () => {
   assert.equal(captureForageSound('Berrybush'), 'berry-gathering')
+})
+
+test('villagers keep gathering when a delivery batch has no dropoff target', () => {
+  const { sendVillagerToDeliveryIfFull } = loadUnitResourceGathering()
+  const calls = []
+  const unit = {
+    inventory: { resources: { wood: 10 } },
+    owner: { isPlayed: true },
+    sendToDelivery: () => false,
+    stop: () => calls.push('stop'),
+  }
+
+  assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood', 9), false)
+  assert.deepEqual(calls, [])
 })

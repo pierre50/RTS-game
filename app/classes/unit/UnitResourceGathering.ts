@@ -7,6 +7,7 @@ import {
   WILDGRASS_RESOURCE_TYPES,
 } from '../../constants'
 import {
+  getUnitCarriedResourceAmount,
   getResourceKeyForLoadingType,
   getUnitResourceCapacityRemaining,
   unitShouldDeliverResource,
@@ -112,15 +113,19 @@ export function addGatheredResource(unit: UnitEntity, loadingType: string, amoun
   return gatheredAmount
 }
 
-export function sendVillagerToDeliveryIfFull(unit: UnitEntity, loadingType: string): boolean {
-  if (!unitShouldDeliverResource(unit, loadingType)) return false
+export function sendVillagerToDeliveryIfFull(
+  unit: UnitEntity,
+  loadingType: string,
+  previousAmount: number | null = null
+): boolean {
+  if (!unitShouldDeliverResource(unit, loadingType, previousAmount)) return false
   if (unit.sendToDelivery?.() === true) return true
-  if (unit.owner?.isPlayed) {
-    unit.gatherProgressState = null
-    unit.stop?.()
-    return true
-  }
   return false
+}
+
+export function getCarriedResourceAmountForLoadingType(unit: UnitEntity, loadingType: string): number {
+  const resource = getResourceKeyForLoadingType(loadingType)
+  return resource ? getUnitCarriedResourceAmount(unit, resource) : 0
 }
 
 function getResourceGatherSwings(loadingType: string, override?: number): number {

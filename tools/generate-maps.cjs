@@ -937,7 +937,9 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
   const requestedBanditCampPositions = compactPositions(options.banditCampPositions)
   const spawnCount = requestedSpawns.length
     ? requestedSpawns.length
-    : Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
+    : options.worldRegion
+      ? 0
+      : Math.floor(createSeededRandom(`${seed}:ideal-spawns`)() * (maxSpawns - minSpawns + 1) + minSpawns)
   const params = ENVIRONMENT_TERRAIN_PARAMS[environmentId] ?? ENVIRONMENT_TERRAIN_PARAMS[DEFAULT_ENVIRONMENT_ID]
   const context = { map: { seed, positionsCount: spawnCount } }
   const terrain = runtimeTerrain.call(context, size + 1, seed, params)

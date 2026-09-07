@@ -34,6 +34,67 @@ function loadWorldRegionPlayers() {
   })
 }
 
+function loadWorldRegionTravelRuntime(calls) {
+  return loadTsModule('app/screens/game/GameWorldRegionTravel.ts', {
+    mocks: {
+      '../../lib': { getReliefOffset: () => 0 },
+      '../../lib/mapSpaces': { getEntityMapPoint: unit => ({ x: unit.x ?? 0, y: unit.y ?? 0 }) },
+      '../../serialization/CampaignSave': {
+        addChildWorldToCampaign: (campaign, state, options) => {
+          calls.addedWorlds.push(options.worldId)
+          return {
+            ...campaign,
+            currentWorldId: options.worldId,
+            worlds: {
+              ...campaign.worlds,
+              [options.worldId]: { id: options.worldId, state },
+            },
+          }
+        },
+        createInitialCampaignSave: state => ({
+          currentWorldId: 'initial',
+          worlds: { initial: { id: 'initial', state } },
+          worldGraph: { nodes: {} },
+        }),
+        enterCampaignWorld: (campaign, worldId) => ({
+          ...campaign,
+          currentWorldId: worldId,
+        }),
+        updateCurrentWorldState: (campaign, state) => ({
+          ...campaign,
+          worlds: {
+            ...campaign.worlds,
+            [campaign.currentWorldId]: {
+              ...campaign.worlds[campaign.currentWorldId],
+              state,
+            },
+          },
+        }),
+      },
+      '../../serialization/SaveSerializer': { serializeGame: context => context.serialized },
+      '../../services/world/WorldRegionTravelSystem': {
+        arrivalCellForRegionEdge: () => ({ i: 9, j: 9 }),
+        findOpenWorldTravelCell: () => ({ i: 9, j: 9 }),
+      },
+      '../../ui/WorldRevealTransition': {
+        WorldRevealTransition: class {
+          async concealTo() {}
+          async revealFrom() {}
+          destroy() {}
+        },
+      },
+      './GameTravelParty': {
+        applyTravelPartyToRuntime: (...args) => calls.travelPartyApplications.push(args),
+        extractTravelParty: state => ({
+          followers: [],
+          hero: state.players?.[0]?.units?.find(unit => unit.type === 'Hero') ?? null,
+        }),
+        runtimeHeroUnit: game => game._gameContext().hero ?? null,
+      },
+    },
+  })
+}
+
 function loadMapPlayerGeneration() {
   class TestHuman {
     constructor(options) {
@@ -84,10 +145,10 @@ test('world region travel arrives inside the opposite edge with a safety inset',
   const { arrivalCellForRegionEdge } = loadWorldRegionTravel()
   const map = createMap()
 
-  assert.deepEqual(arrivalCellForRegionEdge(map, 'west', { i: 0, j: 5 }), map.grid[8][5])
-  assert.deepEqual(arrivalCellForRegionEdge(map, 'east', { i: 12, j: 5 }), map.grid[4][5])
-  assert.deepEqual(arrivalCellForRegionEdge(map, 'north', { i: 6, j: 0 }), map.grid[6][8])
-  assert.deepEqual(arrivalCellForRegionEdge(map, 'south', { i: 6, j: 12 }), map.grid[6][4])
+  assert.deepEqual(arrivalCellForRegionEdge(map, 'west', { i: 0, j: 5 }), map.grid[11][5])
+  assert.deepEqual(arrivalCellForRegionEdge(map, 'east', { i: 12, j: 5 }), map.grid[1][5])
+  assert.deepEqual(arrivalCellForRegionEdge(map, 'north', { i: 6, j: 0 }), map.grid[6][11])
+  assert.deepEqual(arrivalCellForRegionEdge(map, 'south', { i: 6, j: 12 }), map.grid[6][1])
 })
 
 test('world region travel maps isometric edges to the matching macro-world neighbor', () => {
@@ -174,6 +235,85 @@ test('world region travel carries living hero followers only', () => {
 
   assert.equal(party.hero, hero)
   assert.deepEqual(party.followers, [follower])
+})
+
+test('world region travel reloads an already visited region from its saved state', async () => {
+  const calls = { addedWorlds: [], travelPartyApplications: [] }
+  const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
+  const departureState = {
+    config: { worldId: 'world-test', worldRegionId: 'region-a' },
+    players: [{ isPlayed: true, units: [{ i: 2, j: 2, label: 'hero', type: 'Hero' }] }],
+    runtime: { dayNightElapsedMs: 100, weather: { phase: 'rainHeavy', phaseEndsAt: 8000, rainIntensity: 0.9 } },
+    world: { worldId: 'world-test', worldRegionId: 'region-a' },
+  }
+  const visitedRegionState = {
+    config: { worldId: 'world-test', worldRegionId: 'region-b' },
+    players: [
+      {
+        isPlayed: true,
+        units: [
+          { i: 3, j: 3, label: 'hero', type: 'Hero' },
+          { action: 'wood', i: 4, j: 4, label: 'woodcutter', type: 'Villager' },
+        ],
+      },
+    ],
+    runtime: { dayNightElapsedMs: 200 },
+    world: { worldId: 'world-test', worldRegionId: 'region-b' },
+  }
+  let currentContext = {
+    controls: {
+      camera: { x: 0, y: 0 },
+      init: () => {},
+      localToScreen: (x, y) => ({ x, y }),
+      setCamera: () => {},
+      setRuntimeInputEnabled: () => {},
+      updateVisibleCells: () => {},
+    },
+    dayNight: { getElapsedMs: () => 555 },
+    hero: { i: 2, j: 2, x: 0, y: 0 },
+    map: { size: 12 },
+    menu: { refreshMiniMap: () => {}, show: () => {}, updateHeroStatus: () => {} },
+    serialized: departureState,
+  }
+  const game = {
+    _campaignSave: {
+      currentWorldId: 'region-a',
+      worlds: {
+        'region-a': { id: 'region-a', state: departureState },
+        'region-b': { id: 'region-b', state: visitedRegionState },
+      },
+      worldGraph: { nodes: {} },
+    },
+    _autosaveCampaign: () => {
+      game.autosaved = true
+    },
+    _bootFromConfig: async () => {
+      game.bootedFromConfig = true
+    },
+    _bootFromSave: async state => {
+      game.bootedFromSave = state
+      currentContext = { ...currentContext, hero: { i: 3, j: 3, x: 0, y: 0 }, serialized: state }
+    },
+    _destroyRuntime: () => {},
+    _gameContext: () => currentContext,
+    _map: () => currentContext.map,
+    _restartSaveData: null,
+    _worldRegionTransitioning: false,
+    config: departureState.config,
+    context: currentContext,
+  }
+
+  await travelToWorldRegion(game, 'region-b', 'east')
+
+  assert.equal(game.bootedFromConfig, undefined)
+  assert.equal(game.bootedFromSave.players[0].units[1].label, 'woodcutter')
+  assert.equal(game.bootedFromSave.runtime.dayNightElapsedMs, 555)
+  assert.equal(game.bootedFromSave.runtime.weather.phase, 'rainHeavy')
+  assert.equal(calls.travelPartyApplications[0][3].freshWorld, false)
+  assert.equal(calls.addedWorlds.length, 0)
+  assert.equal(game._campaignSave.currentWorldId, 'region-b')
+  assert.equal(game._campaignSave.worlds['region-b'].state.players[0].units[1].label, 'woodcutter')
+  assert.equal(game.autosaved, true)
 })
 
 test('world region player configs keep the human civilization even without a local village', () => {

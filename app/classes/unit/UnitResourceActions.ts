@@ -36,6 +36,7 @@ import {
 import {
   addGatheredResource,
   clampDepletedBerrybushHitPoints,
+  getCarriedResourceAmountForLoadingType,
   getGatherAmount,
   isBuildingEntity,
   isChoppableBerrybush,
@@ -166,6 +167,7 @@ export class UnitResourceActions {
         finishWorkSwing(unit, workTickFrame, workTickFrame)
         return
       }
+      const previousAmount = getCarriedResourceAmountForLoadingType(unit, loadingType)
       const gain = addGatheredResource(unit, loadingType, requestedGain)
       if (gain <= 0) {
         unit.gatherProgressState = null
@@ -187,7 +189,7 @@ export class UnitResourceActions {
         if (dieOnEmpty) dest.die?.()
         onDepleted?.(dest)
         unit.affectNewDest?.()
-      } else if (sendVillagerToDeliveryIfFull(unit, loadingType)) {
+      } else if (sendVillagerToDeliveryIfFull(unit, loadingType, previousAmount)) {
         unit.gatherProgressState = null
       }
       finishWorkSwing(unit, workTickFrame, workTickFrame)
@@ -248,6 +250,7 @@ export class UnitResourceActions {
         finishWorkSwing(unit, SLASH_IMPACT_FRAME)
         return
       }
+      const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wheat)
       const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
       if (gain <= 0) {
         if (isHeroControlled(unit)) stopManualHeroAction(unit)
@@ -263,7 +266,7 @@ export class UnitResourceActions {
       if ((d.quantity ?? 0) <= 0) {
         d.die?.()
         unit.affectNewDest?.()
-      } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat)) {
+      } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat, previousAmount)) {
         unit.gatherProgressState = null
       }
       finishWorkSwing(unit, workTickFrame, workTickFrame)
@@ -318,6 +321,7 @@ export class UnitResourceActions {
           finishWorkSwing(unit, workTickFrame, workTickFrame)
           return
         }
+        const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wood)
         const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
         if (gain <= 0) {
           if (isHeroControlled(unit)) stopManualHeroAction(unit)
@@ -333,7 +337,7 @@ export class UnitResourceActions {
         if ((dest.quantity ?? 0) <= 0) {
           dest.die?.()
           unit.affectNewDest?.()
-        } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood)) {
+        } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood, previousAmount)) {
           unit.gatherProgressState = null
         }
       }

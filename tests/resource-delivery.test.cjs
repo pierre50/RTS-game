@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict')
+const path = require('node:path')
 const test = require('node:test')
-const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+const { loadTsModule, requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
 function loadResourceDelivery() {
   return loadTsModule('app/lib/resources/resourceDelivery.ts', {
@@ -151,6 +152,9 @@ function loadGameResourceDelivery(overrides = {}) {
         buildingAcceptsInventoryResource: () => true,
         unitHasDeliverableResourcesForBuilding: overrides.unitHasDeliverableResourcesForBuilding ?? (() => true),
       },
+      '../../services/rest/UnitRestRules': {
+        canResumeVillagerReturnTaskBeforeRest: overrides.canResumeVillagerReturnTaskBeforeRest ?? (() => true),
+      },
       '../../services/BuildingInteriorSpaceSystem': {
         ensureBuildingInteriorSpace: () => ({ id: 'interior:tc' }),
         getBuildingInteriorSpaceForUnit: overrides.getBuildingInteriorSpaceForUnit ?? (unit => unit.space ?? null),
@@ -166,12 +170,73 @@ function loadGameResourceDelivery(overrides = {}) {
       '../../services/rest/UnitRestLifecycle': {
         continueRestAfterDelivery:
           overrides.continueRestAfterDelivery ?? (() => false),
+        sendUnitToRest:
+          overrides.sendUnitToRest ??
+          ((unit, reason) => {
+            unit.shelterState = { reason, status: 'movingToRest' }
+            return true
+          }),
       },
     },
   })
 }
 
-test('loading types fill local resource pockets with a capacity of ten', () => {
+function loadUnitRestRules(overrides = {}) {
+  return loadTsModule('app/services/rest/UnitRestRules.ts', {
+    mocks: {
+      '../../constants': {
+        ACTION_TYPES: { attack: 'attack' },
+        BUILDING_TYPES: {},
+        CELL_HEIGHT: 32,
+        CELL_WIDTH: 64,
+        FAMILY_TYPES: { building: 'building', unit: 'unit' },
+        STEP_TIME: 20,
+        UNIT_TYPES: { hero: 'Hero', villager: 'Villager' },
+        WORK_TYPES: { attacker: 'attacker' },
+      },
+      '../../config/gameplay': {
+        DAY_NIGHT_CONFIG: { dayLengthMs: 24 * 60 * 1000, hoursPerDay: 24 },
+      },
+      '../../lib/buildings/buildingOccupancy': {
+        getBuildingShelterCapacity: () => 1,
+        hasBuildingShelterCapacity: () => true,
+      },
+      '../../lib/buildings/interiors': {
+        getBuildingInteriorEntryCell: () => null,
+        isBuildingInteriorSupported: () => false,
+      },
+      '../../lib/buildings/passageCells': {
+        canUnitUseCellAsIdleDestination: () => true,
+        createReservedPassageCellLookup: () => null,
+      },
+      '../../lib/combat/bandits': {
+        isBanditUnit: () => false,
+      },
+      '../../lib/grid/cells': {
+        getCellsAroundPoint: () => [],
+      },
+      '../../lib/grid/movement': {
+        getInstanceClosestFreeCellPath: overrides.getInstanceClosestFreeCellPath ?? ((_unit, target) => target.path ?? []),
+        getInstancePath: overrides.getInstancePath ?? (() => []),
+      },
+      '../../lib/units/unitControl': {
+        isHeroControlled: () => false,
+      },
+      '../../lib/units/villagerSchedule': requireFromTsFile(
+        '../../lib/units/villagerSchedule',
+        path.join(__dirname, '..', 'app/services/rest/UnitRestRules.ts'),
+        {}
+      ),
+      '../../lib/mapSpaces': {
+        getEntityCell: (_entity, map) => map.grid?.[0]?.[0] ?? null,
+        getEntitySpaceGrid: (_entity, map) => map.grid,
+        sameMapSpace: () => true,
+      },
+    },
+  })
+}
+
+test('loading types fill local resource pockets without a hard capacity', () => {
   const { getResourceKeyForLoadingType, getUnitResourceCapacityRemaining, unitShouldDeliverResource } =
     loadResourceDelivery()
   const villager = {
@@ -181,9 +246,63 @@ test('loading types fill local resource pockets with a capacity of ten', () => {
 
   assert.equal(getResourceKeyForLoadingType('meat'), 'meat')
   assert.equal(getResourceKeyForLoadingType('stone'), 'stone')
-  assert.equal(getUnitResourceCapacityRemaining(villager, 'stone'), 6)
-  assert.equal(getUnitResourceCapacityRemaining(villager, 'meat'), 0)
+  assert.equal(getUnitResourceCapacityRemaining(villager, 'stone'), Number.POSITIVE_INFINITY)
+  assert.equal(getUnitResourceCapacityRemaining(villager, 'meat'), Number.POSITIVE_INFINITY)
   assert.equal(unitShouldDeliverResource(villager, 'meat'), true)
+
+  villager.inventory.resources.meat = 4
+  assert.equal(unitShouldDeliverResource(villager, 'meat'), false)
+})
+
+test('villagers try delivery when a resource crosses each batch of ten', () => {
+  const { unitShouldDeliverResource } = loadResourceDelivery()
+  const villager = {
+    inventory: { resources: { wood: 11 } },
+    type: 'Villager',
+  }
+
+  assert.equal(unitShouldDeliverResource(villager, 'wood', 9), true)
+  assert.equal(unitShouldDeliverResource(villager, 'wood', 10), false)
+
+  villager.inventory.resources.wood = 20
+  assert.equal(unitShouldDeliverResource(villager, 'wood', 19), true)
+})
+
+test('villager delivery return tasks account for travel time before resuming work', () => {
+  const { canResumeVillagerReturnTaskBeforeRest } = loadUnitRestRules()
+  const owner = { config: { units: { Villager: { speed: 25 } } } }
+  const unit = {
+    context: { dayNight: { state: { hour: 17, minute: 30 } }, map: { grid: [[{ has: null, i: 0, j: 0 }]] } },
+    i: 0,
+    j: 0,
+    owner,
+    speed: 25,
+    type: 'Villager',
+  }
+  const farTree = { family: 'resource', label: 'far-tree', path: Array.from({ length: 1000 }), type: 'Tree' }
+
+  assert.equal(
+    canResumeVillagerReturnTaskBeforeRest(unit, {
+      action: 'chopwood',
+      autonomousJob: 'wood',
+      dest: farTree,
+      work: 'woodcutter',
+    }),
+    false
+  )
+
+  unit.context.dayNight.state.hour = 16
+  unit.context.dayNight.state.minute = 0
+  const nearTree = { family: 'resource', label: 'near-tree', path: [{}], type: 'Tree' }
+  assert.equal(
+    canResumeVillagerReturnTaskBeforeRest(unit, {
+      action: 'chopwood',
+      autonomousJob: 'wood',
+      dest: nearTree,
+      work: 'woodcutter',
+    }),
+    true
+  )
 })
 
 test('delivery targets match the carried resource family', () => {
@@ -609,6 +728,68 @@ test('evening delivery clears its delivery state before continuing toward shelte
     ['refreshInventory'],
     ['continueRest', null],
   ])
+})
+
+test('delivery sends villagers to rest instead of resuming distant work near day end', () => {
+  const calls = []
+  const { handleResourceDeliveryAction } = loadGameResourceDelivery({
+    canResumeVillagerReturnTaskBeforeRest: (candidate, task) => {
+      calls.push(['canResume', task.dest.label])
+      return false
+    },
+    resumeVillagerJobIntent: () => {
+      calls.push(['resumeWork'])
+      return true
+    },
+    sendUnitToRest: (candidate, reason) => {
+      calls.push(['sendToRest', reason])
+      candidate.shelterState = { reason, status: 'movingToRest' }
+      return true
+    },
+  })
+  const owner = { units: [] }
+  const building = { family: 'building', owner, label: 'town-center', type: 'TownCenter' }
+  const chest = { family: 'building', inventory: { resources: {} }, label: 'chest-1', type: 'Chest' }
+  const tree = { family: 'resource', label: 'tree-1', type: 'Tree' }
+  const unit = {
+    action: 'delivery',
+    dest: chest,
+    inventory: { resources: { wood: 10 } },
+    owner,
+    resourceDeliveryState: {
+      building,
+      chest,
+      phase: 'toChest',
+      returnTask: { action: 'chopwood', autonomousJob: 'wood', dest: tree, work: 'woodcutter' },
+      spaceId: 'interior:tc',
+      taskId: 999,
+    },
+    space: { id: 'interior:tc' },
+    spaceId: 'interior:tc',
+  }
+  owner.units.push(unit)
+  const context = {
+    menu: { refreshInventory: () => calls.push(['refreshInventory']) },
+    players: [owner],
+    scheduler: {
+      add() {
+        return 1
+      },
+      remove: id => calls.push(['remove', id]),
+    },
+  }
+  unit.context = context
+
+  handleResourceDeliveryAction(context, unit)
+
+  assert.equal(unit.resourceDeliveryState, null)
+  assert.deepEqual(calls, [
+    ['remove', 999],
+    ['refreshInventory'],
+    ['canResume', 'tree-1'],
+    ['sendToRest', 'sleep'],
+  ])
+  assert.equal(unit.shelterState.status, 'movingToRest')
 })
 
 test('resource delivery system falls back to autonomous job when exact return target is invalid', () => {

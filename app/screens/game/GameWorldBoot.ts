@@ -41,6 +41,7 @@ export type GameWorldBootHost = {
     performance?: { record?: (name: string, duration: number) => void; setPhase?: (phase: string) => void } | null
     player: PlayerLike | null
     players: PlayerLike[]
+    weather?: GameContextLike['weather'] | null
   }
   _applyMapConfig(map: RuntimeMap, config?: GameConfig): void
   _autosaveCampaign(): void
@@ -188,6 +189,7 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   )
   measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')
 }
 
@@ -211,5 +213,6 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
   )
   measure(game, 'save.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'save.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')
 }

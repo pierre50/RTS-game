@@ -430,6 +430,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,
       savedAt: Date.now(),
+      weather: context.weather?.serializeState?.() ?? null,
     },
     camera: cameraData(context.controls.camera),
     world,

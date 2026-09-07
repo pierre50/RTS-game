@@ -1,18 +1,35 @@
-import { ACTION_TYPES, BUILDING_TYPES, UNIT_TYPES, WORK_TYPES } from '../../constants'
+import {
+  ACTION_TYPES,
+  BUILDING_TYPES,
+  CELL_HEIGHT,
+  CELL_WIDTH,
+  FAMILY_TYPES,
+  STEP_TIME,
+  UNIT_TYPES,
+  WORK_TYPES,
+} from '../../constants'
 import { DAY_NIGHT_CONFIG } from '../../config/gameplay'
 import { getBuildingShelterCapacity, hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { getBuildingInteriorEntryCell, isBuildingInteriorSupported } from '../../lib/buildings/interiors'
 import { isBanditUnit } from '../../lib/combat/bandits'
 import {
   canUnitUseCellAsIdleDestination,
+  canUseReservedPassageCellForTransit,
   createReservedPassageCellLookup,
 } from '../../lib/buildings/passageCells'
 import { getCellsAroundPoint } from '../../lib/grid/cells'
+import { getInstanceClosestFreeCellPath, getInstancePath } from '../../lib/grid/movement'
 import { isHeroControlled } from '../../lib/units/unitControl'
-import { isVillagerSleepTime } from '../../lib/units/villagerSchedule'
+import {
+  getMinutesUntilVillagerBed,
+  getMinutesUntilVillagerWorkEnds,
+  isVillagerSleepTime,
+  shouldVillagerBeAsleep,
+  shouldVillagerWork,
+} from '../../lib/units/villagerSchedule'
 import { getEntityCell, getEntitySpaceGrid, sameMapSpace } from '../../lib/mapSpaces'
 import type { GameContextLike } from '../../types/context'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { BuildingEntity, RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
 export const REST_CHECK_INTERVAL_MS = 1000
@@ -24,6 +41,10 @@ const REST_OUTSIDE_SEARCH_RADIUS = 4
 const DEFAULT_UNIT_SIGHT = 7
 const BANDIT_HOME_SLEEP_RADIUS = 8
 const GAME_HOUR_MS = DAY_NIGHT_CONFIG.dayLengthMs / DAY_NIGHT_CONFIG.hoursPerDay
+const GAME_MINUTE_MS = GAME_HOUR_MS / 60
+const AVERAGE_PATH_CELL_DISTANCE_PX = Math.hypot(CELL_WIDTH / 2, CELL_HEIGHT / 2)
+const REST_TRAVEL_BUFFER_RATIO = 1.15
+const MIN_RETURN_TASK_WORK_MINUTES = 30
 
 export type UnitRestSite = {
   location: 'shelter' | 'outside'
@@ -100,6 +121,76 @@ function getShelterScore(unit: UnitEntity, building: BuildingEntity): number {
   return distance(unit, building)
 }
 
+export function estimateTravelMsToCell(unit: UnitEntity, targetCell: RuntimeCell): number | null {
+  const map = unit.context?.map
+  if (!map) return null
+  if (unit.i === targetCell.i && unit.j === targetCell.j) return 0
+  const path = getInstancePath(unit, targetCell.i, targetCell.j, map)
+  if (!path.length) return null
+  return estimatePathTravelMs(unit, path.length)
+}
+
+function estimatePathTravelMs(unit: UnitEntity, pathLength: number): number | null {
+  const speed = getUnitSpeed(unit)
+  if (speed <= 0) return null
+  return ((pathLength * AVERAGE_PATH_CELL_DISTANCE_PX) / speed) * STEP_TIME * REST_TRAVEL_BUFFER_RATIO
+}
+
+function estimateTravelMsToEntity(
+  unit: UnitEntity,
+  target: RuntimeEntity,
+  action: string | null | undefined
+): number | null {
+  const map = unit.context?.map
+  if (!map || !sameMapSpace(unit, target)) return null
+  if (unit.isUnitAtDest?.(action, target)) return 0
+  const passageLookup = createReservedPassageCellLookup(unit.context)
+  const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, target, map, {
+    isCellAllowed: cell => canUnitUseCellAsIdleDestination(unit, cell, { passageLookup }),
+    pathfinding: {
+      canPassThroughSolidCell: cell => canUseReservedPassageCellForTransit(cell, passageLookup),
+    },
+  })
+  if (path.length) return estimatePathTravelMs(unit, path.length)
+  const targetCell = getEntityCell(target, map)
+  return targetCell ? estimateTravelMsToCell(unit, targetCell) : null
+}
+
+function getUnitSpeed(unit: UnitEntity): number {
+  const configuredSpeed = unit.owner?.config?.units?.[unit.type]?.speed
+  return typeof unit.speed === 'number' ? unit.speed : typeof configuredSpeed === 'number' ? configuredSpeed : 1
+}
+
+function estimateTravelMsToReturnTask(unit: UnitEntity, task: UnitResourceDeliveryReturnTask): number | null {
+  const dest = task.dest
+  if (!dest) return null
+  if ('has' in dest) return estimateTravelMsToCell(unit, dest)
+  return estimateTravelMsToEntity(unit, dest, task.action)
+}
+
+export function canResumeVillagerReturnTaskBeforeRest(
+  unit: UnitEntity,
+  task: UnitResourceDeliveryReturnTask | null | undefined
+): boolean {
+  if (!isVillager(unit)) return true
+  if (!shouldVillagerWork(unit)) return false
+  if (!task?.dest) return true
+
+  const travelMs = estimateTravelMsToReturnTask(unit, task)
+  if (travelMs == null) return false
+  const remainingWorkMs = getMinutesUntilVillagerWorkEnds(unit) * GAME_MINUTE_MS
+  const usefulWorkMs = MIN_RETURN_TASK_WORK_MINUTES * GAME_MINUTE_MS
+  return travelMs + usefulWorkMs <= remainingWorkMs
+}
+
+function canReachShelterBeforeBed(unit: UnitEntity, targetCell: RuntimeCell): boolean {
+  if (!isVillager(unit)) return true
+  if (shouldVillagerBeAsleep(unit)) return true
+  const travelMs = estimateTravelMsToCell(unit, targetCell)
+  if (travelMs == null) return false
+  return travelMs <= getMinutesUntilVillagerBed(unit) * GAME_MINUTE_MS
+}
+
 function isVisibleToUnit(unit: UnitEntity, entity: Pick<RuntimeEntity, 'i' | 'j'> & { visible?: boolean }): boolean {
   const map = unit.context?.map
   if (map?.revealEverything || entity.visible) return true
@@ -121,6 +212,7 @@ export function getNearestShelter(unit: UnitEntity): { shelter: BuildingEntity; 
     if (!hasBuildingShelterCapacity(building, unit.owner?.units ?? [], { exclude: unit })) continue
     const targetCell = getShelterEntryCell(unit, building)
     if (!targetCell) continue
+    if (!canReachShelterBeforeBed(unit, targetCell)) continue
     const score = getShelterScore(unit, building)
     if (!best || score < best.score) best = { shelter: building, targetCell, score }
   }
@@ -157,40 +249,35 @@ function isBanditAtHome(unit: UnitEntity): boolean {
   return distance(unit, anchor) <= BANDIT_HOME_SLEEP_RADIUS
 }
 
-function isBuiltTownCenter(building: BuildingEntity | null | undefined): boolean {
-  return Boolean(
-    building &&
-      building.type === BUILDING_TYPES.townCenter &&
-      building.isBuilt &&
-      !building.isDead &&
-      !building.isDestroyed
-  )
-}
-
-function hasDominantLocalBase(unit: UnitEntity): boolean {
-  return Boolean(unit.owner?.buildings?.some(isBuiltTownCenter))
-}
-
-function isDominatedSleepWorld(unit: UnitEntity): boolean {
-  const context = unit.context
-  const worldGraph = context?.getWorldGraph?.()
-  const currentWorldId = context?.getCurrentWorldId?.()
-  if (!worldGraph || !currentWorldId) return true
-
-  const node = worldGraph.nodes[currentWorldId]
-  if (context?.map?.mapType === 'interior' || node?.kind === 'interior') return true
-  if (isBanditUnit(unit)) return isBanditAtHome(unit)
-  if (unit.owner?.isPlayed && currentWorldId === worldGraph.rootWorldId) return true
-  if (unit.owner?.factionId && node?.factionIds?.includes(unit.owner.factionId)) return true
-  return hasDominantLocalBase(unit)
-}
-
 function isExternalOffensiveUnit(unit: UnitEntity): boolean {
   if (isBanditUnit(unit) && isBanditAtHome(unit)) return false
   return Boolean(
     unit.work === WORK_TYPES.attacker &&
       (unit.dest || unit.action === ACTION_TYPES.attack || unit.combatMode === 'attack' || unit.path?.length)
   )
+}
+
+function getPlayedPlayer(unit: UnitEntity): UnitEntity['owner'] | null {
+  return unit.context?.player ?? unit.context?.players?.find(player => player.isPlayed) ?? unit.owner ?? null
+}
+
+function isHostileRestBlocker(unit: UnitEntity, candidate: RuntimeEntity): boolean {
+  if (candidate === unit || candidate.isDead || candidate.isDestroyed) return false
+  if (candidate.family !== FAMILY_TYPES.unit && candidate.family !== FAMILY_TYPES.building) return false
+  if (!sameMapSpace(unit, candidate)) return false
+  const player = getPlayedPlayer(unit)
+  if (!player?.isEnemy?.(candidate.owner)) return false
+  if (player.views && !player.views.isVisible(candidate.i, candidate.j)) return false
+  return distance(unit, candidate) <= (unit.sight ?? DEFAULT_UNIT_SIGHT)
+}
+
+function hasVisiblePlayerEnemyNearby(unit: UnitEntity): boolean {
+  for (const player of unit.context?.players ?? []) {
+    for (const candidate of [...(player.units ?? []), ...(player.buildings ?? [])]) {
+      if (isHostileRestBlocker(unit, candidate)) return true
+    }
+  }
+  return false
 }
 
 function getNowMs(unit: UnitEntity): number {
@@ -257,7 +344,7 @@ export function canStartSleepRest(unit: UnitEntity): boolean {
       !isActiveDefense(unit) &&
       !isExternalOffensiveUnit(unit) &&
       isBanditAtHome(unit) &&
-      isDominatedSleepWorld(unit)
+      !hasVisiblePlayerEnemyNearby(unit)
   )
 }
 

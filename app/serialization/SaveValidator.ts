@@ -114,6 +114,24 @@ export function validateSaveData(data: unknown): SaveRecord {
     validateOptionalFiniteNumber(data.runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(data.runtime.elapsedMs, 'runtime elapsedMs')
     validateOptionalFiniteNumber(data.runtime.savedAt, 'runtime savedAt')
+    if (data.runtime.weather != null) {
+      if (!isObject(data.runtime.weather)) fail('Invalid save file: runtime weather is invalid.')
+      if (data.runtime.weather.phase != null && typeof data.runtime.weather.phase !== 'string') {
+        fail('Invalid save file: runtime weather phase is invalid.')
+      }
+      validateOptionalFiniteNumber(data.runtime.weather.elapsedMs, 'runtime weather elapsedMs')
+      validateOptionalFiniteNumber(data.runtime.weather.flashCooldownMs, 'runtime weather flashCooldownMs')
+      validateOptionalFiniteNumber(data.runtime.weather.lightningBursts, 'runtime weather lightningBursts')
+      validateOptionalFiniteNumber(data.runtime.weather.lightningNextBurstMs, 'runtime weather lightningNextBurstMs')
+      validateOptionalFiniteNumber(data.runtime.weather.phaseEndsAt, 'runtime weather phaseEndsAt')
+      validateOptionalFiniteNumber(data.runtime.weather.precipIntensity, 'runtime weather precipIntensity')
+      validateOptionalFiniteNumber(data.runtime.weather.rainIntensity, 'runtime weather rainIntensity')
+      validateOptionalFiniteNumber(data.runtime.weather.sandIntensity, 'runtime weather sandIntensity')
+      validateOptionalFiniteNumber(data.runtime.weather.snowIntensity, 'runtime weather snowIntensity')
+      validateOptionalFiniteNumber(data.runtime.weather.windIntensity, 'runtime weather windIntensity')
+      validateOptionalFiniteNumber(data.runtime.weather.windTargetX, 'runtime weather windTargetX')
+      validateOptionalFiniteNumber(data.runtime.weather.windX, 'runtime weather windX')
+    }
   }
   if (data.config != null && !isObject(data.config)) {
     fail('Invalid save file: config is invalid.')

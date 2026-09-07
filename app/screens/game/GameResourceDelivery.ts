@@ -10,13 +10,14 @@ import {
   buildingAcceptsInventoryResource,
   unitHasDeliverableResourcesForBuilding,
 } from '../../lib/resources/resourceDelivery'
+import { canResumeVillagerReturnTaskBeforeRest } from '../../services/rest/UnitRestRules'
 import {
   ensureBuildingInteriorSpace,
   getBuildingInteriorSpaceForUnit,
   routeUnitIntoBuildingInteriorSpace,
   routeUnitOutOfBuildingInteriorSpace,
 } from '../../services/BuildingInteriorSpaceSystem'
-import { continueRestAfterDelivery } from '../../services/rest/UnitRestLifecycle'
+import { continueRestAfterDelivery, sendUnitToRest } from '../../services/rest/UnitRestLifecycle'
 import type { GameContextLike } from '../../types/context'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -92,6 +93,10 @@ function finishResourceDelivery(context: GameContextLike, unit: UnitEntity): voi
   context.menu?.refreshInventory?.()
   if (unit.shelterState?.status === 'delivering' && continueRestAfterDelivery(unit)) {
     logGoldMinerFlow(unit, 'delivery.continued-to-shelter', {}, returnTask)
+    return
+  }
+  if (!canResumeVillagerReturnTaskBeforeRest(unit, returnTask) && sendUnitToRest(unit, 'sleep')) {
+    logGoldMinerFlow(unit, 'delivery.rest-started-instead-of-work', {}, returnTask)
     return
   }
   const resumed = resumeVillagerJobIntent(unit, returnTask)

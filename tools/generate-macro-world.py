@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "public" / "maps" / "macro-world-preview.png"
 DEFAULT_JSON_OUTPUT = ROOT / "public" / "maps" / "macro-world-regions.json"
 DEFAULT_CIVILIZATIONS_CONFIG = ROOT / "app" / "config" / "civilizations.ts"
+DEFAULT_LAND_MASK = ROOT / "public" / "maps" / "world-masks" / "continent-001.png"
 
 REGION_MAP_SIZE = 144
 WORLD_REGIONS_W = 5
@@ -218,12 +219,17 @@ def fbm(x: float, y: float, seed: int, octaves: int = 5) -> float:
     return total / amplitude_sum
 
 
+def smoothstep(value: float) -> float:
+    value = max(0.0, min(1.0, value))
+    return value * value * (3 - 2 * value)
+
+
 def make_continent_lobes(rng: random.Random) -> list[tuple[float, float, float, float]]:
     return [
         (rng.uniform(0.18, 0.30), rng.uniform(0.38, 0.54), rng.uniform(0.28, 0.36), rng.uniform(0.42, 0.52)),
         (rng.uniform(0.45, 0.58), rng.uniform(0.43, 0.57), rng.uniform(0.36, 0.44), rng.uniform(0.46, 0.58)),
         (rng.uniform(0.70, 0.82), rng.uniform(0.40, 0.56), rng.uniform(0.28, 0.38), rng.uniform(0.42, 0.55)),
-        (rng.uniform(0.42, 0.58), rng.uniform(0.68, 0.78), rng.uniform(0.38, 0.48), rng.uniform(0.23, 0.32)),
+        (rng.uniform(0.42, 0.58), rng.uniform(0.68, 0.78), rng.uniform(0.38, 0.48), rng.uniform(0.25, 0.34)),
     ]
 
 
@@ -250,53 +256,240 @@ def continent_value(nx: float, ny: float, seed: int, lobes: list[tuple[float, fl
     return value * coast_falloff + boundary_noise * 0.28 + detail_noise * 0.08
 
 
-def biome_sector_at(nx: float, ny: float, seed: int, biomes: list[str]) -> str:
-    if not biomes:
-        raise ValueError("At least one biome sector is required")
-
-    center_x = 0.5 + (fbm(0.5, 0.25, seed + 1601, 2) - 0.5) * 0.08
-    center_y = 0.5 + (fbm(0.25, 0.5, seed + 1607, 2) - 0.5) * 0.08
-    dx = nx - center_x
-    dy = ny - center_y
-
-    angle = math.atan2(dy, dx)
-    angle += math.pi / 2.0
-    angle += (fbm(nx * 4.5, ny * 4.5, seed + 1703, 4) - 0.5) * 1.05
-    angle += (fbm(nx * 13.0, ny * 13.0, seed + 1709, 3) - 0.5) * 0.28
-    normalized = (angle % (math.pi * 2.0)) / (math.pi * 2.0)
-
-    centered = (normalized + 0.5 / len(biomes)) % 1.0
-    index = int(centered * len(biomes)) % len(biomes)
-    return biomes[index]
+def terrain_cell(grid: list[list[str]], x: int, y: int) -> str:
+    return grid[min(WORLD_HEIGHT - 1, max(0, y))][min(WORLD_WIDTH - 1, max(0, x))]
 
 
-def terrain_at(
-    x: int,
-    y: int,
+def count_land_neighbors(land: list[list[bool]], x: int, y: int) -> int:
+    count = 0
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+            nx = x + dx
+            ny = y + dy
+            if 0 <= nx < WORLD_WIDTH and 0 <= ny < WORLD_HEIGHT and land[ny][nx]:
+                count += 1
+    return count
+
+
+def keep_largest_land_component(land: list[list[bool]]) -> None:
+    visited = [[False for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    best: list[tuple[int, int]] = []
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            if not land[y][x] or visited[y][x]:
+                continue
+            visited[y][x] = True
+            component = [(x, y)]
+            queue = [(x, y)]
+            for qx, qy in queue:
+                for nx, ny in ((qx - 1, qy), (qx + 1, qy), (qx, qy - 1), (qx, qy + 1)):
+                    if nx < 0 or ny < 0 or nx >= WORLD_WIDTH or ny >= WORLD_HEIGHT:
+                        continue
+                    if visited[ny][nx] or not land[ny][nx]:
+                        continue
+                    visited[ny][nx] = True
+                    component.append((nx, ny))
+                    queue.append((nx, ny))
+            if len(component) > len(best):
+                best = component
+
+    keep = set(best)
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            land[y][x] = (x, y) in keep
+
+
+def fill_small_water_holes(land: list[list[bool]], max_size: int = 180) -> None:
+    visited = [[False for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            if land[y][x] or visited[y][x]:
+                continue
+            visited[y][x] = True
+            touches_edge = x == 0 or y == 0 or x == WORLD_WIDTH - 1 or y == WORLD_HEIGHT - 1
+            component = [(x, y)]
+            queue = [(x, y)]
+            for qx, qy in queue:
+                for nx, ny in ((qx - 1, qy), (qx + 1, qy), (qx, qy - 1), (qx, qy + 1)):
+                    if nx < 0 or ny < 0 or nx >= WORLD_WIDTH or ny >= WORLD_HEIGHT:
+                        continue
+                    if visited[ny][nx] or land[ny][nx]:
+                        continue
+                    visited[ny][nx] = True
+                    touches_edge = touches_edge or nx == 0 or ny == 0 or nx == WORLD_WIDTH - 1 or ny == WORLD_HEIGHT - 1
+                    component.append((nx, ny))
+                    queue.append((nx, ny))
+            if not touches_edge and len(component) <= max_size:
+                for wx, wy in component:
+                    land[wy][wx] = True
+
+
+def smooth_land_edges(land: list[list[bool]]) -> None:
+    for _pass in range(2):
+        next_land = [row[:] for row in land]
+        for y in range(1, WORLD_HEIGHT - 1):
+            for x in range(1, WORLD_WIDTH - 1):
+                neighbors = count_land_neighbors(land, x, y)
+                if land[y][x] and neighbors <= 2:
+                    next_land[y][x] = False
+                elif not land[y][x] and neighbors >= 6:
+                    next_land[y][x] = True
+        land[:] = next_land
+
+
+def distance_to_water(land: list[list[bool]]) -> list[list[int]]:
+    max_distance = WORLD_WIDTH + WORLD_HEIGHT
+    distances = [[max_distance for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    queue: list[tuple[int, int]] = []
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            if not land[y][x]:
+                distances[y][x] = 0
+                queue.append((x, y))
+    cursor = 0
+    while cursor < len(queue):
+        x, y = queue[cursor]
+        cursor += 1
+        next_distance = distances[y][x] + 1
+        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+            if nx < 0 or ny < 0 or nx >= WORLD_WIDTH or ny >= WORLD_HEIGHT:
+                continue
+            if distances[ny][nx] <= next_distance:
+                continue
+            distances[ny][nx] = next_distance
+            queue.append((nx, ny))
+    return distances
+
+
+def load_land_mask_image(mask_path: Path) -> list[list[bool]] | None:
+    if not mask_path.exists():
+        return None
+    source = Image.open(mask_path).convert("L")
+    bbox = source.point(lambda value: 255 if value >= 128 else 0).getbbox()
+    if bbox:
+        left, top, right, bottom = bbox
+        margin = int(max(right - left, bottom - top) * 0.035)
+        source = source.crop(
+            (
+                max(0, left - margin),
+                max(0, top - margin),
+                min(source.width, right + margin),
+                min(source.height, bottom + margin),
+            )
+        )
+    image = source.resize((WORLD_WIDTH, WORLD_HEIGHT), Image.Resampling.BILINEAR)
+    pixels = image.load()
+    land = [[False for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            land[y][x] = pixels[x, y] >= 128
+
+    keep_largest_land_component(land)
+    fill_small_water_holes(land, max_size=80)
+    keep_largest_land_component(land)
+    return land
+
+
+def build_land_mask(
+    seed: int,
+    continent_lobes: list[tuple[float, float, float, float]],
+    land_mask: Path | None = DEFAULT_LAND_MASK,
+) -> list[list[bool]]:
+    if land_mask:
+        loaded = load_land_mask_image(land_mask if land_mask.is_absolute() else ROOT / land_mask)
+        if loaded:
+            return loaded
+
+    land = [[False for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    for y in range(WORLD_HEIGHT):
+        ny = y / max(1, WORLD_HEIGHT - 1)
+        for x in range(WORLD_WIDTH):
+            nx = x / max(1, WORLD_WIDTH - 1)
+            warp_x = (fbm(nx * 2.2, ny * 2.2, seed + 211, 4) - 0.5) * 0.09
+            warp_y = (fbm(nx * 2.1, ny * 2.1, seed + 307, 4) - 0.5) * 0.09
+            value = continent_value(nx + warp_x, ny + warp_y, seed, continent_lobes)
+            shore_noise = fbm(nx * 34.0, ny * 34.0, seed + 419, 2) - 0.5
+            land[y][x] = value + shore_noise * 0.035 >= 0.015
+
+    smooth_land_edges(land)
+    keep_largest_land_component(land)
+    fill_small_water_holes(land)
+    keep_largest_land_component(land)
+    return land
+
+
+def biome_scores_at(x: int, y: int, seed: int, coast_distance: int) -> dict[str, float]:
+    nx = x / max(1, WORLD_WIDTH - 1)
+    ny = y / max(1, WORLD_HEIGHT - 1)
+    climate_noise = fbm(nx * 3.0, ny * 3.0, seed + 1703, 4) - 0.5
+    dry_noise = fbm(nx * 4.6, ny * 4.6, seed + 1901, 4) - 0.5
+    coastal_humidity = 1.0 - smoothstep(min(1.0, coast_distance / 92.0))
+    west_humidity = 1.0 - smoothstep(nx)
+    east_dryness = smoothstep(nx)
+    north = 1.0 - smoothstep(ny)
+    south = smoothstep(ny)
+
+    humidity = max(0.0, min(1.0, coastal_humidity * 0.48 + west_humidity * 0.34 + climate_noise * 0.28 + 0.26))
+    dryness = max(0.0, min(1.0, east_dryness * 0.42 + south * 0.42 + dry_noise * 0.24 + (1.0 - humidity) * 0.35))
+
+    return {
+        "blackforest": north * 1.1 + humidity * 0.58 + climate_noise * 0.2 - south * 0.38,
+        "temperate": (1.0 - nx) * 0.82 + humidity * 0.55 + (1.0 - abs(ny - 0.48) * 2.0) * 0.28,
+        "steppe": nx * 0.92 + dryness * 0.52 + (1.0 - abs(ny - 0.50) * 2.0) * 0.24,
+        "desert": south * 1.08 + dryness * 0.78 - humidity * 0.42,
+    }
+
+
+def choose_biome(x: int, y: int, seed: int, scores: dict[str, float], biomes: list[str]) -> str:
+    allowed_scores = {biome: scores[biome] for biome in biomes if biome in scores}
+    if not allowed_scores:
+        return biomes[0]
+    values = sorted(allowed_scores.items(), key=lambda item: item[1], reverse=True)
+    best, best_score = values[0]
+    if len(values) == 1:
+        return best
+    second, second_score = values[1]
+    blend = max(0.0, min(1.0, 1.0 - (best_score - second_score) / 0.22))
+    patch_noise = fbm(x * 0.035, y * 0.035, seed + 2309, 3)
+    if blend > 0.35 and patch_noise < 0.32 + blend * 0.24:
+        return second
+    return best
+
+
+def build_macro_terrain_grid(
     seed: int,
     continent_lobes: list[tuple[float, float, float, float]],
     biome_sectors: list[str],
-) -> str:
-    nx = x / WORLD_WIDTH
-    ny = y / WORLD_HEIGHT
+    land_mask: Path | None,
+) -> list[list[str]]:
+    if not biome_sectors:
+        raise ValueError("At least one biome sector is required")
+    land = build_land_mask(seed, continent_lobes, land_mask)
 
-    if (
-        nx < WORLD_WATER_MARGIN
-        or nx > 1.0 - WORLD_WATER_MARGIN
-        or ny < WORLD_WATER_MARGIN
-        or ny > 1.0 - WORLD_WATER_MARGIN
-    ):
-        return "water"
+    for y in range(WORLD_HEIGHT):
+        ny = y / max(1, WORLD_HEIGHT - 1)
+        for x in range(WORLD_WIDTH):
+            nx = x / max(1, WORLD_WIDTH - 1)
+            if not land[y][x]:
+                continue
+            lake_noise = fbm(nx * 11.0, ny * 11.0, seed + 503, 4)
+            basin_noise = fbm(nx * 3.8, ny * 3.8, seed + 809, 3)
+            if 0.18 < nx < 0.84 and 0.20 < ny < 0.80 and lake_noise < 0.145 and basin_noise < 0.34:
+                land[y][x] = False
 
-    if continent_value(nx, ny, seed, continent_lobes) < 0.02:
-        return "water"
-
-    lake_noise = fbm(nx * 13.0, ny * 13.0, seed + 503, 4)
-    basin_noise = fbm(nx * 4.2, ny * 4.2, seed + 809, 3)
-    if 0.15 < nx < 0.88 and 0.18 < ny < 0.82 and lake_noise < 0.20 and basin_noise < 0.39:
-        return "water"
-
-    return biome_sector_at(nx, ny, seed, biome_sectors)
+    fill_small_water_holes(land, max_size=80)
+    keep_largest_land_component(land)
+    distances = distance_to_water(land)
+    terrain = [["water" for _x in range(WORLD_WIDTH)] for _y in range(WORLD_HEIGHT)]
+    for y in range(WORLD_HEIGHT):
+        for x in range(WORLD_WIDTH):
+            if not land[y][x]:
+                continue
+            scores = biome_scores_at(x, y, seed, distances[y][x])
+            terrain[y][x] = choose_biome(x, y, seed, scores, biome_sectors)
+    return terrain
 
 
 def draw_region_grid(draw: ImageDraw.ImageDraw, scale: int) -> None:
@@ -419,9 +612,7 @@ def draw_iso_preview(
     output: Path,
     scale: int,
     labels: bool,
-    seed: int,
-    continent_lobes: list[tuple[float, float, float, float]],
-    biome_sectors: list[str],
+    terrain_grid: list[list[str]],
     settlements: list[dict[str, object]],
 ) -> dict[str, float]:
     bounds = iso_preview_bounds(scale)
@@ -430,7 +621,7 @@ def draw_iso_preview(
     step = PREVIEW_SAMPLE_STEP
     for world_i in range(0, WORLD_HEIGHT, step):
         for world_j in range(0, WORLD_WIDTH, step):
-            terrain = terrain_at(world_j, world_i, seed, continent_lobes, biome_sectors)
+            terrain = terrain_cell(terrain_grid, world_j, world_i)
             x, y = iso_point(world_i, world_j, bounds)
             hw = max(1, step * bounds["halfWidth"])
             hh = max(1, step * bounds["halfHeight"])
@@ -518,9 +709,7 @@ def dominant_region_biome(counts: dict[str, int]) -> str:
 def encoded_region_terrain_rows(
     region_x: int,
     region_y: int,
-    seed: int,
-    continent_lobes: list[tuple[float, float, float, float]],
-    biome_sectors: list[str],
+    terrain_grid: list[list[str]],
 ) -> list[str]:
     rows = []
     for local_i in range(REGION_MAP_SIZE + 1):
@@ -528,7 +717,7 @@ def encoded_region_terrain_rows(
         for local_j in range(REGION_MAP_SIZE + 1):
             world_x = min(WORLD_WIDTH - 1, region_x * REGION_MAP_SIZE + local_j)
             world_y = min(WORLD_HEIGHT - 1, region_y * REGION_MAP_SIZE + local_i)
-            terrain = terrain_at(world_x, world_y, seed, continent_lobes, biome_sectors)
+            terrain = terrain_cell(terrain_grid, world_x, world_y)
             row.append(TERRAIN_CODES[terrain])
         rows.append("".join(row))
     return rows
@@ -538,7 +727,7 @@ def write_regions_json(
     seed: int,
     output: Path,
     biome_sectors: list[str],
-    continent_lobes: list[tuple[float, float, float, float]],
+    terrain_grid: list[list[str]],
     region_counts: list[dict[str, int]],
     settlements: list[dict[str, object]],
     iso_preview: dict[str, object] | None = None,
@@ -561,7 +750,7 @@ def write_regions_json(
                         if biome != "water" and count > 0
                     },
                     "waterRatio": round(counts.get("water", 0) / total, 4),
-                    "terrainRows": encoded_region_terrain_rows(region_x, region_y, seed, continent_lobes, biome_sectors),
+                    "terrainRows": encoded_region_terrain_rows(region_x, region_y, terrain_grid),
                 }
             )
 
@@ -593,6 +782,7 @@ def generate(
     scale: int,
     labels: bool,
     biome_sectors: list[str],
+    land_mask: Path | None,
     json_out: Path | None,
     players: int,
     civilizations: list[str],
@@ -601,6 +791,7 @@ def generate(
 ) -> None:
     rng = random.Random(seed)
     continent_lobes = make_continent_lobes(rng)
+    terrain_grid = build_macro_terrain_grid(seed, continent_lobes, biome_sectors, land_mask)
     sample_width = math.ceil(WORLD_WIDTH / PREVIEW_SAMPLE_STEP)
     sample_height = math.ceil(WORLD_HEIGHT / PREVIEW_SAMPLE_STEP)
     image = Image.new("RGB", (sample_width, sample_height))
@@ -614,13 +805,7 @@ def generate(
         for x in range(sample_width):
             world_x = x * PREVIEW_SAMPLE_STEP
             world_y = y * PREVIEW_SAMPLE_STEP
-            terrain = terrain_at(
-                world_x,
-                world_y,
-                seed,
-                continent_lobes,
-                biome_sectors,
-            )
+            terrain = terrain_cell(terrain_grid, world_x, world_y)
             pixels[x, y] = COLORS[terrain]
             region_x = min(WORLD_REGIONS_W - 1, world_x // REGION_MAP_SIZE)
             region_y = min(WORLD_REGIONS_H - 1, world_y // REGION_MAP_SIZE)
@@ -643,7 +828,7 @@ def generate(
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output)
     iso_output = output.with_name(f"{output.stem}-iso{output.suffix}")
-    iso_bounds = draw_iso_preview(iso_output, scale, labels, seed, continent_lobes, biome_sectors, settlements)
+    iso_bounds = draw_iso_preview(iso_output, scale, labels, terrain_grid, settlements)
     iso_preview = {
         "path": iso_output.name,
         "width": iso_bounds["width"],
@@ -654,7 +839,7 @@ def generate(
         "halfHeight": iso_bounds["halfHeight"],
     }
     if json_out:
-        write_regions_json(seed, json_out, biome_sectors, continent_lobes, region_counts, settlements, iso_preview)
+        write_regions_json(seed, json_out, biome_sectors, terrain_grid, region_counts, settlements, iso_preview)
 
 
 def parse_args() -> argparse.Namespace:
@@ -663,6 +848,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT, help="Output PNG path.")
     parser.add_argument("--scale", type=int, default=1, choices=[1, 2, 3, 4], help="Preview pixel scale.")
     parser.add_argument("--json-out", type=Path, default=DEFAULT_JSON_OUTPUT, help="Macro-region JSON output path.")
+    parser.add_argument(
+        "--land-mask",
+        type=Path,
+        default=DEFAULT_LAND_MASK,
+        help="Black/white source mask used for land and water.",
+    )
+    parser.add_argument("--no-land-mask", action="store_true", help="Use procedural continent generation instead.")
     parser.add_argument(
         "--biomes",
         default=",".join(BIOME_SECTORS),
@@ -689,6 +881,9 @@ def main() -> None:
     args = parse_args()
     output = args.out if args.out.is_absolute() else ROOT / args.out
     json_out = args.json_out if not args.json_out or args.json_out.is_absolute() else ROOT / args.json_out
+    land_mask = None if args.no_land_mask else args.land_mask
+    if land_mask and not land_mask.is_absolute():
+        land_mask = ROOT / land_mask
     biome_sectors = [normalize_biome(biome) for biome in split_csv(args.biomes)]
     unknown_biomes = [biome for biome in biome_sectors if biome not in COLORS]
     if unknown_biomes:
@@ -704,6 +899,7 @@ def main() -> None:
         args.scale,
         labels=not args.no_labels,
         biome_sectors=biome_sectors,
+        land_mask=land_mask,
         json_out=json_out,
         players=players,
         civilizations=civilizations,

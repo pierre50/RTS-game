@@ -58,6 +58,18 @@ export function shouldVillagerRestBeforeBed(unit: UnitEntity): boolean {
   return now >= workEndMinute && now < bedMinute
 }
 
+export function getMinutesUntilVillagerBed(unit: UnitEntity): number {
+  const now = minuteOfDay(unit.context)
+  const { bedMinute } = getVillagerSchedule(unit)
+  return Math.max(0, bedMinute - now)
+}
+
+export function getMinutesUntilVillagerWorkEnds(unit: UnitEntity): number {
+  const now = minuteOfDay(unit.context)
+  const { workEndMinute } = getVillagerSchedule(unit)
+  return Math.max(0, workEndMinute - now)
+}
+
 export function shouldVillagerWork(unit: UnitEntity): boolean {
   const now = minuteOfDay(unit.context)
   const { wakeMinute, workEndMinute } = getVillagerSchedule(unit)

@@ -5,6 +5,7 @@ import { isGameplaySoundSuppressed, playSoundCue } from '../../lib'
 import { getNightAmbienceTargetVolume, NIGHT_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/nightAmbience'
 import { getOceanAmbienceTargetVolume, OCEAN_AMBIENCE_LERP_PER_SECOND } from '../../lib/audio/oceanAmbience'
 import type { GameContextLike } from '../../types/context'
+import type { SaveWeatherState } from '../../types/save'
 
 import {
   AMBIENT_CROSSFADE_MID,
@@ -60,6 +61,14 @@ import {
 } from './WeatherParticles'
 import { startAmbientLoop, type WeatherLoopInstance } from './WeatherAudio'
 import { WeatherColorGrading, type WeatherColorMap } from './WeatherColorGrading'
+
+function finiteOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function isWeatherPhase(phase: unknown): phase is WeatherPhase {
+  return typeof phase === 'string' && phase in WEATHER_COLORS
+}
 
 export class WeatherSystem {
   colorGrading: WeatherColorGrading
@@ -256,6 +265,41 @@ export class WeatherSystem {
     this.phase = phase
     this.phaseEndsAt = this.elapsedMs + phaseDuration(phase, this.random, this.biome)
     if (phase === 'stormBuildUp' || phase === 'rainHeavy') this.flashCooldownMs = randomDuration(2, 7, this.random)
+  }
+
+  serializeState(): SaveWeatherState {
+    return {
+      elapsedMs: this.elapsedMs,
+      flashCooldownMs: this.flashCooldownMs,
+      lightningBursts: this.lightningBursts,
+      lightningNextBurstMs: this.lightningNextBurstMs,
+      phase: this.phase,
+      phaseEndsAt: this.phaseEndsAt,
+      precipIntensity: this.precipIntensity,
+      rainIntensity: this.rainIntensity,
+      sandIntensity: this.sandIntensity,
+      snowIntensity: this.snowIntensity,
+      windIntensity: this.windIntensity,
+      windTargetX: this.windTargetX,
+      windX: this.windX,
+    }
+  }
+
+  applyState(state?: SaveWeatherState | null): void {
+    if (!state) return
+    if (isWeatherPhase(state.phase)) this.phase = state.phase
+    this.elapsedMs = Math.max(0, finiteOr(state.elapsedMs, this.elapsedMs))
+    this.phaseEndsAt = Math.max(this.elapsedMs + 1000, finiteOr(state.phaseEndsAt, this.phaseEndsAt))
+    this.flashCooldownMs = Math.max(0, finiteOr(state.flashCooldownMs, this.flashCooldownMs))
+    this.lightningBursts = Math.max(0, Math.round(finiteOr(state.lightningBursts, this.lightningBursts)))
+    this.lightningNextBurstMs = Math.max(0, finiteOr(state.lightningNextBurstMs, this.lightningNextBurstMs))
+    this.precipIntensity = clamp(finiteOr(state.precipIntensity, this.precipIntensity), 0, 1)
+    this.rainIntensity = clamp(finiteOr(state.rainIntensity, this.rainIntensity), 0, 1)
+    this.snowIntensity = clamp(finiteOr(state.snowIntensity, this.snowIntensity), 0, 1)
+    this.sandIntensity = clamp(finiteOr(state.sandIntensity, this.sandIntensity), 0, 1)
+    this.windIntensity = clamp(finiteOr(state.windIntensity, this.windIntensity), 0, 1)
+    this.windX = clamp(finiteOr(state.windX, this.windX), -12, 12)
+    this.windTargetX = clamp(finiteOr(state.windTargetX, this.windTargetX), -12, 12)
   }
 
   advancePhase(): void {

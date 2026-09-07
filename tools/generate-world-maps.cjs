@@ -17,6 +17,7 @@ const DEFAULT_OUTPUT = path.join(ROOT, 'public', 'maps', 'worlds')
 const DEFAULT_MACRO_SCRIPT = path.join(ROOT, 'tools', 'generate-macro-world.py')
 const DEFAULT_CIVILIZATIONS_CONFIG = path.join(ROOT, 'app', 'config', 'civilizations.ts')
 const DEFAULT_BIOMES = 'blackforest,desert,temperate,steppe'
+const DEFAULT_LAND_MASK = path.join(ROOT, 'public', 'maps', 'world-masks', 'continent-001.png')
 
 const BIOME_ENVIRONMENTS = {
   temperate: 'Temperate',
@@ -54,6 +55,8 @@ function usage(error = '') {
 
   --seed <n>              reproducible world seed (default: current time)
   --out <directory>       output root (default: public/maps/worlds)
+  --land-mask <path>      black/white source mask for land and water (default: public/maps/world-masks/continent-001.png)
+  --no-land-mask          use procedural continent generation instead
   --biomes <a,b,c>        macro biome sectors (default: ${DEFAULT_BIOMES})
   --players <n>           civilization starting villages to plan (default: civilization count, or 0)
   --civilizations <a,b,c> civilization names for planned starting villages, or "all"
@@ -66,6 +69,8 @@ function argumentsFrom(argv) {
   const options = {
     seed: Date.now(),
     out: DEFAULT_OUTPUT,
+    landMask: DEFAULT_LAND_MASK,
+    useLandMask: true,
     biomes: DEFAULT_BIOMES,
     players: 0,
     civilizations: '',
@@ -81,10 +86,15 @@ function argumentsFrom(argv) {
       options.labels = false
       continue
     }
+    if (key === '--no-land-mask') {
+      options.useLandMask = false
+      continue
+    }
     const value = argv[++index]
     if (!value) throw new Error(`Missing value for ${key}`)
     if (key === '--seed') options.seed = Number(value)
     else if (key === '--out') options.out = path.resolve(ROOT, value)
+    else if (key === '--land-mask') options.landMask = path.resolve(ROOT, value)
     else if (key === '--biomes') options.biomes = value
     else if (key === '--players') options.players = Number(value)
     else if (key === '--civilizations') options.civilizations = value
@@ -93,7 +103,8 @@ function argumentsFrom(argv) {
     else throw new Error(`Unknown option: ${key}`)
   }
   if (!Number.isFinite(options.seed)) throw new Error('--seed must be numeric')
-  if (!Number.isInteger(options.players) || options.players < 0) throw new Error('--players must be a positive integer or zero')
+  if (!Number.isInteger(options.players) || options.players < 0)
+    throw new Error('--players must be a positive integer or zero')
   if (!Number.isInteger(options.banditCamps) || options.banditCamps < 0) {
     throw new Error('--bandit-camps must be a positive integer or zero')
   }
@@ -131,7 +142,18 @@ function environmentForRegion(region) {
   return BIOME_ENVIRONMENTS[region.dominantBiome] ?? DEFAULT_ENVIRONMENT_ID
 }
 
-function createMacroPlan({ seed, out, biomes, labels, players, civilizations, banditCamps, settlementDisparity }) {
+function createMacroPlan({
+  seed,
+  out,
+  landMask,
+  useLandMask,
+  biomes,
+  labels,
+  players,
+  civilizations,
+  banditCamps,
+  settlementDisparity,
+}) {
   const worldDirectory = path.join(out, `world-${seed}`)
   const previewPath = path.join(worldDirectory, 'macro-world-preview.png')
   const planPath = path.join(worldDirectory, 'macro-world-regions.json')
@@ -145,6 +167,7 @@ function createMacroPlan({ seed, out, biomes, labels, players, civilizations, ba
     previewPath,
     '--json-out',
     planPath,
+    ...(useLandMask ? ['--land-mask', landMask] : ['--no-land-mask']),
     '--biomes',
     biomes,
     '--players',

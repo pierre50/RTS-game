@@ -176,10 +176,27 @@ export type SavePlayerState = PlayerSetupConfig & {
   aiState?: SavedAIState
 }
 
+export type SaveWeatherState = {
+  elapsedMs?: number
+  flashCooldownMs?: number
+  lightningBursts?: number
+  lightningNextBurstMs?: number
+  phase?: string
+  phaseEndsAt?: number
+  precipIntensity?: number
+  rainIntensity?: number
+  sandIntensity?: number
+  snowIntensity?: number
+  windIntensity?: number
+  windTargetX?: number
+  windX?: number
+}
+
 type SaveRuntimeState = {
   dayNightElapsedMs?: number
   elapsedMs?: number
   savedAt?: number
+  weather?: SaveWeatherState | null
 }
 
 type SaveWorldState = {

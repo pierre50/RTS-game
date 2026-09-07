@@ -4,7 +4,7 @@ import { isHeroControlled } from '../units/unitControl'
 import type { ResourceAmount } from '../../types/common'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
 
-const UNIT_RESOURCE_CARRY_CAPACITY = 10
+const UNIT_RESOURCE_DELIVERY_BATCH_SIZE = 10
 
 type ResourceKey = keyof ResourceAmount
 
@@ -29,7 +29,7 @@ export function getResourceKeyForLoadingType(loadingType: string | null | undefi
   return RESOURCE_KEYS.includes(loadingType as (typeof RESOURCE_KEYS)[number]) ? (loadingType as ResourceKey) : null
 }
 
-function getUnitCarriedResourceAmount(unit: UnitEntity, resource: ResourceKey): number {
+export function getUnitCarriedResourceAmount(unit: UnitEntity, resource: ResourceKey): number {
   return Math.max(0, Math.floor(unit.inventory?.resources?.[resource] ?? 0))
 }
 
@@ -37,11 +37,10 @@ function getUnitCarriedResourceKeys(unit: UnitEntity): ResourceKey[] {
   return RESOURCE_KEYS.filter(resource => getUnitCarriedResourceAmount(unit, resource) > 0)
 }
 
-export function getUnitResourceCapacityRemaining(unit: UnitEntity, loadingType: string): number {
+export function getUnitResourceCapacityRemaining(_unit: UnitEntity, loadingType: string): number {
   const resource = getResourceKeyForLoadingType(loadingType)
   if (!resource) return 0
-  if (isHeroControlled(unit)) return Number.POSITIVE_INFINITY
-  return Math.max(0, UNIT_RESOURCE_CARRY_CAPACITY - getUnitCarriedResourceAmount(unit, resource))
+  return Number.POSITIVE_INFINITY
 }
 
 export function buildingAcceptsInventoryResource(
@@ -69,10 +68,20 @@ function buildingAcceptsAllUnitResources(building: BuildingEntity, unit: UnitEnt
   return resources.length > 0 && resources.every(resource => buildingAcceptsInventoryResource(building, resource))
 }
 
-export function unitShouldDeliverResource(unit: UnitEntity, loadingType: string): boolean {
+export function unitShouldDeliverResource(
+  unit: UnitEntity,
+  loadingType: string,
+  previousAmount: number | null = null
+): boolean {
   if (unit.type !== UNIT_TYPES.villager || isHeroControlled(unit)) return false
   const resource = getResourceKeyForLoadingType(loadingType)
-  return Boolean(resource && getUnitCarriedResourceAmount(unit, resource) >= UNIT_RESOURCE_CARRY_CAPACITY)
+  if (!resource) return false
+  const currentAmount = getUnitCarriedResourceAmount(unit, resource)
+  if (previousAmount == null) return currentAmount >= UNIT_RESOURCE_DELIVERY_BATCH_SIZE
+  const currentBatch = Math.floor(currentAmount / UNIT_RESOURCE_DELIVERY_BATCH_SIZE)
+  const previousBatch =
+    Math.floor(Math.max(0, Math.floor(previousAmount)) / UNIT_RESOURCE_DELIVERY_BATCH_SIZE)
+  return currentBatch > previousBatch
 }
 
 export function findResourceDeliveryTarget(unit: UnitEntity): BuildingEntity | null {

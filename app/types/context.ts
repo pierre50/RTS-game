@@ -10,7 +10,7 @@ import type {
 } from './entities'
 import type { MenuButtonSpec, MinimapPlayerCanvas, TooltipContent, TooltipSource } from './ui'
 import type { HeroEquippedItem } from './heroTools'
-import type { FactionSave, SerializedSave, WorldGraphSave } from './save'
+import type { FactionSave, SaveWeatherState, SerializedSave, WorldGraphSave } from './save'
 import type { Bounds } from './geometry'
 
 export interface DayNightStateLike {
@@ -43,11 +43,13 @@ interface DayNightSystemLike {
 }
 
 interface WeatherSystemLike {
+  applyState?(state?: SaveWeatherState | null): void
   debugState?(): object
   forcePhase?(phase: string): void
   getDarknessLevel?(): number
   getLightningBrightness?(): number
   phase?: string
+  serializeState?(): SaveWeatherState
 }
 
 interface TributeRaidSystemLike {

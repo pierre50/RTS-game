@@ -4,6 +4,7 @@ import { getEntityMapPoint } from '../../lib/mapSpaces'
 import {
   addChildWorldToCampaign,
   createInitialCampaignSave,
+  enterCampaignWorld,
   updateCurrentWorldState,
 } from '../../serialization/CampaignSave'
 import { serializeGame } from '../../serialization/SaveSerializer'
@@ -40,9 +41,11 @@ export type WorldRegionTravelGame = TravelPartyGame & {
     map?: RuntimeMapInstance | null
     menu?: GameContextLike['menu'] | null
     player?: GameContextLike['player'] | null
+    weather?: GameContextLike['weather'] | null
   }
   _autosaveCampaign(): void
   _bootFromConfig(config: GameConfig, options?: { dayNightElapsedMs?: number | null }): Promise<void>
+  _bootFromSave(json: SerializedSave): Promise<void>
   _destroyRuntime(options?: { preserveLoadingScreen?: boolean }): void
   _gameContext(): GameContextLike
   _loadRequiredWorldMapBlueprint(options: {
@@ -81,6 +84,26 @@ function worldRegionTravelConfig(snapshot: SerializedSave, worldRegionId: string
   }
 }
 
+function savedWorldStateForTravel(
+  campaign: CampaignSave | null,
+  worldRegionId: string,
+  snapshot: SerializedSave,
+  dayNightElapsedMs: number | null
+): SerializedSave | null {
+  const state = campaign?.worlds[worldRegionId]?.state
+  if (!state) return null
+  const nextState = structuredClone(state)
+  const weather = snapshot.runtime?.weather ?? null
+  if (dayNightElapsedMs != null || weather) {
+    nextState.runtime = {
+      ...(nextState.runtime ?? {}),
+      ...(dayNightElapsedMs != null ? { dayNightElapsedMs } : {}),
+      ...(weather ? { weather: structuredClone(weather) } : {}),
+    }
+  }
+  return nextState
+}
+
 function focusTravelHero(game: WorldRegionTravelGame): void {
   const hero = runtimeHeroUnit(game)
   if (!hero) return
@@ -99,7 +122,7 @@ function finishWorldRegionArrival(
   const arrivedState = serializeGame(game._gameContext())
   const baseCampaign = previousCampaign ?? createInitialCampaignSave(departureState)
   game._campaignSave = baseCampaign.worlds[worldRegionId]
-    ? updateCurrentWorldState({ ...baseCampaign, currentWorldId: worldRegionId }, arrivedState)
+    ? updateCurrentWorldState(enterCampaignWorld(baseCampaign, worldRegionId), arrivedState)
     : addChildWorldToCampaign(baseCampaign, arrivedState, {
         kind: 'world',
         name: worldRegionId,
@@ -118,11 +141,19 @@ async function bootWorldRegionForTravel(
   snapshot: SerializedSave,
   worldRegionId: string,
   dayNightElapsedMs: number | null
-): Promise<void> {
+): Promise<{ freshWorld: boolean }> {
   const nextConfig = worldRegionTravelConfig(snapshot, worldRegionId)
+  const savedState = savedWorldStateForTravel(game._campaignSave, worldRegionId, snapshot, dayNightElapsedMs)
   game._destroyRuntime({ preserveLoadingScreen: true })
+  if (savedState) {
+    game.config = savedState.config ?? nextConfig
+    await game._bootFromSave(savedState)
+    return { freshWorld: false }
+  }
   game.config = nextConfig
   await game._bootFromConfig(nextConfig, { dayNightElapsedMs })
+  game.context.weather?.applyState?.(snapshot.runtime?.weather)
+  return { freshWorld: true }
 }
 
 function findDebugTeleportCell(game: WorldRegionTravelGame, worldI: number, worldJ: number): RuntimeCell | null {
@@ -169,9 +200,9 @@ export async function travelToWorldRegion(
   context.controls?.setRuntimeInputEnabled?.(false)
   try {
     await transition.concealTo(departurePoint)
-    await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+    const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
     const arrivalCell = arrivalCellForRegionEdge(game._map(), edge, previousCell)
-    applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld: true })
+    applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
     finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
     await transition.revealFrom(getWorldRevealPoint(game))
   } finally {
@@ -218,9 +249,9 @@ export async function debugTeleportWorldMap(
 
   context.controls?.setRuntimeInputEnabled?.(false)
   try {
-    await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+    const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
     const cell = findDebugTeleportCell(game, worldI, worldJ)
-    applyTravelPartyToRuntime(game, party, cell, { freshWorld: true })
+    applyTravelPartyToRuntime(game, party, cell, { freshWorld })
     finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
   } finally {
     game.context.controls?.setRuntimeInputEnabled?.(true)
