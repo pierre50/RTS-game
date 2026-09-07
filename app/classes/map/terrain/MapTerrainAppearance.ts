@@ -13,7 +13,12 @@ export function formatTerrainWaterBorder(map: TerrainMap): void {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
       if (cell.category === 'Water') continue
-      const flags = getNeighborFlags(map.grid, i, j, (neighbor: TerrainCell | undefined) => neighbor?.category === 'Water')
+      const flags = getNeighborFlags(
+        map.grid,
+        i,
+        j,
+        (neighbor: TerrainCell | undefined) => neighbor?.category === 'Water'
+      )
       const frame = getWaterBorderFrame(flags)
       if (frame) cell.setWaterBorder?.(BORDER_SHEETS.waterDesertSand, frame)
     }
@@ -90,21 +95,30 @@ export function rebuildTerrainAppearance(map: TerrainMap, protectedReliefCells: 
 
 export function formatTerrainPatchBorders(map: TerrainMap): void {
   const typeToFormat = ['Grass', 'Jungle', 'DarkForest']
+  const grassBorderTypes = ['DarkForest', 'Jungle'] as const
 
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
-      if (cell.type !== 'Desert' && cell.type !== 'Dirt' && cell.type !== 'Snow') continue
-
       const groundType = cell.type as PatchBorderGroundType
       const n = map.grid[i - 1]?.[j]
       const s = map.grid[i + 1]?.[j]
       const w = map.grid[i]?.[j - 1]
       const e = map.grid[i]?.[j + 1]
-      if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setPatchBorder?.('east', groundType)
-      if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setPatchBorder?.('west', groundType)
-      if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setPatchBorder?.('south', groundType)
-      if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setPatchBorder?.('north', groundType)
+
+      if (cell.type === 'Desert' || cell.type === 'Dirt' || cell.type === 'Snow') {
+        if (n && typeToFormat.includes(n.type) && !n.waterBorder) n.setPatchBorder?.('east', groundType)
+        if (s && typeToFormat.includes(s.type) && !s.waterBorder) s.setPatchBorder?.('west', groundType)
+        if (w && typeToFormat.includes(w.type) && !w.waterBorder) w.setPatchBorder?.('south', groundType)
+        if (e && typeToFormat.includes(e.type) && !e.waterBorder) e.setPatchBorder?.('north', groundType)
+      }
+
+      if (grassBorderTypes.includes(cell.type as (typeof grassBorderTypes)[number])) {
+        if (n?.type === 'Grass' && !n.waterBorder) n.setPatchBorder?.('east', groundType)
+        if (s?.type === 'Grass' && !s.waterBorder) s.setPatchBorder?.('west', groundType)
+        if (w?.type === 'Grass' && !w.waterBorder) w.setPatchBorder?.('south', groundType)
+        if (e?.type === 'Grass' && !e.waterBorder) e.setPatchBorder?.('north', groundType)
+      }
     }
   }
 }

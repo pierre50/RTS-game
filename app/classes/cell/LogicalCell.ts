@@ -22,7 +22,7 @@ export type LogicalCellContext = {
 
 export type TerrainAppearance = {
   patchBorders?: Set<string> | null
-  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
+  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
   relief?: { index: number; elevation: number } | null
   waterBorder?: { resourceName: string; index: number } | null
 }

@@ -23,12 +23,14 @@ type BorderVariantMap = Record<number, number[]>
 
 const BORDER_SHEETS = {
   desertRelief: 'desert-relief',
+  darkGrassRelief: 'dark-grass-relief',
   dirtRelief: 'dirt-relief',
+  jungleRelief: 'jungle-relief',
   snowRelief: 'snow-relief',
 } as const
 const TERRAIN_TEXTURE_DEBUG = false
 
-type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
+type PatchBorderGroundType = 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'
 
 type TerrainDefinition = {
   category?: string
@@ -249,11 +251,15 @@ export class CellTerrain {
     const alreadySet = cell.children.some(c => c.type === 'border' && c.direction === direction)
     if (alreadySet) return
     const resourceName =
-      groundType === 'Dirt'
-        ? BORDER_SHEETS.dirtRelief
-        : groundType === 'Snow'
-          ? BORDER_SHEETS.snowRelief
-          : BORDER_SHEETS.desertRelief
+      groundType === 'DarkForest'
+        ? BORDER_SHEETS.darkGrassRelief
+        : groundType === 'Dirt'
+          ? BORDER_SHEETS.dirtRelief
+          : groundType === 'Jungle'
+            ? BORDER_SHEETS.jungleRelief
+            : groundType === 'Snow'
+              ? BORDER_SHEETS.snowRelief
+              : BORDER_SHEETS.desertRelief
     const cellSpriteTextureName = cell.terrainTextureName
     if (!cellSpriteTextureName) return
     // Relief formatting runs before biome borders. The base terrain reference is

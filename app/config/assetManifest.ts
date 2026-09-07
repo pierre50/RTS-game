@@ -61,7 +61,9 @@ export const ASSET_BUNDLES: Record<string, AssetBundle> = {
   border: {
     'desert-sand-water-border': 'assets/border/desert-sand-water-border/texture.json',
     'desert-relief': 'assets/border/desert-relief/texture.json',
+    'dark-grass-relief': 'assets/border/dark-grass-relief/texture.json',
     'dirt-relief': 'assets/border/dirt-relief/texture.json',
+    'jungle-relief': 'assets/border/jungle-relief/texture.json',
     'snow-relief': 'assets/border/snow-relief/texture.json',
     'water-surface-filter': 'assets/border/water-surface-filter/texture.json',
   },

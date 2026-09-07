@@ -20,7 +20,7 @@ type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number }
   relief?: { index: number; elevation: number }
   patchBorders?: string[]
-  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
+  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
 }
 export type TerrainSourceCell = RuntimeCell & {
   _terrainAppearance: TerrainAppearance

@@ -150,7 +150,7 @@ export class GenerationCell extends LogicalCell implements RuntimeCell {
     this.inclined = true
   }
 
-  setPatchBorder(direction: string, groundType: 'Desert' | 'Dirt' | 'Snow' = 'Desert'): void {
+  setPatchBorder(direction: string, groundType: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' = 'Desert'): void {
     if (!this._terrainAppearance.patchBorders) this._terrainAppearance.patchBorders = new Set()
     this._terrainAppearance.patchBorders.add(direction)
     this._terrainAppearance.patchBorderGroundType = groundType

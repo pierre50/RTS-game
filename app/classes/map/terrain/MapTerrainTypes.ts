@@ -3,7 +3,7 @@ import type { TextureRef } from '../../../lib'
 import type { GridPosition } from '../../../types/grid'
 import type * as MapTypes from '../../../types/map'
 
-export type PatchBorderGroundType = 'Desert' | 'Dirt' | 'Snow'
+export type PatchBorderGroundType = 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'
 
 export type TerrainCell = MapTypes.RuntimeCell & {
   category?: string

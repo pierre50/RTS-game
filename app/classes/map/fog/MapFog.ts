@@ -58,7 +58,7 @@ type TerrainAppearance = {
   waterBorder?: { resourceName: string; index: number } | null
   relief?: { index: number; elevation: number } | null
   patchBorders?: Iterable<string> | null
-  patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
+  patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
 }
 
 type TerrainDecoration = {
@@ -84,7 +84,7 @@ type FogGridCell = MapTypes.RuntimeCell & {
   getTerrainBakeChildren?(): ContainerChild[]
   setWaterBorder?(resourceName: string, index: number): void
   setReliefBorder?(index: number, elevation: number): void
-  setPatchBorder?(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void
+  setPatchBorder?(direction: string, groundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'): void
 }
 
 type FogContainerCell = FogGridCell & ContainerChild
@@ -252,7 +252,12 @@ export class MapFog {
     this.map.context.performance?.record?.('terrainBake.renderTextures', performance.now() - renderStartedAt)
   }
 
-  _cleanupTerrainBakeContainers({ terrainContainer, backfillContainer, backfillSprites, terrainSets }: TerrainBakeContainers): void {
+  _cleanupTerrainBakeContainers({
+    terrainContainer,
+    backfillContainer,
+    backfillSprites,
+    terrainSets,
+  }: TerrainBakeContainers): void {
     const cleanupStartedAt = performance.now()
     for (const sprite of backfillSprites) sprite.destroy()
     backfillContainer.destroy()
@@ -282,7 +287,10 @@ export class MapFog {
 
     const destroyStartedAt = performance.now()
     terrainContainer.destroy({ children: true, texture: false, textureSource: false })
-    this.map.context.performance?.record?.('cellCompaction.destroyTerrainContainer', performance.now() - destroyStartedAt)
+    this.map.context.performance?.record?.(
+      'cellCompaction.destroyTerrainContainer',
+      performance.now() - destroyStartedAt
+    )
 
     this._relinkCompactedCells(replacements)
     const indexStartedAt = performance.now()

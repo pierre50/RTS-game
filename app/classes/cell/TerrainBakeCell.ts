@@ -47,12 +47,17 @@ export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCell
   category?: string
   color?: string | number
   assets: TextureRef[]
-  solid!: boolean; inclined!: boolean; border!: boolean
-  waterBorder!: boolean; terrainHidden!: boolean
+  solid!: boolean
+  inclined!: boolean
+  border!: boolean
+  waterBorder!: boolean
+  terrainHidden!: boolean
   z: number
   viewed!: boolean
   viewBy: Set<VisionViewerRef>
-  has: RuntimeEntity | null; corpses: Set<RuntimeEntity>; fogSprites: FogSpriteMemory[]
+  has: RuntimeEntity | null
+  corpses: Set<RuntimeEntity>
+  fogSprites: FogSpriteMemory[]
   _hasFog!: boolean
   terrainTextureName: string
   terrainSet: ContainerChild | null
@@ -62,7 +67,7 @@ export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCell
   unregisterWaterBorderSurface: (() => void) | null
   _terrainAppearance: {
     patchBorders: Set<string> | null
-    patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
+    patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
   }
@@ -153,14 +158,33 @@ export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCell
   removeFogBuilding(): void {}
   setFogChildren(): void {}
 
-  setPatchBorder(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void { return this.cellTerrain.setPatchBorder(direction, groundType) }
-  resetTerrainAppearance(): void { return this.cellTerrain.resetTerrainAppearance() }
-  setTerrainType(type: string): void { this.cellTerrain.setTerrainType(type); this.map.invalidateWaterOverlay?.() }
-  setWaterBorder(resourceName: string, index: number): void { this.cellTerrain.setWaterBorder(resourceName, index); this.map.invalidateWaterOverlay?.() }
-  setReliefBorder(index: number, elevation?: number): void { return this.cellTerrain.setReliefBorder(index, elevation) }
-  setWater(): void { this.cellTerrain.setWater(); this.map.invalidateWaterOverlay?.() }
-  fillReliefCellsAroundCell(): void { return this.cellTerrain.fillReliefCellsAroundCell() }
-  setCellLevel(level: number, cpt?: number): void { return this.cellTerrain.setCellLevel(level, cpt) }
+  setPatchBorder(direction: string, groundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'): void {
+    return this.cellTerrain.setPatchBorder(direction, groundType)
+  }
+  resetTerrainAppearance(): void {
+    return this.cellTerrain.resetTerrainAppearance()
+  }
+  setTerrainType(type: string): void {
+    this.cellTerrain.setTerrainType(type)
+    this.map.invalidateWaterOverlay?.()
+  }
+  setWaterBorder(resourceName: string, index: number): void {
+    this.cellTerrain.setWaterBorder(resourceName, index)
+    this.map.invalidateWaterOverlay?.()
+  }
+  setReliefBorder(index: number, elevation?: number): void {
+    return this.cellTerrain.setReliefBorder(index, elevation)
+  }
+  setWater(): void {
+    this.cellTerrain.setWater()
+    this.map.invalidateWaterOverlay?.()
+  }
+  fillReliefCellsAroundCell(): void {
+    return this.cellTerrain.fillReliefCellsAroundCell()
+  }
+  setCellLevel(level: number, cpt?: number): void {
+    return this.cellTerrain.setCellLevel(level, cpt)
+  }
 
   destroy(options?: Parameters<ContainerChild['destroy']>[0]): void {
     this.unregisterWaterBorderSurface?.()

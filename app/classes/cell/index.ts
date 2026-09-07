@@ -69,7 +69,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   _terrainRenderResourcesReleased?: boolean
   _terrainAppearance: {
     patchBorders: Set<string> | null
-    patchBorderGroundType?: 'Desert' | 'Dirt' | 'Snow' | null
+    patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
     relief: { index: number; elevation: number } | null
     waterBorder: { resourceName: string; index: number } | null
   }
@@ -184,7 +184,7 @@ export class Cell extends Container implements RuntimeCell, FogCellLike, Terrain
   }
 
   // Terrain delegates
-  setPatchBorder(direction: string, groundType?: 'Desert' | 'Dirt' | 'Snow'): void {
+  setPatchBorder(direction: string, groundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'): void {
     return this.cellTerrain.setPatchBorder(direction, groundType)
   }
   resetTerrainAppearance(): void {
