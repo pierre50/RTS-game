@@ -67,14 +67,15 @@ function makeUnit(extra = {}) {
   }
 }
 
-test('xp thresholds follow the 25·L·(L+1) curve and clamp at the max level', () => {
+test('xp thresholds start at displayed level 1 and clamp at the max level', () => {
   const { getXpForLevel, XP_MAX_LEVEL } = loadExperience()
 
   assert.equal(getXpForLevel(0), 0)
-  assert.equal(getXpForLevel(1), 50)
-  assert.equal(getXpForLevel(2), 150)
-  assert.equal(getXpForLevel(3), 300)
-  assert.equal(getXpForLevel(XP_MAX_LEVEL), 25 * XP_MAX_LEVEL * (XP_MAX_LEVEL + 1))
+  assert.equal(getXpForLevel(1), 0)
+  assert.equal(getXpForLevel(2), 50)
+  assert.equal(getXpForLevel(3), 150)
+  assert.equal(getXpForLevel(4), 300)
+  assert.equal(getXpForLevel(XP_MAX_LEVEL), 25 * (XP_MAX_LEVEL - 1) * XP_MAX_LEVEL)
   assert.equal(getXpForLevel(999), getXpForLevel(XP_MAX_LEVEL))
 })
 
@@ -82,14 +83,15 @@ test('levels derive from accumulated xp with a hard cap', () => {
   const { getUnitLevel, XP_MAX_LEVEL } = loadExperience()
   const unit = makeUnit()
 
+  assert.equal(getUnitLevel(unit, 'mining'), 1)
   unit.experience.mining = 49
-  assert.equal(getUnitLevel(unit, 'mining'), 0)
+  assert.equal(getUnitLevel(unit, 'mining'), 1)
   unit.experience.mining = 50
-  assert.equal(getUnitLevel(unit, 'mining'), 1)
-  unit.experience.mining = 149
-  assert.equal(getUnitLevel(unit, 'mining'), 1)
-  unit.experience.mining = 150
   assert.equal(getUnitLevel(unit, 'mining'), 2)
+  unit.experience.mining = 149
+  assert.equal(getUnitLevel(unit, 'mining'), 2)
+  unit.experience.mining = 150
+  assert.equal(getUnitLevel(unit, 'mining'), 3)
   unit.experience.mining = 1_000_000
   assert.equal(getUnitLevel(unit, 'mining'), XP_MAX_LEVEL)
 })
@@ -167,7 +169,7 @@ test('equipment tier follows a flat xp curve, soldier-only, capped by age', () =
   assert.equal(getUnitEquipmentTier(infantry), 10)
 })
 
-test('overall level drives reflex, energy and defense multipliers', () => {
+test('earned levels above the level-1 baseline drive reflex, energy and defense multipliers', () => {
   const {
     getEnergyRegenLevelMultiplier,
     getEnergyTotalLevelMultiplier,
@@ -183,19 +185,22 @@ test('overall level drives reflex, energy and defense multipliers', () => {
   assert.equal(getParryChanceBonus(unit), 0)
 
   unit.experience.melee = getXpForLevel(10)
-  assert.equal(getReflexAttackRecoveryMultiplier(unit), 1 - 10 * 0.025)
-  assert.equal(getEnergyTotalLevelMultiplier(unit), 1 + 10 * 0.04)
-  assert.equal(getEnergyRegenLevelMultiplier(unit), 1 + 10 * 0.02)
-  assert.equal(getParryChanceBonus(unit), 10 * 0.035)
+  assert.equal(getReflexAttackRecoveryMultiplier(unit), 1 - 9 * 0.025)
+  assert.equal(getEnergyTotalLevelMultiplier(unit), 1 + 9 * 0.04)
+  assert.equal(getEnergyRegenLevelMultiplier(unit), 1 + 9 * 0.02)
+  assert.equal(getParryChanceBonus(unit), 9 * 0.035)
 
   // The reflex multiplier never drops below its floor, however high the level climbs.
   unit.experience.melee = getXpForLevel(20)
-  assert.equal(getReflexAttackRecoveryMultiplier(unit), 0.5)
+  assert.equal(getReflexAttackRecoveryMultiplier(unit), 1 - 19 * 0.025)
 })
 
 test('debug level setter writes exact melee xp and clamps to the max level', () => {
   const { getUnitLevel, setUnitDebugLevel, XP_CATEGORIES, XP_MAX_LEVEL, getXpForLevel } = loadExperience()
   const unit = makeUnit()
+
+  assert.equal(setUnitDebugLevel(unit, 0), 1)
+  assert.equal(getUnitLevel(unit, XP_CATEGORIES.melee), 1)
 
   assert.equal(setUnitDebugLevel(unit, 4), 4)
   assert.equal(unit.experience[XP_CATEGORIES.melee], getXpForLevel(4))
@@ -212,7 +217,7 @@ test('debug level setter writes role skills for equipment progression', () => {
   setUnitDebugLevel(infantry, 4)
 
   assert.equal(infantry.experience[XP_CATEGORIES.melee] + infantry.experience[XP_CATEGORIES.defense], getXpForLevel(4))
-  assert.equal(getUnitLevel(infantry, XP_CATEGORIES.defense), 2)
+  assert.equal(getUnitLevel(infantry, XP_CATEGORIES.defense), 3)
   assert.equal(getUnitEquipmentLevel(infantry), 4)
 })
 
@@ -284,12 +289,12 @@ test('level-up shows gold feedback and refreshes the selected unit panel', () =>
   grantUnitXp(unit, 'mining', 49)
   assert.deepEqual(feedbackCalls, [])
   assert.deepEqual(editorPanelUpdates, [])
-  assert.deepEqual(infoUpdates, [{ id: 'xp-mining-text', value: '0 (49/50)' }])
+  assert.deepEqual(infoUpdates, [{ id: 'xp-mining-text', value: '1 (49/50)' }])
 
   grantUnitXp(unit, 'mining', 1)
   assert.equal(feedbackCalls.length, 1)
   assert.equal(feedbackCalls[0].target, unit)
-  assert.equal(feedbackCalls[0].text, 'levelShort 1')
+  assert.equal(feedbackCalls[0].text, 'levelShort 2')
   assert.deepEqual(editorPanelUpdates, [unit])
   assert.equal(infoUpdates.length, 1)
 })
@@ -308,9 +313,9 @@ test('gather bonus follows the category of the current work', () => {
   const unit = makeUnit({ work: constants.WORK_TYPES.stoneminer })
 
   assert.equal(getGatherXpBonus(unit), 0)
-  unit.experience.mining = getXpForLevel(3)
+  unit.experience.mining = getXpForLevel(4)
   assert.equal(getGatherXpBonus(unit), 1)
-  unit.experience.mining = getXpForLevel(6)
+  unit.experience.mining = getXpForLevel(7)
   assert.equal(getGatherXpBonus(unit), 2)
 
   // stone and gold mining share the same skill bucket
@@ -326,15 +331,15 @@ test('combat, healing and build bonuses scale with the category level', () => {
   const unit = makeUnit()
 
   assert.equal(getCombatXpBonus(unit, 'melee'), 0)
-  unit.experience.melee = getXpForLevel(4)
+  unit.experience.melee = getXpForLevel(5)
   assert.equal(getCombatXpBonus(unit, 'melee'), 2)
   assert.equal(getCombatXpBonus(unit, 'ranged'), 0)
 
-  unit.experience.healing = getXpForLevel(2)
+  unit.experience.healing = getXpForLevel(3)
   assert.equal(getHealingXpBonus(unit), 1)
 
   assert.equal(getBuildRateXpMultiplier(unit), 1)
-  unit.experience.building = getXpForLevel(4)
+  unit.experience.building = getXpForLevel(5)
   assert.equal(getBuildRateXpMultiplier(unit), 1.2)
 })
 
@@ -343,12 +348,12 @@ test('critical hit chance starts low, scales with combat level, and caps', () =>
   const unit = makeUnit()
 
   assert.equal(getCriticalHitChance(unit, 'melee'), 0.05)
-  unit.experience.melee = getXpForLevel(5)
+  unit.experience.melee = getXpForLevel(6)
   assert.equal(getCriticalHitChance(unit, 'melee'), 0.1)
   assert.equal(getCriticalHitChance(unit, 'ranged'), 0.05)
 
   unit.experience.melee = getXpForLevel(XP_MAX_LEVEL)
-  assert.equal(getCriticalHitChance(unit, 'melee'), 0.25)
+  assert.equal(getCriticalHitChance(unit, 'melee'), 0.24)
 })
 
 test('loading types and works map to the expected xp categories', () => {
@@ -377,8 +382,8 @@ test('experience entries are sorted by xp and formatted with progress', () => {
     entries.map(entry => entry.category),
     ['mining', 'melee']
   )
-  assert.equal(entries[0].level, 3)
-  assert.equal(formatXpProgressText(unit, 'mining'), '3 (0/200)')
+  assert.equal(entries[0].level, 4)
+  assert.equal(formatXpProgressText(unit, 'mining'), '4 (0/200)')
 
   unit.experience.mining = getXpForLevel(XP_MAX_LEVEL)
   assert.equal(formatXpProgressText(unit, 'mining'), `${XP_MAX_LEVEL} (max)`)

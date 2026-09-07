@@ -477,7 +477,7 @@ export default class Controls extends Container implements ControlsLike {
 
   moveCamera(dir: string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
     if (this.isInteractionBlocked()) return
-    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale)
+    this.cameraController.move(dir, moveSpeed, isSpeedDivided, deltaScale, !this.freeCameraActive)
   }
 
   moveCameraWithMouse(evt: MouseEvent): void {

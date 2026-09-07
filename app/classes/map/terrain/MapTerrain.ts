@@ -88,6 +88,7 @@ export class MapTerrain {
         const height = broadRelief * 0.78 + localRelief * 0.22
         const index = i * n + j
         const cell = this.map.grid[i][j]
+        if (!cell) continue
 
         reliefH[index] = height
         if (cell.category !== 'Water' && !cell.has && !cell.waterBorder) landHeights.push(height)
@@ -115,6 +116,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (cell.category === 'Water' || cell.has || cell.waterBorder) continue
 
         const index = i * n + j
@@ -134,6 +136,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (cell.z === 1) {
           let cpt = 0
           getCellsAroundPoint(i, j, this.map.grid, 1, c => {
@@ -183,6 +186,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (cell.category === 'Water' || cell.waterBorder) {
           dist[i * n + j] = 0
           queue.push(i * n + j)
@@ -204,6 +208,7 @@ export class MapTerrain {
         const ni = ci + di,
           nj = cj + dj
         if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
+        if (!this.map.grid[ni][nj]) continue
         const nidx = ni * n + nj
         if (dist[nidx] > d + 1) {
           dist[nidx] = d + 1
@@ -251,6 +256,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (cell.category === 'Water') enqueue(cell)
       }
     }
@@ -305,6 +311,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (cell.category !== 'Water') continue
         const index = i * n + j
         dist[index] = 0
@@ -326,6 +333,7 @@ export class MapTerrain {
         const ni = i + di
         const nj = j + dj
         if (ni < 0 || ni > this.map.size || nj < 0 || nj > this.map.size) continue
+        if (!this.map.grid[ni][nj]) continue
         const neighborIndex = ni * n + nj
         if (dist[neighborIndex] <= dist[index] + 1) continue
         dist[neighborIndex] = dist[index] + 1
@@ -339,6 +347,7 @@ export class MapTerrain {
         const index = i * n + j
         if (dist[index] === 9999) continue
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         const range = this.map.getMaxReliefLevelFromCoastDistance(dist[index])
         const minAllowed = waterLevel[index] - range
         const maxAllowed = waterLevel[index] + range
@@ -361,6 +370,7 @@ export class MapTerrain {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         const maxAllowed = this.map.getMaxReliefLevelFromCoastDistance(dist[i * n + j])
         const minAllowed = this.map.getMinReliefLevelFromCoastDistance(dist[i * n + j])
         if (cell.z > maxAllowed) this.map.setCellReliefLevelDirect(cell, maxAllowed)

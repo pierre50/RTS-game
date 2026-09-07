@@ -23,6 +23,24 @@ function loadPlainTsModule(relativePath) {
 
 const { RELIEF_WATER_BUFFER_RADIUS } = loadPlainTsModule('app/constants/terrain.ts')
 
+test('public maps expose only the world preview format used by the UI', () => {
+  const mapsRoot = path.join(ROOT, 'public/maps')
+  const worldManifestPath = path.join(mapsRoot, 'worlds/world-4242/manifest.json')
+  const manifest = JSON.parse(fs.readFileSync(worldManifestPath, 'utf8'))
+
+  assert.equal(fs.existsSync(path.join(mapsRoot, '144')), false, 'legacy root 144 map folder should be removed')
+  assert.equal(fs.existsSync(path.join(mapsRoot, 'manifest.json')), false, 'legacy root map manifest should be removed')
+  assert.equal(fs.existsSync(path.join(mapsRoot, 'macro-world-preview.png')), false, 'legacy root preview should be removed')
+  assert.equal(
+    fs.existsSync(path.join(mapsRoot, 'worlds/world-4242/macro-world-preview-iso.png')),
+    false,
+    'worlds should not include the removed ISO preview'
+  )
+  assert.equal(manifest.macroPreviewPath, 'macro-world-preview.png')
+  assert.equal(Object.hasOwn(manifest, 'macroIsoPreviewPath'), false)
+  assert.equal(Object.hasOwn(manifest, 'isoPreview'), false)
+})
+
 test('blueprint resources accept direct sheet/frame texture assets', () => {
   class Resource {
     constructor(options) {
@@ -46,6 +64,7 @@ test('blueprint resources accept direct sheet/frame texture assets', () => {
         },
       },
       '../../Resource': { Resource },
+      '../NeighborScenery': { setNeighborScenerySource() {} },
       '../../cell': { Cell: class {}, GenerationCell: class {} },
       '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
     },
@@ -104,24 +123,6 @@ function getWaterBorderFrame({ n, s, w, e, nw, ne, sw, se }) {
   if (se) return '006'
   return null
 }
-
-test('map manifest lists every map file in the maps folder', () => {
-  const mapsRoot = path.join(ROOT, 'public/maps')
-  const manifest = JSON.parse(fs.readFileSync(path.join(mapsRoot, 'manifest.json'), 'utf8'))
-  const mapFiles = fs
-    .readdirSync(mapsRoot)
-    .filter(name => /^\d+$/.test(name))
-    .flatMap(sizeDir =>
-      fs
-        .readdirSync(path.join(mapsRoot, sizeDir))
-        .filter(name => name.endsWith('.map'))
-        .map(name => `${sizeDir}/${name}`)
-    )
-    .sort()
-  const manifestPaths = (manifest.maps || []).map(map => map.path).sort()
-
-  assert.deepEqual(manifestPaths, mapFiles)
-})
 
 test('pregenerated map blueprints persist water terrain', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'map-blueprint-'))

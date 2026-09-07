@@ -36,7 +36,16 @@ const MACRO_TREE_FAMILY_BY_CODE = {
 }
 const MACRO_FOREST_PROFILE_BY_CODE = {
   T: { threshold: 0.64, coreChance: 0.22, edgeChance: 0.04, scale: 0.048, seedOffset: 1103 },
-  F: { threshold: 0.34, coreChance: 0.36, edgeChance: 0.11, scale: 0.052, seedOffset: 1201 },
+  F: {
+    threshold: 0.4,
+    coreChance: 0.3,
+    edgeChance: 0.07,
+    scale: 0.052,
+    seedOffset: 1201,
+    clearingScale: 0.032,
+    clearingThreshold: 0.68,
+    clearingFeather: 0.11,
+  },
   J: { threshold: 0.3, coreChance: 0.42, edgeChance: 0.13, scale: 0.056, seedOffset: 1301 },
   D: { threshold: 0.82, coreChance: 0.09, edgeChance: 0.015, scale: 0.06, seedOffset: 1409 },
   S: { threshold: 0.76, coreChance: 0.16, edgeChance: 0.025, scale: 0.05, seedOffset: 1511 },
@@ -161,6 +170,23 @@ function macroForestNoise(i, j, seed, scale, seedOffset) {
     valueNoise(nx * 2.1 + 19.7, ny * 2.1 - 13.3, seed + seedOffset + 37) * 0.28 +
     valueNoise(nx * 4.6 - 8.1, ny * 4.6 + 5.9, seed + seedOffset + 73) * 0.14
   )
+}
+
+function macroForestClearingNoise(i, j, seed, profile) {
+  if (!profile.clearingScale) return 0
+  const nx = i * profile.clearingScale
+  const ny = j * profile.clearingScale
+  return (
+    valueNoise(nx + 31.7, ny - 17.9, seed + profile.seedOffset + 211) * 0.68 +
+    valueNoise(nx * 2.35 - 9.4, ny * 2.35 + 22.1, seed + profile.seedOffset + 257) * 0.32
+  )
+}
+
+function applyMacroClearingChance(chance, clearing, profile) {
+  if (!profile.clearingThreshold || clearing < profile.clearingThreshold - (profile.clearingFeather ?? 0)) return chance
+  if (clearing >= profile.clearingThreshold) return 0
+  const feather = Math.max(0.001, profile.clearingFeather ?? 0)
+  return chance * ((profile.clearingThreshold - clearing) / feather)
 }
 
 function getDeterministicCellVariantIndex(i, j, count, seed = 0) {
@@ -626,8 +652,9 @@ function createMacroTreeOptions(rows, fallbackFamily = null, seed = 0) {
       const profile = MACRO_FOREST_PROFILE_BY_CODE[codeForCell(cell)]
       if (!profile) return 0
       const mask = macroForestNoise(cell.i, cell.j, seed, profile.scale, profile.seedOffset)
-      if (mask >= profile.threshold) return profile.coreChance
-      if (mask >= profile.threshold - 0.08) return profile.edgeChance
+      const clearing = macroForestClearingNoise(cell.i, cell.j, seed, profile)
+      if (mask >= profile.threshold) return applyMacroClearingChance(profile.coreChance, clearing, profile)
+      if (mask >= profile.threshold - 0.08) return applyMacroClearingChance(profile.edgeChance, clearing, profile)
       return 0
     },
   }
@@ -855,7 +882,12 @@ function enforceGeneratedReliefContinuity(map, protectedCells = new Set()) {
   }
 }
 
-function flattenFinalProtectedZones(map, protectedPositions, waterRadius = RELIEF_WATER_BUFFER_RADIUS, spawnRadius = 6) {
+function flattenFinalProtectedZones(
+  map,
+  protectedPositions,
+  waterRadius = RELIEF_WATER_BUFFER_RADIUS,
+  spawnRadius = 6
+) {
   const protectedCells = new Set()
   const distances = coastDistances(map)
   const n = map.size + 1
@@ -990,7 +1022,11 @@ async function blueprint(size, seed, environmentId = DEFAULT_ENVIRONMENT_ID, opt
   const resourceOptions = hasMacroTerrain
     ? createMacroTreeOptions(options.macroTerrainRows, params.treeTextureFamily, seed)
     : { treeTextureFamily: params.treeTextureFamily }
-  await runtimeNeutralResources.call(resourcesScope, protectedPositions.length ? protectedPositions : spawns, resourceOptions)
+  await runtimeNeutralResources.call(
+    resourcesScope,
+    protectedPositions.length ? protectedPositions : spawns,
+    resourceOptions
+  )
   await runtimeBiomeTrees.call(resourcesScope, protectedPositions.length ? protectedPositions : spawns, resourceOptions)
   const resourcesOnReliefBorders = [...map.resources].filter(resource => map.grid[resource.i]?.[resource.j]?.inclined)
   if (resourcesOnReliefBorders.length) {

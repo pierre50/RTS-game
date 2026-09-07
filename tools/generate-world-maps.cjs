@@ -60,7 +60,7 @@ function usage(error = '') {
   --biomes <a,b,c>        macro biome sectors (default: ${DEFAULT_BIOMES})
   --players <n>           civilization starting villages to plan (default: civilization count, or 0)
   --civilizations <a,b,c> civilization names for planned starting villages, or "all"
-  --bandit-camps <n>      bandit camps to plan (default: 0)
+  --bandit-camps <n>      bandit camps to plan (default: 8)
   --settlement-disparity <n> settlement spread variance, 0.0 to 0.85 (default: 0.35)
   --no-preview-labels     hide region coordinates on the macro preview`)
 }
@@ -74,7 +74,7 @@ function argumentsFrom(argv) {
     biomes: DEFAULT_BIOMES,
     players: 0,
     civilizations: '',
-    banditCamps: 0,
+    banditCamps: 8,
     settlementDisparity: 0.35,
     labels: true,
   }
@@ -255,8 +255,6 @@ async function main() {
     biomeSectors: plan.biomeSectors,
     settlements: plan.settlements || [],
     macroPreviewPath: path.relative(worldDirectory, previewPath),
-    macroIsoPreviewPath: plan.isoPreview?.path || path.basename(previewPath).replace(/(\.[^.]+)$/, '-iso$1'),
-    isoPreview: plan.isoPreview || null,
     macroRegionsPath: path.relative(worldDirectory, planPath),
     maps: [],
   }

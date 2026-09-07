@@ -25,6 +25,13 @@ export type SpaceDisplayObject = ContainerChild & {
   spaceId?: string | null
 }
 
+export function createRuntimeMapSpaceBuckets(grid: RuntimeMap['grid'], fallbackSize = 0): BucketGrid {
+  const width = Math.max(1, Math.ceil(Math.max(grid.length, fallbackSize + 1) / BUCKET_SIZE))
+  const heightCells = grid.reduce((max, row) => Math.max(max, row?.length ?? 0), fallbackSize + 1)
+  const height = Math.max(1, Math.ceil(heightCells / BUCKET_SIZE))
+  return Array.from({ length: width }, () => Array.from({ length: height }, () => new Set()))
+}
+
 function normalizeSpaceId(spaceId: string | null | undefined): string {
   return spaceId && spaceId !== OUTSIDE_SPACE_ID ? spaceId : OUTSIDE_SPACE_ID
 }
@@ -257,9 +264,7 @@ export function getEntitySpaceGrid(
 
 function ensureRuntimeMapSpaceBuckets(space: RuntimeMapSpace): BucketGrid {
   if (space.instanceBuckets) return space.instanceBuckets
-  const width = Math.max(1, Math.ceil((space.size + 1) / BUCKET_SIZE))
-  const height = Math.max(1, Math.ceil((space.size + 1) / BUCKET_SIZE))
-  space.instanceBuckets = Array.from({ length: width }, () => Array.from({ length: height }, () => new Set()))
+  space.instanceBuckets = createRuntimeMapSpaceBuckets(space.grid, space.size)
   return space.instanceBuckets
 }
 

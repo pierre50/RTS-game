@@ -264,6 +264,7 @@ export const FR_TRANSLATIONS = {
   confirmDeleteSave: 'Supprimer définitivement la sauvegarde « {name} » ?',
   pause: 'Pause',
   defeat: 'VOUS ÊTES VAINCU',
+  enemyBaseCaptured: 'Base ennemie capturée : bâtiments convertis.',
   wood: 'bois',
   bow: 'arc',
   food: 'nourriture',

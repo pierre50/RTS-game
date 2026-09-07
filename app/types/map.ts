@@ -7,20 +7,12 @@ import type { SaveEntityState } from './save'
 import type { VisionViewerRef } from './vision'
 import type { Viewport } from './geometry'
 import type { TextureRef } from '../lib/graphics/textures'
+import type { LocalMapLayout } from '../lib/localMapLayout'
 
 export type { FogSpriteMemory } from './fog'
 
 export type RuntimeWorldManifest = {
-  isoPreview?: {
-    halfHeight?: number
-    halfWidth?: number
-    height?: number
-    offsetX?: number
-    offsetY?: number
-    path?: string
-    width?: number
-  } | null
-  macroIsoPreviewPath?: string
+  macroPreviewPath?: string
   maps?: Array<{ id?: string; region: { x: number; y: number }; size: number }>
   regionsHigh?: number
   regionsWide?: number
@@ -85,6 +77,7 @@ type GaiaPlayerLike = {
 }
 
 export interface RuntimeMap {
+  localGridLayout?: LocalMapLayout
   grid: Grid<RuntimeCell>
   spaces?: Map<string, RuntimeMapSpace>
   activeSpaceId?: string | null

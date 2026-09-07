@@ -181,7 +181,7 @@ interface MinimapManagerLike {
   getMinimapWorldPoint?(
     clientX: number,
     clientY: number,
-    rect: { left: number; top: number; width: number }
+    rect: { height: number; left: number; top: number; width: number }
   ): {
     x: number
     y: number
@@ -217,6 +217,7 @@ interface RallyPointControllerLike {
 export interface ControlsLike extends Container {
   context: GameContextLike
   camera: { x: number; y: number }
+  setFreeCamera?(enabled: boolean): void
   mouse: { x: number; y: number; prevent?: boolean }
   mouseBuilding?: (Container & { type?: string; isFree?: boolean }) | null
   entityPreview?: EntityPreviewLike | null

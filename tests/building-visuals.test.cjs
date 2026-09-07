@@ -154,13 +154,38 @@ test('construction reveal sprite is recolored to the building owner color', () =
 
   assert.ok(building.constructionRevealSprite)
   assert.deepEqual(
-    calls.filter(call => call[0] === 'changeSpriteColorDirectly'),
+    calls.filter(call => call[0] === 'changeSpriteColorDirectly' && call[1] === building.constructionRevealSprite),
     [['changeSpriteColorDirectly', building.constructionRevealSprite, 'red']]
   )
   assert.equal(building.constructionRevealSprite.texture, texture)
   assert.equal(building.constructionRevealSprite.mask, building.constructionRevealMask)
   assert.equal(children.includes(building.constructionRevealSprite), true)
   assert.equal(children.includes(building.constructionRevealMask), true)
+})
+
+test('construction ghost keeps the player-colored texture transparent', () => {
+  const { calls, applyBuildingConstructionGhost, Texture } = loadBuildingVisuals()
+  const sourceTexture = new Texture()
+  const building = {
+    owner: { color: 'red' },
+    sprite: {
+      alpha: 1,
+      tint: 0x9f9888,
+      texture: sourceTexture,
+    },
+  }
+
+  applyBuildingConstructionGhost(building)
+  const ghostTexture = building.sprite.texture
+  applyBuildingConstructionGhost(building)
+
+  assert.equal(building.sprite.alpha, 0.28)
+  assert.equal(building.sprite.tint, 0xffffff)
+  assert.equal(building.sprite.texture, ghostTexture)
+  const recolorCalls = calls.filter(call => call[0] === 'changeSpriteColorDirectly')
+  assert.equal(recolorCalls.length, 1)
+  assert.equal(recolorCalls[0][1].texture, sourceTexture)
+  assert.equal(recolorCalls[0][2], 'red')
 })
 
 test('building sprite shadows can fall back to a flattened source sprite mask', () => {

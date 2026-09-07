@@ -1,4 +1,5 @@
 import { Gaia } from '../players'
+import { buildNeighborScenery } from './NeighborScenery'
 import { updateInstanceVisibility } from '../../lib'
 import { getEnvironmentTerrainParams } from '../../constants'
 import { rehydrateAIKnowledge } from '../../services/FogOfWar'
@@ -24,7 +25,7 @@ export async function setInitialFogCells(
   const fogCellsStartedAt = performance.now()
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
-      map.grid[i][j].setFog()
+      map.grid[i][j]?.setFog()
     }
     if (i % yieldEvery === 0) await yieldToBrowser()
   }
@@ -143,6 +144,7 @@ async function finalizeGeneratedMap(
 ): Promise<void> {
   await onProgress('finalizingWorld', logTimings ? 0.93 : 0.92)
   await measureAsync('terrainBake', () => map.bakeTerrainToChunks())
+  await measureAsync('neighborScenery', async () => buildNeighborScenery(map))
   map.ready = true
   map.generationTimings = timings
   if (logTimings) {

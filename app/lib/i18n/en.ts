@@ -264,6 +264,7 @@ export const EN_TRANSLATIONS = {
   confirmDeleteSave: 'Permanently delete the save "{name}"?',
   pause: 'Pause',
   defeat: 'YOU HAVE BEEN DEFEATED',
+  enemyBaseCaptured: 'Enemy base captured: buildings converted.',
   wood: 'wood',
   bow: 'bow',
   food: 'food',

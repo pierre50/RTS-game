@@ -42,7 +42,14 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
     return
   }
   const next = unit.path[unit.path.length - 1]
-  const nextCell = map.grid[next.i][next.j]
+  const nextCell = map.grid[next.i]?.[next.j]
+  if (!nextCell) {
+    unit.path = []
+    unit.stopInterval?.()
+    resetUnitCrouchPose(unit)
+    unit.affectNewDest?.()
+    return
+  }
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
 
@@ -153,7 +160,7 @@ function finishPathCellStep(
   unit.j = nextCell.j
   unit.zIndex = getInstanceZIndex(unit)
   clearCellForUnit(unit, unit.currentCell)
-  unit.currentCell = map.grid[unit.i][unit.j]
+  unit.currentCell = nextCell
   placeUnitOnCell(unit, unit.currentCell)
   contextMap?.updateInstanceBucket(unit, oldI, oldJ)
   updateInstanceVisibility(unit)

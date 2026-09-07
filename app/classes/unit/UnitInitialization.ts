@@ -159,7 +159,8 @@ export function applyUnitSpawnConfiguration(unit: UnitRuntimeHost, options: Unit
   unit.visibleCells = new Set()
   const space = getEntityMapSpace(unit, map)
   const grid = space?.grid ?? map.grid
-  const spawnCell = grid[unit.i][unit.j]
+  const spawnCell = grid[unit.i]?.[unit.j]
+  if (!spawnCell) throw new Error(`Cannot spawn unit on missing cell (${unit.i}, ${unit.j})`)
   const [flatSpawnX, flatSpawnY] = cartesianToIsometric(unit.i, unit.j)
   unit.x = unitConfig.x ?? options.x ?? flatSpawnX
   unit.y = unitConfig.y ?? options.y ?? flatSpawnY

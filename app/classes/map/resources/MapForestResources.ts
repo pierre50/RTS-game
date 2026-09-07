@@ -112,7 +112,6 @@ function findForestCenterNearPlayer(
 ): ResourceCenter | null {
   const { grid } = map
   const gridWidth = grid.length
-  const gridHeight = grid[0].length
 
   for (let tries = 0; tries <= maxAttempts; tries++) {
     const i = player.i + Math.floor(map.random() * forestRange * 2 - forestRange)
@@ -122,7 +121,7 @@ function findForestCenterNearPlayer(
       i >= 0 &&
       i < gridWidth &&
       j >= 0 &&
-      j < gridHeight &&
+      j < grid[i].length &&
       isForestCellCandidate(grid, i, j)
     ) {
       return { i, j }
@@ -200,7 +199,7 @@ export function generateForestAroundPlayer(
       ni >= 0 &&
       ni < grid.length &&
       nj >= 0 &&
-      nj < grid[0].length &&
+      grid[ni]?.[nj] &&
       distanceSquared(ni, nj, player.i, player.j) >= safeDistanceSq
     ) {
       const randOffsetX = map.random() > 0.5 ? 1 : -1
@@ -211,13 +210,15 @@ export function generateForestAroundPlayer(
 
   const cellsToPlace = pickRandomCells(removePathCells(forestCells, pathCells), treeCount, () => map.random())
   for (const cell of cellsToPlace) {
+    const terrainCell = grid[cell.i]?.[cell.j]
     if (
+      terrainCell &&
       distanceSquared(cell.i, cell.j, player.i, player.j) >= safeDistanceSq &&
-      grid[cell.i][cell.j].category !== 'Water' &&
-      !grid[cell.i][cell.j].waterBorder &&
+      terrainCell.category !== 'Water' &&
+      !terrainCell.waterBorder &&
       !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
-      !grid[cell.i][cell.j].solid &&
-      !grid[cell.i][cell.j].inclined &&
+      !terrainCell.solid &&
+      !terrainCell.inclined &&
       !hasSpacedResourceAround(grid, cell.i, cell.j)
     ) {
       map.resources.add(createTree(map, cell.i, cell.j, options))

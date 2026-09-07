@@ -91,7 +91,7 @@ function loadHeroStatusHud() {
   const mocks = {
     '../lib/avatar': { renderUnitHeadAvatar: () => {} },
     '../lib/lang': { t: key => (key === 'levelShort' ? 'Lvl' : key) },
-    '../lib/units/unitExperience': { getUnitOverallLevel: unit => unit.level ?? 0 },
+    '../lib/units/unitExperience': { getUnitOverallLevel: unit => unit.level ?? 1 },
   }
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -103,7 +103,7 @@ function makeHero(overrides = {}) {
   return {
     energy: 6.1,
     hitPoints: 20,
-    level: 0,
+    level: 1,
     name: 'Aster',
     totalEnergy: 12,
     totalHitPoints: 20,

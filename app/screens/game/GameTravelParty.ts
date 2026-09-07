@@ -146,6 +146,7 @@ function resetPlayedFogForFreshWorld(game: TravelPartyGame): void {
   player.cellViewed = 0
   for (const row of map.grid) {
     for (const cell of row) {
+      if (!cell) continue
       cell.viewBy = new Set()
       if (!map.revealEverything) cell.setFog()
     }

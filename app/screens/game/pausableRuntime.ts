@@ -20,7 +20,7 @@ export function collectPausableInstances(map: RuntimeMap, players: PlayerLike[])
   }
   for (const row of map.grid ?? []) {
     for (const cell of row ?? []) {
-      for (const corpse of cell.corpses ?? []) addPausableInstance(instances, corpse)
+      for (const corpse of cell?.corpses ?? []) addPausableInstance(instances, corpse)
     }
   }
   return instances

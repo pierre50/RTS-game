@@ -228,7 +228,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../ui/WorldRevealTransition': {
+    '../ui/transitions/WorldRevealTransition': {
       WorldRevealTransition: class WorldRevealTransition {
         async revealFrom() {}
         destroy() {}
@@ -265,7 +265,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
-    '../../ui/WorldRevealTransition': mocks['../ui/WorldRevealTransition'],
+    '../../ui/transitions/WorldRevealTransition': mocks['../ui/transitions/WorldRevealTransition'],
     '../../services/weather/WeatherSystem': mocks['../services/weather/WeatherSystem'],
     '../../services/lighting/LightSystem': mocks['../services/lighting/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],

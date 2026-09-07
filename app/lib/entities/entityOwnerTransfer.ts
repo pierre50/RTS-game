@@ -4,6 +4,7 @@ import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
 import { updateInstanceVisibility } from '../grid/visibility'
 import { syncEntityHealthDisplay } from './entityHealthDisplay'
 import { isPlayerEliminated } from '../playerState'
+import { t } from '../lang'
 import type { MenuLike } from '../../types/context'
 import type { GameContextLike } from '../../types/context'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -199,6 +200,7 @@ export function transferDefeatedPlayerBuildings(defeatedPlayer: PlayerLike): num
   if (!players.length) return 0
 
   let transferred = 0
+  let transferredToPlayedPlayer = false
   for (const building of [...(defeatedPlayer.buildings ?? [])]) {
     if (!isLivingBuilding(building)) continue
     const newOwner = players.length === 1 ? players[0] : nearestPlayerForBuilding(building, players)
@@ -211,7 +213,11 @@ export function transferDefeatedPlayerBuildings(defeatedPlayer: PlayerLike): num
       })
     ) {
       transferred += 1
+      if (newOwner.isPlayed) transferredToPlayedPlayer = true
     }
+  }
+  if (transferredToPlayedPlayer) {
+    context?.menu?.showMessage?.(t('enemyBaseCaptured'), 'success')
   }
   return transferred
 }

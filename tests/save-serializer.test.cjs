@@ -93,6 +93,26 @@ test('seeded saves omit the full map grid', () => {
   assert.equal(Object.hasOwn(save, 'map'), false)
 })
 
+test('sparse local saves retain independent layout metadata and the source blueprint size', () => {
+  const layout = { columns: 74, rows: 293 }
+  const save = serializeGame(
+    makeContext({
+      localGridLayout: layout,
+      size: 219,
+      worldRegionId: 'r0-0',
+      worldManifest: { maps: [{ id: 'r0-0', size: 144 }] },
+    })
+  )
+  assert.deepEqual(save.world.localGridLayout, layout)
+  assert.deepEqual(save.config.localGridLayout, layout)
+  assert.equal(save.world.sourceSize, 144)
+  assert.equal(save.config.size, 144)
+  assert.equal(save.world.size, 219)
+  layout.columns = 2
+  assert.equal(save.world.localGridLayout.columns, 74)
+  assert.equal(save.config.localGridLayout.columns, 74)
+})
+
 test('saves without a seed do not write a legacy map fallback', () => {
   const save = serializeGame(makeContext({ seed: null }))
 

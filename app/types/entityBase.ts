@@ -18,7 +18,7 @@ export type EntityLightSourceConfig = {
 
 export type EntityInfoRenderOptions = {
   // Character-sheet views (the hero's inventory "Infos" tab) want every XP category listed even
-  // at level 0; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
+  // at level 1; the compact side-HUD/modal/NPC-orders views stay filtered to earned categories only.
   showAllXp?: boolean
   // Modal windows already carry the entity identity in their title; hide duplicate identity labels
   // inside the stat panel while keeping useful metadata such as civ/level/hit points.

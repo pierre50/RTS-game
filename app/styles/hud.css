@@ -510,8 +510,7 @@
   width: 100%;
   color: #ffe9e3;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 42%),
-    linear-gradient(180deg, #9e241b, #5f120e);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 42%), linear-gradient(180deg, #9e241b, #5f120e);
   border-color: #f05d49;
 }
 
@@ -580,8 +579,7 @@
 .editor-minimap-wrap,
 .minimap-wrap {
   position: relative;
-  filter: drop-shadow(-2px 0 0 var(--ui-map-shadow-dark)) drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
-    drop-shadow(2px 0 0 var(--ui-map-shadow-light)) drop-shadow(0 2px 0 var(--ui-map-shadow-light));
+  filter: var(--ui-map-border);
 }
 
 .editor-minimap,
@@ -592,6 +590,10 @@
   clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
+.minimap-map.local-square {
+  clip-path: none;
+}
+
 .editor-minimap canvas,
 .minimap-map canvas {
   position: absolute;
@@ -599,6 +601,13 @@
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.minimap-map.local-square canvas {
+  top: calc(-1 * var(--minimap-local-edge-crop-y));
+  left: calc(-1 * var(--minimap-local-edge-crop-x));
+  width: calc(100% + var(--minimap-local-edge-crop-x) * 2);
+  height: calc(100% + var(--minimap-local-edge-crop-y) * 2);
 }
 
 .minimap-camera {
@@ -721,15 +730,22 @@
   min-height: 90px;
 }
 
+.action-menu-minimap-page .minimap-wrap.local-square {
+  --minimap-local-edge-crop-x: 12px;
+  --minimap-local-edge-crop-y: 14px;
+  width: min(640px, calc(100vw - 96px), calc(100vh - 160px));
+  aspect-ratio: 1 / 1;
+  min-height: 180px;
+  overflow: hidden;
+}
+
 .worldmap-global {
   position: relative;
   width: min(100%, 760px);
   margin: 0 auto;
   overflow: hidden;
-  border: var(--ui-slot-border);
-  border-radius: var(--main-border-radius);
   background: var(--surface-black-solid);
-  box-shadow: var(--shadow-panel);
+  filter: var(--ui-map-border);
   aspect-ratio: 2 / 1;
 }
 
@@ -795,8 +811,13 @@
   aspect-ratio: 5 / 4;
 }
 
+.worldmap-global.local-square {
+  aspect-ratio: 1 / 1;
+  width: min(100%, 760px, calc(100vh - 210px));
+}
+
 .worldmap-global.flat .worldmap-global-image {
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .worldmap-global.flat .worldmap-global-region {
@@ -950,9 +971,7 @@
 @media (hover: hover) and (pointer: fine) {
   .inventory-transfer-slot.is-theft:not(:disabled, .disabled, [aria-disabled='true']):hover {
     color: #ffd7d7;
-    background:
-      var(--ui-button-sheen),
-      linear-gradient(180deg, rgba(112, 18, 28, 0.94), rgba(64, 10, 20, 0.96));
+    background: var(--ui-button-sheen), linear-gradient(180deg, rgba(112, 18, 28, 0.94), rgba(64, 10, 20, 0.96));
     border-color: #ff8a72;
     box-shadow:
       var(--ui-button-shadow-raised),

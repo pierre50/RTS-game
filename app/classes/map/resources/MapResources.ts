@@ -693,8 +693,8 @@ export class MapResources {
     const params = getEnvironmentTerrainParams(this.map.environment)
     for (let i = 1; i < size; i++) {
       for (let j = 1; j < size; j++) {
-        const cell = grid[i][j]
-        if (cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
+        const cell = grid[i]?.[j]
+        if (!cell || cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
         if (hasWaterBorderWithin(grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
         let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
         if (cell.type === params.groundType && params.groundTreeChance != null) {

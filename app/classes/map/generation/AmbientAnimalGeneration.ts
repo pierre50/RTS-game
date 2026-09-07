@@ -181,8 +181,8 @@ function shouldSpawnAmbientAnimal(
     hasWaterNeighbor: (i: number, j: number) => boolean
   }
 ): boolean {
-  const cell = map.grid[i][j]
-  if (options.hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) return false
+  const cell = map.grid[i]?.[j]
+  if (!cell || options.hasSolidNeighbor(i, j) || cell.has || cell.solid || cell.border || cell.inclined) return false
   const hasWaterBorderClearance = hasWaterBorderWithin(map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)
   return (
     !options.hasWaterNeighbor(i, j) &&

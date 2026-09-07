@@ -18,6 +18,9 @@ function loadOwnerTransfer(calls = []) {
       '../grid/visibility': {
         updateInstanceVisibility: target => calls.push(['updateInstanceVisibility', target.label, target.owner.label]),
       },
+      '../lang': {
+        t: key => key,
+      },
       './entityHealthDisplay': {
         syncEntityHealthDisplay: () => calls.push(['syncEntityHealthDisplay']),
       },
@@ -74,7 +77,11 @@ test('defeated player buildings transfer to the only remaining player', () => {
   const defeated = makePlayer('defeated')
   const chest = makeBuilding('chest-1', defeated, 8, 8)
   defeated.context = {
-    menu: { isMiniMapActive: () => false, updateTopbar: () => calls.push(['updateTopbar']) },
+    menu: {
+      isMiniMapActive: () => false,
+      showMessage: (message, type) => calls.push(['showMessage', message, type]),
+      updateTopbar: () => calls.push(['updateTopbar']),
+    },
     player: winner,
     players: [winner, defeated],
   }
@@ -88,6 +95,9 @@ test('defeated player buildings transfer to the only remaining player', () => {
   assert.equal(chest.technology, null)
   assert.equal(chest.loading, null)
   assert.deepEqual(calls.filter(([name]) => name === 'updateTopbar'), [['updateTopbar']])
+  assert.deepEqual(calls.filter(([name]) => name === 'showMessage'), [
+    ['showMessage', 'enemyBaseCaptured', 'success'],
+  ])
 })
 
 test('defeated player buildings transfer to the nearest remaining player', () => {

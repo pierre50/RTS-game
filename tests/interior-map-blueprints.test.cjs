@@ -149,6 +149,7 @@ test('interior blueprint masks make cells beyond the dirt floor solid', () => {
     mocks: {
       'pixi.js': { Assets: { cache: { get: () => ({ resources: {}, cells: {} }) } } },
       '../../Resource': { Resource: class {} },
+      '../NeighborScenery': { setNeighborScenerySource() {} },
       '../../cell': { Cell: class {}, GenerationCell: class {} },
       '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
     },
@@ -200,6 +201,7 @@ test('interior blueprint exits remain passable when placed on the dirt border', 
     mocks: {
       'pixi.js': { Assets: { cache: { get: () => ({ resources: {}, cells: {} }) } } },
       '../../Resource': { Resource: class {} },
+      '../NeighborScenery': { setNeighborScenerySource() {} },
       '../../cell': { Cell: class {}, GenerationCell: class {} },
       '../../../lib': { createDeterministicCellVariantPicker: () => () => undefined },
     },

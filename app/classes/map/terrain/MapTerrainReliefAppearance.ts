@@ -38,7 +38,8 @@ export function rebuildTerrainBackfill(map: TerrainMap): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
-      const isMapEdge = i === 0 || j === 0 || i === map.size || j === map.size
+      if (!cell) continue
+      const isMapEdge = !map.grid[i - 1]?.[j] || !map.grid[i + 1]?.[j] || !map.grid[i]?.[j - 1] || !map.grid[i]?.[j + 1]
       if (!isMapEdge || cell.z === 0) continue
 
       const assets = config?.cells?.[cell.type]?.assets || []
@@ -70,12 +71,13 @@ export function rebuildTerrainBackfill(map: TerrainMap): void {
   }
 }
 
-export function formatTerrainRelief(map: TerrainMap): void {
-  rebuildTerrainBackfill(map)
+export function formatTerrainRelief(map: TerrainMap, backfill = true): void {
+  if (backfill) rebuildTerrainBackfill(map)
 
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (cell.category === 'Water' || cell.waterBorder) continue
 
       const { n, s, w, e, nw, ne, sw, se } = getNeighborFlags(

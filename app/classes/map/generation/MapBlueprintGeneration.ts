@@ -2,6 +2,8 @@ import { Assets } from 'pixi.js'
 import { Resource } from '../../Resource'
 import { Cell, GenerationCell } from '../../cell'
 import { createDeterministicCellVariantPicker } from '../../../lib'
+import { createSquareLocalBlueprint } from './LocalMapBlueprint'
+import { setNeighborScenerySource } from '../NeighborScenery'
 import type { RuntimeCell } from '../../../types/map'
 import type { ResourceEntity } from '../../../types/entities'
 import type { GameContextLike } from '../../../types/context'
@@ -72,7 +74,7 @@ export class MapBlueprintGeneration {
     { onProgress = async (_stage: string, _progress: number) => {} }: { onProgress?: ProgressCallback } = {}
   ): Promise<void> {
     const context = runtimeContext(this.map.context)
-    const blueprint = blueprintData
+    const blueprint = createSquareLocalBlueprint(blueprintData)
     const destroyStartedAt = performance.now()
     this.destroyGeneratedChildren()
     this.map.blueprintDestroyMs = performance.now() - destroyStartedAt
@@ -90,6 +92,7 @@ export class MapBlueprintGeneration {
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
         const type = blueprint.terrain[i][j]
+        if (type == null) continue
         const definition = cellDefinitions[type] as CellDefinition
         const cell = new GenerationCell(
           {
@@ -144,7 +147,7 @@ export class MapBlueprintGeneration {
 
   generateEditableFromBlueprint(blueprintData: MapBlueprint): void {
     const context = runtimeContext(this.map.context)
-    const blueprint = blueprintData
+    const blueprint = createSquareLocalBlueprint(blueprintData)
     this.destroyGeneratedChildren()
     this.applyBlueprintMetadata(blueprint)
 
@@ -153,6 +156,7 @@ export class MapBlueprintGeneration {
       const row: RuntimeCell[] = []
       this.map.grid[i] = row
       for (let j = 0; j <= this.map.size; j++) {
+        if (blueprint.terrain[i][j] == null) continue
         const cell = new Cell(
           {
             i,
@@ -179,8 +183,10 @@ export class MapBlueprintGeneration {
   }
 
   applyBlueprintMetadata(blueprint: MapBlueprint): void {
+    setNeighborScenerySource(this.map, blueprint)
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
+    this.map.localGridLayout = blueprint.localGridLayout
     this.map.mapType = isInteriorBlueprint(blueprint) ? 'interior' : (blueprint.mapType ?? 'world-region')
     this.map.playersPos = blueprint.spawns || []
     this.map.interiorExits = blueprint.exits || []

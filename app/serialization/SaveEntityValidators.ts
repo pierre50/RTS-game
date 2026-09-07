@@ -32,13 +32,18 @@ function validateAIState(aiState: unknown, playerIndex: number): void {
   validateArray(aiState.threatenedTargets ?? [], `player ${playerIndex} AI threatenedTargets`)
 }
 
-export function validatePlayers(players: unknown, size: number, config: LoadedGameConfig): void {
+export function validatePlayers(
+  players: unknown,
+  size: number,
+  config: LoadedGameConfig,
+  containsCell?: (i: number, j: number) => boolean
+): void {
   validateArray(players, 'players')
   if (!players.length) fail('Invalid save file: players list is empty.')
 
   let playedPlayers = 0
   for (let index = 0; index < players.length; index++) {
-    if (validatePlayerRecord(players[index], index, size, config)) playedPlayers++
+    if (validatePlayerRecord(players[index], index, size, config, containsCell)) playedPlayers++
   }
 
   if (playedPlayers !== 1) {
@@ -81,7 +86,13 @@ export function validateAnimals(animals: unknown, size: number, config: LoadedGa
   })
 }
 
-function validatePlayerRecord(player: unknown, index: number, size: number, config: LoadedGameConfig): boolean {
+function validatePlayerRecord(
+  player: unknown,
+  index: number,
+  size: number,
+  config: LoadedGameConfig,
+  containsCell?: (i: number, j: number) => boolean
+): boolean {
   if (!isObject(player)) fail(`Invalid save file: player ${index} is invalid.`)
   if (
     typeof player.type !== 'string' ||
@@ -101,14 +112,19 @@ function validatePlayerRecord(player: unknown, index: number, size: number, conf
   validateArray(buildings, `player ${index} buildings`)
   validateArray(units, `player ${index} units`)
   validateArray(corpses, `player ${index} corpses`)
-  validatePlayerViews(views, index, size)
+  validatePlayerViews(views, index, size, containsCell)
   validatePlayerBuildings(buildings, index, size, config)
   validatePlayerUnits(units, index, size, config)
   validatePlayerCorpses(corpses, index, size, config)
   return player.isPlayed
 }
 
-function validatePlayerViews(views: unknown, playerIndex: number, size: number): void {
+function validatePlayerViews(
+  views: unknown,
+  playerIndex: number,
+  size: number,
+  containsCell?: (i: number, j: number) => boolean
+): void {
   validateArray(views, `player ${playerIndex} views`)
   if (views.length !== size) {
     fail(`Invalid save file: player ${playerIndex} views have an invalid size.`)
@@ -117,10 +133,11 @@ function validatePlayerViews(views: unknown, playerIndex: number, size: number):
   for (let i = 0; i < size; i++) {
     const viewRow = views[i]
     validateArray(viewRow, `player ${playerIndex} view row ${i}`)
-    if (viewRow.length !== size) {
+    if (containsCell ? viewRow.length > size : viewRow.length !== size) {
       fail(`Invalid save file: player ${playerIndex} views must match the map size.`)
     }
     for (let j = 0; j < size; j++) {
+      if (containsCell && !containsCell(i, j) && viewRow[j] == null) continue
       validateViewCell(viewRow[j], i, j)
     }
   }
@@ -140,11 +157,20 @@ function validatePlayerBuildings(
     if (isObject(building) && building.stableHorses != null) {
       validateArray(building.stableHorses, `player ${playerIndex} building ${buildingIndex}.stableHorses`)
       building.stableHorses.forEach((horse, horseIndex) =>
-        validateSavedHorseTamingStatus(horse, `player ${playerIndex} building ${buildingIndex}.stableHorses ${horseIndex}`)
+        validateSavedHorseTamingStatus(
+          horse,
+          `player ${playerIndex} building ${buildingIndex}.stableHorses ${horseIndex}`
+        )
       )
     }
-    validateOptionalFiniteNumber(building.trainingStartedDay, `player ${playerIndex} building ${buildingIndex}.trainingStartedDay`)
-    validateOptionalFiniteNumber(building.trainingCompleteDay, `player ${playerIndex} building ${buildingIndex}.trainingCompleteDay`)
+    validateOptionalFiniteNumber(
+      building.trainingStartedDay,
+      `player ${playerIndex} building ${buildingIndex}.trainingStartedDay`
+    )
+    validateOptionalFiniteNumber(
+      building.trainingCompleteDay,
+      `player ${playerIndex} building ${buildingIndex}.trainingCompleteDay`
+    )
   })
 }
 
@@ -185,7 +211,10 @@ function validateAnimalState(
   if (animal.action != null && (typeof animal.action !== 'string' || !ANIMAL_ACTIONS.has(animal.action))) {
     fail(`Invalid save file: ${label}.action is invalid.`)
   }
-  if (animal.currentSheet != null && (typeof animal.currentSheet !== 'string' || !ANIMAL_SHEETS.has(animal.currentSheet))) {
+  if (
+    animal.currentSheet != null &&
+    (typeof animal.currentSheet !== 'string' || !ANIMAL_SHEETS.has(animal.currentSheet))
+  ) {
     fail(`Invalid save file: ${label}.currentSheet is invalid.`)
   }
   validateAnimalPath(animal.path, size, `${label}.path`)

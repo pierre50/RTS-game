@@ -43,7 +43,10 @@ export function normalizeWaterTopology(
     }
   } else {
     for (let i = 0; i <= map.size; i++) {
-      for (let j = 0; j <= map.size; j++) candidates.add(map.grid[i][j])
+      for (let j = 0; j <= map.size; j++) {
+        const cell = map.grid[i][j]
+        if (cell) candidates.add(cell)
+      }
     }
   }
 

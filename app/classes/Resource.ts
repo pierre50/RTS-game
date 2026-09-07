@@ -111,7 +111,8 @@ export class Resource extends Instance implements ResourceEntity {
     if (typeof options.totalQuantity === 'number') this.totalQuantity = options.totalQuantity
     const space = getEntityMapSpace(this, map)
     const grid = space?.grid ?? map.grid
-    const cell = grid[this.i][this.j]
+    const cell = grid[this.i]?.[this.j]
+    if (!cell) throw new Error(`Cannot spawn resource on missing cell (${this.i}, ${this.j})`)
 
     this.quantity = this.quantity ?? this.totalQuantity
     this.hitPoints = this.hitPoints ?? this.totalHitPoints

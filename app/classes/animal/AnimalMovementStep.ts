@@ -65,8 +65,6 @@ function pauseForBlockedAnimal(animal: AnimalControllerHost): void {
 
 function settleOnNextCell(animal: AnimalControllerHost, nextCell: AnimalControllerHost['currentCell']): void {
   const map = animal.context.map
-  const spaceMap = getEntitySpaceMapLike(animal, map)
-  const grid = spaceMap?.grid ?? map.grid
   const oldI = animal.i
   const oldJ = animal.j
   animal.z = nextCell.z
@@ -77,7 +75,7 @@ function settleOnNextCell(animal: AnimalControllerHost, nextCell: AnimalControll
     animal.currentCell.has = null
     animal.currentCell.solid = false
   }
-  animal.currentCell = grid[animal.i][animal.j]
+  animal.currentCell = nextCell
   if (animal.currentCell.has === null) {
     animal.currentCell.place(animal)
     animal.currentCell.solid = true
@@ -139,7 +137,12 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
   const map = getEntitySpaceMapLike(animal, runtimeMap)
   if (!map) return
   const next = animal.path[animal.path.length - 1]
-  const nextCell = map.grid[next.i][next.j]
+  const nextCell = next && map.grid[next.i]?.[next.j]
+  if (!nextCell) {
+    animal.path = []
+    animal.stop()
+    return
+  }
   const [nextFlatX, nextFlatY] = cartesianToIsometric(nextCell.i, nextCell.j)
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
   syncReliefLiftTowardNextCell(animal, map.grid, nextFlatPoint)

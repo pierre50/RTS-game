@@ -1,0 +1,75 @@
+import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
+import { updateInstanceRenderVisibility } from '../../lib'
+import type { RuntimeCell } from '../../types/map'
+import type { Viewport } from '../../types/geometry'
+import type { CameraPoint } from './CameraMovement'
+
+export type CameraVisibleCellsStats = {
+  candidates: number
+  exited: number
+  margin: number
+  samples: number
+  stepX: number
+  stepY: number
+  updated: number
+}
+
+export type CameraCellSpace = {
+  grid: RuntimeCell[][]
+  origin: CameraPoint
+  size: number
+}
+
+export function collectCameraCells(
+  space: CameraCellSpace,
+  viewport: Viewport,
+  margin: number
+): { cells: Set<RuntimeCell>; samples: number; stepX: number; stepY: number } {
+  const cells = new Set<RuntimeCell>()
+  const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
+  const localVisibleLeft = visibleLeft - space.origin.x
+  const localVisibleTop = visibleTop - space.origin.y
+  const startX = Math.floor(localVisibleLeft - margin)
+  const endX = Math.floor(localVisibleLeft + visibleWidth + margin)
+  const startY = Math.floor(localVisibleTop - margin)
+  const endY = Math.floor(localVisibleTop + visibleHeight + margin)
+  const stepX = CELL_WIDTH / 2
+  const stepY = CELL_HEIGHT / 2
+  const invCW = 1 / CELL_WIDTH
+  const invCH = 1 / CELL_HEIGHT
+  let samples = 0
+
+  for (let i = startX; i <= endX; i += stepX) {
+    for (let j = startY; j <= endY; j += stepY) {
+      samples++
+      const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), space.size)
+      const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), space.size)
+      const cell = space.grid[x]?.[y]
+      if (cell) cells.add(cell)
+    }
+  }
+
+  return { cells, samples, stepX, stepY }
+}
+
+export function refreshExitedCameraCells(previousCells: Set<RuntimeCell>, nextCells: Set<RuntimeCell>): number {
+  let exited = 0
+  for (const cell of previousCells) {
+    if (nextCells.has(cell)) continue
+    exited++
+    if (cell.has) updateInstanceRenderVisibility(cell.has)
+    for (const corpse of cell.corpses) updateInstanceRenderVisibility(corpse)
+  }
+  return exited
+}
+
+export function refreshEnteredCameraCells(previousCells: Set<RuntimeCell>, nextCells: Set<RuntimeCell>): number {
+  let updated = 0
+  for (const cell of nextCells) {
+    const hasCameraCulledContent = cell.has || cell.corpses?.size
+    if (previousCells.has(cell) && !hasCameraCulledContent) continue
+    updated++
+    cell.updateVisible()
+  }
+  return updated
+}

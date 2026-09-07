@@ -200,6 +200,8 @@ type SaveRuntimeState = {
 }
 
 type SaveWorldState = {
+  sourceSize?: number
+  localGridLayout?: { columns: number; rows: number }
   environment?: string
   seed?: string | number
   size?: number
@@ -282,6 +284,7 @@ export type CampaignSave = {
 }
 
 export type GameConfig = {
+  localGridLayout?: { columns: number; rows: number }
   allTechnologies?: boolean
   bots?: number
   difficulty?: string
@@ -328,7 +331,7 @@ export type SerializedSave = {
   version?: number
   camera: { x: number; y: number }
   config?: GameConfig
-  map?: SaveCellState[][]
+  map?: (SaveCellState | null)[][]
   players: SavePlayerState[]
   resources: SaveEntityState[]
   animals: SaveEntityState[]

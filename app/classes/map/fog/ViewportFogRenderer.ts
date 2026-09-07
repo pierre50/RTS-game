@@ -265,12 +265,11 @@ export class ViewportFogRenderer {
 
     for (let i = minI; i <= maxI; i++) {
       for (let j = minJ; j <= maxJ; j++) {
+        const cell = this.map.grid[i]?.[j]
+        if (!cell) continue
         const explored = this.map.revealTerrain || views.isViewed(i, j)
         const visible = views.isVisible(i, j)
         if (!explored && !visible) continue
-
-        const cell = this.map.grid[i]?.[j]
-        if (!cell) continue
 
         const exploredShape = getFogRevealShape(
           cell as FogRevealCell,

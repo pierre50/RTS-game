@@ -1,0 +1,100 @@
+const assert = require('node:assert/strict')
+const test = require('node:test')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
+
+const { localToGrid } = loadTsModule('app/lib/localMapLayout.ts')
+const { validateSaveData } = loadTsModule('app/serialization/SaveValidator.ts', {
+  mocks: {
+    'pixi.js': { Assets: { cache: { get: () => ({ units: { Hero: {} }, resources: { Tree: {} } }) } } },
+    '../lib/horses/horseTaming': { isHorseTamingStatus: () => true },
+  },
+})
+
+function sparseSave() {
+  const layout = { columns: 4, rows: 13 }
+  const map = Array.from({ length: 10 }, () => [])
+  const views = Array.from({ length: 10 }, () => [])
+  for (let r = 0; r < layout.rows; r++) {
+    for (let c = 0; c < layout.columns - (r % 2); c++) {
+      const { i, j } = localToGrid(c, r, layout)
+      map[i][j] = { type: 'Grass', z: 0 }
+      views[i][j] = { viewed: true, viewBy: [] }
+    }
+  }
+  return JSON.parse(
+    JSON.stringify({
+      world: { seed: 1, size: 9, localGridLayout: layout },
+      map,
+      camera: { x: 0, y: 0 },
+      resources: [],
+      animals: [],
+      players: [{ type: 'Human', isPlayed: true, views, units: [{ type: 'Hero', ...localToGrid(1, 4, layout) }] }],
+    })
+  )
+}
+
+test('sparse saves validate after JSON converts missing cells and vision to null', () => {
+  const save = sparseSave()
+  assert.equal(save.map[0][0], null)
+  assert.equal(validateSaveData(save), save)
+  delete save.map
+  assert.equal(validateSaveData(save), save)
+})
+
+test('sparse saves reject malformed layouts, missing rows, cells inside holes, and missing playable cells', () => {
+  const mutations = [
+    save => {
+      save.world.localGridLayout.rows = 12
+    },
+    save => {
+      save.world.localGridLayout.columns = 0
+    },
+    save => {
+      save.world.localGridLayout = null
+    },
+    save => {
+      save.config = { localGridLayout: { columns: 5, rows: 17 } }
+    },
+    save => {
+      save.map[0] = null
+    },
+    save => {
+      save.map[0][0] = { type: 'Grass' }
+    },
+    save => {
+      const p = localToGrid(3, 1, save.world.localGridLayout)
+      save.map[p.i][p.j] = { type: 'Grass' }
+    },
+    save => {
+      save.map[0][3] = null
+    },
+    save => {
+      save.players[0].views[0][3] = null
+    },
+    save => {
+      save.players[0].units[0].i = 0
+      save.players[0].units[0].j = 0
+    },
+    save => {
+      save.resources.push({ type: 'Tree', i: 0, j: 0 })
+    },
+  ]
+  for (const mutate of mutations) {
+    const save = sparseSave()
+    mutate(save)
+    assert.throws(() => validateSaveData(save), /Invalid save file/)
+  }
+})
+
+test('old dense saves and interiors keep validating without layout metadata', () => {
+  for (const mapType of ['world-region', 'interior']) {
+    const save = sparseSave()
+    delete save.world.localGridLayout
+    save.world.mapType = mapType
+    save.map = Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => ({ type: 'Grass' })))
+    save.players[0].views = save.map.map(row => row.map(() => ({})))
+    assert.equal(validateSaveData(save), save)
+    save.map[0][0] = null
+    assert.throws(() => validateSaveData(save), /cell 0,0/)
+  }
+})

@@ -350,6 +350,11 @@
 
   --ui-map-shadow-dark: #050716;
   --ui-map-shadow-light: rgba(207, 216, 255, 0.18);
+  --ui-map-border:
+    drop-shadow(-2px 0 0 var(--ui-map-shadow-dark))
+    drop-shadow(0 -2px 0 var(--ui-map-shadow-dark))
+    drop-shadow(2px 0 0 var(--ui-map-shadow-light))
+    drop-shadow(0 2px 0 var(--ui-map-shadow-light));
 
   --focus-outline-color: rgba(255, 240, 168, 0.95);
 

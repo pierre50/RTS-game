@@ -15,6 +15,7 @@ import {
   MapBlueprintLoadError,
   loadPregeneratedWorldMapBlueprint,
   loadPregeneratedInteriorBlueprint,
+  type WorldBlueprintFileCache,
 } from '../serialization/MapBlueprintLoader'
 import { type RegionEdge } from '../services/world/WorldRegionTravelSystem'
 import { cleanupDebugArtifacts } from '../dev-console/actions/shared'
@@ -73,7 +74,7 @@ import {
 } from './game/GameResourceDelivery'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
-import type { WorldRevealPoint } from '../ui/WorldRevealTransition'
+import type { WorldRevealPoint } from '../ui/transitions/WorldRevealTransition'
 import {
   activateBuildingInteriorSpace,
   deactivateBuildingInteriorSpace,
@@ -125,6 +126,7 @@ export default class Game extends Container {
   _onDocumentVisibilityChange?: () => void
   _runtimeServices: RuntimeServices
   _worldRegionBlueprintCache: globalThis.Map<string, Promise<Awaited<ReturnType<typeof loadPregeneratedWorldMapBlueprint>>>>
+  _worldBlueprintFileCache: WorldBlueprintFileCache
   _worldRegionTransitioning: boolean
 
   constructor(
@@ -143,6 +145,7 @@ export default class Game extends Container {
     this._isRestarting = false
     this._runtimeServices = createEmptyRuntimeServices()
     this._worldRegionBlueprintCache = new globalThis.Map()
+    this._worldBlueprintFileCache = new globalThis.Map()
     this._worldRegionTransitioning = false
     this.config = config
     this.onQuit = onQuit
@@ -204,7 +207,7 @@ export default class Game extends Container {
       if (cached) return cached
     }
     try {
-      const promise = loadPregeneratedWorldMapBlueprint(options)
+      const promise = loadPregeneratedWorldMapBlueprint(options, this._worldBlueprintFileCache)
       if (cacheKey) this._worldRegionBlueprintCache.set(cacheKey, promise)
       return await promise
     } catch (error) {
@@ -553,6 +556,8 @@ export default class Game extends Container {
   }
 
   override destroy(options?: Parameters<Container['destroy']>[0]): void {
+    this._worldRegionBlueprintCache.clear()
+    this._worldBlueprintFileCache.clear()
     this._wakeLock?.release()
     document.removeEventListener('visibilitychange', this._onVisibilityChange as EventListener)
     this._destroyRuntime()

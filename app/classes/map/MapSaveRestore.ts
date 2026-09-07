@@ -60,10 +60,13 @@ function isRuntimeDestination(value: RuntimeEntity | RuntimeCell | null): value 
 
 // A saved reference is either a [i, j] grid coordinate, a [i, j, label] tuple (an
 // entity currently standing on a cell), or a bare label string (entity lookup).
-function getDest(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): RuntimeEntity | RuntimeCell | null {
+function getDest(
+  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
+  map: MapGenerationMap
+): RuntimeEntity | RuntimeCell | null {
   if (val) {
     if (Array.isArray(val)) {
-      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : map.grid[val[0]][val[1]]
+      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : (map.grid[val[0]]?.[val[1]] ?? null)
     } else {
       return getRuntimeEntityByLabel(map, val as string)
     }
@@ -78,7 +81,10 @@ function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeE
 
 // Saved references used for unit/building ownership links and AI memory always
 // encode an entity label, never a bare grid cell, so this narrows the lookup above.
-function getDestEntity(val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined, map: MapGenerationMap): RuntimeEntity | null {
+function getDestEntity(
+  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
+  map: MapGenerationMap
+): RuntimeEntity | null {
   const dest = getDest(val, map)
   return isRuntimeDestination(dest) ? dest : null
 }
@@ -234,6 +240,7 @@ export function restorePlayerViewsAndFog(player: PlayerLike, map: MapGenerationM
   player.views.restoreViewers(name => getDestEntity(name, map))
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
+      if (!map.grid[i]?.[j]) continue
       if (player.views.isViewed(i, j)) {
         player.views.onViewed?.(i, j)
       }

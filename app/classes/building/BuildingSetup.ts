@@ -60,7 +60,8 @@ export function setupBuildingTransform(building: Building): void {
   const { map, controls } = building.context
   const space = getEntityMapSpace(building, map)
   const grid = space?.grid ?? map.grid
-  const anchorCell = grid[building.i][building.j]
+  const anchorCell = grid[building.i]?.[building.j]
+  if (!anchorCell) throw new Error(`Cannot spawn building on missing cell (${building.i}, ${building.j})`)
   const [flatX, flatY] = cartesianToIsometric(building.i, building.j)
   building.x = flatX
   building.y = flatY

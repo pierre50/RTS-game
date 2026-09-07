@@ -167,7 +167,8 @@ export class MapFog {
     const visibleStartedAt = performance.now()
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
-        this.map.grid[i][j].visible = true
+        const cell = this.map.grid[i][j]
+        if (cell) cell.visible = true
       }
     }
     this.map.context.performance?.record?.('terrainBake.markVisible', performance.now() - visibleStartedAt)
@@ -205,6 +206,7 @@ export class MapFog {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         const set = cell.getChildByLabel?.(LABEL_TYPES.set)
         if (set) {
           cell.removeChild?.(set)
@@ -277,6 +279,7 @@ export class MapFog {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (!isRuntimeCellSource(cell)) continue
         const runtimeCell = new RuntimeCell(cell)
         replacements.set(cell, runtimeCell)
@@ -325,6 +328,7 @@ export class MapFog {
     for (let i = 0; i <= this.map.size; i++) {
       for (let j = 0; j <= this.map.size; j++) {
         const cell = this.map.grid[i][j]
+        if (!cell) continue
         if (player.views.isViewed(i, j)) cell.updateVisible()
       }
     }
@@ -332,7 +336,7 @@ export class MapFog {
   }
 
   bakeTerrainToChunks(): void {
-    if (this.map.grid[0]?.[0]?.isGenerationCell) {
+    if (this.map.grid.some(row => row.some(cell => cell?.isGenerationCell))) {
       this._materializeGenerationCells()
     }
 
@@ -468,6 +472,9 @@ export class MapFog {
       }
     }
 
+    if (!Number.isFinite(minX)) {
+      return { minX: 0, minY: 0, maxX: 1, maxY: 1, totalW: 1, totalH: 1 }
+    }
     const margin = CELL_DEPTH
     minX -= margin
     minY -= margin

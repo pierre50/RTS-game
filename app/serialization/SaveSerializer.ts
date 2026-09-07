@@ -18,17 +18,7 @@ import type {
 
 type GridPoint = { i: number; j: number }
 const DEFAULT_SERIALIZED_MAP_TYPE = 'world-region'
-const SERIALIZED_RESOURCE_NAMES = [
-  'wood',
-  'food',
-  'berry',
-  'meat',
-  'wheat',
-  'stone',
-  'gold',
-  'copper',
-  'iron',
-] as const
+const SERIALIZED_RESOURCE_NAMES = ['wood', 'food', 'berry', 'meat', 'wheat', 'stone', 'gold', 'copper', 'iron'] as const
 type Destination = Partial<GridPoint & { x: number; y: number; label: string }>
 type SpriteState = { currentFrame?: number; loop?: boolean }
 type SerializableEntity = RuntimeEntityBase & {
@@ -415,6 +405,9 @@ function playerData(player: SerializablePlayer) {
 }
 
 export function serializeGame(context: SerializableContext): SerializedSave {
+  const sourceSize = context.map.localGridLayout
+    ? context.map.worldManifest?.maps?.find(entry => entry.id === context.map.worldRegionId)?.size
+    : undefined
   const world = {
     seed: context.map.seed,
     size: context.map.size,
@@ -423,6 +416,8 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     pregeneratedBlueprintId: context.map.pregeneratedBlueprintId ?? null,
     worldId: context.map.worldId ?? null,
     worldRegionId: context.map.worldRegionId ?? null,
+    ...(context.map.localGridLayout ? { localGridLayout: { ...context.map.localGridLayout } } : {}),
+    ...(sourceSize != null ? { sourceSize } : {}),
   }
   const data: SerializedSave = {
     version: 2,
@@ -436,7 +431,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
     world,
     config: {
       seed: context.map.seed,
-      size: context.map.size,
+      size: sourceSize ?? context.map.size,
       mapType: context.map.mapType || DEFAULT_SERIALIZED_MAP_TYPE,
       environment: context.map.environment,
       instantMode: context.map.instantMode,
@@ -450,6 +445,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
       difficulty: context.map.difficulty,
       worldId: context.map.worldId ?? undefined,
       worldRegionId: context.map.worldRegionId ?? undefined,
+      ...(context.map.localGridLayout ? { localGridLayout: { ...context.map.localGridLayout } } : {}),
     },
     players: (context.players ?? []).map(player => playerData(player)),
     resources: [...context.map.resources].map(resource => resourceData(resource as SerializableEntity)),

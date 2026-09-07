@@ -150,7 +150,7 @@ test('non-siege enemies and aggressive animals have ARPG attack recovery', () =>
   assert.equal(animals.Wolf.attackRecoveryMs, 800)
 })
 
-test('level-zero hero uses the human stamina baseline', () => {
+test('level-one hero uses the human stamina baseline', () => {
   assert.equal(units.Villager.totalEnergy, 12)
   assert.equal(units.Villager.energyRegenRate, 3.1)
   assert.equal(units.Villager.energyRegenDelay, 400)

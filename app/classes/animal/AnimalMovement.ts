@@ -107,10 +107,11 @@ export class AnimalMovement {
       return
     }
     animal.stopInterval()
+    const currentCell = map.grid[animal.i]?.[animal.j]
     if (
+      currentCell &&
       this.isAnimalAtDest(action, dest) &&
-      (!map.grid[animal.i]?.[animal.j]?.solid ||
-        (map.grid[animal.i]?.[animal.j]?.solid && map.grid[animal.i]?.[animal.j]?.has?.label === animal.label))
+      (!currentCell.solid || currentCell.has?.label === animal.label)
     ) {
       animal.setDest(dest)
       animal.action = action

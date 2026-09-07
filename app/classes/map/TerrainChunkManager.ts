@@ -89,13 +89,15 @@ export class TerrainChunkManager {
         const startJ = cj * TERRAIN_CHUNK_SIZE
         const endI = Math.min(this.map.size, startI + TERRAIN_CHUNK_SIZE - 1)
         const endJ = Math.min(this.map.size, startJ + TERRAIN_CHUNK_SIZE - 1)
+        const bounds = this._getChunkBounds(startI, startJ, endI, endJ)
+        if (!bounds) continue
         this.chunks.set(`${ci}:${cj}`, {
           key: `${ci}:${cj}`,
           startI,
           startJ,
           endI,
           endJ,
-          bounds: this._getChunkBounds(startI, startJ, endI, endJ),
+          bounds,
           mounted: false,
           visualCells: null,
           lastUsed: 0,
@@ -106,25 +108,24 @@ export class TerrainChunkManager {
     if (viewport) this.update(viewport)
   }
 
-  _getChunkBounds(startI: number, startJ: number, endI: number, endJ: number): Bounds {
+  _getChunkBounds(startI: number, startJ: number, endI: number, endJ: number): Bounds | null {
     let minX = Infinity
     let minY = Infinity
     let maxX = -Infinity
     let maxY = -Infinity
 
-    for (const [i, j] of [
-      [startI, startJ],
-      [startI, endJ],
-      [endI, startJ],
-      [endI, endJ],
-    ]) {
-      const cell = this.map.grid[i][j]
-      minX = Math.min(minX, cell.x - CELL_WIDTH)
-      minY = Math.min(minY, cell.y - CELL_HEIGHT - CELL_DEPTH * 4)
-      maxX = Math.max(maxX, cell.x + CELL_WIDTH)
-      maxY = Math.max(maxY, cell.y + CELL_HEIGHT + CELL_DEPTH * 4)
+    for (let i = startI; i <= endI; i++) {
+      for (let j = startJ; j <= endJ; j++) {
+        const cell = this.map.grid[i][j]
+        if (!cell) continue
+        minX = Math.min(minX, cell.x - CELL_WIDTH)
+        minY = Math.min(minY, cell.y - CELL_HEIGHT - CELL_DEPTH * 4)
+        maxX = Math.max(maxX, cell.x + CELL_WIDTH)
+        maxY = Math.max(maxY, cell.y + CELL_HEIGHT + CELL_DEPTH * 4)
+      }
     }
 
+    if (!Number.isFinite(minX)) return null
     return { minX, minY, width: maxX - minX, height: maxY - minY }
   }
 
@@ -193,7 +194,7 @@ export class TerrainChunkManager {
     for (let i = chunk.startI; i <= chunk.endI; i++) {
       for (let j = chunk.startJ; j <= chunk.endJ; j++) {
         const source = this.map.grid[i][j]
-        if (!needsAnimatedTerrainOverlay(source)) continue
+        if (!source || !needsAnimatedTerrainOverlay(source)) continue
         const visualCell = this._createTerrainCell(source)
         chunk.visualCells.set(`${i}:${j}`, visualCell)
         this.terrainLayer?.addChild(visualCell)

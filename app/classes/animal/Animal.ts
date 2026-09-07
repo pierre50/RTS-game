@@ -167,14 +167,15 @@ export class Animal extends Instance implements AnimalEntity {
     this.visibleCells = new Set()
     const space = getEntityMapSpace(this, map)
     const grid = space?.grid ?? map.grid
-    const spawnCell = grid[this.i][this.j]
+    const spawnCell = grid[this.i]?.[this.j]
+    if (!spawnCell) throw new Error(`Cannot spawn animal on missing cell (${this.i}, ${this.j})`)
     const [flatSpawnX, flatSpawnY] = cartesianToIsometric(this.i, this.j)
     this.x = animalConfig.x ?? numberCoordinate(options.x) ?? flatSpawnX
     this.y = animalConfig.y ?? numberCoordinate(options.y) ?? flatSpawnY
     this.z = animalConfig.z ?? numberCoordinate(options.z) ?? spawnCell.z
     this.zIndex = getInstanceZIndex(this)
 
-    this.currentCell = grid[this.i][this.j]
+    this.currentCell = spawnCell
     this.currentCell.place(this)
     this.currentCell.solid = true
 

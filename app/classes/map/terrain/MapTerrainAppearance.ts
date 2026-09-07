@@ -12,6 +12,7 @@ export function formatTerrainWaterBorder(map: TerrainMap): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (cell.category === 'Water') continue
       const flags = getNeighborFlags(
         map.grid,
@@ -29,6 +30,7 @@ export function formatTerrainWaterBorderOverlays(map: TerrainMap): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (!cell.waterBorder) continue
 
       const overlay = (neighbor: TerrainCell | undefined, direction: string) => {
@@ -66,7 +68,7 @@ export function rebuildTerrainAppearance(map: TerrainMap, protectedReliefCells: 
     const preserveWaterBorder = Boolean(map.blueprintWaterBorderReady)
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
-        map.grid[i][j].resetTerrainAppearance?.({ preserveWaterBorder })
+        map.grid[i][j]?.resetTerrainAppearance?.({ preserveWaterBorder })
       }
     }
   })
@@ -100,6 +102,7 @@ export function formatTerrainPatchBorders(map: TerrainMap): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       const groundType = cell.type as PatchBorderGroundType
       const n = map.grid[i - 1]?.[j]
       const s = map.grid[i + 1]?.[j]

@@ -25,8 +25,13 @@ const SHADOW_OFFSET_Y = 0
 const SPRITE_SHADOW_SCALE_X = 1.02
 const SPRITE_SHADOW_SCALE_Y = -0.5
 const CONSTRUCTION_GHOST_ALPHA = 0.28
-const CONSTRUCTION_GHOST_TINT = 0x9f9888
 const shadowTextureFrameCache = new Map<string, Texture>()
+
+type ConstructionGhostSprite = Sprite & {
+  constructionGhostColor?: string
+  constructionGhostSourceTexture?: Texture
+  constructionGhostTexture?: Texture
+}
 
 function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: number; height: number } {
   const texture = sprite.texture
@@ -41,8 +46,32 @@ function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: n
 }
 
 export function applyBuildingConstructionGhost(building: BuildingControllerHost): void {
-  building.sprite.alpha = CONSTRUCTION_GHOST_ALPHA
-  building.sprite.tint = CONSTRUCTION_GHOST_TINT
+  const sprite = building.sprite as ConstructionGhostSprite
+  const ownerColor = building.owner.color ?? ''
+  const sourceTexture =
+    sprite.texture === sprite.constructionGhostTexture && sprite.constructionGhostSourceTexture
+      ? sprite.constructionGhostSourceTexture
+      : sprite.texture
+
+  if (ownerColor && ownerColor !== 'blue') {
+    if (
+      sprite.constructionGhostColor !== ownerColor ||
+      sprite.constructionGhostSourceTexture !== sourceTexture ||
+      !sprite.constructionGhostTexture
+    ) {
+      sprite.texture = sourceTexture
+      changeSpriteColorDirectly(sprite, ownerColor)
+      sprite.constructionGhostColor = ownerColor
+      sprite.constructionGhostSourceTexture = sourceTexture
+      sprite.constructionGhostTexture = sprite.texture
+    }
+    sprite.texture = sprite.constructionGhostTexture
+  } else if (sprite.texture === sprite.constructionGhostTexture && sprite.constructionGhostSourceTexture) {
+    sprite.texture = sprite.constructionGhostSourceTexture
+  }
+
+  sprite.alpha = CONSTRUCTION_GHOST_ALPHA
+  sprite.tint = 0xffffff
 }
 
 export function syncBuildingConstructionReveal(building: BuildingControllerHost, percentage: number): void {

@@ -19,16 +19,7 @@ type WorldManifestEntry = {
 
 type WorldManifest = {
   format?: string
-  isoPreview?: {
-    halfHeight?: number
-    halfWidth?: number
-    height?: number
-    offsetX?: number
-    offsetY?: number
-    path?: string
-    width?: number
-  } | null
-  macroIsoPreviewPath?: string
+  macroPreviewPath?: string
   maps?: WorldManifestEntry[]
   regionsHigh?: number
   regionsWide?: number
@@ -90,6 +81,9 @@ type LoadedBlueprint = MapBlueprint & {
   id: string | number
   timings: BlueprintTimings
 }
+
+// Owned by a game session: neighboring regions share immutable decoded files.
+export type WorldBlueprintFileCache = Map<string, Promise<LoadedBlueprint>>
 
 type LoadWorldBlueprintOptions = {
   size?: number
@@ -273,12 +267,37 @@ async function decodeMapBlueprintPayload(
   }
 }
 
-export async function loadPregeneratedWorldMapBlueprint({
-  playerCiv,
-  size = 144,
-  worldId,
-  worldRegionId,
-}: LoadWorldBlueprintOptions) {
+function loadWorldBlueprintFile(
+  worldId: string,
+  entry: Pick<WorldManifestEntry, 'id' | 'path' | 'size'>,
+  cache: WorldBlueprintFileCache
+): Promise<LoadedBlueprint> {
+  const path = `maps/worlds/${worldId}/maps/${entry.path}`
+  const key = `${path}:${entry.size}`
+  const cached = cache.get(key)
+  if (cached) return cached
+  const promise = (async () => {
+    const timings: BlueprintTimings = {}
+    const startedAt = performance.now()
+    const response = await fetch(path, { cache: 'no-store' })
+    if (!response.ok) fail('map-fetch-failed', `Unable to load ${path} (${response.status})`)
+    timings.blueprintMapFetch = performance.now() - startedAt
+    const parseStartedAt = performance.now()
+    const payload = await response.json()
+    timings.blueprintMapParse = performance.now() - parseStartedAt
+    return decodeMapBlueprintPayload(payload, entry, timings)
+  })()
+  cache.set(key, promise)
+  void promise.catch(() => {
+    if (cache.get(key) === promise) cache.delete(key)
+  })
+  return promise
+}
+
+export async function loadPregeneratedWorldMapBlueprint(
+  { playerCiv, size = 144, worldId, worldRegionId }: LoadWorldBlueprintOptions,
+  fileCache: WorldBlueprintFileCache = new Map()
+) {
   const timings: BlueprintTimings = {}
   let manifest: WorldManifest | undefined
   let manifestResponse: Response
@@ -308,24 +327,30 @@ export async function loadPregeneratedWorldMapBlueprint({
   if (!selected) fail('no-compatible-map', `No world map blueprint matches ${worldId}`)
 
   try {
-    const mapPath = `maps/worlds/${worldId}/maps/${selected.path}`
-    const mapFetchStartedAt = performance.now()
-    const response = await fetch(mapPath, { cache: 'no-store' })
-    if (!response.ok) fail('map-fetch-failed', `Unable to load ${mapPath} (${response.status})`)
-    timings.blueprintMapFetch = performance.now() - mapFetchStartedAt
-    const mapParseStartedAt = performance.now()
-    const payload = await response.json()
-    timings.blueprintMapParse = performance.now() - mapParseStartedAt
-    const blueprint = await decodeMapBlueprintPayload(payload, selected, timings)
+    const blueprint = await loadWorldBlueprintFile(worldId, selected, fileCache)
+    const visualNeighbors = await Promise.all(
+      manifest.maps
+        .filter(
+          entry =>
+            entry.path !== selected.path &&
+            entry.size === selected.size &&
+            Math.abs(entry.region.x - selected.region.x) <= 1 &&
+            Math.abs(entry.region.y - selected.region.y) <= 1
+        )
+        .map(async entry => {
+          return { region: entry.region, blueprint: await loadWorldBlueprintFile(worldId, entry, fileCache) }
+        })
+    )
     return {
       ...blueprint,
+      timings: { ...timings, ...blueprint.timings },
+      visualNeighbors,
       environment: selected.environment,
       worldId,
       worldRegionId: selected.id || regionIdFromEntry(selected),
       worldRegion: selected.region,
       worldManifest: {
-        isoPreview: manifest.isoPreview ?? null,
-        macroIsoPreviewPath: manifest.macroIsoPreviewPath,
+        macroPreviewPath: manifest.macroPreviewPath,
         maps: manifest.maps.map(map => ({
           id: map.id || regionIdFromEntry(map),
           region: map.region,
@@ -387,7 +412,10 @@ export async function loadPregeneratedInteriorBlueprint({
       fail('blueprint-id-missing', `Interior blueprint "${id}" is not listed in maps/interiors/manifest.json`)
     }
   } else {
-    const candidates = compatibleInteriorEntries(interiorManifest, { buildingSize, interiorType: requestedBuildingType })
+    const candidates = compatibleInteriorEntries(interiorManifest, {
+      buildingSize,
+      interiorType: requestedBuildingType,
+    })
     if (!candidates.length)
       fail('no-compatible-map', `No interior blueprint matches ${requestedBuildingType || 'unknown'}`)
     selected = candidates[Math.floor(random() * candidates.length)]

@@ -28,7 +28,7 @@ function getDeepestLevel(map: TerrainMap): number {
   let deepestLevel = 0
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
-      deepestLevel = Math.min(deepestLevel, map.grid[i][j].z)
+      deepestLevel = Math.min(deepestLevel, map.grid[i][j]?.z ?? 0)
     }
   }
   return deepestLevel
@@ -37,6 +37,7 @@ function getDeepestLevel(map: TerrainMap): number {
 function expandDepthMask(map: TerrainMap, depthMask: Uint8Array, expandedMask: Uint8Array, n: number): void {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
+      if (!map.grid[i][j]) continue
       const index = i * n + j
       if (depthMask[index]) {
         expandedMask[index] = 1
@@ -62,6 +63,7 @@ function closeNegativeReliefGaps(map: TerrainMap, protectedCells: Set<TerrainCel
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
         const cell = map.grid[i][j]
+        if (!cell) continue
         if (cell.category !== 'Water' && !cell.waterBorder && cell.z <= level) depthMask[i * n + j] = 1
       }
     }
@@ -71,6 +73,7 @@ function closeNegativeReliefGaps(map: TerrainMap, protectedCells: Set<TerrainCel
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
         const cell = map.grid[i][j]
+        if (!cell) continue
         if (cell.category === 'Water' || cell.waterBorder || cell.has || protectedCells.has(cell) || cell.z <= level)
           continue
 
@@ -94,6 +97,7 @@ function buildDepressionUpperBounds(map: TerrainMap, n: number): Int16Array {
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (cell.category === 'Water' || cell.waterBorder || cell.z >= 0) continue
       depressionUpperBounds[i * n + j] = cell.z
       queue.push(cell)
@@ -125,6 +129,7 @@ function applyDepressionUpperBounds(
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (cell.category === 'Water' || cell.waterBorder) continue
       const upperBound = depressionUpperBounds[i * n + j]
       if (!protectedCells.has(cell) && upperBound < cell.z) map.setCellReliefLevelDirect(cell, upperBound)
@@ -180,6 +185,7 @@ function enforceHeightSteps(
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       const neighbors = [map.grid[i]?.[j + 1], map.grid[i + 1]?.[j - 1], map.grid[i + 1]?.[j], map.grid[i + 1]?.[j + 1]]
 
       for (const neighbor of neighbors) {
@@ -208,6 +214,7 @@ function raiseUnsupportedTransitions(
   for (let i = 0; i <= map.size; i++) {
     for (let j = 0; j <= map.size; j++) {
       const cell = map.grid[i][j]
+      if (!cell) continue
       if (cell.category === 'Water' || cell.waterBorder || protectedCells.has(cell)) continue
       const higherNeighbors = getNeighborFlags(map.grid, cell.i, cell.j, (neighbor: TerrainCell | undefined) =>
         Boolean(neighbor && neighbor.z > cell.z)

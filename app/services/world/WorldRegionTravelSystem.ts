@@ -1,4 +1,5 @@
-import { getEntityMapPoint } from '../../lib/mapSpaces'
+import { getEntityMapPoint, isOutsideSpaceId } from '../../lib/mapSpaces'
+import { gridToLocal, localToGrid, type LocalMapLayout } from '../../lib/localMapLayout'
 import type { GameContextLike } from '../../types/context'
 import type { UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
@@ -16,36 +17,77 @@ const CROSS_MARGIN_CELLS = 1
 const CHECK_INTERVAL_MS = 160
 
 function regionIdFor(map: RuntimeMap, region: RegionPoint): string | null {
+  const size = worldRegionSourceSize(map)
   const entry = map.worldManifest?.maps?.find(candidate => {
-    return candidate.size === map.size && candidate.region.x === region.x && candidate.region.y === region.y
+    return candidate.size === size && candidate.region.x === region.x && candidate.region.y === region.y
   })
   return entry?.id ?? null
 }
 
+export function worldRegionSourceSize(map: RuntimeMap): number {
+  return map.worldManifest?.maps?.find(candidate => candidate.id === map.worldRegionId)?.size ?? map.size
+}
+
 function neighborRegionForEdge(region: RegionPoint, edge: RegionEdge): RegionPoint {
-  if (edge === 'west') return { x: region.x, y: region.y - 1 }
-  if (edge === 'east') return { x: region.x, y: region.y + 1 }
-  if (edge === 'north') return { x: region.x - 1, y: region.y }
-  return { x: region.x + 1, y: region.y }
+  if (edge === 'west') return { x: region.x - 1, y: region.y }
+  if (edge === 'east') return { x: region.x + 1, y: region.y }
+  if (edge === 'north') return { x: region.x, y: region.y - 1 }
+  return { x: region.x, y: region.y + 1 }
 }
 
 function edgeDistance(hero: UnitEntity, map: RuntimeMap, edge: RegionEdge): number {
+  if (map.localGridLayout) {
+    const { column, row } = gridToLocal(hero.i, hero.j, map.localGridLayout)
+    const displayColumn = column + (row % 2) / 2
+    if (edge === 'west') return displayColumn
+    if (edge === 'east') return map.localGridLayout.columns - 1 - displayColumn
+    if (edge === 'north') return row / 2
+    return (map.localGridLayout.rows - 1 - row) / 2
+  }
   if (edge === 'west') return hero.i
   if (edge === 'east') return map.size - hero.i
   if (edge === 'north') return hero.j
   return map.size - hero.j
 }
 
-function nearestEdge(hero: UnitEntity, map: RuntimeMap, margin: number): RegionEdge | null {
+function nearestEdge(hero: UnitEntity, map: RuntimeMap, margin: number, crossing = false): RegionEdge | null {
   const edges: RegionEdge[] = ['west', 'east', 'north', 'south']
   const candidates = edges
     .map(edge => ({ edge, distance: edgeDistance(hero, map, edge) }))
-    .filter(candidate => candidate.distance <= margin)
+    .filter(candidate => {
+      const threshold =
+        crossing && map.localGridLayout ? (candidate.edge === 'west' || candidate.edge === 'east' ? 0.5 : 0) : margin
+      return candidate.distance <= threshold
+    })
     .sort((a, b) => a.distance - b.distance)
   return candidates[0]?.edge ?? null
 }
 
-export function arrivalCellForRegionEdge(map: RuntimeMap, edge: RegionEdge, previousCell: { i: number; j: number }): RuntimeCell | null {
+export function arrivalCellForRegionEdge(
+  map: RuntimeMap,
+  edge: RegionEdge,
+  previousCell: { i: number; j: number },
+  previousLayout?: LocalMapLayout
+): RuntimeCell | null {
+  if (map.localGridLayout) {
+    const layout = map.localGridLayout
+    const previous = gridToLocal(previousCell.i, previousCell.j, previousLayout ?? layout)
+    const columnInset = Math.min(2, Math.floor((layout.columns - 1) / 2))
+    const rowInset = Math.min(4, Math.floor((layout.rows - 1) / 2))
+    const column = edge === 'west' ? layout.columns - 1 - columnInset : edge === 'east' ? columnInset : previous.column
+    const row = edge === 'north' ? layout.rows - 1 - rowInset : edge === 'south' ? rowInset : previous.row
+    const targetRow = Math.max(rowInset, Math.min(layout.rows - 1 - rowInset, Math.round(row)))
+    const target = localToGrid(
+      Math.max(columnInset, Math.min(layout.columns - 1 - columnInset - (targetRow % 2), Math.round(column))),
+      targetRow,
+      layout
+    )
+    return findOpenWorldTravelCell(map, target, Math.max(layout.columns, layout.rows), columnInset)
+  }
+  if (previousLayout) {
+    const { column, row } = gridToLocal(previousCell.i, previousCell.j, previousLayout)
+    previousCell = { i: column * 2 + (row % 2), j: Math.floor(row / 2) }
+  }
   const inset = 1
   const center = Math.floor(map.size / 2)
   const target =
@@ -74,6 +116,26 @@ export function findOpenWorldTravelCell(
   maxRadius: number,
   inset = 1
 ): RuntimeCell | null {
+  if (map.localGridLayout) {
+    const layout = map.localGridLayout
+    const origin = gridToLocal(start.i, start.j, layout)
+    const columnInset = Math.min(inset, Math.floor((layout.columns - 1) / 2))
+    const rowInset = Math.min(inset * 2, Math.floor((layout.rows - 1) / 2))
+    let nearest: RuntimeCell | null = null
+    let nearestDistance = Infinity
+    for (let row = rowInset; row < layout.rows - rowInset; row++) {
+      for (let column = columnInset; column < layout.columns - columnInset - (row % 2); column++) {
+        const distance = Math.max(Math.abs(column - origin.column), Math.abs(row - origin.row) / 2)
+        if (distance > maxRadius || distance >= nearestDistance) continue
+        const { i, j } = localToGrid(column, row, layout)
+        const cell = map.grid[i]?.[j]
+        if (!isOpenWorldTravelCell(cell)) continue
+        nearest = cell
+        nearestDistance = distance
+      }
+    }
+    return nearest
+  }
   if (isOpenWorldTravelCell(map.grid[start.i]?.[start.j])) return map.grid[start.i][start.j]
   for (let radius = 1; radius <= maxRadius; radius += 1) {
     for (let di = -radius; di <= radius; di += 1) {
@@ -118,10 +180,19 @@ export class WorldRegionTravelSystem {
 
     const map = this.context.map
     const hero = this.context.controls?.heroUnit
-    if (!map || !hero || map.mapType === 'interior' || !map.worldId || !map.worldRegion) return
+    if (
+      !map ||
+      !hero ||
+      map.mapType === 'interior' ||
+      !isOutsideSpaceId(hero.spaceId) ||
+      !map.worldId ||
+      !map.worldRegion
+    ) {
+      return
+    }
     const edgeToPreload = nearestEdge(hero, map, PRELOAD_MARGIN_CELLS)
     if (edgeToPreload) this.preloadNeighbor(edgeToPreload)
-    const edgeToCross = nearestEdge(hero, map, CROSS_MARGIN_CELLS)
+    const edgeToCross = nearestEdge(hero, map, CROSS_MARGIN_CELLS, true)
     if (edgeToCross) this.crossToNeighbor(edgeToCross)
   }
 
@@ -140,7 +211,7 @@ export class WorldRegionTravelSystem {
   crossToNeighbor(edge: RegionEdge): void {
     const map = this.context.map
     const hero = this.context.controls?.heroUnit
-    if (!map?.worldRegion || !hero) return
+    if (!map?.worldRegion || !hero || !isOutsideSpaceId(hero.spaceId)) return
     const regionId = regionIdFor(map, neighborRegionForEdge(map.worldRegion, edge))
     if (!regionId) return
     this._travelling = true

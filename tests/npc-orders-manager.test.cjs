@@ -150,7 +150,7 @@ function buildMocks(calls, context) {
       UNIT_TYPES: { villager: 'Villager' },
     },
     '../lib/units/unitExperience': {
-      getUnitEquipmentLevel: npc => npc.debugLevel ?? 0,
+      getUnitEquipmentLevel: npc => npc.debugLevel ?? 1,
       setUnitDebugLevel: (npc, level) => {
         npc.debugLevel = level
         calls.push(['setUnitDebugLevel', level, `paused=${context.paused}`])
@@ -677,9 +677,9 @@ test('debug level button cycles a solo unit level without closing communication'
     await Promise.resolve()
 
     assert.equal(manager.opened, true)
-    assert.equal(npc.debugLevel, 1)
+    assert.equal(npc.debugLevel, 2)
     assert.deepEqual(calls, [
-      ['setUnitDebugLevel', 1, 'paused=false'],
+      ['setUnitDebugLevel', 2, 'paused=false'],
       ['refreshUnitEquipmentStats', 'infantry-1'],
       ['ensureAndRefreshBakedLpcUnitAssets', 'infantry-1'],
       ['updateHeroStatus', 'infantry-1'],

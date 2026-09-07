@@ -1,24 +1,15 @@
 import { Assets } from 'pixi.js'
 import type { ContainerChild, Sprite } from 'pixi.js'
 import { cartesianToIsometric } from '../../lib'
-import { CELL_DEPTH, FAMILY_TYPES } from '../../constants'
+import { CELL_DEPTH } from '../../constants'
 import type { RuntimeEntity } from '../../types/entities'
 import type { FogSpriteMemory, RuntimeCell as MapRuntimeCell } from '../../types/map'
-import type { VisionViewerRef } from '../../types/vision'
-import type { TextureRef } from '../../lib'
 import { CellTerrain, type TerrainCellLike } from './CellTerrain'
 import type { FogCellLike } from './CellFog'
 import { placeCellEntity, updateCellChildVisibility, updateCellVisible } from './CellVisibility'
 import { createCellTerrainSprite } from './CellSpriteFactory'
-import {
-  assignCellCommonState,
-  createEmptyTerrainAppearance,
-  type CellConfig,
-  type CellContextLike,
-  type CellMapLike,
-} from './CellTypes'
-
-type TerrainBakeMap = CellMapLike
+import { type CellConfig, type CellContextLike } from './CellTypes'
+import { CellBase } from './CellBase'
 
 export type TerrainBakeCellContext = CellContextLike
 
@@ -29,70 +20,18 @@ type TerrainBakeCellSource = MapRuntimeCell & {
   _hasFog?: boolean
 }
 
-export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCellLike {
-  context: TerrainBakeCellContext
-  family: string
-  map: TerrainBakeMap
-  children: ContainerChild[]
-  parent: TerrainCellLike['parent']
-  x: number
-  y: number
-  visible: boolean
-  zIndex: number
-  sortableChildren: boolean
-  eventMode: string
-  i: number
-  j: number
-  type: string
-  category?: string
-  color?: string | number
-  assets: TextureRef[]
-  solid!: boolean
-  inclined!: boolean
-  border!: boolean
-  waterBorder!: boolean
-  terrainHidden!: boolean
-  z: number
-  viewed!: boolean
-  viewBy: Set<VisionViewerRef>
-  has: RuntimeEntity | null
-  corpses: Set<RuntimeEntity>
-  fogSprites: FogSpriteMemory[]
-  _hasFog!: boolean
-  terrainTextureName: string
+export class TerrainBakeCell extends CellBase implements MapRuntimeCell, FogCellLike, TerrainCellLike {
   terrainSet: ContainerChild | null
-  sprite: Sprite | null
+  override sprite: Sprite | null
   cellFog: null
-  cellTerrain: CellTerrain
-  unregisterWaterBorderSurface: (() => void) | null
-  _terrainAppearance: {
-    patchBorders: Set<string> | null
-    patchBorderGroundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow' | null
-    relief: { index: number; elevation: number } | null
-    waterBorder: { resourceName: string; index: number } | null
-  }
 
   constructor(source: TerrainBakeCellSource, context: TerrainBakeCellContext) {
-    this.context = context
+    super(context, source)
     this.map = this.context.map
-    this.parent = this.map as unknown as TerrainCellLike['parent']
-    this.children = []
-    this.family = FAMILY_TYPES.cell
-    this.i = 0
-    this.j = 0
-    this.type = ''
-    this.z = 0
-    this.assets = []
-    this.corpses = new Set()
-    this.fogSprites = []
-    this.has = null
-    this.terrainTextureName = ''
+    ;(this as unknown as { parent: TerrainCellLike['parent'] }).parent =
+      this.map as unknown as TerrainCellLike['parent']
     this.terrainSet = null
     this.cellFog = null
-    this.unregisterWaterBorderSurface = null
-    this.viewBy = new Set()
-    this._terrainAppearance = createEmptyTerrainAppearance()
-    assignCellCommonState(this, source)
 
     const definition = Assets.cache.get('config')?.cells?.[this.type] as CellConfig | undefined
     if (definition) Object.assign(this, definition)
@@ -109,21 +48,6 @@ export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCell
 
     this.cellTerrain = new CellTerrain(this)
     this.eventMode = 'none'
-  }
-
-  getChildByLabel(label: string): ContainerChild | null {
-    return this.children.find(child => child.label === label) ?? null
-  }
-
-  addChild<T extends ContainerChild>(child: T): T {
-    this.children.push(child)
-    return child
-  }
-
-  removeChild<T extends ContainerChild>(child: T): T {
-    const index = this.children.indexOf(child)
-    if (index >= 0) this.children.splice(index, 1)
-    return child
   }
 
   getTerrainBakeChildren(): ContainerChild[] {
@@ -158,39 +82,7 @@ export class TerrainBakeCell implements MapRuntimeCell, FogCellLike, TerrainCell
   removeFogBuilding(): void {}
   setFogChildren(): void {}
 
-  setPatchBorder(direction: string, groundType?: 'Desert' | 'DarkForest' | 'Dirt' | 'Jungle' | 'Snow'): void {
-    return this.cellTerrain.setPatchBorder(direction, groundType)
-  }
-  resetTerrainAppearance(): void {
-    return this.cellTerrain.resetTerrainAppearance()
-  }
-  setTerrainType(type: string): void {
-    this.cellTerrain.setTerrainType(type)
-    this.map.invalidateWaterOverlay?.()
-  }
-  setWaterBorder(resourceName: string, index: number): void {
-    this.cellTerrain.setWaterBorder(resourceName, index)
-    this.map.invalidateWaterOverlay?.()
-  }
-  setReliefBorder(index: number, elevation?: number): void {
-    return this.cellTerrain.setReliefBorder(index, elevation)
-  }
-  setWater(): void {
-    this.cellTerrain.setWater()
-    this.map.invalidateWaterOverlay?.()
-  }
-  fillReliefCellsAroundCell(): void {
-    return this.cellTerrain.fillReliefCellsAroundCell()
-  }
-  setCellLevel(level: number, cpt?: number): void {
-    return this.cellTerrain.setCellLevel(level, cpt)
-  }
-
-  destroy(options?: Parameters<ContainerChild['destroy']>[0]): void {
-    this.unregisterWaterBorderSurface?.()
-    this.unregisterWaterBorderSurface = null
-    for (const child of this.children.splice(0)) {
-      child.destroy?.(options)
-    }
+  override destroy(options?: Parameters<ContainerChild['destroy']>[0]): void {
+    super.destroy(options)
   }
 }

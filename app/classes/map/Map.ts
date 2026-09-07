@@ -1,5 +1,7 @@
 import { Container, type ContainerChild, type Graphics, type Texture, type Ticker, type TilingSprite } from 'pixi.js'
-import { BUCKET_SIZE, CELL_WIDTH } from '../../constants'
+import { updateNeighborSceneryVisibility } from './NeighborScenery'
+import type { LocalMapLayout } from '../../lib/localMapLayout'
+import { CELL_WIDTH } from '../../constants'
 import type { EnvironmentTerrainParams } from '../../constants'
 import {
   MapGeneration,
@@ -16,6 +18,7 @@ import { createSeededRandom } from '../../lib/random'
 import {
   OUTSIDE_SPACE_ID,
   addEntityToRuntimeMapSpaceBucket,
+  createRuntimeMapSpaceBuckets,
   ensureOutsideMapSpace,
   getEntityMapSpace,
   removeEntityFromRuntimeMapSpaceBucket,
@@ -34,7 +37,7 @@ import {
 } from './MapWaterOverlay'
 import type { ResourceAmount } from '../../types/common'
 import type { GridPosition } from '../../types/grid'
-import type { RuntimeCell, RenderChunk, RuntimeMap, RuntimeMapSpace } from '../../types/map'
+import type { RuntimeCell, RenderChunk, RuntimeMap, RuntimeMapSpace, RuntimeWorldManifest } from '../../types/map'
 import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 import type { Viewport, Bounds } from '../../types/geometry'
@@ -87,13 +90,7 @@ export default class Map extends Container {
   worldId: string | null
   worldRegionId: string | null
   worldRegion: { x: number; y: number } | null
-  worldManifest: {
-    maps?: Array<{ id?: string; region: { x: number; y: number }; size: number }>
-    regionsHigh?: number
-    regionsWide?: number
-    settlements?: unknown[]
-    worldSeed?: string | number
-  } | null
+  worldManifest: RuntimeWorldManifest | null
   positionsCount: number
   gaia: PlayerLike | null
   resources: Set<ResourceEntity>
@@ -115,6 +112,7 @@ export default class Map extends Container {
   waterOverlayTick: ((ticker: Ticker) => void) | null
   waterBorderSurfaces: Set<WaterBorderSurface>
   waterBackground: Graphics | null
+  localGridLayout?: LocalMapLayout
 
   visibleRenderChunkCount?: number
 
@@ -229,6 +227,7 @@ export default class Map extends Container {
   }
 
   updateRenderChunks(viewport: Viewport, margin: number = CELL_WIDTH * 2): void {
+    updateNeighborSceneryVisibility(this)
     this.updateWaterOverlay()
     if (this.terrainChunkManager?.chunks.size) {
       this.context.performance?.measure?.('terrainChunks.update', () => this.terrainChunkManager.update(viewport))
@@ -289,9 +288,7 @@ export default class Map extends Container {
 
   _ensureBuckets(): void {
     if (this.instanceBuckets) return
-    const bw = Math.ceil(this.grid.length / BUCKET_SIZE)
-    const bh = Math.ceil(this.grid[0].length / BUCKET_SIZE)
-    this.instanceBuckets = Array.from({ length: bw }, () => Array.from({ length: bh }, () => new Set()))
+    this.instanceBuckets = createRuntimeMapSpaceBuckets(this.grid, this.size)
     ensureOutsideMapSpace(this as unknown as RuntimeMap).instanceBuckets = this.instanceBuckets
   }
 

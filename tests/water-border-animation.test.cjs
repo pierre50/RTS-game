@@ -140,7 +140,8 @@ function loadMapModule({ waterOverlayFramesAvailable = false } = {}) {
       })
     }
     if (request === './TerrainChunkManager') return { TerrainChunkManager: class {} }
-    return requireFromTsFile(request, filename, mocks)
+    if (request === './NeighborScenery') return { updateNeighborSceneryVisibility() {} }
+    return requireFromTsFile(request, filename)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.default

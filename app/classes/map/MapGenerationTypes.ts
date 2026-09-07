@@ -1,4 +1,5 @@
 import type { ContainerChild } from 'pixi.js'
+import type { LocalMapLayout } from '../../lib/localMapLayout'
 import type { EnvironmentTerrainParams, FAMILY_TYPES } from '../../constants'
 import type { GameContextLike, MapRuntimeContext } from '../../types/context'
 import type { RuntimeEntity } from '../../types/entities'
@@ -136,6 +137,9 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
+  visualNeighbors?: Array<{ region: { x: number; y: number }; blueprint: MapBlueprint }>
+  preserveLegacyGrid?: boolean
+  localGridLayout?: LocalMapLayout
   seed?: string | number
   size: number
   buildingSize?: number
@@ -162,7 +166,7 @@ export type SavedGameData = Omit<
   SerializedSave,
   'map' | 'players' | 'resources' | 'animals' | 'naturalResourceRespawnSlots'
 > & {
-  map: SaveCellState[][]
+  map: (SaveCellState | null)[][]
   players: SavedPlayer[]
   camera: { x: number; y: number }
   resources: SaveEntityState[]

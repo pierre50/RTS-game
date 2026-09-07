@@ -12,6 +12,9 @@ function loadMinimapManager() {
       return createCanvas()
     },
   }
+  global.getComputedStyle ||= element => ({
+    getPropertyValue: name => element?.style?.getPropertyValue?.(name) || '',
+  })
   const filename = path.join(__dirname, '../app/ui/minimap/MinimapManager.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -30,7 +33,7 @@ function loadMinimapManager() {
       throttleByKey: fn => fn,
       canvasDrawDiamond: (...args) => args[0].diamonds.push(args.slice(1)),
       canvasDrawRectangle: (...args) => args[0].rectangles.push(args.slice(1)),
-      canvasDrawStrokeRectangle: () => {},
+      canvasDrawStrokeRectangle: (...args) => args[0].strokes.push(args.slice(1)),
       playerCanSeeInstance: () => true,
     },
     '../lib/mapSpaces': {
@@ -51,6 +54,7 @@ function createCanvas() {
   const context = {
     diamonds: [],
     rectangles: [],
+    strokes: [],
     clears: 0,
     translate() {},
     clearRect() {
@@ -89,13 +93,22 @@ function createMenu({ revealEverything = false, playerLabel = 'player' } = {}) {
     },
     minimapMap: {
       appendChild: canvas => appended.push(canvas),
-      style: {},
+      style: createStyleDeclaration(),
     },
     terrainMinimap: createCanvas(),
     resourcesMinimap: createCanvas(),
     cameraMinimap: createCanvas(),
     playersMinimap: [],
     ensureMinimapCanvases() {},
+  }
+}
+
+function createStyleDeclaration() {
+  const properties = new Map()
+  return {
+    getPropertyValue: name => properties.get(name) ?? '',
+    removeProperty: name => properties.delete(name),
+    setProperty: (name, value) => properties.set(name, value),
   }
 }
 
@@ -137,6 +150,37 @@ test('minimap ignores redraw requests while inactive', () => {
   assert.equal(menu.resourcesMinimap.context.clears, 0)
   assert.equal(menu.cameraMinimap.context.clears, 0)
   assert.equal(menu.playersMinimap.length, 0)
+})
+
+test('exterior minimap uses a square canvas only with a local layout', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  menu.context.map.localGridLayout = { columns: 3, rows: 9 }
+  const manager = new MinimapManager(menu)
+  manager.activate()
+
+  assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height)
+  assert.equal(menu.resourcesMinimap.width, menu.resourcesMinimap.height)
+  assert.equal(menu.cameraMinimap.width, menu.cameraMinimap.height)
+})
+
+test('legacy exterior minimap retains its isometric canvas', () => {
+  const MinimapManager = loadMinimapManager()
+  const menu = createMenu({ revealEverything: true })
+  menu.context.map.grid[0][0].color = 'origin'
+  menu.context.map.grid[1][0].color = 'east'
+  menu.context.map.grid[0][1].color = 'south'
+  const manager = new MinimapManager(menu)
+  manager.activate()
+  manager.revealTerrainMinimap()
+
+  assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height * 2)
+
+  const draws = new Map(menu.terrainMinimap.context.diamonds.map(([x, y, width, height, color]) => [color, { x, y }]))
+
+  assert.ok(draws.get('east').x > draws.get('origin').x)
+  assert.ok(draws.get('south').x < draws.get('east').x)
+  assert.ok(draws.get('south').y > draws.get('origin').y)
 })
 
 test('minimap clears stale non-player layers instead of redrawing them', () => {
@@ -315,4 +359,99 @@ test('interior minimap scales unit and building markers with the active room', (
   assert.ok(unitMarker[2] > 8)
   assert.equal(buildingMarker[4], '#00f')
   assert.equal(unitMarker[4], '#00f')
+})
+
+function createLocalMinimap(layout = { columns: 9, rows: 33 }) {
+  const menu = createMenu({ revealEverything: true })
+  const grid = []
+  for (let row = 0; row < layout.rows; row++) {
+    for (let column = 0; column < layout.columns - (row % 2); column++) {
+      const i = column + Math.ceil(row / 2)
+      const j = layout.columns - 1 - column + Math.floor(row / 2)
+      grid[i] ||= []
+      grid[i][j] = { i, j, x: (i - j) * 32, y: (i + j) * 16, color: `${column}:${row}` }
+    }
+  }
+  const size = grid.length - 1
+  Object.assign(menu.context.map, { grid, size, localGridLayout: layout })
+  menu.context.map.spaces.set('outside', { id: 'outside', kind: 'outside', grid, size, origin: { x: 0, y: 0 } })
+  const manager = new (loadMinimapManager())(menu)
+  manager.activate()
+  return { menu, manager }
+}
+
+function assertClose(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 1e-8, `${actual} != ${expected}`)
+}
+
+test('local minimap projects sparse terrain uniformly in world coordinates and inverts CSS-scaled clicks', () => {
+  const { menu, manager } = createLocalMinimap()
+  const draws = menu.terrainMinimap.context.diamonds
+  assert.equal(draws.length, 9 * 17 + 8 * 16)
+  const rect = { left: 30, top: 50, width: 420, height: 280 }
+  for (const [x, y, width, height, color] of draws) {
+    const [column, row] = color.split(':').map(Number)
+    const worldX = (2 * column - 8 + (row % 2)) * 32
+    const worldY = (8 + row) * 16
+    const centerY = y + (height - 1) / 2
+    assertClose(x, 24 + (worldX + 256) * 2.25)
+    assertClose(centerY, 24 + (worldY - 128) * 2.25)
+    assertClose(width - 1, (height - 1) * 2)
+    const cropX = 12
+    const cropY = 14
+    const point = manager.getMinimapWorldPoint(
+      rect.left + (x / 1200) * (rect.width + cropX * 2) - cropX,
+      rect.top + (centerY / 1200) * (rect.height + cropY * 2) - cropY,
+      rect
+    )
+    assert.ok(Math.abs(point.x - worldX) < 1e-8)
+    assert.ok(Math.abs(point.y - worldY) < 1e-8)
+  }
+  assert.deepEqual(manager.getMinimapWorldPoint(-1000, -1000, rect), { x: -256, y: 128 })
+  assert.deepEqual(manager.getMinimapWorldPoint(1000, 1000, rect), { x: 256, y: 640 })
+})
+
+test('local minimap markers follow actual fractional positions and camera overlay uses the same scale', () => {
+  const { menu, manager } = createLocalMinimap()
+  menu.context.player.units = [{ family: 'unit', i: 9, j: 9, position: { x: 12.5, y: 180.25 } }]
+  manager.updatePlayerMiniMapEvt(menu.context.player)
+  const [x, y, width, height] = menu.playersMinimap[0].context.rectangles.at(-1)
+  assertClose(x + width / 2, 24 + (12.5 + 256) * 2.25)
+  assertClose(y + height / 2, 24 + (180.25 - 128) * 2.25)
+  menu.context.controls.getViewportMetrics = () => ({
+    visibleLeft: -60,
+    visibleTop: 100,
+    visibleWidth: 120,
+    visibleHeight: 80,
+  })
+  manager.updateCameraMiniMapEvt()
+  menu.cameraMinimap.context.strokes
+    .at(-1)
+    .slice(0, 4)
+    .forEach((value, index) => assertClose(value, [465, -38.99999999999999, 270, 180][index]))
+})
+
+test('rectangular local layouts retain uniform scale with centered unused space', () => {
+  const { manager, menu } = createLocalMinimap({ columns: 9, rows: 17 })
+  const edge = menu.terrainMinimap.context.diamonds.find(draw => draw[4] === '0:0')
+  assertClose(edge[0], 24)
+  assertClose(edge[1] + (edge[3] - 1) / 2, 312)
+  const point = manager.getMinimapWorldPoint(150, 150, { left: 0, top: 0, width: 300, height: 300 })
+  assertClose(point.x, 0)
+  assertClose(point.y, 256)
+})
+
+test('interior minimap ignores exterior local layout metadata', () => {
+  const { menu, manager } = createLocalMinimap()
+  menu.context.map.spaces.set('interior:house', {
+    id: 'interior:house',
+    kind: 'interior',
+    size: 1,
+    grid: [],
+    origin: { x: 500, y: 600 },
+  })
+  menu.context.map.activeSpaceId = 'interior:house'
+  manager.initMiniMap()
+  assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height * 2)
+  assert.match(menu.minimapMap.style.clipPath, /^polygon/)
 })

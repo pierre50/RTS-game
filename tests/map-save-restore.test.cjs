@@ -34,6 +34,27 @@ function loadMapSaveRestore() {
 
 const { restorePlayerEntitiesFromSave } = loadMapSaveRestore()
 
+test('fog restoration skips sparse holes even when their saved vision is viewed', () => {
+  const { restorePlayerViewsAndFog } = loadMapSaveRestore()
+  const fog = []
+  const viewed = []
+  const map = { size: 2, grid: [[], [, { setFog: value => fog.push(value) }], []] }
+  restorePlayerViewsAndFog(
+    {
+      isPlayed: true,
+      views: {
+        restoreViewers() {},
+        isViewed: () => true,
+        isVisible: () => false,
+        onViewed: (i, j) => viewed.push([i, j]),
+      },
+    },
+    map
+  )
+  assert.deepEqual(fog, [true])
+  assert.deepEqual(viewed, [[1, 1]])
+})
+
 test('restoring player entities preserves saved unit types instead of applying new-game hero promotion', () => {
   const createUnitCalls = []
   const player = {
@@ -57,5 +78,8 @@ test('restoring player entities preserves saved unit types instead of applying n
   assert.equal(player.corpses[0].type, 'Fantassin')
   assert.equal(createUnitCalls[0].options.suppressCreateSound, true)
   assert.equal(createUnitCalls[1].options.suppressCreateSound, true)
-  assert.deepEqual(createUnitCalls.map(call => call.creationOptions), [{ preserveType: true }, { preserveType: true }])
+  assert.deepEqual(
+    createUnitCalls.map(call => call.creationOptions),
+    [{ preserveType: true }, { preserveType: true }]
+  )
 })

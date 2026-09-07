@@ -148,6 +148,7 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
     size: world.size ?? savedConfig.size,
     mapType: world.mapType ?? savedConfig.mapType,
     environment: world.environment ?? savedConfig.environment,
+    localGridLayout: world.localGridLayout ?? savedConfig.localGridLayout,
     worldId: world.worldId ?? savedConfig.worldId ?? DEFAULT_WORLD_ID,
     worldRegionId: world.worldRegionId ?? savedConfig.worldRegionId ?? undefined,
     players: savedPlayers.map(player => ({
@@ -166,19 +167,23 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
     isInteriorWorld
       ? game._loadRequiredInteriorBlueprint({ id: String(blueprintId) })
       : game._loadRequiredWorldMapBlueprint({
-          size: map.size,
+          size: json.world?.sourceSize ?? map.size,
           playerCiv: seedConfig.players.find(player => player.isHuman)?.civ ?? seedConfig.players[0]?.civ,
           worldId: seedConfig.worldId ?? DEFAULT_WORLD_ID,
           worldRegionId: seedConfig.worldRegionId ?? undefined,
         })
   )
   await measureAsync(game, 'seedSave.generateFromBlueprint', () =>
-    map.generateFromBlueprint(blueprint, { onProgress: reportProgress(game) })
+    map.generateFromBlueprint(
+      { ...blueprint, preserveLegacyGrid: !seedConfig.localGridLayout },
+      { onProgress: reportProgress(game) }
+    )
   )
   recordLoadedMapBlueprint(map, blueprint, 'save-pregenerated-blueprint')
   await measureAsync(game, 'seedSave.prepareTerrainForSavedState', () =>
     map.prepareTerrainForSavedState({ onProgress: reportProgress(game) })
   )
+  await preloadSavedPlayerAssets(game, json)
   measure(game, 'seedSave.applySavedState', () =>
     map.mapGeneration.applySavedStateToGeneratedMap(savedRuntimeState(json))
   )
@@ -193,6 +198,19 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   game.context.performance?.setPhase?.('runtime')
 }
 
+async function preloadSavedPlayerAssets(game: GameWorldBootHost, json: SerializedSave): Promise<void> {
+  // Saved units need their owner's appearance sheets before their constructors run.
+  const players = json.players.map(player => ({
+    civ: player.civ,
+    gender: player.gender,
+    label: player.label ?? '',
+    heroAppearance: player.heroAppearance,
+  }))
+  await measureAsync(game, 'save.preloadPlayerAssets', () =>
+    preloadBakedLpcUnitsForPlayers(players, game.context.performance, { preloadEquipment: true })
+  )
+}
+
 export async function bootGameFromSave(game: GameWorldBootHost, json: SerializedSave): Promise<void> {
   game.context.performance?.setPhase?.('load')
   if (!hasSerializedGrid(json)) {
@@ -205,6 +223,7 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
   map.size = Math.max(0, (savedMap?.length || 1) - 1)
   measure(game, 'save.applyMapConfig', () => game._applyMapConfig(map, saveConfig(json.config)))
   measure(game, 'save.createUiRuntime', () => game._createUiRuntime())
+  await preloadSavedPlayerAssets(game, json)
   measure(game, 'save.generateFromJSON', () => map.generateFromJSON(savedRuntimeState(json)))
   await measureAsync(game, 'save.preloadUnits', () =>
     preloadBakedLpcUnitsForPlayers(game.context.players, game.context.performance, {

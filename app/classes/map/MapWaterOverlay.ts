@@ -131,25 +131,59 @@ function mapHasWaterCells(map: Pick<WaterOverlayHost, 'grid'>): boolean {
   return false
 }
 
-function createMapGridMask(map: Pick<WaterOverlayHost, 'size'>): Graphics {
+function createMapGridMask(map: Pick<WaterOverlayHost, 'size' | 'grid'>): Graphics {
   const halfWidth = CELL_WIDTH / 2
   const halfHeight = CELL_HEIGHT / 2
   const mask = new Graphics()
   mask.label = 'waterOverlayMask'
   mask.eventMode = 'none'
   mask.zIndex = WATER_BACKGROUND_Z_INDEX - 0.1
-  mask
-    .poly([
-      0,
-      -halfHeight,
-      map.size * halfWidth + halfWidth,
-      map.size * halfHeight,
-      0,
-      map.size * CELL_HEIGHT + halfHeight,
-      -map.size * halfWidth - halfWidth,
-      map.size * halfHeight,
-    ])
-    .fill({ color: 0xffffff })
+  const dense =
+    map.grid.length === map.size + 1 &&
+    map.grid.every(row => {
+      if (row.length !== map.size + 1) return false
+      for (let j = 0; j <= map.size; j++) if (!row[j]) return false
+      return true
+    })
+  if (dense) {
+    mask
+      .poly([
+        0,
+        -halfHeight,
+        map.size * halfWidth + halfWidth,
+        map.size * halfHeight,
+        0,
+        map.size * CELL_HEIGHT + halfHeight,
+        -map.size * halfWidth - halfWidth,
+        map.size * halfHeight,
+      ])
+      .fill({ color: 0xffffff })
+    return mask
+  }
+  // Each occupied row run is an isometric strip; gaps stay outside the mask.
+  for (let i = 0; i < map.grid.length; i++) {
+    const row = map.grid[i]
+    for (let j = 0; j < row.length; j++) {
+      if (!row[j]) continue
+      const startJ = j
+      while (j + 1 < row.length && row[j + 1]) j++
+      const startX = (i - startJ) * halfWidth
+      const startY = (i + startJ) * halfHeight
+      const endX = (i - j) * halfWidth
+      const endY = (i + j) * halfHeight
+      mask.poly([
+        startX,
+        startY - halfHeight,
+        startX + halfWidth,
+        startY,
+        endX,
+        endY + halfHeight,
+        endX - halfWidth,
+        endY,
+      ])
+    }
+  }
+  mask.fill({ color: 0xffffff })
   return mask
 }
 

@@ -300,10 +300,11 @@ export class UnitMovementRouting {
     }
     cancelEnergyWait(unit)
     syncVillagerWorkForAction(unit, action)
+    const currentCell = map.grid[unit.i]?.[unit.j]
     if (
+      currentCell &&
       unit.isUnitAtDest?.(action, dest) &&
-      (!map.grid[unit.i][unit.j].solid ||
-        (map.grid[unit.i][unit.j].solid && map.grid[unit.i][unit.j].has?.label === unit.label))
+      (!currentCell.solid || currentCell.has?.label === unit.label)
     ) {
       if (!forceRepath && currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
         return

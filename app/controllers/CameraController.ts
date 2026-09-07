@@ -1,11 +1,24 @@
-import { pointInRectangle, pointIsBetweenTwoPoint, updateInstanceRenderVisibility } from '../lib'
+import { pointInRectangle } from '../lib'
 import { rectangleIntersectsViewport } from '../lib/graphics/chunkCulling'
 import { getActiveMapSpace, OUTSIDE_SPACE_ID } from '../lib/mapSpaces'
+import { getLocalMapBounds } from '../lib/localMapLayout'
 import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
 import { getCameraZoom } from '../lib/audio/settings'
 import type { RuntimeCell, RuntimeMap } from '../types/map'
 import type { Bounds, Viewport } from '../types/geometry'
 import type { VisionGridLike } from '../types/player'
+import {
+  getCameraMoveDelta,
+  getMouseCameraDirections,
+  type CameraDirection,
+  type CameraPoint,
+} from './camera/CameraMovement'
+import {
+  collectCameraCells,
+  refreshEnteredCameraCells,
+  refreshExitedCameraCells,
+  type CameraVisibleCellsStats,
+} from './camera/CameraVisibleCells'
 
 // Generous halo around the viewport used to decide which cells are worth tracking for camera
 // culling. Must comfortably exceed the largest building sprite's extent beyond its footprint tile
@@ -14,17 +27,7 @@ import type { VisionGridLike } from '../types/player'
 const CAMERA_CULL_MARGIN = CELL_WIDTH * 4
 const CAMERA_VISIBLE_CELLS_SNAP = CELL_WIDTH / 2
 
-type Point = { x: number; y: number }
-type CameraDirection = 'left' | 'right' | 'up' | 'down'
-type CameraVisibleCellsStats = {
-  candidates: number
-  exited: number
-  margin: number
-  samples: number
-  stepX: number
-  stepY: number
-  updated: number
-}
+type Point = CameraPoint
 type CameraContext = {
   app: {
     screen: {
@@ -165,6 +168,13 @@ export class CameraController {
   }
 
   clampWorldPointToMap(x: number, y: number): { x: number; y: number } {
+    const bounds = this.getLocalCameraBounds()
+    if (bounds) {
+      return {
+        x: Math.min(Math.max(x, bounds.left), bounds.right),
+        y: Math.min(Math.max(y, bounds.top), bounds.bottom),
+      }
+    }
     const { origin, size } = this.getActiveCameraSpace()
     const localX = x - origin.x
     const localY = y - origin.y
@@ -179,6 +189,18 @@ export class CameraController {
   }
 
   clampCameraToMap(): void {
+    const bounds = this.getLocalCameraBounds()
+    if (bounds) {
+      const viewport = this.getViewportRect()
+      // When the viewport exceeds an axis, center that axis over the map.
+      const clampAxis = (start: number, extent: number, min: number, max: number) =>
+        extent >= max - min ? (min + max - extent) / 2 : Math.min(Math.max(start, min), max - extent)
+      this.camera.x +=
+        clampAxis(viewport.visibleLeft, viewport.visibleWidth, bounds.left, bounds.right) - viewport.visibleLeft
+      this.camera.y +=
+        clampAxis(viewport.visibleTop, viewport.visibleHeight, bounds.top, bounds.bottom) - viewport.visibleTop
+      return
+    }
     const {
       context: { app },
     } = this
@@ -190,7 +212,26 @@ export class CameraController {
     this.camera.y = center.y - app.screen.height / 2
   }
 
-  move(dir: CameraDirection | string, moveSpeed: number, isSpeedDivided: boolean, deltaScale = 1): void {
+  private getLocalCameraBounds(): ReturnType<typeof getLocalMapBounds> | null {
+    const { map } = this.context
+    const space = this.getActiveCameraSpace()
+    if (!space.isOutside || !map.localGridLayout) return null
+    const bounds = getLocalMapBounds(map.localGridLayout)
+    return {
+      left: bounds.left + space.origin.x,
+      right: bounds.right + space.origin.x,
+      top: bounds.top + space.origin.y,
+      bottom: bounds.bottom + space.origin.y,
+    }
+  }
+
+  move(
+    dir: CameraDirection | string,
+    moveSpeed: number,
+    isSpeedDivided: boolean,
+    deltaScale = 1,
+    useEdgeSlide = true
+  ): void {
     /**
      *  /A\
      * /   \
@@ -205,56 +246,22 @@ export class CameraController {
 
     const dividedSpeed = isSpeedDivided ? 1.5 : 1
     const speed = ((moveSpeed || 20) / dividedSpeed) * deltaScale
-    const { A, B, C, D } = this.getCameraDiamondBounds()
     const cameraCenter = {
       x: app.screen.width / 2,
       y: app.screen.height / 2,
     }
     const prevX = this.camera.x
     const prevY = this.camera.y
-
-    if (dir === 'left') {
-      if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.x - 100 > B.x && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.x - 100 > B.x) {
-        this.camera.x -= speed
-      }
-    } else if (dir === 'right') {
-      if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.x + 100 < D.x && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.x + 100 < D.x) {
-        this.camera.x += speed
-      }
-    }
-    if (dir === 'up') {
-      if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, B, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.y - 50 > A.y && pointIsBetweenTwoPoint(A, D, cameraCenter, 50)) {
-        this.camera.y -= speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.y - 50 > A.y) {
-        this.camera.y -= speed
-      }
-    } else if (dir === 'down') {
-      if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(D, C, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x -= speed
-      } else if (cameraCenter.y + 50 < C.y && pointIsBetweenTwoPoint(B, C, cameraCenter, 50)) {
-        this.camera.y += speed / (CELL_WIDTH / CELL_HEIGHT)
-        this.camera.x += speed
-      } else if (cameraCenter.y + 100 < C.y) {
-        this.camera.y += speed
-      }
-    }
+    const delta = getCameraMoveDelta(
+      dir,
+      speed,
+      useEdgeSlide,
+      Boolean(this.getLocalCameraBounds()),
+      this.getCameraDiamondBounds(),
+      cameraCenter
+    )
+    this.camera.x += delta.x
+    this.camera.y += delta.y
 
     if (this.camera.x === prevX && this.camera.y === prevY) return
 
@@ -265,7 +272,6 @@ export class CameraController {
   }
 
   moveWithMouse(evt: { pageX: number; pageY: number }): void {
-    const dir: CameraDirection[] = []
     const mouse = {
       x: evt.pageX,
       y: evt.pageY,
@@ -279,26 +285,7 @@ export class CameraController {
       up: (0 + moveDist - mouse.y) * coef,
       down: (mouse.y - (window.innerHeight - moveDist)) * coef,
     }
-    if (mouse.x >= 0 && mouse.x <= 0 + moveDist && mouse.y >= 0 && mouse.y <= window.innerHeight) {
-      dir.push('left')
-    } else if (
-      mouse.x > window.innerWidth - moveDist &&
-      mouse.x <= window.innerWidth &&
-      mouse.y >= 0 &&
-      mouse.y <= window.innerHeight
-    ) {
-      dir.push('right')
-    }
-    if (mouse.x >= 0 && mouse.x <= window.innerWidth && mouse.y >= 0 && mouse.y <= 0 + moveDist) {
-      dir.push('up')
-    } else if (
-      mouse.x >= 0 &&
-      mouse.x <= window.innerWidth &&
-      mouse.y > window.innerHeight - moveDist &&
-      mouse.y <= window.innerHeight
-    ) {
-      dir.push('down')
-    }
+    const dir = getMouseCameraDirections(mouse, { width: window.innerWidth, height: window.innerHeight }, moveDist)
     this.mouseMoveState = dir.length ? { dir, calcs } : null
   }
 
@@ -359,50 +346,10 @@ export class CameraController {
     const startedAt = performance.now()
     try {
       if (!player?.views) return
-      const newVisible = this._nextVisibleCells ?? new Set()
-      newVisible.clear()
       const margin = CAMERA_CULL_MARGIN
-      const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = viewport
-      const localVisibleLeft = visibleLeft - activeSpace.origin.x
-      const localVisibleTop = visibleTop - activeSpace.origin.y
-
-      const startX = Math.floor(localVisibleLeft - margin)
-      const endX = Math.floor(localVisibleLeft + visibleWidth + margin)
-      const startY = Math.floor(localVisibleTop - margin)
-      const endY = Math.floor(localVisibleTop + visibleHeight + margin)
-
-      const stepX = CELL_WIDTH / 2
-      const stepY = CELL_HEIGHT / 2
-      const invCW = 1 / CELL_WIDTH
-      const invCH = 1 / CELL_HEIGHT
-      let samples = 0
-      for (let i = startX; i <= endX; i += stepX) {
-        for (let j = startY; j <= endY; j += stepY) {
-          samples++
-          const x = Math.min(Math.max(Math.round(i * invCW + j * invCH), 0), activeSpace.size)
-          const y = Math.min(Math.max(Math.round(j * invCH - i * invCW), 0), activeSpace.size)
-          const cell = activeSpace.grid[x]?.[y]
-          if (cell) newVisible.add(cell)
-        }
-      }
-
-      let exited = 0
-      for (let cell of this.visibleCells) {
-        if (!newVisible.has(cell)) {
-          exited++
-          if (cell.has) updateInstanceRenderVisibility(cell.has)
-          for (const corpse of cell.corpses) updateInstanceRenderVisibility(corpse)
-        }
-      }
-
-      let updated = 0
-      for (let cell of newVisible) {
-        const hasCameraCulledContent = cell.has || cell.corpses?.size
-        if (!this.visibleCells.has(cell) || hasCameraCulledContent) {
-          updated++
-          cell.updateVisible()
-        }
-      }
+      const { cells: newVisible, samples, stepX, stepY } = collectCameraCells(activeSpace, viewport, margin)
+      const exited = refreshExitedCameraCells(this.visibleCells, newVisible)
+      const updated = refreshEnteredCameraCells(this.visibleCells, newVisible)
 
       this.visibleCellsStats = {
         candidates: newVisible.size,
@@ -426,19 +373,23 @@ export class CameraController {
       context: { app, menu },
     } = this
     const requestedCenter = direct ? { x: x + app.screen.width / 2, y: y + app.screen.height / 2 } : { x, y }
-    const center = this.clampWorldPointToMap(requestedCenter.x, requestedCenter.y)
+    const center = this.getLocalCameraBounds()
+      ? requestedCenter
+      : this.clampWorldPointToMap(requestedCenter.x, requestedCenter.y)
     const nextCamera = {
       x: center.x - app.screen.width / 2,
       y: center.y - app.screen.height / 2,
     }
-    const moved = nextCamera.x !== this.camera.x || nextCamera.y !== this.camera.y
+    const previousCamera = this.camera
+    this.camera = nextCamera
+    if (this.getLocalCameraBounds()) this.clampCameraToMap()
+    const moved = this.camera.x !== previousCamera.x || this.camera.y !== previousCamera.y
     if (!moved) {
       if (refreshVisibleCells) this.updateVisibleCells()
       else this.scheduleVisibleCellsUpdate()
       return
     }
 
-    this.camera = nextCamera
     this.applyCameraTransform()
     if (menu?.isMiniMapActive?.() !== false) menu?.updateCameraMiniMap?.()
     if (refreshVisibleCells) {

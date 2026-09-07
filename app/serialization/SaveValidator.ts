@@ -1,4 +1,6 @@
 import { Assets } from 'pixi.js'
+import { gridToLocal } from '../lib/localMapLayout'
+import type { GameConfig } from '../types/save'
 import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
 import {
@@ -26,7 +28,31 @@ function getLoadedConfig(): LoadedGameConfig {
   return config as LoadedGameConfig
 }
 
-function validateMap(map: unknown): number {
+type LocalLayout = NonNullable<GameConfig['localGridLayout']>
+
+function containsCell(layout: LocalLayout, i: number, j: number): boolean {
+  const { row, column } = gridToLocal(i, j, layout)
+  return row >= 0 && row < layout.rows && column >= 0 && column < layout.columns - (row % 2)
+}
+
+function validateLocalLayout(value: unknown): LocalLayout | undefined {
+  if (value === undefined) return undefined
+  if (
+    !isObject(value) ||
+    !Number.isInteger(value.columns) ||
+    !Number.isInteger(value.rows) ||
+    typeof value.columns !== 'number' ||
+    typeof value.rows !== 'number' ||
+    value.columns < 2 ||
+    value.columns > MAX_MAP_EDGE ||
+    value.rows !== 4 * (value.columns - 1) + 1
+  ) {
+    fail('Invalid save file: local grid layout is invalid.')
+  }
+  return { columns: value.columns, rows: value.rows }
+}
+
+function validateMap(map: unknown, layout?: LocalLayout): number {
   validateArray(map, 'map')
   if (!map.length || map.length > MAX_MAP_EDGE) {
     fail('Invalid save file: map size is unsupported.')
@@ -35,10 +61,14 @@ function validateMap(map: unknown): number {
   for (let i = 0; i < size; i++) {
     const row = map[i]
     validateArray(row, `map row ${i}`)
-    if (row.length !== size) {
+    if (layout ? row.length > size : row.length !== size) {
       fail('Invalid save file: map must be square.')
     }
     for (let j = 0; j < size; j++) {
+      if (layout && !containsCell(layout, i, j)) {
+        if (row[j] != null) fail(`Invalid save file: cell ${i},${j} is outside the local grid layout.`)
+        continue
+      }
       validateCell(row[j], i, j)
     }
   }
@@ -53,6 +83,15 @@ function validateSeedWorld(data: ObjectRecord, legacyMapSize: number | null = nu
     fail('Invalid save file: map size is unsupported.')
   }
   const seed = world.seed ?? config.seed
+  if (
+    world.sourceSize != null &&
+    (typeof world.sourceSize !== 'number' ||
+      !Number.isInteger(world.sourceSize) ||
+      world.sourceSize < 1 ||
+      world.sourceSize >= MAX_MAP_EDGE)
+  ) {
+    fail('Invalid save file: source map size is unsupported.')
+  }
   if (typeof seed !== 'number' || !Number.isFinite(seed)) {
     fail('Invalid save file: map seed is invalid.')
   }
@@ -101,13 +140,45 @@ export function validateSaveData(data: unknown): SaveRecord {
   }
 
   const config = getLoadedConfig()
-  const legacyMapSize = Array.isArray(data.map) ? validateMap(data.map) : null
+  const worldLayout = validateLocalLayout(isObject(data.world) ? data.world.localGridLayout : undefined)
+  const configLayout = validateLocalLayout(isObject(data.config) ? data.config.localGridLayout : undefined)
+  if (
+    worldLayout &&
+    configLayout &&
+    (worldLayout.columns !== configLayout.columns || worldLayout.rows !== configLayout.rows)
+  ) {
+    fail('Invalid save file: local grid layouts disagree.')
+  }
+  const layout = worldLayout ?? configLayout
+  const legacyMapSize = Array.isArray(data.map) ? validateMap(data.map, layout) : null
   const size = validateSeedWorld(data, legacyMapSize)
+  if (layout && layout.columns - 1 + Math.ceil((layout.rows - 1) / 2) >= size) {
+    fail('Invalid save file: local grid layout exceeds the map size.')
+  }
+  if (layout && legacyMapSize != null && legacyMapSize !== size) {
+    fail('Invalid save file: local grid map size disagrees with its world size.')
+  }
   validateCamera(data.camera)
-  validatePlayers(data.players, size, config)
+  validatePlayers(data.players, size, config, layout ? (i, j) => containsCell(layout, i, j) : undefined)
   validateResources(data.resources, size, config)
   validateNaturalResourceRespawnSlots(data.naturalResourceRespawnSlots, size, config)
   validateAnimals(data.animals, size, config)
+  if (layout) {
+    const players = data.players as ObjectRecord[]
+    const entities = [
+      data.resources,
+      data.animals,
+      data.naturalResourceRespawnSlots ?? [],
+      ...players.flatMap(player => [player.buildings ?? [], player.units ?? [], player.corpses ?? []]),
+    ]
+    for (const list of entities as ObjectRecord[][]) {
+      for (const entity of list) {
+        if (!containsCell(layout, entity.i as number, entity.j as number)) {
+          fail('Invalid save file: entity is outside the local grid layout.')
+        }
+      }
+    }
+  }
 
   if (data.runtime != null) {
     if (!isObject(data.runtime)) fail('Invalid save file: runtime is invalid.')

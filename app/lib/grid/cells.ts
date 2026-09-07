@@ -11,6 +11,7 @@ function zoneMatchesCondition<TCell extends GridCell>(
   condition: CellCondition<TCell>
 ): boolean {
   const surroundingCells = getPlainCellsAroundPoint(i, j, grid, size)
+  if (surroundingCells.length !== (2 * size + 1) ** 2) return false
   for (const surroundingCell of surroundingCells) {
     if (!condition(surroundingCell)) return false
   }

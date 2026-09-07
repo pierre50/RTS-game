@@ -4,6 +4,7 @@ import { getGaiaAnimals } from '../../../lib'
 import { rehydrateAIKnowledge } from '../../../services/FogOfWar'
 import { FAMILY_TYPES, PLAYER_TYPES, RESOURCE_TYPES } from '../../../constants'
 import { Cell } from '../../cell'
+import { normalizeLocalMapRelief } from './LocalMapRelief'
 import {
   processUnit,
   restoreAIState,
@@ -17,7 +18,7 @@ import type { PlayerLike } from '../../../types/player'
 import type { ResourceOptions } from '../../Resource'
 import type { ResourceEntity } from '../../../types/entities'
 import type { SaveEntityState } from '../../../types/save'
-import type { GaiaRespawnSlot, MapGenerationMap, SavedGameData } from '../MapGenerationTypes'
+import type { GaiaRespawnSlot, MapBlueprint, MapGenerationMap, SavedGameData } from '../MapGenerationTypes'
 import type { SavedPlayer } from '../MapSaveRestoreTypes'
 
 function runtimeContext(map: MapGenerationMap): GameContextLike {
@@ -65,7 +66,9 @@ export function restoreSavedPlayers(
         corpses: [],
         buildings: [],
         units: [],
-        ...(player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits ? { difficulty: map.difficulty } : {}),
+        ...(player.type === PLAYER_TYPES.ai || player.type === PLAYER_TYPES.bandits
+          ? { difficulty: map.difficulty }
+          : {}),
       },
       context
     )
@@ -134,6 +137,22 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
   map.clearRenderChunks()
   map.resetRandom()
   map.size = savedMap.length - 1
+  map.localGridLayout = data.world?.localGridLayout ?? data.config?.localGridLayout
+  const terrainBlueprint: MapBlueprint = {
+    size: map.size,
+    localGridLayout: map.localGridLayout,
+    terrain: Array.from({ length: map.size + 1 }, () => []),
+    relief: Array.from({ length: map.size + 1 }, () => []),
+  }
+  for (let i = 0; i <= map.size; i++)
+    for (let j = 0; j <= map.size; j++) {
+      const cell = savedMap[i]?.[j]
+      if (!cell) continue
+      terrainBlueprint.terrain[i][j] = cell.type
+      terrainBlueprint.relief![i][j] = cell.z ?? 0
+    }
+  normalizeLocalMapRelief(terrainBlueprint)
+  map.grid = Array.from({ length: savedMap.length }, () => [])
   map.invalidateReliefCoastDistances()
 
   restoreSavedPlayers(map, players, runtime)
@@ -149,7 +168,11 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
         map.grid[i] = []
       }
       const cell = line[j]
-      const newCell = new Cell({ i, j, z: cell.z ?? 0, type: cell.type, fogSprites: cell.fogSprites ?? [] }, context)
+      if (!cell) continue
+      const newCell = new Cell(
+        { i, j, z: terrainBlueprint.relief![i][j], type: cell.type, fogSprites: cell.fogSprites ?? [] },
+        context
+      )
       map.addChild(newCell)
       map.grid[i][j] = newCell
     }
@@ -165,7 +188,7 @@ export function generateFromJSON(map: MapGenerationMap, data: SavedGameData): vo
   if (!map.revealEverything) {
     for (let i = 0; i <= map.size; i++) {
       for (let j = 0; j <= map.size; j++) {
-        map.grid[i][j].setFog()
+        map.grid[i][j]?.setFog()
       }
     }
   }
@@ -197,6 +220,7 @@ export function clearGeneratedGameplayState(map: MapGenerationMap): void {
   }
   for (const row of map.grid || []) {
     for (const cell of row || []) {
+      if (!cell) continue
       cell.has = null
       cell.solid = false
       cell.corpses?.clear?.()

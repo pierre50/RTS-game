@@ -26,10 +26,7 @@ WORLD_HEIGHT = REGION_MAP_SIZE * WORLD_REGIONS_H
 PREVIEW_SAMPLE_STEP = 2
 WORLD_WATER_MARGIN = 0.055
 DEFAULT_PLAYERS = 0
-DEFAULT_BANDIT_CAMPS = 0
-ISO_HALF_WIDTH = 1.0
-ISO_HALF_HEIGHT = 0.5
-ISO_MARGIN = 12
+DEFAULT_BANDIT_CAMPS = 8
 
 BIOME_SECTORS = [
     "blackforest",
@@ -77,6 +74,76 @@ BANDIT_CAMP_RADIUS = 12
 VILLAGE_LOCAL_PADDING = 28
 BANDIT_CAMP_LOCAL_PADDING = 18
 
+CIVILIZATION_PLACEMENT = {
+    "Hellas": {
+        "biomes": {"temperate": 1.0, "steppe": 0.45, "desert": 0.25, "blackforest": 0.15},
+        "target_x": 0.45,
+        "target_y": 0.48,
+        "x_weight": 0.55,
+        "y_weight": 0.45,
+    },
+    "Latium": {
+        "biomes": {"temperate": 1.0, "steppe": 0.5, "blackforest": 0.25, "desert": 0.2},
+        "target_x": 0.54,
+        "target_y": 0.48,
+        "x_weight": 0.55,
+        "y_weight": 0.45,
+    },
+    "Kemet": {
+        "biomes": {"desert": 1.0, "steppe": 0.55, "temperate": 0.22, "blackforest": -0.25},
+        "target_x": 0.58,
+        "target_y": 0.68,
+        "x_weight": 0.35,
+        "y_weight": 0.85,
+    },
+    "Sumeria": {
+        "biomes": {"desert": 0.85, "steppe": 0.9, "temperate": 0.2, "blackforest": -0.15},
+        "target_x": 0.66,
+        "target_y": 0.58,
+        "x_weight": 0.55,
+        "y_weight": 0.75,
+    },
+    "Xia": {
+        "biomes": {"steppe": 1.25, "temperate": 0.25, "desert": -0.25, "blackforest": 0.0},
+        "target_x": 0.72,
+        "target_y": 0.44,
+        "x_weight": 0.85,
+        "y_weight": 0.85,
+    },
+    "Alba": {
+        "biomes": {"blackforest": 1.0, "temperate": 0.65, "steppe": 0.2, "desert": -0.25},
+        "target_x": 0.28,
+        "target_y": 0.32,
+        "x_weight": 0.65,
+        "y_weight": 0.65,
+    },
+    "Nord": {
+        "biomes": {"blackforest": 0.85, "steppe": 0.75, "temperate": 0.25, "desert": -0.35},
+        "target_x": 0.48,
+        "target_y": 0.16,
+        "x_weight": 0.25,
+        "y_weight": 1.05,
+    },
+    "Nobatia": {
+        "biomes": {"desert": 1.0, "steppe": 0.65, "temperate": 0.05, "blackforest": -0.45},
+        "target_x": 0.55,
+        "target_y": 0.84,
+        "x_weight": 0.25,
+        "y_weight": 1.25,
+    },
+}
+
+CIVILIZATION_PLACEMENT_PRIORITY = {
+    "Kemet": 0,
+    "Sumeria": 1,
+    "Nobatia": 2,
+    "Nord": 3,
+    "Xia": 4,
+    "Alba": 5,
+    "Hellas": 6,
+    "Latium": 7,
+}
+
 
 def clamp_int(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
@@ -95,6 +162,8 @@ def configured_civilizations() -> list[str]:
 
 def resolve_civilizations(value: str) -> list[str]:
     items = split_csv(value)
+    if not items:
+        return configured_civilizations()
     if len(items) == 1 and items[0].lower() == "all":
         return configured_civilizations()
     return items
@@ -158,6 +227,119 @@ def pick_spread_position(
             return rng.choice(sample[: max(1, min(6, len(sample)))])
         distance = int(distance * 0.75)
     return rng.choice(pool) if pool else None
+
+
+def normalized_world_position(point: tuple[int, int]) -> tuple[float, float]:
+    world_i, world_j = point
+    return (
+        world_j / max(1, WORLD_WIDTH - 1),
+        world_i / max(1, WORLD_HEIGHT - 1),
+    )
+
+
+def civilization_candidate_score(
+    civilization: str,
+    candidate: dict[str, object],
+    occupied: list[tuple[tuple[int, int], int]],
+    settlements: list[dict[str, object]],
+    min_distance: int,
+) -> float:
+    profile = CIVILIZATION_PLACEMENT.get(civilization, {})
+    point = candidate["point"]
+    nx, ny = normalized_world_position(point)
+    biome = str(candidate["biome"])
+    region_biome = str(candidate.get("regionBiome") or biome)
+    region_biome_weight = float(candidate.get("regionBiomeWeight") or 0)
+
+    biome_weights = profile.get("biomes", {})
+    if isinstance(biome_weights, dict):
+        biome_score = biome_weights.get(biome, 0.25) * 0.85 + biome_weights.get(region_biome, 0.25) * 0.65
+        biome_score += region_biome_weight * 0.35
+    else:
+        biome_score = 0.25
+
+    target_x = float(profile.get("target_x", 0.5))
+    target_y = float(profile.get("target_y", 0.5))
+    x_weight = float(profile.get("x_weight", 0.35))
+    y_weight = float(profile.get("y_weight", 0.35))
+    x_score = 1.0 - min(1.0, abs(nx - target_x) / 0.45)
+    y_score = 1.0 - min(1.0, abs(ny - target_y) / 0.45)
+
+    if occupied:
+        nearest_distance = math.sqrt(min(distance_sq(point, occupied_point) for occupied_point, _radius in occupied))
+        distance_score = min(1.0, nearest_distance / max(1, min_distance))
+    else:
+        distance_score = 0.85
+
+    south_bonus = 0.0
+    if civilization == "Nobatia":
+        dry_south = [
+            settlement
+            for settlement in settlements
+            if settlement.get("civ") in {"Kemet", "Sumeria"}
+        ]
+        if dry_south:
+            southernmost_dry_civ = max(float(settlement["world"]["i"]) for settlement in dry_south)
+            south_bonus = 0.35 if point[0] > southernmost_dry_civ else -0.2
+
+    return biome_score * 1.35 + x_score * x_weight + y_score * y_weight + distance_score * 0.75 + south_bonus
+
+
+def pick_civilization_position(
+    rng: random.Random,
+    civilization: str,
+    candidates: list[dict[str, object]],
+    occupied: list[tuple[tuple[int, int], int]],
+    settlements: list[dict[str, object]],
+    min_distance: int,
+    local_padding: int,
+) -> dict[str, object] | None:
+    padded = [candidate for candidate in candidates if has_local_padding(candidate["point"][0], candidate["point"][1], local_padding)]
+    pool = padded or candidates
+    distance = int(min_distance * 0.68)
+    while distance >= 16:
+        distance_sq_min = distance ** 2
+        valid = [
+            candidate
+            for candidate in pool
+            if all(distance_sq(candidate["point"], point) >= max(distance_sq_min, radius ** 2) for point, radius in occupied)
+        ]
+        if valid:
+            scored = [
+                (
+                    civilization_candidate_score(civilization, candidate, occupied, settlements, distance),
+                    rng.random(),
+                    candidate,
+                )
+                for candidate in valid
+            ]
+            scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+            shortlist = scored[: max(1, min(8, len(scored)))]
+            return rng.choice(shortlist)[2]
+        distance = int(distance * 0.75)
+    if not pool:
+        return None
+    scored = [
+        (
+            civilization_candidate_score(civilization, candidate, occupied, settlements, distance),
+            rng.random(),
+            candidate,
+        )
+        for candidate in pool
+    ]
+    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return rng.choice(scored[: max(1, min(8, len(scored)))])[2]
+
+
+def civilization_placement_order(civilizations: list[str], player_count: int) -> list[tuple[int, str]]:
+    entries = [
+        (index, civilizations[index] if index < len(civilizations) else f"Civilization {index + 1}")
+        for index in range(player_count)
+    ]
+    return sorted(
+        entries,
+        key=lambda entry: (CIVILIZATION_PLACEMENT_PRIORITY.get(entry[1], 100), entry[0]),
+    )
 
 
 def create_settlement(
@@ -427,18 +609,20 @@ def biome_scores_at(x: int, y: int, seed: int, coast_distance: int) -> dict[str,
     dry_noise = fbm(nx * 4.6, ny * 4.6, seed + 1901, 4) - 0.5
     coastal_humidity = 1.0 - smoothstep(min(1.0, coast_distance / 92.0))
     west_humidity = 1.0 - smoothstep(nx)
-    east_dryness = smoothstep(nx)
+    east_steppe = smoothstep(nx)
     north = 1.0 - smoothstep(ny)
     south = smoothstep(ny)
+    mid_latitude = 1.0 - abs(ny - 0.46) * 2.0
 
     humidity = max(0.0, min(1.0, coastal_humidity * 0.48 + west_humidity * 0.34 + climate_noise * 0.28 + 0.26))
-    dryness = max(0.0, min(1.0, east_dryness * 0.42 + south * 0.42 + dry_noise * 0.24 + (1.0 - humidity) * 0.35))
+    aridity = max(0.0, min(1.0, south * 0.62 + dry_noise * 0.24 + (1.0 - humidity) * 0.32))
+    steppe_dryness = max(0.0, min(1.0, east_steppe * 0.58 + dry_noise * 0.22 + (1.0 - humidity) * 0.26))
 
     return {
         "blackforest": north * 1.1 + humidity * 0.58 + climate_noise * 0.2 - south * 0.38,
         "temperate": (1.0 - nx) * 0.82 + humidity * 0.55 + (1.0 - abs(ny - 0.48) * 2.0) * 0.28,
-        "steppe": nx * 0.92 + dryness * 0.52 + (1.0 - abs(ny - 0.50) * 2.0) * 0.24,
-        "desert": south * 1.08 + dryness * 0.78 - humidity * 0.42,
+        "steppe": east_steppe * 1.08 + steppe_dryness * 0.56 + mid_latitude * 0.32 - south * 0.34,
+        "desert": south * 1.42 + aridity * 0.72 - east_steppe * 0.18 - humidity * 0.34,
     }
 
 
@@ -536,108 +720,6 @@ def draw_settlements(draw: ImageDraw.ImageDraw, scale: int, settlements: list[di
         draw.text((x + dot_radius + 2 * scale, y - 5 * scale), label, fill=(255, 255, 255, 230))
 
 
-def iso_preview_bounds(scale: int) -> dict[str, float]:
-    width = (WORLD_WIDTH + WORLD_HEIGHT) * ISO_HALF_WIDTH * scale + ISO_MARGIN * 2
-    height = (WORLD_WIDTH + WORLD_HEIGHT) * ISO_HALF_HEIGHT * scale + ISO_MARGIN * 2
-    return {
-        "width": math.ceil(width),
-        "height": math.ceil(height),
-        "offsetX": WORLD_WIDTH * ISO_HALF_WIDTH * scale + ISO_MARGIN,
-        "offsetY": ISO_MARGIN,
-        "halfWidth": ISO_HALF_WIDTH * scale,
-        "halfHeight": ISO_HALF_HEIGHT * scale,
-    }
-
-
-def iso_point(world_i: float, world_j: float, bounds: dict[str, float]) -> tuple[float, float]:
-    return (
-        (world_i - world_j) * bounds["halfWidth"] + bounds["offsetX"],
-        (world_i + world_j) * bounds["halfHeight"] + bounds["offsetY"],
-    )
-
-
-def draw_iso_region_grid(draw: ImageDraw.ImageDraw, scale: int, bounds: dict[str, float]) -> None:
-    line_color = COLORS["grid"] + (120,)
-    width = max(1, scale)
-    for region_x in range(WORLD_REGIONS_W + 1):
-        world_j = region_x * REGION_MAP_SIZE
-        draw.line(
-            [iso_point(0, world_j, bounds), iso_point(WORLD_HEIGHT, world_j, bounds)],
-            fill=line_color,
-            width=width,
-        )
-    for region_y in range(WORLD_REGIONS_H + 1):
-        world_i = region_y * REGION_MAP_SIZE
-        draw.line(
-            [iso_point(world_i, 0, bounds), iso_point(world_i, WORLD_WIDTH, bounds)],
-            fill=line_color,
-            width=width,
-        )
-
-
-def draw_iso_region_labels(draw: ImageDraw.ImageDraw, scale: int, bounds: dict[str, float]) -> None:
-    label_color = (255, 255, 255, 190)
-    for region_y in range(WORLD_REGIONS_H):
-        for region_x in range(WORLD_REGIONS_W):
-            x, y = iso_point((region_y + 0.5) * REGION_MAP_SIZE, (region_x + 0.5) * REGION_MAP_SIZE, bounds)
-            draw.text((x - 8 * scale, y - 5 * scale), f"{region_x},{region_y}", fill=label_color)
-
-
-def draw_iso_settlements(draw: ImageDraw.ImageDraw, scale: int, bounds: dict[str, float], settlements: list[dict[str, object]]) -> None:
-    for settlement in settlements:
-        world = settlement["world"]
-        x, y = iso_point(int(world["i"]), int(world["j"]), bounds)
-        kind = str(settlement["kind"])
-        if kind == "banditCamp":
-            color = BANDIT_COLOR
-            label = settlement["id"].replace("bandit-camp-", "B")
-        else:
-            player_index = int(settlement.get("playerIndex", 0))
-            color = SETTLEMENT_COLORS[player_index % len(SETTLEMENT_COLORS)]
-            label = f"P{player_index + 1}"
-
-        radius = max(4, 4 * scale)
-        fill = color + (90,)
-        outline = color + (255,)
-        if kind == "banditCamp":
-            draw.rectangle((x - radius, y - radius, x + radius, y + radius), fill=fill, outline=outline, width=max(1, scale))
-        else:
-            draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=fill, outline=outline, width=max(1, scale))
-        dot_radius = max(2, 2 * scale)
-        draw.ellipse((x - dot_radius, y - dot_radius, x + dot_radius, y + dot_radius), fill=color + (255,))
-        draw.text((x + radius + 2 * scale, y - 5 * scale), label, fill=(255, 255, 255, 230))
-
-
-def draw_iso_preview(
-    output: Path,
-    scale: int,
-    labels: bool,
-    terrain_grid: list[list[str]],
-    settlements: list[dict[str, object]],
-) -> dict[str, float]:
-    bounds = iso_preview_bounds(scale)
-    image = Image.new("RGBA", (int(bounds["width"]), int(bounds["height"])), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    step = PREVIEW_SAMPLE_STEP
-    for world_i in range(0, WORLD_HEIGHT, step):
-        for world_j in range(0, WORLD_WIDTH, step):
-            terrain = terrain_cell(terrain_grid, world_j, world_i)
-            x, y = iso_point(world_i, world_j, bounds)
-            hw = max(1, step * bounds["halfWidth"])
-            hh = max(1, step * bounds["halfHeight"])
-            draw.polygon(
-                [(x, y - hh), (x + hw, y), (x, y + hh), (x - hw, y)],
-                fill=COLORS[terrain] + (255,),
-            )
-    draw_iso_region_grid(draw, scale, bounds)
-    draw_iso_settlements(draw, scale, bounds, settlements)
-    if labels:
-        draw_iso_region_labels(draw, scale, bounds)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    image.save(output)
-    return bounds
-
-
 def create_settlement_plan(
     seed: int,
     land_samples: list[dict[str, object]],
@@ -656,13 +738,20 @@ def create_settlement_plan(
     bandit_count = max(0, bandit_camps)
     disparity = max(0.0, min(0.85, settlement_disparity))
 
-    for player_index in range(player_count):
+    for player_index, civ in civilization_placement_order(civilizations, player_count):
         base_distance = int(min(WORLD_WIDTH, WORLD_HEIGHT) * (0.34 - disparity * 0.12))
-        candidate = pick_spread_position(rng, land_samples, occupied, base_distance, VILLAGE_LOCAL_PADDING)
+        candidate = pick_civilization_position(
+            rng,
+            civ,
+            land_samples,
+            occupied,
+            settlements,
+            base_distance,
+            VILLAGE_LOCAL_PADDING,
+        )
         if not candidate:
             continue
         world_i, world_j = candidate["point"]
-        civ = civilizations[player_index] if player_index < len(civilizations) else f"Civilization {player_index + 1}"
         settlement = create_settlement(
             f"player-{player_index + 1}-village",
             "village",
@@ -706,6 +795,21 @@ def dominant_region_biome(counts: dict[str, int]) -> str:
     return max(land_counts.items(), key=lambda item: item[1])[0]
 
 
+def annotate_land_samples_with_region_biomes(
+    land_samples: list[dict[str, object]],
+    region_counts: list[dict[str, int]],
+) -> None:
+    for sample in land_samples:
+        world_i, world_j = sample["point"]
+        region_x = min(WORLD_REGIONS_W - 1, world_j // REGION_MAP_SIZE)
+        region_y = min(WORLD_REGIONS_H - 1, world_i // REGION_MAP_SIZE)
+        counts = region_counts[region_y * WORLD_REGIONS_W + region_x]
+        land_total = max(1, sum(count for biome, count in counts.items() if biome != "water"))
+        region_biome = dominant_region_biome(counts)
+        sample["regionBiome"] = region_biome
+        sample["regionBiomeWeight"] = counts.get(region_biome, 0) / land_total
+
+
 def encoded_region_terrain_rows(
     region_x: int,
     region_y: int,
@@ -730,7 +834,6 @@ def write_regions_json(
     terrain_grid: list[list[str]],
     region_counts: list[dict[str, int]],
     settlements: list[dict[str, object]],
-    iso_preview: dict[str, object] | None = None,
 ) -> None:
     regions = []
     for region_y in range(WORLD_REGIONS_H):
@@ -765,7 +868,6 @@ def write_regions_json(
                 "regionsWide": WORLD_REGIONS_W,
                 "regionsHigh": WORLD_REGIONS_H,
                 "biomeSectors": biome_sectors,
-                **({"isoPreview": iso_preview} if iso_preview else {}),
                 "settlements": settlements,
                 "regions": regions,
             },
@@ -814,6 +916,7 @@ def generate(
             if terrain != "water":
                 land_samples.append({"point": (world_y, world_x), "biome": terrain})
 
+    annotate_land_samples_with_region_biomes(land_samples, region_counts)
     settlements = create_settlement_plan(seed, land_samples, players, civilizations, bandit_camps, settlement_disparity)
 
     image = image.resize((WORLD_WIDTH * scale, WORLD_HEIGHT * scale), Image.Resampling.NEAREST)
@@ -821,25 +924,13 @@ def generate(
     image = image.convert("RGBA")
     draw = ImageDraw.Draw(image)
     draw_region_grid(draw, scale)
-    draw_settlements(draw, scale, settlements)
     if labels:
         draw_region_labels(draw, scale)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output)
-    iso_output = output.with_name(f"{output.stem}-iso{output.suffix}")
-    iso_bounds = draw_iso_preview(iso_output, scale, labels, terrain_grid, settlements)
-    iso_preview = {
-        "path": iso_output.name,
-        "width": iso_bounds["width"],
-        "height": iso_bounds["height"],
-        "offsetX": iso_bounds["offsetX"],
-        "offsetY": iso_bounds["offsetY"],
-        "halfWidth": iso_bounds["halfWidth"],
-        "halfHeight": iso_bounds["halfHeight"],
-    }
     if json_out:
-        write_regions_json(seed, json_out, biome_sectors, terrain_grid, region_counts, settlements, iso_preview)
+        write_regions_json(seed, json_out, biome_sectors, terrain_grid, region_counts, settlements)
 
 
 def parse_args() -> argparse.Namespace:

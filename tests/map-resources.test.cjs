@@ -322,6 +322,21 @@ test('biome tree generation can use per-cell macro biome rules', async () => {
   assert(trees.some(tree => tree.textureName === '000_resources/tree/dark-forest'))
 })
 
+test('biome trees skip holes and empty rows before invoking placement rules', async () => {
+  const grid = [[], new Array(5), [undefined, undefined, { i: 2, j: 2, type: 'Grass', category: 'Land' }], [], []]
+  const map = {
+    context: {}, grid, size: 4, environment: 'Temperate', resources: new Set(),
+    random: () => 0, randomItem: items => items[0],
+    addChild(child) { assert.ok(grid[child.i][child.j]); return child },
+  }
+  const visited = []
+  await new MapResources(map).generateBiomeTreesAsync([], {
+    treeChanceForCell: cell => { visited.push(cell); return 1 },
+  })
+  assert.deepEqual(visited, [grid[2][2]])
+  assert.equal(map.resources.size, 1)
+})
+
 test('scattered herbs are isolated and use biome-weighted plant types', async () => {
   global.requestAnimationFrame ??= callback => setImmediate(callback)
   const size = 120

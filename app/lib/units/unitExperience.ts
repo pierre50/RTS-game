@@ -38,7 +38,8 @@ function getLoadingXpEntries(loadingTypes: Array<string | undefined>, category: 
     .map(loadingType => [loadingType, category])
 }
 
-// Cumulative XP required to reach a level: 25·L·(L+1) → 50, 150, 300, 500…
+// Cumulative XP required to reach a displayed level. Units start at level 1:
+// level 1 → 0 XP, level 2 → 50 XP, level 3 → 150 XP, level 4 → 300 XP…
 const XP_LEVEL_FACTOR = 25
 const GATHER_BONUS_LEVEL_STEP = 3 // +1 resource per swing every 3 levels
 const COMBAT_BONUS_LEVEL_STEP = 2 // +1 damage per hit every 2 levels
@@ -98,8 +99,9 @@ export type XpProgress = {
 }
 
 export function getXpForLevel(level: number): number {
-  const clamped = Math.max(0, Math.min(level, XP_MAX_LEVEL))
-  return XP_LEVEL_FACTOR * clamped * (clamped + 1)
+  const clamped = Math.max(1, Math.min(level, XP_MAX_LEVEL))
+  const earnedLevels = clamped - 1
+  return XP_LEVEL_FACTOR * earnedLevels * (earnedLevels + 1)
 }
 
 export function getUnitXp(unit: UnitEntity, category: string): number {
@@ -108,7 +110,7 @@ export function getUnitXp(unit: UnitEntity, category: string): number {
 
 export function getLevelForXp(xp: number): number {
   const safeXp = Math.max(0, Math.floor(xp))
-  let level = 0
+  let level = 1
   while (level < XP_MAX_LEVEL && safeXp >= getXpForLevel(level + 1)) level++
   return level
 }
@@ -125,6 +127,10 @@ export function getUnitOverallLevel(unit: UnitEntity): number {
 function getCombinedUnitLevel(unit: UnitEntity, categories: readonly string[]): number {
   const totalXp = categories.reduce((sum, category) => sum + getUnitXp(unit, category), 0)
   return getLevelForXp(totalXp)
+}
+
+function getProgressionLevel(level: number): number {
+  return Math.max(0, level - 1)
 }
 
 export function getUnitEquipmentLevel(unit: UnitEntity, category = unit.category || unit.type): number {
@@ -170,7 +176,7 @@ function getDebugLevelCategories(unit: UnitEntity, category = unit.category || u
 }
 
 export function setUnitDebugLevel(unit: UnitEntity, level: number, category = unit.category || unit.type): number {
-  const clampedLevel = Math.max(0, Math.min(XP_MAX_LEVEL, Math.floor(level)))
+  const clampedLevel = Math.max(1, Math.min(XP_MAX_LEVEL, Math.floor(level)))
   unit.experience = unit.experience ?? {}
   const categories = getDebugLevelCategories(unit, category)
   const totalXp = getXpForLevel(clampedLevel)
@@ -212,41 +218,41 @@ export function getUnitExperienceEntries(
 export function getGatherXpBonus(unit: UnitEntity): number {
   const category = unit.work ? WORK_XP_CATEGORY[unit.work] : null
   if (!category) return 0
-  return Math.floor(getUnitLevel(unit, category) / GATHER_BONUS_LEVEL_STEP)
+  return Math.floor(getProgressionLevel(getUnitLevel(unit, category)) / GATHER_BONUS_LEVEL_STEP)
 }
 
 export function getCombatXpBonus(unit: UnitEntity, category: string): number {
-  return Math.floor(getUnitLevel(unit, category) / COMBAT_BONUS_LEVEL_STEP)
+  return Math.floor(getProgressionLevel(getUnitLevel(unit, category)) / COMBAT_BONUS_LEVEL_STEP)
 }
 
 export function getHealingXpBonus(unit: UnitEntity): number {
-  return Math.floor(getUnitLevel(unit, XP_CATEGORIES.healing) / HEAL_BONUS_LEVEL_STEP)
+  return Math.floor(getProgressionLevel(getUnitLevel(unit, XP_CATEGORIES.healing)) / HEAL_BONUS_LEVEL_STEP)
 }
 
 export function getBuildRateXpMultiplier(unit: UnitEntity): number {
-  return 1 + getUnitLevel(unit, XP_CATEGORIES.building) * BUILD_RATE_BONUS_PER_LEVEL
+  return 1 + getProgressionLevel(getUnitLevel(unit, XP_CATEGORIES.building)) * BUILD_RATE_BONUS_PER_LEVEL
 }
 
 export function getParryChanceBonus(unit: UnitEntity): number {
-  return getUnitOverallLevel(unit) * PARRY_CHANCE_PER_LEVEL
+  return getProgressionLevel(getUnitOverallLevel(unit)) * PARRY_CHANCE_PER_LEVEL
 }
 
 export function getCriticalHitChance(unit: UnitEntity, category: string): number {
-  const level = getUnitLevel(unit, category)
+  const level = getProgressionLevel(getUnitLevel(unit, category))
   return Math.min(CRITICAL_HIT_MAX_CHANCE, CRITICAL_HIT_BASE_CHANCE + level * CRITICAL_HIT_CHANCE_PER_LEVEL)
 }
 
 export function getReflexAttackRecoveryMultiplier(unit: UnitEntity): number {
-  const level = getUnitOverallLevel(unit)
+  const level = getProgressionLevel(getUnitOverallLevel(unit))
   return Math.max(MIN_REFLEX_RECOVERY_MULTIPLIER, 1 - level * REFLEX_RECOVERY_REDUCTION_PER_LEVEL)
 }
 
 export function getEnergyTotalLevelMultiplier(unit: UnitEntity): number {
-  return 1 + getUnitOverallLevel(unit) * ENERGY_TOTAL_BONUS_PER_LEVEL
+  return 1 + getProgressionLevel(getUnitOverallLevel(unit)) * ENERGY_TOTAL_BONUS_PER_LEVEL
 }
 
 export function getEnergyRegenLevelMultiplier(unit: UnitEntity): number {
-  return 1 + getUnitOverallLevel(unit) * ENERGY_REGEN_BONUS_PER_LEVEL
+  return 1 + getProgressionLevel(getUnitOverallLevel(unit)) * ENERGY_REGEN_BONUS_PER_LEVEL
 }
 
 export function getXpInfoId(category: string): string {
