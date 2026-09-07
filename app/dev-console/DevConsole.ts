@@ -121,19 +121,26 @@ export class DevConsole {
     this.executeInput()
   }
 
-  executeInput(): void {
+  async executeInput(): Promise<void> {
     const input = this.input!.value.trim()
     if (!input) return
 
     this.history.push(input)
     this.historyIndex = this.history.length
-    const result = this.commands.execute(input, {
-      ...this.context,
-      commands: this.commands,
-    })
-    this.setLogMessage(result.message, result.ok ? 'ok' : 'error')
     this.input!.value = ''
-    this.input!.focus()
+    this.setLogMessage('Running...', 'ok')
+    try {
+      const result = await this.commands.execute(input, {
+        ...this.context,
+        commands: this.commands,
+      })
+      this.setLogMessage(result.message, result.ok ? 'ok' : 'error')
+    } catch (error) {
+      console.error('Dev command failed', { input, error })
+      this.setLogMessage('Command failed', 'error')
+    } finally {
+      this.input!.focus()
+    }
   }
 
   setLogMessage(message: string, status = 'ok'): void {

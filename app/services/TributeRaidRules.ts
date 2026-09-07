@@ -18,6 +18,8 @@ export const RAID_RETURN_RANGE = 3
 export const RAID_UPDATE_MS = 350
 export const RAID_SPAWN_MIN_RADIUS = 4
 export const RAID_SPAWN_MAX_RADIUS = 9
+export const RAID_SPAWN_BUILDING_CLEARANCE = 2
+export const RAID_SPAWN_EDGE_BAND = 3
 const TRIBUTE_ROUNDING_STEP = 10
 
 export type TributeRaidKind = 'bandit' | 'faction'

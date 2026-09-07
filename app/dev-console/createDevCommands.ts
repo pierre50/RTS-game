@@ -116,8 +116,8 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     aliases: ['raid', 'bandits'],
     usage: 'bandit-raid',
     describe: 'Trigger a bandit tribute raid near the target',
-    run: (_args, context) => {
-      const started = context.tributeRaids?.triggerRaid({ source: 'dev-console' }) ?? false
+    run: async (_args, context) => {
+      const started = (await context.tributeRaids?.triggerRaid({ source: 'dev-console' })) ?? false
       return started
         ? { ok: true, message: 'Bandit raid triggered' }
         : { ok: false, message: 'Unable to trigger bandit raid' }
@@ -129,9 +129,9 @@ function registerSpawnCommands(registry: DevCommandRegistry): void {
     aliases: ['frraid', 'envoy'],
     usage: 'faction-raid',
     describe: 'Trigger a hostile known faction tribute raid near the target',
-    run: (_args, context) => {
+    run: async (_args, context) => {
       const started =
-        context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }) ?? false
+        (await context.tributeRaids?.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true })) ?? false
       return started
         ? { ok: true, message: 'Faction raid triggered' }
         : { ok: false, message: 'Unable to trigger faction raid' }

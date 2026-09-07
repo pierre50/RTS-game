@@ -77,6 +77,14 @@ Clean the build folder:
 pnpm clean
 ```
 
+Run the code health check:
+
+```bash
+pnpm health
+```
+
+This refreshes `reports/code-health.md` and `reports/code-health.json`.
+
 ## Useful structure
 
 - `app/`: game source code

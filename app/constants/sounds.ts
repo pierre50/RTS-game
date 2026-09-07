@@ -36,6 +36,7 @@ export const SOUND_CUES = {
   },
   surface: {
     bushRustle: ['surface/bush-rustling-1', 'surface/bush-rustling-2', 'surface/bush-rustling-3'],
+    waterSmallSplash: 'small-splash',
   },
   villager: {
     command: null,

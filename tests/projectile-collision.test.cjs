@@ -28,6 +28,9 @@ function loadProjectile(libOverrides = {}) {
     MENU_INFO_IDS: { hitPoints: 'hitPoints' },
     STEP_TIME: 16,
     UNIT_TYPES: { villager: 'Villager' },
+    SOUND_CUES: {
+      surface: { waterSmallSplash: 'small-splash' },
+    },
   }
   const mocks = {
     'pixi.js': {
@@ -270,6 +273,89 @@ test('landed projectiles use their runtime map space grid', () => {
 
   assert.equal(interiorCell.corpses.has(projectile), true)
   assert.equal(outsideCell.corpses.has(projectile), false)
+})
+
+test('arrows play an audible splash when landing in water', () => {
+  const soundCalls = []
+  const Projectile = loadProjectile({
+    isometricToCartesian: () => [1, 1],
+    playAudibleSoundCue: (instance, cue, options) => {
+      soundCalls.push({ instance, cue, options })
+      return cue
+    },
+  })
+  const waterCell = { category: 'Water', corpses: new Set(), i: 1, j: 1, waterBorder: false }
+  const projectile = Object.create(Projectile.prototype)
+
+  Object.assign(projectile, {
+    context: {
+      map: {
+        grid: [[null, null], [null, waterCell]],
+        size: 1,
+      },
+      scheduler: { remove: () => {} },
+    },
+    clear: () => {},
+    interval: null,
+    isDead: false,
+    isDestroyed: false,
+    stopTimeout: () => {},
+    x: 64,
+    y: 32,
+  })
+
+  projectile.landOnGround()
+
+  assert.deepEqual(soundCalls, [
+    {
+      instance: projectile,
+      cue: 'small-splash',
+      options: { profile: 'surface' },
+    },
+  ])
+})
+
+test('arrows treat non-playable sea space as splash landings', () => {
+  for (const cell of [
+    undefined,
+    { type: 'Water', category: 'Ground', terrainHidden: false, waterBorder: false },
+    { type: 2, category: 'Ground', terrainHidden: false, waterBorder: false },
+    { category: 'Grass', terrainHidden: true, waterBorder: false },
+    { category: 'Grass', terrainHidden: false, waterBorder: false, _terrainAppearance: { waterBorder: { index: 1 } } },
+  ]) {
+    const soundCalls = []
+    const Projectile = loadProjectile({
+      isometricToCartesian: () => [1, 1],
+      playAudibleSoundCue: (instance, cue, options) => {
+        soundCalls.push({ instance, cue, options })
+        return cue
+      },
+    })
+    const projectile = Object.create(Projectile.prototype)
+
+    Object.assign(projectile, {
+      context: {
+        map: {
+          grid: [[null, null], [null, cell]],
+          size: 1,
+        },
+        scheduler: { remove: () => {} },
+      },
+      clear: () => {},
+      interval: null,
+      isDead: false,
+      isDestroyed: false,
+      stopTimeout: () => {},
+      x: 64,
+      y: 32,
+    })
+
+    projectile.landOnGround()
+
+    assert.equal(soundCalls.length, 1)
+    assert.equal(soundCalls[0].cue, 'small-splash')
+    assert.deepEqual(soundCalls[0].options, { profile: 'surface' })
+  }
 })
 
 test('projectile collision candidates include enemy buildings', () => {

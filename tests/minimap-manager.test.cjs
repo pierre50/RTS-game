@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadMinimapManager() {
+function loadMinimapManager({ renderUnitHeadAvatar = () => false } = {}) {
   global.document ||= {
     createElement: tag => {
       assert.equal(tag, 'canvas')
@@ -43,6 +43,9 @@ function loadMinimapManager() {
       },
       getEntitySpaceId: instance => instance?.spaceId || 'outside',
     },
+    '../../lib/avatar': {
+      renderUnitHeadAvatar,
+    },
   }
   const localRequire = request =>
     Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
@@ -55,8 +58,12 @@ function createCanvas() {
     diamonds: [],
     rectangles: [],
     strokes: [],
+    images: [],
     clears: 0,
     translate() {},
+    drawImage(...args) {
+      this.images.push(args)
+    },
     clearRect() {
       this.clears++
     },
@@ -87,6 +94,7 @@ function createMenu({ revealEverything = false, playerLabel = 'player' } = {}) {
     appended,
     context: {
       map,
+      app: {},
       player,
       players: [player],
       controls: { getViewportMetrics: () => ({ visibleLeft: 0, visibleTop: 0, visibleWidth: 0, visibleHeight: 0 }) },
@@ -225,6 +233,40 @@ test('minimap does not draw animal markers on player layers', () => {
   assert.equal(menu.playersMinimap[0].context.rectangles[0][2], 8)
   assert.equal(menu.playersMinimap[0].context.rectangles[0][3], 8)
   assert.equal(menu.playersMinimap[0].context.rectangles[0][4], '#00f')
+})
+
+test('minimap draws player unit head avatars when available', () => {
+  const avatarCanvas = createCanvas()
+  const renderedUnits = []
+  const MinimapManager = loadMinimapManager({
+    renderUnitHeadAvatar: (app, unit, canvas) => {
+      renderedUnits.push({ app, unit, canvas })
+      canvas.width = avatarCanvas.width
+      canvas.height = avatarCanvas.height
+      return true
+    },
+  })
+  const menu = createMenu()
+  const manager = new MinimapManager(menu)
+  manager.getMinimapParams = () => ({ factor: 1, translate: 0 })
+  manager.activate()
+  const unit = { family: 'unit', position: { x: 12, y: 12 } }
+
+  manager.updatePlayerMiniMapEvt({
+    label: 'player',
+    colorHex: '#00f',
+    buildings: [],
+    units: [unit],
+  })
+
+  const layer = menu.playersMinimap[0]
+  assert.equal(renderedUnits.length, 1)
+  assert.equal(renderedUnits[0].app, menu.context.app)
+  assert.equal(renderedUnits[0].unit, unit)
+  assert.equal(layer.context.rectangles.length, 0)
+  assert.equal(layer.context.images.length, 1)
+  assert.equal(layer.context.images[0][3], 24)
+  assert.equal(layer.context.images[0][4], 24)
 })
 
 test('minimap skips non-player units when the whole map is revealed', () => {

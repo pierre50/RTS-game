@@ -38,6 +38,8 @@
     "check:quick": "pnpm typecheck && pnpm lint && pnpm deadcode && pnpm audit:report",
     "check": "pnpm check:quick && pnpm test",
     "audit:code": "pnpm lint && pnpm typecheck && pnpm duplication && pnpm deadcode",
+    "code:health": "node tools/audit-report.cjs",
+    "health": "pnpm code:health",
     "audit:report": "node tools/audit-report.cjs",
     "precommit": "lint-staged",
     "lint": "eslint \"app/**/*.ts\""

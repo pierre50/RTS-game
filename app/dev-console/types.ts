@@ -29,7 +29,7 @@ export interface Command {
   usage?: string
   describe?: string
   complete?: (args: string[], context: DevConsoleContext) => string[]
-  run: (args: string[], context: DevConsoleContext) => CommandResult
+  run: (args: string[], context: DevConsoleContext) => CommandResult | Promise<CommandResult>
 }
 
 type DevDayNightLike = {
@@ -275,8 +275,8 @@ export type DevConsoleContext = {
   dayNight?: DevDayNightLike | null
   weather?: DevWeatherLike | null
   tributeRaids?: {
-    triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
-    triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
+    triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
+    triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
   } | null
   timeSkip?: DevTimeSkipLike | null
   unitRest?: {

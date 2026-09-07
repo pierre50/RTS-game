@@ -6,12 +6,13 @@ import {
   canvasDrawStrokeRectangle,
   playerCanSeeInstance,
 } from '../../lib'
+import { renderUnitHeadAvatar } from '../../lib/avatar'
 import { getActiveMapSpace, getEntitySpaceId } from '../../lib/mapSpaces'
 import { getLocalMapBounds } from '../../lib/localMapLayout'
 import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../../constants'
 import type { MinimapHostLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
-import type { ResourceEntity, RuntimeEntity } from '../../types/entities'
+import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../types/map'
 
 type MinimapBounds = {
@@ -48,6 +49,8 @@ const MINIMAP_SQUARE_BASE_SIZE = 300
 const MINIMAP_RESOLUTION_SCALE = 4
 const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X = 12
 const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y = 14
+const MINIMAP_UNIT_AVATAR_SOURCE_SIZE = 32
+const MINIMAP_UNIT_AVATAR_DISPLAY_SIZE = 6 * MINIMAP_RESOLUTION_SCALE
 
 function terrainColor(value: string | number | undefined): string {
   return typeof value === 'string' ? value : ''
@@ -96,6 +99,7 @@ export class MinimapManager {
   private active: boolean
   private initialized: boolean
   private layoutKey: string | null
+  private unitAvatarCache: WeakMap<RuntimeEntity, HTMLCanvasElement>
 
   constructor(menu: MinimapHostLike) {
     this.menu = menu
@@ -103,6 +107,7 @@ export class MinimapManager {
     this.active = false
     this.initialized = false
     this.layoutKey = null
+    this.unitAvatarCache = new WeakMap()
 
     this.updatePlayerMiniMap = throttleByKey(
       this.updatePlayerMiniMapEvt.bind(this),
@@ -318,6 +323,43 @@ export class MinimapManager {
   private getBuildingMarkerSize(size: number, squareSize: number): number {
     if (this.getMinimapSpace().kind !== 'interior') return squareSize + size * MINIMAP_RESOLUTION_SCALE
     return squareSize + size * squareSize * 0.35
+  }
+
+  private getUnitAvatarSize(squareSize: number): number {
+    return Math.max(squareSize, MINIMAP_UNIT_AVATAR_DISPLAY_SIZE)
+  }
+
+  private getUnitAvatar(unit: RuntimeEntity): HTMLCanvasElement | null {
+    const cached = this.unitAvatarCache.get(unit)
+    if (cached) return cached
+
+    const canvas = document.createElement('canvas')
+    canvas.width = MINIMAP_UNIT_AVATAR_SOURCE_SIZE
+    canvas.height = MINIMAP_UNIT_AVATAR_SOURCE_SIZE
+
+    if (!renderUnitHeadAvatar(this.menu.context.app, unit as UnitEntity, canvas)) return null
+
+    this.unitAvatarCache.set(unit, canvas)
+    return canvas
+  }
+
+  private drawUnitAvatarMarker(
+    context: CanvasRenderingContext2D,
+    unit: RuntimeEntity,
+    x: number,
+    y: number,
+    squareSize: number,
+    fallbackColor: string
+  ): void {
+    const avatar = this.getUnitAvatar(unit)
+    if (!avatar) {
+      canvasDrawRectangle(context, x - squareSize / 2, y - squareSize / 2, squareSize, squareSize, fallbackColor)
+      return
+    }
+
+    const size = this.getUnitAvatarSize(squareSize)
+    context.imageSmoothingEnabled = false
+    context.drawImage(avatar, x - size / 2, y - size / 2, size, size)
   }
 
   private withMinimapViewSpace<T>(player: PlayerLike | null | undefined, callback: () => T): T {
@@ -625,14 +667,7 @@ export class MinimapManager {
       const position = this.instanceToMinimapPoint(unit, transform)
       if (!position) return
       const { selected } = unit
-      canvasDrawRectangle(
-        context,
-        position.x - squareSize / 2,
-        position.y - squareSize / 2,
-        squareSize,
-        squareSize,
-        selected ? 'white' : color
-      )
+      this.drawUnitAvatarMarker(context, unit, position.x, position.y, squareSize, selected ? 'white' : color)
     })
   }
 }

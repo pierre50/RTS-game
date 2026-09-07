@@ -53,8 +53,8 @@ interface WeatherSystemLike {
 }
 
 interface TributeRaidSystemLike {
-  triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean
-  triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean
+  triggerRaid(options?: { source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
+  triggerFactionRaid(options?: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' }): boolean | Promise<boolean>
 }
 
 interface UnitRestSystemLike {

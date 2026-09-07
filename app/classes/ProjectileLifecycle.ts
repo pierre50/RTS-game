@@ -1,4 +1,5 @@
-import { ARROW_GROUND_TIME, FADE_DURATION_MS } from '../constants'
+import { ARROW_GROUND_TIME, FADE_DURATION_MS, SOUND_CUES } from '../constants'
+import { playAudibleSoundCue, type AudibleInstance } from '../lib/audio/sound'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
 import { getEntitySpaceGrid } from '../lib/mapSpaces'
 import { getReliefOffset, getTerrainSetZIndex, isometricToCartesian, randomRange } from '../lib/maths'
@@ -6,6 +7,14 @@ import type { GameContextLike, SchedulerTaskId } from '../types/context'
 import type { ResourceEntity, RuntimeEntity } from '../types/entities'
 import { TREE_STICK_HEIGHT, TREE_STICK_JITTER } from './ProjectileGeometry'
 import type { EmbeddedMaskKind, ProjectileSprite } from './ProjectileVisuals'
+
+type LandingCell = {
+  category?: string
+  terrainHidden?: boolean
+  type?: string | number
+  waterBorder?: boolean
+  _terrainAppearance?: { waterBorder?: unknown }
+}
 
 type LifecycleProjectile = {
   context: GameContextLike
@@ -32,6 +41,17 @@ type LifecycleProjectile = {
   destroy(options?: { children?: boolean; texture?: boolean }): void
   once(event: string, callback: () => void): void
   stopTimeout(): void
+}
+
+function isProjectileWaterLanding(cell: LandingCell): boolean {
+  return (
+    cell.category === 'Water' ||
+    cell.type === 'Water' ||
+    cell.type === 2 ||
+    cell.waterBorder === true ||
+    cell.terrainHidden === true ||
+    Boolean(cell._terrainAppearance?.waterBorder)
+  )
 }
 
 function stopProjectileStep(projectile: LifecycleProjectile): void {
@@ -63,7 +83,8 @@ export function landProjectileOnGround(projectile: LifecycleProjectile): void {
   projectile.j = j
   const grid = getEntitySpaceGrid(projectile, projectile.context.map)
   const cell = grid?.[i]?.[j]
-  if (!cell || cell.category === 'Water' || cell.waterBorder) {
+  if (!cell || isProjectileWaterLanding(cell)) {
+    playAudibleSoundCue(projectile as AudibleInstance, SOUND_CUES.surface.waterSmallSplash, { profile: 'surface' })
     projectile.clear()
     return
   }

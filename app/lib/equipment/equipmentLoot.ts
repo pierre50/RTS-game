@@ -147,6 +147,7 @@ export function formatEquipmentLootLabel(equipment: string): string {
   return equipment
     .split('_')
     .filter(Boolean)
+    .filter(part => part.toLowerCase() !== 'bandit')
     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 }

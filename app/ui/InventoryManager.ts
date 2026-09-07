@@ -24,6 +24,7 @@ import { getReservedGameplayHotkeys } from '../lib/audio/settings'
 import { ModalTabs } from './Tabs'
 import { renderInventoryWorldMap } from './InventoryWorldMap'
 import { getInventoryConstructionButtons, renderInventoryConstruction } from './InventoryConstruction'
+import { renderMinimapLegend } from './minimap/MinimapLegend'
 import {
   renderInventoryEquippedEquipment,
   renderInventoryLootedEquipment,
@@ -58,6 +59,8 @@ export class InventoryManager {
   weaponPanel: HTMLDivElement
   equippedPanel: HTMLDivElement
   lootedEquipmentPanel: HTMLDivElement
+  minimapLayout: HTMLDivElement
+  minimapLegend: HTMLDivElement
   slots: Map<HeroEquippedItem, HTMLButtonElement>
   toolIcons: Map<HeroEquippedItem, HTMLCanvasElement>
   toolIconsRendered: boolean
@@ -98,6 +101,10 @@ export class InventoryManager {
     this.equippedPanel.className = 'inventory-equipped-section'
     this.lootedEquipmentPanel = document.createElement('div')
     this.lootedEquipmentPanel.className = 'inventory-loot-section'
+    this.minimapLayout = document.createElement('div')
+    this.minimapLayout.className = 'minimap-panel-layout'
+    this.minimapLegend = document.createElement('div')
+    this.minimapLegend.className = 'minimap-legend'
 
     this.modalTabs = new ModalTabs<ActionMenuTab>(
       [
@@ -144,7 +151,8 @@ export class InventoryManager {
     this.toolsPanel.appendChild(this.lootedEquipmentPanel)
 
     this.panel.appendChild(this.modalTabs.element)
-    this.minimapPanel.appendChild(menu.minimapWrap)
+    this.minimapLayout.append(menu.minimapWrap, this.minimapLegend)
+    this.minimapPanel.appendChild(this.minimapLayout)
   }
 
   toggle(): void {
@@ -201,6 +209,7 @@ export class InventoryManager {
     if (tab === 'minimap') {
       this.menu.activateMiniMap()
       this.menu.clearActionHotkeys()
+      this.renderMinimapLegend()
       return
     }
 
@@ -234,6 +243,10 @@ export class InventoryManager {
 
   renderWorldMap(): void {
     renderInventoryWorldMap(this.worldMapPanel, this.menu)
+  }
+
+  renderMinimapLegend(): void {
+    renderMinimapLegend(this.minimapLegend, this.menu.context.player)
   }
 
   renderToolIcons(): void {

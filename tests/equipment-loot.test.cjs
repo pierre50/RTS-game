@@ -166,6 +166,7 @@ test('equipment loot labels humanize runtime ids', () => {
   )
 
   assert.equal(formatEquipmentLootLabel('round_shield_ceramic_slash'), 'Round Shield Ceramic Slash')
+  assert.equal(formatEquipmentLootLabel('bandit_sword'), 'Sword')
   assert.equal(formatEquipmentStackLabel('round_shield_ceramic_slash', 2), 'Round Shield Ceramic Slash x2')
   assert.deepEqual(getEquipmentStacks(['bow', 'bow', 'helmet_barbarian_ceramic']), [
     { equipment: 'bow', count: 2 },

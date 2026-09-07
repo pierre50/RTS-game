@@ -1,5 +1,6 @@
 import { t } from '../lib/lang'
 import type { ResourceAmount } from '../types/common'
+import type { FactionSave } from '../types/save'
 import type { TributeRaid } from './TributeRaidRules'
 
 function formatCost(cost: ResourceAmount): string {
@@ -9,19 +10,25 @@ function formatCost(cost: ResourceAmount): string {
     .join(', ')
 }
 
+function getRaidFactionDisplayName(faction: FactionSave | null | undefined): string {
+  const rawName = faction?.name?.trim()
+  if (rawName && rawName.toLowerCase() !== 'bandits') return rawName
+  return faction?.civilization ? t('factionCivilizationDisplayName', { civ: t(faction.civilization) }) : t('unknownFaction')
+}
+
 export function getIncomingRaidMessage(raid: TributeRaid): string {
-  if (raid.kind === 'faction') return t('factionRaidIncoming', { name: raid.faction?.name ?? t('computer') })
+  if (raid.kind === 'faction') return t('factionRaidIncoming', { name: getRaidFactionDisplayName(raid.faction) })
   return t('banditRaidIncoming')
 }
 
 export function getTributeTitle(raid: TributeRaid): string {
-  if (raid.kind === 'faction') return t('factionTributeTitle', { name: raid.faction?.name ?? t('computer') })
+  if (raid.kind === 'faction') return t('factionTributeTitle', { name: getRaidFactionDisplayName(raid.faction) })
   return t('banditTributeTitle')
 }
 
 export function getTributeDemand(raid: TributeRaid): string {
   if (raid.kind === 'faction') {
-    return t('factionTributeDemand', { cost: formatCost(raid.tribute), name: raid.faction?.name ?? t('computer') })
+    return t('factionTributeDemand', { cost: formatCost(raid.tribute), name: getRaidFactionDisplayName(raid.faction) })
   }
   return t('banditTributeDemand', { cost: formatCost(raid.tribute) })
 }
@@ -42,7 +49,7 @@ export function getTributeCannotPayLabel(raid: TributeRaid): string {
 }
 
 export function getTributePaidMessage(raid: TributeRaid): string {
-  if (raid.kind === 'faction') return t('factionTributePaid', { name: raid.faction?.name ?? t('computer') })
+  if (raid.kind === 'faction') return t('factionTributePaid', { name: getRaidFactionDisplayName(raid.faction) })
   return t('banditTributePaid')
 }
 
@@ -55,6 +62,6 @@ export function getLocalTributeRefusedMessage(raid: TributeRaid): string {
 }
 
 export function getHostileRaidMessage(raid: TributeRaid): string {
-  if (raid.kind === 'faction') return t('factionRaidHostile', { name: raid.faction?.name ?? t('computer') })
+  if (raid.kind === 'faction') return t('factionRaidHostile', { name: getRaidFactionDisplayName(raid.faction) })
   return t('banditRaidHostile')
 }

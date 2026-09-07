@@ -48,7 +48,7 @@ export class DevCommandRegistry {
     return suggestions.filter(s => s.toLowerCase().startsWith(prefix.toLowerCase()))
   }
 
-  execute(input: string, context: DevConsoleContext): CommandResult {
+  execute(input: string, context: DevConsoleContext): CommandResult | Promise<CommandResult> {
     const [name, ...args] = input.trim().split(/\s+/)
     const command = this.get(name)
     if (!command) {
