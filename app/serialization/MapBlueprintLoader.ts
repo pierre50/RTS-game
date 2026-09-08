@@ -454,6 +454,7 @@ export async function loadPregeneratedInteriorBlueprint({
       kind: 'interior',
       interiorType: requestedBuildingType || selected.buildingType || payload.interiorType,
       mapType: 'interior',
+      localGridLayout: payload.localGridLayout,
       size,
       seed: payload.seed,
       terrain: toGrid(terrainValues, size, value => (value === 6 ? 'Water' : TERRAIN_TYPES[value] || 'Grass')),

@@ -308,15 +308,17 @@ function getWalkingFallbackTexture(
 }
 
 export function setUnitTexture(sheet: string, instance: UnitTextureInstance): void {
+  // Pausing stops animation, not visual synchronization during placement or travel.
+  updateUnitTexture(sheet, instance)
+  if (instance.context.paused) instance.sprite.stop()
+}
+
+function updateUnitTexture(sheet: string, instance: UnitTextureInstance): void {
   const sheets = instance as UnitTextureInstance & MutableSheetObject
   const sheetToReset = [SHEET_TYPES.action, SHEET_TYPES.dying, SHEET_TYPES.corpse]
   if (!sheetToReset.includes(sheet)) {
     instance.sprite.onLoop = null
     instance.sprite.onFrameChange = null
-  }
-  const { paused } = instance.context
-  if (paused) {
-    return
   }
   if (!sheets[sheet]) {
     const fallbackSpriteScale = instance.spriteScale ?? 1

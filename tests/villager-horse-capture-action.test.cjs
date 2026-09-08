@@ -30,7 +30,10 @@ function loadUnitActions(calls, captureHorse) {
     const source = fs.readFileSync(filename, 'utf8')
     const { code } = babel.transformSync(source, {
       filename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const module = { exports: {} }
     new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -443,4 +446,82 @@ test('villager horse capture cleanup releases the attached horse when the order 
     calls.filter(call => call[0] === 'clearLasso'),
     [['clearLasso', false]]
   )
+})
+
+test('villager resumes walking after a broken lasso without action animation resets or excessive repaths', () => {
+  const calls = []
+  const horse = { family: 'animal', type: 'Horse', label: 'horse-1', i: 3, j: 3, x: 96, y: 96 }
+  const scheduler = {
+    elapsedMs: 1000,
+    tasks: [],
+    add(callback) {
+      this.tasks.push(callback)
+      return this.tasks.length
+    },
+    remove() {},
+  }
+  let atHorse = true
+  const unit = {
+    label: 'villager-1',
+    action: 'captureHorse',
+    dest: horse,
+    currentSheet: 'walking',
+    owner: { buildings: [] },
+    context: { scheduler, map: { addChild() {} } },
+    sprite: {},
+    path: [],
+    getActionCondition: () => true,
+    isUnitAtDest: () => atHorse,
+    destHasMoved: () => false,
+    setTextures(sheet) {
+      this.currentSheet = sheet
+      calls.push(['setTextures', sheet])
+    },
+    sendToEvt() {
+      calls.push(['repath', scheduler.elapsedMs])
+    },
+  }
+  const UnitActions = loadUnitActions(calls, horse)
+  const actions = new UnitActions(unit)
+  unit.getAction = name => actions.getAction(name)
+  actions.getAction('captureHorse')
+  assert.equal(horse.isLassoed, true)
+
+  unit.heroLasso.releaseHorse({ allowStable: false, allowFlee: true })
+  unit.heroLasso.state = 'retracting'
+  atHorse = false
+  unit.path = [{ i: 3, j: 3 }]
+  unit.currentSheet = 'walking'
+  calls.length = 0
+  for (let elapsedMs = 1020; elapsedMs <= 1440; elapsedMs += 20) {
+    scheduler.elapsedMs = elapsedMs
+    scheduler.tasks[0]()
+    assert.equal(unit.currentSheet, 'walking')
+  }
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'setTextures'),
+    []
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'repath'),
+    [
+      ['repath', 1220],
+      ['repath', 1440],
+    ]
+  )
+
+  atHorse = true
+  unit.path = []
+  scheduler.elapsedMs = 1460
+  scheduler.tasks[0]()
+  assert.equal(unit.currentSheet, 'action')
+  scheduler.elapsedMs = 1480
+  scheduler.tasks[0]()
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'setTextures'),
+    [['setTextures', 'action']]
+  )
+  scheduler.elapsedMs = 1800
+  scheduler.tasks[0]()
+  assert.equal(horse.isLassoed, true)
 })

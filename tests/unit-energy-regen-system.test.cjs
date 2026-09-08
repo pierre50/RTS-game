@@ -51,6 +51,23 @@ test('passive unit energy regen updates idle and working units without active pa
   ])
 })
 
+test('passive unit energy regen skips the actively controlled hero', () => {
+  const calls = []
+  const { UnitEnergyRegenSystem } = loadEnergyRegenSystem(calls)
+  const hero = { label: 'hero', path: [] }
+  const idle = { label: 'idle', path: [] }
+  const context = {
+    controls: { heroUnit: hero },
+    players: [{ units: [hero, idle] }],
+    scheduler: createScheduler(calls),
+  }
+  const system = new UnitEnergyRegenSystem(context)
+
+  system.update(500)
+
+  assert.deepEqual(calls.filter(call => call[0] === 'regen'), [['regen', 'idle', 500]])
+})
+
 test('passive unit energy regen unregisters its scheduler task on destroy', () => {
   const calls = []
   const { UnitEnergyRegenSystem } = loadEnergyRegenSystem(calls)

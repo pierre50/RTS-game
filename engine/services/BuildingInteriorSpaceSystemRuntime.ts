@@ -1,5 +1,9 @@
 import { Container, Graphics, type ContainerChild } from 'pixi.js'
 import { Cell } from '../../app/classes/cell'
+import {
+  createRoundLocalInteriorBlueprint,
+  createSquareLocalBlueprint,
+} from '../../app/classes/map/generation/LocalMapBlueprint'
 import { BUILDING_TYPES, CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, LABEL_TYPES, SHEET_TYPES } from '../../app/constants'
 import { sameBuilding } from '../../app/lib/buildings/identity'
 import {
@@ -89,6 +93,7 @@ export type BuildingInteriorRuntimeSpace = RuntimeMapSpace & {
   idleCells: RuntimeCell[]
   renderer: BuildingInteriorSpaceRenderer
   sleepCells: RuntimeCell[]
+  walkableCells: RuntimeCell[]
 }
 
 const TARGET_FRAME_MS = 1000 / 60
@@ -115,62 +120,20 @@ function isBlueprintExitCell(blueprint: MapBlueprint, i: number, j: number): boo
 
 function createDefaultBuildingInteriorBlueprint(building: BuildingEntity): MapBlueprint {
   const size = getDefaultInteriorMapSize(building)
-  const width = size + 1
-  const center = size / 2
-  const radius = Math.max(3, Math.floor(width * 0.29))
-  const terrain = Array.from({ length: width }, () => Array.from({ length: width }, () => 'Water'))
-  const relief = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
-  const floorMask = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
-  const borderMask = Array.from({ length: width }, () => Array.from({ length: width }, () => 0))
-
-  for (let i = 0; i <= size; i += 1) {
-    for (let j = 0; j <= size; j += 1) {
-      if (Math.hypot(i - center, j - center) > radius) continue
-      terrain[i][j] = 'Dirt'
-      floorMask[i][j] = 1
-    }
-  }
-
-  for (let i = 0; i <= size; i += 1) {
-    for (let j = 0; j <= size; j += 1) {
-      if (!floorMask[i][j]) continue
-      let touchesOutside = false
-      for (let di = -1; di <= 1 && !touchesOutside; di += 1) {
-        for (let dj = -1; dj <= 1; dj += 1) {
-          if (di === 0 && dj === 0) continue
-          const ni = i + di
-          const nj = j + dj
-          if (ni < 0 || nj < 0 || ni > size || nj > size || !floorMask[ni][nj]) {
-            touchesOutside = true
-            break
-          }
-        }
-      }
-      if (touchesOutside) borderMask[i][j] = 1
-    }
-  }
-
-  const exit = {
-    i: Math.round(center),
-    j: Math.min(size - 1, Math.round(center + radius * 0.76)),
-  }
-  borderMask[exit.i][exit.j] = 0
-
-  return {
+  const buildingSize = building.size ?? 2
+  return createRoundLocalInteriorBlueprint({
     seed: building.context?.map?.seed,
-    buildingSize: building.size,
+    buildingSize,
     kind: 'interior',
     mapType: 'interior',
     interiorType: building.type,
     size,
-    terrain,
-    relief,
-    floorMask,
-    borderMask,
-    spawns: [{ i: exit.i, j: exit.j }],
-    exits: [exit],
+    terrain: [],
+    relief: [],
+    spawns: [],
+    exits: [{ i: 0, j: 0 }],
     resources: [],
-  }
+  })
 }
 
 function isInteriorFloorCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
@@ -455,17 +418,62 @@ function findInteriorDefaultBuildingCell(
   )
 }
 
+function isUsableInteriorDecorationCell(cell: RuntimeCell | null | undefined): cell is RuntimeCell {
+  return Boolean(cell && !cell.terrainHidden && cell.category !== 'Water' && !cell.waterBorder)
+}
+
+function getOppositeExitInsetCell(
+  space: BuildingInteriorRuntimeSpace,
+  center: { i: number; j: number }
+): RuntimeCell | null {
+  if (!space.exitCell) return null
+  const exitX = space.exitCell.i - space.exitCell.j
+  const exitY = space.exitCell.i + space.exitCell.j
+  const centerX = center.i - center.j
+  const centerY = center.i + center.j
+  const awayX = centerX - exitX
+  const awayY = centerY - exitY
+  if (awayX === 0 && awayY === 0) return null
+
+  const cells = space.walkableCells.filter(cell => {
+    if (!isUsableInteriorDecorationCell(cell) || cell.border) return false
+    const cellX = cell.i - cell.j
+    const cellY = cell.i + cell.j
+    const matchesHorizontalSide = awayX === 0 || (awayX > 0 ? cellX >= centerX : cellX <= centerX)
+    const matchesVerticalSide = awayY === 0 || (awayY > 0 ? cellY >= centerY : cellY <= centerY)
+    return matchesHorizontalSide && matchesVerticalSide
+  })
+  const candidates = cells.length ? cells : space.walkableCells
+  let best: RuntimeCell | null = null
+  let bestScore = -Infinity
+  for (const cell of candidates) {
+    if (!isUsableInteriorDecorationCell(cell) || cell.border) continue
+    const cellX = cell.i - cell.j
+    const cellY = cell.i + cell.j
+    const score = (cellX - centerX) * awayX + (cellY - centerY) * awayY
+    if (score > bestScore) {
+      best = cell
+      bestScore = score
+    }
+  }
+  return best
+}
+
 function getInteriorDefaultBuildingPreferredCell(
   space: BuildingInteriorRuntimeSpace,
   item: ReturnType<typeof getBuildingInteriorDecorationLayout>[number],
-  center: number
+  center: { i: number; j: number }
 ): { i: number; j: number } {
+  if (item.placement === 'oppositeExitInset') {
+    const cell = getOppositeExitInsetCell(space, center)
+    if (cell) return cell
+  }
   if (item.placement === 'oppositeExitBorder' && space.exitCell) {
-    const directionI = Math.sign(center - space.exitCell.i)
-    const directionJ = Math.sign(center - space.exitCell.j)
-    if (directionI === 0 && directionJ === 0) return { i: center + item.offsetI, j: center + item.offsetJ }
-    let i = center
-    let j = center
+    const directionI = Math.sign(center.i - space.exitCell.i)
+    const directionJ = Math.sign(center.j - space.exitCell.j)
+    if (directionI === 0 && directionJ === 0) return { i: center.i + item.offsetI, j: center.j + item.offsetJ }
+    let i = center.i
+    let j = center.j
     let borderCell: RuntimeCell | null = null
     while (i >= 0 && i <= space.size && j >= 0 && j <= space.size) {
       const cell = space.grid[i]?.[j]
@@ -475,7 +483,29 @@ function getInteriorDefaultBuildingPreferredCell(
     }
     if (borderCell) return borderCell
   }
-  return { i: center + item.offsetI, j: center + item.offsetJ }
+  return { i: center.i + item.offsetI, j: center.j + item.offsetJ }
+}
+
+function getInteriorRoomCenter(space: BuildingInteriorRuntimeSpace): { i: number; j: number } {
+  const cells = space.walkableCells.length ? space.walkableCells : space.sleepCells
+  if (!cells.length) return { i: Math.round(space.size / 2), j: Math.round(space.size / 2) }
+  const total = cells.reduce(
+    (sum, cell) => ({
+      i: sum.i + cell.i,
+      j: sum.j + cell.j,
+    }),
+    { i: 0, j: 0 }
+  )
+  const center = {
+    i: total.i / cells.length,
+    j: total.j / cells.length,
+  }
+  const nearest = cells.reduce((best, cell) => {
+    const bestDistance = (best.i - center.i) ** 2 + (best.j - center.j) ** 2
+    const cellDistance = (cell.i - center.i) ** 2 + (cell.j - center.j) ** 2
+    return cellDistance < bestDistance ? cell : best
+  }, cells[0])
+  return { i: nearest.i, j: nearest.j }
 }
 
 function ensureInteriorDefaultBuildings(context: GameContextLike, space: BuildingInteriorRuntimeSpace): void {
@@ -486,7 +516,7 @@ function ensureInteriorDefaultBuildings(context: GameContextLike, space: Buildin
   }
   const owner = space.building.owner
   if (!owner?.createBuilding) return
-  const center = Math.round(space.size / 2)
+  const center = getInteriorRoomCenter(space)
   const blockedCells = new Set<string>()
   if (space.entryCell) blockedCells.add(interiorCellKey(space.entryCell))
 
@@ -727,6 +757,7 @@ function buildInteriorSpaceCells(
     const row: RuntimeCell[] = []
     grid[i] = row
     for (let j = 0; j <= blueprint.size; j += 1) {
+      if (blueprint.terrain[i]?.[j] == null) continue
       const isFloor = maskValue(blueprint.floorMask, i, j) || !blueprint.floorMask
       const isExit = isBlueprintExitCell(blueprint, i, j)
       const cell = new Cell(
@@ -788,8 +819,9 @@ function placeRendererNearBuilding(
 export function ensureBuildingInteriorSpace(
   context: GameContextLike,
   building: BuildingEntity,
-  blueprint: MapBlueprint
+  blueprintData: MapBlueprint
 ): BuildingInteriorRuntimeSpace {
+  const blueprint = createSquareLocalBlueprint(blueprintData)
   const map = context.map
   const id = getBuildingInteriorSpaceId(building)
   const existing = getMapSpace(map, id)
@@ -823,6 +855,7 @@ export function ensureBuildingInteriorSpace(
     kind: 'interior',
     grid: built.grid,
     size: blueprint.size,
+    localGridLayout: blueprint.localGridLayout,
     container: renderer.entityLayer,
     shadowLayer: renderer.shadowLayer,
     shadowRenderContainer: renderer.sceneLayer,
@@ -840,6 +873,7 @@ export function ensureBuildingInteriorSpace(
     portals: [entryPortal, exitPortal],
     renderer,
     sleepCells: built.sleepCells,
+    walkableCells: built.walkableCells,
   }
   renderer.space = space
   map.spaces?.set(id, space)

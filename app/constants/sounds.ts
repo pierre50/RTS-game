@@ -27,7 +27,7 @@ export const SOUND_CUES = {
     meleeWhiff: 'attack-swipe',
   },
   projectile: {
-    arrowLaunch: ['archer-attack', 'archer-attack-2', 'archer-attack-3', 'archer-attack-4'],
+    arrowLaunch: ['archer-attack', 'archer-attack-2'],
   },
   unit: {
     horseMoving: 'horse-moving',

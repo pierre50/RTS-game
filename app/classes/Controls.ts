@@ -18,6 +18,9 @@ import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../type
 import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
 import {
+  captureControlsMovement,
+  restoreControlsMovement,
+  type HeldMovementKeys,
   handleControlsEscapeKey,
   handleControlsKeyDown,
   handleControlsKeyUp,
@@ -209,6 +212,11 @@ export default class Controls extends Container implements ControlsLike {
     if (!hero) return null
     const point = getEntityMapPoint(hero)
     return { x: point.x, y: point.y + getReliefOffset(hero) }
+  }
+
+  focusHeroCamera(): void {
+    const center = this.getHeroCameraCenter()
+    if (center) this.cameraController.set(center.x, center.y)
   }
 
   getViewportMetrics(): {
@@ -515,10 +523,7 @@ export default class Controls extends Container implements ControlsLike {
     this.keysPressed = {}
     this.keyPressedCount = 0
     this.keySpeed = 0
-    if (!enabled && this.heroUnit) {
-      const cameraCenter = this.getHeroCameraCenter()
-      if (cameraCenter) this.cameraController.set(cameraCenter.x, cameraCenter.y)
-    }
+    if (!enabled) this.focusHeroCamera()
   }
 
   setRuntimeInputEnabled(enabled: boolean): void {
@@ -527,6 +532,14 @@ export default class Controls extends Container implements ControlsLike {
     this.eventMode = enabled ? 'auto' : 'none'
     this.renderable = enabled
     if (!enabled) this.cancelActiveInteraction()
+  }
+
+  captureMovementInput(): () => HeldMovementKeys {
+    return captureControlsMovement(this)
+  }
+
+  restoreMovementInput(held: HeldMovementKeys): void {
+    restoreControlsMovement(this, held)
   }
 
   setEquippedItem(item: HeroEquippedItem | null): void {

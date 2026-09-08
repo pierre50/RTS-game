@@ -15,10 +15,6 @@ function loadEntityHealthDisplay() {
   const module = { exports: {} }
   const mocks = {
     '../constants': { MENU_INFO_IDS: { hitPoints: 'hit-points' } },
-    './entities/hitPointsText': {
-      formatHitPointsText: (hitPoints, totalHitPoints) =>
-        `${Math.round(Number(hitPoints))}/${Math.round(Number(totalHitPoints))}`,
-    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -56,4 +52,21 @@ test('syncEntityHealthDisplay can empty depleted health text for harvested resou
   syncEntityHealthDisplay(entity, { forceInfo: true, menu, emptyWhenDepleted: true })
 
   assert.deepEqual(calls, [['drawHealthBar'], ['updateInfo', 'hit-points', '']])
+})
+
+test('syncEntityHealthDisplay keeps positive fractional health visible in selected info', () => {
+  const { syncEntityHealthDisplay } = loadEntityHealthDisplay()
+  const calls = []
+  const entity = {
+    hitPoints: 0.4,
+    totalHitPoints: 100,
+    selected: true,
+    drawHealthBar: () => calls.push(['drawHealthBar']),
+  }
+  const player = { selectedOther: entity }
+  const menu = { updateInfo: (id, value) => calls.push(['updateInfo', id, value]) }
+
+  syncEntityHealthDisplay(entity, { player, menu })
+
+  assert.deepEqual(calls, [['drawHealthBar'], ['updateInfo', 'hit-points', '1/100']])
 })

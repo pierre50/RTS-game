@@ -86,6 +86,7 @@ export function ensureOutsideMapSpace(map: RuntimeMap): RuntimeMapSpace {
   }
   outside.grid = map.grid
   outside.size = map.size
+  outside.localGridLayout = map.localGridLayout
   outside.container = map
   outside.shadowLayer = map.shadowLayer ?? null
   outside.shadowRenderContainer = map
@@ -127,7 +128,13 @@ function getMapSpaceCell(space: RuntimeMapSpace | null | undefined, i: number, j
 }
 
 export function getEntityCell(
-  entity: { context?: { map?: RuntimeMap | null }; currentCell?: RuntimeCell | null; i: number; j: number; spaceId?: string | null },
+  entity: {
+    context?: { map?: RuntimeMap | null }
+    currentCell?: RuntimeCell | null
+    i: number
+    j: number
+    spaceId?: string | null
+  },
   fallbackMap?: RuntimeMap | null
 ): RuntimeCell | null {
   const map = fallbackMap ?? entity.context?.map

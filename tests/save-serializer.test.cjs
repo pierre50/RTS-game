@@ -53,6 +53,14 @@ function loadSaveSerializer() {
   return module.exports
 }
 
+test('pending world pursuers are included in the runtime save', () => {
+  const { serializeGame } = loadSaveSerializer()
+  const context = makeContext()
+  const entries = [{ entity: { label: 'wolf', type: 'Wolf', i: 1, j: 2 }, arrival: { i: 1, j: 2 }, targetLabel: 'hero', remainingMs: 1200 }]
+  context.worldPursuit = { serializeState: () => structuredClone(entries) }
+  assert.deepEqual(serializeGame(context).runtime.worldPursuers, entries)
+})
+
 function makeContext(mapOverrides = {}) {
   return {
     scheduler: { elapsedMs: 123 },

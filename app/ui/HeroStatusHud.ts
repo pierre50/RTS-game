@@ -1,4 +1,5 @@
 import { renderUnitHeadAvatar } from '../lib/avatar'
+import { formatDisplayedHitPoints } from '../lib/entities/hitPointsText'
 import { t } from '../lib/lang'
 import { getUnitOverallLevel } from '../lib/units/unitExperience'
 import type { UnitEntity } from '../types/entities'
@@ -138,7 +139,7 @@ export class HeroStatusHud {
     const rawHitPoints = Math.max(0, hero.hitPoints ?? 0)
     const rawTotalHitPoints = Math.max(0, hero.totalHitPoints ?? 0)
     const max = Math.ceil(rawTotalHitPoints)
-    const current = Math.min(max, Math.floor(rawHitPoints))
+    const current = Math.min(max, formatDisplayedHitPoints(rawHitPoints))
     const targetHitPoints = Math.min(rawTotalHitPoints, rawHitPoints)
     if (this.displayedHitPoints == null || targetHitPoints < this.displayedHitPoints) {
       this.displayedHitPoints = targetHitPoints

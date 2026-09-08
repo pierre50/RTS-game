@@ -14,6 +14,7 @@ import type { MinimapHostLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
 import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell, RuntimeMapSpace } from '../../types/map'
+import type { LocalMapLayout } from '../../lib/localMapLayout'
 
 type MinimapBounds = {
   maxI: number
@@ -179,7 +180,14 @@ export class MinimapManager {
   }
 
   private shouldUseSquareGridLayout(): boolean {
-    return this.getMinimapSpace().kind !== 'interior' && Boolean(this.menu.context.map.localGridLayout)
+    return Boolean(this.getMinimapLocalLayout())
+  }
+
+  private getMinimapLocalLayout(): LocalMapLayout | undefined {
+    const space = this.getMinimapSpace()
+    return space.kind === 'interior'
+      ? space.localGridLayout
+      : (space.localGridLayout ?? this.menu.context.map.localGridLayout)
   }
 
   private getLocalVisualCropPx(transform: MinimapTransform): { x: number; y: number } {
@@ -235,7 +243,7 @@ export class MinimapManager {
     const origin = space.origin ?? { x: 0, y: 0 }
     const padding = 6 * MINIMAP_RESOLUTION_SCALE
 
-    const localLayout = space.kind !== 'interior' ? this.menu.context.map.localGridLayout : undefined
+    const localLayout = this.getMinimapLocalLayout()
     if (localLayout) {
       const worldBounds = getLocalMapBounds(localLayout)
       const worldWidth = worldBounds.right - worldBounds.left

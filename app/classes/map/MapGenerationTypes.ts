@@ -153,6 +153,7 @@ export type MapBlueprint = {
   relief?: number[][]
   floorMask?: number[][]
   borderMask?: number[][]
+  floorShape?: unknown
   resources?: BlueprintResource[]
   settlements?: MapSettlement[]
   banditCampPositions?: GridPosition[]

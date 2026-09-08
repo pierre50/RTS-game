@@ -42,6 +42,7 @@ export type GameWorldBootHost = {
     player: PlayerLike | null
     players: PlayerLike[]
     weather?: GameContextLike['weather'] | null
+    worldPursuit?: GameContextLike['worldPursuit'] | null
   }
   _applyMapConfig(map: RuntimeMap, config?: GameConfig): void
   _autosaveCampaign(): void
@@ -194,13 +195,17 @@ export async function bootGameFromSeedSave(game: GameWorldBootHost, json: Serial
   )
   measure(game, 'seedSave.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'seedSave.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  game.context.worldPursuit?.restore(json.runtime?.worldPursuers)
   game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')
 }
 
 async function preloadSavedPlayerAssets(game: GameWorldBootHost, json: SerializedSave): Promise<void> {
   // Saved units need their owner's appearance sheets before their constructors run.
-  const players = json.players.map(player => ({
+  const players = [
+    ...json.players,
+    ...(json.runtime?.worldPursuers ?? []).flatMap(entry => (entry.owner ? [entry.owner] : [])),
+  ].map(player => ({
     civ: player.civ,
     gender: player.gender,
     label: player.label ?? '',
@@ -232,6 +237,7 @@ export async function bootGameFromSave(game: GameWorldBootHost, json: Serialized
   )
   measure(game, 'save.controlsInit', () => game.context.controls?.init?.())
   measure(game, 'save.mountRuntime', () => game._mountRuntime(json.runtime?.dayNightElapsedMs))
+  game.context.worldPursuit?.restore(json.runtime?.worldPursuers)
   game.context.weather?.applyState?.(json.runtime?.weather)
   game.context.performance?.setPhase?.('runtime')
 }

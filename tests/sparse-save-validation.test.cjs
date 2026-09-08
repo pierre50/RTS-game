@@ -33,6 +33,22 @@ function sparseSave() {
   )
 }
 
+test('pending world pursuers validate their identity, arrival and remaining delay', () => {
+  const save = sparseSave()
+  const entry = {
+    entity: { type: 'Hero', label: 'pursuer', i: 99, j: 99 },
+    owner: { type: 'AI', label: 'enemy' },
+    targetLabel: 'hero', arrival: localToGrid(1, 4, save.world.localGridLayout), remainingMs: 1200,
+  }
+  save.runtime = { worldPursuers: [entry] }
+  assert.equal(validateSaveData(save), save)
+  entry.remainingMs = -1
+  assert.throws(() => validateSaveData(save), /pursuer delay/)
+  entry.remainingMs = 1200
+  save.runtime.worldPursuers.push(structuredClone(entry))
+  assert.throws(() => validateSaveData(save), /pursuer identity/)
+})
+
 test('sparse saves validate after JSON converts missing cells and vision to null', () => {
   const save = sparseSave()
   assert.equal(save.map[0][0], null)

@@ -8,7 +8,19 @@ function wait(ms: number): Promise<void> {
 }
 
 function waitForFrame(): Promise<void> {
-  return new Promise(resolve => window.requestAnimationFrame(() => resolve()))
+  if (document.hidden || typeof window.requestAnimationFrame !== 'function') return wait(0)
+  return new Promise(resolve => {
+    // A hidden or suspended renderer may stop delivering animation frames.
+    const timeout = window.setTimeout(resolve, 100)
+    window.requestAnimationFrame(() => {
+      window.clearTimeout(timeout)
+      resolve()
+    })
+  })
+}
+
+async function waitForTransitionFrames(count = 2): Promise<void> {
+  for (let index = 0; index < count; index += 1) await waitForFrame()
 }
 
 export class BuildingInteriorTransition {
@@ -42,16 +54,33 @@ export class BuildingInteriorTransition {
 
   async playDeparture(): Promise<void> {
     if (!this.root) return
-    await waitForFrame()
-    this.root.classList.add('is-open')
-    await wait(DEPARTURE_FADE_MS)
+    await waitForTransitionFrames()
+    await this.fade('is-open', DEPARTURE_FADE_MS)
   }
 
   async finish(): Promise<void> {
     if (!this.root) return
-    this.root.classList.add('is-arriving')
-    await wait(ARRIVAL_FADE_MS)
+    await this.fade('is-arriving', ARRIVAL_FADE_MS)
     this.destroy()
+  }
+
+  private async fade(className: string, duration: number): Promise<void> {
+    const root = this.root
+    if (!root) return
+    await new Promise<void>(resolve => {
+      const finish = (): void => {
+        window.clearTimeout(timeout)
+        root.removeEventListener('transitionend', onEnd)
+        resolve()
+      }
+      const onEnd = (event: TransitionEvent): void => {
+        if (event.target === root && event.propertyName === 'opacity') finish()
+      }
+      // Transition events can be skipped when the document is hidden.
+      const timeout = window.setTimeout(finish, document.hidden ? 0 : duration + 100)
+      root.addEventListener('transitionend', onEnd)
+      root.classList.add(className)
+    })
   }
 
   destroy(): void {
@@ -60,14 +89,23 @@ export class BuildingInteriorTransition {
   }
 }
 
-export async function playBuildingInteriorDoorTransition(callback: () => void | Promise<void>): Promise<void> {
+export async function playBuildingInteriorDoorTransition(
+  callback: () => void | Promise<void>,
+  options: { blockInput?: boolean; beforeReveal?: () => void | Promise<void> } = {}
+): Promise<void> {
   const transition = new BuildingInteriorTransition({ mode: 'door' })
   try {
+    if (options.blockInput && transition.root) {
+      transition.root.style.zIndex = '20000'
+      transition.root.style.pointerEvents = 'auto'
+    }
     await transition.playDeparture()
+    await waitForTransitionFrames()
     await callback()
+    await options.beforeReveal?.()
+    await waitForTransitionFrames()
     await transition.finish()
-  } catch (error) {
+  } finally {
     transition.destroy()
-    throw error
   }
 }

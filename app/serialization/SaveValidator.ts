@@ -18,6 +18,7 @@ import {
   validateNaturalResourceRespawnSlots,
   validatePlayers,
   validateResources,
+  validateWorldPursuers,
 } from './SaveEntityValidators'
 
 function getLoadedConfig(): LoadedGameConfig {
@@ -185,6 +186,7 @@ export function validateSaveData(data: unknown): SaveRecord {
     validateOptionalFiniteNumber(data.runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
     validateOptionalFiniteNumber(data.runtime.elapsedMs, 'runtime elapsedMs')
     validateOptionalFiniteNumber(data.runtime.savedAt, 'runtime savedAt')
+    validateWorldPursuers(data.runtime.worldPursuers, size, config)
     if (data.runtime.weather != null) {
       if (!isObject(data.runtime.weather)) fail('Invalid save file: runtime weather is invalid.')
       if (data.runtime.weather.phase != null && typeof data.runtime.weather.phase !== 'string') {

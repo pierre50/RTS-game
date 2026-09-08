@@ -59,6 +59,7 @@ export function applyPortableUnitState(
     assetCiv: source.assetCiv,
     appearanceVariants: cloneRecord((source as { appearanceVariants?: Record<string, string> }).appearanceVariants),
     controlMode: source.controlMode,
+    degree: source.degree,
     energy: source.energy,
     experience: cloneRecord(source.experience),
     followingHero: source.followingHero,

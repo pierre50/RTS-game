@@ -37,6 +37,26 @@ function loadWorldRegionPlayers() {
   })
 }
 
+test('travel party refreshes the restored facing before revealing the paused world', () => {
+  const { applyTravelPartyToRuntime } = loadTravelParty()
+  const rendered = []
+  const hero = {
+    type: 'Hero', degree: 12,
+    setTextures(sheet) { rendered.push([sheet, this.degree]) },
+  }
+  const context = {
+    paused: true,
+    player: { units: [hero], views: { removeViewerEverywhere: () => [] } },
+    controls: { heroUnit: hero },
+    map: { revealEverything: true },
+  }
+  applyTravelPartyToRuntime({ _gameContext: () => context }, {
+    hero: { type: 'Hero', degree: 270 }, followers: [],
+  })
+  assert.deepEqual(rendered, [['standingSheet', 270]])
+  assert.equal(context.paused, true)
+})
+
 function loadWorldRegionTravelRuntime(calls) {
   return loadTsModule('app/screens/game/GameWorldRegionTravel.ts', {
     mocks: {
@@ -83,11 +103,16 @@ function loadWorldRegionTravelRuntime(calls) {
         arrivalCellForRegionEdge: () => ({ i: 9, j: 9 }),
         findOpenWorldTravelCell: () => ({ i: 9, j: 9 }),
       },
-      '../../ui/transitions/WorldFadeTransition': {
-        WorldFadeTransition: class {
-          async conceal() { calls.concealed = true }
-          async reveal() { calls.revealed = true }
-          destroy() { calls.fadeDestroyed = true }
+      '../../ui/BuildingInteriorTransition': {
+        playBuildingInteriorDoorTransition: async (callback, options) => {
+          calls.concealed = true
+          calls.blockInput = options.blockInput
+          try {
+            await callback()
+            calls.revealed = true
+          } finally {
+            calls.fadeDestroyed = true
+          }
         },
       },
       './GameTravelParty': {
@@ -485,6 +510,97 @@ for (const square of [false, true]) test(`world region travel restores a visited
   assert.equal(calls.concealed, true)
   assert.equal(calls.revealed, true)
   assert.equal(calls.fadeDestroyed, true)
+})
+
+test('border travel transfers visible pursuers out of the source save and schedules the new hero target', async () => {
+  const calls = { addedWorlds: [], travelPartyApplications: [] }
+  const { travelToWorldRegion } = loadWorldRegionTravelRuntime(calls)
+  const hero = { label: 'old-hero', type: 'Hero', i: 2, j: 2 }
+  const enemy = { label: 'enemy-unit', type: 'Villager', i: 2, j: 3, sight: 5, hitPoints: 12, dest: hero }
+  const snapshot = {
+    config: { worldId: 'world-test' }, resources: [], animals: [],
+    players: [{ label: 'human', isPlayed: true, units: [hero] }, { label: 'enemy', units: [enemy] }],
+  }
+  let context = {
+    hero, serialized: snapshot, players: snapshot.players,
+    controls: {}, menu: {}, map: { size: 12, worldId: 'world-test' },
+  }
+  const game = {
+    context, config: snapshot.config,
+    _campaignSave: { currentWorldId: 'source', worlds: { source: { id: 'source', state: snapshot } }, worldGraph: { nodes: {} } },
+    _gameContext: () => context, _map: () => context.map,
+    _destroyRuntime() {}, _loadRequiredWorldMapBlueprint: async () => {},
+    _bootFromConfig: async () => {
+      context = { ...context, hero: { ...hero, label: 'new-hero' }, worldPursuit: { enqueue: entries => { calls.pending = entries } } }
+      game.context = context
+    },
+    _autosaveCampaign() {},
+  }
+  await travelToWorldRegion(game, 'destination', 'east')
+  assert.equal(calls.pending.length, 1)
+  assert.equal(calls.pending[0].targetLabel, 'new-hero')
+  assert.equal(calls.pending[0].remainingMs, 3000)
+  assert.deepEqual(calls.pending[0].arrival, { i: 9, j: 9 })
+  assert.deepEqual(game._campaignSave.worlds.source.state.players[1].units, [])
+  assert.equal(snapshot.players[1].units[0], enemy)
+})
+
+test('world map debug teleport in the current region uses the fade transition', async () => {
+  const calls = { addedWorlds: [], travelPartyApplications: [] }
+  const { debugTeleportWorldMap } = loadWorldRegionTravelRuntime(calls)
+  const snapshot = {
+    config: { worldId: 'world-test', worldRegionId: 'region-a' },
+    players: [{ isPlayed: true, units: [{ i: 2, j: 2, label: 'hero', type: 'Hero' }] }],
+    world: { worldId: 'world-test', worldRegionId: 'region-a' },
+  }
+  const context = {
+    controls: {
+      focusHeroCamera: () => { calls.cameraFocused = true; calls.visibilityUpdated = true },
+      captureMovementInput: () => () => ({ KeyS: 'heroDown' }),
+      restoreMovementInput: held => {
+        assert.equal(calls.input, true)
+        assert.equal(calls.paused, false)
+        calls.restoredMovement = held
+      },
+      setRuntimeInputEnabled: enabled => { calls.input = enabled },
+      updateVisibleCells: () => { calls.visibilityUpdated = true },
+    },
+    hero: { i: 2, j: 2, x: 0, y: 0 },
+    map: { mapType: 'world-region', size: 12, worldId: 'world-test', worldRegionId: 'region-a' },
+    menu: {
+      refreshMiniMap: () => { calls.minimapRefreshed = true },
+      updateHeroStatus: () => { calls.heroStatusUpdated = true },
+    },
+    serialized: snapshot,
+  }
+  const game = {
+    context,
+    config: snapshot.config,
+    _campaignSave: null,
+    _gameContext: () => context,
+    _map: () => context.map,
+    _loadRequiredWorldMapBlueprint: async () => {},
+    _destroyRuntime: () => {},
+    _bootFromConfig: async () => {},
+    _bootFromSave: async () => {},
+    _autosaveCampaign: () => { calls.autosaved = true },
+    _restartSaveData: null,
+    _worldRegionTransitioning: false,
+    togglePause: paused => { calls.paused = paused },
+  }
+
+  await debugTeleportWorldMap(game, { worldI: 4, worldJ: 4, worldRegionId: 'region-a' })
+
+  assert.equal(calls.concealed, true)
+  assert.equal(calls.revealed, true)
+  assert.equal(calls.fadeDestroyed, true)
+  assert.equal(calls.blockInput, true)
+  assert.deepEqual(calls.restoredMovement, { KeyS: 'heroDown' })
+  assert.equal(calls.input, true)
+  assert.equal(calls.paused, false)
+  assert.equal(calls.travelPartyApplications.length, 1)
+  assert.equal(calls.cameraFocused, true)
+  assert.equal(calls.visibilityUpdated, true)
 })
 
 for (const failure of ['preload', 'boot']) test(`failed fade travel restores input and departure state (${failure})`, async () => {

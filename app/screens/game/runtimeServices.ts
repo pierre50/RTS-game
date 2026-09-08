@@ -20,12 +20,16 @@ import type { RuntimeMap } from '../../types/map'
 
 type ScreenRect = { height: number; width: number; x: number; y: number }
 type LayerHost = { addChild(child: ContainerChild): unknown }
-type RuntimeServiceContext = Pick<GameContextLike, 'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather'>
+type RuntimeServiceContext = Pick<
+  GameContextLike,
+  'dayNight' | 'timeSkip' | 'tributeRaids' | 'unitRest' | 'weather' | 'worldPursuit'
+>
 
 const WEATHER_LAYER_Z_INDEX = 10
 const LIGHT_LAYER_Z_INDEX = 20
 
 export type RuntimeServices = {
+  worldPursuit: WorldPursuitSystem | null
   buildingInteriorEntryMarker: BuildingInteriorEntryMarkerSystem | null
   campPatrols: CampPatrolSystem | null
   dailyWorldEvents: DailyWorldEventSystem | null
@@ -46,6 +50,7 @@ export type RuntimeServices = {
 
 export function createEmptyRuntimeServices(): RuntimeServices {
   return {
+    worldPursuit: null,
     buildingInteriorEntryMarker: null,
     campPatrols: null,
     dailyWorldEvents: null,
@@ -73,6 +78,8 @@ export function createRuntimeServices(
   worldRegionTravelHost?: RegionTravelHost | null
 ): RuntimeServices {
   const isInterior = map.mapType === 'interior'
+  const worldPursuit = new WorldPursuitSystem(context)
+  context.worldPursuit = worldPursuit
   const timeSkip = new TimeSkipSystem(context)
   context.timeSkip = timeSkip
 
@@ -102,6 +109,7 @@ export function createRuntimeServices(
 
   const lights = new LightSystem(context, getScreenRect, () => dayNight.getDarknessLevel())
   const services = {
+    worldPursuit,
     buildingInteriorEntryMarker,
     campPatrols,
     dailyWorldEvents,
@@ -136,6 +144,8 @@ export function addRuntimeServiceLayers(host: LayerHost, services: RuntimeServic
 }
 
 export function destroyRuntimeServices(services: RuntimeServices, context: RuntimeServiceContext): RuntimeServices {
+  services.worldPursuit?.destroy()
+  context.worldPursuit = null
   services.buildingInteriorEntryMarker?.destroy()
   services.lights?.destroy()
   services.interiorExitMarker?.destroy()
@@ -182,3 +192,4 @@ function clearRuntimeServiceDebugGlobals(): void {
   runtimeWindow.__weatherSystem = null
   runtimeWindow.__lightSystem = null
 }
+import { WorldPursuitSystem } from '../../services/world/WorldPursuitSystem'

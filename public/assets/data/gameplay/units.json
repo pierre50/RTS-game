@@ -128,13 +128,9 @@
       "goldminer": 1
     },
     "sounds": {
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3",
-        "human-unit-killed-4",
-        "human-unit-killed-5"
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2"
       ],
       "work": {
         "gatherFood": "farming-3",
@@ -267,8 +263,10 @@
       "goldminer": 1
     },
     "sounds": {
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"],
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2"
+      ],
       "work": {
         "chopWood": "wood-chopping",
         "forageBerry": "berry-gathering",
@@ -325,8 +323,10 @@
       }
     },
     "sounds": {
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": ["human-unit-killed", "human-unit-killed-2", "human-unit-killed-3"]
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2"
+      ]
     }
   },
   "Fantassin": {
@@ -357,13 +357,11 @@
       "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
-      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"],
-      "die": [
-        "human-unit-killed-6",
-        "human-unit-killed-7",
-        "human-unit-killed-8",
-        "human-unit-killed-9",
-        "human-unit-killed-10"
+      "hit": [
+        "sword-attack",
+        "swing-sword-attack",
+        "tinkle-sword-attack",
+        "sword-attack-2"
       ]
     }
   },
@@ -398,13 +396,9 @@
       "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3",
-        "human-unit-killed-4",
-        "human-unit-killed-5"
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2"
       ]
     }
   },
@@ -436,13 +430,9 @@
       "corpseSheet": "units/priest/greek/male/corpse"
     },
     "sounds": {
-      "hit": ["attack-class-2", "attack-class-2-2", "attack-class-2-3"],
-      "die": [
-        "human-unit-killed",
-        "human-unit-killed-2",
-        "human-unit-killed-3",
-        "human-unit-killed-4",
-        "human-unit-killed-5"
+      "hit": [
+        "attack-class-2",
+        "attack-class-2-2"
       ]
     }
   }

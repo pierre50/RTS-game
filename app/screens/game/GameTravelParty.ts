@@ -12,6 +12,7 @@ import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { SaveEntityState, SerializedSave } from '../../types/save'
 import { applyPortableUnitState } from './GameStateHelpers'
 import type { HeroEquippedItem } from '../../types/heroTools'
+import { SHEET_TYPES } from '../../constants'
 
 export type TravelPartyState = {
   followers: SaveEntityState[]
@@ -195,6 +196,7 @@ export function applyTravelPartyToRuntime(
     travelUnits.push(follower)
   }
 
+  for (const unit of travelUnits) unit.setTextures?.(SHEET_TYPES.standing)
   refreshTravelPartyFog(game, travelUnits)
   controls.init?.()
   if (equippedItem) controls.setEquippedItem?.(equippedItem)

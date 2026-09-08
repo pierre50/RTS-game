@@ -228,11 +228,8 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
         destroy() {}
       },
     },
-    '../ui/transitions/WorldRevealTransition': {
-      WorldRevealTransition: class WorldRevealTransition {
-        async revealFrom() {}
-        destroy() {}
-      },
+    '../ui/BuildingInteriorTransition': {
+      playBuildingInteriorDoorTransition: async callback => callback(),
     },
     '../ui/OrientationGuard': {
       OrientationGuard: class OrientationGuard {
@@ -265,7 +262,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     '../../serialization/SaveValidator': mocks['../serialization/SaveValidator'],
     '../../serialization/SaveSerializer': mocks['../serialization/SaveSerializer'],
     '../../ui/GameLoadingScreen': mocks['../ui/GameLoadingScreen'],
-    '../../ui/transitions/WorldRevealTransition': mocks['../ui/transitions/WorldRevealTransition'],
+    '../../ui/BuildingInteriorTransition': mocks['../ui/BuildingInteriorTransition'],
     '../../services/weather/WeatherSystem': mocks['../services/weather/WeatherSystem'],
     '../../services/lighting/LightSystem': mocks['../services/lighting/LightSystem'],
     '../../services/ShadowSystem': mocks['../services/ShadowSystem'],
@@ -601,6 +598,18 @@ test('portable hero state preserves mounted horse color across worlds', () => {
   assert.equal(target.mountedOnHorse, true)
   assert.equal(target.horseColor, 'gray')
   assert.equal(target.companionHorseColor, 'gray')
+})
+
+test('portable hero state preserves all facing directions including zero', () => {
+  const Game = loadGame()
+  const game = new Game({ ticker: { speed: 1 } }, {}, null, null)
+  for (const degree of [0, 45, 90, 135, 180, 225, 270, 315]) {
+    const target = { degree: 123 }
+    game._applyPortableUnitState(target, { i: 0, j: 0, type: 'Hero', degree })
+    assert.equal(target.degree, degree)
+    game._applyPortableUnitState(target, { i: 0, j: 0, type: 'Hero' })
+    assert.equal(target.degree, degree)
+  }
 })
 
 test('pause applies to live units, buildings, gaia animals and corpses once', () => {

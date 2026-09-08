@@ -192,7 +192,16 @@ export type SaveWeatherState = {
   windX?: number
 }
 
+export type PendingWorldPursuer = {
+  entity: SaveEntityState
+  owner?: SavePlayerState
+  targetLabel: string
+  arrival: SaveGridPoint
+  remainingMs: number
+}
+
 type SaveRuntimeState = {
+  worldPursuers?: PendingWorldPursuer[]
   dayNightElapsedMs?: number
   elapsedMs?: number
   savedAt?: number

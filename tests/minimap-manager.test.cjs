@@ -483,7 +483,7 @@ test('rectangular local layouts retain uniform scale with centered unused space'
   assertClose(point.y, 256)
 })
 
-test('interior minimap ignores exterior local layout metadata', () => {
+test('interior minimap uses the active interior local layout', () => {
   const { menu, manager } = createLocalMinimap()
   menu.context.map.spaces.set('interior:house', {
     id: 'interior:house',
@@ -491,9 +491,10 @@ test('interior minimap ignores exterior local layout metadata', () => {
     size: 1,
     grid: [],
     origin: { x: 500, y: 600 },
+    localGridLayout: { columns: 2, rows: 5 },
   })
   menu.context.map.activeSpaceId = 'interior:house'
   manager.initMiniMap()
-  assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height * 2)
-  assert.match(menu.minimapMap.style.clipPath, /^polygon/)
+  assert.equal(menu.terrainMinimap.width, menu.terrainMinimap.height)
+  assert.equal(menu.minimapMap.style.clipPath, '')
 })

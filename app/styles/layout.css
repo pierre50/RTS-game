@@ -77,33 +77,6 @@
   text-align: right;
 }
 
-.world-reveal {
-  --world-reveal-x: 50vw;
-  --world-reveal-y: 50vh;
-  --world-reveal-radius: 0px;
-
-  position: fixed;
-  inset: 0;
-  z-index: 5200;
-  display: block;
-  background: #020204;
-  pointer-events: auto;
-  mask-repeat: no-repeat;
-  mask-size: 100% 100%;
-  mask-image: radial-gradient(
-    circle at var(--world-reveal-x) var(--world-reveal-y),
-    transparent 0 var(--world-reveal-radius),
-    #000 calc(var(--world-reveal-radius) + 1px)
-  );
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  -webkit-mask-image: radial-gradient(
-    circle at var(--world-reveal-x) var(--world-reveal-y),
-    transparent 0 var(--world-reveal-radius),
-    #000 calc(var(--world-reveal-radius) + 1px)
-  );
-}
-
 .building-interior-transition {
   --building-interior-progress: 0%;
 

@@ -144,6 +144,7 @@ export interface RuntimeMapSpace {
   kind: RuntimeMapSpaceKind
   grid: Grid<RuntimeCell>
   size: number
+  localGridLayout?: LocalMapLayout
   container: Container | RuntimeMap
   shadowLayer?: Container | null
   shadowRenderContainer?: Container | RuntimeMap | null

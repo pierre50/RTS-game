@@ -23,6 +23,13 @@ test('formatHitPointsText rounds decimal hit points for display', () => {
   assert.equal(formatHitPointsText(99.4, 100), '99/100')
 })
 
+test('formatHitPointsText keeps positive fractional hit points visible', () => {
+  const { formatHitPointsText } = loadHitPointsText()
+
+  assert.equal(formatHitPointsText(0.4, 100), '1/100')
+  assert.equal(formatHitPointsText(0, 100), '0/100')
+})
+
 test('formatHitPointsText preserves empty display updates', () => {
   const { formatHitPointsText } = loadHitPointsText()
 

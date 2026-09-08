@@ -1,6 +1,6 @@
 import { Graphics } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES, STEP_TIME } from '../constants'
-import { getReliefOffset } from '../lib'
+import { getReliefOffset, playAudibleSoundCue } from '../lib'
 import { degreeToDirection, pointIsBetweenTwoPoint, pointsDistance } from '../lib/maths'
 import { t } from '../lib/lang'
 import {
@@ -34,6 +34,7 @@ const LASSO_HAND_FRAME_COUNT = 8
 const LASSO_HORSE_NECK_FRAME_COUNT = 6
 const LASSO_DEFAULT_Z_OFFSET = 2
 const LASSO_ATTACHED_HORSE_Z_OFFSET = -1
+const LASSO_HORSE_CAPTURE_SOUNDS = ['horse-2', 'horse-3']
 const LASSO_HAND_OFFSETS = {
   north: [
     { x: -9, y: -7 },
@@ -293,6 +294,7 @@ export class HeroLassoThrow extends Graphics {
     horse.lassoOwner = this.hero
     horse.stop?.()
     horse.animalBehavior?.stop?.()
+    playAudibleSoundCue(horse, LASSO_HORSE_CAPTURE_SOUNDS, { profile: 'voice' })
     if (this.options.showMessages) {
       this.gameContext.menu?.showMessage?.(t('lassoHorseCaught'), 'success')
     }

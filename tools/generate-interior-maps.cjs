@@ -59,6 +59,27 @@ function mapSizeForBuildingSize(buildingSize) {
   return buildingSize * 2 + 7
 }
 
+function createLocalMapLayout(sourceSize) {
+  const columns = Math.ceil((sourceSize + 1) / 2) + 1
+  return { columns, rows: 4 * (columns - 1) + 1 }
+}
+
+function localToGrid(column, row, layout) {
+  return {
+    i: column + Math.ceil(row / 2),
+    j: layout.columns - 1 - column + Math.floor(row / 2),
+  }
+}
+
+function gridToLocal(i, j, layout) {
+  const row = i + j - (layout.columns - 1)
+  return { column: i - Math.ceil(row / 2), row }
+}
+
+function localMapSize(layout) {
+  return layout.columns - 1 + Math.ceil((layout.rows - 1) / 2)
+}
+
 function profileForBuildingSize(buildingSize) {
   return {
     buildingSize,
@@ -142,37 +163,56 @@ function encode(array) {
 }
 
 function buildingInterior({ buildingSize, id, seed, size }) {
-  const width = size + 1
-  const center = size / 2
-  const radius = Math.max(3, Math.floor(width * 0.29))
+  const layout = createLocalMapLayout(size)
+  const localSize = localMapSize(layout)
+  const width = localSize + 1
   const terrain = new Uint8Array(width * width).fill(WATER)
   const relief = new Int8Array(width * width)
   const floorMask = new Uint8Array(width * width)
   const borderMask = new Uint8Array(width * width)
+  const centerColumn = (layout.columns - 1) / 2
+  const centerRow = (layout.rows - 1) / 2
+  const radiusColumns = Math.max(2.25, Math.min(layout.columns / 2 - 0.65, buildingSize + 1.35))
+  const radiusRows = Math.min(centerRow - 1, radiusColumns * 2.55)
+  const curvePower = 3
 
   const indexOf = (i, j) => i * width + j
 
-  for (let i = 0; i <= size; i++) {
-    for (let j = 0; j <= size; j++) {
-      const distance = Math.hypot(i - center, j - center)
-      if (distance <= radius) {
-        floorMask[indexOf(i, j)] = 1
-        terrain[indexOf(i, j)] = DIRT
-      }
+  for (let row = 0; row < layout.rows; row++) {
+    for (let column = 0; column < layout.columns; column++) {
+      if (row % 2 === 1 && column === layout.columns - 1) continue
+      const { i, j } = localToGrid(column, row, layout)
+      const visualColumn = column + (row % 2) / 2
+      const dx = Math.abs((visualColumn - centerColumn) / radiusColumns)
+      const dy = Math.abs((row - centerRow) / radiusRows)
+      if (dx ** curvePower + dy ** curvePower > 1) continue
+      terrain[indexOf(i, j)] = DIRT
+      floorMask[indexOf(i, j)] = 1
     }
   }
 
-  for (let i = 0; i <= size; i++) {
-    for (let j = 0; j <= size; j++) {
+  let exit = null
+  const targetExitColumn = centerColumn - radiusColumns * 0.45
+  for (let i = 0; i <= localSize; i++) {
+    for (let j = 0; j <= localSize; j++) {
       const index = indexOf(i, j)
       if (!floorMask[index]) continue
+      const local = gridToLocal(i, j, layout)
+      const visualColumn = local.column + (local.row % 2) / 2
+      if (local.row > centerRow && visualColumn < centerColumn) {
+        const columnDistance = Math.abs(visualColumn - targetExitColumn)
+        const bestColumnDistance = exit ? Math.abs(exit.visualColumn - targetExitColumn) : Infinity
+        if (!exit || local.row > exit.row || (local.row === exit.row && columnDistance < bestColumnDistance)) {
+          exit = { i, j, row: local.row, visualColumn }
+        }
+      }
       let touchesOutside = false
       for (let di = -1; di <= 1 && !touchesOutside; di++) {
         for (let dj = -1; dj <= 1; dj++) {
           if (di === 0 && dj === 0) continue
           const ni = i + di
           const nj = j + dj
-          if (ni < 0 || nj < 0 || ni > size || nj > size || !floorMask[indexOf(ni, nj)]) {
+          if (ni < 0 || nj < 0 || ni > localSize || nj > localSize || !floorMask[indexOf(ni, nj)]) {
             touchesOutside = true
             break
           }
@@ -183,13 +223,10 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     }
   }
 
-  const exit = {
-    id: 'main',
-    i: Math.round(center),
-    j: Math.min(size - 1, Math.round(center + radius * 0.76)),
-    direction: 'south',
-  }
-  const spawn = { i: exit.i, j: exit.j }
+  const doorCell = exit ? { i: exit.i, j: exit.j } : { i: Math.round(localSize / 2), j: Math.round(localSize / 2) }
+  const door = { id: 'main', ...doorCell, direction: 'south' }
+  borderMask[indexOf(door.i, door.j)] = 0
+  const spawn = { i: door.i, j: door.j }
 
   return {
     format: 'map-blueprint',
@@ -197,7 +234,8 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     id,
     kind: 'interior',
     buildingSize,
-    size,
+    size: localSize,
+    localGridLayout: layout,
     seed,
     encoding: 'base64',
     cellCount: terrain.length,
@@ -206,12 +244,13 @@ function buildingInterior({ buildingSize, id, seed, size }) {
     floorMask: encode(floorMask),
     borderMask: encode(borderMask),
     floorShape: {
-      type: 'circle',
-      center: { i: center, j: center },
-      radius,
+      type: 'round-local',
+      center: { column: centerColumn, row: centerRow },
+      radius: { columns: radiusColumns, rows: radiusRows },
+      curvePower,
     },
     spawns: [spawn],
-    exits: [exit],
+    exits: [door],
     resources: [],
   }
 }

@@ -19,6 +19,7 @@ function loadRuntimeServices() {
 
   const module = loadTsModule('app/screens/game/runtimeServices.ts', {
     mocks: {
+      '../../services/world/WorldPursuitSystem': { WorldPursuitSystem: service('worldPursuit') },
       '../../services/buildingInterior/BuildingInteriorEntryMarkerSystem': {
         BuildingInteriorEntryMarkerSystem: service('buildingInteriorEntryMarker'),
       },

@@ -17,14 +17,6 @@ function loadBaseEntityInterface() {
     '../../constants': {
       MENU_INFO_IDS: { hitPoints: 'hit-points' },
     },
-    '../../lib/entities/hitPointsText': {
-      formatHitPointsText: (hitPoints, totalHitPoints) => {
-        if (hitPoints === '') return ''
-        const current = Number(hitPoints)
-        const max = Number(totalHitPoints)
-        return `${Number.isFinite(current) ? Math.round(current) : 0}/${Number.isFinite(max) ? Math.round(max) : 0}`
-      },
-    },
   }
   const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -129,5 +121,17 @@ test('hit point info rounds decimal health for display', () => {
     const wrapper = element.querySelector('.hit-points-display')
 
     assert.equal(wrapper.querySelector('.hit-points').textContent, '2/100')
+  })
+})
+
+test('hit point info keeps positive fractional health visible', () => {
+  withMockDocument(() => {
+    const { appendBaseEntityInfo } = loadBaseEntityInterface()
+    const element = new MockElement('div')
+    appendBaseEntityInfo(element, '', '', 0.4, 100, { hideType: true })
+    const wrapper = element.querySelector('.hit-points-display')
+
+    assert.equal(wrapper.styles.get('--entity-hit-points-percent'), '0.4%')
+    assert.equal(wrapper.querySelector('.hit-points').textContent, '1/100')
   })
 })

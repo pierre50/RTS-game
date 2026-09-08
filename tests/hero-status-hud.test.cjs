@@ -167,3 +167,22 @@ test('hero status hud updates energy text only when the displayed value changes'
     dom.restore()
   }
 })
+
+test('hero status hud displays one hit point while the hero has positive fractional health', () => {
+  const dom = installDom()
+  try {
+    const HeroStatusHud = loadHeroStatusHud()
+    const menu = { context: { app: {} }, gameHud: makeElement('div') }
+    const hud = new HeroStatusHud(menu)
+
+    hud.setHero(makeHero({ hitPoints: 0.4, totalHitPoints: 20 }))
+
+    assert.equal(hud.value.textContent, '1/20')
+
+    hud.update(makeHero({ hitPoints: 0, totalHitPoints: 20 }))
+
+    assert.equal(hud.value.textContent, '0/20')
+  } finally {
+    dom.restore()
+  }
+})

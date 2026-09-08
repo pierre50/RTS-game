@@ -201,6 +201,7 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
 function animalData(animal: SerializableEntity): SaveEntityState {
   const data = filterObject(animal, [
     'label',
+    'name',
     'type',
     'i',
     'j',
@@ -208,6 +209,14 @@ function animalData(animal: SerializableEntity): SaveEntityState {
     'y',
     'z',
     'hitPoints',
+    'totalHitPoints',
+    'energy',
+    'totalEnergy',
+    'lastEnergySpentAt',
+    'healthRegenRate',
+    'healthRegenDelay',
+    'healthRegenMultiplier',
+    'lastHealthDamagedAt',
     'horseColor',
     'trapPrey',
     'tamingStatus',
@@ -224,6 +233,7 @@ function animalData(animal: SerializableEntity): SaveEntityState {
     'isDead',
     'isDestroyed',
     'quantity',
+    'totalQuantity',
     'isFleeing',
   ]) as Partial<SaveEntityState>
   return {
@@ -277,6 +287,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
       'followingHero',
       'assetCiv',
       'assetAge',
+      'assetType',
       'mountedOnHorse',
       'horseColor',
       'companionHorseColor',
@@ -422,6 +433,7 @@ export function serializeGame(context: SerializableContext): SerializedSave {
   const data: SerializedSave = {
     version: 2,
     runtime: {
+      worldPursuers: context.worldPursuit?.serializeState(),
       dayNightElapsedMs: context.dayNight?.getElapsedMs?.() ?? 0,
       elapsedMs: context.scheduler?.elapsedMs ?? 0,
       savedAt: Date.now(),

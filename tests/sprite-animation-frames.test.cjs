@@ -97,6 +97,34 @@ test('missing standing sheet idles on the first walking frame from the current d
   assert.deepEqual(sprite.textures, [{ id: 0 }])
 })
 
+test('paused placement updates facing textures without starting animation', () => {
+  const { setUnitTexture, getSpriteFrameSelection } = loadModule('app/lib/entities/spriteTextures.ts', {
+    '../constants': { SHEET_TYPES: {
+      standing: 'standingSheet', walking: 'walkingSheet', action: 'actionSheet',
+      dying: 'dyingSheet', corpse: 'corpseSheet',
+    } },
+  })
+  const textures = Object.fromEntries(Array.from({ length: 6 }, (_, id) => [`${id}.png`, { id }]))
+  const sheet = { data: {}, textures }
+  const sprite = {
+    currentFrame: 0, textures: [], playing: true,
+    anchor: { set() {} }, scale: { x: 1, y: 1 },
+    stop() { this.playing = false },
+    play() { this.playing = true },
+  }
+  for (const degree of [0, 45, 90, 135, 180, 225, 270, 315]) {
+    const expected = getSpriteFrameSelection(textures, degree, 3)
+    setUnitTexture('standingSheet', {
+      context: { paused: true }, degree, sprite,
+      standingSheet: sheet, walkingSheet: sheet,
+      sheetDirectionCounts: { standingSheet: 3, walkingSheet: 3 },
+    })
+    assert.deepEqual(sprite.textures, [expected.textures[0]])
+    assert.equal(sprite.scale.x, expected.mirrored ? -1 : 1)
+    assert.equal(sprite.playing, false)
+  }
+})
+
 test('missing animal corpse sheet freezes on the last dying frame', () => {
   const { setUnitTexture } = loadModule('app/lib/entities/spriteTextures.ts', {
     '../constants': {

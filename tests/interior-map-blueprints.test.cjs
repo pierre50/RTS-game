@@ -22,7 +22,12 @@ function installInteriorMapFetch(root) {
   }
 }
 
-test('interior generator writes size-based circular dirt blueprints for supported buildings', () => {
+function localCoordinates(i, j, layout) {
+  const row = i + j - (layout.columns - 1)
+  return { column: i - Math.ceil(row / 2), row }
+}
+
+test('interior generator writes size-based round dirt blueprints with a bottom-left door', () => {
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'interior-blueprint-'))
 
   try {
@@ -50,8 +55,8 @@ test('interior generator writes size-based circular dirt blueprints for supporte
     assert.deepEqual(
       manifest.blueprints.map(blueprint => [blueprint.id, blueprint.buildingSize, blueprint.size, blueprint.path]),
       [
-        ['building-size-3-001', 3, 13, 'size-3/building-size-3-001.map'],
-        ['building-size-2-001', 2, 11, 'size-2/building-size-2-001.map'],
+        ['building-size-3-001', 3, 21, 'size-3/building-size-3-001.map'],
+        ['building-size-2-001', 2, 18, 'size-2/building-size-2-001.map'],
       ]
     )
     assert.deepEqual(
@@ -81,7 +86,7 @@ test('interior generator writes size-based circular dirt blueprints for supporte
       assert.equal(blueprint.kind, 'interior')
       assert.equal(blueprint.buildingSize, entry.buildingSize)
       assert.equal(blueprint.size, entry.size)
-      assert.equal(blueprint.floorShape.type, 'circle')
+      assert.equal(blueprint.floorShape.type, 'round-local')
       assert.equal(blueprint.cellCount, expectedCells)
       assert.equal(terrain.length, expectedCells)
       assert.equal(relief.length, expectedCells)
@@ -93,17 +98,36 @@ test('interior generator writes size-based circular dirt blueprints for supporte
       assert.ok([...borderMask].some(value => value === 1))
       assert.ok([...terrain].some(value => value === DIRT_INDEX))
       assert.ok([...terrain].some(value => value === WATER_INDEX))
+      const exit = blueprint.exits[0]
+      const exitLocal = localCoordinates(exit.i, exit.j, blueprint.localGridLayout)
+      const exitVisualColumn = exitLocal.column + (exitLocal.row % 2) / 2
+      assert.ok(exitLocal.row > blueprint.floorShape.center.row)
+      assert.ok(exitVisualColumn < blueprint.floorShape.center.column)
       for (let index = 0; index < expectedCells; index++) {
         if (borderMask[index]) assert.equal(floorMask[index], 1)
         if (floorMask[index]) assert.equal(terrain[index], DIRT_INDEX)
         else assert.equal(terrain[index], WATER_INDEX)
       }
       if (entry.buildingSize === 2) {
-        assert.deepEqual(blueprint.spawns, [{ i: 6, j: 8 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 6, j: 8, direction: 'south' }])
+        assert.deepEqual(blueprint.floorShape, {
+          type: 'round-local',
+          center: { column: 3, row: 12 },
+          radius: { columns: 2.85, rows: 7.2675 },
+          curvePower: 3,
+        })
+        assert.deepEqual(blueprint.localGridLayout, { columns: 7, rows: 25 })
+        assert.deepEqual(blueprint.spawns, [{ i: 12, j: 13 }])
+        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 12, j: 13, direction: 'south' }])
       } else {
-        assert.deepEqual(blueprint.spawns, [{ i: 7, j: 10 }])
-        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 7, j: 10, direction: 'south' }])
+        assert.deepEqual(blueprint.floorShape, {
+          type: 'round-local',
+          center: { column: 3.5, row: 14 },
+          radius: { columns: 3.35, rows: 8.5425 },
+          curvePower: 3,
+        })
+        assert.deepEqual(blueprint.localGridLayout, { columns: 8, rows: 29 })
+        assert.deepEqual(blueprint.spawns, [{ i: 13, j: 16 }])
+        assert.deepEqual(blueprint.exits, [{ id: 'main', i: 13, j: 16, direction: 'south' }])
       }
     }
 
@@ -133,7 +157,8 @@ test('interior blueprint loader selects by building size while keeping type-spec
     assert.equal(stable.id, 'stable-size-3-001')
     assert.equal(stable.interiorType, 'Stable')
     assert.equal(stable.buildingSize, 3)
-    assert.equal(stable.size, 13)
+    assert.equal(stable.size, 21)
+    assert.deepEqual(stable.localGridLayout, { columns: 8, rows: 29 })
 
     const legacyStable = await loadPregeneratedInteriorBlueprint({ id: 'stable-circle-001' })
     assert.equal(legacyStable.id, 'stable-size-3-001')

@@ -5,7 +5,7 @@ import { validateSaveData } from '../../serialization/SaveValidator'
 import { createInitialCampaignSave, getCurrentWorldState, isCampaignSave } from '../../serialization/CampaignSave'
 import { getGameSpeed } from '../../lib/audio/settings'
 import { GameLoadingScreen } from '../../ui/GameLoadingScreen'
-import { WorldRevealTransition, type WorldRevealPoint } from '../../ui/transitions/WorldRevealTransition'
+import { playBuildingInteriorDoorTransition } from '../../ui/BuildingInteriorTransition'
 import type { SchedulerLike } from '../../types/context'
 import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
 import type { UnitEntity } from '../../types/entities'
@@ -13,6 +13,7 @@ import { ensureCampaignPlayerRoster, worldStateWithCampaignClock } from './GameS
 
 type BootFlowContext = {
   app: Application
+  controls?: { focusHeroCamera?(): void } | null
   menu?: { show?(): void } | null
   scheduler?: SchedulerLike | null
 }
@@ -33,7 +34,6 @@ export type GameBootFlowHost = {
   _bootFromConfig(config: GameConfig): Promise<void>
   _bootFromSave(json: SerializedSave): Promise<void>
   _destroyRuntime(): void
-  _getWorldRevealPoint(): WorldRevealPoint | null
   _measure<T>(name: string, callback: () => T): T
   _runtimeHeroUnit(): UnitEntity | null
   _yieldToBrowser(): Promise<void>
@@ -78,30 +78,28 @@ function restoreHeroInvincibility(hero: UnitEntity, previousDevInvincible: boole
   }
 }
 
-async function finishInitialBoot(game: GameBootFlowHost, booted: boolean): Promise<void> {
-  const revealPoint = booted ? game._getWorldRevealPoint() : null
-  const initialReveal = booted ? new WorldRevealTransition(revealPoint) : null
-  const hero = booted ? game._runtimeHeroUnit() : null
+async function finishBoot(game: GameBootFlowHost, booted: boolean, protectHero = false): Promise<void> {
+  const hero = booted && protectHero ? game._runtimeHeroUnit() : null
   const previousDevInvincible = hero?.devInvincible
   if (hero) hero.devInvincible = true
-  game._measure('loading.destroy', () => game._loadingScreen?.destroy())
-  game._loadingScreen = null
-  if (!booted) {
-    initialReveal?.destroy()
-    return
+  const showGame = (): void => {
+    game._measure('loading.destroy', () => game._loadingScreen?.destroy())
+    game._loadingScreen = null
+    if (booted) game._measure('menu.show', () => game.context.menu?.show?.())
   }
-  game._measure('menu.show', () => game.context.menu?.show?.())
   try {
-    await initialReveal?.revealFrom(game._getWorldRevealPoint() ?? revealPoint)
+    if (booted)
+      await playBuildingInteriorDoorTransition(showGame, {
+        blockInput: true,
+        beforeReveal: () => {
+          game.context.controls?.focusHeroCamera?.()
+          game.context.app.render()
+        },
+      })
+    else showGame()
   } finally {
     if (hero) restoreHeroInvincibility(hero, previousDevInvincible)
   }
-}
-
-function finishBoot(game: GameBootFlowHost, booted: boolean): void {
-  game._measure('loading.destroy', () => game._loadingScreen?.destroy())
-  game._loadingScreen = null
-  if (booted) game._measure('menu.show', () => game.context.menu?.show?.())
 }
 
 export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
@@ -114,7 +112,7 @@ export async function startGameRuntime(game: GameBootFlowHost): Promise<void> {
     await game._bootFromConfig(game.config)
     booted = true
   } finally {
-    await finishInitialBoot(game, booted)
+    await finishBoot(game, booted, true)
   }
 }
 
@@ -136,7 +134,7 @@ export async function loadGameRuntime(game: GameBootFlowHost, json: SaveRecord):
     game.quit()
     showInvalidSaveModal(message)
   } finally {
-    finishBoot(game, booted)
+    await finishBoot(game, booted)
   }
 }
 
@@ -151,7 +149,10 @@ export async function restartGameRuntime(game: GameBootFlowHost): Promise<void> 
     await game._bootFromSave(currentCampaignWorld(game))
     booted = true
   } finally {
-    finishBoot(game, booted)
-    game._isRestarting = false
+    try {
+      await finishBoot(game, booted)
+    } finally {
+      game._isRestarting = false
+    }
   }
 }

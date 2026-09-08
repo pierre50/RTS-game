@@ -3,7 +3,10 @@
     "size": 3,
     "speed": 22.5,
     "sounds": {
-      "launch": ["archer-attack", "archer-attack-2", "archer-attack-3", "archer-attack-4"]
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
     }
   },
   "ArrowCeramic": {
@@ -11,7 +14,10 @@
     "speed": 22.5,
     "assets": "projectiles/arrow_ceramic",
     "sounds": {
-      "launch": ["archer-attack", "archer-attack-2", "archer-attack-3", "archer-attack-4"]
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
     }
   },
   "ArrowCopper": {
@@ -19,7 +25,10 @@
     "speed": 22.5,
     "assets": "projectiles/arrow_copper",
     "sounds": {
-      "launch": ["archer-attack", "archer-attack-2", "archer-attack-3", "archer-attack-4"]
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
     }
   },
   "ArrowBronze": {
@@ -27,7 +36,10 @@
     "speed": 22.5,
     "assets": "projectiles/arrow_bronze",
     "sounds": {
-      "launch": ["archer-attack", "archer-attack-2", "archer-attack-3", "archer-attack-4"]
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
     }
   },
   "ArrowIron": {
@@ -35,7 +47,10 @@
     "speed": 22.5,
     "assets": "projectiles/arrow_iron",
     "sounds": {
-      "launch": ["archer-attack", "archer-attack-2", "archer-attack-3", "archer-attack-4"]
+      "launch": [
+        "archer-attack",
+        "archer-attack-2"
+      ]
     }
   }
 }

@@ -1,6 +1,9 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { degreeToDirection, getInstanceDegree, instancesDistance, isWildHorse } from '../../lib'
-import { getNearestAvailableStableForUnit, routeCapturedHorseToStableWithOwnerContact } from '../../lib/horses/horseCapture'
+import {
+  getNearestAvailableStableForUnit,
+  routeCapturedHorseToStableWithOwnerContact,
+} from '../../lib/horses/horseCapture'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { SchedulerTaskId } from '../../types/context'
 import { HeroLassoThrow } from '../HeroLassoThrow'
@@ -296,13 +299,15 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
     return
   }
 
-  unit.setTextures?.(SHEET_TYPES.action)
-
   if (!unit.isUnitAtDest?.(unit.action, horse)) {
-    unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+    if (now - captureHorseState.lastRepathAt >= CAPTURE_HORSE_REPATH_INTERVAL_MS) {
+      captureHorseState.lastRepathAt = now
+      unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
+    }
     return
   }
 
+  if (unit.currentSheet !== SHEET_TYPES.action) unit.setTextures?.(SHEET_TYPES.action)
   syncCaptureHorseMovingDest(unit, horse)
 
   if (tryStartCaptureHorseLasso(unit, horse, captureHorseState, now, hasActiveCaptureLasso, isCapturing)) return

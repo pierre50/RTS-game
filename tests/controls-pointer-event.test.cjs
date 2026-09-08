@@ -363,6 +363,23 @@ test('picks the visually elevated terrain cell under the cursor', () => {
   }
 })
 
+test('arrival camera centers on the hero while input is disabled and the game is paused', () => {
+  const { controls, restore } = createControls()
+  try {
+    controls.context.paused = true
+    controls.runtimeInputEnabled = false
+    controls.heroController.heroUnit = { x: 12, y: 34 }
+    const positions = []
+    controls.cameraController.set = (...args) => positions.push(args)
+    controls.setCamera(12, 34)
+    assert.equal(positions.length, 0)
+    controls.focusHeroCamera()
+    assert.deepEqual(positions, [[12, 34]])
+  } finally {
+    restore()
+  }
+})
+
 test('time skip blocks hero-controlled unit movement', () => {
   const { controls, restore } = createControls()
   try {

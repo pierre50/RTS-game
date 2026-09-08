@@ -16,6 +16,34 @@ import {
 const ANIMAL_ACTIONS = new Set<string>(Object.values(ACTION_TYPES))
 const ANIMAL_SHEETS = new Set<string>(Object.values(SHEET_TYPES))
 
+export function validateWorldPursuers(value: unknown, size: number, config: LoadedGameConfig): void {
+  if (value == null) return
+  validateArray(value, 'world pursuers')
+  const labels = new Set<string>()
+  for (const entry of value) {
+    if (!isObject(entry) || !isObject(entry.entity) || !isObject(entry.arrival))
+      fail('Invalid save file: world pursuer is invalid.')
+    if (typeof entry.targetLabel !== 'string' || !entry.targetLabel)
+      fail('Invalid save file: world pursuer target is invalid.')
+    if (typeof entry.remainingMs !== 'number' || !Number.isFinite(entry.remainingMs) || entry.remainingMs < 0)
+      fail('Invalid save file: world pursuer delay is invalid.')
+    const label = entry.entity.label
+    if (typeof label !== 'string' || !label || labels.has(label))
+      fail('Invalid save file: world pursuer identity is invalid.')
+    labels.add(label)
+    const entity = { ...entry.entity, i: entry.arrival.i, j: entry.arrival.j, path: [], realDest: null }
+    if (entry.owner != null) {
+      if (
+        !isObject(entry.owner) ||
+        typeof entry.owner.label !== 'string' ||
+        ![PLAYER_TYPES.human, PLAYER_TYPES.ai, PLAYER_TYPES.bandits].includes(entry.owner.type as string)
+      )
+        fail('Invalid save file: world pursuer owner is invalid.')
+      validatePlayerUnits([entity], 0, size, config)
+    } else validateAnimals([entity], size, config)
+  }
+}
+
 function validateAIState(aiState: unknown, playerIndex: number): void {
   if (aiState == null) return
   if (!isObject(aiState)) fail(`Invalid save file: player ${playerIndex} AI state is invalid.`)

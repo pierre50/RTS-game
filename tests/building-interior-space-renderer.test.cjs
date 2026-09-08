@@ -49,103 +49,103 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
   }
 
   const mocks = {
-      'pixi.js': { Container, Graphics },
-      '../classes/cell': {
-        Cell: class {
-          constructor(options) {
-            Object.assign(this, options)
-            this.category = options.type
-            this.corpses = new Set()
-            this.has = null
-            this.solid = false
-            this.visible = true
-            this.x = options.i * 32
-            this.y = options.j * 16
-          }
+    'pixi.js': { Container, Graphics },
+    '../classes/cell': {
+      Cell: class {
+        constructor(options) {
+          Object.assign(this, options)
+          this.category = options.type
+          this.corpses = new Set()
+          this.has = null
+          this.solid = false
+          this.visible = true
+          this.x = options.i * 32
+          this.y = options.j * 16
+        }
 
-          place(entity) {
-            this.has = entity
-            this.solid = true
-            entity.currentCell = this
-            entity.i = this.i
-            entity.j = this.j
-            entity.x = this.x
-            entity.y = this.y
-          }
-        },
+        place(entity) {
+          this.has = entity
+          this.solid = true
+          entity.currentCell = this
+          entity.i = this.i
+          entity.j = this.j
+          entity.x = this.x
+          entity.y = this.y
+        }
       },
-      '../constants': {
-        BUILDING_TYPES: {
-          campCrate: 'CampCrate',
-          campJarSmall: 'CampJarSmall',
-          campRockPile: 'CampRockPile',
-          chest: 'Chest',
-          fireCamp: 'FireCamp',
-          granary: 'Granary',
-          house: 'House',
-          stable: 'Stable',
-          storagePit: 'StoragePit',
-          townCenter: 'TownCenter',
-        },
-        CELL_HEIGHT: 32,
-        CELL_WIDTH: 64,
-        FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
-        LABEL_TYPES: { interiorExit: 'interiorExit' },
-        SHEET_TYPES: { standing: 'standing' },
+    },
+    '../constants': {
+      BUILDING_TYPES: {
+        campCrate: 'CampCrate',
+        campJarSmall: 'CampJarSmall',
+        campRockPile: 'CampRockPile',
+        chest: 'Chest',
+        fireCamp: 'FireCamp',
+        granary: 'Granary',
+        house: 'House',
+        stable: 'Stable',
+        storagePit: 'StoragePit',
+        townCenter: 'TownCenter',
       },
-      '../lib/buildings/interiors': {
-        getBuildingInteriorEntryCell: () => null,
-        getBuildingInteriorPortalId: building => building.label || 'building',
+      CELL_HEIGHT: 32,
+      CELL_WIDTH: 64,
+      FAMILY_TYPES: { animal: 'animal', unit: 'unit' },
+      LABEL_TYPES: { interiorExit: 'interiorExit' },
+      SHEET_TYPES: { standing: 'standing' },
+    },
+    '../lib/buildings/interiors': {
+      getBuildingInteriorEntryCell: () => null,
+      getBuildingInteriorPortalId: building => building.label || 'building',
+    },
+    '../lib/grid/cells': { getCellsAroundPoint: overrides.getCellsAroundPoint ?? (() => []) },
+    '../lib/grid/placement': { canPlaceBuildingAt: overrides.canPlaceBuildingAt ?? (() => false) },
+    '../lib/grid/visibility': {
+      updateInstanceRenderVisibility: overrides.updateInstanceRenderVisibility ?? (() => {}),
+      updateInstanceVisibility: overrides.updateInstanceVisibility ?? (() => {}),
+    },
+    '../lib/mapSpaces': {
+      OUTSIDE_SPACE_ID: 'outside',
+      ensureMapSpaces: map => (map.spaces ??= new Map()),
+      getEntityMapSpace: () => null,
+      getEntitySpaceId: entity => entity?.spaceId || 'outside',
+      getMapSpace: (map, spaceId = 'outside') => map?.spaces?.get(spaceId || 'outside') ?? null,
+      moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
+      sameMapSpace: () => true,
+    },
+    '../lib/ui/InteractionCellMarker': {
+      INTERACTION_CELL_MARKER_PULSE_MS: 1400,
+      INTERACTION_CELL_MARKER_Z_INDEX: 100,
+      drawInteractionCellMarker: () => {},
+      interactionCellPulse: () => 1,
+    },
+    '../lib/entities/overheadIndicator': {
+      clearUnitOverheadIndicator: () => {},
+      setUnitOverheadIndicator: () => {},
+    },
+    './rest/UnitSleepVisuals': {
+      setDetachedShadowsVisible: () => {},
+      setSleepingOutsideFinalVisual: () => {},
+    },
+    '../lib/horses/horseTaming': {
+      HORSE_TAMING_STATUS: { wild: 'wild', tamed: 'tamed' },
+      setHorseTamingStatus: (horse, status) => {
+        horse.tamingStatus = status
       },
-      '../lib/grid/cells': { getCellsAroundPoint: overrides.getCellsAroundPoint ?? (() => []) },
-      '../lib/grid/placement': { canPlaceBuildingAt: overrides.canPlaceBuildingAt ?? (() => false) },
-      '../lib/grid/visibility': {
-        updateInstanceRenderVisibility: overrides.updateInstanceRenderVisibility ?? (() => {}),
-        updateInstanceVisibility: overrides.updateInstanceVisibility ?? (() => {}),
-      },
-      '../lib/mapSpaces': {
-        OUTSIDE_SPACE_ID: 'outside',
-        ensureMapSpaces: map => (map.spaces ??= new Map()),
-        getEntityMapSpace: () => null,
-        getEntitySpaceId: entity => entity?.spaceId || 'outside',
-        getMapSpace: (map, spaceId = 'outside') => map?.spaces?.get(spaceId || 'outside') ?? null,
-        moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
-        sameMapSpace: () => true,
-      },
-      '../lib/ui/InteractionCellMarker': {
-        INTERACTION_CELL_MARKER_PULSE_MS: 1400,
-        INTERACTION_CELL_MARKER_Z_INDEX: 100,
-        drawInteractionCellMarker: () => {},
-        interactionCellPulse: () => 1,
-      },
-      '../lib/entities/overheadIndicator': {
-        clearUnitOverheadIndicator: () => {},
-        setUnitOverheadIndicator: () => {},
-      },
-      './rest/UnitSleepVisuals': {
-        setDetachedShadowsVisible: () => {},
-        setSleepingOutsideFinalVisual: () => {},
-      },
-      '../lib/horses/horseTaming': {
-        HORSE_TAMING_STATUS: { wild: 'wild', tamed: 'tamed' },
-        setHorseTamingStatus: (horse, status) => {
-          horse.tamingStatus = status
-        },
-        shouldHorseFleeFromThreat: horse => horse?.type !== 'Horse' || horse.tamingStatus !== 'tamed',
-      },
-      '../lib/horses/wildHorseBehavior': {
-        spookWildHorse:
-          overrides.spookWildHorse ??
-          (horse => {
-            horse.tamingStatus = 'wild'
-            horse.strategy = 'runaway'
-            horse.ambientMovement = true
-            horse.animalBehavior?.start?.()
-          }),
-      },
-      '../lib/horses/stableHorses': {
-        getStableHorses: building => building.stableHorses ?? [],
-      },
+      shouldHorseFleeFromThreat: horse => horse?.type !== 'Horse' || horse.tamingStatus !== 'tamed',
+    },
+    '../lib/horses/wildHorseBehavior': {
+      spookWildHorse:
+        overrides.spookWildHorse ??
+        (horse => {
+          horse.tamingStatus = 'wild'
+          horse.strategy = 'runaway'
+          horse.ambientMovement = true
+          horse.animalBehavior?.start?.()
+        }),
+    },
+    '../lib/horses/stableHorses': {
+      getStableHorses: building => building.stableHorses ?? [],
+    },
     './SpacePortalSystem': {
       prepareUnitForSpaceTransfer: overrides.prepareUnitForSpaceTransfer ?? (() => {}),
       routeUnitThroughSpacePortal: () => false,
@@ -283,7 +283,8 @@ test('runtime stable interiors synchronize stored horses without default decorat
   const space = ensureBuildingInteriorSpace(context, building, blueprint)
 
   assert.deepEqual(createdBuildings, [])
-  assert.equal(space.size, 2)
+  assert.equal(space.size, 6)
+  assert.deepEqual(space.localGridLayout, { columns: 3, rows: 9 })
   assert.equal(createdAnimals.length, 2)
   assert.deepEqual(
     createdAnimals.map(horse => ({
@@ -330,7 +331,10 @@ test('runtime stable interiors synchronize stored horses without default decorat
 test('runtime storage interiors create an indestructible default chest', () => {
   const createdBuildings = []
   const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
-    canPlaceBuildingAt: () => false,
+    canPlaceBuildingAt: (grid, i, j) => {
+      const cell = grid[i]?.[j]
+      return Boolean(cell && !cell.solid && !cell.border && !cell.has)
+    },
   })
   const context = {
     app: { ticker: { add: () => {}, remove: () => {} } },
@@ -428,34 +432,115 @@ test('runtime storage interiors create an indestructible default chest', () => {
   }
 
   const space = ensureBuildingInteriorSpace(context, building, blueprint)
+  const chest = createdBuildings.find(item => item.type === 'Chest')
 
-  assert.deepEqual(
-    createdBuildings
-      .filter(item => item.type === 'Chest')
-      .map(item => ({
-        indestructible: item.indestructible,
-        i: item.i,
-        isBuilt: item.isBuilt,
-        inventory: item.inventory,
-        j: item.j,
-        label: item.label,
-        spaceId: item.spaceId,
-        type: item.type,
-      })),
-    [
-      {
-        indestructible: true,
-        i: 3,
-        isBuilt: true,
-        inventory: { resources: { food: 25, wood: 5 } },
-        j: 0,
-        label: `${space.id}:default:storage-chest`,
-        spaceId: space.id,
-        type: 'Chest',
-      },
-    ]
-  )
+  assert.ok(chest)
+  assert.equal(chest.indestructible, true)
+  assert.equal(chest.isBuilt, true)
+  assert.deepEqual(chest.inventory, { resources: { food: 25, wood: 5 } })
+  assert.equal(chest.label, `${space.id}:default:storage-chest`)
+  assert.equal(chest.spaceId, space.id)
+  assert.equal(space.grid[chest.i][chest.j].border, false)
+  const average = space.walkableCells.reduce((sum, cell) => ({ i: sum.i + cell.i, j: sum.j + cell.j }), { i: 0, j: 0 })
+  average.i /= space.walkableCells.length
+  average.j /= space.walkableCells.length
+  const chestX = chest.i - chest.j
+  const chestY = chest.i + chest.j
+  const centerX = average.i - average.j
+  const centerY = average.i + average.j
+  const exitX = space.exitCell.i - space.exitCell.j
+  const exitY = space.exitCell.i + space.exitCell.j
+  assert.ok((chestX - centerX) * (centerX - exitX) + (chestY - centerY) * (centerY - exitY) > 0)
   assert.deepEqual(building.inventory.resources, {})
+})
+
+test('runtime building interiors place the fire camp at the room center', () => {
+  const createdBuildings = []
+  const { ensureBuildingInteriorSpace } = loadBuildingInteriorSpaceSystem({
+    canPlaceBuildingAt: (grid, i, j) => {
+      const cell = grid[i]?.[j]
+      return Boolean(cell && !cell.solid && !cell.border && !cell.has)
+    },
+  })
+  const context = {
+    app: { ticker: { add: () => {}, remove: () => {} } },
+    controls: {},
+    map: {
+      addChild: child => {
+        child.parent = context.map
+        return child
+      },
+      addToInstanceBucket: () => {},
+      gaia: { animals: [] },
+      grid: [[{ i: 0, j: 0 }]],
+      random: () => 0,
+      randomItem: items => items[0],
+      randomRange: min => min,
+      removeFromInstanceBucket: () => {},
+      spaces: new Map(),
+      updateInstanceBucket: () => {},
+    },
+  }
+  const owner = {
+    buildings: [],
+    config: { buildings: { FireCamp: { size: 1 } } },
+    createBuilding(options) {
+      createdBuildings.push(options)
+      const building = { ...options, isDestroyed: false }
+      this.buildings.push(building)
+      return building
+    },
+    isPlayed: true,
+  }
+  const building = {
+    context,
+    family: 'building',
+    i: 3,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    j: 4,
+    label: 'house-1',
+    owner,
+    size: 2,
+    type: 'House',
+    x: 120,
+    y: 160,
+  }
+  const blueprint = {
+    floorMask: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0],
+      [0, 1, 1, 1, 0],
+      [0, 0, 0, 0, 0],
+    ],
+    borderMask: [
+      [0, 0, 0, 0, 0],
+      [0, 1, 1, 1, 0],
+      [0, 1, 0, 1, 0],
+      [0, 1, 1, 1, 0],
+      [0, 0, 0, 0, 0],
+    ],
+    exits: [{ i: 3, j: 2 }],
+    relief: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0)),
+    size: 4,
+    terrain: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 'Dirt')),
+  }
+
+  const space = ensureBuildingInteriorSpace(context, building, blueprint)
+  const fireCamp = createdBuildings.find(item => item.type === 'FireCamp')
+  const average = space.walkableCells.reduce((sum, cell) => ({ i: sum.i + cell.i, j: sum.j + cell.j }), { i: 0, j: 0 })
+  average.i /= space.walkableCells.length
+  average.j /= space.walkableCells.length
+  const nearestCenterCell = space.walkableCells.reduce((best, cell) => {
+    const bestDistance = (best.i - average.i) ** 2 + (best.j - average.j) ** 2
+    const cellDistance = (cell.i - average.i) ** 2 + (cell.j - average.j) ** 2
+    return cellDistance < bestDistance ? cell : best
+  }, space.walkableCells[0])
+
+  assert.ok(fireCamp)
+  assert.deepEqual({ i: fireCamp.i, j: fireCamp.j }, { i: nearestCenterCell.i, j: nearestCenterCell.j })
 })
 
 test('destroyed building interiors merge every interior chest inventory into one drop', () => {
@@ -689,7 +774,10 @@ test('interior idle facing gives villagers at the back varied standing angles', 
   const textures = []
   const space = {
     entryCell: centerCell,
-    grid: [[null, targetCell], [null, centerCell]],
+    grid: [
+      [null, targetCell],
+      [null, centerCell],
+    ],
     size: 2,
   }
   const firstUnit = {
@@ -747,7 +835,12 @@ test('destroyed building interiors expel living units back outside', () => {
     renderer,
     size: 15,
   }
-  const outsideSpace = { container: { sortChildren: () => calls.push(['sortOutside']) }, grid: outsideGrid, id: 'outside', kind: 'outside' }
+  const outsideSpace = {
+    container: { sortChildren: () => calls.push(['sortOutside']) },
+    grid: outsideGrid,
+    id: 'outside',
+    kind: 'outside',
+  }
   const context = {
     map: {
       activeSpaceId: space.id,
@@ -812,7 +905,10 @@ test('destroyed building interiors expel living units back outside', () => {
   )
   assert.equal(villager.shelterState, null)
   assert.equal(context.map.activeSpaceId, null)
-  assert.deepEqual(calls.find(call => call[0] === 'setActive'), ['setActive', false])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'setActive'),
+    ['setActive', false]
+  )
 })
 
 test('destroyed active building interior expels the hero back to the outside map', () => {
@@ -891,9 +987,18 @@ test('destroyed active building interior expels the hero back to the outside map
   assert.equal(hero.spaceId, undefined)
   assert.equal(hero.currentCell, entryCell)
   assert.equal(context.map.activeSpaceId, null)
-  assert.deepEqual(calls.find(call => call[0] === 'prepare'), ['prepare', 'hero'])
-  assert.deepEqual(calls.find(call => call[0] === 'move'), ['move', 'hero', 'outside', 1, 1])
-  assert.deepEqual(calls.find(call => call[0] === 'setActive'), ['setActive', false])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'prepare'),
+    ['prepare', 'hero']
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'move'),
+    ['move', 'hero', 'outside', 1, 1]
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'setActive'),
+    ['setActive', false]
+  )
 })
 
 test('destroyed stable releases interior and stored horses as wild runaways', () => {
@@ -919,7 +1024,10 @@ test('destroyed stable releases interior and stored horses as wild runaways', ()
     label: 'stable-1',
     owner: {},
     size: 3,
-    stableHorses: [{ horseColor: 'light', tamingStatus: 'tamed' }, { horseColor: 'dark', tamingStatus: 'tamed' }],
+    stableHorses: [
+      { horseColor: 'light', tamingStatus: 'tamed' },
+      { horseColor: 'dark', tamingStatus: 'tamed' },
+    ],
     horseAmount: 2,
     type: 'Stable',
   }

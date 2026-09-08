@@ -12,7 +12,7 @@ export type BuildingInteriorDecorationSpec = {
   key: string
   offsetI: number
   offsetJ: number
-  placement?: 'offset' | 'oppositeExitBorder'
+  placement?: 'offset' | 'oppositeExitBorder' | 'oppositeExitInset'
   type: string
 }
 
@@ -27,8 +27,7 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
       type: 'chest',
       offsetI: 0,
       offsetJ: 0,
-      placement: 'oppositeExitBorder',
-      allowBorderPlacement: true,
+      placement: 'oppositeExitInset',
       buildingOptions: { indestructible: true },
     },
   ],
@@ -56,8 +55,7 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
       type: 'chest',
       offsetI: 0,
       offsetJ: 0,
-      placement: 'oppositeExitBorder',
-      allowBorderPlacement: true,
+      placement: 'oppositeExitInset',
       buildingOptions: { indestructible: true },
     },
     { key: 'bucket-west', type: 'campBucket', offsetI: -2, offsetJ: 1 },
@@ -69,8 +67,7 @@ const DECORATION_LAYOUTS: Record<string, DecorationTemplate[]> = {
       type: 'chest',
       offsetI: 0,
       offsetJ: 0,
-      placement: 'oppositeExitBorder',
-      allowBorderPlacement: true,
+      placement: 'oppositeExitInset',
       buildingOptions: { indestructible: true },
     },
     { key: 'crate-west', type: 'campCrate', offsetI: -2, offsetJ: 0 },

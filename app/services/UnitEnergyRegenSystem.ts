@@ -12,8 +12,15 @@ function isWaitingForEnergy(unit: UnitEntity): boolean {
   return Boolean(unit.waitingForEnergyAction)
 }
 
-function shouldApplyPassiveUnitEnergyRegen(unit: UnitEntity): boolean {
-  return Boolean(unit && !unit.isDead && !unit.isDestroyed && !hasActivePath(unit) && !isWaitingForEnergy(unit))
+function shouldApplyPassiveUnitEnergyRegen(context: GameContextLike, unit: UnitEntity): boolean {
+  return Boolean(
+    unit &&
+      context.controls?.heroUnit !== unit &&
+      !unit.isDead &&
+      !unit.isDestroyed &&
+      !hasActivePath(unit) &&
+      !isWaitingForEnergy(unit)
+  )
 }
 
 export class UnitEnergyRegenSystem {
@@ -28,7 +35,7 @@ export class UnitEnergyRegenSystem {
   update(elapsedMs = UNIT_ENERGY_REGEN_INTERVAL_MS): void {
     for (const player of this.context.players ?? []) {
       for (const unit of player.units ?? []) {
-        if (shouldApplyPassiveUnitEnergyRegen(unit)) updateUnitEnergy?.(unit, elapsedMs)
+        if (shouldApplyPassiveUnitEnergyRegen(this.context, unit)) updateUnitEnergy?.(unit, elapsedMs)
       }
     }
   }

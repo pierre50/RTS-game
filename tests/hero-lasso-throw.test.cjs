@@ -5,7 +5,7 @@ const test = require('node:test')
 const babel = require('@babel/core')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
+function loadHeroLassoThrow({ treeCollision = () => null, playAudibleSoundCue = () => null } = {}) {
   const filename = path.join(__dirname, '../app/classes/HeroLassoThrow.ts')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
@@ -52,6 +52,7 @@ function loadHeroLassoThrow({ treeCollision = () => null } = {}) {
     '../lib': {
       getReliefOffset: () => 0,
       instanceContactInstance: (a, b) => Math.hypot(a.i - b.i, a.j - b.j) <= 1,
+      playAudibleSoundCue,
     },
     '../lib/maths': {
       degreeToDirection: degree => {
@@ -212,6 +213,25 @@ test('attached lasso makes the horse follow and releases it when cleared', () =>
   assert.equal(horse.ambientMovement, true)
   assert.equal(calls.some(call => call[0] === 'animalBehavior.start'), true)
   assert.equal(calls.some(call => call[0] === 'horse.isAttacked'), true)
+})
+
+test('lasso capture plays a random horse vocal cue', () => {
+  const soundCalls = []
+  const HeroLassoThrow = loadHeroLassoThrow({
+    playAudibleSoundCue: (instance, cue, options) => {
+      soundCalls.push({ instance, cue, options })
+      return 'horse-2'
+    },
+  })
+  const calls = []
+  const hero = makeHero()
+  const horse = makeHorse(calls)
+  const context = makeContext(calls)
+  const lasso = new HeroLassoThrow(hero, { x: 220, y: 0 }, context)
+
+  lasso.attachToHorse(horse)
+
+  assert.deepEqual(soundCalls, [{ instance: horse, cue: ['horse-2', 'horse-3'], options: { profile: 'voice' } }])
 })
 
 test('external stable routing suspends lasso follow and stop commands', () => {

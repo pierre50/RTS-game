@@ -204,7 +204,7 @@
       "dyingSheet": 1
     },
     "sounds": {
-      "fall": "deer-lion-killed",
+      "die": "horse-unit-die",
       "hit": "target-hit"
     }
   }

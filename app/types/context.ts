@@ -232,6 +232,9 @@ export interface ControlsLike extends Container {
   removeMouseBuilding(): void
   setMouseBuilding?(building: PlaceableBuildingConfig): void
   setCamera(x: number, y: number, direct?: boolean): void
+  focusHeroCamera?(): void
+  captureMovementInput?(): () => HeldMovementKeys
+  restoreMovementInput?(held: HeldMovementKeys): void
   updateVisibleCells?(): void
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean
   instanceIsAudible(instance: AudibleInstanceLike): boolean
@@ -285,6 +288,7 @@ export interface GameContextLike {
   controls: ControlsLike
   menu: MenuLike
   scheduler: SchedulerLike
+  worldPursuit?: WorldPursuitSystem | null
   performance?: PerformanceMonitorLike | null
   dayNight?: DayNightSystemLike | null
   weather?: WeatherSystemLike | null
@@ -346,3 +350,5 @@ export type AudibleInstanceLike = {
   target?: { visible?: boolean }
   visible?: boolean
 }
+import type { HeldMovementKeys } from '../classes/ControlsKeyboard'
+import type { WorldPursuitSystem } from '../services/world/WorldPursuitSystem'

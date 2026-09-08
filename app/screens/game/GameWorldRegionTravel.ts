@@ -1,5 +1,5 @@
 import type { Container } from 'pixi.js'
-import { getEntityMapPoint, isOutsideSpaceId } from '../../lib/mapSpaces'
+import { isOutsideSpaceId } from '../../lib/mapSpaces'
 import { blueprintToLocalGrid } from '../../lib/localMapLayout'
 import {
   addChildWorldToCampaign,
@@ -17,7 +17,7 @@ import {
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeCell, RuntimeMap } from '../../types/map'
 import type { CampaignSave, GameConfig, SaveRecord, SerializedSave } from '../../types/save'
-import { WorldFadeTransition } from '../../ui/transitions/WorldFadeTransition'
+import { playBuildingInteriorDoorTransition } from '../../ui/BuildingInteriorTransition'
 import { applyTravelPartyToRuntime, extractTravelParty, runtimeHeroUnit, type TravelPartyGame } from './GameTravelParty'
 
 type RuntimeMapInstance = RuntimeMap & {
@@ -98,9 +98,7 @@ function savedWorldStateForTravel(
 function focusTravelHero(game: WorldRegionTravelGame): void {
   const hero = runtimeHeroUnit(game)
   if (!hero) return
-  const point = getEntityMapPoint(hero)
-  game.context.controls?.setCamera?.(point.x, point.y, true)
-  game.context.controls?.updateVisibleCells?.()
+  game.context.controls?.focusHeroCamera?.()
   game.context.menu?.updateHeroStatus?.(hero)
 }
 
@@ -180,19 +178,34 @@ export async function preloadWorldRegion(game: WorldRegionTravelGame, worldRegio
   })
 }
 
+async function withWorldRegionTransition(game: WorldRegionTravelGame, travel: () => Promise<void>): Promise<void> {
+  const releaseMovement = game.context.controls?.captureMovementInput?.()
+  game._worldRegionTransitioning = true
+  try {
+    game.context.controls?.setRuntimeInputEnabled?.(false)
+    game.togglePause?.(true, { silent: true })
+    await playBuildingInteriorDoorTransition(travel, {
+      blockInput: true,
+      beforeReveal: () => game._gameContext().app.render(),
+    })
+  } finally {
+    const heldMovement = releaseMovement?.()
+    game.togglePause?.(false, { silent: true })
+    game.context.controls?.setRuntimeInputEnabled?.(true)
+    if (heldMovement) game.context.controls?.restoreMovementInput?.(heldMovement)
+    game._worldRegionTransitioning = false
+  }
+}
+
 export async function travelToWorldRegion(
   game: WorldRegionTravelGame,
   worldRegionId: string,
   edge: RegionEdge
 ): Promise<void> {
   if (game._worldRegionTransitioning) return
-  game._worldRegionTransitioning = true
   const context = game._gameContext()
   const hero = runtimeHeroUnit(game)
-  if (hero && !isOutsideSpaceId(hero.spaceId)) {
-    game._worldRegionTransitioning = false
-    return
-  }
+  if (hero && !isOutsideSpaceId(hero.spaceId)) return
   const previousCell = {
     i: hero?.i ?? Math.floor(context.map.size / 2),
     j: hero?.j ?? Math.floor(context.map.size / 2),
@@ -203,47 +216,57 @@ export async function travelToWorldRegion(
   const party = extractTravelParty(snapshot)
   const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
   const previousFreeCamera = context.controls?.freeCameraActive ?? false
-  let transition: WorldFadeTransition | null = null
+  const pursuers = collectWorldPursuers(context, snapshot, party)
+  const departureState = removeWorldPursuers(snapshot, pursuers)
+  const departureCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, departureState) : null
   let bootAttempted = false
-  context.controls?.setRuntimeInputEnabled?.(false)
-  game.togglePause?.(true, { silent: true })
-  try {
-    transition = new WorldFadeTransition()
-    await transition.conceal()
-    await preloadWorldRegion(game, worldRegionId)
-    bootAttempted = true
-    game.togglePause?.(false, { silent: true })
-    const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
-    game.togglePause?.(true, { silent: true })
-    game.context.controls?.setRuntimeInputEnabled?.(false)
-    game.context.controls?.setFreeCamera?.(previousFreeCamera)
-    const arrivalMap = game._map()
-    const departureCell =
-      !previousLayout && arrivalMap.localGridLayout
-        ? blueprintToLocalGrid(previousCell.i, previousCell.j, arrivalMap.localGridLayout)
-        : previousCell
-    const arrivalCell = arrivalCellForRegionEdge(arrivalMap, edge, departureCell, previousLayout)
-    applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
-    finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
-    await transition.reveal()
-  } catch (error) {
-    if (bootAttempted) {
+  await withWorldRegionTransition(game, async () => {
+    try {
+      await preloadWorldRegion(game, worldRegionId)
+      bootAttempted = true
       game.togglePause?.(false, { silent: true })
-      game._destroyRuntime({ preserveLoadingScreen: true })
-      game.config = snapshot.config ?? null
-      await game._bootFromSave(snapshot)
-      game._campaignSave = previousCampaign
-      game._restartSaveData = previousCampaign ? structuredClone(previousCampaign) : snapshot
-      ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
-      game._autosaveCampaign()
+      const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
+      game.togglePause?.(true, { silent: true })
+      game.context.controls?.setRuntimeInputEnabled?.(false)
+      game.context.controls?.setFreeCamera?.(previousFreeCamera)
+      const arrivalMap = game._map()
+      const departureCell =
+        !previousLayout && arrivalMap.localGridLayout
+          ? blueprintToLocalGrid(previousCell.i, previousCell.j, arrivalMap.localGridLayout)
+          : previousCell
+      const arrivalCell = arrivalCellForRegionEdge(arrivalMap, edge, departureCell, previousLayout)
+      applyTravelPartyToRuntime(game, party, arrivalCell, { freshWorld })
+      if (pursuers.length) {
+        if (!arrivalCell) throw new Error('No arrival cell for world pursuers')
+        const pursuit = game._gameContext().worldPursuit
+        if (!pursuit) throw new Error('World pursuit runtime is unavailable')
+        pursuit.enqueue(
+          pursuers.map(pursuer => ({
+            ...pursuer,
+            targetLabel:
+              pursuer.targetLabel === party.hero?.label
+                ? (runtimeHeroUnit(game)?.label ?? pursuer.targetLabel)
+                : pursuer.targetLabel,
+            arrival: { i: arrivalCell.i, j: arrivalCell.j },
+            remainingMs: 3000,
+          }))
+        )
+      }
+      finishWorldRegionArrival(game, departureCampaign, departureState, worldRegionId)
+    } catch (error) {
+      if (bootAttempted) {
+        game.togglePause?.(false, { silent: true })
+        game._destroyRuntime({ preserveLoadingScreen: true })
+        game.config = snapshot.config ?? null
+        await game._bootFromSave(snapshot)
+        game._campaignSave = previousCampaign
+        game._restartSaveData = previousCampaign ? structuredClone(previousCampaign) : snapshot
+        ;(game.context.menu as { show?: () => void } | null | undefined)?.show?.()
+        game._autosaveCampaign()
+      }
+      throw error
     }
-    throw error
-  } finally {
-    transition?.destroy()
-    game.togglePause?.(false, { silent: true })
-    game.context.controls?.setRuntimeInputEnabled?.(true)
-    game._worldRegionTransitioning = false
-  }
+  })
 }
 
 export async function debugTeleportWorldMap(
@@ -264,34 +287,26 @@ export async function debugTeleportWorldMap(
       context.menu?.showMessage?.('Aucune cellule libre ici.', 'error')
       return
     }
-    applyTravelPartyToRuntime(game, party, cell)
-    const hero = runtimeHeroUnit(game)
-    if (hero) {
-      const point = getEntityMapPoint(hero)
-      context.controls?.setCamera?.(point.x, point.y, true)
-      context.controls?.updateVisibleCells?.()
-      context.menu?.updateHeroStatus?.(hero)
-    }
-    context.menu?.refreshMiniMap?.()
-    if (game._campaignSave)
-      game._campaignSave = updateCurrentWorldState(game._campaignSave, serializeGame(game._gameContext()))
-    game._restartSaveData = game._campaignSave ? structuredClone(game._campaignSave) : game._restartSaveData
-    game._autosaveCampaign()
+    await withWorldRegionTransition(game, async () => {
+      applyTravelPartyToRuntime(game, party, cell)
+      focusTravelHero(game)
+      context.menu?.refreshMiniMap?.()
+      if (game._campaignSave)
+        game._campaignSave = updateCurrentWorldState(game._campaignSave, serializeGame(game._gameContext()))
+      game._restartSaveData = game._campaignSave ? structuredClone(game._campaignSave) : game._restartSaveData
+      game._autosaveCampaign()
+    })
     return
   }
 
-  game._worldRegionTransitioning = true
   const dayNightElapsedMs = context.dayNight?.getElapsedMs?.() ?? null
   const previousCampaign = game._campaignSave ? updateCurrentWorldState(game._campaignSave, snapshot) : null
 
-  context.controls?.setRuntimeInputEnabled?.(false)
-  try {
+  await withWorldRegionTransition(game, async () => {
     const { freshWorld } = await bootWorldRegionForTravel(game, snapshot, worldRegionId, dayNightElapsedMs)
     const cell = findDebugTeleportCell(game, worldI, worldJ)
     applyTravelPartyToRuntime(game, party, cell, { freshWorld })
     finishWorldRegionArrival(game, previousCampaign, snapshot, worldRegionId)
-  } finally {
-    game.context.controls?.setRuntimeInputEnabled?.(true)
-    game._worldRegionTransitioning = false
-  }
+  })
 }
+import { collectWorldPursuers, removeWorldPursuers } from './GameWorldPursuers'

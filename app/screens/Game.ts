@@ -2,7 +2,6 @@ import type { Application } from 'pixi.js'
 import { Container, type ContainerChild } from 'pixi.js'
 import { t } from '../lib/lang'
 import Map from '../classes/map/Map'
-import { getReliefOffset } from '../lib'
 import { clearAllCombatFeedback } from '../lib/combat/combatFeedback'
 import { adjustFactionRelation } from '../lib/combat/factions'
 import { getBuildingInteriorBlueprintType, getBuildingInteriorEntryCell } from '../lib/buildings/interiors'
@@ -74,7 +73,6 @@ import {
 } from './game/GameResourceDelivery'
 import type { GameLoadingScreen } from '../ui/GameLoadingScreen'
 import { playBuildingInteriorDoorTransition, type BuildingInteriorTransition } from '../ui/BuildingInteriorTransition'
-import type { WorldRevealPoint } from '../ui/transitions/WorldRevealTransition'
 import {
   activateBuildingInteriorSpace,
   deactivateBuildingInteriorSpace,
@@ -182,14 +180,6 @@ export default class Game extends Container {
   _map(): MapInstance {
     if (!this.context.map) throw new Error('Game map is not ready')
     return this.context.map as MapInstance
-  }
-
-  _getWorldRevealPoint(): WorldRevealPoint | null {
-    const { controls } = this.context
-    const hero = this._runtimeHeroUnit()
-    if (!controls || !hero) return null
-    const point = getEntityMapPoint(hero)
-    return controls.localToScreen(point.x - controls.camera.x, point.y + getReliefOffset(hero) - controls.camera.y)
   }
 
   async _updateLoading(messageKey: string, progress: number): Promise<void> {

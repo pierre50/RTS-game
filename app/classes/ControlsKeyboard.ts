@@ -35,6 +35,61 @@ type ControlsKeyboardHost = {
 }
 
 const CAMERA_ACTIONS = new Set<ControlBindingAction>(['cameraLeft', 'cameraRight', 'cameraDown', 'cameraUp'])
+const MOVEMENT_ACTIONS = new Set<ControlBindingAction>([
+  ...CAMERA_ACTIONS,
+  'heroLeft',
+  'heroRight',
+  'heroDown',
+  'heroUp',
+])
+export type HeldMovementKeys = Partial<Record<string, ControlBindingAction>>
+
+export function captureControlsMovement(controls: ControlsKeyboardHost): () => HeldMovementKeys {
+  const held: HeldMovementKeys = Object.fromEntries(
+    Object.entries(controls.keyActionsByCode).filter(([, action]) => action && MOVEMENT_ACTIONS.has(action))
+  )
+  const clear = (): void => {
+    for (const code of Object.keys(held)) delete held[code]
+  }
+  const onDown = (event: KeyboardEvent): void => {
+    if (event.altKey || event.metaKey || event.key === 'Escape') {
+      clear()
+      return
+    }
+    if (event.repeat || !event.code || controls.isEditableTarget(event.target)) return
+    const action = getControlActionForKeyboardEvent(event)
+    if (action && MOVEMENT_ACTIONS.has(action)) held[event.code] = action
+  }
+  const onUp = (event: KeyboardEvent): void => {
+    delete held[event.code]
+  }
+  const onVisibility = (): void => {
+    if (document.hidden) clear()
+  }
+  document.addEventListener('keydown', onDown)
+  document.addEventListener('keyup', onUp)
+  document.addEventListener('visibilitychange', onVisibility)
+  window.addEventListener('blur', clear)
+  return () => {
+    document.removeEventListener('keydown', onDown)
+    document.removeEventListener('keyup', onUp)
+    document.removeEventListener('visibilitychange', onVisibility)
+    window.removeEventListener('blur', clear)
+    return held
+  }
+}
+
+export function restoreControlsMovement(controls: ControlsKeyboardHost, held: HeldMovementKeys): void {
+  if (controls.isInteractionBlocked()) return
+  for (const [code, action] of Object.entries(held)) {
+    if (!action || !MOVEMENT_ACTIONS.has(action)) continue
+    controls.keyActionsByCode[code] = action
+    if (CAMERA_ACTIONS.has(action)) controls.keysPressed[action] = true
+    else controls.heroController.handleKeyDown(action)
+  }
+  controls.keyPressedCount = [...CAMERA_ACTIONS].filter(action => controls.keysPressed[action]).length
+  controls.keySpeed = controls.keyPressedCount ? KEYBOARD_CAMERA_INITIAL_SPEED : 0
+}
 const KEYBOARD_CAMERA_INITIAL_SPEED = 7
 const KEYBOARD_CAMERA_MAX_SPEED = 14
 const KEYBOARD_CAMERA_ACCELERATION = 0.24
@@ -169,7 +224,10 @@ export function panControlsCameraWithArrowKeys(controls: ControlsKeyboardHost, f
   if (controls.keyPressedCount <= 0) return
   const double = controls.keyPressedCount > 1
   if (controls.keySpeed < KEYBOARD_CAMERA_MAX_SPEED) {
-    controls.keySpeed = Math.min(KEYBOARD_CAMERA_MAX_SPEED, controls.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION)
+    controls.keySpeed = Math.min(
+      KEYBOARD_CAMERA_MAX_SPEED,
+      controls.keySpeed + frameScale * KEYBOARD_CAMERA_ACCELERATION
+    )
   }
   if (controls.keysPressed.cameraLeft) controls.moveCamera('left', controls.keySpeed, double, frameScale)
   if (controls.keysPressed.cameraUp) controls.moveCamera('up', controls.keySpeed, double, frameScale)
