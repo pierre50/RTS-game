@@ -2,6 +2,8 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
+const preparedContent = loadTsModule('app/classes/map/generation/PreparedMapContent.ts')
+
 class MockGaia {}
 
 function loadModule(relativePath, mocks) {
@@ -10,6 +12,7 @@ function loadModule(relativePath, mocks) {
 
 function loadMapGeneration() {
   return loadModule('app/classes/map/MapGeneration.ts', {
+    './generation/PreparedMapContent': preparedContent,
     'pixi.js': {
       Assets: {
         cache: {
@@ -93,13 +96,14 @@ function loadMapGeneration() {
   }).MapGeneration
 }
 
-function createGenerator({ random = () => 0, randomRange, environment } = {}) {
+function createGenerator({ random = () => 0, randomRange, environment, terrainType } = {}) {
   const placed = []
   const size = 20
   const grid = Array.from({ length: size + 1 }, (_, i) =>
     Array.from({ length: size + 1 }, (_, j) => ({
       i,
       j,
+      type: terrainType,
       solid: false,
       has: null,
       border: false,
@@ -156,8 +160,39 @@ test('ambient selection excludes wolves and can pick horses', () => {
   assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
 })
 
+test('open grass ambient selection can still pick horses', () => {
+  const { generation } = createGenerator({ terrainType: 'Grass', random: () => 0.999 })
+
+  assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
+})
+
 test('steppe ambient selection favors horses over open grass defaults', () => {
   const { generation } = createGenerator({ environment: 'Steppe', random: () => 0.75 })
 
   assert.equal(generation.pickAmbientAnimalType(10, 10), 'Horse')
+})
+
+test('closed and cold biomes do not spawn wild horses', () => {
+  for (const terrainType of ['DarkForest', 'Jungle', 'Snow']) {
+    const { generation } = createGenerator({ terrainType, random: () => 0.999 })
+
+    assert.notEqual(generation.pickAmbientAnimalType(10, 10), 'Horse')
+  }
+})
+
+test('prepared wildlife loads its list without scanning or rolling new groups', async () => {
+  const { generation, placed, grid } = createGenerator({ random: () => assert.fail('no animal generation at load') })
+  grid[11][11].has = { type: 'TownCenter' }
+  preparedContent.registerPreparedMapContent(generation.map, {
+    animals: [
+      { i: 10, j: 10, type: 'Deer' },
+      { i: 11, j: 11, type: 'Hare' },
+    ],
+  })
+  await generation.generateSetsAsync()
+  assert.deepEqual(placed, [{ i: 10, j: 10, type: 'Deer' }])
+  const empty = createGenerator({ random: () => assert.fail('an empty saved population is authoritative') })
+  preparedContent.registerPreparedMapContent(empty.generation.map, { animals: [] })
+  await empty.generation.generateSetsAsync()
+  assert.deepEqual(empty.placed, [])
 })

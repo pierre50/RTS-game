@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { playerColors } from '../../lib'
 import { BUILDING_TYPES, PLAYER_TYPES, POPULATION_MAX, UNIT_TYPES } from '../../constants'
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
@@ -61,11 +62,7 @@ export function generatePlayers(
       }
     }
 
-    players
-      .filter(player => player.type !== PLAYER_TYPES.bandits)
-      .forEach((player, index) =>
-        applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
-      )
+    applyAllStartingBonuses(map, players, playersConfig)
 
     return players
   }
@@ -85,11 +82,7 @@ export function generatePlayers(
       }
     }
 
-    players
-      .filter(player => player.type !== PLAYER_TYPES.bandits)
-      .forEach((player, index) =>
-        applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
-      )
+    applyAllStartingBonuses(map, players, playersConfig)
 
     return players
   }
@@ -115,11 +108,7 @@ export function generatePlayers(
     })
   }
 
-  players
-    .filter(player => player.type !== PLAYER_TYPES.bandits)
-    .forEach((player, index) =>
-      applyStartingBonuses(map, player, playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null)
-    )
+  applyAllStartingBonuses(map, players, playersConfig)
 
   return players
 }
@@ -209,7 +198,7 @@ function createHumanPlayer(
 ): PlayerLike {
   const civilizationLevel = Math.max(0, Math.min(Number(config?.civilizationLevel) || 0, 3))
   return new Human(
-    {
+    definedProperties({
       i,
       j,
       age: 0,
@@ -223,7 +212,7 @@ function createHumanPlayer(
       name: config?.name,
       isPlayed: true,
       civilizationLevel,
-    },
+    }),
     context
   )
 }
@@ -238,7 +227,7 @@ function createAIPlayer(
 ): PlayerLike {
   const civilizationLevel = Math.max(0, Math.min(Number(config?.civilizationLevel) || 0, 3))
   return new AI(
-    {
+    definedProperties({
       i,
       j,
       age: 0,
@@ -252,7 +241,7 @@ function createAIPlayer(
       name: config?.name,
       difficulty: map.difficulty,
       civilizationLevel,
-    },
+    }),
     context
   )
 }
@@ -271,4 +260,20 @@ function placeStartingUnits(map: MapGenerationMap, player: PlayerLike, towncente
     const gender = STARTING_CIVILIAN_GENDERS[i % STARTING_CIVILIAN_GENDERS.length]
     towncenter.placeUnit?.(UNIT_TYPES.villager, { gender, appearanceVariants: { gender } })
   }
+}
+
+function applyAllStartingBonuses(
+  map: MapGenerationMap,
+  players: PlayerLike[],
+  playersConfig: PlayerOptions[] | null
+): void {
+  players
+    .filter(player => player.type !== PLAYER_TYPES.bandits)
+    .forEach((player, index) =>
+      applyStartingBonuses(
+        map,
+        player,
+        playersConfig?.[index]?.age ?? playersConfig?.[index]?.civilizationLevel ?? null
+      )
+    )
 }

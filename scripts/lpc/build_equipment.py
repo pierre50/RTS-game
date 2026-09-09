@@ -63,6 +63,8 @@ def equipment_family_path(equipment_key: str) -> str:
         return "tool/hammer"
     if equipment_key.startswith("scythe_"):
         return "tool/scythe"
+    if equipment_key == "longstick":
+        return "weapon/longstick"
     if equipment_key in {"bow", "bow_great", "bow_recurve"}:
         return "weapon/bow"
     if equipment_key.startswith("arrow_"):

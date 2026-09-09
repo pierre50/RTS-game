@@ -308,3 +308,262 @@ test('building hit point gains show a positive floating value', () => {
 
   assert.equal(addedDisplays.length, 1)
 })
+
+function feedbackFixture() {
+  const tasks = new Map()
+  const displays = []
+  const overlays = []
+  let id = 0
+  const scheduler = {
+    elapsedMs: 1000,
+    add(callback, delay, label) {
+      const key = id++
+      tasks.set(key, { callback, delay, label })
+      return key
+    },
+    addOneShot(callback, delay, label) {
+      return this.add(callback, delay, label)
+    },
+    remove(key) {
+      tasks.delete(key)
+    },
+  }
+  const parent = {
+    children: [],
+    addChild(child) {
+      this.children.push(child)
+      child.parent = this
+    },
+    removeChild(child) {
+      this.children.splice(this.children.indexOf(child), 1)
+      child.parent = null
+    },
+  }
+  const target = {
+    family: 'unit',
+    x: 10,
+    y: 20,
+    context: { scheduler },
+    parent,
+    sprite: { parent, width: 20, height: 40, x: 0, y: 0, anchor: { x: 0.5, y: 1 } },
+    children: [],
+    addChild(child) {
+      this.children.push(child)
+      child.parent = this
+    },
+  }
+  const effects = []
+  const api = loadModule('app/lib/combat/combatFeedback.ts', {
+    'pixi.js': {
+      Text: class extends MockText {
+        constructor(options) {
+          super(options)
+          displays.push(this)
+        }
+      },
+      Graphics: class extends MockGraphics {
+        constructor() {
+          super()
+          overlays.push(this)
+        }
+        fill(options) {
+          this.lastFill = options
+        }
+      },
+    },
+    '../constants': { FAMILY_TYPES: { unit: 'unit', animal: 'animal', building: 'building', resource: 'resource' } },
+    '../maths': { getReliefOffset: () => 0 },
+    '../entities/entityHudPosition': { getEntityHudTopY: () => -40 },
+    '../entities/spriteTransientEffects': {
+      hasSpriteFilterEffect: sprite => Boolean(sprite.effect),
+      clearSpriteFilterEffect: sprite => {
+        sprite.effect = false
+        effects.push('clear')
+      },
+      clearAllSpriteFilterEffects: () => effects.push('all'),
+      setSpriteFiltersPreservingTransientEffect: (sprite, filters) => {
+        sprite.filters = filters
+        effects.push('set')
+      },
+    },
+  })
+  function task(label) {
+    return [...tasks.values()].find(entry => entry.label === label)
+  }
+  return { api, target, scheduler, tasks, displays, overlays, parent, effects, task }
+}
+
+test('combat feedback rejects invalid amounts, unsupported families and unavailable targets', () => {
+  const f = feedbackFixture()
+  for (const name of ['showDamageFeedback', 'showCriticalDamageFeedback', 'showHitPointGainFeedback']) {
+    for (const amount of [NaN, Infinity, -1, 0, 0.1]) f.api[name](f.target, amount)
+    for (const state of [{ family: 'other' }, { isDead: true }, { isDestroyed: true }, { context: { defeat: true } }])
+      f.api[name]({ ...f.target, ...state }, 5)
+  }
+  f.api.showParryFeedback({ ...f.target, family: 'other' }, 'parry')
+  f.api.showResourceGainFeedback(f.target, 0)
+  f.api.showLevelUpFeedback({ ...f.target, context: {} }, 'level')
+  assert.equal(f.tasks.size, 0)
+  assert.equal(f.displays.length, 0)
+})
+
+test('floating combat texts animate, expire, and clean up destroyed targets and displays', () => {
+  const f = feedbackFixture()
+  f.api.showCriticalDamageFeedback(f.target, 3.6)
+  assert.equal(f.displays[0].text, 'CRIT -4')
+  const animation = f.task('combat.criticalDamageText').callback
+  const originalY = f.displays[0].y
+  animation()
+  assert.ok(f.displays[0].y < originalY)
+  for (let i = 0; i < 13; i++) animation()
+  assert.equal(f.displays[0].destroyed, true)
+  assert.equal(f.tasks.size, 0)
+  f.api.showParryFeedback(f.target, 'PARRY')
+  const parry = f.task('combat.parryText').callback
+  f.target.isDestroyed = true
+  parry()
+  assert.equal(f.tasks.size, 0)
+  f.target.isDestroyed = false
+  f.api.showLevelUpFeedback(f.target, 'Level 2')
+  f.displays.at(-1).destroy()
+  f.task('experience.levelUpText').callback()
+  assert.equal(f.tasks.size, 0)
+  f.api.clearDamageFeedback({})
+})
+
+test('resource feedback is detached from harvested targets and missing parents release displays', () => {
+  const f = feedbackFixture()
+  f.target.family = 'resource'
+  delete f.target.sprite
+  f.api.showResourceGainFeedback(f.target, 2, 'Wood')
+  assert.equal(f.displays[0].text, '+2 Wood')
+  assert.equal(f.displays[0].x, 10)
+  assert.equal(f.parent.children[0], f.displays[0])
+  f.target.isDestroyed = true
+  f.task('resource.gainText').callback()
+  assert.equal(f.displays[0].destroyed, false)
+  f.api.clearDamageFeedback(f.target)
+  assert.equal(f.displays[0].destroyed, true)
+  f.target.isDestroyed = false
+  delete f.target.x
+  delete f.target.y
+  f.api.showResourceGainFeedback(f.target, 1)
+  assert.equal(f.displays.at(-1).x, 0)
+  f.api.clearDamageFeedback(f.target)
+  for (const parent of [null, { destroyed: true }]) {
+    f.target.parent = parent
+    f.api.showResourceGainFeedback(f.target, 1)
+    assert.equal(f.displays.at(-1).destroyed, true)
+  }
+  assert.equal(f.tasks.size, 0)
+})
+
+test('conversion waves preserve replacement effects and clean up on completion and interruption', () => {
+  const f = feedbackFixture()
+  for (const [color, expected] of [
+    ['red', 0xe30b00],
+    ['#123456', 0x123456],
+    ['#bad', 0xffffff],
+    [undefined, 0xffffff],
+  ]) {
+    f.api.showConversionFeedback(f.target, color)
+    const current = f.task('combat.conversionWave').callback
+    current()
+    assert.equal(f.overlays.at(-1).lastFill.color, expected)
+    for (let i = 0; i < 11; i++) current()
+    assert.equal(f.overlays.at(-1).destroyed, true)
+    assert.equal(f.tasks.size, 0)
+  }
+  f.api.showConversionFeedback(f.target, 'blue')
+  const stale = f.task('combat.conversionWave').callback
+  f.api.showConversionFeedback(f.target, 'green')
+  stale()
+  assert.equal(f.overlays.at(-1).destroyed, undefined)
+  assert.equal(f.tasks.size, 1)
+  for (const state of ['destroyed', 'isDestroyed', 'defeat']) {
+    if (state === 'destroyed') f.target.sprite.destroyed = true
+    else if (state === 'defeat') f.target.context.defeat = true
+    else f.target.isDestroyed = true
+    f.task('combat.conversionWave').callback()
+    assert.equal(f.tasks.size, 0)
+    f.target.sprite.destroyed = false
+    f.target.context.defeat = false
+    f.target.isDestroyed = false
+    f.api.showConversionFeedback(f.target)
+  }
+  f.target.sprite.effect = true
+  f.api.clearDamageFeedback(f.target)
+  assert.equal(f.target.sprite.effect, false)
+  f.api.clearDamageFeedback(f.target)
+  assert.equal(f.tasks.size, 0)
+  for (const state of [
+    { family: 'other' },
+    { family: 'building' },
+    { context: {} },
+    { sprite: null },
+    { sprite: {} },
+    { isDestroyed: true },
+    { context: { defeat: true } },
+  ])
+    f.api.showConversionFeedback({ ...f.target, ...state })
+  assert.equal(f.tasks.size, 0)
+  const filters = [{}]
+  f.api.setSpriteFiltersPreservingDamageFeedback(f.target.sprite, filters)
+  assert.equal(f.target.sprite.filters, filters)
+})
+
+test('status feedback cooldowns expire and direct aggression cancels a pending sequence', () => {
+  const f = feedbackFixture()
+  for (const name of [
+    'showFatigueFeedback',
+    'showHealingFeedback',
+    'showConfusionFeedback',
+    'showBlockedFeedback',
+    'showAggressionFeedback',
+    'showAlertFeedback',
+  ]) {
+    const before = f.target.children.length
+    f.api[name](f.target)
+    f.api[name](f.target)
+    assert.equal(f.target.children.length, before + 1, name)
+    f.scheduler.elapsedMs += 1200
+    f.api[name](f.target)
+    assert.equal(f.target.children.length, before + 2, name)
+    f.api[name]({})
+  }
+  f.scheduler.elapsedMs += 1200
+  let aggression = 0
+  f.api.showAlertThenAggressionFeedback(f.target, () => aggression++)
+  assert.ok(f.task('unit.alertAggressionText'))
+  f.api.showAlertThenAggressionFeedback(f.target)
+  f.api.showAggressionFeedback(f.target)
+  assert.equal(f.task('unit.alertAggressionText'), undefined)
+  assert.equal(aggression, 0)
+  f.api.clearAllCombatFeedback()
+  assert.equal(f.tasks.size, 0)
+  assert.ok(f.effects.includes('all'))
+})
+
+test('delayed aggression ignores dead or destroyed targets and supports missing schedulers', () => {
+  for (const field of ['isDead', 'isDestroyed']) {
+    const f = feedbackFixture()
+    let called = false
+    f.api.showAlertThenAggressionFeedback(f.target, () => {
+      called = true
+    })
+    f.target[field] = true
+    f.task('unit.alertAggressionText').callback()
+    assert.equal(called, false)
+    f.api.clearAllCombatFeedback()
+  }
+  const f = feedbackFixture()
+  let called = false
+  f.api.showAlertThenAggressionFeedback({}, () => {
+    called = true
+  })
+  assert.equal(called, true)
+  f.api.showAlertThenAggressionFeedback({})
+  f.api.showConversionFeedback(f.target)
+  f.api.clearAllCombatFeedback()
+  assert.equal(f.tasks.size, 0)
+})

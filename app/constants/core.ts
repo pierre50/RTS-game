@@ -1,5 +1,4 @@
-export const CELL_WIDTH = 64
-export const CELL_HEIGHT = 32
+export { CELL_WIDTH, CELL_HEIGHT } from './gridGeometry'
 export const CELL_DEPTH = 16
 
 // CELL_DEPTH is also the sole visual elevation offset per relief step. Entity x/y are always flat

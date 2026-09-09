@@ -1,3 +1,4 @@
+import { definedProperties } from '../definedProperties'
 import { Rectangle, Sprite, Texture, type Container } from 'pixi.js'
 import { CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import type { GameContextLike, SchedulerLike, SchedulerTaskId } from '../../types/context'
@@ -462,24 +463,26 @@ export function spawnSpriteFragmentBurst(options: SpriteFragmentBurstOptions): v
   const candidates = pickCandidates(focusedTiles, safeMaxFragments, random)
   if (!candidates.length) return
 
-  const fragments = createFragmentStates({
-    host,
-    sprite,
-    texture: sprite.texture,
-    bounds: candidateResult.bounds,
-    candidates,
-    durationMs,
-    minSpeed,
-    maxSpeed,
-    upwardVelocity,
-    settleToBottom,
-    lockX,
-    groundTargets,
-    settleSpread,
-    zIndexOffset,
-    sourcePoint,
-    random,
-  })
+  const fragments = createFragmentStates(
+    definedProperties({
+      host,
+      sprite,
+      texture: sprite.texture,
+      bounds: candidateResult.bounds,
+      candidates,
+      durationMs,
+      minSpeed,
+      maxSpeed,
+      upwardVelocity,
+      settleToBottom,
+      lockX,
+      groundTargets,
+      settleSpread,
+      zIndexOffset,
+      sourcePoint,
+      random,
+    })
+  )
   for (const fragment of fragments) layer.addChild(fragment.sprite)
   animateFragments(fragments, context.scheduler, Math.max(8, stepMs), gravity, settleStrength, groundBounce)
 }

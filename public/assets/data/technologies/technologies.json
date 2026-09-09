@@ -8,6 +8,21 @@
         "key": "age",
         "op": "=",
         "value": 0
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Farming"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "BowCrafting"
+      },
+      {
+        "key": "technologies",
+        "op": "includes",
+        "value": "Village"
       }
     ],
     "researchTime": 120,
@@ -509,12 +524,32 @@
   "Farming": {
     "icon": "090_50729",
     "key": "technologies",
+    "conditions": [
+      {
+        "key": "discoveredResources",
+        "op": "includes",
+        "value": "wheat"
+      }
+    ],
     "researchTime": 0,
     "cost": {}
   },
   "HorseTaming": {
     "icon": "068_50729",
     "key": "technologies",
+    "researchTime": 0,
+    "cost": {}
+  },
+  "Village": {
+    "icon": "065_50729",
+    "key": "technologies",
+    "conditions": [
+      {
+        "key": "villagerPopulation",
+        "op": ">=",
+        "value": 20
+      }
+    ],
     "researchTime": 0,
     "cost": {}
   },

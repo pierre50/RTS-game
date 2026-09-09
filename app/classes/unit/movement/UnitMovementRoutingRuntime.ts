@@ -1,3 +1,5 @@
+import { cancelVillagerExplorationResume } from '../../../lib/units/autonomy/villagerExploration'
+import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, UNIT_TYPES } from '../../../constants'
 import {
   clearVillagerAutonomy,
@@ -254,19 +256,9 @@ export class UnitMovementRouting {
     if (unit.actionLocked) {
       return unit.queueOrder?.(dest ?? (() => {}), action)
     }
-    const currentDest = unit.dest
-    const currentDestMatchesTarget =
-      isRuntimeEntity(currentDest) && isRuntimeEntity(dest) && currentDest.label === dest.label
-    if (
-      !forceRepath &&
-      dest &&
-      isRuntimeEntity(currentDest) &&
-      currentDestMatchesTarget &&
-      unit.action === action &&
-      ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
-    ) {
-      return
-    }
+    const currentDestMatchesTarget = this.matchesCurrentTarget(dest)
+    if (this.isRedundantOrder(dest, action, forceRepath, currentDestMatchesTarget)) return
+    cancelVillagerExplorationResume(unit)
     unit.handleChangeDest?.()
     if (action !== ACTION_TYPES.train) {
       unit.trainingTargetType = null
@@ -274,18 +266,51 @@ export class UnitMovementRouting {
     }
     unit.stopInterval?.()
     unit.blockedGatherApproach = null
-    let path: RuntimeCell[] = []
     if (!dest || isDestroyedEntity(dest) || unit.isDead || !map) return
     if (!this.targetIsInUnitSpace(dest)) {
       this.handleUnreachableDestination(action)
       return
     }
     const passageLookup = createReservedPassageCellLookup(unit.context)
-    const passageStopAllowed =
-      allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(unit, dest))
-    if (!(preserveAutonomy && !action)) unit.exploringForAutonomy = false
-    if (!action) clearManualMoveWorkState(unit, preserveAutonomy)
+    const passageStopAllowed = this.allowsPassageStop(dest, allowPassageStop)
+    this.prepareMoveWork(action, preserveAutonomy)
     if (this.routeToActionArrivalCell(dest, action, passageLookup)) return
+    dest = this.resolvePassageDestination(dest, action, passageStopAllowed, passageLookup)
+    if (!dest) {
+      this.handleUnreachableDestination(action)
+      return
+    }
+    cancelEnergyWait(unit)
+    syncVillagerWorkForAction(unit, action)
+    if (this.tryArriveAtDestination(map, dest, action, forceRepath, currentDestMatchesTarget)) return
+    if (isRuntimeEntity(dest) && tryStartUnitContactApproach(unit, dest, action)) return
+    this.routePreparedDestination(dest, action, map, passageLookup, passageStopAllowed, allowBlockedGatherApproach)
+  }
+
+  private isRedundantOrder(
+    dest: RuntimeEntity | RuntimeCell | null,
+    action: string | null,
+    forceRepath: boolean,
+    currentDestMatchesTarget: boolean
+  ): boolean {
+    const unit = this.unit
+    return Boolean(
+      !forceRepath &&
+        dest &&
+        isRuntimeEntity(unit.dest) &&
+        currentDestMatchesTarget &&
+        unit.action === action &&
+        ((unit.path?.length ?? 0) > 0 || unit.isUnitAtDest?.(action, dest))
+    )
+  }
+
+  private resolvePassageDestination(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    passageStopAllowed: boolean,
+    passageLookup: PassageLookup
+  ): RuntimeEntity | RuntimeCell | null {
+    const unit = this.unit
     if (
       !action &&
       !isRuntimeEntity(dest) &&
@@ -293,13 +318,21 @@ export class UnitMovementRouting {
     ) {
       const waitingCell = findNearestPassageWaitingCell(unit, dest, { passageLookup })
       if (!waitingCell) {
-        this.handleUnreachableDestination(action)
-        return
+        return null
       }
       dest = waitingCell.cell
     }
-    cancelEnergyWait(unit)
-    syncVillagerWorkForAction(unit, action)
+    return dest
+  }
+
+  private tryArriveAtDestination(
+    map: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>,
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    forceRepath: boolean,
+    currentDestMatchesTarget: boolean
+  ): boolean {
+    const unit = this.unit
     const currentCell = map.grid[unit.i]?.[unit.j]
     if (
       currentCell &&
@@ -307,39 +340,41 @@ export class UnitMovementRouting {
       (!currentCell.solid || currentCell.has?.label === unit.label)
     ) {
       if (!forceRepath && currentDestMatchesTarget && unit.action === action && (unit.path?.length ?? 0) === 0) {
-        return
+        return true
       }
       unit.setDest?.(dest)
       unit.action = action
       unit.degree = getInstanceDegree(unit, dest.x, dest.y)
       unit.getAction?.(action ?? '')
-      return
+      return true
     }
-    if (map.grid[dest.i] && map.grid[dest.i][dest.j]) {
-      const passagePathfinding = createPassagePathfindingOptions(passageLookup)
-      const destCell = map.grid[dest.i][dest.j]
+    return false
+  }
+
+  private routePreparedDestination(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    map: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>,
+    passageLookup: PassageLookup,
+    passageStopAllowed: boolean,
+    allowBlockedGatherApproach: boolean
+  ): void {
+    const unit = this.unit
+    let path: RuntimeCell[] = []
+    const destCell = map.grid[dest.i]?.[dest.j]
+    if (destCell) {
       if (destCell.solid) {
-        path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map, {
-          isCellAllowed: cell =>
-            canUnitUseCellAsIdleDestination(unit, cell, { allowPassageStop: passageStopAllowed, passageLookup }),
-          pathfinding: passagePathfinding,
-        })
-        if (!path.length && unit.work) {
-          unit.action = action
-          if (
-            allowBlockedGatherApproach &&
-            isRuntimeEntity(dest) &&
-            this.approachBlockedGatherTarget(dest, action ?? '')
-          )
-            return
-          debugCombatMove(unit, 'send-to-solid-dest-no-path', destCell, {
-            stage: 'send-to',
-            action,
-            destSolid: destCell.solid,
-          })
-          this.handleUnreachableDestination(action)
-          return
-        }
+        const detour = this.findSolidDestinationPath(
+          dest,
+          action,
+          map,
+          destCell,
+          passageLookup,
+          passageStopAllowed,
+          allowBlockedGatherApproach
+        )
+        if (detour === null) return
+        path = detour
       } else if (destCell.category === 'Water') {
         unit.action = action
         this.routeToReachableWaterApproach(dest, action, allowBlockedGatherApproach)
@@ -366,5 +401,50 @@ export class UnitMovementRouting {
         return
       this.handleUnreachableDestination(action)
     }
+  }
+
+  private findSolidDestinationPath(
+    dest: RuntimeEntity | RuntimeCell,
+    action: string | null,
+    map: NonNullable<ReturnType<typeof getEntitySpaceMapLike>>,
+    destCell: RuntimeCell,
+    passageLookup: PassageLookup,
+    passageStopAllowed: boolean,
+    allowBlockedGatherApproach: boolean
+  ): RuntimeCell[] | null {
+    const unit = this.unit
+    const passagePathfinding = createPassagePathfindingOptions(passageLookup)
+    const path = getInstanceClosestFreeCellPath<RuntimeCell>(unit, dest, map, {
+      isCellAllowed: cell =>
+        canUnitUseCellAsIdleDestination(unit, cell, { allowPassageStop: passageStopAllowed, passageLookup }),
+      pathfinding: passagePathfinding,
+    })
+    if (!path.length && unit.work) {
+      unit.action = action
+      if (allowBlockedGatherApproach && isRuntimeEntity(dest) && this.approachBlockedGatherTarget(dest, action ?? ''))
+        return null
+      debugCombatMove(unit, 'send-to-solid-dest-no-path', destCell, {
+        stage: 'send-to',
+        action,
+        destSolid: destCell.solid,
+      })
+      this.handleUnreachableDestination(action)
+      return null
+    }
+    return path
+  }
+
+  private matchesCurrentTarget(dest: RuntimeEntity | RuntimeCell | null): boolean {
+    const currentDest = this.unit.dest
+    return isRuntimeEntity(currentDest) && isRuntimeEntity(dest) && currentDest.label === dest.label
+  }
+
+  private allowsPassageStop(dest: RuntimeEntity | RuntimeCell, allowPassageStop: boolean): boolean {
+    return allowPassageStop || (!isRuntimeEntity(dest) && unitHasActivePassageStopIntent(this.unit, dest))
+  }
+
+  private prepareMoveWork(action: string | null, preserveAutonomy: boolean): void {
+    if (!(preserveAutonomy && !action)) this.unit.exploringForAutonomy = false
+    if (!action) clearManualMoveWorkState(this.unit, preserveAutonomy)
   }
 }

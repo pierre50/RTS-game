@@ -1,37 +1,14 @@
-import type { ContainerChild } from 'pixi.js'
-import { FAMILY_TYPES } from '../../constants'
-import { isAIControlledPlayer } from '../../lib/playerState'
 import { expandLegacyFoodAmount, syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 import type { PlayerLike } from '../../types/player'
-import type { SaveEntityState, SaveReference, SavedEnemyMemoryState } from '../../types/save'
+import type { SaveEntityState, SaveReference } from '../../types/save'
 import type { MapGenerationMap } from './MapGenerationTypes'
+import { getDest, getDestEntity, isRuntimeDestination } from './MapSaveReferences'
 import type { SavedPlayer } from './MapSaveRestoreTypes'
+export { restoreAIState } from './MapSaveAI'
 
 export type { SavedPlayer } from './MapSaveRestoreTypes'
-
-type AIEnemyMemoryRuntime = {
-  instance: RuntimeEntity
-  label: string
-  lastSeenAt: number
-  visible?: boolean
-}
-type AIThreatRuntime = {
-  target: RuntimeEntity | null
-  attacker: RuntimeEntity | null
-  lastSeenAt: number
-  attackerFamily?: string
-  attackerType?: string
-  count?: number
-}
-type AIPlayerMemoryState = PlayerLike & {
-  phase: string
-  getNow(): number
-  enemyUnitMemory: Map<string, AIEnemyMemoryRuntime>
-  enemyBuildingMemory: Map<string, AIEnemyMemoryRuntime>
-  threatenedTargets: Map<string, AIThreatRuntime>
-}
 type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
   action?: string | null
   blockedGatherApproach?: { target: SaveReference | RuntimeEntity; action: string } | null
@@ -45,48 +22,6 @@ type RestoringMobileEntity = (UnitEntity | AnimalEntity) & {
   setPath?: UnitEntity['setPath']
   stop?: UnitEntity['stop']
   work?: string | null
-}
-function isRuntimeEntity(value: ContainerChild | null): value is RuntimeEntity & ContainerChild {
-  return Boolean(value && typeof (value as Partial<RuntimeEntity>).family === 'string')
-}
-
-function isRuntimeDestination(value: RuntimeEntity | RuntimeCell | null): value is RuntimeEntity {
-  return Boolean(value && 'family' in value)
-}
-// --- Saved-game restore helpers -------------------------------------------------
-// Shared by generateFromJSON and applySavedStateToGeneratedMap, which rebuild the
-// same runtime cross-references (unit destinations, building assignments, AI
-// memory) from a serialized save.
-
-// A saved reference is either a [i, j] grid coordinate, a [i, j, label] tuple (an
-// entity currently standing on a cell), or a bare label string (entity lookup).
-function getDest(
-  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
-  map: MapGenerationMap
-): RuntimeEntity | RuntimeCell | null {
-  if (val) {
-    if (Array.isArray(val)) {
-      return val[2] ? getRuntimeEntityByLabel(map, val[2]) : (map.grid[val[0]]?.[val[1]] ?? null)
-    } else {
-      return getRuntimeEntityByLabel(map, val as string)
-    }
-  }
-  return null
-}
-
-function getRuntimeEntityByLabel(map: MapGenerationMap, label: string): RuntimeEntity | null {
-  const child = map.getChildByLabel(label)
-  return isRuntimeEntity(child) ? child : null
-}
-
-// Saved references used for unit/building ownership links and AI memory always
-// encode an entity label, never a bare grid cell, so this narrows the lookup above.
-function getDestEntity(
-  val: SaveReference | RuntimeEntity | RuntimeCell | null | undefined,
-  map: MapGenerationMap
-): RuntimeEntity | null {
-  const dest = getDest(val, map)
-  return isRuntimeDestination(dest) ? dest : null
 }
 
 export function processUnit(unit: RestoringMobileEntity, context: MapGenerationMap): void {
@@ -177,63 +112,6 @@ export function restoreSelection(player: PlayerLike, savedPlayer: SavedPlayer, c
   player.selectedBuilding = null
   player.selectedOther = null
   context.context.menu?.setActionTarget?.(heroUnit ?? null)
-}
-
-export function restoreAIState(player: PlayerLike, savedPlayer: SavedPlayer, context: MapGenerationMap): void {
-  if (!isAIControlledPlayer(player) || !savedPlayer?.aiState) return
-
-  const state = savedPlayer.aiState
-  // Narrowed to the concrete AI player's bookkeeping fields — see AIPlayerMemoryState.
-  const aiPlayer = player as AIPlayerMemoryState
-  const now = aiPlayer.getNow()
-  const validPhases = new Set(['economy', 'military_build', 'attack'])
-  if (state.phase && validPhases.has(state.phase)) {
-    aiPlayer.phase = state.phase === 'attack' ? 'military_build' : state.phase
-  }
-
-  const restoreMemories = (
-    savedMemories: SavedEnemyMemoryState[] | undefined,
-    memoryMap: Map<string, AIEnemyMemoryRuntime>
-  ) => {
-    memoryMap.clear()
-    for (const savedMemory of savedMemories || []) {
-      if (!savedMemory || typeof savedMemory !== 'object') continue
-      const instance = getDestEntity(savedMemory.instance, context)
-      if (!instance || instance.isDead || instance.isDestroyed || !player.isEnemy?.(instance.owner)) continue
-
-      player.rememberEnemy?.(instance)
-      const memory = memoryMap.get(instance.label)
-      if (!memory) continue
-      memory.lastSeenAt = now - Math.max(0, (savedMemory.lastSeenAgo as number) || 0)
-      memory.visible = player.views.isVisible(instance.i, instance.j)
-      if (instance.family === FAMILY_TYPES.building) player.foundedEnemyBuildings?.add(instance)
-      if (instance.family === FAMILY_TYPES.unit) player.foundedEnemyUnits?.add(instance)
-    }
-  }
-  restoreMemories(state.enemyUnits, aiPlayer.enemyUnitMemory)
-  restoreMemories(state.enemyBuildings, aiPlayer.enemyBuildingMemory)
-
-  aiPlayer.threatenedTargets.clear()
-  for (const threat of state.threatenedTargets || []) {
-    if (!threat || typeof threat !== 'object') continue
-    const target = getDestEntity(threat.target, context)
-    if (!target || target.isDead || target.isDestroyed) continue
-
-    const attacker = getDestEntity(threat.attacker, context)
-    const lastSeenAgo = Number.isFinite(threat.lastSeenAgo)
-      ? Math.max(0, threat.lastSeenAgo ?? 0)
-      : Number.isFinite(state.savedAt) && Number.isFinite(threat.lastSeenAt)
-        ? Math.max(0, (state.savedAt ?? 0) - (threat.lastSeenAt ?? 0))
-        : 0
-    aiPlayer.threatenedTargets.set(target.label, {
-      target,
-      attacker: attacker || null,
-      attackerFamily: attacker?.family || threat.attackerFamily || undefined,
-      attackerType: attacker?.type || threat.attackerType || undefined,
-      lastSeenAt: now - lastSeenAgo,
-      count: Number.isFinite(threat.count) ? (threat.count ?? 0) : 0,
-    })
-  }
 }
 
 export function restorePlayerViewsAndFog(player: PlayerLike, map: MapGenerationMap): void {

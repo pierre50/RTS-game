@@ -9,6 +9,6 @@ export type HeroEquipmentSlot =
   | 'offhand'
   | 'arrow'
 
-export type HeroWeaponSlot = 'melee' | 'ranged' | 'lasso' | 'offhand' | 'quiver'
+export type HeroWeaponSlot = 'melee' | 'ranged' | 'offhand' | 'quiver'
 
 export type UnitControlMode = 'standard' | 'hero' | 'ai'

@@ -85,6 +85,7 @@ function makeContext(calls) {
     paused: false,
     app: {},
     player: {
+      age: 2,
       name: 'Hero',
       isPlayed: true,
       config: {
@@ -163,6 +164,10 @@ function buildMocks(calls, context) {
     },
     '../lib/equipment/equipmentDiscoveries': {
       discoverHeroEquipment: () => {},
+      discoverHeroResource: () => {},
+    },
+    '../lib/resources/ironMining': {
+      canOwnerMineIron: owner => (owner?.age ?? 0) >= 2,
     },
     '../lib/lpc': {
       ensureAndRefreshBakedLpcUnitAssets: async npc => {
@@ -521,6 +526,24 @@ test('resource orders live behind a resources submenu without a visible back but
     assert.equal(manager.buttons.get('copper').hidden, false)
     assert.equal(manager.buttons.get('iron').hidden, false)
     assert.equal(manager.buttons.get('back').hidden, true)
+  })
+})
+
+test('iron resource order stays hidden before the bronze age', () => {
+  withFakeDocument(() => {
+    const calls = []
+    const context = makeContext(calls)
+    context.player.age = 1
+    const menu = { context }
+    const { NpcOrdersManager } = loadModule('app/ui/NpcOrdersManager.ts', buildMocks(calls, context))
+    const manager = new NpcOrdersManager(menu)
+    const npc = { type: 'Villager', label: 'villager-1', owner: context.player }
+
+    manager.open([npc])
+    manager.buttons.get('resources').click()
+
+    assert.equal(manager.buttons.get('iron').hidden, true)
+    assert.equal(manager.buttons.get('copper').hidden, false)
   })
 })
 

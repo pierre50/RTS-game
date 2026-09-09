@@ -1,3 +1,4 @@
+import { consumePreparedTerrain } from '../generation/PreparedMapContent'
 import { getNeighborFlags, getWaterBorderFrame } from '../../../lib/terrain/topology'
 import { formatTerrainRelief, rebuildTerrainBackfill } from './MapTerrainReliefAppearance'
 import type { PatchBorderGroundType, TerrainCell, TerrainMap } from './MapTerrainTypes'
@@ -55,6 +56,7 @@ export function formatTerrainWaterBorderOverlays(map: TerrainMap): void {
 }
 
 export function rebuildTerrainAppearance(map: TerrainMap, protectedReliefCells: Set<TerrainCell> = new Set()): void {
+  if (consumePreparedTerrain(map)) return
   const timings = map.generationTimings
   const measure = <T>(name: string, callback: () => T): T => {
     if (!timings) return callback()

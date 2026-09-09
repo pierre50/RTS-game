@@ -10,6 +10,7 @@ import {
   aimHeroPowerChargeAt,
   beginHeroDefense,
   canHeroDefendWithTool,
+  isHeroCatchingPoleEquipped,
   isHeroPowerChargeActiveForTool,
   updateHeroDefense,
   updateHeroPowerCharge,
@@ -116,7 +117,10 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
   const goToCursorState = controller.pendingGoToNpcs
     ? resolveNpcGoToCursorState(controller.pendingGoToNpcs, hoverTarget, hoverCell, controller.controls.context)
     : null
-  updateHeroCursor(controller.equippedItem, goToCursorState)
+  updateHeroCursor(
+    isHeroCatchingPoleEquipped(unit, controller.equippedItem) ? 'catchingPole' : controller.equippedItem,
+    goToCursorState
+  )
   controller.updateProximityInteractionPrompt()
   let attacking = Boolean(unit.actionLocked)
   if (
@@ -138,7 +142,6 @@ export function updateHeroControllerRuntime(controller: HeroControllerUpdateHost
     !(controller.equippedItem === 'interact' && controller.interactInputOwner === 'movement') &&
     !attacking &&
     controller.equippedItem !== 'bow' &&
-    controller.equippedItem !== 'lasso' &&
     controller.equippedItem !== 'sword'
   ) {
     const nextPoint = controller.getShiftMoveLockedAimPoint() ?? aimPoint

@@ -1,6 +1,30 @@
 {
   "presets": [
     "@babel/preset-env",
-    ["@babel/preset-typescript", { "allowDeclareFields": true }]
-  ]
+    [
+      "@babel/preset-typescript",
+      {
+        "allowDeclareFields": true
+      }
+    ]
+  ],
+  "env": {
+    "health": {
+      "plugins": [
+        [
+          "istanbul",
+          {
+            "extension": [".ts"],
+            "include": [
+              "app/lib/combat/**/*.ts",
+              "app/lib/units/**/*.ts",
+              "app/classes/unit/movement/**/*.ts",
+              "app/serialization/**/*.ts"
+            ],
+            "exclude": []
+          }
+        ]
+      ]
+    }
+  }
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const { writeScenery } = require('./maps/scenery.cjs')
 const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
@@ -211,8 +212,10 @@ async function generateRegionMap(region, worldSeed, mapsDirectory) {
     const id = `world-${worldSeed}-${regionId(region)}-${slug(environment)}`
     const relativePath = `${BLUEPRINT_MAP_SIZE}/${id}.map`
     fs.writeFileSync(path.join(mapsDirectory, relativePath), `${JSON.stringify({ ...map, id, macroRegion: region })}\n`)
+    writeScenery({ ...map, id }, path.join(mapsDirectory, relativePath.replace(/\.map$/, '.scenery.json')))
     return {
       id,
+      sceneryPath: relativePath.replace(/\.map$/, '.scenery.json'),
       size: BLUEPRINT_MAP_SIZE,
       environment,
       dominantBiome: region.dominantBiome,

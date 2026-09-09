@@ -19,6 +19,13 @@ const unitWorkAppearanceMock = {
 
 function loadModule(relativePath, mocks) {
   const defaultMocks = {
+    '../../lib/actions/contactActions': { canReachActionTarget: () => true, isActionTouchingTarget: () => true, getActionContactTool: () => undefined },
+    '../../lib/contact/contactDebug': { showContactDebug: () => {} },
+    '../../lib/contact/contactGeometry': { isContactTouching: () => true, getContactAimDegree: () => 0 },
+    '../../lib/combat/unitMelee': {
+      getUnitMeleeWeapon: unit => unit.equipment?.[0],
+      usesMeleeAttack: unit => !unit.projectile,
+    },
     '../../lib/units/unitExperience': unitExperienceMock,
     '../config/gameDifficultyBalance': (() => {
       const balances = {
@@ -755,7 +762,7 @@ test('early resource actions require only their remaining unlocking technologies
   assert.equal(getActionCondition(source, gold, 'minegold'), false)
   assert.equal(getActionCondition(source, wheat, 'farm'), false)
 
-  source.owner.technologies.push('Pickaxe', 'Farming', 'BowCrafting')
+  source.owner.technologies.push('Pickaxe', 'BowCrafting')
 
   assert.equal(getActionCondition(source, deer, 'hunt'), true)
   assert.equal(getActionCondition(source, carcass, 'takemeat'), true)

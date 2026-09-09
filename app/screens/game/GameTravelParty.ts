@@ -1,8 +1,5 @@
-import {
-  getFreeLandCellAroundInstance,
-  teleportRuntimeUnitToCell,
-  updateInstanceVisibility,
-} from '../../lib'
+import { definedProperties } from '../../lib/definedProperties'
+import { getFreeLandCellAroundInstance, teleportRuntimeUnitToCell, updateInstanceVisibility } from '../../lib'
 import { createNonReservedPassageCellCondition } from '../../lib/buildings/passageCells'
 import { refreshUnitEquipmentStats } from '../../lib/equipment/equipmentStats'
 import type { GameContextLike } from '../../types/context'
@@ -176,19 +173,21 @@ export function applyTravelPartyToRuntime(
   for (const followerState of party.followers) {
     const cell = findPartyFollowerArrivalCell(game, hero)
     if (!cell) continue
-    const follower = player.createUnit?.({
-      i: cell.i,
-      j: cell.j,
-      appearanceVariants: followerState.appearanceVariants
-        ? { ...followerState.appearanceVariants }
-        : followerState.gender
-          ? { gender: followerState.gender }
-          : undefined,
-      gender: followerState.gender,
-      label: followerState.label,
-      name: followerState.name,
-      type: followerState.type,
-    })
+    const follower = player.createUnit?.(
+      definedProperties({
+        i: cell.i,
+        j: cell.j,
+        appearanceVariants: followerState.appearanceVariants
+          ? { ...followerState.appearanceVariants }
+          : followerState.gender
+            ? { gender: followerState.gender }
+            : undefined,
+        gender: followerState.gender,
+        label: followerState.label,
+        name: followerState.name,
+        type: followerState.type,
+      })
+    )
     if (!follower) continue
     applyPortableUnitState(follower as Partial<SaveEntityState>, followerState, { keepAlive: true })
     follower.followingHero = true

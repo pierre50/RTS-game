@@ -30,11 +30,13 @@ const AMBIENT_ANIMAL_PROFILES: Record<string, AmbientAnimalProfile> = {
   Horse: { weight: 1.4, groupChance: 0.65, groupSize: [2, 4], radius: 3 },
 }
 const ANIMAL_HABITAT_WEIGHTS: Record<string, Record<string, number>> = {
-  Grass: { Deer: 1.15, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Horse: 1.25 },
-  DarkForest: { Deer: 1.1, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Horse: 0.75 },
-  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Horse: 0.65 },
-  Desert: { Deer: 0.5, Hare: 1.05, BlackGrouse: 0.5, Fox: 1.1, Boar: 0.45, Horse: 0.9 },
-  Steppe: { Deer: 0.8, Hare: 1.2, BlackGrouse: 1.05, Fox: 0.8, Boar: 0.35, Horse: 3.2 },
+  Grass: { Deer: 1.2, Hare: 1.1, BlackGrouse: 1.15, Fox: 0.85, Boar: 0.75, Horse: 0.8 },
+  DarkForest: { Deer: 1.15, Hare: 0.85, BlackGrouse: 0.8, Fox: 1.2, Boar: 1.4, Horse: 0 },
+  Jungle: { Deer: 0.85, Hare: 0.85, BlackGrouse: 0.75, Fox: 1.05, Boar: 1.15, Horse: 0 },
+  Desert: { Deer: 0.45, Hare: 1.1, BlackGrouse: 0.45, Fox: 1.15, Boar: 0.35, Horse: 0.15 },
+  Steppe: { Deer: 0.75, Hare: 1.2, BlackGrouse: 1.05, Fox: 0.8, Boar: 0.25, Horse: 3.6 },
+  Dirt: { Deer: 0.9, Hare: 1.05, BlackGrouse: 0.9, Fox: 1, Boar: 0.65, Horse: 0.25 },
+  Snow: { Deer: 0.75, Hare: 0.7, BlackGrouse: 1.1, Fox: 1.15, Boar: 0.45, Horse: 0 },
 }
 
 function pickWeightedItem<T>(random: () => number, entries: Array<[T, number]>): T {

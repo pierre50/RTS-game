@@ -10,7 +10,7 @@ import { getAutonomyJobForWork, setVillagerAutonomy } from '../../lib'
 import { t } from '../../lib/lang'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { applyUnitWorkAssets } from '../../lib/units/unitWorkAppearance'
-import { logGoldMinerFlow } from '../../lib/units/villagerJobDiagnostics'
+import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
 import {
   findResourceDeliveryTarget,
   unitHasDeliverableResources,

@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { t } from '../../lib/lang'
 import { preloadBakedLpcUnitsForPlayers } from '../../lib/lpc'
 import { DEFAULT_WORLD_ID } from '../../config/worlds'
@@ -205,12 +206,14 @@ async function preloadSavedPlayerAssets(game: GameWorldBootHost, json: Serialize
   const players = [
     ...json.players,
     ...(json.runtime?.worldPursuers ?? []).flatMap(entry => (entry.owner ? [entry.owner] : [])),
-  ].map(player => ({
-    civ: player.civ,
-    gender: player.gender,
-    label: player.label ?? '',
-    heroAppearance: player.heroAppearance,
-  }))
+  ].map(player =>
+    definedProperties({
+      civ: player.civ,
+      gender: player.gender,
+      label: player.label ?? '',
+      heroAppearance: player.heroAppearance,
+    })
+  )
   await measureAsync(game, 'save.preloadPlayerAssets', () =>
     preloadBakedLpcUnitsForPlayers(players, game.context.performance, { preloadEquipment: true })
   )

@@ -13,3 +13,13 @@ tools/*
 !tools/generate-world-maps.cjs
 !tools/generate-interior-maps.cjs
 !tools/audit-report.cjs
+
+!tools/health/
+!tools/health/**
+
+reports/health-logs/
+
+!tools/maps/
+!tools/maps/**
+
+!tools/finalize-world-maps.cjs

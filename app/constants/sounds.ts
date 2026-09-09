@@ -28,6 +28,7 @@ export const SOUND_CUES = {
   },
   projectile: {
     arrowLaunch: ['archer-attack', 'archer-attack-2'],
+    arrowShot: 'arrow-shot',
   },
   unit: {
     horseMoving: 'horse-moving',

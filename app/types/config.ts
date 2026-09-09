@@ -1,3 +1,4 @@
+import type { ContactActionProfile, ContactProfileOverride } from '../lib/contact/contactTypes'
 import type { ResourceAmount } from './common'
 import type { CommandSound, UnitSounds } from './sounds'
 import type { HeroEquipmentSlot } from './unitTypes'
@@ -26,6 +27,7 @@ export type UnitAppearanceLayerConfig = {
   workTypes?: string[]
   civilizations?: string[]
   hideWhenEquippedSlots?: readonly HeroEquipmentSlot[]
+  minAge?: number
   minLevel?: number
   maxLevel?: number
   ageSheetOverrides?: Record<string, Partial<Record<string, string>>>
@@ -71,6 +73,7 @@ export interface CombatBehaviorConfig {
 }
 
 interface EntityConfig {
+  contact?: ContactProfileOverride
   // Optional: still used by technologies, no longer read for units/buildings/
   // animals/resources now that those show a cropped sprite avatar instead.
   icon?: string
@@ -106,6 +109,7 @@ export interface UnitConfig extends EntityConfig {
 }
 
 export type EquipmentStats = {
+  contact?: Partial<ContactActionProfile>
   weapon?: {
     power?: number
     range?: number

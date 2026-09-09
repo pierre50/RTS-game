@@ -226,6 +226,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
         'helmet_barbarian_nasal_ceramic',
         'sword_ceramic',
         'sword_bronze',
+        'catchingPole',
         'round_shield_ceramic_slash',
         'bow',
         'arrow_copper',
@@ -247,6 +248,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
     'helmet_barbarian_nasal_ceramic',
     'sword_ceramic',
     'sword_bronze',
+    'catchingPole',
     'round_shield_ceramic_slash',
     'bow',
     'arrow_copper',
@@ -268,6 +270,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
   assert.deepEqual(hero.inventory.equipment, [
     'sword_ceramic',
     'sword_bronze',
+    'catchingPole',
     'round_shield_ceramic_slash',
     'bow',
     'arrow_copper',
@@ -290,9 +293,14 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
   assert.deepEqual(hero.inventory.activeWeapons, {
     melee: 'sword_bronze',
   })
+  assert.equal(equipHeroInventoryItem(hero, 'catchingPole'), true)
+  assert.deepEqual(hero.inventory.activeWeapons, {
+    melee: 'catchingPole',
+  })
+  assert.ok(hero.inventory.equipment.includes('sword_bronze'))
   assert.equal(equipHeroInventoryItem(hero, 'bow'), true)
   assert.deepEqual(hero.inventory.activeWeapons, {
-    melee: 'sword_bronze',
+    melee: 'catchingPole',
     ranged: 'bow',
   })
   assert.equal(equipHeroInventoryItem(hero, 'arrow_copper'), true)
@@ -304,7 +312,7 @@ test('hero equips bag items into gear and weapon slots with replacement swaps', 
   })
   assert.equal(hero.inventory.equippedCounts.arrow, 2)
   assert.deepEqual(hero.inventory.activeWeapons, {
-    melee: 'sword_bronze',
+    melee: 'catchingPole',
     ranged: 'bow',
   })
   assert.equal(hero.inventory.equipment.includes('arrow_copper'), false)
@@ -438,4 +446,21 @@ test('hero arrow stacks can equip and unequip one item at a time', () => {
   assert.equal(hero.inventory.equipped.arrow, undefined)
   assert.equal(hero.inventory.equippedCounts.arrow, undefined)
   assert.equal(hero.inventory.equipment.filter(item => item === 'arrow_copper').length, 3)
+})
+
+test('helmet wings require a helmet and occupy its decoration slot without replacing it', () => {
+  const { equipHeroInventoryItem, unequipHeroInventorySlot } = loadModule('app/lib/equipment/equipmentLoot.ts', {
+    './equipmentStats': { getUnitEquipment: () => [], refreshUnitEquipmentStats: () => {} },
+    '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
+    '../lpc': { applyBakedLpcUnitAssets: () => {} },
+  })
+  const hero = { inventory: { equipment: ['helmet_wings_gold', 'helmet_iron'] } }
+  assert.equal(equipHeroInventoryItem(hero, 'helmet_wings_gold'), false)
+  assert.deepEqual(hero.inventory.equipment, ['helmet_wings_gold', 'helmet_iron'])
+  assert.equal(equipHeroInventoryItem(hero, 'helmet_iron'), true)
+  assert.equal(equipHeroInventoryItem(hero, 'helmet_wings_gold'), true)
+  assert.deepEqual(hero.inventory.equipped, { helmet: 'helmet_iron', helmetDecor: 'helmet_wings_gold' })
+  assert.equal(unequipHeroInventorySlot(hero, 'helmet'), true)
+  assert.deepEqual(hero.inventory.equipped, {})
+  assert.deepEqual(hero.inventory.equipment, ['helmet_iron', 'helmet_wings_gold'])
 })

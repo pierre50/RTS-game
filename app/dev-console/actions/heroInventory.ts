@@ -6,7 +6,7 @@ import type { DevConsoleContext } from '../types'
 import { RESOURCE_NAMES, findKey } from './shared'
 import type { ResourceAmount } from '../../types/common'
 
-const SPECIAL_HERO_INVENTORY_ITEMS = ['lasso', 'healing_poultice', 'poison_vial', 'fiber_bandage'] as const
+const SPECIAL_HERO_INVENTORY_ITEMS = ['catchingPole', 'healing_poultice', 'poison_vial', 'fiber_bandage'] as const
 const HERO_INVENTORY_COMMAND_EXCLUDED_ITEMS = new Set(['longsword', 'quiver'])
 
 function getHero(context: DevConsoleContext) {

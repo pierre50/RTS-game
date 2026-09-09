@@ -1,3 +1,4 @@
+import { applyPreparedTerrain } from './generation/PreparedMapContent'
 import { Assets, Container, Sprite } from 'pixi.js'
 import { CELL_DEPTH, CELL_HEIGHT, CELL_WIDTH } from '../../constants'
 import { getGroundReliefLevel, getInstanceZIndex, getTexture } from '../../lib'
@@ -5,7 +6,6 @@ import { getLocalMapBounds, localToGrid } from '../../lib/localMapLayout'
 import { GenerationCell } from '../cell/GenerationCell'
 import { TerrainBakeCell } from '../cell/TerrainBakeCell'
 import { createSquareLocalBlueprint } from './generation/LocalMapBlueprint'
-import { normalizeLocalMapRelief } from './generation/LocalMapRelief'
 import {
   formatTerrainPatchBorders,
   formatTerrainWaterBorder,
@@ -46,6 +46,7 @@ function neighborBlueprint(source: MapBlueprint, saved: SerializedSave | null | 
     resources: saved.resources.filter(resource => !resource.isDead && !resource.isDestroyed),
   }
   if (saved.map) {
+    blueprint.terrainAppearance = undefined
     blueprint.terrain = prepared.terrain.map(row => row.slice())
     blueprint.relief = prepared.relief?.map(row => row.slice()) ?? prepared.terrain.map(row => row.map(() => 0))
     for (let i = 0; i < saved.map.length; i++) {
@@ -56,7 +57,6 @@ function neighborBlueprint(source: MapBlueprint, saved: SerializedSave | null | 
         blueprint.relief[i][j] = cell.z ?? 0
       }
     }
-    normalizeLocalMapRelief(blueprint)
   }
   return blueprint
 }
@@ -130,10 +130,13 @@ export function buildNeighborScenery(map: MapGenerationMap): void {
       size: blueprint.size,
       seed: blueprint.seed,
     }) as unknown as TerrainMap
-    formatTerrainWaterBorder(terrain)
-    formatTerrainRelief(terrain, false)
-    formatTerrainPatchBorders(terrain)
-    formatTerrainWaterBorderOverlays(terrain)
+    if (blueprint.terrainAppearance) applyPreparedTerrain(terrain, blueprint.terrainAppearance)
+    else {
+      formatTerrainWaterBorder(terrain)
+      formatTerrainRelief(terrain, false)
+      formatTerrainPatchBorders(terrain)
+      formatTerrainWaterBorderOverlays(terrain)
+    }
     terrain.destroy()
 
     const register = (display: Container, x: number, y: number) => {

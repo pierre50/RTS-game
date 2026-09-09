@@ -1,24 +1,15 @@
-import { ACTION_TYPES, CELL_HEIGHT, FAMILY_TYPES } from '../constants'
+import { canReachActionTarget, usesUnitContactAction } from '../actions/contactActions'
+import { CELL_HEIGHT, FAMILY_TYPES } from '../constants'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
-import { getBuildingContactDistance } from '../grid/cells'
 import { instanceContactInstance } from '../grid/movement'
 import { getRoundedIsoShapePoints } from '../graphics/selection'
 import { closestPointOnSegment, distanceToPolygon, pointIsInsidePolygon } from '../geometry/polygon'
-import { instancesDistance } from '../maths'
 import { isHeroControlled } from '../units/unitControl'
 
-const HERO_FOOD_CONTACT_EXTRA_RANGE = 1.5
 const HERO_FOOTPRINT_INTERACTION_BASE_MARGIN = CELL_HEIGHT * 1.5
 const HERO_FOOTPRINT_INTERACTION_MAX_MARGIN = CELL_HEIGHT * 2
 
 type Point = { x: number; y: number }
-
-function getHeroActionDistance(action: string | null | undefined, target: RuntimeEntity): number | null {
-  if (!action) return null
-  if (action !== ACTION_TYPES.takemeat) return null
-
-  return getBuildingContactDistance(target.size ?? 1) + HERO_FOOD_CONTACT_EXTRA_RANGE
-}
 
 function getTargetFootprintPoints(target: RuntimeEntity): Point[] | null {
   if (![FAMILY_TYPES.building, FAMILY_TYPES.resource].includes(target.family ?? '')) return null
@@ -61,9 +52,8 @@ export function isHeroActionInRange(
   target: RuntimeEntity | null | undefined
 ): boolean {
   if (!target || !isHeroControlled(unit) || target.isDestroyed) return false
-  if (isHeroNearTargetFootprint(unit, target)) return true
-  const actionDistance = getHeroActionDistance(action, target)
-  return actionDistance !== null && instancesDistance(unit, target) <= actionDistance
+  if (usesUnitContactAction(unit, action)) return canReachActionTarget(unit, target, action)
+  return isHeroNearTargetFootprint(unit, target)
 }
 
 export function isHeroInteractionTargetReachable(
@@ -72,6 +62,7 @@ export function isHeroInteractionTargetReachable(
   target: RuntimeEntity | null | undefined
 ): boolean {
   if (!target || target === unit || target.isDestroyed) return false
+  if (usesUnitContactAction(unit, action)) return canReachActionTarget(unit, target, action)
   if (isHeroActionInRange(unit, action, target)) return true
   return instanceContactInstance(unit, target)
 }

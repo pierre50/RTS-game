@@ -17,7 +17,7 @@ function clearSpriteCallbacks(unit: UnitEntity, callbacks: boolean | SpriteCallb
   if (!unit.sprite || callbacks === false) return
   const names = callbacks === true ? (['onComplete', 'onFrameChange', 'onLoop'] as const) : callbacks
   for (const name of names) {
-    unit.sprite[name] = undefined
+    delete unit.sprite[name]
   }
 }
 

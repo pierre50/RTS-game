@@ -11,7 +11,10 @@ function loadPlayer(overrides = {}) {
     const source = fs.readFileSync(tsFilename, 'utf8')
     return babel.transformSync(source, {
       filename: tsFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     }).code
   }
 
@@ -20,7 +23,11 @@ function loadPlayer(overrides = {}) {
     if (moduleCache.has(tsFilename)) return moduleCache.get(tsFilename).exports
     const loadedModule = { exports: {} }
     moduleCache.set(tsFilename, loadedModule)
-    new Function('module', 'exports', 'require', compileTs(tsFilename))(loadedModule, loadedModule.exports, localRequire)
+    new Function('module', 'exports', 'require', compileTs(tsFilename))(
+      loadedModule,
+      loadedModule.exports,
+      localRequire
+    )
     return loadedModule.exports
   }
   const localRequire = request => {
@@ -57,8 +64,7 @@ function loadPlayer(overrides = {}) {
         playSoundCue: () => {},
         updateInstanceVisibility: () => {},
         isBuildingLimitReached: () => false,
-        getBuildingFootprintCells:
-          overrides.getBuildingFootprintCells ?? ((i, j, grid) => [grid[i][j]]),
+        getBuildingFootprintCells: overrides.getBuildingFootprintCells ?? ((i, j, grid) => [grid[i][j]]),
         capitalizeFirstLetter: value => value.charAt(0).toUpperCase() + value.slice(1),
       }
     }
@@ -108,12 +114,19 @@ function loadPlayer(overrides = {}) {
       }
     }
     if (request === '../../lib/audio/uiSound') return { playUiSound: () => {} }
+    if (request === '../../lib/lang') return { t: key => key }
     if (request === '../../services/VisionGrid') return { VisionGrid: class {} }
     if (request === '../../lib/buildings/walls') {
       return {
         refreshOwnerWalls: () => {},
         updateWallAndNeighbours: () => {},
       }
+    }
+    if (request === './PlayerInitialization') {
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerInitialization.ts'))
+    }
+    if (request === './PlayerBuildingPlacement') {
+      return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerBuildingPlacement.ts'))
     }
     if (request === './PlayerTechnologies') {
       return loadTsFile(path.join(__dirname, '../app/classes/players/PlayerTechnologies.ts'))
@@ -195,6 +208,52 @@ test('age-based auto technologies stop before age 3 wall upgrades', () => {
 
   assert.deepEqual(unlocked, ['ResearchSmallWall', 'UpgradeMediumWall'])
   assert.deepEqual(player.technologies, ['ResearchSmallWall', 'UpgradeMediumWall'])
+})
+
+test('village technology unlocks when reaching 20 living villagers', () => {
+  const Player = loadPlayer()
+  const messages = []
+  const player = {
+    age: 0,
+    technologies: [],
+    techs: {
+      Village: {
+        key: 'technologies',
+        conditions: [{ key: 'villagerPopulation', op: '>=', value: 20 }],
+      },
+    },
+    units: Array.from({ length: 20 }, (_, index) => ({
+      type: 'Villager',
+      isDead: index === 3,
+      isDestroyed: false,
+    })),
+    buildings: [],
+    context: {
+      menu: {
+        showMessage: (message, type) => messages.push([message, type]),
+        updateActionTarget: () => messages.push(['action-target']),
+        updateTopbar: () => messages.push(['topbar']),
+        syncTechnologyProgress: () => messages.push(['tech-progress']),
+      },
+    },
+    isPlayed: true,
+    updateConfig: () => {},
+  }
+  Object.setPrototypeOf(player, Player.prototype)
+
+  assert.equal(player.villagerPopulation, 19)
+  assert.deepEqual(player.unlockVillagerPopulationMilestoneTechnologies(), [])
+  player.units[3].isDead = false
+
+  assert.equal(player.villagerPopulation, 20)
+  assert.deepEqual(player.unlockVillagerPopulationMilestoneTechnologies(), ['Village'])
+  assert.deepEqual(player.technologies, ['Village'])
+  assert.deepEqual(messages, [
+    ['technologyVillageUnlocked', 'success'],
+    ['action-target'],
+    ['topbar'],
+    ['tech-progress'],
+  ])
 })
 
 test('tech all ignores building prerequisites but keeps age requirements', () => {
@@ -380,4 +439,50 @@ test('planting wheat fields refreshes each planted cell before fading resources 
     [...player.context.map.resources].map(wheat => wheat.quantity),
     [8, 9, 11, 12]
   )
+})
+
+test('missing building definitions reject purchases and wheat fields before any payment or spawn', () => {
+  const Player = loadPlayer()
+  const player = {
+    config: { buildings: {} },
+    context: { map: { grid: [[]] }, menu: {} },
+    spawnBuilding: () => assert.fail('must not spawn an unknown building'),
+  }
+  Object.setPrototypeOf(player, Player.prototype)
+  assert.equal(player.buyBuilding(0, 0, 'Unknown'), false)
+  assert.equal(player.buyBuilding(0, 0, 'Farm'), false)
+  assert.equal(player.plantWheatField(0, 0), false)
+})
+
+test('player initialization normalizes relations and retains restored resource overrides', () => {
+  const Player = loadPlayer()
+  for (const [team, expected] of [
+    [undefined, null],
+    ['', null],
+    ['invalid', null],
+    ['2', 2],
+    [0, 0],
+  ]) {
+    const player = new Player(
+      { team, diplomacy: 'neutral', factionId: 'Hellas', herb: 8 },
+      {
+        map: { startingResources: { herb: 3, sinew: 7 }, size: 1 },
+        menu: {},
+      }
+    )
+    assert.equal(player.team, expected)
+    assert.equal(player.diplomacy, 'neutral')
+    assert.equal(player.factionId, 'Hellas')
+    assert.equal(player.herb, 8)
+    assert.equal(player.sinew, 7)
+  }
+  const player = new Player(
+    { diplomacy: 'invalid', factionId: 3 },
+    {
+      map: { startingResources: {}, size: 1 },
+      menu: {},
+    }
+  )
+  assert.equal(player.diplomacy, null)
+  assert.equal(player.factionId, null)
 })

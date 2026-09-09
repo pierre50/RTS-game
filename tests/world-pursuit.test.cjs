@@ -38,7 +38,7 @@ test('departure save loses pursuers and occupied cell references, while the roll
 })
 
 function runtimeFixture() {
-  const { ActionScheduler } = loadTsModule('app/lib/actionScheduler.ts')
+  const { ActionScheduler } = loadTsModule('app/lib/ActionScheduler.ts')
   const spawns = []
   const sent = []
   const removed = []

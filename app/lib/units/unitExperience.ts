@@ -104,7 +104,7 @@ export function getXpForLevel(level: number): number {
   return XP_LEVEL_FACTOR * earnedLevels * (earnedLevels + 1)
 }
 
-export function getUnitXp(unit: UnitEntity, category: string): number {
+export function getUnitXp(unit: Pick<UnitEntity, 'experience'>, category: string): number {
   return Math.max(0, Math.floor(unit.experience?.[category] ?? 0))
 }
 
@@ -155,10 +155,14 @@ function getEquipmentTierCapForAge(age: number): number {
 
 // The new, independent equipment-unlock track: linear XP curve, soldier-only (everything else —
 // villagers, Priest — has no level-gated equipment anyway), capped by the player's current age.
-export function getUnitEquipmentTier(unit: UnitEntity, category = unit.category || unit.type): number {
+export function getUnitEquipmentTier(
+  unit: Pick<UnitEntity, 'experience' | 'category' | 'type' | 'owner'>,
+  category = unit.category || unit.type
+): number {
   let totalXp = 0
   if (category === 'Fantassin') totalXp = getUnitXp(unit, XP_CATEGORIES.melee) + getUnitXp(unit, XP_CATEGORIES.defense)
-  else if (category === 'Archer') totalXp = getUnitXp(unit, XP_CATEGORIES.ranged) + getUnitXp(unit, XP_CATEGORIES.defense)
+  else if (category === 'Archer')
+    totalXp = getUnitXp(unit, XP_CATEGORIES.ranged) + getUnitXp(unit, XP_CATEGORIES.defense)
   else return 0
 
   const tierFromXp = Math.min(XP_MAX_LEVEL, Math.floor(totalXp / EQUIPMENT_TIER_XP_PER_LEVEL))

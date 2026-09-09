@@ -1,60 +1,65 @@
-import { Player } from '../classes/players/Player'
-import { ACTION_TYPES, PLAYER_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
-import { canAfford, getHexColor, payCost } from '../lib'
+import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'
+import { createInspectionModal } from '../ui/InspectionPanel'
+import { DAY_NIGHT_CONFIG } from '../config/gameplay'
+import { ACTION_TYPES, UNIT_TYPES, WORK_TYPES } from '../constants'
 import { FACTION_SCORE } from '../lib/combat/factions'
 import { setUnitOverheadIndicator } from '../lib/entities/overheadIndicator'
-import { preloadBakedLpcUnitsForPlayers } from '../lib/lpc'
-import { createInspectionModal } from '../ui/InspectionPanel'
-import { createTitledEntityInfoContent } from '../ui/EntityInfoModalManager'
-import { BANDIT_FACTION_ID } from '../lib/campaign/playerRoster'
+import type { ResourceAmount } from '../types/common'
+import type { GameContextLike, SchedulerTaskId } from '../types/context'
+import type { UnitEntity } from '../types/entities'
+import type { RuntimeCell } from '../types/map'
+import type { FactionSave } from '../types/save'
 import type { DailyWorldEvent, DailyWorldEventHandler } from './DailyWorldEventSystem'
 import {
-  BANDIT_OWNER_NAME,
   BANDIT_RAID_FIRST_DAY,
   BANDIT_RAID_INTERVAL_DAYS,
   FACTION_RAID_FIRST_DAY,
   FACTION_RAID_INTERVAL_DAYS,
-  FACTION_RAID_MIN_HATE,
+  FACTION_RAID_START_HOUR,
   RAID_APPROACH_RANGE,
   RAID_UPDATE_MS,
   getRaidCellDistance,
   getRaidUnitTypes,
-  isRaidBanditOwner,
-  isRaidFactionOwner,
+  isFactionRaidHourAllowed,
   livingRaidUnits,
-  roundTributeCost,
   type TributeRaid,
   type TributeRaidKind,
   type TributeRaidOwner,
   type TributeRaidUnit,
 } from './TributeRaidRules'
-import {
-  getHostileRaidMessage,
-  getIncomingRaidMessage,
-  getLocalTributeRefusedMessage,
-  getLocalTributeTargetMessage,
-  getTributeDemand,
-  getTributePayLabel,
-  getTributeRefuseLabel,
-  getTributeCannotPayLabel,
-  getTributePaidMessage,
-  getTributeTitle,
-} from './TributeRaidText'
 import { findRaidTarget, hasActiveBanditCampPresence } from './TributeRaidTargeting'
+import { getHostileRaidMessage, getIncomingRaidMessage, getTributePaidMessage } from './TributeRaidText'
+import {
+  findAngryKnownFaction as runFindAngryKnownFaction,
+  getBanditRaidSize as runGetBanditRaidSize,
+  getBanditTributeCost as runGetBanditTributeCost,
+  getFactionRaidSize as runGetFactionRaidSize,
+  getFactionTributeCost as runGetFactionTributeCost,
+  getLivingPlayerMilitaryCount as runGetLivingPlayerMilitaryCount,
+  isBaseWorld as runIsBaseWorld,
+} from './tribute/TributeRaidBalance'
+import {
+  createTemporaryRaidOwner as runCreateTemporaryRaidOwner,
+  getOrCreateBanditOwner as runGetOrCreateBanditOwner,
+  getOrCreateFactionRaidOwner as runGetOrCreateFactionRaidOwner,
+  preloadRaidOwnerAssets as runPreloadRaidOwnerAssets,
+} from './tribute/TributeRaidOwners'
+import {
+  openTributeModal as runOpenTributeModal,
+  resolveTributeParley as runResolveTributeParley,
+  shouldLocalChiefPayTribute as runShouldLocalChiefPayTribute,
+} from './tribute/TributeRaidParley'
 import { findTributeRaidSpawnCells, removeTributeRaidUnitFromRuntime } from './tribute/TributeRaidSpawning'
-import type { GameContextLike } from '../types/context'
-import type { ResourceAmount } from '../types/common'
-import type { UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
-import type { FactionSave } from '../types/save'
 
 export class TributeRaidSystem implements DailyWorldEventHandler {
   context: GameContextLike
+  deferredFactionRaidTaskId: SchedulerTaskId | null
   raids: TributeRaid[]
   lastScheduledDay: number
 
   constructor(context: GameContextLike) {
     this.context = context
+    this.deferredFactionRaidTaskId = null
     this.raids = []
     this.lastScheduledDay = 0
   }
@@ -66,9 +71,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       this.lastScheduledDay !== day
 
     if (shouldTryFactionRaid) {
-      void this.triggerFactionRaid({ source: 'schedule' }).then(started => {
-        if (started) this.lastScheduledDay = day
-      })
+      this.triggerScheduledFactionRaid(day)
       return
     }
 
@@ -77,6 +80,48 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     if (this.lastScheduledDay === day) return
     this.lastScheduledDay = day
     void this.triggerRaid({ source: 'schedule' })
+  }
+
+  triggerScheduledFactionRaid(day: number): void {
+    const delayMs = this.getDelayUntilFactionRaidWindowMs()
+    if (delayMs == null) return
+    if (delayMs > 0) {
+      this.scheduleFactionRaidAtWindow(day, delayMs)
+      return
+    }
+    void this.triggerFactionRaid({ source: 'schedule' }).then(started => {
+      if (started) this.lastScheduledDay = day
+    })
+  }
+
+  scheduleFactionRaidAtWindow(day: number, delayMs: number): void {
+    if (this.deferredFactionRaidTaskId != null) return
+    this.deferredFactionRaidTaskId = this.context.scheduler.addOneShot(
+      () => {
+        this.deferredFactionRaidTaskId = null
+        if (this.lastScheduledDay === day) return
+        if (!this.isFactionRaidWindowOpen()) return
+        void this.triggerFactionRaid({ source: 'schedule' }).then(started => {
+          if (started) this.lastScheduledDay = day
+        })
+      },
+      delayMs,
+      'tributeRaid.factionWindow'
+    )
+  }
+
+  getDelayUntilFactionRaidWindowMs(): number | null {
+    const state = this.context.dayNight?.state
+    if (!state) return 0
+    const time = state.hour + state.minute / 60
+    if (isFactionRaidHourAllowed(state.hour, state.minute)) return 0
+    if (time >= FACTION_RAID_START_HOUR) return null
+    return ((FACTION_RAID_START_HOUR - time) / DAY_NIGHT_CONFIG.hoursPerDay) * DAY_NIGHT_CONFIG.dayLengthMs
+  }
+
+  isFactionRaidWindowOpen(): boolean {
+    const state = this.context.dayNight?.state
+    return !state || isFactionRaidHourAllowed(state.hour, state.minute)
   }
 
   async triggerRaid(_options: { source?: 'schedule' | 'dev-console' } = {}): Promise<boolean> {
@@ -90,7 +135,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     })
   }
 
-  async triggerFactionRaid(options: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' } = {}): Promise<boolean> {
+  async triggerFactionRaid(
+    options: { ignoreBaseWorld?: boolean; source?: 'schedule' | 'dev-console' } = {}
+  ): Promise<boolean> {
+    if (!this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
     const faction = this.findAngryKnownFaction(options)
     if (!faction) return false
@@ -110,6 +158,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     size: number
     tribute: ResourceAmount
   }): Promise<boolean> {
+    if (options.kind === 'faction' && !this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
     const target = findRaidTarget(this.context, options.kind)
     if (!target) return false
@@ -118,6 +167,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
 
     const owner = options.owner
     await this.preloadRaidOwnerAssets(owner)
+    if (options.kind === 'faction' && !this.isFactionRaidWindowOpen()) return false
     if (!this.canStartRaid()) return false
     const raid: TributeRaid = {
       id: `${options.kind}-raid-${Date.now()}-${Math.round((this.context.map.random?.() ?? Math.random()) * 100000)}`,
@@ -132,7 +182,30 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       updateTaskId: null,
     }
 
-    const unitTypes = this.getRaidUnitTypes(spawnCells.length, options.kind)
+    this.populateRaid(raid, owner, spawnCells, options.kind)
+
+    if (!raid.units.length || !raid.chief) {
+      for (const unit of raid.units) this.removeUnitFromRuntime(unit)
+      return false
+    }
+    setUnitOverheadIndicator(raid.chief, 'exclamation')
+    this.raids.push(raid)
+    this.sendRaidToTarget(raid, { forceRepath: true })
+    this.startRaidUpdates(raid)
+    this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
+    if (this.context.menu?.isMiniMapActive?.() !== false) {
+      this.context.menu?.updatePlayerMiniMapEvt?.(owner)
+    }
+    return true
+  }
+
+  private populateRaid(
+    raid: TributeRaid,
+    owner: TributeRaidOwner,
+    spawnCells: ReturnType<TributeRaidSystem['findSpawnCells']>,
+    kind: TributeRaidKind
+  ): void {
+    const unitTypes = this.getRaidUnitTypes(spawnCells.length, kind)
     for (let index = 0; index < unitTypes.length; index++) {
       const cell = spawnCells[index]
       let unit: TributeRaidUnit | undefined
@@ -163,20 +236,6 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
       raid.units.push(unit)
       if (unit.type === UNIT_TYPES.banditChief || unit.type === UNIT_TYPES.chief) raid.chief = unit
     }
-
-    if (!raid.units.length || !raid.chief) {
-      for (const unit of raid.units) this.removeUnitFromRuntime(unit)
-      return false
-    }
-    setUnitOverheadIndicator(raid.chief, 'exclamation')
-    this.raids.push(raid)
-    this.sendRaidToTarget(raid, { forceRepath: true })
-    this.startRaidUpdates(raid)
-    this.context.menu?.showMessage(getIncomingRaidMessage(raid), 'warning')
-    if (this.context.menu?.isMiniMapActive?.() !== false) {
-      this.context.menu?.updatePlayerMiniMapEvt?.(owner)
-    }
-    return true
   }
 
   canStartRaid(): boolean {
@@ -184,48 +243,15 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   getOrCreateBanditOwner(): TributeRaidOwner {
-    const existing = this.context.players.find(isRaidBanditOwner)
-    if (existing) {
-      existing.diplomacy = 'neutral'
-      return existing
-    }
-
-    const owner = this.createTemporaryRaidOwner({
-      civ: this.context.player?.civ ?? 'Hellas',
-      name: BANDIT_OWNER_NAME,
-    })
-    owner.banditRaidOwner = true
-    return owner
+    return runGetOrCreateBanditOwner(this)
   }
 
   getOrCreateFactionRaidOwner(faction: FactionSave): TributeRaidOwner {
-    const existing = this.context.players.find(player => isRaidFactionOwner(player, faction.id))
-    if (existing) {
-      existing.diplomacy = 'neutral'
-      existing.factionId = null
-      existing.color = faction.color ?? existing.color ?? 'red'
-      existing.colorHex = getHexColor(existing.color)
-      existing.civ = faction.civilization ?? existing.civ ?? this.context.player?.civ ?? 'Hellas'
-      return existing
-    }
-
-    const owner = this.createTemporaryRaidOwner({
-      civ: faction.civilization ?? this.context.player?.civ ?? 'Hellas',
-      color: faction.color ?? 'red',
-      factionId: null,
-      name: faction.name,
-    })
-    owner.factionRaidOwner = true
-    owner.factionRaidFactionId = faction.id
-    return owner
+    return runGetOrCreateFactionRaidOwner(this, faction)
   }
 
   async preloadRaidOwnerAssets(owner: TributeRaidOwner): Promise<void> {
-    try {
-      await preloadBakedLpcUnitsForPlayers([owner], this.context.performance, { preloadEquipment: true })
-    } catch (error) {
-      console.error('Unable to preload tribute raid owner assets', { owner: owner.name, civ: owner.civ, error })
-    }
+    return runPreloadRaidOwnerAssets(this, owner)
   }
 
   createTemporaryRaidOwner(options: {
@@ -234,64 +260,23 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
     factionId?: string | null
     name: string
   }): TributeRaidOwner {
-    const owner = new Player(
-      {
-        name: options.name,
-        type: PLAYER_TYPES.ai,
-        isPlayed: false,
-        color: options.color ?? 'red',
-        civ: options.civ,
-        gender: 'male',
-        team: null,
-        diplomacy: 'neutral',
-        factionId: options.factionId,
-        populationMax: Number.POSITIVE_INFINITY,
-        autoTechnologyByAge: false,
-      },
-      this.context
-    ) as TributeRaidOwner
-    owner.selectedUnits = []
-    owner.selectedUnit = null
-    owner.selectedBuilding = null
-    owner.selectedOther = null
-    owner.hasBuilt = []
-    this.context.players.push(owner)
-    return owner
+    return runCreateTemporaryRaidOwner(this, options)
   }
 
   isBaseWorld(): boolean {
-    const graph = this.context.getWorldGraph?.()
-    const currentWorldId = this.context.getCurrentWorldId?.()
-    return Boolean(graph?.rootWorldId && currentWorldId && graph.rootWorldId === currentWorldId)
+    return runIsBaseWorld(this)
   }
 
   findAngryKnownFaction(options: { ignoreBaseWorld?: boolean } = {}): FactionSave | null {
-    if (!options.ignoreBaseWorld && !this.isBaseWorld()) return null
-    const factions = Object.values(this.context.getCampaignFactions?.() ?? {})
-    const angry = factions
-      .filter(faction => faction.id !== BANDIT_FACTION_ID && faction.relationScore <= FACTION_RAID_MIN_HATE)
-      .sort((a, b) => a.relationScore - b.relationScore)
-    if (!angry.length) return null
-
-    const worstScore = angry[0].relationScore
-    const candidates = angry.filter(faction => faction.relationScore <= worstScore + 20)
-    return candidates[Math.floor((this.context.map.random?.() ?? Math.random()) * candidates.length)] ?? angry[0]
+    return runFindAngryKnownFaction(this, options)
   }
 
   getBanditRaidSize(): number {
-    const player = this.context.player
-    const day = this.context.dayNight?.state?.day ?? 1
-    const ageBonus = Math.max(0, player?.age ?? 0)
-    return Math.max(2, Math.min(7, 2 + ageBonus + Math.floor(day / 5)))
+    return runGetBanditRaidSize(this)
   }
 
   getFactionRaidSize(faction: FactionSave): number {
-    const player = this.context.player
-    const militaryCount = this.getLivingPlayerMilitaryCount()
-    const hateBonus = Math.max(0, Math.floor(Math.abs(Math.min(0, faction.relationScore)) / 25))
-    const ageBonus = Math.max(0, player?.age ?? 0)
-    const randomBonus = Math.floor((this.context.map.random?.() ?? Math.random()) * 3)
-    return Math.max(2, Math.min(9, 2 + Math.floor(militaryCount / 2) + hateBonus + ageBonus + randomBonus))
+    return runGetFactionRaidSize(this, faction)
   }
 
   getRaidUnitTypes(count: number, kind: TributeRaidKind = 'bandit'): string[] {
@@ -299,30 +284,15 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   getBanditTributeCost(): ResourceAmount {
-    const day = this.context.dayNight?.state?.day ?? 1
-    const age = this.context.player?.age ?? 0
-    return roundTributeCost({
-      food: 40 + day * 5 + age * 20,
-      gold: 25 + day * 4 + age * 15,
-    })
+    return runGetBanditTributeCost(this)
   }
 
   getFactionTributeCost(faction: FactionSave): ResourceAmount {
-    const player = this.context.player
-    const day = this.context.dayNight?.state?.day ?? 1
-    const age = player?.age ?? 0
-    const hate = Math.max(0, Math.abs(Math.min(0, faction.relationScore)))
-    const soldiers = this.getLivingPlayerMilitaryCount()
-    return roundTributeCost({
-      food: 45 + day * 4 + age * 20 + soldiers * 8 + Math.floor(hate * 0.8),
-      gold: 25 + day * 3 + age * 18 + soldiers * 5 + Math.floor(hate * 0.6),
-    })
+    return runGetFactionTributeCost(this, faction)
   }
 
   getLivingPlayerMilitaryCount(): number {
-    return (this.context.player?.units ?? []).filter(
-      unit => !unit.isDead && !unit.isDestroyed && unit.type !== UNIT_TYPES.villager && unit.type !== UNIT_TYPES.hero
-    ).length
+    return runGetLivingPlayerMilitaryCount(this)
   }
 
   findSpawnCells(target: UnitEntity, count: number, faction?: FactionSave | null): RuntimeCell[] {
@@ -372,92 +342,18 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   openTributeModal(raid: TributeRaid): void {
-    if (raid.phase !== 'approaching' || raid.modal) return
-    raid.phase = 'parley'
-    for (const unit of livingRaidUnits(raid)) unit.stop?.()
-
-    let resolved = false
-    const content = document.createElement('div')
-    content.className = 'bandit-tribute-modal-content'
-    content.appendChild(createTitledEntityInfoContent(this.context.app, raid.chief))
-
-    const speech = document.createElement('p')
-    speech.className = 'bandit-tribute-text'
-    speech.textContent = getTributeDemand(raid)
-    content.appendChild(speech)
-
-    const actions = document.createElement('div')
-    actions.className = 'npc-orders-options bandit-tribute-actions'
-
-    const canPayTribute = canAfford(this.context.player, raid.tribute)
-    const payButton = document.createElement('button')
-    payButton.type = 'button'
-    payButton.className = 'ui-btn'
-    payButton.textContent = getTributePayLabel(raid)
-    payButton.disabled = !canPayTribute
-    if (!canPayTribute) payButton.title = getTributeCannotPayLabel(raid)
-    payButton.addEventListener('click', () => {
-      if (!canAfford(this.context.player, raid.tribute)) {
-        this.context.menu?.showMessage(getTributeCannotPayLabel(raid), 'warning')
-        return
-      }
-      resolved = true
-      payCost(this.context.player, raid.tribute)
-      this.context.menu?.updateTopbar()
-      raid.modal?.close()
-      raid.modal = null
-      this.acceptTribute(raid)
-    })
-    actions.appendChild(payButton)
-
-    const refuseButton = document.createElement('button')
-    refuseButton.type = 'button'
-    refuseButton.className = 'ui-btn'
-    refuseButton.textContent = getTributeRefuseLabel(raid)
-    refuseButton.addEventListener('click', () => {
-      resolved = true
-      raid.modal?.close()
-      raid.modal = null
-      this.makeRaidHostile(raid)
-    })
-    actions.appendChild(refuseButton)
-    content.appendChild(actions)
-
-    raid.modal = createInspectionModal({
-      title: getTributeTitle(raid),
-      content,
-      panelClass: 'bandit-tribute-modal',
-      onClose: () => {
-        raid.modal = null
-        if (!resolved && raid.phase === 'parley') this.makeRaidHostile(raid)
-      },
+    return runOpenTributeModal(this, raid, {
+      createChiefContent: chief => createTitledEntityInfoContent(this.context.app, chief),
+      createModal: createInspectionModal,
     })
   }
 
   resolveTributeParley(raid: TributeRaid): void {
-    if (raid.target.owner?.isPlayed) {
-      this.openTributeModal(raid)
-      return
-    }
-
-    raid.phase = 'parley'
-    for (const unit of livingRaidUnits(raid)) unit.stop?.()
-    const targetOwner = raid.target.owner
-    if (targetOwner && this.shouldLocalChiefPayTribute(raid)) {
-      payCost(targetOwner, raid.tribute)
-      this.context.menu?.showMessage(getLocalTributeTargetMessage(raid), 'info')
-      this.acceptTribute(raid)
-      return
-    }
-
-    this.context.menu?.showMessage(getLocalTributeRefusedMessage(raid), 'warning')
-    this.makeRaidHostile(raid)
+    return runResolveTributeParley(this, raid)
   }
 
   shouldLocalChiefPayTribute(raid: TributeRaid): boolean {
-    const targetOwner = raid.target.owner
-    if (!targetOwner || !canAfford(targetOwner, raid.tribute)) return false
-    return (this.context.map.random?.() ?? Math.random()) < 0.5
+    return runShouldLocalChiefPayTribute(this, raid)
   }
 
   acceptTribute(raid: TributeRaid): void {
@@ -502,6 +398,7 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   cleanupRaid(raid: TributeRaid): void {
+    if (raid.phase === 'parley') raid.phase = 'leaving'
     if (raid.updateTaskId != null) {
       this.context.scheduler.remove(raid.updateTaskId)
       raid.updateTaskId = null
@@ -514,6 +411,10 @@ export class TributeRaidSystem implements DailyWorldEventHandler {
   }
 
   destroy(): void {
+    if (this.deferredFactionRaidTaskId != null) {
+      this.context.scheduler.remove(this.deferredFactionRaidTaskId)
+      this.deferredFactionRaidTaskId = null
+    }
     for (const raid of [...this.raids]) this.cleanupRaid(raid)
   }
 }

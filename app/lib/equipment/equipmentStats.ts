@@ -52,6 +52,8 @@ const MELEE_WEAPON_EQUIPMENT_KEYS = new Set([
   'longsword',
   'halberd',
   'cane',
+  'longstick',
+  'catchingPole',
 ])
 
 const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
@@ -132,6 +134,8 @@ const FALLBACK_EQUIPMENT_STATS: Record<string, EquipmentStats> = {
   round_shield_bronze_slash: { armor: { melee: 2, pierce: 2 } },
   round_shield_iron_slash: { armor: { melee: 3, pierce: 2 } },
   cane: { weapon: { power: 1 } },
+  longstick: { weapon: { power: 1 } },
+  catchingPole: { weapon: { power: 1 } },
   boar_tusks: { weapon: { power: 3 } },
   wolf_bite: { weapon: { power: 4 } },
   watch_tower_arrow: { weapon: { power: 3 } },
@@ -191,7 +195,7 @@ function getHeroInventoryActiveWeaponEquipment(entity: EquipmentEntityLike): str
       (item): item is string => typeof item === 'string'
     )
   }
-  return [activeWeapons.lasso].filter((item): item is string => typeof item === 'string')
+  return []
 }
 
 function getHeroInventoryCombatEquipment(entity: EquipmentEntityLike): string[] {
@@ -408,6 +412,14 @@ function getConfiguredEntityEquipment(entity: EquipmentEntityLike): string[] {
         entity.owner?.civ
       )
     : []
+}
+
+export function getEntityMeleeWeapon(entity: EquipmentEntityLike): string | undefined {
+  const definitions = loadedEquipmentStats()
+  return getConfiguredEntityEquipment(entity).find(key => {
+    const weapon = definitions[key]?.weapon
+    return Boolean(weapon && !weapon.range)
+  })
 }
 
 export function getEntityWeaponPower(entity?: EquipmentEntityLike | null): number {

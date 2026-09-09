@@ -1,6 +1,5 @@
 import { blueprintToLocalGrid, createLocalMapLayout, gridToLocal, localToGrid } from '../../../lib/localMapLayout'
 import type { MapBlueprint } from '../MapGenerationTypes'
-import { normalizeLocalMapRelief } from './LocalMapRelief'
 
 function createSparseGrid<T>(size: number): T[][] {
   return Array.from({ length: size + 1 }, () => [])
@@ -80,7 +79,6 @@ export function createSquareLocalBlueprint(source: MapBlueprint): MapBlueprint {
     banditCampPositions: source.banditCampPositions?.map(position),
     settlements: source.settlements?.map(value => ({ ...value, local: position(value.local) })),
   }
-  normalizeLocalMapRelief(blueprint)
   return blueprint
 }
 

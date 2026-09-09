@@ -51,7 +51,7 @@ function stopWheatAtInitialGrowthFrame(resource: Resource, sprite: AnimatedSprit
   if (resource.isWindAnimatedWheat()) resource.startWindMotion()
 }
 
-function createStaticResourceSprite(resource: Resource, cell: { type: string }): Sprite {
+export function prepareStaticResourceTexture(resource: Resource, cell: { type: string }) {
   const terrainAssets = getTerrainAssets(resource.assets, cell.type)
   const textureRef =
     resource.textureName ||
@@ -69,17 +69,19 @@ function createStaticResourceSprite(resource: Resource, cell: { type: string }):
     (texture as TextureWithCacheIds).textureCacheIds?.[0] || `${textureRefToString(normalizedTextureRef)}.png`
   const spritesheet = Assets.cache.get(getTextureSheet(normalizedTextureRef))
   resource.textureName = textureRefToString(normalizedTextureRef)
-  const sprite = Sprite.from(texture)
-  if (texture.defaultAnchor) {
-    sprite.anchor.copyFrom(texture.defaultAnchor)
-  }
   if (resource.type === RESOURCE_TYPES.berrybush && resource.berrybushFullTextureName == null) {
     const berrybushTextureRef = parseTextureRef(resource.textureName)
     if (berrybushTextureRef.frame > 0) {
       resource.berrybushFullTextureName = resource.textureName
     }
   }
-  sprite.hitArea =
-    spritesheet?.data?.frames?.[textureFile]?.hitArea && new Polygon(spritesheet.data.frames[textureFile].hitArea)
+  return { texture, hitArea: spritesheet?.data?.frames?.[textureFile]?.hitArea }
+}
+
+function createStaticResourceSprite(resource: Resource, cell: { type: string }): Sprite {
+  const { texture, hitArea } = prepareStaticResourceTexture(resource, cell)
+  const sprite = Sprite.from(texture)
+  if (texture.defaultAnchor) sprite.anchor.copyFrom(texture.defaultAnchor)
+  sprite.hitArea = hitArea && new Polygon(hitArea)
   return sprite
 }

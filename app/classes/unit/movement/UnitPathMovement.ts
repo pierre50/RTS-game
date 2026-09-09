@@ -1,3 +1,4 @@
+import { tryStartUnitContactApproach } from './UnitContactApproach'
 import { ACTION_TYPES, SHEET_TYPES } from '../../../constants'
 import {
   canUpdateMinimap,
@@ -61,6 +62,7 @@ export function moveUnitToPath(unit: UnitEntity, retryBlockedGatherApproach: () 
   }
   updateCautiousAnimalApproachSpeed(unit)
   applyUnitCrouchPose(unit, isUnitWalkSpeedFactor(getRequestedMoveSpeedFactor(unit)))
+  if ('family' in dest && tryStartUnitContactApproach(unit, dest, unit.action)) return
   if (shouldWaitForMovingBlocker(unit, nextCell)) return
   if (handleBlockedPathCell(unit, nextCell, dest)) return
 

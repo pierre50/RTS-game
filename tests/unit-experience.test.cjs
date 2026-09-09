@@ -5,7 +5,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadModule(relativePath, mocks) {
   return loadTsModule(relativePath, {
     mocks: {
-      '../HeroLassoThrow': { HeroLassoThrow: class {} },
+      '../HeroCatchingPoleThrow': { HeroCatchingPoleThrow: class {} },
       '../../lib/horses/horseCapture': {
         getNearestAvailableStableForUnit: () => null,
         routeCapturedHorseToStableWithOwnerContact: () => null,
@@ -433,6 +433,13 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
       getHealingXpBonus: () => 0,
       grantUnitXp: (unit, category, amount) => xpCalls.push({ category, amount }),
     },
+    '../../lib/actions/contactActions': {
+      canReachActionTarget: () => true,
+      isActionTouchingTarget: () => true,
+      getActionContactTool: () => undefined,
+    },
+    '../../lib/contact/contactGeometry': { getContactAimDegree: () => 0 },
+    '../../lib/contact/contactDebug': { showContactDebug: () => {} },
     '../../lib/entities/entityHealthDisplay': entityHealthDisplayMock,
     '../../lib/units/unitControl': {
       isHeroControlled: () => false,
@@ -447,7 +454,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
     '../../lib/lpc': { refreshBakedLpcUnitAssets: () => {} },
   })
 
-  const berryBush = { quantity: 10, selected: false }
+  const berryBush = { family: 'resource', type: 'Berrybush', quantity: 10, selected: false }
   const unit = {
     category: 'Villager',
     action: 'forageberry',
@@ -471,7 +478,7 @@ test('gathering grants xp for the loading type and applies the gather bonus', ()
   assert.deepEqual(xpCalls, [{ category: 'farming', amount: 3 }])
 })
 
-test('gathered stone is added to the unit inventory without increasing global resources', () => {
+test('gathered stone exceeds ten in local inventory without increasing global resources', () => {
   let inventoryRefreshes = 0
   const { addGatheredResource } = loadModule('app/classes/unit/UnitResourceGathering.ts', {
     '../../constants': {
@@ -500,8 +507,8 @@ test('gathered stone is added to the unit inventory without increasing global re
   const secondGain = addGatheredResource(unit, 'stone', 10)
 
   assert.equal(firstGain, 6)
-  assert.equal(secondGain, 4)
-  assert.deepEqual(unit.inventory.resources, { stone: 10 })
+  assert.equal(secondGain, 10)
+  assert.deepEqual(unit.inventory.resources, { stone: 16 })
   assert.equal(unit.owner.stone, 4)
   assert.equal(inventoryRefreshes, 2)
 })

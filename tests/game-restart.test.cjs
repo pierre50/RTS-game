@@ -49,7 +49,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
     },
     '../lib/combat/combatFeedback': { clearAllCombatFeedback() {} },
     '../lib/equipment/equipmentStats': { refreshUnitEquipmentStats() {} },
-    '../lib/actionScheduler': {
+    '../lib/ActionScheduler': {
       ActionScheduler: class ActionScheduler {
         clear() {}
         destroy() {}

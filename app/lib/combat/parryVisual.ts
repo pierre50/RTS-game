@@ -11,7 +11,7 @@ type ParryVisualState = {
   loop?: boolean
   playing: boolean
   sheet: string
-  callbacks: Partial<Pick<ParrySprite, SpriteCallbackName>>
+  callbacks: { [K in SpriteCallbackName]: ParrySprite[K] }
 }
 
 const parryVisualStates = new WeakMap<UnitEntity, ParryVisualState>()

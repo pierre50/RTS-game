@@ -5,24 +5,24 @@ const test = require('node:test')
 const babel = require('@babel/core')
 
 function loadUnitActions(calls, captureHorse) {
-  class HeroLassoThrow {
+  class HeroCatchingPoleThrow {
     constructor(unit, _destination, _context, options) {
       this.state = 'attached'
       this.target = captureHorse
-      this.clearLasso = ({ releaseHorse } = {}) => {
+      this.clearCatchingPoleThrow = ({ releaseHorse } = {}) => {
         calls.push(['externalStableRouteActive', false])
-        calls.push(['clearLasso', releaseHorse])
+        calls.push(['clearCatchingPoleThrow', releaseHorse])
       }
       this.releaseHorse = ({ allowStable, allowFlee } = {}) => {
         calls.push(['releaseHorse', allowStable, allowFlee])
-        captureHorse.isLassoed = false
-        captureHorse.lassoOwner = null
+        captureHorse.isCatchingPoleCaught = false
+        captureHorse.catchingPoleOwner = null
       }
       this.setExternalStableRouteActive = active => calls.push(['externalStableRouteActive', active])
-      unit.heroLasso = this
-      captureHorse.isLassoed = true
-      captureHorse.lassoOwner = unit
-      calls.push(['lasso', options.autoRouteStableWhileAttached])
+      unit.heroCatchingPoleThrow = this
+      captureHorse.isCatchingPoleCaught = true
+      captureHorse.catchingPoleOwner = unit
+      calls.push(['catchingPole', options.autoRouteStableWhileAttached, unit.sprite.currentFrame])
     }
   }
 
@@ -36,11 +36,26 @@ function loadUnitActions(calls, captureHorse) {
       ],
     })
     const module = { exports: {} }
-    new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+    new Function('module', 'exports', 'require', code)(module, module.exports, request =>
+      localRequire(
+        filename.includes('/unit/work/')
+          ? request.replace(/^\.\.\/\.\.\/\.\.\//, '../../').replace(/^\.\.\/Unit/, './Unit')
+          : request
+      )
+    )
     return module.exports
   }
 
   const localRequire = request => {
+    if (request === '../../lib/actions/contactActions') {
+      return {
+        canReachActionTarget: () => true,
+        isActionTouchingTarget: () => true,
+        getActionContactTool: () => undefined,
+      }
+    }
+    if (request === '../../lib/contact/contactGeometry') return { getContactAimDegree: () => 0 }
+    if (request === '../../lib/contact/contactDebug') return { showContactDebug: () => {} }
     if (request === '../../constants') {
       return {
         ACTION_TYPES: { captureHorse: 'captureHorse' },
@@ -88,7 +103,7 @@ function loadUnitActions(calls, captureHorse) {
         },
       }
     }
-    if (request === '../HeroLassoThrow') return { HeroLassoThrow }
+    if (request === '../HeroCatchingPoleThrow') return { HeroCatchingPoleThrow }
     if (request === '../Projectile') return { Projectile: class {} }
     if (request === '../../lib/mapSpaces') {
       return {
@@ -130,7 +145,25 @@ function loadUnitActions(calls, captureHorse) {
     if (request === '../../lib/entities/entityOwnerTransfer') return { transferEntityOwner: () => true }
     if (request === '../../lib/buildings/buildingOccupancy') return { getBuildingShelterCapacity: () => 0 }
     if (request === '../../lib/entities/slashRecoveryAnimation') return { playReverseSlashRecovery: () => false }
+    if (request === '../../lib/hero/heroProjectileTools') {
+      return {
+        finishHeroCatchingPoleThrowAnimation: unit => {
+          unit.sprite.loop = false
+          unit.sprite.currentFrame = 1
+          unit.actionLocked = false
+          calls.push(['finishCatchingPoleThrowAnimation'])
+        },
+        holdHeroCatchingPoleThrowFrame: unit => {
+          unit.sprite.loop = false
+          unit.sprite.currentFrame = 5
+          unit.actionLocked = true
+          calls.push(['holdCatchingPoleThrowFrame'])
+        },
+      }
+    }
     if (request === '../../lib/entities/workImpactFragments') return { emitWorkImpactFragments: () => {} }
+    if (request === '../../lib/equipment/equipmentDiscoveries') return { discoverHeroResource: () => [] }
+    if (request === '../../lib/resources/ironMining') return { showIronMiningBlockedMessage: () => {} }
     if (request === '../../lib/graphics') return { onSpriteLoopAtFrame: () => {} }
     if (request === '../../lib/animations/actionFrameSequences') return { getActionFrameSequence: () => [] }
     if (request === './UnitCaptureHorseAction') {
@@ -138,6 +171,12 @@ function loadUnitActions(calls, captureHorse) {
     }
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
+    }
+    if (/^\.\/(?:work\/)?Unit(?:FarmingAction|WoodcuttingAction|BuildingAction|WorkSwing)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/work', path.basename(request) + '.ts'))
+    }
+    if (request === '../../lib/definedProperties') {
+      return loadTsFile(path.join(__dirname, '../app/lib/definedProperties.ts'))
     }
     if (request === './UnitResourceActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
@@ -166,7 +205,7 @@ function loadUnitActions(calls, captureHorse) {
   return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitActions.ts')).UnitActions
 }
 
-test('villager horse capture resumes after the lasso and routes the owner to the stable', () => {
+test('villager horse capture resumes after the catchingPole and routes the owner to the stable', () => {
   const calls = []
   const horse = {
     family: 'animal',
@@ -214,7 +253,7 @@ test('villager horse capture resumes after the lasso and routes the owner to the
     context: { scheduler, map: { addChild: () => calls.push(['addChild']) } },
     sprite: {},
     path: [],
-    getActionCondition: target => target === horse && !horse.isLassoed,
+    getActionCondition: target => target === horse && !horse.isCatchingPoleCaught,
     isUnitAtDest: (_action, target) => target === horse,
     destHasMoved: () => false,
     setTextures: sheet => calls.push(['setTextures', sheet]),
@@ -230,10 +269,10 @@ test('villager horse capture resumes after the lasso and routes the owner to the
   unit.getAction = name => actions.getAction(name)
   actions.getAction('captureHorse')
 
-  assert.equal(horse.isLassoed, true)
+  assert.equal(horse.isCatchingPoleCaught, true)
   assert.deepEqual(
-    calls.filter(call => call[0] === 'lasso'),
-    [['lasso', false]]
+    calls.filter(call => call[0] === 'catchingPole'),
+    [['catchingPole', false, 5]]
   )
 
   scheduler.tasks[0]()
@@ -309,8 +348,91 @@ test('villager horse capture repath throttle survives synchronous action reentry
 
   assert.equal(calls.filter(call => call[0] === 'sendToEvt').length, 1)
   assert.equal(
-    calls.some(call => call[0] === 'lasso'),
+    calls.some(call => call[0] === 'catchingPole'),
     false
+  )
+})
+
+test('villager capture keeps the catchingPole throw frame held across capture ticks', () => {
+  const calls = []
+  const horse = {
+    family: 'animal',
+    type: 'Horse',
+    label: 'horse-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    isDead: false,
+    isDestroyed: false,
+  }
+  const stable = {
+    family: 'building',
+    type: 'Stable',
+    label: 'stable-1',
+    i: 5,
+    j: 5,
+    x: 160,
+    y: 160,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+  }
+  const scheduler = {
+    elapsedMs: 1000,
+    tasks: [],
+    add(callback) {
+      this.tasks.push(callback)
+      return this.tasks.length
+    },
+    remove() {},
+  }
+  const unit = {
+    family: 'unit',
+    type: 'Villager',
+    label: 'villager-1',
+    i: 3,
+    j: 3,
+    x: 96,
+    y: 96,
+    action: 'captureHorse',
+    dest: horse,
+    owner: { buildings: [stable] },
+    context: { scheduler, map: { addChild: () => calls.push(['addChild']) } },
+    sprite: { currentFrame: 0, loop: true },
+    path: [],
+    getActionCondition: target => target === horse && !horse.isCatchingPoleCaught,
+    isUnitAtDest: (_action, target) => target === horse,
+    destHasMoved: () => false,
+    setTextures: sheet => calls.push(['setTextures', sheet]),
+    sendToEvt: (target, action) => {
+      calls.push(['sendToEvt', target.label, action])
+      unit.dest = target
+    },
+    affectNewDest: () => calls.push(['affectNewDest']),
+  }
+
+  const UnitActions = loadUnitActions(calls, horse)
+  const actions = new UnitActions(unit)
+  unit.getAction = name => actions.getAction(name)
+  actions.getAction('captureHorse')
+
+  assert.equal(unit.sprite.currentFrame, 5)
+  assert.equal(unit.sprite.loop, false)
+  assert.equal(unit.actionLocked, true)
+
+  scheduler.tasks[0]()
+
+  assert.equal(unit.sprite.currentFrame, 5)
+  assert.equal(unit.sprite.loop, false)
+  assert.equal(unit.actionLocked, true)
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'holdCatchingPoleThrowFrame'),
+    [['holdCatchingPoleThrowFrame']]
+  )
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'catchingPole'),
+    [['catchingPole', false, 5]]
   )
 })
 
@@ -411,7 +533,7 @@ test('villager horse capture cleanup releases the attached horse when the order 
     context: { scheduler, map: { addChild: () => calls.push(['addChild']) } },
     sprite: {},
     path: [],
-    getActionCondition: target => target === horse && !horse.isLassoed,
+    getActionCondition: target => target === horse && !horse.isCatchingPoleCaught,
     isUnitAtDest: (_action, target) => target === horse,
     destHasMoved: () => false,
     setTextures: sheet => calls.push(['setTextures', sheet]),
@@ -427,13 +549,13 @@ test('villager horse capture cleanup releases the attached horse when the order 
   unit.getAction = name => actions.getAction(name)
   actions.getAction('captureHorse')
 
-  assert.equal(horse.isLassoed, true)
+  assert.equal(horse.isCatchingPoleCaught, true)
 
   unit.action = null
   scheduler.tasks[0]()
 
-  assert.equal(horse.isLassoed, false)
-  assert.equal(horse.lassoOwner, null)
+  assert.equal(horse.isCatchingPoleCaught, false)
+  assert.equal(horse.catchingPoleOwner, null)
   assert.deepEqual(
     calls.filter(call => call[0] === 'externalStableRouteActive'),
     [['externalStableRouteActive', false]]
@@ -443,12 +565,12 @@ test('villager horse capture cleanup releases the attached horse when the order 
     [['releaseHorse', false, true]]
   )
   assert.deepEqual(
-    calls.filter(call => call[0] === 'clearLasso'),
-    [['clearLasso', false]]
+    calls.filter(call => call[0] === 'clearCatchingPoleThrow'),
+    [['clearCatchingPoleThrow', false]]
   )
 })
 
-test('villager resumes walking after a broken lasso without action animation resets or excessive repaths', () => {
+test('villager resumes walking after a broken catchingPole without action animation resets or excessive repaths', () => {
   const calls = []
   const horse = { family: 'animal', type: 'Horse', label: 'horse-1', i: 3, j: 3, x: 96, y: 96 }
   const scheduler = {
@@ -485,10 +607,10 @@ test('villager resumes walking after a broken lasso without action animation res
   const actions = new UnitActions(unit)
   unit.getAction = name => actions.getAction(name)
   actions.getAction('captureHorse')
-  assert.equal(horse.isLassoed, true)
+  assert.equal(horse.isCatchingPoleCaught, true)
 
-  unit.heroLasso.releaseHorse({ allowStable: false, allowFlee: true })
-  unit.heroLasso.state = 'retracting'
+  unit.heroCatchingPoleThrow.releaseHorse({ allowStable: false, allowFlee: true })
+  unit.heroCatchingPoleThrow.state = 'retracting'
   atHorse = false
   unit.path = [{ i: 3, j: 3 }]
   unit.currentSheet = 'walking'
@@ -523,5 +645,5 @@ test('villager resumes walking after a broken lasso without action animation res
   )
   scheduler.elapsedMs = 1800
   scheduler.tasks[0]()
-  assert.equal(horse.isLassoed, true)
+  assert.equal(horse.isCatchingPoleCaught, true)
 })

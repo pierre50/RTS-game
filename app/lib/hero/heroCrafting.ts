@@ -26,7 +26,7 @@ const HERO_CONSUMABLE_HEALING: Record<string, number> = {
   [HERO_FIBER_BANDAGE_ITEM]: 8,
 }
 
-export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
+export const HERO_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
   {
     id: 'bow',
     labelKey: 'craftBow',
@@ -34,6 +34,14 @@ export const HERO_ARROW_CRAFT_RECIPES: readonly HeroCraftRecipe[] = [
     outputEquipment: 'bow',
     outputCount: 1,
     cost: { wood: 5, sinew: 2 },
+  },
+  {
+    id: 'catchingPole',
+    labelKey: 'craftCatchingPole',
+    descriptionKey: 'craftCatchingPoleDescription',
+    outputEquipment: 'catchingPole',
+    outputCount: 1,
+    cost: { wood: 4, fiber: 2 },
   },
   {
     id: HERO_CAMPFIRE_ITEM,

@@ -129,7 +129,8 @@ function loadResourceVisuals() {
   }
 
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return { ...module.exports, AnimatedSprite, Assets, Sprite, Texture }
 }
@@ -262,4 +263,38 @@ test('wildgrass resources use wind motion and keep generated shadows visible', (
   assert.equal(shadow.visible, true)
   assert.notEqual(sprite.skew.x, 0)
   assert.notEqual(shadow.skew.x, 0)
+})
+
+test('hidden resources do not register wind updates and stop when leaving the active space', () => {
+  const { Sprite, startWindMotion, syncVisualSettings } = loadResourceVisuals()
+  const callbacks = new Set()
+  const resource = {
+    type: 'Tree',
+    visible: false,
+    i: 3,
+    j: 7,
+    windTick: null,
+    windTime: 0,
+    sprite: new Sprite(),
+    shadow: null,
+    context: {
+      map: { activeSpaceId: 'outside' },
+      app: { ticker: { add: cb => callbacks.add(cb), remove: cb => callbacks.delete(cb) } },
+    },
+  }
+  startWindMotion(resource)
+  assert.equal(callbacks.size, 0)
+  resource.visible = true
+  syncVisualSettings(resource)
+  assert.equal(callbacks.size, 1)
+  syncVisualSettings(resource)
+  assert.equal(callbacks.size, 1, 'visibility refresh must not duplicate callbacks')
+  resource.visible = false
+  syncVisualSettings(resource)
+  assert.equal(callbacks.size, 0)
+  resource.visible = true
+  syncVisualSettings(resource)
+  resource.context.map.activeSpaceId = 'room'
+  syncVisualSettings(resource)
+  assert.equal(callbacks.size, 0)
 })

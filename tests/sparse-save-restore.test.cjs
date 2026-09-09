@@ -127,7 +127,7 @@ test('full-grid restoration keeps every sparse row and clears cells from previou
   assert.equal(map.grid[0][0], undefined)
   assert.equal(map.grid[1][0], undefined)
   assert.equal(map.grid[1][1].fogged, true)
-  assert.equal(map.grid[1][1].z, 0, 'old square saves also receive the repaired boundary elevation')
+  assert.equal(map.grid[1][1].z, 3, 'saved elevation is read exactly without terrain generation')
   map.grid[1][1].has = { label: 'old resource' }
   clearGeneratedGameplayState(map)
   assert.equal(map.grid[1][1].has, null)

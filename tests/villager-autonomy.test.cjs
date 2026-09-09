@@ -94,6 +94,9 @@ function loadVillagerAutonomy() {
             (building.stableHorses?.length ?? 0) < 5
         ) ?? null,
     },
+    '../resources/ironMining': {
+      canOwnerMineIron: owner => (owner?.age ?? 0) >= 2,
+    },
   })
 }
 
@@ -101,6 +104,7 @@ function createOwner(extra = {}) {
   return {
     buildings: [],
     foundedBerrybushs: new Set(),
+    age: 2,
     units: [],
     views: { isViewed: () => true },
     ...extra,
@@ -213,6 +217,31 @@ test('copper and iron autonomy target only the requested ore and issue the match
   assert.equal(ironMiner.dest, iron)
   assert.equal(ironMiner.action, constants.ACTION_TYPES.mineiron)
   assert.equal(ironMiner.autonomousJob, 'iron')
+})
+
+test('iron autonomy is unavailable before the bronze age', () => {
+  const { assignVillagerAutonomy, hasVillagerAutonomyTarget } = loadVillagerAutonomy()
+  const iron = {
+    family: constants.FAMILY_TYPES.resource,
+    i: 5,
+    isDestroyed: false,
+    j: 5,
+    label: 'iron-1',
+    quantity: 100,
+    type: constants.RESOURCE_TYPES.iron,
+  }
+  const owner = createOwner({
+    age: 1,
+    foundedResources: {
+      [constants.RESOURCE_TYPES.iron]: new Set([iron]),
+    },
+  })
+  const ironMiner = createVillager(owner)
+
+  assert.equal(hasVillagerAutonomyTarget(ironMiner, 'iron'), false)
+  assert.equal(assignVillagerAutonomy(ironMiner, 'iron'), false)
+  assert.equal(ironMiner.dest, null)
+  assert.equal(ironMiner.action, undefined)
 })
 
 test('food autonomy treats wheat with an incoming farmer as occupied', () => {
@@ -750,4 +779,30 @@ test('construction autonomy repairs own damaged completed buildings', () => {
   assert.equal(assignVillagerAutonomy(villager, 'construction'), true)
   assert.equal(villager.dest, damagedBuilding)
   assert.equal(villager.action, constants.ACTION_TYPES.build)
+})
+
+test('food search retries after failure and collects newly discovered food on the next scheduled check', () => {
+  const { assignVillagerAutonomy } = loadVillagerAutonomy()
+  const tasks = []
+  let explored = 0
+  const owner = createOwner()
+  const villager = createVillager(owner, {
+    context: { scheduler: { addOneShot(callback, delay) { tasks.push({ callback, delay }); return tasks.length }, remove() {} } },
+    explore() { explored++; return false },
+  })
+  assert.equal(assignVillagerAutonomy(villager, 'food'), false)
+  assert.equal(explored, 1)
+  assert.equal(tasks.length, 1)
+  assert.equal(tasks[0].delay, 2000)
+  tasks[0].callback()
+  assert.equal(explored, 2)
+  assert.equal(tasks.length, 2)
+  const berries = { family: constants.FAMILY_TYPES.resource, type: constants.RESOURCE_TYPES.berrybush,
+    i: 5, j: 5, quantity: 10, hitPoints: 10 }
+  owner.foundedBerrybushs.add(berries)
+  tasks[1].callback()
+  assert.equal(explored, 2)
+  assert.equal(villager.dest, berries)
+  assert.equal(villager.action, constants.ACTION_TYPES.forageberry)
+  assert.equal(tasks.length, 2)
 })

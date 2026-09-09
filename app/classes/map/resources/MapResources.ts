@@ -1,14 +1,22 @@
-import { Resource } from '../../Resource'
-import {
-  RESOURCE_TYPES,
-  BIOME_TREE_CHANCE,
-  BIOME_TREE_PLAYER_SAFE_DIST,
-  WATER_BORDER_PLACEMENT_CLEARANCE,
-  getEnvironmentTerrainParams,
-} from '../../../constants'
+import type { ContainerChild } from 'pixi.js'
+import { RESOURCE_TYPES, WATER_BORDER_PLACEMENT_CLEARANCE, getEnvironmentTerrainParams } from '../../../constants'
 import { hasWaterBorderWithin } from '../../../lib'
-import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../../../config/gameplay'
+import { definedProperties } from '../../../lib/definedProperties'
+import type { ResourceEntity } from '../../../types/entities'
+import type { GridPosition } from '../../../types/grid'
+import type { RuntimeCell } from '../../../types/map'
+import type { SaveEntityState } from '../../../types/save'
 import { generateForestAroundPlayer as generateForestAroundPlayerResources } from './MapForestResources'
+import {
+  generateBiomeTreesAsync as runGenerateBiomeTreesAsync,
+  respawnNaturalResource as runRespawnNaturalResource,
+} from './MapNaturalResources'
+import { createResource } from './MapResourceCreation'
+import {
+  findNeutralResourceCenter as runFindNeutralResourceCenter,
+  getSharedGroupTextureName as runGetSharedGroupTextureName,
+  placeResourceGroupAt as runPlaceResourceGroupAt,
+} from './MapResourcePlacement'
 import { hasSpacedResourceAround } from './MapResourceSpacing'
 import {
   NEUTRAL_RESOURCE_QUANTITY_RANGES,
@@ -16,15 +24,10 @@ import {
   rollResourceQuantity,
 } from './ResourceQuantityRanges'
 import { pickTreeTextureNameForFamily, type TreeTextureFamily } from './TreeResourceTextures'
-import type { ContainerChild } from 'pixi.js'
-import type { GridPosition } from '../../../types/grid'
-import type { RuntimeCell } from '../../../types/map'
-import type { ResourceEntity } from '../../../types/entities'
-import type { SaveEntityState } from '../../../types/save'
 
 export type ResourceDensity = keyof typeof RESOURCE_DENSITY_PROFILES
 type NeutralResourceProfileKey = keyof (typeof RESOURCE_DENSITY_PROFILES)['moderate']['neutralGroups']
-type ResourceType = string
+export type ResourceType = string
 type ScatteredHerbProfile = {
   type: ResourceType
   countMultiplier: Partial<Record<string, number>>
@@ -39,8 +42,8 @@ type ResourceGroupEntry = {
 type NeutralResourceGroup = ResourceGroupEntry & {
   profileKey: NeutralResourceProfileKey
 }
-type ResourceCenter = GridPosition
-type ResourcePlacementOptions = {
+export type ResourceCenter = GridPosition
+export type ResourcePlacementOptions = {
   isNaturalResource?: boolean
   textureName?: string
   textureNameFactory?: (cell?: RuntimeCell) => string | undefined
@@ -50,15 +53,14 @@ type ResourcePlacementOptions = {
   totalQuantity?: number
   startsMature?: boolean
 }
-type TreeResourceGenerationOptions = {
+export type TreeResourceGenerationOptions = {
   treeTextureFamily?: TreeTextureFamily | null
   treeTextureFamilyForCell?: (cell: RuntimeCell) => TreeTextureFamily | null | undefined
   treeChanceForCell?: (cell: RuntimeCell) => number | null | undefined
 }
 
-const RELOCATED_RESPAWN_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, RESOURCE_TYPES.wheat])
 const PLAYER_START_RESOURCE_CLEARANCE = 6
-type MapResourcesMap = {
+export type MapResourcesMap = {
   context: object
   grid: RuntimeCell[][]
   size: number
@@ -140,34 +142,6 @@ const NEUTRAL_RESOURCE_GROUPS: NeutralResourceGroup[] = [
     minNeutralDistance: 34,
   },
 ]
-
-function createResource(
-  map: MapResourcesMap,
-  i: number,
-  j: number,
-  type: ResourceType,
-  options: ResourcePlacementOptions = {}
-): ResourceEntity {
-  return map.addChild(
-    new Resource(
-      {
-        i,
-        j,
-        type,
-        isNaturalResource: options.isNaturalResource ?? true,
-        textureName: options.textureName,
-        quantity: options.quantity,
-        totalQuantity: options.totalQuantity,
-        startsMature: options.startsMature,
-      },
-      map.context as ConstructorParameters<typeof Resource>[1]
-    )
-  )
-}
-
-function berryBushTextureName(frame: number): string {
-  return `${String(frame).padStart(3, '0')}_resources/berrybush`
-}
 
 const RESOURCE_DENSITY_PROFILES = {
   low: {
@@ -335,12 +309,14 @@ export function getScatteredHerbCount(
   return Math.round(baseCount * environmentMultiplier * sizeScale)
 }
 
-function shuffled<T>(items: T[], random: () => number): T[] {
+function shuffled<T extends object>(items: T[], random: () => number): T[] {
   const result = [...items]
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1))
     const item = result[i]
-    result[i] = result[j]
+    const replacement = result[j]
+    if (!item || !replacement) throw new Error('Invalid resource shuffle index')
+    result[i] = replacement
     result[j] = item
   }
   return result
@@ -464,10 +440,16 @@ export class MapResources {
 
       const rolledQuantity = rollResourceQuantity(() => this.map.random(), SCATTERED_STONE_QUANTITY_RANGE)
       this.map.resources.add(
-        createResource(this.map, i, j, RESOURCE_TYPES.stone, {
-          quantity: rolledQuantity,
-          totalQuantity: rolledQuantity,
-        })
+        createResource(
+          this.map,
+          i,
+          j,
+          RESOURCE_TYPES.stone,
+          definedProperties({
+            quantity: rolledQuantity,
+            totalQuantity: rolledQuantity,
+          })
+        )
       )
       placed++
 
@@ -502,10 +484,16 @@ export class MapResources {
           NEUTRAL_RESOURCE_QUANTITY_RANGES[herb.type]
         )
         this.map.resources.add(
-          createResource(this.map, i, j, herb.type, {
-            quantity: rolledQuantity,
-            totalQuantity: rolledQuantity,
-          })
+          createResource(
+            this.map,
+            i,
+            j,
+            herb.type,
+            definedProperties({
+              quantity: rolledQuantity,
+              totalQuantity: rolledQuantity,
+            })
+          )
         )
         placed++
 
@@ -522,27 +510,7 @@ export class MapResources {
     playerSafeDistance: number,
     minNeutralDistance: number
   ): GridPosition | null {
-    const border = 10
-    const playerSafeDistanceSq = playerSafeDistance ** 2
-    const minNeutralDistanceSq = minNeutralDistance ** 2
-
-    for (let attempt = 0; attempt < 300; attempt++) {
-      const i = this.map.randomRange(border, this.map.size - border)
-      const j = this.map.randomRange(border, this.map.size - border)
-      const cell = this.map.grid[i]?.[j]
-      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
-      if (hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
-
-      const tooCloseToPlayer = playersPos.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < playerSafeDistanceSq)
-      if (tooCloseToPlayer) continue
-
-      const tooCloseToGroup = placedCenters.some(pos => (pos.i - i) ** 2 + (pos.j - j) ** 2 < minNeutralDistanceSq)
-      if (tooCloseToGroup) continue
-
-      return { i, j }
-    }
-
-    return null
+    return runFindNeutralResourceCenter(this, playersPos, placedCenters, playerSafeDistance, minNeutralDistance)
   }
 
   placeResourceGroupAt(
@@ -552,122 +520,15 @@ export class MapResources {
     clusterRadius: number = 2,
     options: ResourcePlacementOptions = {}
   ): boolean {
-    const { grid } = this.map
-    const playerAvoidPositions = options.playerAvoidPositions ?? []
-    const playerClearanceSq = (options.playerClearance ?? 0) ** 2
-
-    function getValidCells(ci: number, cj: number, radius: number): ResourceCenter[] {
-      const cells: ResourceCenter[] = []
-      for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          const newI = ci + dx
-          const newJ = cj + dy
-          if (!grid[newI]?.[newJ]) continue
-          const cell = grid[newI][newJ]
-          if (
-            !hasSpacedResourceAround(grid, cell.i, cell.j) &&
-            !playerAvoidPositions.some(pos => (pos.i - cell.i) ** 2 + (pos.j - cell.j) ** 2 < playerClearanceSq) &&
-            !cell.solid &&
-            cell.category !== 'Water' &&
-            !hasWaterBorderWithin(grid, cell.i, cell.j, WATER_BORDER_PLACEMENT_CLEARANCE) &&
-            !cell.has &&
-            !cell.border &&
-            !cell.inclined &&
-            // Dirt/Snow patches are meant to read as bare ground; trees there would also
-            // fall back to the wrong sprite since resources.json has no matching tree variants.
-            (instance !== RESOURCE_TYPES.tree || (cell.type !== 'Dirt' && cell.type !== 'Snow'))
-          ) {
-            cells.push({ i: newI, j: newJ })
-          }
-        }
-      }
-      return cells
-    }
-
-    let validCells = getValidCells(center.i, center.j, clusterRadius)
-    if (validCells.length < quantity) validCells = getValidCells(center.i, center.j, clusterRadius + 1)
-    if (validCells.length < quantity) return false
-
-    const cellsToPlace: ResourceCenter[] = []
-    for (let i = 0; i < quantity; i++) {
-      if (!validCells.length) break
-      const idx = Math.floor(this.map.random() * validCells.length)
-      cellsToPlace.push(validCells.splice(idx, 1)[0])
-    }
-
-    const sharedTextureName = options.textureName ?? this.getSharedGroupTextureName(instance)
-    for (const cell of cellsToPlace) {
-      const rolledQuantity =
-        options.quantity ?? rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[instance])
-      this.map.resources.add(
-        createResource(this.map, cell.i, cell.j, instance, {
-          textureName: options.textureNameFactory?.(grid[cell.i]?.[cell.j]) ?? sharedTextureName,
-          isNaturalResource: options.isNaturalResource ?? true,
-          quantity: rolledQuantity,
-          totalQuantity: rolledQuantity,
-          startsMature: options.startsMature,
-        })
-      )
-    }
-    return true
+    return runPlaceResourceGroupAt(this, center, instance, quantity, clusterRadius, options)
   }
 
   respawnNaturalResource(slot: SaveEntityState): boolean {
-    if (!Object.hasOwn(NATURAL_RESOURCE_REGROWTH_BY_TYPE, slot.type)) return false
-    if (!RELOCATED_RESPAWN_TYPES.has(slot.type)) {
-      const cell = this.map.grid[slot.i]?.[slot.j]
-      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) return false
-      const totalQuantity =
-        typeof slot.totalQuantity === 'number'
-          ? slot.totalQuantity
-          : rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
-      const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
-      const quantity =
-        typeof totalQuantity === 'number'
-          ? Math.max(1, Math.ceil(totalQuantity * config.respawnQuantityRatio))
-          : undefined
-      this.map.resources.add(
-        createResource(this.map, slot.i, slot.j, slot.type, {
-          isNaturalResource: true,
-          quantity,
-          totalQuantity,
-        })
-      )
-      return true
-    }
-    const border = 10
-    const attempts = Math.max(120, this.map.size * 2)
-    for (let attempt = 0; attempt < attempts; attempt++) {
-      const i = this.map.randomRange(border, this.map.size - border)
-      const j = this.map.randomRange(border, this.map.size - border)
-      const cell = this.map.grid[i]?.[j]
-      if (!cell || cell.solid || cell.category === 'Water' || cell.has || cell.border || cell.inclined) continue
-      if (hasWaterBorderWithin(this.map.grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
-      if (hasSpacedResourceAround(this.map.grid, i, j)) continue
-
-      const rolledQuantity = rollResourceQuantity(() => this.map.random(), NEUTRAL_RESOURCE_QUANTITY_RANGES[slot.type])
-      const config = NATURAL_RESOURCE_REGROWTH_BY_TYPE[slot.type as keyof typeof NATURAL_RESOURCE_REGROWTH_BY_TYPE]
-      const quantity =
-        typeof rolledQuantity === 'number'
-          ? Math.max(1, Math.ceil(rolledQuantity * config.respawnQuantityRatio))
-          : undefined
-      this.map.resources.add(
-        createResource(this.map, i, j, slot.type, {
-          isNaturalResource: true,
-          textureName: slot.type === RESOURCE_TYPES.berrybush ? slot.textureName : undefined,
-          quantity,
-          totalQuantity: rolledQuantity,
-          startsMature: slot.type === RESOURCE_TYPES.wheat ? true : undefined,
-        })
-      )
-      return true
-    }
-    return false
+    return runRespawnNaturalResource(this, slot)
   }
 
   getSharedGroupTextureName(instance: ResourceType): string | undefined {
-    if (instance !== RESOURCE_TYPES.berrybush) return undefined
-    return berryBushTextureName(this.map.randomItem([1, 2]))
+    return runGetSharedGroupTextureName(this, instance)
   }
 
   pickTreeTextureName(family: TreeTextureFamily | null | undefined): string | undefined {
@@ -678,50 +539,6 @@ export class MapResources {
     playersPos: GridPosition[],
     options: TreeResourceGenerationOptions = {}
   ): Promise<void> {
-    const yieldFrame = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
-    const { grid, size } = this.map
-    const safeDistSq = BIOME_TREE_PLAYER_SAFE_DIST ** 2
-    // Every environment's ground is single-type (see MapGeneration#generateTerrain). A cell's
-    // forest type (DarkForest/Jungle) can come from exactly one of three sources per
-    // environment — the dominant groundType (BlackForest/Jungle), a patchwork patch, or a
-    // lake shore (both only Desert today) — and each has its own tunable chance instead of
-    // BIOME_TREE_CHANCE's default, which was tuned for that type being a small patch on the
-    // old mixed-biome map and would leave almost no walkable gaps at full-environment coverage.
-    // Patchwork and lake-shore cells can share the same terrainType (both 'Jungle' for Desert)
-    // with no per-cell record of which one produced a given cell, so a matching cell resolves
-    // patchwork.treeChance first — see EnvironmentTerrainParams.lakes.shoreTreeChance's comment.
-    const params = getEnvironmentTerrainParams(this.map.environment)
-    for (let i = 1; i < size; i++) {
-      for (let j = 1; j < size; j++) {
-        const cell = grid[i]?.[j]
-        if (!cell || cell.has || cell.solid || cell.border || cell.inclined || cell.category === 'Water') continue
-        if (hasWaterBorderWithin(grid, i, j, WATER_BORDER_PLACEMENT_CLEARANCE)) continue
-        let chance = BIOME_TREE_CHANCE[cell.type as keyof typeof BIOME_TREE_CHANCE] ?? 0
-        if (cell.type === params.groundType && params.groundTreeChance != null) {
-          chance = params.groundTreeChance
-        } else if (cell.type === params.patchwork?.terrainType && params.patchwork.treeChance != null) {
-          chance = params.patchwork.treeChance
-        } else if (cell.type === params.lakes?.shoreType && params.lakes.shoreTreeChance != null) {
-          chance = params.lakes.shoreTreeChance
-        }
-        chance = options.treeChanceForCell?.(cell) ?? chance
-        if (chance === 0) continue
-        if (playersPos.some(p => (p.i - i) ** 2 + (p.j - j) ** 2 < safeDistSq)) continue
-        if (this.map.random() < chance) {
-          const rolledQuantity = rollResourceQuantity(
-            () => this.map.random(),
-            NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.tree]
-          )
-          this.map.resources.add(
-            createResource(this.map, i, j, RESOURCE_TYPES.tree, {
-              textureName: this.pickTreeTextureName(options.treeTextureFamilyForCell?.(cell) ?? options.treeTextureFamily),
-              quantity: rolledQuantity,
-              totalQuantity: rolledQuantity,
-            })
-          )
-        }
-      }
-      if (i % 8 === 0) await yieldFrame()
-    }
+    return runGenerateBiomeTreesAsync(this, playersPos, options)
   }
 }

@@ -16,17 +16,15 @@ import {
   getHeroShootReleaseFrame,
   hasHeroEquippedArrow,
   hideReleasedBowArrowLayer,
-  throwLassoAt,
+  finishHeroCatchingPoleThrowAnimation,
+  holdHeroCatchingPoleThrowFrame,
+  throwCatchingPoleAt,
   warnHeroNoArrowEquipped,
 } from './heroProjectileTools'
-import {
-  getHeroSwordChargeDamageMultiplier,
-  getHeroWeaponDamage,
-  triggerSwordAttackAt,
-} from './heroMeleeTools'
-import type { HeroEquippedItem } from './heroToolEquipment'
+import { getHeroSwordChargeDamageMultiplier, getHeroWeaponDamage, triggerSwordAttackAt } from './heroMeleeTools'
+import { getHeroPowerChargeToolForEquippedItem, type HeroEquippedItem } from './heroToolEquipment'
 
-type HeroPowerChargeTool = 'bow' | 'lasso' | 'sword'
+type HeroPowerChargeTool = 'bow' | 'catchingPole' | 'sword'
 
 const HERO_POWER_CHARGE_ENERGY_ACTION = 'heroPowerCharge'
 const HERO_POWER_CHARGE_MS = 700
@@ -104,7 +102,11 @@ export function aimHeroPowerChargeAt(hero: UnitEntity, destination: Point): bool
 }
 
 export function isHeroPowerChargeActiveForTool(hero: UnitEntity, tool: HeroEquippedItem | null | undefined): boolean {
-  return hero.heroPowerChargeStart != null && hero.heroPowerChargeTool === tool && !hero.heroPowerReleaseQueued
+  return (
+    hero.heroPowerChargeStart != null &&
+    hero.heroPowerChargeTool === getHeroPowerChargeToolForEquippedItem(hero, tool) &&
+    !hero.heroPowerReleaseQueued
+  )
 }
 
 export function updateHeroPowerCharge(hero: UnitEntity, now = performance.now()): void {
@@ -165,8 +167,8 @@ export function cancelHeroPowerCharge(hero: UnitEntity): void {
   finishHeroToolAnimation(hero)
 }
 
-export function cancelHeroLasso(hero: UnitEntity): void {
-  hero.heroLasso?.clearLasso({ releaseHorse: true })
+export function cancelHeroCatchingPole(hero: UnitEntity): void {
+  hero.heroCatchingPoleThrow?.clearCatchingPoleThrow({ releaseHorse: true })
 }
 
 function finishHeroSwordChargeAttack(hero: UnitEntity, destination: Point, power: number): boolean {
@@ -199,8 +201,14 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
   clearHeroPowerCharge(hero)
   const map = hero.context?.map
   const sprite = hero.sprite
-  if (tool === 'lasso') {
-    throwLassoAt(hero, destination, power)
+  if (tool === 'catchingPole') {
+    const catchingPole = throwCatchingPoleAt(hero, destination, power, {
+      onThrowResolved: () => finishHeroCatchingPoleThrowAnimation(hero),
+    })
+    if (!catchingPole) {
+      finishHeroToolAnimation(hero)
+      return
+    }
   } else if (map) {
     if (!hasHeroEquippedArrow(hero)) {
       warnHeroNoArrowEquipped(hero)
@@ -229,6 +237,9 @@ function finishHeroPowerChargeShot(hero: UnitEntity): void {
   }
   if (tool === 'bow') {
     hideReleasedBowArrowLayer(hero, sprite)
+  } else if (tool === 'catchingPole') {
+    holdHeroCatchingPoleThrowFrame(hero)
+    return
   } else {
     hero.syncAppearanceLayers?.(SHEET_TYPES.action)
   }

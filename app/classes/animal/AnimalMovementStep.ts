@@ -1,3 +1,5 @@
+import { canReachContact } from '../../lib/contact/contactGeometry'
+import { tryStartAnimalContactApproach } from './AnimalContactApproach'
 import { ACTION_TYPES, FAMILY_TYPES, RELIEF_CLIMB_SPEED_MULTIPLIER, SHEET_TYPES, STEP_TIME } from '../../constants'
 import {
   cartesianToIsometric,
@@ -22,7 +24,8 @@ import type { AnimalControllerHost } from './AnimalTypes'
 
 function getMovementSpeed(animal: AnimalControllerHost): number {
   if (animal.movementSheet === SHEET_TYPES.flying && typeof animal.flyingSpeed === 'number') return animal.flyingSpeed
-  if (animal.movementSheet === SHEET_TYPES.running && typeof animal.runningSpeed === 'number') return animal.runningSpeed
+  if (animal.movementSheet === SHEET_TYPES.running && typeof animal.runningSpeed === 'number')
+    return animal.runningSpeed
   return animal.speed
 }
 
@@ -98,7 +101,12 @@ function resolveArrivalAfterStep(animal: AnimalControllerHost): boolean {
     animal.sendTo(animal.dest, animal.action ?? null, { forceRepath: true, movementSheet: animal.movementSheet })
     return true
   }
-  if (animal.action && animal.dest && instanceContactInstance(animal, animal.dest)) {
+  const inRange =
+    animal.dest &&
+    (animal.action === ACTION_TYPES.attack && 'family' in animal.dest
+      ? canReachContact(animal, animal.dest)
+      : instanceContactInstance(animal, animal.dest))
+  if (animal.action && animal.dest && inRange) {
     animal.path = []
     animal.stopInterval()
     animal.degree = getInstanceDegree(animal, animal.dest.x, animal.dest.y)
@@ -125,8 +133,9 @@ function moveTowardNextCell(
   if (nextCell.inclined || (nextCell.z ?? 0) > (animal.currentCell?.z ?? 0)) speed *= RELIEF_CLIMB_SPEED_MULTIPLIER
   moveTowardPoint(animal, nextFlatX, nextFlatY, speed)
   animal.zIndex = getInstanceZIndex(animal)
-  if (degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
-    animal.setTextures(animal.movementSheet ?? SHEET_TYPES.walking)
+  const movementSheet = animal.movementSheet ?? SHEET_TYPES.walking
+  if (animal.currentSheet !== movementSheet || degreeToDirection(oldDeg) !== degreeToDirection(animal.degree)) {
+    animal.setTextures(movementSheet)
   }
 }
 
@@ -147,18 +156,7 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
   const nextFlatPoint = { i: nextCell.i, j: nextCell.j, x: nextFlatX, y: nextFlatY }
   syncReliefLiftTowardNextCell(animal, map.grid, nextFlatPoint)
 
-  if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
-    animal.affectNewDest()
-    return
-  }
-  if (isBlockedByMovingAnimal(animal, nextCell)) {
-    pauseForBlockedAnimal(animal)
-    return
-  }
-  if ((nextCell.solid || nextCell.category === 'Water') && animal.dest) {
-    animal.sendTo(animal.dest, animal.action, { forceRepath: true, movementSheet: animal.movementSheet })
-    return
-  }
+  if (!canContinueAnimalStep(animal, nextCell)) return
   if (!animal.sprite.playing) animal.sprite.play()
 
   const moveSpeed = getMovementSpeed(animal)
@@ -168,4 +166,22 @@ export function moveAnimalToPath(animal: AnimalControllerHost): void {
     return
   }
   moveTowardNextCell(animal, map.grid, nextFlatX, nextFlatY, moveSpeed)
+}
+
+function canContinueAnimalStep(animal: AnimalControllerHost, nextCell: AnimalControllerHost['currentCell']): boolean {
+  if (!animal.dest || ('isDestroyed' in animal.dest && animal.dest.isDestroyed)) {
+    animal.affectNewDest()
+    return false
+  }
+  if ('family' in animal.dest && tryStartAnimalContactApproach(animal, animal.dest, animal.action ?? null)) return false
+  if (isBlockedByMovingAnimal(animal, nextCell)) {
+    pauseForBlockedAnimal(animal)
+    return false
+  }
+  if ((nextCell.solid || nextCell.category === 'Water') && animal.dest) {
+    animal.sendTo(animal.dest, animal.action, { forceRepath: true, movementSheet: animal.movementSheet })
+    return false
+  }
+
+  return true
 }

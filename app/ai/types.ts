@@ -53,8 +53,8 @@ export type AIEntityLike = {
   totalQuantity?: number
   loading?: number | null
   isUsedBy?: AIEntityLike | RuntimeEntity | null
-  isLassoed?: boolean
-  lassoOwner?: AIEntityLike | null
+  isCatchingPoleCaught?: boolean
+  catchingPoleOwner?: AIEntityLike | null
   realDest?: (GridInstanceLike & Partial<Point>) | RuntimeCell | RuntimeEntity | AIEntityLike | null
   eventMode?: string
   selected?: boolean

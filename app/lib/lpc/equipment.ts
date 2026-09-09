@@ -1,3 +1,4 @@
+import { definedProperties } from '../definedProperties'
 import { SHEET_TYPES } from '../../constants'
 import { lpcAnimationSpeedForSheet } from './animationSpeeds'
 import type { UnitAppearanceLayerConfig } from '../../types/config'
@@ -71,6 +72,11 @@ function unitEquipmentEntry(definition: UnitEquipmentDefinition): UnitEquipmentE
   return typeof definition === 'string' ? { equipment: definition } : definition
 }
 
+export function dynamicEquipmentVisualKey(equipment: string): DynamicEquipmentKey | null {
+  if (equipment === 'catchingPole') return 'longstick'
+  return DYNAMIC_EQUIPMENT_KEYS.includes(equipment as DynamicEquipmentKey) ? (equipment as DynamicEquipmentKey) : null
+}
+
 function isEquipmentUnlocked(entry: Pick<UnitEquipmentEntry, 'minLevel' | 'maxLevel'>, level = 0): boolean {
   return level >= (entry.minLevel ?? 0) && level <= (entry.maxLevel ?? Number.POSITIVE_INFINITY)
 }
@@ -123,7 +129,7 @@ function layerConfig(
   const dyingSheet = sheets.includes('dying') ? equipmentAlias(equipment, layer, 'dying') : undefined
   const corpseSheet = sheets.includes('corpse') ? equipmentAlias(equipment, layer, 'corpse') : undefined
 
-  return {
+  return definedProperties({
     zIndex:
       layer === 'front' && WEARABLE_EQUIPMENT_KEYS.has(equipment)
         ? WEARABLE_EQUIPMENT_Z_INDEX
@@ -153,7 +159,7 @@ function layerConfig(
       ...(dyingSheet ? { [SHEET_TYPES.dying]: 1 } : {}),
       ...(corpseSheet ? { [SHEET_TYPES.corpse]: 1 } : {}),
     },
-  }
+  })
 }
 
 function equipmentLayerConfigs(
@@ -224,20 +230,24 @@ export function dynamicEquipmentLayersForUnit(unitType: string, civilization?: s
   return (UNIT_EQUIPMENT[unitType] ?? []).flatMap(definition => {
     const { equipment, ageEquipment, civilizations, minLevel, maxLevel, options } = unitEquipmentEntry(definition)
     if (!isEquipmentEnabledForCivilization({ civilizations }, civilization)) return []
-    return equipmentLayerConfigs(equipment, { ...options, civilizations, minLevel, maxLevel }, ageEquipment)
+    return equipmentLayerConfigs(
+      equipment,
+      definedProperties({ ...options, civilizations, minLevel, maxLevel }),
+      ageEquipment
+    )
   })
 }
 
 export function dynamicEquipmentLayersForVillager(): UnitAppearanceLayerConfig[] {
-  return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, ageEquipment, options }) =>
-    equipmentLayerConfigs(equipment, { ...options, workTypes: [workType] }, ageEquipment)
+  return VILLAGER_WORK_EQUIPMENT.flatMap(({ workType, equipment, ageEquipment, minAge, options }) =>
+    equipmentLayerConfigs(equipment, definedProperties({ ...options, workTypes: [workType], minAge }), ageEquipment)
   )
 }
 
 export function dynamicEquipmentLayersForEquipment(equipment: readonly string[]): UnitAppearanceLayerConfig[] {
   return equipment.flatMap(item => {
-    if (!DYNAMIC_EQUIPMENT_KEYS.includes(item as DynamicEquipmentKey)) return []
-    return equipmentLayerConfigs(item as DynamicEquipmentKey)
+    const visualEquipment = dynamicEquipmentVisualKey(item)
+    return visualEquipment ? equipmentLayerConfigs(visualEquipment) : []
   })
 }
 
@@ -252,7 +262,7 @@ export function dynamicEquipmentForUnit(unitType: string, age = 0, level = 0, ci
 
 export function dynamicEquipmentForWork(workType: string | null | undefined, age = 0): string[] {
   if (!workType) return []
-  return VILLAGER_WORK_EQUIPMENT.filter(({ workType: equipmentWork }) => equipmentWork === workType).map(
-    ({ equipment, ageEquipment }) => equipmentForAge(equipment, ageEquipment, age)
-  )
+  return VILLAGER_WORK_EQUIPMENT.filter(
+    ({ workType: equipmentWork, minAge }) => equipmentWork === workType && age >= (minAge ?? 0)
+  ).map(({ equipment, ageEquipment }) => equipmentForAge(equipment, ageEquipment, age))
 }

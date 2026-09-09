@@ -1,69 +1,30 @@
-import {
-  LOADING_TYPES,
-  MENU_INFO_IDS,
-  MINING_RESOURCE_CONFIG,
-  RESOURCE_TYPES,
-  SHEET_TYPES,
-  SOUND_CUES,
-} from '../../constants'
-import {
-  onSpriteLoopAtFrame,
-  playAudibleSoundCue,
-  showDamageFeedback,
-  showHitPointGainFeedback,
-  showResourceGainFeedback,
-  SLASH_IMPACT_FRAME,
-} from '../../lib'
-import {
-  getBuildRateXpMultiplier,
-  grantUnitXp,
-  LOADING_XP_CATEGORY,
-  XP_BUILD_TICK,
-  XP_CATEGORIES,
-  XP_FELL_TREE_TICK,
-} from '../../lib/units/unitExperience'
+import { MENU_INFO_IDS, MINING_RESOURCE_CONFIG, SHEET_TYPES, SOUND_CUES } from '../../constants'
+import { onSpriteLoopAtFrame, playAudibleSoundCue, showResourceGainFeedback, SLASH_IMPACT_FRAME } from '../../lib'
+import { canReachActionTarget, getActionContactTool, isActionTouchingTarget } from '../../lib/actions/contactActions'
+import { showContactDebug } from '../../lib/contact/contactDebug'
+import { getContactAimDegree } from '../../lib/contact/contactGeometry'
+import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
+import { showIronMiningBlockedMessage } from '../../lib/resources/ironMining'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
-import { getActionAnimationReleaseFrame } from '../../lib/animations/actionFrameSequences'
-import { syncEntityHealthDisplay } from '../../lib/entities/entityHealthDisplay'
-import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
-import {
-  finishManualHeroWorkSwing,
-  lockManualHeroAction,
-  restartManualHeroActionAnimation,
-  stopManualHeroAction,
-} from './UnitManualHeroWork'
+import { grantUnitXp, LOADING_XP_CATEGORY } from '../../lib/units/unitExperience'
+import type { CommandSound, RuntimeEntity, UnitEntity } from '../../types/entities'
+import { handleBuildAction as runBuildAction } from './work/UnitBuildingAction'
+import { handleFarmAction as runFarmAction } from './work/UnitFarmingAction'
+import { logGatherVisualState } from './UnitGatherVisualDebug'
+import { lockManualHeroAction, restartManualHeroActionAnimation, stopManualHeroAction } from './UnitManualHeroWork'
 import {
   addGatheredResource,
-  clampDepletedBerrybushHitPoints,
   getCarriedResourceAmountForLoadingType,
   getGatherAmount,
-  isBuildingEntity,
-  isChoppableBerrybush,
-  isFarmHarvestTarget,
-  isResourceEntity,
   isRuntimeEntity,
   sendVillagerToDeliveryIfFull,
   shouldReleaseGatheredResource,
   showDepletedBerrybushMessage,
   startForageResourceAction,
 } from './UnitResourceGathering'
-import { logGatherVisualState } from './UnitGatherVisualDebug'
-import { shouldSyncBuildHealthDisplay } from './UnitBuildVisuals'
-import type { RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { CommandSound } from '../../types/entities'
-
-function getWorkAnimationReleaseFrame(unit: UnitEntity, impactFrame: number): number {
-  return getActionAnimationReleaseFrame(unit, unit.action, impactFrame)
-}
-
-function finishWorkSwing(
-  unit: UnitEntity,
-  impactFrame: number,
-  animationReleaseFrame = getWorkAnimationReleaseFrame(unit, impactFrame)
-): void {
-  finishManualHeroWorkSwing(unit, impactFrame, animationReleaseFrame)
-}
+import { handleChopWoodAction as runChopWoodAction } from './work/UnitWoodcuttingAction'
+import { finishWorkSwing, getWorkAnimationReleaseFrame } from './work/UnitWorkSwing'
 
 export class UnitResourceActions {
   unit: UnitEntity
@@ -81,12 +42,43 @@ export class UnitResourceActions {
     return this.unit.sounds?.work?.[key] ?? fallback
   }
 
+  ensureWorkContact(target: RuntimeEntity | null, preparing = false): boolean {
+    const unit = this.unit
+    if (target && !preparing) showContactDebug(unit, [target], getActionContactTool(unit, unit.action))
+    if (
+      target &&
+      (preparing ? canReachActionTarget(unit, target, unit.action) : isActionTouchingTarget(unit, target, unit.action))
+    ) {
+      if (preparing) unit.degree = getContactAimDegree(unit, target)
+      return true
+    }
+    // A missed tool stroke must never advance gathering progress or emit resources.
+    if (unit.sprite) delete unit.sprite.onFrameChange
+    unit.actionLocked = false
+    if (isHeroControlled(unit)) stopManualHeroAction(unit)
+    else if (target) unit.sendToEvt?.(target, unit.action ?? null, { forceRepath: true })
+    else unit.affectNewDest?.()
+    return false
+  }
+
+  bindWorkImpact(frame: number, impact: () => void): void {
+    const unit = this.unit
+    if (!unit.sprite) return
+    const target = unit.dest
+    const action = unit.action
+    onSpriteLoopAtFrame(unit.sprite, frame, () => {
+      if (unit.isDead || unit.isDestroyed || unit.dest !== target || unit.action !== action) return
+      impact()
+    })
+  }
+
   prepareLoopingWorkAction(): boolean {
     const unit = this.unit
     if (!unit.getActionCondition?.(unit.dest)) {
       unit.affectNewDest?.()
       return false
     }
+    if (!this.ensureWorkContact(isRuntimeEntity(unit.dest) ? unit.dest : null, true)) return false
     unit.setTextures?.(SHEET_TYPES.action)
     if (!unit.sprite) return false
     restartManualHeroActionAnimation(unit)
@@ -131,36 +123,15 @@ export class UnitResourceActions {
     const unit = this.unit
     const menu = unit.context?.menu
     if (!unit.getActionCondition?.(unit.dest)) {
+      showIronMiningBlockedMessage(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
       showDepletedBerrybushMessage(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
       unit.affectNewDest?.()
       return
     }
-    unit.setTextures?.(SHEET_TYPES.action)
-    if (!unit.sprite) return
-    restartManualHeroActionAnimation(unit)
-    lockManualHeroAction(unit)
+    if (!this.prepareLoopingWorkAction() || !unit.sprite) return
     const workTickFrame = getWorkAnimationReleaseFrame(unit, releaseFrame)
-    const gatherTick = () => {
-      const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(dest)) {
-        unit.gatherProgressState = null
-        if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
-          dest.die?.()
-        }
-        showDepletedBerrybushMessage(unit, dest)
-        unit.affectNewDest?.()
-        return
-      }
-      const requestedGain = getGatherAmount(unit)
-      if (!dest || requestedGain <= 0) {
-        unit.gatherProgressState = null
-        if (isHeroControlled(unit)) stopManualHeroAction(unit)
-        return
-      }
-      if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
-        if (isHeroControlled(unit)) stopManualHeroAction(unit)
-        return
-      }
+    const releaseGatheredResources = (dest: RuntimeEntity, requestedGain: number) => {
+      onRelease?.()
       onImpact?.(dest)
       if (!shouldReleaseGatheredResource(unit, dest, loadingType, gatherEvery)) {
         this.playSound(soundId)
@@ -194,10 +165,36 @@ export class UnitResourceActions {
       }
       finishWorkSwing(unit, workTickFrame, workTickFrame)
     }
-    onSpriteLoopAtFrame(unit.sprite, workTickFrame, () => {
-      onRelease?.()
-      gatherTick()
+    this.bindWorkImpact(workTickFrame, () => {
+      this.gatherImpact(dieOnEmpty, releaseGatheredResources)
     })
+  }
+
+  private gatherImpact(dieOnEmpty: boolean, release: (dest: RuntimeEntity, gain: number) => void): void {
+    const unit = this.unit
+    const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (!unit.getActionCondition?.(dest)) {
+      unit.gatherProgressState = null
+      showIronMiningBlockedMessage(unit, dest)
+      if (dieOnEmpty && dest && (dest.quantity ?? 0) <= 0) {
+        dest.die?.()
+      }
+      showDepletedBerrybushMessage(unit, dest)
+      unit.affectNewDest?.()
+      return
+    }
+    const requestedGain = getGatherAmount(unit)
+    if (!dest || requestedGain <= 0) {
+      unit.gatherProgressState = null
+      if (isHeroControlled(unit)) stopManualHeroAction(unit)
+      return
+    }
+    if (!this.ensureWorkContact(dest)) return
+    if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
+      if (isHeroControlled(unit)) stopManualHeroAction(unit)
+      return
+    }
+    release(dest, requestedGain)
   }
 
   handleForageBerryAction() {
@@ -205,193 +202,15 @@ export class UnitResourceActions {
   }
 
   handleFarmAction() {
-    const unit = this.unit
-    const menu = unit.context?.menu
-    if (!unit.getActionCondition?.(unit.dest)) {
-      unit.affectNewDest?.()
-      return
-    }
-    const dest = isFarmHarvestTarget(unit.dest) ? unit.dest : null
-    if (!dest) return
-    if (!isHeroControlled(unit)) dest.isUsedBy = unit
-    if (!this.prepareLoopingWorkAction()) return
-    const sprite = unit.sprite
-    if (!sprite) return
-    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
-    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
-      const d = isFarmHarvestTarget(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(d)) {
-        if ((d?.quantity ?? 0) <= 0) {
-          d?.die?.()
-        }
-        unit.affectNewDest?.()
-        return
-      }
-      if (d && !isHeroControlled(unit)) d.isUsedBy = unit
-      const requestedGain = getGatherAmount(unit)
-      if (!d || requestedGain <= 0) {
-        if (isHeroControlled(unit)) {
-          if (d) {
-            d.isUsedBy = null
-          }
-          stopManualHeroAction(unit)
-          return
-        }
-        if (d) d.isUsedBy = null
-        return
-      }
-      if (!spendOrWaitForEnergy(unit, unit.action, d)) {
-        if (isHeroControlled(unit)) stopManualHeroAction(unit)
-        return
-      }
-      spawnWorkImpactFragments(unit, d)
-      this.playSound(this.getWorkSound('gatherFood', SOUND_CUES.villager.gatherFood))
-      if (!shouldReleaseGatheredResource(unit, d, LOADING_TYPES.wheat)) {
-        finishWorkSwing(unit, SLASH_IMPACT_FRAME)
-        return
-      }
-      const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wheat)
-      const gain = addGatheredResource(unit, LOADING_TYPES.wheat, requestedGain)
-      if (gain <= 0) {
-        if (isHeroControlled(unit)) stopManualHeroAction(unit)
-        else unit.sendToDelivery?.()
-        return
-      }
-      grantUnitXp(unit, XP_CATEGORIES.farming, gain)
-      d.quantity = Math.max((d.quantity ?? 0) - gain, 0)
-      showResourceGainFeedback(unit, gain)
-      if (d.selected) {
-        menu?.updateInfo?.(MENU_INFO_IDS.quantityText, d.quantity)
-      }
-      if ((d.quantity ?? 0) <= 0) {
-        d.die?.()
-        unit.affectNewDest?.()
-      } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wheat, previousAmount)) {
-        unit.gatherProgressState = null
-      }
-      finishWorkSwing(unit, workTickFrame, workTickFrame)
-    })
+    return runFarmAction(this)
   }
 
   handleChopWoodAction() {
-    const unit = this.unit
-    const menu = unit.context?.menu
-    const player = unit.owner
-    if (!this.prepareLoopingWorkAction()) return
-    const sprite = unit.sprite
-    if (!sprite) return
-    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
-    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
-      const dest = isResourceEntity(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(dest)) {
-        if ((dest?.quantity ?? 0) <= 0) {
-          dest?.die?.()
-        }
-        unit.affectNewDest?.()
-        return
-      }
-      if (!dest) return
-      if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
-        if (isHeroControlled(unit)) stopManualHeroAction(unit)
-        return
-      }
-      spawnWorkImpactFragments(unit, dest)
-      this.playSound(this.getWorkSound('chopWood', SOUND_CUES.villager.chopWood))
-      if ((dest.hitPoints ?? 0) > 0) {
-        clampDepletedBerrybushHitPoints(dest)
-        const previousHitPoints = dest.hitPoints ?? 0
-        dest.hitPoints = Math.max(previousHitPoints - 1, 0)
-        showDamageFeedback(dest, previousHitPoints - (dest.hitPoints ?? 0))
-        grantUnitXp(unit, XP_CATEGORIES.woodcutting, XP_FELL_TREE_TICK)
-        if (dest.selected) {
-          syncEntityHealthDisplay(dest, { menu, player, emptyWhenDepleted: true })
-        }
-        if ((dest.hitPoints ?? 0) <= 0) {
-          dest.hitPoints = 0
-          if (dest.type === RESOURCE_TYPES.berrybush) {
-            dest.die?.()
-            unit.affectNewDest?.()
-          } else {
-            dest.setCuttedTreeTexture?.()
-          }
-        }
-      } else if (!isChoppableBerrybush(dest)) {
-        const requestedGain = getGatherAmount(unit)
-        if (!shouldReleaseGatheredResource(unit, dest, LOADING_TYPES.wood)) {
-          finishWorkSwing(unit, workTickFrame, workTickFrame)
-          return
-        }
-        const previousAmount = getCarriedResourceAmountForLoadingType(unit, LOADING_TYPES.wood)
-        const gain = addGatheredResource(unit, LOADING_TYPES.wood, requestedGain)
-        if (gain <= 0) {
-          if (isHeroControlled(unit)) stopManualHeroAction(unit)
-          else unit.sendToDelivery?.()
-          return
-        }
-        grantUnitXp(unit, XP_CATEGORIES.woodcutting, gain)
-        dest.quantity = Math.max((dest.quantity ?? 0) - gain, 0)
-        showResourceGainFeedback(unit, gain)
-        if (dest.selected) {
-          menu?.updateInfo?.(MENU_INFO_IDS.quantityText, dest.quantity)
-        }
-        if ((dest.quantity ?? 0) <= 0) {
-          dest.die?.()
-          unit.affectNewDest?.()
-        } else if (sendVillagerToDeliveryIfFull(unit, LOADING_TYPES.wood, previousAmount)) {
-          unit.gatherProgressState = null
-        }
-      }
-      finishWorkSwing(unit, workTickFrame, workTickFrame)
-    })
+    return runChopWoodAction(this)
   }
 
   handleBuildAction() {
-    const unit = this.unit
-    const menu = unit.context?.menu
-    const player = unit.owner
-    if (!this.prepareLoopingWorkAction()) return
-    const sprite = unit.sprite
-    if (!sprite) return
-    const workTickFrame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
-    onSpriteLoopAtFrame(sprite, workTickFrame, () => {
-      const dest = isBuildingEntity(unit.dest) ? unit.dest : null
-      if (!unit.getActionCondition?.(dest)) {
-        if (dest?.isBuilt && unit.continueBuildingQueue?.()) return
-        unit.affectNewDest?.()
-        return
-      }
-      if (!dest) return
-      if ((dest.hitPoints ?? 0) < (dest.totalHitPoints ?? 0)) {
-        if (!spendOrWaitForEnergy(unit, unit.action, dest)) {
-          if (isHeroControlled(unit)) stopManualHeroAction(unit)
-          return
-        }
-        spawnWorkImpactFragments(unit, dest)
-        this.playSound(this.getWorkSound('build', SOUND_CUES.villager.buildLoop))
-        const beforeHitPoints = dest.hitPoints ?? 0
-        dest.hitPoints = Math.min(
-          Math.round(
-            beforeHitPoints +
-              ((dest.totalHitPoints ?? 0) / (dest.constructionTime ?? 1)) * getBuildRateXpMultiplier(unit)
-          ),
-          dest.totalHitPoints ?? 0
-        )
-        showHitPointGainFeedback(dest, (dest.hitPoints ?? 0) - beforeHitPoints)
-        grantUnitXp(unit, XP_CATEGORIES.building, XP_BUILD_TICK)
-        if (shouldSyncBuildHealthDisplay(dest)) {
-          syncEntityHealthDisplay(dest, { menu, player, forceInfo: unit.owner?.isPlayed })
-        }
-        dest.updateHitPoints?.(unit.action ?? '')
-      } else {
-        if (!dest.isBuilt) {
-          dest.updateHitPoints?.(unit.action ?? '')
-          dest.isBuilt = true
-        }
-        if (unit.continueBuildingQueue?.()) return
-        unit.affectNewDest?.()
-      }
-      finishWorkSwing(unit, workTickFrame, workTickFrame)
-    })
+    return runBuildAction(this)
   }
 
   handleDeliveryAction() {

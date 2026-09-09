@@ -147,6 +147,7 @@ export type SavePlayerState = PlayerSetupConfig & {
   gold?: number
   iron?: number
   discoveredEquipment?: string[]
+  discoveredResources?: string[]
   hasBuilt?: string[]
   isPlayed?: boolean
   label?: string

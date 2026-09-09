@@ -67,3 +67,17 @@ test('findInstancesInSight can filter targets by effective insight range', () =>
     ['fast-enemy']
   )
 })
+
+test('sight lookup tolerates an empty spatial index while the map initializes', () => {
+  const { findInstancesInSight } = loadModule('app/lib/grid/visibility.ts', {
+    '../../constants': { ...constants, BUCKET_SIZE: 10 },
+    '../../services/FogOfWar': { updateVisibility: () => {} },
+  })
+  for (const instanceBuckets of [undefined, null, [], [[]]]) {
+    const observer = { i: 0, j: 0, x: 0, y: 0, sight: 8, context: { map: { instanceBuckets } } }
+    assert.deepEqual(
+      findInstancesInSight(observer, () => assert.fail('no target should be visited')),
+      []
+    )
+  }
+})

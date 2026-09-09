@@ -1,12 +1,16 @@
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES, STEP_TIME } from '../../constants'
 import { degreeToDirection, getInstanceDegree, instancesDistance, isWildHorse } from '../../lib'
 import {
+  finishHeroCatchingPoleThrowAnimation,
+  holdHeroCatchingPoleThrowFrame,
+} from '../../lib/hero/heroProjectileTools'
+import {
   getNearestAvailableStableForUnit,
   routeCapturedHorseToStableWithOwnerContact,
 } from '../../lib/horses/horseCapture'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { SchedulerTaskId } from '../../types/context'
-import { HeroLassoThrow } from '../HeroLassoThrow'
+import { HeroCatchingPoleThrow } from '../HeroCatchingPoleThrow'
 
 const CAPTURE_HORSE_RETRY_INTERVAL_MS = 750
 const CAPTURE_HORSE_REPATH_INTERVAL_MS = 220
@@ -14,14 +18,14 @@ const CAPTURE_HORSE_OWNER_STABLE_MIN_TIMEOUT_MS = 20000
 const CAPTURE_HORSE_OWNER_STABLE_MS_PER_CELL = 900
 
 type CaptureHorseActionState = {
-  lastLassoAttemptAt: number
+  lastCatchingPoleAttemptAt: number
   lastRepathAt: number
   stableRouteStop: (() => void) | null
   stableRouteHorseLabel: string | null
   tickTaskId: SchedulerTaskId | null
 }
 
-type HeroLassoWithTarget = {
+type HeroCatchingPoleWithTarget = {
   target?: RuntimeEntity | null
 }
 
@@ -31,7 +35,7 @@ function getCaptureHorseActionState(unit: UnitEntity): CaptureHorseActionState {
   let state = captureHorseActionStateByUnit.get(unit)
   if (!state) {
     state = {
-      lastLassoAttemptAt: 0,
+      lastCatchingPoleAttemptAt: 0,
       lastRepathAt: 0,
       stableRouteStop: null,
       stableRouteHorseLabel: null,
@@ -79,18 +83,18 @@ function isHorseEntity(value: RuntimeEntity | null | undefined): value is Animal
   return Boolean(value?.family === FAMILY_TYPES.animal && value.type === 'Horse' && isWildHorse(value))
 }
 
-function getHorseLassoOwner(horse: AnimalEntity): UnitEntity | null | undefined {
-  return horse.lassoOwner
+function getHorseCatchingPoleOwner(horse: AnimalEntity): UnitEntity | null | undefined {
+  return horse.catchingPoleOwner
 }
 
-function getHeroLassoTarget(unit: UnitEntity): RuntimeEntity | null {
-  const lasso = (unit.heroLasso ?? null) as HeroLassoWithTarget | null
-  const target = lasso?.target
+function getHeroCatchingPoleTarget(unit: UnitEntity): RuntimeEntity | null {
+  const catchingPole = (unit.heroCatchingPoleThrow ?? null) as HeroCatchingPoleWithTarget | null
+  const target = catchingPole?.target
   return isRuntimeEntity(target) ? target : null
 }
 
-function getHeroCaptureLasso(unit: UnitEntity): HeroLassoThrow | null {
-  return unit.heroLasso instanceof HeroLassoThrow ? unit.heroLasso : null
+function getHeroCaptureCatchingPole(unit: UnitEntity): HeroCatchingPoleThrow | null {
+  return unit.heroCatchingPoleThrow instanceof HeroCatchingPoleThrow ? unit.heroCatchingPoleThrow : null
 }
 
 function releaseCaptureHorseAttachment(
@@ -98,19 +102,19 @@ function releaseCaptureHorseAttachment(
   horse: AnimalEntity | null | undefined = null,
   { allowFlee = true }: { allowFlee?: boolean } = {}
 ): void {
-  const lasso = getHeroCaptureLasso(unit)
-  const lassoTarget = (lasso as HeroLassoWithTarget | null)?.target
-  const lassoHorse = isHorseEntity(lassoTarget) ? lassoTarget : null
-  const ownedHorse = horse && getHorseLassoOwner(horse)?.label === unit.label ? horse : lassoHorse
+  const catchingPole = getHeroCaptureCatchingPole(unit)
+  const catchingPoleTarget = (catchingPole as HeroCatchingPoleWithTarget | null)?.target
+  const catchingPoleHorse = isHorseEntity(catchingPoleTarget) ? catchingPoleTarget : null
+  const ownedHorse = horse && getHorseCatchingPoleOwner(horse)?.label === unit.label ? horse : catchingPoleHorse
 
-  if (lasso && lassoHorse && getHorseLassoOwner(lassoHorse)?.label === unit.label) {
-    lasso.releaseHorse({ allowStable: false, allowFlee })
-  } else if (ownedHorse && getHorseLassoOwner(ownedHorse)?.label === unit.label) {
-    ownedHorse.isLassoed = false
-    ownedHorse.lassoOwner = null
+  if (catchingPole && catchingPoleHorse && getHorseCatchingPoleOwner(catchingPoleHorse)?.label === unit.label) {
+    catchingPole.releaseHorse({ allowStable: false, allowFlee })
+  } else if (ownedHorse && getHorseCatchingPoleOwner(ownedHorse)?.label === unit.label) {
+    ownedHorse.isCatchingPoleCaught = false
+    ownedHorse.catchingPoleOwner = null
     if (allowFlee) ownedHorse.animalBehavior?.start?.()
   }
-  lasso?.clearLasso({ releaseHorse: false })
+  catchingPole?.clearCatchingPoleThrow({ releaseHorse: false })
 }
 
 function resetCaptureHorseActionState(unit: UnitEntity, horse: AnimalEntity | null = null): void {
@@ -124,7 +128,7 @@ function resetCaptureHorseActionState(unit: UnitEntity, horse: AnimalEntity | nu
 }
 
 function clearCaptureHorseStableRoute(unit: UnitEntity, state: CaptureHorseActionState): void {
-  getHeroCaptureLasso(unit)?.setExternalStableRouteActive(false)
+  getHeroCaptureCatchingPole(unit)?.setExternalStableRouteActive(false)
   if (state.stableRouteStop) {
     state.stableRouteStop()
     state.stableRouteStop = null
@@ -140,34 +144,36 @@ function syncCaptureHorseMovingDest(unit: UnitEntity, horse: AnimalEntity): void
   unit.realDest.y = horse.y
   const oldDeg = unit.degree
   unit.degree = getInstanceDegree(unit, horse.x, horse.y)
-  if (degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
+  if (!unit.heroCatchingPoleThrow && degreeToDirection(oldDeg ?? 0) !== degreeToDirection(unit.degree ?? 0)) {
     unit.setTextures?.(SHEET_TYPES.action)
   }
 }
 
-function tryStartCaptureHorseLasso(
+function tryStartCaptureHorseCatchingPole(
   unit: UnitEntity,
   horse: AnimalEntity,
   state: CaptureHorseActionState,
   now: number,
-  hasActiveCaptureLasso: boolean,
+  hasActiveCaptureCatchingPole: boolean,
   isCapturing: boolean
 ): boolean {
-  if (isCapturing || hasActiveCaptureLasso || !unit.context) return false
+  if (isCapturing || hasActiveCaptureCatchingPole || !unit.context) return false
   if (now - state.lastRepathAt > CAPTURE_HORSE_REPATH_INTERVAL_MS) {
     state.lastRepathAt = now
     unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
   }
-  if (now - state.lastLassoAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return true
-  state.lastLassoAttemptAt = now
-  const lasso = new HeroLassoThrow(unit, { x: horse.x, y: horse.y }, unit.context, {
+  if (now - state.lastCatchingPoleAttemptAt < CAPTURE_HORSE_RETRY_INTERVAL_MS) return true
+  state.lastCatchingPoleAttemptAt = now
+  holdHeroCatchingPoleThrowFrame(unit)
+  const catchingPole = new HeroCatchingPoleThrow(unit, { x: horse.x, y: horse.y }, unit.context, {
     pullCapturedHorseToOwner: true,
     allowStableOnRelease: false,
     releaseHorseOnClear: false,
     autoRouteStableWhileAttached: false,
     showMessages: unit.owner?.isPlayed,
+    onThrowResolved: () => finishHeroCatchingPoleThrowAnimation(unit),
   })
-  unit.context.map?.addChild(lasso)
+  unit.context.map?.addChild(catchingPole)
   return true
 }
 
@@ -188,22 +194,22 @@ function routeCapturedHorseToStable(
       owner: unit,
       horse,
       ownerContactTimeoutMs: getCaptureHorseOwnerStableTimeoutMs(unit, stable),
-      isRouteValid: () => Boolean(horse.isLassoed && getHorseLassoOwner(horse)?.label === unit.label),
+      isRouteValid: () => Boolean(horse.isCatchingPoleCaught && getHorseCatchingPoleOwner(horse)?.label === unit.label),
       onHorseRouteStart: () => {
-        getHeroCaptureLasso(unit)?.setExternalStableRouteActive(true)
+        getHeroCaptureCatchingPole(unit)?.setExternalStableRouteActive(true)
       },
       onStored: () => {
-        horse.isLassoed = false
-        horse.lassoOwner = null
+        horse.isCatchingPoleCaught = false
+        horse.catchingPoleOwner = null
         clearStableRoute()
-        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+        unit.heroCatchingPoleThrow?.clearCatchingPoleThrow?.({ releaseHorse: false })
         if (unit.action === ACTION_TYPES.captureHorse) unit.affectNewDest?.()
       },
       onFailure: () => {
         clearStableRoute()
-        horse.isLassoed = false
-        horse.lassoOwner = null
-        unit.heroLasso?.clearLasso?.({ releaseHorse: false })
+        horse.isCatchingPoleCaught = false
+        horse.catchingPoleOwner = null
+        unit.heroCatchingPoleThrow?.clearCatchingPoleThrow?.({ releaseHorse: false })
         if (unit.action !== ACTION_TYPES.captureHorse) return
         if (unit.getActionCondition?.(horse, ACTION_TYPES.captureHorse)) {
           unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
@@ -222,12 +228,16 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
     return
   }
   const unitDest = isRuntimeEntity(unit.dest) ? unit.dest : null
-  const heroLassoTarget = getHeroLassoTarget(unit)
+  const heroCatchingPoleThrowTarget = getHeroCatchingPoleTarget(unit)
   const now = unitContext.scheduler?.elapsedMs ?? Date.now()
   const captureHorseState = getCaptureHorseActionState(unit)
   const clearStableRoute = () => clearCaptureHorseStableRoute(unit, captureHorseState)
   const stableTarget = unitDest?.family === FAMILY_TYPES.building ? (unitDest as BuildingEntity) : null
-  const horse = isHorseEntity(unitDest) ? unitDest : isHorseEntity(heroLassoTarget) ? heroLassoTarget : null
+  const horse = isHorseEntity(unitDest)
+    ? unitDest
+    : isHorseEntity(heroCatchingPoleThrowTarget)
+      ? heroCatchingPoleThrowTarget
+      : null
   if (!horse || horse.isDead || horse.isDestroyed) {
     clearStableRoute()
     resetCaptureHorseActionState(unit, horse)
@@ -235,21 +245,23 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
     return
   }
 
-  const lassoOwner = getHorseLassoOwner(horse)
-  if (!horse.isLassoed && lassoOwner?.label === unit.label) {
-    horse.lassoOwner = null
+  const catchingPoleOwner = getHorseCatchingPoleOwner(horse)
+  if (!horse.isCatchingPoleCaught && catchingPoleOwner?.label === unit.label) {
+    horse.catchingPoleOwner = null
   }
-  if (horse.isLassoed && !lassoOwner) {
-    horse.isLassoed = false
+  if (horse.isCatchingPoleCaught && !catchingPoleOwner) {
+    horse.isCatchingPoleCaught = false
     clearStableRoute()
-    captureHorseState.lastLassoAttemptAt = 0
+    captureHorseState.lastCatchingPoleAttemptAt = 0
     captureHorseState.lastRepathAt = 0
     resetCaptureHorseActionState(unit, horse)
     unit.affectNewDest?.()
     return
   }
-  const isLassoedByOther = Boolean(horse.isLassoed && lassoOwner && lassoOwner.label !== unit.label)
-  if (isLassoedByOther) {
+  const isCatchingPoleCaughtByOther = Boolean(
+    horse.isCatchingPoleCaught && catchingPoleOwner && catchingPoleOwner.label !== unit.label
+  )
+  if (isCatchingPoleCaughtByOther) {
     clearStableRoute()
     resetCaptureHorseActionState(unit)
     unit.affectNewDest?.()
@@ -257,28 +269,31 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
   }
   ensureCaptureHorseTick(unit, captureHorseState)
 
-  const heroCaptureLasso = getHeroCaptureLasso(unit)
-  const lassoTarget = (heroCaptureLasso as HeroLassoWithTarget | null)?.target
+  const heroCaptureCatchingPole = getHeroCaptureCatchingPole(unit)
+  const catchingPoleTarget = (heroCaptureCatchingPole as HeroCatchingPoleWithTarget | null)?.target
   if (
-    heroCaptureLasso &&
-    heroCaptureLasso.state !== 'retracting' &&
-    isRuntimeEntity(lassoTarget) &&
-    lassoTarget.label !== horse.label
+    heroCaptureCatchingPole &&
+    heroCaptureCatchingPole.state !== 'retracting' &&
+    isRuntimeEntity(catchingPoleTarget) &&
+    catchingPoleTarget.label !== horse.label
   ) {
-    heroCaptureLasso.clearLasso?.({ releaseHorse: false })
+    heroCaptureCatchingPole.clearCatchingPoleThrow?.({ releaseHorse: false })
   }
-  const hasActiveCaptureLasso =
+  const hasActiveCaptureCatchingPole =
     unit.action === ACTION_TYPES.captureHorse &&
     Boolean(
-      heroCaptureLasso &&
-        heroCaptureLasso.state !== 'retracting' &&
-        (!isRuntimeEntity(lassoTarget) ? unitDest?.label === horse.label : lassoTarget.label === horse.label)
+      heroCaptureCatchingPole &&
+        heroCaptureCatchingPole.state !== 'retracting' &&
+        (!isRuntimeEntity(catchingPoleTarget)
+          ? unitDest?.label === horse.label
+          : catchingPoleTarget.label === horse.label)
     )
-  const isHeroLassoOwner = horse.isLassoed && horse.type === 'Horse' && lassoOwner?.label === unit.label
-  const isCapturing = isHeroLassoOwner || hasActiveCaptureLasso
+  const isHeroCatchingPoleOwner =
+    horse.isCatchingPoleCaught && horse.type === 'Horse' && catchingPoleOwner?.label === unit.label
+  const isCapturing = isHeroCatchingPoleOwner || hasActiveCaptureCatchingPole
 
   if (stableTarget) {
-    if (!isCapturing || !horse.isLassoed) {
+    if (!isCapturing || !horse.isCatchingPoleCaught) {
       clearStableRoute()
       unit.affectNewDest?.()
       unit.sendToEvt?.(horse, ACTION_TYPES.captureHorse, { forceRepath: true })
@@ -310,9 +325,10 @@ export function handleCaptureHorseAction(unit: UnitEntity): void {
   if (unit.currentSheet !== SHEET_TYPES.action) unit.setTextures?.(SHEET_TYPES.action)
   syncCaptureHorseMovingDest(unit, horse)
 
-  if (tryStartCaptureHorseLasso(unit, horse, captureHorseState, now, hasActiveCaptureLasso, isCapturing)) return
+  if (tryStartCaptureHorseCatchingPole(unit, horse, captureHorseState, now, hasActiveCaptureCatchingPole, isCapturing))
+    return
 
-  if (!horse.isLassoed) {
+  if (!horse.isCatchingPoleCaught) {
     clearStableRoute()
     captureHorseState.lastRepathAt = now
     return

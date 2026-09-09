@@ -7,7 +7,7 @@ import {
   INTERACTION_CELL_MARKER_Z_INDEX,
   drawInteractionCellMarker,
   interactionCellPulse,
-} from '../../lib/ui/InteractionCellMarker'
+} from '../../lib/ui/interactionCellMarker'
 import type { GameContextLike } from '../../types/context'
 import type { RuntimeMap } from '../../types/map'
 

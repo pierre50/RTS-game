@@ -119,9 +119,6 @@ function loadHeroController({
     '../lib/chief': {
       heroCanCommand: hero => Boolean(hero?.isChief),
     },
-    '../lib/lang': {
-      t: key => key,
-    },
     '../lib/theft/theft': theft,
     '../theft/theft': theft,
     '../lib/lpc': {
@@ -319,13 +316,18 @@ function createController({
     cancelHeroActiveToolAction: () => false,
     canHeroDefendWithTool: tool => tool === 'sword',
     cancelHeroPowerCharge: () => {},
-    cancelHeroLasso: hero => hero.heroLasso?.clearLasso({ releaseHorse: true }),
+    cancelHeroCatchingPole: hero => hero.heroCatchingPoleThrow?.clearCatchingPoleThrow({ releaseHorse: true }),
     cancelHeroDefense: () => {},
     findFacingEntity: (_hero, matches) => createdAnimals.find(animal => matches(animal)) ?? null,
     getHeroAimDegree: (hero, destination) => getInstanceDegree(hero, destination.x, destination.y),
-    HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
+    HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
+    isHeroCatchingPoleEquipped: (hero, tool) =>
+      tool === 'sword' && hero?.inventory?.activeWeapons?.melee === 'catchingPole',
     isHeroPowerChargeActiveForTool: (hero, tool) =>
-      hero.heroPowerChargeStart != null && hero.heroPowerChargeTool === tool && !hero.heroPowerReleaseQueued,
+      hero.heroPowerChargeStart != null &&
+      hero.heroPowerChargeTool ===
+        (tool === 'sword' && hero?.inventory?.activeWeapons?.melee === 'catchingPole' ? 'catchingPole' : tool) &&
+      !hero.heroPowerReleaseQueued,
     isHeroToolAvailable: () => true,
     isMountedAttackAimBlocked: () => false,
     releaseHeroDefense: () => false,
@@ -947,6 +949,46 @@ test('E reports horse theft when taking a foreign stable horse', () => {
   assert.equal(theftCalls[0].target.owner, foreignOwner)
 })
 
+test('E mounts an own stable horse without reporting theft', () => {
+  let horseInteraction = null
+  const theftCalls = []
+  const { controller, grid, hero, map } = createController({
+    resolveHeroProximityInteraction: () => horseInteraction,
+    theft: {
+      applyTheftConsequences: event => theftCalls.push(event),
+      THEFT_SUBJECT_TYPES: { horse: 'horse' },
+    },
+  })
+  const spaceId = 'interior:own-stable'
+  const stable = {
+    family: 'building',
+    owner: hero.owner,
+    stableHorses: [{ horseColor: 'black', tamingStatus: 'tamed' }],
+    type: 'Stable',
+  }
+  map.spaces = new Map([[spaceId, { building: stable, kind: 'interior' }]])
+  hero.speed = 1
+
+  const horse = map.gaia.createAnimal({
+    i: 0,
+    j: 1,
+    spaceId,
+    type: 'Horse',
+    horseColor: 'black',
+    tamingStatus: 'tamed',
+  })
+  horse.label = `${spaceId}:stable-horse:0`
+  horse.currentCell = grid[0][1]
+  grid[0][1].has = horse
+  grid[0][1].solid = true
+  horseInteraction = { action: 'mount', labelKey: 'heroInteractionMount', target: horse }
+
+  assert.equal(controller.handleKeyDown('heroInteract'), true)
+
+  assert.equal(hero.mountedOnHorse, true)
+  assert.equal(theftCalls.length, 0)
+})
+
 test('H brings an unspawned linked horse out from a visible owned stable', () => {
   const { calls, controller, createdAnimals, grid, hero } = createController()
   hero.speed = 1
@@ -1237,29 +1279,33 @@ test('Shift fades the hero through the companion horse dismount transition when 
   assert.equal(controller.mountTransitionTaskId, null)
 })
 
-test('changing away from lasso clears the active lasso', () => {
+test('changing away from the melee catchingPole clears the active catchingPole', () => {
   const { calls, controller, hero } = createController()
-  hero.heroLasso = {
-    clearLasso: options => calls.push(['clearLasso', options]),
+  hero.inventory = { activeWeapons: {} }
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  hero.heroCatchingPoleThrow = {
+    clearCatchingPoleThrow: options => calls.push(['clearCatchingPoleThrow', options]),
   }
-
-  controller.setEquippedTool('lasso')
-  assert.deepEqual(calls, [])
 
   controller.setEquippedTool('sword')
-  assert.deepEqual(calls, [['clearLasso', { releaseHorse: true }]])
+  assert.deepEqual(calls, [])
+
+  controller.setEquippedTool('bow')
+  assert.deepEqual(calls, [['clearCatchingPoleThrow', { releaseHorse: true }]])
 })
 
-test('left click with an active lasso clears it instead of throwing again', () => {
+test('left click with an active catchingPole clears it instead of throwing again', () => {
   const { calls, controller, hero } = createController()
-  hero.heroLasso = {
-    clearLasso: options => calls.push(['clearLasso', options]),
+  hero.inventory = { activeWeapons: {} }
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  hero.heroCatchingPoleThrow = {
+    clearCatchingPoleThrow: options => calls.push(['clearCatchingPoleThrow', options]),
   }
 
-  controller.setEquippedTool('lasso')
+  controller.setEquippedTool('sword')
   controller.handlePrimaryPointerDown()
 
-  assert.deepEqual(calls, [['clearLasso', { releaseHorse: true }]])
+  assert.deepEqual(calls, [['clearCatchingPoleThrow', { releaseHorse: true }]])
   assert.equal(controller.mouseHeld, false)
   assert.equal(controller.primaryClickPoint, null)
 })

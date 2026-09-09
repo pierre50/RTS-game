@@ -119,7 +119,9 @@ export class UnitActions {
     const unit = this.unit
     const sprite = unit.sprite
     if (!sprite) return
-    setActionSpriteLoop(unit, true)
+    const preserveCaptureHorseCatchingPoleAnimation =
+      name === ACTION_TYPES.captureHorse && (Boolean(unit.heroCatchingPoleThrow) || unit.attackRecoveryAnimationTaskId != null)
+    if (!preserveCaptureHorseCatchingPoleAnimation) setActionSpriteLoop(unit, true)
     sprite.onLoop = undefined
     sprite.onFrameChange = undefined
     switch (name) {

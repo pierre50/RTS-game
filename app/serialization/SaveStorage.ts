@@ -70,7 +70,18 @@ type ExportPayload = {
 
 function getIndex(): SaveIndexEntry[] {
   try {
-    return JSON.parse(backend.getIndex() || '[]')
+    const parsed: unknown = JSON.parse(backend.getIndex() || '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (entry): entry is SaveIndexEntry =>
+        entry != null &&
+        typeof entry === 'object' &&
+        typeof entry.key === 'string' &&
+        entry.key.length > 0 &&
+        typeof entry.name === 'string' &&
+        typeof entry.date === 'number' &&
+        Number.isFinite(entry.date)
+    )
   } catch {
     return []
   }
@@ -217,7 +228,8 @@ export function importSaveFile(file: File): Promise<{ key: string; name: string 
         } catch {
           throw new Error('INVALID_FORMAT')
         }
-        if (parsed.format !== EXPORT_FORMAT || typeof parsed.data !== 'string') throw new Error('INVALID_FORMAT')
+        if (!parsed || parsed.format !== EXPORT_FORMAT || typeof parsed.data !== 'string')
+          throw new Error('INVALID_FORMAT')
 
         const raw = LZString.decompressFromBase64(parsed.data)
         if (!raw) throw new Error('SAVE_CORRUPT')

@@ -12,6 +12,7 @@ export type AnimalDestination = RuntimeEntity | RuntimeCell
 
 export type AnimalMoveOptions = {
   forceRepath?: boolean
+  allowPassageStop?: boolean
   movementSheet?: string
 }
 

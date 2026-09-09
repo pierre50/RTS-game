@@ -24,7 +24,7 @@ function loadHeroToolEquipment() {
 }
 
 test('hero interact is bare hands even when attacker work has fallback equipment', () => {
-  const { getHeroToolEquipment } = loadHeroToolEquipment()
+  const { getHeroPowerChargeToolForEquippedItem, getHeroToolEquipment } = loadHeroToolEquipment()
   const hero = {
     owner: { age: 3 },
     inventory: {
@@ -35,4 +35,8 @@ test('hero interact is bare hands even when attacker work has fallback equipment
 
   assert.deepEqual(getHeroToolEquipment(hero, 'interact'), [])
   assert.deepEqual(getHeroToolEquipment(hero, 'sword'), ['axe_iron', 'round_shield_iron_slash'])
+
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  assert.deepEqual(getHeroToolEquipment(hero, 'sword'), ['catchingPole', 'round_shield_iron_slash'])
+  assert.equal(getHeroPowerChargeToolForEquippedItem(hero, 'sword'), 'catchingPole')
 })

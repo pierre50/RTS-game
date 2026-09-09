@@ -135,6 +135,8 @@ export function isWindMotionEligible(resource: ResourceVisualOwner): boolean {
 
 export function shouldUseWindMotion(resource: ResourceVisualOwner): boolean {
   return (
+    resource.visible &&
+    isEntityInActiveMapSpace(resource) &&
     !resource.isDestroyed &&
     !resource.destroyed &&
     isWindMotionEligible(resource) &&
@@ -142,9 +144,7 @@ export function shouldUseWindMotion(resource: ResourceVisualOwner): boolean {
   )
 }
 
-export function canApplyWindMotion(
-  displayObject: ResourceShadow | null | undefined
-): displayObject is ResourceShadow {
+export function canApplyWindMotion(displayObject: ResourceShadow | null | undefined): displayObject is ResourceShadow {
   return Boolean(displayObject && !displayObject.destroyed && displayObject.skew)
 }
 
@@ -154,7 +154,11 @@ function shouldShowResourceShadow(resource: ResourceVisualOwner): boolean {
     resource.visible &&
     !resource.isDestroyed &&
     isEntityInActiveMapSpace(resource) &&
-    !(resource.type === RESOURCE_TYPES.wheat && resource.sprite instanceof AnimatedSprite && resource.sprite.currentFrame === 0)
+    !(
+      resource.type === RESOURCE_TYPES.wheat &&
+      resource.sprite instanceof AnimatedSprite &&
+      resource.sprite.currentFrame === 0
+    )
   )
 }
 
@@ -192,7 +196,7 @@ export function updateWindMotion(resource: ResourceVisualOwner, deltaMS: number)
   }
   if (resource.context.paused) return
   if (!shouldUseWindMotion(resource)) {
-    resetWindMotion(resource)
+    stopWindMotion(resource)
     return
   }
   resource.windTime += deltaMS
@@ -284,7 +288,7 @@ export function syncVisualSettings(resource: ResourceVisualOwner): void {
   if (resource.shadow) {
     resource.shadow.visible = shouldShowResourceShadow(resource)
   }
-  if (getResourceWindAnimationEnabled()) {
+  if (shouldUseWindMotion(resource)) {
     startWindMotion(resource)
   } else {
     stopWindMotion(resource)

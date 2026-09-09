@@ -24,13 +24,14 @@ import {
   LABEL_TYPES,
   PASSABLE_RESOURCE_TYPES,
   RESOURCE_TYPES,
+  WILDGRASS_RESOURCE_TYPES,
 } from '../constants'
 import { NATURAL_RESOURCE_REGROWTH_BY_TYPE } from '../config/gameplay'
 import { Instance } from './Instance'
 import { ResourceInterface } from '../ui/entity/ResourceInterface'
 import { fadeOutThenClear } from '../lib/entities/entityFade'
 import { onVisualSettingsChange } from '../lib/audio/settings'
-import { createResourceSprite } from './ResourceSpriteFactory'
+import { createResourceSprite, prepareStaticResourceTexture } from './ResourceSpriteFactory'
 import {
   BERRYBUSH_SHEET_ID,
   EMPTY_BERRYBUSH_FRAME,
@@ -66,6 +67,8 @@ import type { RuntimeCell } from '../types/map'
 export type { ResourceOptions } from './ResourceTexture'
 
 export class Resource extends Instance implements ResourceEntity {
+  deferredSpriteBounds?: { width: number; height: number; anchor: { x: number; y: number } }
+  private deferredVisuals?: () => void
   resourceInterface: ResourceInterface
   quantity!: number
   interface: EntityInterfaceLike
@@ -136,34 +139,57 @@ export class Resource extends Instance implements ResourceEntity {
         this.setDefaultInterface(element, data, options)
       },
     }
-    this.sprite = createResourceSprite(this, options, cell)
+    const initializeVisuals = () => {
+      this.deferredVisuals = undefined
+      this.deferredSpriteBounds = undefined
+      this.sprite = createResourceSprite(this, options, cell)
 
-    const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
-    interactiveSprite.updateAnchor = true
-    interactiveSprite.label = LABEL_TYPES.sprite
-    const spriteScale = this.spriteScale ?? 1
-    this.sprite.scale.set(spriteScale)
-    this.sprite.position.y = this.reliefLift
-    if (this.sprite) {
-      interactiveSprite.eventMode = 'static'
-      interactiveSprite.roundPixels = true
+      const interactiveSprite = this.sprite as Sprite & { updateAnchor?: boolean }
+      interactiveSprite.updateAnchor = true
+      interactiveSprite.label = LABEL_TYPES.sprite
+      const spriteScale = this.spriteScale ?? 1
+      this.sprite.scale.set(spriteScale)
+      this.sprite.position.y = this.reliefLift ?? 0
+      if (this.sprite) {
+        interactiveSprite.eventMode = 'static'
+        interactiveSprite.roundPixels = true
 
-      this.sprite.on('pointertap', () => {
-        this.context.editor?.handleEntityInteraction(this)
-      })
-      this.sprite.on('pointerup', () => {
-        this.context.editor?.handleEntityInteraction(this)
-      })
+        this.sprite.on('pointertap', () => {
+          this.context.editor?.handleEntityInteraction(this)
+        })
+        this.sprite.on('pointerup', () => {
+          this.context.editor?.handleEntityInteraction(this)
+        })
 
-      this.shadow = this.createShadow()
-      if (this.shadow) {
-        attachEntityShadowsToMapSpace(this.context.map, this)
-        this.addChild(this.sprite)
-      } else {
-        this.addChild(this.sprite)
+        this.shadow = this.createShadow()
+        if (this.shadow) {
+          attachEntityShadowsToMapSpace(this.context.map, this)
+          this.addChild(this.sprite)
+        } else {
+          this.addChild(this.sprite)
+        }
+        this.startWindMotion()
       }
-      this.startWindMotion()
     }
+    if (!this.isAnimated && !context.editor && !options.isDead && !options.isDestroyed) {
+      const { texture } = prepareStaticResourceTexture(this, cell)
+      const scale = this.spriteScale ?? 1
+      this.deferredSpriteBounds = {
+        width: texture.width * scale,
+        height: texture.height * scale,
+        anchor: { x: texture.defaultAnchor?.x ?? 0, y: texture.defaultAnchor?.y ?? 0 },
+      }
+      this.deferredVisuals = initializeVisuals
+      Object.defineProperty(this, 'sprite', {
+        configurable: true,
+        enumerable: false,
+        get: () => {
+          Object.defineProperty(this, 'sprite', { configurable: true, writable: true, value: undefined })
+          initializeVisuals()
+          return this.sprite
+        },
+      })
+    } else initializeVisuals()
     this.visualSettingsCleanup = onVisualSettingsChange(() => this.syncVisualSettings())
     map.addToInstanceBucket(this)
   }
@@ -339,15 +365,16 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   spawnDepletedResourceFragmentBurst(): boolean {
-    if (this.type === RESOURCE_TYPES.berrybush || this.type === RESOURCE_TYPES.wheat) {
+    const isWildgrass = WILDGRASS_RESOURCE_TYPES.has(this.type)
+    if (this.type === RESOURCE_TYPES.berrybush || this.type === RESOURCE_TYPES.wheat || isWildgrass) {
       spawnSpriteFragmentBurst({
         context: this.context,
         host: this,
         sprite: this.sprite,
         layer: this.parent,
-        fragmentSize: 12,
-        maxFragments: 12,
-        durationMs: 760,
+        fragmentSize: isWildgrass ? 8 : 12,
+        maxFragments: isWildgrass ? 8 : 12,
+        durationMs: isWildgrass ? 620 : 760,
         gravity: 0.0017,
         minSpeed: 0.006,
         maxSpeed: 0.035,
@@ -459,7 +486,7 @@ export class Resource extends Instance implements ResourceEntity {
     this.z = cell.z
     this.zIndex = getInstanceZIndex(this)
     this.reliefLift = -getReliefLiftPixels(getGroundReliefLevel(cell))
-    this.sprite.position.y = this.reliefLift
+    this.sprite.position.y = this.reliefLift ?? 0
     this.visible = true
     this.refreshTextureForTerrain()
   }
@@ -481,10 +508,12 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   startWindMotion(): void {
+    if (this.deferredVisuals) return
     startWindMotion(this)
   }
 
   stopWindMotion(): void {
+    if (this.deferredVisuals) return
     stopWindMotion(this)
   }
 
@@ -505,19 +534,29 @@ export class Resource extends Instance implements ResourceEntity {
   }
 
   syncShadow(shadow = this.shadow): void {
+    if (this.deferredVisuals) {
+      if (!this.visible) return
+      void this.sprite
+      shadow = this.shadow
+    }
+    if (this.shouldUseWindMotion()) this.startWindMotion()
+    else if (this.windTick) this.stopWindMotion()
     syncShadow(this, shadow)
   }
 
   syncVisualSettings(): void {
+    if (this.deferredVisuals) return
     syncVisualSettings(this)
   }
 
   override pause(): void {
+    if (this.deferredVisuals) return
     super.pause()
     ;(this.shadow as AnimatedSprite | null)?.stop?.()
   }
 
   override resume(): void {
+    if (this.deferredVisuals) return
     if (this.type === RESOURCE_TYPES.wheat) {
       this.syncShadow()
       return
@@ -533,6 +572,10 @@ export class Resource extends Instance implements ResourceEntity {
     this.shadow?.parent?.removeChild(this.shadow)
     this.shadow?.destroy({ children: true, texture: false })
     this.shadow = null
+    if (this.deferredVisuals) {
+      this.deferredVisuals = undefined
+      Object.defineProperty(this, 'sprite', { configurable: true, writable: true, value: undefined })
+    }
     super.destroy(options)
   }
 }

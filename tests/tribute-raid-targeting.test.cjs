@@ -25,9 +25,10 @@ function loadTributeRaidTargeting() {
       '../constants': constants,
       '../lib/chief': {
         hasLivingChief: player =>
-          Boolean(player?.units?.some(unit => unit.type === constants.UNIT_TYPES.chief && !unit.isDead && !unit.isDestroyed)),
-        isLivingChief: unit =>
-          Boolean(unit?.type === constants.UNIT_TYPES.chief && !unit.isDead && !unit.isDestroyed),
+          Boolean(
+            player?.units?.some(unit => unit.type === constants.UNIT_TYPES.chief && !unit.isDead && !unit.isDestroyed)
+          ),
+        isLivingChief: unit => Boolean(unit?.type === constants.UNIT_TYPES.chief && !unit.isDead && !unit.isDestroyed),
       },
     },
   })
@@ -111,7 +112,7 @@ function loadTributeRaidText() {
   })
 }
 
-function loadTributeRaidSystem() {
+function loadTributeRaidSystem(overrides = {}) {
   return loadTsModule('app/services/TributeRaidSystem.ts', {
     mocks: {
       '../classes/players/Player': {
@@ -125,6 +126,9 @@ function loadTributeRaidSystem() {
             this.corpses = []
           }
         },
+      },
+      '../config/gameplay': {
+        DAY_NIGHT_CONFIG: { dayLengthMs: 24 * 60 * 1000, hoursPerDay: 24 },
       },
       '../constants': constants,
       '../lib': {
@@ -160,6 +164,7 @@ function loadTributeRaidSystem() {
         findTributeRaidSpawnCells: () => [],
         removeTributeRaidUnitFromRuntime: () => {},
       },
+      ...overrides,
     },
   })
 }
@@ -170,6 +175,15 @@ test('tribute demands are rounded to clean resource amounts', () => {
   assert.equal(roundTributeValue(54), 50)
   assert.equal(roundTributeValue(61), 60)
   assert.deepEqual(roundTributeCost({ food: 61, gold: 196 }), { food: 60, gold: 200 })
+})
+
+test('faction raids are allowed from 09:00 until before 17:00', () => {
+  const { isFactionRaidHourAllowed } = loadTributeRaidRules()
+
+  assert.equal(isFactionRaidHourAllowed(8, 59), false)
+  assert.equal(isFactionRaidHourAllowed(9, 0), true)
+  assert.equal(isFactionRaidHourAllowed(16, 59), true)
+  assert.equal(isFactionRaidHourAllowed(17, 0), false)
 })
 
 test('bandit raids are blocked when an active bandit camp already controls the map', () => {
@@ -265,7 +279,10 @@ test('tribute raid spawn cells stay clear of the target owner buildings', () => 
   const cells = findTributeRaidSpawnCells({ map: { grid, random: () => 0.5 } }, target, 6)
 
   assert.ok(cells.length > 0)
-  assert.equal(cells.some(cell => Math.hypot(cell.i - 9, cell.j - 10) <= 4), false)
+  assert.equal(
+    cells.some(cell => Math.hypot(cell.i - 9, cell.j - 10) <= 4),
+    false
+  )
 })
 
 test('faction raid spawn prefers the map edge facing the faction home region', () => {
@@ -340,6 +357,48 @@ test('faction raids ignore the dedicated bandit faction', () => {
   }
 
   assert.equal(system.findAngryKnownFaction()?.id, 'civ-nord')
+})
+
+test('scheduled faction raids wait until the daytime raid window opens', () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const calls = []
+  const system = Object.create(TributeRaidSystem.prototype)
+  system.lastScheduledDay = 0
+  system.deferredFactionRaidTaskId = null
+  system.context = {
+    dayNight: { state: { hour: 6, minute: 0 } },
+    scheduler: {
+      addOneShot(callback, delayMs, name) {
+        calls.push(['addOneShot', delayMs, name])
+        this.callback = callback
+        return 42
+      },
+    },
+  }
+  system.triggerFactionRaid = async options => {
+    calls.push(['triggerFactionRaid', options.source])
+    return true
+  }
+
+  system.triggerScheduledFactionRaid(3)
+
+  assert.deepEqual(calls, [['addOneShot', 180000, 'tributeRaid.factionWindow']])
+
+  system.context.dayNight.state = { hour: 9, minute: 0 }
+  system.context.scheduler.callback()
+
+  assert.equal(system.deferredFactionRaidTaskId, null)
+  assert.equal(calls[1][0], 'triggerFactionRaid')
+})
+
+test('faction raids cannot be triggered outside the daytime raid window', async () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const system = Object.create(TributeRaidSystem.prototype)
+  system.context = {
+    dayNight: { state: { hour: 18, minute: 0 } },
+  }
+
+  assert.equal(await system.triggerFactionRaid({ source: 'dev-console', ignoreBaseWorld: true }), false)
 })
 
 test('faction raid relation becomes hostile only when the tribute turns violent', () => {
@@ -420,4 +479,233 @@ test('bandit raids keep targeting the hero when the player has the stronger loca
   }
 
   assert.equal(findRaidTarget(context, 'bandit'), hero)
+})
+
+function negotiationHarness(t, { affordable = true, local = false } = {}) {
+  const calls = []
+  let modalOptions
+  let canPay = affordable
+  const originalDocument = global.document
+  global.document = {
+    createElement: tag => ({
+      tag,
+      children: [],
+      listeners: {},
+      appendChild(child) {
+        this.children.push(child)
+      },
+      addEventListener(event, fn) {
+        this.listeners[event] = fn
+      },
+    }),
+  }
+  t.after(() => {
+    global.document = originalDocument
+  })
+  const { TributeRaidSystem } = loadTributeRaidSystem({
+    '../lib': { canAfford: () => canPay, payCost: owner => calls.push(['paid', owner]), getHexColor: color => color },
+    '../ui/InspectionPanel': {
+      createInspectionModal: options => {
+        modalOptions = options
+        return { close: options.onClose }
+      },
+    },
+  })
+  const player = { isPlayed: !local }
+  const chief = { stop: () => calls.push(['stop']), owner: {} }
+  const raid = {
+    id: 'test',
+    kind: 'bandit',
+    chief,
+    target: { owner: player },
+    units: [chief],
+    tribute: { gold: 50 },
+    phase: 'approaching',
+    modal: null,
+    updateTaskId: 12,
+  }
+  const system = new TributeRaidSystem({
+    player,
+    map: { random: () => 0 },
+    menu: { showMessage: (...args) => calls.push(['message', ...args]), updateTopbar: () => calls.push(['topbar']) },
+    scheduler: { remove: id => calls.push(['remove', id]) },
+  })
+  system.raids.push(raid)
+  system.acceptTribute = current => {
+    current.phase = 'leaving'
+    calls.push(['accepted'])
+  }
+  system.makeRaidHostile = current => {
+    current.phase = 'hostile'
+    calls.push(['hostile'])
+  }
+  return {
+    system,
+    raid,
+    calls,
+    setAffordable: value => {
+      canPay = value
+    },
+    modal: () => modalOptions,
+    buttons: () => modalOptions.content.children[2].children,
+  }
+}
+
+test('tribute payment is rechecked and a resolved modal cannot charge twice or turn hostile', t => {
+  const h = negotiationHarness(t)
+  h.system.resolveTributeParley(h.raid)
+  const [pay, refuse] = h.buttons()
+  assert.equal(pay.disabled, false)
+  h.setAffordable(false)
+  pay.listeners.click()
+  assert.equal(h.calls.filter(c => c[0] === 'paid').length, 0)
+  assert.equal(h.raid.phase, 'parley')
+  h.setAffordable(true)
+  pay.listeners.click()
+  pay.listeners.click()
+  refuse.listeners.click()
+  assert.equal(h.calls.filter(c => c[0] === 'paid').length, 1)
+  assert.equal(h.calls.filter(c => c[0] === 'accepted').length, 1)
+  assert.equal(h.calls.filter(c => c[0] === 'hostile').length, 0)
+  assert.equal(h.raid.modal, null)
+})
+
+test('refusing or closing an unresolved tribute dialog makes the raid hostile once', t => {
+  const h = negotiationHarness(t, { affordable: false })
+  h.system.openTributeModal(h.raid)
+  assert.equal(h.buttons()[0].disabled, true)
+  assert.ok(h.buttons()[0].title)
+  const modal = h.raid.modal
+  h.system.openTributeModal(h.raid)
+  assert.equal(h.raid.modal, modal)
+  h.buttons()[1].listeners.click()
+  h.buttons()[1].listeners.click()
+  assert.equal(h.calls.filter(c => c[0] === 'hostile').length, 1)
+  h.raid.phase = 'approaching'
+  h.system.openTributeModal(h.raid)
+  h.modal().onClose()
+  assert.equal(h.calls.filter(c => c[0] === 'hostile').length, 2)
+})
+
+test('cleaning up an open tribute negotiation never counts as a refusal', t => {
+  const h = negotiationHarness(t)
+  h.system.openTributeModal(h.raid)
+  const [pay, refuse] = h.buttons()
+  h.system.cleanupRaid(h.raid)
+  pay.listeners.click()
+  refuse.listeners.click()
+  assert.equal(h.raid.phase, 'leaving')
+  assert.equal(h.raid.modal, null)
+  assert.equal(h.system.raids.length, 0)
+  assert.deepEqual(
+    h.calls.filter(c => ['paid', 'hostile', 'accepted'].includes(c[0])),
+    []
+  )
+  assert.ok(h.calls.some(c => c[0] === 'remove' && c[1] === 12))
+})
+
+test('local chiefs pay only when affordable and the negotiation roll succeeds', t => {
+  const h = negotiationHarness(t, { local: true })
+  h.system.resolveTributeParley(h.raid)
+  assert.equal(h.calls.filter(c => c[0] === 'paid').length, 1)
+  h.setAffordable(false)
+  h.system.resolveTributeParley(h.raid)
+  assert.equal(h.raid.phase, 'hostile')
+  h.setAffordable(true)
+  h.system.context.map.random = () => 0.5
+  assert.equal(h.system.shouldLocalChiefPayTribute(h.raid), false)
+  delete h.raid.target.owner
+  h.system.resolveTributeParley(h.raid)
+  assert.equal(h.system.shouldLocalChiefPayTribute(h.raid), false)
+  assert.equal(h.calls.filter(c => c[0] === 'paid').length, 1)
+})
+
+test('raid balance keeps limits, military exclusions and rounded tribute amounts', () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const system = new TributeRaidSystem({ map: { random: () => 0 } })
+  const faction = { relationScore: 0 }
+  assert.equal(system.getLivingPlayerMilitaryCount(), 0)
+  assert.equal(system.getBanditRaidSize(), 2)
+  assert.equal(system.getFactionRaidSize(faction), 2)
+  assert.deepEqual(system.getBanditTributeCost(), { food: 50, gold: 30 })
+  assert.deepEqual(system.getFactionTributeCost(faction), { food: 50, gold: 30 })
+  system.context.player = {
+    age: 1,
+    units: [
+      { type: 'Hero' },
+      { type: 'Villager' },
+      { type: 'Fantassin' },
+      { type: 'Bowman' },
+      { type: 'Fantassin', isDead: true },
+      { type: 'Bowman', isDestroyed: true },
+    ],
+  }
+  system.context.dayNight = { state: { day: 10 } }
+  assert.equal(system.getLivingPlayerMilitaryCount(), 2)
+  assert.equal(system.getBanditRaidSize(), 5)
+  assert.equal(system.getFactionRaidSize({ relationScore: -50 }), 6)
+  assert.deepEqual(system.getFactionTributeCost({ relationScore: -50 }), { food: 160, gold: 110 })
+  system.context.player.age = 100
+  assert.equal(system.getBanditRaidSize(), 7)
+  assert.equal(system.getFactionRaidSize({ relationScore: -100 }), 9)
+})
+
+test('faction selection respects the base world and the worst-relation candidate window', () => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const context = {
+    map: { random: () => 0 },
+    getCurrentWorldId: () => 'other',
+    getWorldGraph: () => ({ rootWorldId: 'root' }),
+  }
+  const system = new TributeRaidSystem(context)
+  assert.equal(system.findAngryKnownFaction(), null)
+  assert.equal(system.findAngryKnownFaction({ ignoreBaseWorld: true }), null)
+  const worst = { id: 'worst', relationScore: -90 }
+  context.getCampaignFactions = () => ({
+    worst,
+    near: { id: 'near', relationScore: -75 },
+    far: { id: 'far', relationScore: -20 },
+    friend: { id: 'friend', relationScore: 20 },
+  })
+  assert.equal(system.findAngryKnownFaction({ ignoreBaseWorld: true }), worst)
+  context.map.random = () => 0.9
+  assert.equal(system.findAngryKnownFaction({ ignoreBaseWorld: true }).id, 'near')
+  context.map.random = () => 1
+  assert.equal(system.findAngryKnownFaction({ ignoreBaseWorld: true }), worst)
+  delete context.getWorldGraph
+  delete context.getCurrentWorldId
+  assert.equal(system.isBaseWorld(), false)
+})
+
+test('temporary raid owners retain their identities and use civilization fallbacks', async t => {
+  const { TributeRaidSystem } = loadTributeRaidSystem()
+  const system = new TributeRaidSystem({ players: [], map: {} })
+  const bandit = system.getOrCreateBanditOwner()
+  assert.equal(bandit.civ, 'Hellas')
+  bandit.diplomacy = 'hostile'
+  assert.equal(system.getOrCreateBanditOwner(), bandit)
+  assert.equal(bandit.diplomacy, 'neutral')
+  const faction = { id: 'f', name: 'Faction' }
+  const owner = system.getOrCreateFactionRaidOwner(faction)
+  assert.equal(owner.civ, 'Hellas')
+  assert.equal(owner.color, 'red')
+  delete owner.color
+  delete owner.civ
+  assert.equal(system.getOrCreateFactionRaidOwner(faction).civ, 'Hellas')
+  system.context.player = { civ: 'Nord' }
+  delete owner.civ
+  assert.equal(system.getOrCreateFactionRaidOwner(faction).civ, 'Nord')
+  assert.equal(system.context.players.length, 2)
+  await system.preloadRaidOwnerAssets(owner)
+  const messages = []
+  t.mock.method(console, 'error', (...args) => messages.push(args))
+  const failing = loadTributeRaidSystem({
+    '../lib/lpc': {
+      preloadBakedLpcUnitsForPlayers: async () => {
+        throw new Error('unavailable')
+      },
+    },
+  })
+  await new failing.TributeRaidSystem(system.context).preloadRaidOwnerAssets(owner)
+  assert.equal(messages.length, 1)
 })

@@ -41,6 +41,7 @@ function loadAIStrategy(options = {}) {
       newVillagerReserveDays: 5,
     },
     WORK_TYPES: {},
+    ...options.constants,
   }
   const mocks = {
     '../constants': constants,
@@ -88,6 +89,8 @@ function loadAIStrategy(options = {}) {
       }
     }
     if (request === './AIMilitary') return { AIMilitary: class {} }
+    if (['./AIStrategyEconomy', './AIStrategyTraining', './AIStrategyResources'].includes(request))
+      return loadTsFile(path.join(__dirname, '../app/ai', request.slice(2) + '.ts'))
     if (request === './AIStrategyBuilding') return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyBuilding.ts'))
     if (request === './AIStrategyProduction')
       return loadTsFile(path.join(__dirname, '../app/ai/AIStrategyProduction.ts'))
@@ -109,6 +112,7 @@ function loadAIStrategy(options = {}) {
         NEXT_AGE: {},
         TECH_PRIORITY_BY_BUILDING: {},
         VILLAGE_TARGET_PERCENTAGE_BY_AGE: {},
+        ...options.config,
       }
     }
     if (request === './unitGroups') {
@@ -531,4 +535,201 @@ test('ai military production sends a villager to train instead of buying from th
   assert.equal(actions, 1)
   assert.equal(villager.trainingTargetType, 'Fantassin')
   assert.deepEqual(calls, [['sendToEvt', 'Barracks', 'train', { forceRepath: true, allowPassageStop: true }]])
+})
+
+function strategyFixture(options = {}) {
+  const AIStrategy = loadAIStrategy(options)
+  const ai = {
+    age: 0,
+    buildings: [],
+    units: [],
+    technologies: [],
+    phase: 'economy',
+    population: 0,
+    populationMax: 20,
+    difficultyConfig: { popCapMultiplier: 1 },
+    food: 500,
+    wood: 500,
+    gold: 500,
+    stone: 500,
+    foundedBerrybushs: new Set(),
+    getHomeAnchor: () => null,
+    config: { buildings: {}, units: { Fantassin: { cost: { food: 50 } } } },
+  }
+  ai.buildings.push({
+    type: 'Chest',
+    owner: ai,
+    inventory: {
+      resources: {
+        get wheat() {
+          return ai.food
+        },
+        get wood() {
+          return ai.wood
+        },
+        get gold() {
+          return ai.gold
+        },
+        get stone() {
+          return ai.stone
+        },
+      },
+    },
+  })
+  const strategy = new AIStrategy(ai)
+  const barracks = { type: 'Barracks', owner: ai, units: ['Fantassin'], queue: [], isBuilt: true }
+  function villager(patch = {}) {
+    const unit = {
+      type: 'Villager',
+      sendToEvt(target) {
+        this.dest = target
+        return true
+      },
+      ...patch,
+    }
+    ai.units.push(unit)
+    return unit
+  }
+  return { ai, strategy, barracks, villager }
+}
+
+test('ai training preserves the reserve and reserves each accepted order only once', () => {
+  const { ai, strategy, barracks, villager } = strategyFixture()
+  ai.food = 170
+  const villagers = [villager(), villager(), villager()]
+  const reserve = { food: 70 }
+  assert.equal(strategy.trainUnits(0, 3, [barracks], 'Fantassin', villagers, reserve), 2)
+  assert.equal(villagers.filter(unit => unit.trainingTargetType).length, 2)
+  assert.deepEqual(reserve, { food: 70 })
+  assert.equal(ai.food, 170)
+  assert.equal(strategy.trainUnits(3, 3, [barracks], 'Fantassin', villagers), 0)
+})
+
+test('ai training ignores unavailable villagers and does not reserve failed movement orders', () => {
+  const { ai, strategy, barracks, villager } = strategyFixture()
+  ai.food = 50
+  const rejected = villager({ sendToEvt: () => false })
+  const accepted = villager()
+  const villagers = [
+    villager({ isDead: true }),
+    villager({ isDestroyed: true }),
+    villager({ type: 'Fantassin' }),
+    villager({ action: 'attack' }),
+    villager({ trainingTargetType: 'Bowman' }),
+    villager({ sendToEvt: undefined }),
+    rejected,
+    accepted,
+  ]
+  assert.equal(strategy.trainUnits(0, 4, [barracks], 'Fantassin', villagers), 1)
+  assert.equal(rejected.trainingTargetType, null)
+  assert.equal(accepted.trainingTargetType, 'Fantassin')
+})
+
+test('ai training accounts for active, queued, concurrent and incoming trainees', () => {
+  const { strategy, barracks, villager } = strategyFixture()
+  barracks.loading = 0
+  barracks.queue = ['Fantassin', 'Fantassin']
+  barracks.trainingQueue = [{}]
+  villager({ dest: barracks, trainingTargetType: 'Fantassin' })
+  villager({ dest: barracks, trainingTargetType: 'Fantassin', isDead: true })
+  villager({ dest: barracks, trainingTargetType: 'Fantassin', isDestroyed: true })
+  const candidates = [villager(), villager()]
+  assert.equal(strategy.trainUnits(0, 2, [barracks], 'Fantassin', candidates), 1)
+  assert.equal(candidates[1].trainingTargetType, undefined)
+  assert.equal(strategy.trainUnits(0, 1, [barracks], 'Fantassin', [candidates[1]]), 0)
+})
+
+test('ai training skips dead, destroyed and incompatible buildings', () => {
+  const { strategy, barracks, villager } = strategyFixture()
+  const invalid = [
+    { ...barracks, isDead: true },
+    { ...barracks, isDestroyed: true },
+    { ...barracks, units: ['Bowman'] },
+    { ...barracks, units: undefined },
+  ]
+  assert.equal(strategy.trainUnits(0, 1, invalid, 'Fantassin', [villager()]), 0)
+  assert.equal(strategy.trainUnits(0, 1, [...invalid, barracks], 'Fantassin', [villager()]), 1)
+})
+
+test('ai barracks expansion requires military phase, an unlocked age and enough army or training load', () => {
+  const { ai, strategy, barracks } = strategyFixture({ constants: { AGE_UP_ENABLED: true } })
+  ai.buildings = [barracks]
+  const army = { infantry: Array(8).fill({}) }
+  ai.age = 2
+  assert.equal(strategy.getDesiredBarracksCount(army), 0)
+  ai.phase = 'military_build'
+  ai.age = 1
+  assert.equal(strategy.getDesiredBarracksCount(army), 1)
+  ai.age = 2
+  assert.equal(strategy.getDesiredBarracksCount(army), 2)
+  assert.equal(strategy.getDesiredBarracksCount(), 1)
+  barracks.queue = ['Fantassin']
+  barracks.loading = 0
+  assert.equal(strategy.getDesiredBarracksCount(), 2)
+  assert.equal(
+    strategy.getTrainingLoad([barracks, { ...barracks, isDead: true }, { ...barracks, isDestroyed: true }]),
+    2
+  )
+  barracks.isBuilt = false
+  assert.equal(strategy.getDesiredBarracksCount(), 1)
+})
+
+test('ai growth reserves respect housing capacity, population and the daily arrival cap', () => {
+  const { ai, strategy } = strategyFixture()
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 0)
+  ai.population = 10
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 140)
+  ai.populationMax = 10
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 120)
+  ai.populationMax = 8
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 120)
+  ai.population = 100
+  ai.populationMax = 200
+  assert.equal(strategy.getVillagerGrowthFoodReserve(), 1300)
+})
+
+test('ai age-up reserves retain the population threshold and can be disabled', () => {
+  const ageCost = { food: 200, gold: 100 }
+  const options = {
+    constants: { AGE_UP_ENABLED: true, DAILY_CONSUMPTION_PER_VILLAGER: { food: 0 } },
+    config: { AGE_UP_COSTS: { 1: ageCost }, MAX_VILLAGER_PER_AGE: { 0: 10 } },
+  }
+  const { ai, strategy } = strategyFixture(options)
+  ai.food = 50
+  ai.gold = 120
+  ai.population = 6
+  assert.deepEqual(strategy.getAgeUpReserve(), {})
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 150, gold: 0, wood: 0, stone: 0 })
+  ai.population = 7
+  assert.deepEqual(strategy.getAgeUpReserve(), ageCost)
+  assert.deepEqual(strategy.getEconomicDemand(), { food: 200, gold: 100, wood: 0, stone: 0 })
+  ai.age = 3
+  assert.deepEqual(strategy.getAgeUpReserve(), {})
+  const frozen = strategyFixture({ ...options, constants: { ...options.constants, AGE_UP_ENABLED: false } })
+  frozen.ai.population = 10
+  assert.deepEqual(frozen.strategy.getAgeUpReserve(), {})
+  assert.deepEqual(frozen.strategy.getEconomicDemand(), { food: 0, gold: 0, wood: 0, stone: 0 })
+})
+
+test('ai berry planning rejects destroyed, depleted and distant bushes', () => {
+  const { ai, strategy } = strategyFixture()
+  const bush = { i: 5, j: 5, quantity: 100 }
+  ai.foundedBerrybushs = new Set([
+    bush,
+    { ...bush, isDestroyed: true },
+    { ...bush, isDead: true },
+    { ...bush, quantity: 0 },
+    { ...bush, i: 50 },
+  ])
+  ai.getHomeAnchor = () => ({ i: 0, j: 0 })
+  assert.equal(strategy.getViableBerryBushCount(), 1)
+  ai.getHomeAnchor = () => null
+  assert.equal(strategy.getViableBerryBushCount(), 2)
+  ai.buildings = [{ type: 'Granary', isBuilt: true, i: 0, j: 0 }]
+  assert.equal(strategy.getViableBerryBushCount(), 1)
+  ai.buildings[0].isDestroyed = true
+  assert.equal(strategy.getViableBerryBushCount(), 2)
+  ai.buildings[0].isDestroyed = false
+  ai.buildings[0].i = 100
+  assert.equal(strategy.getViableBerryBushCount(), 0)
 })

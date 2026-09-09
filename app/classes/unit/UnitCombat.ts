@@ -1,3 +1,8 @@
+import { isVillagerWorkTargetRejected } from '../../lib/units/villagerAutonomyTargeting'
+import { definedProperties } from '../../lib/definedProperties'
+import { showContactDebug } from '../../lib/contact/contactDebug'
+import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
+import { getUnitMeleeWeapon, usesMeleeAttack } from '../../lib/combat/unitMelee'
 import {
   ACTION_TYPES,
   CELL_HEIGHT,
@@ -62,6 +67,7 @@ function getMeleeImpactSound(unit: UnitEntity, target: RuntimeEntity | null): Co
 }
 
 type AttackLoopVisualOptions = {
+  trackTargetOnRelease?: boolean
   onAttackPrepared?: (target: RuntimeEntity) => void
   playRecoveryAnimation?: (releaseFrame: number, onComplete: () => void) => boolean | void
 }
@@ -84,42 +90,48 @@ export class UnitCombat {
     visualOptions: AttackLoopVisualOptions = {}
   ) {
     const unit = this.unit
-    runAttackLoopOnFrame(unit, {
-      releaseFrame,
-      prepareAttackSheet: () => {
-        setUnitVisualSheet(unit, SHEET_TYPES.action, {
-          clearCallbacks: ['onComplete', 'onFrameChange'],
-          frame: 0,
-          play: 'play',
-          syncMountedHorse: true,
-          syncShadow: false,
-        })
-      },
-      prepareRecoverySheet: () => {
-        setUnitVisualSheet(unit, SHEET_TYPES.standing, {
-          clearCallbacks: false,
-          invalidateAnimation: false,
-          syncShadow: false,
-        })
-      },
-      onAttackPrepared: visualOptions.onAttackPrepared,
-      playRecoveryAnimation: visualOptions.playRecoveryAnimation,
-      onOutOfRange: dest => {
-        unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
-      },
-      onTargetUnavailable: (dest, phase) => {
-        if (dest && (dest.hitPoints ?? 0) <= 0) {
-          dest.die?.()
-        }
-        if (phase === 'preflight') {
-          if (this.tryEnterBuildingInteriorAssault(dest)) return
-          unit.affectNewDest?.()
-          return
-        }
-        this.finishAttackAfterCurrentLoop()
-      },
-      onReadyToAttack: target => onFire(target),
-    })
+    runAttackLoopOnFrame(
+      unit,
+      definedProperties({
+        releaseFrame,
+        trackTargetOnRelease: visualOptions.trackTargetOnRelease,
+        syncMovingTargetDirection:
+          visualOptions.trackTargetOnRelease === false ? () => this.syncMovingTargetDirection() : undefined,
+        prepareAttackSheet: () => {
+          setUnitVisualSheet(unit, SHEET_TYPES.action, {
+            clearCallbacks: ['onComplete', 'onFrameChange'],
+            frame: 0,
+            play: 'play',
+            syncMountedHorse: true,
+            syncShadow: false,
+          })
+        },
+        prepareRecoverySheet: () => {
+          setUnitVisualSheet(unit, SHEET_TYPES.standing, {
+            clearCallbacks: false,
+            invalidateAnimation: false,
+            syncShadow: false,
+          })
+        },
+        onAttackPrepared: visualOptions.onAttackPrepared,
+        playRecoveryAnimation: visualOptions.playRecoveryAnimation,
+        onOutOfRange: (dest: RuntimeEntity | null) => {
+          unit.sendToEvt?.(dest, ACTION_TYPES.attack, { forceRepath: true })
+        },
+        onTargetUnavailable: (dest: RuntimeEntity | null, phase: 'preflight' | 'release') => {
+          if (dest && (dest.hitPoints ?? 0) <= 0) {
+            dest.die?.()
+          }
+          if (phase === 'preflight') {
+            if (this.tryEnterBuildingInteriorAssault(dest)) return
+            unit.affectNewDest?.()
+            return
+          }
+          this.finishAttackAfterCurrentLoop()
+        },
+        onReadyToAttack: (target: RuntimeEntity) => onFire(target),
+      })
+    )
   }
 
   playReverseSlashRecovery(releaseFrame: number, onComplete: () => void): boolean {
@@ -188,7 +200,7 @@ export class UnitCombat {
     const unit = this.unit
     const unitAsInstance = unit
     const targets = findInstancesInSight<UnitEntity, RuntimeEntity>(unitAsInstance, instance =>
-      Boolean(unit.getActionCondition?.(instance, action))
+      Boolean(unit.getActionCondition?.(instance, action)) && !isVillagerWorkTargetRejected(unit, instance)
     )
     if (!targets.length) return false
     const target = getClosestInstanceWithPath<RuntimeEntity, RuntimeCell>(unitAsInstance, targets)
@@ -215,6 +227,10 @@ export class UnitCombat {
   syncMovingTargetDirection() {
     const unit = this.unit
     const dest = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (dest && usesMeleeAttack(unit)) {
+      unit.degree = getContactAimDegree(unit, dest)
+      return
+    }
     syncMovedActionTarget(unit, dest)
   }
 
@@ -250,6 +266,11 @@ export class UnitCombat {
       this.runAttackLoop(
         SLASH_IMPACT_FRAME,
         dest => {
+          showContactDebug(unit, dest ? [dest] : [], getUnitMeleeWeapon(unit))
+          if (!dest || !isContactTouching(unit, dest, getUnitMeleeWeapon(unit))) {
+            playAudibleSoundCue(unit, SOUND_CUES.hero.meleeWhiff, { profile: 'combat' })
+            return
+          }
           playAudibleSoundCue(unit, getMeleeImpactSound(unit, dest), { profile: 'combat' })
           if (dest && (dest.hitPoints ?? 0) > 0) {
             const { killed } = applyCombatHit(unit, dest, {
@@ -267,6 +288,7 @@ export class UnitCombat {
           }
         },
         {
+          trackTargetOnRelease: false,
           onAttackPrepared: target => prepareAutomaticParry?.(target),
           playRecoveryAnimation: (releaseFrame, onComplete) => this.playReverseSlashRecovery(releaseFrame, onComplete),
         }

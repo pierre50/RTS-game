@@ -76,6 +76,16 @@ function loadBuildingVisuals() {
     }
   }
   class Rectangle {}
+  class ColorOverlayFilter {
+    constructor(options) {
+      Object.assign(this, options)
+    }
+  }
+  class OutlineFilter {
+    constructor(options) {
+      this.options = options
+    }
+  }
 
   return {
     ...loadTsModule('app/classes/building/BuildingVisuals.ts', {
@@ -88,6 +98,7 @@ function loadBuildingVisuals() {
           Sprite,
           Texture,
         },
+        'pixi-filters': { ColorOverlayFilter, OutlineFilter },
         '../../constants': { LABEL_TYPES: { shadow: 'shadow' } },
         '../../lib': {
           bindAnimatedSpriteToTicker: () => {},
@@ -97,6 +108,7 @@ function loadBuildingVisuals() {
             const origin = space?.origin ?? { x: 0, y: 0 }
             return { x: origin.x + building.x, y: origin.y + building.y }
           },
+          getHexColor: color => (color === 'red' ? '#e30b00' : '#ffffff'),
           getRallyPointFrames: () => [],
           getTextureByFrame: () => null,
           getTextureSheet: textureName => textureName,
@@ -122,6 +134,7 @@ test('construction reveal sprite is recolored to the building owner color', () =
   const children = []
   const building = {
     addChild: child => children.push(child),
+    constructionGhostBorder: null,
     constructionRevealMask: null,
     constructionRevealSprite: null,
     owner: { color: 'red' },
@@ -166,10 +179,16 @@ test('construction reveal sprite is recolored to the building owner color', () =
 test('construction ghost keeps the player-colored texture transparent', () => {
   const { calls, applyBuildingConstructionGhost, Texture } = loadBuildingVisuals()
   const sourceTexture = new Texture()
+  const children = []
   const building = {
+    addChild: child => children.push(child),
+    constructionGhostBorder: null,
     owner: { color: 'red' },
     sprite: {
+      anchor: { x: 0.5, y: 0.8 },
       alpha: 1,
+      position: { x: 4, y: -6 },
+      scale: { x: 1, y: 1 },
       tint: 0x9f9888,
       texture: sourceTexture,
     },
@@ -179,9 +198,24 @@ test('construction ghost keeps the player-colored texture transparent', () => {
   const ghostTexture = building.sprite.texture
   applyBuildingConstructionGhost(building)
 
-  assert.equal(building.sprite.alpha, 0.28)
+  assert.equal(building.sprite.alpha, 0.42)
   assert.equal(building.sprite.tint, 0xffffff)
   assert.equal(building.sprite.texture, ghostTexture)
+  assert.equal(building.sprite.filters.length, 1)
+  assert.equal(building.sprite.filters[0].color, 0xe30b00)
+  assert.equal(building.sprite.filters[0].alpha, 0.58)
+  assert.ok(building.constructionGhostBorder)
+  assert.equal(children.includes(building.constructionGhostBorder), true)
+  assert.equal(building.constructionGhostBorder.texture, sourceTexture)
+  assert.equal(building.constructionGhostBorder.anchor.x, 0.5)
+  assert.equal(building.constructionGhostBorder.anchor.y, 0.8)
+  assert.deepEqual(building.constructionGhostBorder.filters[0].options, {
+    color: 0xffd25a,
+    alpha: 0.82,
+    knockout: true,
+    quality: 0.18,
+    thickness: 3,
+  })
   const recolorCalls = calls.filter(call => call[0] === 'changeSpriteColorDirectly')
   assert.equal(recolorCalls.length, 1)
   assert.equal(recolorCalls[0][1].texture, sourceTexture)

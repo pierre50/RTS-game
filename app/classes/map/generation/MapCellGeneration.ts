@@ -1,15 +1,10 @@
+import type { EnvironmentTerrainParams } from '../../../constants'
 import { getEnvironmentTerrainParams } from '../../../constants'
-import { Cell, GenerationCell } from '../../cell'
-import { generateTerrainMap } from '../terrain/MapTerrainGeneration'
 import type { GameContextLike } from '../../../types/context'
 import type { RuntimeCell } from '../../../types/map'
-import type { EnvironmentTerrainParams } from '../../../constants'
-import type {
-  GenerateMapOptions,
-  MapGenerationMap,
-  TerrainGrid,
-  TerrainValue,
-} from '../MapGenerationTypes'
+import { Cell, GenerationCell } from '../../cell'
+import type { GenerateMapOptions, MapGenerationMap, TerrainGrid, TerrainValue } from '../MapGenerationTypes'
+import { createTerrainWorkerSource, generateTerrainMap } from '../terrain/MapTerrainGeneration'
 
 const TERRAIN_TYPES: Record<TerrainValue, string> = {
   0: 'Grass',
@@ -51,18 +46,7 @@ export function generateTerrainInWorker(
   if (typeof Worker === 'undefined') {
     return Promise.resolve(generateTerrain(map, gridSize, seed, params))
   }
-  const source = generateTerrainMap.toString()
-  const functionSource = source.startsWith('function') ? `(${source})` : `(function ${source})`
-  const workerSource = `
-    const generateTerrain = ${functionSource};
-    self.onmessage = ({ data }) => {
-      try {
-        self.postMessage(generateTerrain(data.gridSize, data.seed, data.params));
-      } catch (error) {
-        self.postMessage({ error: error?.stack || error?.message || String(error) });
-      }
-    };
-  `
+  const workerSource = createTerrainWorkerSource()
   const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }))
   return new Promise((resolve, reject) => {
     const worker = new Worker(url)
@@ -147,7 +131,10 @@ export async function generateCellsAsync(
   map: MapGenerationMap,
   yieldToBrowser: YieldToBrowser,
   generateTerrainData: () => Promise<TerrainGrid>,
-  { onProgress = async (_stage: string, _progress: number) => {}, terrain: preparedTerrain = null }: GenerateMapOptions = {}
+  {
+    onProgress = async (_stage: string, _progress: number) => {},
+    terrain: preparedTerrain = null,
+  }: GenerateMapOptions = {}
 ): Promise<void> {
   const context = runtimeContext(map)
   const z = 0

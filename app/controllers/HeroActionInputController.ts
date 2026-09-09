@@ -2,8 +2,9 @@ import { SHEET_TYPES } from '../constants'
 import {
   beginHeroDefense,
   cancelHeroActiveToolAction,
-  cancelHeroLasso,
+  cancelHeroCatchingPole,
   canHeroDefendWithTool,
+  isHeroCatchingPoleEquipped,
   isHeroPowerChargeActiveForTool,
   isMountedAttackAimBlocked,
   releaseHeroDefense,
@@ -52,8 +53,11 @@ export class HeroActionInputController {
       this.host.resolveGoTo()
       return
     }
-    if (this.host.equippedItem === 'lasso' && this.host.heroUnit?.heroLasso) {
-      cancelHeroLasso(this.host.heroUnit)
+    if (
+      isHeroCatchingPoleEquipped(this.host.heroUnit, this.host.equippedItem) &&
+      this.host.heroUnit?.heroCatchingPoleThrow
+    ) {
+      cancelHeroCatchingPole(this.host.heroUnit)
       this.host.mouseHeld = false
       this.host.primaryClickPoint = null
       return

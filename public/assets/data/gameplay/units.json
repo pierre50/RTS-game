@@ -128,10 +128,7 @@
       "goldminer": 1
     },
     "sounds": {
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2"],
       "work": {
         "gatherFood": "farming-3",
         "chopWood": "wood-chopping",
@@ -177,8 +174,7 @@
         "arrow": 10
       },
       "activeWeapons": {
-        "melee": "sword_ceramic",
-        "lasso": "lasso"
+        "melee": "sword_ceramic"
       }
     },
     "showBuildings": true,
@@ -263,10 +259,7 @@
       "goldminer": 1
     },
     "sounds": {
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2"
-      ],
+      "hit": ["attack-class-2", "attack-class-2-2"],
       "work": {
         "chopWood": "wood-chopping",
         "forageBerry": "berry-gathering",
@@ -323,10 +316,7 @@
       }
     },
     "sounds": {
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2"
-      ]
+      "hit": ["attack-class-2", "attack-class-2-2"]
     }
   },
   "Fantassin": {
@@ -357,12 +347,7 @@
       "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
-      "hit": [
-        "sword-attack",
-        "swing-sword-attack",
-        "tinkle-sword-attack",
-        "sword-attack-2"
-      ]
+      "hit": ["sword-attack", "swing-sword-attack", "tinkle-sword-attack", "sword-attack-2"]
     }
   },
   "Bowman": {
@@ -396,10 +381,7 @@
       "corpseSheet": "units/infantry/greek/male/corpse"
     },
     "sounds": {
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2"
-      ]
+      "hit": ["attack-class-2", "attack-class-2-2"]
     }
   },
   "Priest": {
@@ -430,10 +412,7 @@
       "corpseSheet": "units/priest/greek/male/corpse"
     },
     "sounds": {
-      "hit": [
-        "attack-class-2",
-        "attack-class-2-2"
-      ]
+      "hit": ["attack-class-2", "attack-class-2-2"]
     }
   }
 }

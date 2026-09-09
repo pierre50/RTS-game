@@ -1,3 +1,4 @@
+import { takePreparedAnimals } from './generation/PreparedMapContent'
 import { Assets } from 'pixi.js'
 import { Gaia } from '../players'
 import { MapBlueprintGeneration } from './generation/MapBlueprintGeneration'
@@ -352,6 +353,12 @@ export class MapGeneration {
   }
 
   generateSets() {
+    const prepared = takePreparedAnimals(this.map)
+    if (prepared) {
+      for (const animal of prepared)
+        if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) this._gaiaCreateAnimal(animal)
+      return
+    }
     generateAmbientAnimalSets(this.map, {
       hasSolidNeighbor: (i, j) => this._hasSolidNeighbor(i, j),
       hasWaterNeighbor: (i, j) => this._hasWaterNeighbor(i, j),
@@ -361,6 +368,16 @@ export class MapGeneration {
   }
 
   async generateSetsAsync() {
+    const prepared = takePreparedAnimals(this.map)
+    if (prepared) {
+      for (let index = 0; index < prepared.length; index++) {
+        const animal = prepared[index]
+        // Villages and camps are placed at runtime; keep occupied cells intact.
+        if (this.canPlaceAmbientAnimalAt(animal.i, animal.j)) this._gaiaCreateAnimal(animal)
+        if (index > 0 && index % 32 === 0) await this.yieldToBrowser()
+      }
+      return
+    }
     await generateAmbientAnimalSetsAsync(this.map, {
       hasSolidNeighbor: (i, j) => this._hasSolidNeighbor(i, j),
       hasWaterNeighbor: (i, j) => this._hasWaterNeighbor(i, j),

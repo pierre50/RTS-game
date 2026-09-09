@@ -5,7 +5,7 @@ import { getEntitySpaceId } from '../../lib/mapSpaces'
 import { syncPlayerResourceFieldsFromChests } from '../../lib/resources/playerResourceTotals'
 import { playAudibleSoundCue } from '../../lib/audio/sound'
 import { resumeVillagerJobIntent } from '../../lib/units/villagerTaskRecovery'
-import { logGoldMinerFlow } from '../../lib/units/villagerJobDiagnostics'
+import { logGoldMinerFlow } from '../../lib/units/autonomy/villagerJobDiagnostics'
 import {
   buildingAcceptsInventoryResource,
   unitHasDeliverableResourcesForBuilding,

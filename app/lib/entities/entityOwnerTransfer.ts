@@ -1,4 +1,4 @@
-import { FAMILY_TYPES, SHEET_TYPES } from '../../constants'
+import { FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import { isBanditOwner } from '../combat/bandits'
 import { getBuildingShelterCapacity } from '../buildings/buildingOccupancy'
 import { updateInstanceVisibility } from '../grid/visibility'
@@ -38,7 +38,11 @@ function removeFromOwnerList(
   if (index >= 0) list.splice(index, 1)
 }
 
-function addToOwnerList(owner: PlayerLike | null | undefined, key: 'units' | 'buildings', instance: RuntimeEntity): void {
+function addToOwnerList(
+  owner: PlayerLike | null | undefined,
+  key: 'units' | 'buildings',
+  instance: RuntimeEntity
+): void {
   const list = ownerList(owner, key)
   if (!Array.isArray(list) || list.includes(instance)) return
   list.push(instance)
@@ -57,10 +61,7 @@ function entityDistanceSq(a: Pick<RuntimeEntity, 'i' | 'j'>, b: Pick<RuntimeEnti
 }
 
 function playerAnchorEntities(player: PlayerLike): Array<Pick<RuntimeEntity, 'i' | 'j'>> {
-  const anchors = [
-    ...(player.units ?? []).filter(isLivingUnit),
-    ...(player.buildings ?? []).filter(isLivingBuilding),
-  ]
+  const anchors = [...(player.units ?? []).filter(isLivingUnit), ...(player.buildings ?? []).filter(isLivingBuilding)]
   return anchors.length ? anchors : [{ i: player.i ?? 0, j: player.j ?? 0 }]
 }
 
@@ -121,6 +122,7 @@ export function transferEntityOwner(
   newOwner: PlayerLike,
   options: TransferOwnerOptions = {}
 ): boolean {
+  if (!isConvertibleEntity(target)) return false
   const menu = options.menu ?? target.context?.menu ?? null
   const player = options.player ?? target.context?.player ?? null
   const oldOwner = target.owner
@@ -136,59 +138,10 @@ export function transferEntityOwner(
   target.assetCiv = target.assetCiv || oldOwner.civ
   target.assetAge = target.assetAge ?? oldOwner.age
   target.owner = newOwner
+  if (target.family === FAMILY_TYPES.unit) transferUnitMembership(target, oldOwner, newOwner)
+  else transferBuildingMembership(target, oldOwner, newOwner, menu)
 
-  if (target.family === FAMILY_TYPES.unit) {
-    removeFromOwnerList(oldOwner, 'units', target)
-    addToOwnerList(newOwner, 'units', target)
-    oldOwner.population = Math.max(0, oldOwner.population - 1)
-    newOwner.population += 1
-    target.setTextures?.(SHEET_TYPES.standing)
-  } else if (target.family === FAMILY_TYPES.building) {
-    target.assetType = target.assetType || target.type
-    removeFromOwnerList(oldOwner, 'buildings', target)
-    addToOwnerList(newOwner, 'buildings', target)
-    const populationCapacity = getBuildingShelterCapacity(target) || target.increasePopulation || 0
-    if (populationCapacity && target.populationCapacityApplied) {
-      oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
-      newOwner.populationMax += populationCapacity
-    }
-    target.clearRallyPoint?.()
-    target.queue = []
-    target.technology = null
-    target.loading = null
-    target.finalTexture?.()
-    if (target.interface) {
-      const units =
-        newOwner.isPlayed && menu
-          ? (target.units || []).map(key => menu.getBuildingTrainingStatusButton?.(key, target))
-          : []
-      target.interface.menu = newOwner.isPlayed
-        ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
-            (item): item is NonNullable<typeof item> => Boolean(item)
-          )
-        : []
-    }
-    if (target.isBuilt && !newOwner.hasBuilt?.includes(target.type)) {
-      newOwner.hasBuilt?.push(target.type)
-    }
-  } else {
-    return false
-  }
-
-  updateInstanceVisibility(target)
-  if (options.showFeedback !== false) options.showConversionFeedback?.(target, newOwner.color ?? newOwner.colorHex)
-  if (target.selected || target.shouldKeepHealthBarVisible?.()) {
-    syncEntityHealthDisplay(target, { menu, player: newOwner })
-  } else {
-    target.removeHealthBar?.()
-  }
-  canRefreshTransferMinimap(target, player) &&
-    menu?.isMiniMapActive?.() !== false &&
-    menu?.updatePlayerMiniMapEvt?.(oldOwner)
-  canRefreshTransferMinimap(target, player) &&
-    menu?.isMiniMapActive?.() !== false &&
-    menu?.updatePlayerMiniMapEvt?.(newOwner)
-  if (newOwner.isPlayed) menu?.updateTopbar()
+  refreshTransferredEntityUI(target, oldOwner, newOwner, menu, player, options)
   return true
 }
 
@@ -220,4 +173,76 @@ export function transferDefeatedPlayerBuildings(defeatedPlayer: PlayerLike): num
     context?.menu?.showMessage?.(t('enemyBaseCaptured'), 'success')
   }
   return transferred
+}
+
+function transferUnitMembership(target: ConvertibleEntity, oldOwner: PlayerLike, newOwner: PlayerLike): void {
+  removeFromOwnerList(oldOwner, 'units', target)
+  addToOwnerList(newOwner, 'units', target)
+  oldOwner.population = Math.max(0, oldOwner.population - 1)
+  newOwner.population += 1
+  if (target.type === UNIT_TYPES.villager) newOwner.unlockVillagerPopulationMilestoneTechnologies?.()
+  target.setTextures?.(SHEET_TYPES.standing)
+}
+
+function transferBuildingMembership(
+  target: ConvertibleEntity,
+  oldOwner: PlayerLike,
+  newOwner: PlayerLike,
+  menu: MenuLike | null
+): void {
+  target.assetType = target.assetType || target.type
+  removeFromOwnerList(oldOwner, 'buildings', target)
+  addToOwnerList(newOwner, 'buildings', target)
+  const populationCapacity = getBuildingShelterCapacity(target) || target.increasePopulation || 0
+  if (populationCapacity && target.populationCapacityApplied) {
+    oldOwner.populationMax = Math.max(0, oldOwner.populationMax - populationCapacity)
+    newOwner.populationMax += populationCapacity
+  }
+  target.clearRallyPoint?.()
+  target.queue = []
+  target.technology = null
+  target.loading = null
+  target.finalTexture?.()
+  refreshTransferredBuildingMenu(target, newOwner, menu)
+  if (target.isBuilt && !newOwner.hasBuilt?.includes(target.type)) {
+    newOwner.hasBuilt?.push(target.type)
+  }
+}
+
+function refreshTransferredEntityUI(
+  target: ConvertibleEntity,
+  oldOwner: PlayerLike,
+  newOwner: PlayerLike,
+  menu: MenuLike | null,
+  player: PlayerLike | null,
+  options: TransferOwnerOptions
+): void {
+  updateInstanceVisibility(target)
+  if (options.showFeedback !== false) options.showConversionFeedback?.(target, newOwner.color ?? newOwner.colorHex)
+  if (target.selected || target.shouldKeepHealthBarVisible?.()) {
+    syncEntityHealthDisplay(target, { menu, player: newOwner })
+  } else {
+    target.removeHealthBar?.()
+  }
+  canRefreshTransferMinimap(target, player) &&
+    menu?.isMiniMapActive?.() !== false &&
+    menu?.updatePlayerMiniMapEvt?.(oldOwner)
+  canRefreshTransferMinimap(target, player) &&
+    menu?.isMiniMapActive?.() !== false &&
+    menu?.updatePlayerMiniMapEvt?.(newOwner)
+  if (newOwner.isPlayed) menu?.updateTopbar()
+}
+
+function refreshTransferredBuildingMenu(target: ConvertibleEntity, newOwner: PlayerLike, menu: MenuLike | null): void {
+  if (target.interface) {
+    const units =
+      newOwner.isPlayed && menu
+        ? (target.units || []).map(key => menu.getBuildingTrainingStatusButton?.(key, target))
+        : []
+    target.interface.menu = newOwner.isPlayed
+      ? [...units, ...(units.length && menu ? [menu.getActionRallyPointButton?.()] : [])].filter(
+          (item): item is NonNullable<typeof item> => Boolean(item)
+        )
+      : []
+  }
 }

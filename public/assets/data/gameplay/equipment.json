@@ -82,6 +82,16 @@
       "power": 8
     }
   },
+  "longstick": {
+    "weapon": {
+      "power": 1
+    }
+  },
+  "catchingPole": {
+    "weapon": {
+      "power": 1
+    }
+  },
   "bow": {
     "weapon": {
       "power": 5,

@@ -1,27 +1,18 @@
 import { Assets, Container, Sprite } from 'pixi.js'
-import {
-  cartesianToIsometric,
-  canAfford,
-  canPlaceBuildingAt,
-  getBuildingFootprintCells,
-  hasBuildingPlacementClearance,
-  getTexture,
-  payCost,
-  isBuildingLimitReached,
-} from '../lib'
-import { createReservedPassageCellLookup } from '../lib/buildings/passageCells'
-import { getMissingPlayerResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
-import { getCellMapPoint, getMapSpace, isOutsideSpaceId, sameCellMapSpace } from '../lib/mapSpaces'
 import { BUILDING_TYPES, COLOR_GREEN, COLOR_RED, LABEL_TYPES, UNIT_TYPES } from '../constants'
+import type { ResourceLedger } from '../lib'
+import { canAfford, cartesianToIsometric, getTexture, payCost } from '../lib'
 import { getWallTexture, isWall } from '../lib/buildings/walls'
 import { addHeroInventoryItem, removeHeroInventoryItem } from '../lib/equipment/equipmentLoot'
-import { WallPlacementController } from './WallPlacementController'
 import { t } from '../lib/lang'
+import { getCellMapPoint } from '../lib/mapSpaces'
+import { getMissingPlayerResources, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
 import type { ControlsLike } from '../types/context'
 import type { PlaceableBuildingConfig, UnitEntity } from '../types/entities'
 import type { RuntimeCell } from '../types/map'
 import type { PlacementOwner } from '../types/player'
-import type { ResourceLedger } from '../lib'
+import { BuildingPlacementRules } from './BuildingPlacementRules'
+import { WallPlacementController } from './WallPlacementController'
 
 type MouseBuilding = Container &
   PlaceableBuildingConfig & {
@@ -33,11 +24,13 @@ const WHEAT_FIELD_SIZE = 4
 const WHEAT_PREVIEW_ALPHA = 0.75
 
 export class BuildingPlacer {
+  private readonly placementRules: BuildingPlacementRules
   controls: ControlsLike
   wallPlacementController: WallPlacementController
 
   constructor(controls: ControlsLike) {
     this.controls = controls
+    this.placementRules = new BuildingPlacementRules(controls)
     this.wallPlacementController = new WallPlacementController({
       context: controls.context,
       parent: controls,
@@ -184,47 +177,11 @@ export class BuildingPlacer {
   }
 
   isExploredForPlacement(cell: RuntimeCell, owner: PlacementOwner): boolean {
-    const {
-      controls: {
-        context: { map },
-      },
-    } = this
-    if (!isOutsideSpaceId(cell.spaceId)) return cell.visible !== false
-    return Boolean(cell && (map.revealEverything || map.revealTerrain || owner?.views?.isViewed(cell.i, cell.j)))
+    return this.placementRules.isExploredForPlacement(cell, owner)
   }
 
   canPlaceMouseBuilding(cell: RuntimeCell): boolean {
-    const {
-      controls,
-      controls: {
-        context: { map, player },
-      },
-    } = this
-    const space = getMapSpace(map, cell.spaceId)
-    const grid = space?.grid ?? map.grid
-    const mouseBuilding = controls.mouseBuilding as MouseBuilding | null | undefined
-    if (!mouseBuilding) return false
-    if (!cell) return false
-    if (
-      mouseBuilding.inventoryItem &&
-      !controls.heroUnit?.inventory?.equipment?.includes(mouseBuilding.inventoryItem)
-    ) {
-      return false
-    }
-    if (mouseBuilding.type !== BUILDING_TYPES.farm && isBuildingLimitReached(player, mouseBuilding.type)) return false
-    if (this.doesBuildingOverlapHero(cell, mouseBuilding)) return false
-    if (mouseBuilding.inventoryItem && !this.isInventoryBuildingInHeroPlacementRange(cell, mouseBuilding)) return false
-    const passageLookup = createReservedPassageCellLookup(controls.context)
-    const placementOptions = {
-      requireVisible: true,
-      requireExplored: true,
-      isExplored: (candidate: RuntimeCell) => this.isExploredForPlacement(candidate, player),
-      canUseCell: (candidate: RuntimeCell) => !passageLookup.has(candidate),
-    }
-    return (
-      canPlaceBuildingAt(grid, cell.i, cell.j, mouseBuilding, placementOptions) &&
-      hasBuildingPlacementClearance(grid, cell.i, cell.j, mouseBuilding, placementOptions)
-    )
+    return this.placementRules.canPlaceMouseBuilding(cell)
   }
 
   addWheatFieldPreview(container: Container, texture: ReturnType<typeof getTexture>): void {
@@ -273,45 +230,19 @@ export class BuildingPlacer {
   }
 
   doesBuildingOverlapHero(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
-    const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
-    if (!hero || hero.isDead || hero.isDestroyed) return false
-    if (!sameCellMapSpace(hero, cell)) return false
-    const size = typeof building.size === 'number' ? building.size : 1
-    const space = getMapSpace(this.controls.context.map, cell.spaceId)
-    return getBuildingFootprintCells(cell.i, cell.j, space?.grid ?? this.controls.context.map.grid, size).some(
-      footprintCell => footprintCell.i === hero.i && footprintCell.j === hero.j
-    )
+    return this.placementRules.doesBuildingOverlapHero(cell, building)
   }
 
   isInventoryBuildingInHeroPlacementRange(cell: RuntimeCell, building: PlaceableBuildingConfig): boolean {
-    const hero = this.controls.heroUnit
-    if (!hero || hero.isDead || hero.isDestroyed) return false
-    if (!sameCellMapSpace(hero, cell)) return false
-    const size = typeof building.size === 'number' ? building.size : 1
-    const maxDistance = Math.max(1, Math.floor(size) * 2)
-    return Math.max(Math.abs(hero.i - cell.i), Math.abs(hero.j - cell.j)) <= maxDistance
+    return this.placementRules.isInventoryBuildingInHeroPlacementRange(cell, building)
   }
 
   canWallUseCell(cell: RuntimeCell, owner: PlacementOwner, allowExistingWall = false): boolean {
-    if (
-      !cell ||
-      this.isHeroOnCell(cell) ||
-      !cell.visible ||
-      !this.isExploredForPlacement(cell, owner) ||
-      cell.category === 'Water' ||
-      cell.waterBorder ||
-      cell.inclined ||
-      cell.border
-    ) {
-      return false
-    }
-    if (!cell.has && !cell.solid) return true
-    return allowExistingWall && isWall(cell.has, owner)
+    return this.placementRules.canWallUseCell(cell, owner, allowExistingWall)
   }
 
   isHeroOnCell(cell: RuntimeCell): boolean {
-    const hero = this.controls.isHeroControlActive?.() ? this.controls.heroUnit : null
-    return Boolean(hero && !hero.isDead && !hero.isDestroyed && hero.i === cell.i && hero.j === cell.j)
+    return this.placementRules.isHeroOnCell(cell)
   }
 
   commitWallPath(path: RuntimeCell[], owner: PlacementOwner): boolean {

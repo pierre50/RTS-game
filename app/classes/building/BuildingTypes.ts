@@ -75,6 +75,7 @@ export type BuildingControllerHost = Omit<
     shadowWasVisible?: boolean
     constructionRevealSprite?: Sprite | null
     constructionRevealMask?: Graphics | null
+    constructionGhostBorder?: Sprite | null
     intervalId?: unknown
     attackIntervalId?: unknown
     projectile?: string

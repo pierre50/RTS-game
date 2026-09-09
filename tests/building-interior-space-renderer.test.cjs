@@ -112,7 +112,7 @@ function loadBuildingInteriorSpaceSystem(overrides = {}) {
       moveEntityToMapSpace: overrides.moveEntityToMapSpace ?? (() => {}),
       sameMapSpace: () => true,
     },
-    '../lib/ui/InteractionCellMarker': {
+    '../lib/ui/interactionCellMarker': {
       INTERACTION_CELL_MARKER_PULSE_MS: 1400,
       INTERACTION_CELL_MARKER_Z_INDEX: 100,
       drawInteractionCellMarker: () => {},

@@ -15,6 +15,7 @@ import {
 import { playSoundCue } from '../../lib'
 import { hasLivingChief, playerNeedsChiefForCommand } from '../../lib/chief'
 import { refreshOwnerWalls } from '../../lib/buildings/walls'
+import { t } from '../../lib/lang'
 import type { GameContextLike } from '../../types/context'
 import type { ConfigOperation, ConfigValue, TechnologyConfig } from '../../types/config'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -22,6 +23,10 @@ import type { PlayerConfigLike, PlayerLike } from '../../types/player'
 import type { Condition } from '../../lib/combat'
 
 const AGE_TECHNOLOGIES = new Set(['ToolAge', 'BronzeAge', 'IronAge'])
+const VILLAGER_POPULATION_CONDITION_KEY = 'villagerPopulation'
+const MILESTONE_TECHNOLOGY_MESSAGE_KEYS: Record<string, string> = {
+  Village: 'technologyVillageUnlocked',
+}
 
 type NumericConfigOperation = ConfigOperation & {
   key: string
@@ -222,6 +227,32 @@ export function applyEligibleTechnologies(player: PlayerTechnologyOwner): string
     }
   }
 
+  return unlocked
+}
+
+function technologyUsesCondition(config: TechnologyConfig | undefined, key: string): boolean {
+  return Boolean(config?.conditions?.some((condition: Condition) => condition.key === key))
+}
+
+function notifyMilestoneTechnology(player: PlayerTechnologyOwner, type: string): void {
+  if (!player.isPlayed) return
+  const messageKey = MILESTONE_TECHNOLOGY_MESSAGE_KEYS[type]
+  if (messageKey) player.context.menu.showMessage?.(t(messageKey), 'success')
+  player.context.menu.updateActionTarget?.()
+  player.context.menu.updateTopbar?.()
+  player.context.menu.syncTechnologyProgress?.()
+}
+
+export function unlockVillagerPopulationMilestoneTechnologies(player: PlayerTechnologyOwner): string[] {
+  const unlocked: string[] = []
+  for (const [type, config] of Object.entries(player.techs || {})) {
+    if (!technologyUsesCondition(config, VILLAGER_POPULATION_CONDITION_KEY)) continue
+    if (!player.isTechnologyEligible(type)) continue
+    if (player.unlockTechnology(type)) {
+      unlocked.push(type)
+      notifyMilestoneTechnology(player, type)
+    }
+  }
   return unlocked
 }
 

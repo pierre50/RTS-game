@@ -17,7 +17,67 @@ import type { UnitLifecycle } from './UnitLifecycle'
 import type { UnitMovement } from './movement/UnitMovement'
 
 declare module './Unit' {
-  interface Unit {
+  interface Unit
+    extends Pick<
+      UnitEntity,
+      | 'spaceId'
+      | 'sounds'
+      | 'work'
+      | 'actionFrameSequence'
+      | 'shelterState'
+      | 'sleepVisualState'
+      | 'visualAnimationToken'
+      | 'restWakeLockUntilMs'
+      | 'restAlertTargetLabel'
+      | 'interiorExitState'
+      | 'resourceDeliveryState'
+      | 'dest'
+      | 'realDest'
+      | 'previousDest'
+      | 'previousWork'
+      | 'pendingOrder'
+      | 'blockedGatherApproach'
+      | 'isDirectMoving'
+      | 'speed'
+      | 'contextAction'
+      | 'mountedOnHorse'
+      | 'actionSheet'
+      | 'walkingSheet'
+      | 'standingSheet'
+      | 'loop'
+      | 'visibilityTimeout'
+      | 'showBuildings'
+      | 'assets'
+      | 'allAssets'
+      | 'energy'
+      | 'totalEnergy'
+      | 'energyRegenRate'
+      | 'energyRegenDelay'
+      | 'energyRegenMultiplier'
+      | 'lastEnergySpentAt'
+      | 'energyCosts'
+      | 'waitingForEnergyAction'
+      | 'waitingForEnergyTarget'
+      | 'energyWaitTaskId'
+      | 'attackRecoveryMs'
+      | 'attackRecoveryTaskId'
+      | 'attackRecoveryAnimationTaskId'
+      | 'combatBehavior'
+      | 'combatBehaviorPreset'
+      | 'combatMode'
+      | 'combatRecoveryOrbitDirection'
+      | 'lastCombatRecoveryMoveAt'
+      | 'contextActionEnergyCosts'
+      | 'toolLevels'
+      | 'inventory'
+      | 'lootEquipment'
+      | 'appearance'
+      | 'appearanceVariants'
+      | 'totalQuantity'
+      | 'isChief'
+      | 'handleSetDest'
+      | 'handleIsAttacked'
+    > {
     unitInterface: UnitInterface
     unitCommands: UnitCommands
     unitLifecycle: UnitLifecycle
@@ -39,80 +99,22 @@ declare module './Unit' {
     visualSettingsCleanup: (() => void) | null
 
     controlMode: NonNullable<UnitEntity['controlMode']>
-    spaceId?: UnitEntity['spaceId']
     inactif: boolean
-    sounds?: UnitEntity['sounds']
-    work: UnitEntity['work']
-    actionFrameSequence?: UnitEntity['actionFrameSequence']
-    shelterState?: UnitEntity['shelterState']
-    sleepVisualState?: UnitEntity['sleepVisualState']
-    visualAnimationToken?: UnitEntity['visualAnimationToken']
-    restWakeLockUntilMs?: UnitEntity['restWakeLockUntilMs']
-    restAlertTargetLabel?: UnitEntity['restAlertTargetLabel']
-    interiorExitState?: UnitEntity['interiorExitState']
-    resourceDeliveryState?: UnitEntity['resourceDeliveryState']
 
-    dest: UnitEntity['dest']
-    realDest: UnitEntity['realDest']
-    previousDest: UnitEntity['previousDest']
-    previousWork: UnitEntity['previousWork']
     path: NonNullable<UnitEntity['path']>
-    pendingOrder: UnitEntity['pendingOrder']
-    blockedGatherApproach: UnitEntity['blockedGatherApproach']
     buildQueue: NonNullable<UnitEntity['buildQueue']>
-    isDirectMoving?: UnitEntity['isDirectMoving']
     currentCell: NonNullable<UnitEntity['currentCell']>
     visibleCells: NonNullable<UnitEntity['visibleCells']>
-    speed?: UnitEntity['speed']
 
     actionLocked: boolean
-    contextAction?: UnitEntity['contextAction']
     currentSheet: NonNullable<UnitEntity['currentSheet']>
     currentFrame: NonNullable<UnitEntity['currentFrame']>
-    mountedOnHorse?: UnitEntity['mountedOnHorse']
     horseColor?: HorseColor
-    actionSheet?: UnitEntity['actionSheet']
-    walkingSheet?: UnitEntity['walkingSheet']
-    standingSheet?: UnitEntity['standingSheet']
-    loop?: UnitEntity['loop']
-    visibilityTimeout?: UnitEntity['visibilityTimeout']
-    showBuildings?: UnitEntity['showBuildings']
 
-    assets?: UnitEntity['assets']
-    allAssets?: UnitEntity['allAssets']
-    energy?: UnitEntity['energy']
-    totalEnergy?: UnitEntity['totalEnergy']
-    energyRegenRate?: UnitEntity['energyRegenRate']
-    energyRegenDelay?: UnitEntity['energyRegenDelay']
-    energyRegenMultiplier?: UnitEntity['energyRegenMultiplier']
-    lastEnergySpentAt?: UnitEntity['lastEnergySpentAt']
-    energyCosts?: UnitEntity['energyCosts']
-    waitingForEnergyAction?: UnitEntity['waitingForEnergyAction']
-    waitingForEnergyTarget?: UnitEntity['waitingForEnergyTarget']
-    energyWaitTaskId?: UnitEntity['energyWaitTaskId']
-    attackRecoveryMs?: UnitEntity['attackRecoveryMs']
-    attackRecoveryTaskId?: UnitEntity['attackRecoveryTaskId']
-    attackRecoveryAnimationTaskId?: UnitEntity['attackRecoveryAnimationTaskId']
-    combatBehavior?: UnitEntity['combatBehavior']
-    combatBehaviorPreset?: UnitEntity['combatBehaviorPreset']
-    combatMode?: UnitEntity['combatMode']
-    combatRecoveryOrbitDirection?: UnitEntity['combatRecoveryOrbitDirection']
-    lastCombatRecoveryMoveAt?: UnitEntity['lastCombatRecoveryMoveAt']
-    contextActionEnergyCosts?: UnitEntity['contextActionEnergyCosts']
-    toolLevels?: UnitEntity['toolLevels']
-    inventory?: UnitEntity['inventory']
-    lootEquipment?: UnitEntity['lootEquipment']
-    appearance?: UnitEntity['appearance']
-    appearanceVariants?: UnitEntity['appearanceVariants']
-
-    totalQuantity?: UnitEntity['totalQuantity']
     quantity: number
     experience: NonNullable<UnitEntity['experience']>
-    isChief?: UnitEntity['isChief']
 
-    interface: UnitEntity['interface']
-    handleSetDest?: UnitEntity['handleSetDest']
-    handleIsAttacked?: UnitEntity['handleIsAttacked']
+    interface?: NonNullable<UnitEntity['interface']>
     context: GameContextLike & { scheduler: SchedulerLike }
 
     commonSendTo(

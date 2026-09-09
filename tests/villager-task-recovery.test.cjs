@@ -132,10 +132,7 @@ test('gold task recovery uses the public gold command and verifies that the orde
   assert.equal(unit.dest, gold)
   assert.equal(unit.action, constants.ACTION_TYPES.minegold)
   assert.equal(unit.path.length, 1)
-  assert.deepEqual(calls, [
-    ['handleChangeDest'],
-    ['sendToGold', 'gold-1', true],
-  ])
+  assert.deepEqual(calls, [['handleChangeDest'], ['sendToGold', 'gold-1', true]])
 })
 
 test('gold task recovery rejects a command that did not create a destination or action', () => {
@@ -173,4 +170,127 @@ test('gold task recovery rejects a command that did not create a destination or 
     ['sendToGold'],
     ['assignAutonomy', 'gold', { exploreWhenNoTarget: true, preserveRejectedTargets: true }],
   ])
+})
+
+for (const [action, method, family] of [
+  ['farm', 'sendToFarm', 'resource'],
+  ['forageberry', 'sendToBerrybush', 'resource'],
+  ['chopwood', 'sendToTree', 'resource'],
+  ['takemeat', 'sendToTakeMeat', 'resource'],
+  ['minestone', 'sendToStone', 'resource'],
+  ['minecopper', 'sendToCopper', 'resource'],
+  ['mineiron', 'sendToIron', 'resource'],
+  ['build', 'sendToBuilding', 'building'],
+]) {
+  test(`stored ${action} tasks resume through their public command and detect missing commands`, () => {
+    const calls = []
+    const { resumeVillagerStoredTask } = loadVillagerTaskRecovery(calls)
+    const target = { label: 'target', family }
+    const unit = {
+      [method](dest) {
+        this.dest = dest
+        this.action = action
+      },
+    }
+    assert.equal(resumeVillagerStoredTask(unit, { dest: target, action }, { fallbackToAutonomy: false }), true)
+    assert.equal(unit.dest, target)
+    assert.equal(unit.action, action)
+    delete unit[method]
+    assert.equal(resumeVillagerStoredTask(unit, { dest: target, action }, { fallbackToAutonomy: false }), false)
+    assert.equal(calls.length, 0)
+  })
+}
+
+test('stored movement tasks support cells, unlabeled destinations and explicit order rejection', () => {
+  const { resumeVillagerStoredTask } = loadVillagerTaskRecovery([])
+  for (const dest of [{ has: null, i: 2, j: 3 }, { label: 'entity' }]) {
+    const unit = {
+      sendToEvt(target, action, options) {
+        this.dest = target
+        this.action = action
+        assert.equal(options.preserveAutonomy, true)
+      },
+    }
+    assert.equal(resumeVillagerStoredTask(unit, { dest }, { fallbackToAutonomy: false }), true)
+    unit.sendToEvt = () => false
+    assert.equal(resumeVillagerStoredTask(unit, { dest }, { fallbackToAutonomy: false }), false)
+    delete unit.sendToEvt
+    assert.equal(resumeVillagerStoredTask(unit, { dest }, { fallbackToAutonomy: false }), false)
+  }
+})
+
+test('recovery recognizes equivalent targets, blocked approaches and work already in progress', () => {
+  const { resumeVillagerStoredTask } = loadVillagerTaskRecovery([])
+  const dest = { label: 'tree' }
+  const task = { dest, action: 'chopwood' }
+  const unit = {
+    sendToTree() {
+      this.dest = { label: 'tree' }
+      this.action = 'chopwood'
+    },
+  }
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), true)
+  unit.sendToTree = function () {
+    this.blockedGatherApproach = { target: dest, action: 'chopwood' }
+  }
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), true)
+  unit.blockedGatherApproach = null
+  unit.sendToTree = function () {
+    this.action = 'chopwood'
+  }
+  unit.isUnitAtDest = () => true
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), true)
+  unit.isUnitAtDest = () => false
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), false)
+})
+
+test('construction recovery routes non-building targets through their map cell', () => {
+  const { resumeVillagerStoredTask } = loadVillagerTaskRecovery([])
+  const cell = { has: null, i: 4, j: 5 }
+  const target = { family: 'resource', cell }
+  const unit = {
+    context: { map: {} },
+    sendToEvt(dest, action) {
+      this.dest = dest
+      this.action = action
+    },
+  }
+  const task = { dest: target, action: 'build' }
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), true)
+  assert.equal(unit.dest, cell)
+  delete unit.sendToEvt
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), false)
+  delete target.cell
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), false)
+  delete unit.context
+  assert.equal(resumeVillagerStoredTask(unit, task, { fallbackToAutonomy: false }), false)
+})
+
+test('invalid stored tasks cannot restart dead targets and respect fallback and motion options', () => {
+  const calls = []
+  const { resumeVillagerStoredTask, resumeStrictVillagerAutonomy } = loadVillagerTaskRecovery(calls)
+  const originalDest = { label: 'current' }
+  const path = [{ i: 1, j: 2 }]
+  const unit = { dest: originalDest, path, autonomousJob: 'wood', getActionCondition: () => false }
+  assert.equal(resumeVillagerStoredTask(unit, null), false)
+  for (const dest of [null, { isDead: true }, { label: 'rejected' }]) {
+    assert.equal(
+      resumeVillagerStoredTask(
+        unit,
+        { dest, action: 'farm', autonomousJob: 'gold' },
+        { clearMotion: false, preserveAutonomy: false, fallbackToAutonomy: false }
+      ),
+      false
+    )
+    assert.equal(unit.dest, originalDest)
+    assert.equal(unit.path, path)
+    assert.equal(unit.autonomousJob, 'wood')
+  }
+  assert.equal(resumeVillagerStoredTask(unit, { dest: null, work: 'goldminer' }, { exploreWhenNoTarget: false }), false)
+  assert.deepEqual(calls.at(-1), [
+    'assignAutonomy',
+    'gold',
+    { exploreWhenNoTarget: false, preserveRejectedTargets: true },
+  ])
+  assert.equal(resumeStrictVillagerAutonomy({}), false)
 })

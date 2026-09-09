@@ -1,19 +1,19 @@
-import type { RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
+import type { RuntimeEntity, UnitEntity, UnitResourceDeliveryReturnTask } from '../../../types/entities'
+import type { RuntimeCell } from '../../../types/map'
 
 const GOLD_MINER_FLOW_DEBUG = typeof window !== 'undefined' && typeof document !== 'undefined'
 
 function targetSnapshot(target: RuntimeEntity | RuntimeCell | null | undefined): object | null {
   if (!target) return null
   return {
-    action: 'action' in target ? target.action ?? null : undefined,
+    action: 'action' in target ? (target.action ?? null) : undefined,
     destroyed: 'isDestroyed' in target ? Boolean(target.isDestroyed) : undefined,
     i: target.i,
     j: target.j,
-    label: 'label' in target ? target.label ?? null : null,
-    quantity: 'quantity' in target ? target.quantity ?? null : undefined,
+    label: 'label' in target ? (target.label ?? null) : null,
+    quantity: 'quantity' in target ? (target.quantity ?? null) : undefined,
     solid: 'solid' in target ? Boolean(target.solid) : undefined,
-    type: 'type' in target ? target.type ?? null : null,
+    type: 'type' in target ? (target.type ?? null) : null,
   }
 }
 

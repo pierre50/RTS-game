@@ -1,36 +1,16 @@
-import { RELIEF_CLIMB_SPEED_MULTIPLIER, RELIEF_LIFT_SMOOTHING, SHEET_TYPES } from '../../../constants'
-import {
-  degreeToDirection,
-  getGroundReliefLevel,
-  getInstanceDegree,
-  getInstanceZIndex,
-  isometricToCartesian,
-  playMovementSurfaceAudio,
-  updateInstanceRenderVisibility,
-  updateInstanceVisibility,
-} from '../../../lib'
-import { isHeroControlled } from '../../../lib/units/unitControl'
-import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
+import { isometricToCartesian } from '../../../lib'
 import { getEntitySpaceMapLike } from '../../../lib/mapSpaces'
-import { debugBlockedDirectMove, debugCombatMove, debugDirectMoveProbe, serializeDirectMoveDebugCell } from './UnitMovementDebug'
-import {
-  SLIDE_PROBE_ANGLES,
-  clearCellForUnit,
-  isCellBlockedForUnit,
-  placeUnitOnCell,
-  type DirectMoveOptions,
-} from './UnitMovementHelpers'
+import { getEnergyMoveSpeedMultiplier } from '../../../lib/units/unitEnergy'
+import type { UnitEntity } from '../../../types/entities'
+import { attemptDirectMove } from './UnitDirectMovementStep'
 import {
   blocksHeroDirectMoveWithRoundedFootprint,
   blocksHeroDirectMoveWithSoftBody,
-  createHeroTerrainCollisionBlocker,
   getHeroCollisionFootprintPoints,
-  getHeroDirectMoveBlockerAtPoint,
-  getHeroTerrainCollisionBlockerNearPoint,
-  isHeroTerrainCollisionCell,
   type HeroDirectMoveBlocker,
 } from './UnitHeroDirectMovementCollision'
-import type { UnitEntity } from '../../../types/entities'
+import { debugBlockedDirectMove, serializeDirectMoveDebugCell } from './UnitMovementDebug'
+import { SLIDE_PROBE_ANGLES, type DirectMoveOptions } from './UnitMovementHelpers'
 
 export class UnitDirectMovement {
   unit: UnitEntity
@@ -83,7 +63,11 @@ export class UnitDirectMovement {
       return true
     }
     const directMoveBlocker = blocker as HeroDirectMoveBlocker | null
-    if (directMoveBlocker && directMoveBlocker.family !== 'terrain' && !blocksHeroDirectMoveWithSoftBody(directMoveBlocker)) {
+    if (
+      directMoveBlocker &&
+      directMoveBlocker.family !== 'terrain' &&
+      !blocksHeroDirectMoveWithSoftBody(directMoveBlocker)
+    ) {
       const slideFailedBlocker = this.directMoveBlocker as HeroDirectMoveBlocker | null
       debugBlockedDirectMove(
         unit,
@@ -109,6 +93,17 @@ export class UnitDirectMovement {
       return false
     }
 
+    return this.probeAlternativeDirections(dirX, dirY, distance, facingDirX, facingDirY)
+  }
+
+  private probeAlternativeDirections(
+    dirX: number,
+    dirY: number,
+    distance: number,
+    facingDirX: number,
+    facingDirY: number
+  ): boolean {
+    const unit = this.unit
     const baseAngle = Math.atan2(dirY, dirX)
     const probeSigns = this.slideBias ? [this.slideBias, -this.slideBias] : [1, -1]
     for (const step of SLIDE_PROBE_ANGLES) {
@@ -206,6 +201,7 @@ export class UnitDirectMovement {
     for (let index = 0; index < points.length; index++) {
       const a = points[index]
       const b = points[(index + 1) % points.length]
+      if (!a || !b) continue
       const segmentX = b.x - a.x
       const segmentY = b.y - a.y
       const segmentLengthSq = segmentX * segmentX + segmentY * segmentY
@@ -281,209 +277,6 @@ export class UnitDirectMovement {
     facingDirX: number = dirX,
     facingDirY: number = dirY
   ): boolean {
-    const unit = this.unit
-    const contextMap = unit.context?.map
-    const map = getEntitySpaceMapLike(unit, contextMap)
-    if (!map || !unit.sprite || (dirX === 0 && dirY === 0) || distance <= 0) return false
-
-    const targetClimbFactor = unit.currentCell?.inclined ? RELIEF_CLIMB_SPEED_MULTIPLIER : 1
-    this.directMoveClimbFactor += (targetClimbFactor - this.directMoveClimbFactor) * RELIEF_LIFT_SMOOTHING
-    const effectiveDistance = distance * this.directMoveClimbFactor * getEnergyMoveSpeedMultiplier(unit)
-
-    const candidateX = unit.x + dirX * effectiveDistance
-    const candidateY = unit.y + dirY * effectiveDistance
-    const [rawI, rawJ] = isometricToCartesian(candidateX, candidateY)
-    if (rawI < 0 || rawJ < 0 || rawI > map.size || rawJ > map.size) {
-      debugBlockedDirectMove(unit, 'target-out-of-map', { rawI, rawJ, mapSize: map.size }, dirX, dirY)
-      return false
-    }
-    const newI = Math.min(Math.max(rawI, 0), map.size)
-    const newJ = Math.min(Math.max(rawJ, 0), map.size)
-    const crossingCell = newI !== unit.i || newJ !== unit.j
-    const targetCell = crossingCell ? map.grid[newI]?.[newJ] : unit.currentCell
-    const heroControlled = isHeroControlled(unit)
-    if (heroControlled && (targetCell?.waterBorder || targetCell?.category === 'Water' || unit.currentCell?.waterBorder)) {
-      debugDirectMoveProbe(
-        unit,
-        'hero-border-attempt',
-        {
-          rawI,
-          rawJ,
-          newI,
-          newJ,
-          candidateX: Math.round(candidateX * 100) / 100,
-          candidateY: Math.round(candidateY * 100) / 100,
-          crossingCell,
-          target: targetCell
-            ? {
-                i: targetCell.i,
-                j: targetCell.j,
-                x: Math.round(targetCell.x * 100) / 100,
-                y: Math.round(targetCell.y * 100) / 100,
-                solid: targetCell.solid,
-                waterBorder: targetCell.waterBorder,
-                border: targetCell.border,
-                category: targetCell.category,
-                has: targetCell.has
-                  ? { family: targetCell.has.family, type: targetCell.has.type, label: targetCell.has.label, sameObject: targetCell.has === unit }
-                  : null,
-              }
-            : null,
-        },
-        dirX,
-        dirY
-      )
-    }
-
-    if (crossingCell) {
-      if (!targetCell) {
-        debugBlockedDirectMove(unit, 'missing-target-cell', { rawI, rawJ, newI, newJ }, dirX, dirY)
-        return false
-      }
-      if (targetCell.border && (!targetCell.waterBorder || targetCell.solid) && !heroControlled) {
-        debugBlockedDirectMove(unit, 'target-border', { rawI, rawJ, newI, newJ, targetCell }, dirX, dirY)
-        return false
-      }
-      if (!heroControlled && isCellBlockedForUnit(unit, targetCell)) {
-        debugCombatMove(unit, 'direct-target-solid', targetCell, { stage: 'direct-move', rawI, rawJ, newI, newJ })
-        return false
-      }
-      if (heroControlled && targetCell.solid && !targetCell.has) {
-        this.directMoveBlocker = createHeroTerrainCollisionBlocker(targetCell, map)
-        debugBlockedDirectMove(
-          unit,
-          'target-solid-terrain',
-          { rawI, rawJ, newI, newJ, category: targetCell.category, waterBorder: targetCell.waterBorder },
-          dirX,
-          dirY
-        )
-        return false
-      }
-      const nearbyTerrainBlocker = heroControlled
-        ? getHeroTerrainCollisionBlockerNearPoint(unit, targetCell, candidateX, candidateY)
-        : null
-      if (nearbyTerrainBlocker) {
-        this.directMoveBlocker = nearbyTerrainBlocker
-        debugBlockedDirectMove(
-          unit,
-          'target-nearby-terrain-footprint',
-          { rawI, rawJ, newI, newJ, category: targetCell.category, waterBorder: targetCell.waterBorder },
-          dirX,
-          dirY
-        )
-        return false
-      }
-      const categoryAllowed = targetCell.category !== 'Water' && (!targetCell.waterBorder || !targetCell.solid)
-      if (!categoryAllowed) {
-        if (isHeroTerrainCollisionCell(unit, targetCell)) this.directMoveBlocker = createHeroTerrainCollisionBlocker(targetCell, map)
-        debugBlockedDirectMove(
-          unit,
-          'target-category',
-          { rawI, rawJ, newI, newJ, category: targetCell.category, waterBorder: targetCell.waterBorder },
-          dirX,
-          dirY
-        )
-        return false
-      }
-    }
-    const terrainBlocker = heroControlled ? getHeroTerrainCollisionBlockerNearPoint(unit, targetCell, candidateX, candidateY) : null
-    if (terrainBlocker) {
-      this.directMoveBlocker = terrainBlocker
-      debugBlockedDirectMove(
-        unit,
-        'target-terrain-footprint',
-        {
-          rawI,
-          rawJ,
-          newI,
-          newJ,
-          category: targetCell?.category,
-          waterBorder: targetCell?.waterBorder,
-          solid: targetCell?.solid,
-          border: targetCell?.border,
-          crossingCell,
-          terrainBlocker: {
-            type: terrainBlocker.type,
-            pointCount: terrainBlocker.collisionPoints?.length ?? 0,
-            points: terrainBlocker.collisionPoints?.map(point => ({
-              x: Math.round(point.x * 100) / 100,
-              y: Math.round(point.y * 100) / 100,
-            })),
-          },
-          occupant: targetCell?.has
-            ? {
-                family: targetCell.has.family,
-                type: targetCell.has.type,
-                label: targetCell.has.label,
-                sameObject: targetCell.has === unit,
-              }
-            : null,
-        },
-        dirX,
-        dirY
-      )
-      return false
-    }
-    if (heroControlled) {
-      const blocker = getHeroDirectMoveBlockerAtPoint(unit, targetCell, candidateX, candidateY)
-      if (blocker) {
-        this.directMoveBlocker = blocker
-        debugBlockedDirectMove(
-          unit,
-          'target-occupied',
-          {
-            rawI,
-            rawJ,
-            newI,
-            newJ,
-            target: {
-              solid: targetCell?.solid,
-              waterBorder: targetCell?.waterBorder,
-              category: targetCell?.category,
-              has: { type: blocker.type, family: blocker.family, label: blocker.label },
-            },
-          },
-          dirX,
-          dirY
-        )
-        return false
-      }
-    }
-
-    const oldI = unit.i
-    const oldJ = unit.j
-    const oldDeg = unit.degree ?? 0
-    const wasWalking = unit.currentSheet === SHEET_TYPES.walking
-    const beforeX = unit.x
-    const beforeY = unit.y
-    unit.degree = getInstanceDegree(unit, unit.x + facingDirX, unit.y + facingDirY)
-    unit.x = candidateX
-    unit.y = candidateY
-    unit.zIndex = getInstanceZIndex(unit)
-
-    if (crossingCell && targetCell) {
-      unit.z = targetCell.z
-      unit.i = newI
-      unit.j = newJ
-      unit.zIndex = getInstanceZIndex(unit)
-      clearCellForUnit(unit, unit.currentCell)
-      unit.currentCell = targetCell
-      placeUnitOnCell(unit, targetCell)
-      if (heroControlled) {
-        updateInstanceRenderVisibility(unit)
-        unit.visible = true
-      }
-      contextMap?.updateInstanceBucket(unit, oldI, oldJ)
-    }
-    updateInstanceVisibility(unit)
-    unit.applyReliefLift?.(getGroundReliefLevel(unit.currentCell))
-    playMovementSurfaceAudio(unit, effectiveDistance, { previousX: beforeX, previousY: beforeY })
-    if (!unit.actionLocked) {
-      if (!unit.sprite.playing) unit.sprite.play()
-      if (!wasWalking || degreeToDirection(oldDeg) !== degreeToDirection(unit.degree ?? 0)) {
-        unit.setTextures?.(SHEET_TYPES.walking)
-      }
-    }
-    return true
+    return attemptDirectMove(this, dirX, dirY, distance, facingDirX, facingDirY)
   }
 }

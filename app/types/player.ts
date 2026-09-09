@@ -93,11 +93,13 @@ export interface PlayerLike {
   iron: number
   population: number
   populationMax: number
+  villagerPopulation?: number
   isPlayed?: boolean
   views: VisionGridLike
   config: PlayerConfigLike
   technologies: string[]
   discoveredEquipment?: string[]
+  discoveredResources?: string[]
   researchTechnology?: { type?: string; config?: TechnologyConfig } | null
   researchLoading?: number | null
   techs: Record<string, TechnologyConfig>
@@ -161,6 +163,7 @@ export interface PlayerLike {
   hasBuilt?: string[]
   autoTechnologyByAge?: boolean
   applyEligibleTechnologies?: () => string[]
+  unlockVillagerPopulationMilestoneTechnologies?: () => string[]
   civilizationLevel?: number
 }
 

@@ -1,3 +1,4 @@
+import { definedProperties } from '../../lib/definedProperties'
 import { getBuildingFootprintCells, getFreeLandCellAroundInstance } from '../../lib'
 import { findInteriorSleepCell, hasBuildingShelterCapacity } from '../../lib/buildings/buildingOccupancy'
 import { sameBuilding } from '../../lib/buildings/identity'
@@ -136,7 +137,7 @@ export function removeBuildingInteriorOccupants(state: SerializedSave, occupants
     players: state.players.map(player => {
       if (!player.isPlayed || !player.units?.length) return player
       const selectedUnitLabels = player.selectedUnitLabels?.filter(label => !occupantLabels.has(label))
-      return {
+      return definedProperties({
         ...player,
         selectedUnitLabel:
           player.selectedUnitLabel && occupantLabels.has(player.selectedUnitLabel)
@@ -144,7 +145,7 @@ export function removeBuildingInteriorOccupants(state: SerializedSave, occupants
             : player.selectedUnitLabel,
         selectedUnitLabels,
         units: player.units.filter(unit => !unit.label || !occupantLabels.has(unit.label)),
-      }
+      })
     }),
   }
 }
@@ -216,11 +217,12 @@ export function addInteriorOccupantsToRuntime(
     const arrivalCell = findInteriorOccupantArrivalCell(game, anchor)
     if (!arrivalCell) continue
     const sleepCell = occupantState.sleepInInterior ? findInteriorSleepCell(game._gameContext().map) : null
-    const enterSleepingInstantly = occupantState.sleepInInterior && (options.sleepVisual ?? 'finalFrame') === 'finalFrame'
+    const enterSleepingInstantly =
+      occupantState.sleepInInterior && (options.sleepVisual ?? 'finalFrame') === 'finalFrame'
     const spawnCell = enterSleepingInstantly && sleepCell ? sleepCell : arrivalCell
 
     const occupant = player.createUnit?.(
-      {
+      definedProperties({
         i: spawnCell.i,
         j: spawnCell.j,
         appearanceVariants: occupantState.appearanceVariants
@@ -233,7 +235,7 @@ export function addInteriorOccupantsToRuntime(
         name: occupantState.name,
         suppressCreateSound: true,
         type: occupantState.type,
-      },
+      }),
       { preserveType: true }
     )
     if (!occupant) continue

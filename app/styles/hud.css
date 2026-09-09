@@ -677,6 +677,82 @@
   gap: var(--ui-gap-8);
 }
 
+.action-menu-technologies-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-12);
+}
+
+.technology-menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+  width: 100%;
+}
+
+.technology-menu-section-title {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+.technology-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  gap: var(--ui-gap-8);
+}
+
+.technology-menu-section-age .technology-menu-grid {
+  grid-template-columns: minmax(220px, 1fr);
+}
+
+.technology-menu-section-age .ui-action-row {
+  min-height: 74px;
+  border-color: rgba(255, 214, 108, 0.75);
+  background: rgba(255, 214, 108, 0.08);
+}
+
+.technology-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-6);
+}
+
+.technology-objective-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-gap-8);
+  min-height: 30px;
+  padding: 5px 8px;
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.technology-objective-row.is-acquired {
+  color: var(--msg-success-color);
+  border-color: rgba(142, 231, 160, 0.28);
+  background: rgba(142, 231, 160, 0.08);
+}
+
+.technology-objective-row.is-locked {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.technology-objective-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.technology-objective-status {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
 .action-menu-minimap-page {
   display: flex;
   align-items: center;
@@ -1271,21 +1347,21 @@
   white-space: nowrap;
 }
 
-.action-menu-technologies-page > .ui-action-row,
 .action-menu-craft-page > .ui-action-row,
-.action-menu-technologies-page > .menu-tooltip-hitbox > .ui-action-row,
+.technology-menu-grid > .ui-action-row,
+.technology-menu-grid > .menu-tooltip-hitbox > .ui-action-row,
 .action-menu-craft-page > .menu-tooltip-hitbox > .ui-action-row {
   position: relative;
   gap: 2px var(--ui-gap-8);
 }
 
-.action-menu-technologies-page > .menu-tooltip-hitbox,
+.technology-menu-grid > .menu-tooltip-hitbox,
 .action-menu-craft-page > .menu-tooltip-hitbox {
   width: 100%;
 }
 
-.action-menu-technologies-page > .ui-action-row.is-acquired,
-.action-menu-technologies-page > .menu-tooltip-hitbox > .ui-action-row.is-acquired {
+.technology-menu-grid > .ui-action-row.is-acquired,
+.technology-menu-grid > .menu-tooltip-hitbox > .ui-action-row.is-acquired {
   color: var(--msg-success-color);
   border-color: var(--msg-success-border);
   background: var(--msg-success-bg);

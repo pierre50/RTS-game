@@ -1,13 +1,14 @@
 import type { HeroEquippedItem } from './heroTools'
 
-export type CursorState = 'default' | 'pointer' | 'resource' | 'combat' | 'bow' | 'lasso' | 'move' | 'enter'
+export type CursorState = 'default' | 'pointer' | 'resource' | 'combat' | 'bow' | 'catchingPole' | 'move' | 'enter'
+type HeroCursorTool = HeroEquippedItem | 'catchingPole'
 
 const CURSOR_CLASSES: Partial<Record<CursorState, string>> = {
   pointer: 'hero-cursor-pointer',
   resource: 'hero-cursor-resource',
   combat: 'hero-cursor-combat',
   bow: 'hero-cursor-bow',
-  lasso: 'hero-cursor-bow',
+  catchingPole: 'hero-cursor-bow',
   move: 'hero-cursor-move',
   enter: 'hero-cursor-enter',
 }
@@ -21,9 +22,9 @@ const ALL_CURSOR_CLASSES = Object.values(CURSOR_CLASSES).filter((value): value i
 let lastState: CursorState | null = null
 let virtualCursorEl: HTMLDivElement | null = null
 
-function resolveToolCursorState(tool: HeroEquippedItem | null): CursorState {
+function resolveToolCursorState(tool: HeroCursorTool | null): CursorState {
   if (tool === 'bow') return 'bow'
-  if (tool === 'lasso') return 'lasso'
+  if (tool === 'catchingPole') return 'catchingPole'
   return 'default'
 }
 
@@ -36,10 +37,7 @@ function getVirtualCursorElement(): HTMLDivElement {
   return el
 }
 
-export function updateHeroCursor(
-  tool: HeroEquippedItem | null,
-  overrideState: CursorState | null = null
-): void {
+export function updateHeroCursor(tool: HeroCursorTool | null, overrideState: CursorState | null = null): void {
   const state = overrideState ?? resolveToolCursorState(tool)
   if (state === lastState) return
   const body = document.body

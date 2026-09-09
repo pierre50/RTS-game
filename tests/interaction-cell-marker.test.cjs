@@ -4,7 +4,7 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadMarker() {
   const shapes = []
-  const module = loadTsModule('app/lib/ui/InteractionCellMarker.ts', {
+  const module = loadTsModule('app/lib/ui/interactionCellMarker.ts', {
     mocks: {
       '../../constants': {
         COLOR_GOLD: 0xffd45a,

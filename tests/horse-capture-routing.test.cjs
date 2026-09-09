@@ -31,6 +31,9 @@ function loadHorseCapture(calls) {
     if (request === '../grid/movement') {
       return { instanceContactInstance: (a, b) => a.i === b.i && a.j === b.j }
     }
+    if (request === '../buildings/interiors') {
+      return { getBuildingInteriorEntryCell: () => calls.storageCell ?? null }
+    }
     return requireFromTsFile(request, filename, mocks)
   }
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
@@ -85,9 +88,89 @@ test('owner-contact routing waits for the owner timeout before failing', () => {
 
   scheduler.elapsedMs = 20000
   scheduler.tasks[0]()
-  assert.equal(calls.some(call => call[0] === 'failure'), false)
+  assert.equal(
+    calls.some(call => call[0] === 'failure'),
+    false
+  )
 
   scheduler.elapsedMs = 30000
   scheduler.tasks[0]()
-  assert.equal(calls.some(call => call[0] === 'failure'), true)
+  assert.equal(
+    calls.some(call => call[0] === 'failure'),
+    true
+  )
+})
+
+test('captured horses enter a stable through the stable entry cell', () => {
+  const calls = []
+  const storageCell = { i: 12, j: 10 }
+  calls.storageCell = storageCell
+  const { routeCapturedHorseToStableWithOwnerContact } = loadHorseCapture(calls)
+  const stable = {
+    type: 'Stable',
+    label: 'stable-1',
+    i: 10,
+    j: 10,
+    isBuilt: true,
+    isDead: false,
+    isDestroyed: false,
+    stableHorses: [],
+  }
+  const owner = {
+    label: 'villager-1',
+    i: 10,
+    j: 10,
+    owner: { buildings: [stable] },
+  }
+  const horse = {
+    label: 'horse-1',
+    horseColor: 'brown',
+    i: 10,
+    j: 10,
+    isDead: false,
+    isDestroyed: false,
+    clear: () => calls.push(['horse.clear']),
+    sendTo: target => calls.push(['horse.sendTo', target]),
+  }
+  const scheduler = {
+    elapsedMs: 0,
+    tasks: [],
+    add(callback) {
+      this.tasks.push(callback)
+      return this.tasks.length
+    },
+    remove: id => calls.push(['removeTask', id]),
+  }
+
+  routeCapturedHorseToStableWithOwnerContact({
+    gameContext: { map: { grid: [] }, scheduler },
+    owner,
+    horse,
+    onStored: () => calls.push(['stored']),
+    onFailure: () => calls.push(['failure']),
+  })
+
+  assert.equal(
+    calls.some(call => call[0] === 'stored'),
+    false
+  )
+  assert.deepEqual(
+    calls.find(call => call[0] === 'horse.sendTo'),
+    ['horse.sendTo', storageCell]
+  )
+
+  horse.i = storageCell.i
+  horse.j = storageCell.j
+  scheduler.elapsedMs = 20
+  scheduler.tasks[1]()
+
+  assert.deepEqual(stable.stableHorses, [{ horseColor: 'brown' }])
+  assert.equal(
+    calls.some(call => call[0] === 'horse.clear'),
+    true
+  )
+  assert.equal(
+    calls.some(call => call[0] === 'stored'),
+    true
+  )
 })

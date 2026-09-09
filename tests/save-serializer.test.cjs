@@ -13,6 +13,19 @@ function loadSaveSerializer() {
   })
   const module = { exports: {} }
   const mockRequire = id => {
+    if (id === '../lib/definedProperties') {
+      const dependency = path.join(__dirname, '../app/lib/definedProperties.ts')
+      const transformed = babel.transformSync(fs.readFileSync(dependency, 'utf8'), {
+        filename: dependency,
+        presets: [
+          ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+          '@babel/preset-typescript',
+        ],
+      })
+      const loaded = { exports: {} }
+      new Function('module', 'exports', 'require', transformed.code)(loaded, loaded.exports, require)
+      return loaded.exports
+    }
     if (id === '../lib') {
       return {
         filterObject(sourceObject, keys) {
@@ -56,7 +69,14 @@ function loadSaveSerializer() {
 test('pending world pursuers are included in the runtime save', () => {
   const { serializeGame } = loadSaveSerializer()
   const context = makeContext()
-  const entries = [{ entity: { label: 'wolf', type: 'Wolf', i: 1, j: 2 }, arrival: { i: 1, j: 2 }, targetLabel: 'hero', remainingMs: 1200 }]
+  const entries = [
+    {
+      entity: { label: 'wolf', type: 'Wolf', i: 1, j: 2 },
+      arrival: { i: 1, j: 2 },
+      targetLabel: 'hero',
+      remainingMs: 1200,
+    },
+  ]
   context.worldPursuit = { serializeState: () => structuredClone(entries) }
   assert.deepEqual(serializeGame(context).runtime.worldPursuers, entries)
 })
@@ -360,4 +380,19 @@ test('serializes building production, research, rally points and active user lin
     inventory: { equipment: ['trap'], resources: { wood: 5 } },
     isUsedBy: 'villager-1',
   })
+})
+
+test('saving an unseen static resource does not materialize its sprite', () => {
+  const resource = {
+    label: 'unseen-tree',
+    type: 'Tree',
+    i: 1,
+    j: 1,
+    textureName: 'tree_0',
+    quantity: 10,
+    deferredSpriteBounds: {},
+  }
+  Object.defineProperty(resource, 'sprite', { get: () => assert.fail('save should not create visuals') })
+  const save = serializeGame(makeContext({ resources: new Set([resource]) }))
+  assert.equal(save.resources[0].textureName, 'tree_0')
 })

@@ -46,6 +46,10 @@ function loadHeroActionRange({ contact = () => false, heroControlled = () => tru
   })
   const module = { exports: {} }
   const mocks = {
+    '../actions/contactActions': {
+      usesUnitContactAction: (_unit, action) => action === 'chopwood',
+      canReachActionTarget: () => false,
+    },
     '../constants': {
       CELL_HEIGHT: 32,
       ACTION_TYPES: { takemeat: 'takemeat' },
@@ -134,7 +138,7 @@ test('hero interaction keeps a forgiving band around large building-like resourc
   assert.equal(isHeroInteractionTargetReachable(hero, null, stoneDeposit), true)
 })
 
-test('hero resource interaction footprint can be widened independently from pathing size', () => {
+test('selection footprint can be widened without granting work contact', () => {
   const { getHeroInteractionTargetPoint, isHeroInteractionTargetReachable } = loadHeroActionRange()
   const hero = { controlMode: 'hero', i: 0, j: 0, x: 0, y: -64 }
   const tree = {
@@ -150,7 +154,7 @@ test('hero resource interaction footprint can be widened independently from path
   }
 
   assert.deepEqual(getHeroInteractionTargetPoint(hero, tree), { x: 0, y: -32 })
-  assert.equal(isHeroInteractionTargetReachable(hero, 'chopwood', tree), true)
+  assert.equal(isHeroInteractionTargetReachable(hero, 'chopwood', tree), false)
 })
 
 test('hero interaction range still falls back to strict contact for regular targets', () => {

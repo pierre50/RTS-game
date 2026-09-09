@@ -368,3 +368,10 @@ test('hero inventory equipment drives runtime attack armor and range', () => {
   assert.equal(getUnitRuntimeCombatStats(hero, heroConfig).weaponPower, UNARMED_UNIT_WEAPON_POWER)
   assert.equal(getUnitCombatRange(hero), undefined)
 })
+
+test('melee collision weapon follows equipment and ignores shields and bows', () => {
+  const { getEntityMeleeWeapon } = loadEquipmentStats()
+  assert.equal(getEntityMeleeWeapon({ equipment: ['armor_leather', 'bow', 'axe_iron'] }), 'axe_iron')
+  assert.equal(getEntityMeleeWeapon({ equipment: ['armor_leather', 'bow'] }), undefined)
+  assert.equal(getEntityMeleeWeapon({ equipment: [] }), undefined)
+})

@@ -1,43 +1,43 @@
 import { Container, Graphics } from 'pixi.js'
-import { getReliefOffset, isometricToCartesian } from '../lib'
-import { getActiveInteractionSpace, getEntityMapPoint, getSpaceLocalPointFromMapPoint } from '../lib/mapSpaces'
-import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
-import { CameraController } from '../controllers/CameraController'
 import { BuildingPlacer } from '../controllers/BuildingPlacer'
-import { RallyPointController } from '../controllers/RallyPointController'
+import { CameraController } from '../controllers/CameraController'
+import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
 import { HeroController } from '../controllers/HeroController'
 import { HeroInteractionController } from '../controllers/HeroInteractionController'
-import { GamepadHeroInput } from '../controllers/GamepadHeroInput'
-import { TouchInputController, type TouchInteraction } from '../controllers/TouchInputController'
 import { PointerInputController, type PointerPageEvent } from '../controllers/PointerInputController'
+import { RallyPointController } from '../controllers/RallyPointController'
+import { TouchInputController, type TouchInteraction } from '../controllers/TouchInputController'
 import type { ControlBindingAction } from '../lib/audio/settings'
-import { setHeroGameCursorEnabled } from '../lib/hero/heroCursor'
 import type { HeroEquippedItem } from '../lib/hero/heroTools'
 import type { AudibleInstanceLike, ControlsLike, GameContextLike } from '../types/context'
 import type { PlaceableBuildingConfig, RuntimeEntity, UnitEntity } from '../types/entities'
-import type { RuntimeCell } from '../types/map'
 import type { Bounds } from '../types/geometry'
+import type { RuntimeCell } from '../types/map'
+import type { TickerLike } from './ControlsFrame'
+import { onTick as runOnTick } from './ControlsFrame'
+import {
+  getCellUnderCursor as runGetCellUnderCursor,
+  getHeroCameraCenter as runGetHeroCameraCenter,
+  getMapPointUnderCursor as runGetMapPointUnderCursor,
+  getWorldPointUnderCursor as runGetWorldPointUnderCursor,
+  init as runInit,
+  instanceInCamera as runInstanceInCamera,
+  instanceIsAudible as runInstanceIsAudible,
+  localToScreen as runLocalToScreen,
+  screenToLocal as runScreenToLocal,
+} from './ControlsGeometry'
 import {
   captureControlsMovement,
-  restoreControlsMovement,
-  type HeldMovementKeys,
   handleControlsEscapeKey,
   handleControlsKeyDown,
   handleControlsKeyUp,
   panControlsCameraWithArrowKeys,
+  restoreControlsMovement,
+  type HeldMovementKeys,
 } from './ControlsKeyboard'
 type PointerPoint = { x: number; y: number }
-type TickerLike = { elapsedMS?: number; deltaMS?: number; deltaTime: number }
 type AudibleEntity = AudibleInstanceLike & { x: number; y: number }
-const MAX_CAMERA_FRAME_SCALE = 3
-const TARGET_FRAME_MS = 1000 / 60
-const POINTER_CELL_PICK_RADIUS = 8
 
-function pointIsInCellDiamond(point: PointerPoint, cell: RuntimeCell): boolean {
-  const dx = Math.abs(point.x - cell.x)
-  const dy = Math.abs(point.y - cell.y)
-  return dx / (CELL_WIDTH / 2) + dy / (CELL_HEIGHT / 2) <= 1
-}
 export default class Controls extends Container implements ControlsLike {
   context: GameContextLike
   mouse: { x: number; y: number; prevent: boolean }
@@ -208,10 +208,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   getHeroCameraCenter(): { x: number; y: number } | null {
-    const hero = this.heroUnit
-    if (!hero) return null
-    const point = getEntityMapPoint(hero)
-    return { x: point.x, y: point.y + getReliefOffset(hero) }
+    return runGetHeroCameraCenter(this)
   }
 
   focusHeroCamera(): void {
@@ -232,27 +229,11 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   screenToLocal(x: number, y: number): { x: number; y: number } {
-    const { zoom, offsetX, offsetY } = this.getViewportMetrics()
-    const rect = this.context.gamebox.getBoundingClientRect()
-    const scaleX = this.context.app.screen.width / rect.width
-    const scaleY = this.context.app.screen.height / rect.height
-    const rendererX = (x - rect.left) * scaleX
-    const rendererY = (y - rect.top) * scaleY
-    return {
-      x: (rendererX - offsetX) / zoom,
-      y: (rendererY - offsetY) / zoom,
-    }
+    return runScreenToLocal(this, x, y)
   }
 
   localToScreen(x: number, y: number): { x: number; y: number } {
-    const { zoom, offsetX, offsetY } = this.getViewportMetrics()
-    const rect = this.context.gamebox.getBoundingClientRect()
-    const scaleX = this.context.app.screen.width / rect.width
-    const scaleY = this.context.app.screen.height / rect.height
-    return {
-      x: rect.left + (offsetX + x * zoom) / scaleX,
-      y: rect.top + (offsetY + y * zoom) / scaleY,
-    }
+    return runLocalToScreen(this, x, y)
   }
 
   isInteractionBlocked(): boolean {
@@ -300,43 +281,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   onTick(ticker: TickerLike): void {
-    if (!this.runtimeInputEnabled) {
-      setHeroGameCursorEnabled(false)
-      return
-    }
-    setHeroGameCursorEnabled(this.isHeroControlActive() && !this.isInGameMenuOpen())
-    const gameFrameScale = (ticker.deltaMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS
-    if (this.isInteractionBlocked()) {
-      this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
-      this.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
-      this.cancelActiveInteraction()
-      return
-    }
-
-    const frameScale = Math.min(
-      (ticker.elapsedMS ?? ticker.deltaTime * TARGET_FRAME_MS) / TARGET_FRAME_MS,
-      MAX_CAMERA_FRAME_SCALE
-    )
-
-    if (this.isHeroControlActive()) {
-      this.gamepadInput.update()
-      this.heroController.update(gameFrameScale)
-      if (this.freeCameraActive) {
-        this.panCameraWithArrowKeys(frameScale)
-      } else {
-        const cameraCenter = this.getHeroCameraCenter()
-        if (cameraCenter) this.cameraController.set(cameraCenter.x, cameraCenter.y, false, false)
-      }
-      if (this.mouseBuilding || this.rallyPointController.active) {
-        this.mouseBuilding ? this.buildingPlacer.handleMouseMove() : this.rallyPointController.handleMouseMove()
-      }
-      return
-    }
-
-    this.heroController.updateCriticalHealthEffects(TARGET_FRAME_MS * gameFrameScale, false)
-    this.heroController.updateOcclusionFade(TARGET_FRAME_MS * gameFrameScale, false)
-    this.cameraController.updateMouseMove(frameScale)
-    this.panCameraWithArrowKeys(frameScale)
+    return runOnTick(this, ticker)
   }
 
   panCameraWithArrowKeys(frameScale: number): void {
@@ -384,63 +329,15 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   getWorldPointUnderCursor(): PointerPoint {
-    const {
-      context: { map },
-    } = this
-    const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
-    const mapPoint = {
-      x: pointer.x - map.x,
-      y: pointer.y - map.y,
-    }
-    const space = getActiveInteractionSpace(this.context)
-    return getSpaceLocalPointFromMapPoint(space, mapPoint)
+    return runGetWorldPointUnderCursor(this)
   }
 
   getMapPointUnderCursor(): PointerPoint {
-    const {
-      context: { map },
-    } = this
-    const pointer = this.screenToLocal(this.mouse.x, this.mouse.y)
-    return {
-      x: pointer.x - map.x,
-      y: pointer.y - map.y,
-    }
+    return runGetMapPointUnderCursor(this)
   }
 
   getCellUnderCursor(): RuntimeCell | null {
-    const {
-      context: { map },
-    } = this
-    const space = getActiveInteractionSpace(this.context)
-    const pointer = this.getWorldPointUnderCursor()
-    const pos = isometricToCartesian(pointer.x, pointer.y)
-    const size = space?.size ?? map.size
-    const grid = space?.grid ?? map.grid
-    const i = Math.min(Math.max(pos[0], 0), size)
-    const j = Math.min(Math.max(pos[1], 0), size)
-    const fallbackCell = grid[i]?.[j] || null
-    let bestCell: RuntimeCell | null = null
-    let bestDistance = Infinity
-    for (
-      let candidateI = Math.max(0, i - POINTER_CELL_PICK_RADIUS);
-      candidateI <= Math.min(size, i + POINTER_CELL_PICK_RADIUS);
-      candidateI++
-    ) {
-      for (
-        let candidateJ = Math.max(0, j - POINTER_CELL_PICK_RADIUS);
-        candidateJ <= Math.min(size, j + POINTER_CELL_PICK_RADIUS);
-        candidateJ++
-      ) {
-        const cell = grid[candidateI]?.[candidateJ]
-        if (!cell || !pointIsInCellDiamond(pointer, cell)) continue
-        const distance = Math.abs(pointer.x - cell.x) + Math.abs(pointer.y - cell.y)
-        if (distance < bestDistance) {
-          bestCell = cell
-          bestDistance = distance
-        }
-      }
-    }
-    return bestCell || fallbackCell
+    return runGetCellUnderCursor(this)
   }
 
   getFacingEntityTarget(): RuntimeEntity | null {
@@ -564,20 +461,11 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   instanceInCamera(instance: { x: number; y: number }, bounds?: Bounds): boolean {
-    const point = 'context' in instance ? getEntityMapPoint(instance as UnitEntity) : instance
-    return this.cameraController.instanceInCamera(point, bounds)
+    return runInstanceInCamera(this, instance, bounds)
   }
 
   instanceIsAudible(instance: AudibleEntity): boolean {
-    const {
-      context: { map },
-    } = this
-
-    if (!this.instanceInCamera(instance)) return false
-    if (map.revealEverything) return true
-    if (instance.owner?.isPlayed || instance.owner?.owner?.isPlayed) return true
-
-    return Boolean(instance.visible || instance.owner?.visible || instance.target?.visible)
+    return runInstanceIsAudible(this, instance)
   }
 
   getCellOnCamera(callback: (cell: RuntimeCell) => void): void {
@@ -589,19 +477,7 @@ export default class Controls extends Container implements ControlsLike {
   }
 
   init(): void {
-    const {
-      context: { player, map },
-    } = this
-
-    if (this.heroController.initFromPlayerStart()) return
-
-    if (player?.buildings?.length) {
-      this.setCamera(player.buildings[0].x, player.buildings[0].y)
-    } else if (player?.units?.length) {
-      this.setCamera(player.units[0].x, player.units[0].y)
-    } else {
-      this.setCamera(map.size / 2, map.size / 2)
-    }
+    return runInit(this)
   }
 
   setCamera(x: number, y: number, direct?: boolean): void {

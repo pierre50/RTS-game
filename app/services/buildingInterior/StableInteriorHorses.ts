@@ -22,13 +22,17 @@ function isStableInteriorHorseSpace(space: RuntimeMapSpace): space is StableInte
   return isStableInteriorSpace(space) && Array.isArray((space as StableInteriorHorseSpace).sleepCells)
 }
 
-function isStableInteriorHorseForSpace(space: StableInteriorHorseSpace, entity: RuntimeEntity | null | undefined): boolean {
+function isStableInteriorHorseForSpace(
+  space: StableInteriorHorseSpace,
+  entity: RuntimeEntity | null | undefined
+): boolean {
   return Boolean(
     entity &&
+      !entity.isDestroyed &&
       entity.family === 'animal' &&
       entity.type === 'Horse' &&
       entity.spaceId === space.id &&
-      entity.label?.startsWith(`${space.id}:stable-horse:`)
+      /:stable-horse:\d+$/.test(entity.label ?? '')
   )
 }
 
@@ -56,7 +60,9 @@ export function syncStableInteriorHorses(context: GameContextLike, space: Runtim
   if (!isStableInteriorHorseSpace(space)) return
   const createAnimal = context.map.gaia?.createAnimal
   const expectedHorses = getStableHorses(space.building)
-  const existingHorses = (context.map.gaia?.animals ?? []).filter(entity => isStableInteriorHorseForSpace(space, entity))
+  const existingHorses = (context.map.gaia?.animals ?? []).filter(entity =>
+    isStableInteriorHorseForSpace(space, entity)
+  )
   const existingByLabel = new Map(existingHorses.map(entity => [entity.label, entity]))
   const expectedLabels = new Set(expectedHorses.map((_, index) => getStableInteriorHorseLabel(space.id, index)))
   const usedCells = new Set<string>()

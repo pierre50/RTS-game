@@ -8,6 +8,7 @@ function loadOwnerTransfer(calls = []) {
       '../../constants': {
         FAMILY_TYPES: { building: 'building', unit: 'unit' },
         SHEET_TYPES: { standing: 'standing' },
+        UNIT_TYPES: { villager: 'Villager' },
       },
       '../combat/bandits': {
         isBanditOwner: owner => Boolean(owner?.devConsoleBanditOwner),
@@ -94,10 +95,14 @@ test('defeated player buildings transfer to the only remaining player', () => {
   assert.deepEqual(chest.queue, [])
   assert.equal(chest.technology, null)
   assert.equal(chest.loading, null)
-  assert.deepEqual(calls.filter(([name]) => name === 'updateTopbar'), [['updateTopbar']])
-  assert.deepEqual(calls.filter(([name]) => name === 'showMessage'), [
-    ['showMessage', 'enemyBaseCaptured', 'success'],
-  ])
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'updateTopbar'),
+    [['updateTopbar']]
+  )
+  assert.deepEqual(
+    calls.filter(([name]) => name === 'showMessage'),
+    [['showMessage', 'enemyBaseCaptured', 'success']]
+  )
 })
 
 test('defeated player buildings transfer to the nearest remaining player', () => {
@@ -118,4 +123,66 @@ test('defeated player buildings transfer to the nearest remaining player', () =>
   assert.equal(eastChest.owner, east)
   assert.equal(west.buildings.includes(westChest), true)
   assert.equal(east.buildings.includes(eastChest), true)
+})
+
+test('unit transfers move membership and population once and clear interrupted runtime actions', () => {
+  const calls = []
+  const { transferEntityOwner } = loadOwnerTransfer(calls)
+  const oldOwner = makePlayer('old')
+  const newOwner = makePlayer('new')
+  oldOwner.population = 1
+  oldOwner.civ = 'OldCiv'
+  oldOwner.age = 2
+  newOwner.unlockVillagerPopulationMilestoneTechnologies = () => calls.push(['milestone'])
+  const target = {
+    family: 'unit',
+    label: 'u',
+    type: 'Villager',
+    owner: oldOwner,
+    action: 'attack',
+    dest: {},
+    path: [{}],
+    pendingOrder: {},
+    actionLocked: true,
+    energyWaitTaskId: 0,
+    context: { scheduler: { remove: id => calls.push(['remove', id]) } },
+    sprite: { onLoop() {}, onComplete() {}, onFrameChange() {} },
+    setTextures: sheet => calls.push(['texture', sheet]),
+    stopInterval: () => calls.push(['stop']),
+  }
+  oldOwner.units.push(target)
+  assert.equal(transferEntityOwner(target, newOwner), true)
+  assert.equal(target.owner, newOwner)
+  assert.deepEqual(oldOwner.units, [])
+  assert.deepEqual(newOwner.units, [target])
+  assert.equal(oldOwner.population, 0)
+  assert.equal(newOwner.population, 1)
+  assert.equal(target.assetCiv, 'OldCiv')
+  assert.equal(target.assetAge, 2)
+  assert.equal(target.action, null)
+  assert.equal(target.dest, null)
+  assert.equal(target.pendingOrder, null)
+  assert.equal(target.actionLocked, false)
+  assert.deepEqual(target.path, [])
+  assert.equal(target.sprite.onLoop, undefined)
+  assert.ok(calls.some(call => call[0] === 'remove' && call[1] === 0))
+  assert.ok(calls.some(call => call[0] === 'milestone'))
+  assert.equal(transferEntityOwner(target, newOwner), false)
+  assert.equal(newOwner.population, 1)
+})
+
+test('unsupported entities and disallowed owners leave ownership and runtime state untouched', () => {
+  const { transferEntityOwner } = loadOwnerTransfer()
+  const oldOwner = makePlayer('old')
+  const newOwner = makePlayer('new')
+  const target = { family: 'resource', owner: oldOwner, action: 'work', path: [{}] }
+  const path = target.path
+  assert.equal(transferEntityOwner(target, newOwner), false)
+  assert.equal(target.owner, oldOwner)
+  assert.equal(target.action, 'work')
+  assert.equal(target.path, path)
+  target.family = 'unit'
+  newOwner.devConsoleBanditOwner = true
+  assert.equal(transferEntityOwner(target, newOwner), false)
+  assert.equal(target.owner, oldOwner)
 })

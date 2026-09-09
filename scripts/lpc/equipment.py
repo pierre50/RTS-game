@@ -90,6 +90,19 @@ def scythe_equipment(palette: str | None = None) -> dict[str, Equipment]:
     }
 
 
+def longstick_equipment() -> dict[str, Equipment]:
+    return {
+        "walk": Equipment(
+            background=(LayerSpec("weapon/polearm/longstick/universal_behind/walk/scythe.png"),),
+            foreground=(LayerSpec("weapon/polearm/longstick/walk/scythe.png"),),
+        ),
+        "slash": Equipment(
+            background=(LayerSpec("weapon/polearm/longstick/attack_slash/behind/scythe.png"),),
+            foreground=(LayerSpec("weapon/polearm/longstick/attack_slash/scythe.png"),),
+        ),
+    }
+
+
 def arrow_equipment(palette: str | None = None) -> dict[str, Equipment]:
     return {
         "shoot": Equipment(
@@ -297,6 +310,7 @@ EQUIPMENT: dict[str, dict[str, Equipment]] = {
     "scythe_copper": scythe_equipment("copper"),
     "scythe_bronze": scythe_equipment("bronze"),
     "scythe_iron": scythe_equipment("iron"),
+    "longstick": longstick_equipment(),
     "bow": {
         "walk": Equipment(
             background=(
@@ -499,6 +513,7 @@ EQUIPMENT_ACTION_ANIMATIONS: dict[str, str] = {
     "scythe_copper": "slash",
     "scythe_bronze": "slash",
     "scythe_iron": "slash",
+    "longstick": "slash",
     "bow": "shoot",
     "bow_great": "shoot",
     "bow_recurve": "shoot",

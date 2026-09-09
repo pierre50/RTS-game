@@ -20,7 +20,7 @@ export function getHeroAimDegree(hero: Point, destination: Point): number {
   return Math.round((Math.atan2(dy, dx) * 180) / Math.PI + 180)
 }
 
-export function getHeroAimDelta(hero: UnitEntity, target: Point): number {
+function getHeroAimDelta(hero: UnitEntity, target: Point): number {
   return angleDelta(getHeroAimDegree(hero, target), hero.degree ?? 0)
 }
 
@@ -29,7 +29,7 @@ export function isMountedAttackAimBlocked(hero: UnitEntity, point: Point): boole
   return angleDelta(getHeroAimDegree(hero, point), hero.degree ?? 0) > MOUNTED_ATTACK_HALF_ANGLE
 }
 
-export function getDirectionalTarget<T extends RuntimeEntity>(
+function getDirectionalTarget<T extends RuntimeEntity>(
   hero: UnitEntity,
   candidates: T[],
   halfAngle = CLICK_DIRECTION_HALF_ANGLE

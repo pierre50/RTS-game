@@ -86,6 +86,7 @@ export class Building extends Instance implements BuildingEntity {
   shadowWasVisible: boolean
   constructionRevealSprite: Sprite | null
   constructionRevealMask: Graphics | null
+  constructionGhostBorder: Sprite | null
   intervalId: SchedulerTaskId | null
   attackIntervalId: SchedulerTaskId | null
   declare sprite: BuildingSprite
@@ -158,6 +159,7 @@ export class Building extends Instance implements BuildingEntity {
     this.shadowWasVisible = false
     this.constructionRevealSprite = null
     this.constructionRevealMask = null
+    this.constructionGhostBorder = null
     this.visualSettingsCleanup = null
 
     this.assignProperties(options)

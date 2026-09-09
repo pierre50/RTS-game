@@ -1,3 +1,4 @@
+import { registerPreparedMapContent, applyPreparedTerrain } from './PreparedMapContent'
 import { Assets } from 'pixi.js'
 import { Resource } from '../../Resource'
 import { Cell, GenerationCell } from '../../cell'
@@ -123,18 +124,11 @@ export class MapBlueprintGeneration {
       this.map.blueprintInitialWaterBorderMs = 0
       this.map.blueprintWaterBorderReady = true
     } else {
-      const fillWaterStartedAt = performance.now()
-      this.map.fillWaterGaps()
-      this.map.blueprintFillWaterGapsMs = performance.now() - fillWaterStartedAt
-      this.map.context.performance?.record?.('blueprint.fillWaterGaps', this.map.blueprintFillWaterGapsMs)
-      await this.yieldToBrowser()
-      const normalizeWaterStartedAt = performance.now()
-      this.map.normalizeWaterTopology()
-      this.map.blueprintNormalizeWaterMs = performance.now() - normalizeWaterStartedAt
-      this.map.context.performance?.record?.('blueprint.normalizeWaterTopology', this.map.blueprintNormalizeWaterMs)
-      await this.yieldToBrowser()
+      this.map.blueprintFillWaterGapsMs = 0
+      this.map.blueprintNormalizeWaterMs = 0
       const waterBorderStartedAt = performance.now()
-      this.map.formatCellsWaterBorder()
+      if (blueprint.terrainAppearance) applyPreparedTerrain(this.map, blueprint.terrainAppearance, true)
+      else this.map.formatCellsWaterBorder()
       this.map.blueprintWaterBorderReady = true
       this.map.blueprintInitialWaterBorderMs = performance.now() - waterBorderStartedAt
       this.map.context.performance?.record?.('blueprint.formatWaterBorder', this.map.blueprintInitialWaterBorderMs)
@@ -175,15 +169,15 @@ export class MapBlueprintGeneration {
     if (isInteriorBlueprint(blueprint)) {
       this.map.blueprintWaterBorderReady = true
     } else {
-      this.map.fillWaterGaps()
-      this.map.normalizeWaterTopology()
-      this.map.formatCellsWaterBorder()
+      if (blueprint.terrainAppearance) applyPreparedTerrain(this.map, blueprint.terrainAppearance, true)
+      else this.map.formatCellsWaterBorder()
     }
     this.loadBlueprintResources(blueprint)
   }
 
   applyBlueprintMetadata(blueprint: MapBlueprint): void {
     setNeighborScenerySource(this.map, blueprint)
+    registerPreparedMapContent(this.map, blueprint)
     this.map.seed = blueprint.seed
     this.map.size = blueprint.size
     this.map.localGridLayout = blueprint.localGridLayout

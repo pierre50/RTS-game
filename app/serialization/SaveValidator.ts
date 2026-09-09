@@ -1,25 +1,21 @@
 import { Assets } from 'pixi.js'
-import { gridToLocal } from '../lib/localMapLayout'
-import type { GameConfig } from '../types/save'
-import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
 import type { LoadedGameConfig, SaveRecord, SerializedSave } from '../types/save'
-import {
-  fail,
-  isFiniteNumber,
-  isObject,
-  MAX_MAP_EDGE,
-  type ObjectRecord,
-  validateArray,
-  validateCell,
-  validateOptionalFiniteNumber,
-} from './SaveValidationPrimitives'
+import { CAMPAIGN_SAVE_FORMAT, getCurrentWorldState, isCampaignSave } from './CampaignSave'
 import {
   validateAnimals,
   validateNaturalResourceRespawnSlots,
   validatePlayers,
   validateResources,
-  validateWorldPursuers,
 } from './SaveEntityValidators'
+import { containsCell, validateLocalLayout, validateMap, validateSeedWorld } from './SaveMapValidation'
+import { validateRuntimeState } from './SaveRuntimeValidation'
+import {
+  fail,
+  isFiniteNumber,
+  isObject,
+  type ObjectRecord,
+  validateOptionalFiniteNumber,
+} from './SaveValidationPrimitives'
 
 function getLoadedConfig(): LoadedGameConfig {
   const config = Assets.cache.get('config')
@@ -27,84 +23,6 @@ function getLoadedConfig(): LoadedGameConfig {
     fail('Invalid save file: game config is not loaded.')
   }
   return config as LoadedGameConfig
-}
-
-type LocalLayout = NonNullable<GameConfig['localGridLayout']>
-
-function containsCell(layout: LocalLayout, i: number, j: number): boolean {
-  const { row, column } = gridToLocal(i, j, layout)
-  return row >= 0 && row < layout.rows && column >= 0 && column < layout.columns - (row % 2)
-}
-
-function validateLocalLayout(value: unknown): LocalLayout | undefined {
-  if (value === undefined) return undefined
-  if (
-    !isObject(value) ||
-    !Number.isInteger(value.columns) ||
-    !Number.isInteger(value.rows) ||
-    typeof value.columns !== 'number' ||
-    typeof value.rows !== 'number' ||
-    value.columns < 2 ||
-    value.columns > MAX_MAP_EDGE ||
-    value.rows !== 4 * (value.columns - 1) + 1
-  ) {
-    fail('Invalid save file: local grid layout is invalid.')
-  }
-  return { columns: value.columns, rows: value.rows }
-}
-
-function validateMap(map: unknown, layout?: LocalLayout): number {
-  validateArray(map, 'map')
-  if (!map.length || map.length > MAX_MAP_EDGE) {
-    fail('Invalid save file: map size is unsupported.')
-  }
-  const size = map.length
-  for (let i = 0; i < size; i++) {
-    const row = map[i]
-    validateArray(row, `map row ${i}`)
-    if (layout ? row.length > size : row.length !== size) {
-      fail('Invalid save file: map must be square.')
-    }
-    for (let j = 0; j < size; j++) {
-      if (layout && !containsCell(layout, i, j)) {
-        if (row[j] != null) fail(`Invalid save file: cell ${i},${j} is outside the local grid layout.`)
-        continue
-      }
-      validateCell(row[j], i, j)
-    }
-  }
-  return size
-}
-
-function validateSeedWorld(data: ObjectRecord, legacyMapSize: number | null = null): number {
-  const world = isObject(data.world) ? data.world : {}
-  const config = isObject(data.config) ? data.config : {}
-  const rawSize = world.size ?? config.size ?? (legacyMapSize != null ? legacyMapSize - 1 : null)
-  if (typeof rawSize !== 'number' || !Number.isInteger(rawSize) || rawSize < 1 || rawSize >= MAX_MAP_EDGE) {
-    fail('Invalid save file: map size is unsupported.')
-  }
-  const seed = world.seed ?? config.seed
-  if (
-    world.sourceSize != null &&
-    (typeof world.sourceSize !== 'number' ||
-      !Number.isInteger(world.sourceSize) ||
-      world.sourceSize < 1 ||
-      world.sourceSize >= MAX_MAP_EDGE)
-  ) {
-    fail('Invalid save file: source map size is unsupported.')
-  }
-  if (typeof seed !== 'number' || !Number.isFinite(seed)) {
-    fail('Invalid save file: map seed is invalid.')
-  }
-  const mapType = world.mapType ?? config.mapType
-  if (mapType != null && (typeof mapType !== 'string' || !mapType)) {
-    fail('Invalid save file: map type is invalid.')
-  }
-  const environment = world.environment ?? config.environment
-  if (environment != null && (typeof environment !== 'string' || !environment)) {
-    fail('Invalid save file: map environment is invalid.')
-  }
-  return rawSize + 1
 }
 
 function validateCamera(camera: unknown): void {
@@ -181,31 +99,7 @@ export function validateSaveData(data: unknown): SaveRecord {
     }
   }
 
-  if (data.runtime != null) {
-    if (!isObject(data.runtime)) fail('Invalid save file: runtime is invalid.')
-    validateOptionalFiniteNumber(data.runtime.dayNightElapsedMs, 'runtime dayNightElapsedMs')
-    validateOptionalFiniteNumber(data.runtime.elapsedMs, 'runtime elapsedMs')
-    validateOptionalFiniteNumber(data.runtime.savedAt, 'runtime savedAt')
-    validateWorldPursuers(data.runtime.worldPursuers, size, config)
-    if (data.runtime.weather != null) {
-      if (!isObject(data.runtime.weather)) fail('Invalid save file: runtime weather is invalid.')
-      if (data.runtime.weather.phase != null && typeof data.runtime.weather.phase !== 'string') {
-        fail('Invalid save file: runtime weather phase is invalid.')
-      }
-      validateOptionalFiniteNumber(data.runtime.weather.elapsedMs, 'runtime weather elapsedMs')
-      validateOptionalFiniteNumber(data.runtime.weather.flashCooldownMs, 'runtime weather flashCooldownMs')
-      validateOptionalFiniteNumber(data.runtime.weather.lightningBursts, 'runtime weather lightningBursts')
-      validateOptionalFiniteNumber(data.runtime.weather.lightningNextBurstMs, 'runtime weather lightningNextBurstMs')
-      validateOptionalFiniteNumber(data.runtime.weather.phaseEndsAt, 'runtime weather phaseEndsAt')
-      validateOptionalFiniteNumber(data.runtime.weather.precipIntensity, 'runtime weather precipIntensity')
-      validateOptionalFiniteNumber(data.runtime.weather.rainIntensity, 'runtime weather rainIntensity')
-      validateOptionalFiniteNumber(data.runtime.weather.sandIntensity, 'runtime weather sandIntensity')
-      validateOptionalFiniteNumber(data.runtime.weather.snowIntensity, 'runtime weather snowIntensity')
-      validateOptionalFiniteNumber(data.runtime.weather.windIntensity, 'runtime weather windIntensity')
-      validateOptionalFiniteNumber(data.runtime.weather.windTargetX, 'runtime weather windTargetX')
-      validateOptionalFiniteNumber(data.runtime.weather.windX, 'runtime weather windX')
-    }
-  }
+  validateRuntimeState(data.runtime, size, config)
   if (data.config != null && !isObject(data.config)) {
     fail('Invalid save file: config is invalid.')
   }

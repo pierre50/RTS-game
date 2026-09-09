@@ -158,8 +158,7 @@ test('interior decorations vary by building type', () => {
       type: 'Chest',
       offsetI: 0,
       offsetJ: 0,
-      placement: 'oppositeExitBorder',
-      allowBorderPlacement: true,
+      placement: 'oppositeExitInset',
       buildingOptions: { indestructible: true },
     }
   )
@@ -170,8 +169,7 @@ test('interior decorations vary by building type', () => {
       type: 'Chest',
       offsetI: 0,
       offsetJ: 0,
-      placement: 'oppositeExitBorder',
-      allowBorderPlacement: true,
+      placement: 'oppositeExitInset',
       buildingOptions: { indestructible: true },
     }
   )

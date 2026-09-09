@@ -147,23 +147,64 @@ function mockBuildingFootprintCells(startX, startY, grid, size = 1) {
   return result
 }
 
+// Reuse compilation only: every load still evaluates a fresh module with its own mocks.
+const compiledMovementModules = new Map()
+
 function loadModule(relativePath, mocks) {
   const filename = path.join(__dirname, '..', relativePath)
+  const dependencyModules = new Map()
   function loadTsFile(tsFilename) {
     const source = fs.readFileSync(tsFilename, 'utf8')
-    const { code } = babel.transformSync(source, {
-      filename: tsFilename,
-      presets: [
-        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
-        '@babel/preset-typescript',
-      ],
-    })
+    let compiled = compiledMovementModules.get(tsFilename)
+    if (!compiled || compiled.source !== source) {
+      const { code } = babel.transformSync(source, {
+        filename: tsFilename,
+        presets: [
+          ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+          '@babel/preset-typescript',
+        ],
+      })
+      compiled = { source, code }
+      compiledMovementModules.set(tsFilename, compiled)
+    }
+    const { code } = compiled
     const module = { exports: {} }
-    new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
+    new Function('module', 'exports', 'require', code)(module, module.exports, request =>
+      localRequire(
+        tsFilename.includes('/unit/work/')
+          ? request.replace(/^\.\.\/\.\.\/\.\.\//, '../../').replace(/^\.\.\/Unit/, './Unit')
+          : request
+      )
+    )
     return module.exports
   }
   const localRequire = request => {
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
+    if (request === '../../lib/units/autonomy/villagerExploration')
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/autonomy/villagerExploration.ts'),
+        filename,
+        mocks
+      )
+    if (request === '../../lib/units/villagerAutonomyTargeting')
+      return { isVillagerWorkTargetRejected: () => false, markVillagerAutonomyTargetRejected: () => {} }
+    if (request === '../../lib/actions/contactActions')
+      return {
+        usesUnitContactAction: (unit, action) => action === 'attack' && !unit.projectile,
+        isActionTouchingTarget: () => true,
+        canReachActionTarget: (unit, _target, action) => (action === 'attack' ? (unit.meleeReachable ?? false) : true),
+        getActionContactTool: () => undefined,
+      }
+    if (request === '../../lib/contact/contactGeometry')
+      return { canReachContact: unit => unit.meleeReachable ?? false, getContactAimDegree: () => 0 }
+    if (request === '../../lib/combat/unitMelee')
+      return {
+        usesMeleeAttack: unit => !unit.projectile,
+        getUnitMeleeWeapon: unit => unit.equipment?.[0],
+      }
+    if (request === '../../lib/contact/contactDebug') return { showContactDebug: () => {} }
+    if (request === './UnitContactApproach') return { tryStartUnitContactApproach: () => false }
+
     if (request === '../../types/runtime') return runtimeTypesMock
     if (request === '../../lib') {
       const libMock = mocks[request] ?? {}
@@ -356,6 +397,9 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitManualHeroWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitManualHeroWork.ts'))
     }
+    if (/^\.\/(?:work\/)?Unit(?:FarmingAction|WoodcuttingAction|BuildingAction|WorkSwing)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/work', path.basename(request) + '.ts'))
+    }
     if (request === './UnitResourceActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitResourceActions.ts'))
     }
@@ -367,6 +411,9 @@ function loadModule(relativePath, mocks) {
     }
     if (request === './UnitDirectedActions') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitDirectedActions.ts'))
+    }
+    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitDirectMovement.ts'))
@@ -395,8 +442,11 @@ function loadModule(relativePath, mocks) {
     if (request === './UnitPreviousWork') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/UnitPreviousWork.ts'))
     }
-    if (request === '../HeroLassoThrow') return { HeroLassoThrow: class {} }
-    return requireFromTsFile(request, filename, mocks)
+    if (request === '../HeroCatchingPoleThrow') return { HeroCatchingPoleThrow: class {} }
+    if (request.endsWith('/units/villagerAutonomyTargeting')) {
+      return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
+    }
+    return requireFromTsFile(request, filename, mocks, dependencyModules)
   }
   return loadTsFile(filename)
 }
@@ -836,6 +886,7 @@ test('ranged units must contact buildings before entering them', () => {
   })
   const unit = {
     type: 'Bowman',
+    projectile: 'arrow',
     range: 5,
   }
   const stable = {
@@ -3538,9 +3589,7 @@ test('blocked training entry repaths while still allowing the door passage stop'
 
   new UnitMovement(unit).moveToPath()
 
-  assert.deepEqual(sent, [
-    ['barracks-1', constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }],
-  ])
+  assert.deepEqual(sent, [['barracks-1', constants.ACTION_TYPES.train, { forceRepath: true, allowPassageStop: true }]])
 })
 
 test('manual building goto paths to the building entry cell', () => {
@@ -3629,10 +3678,7 @@ test('manual building goto paths to the building entry cell', () => {
   assert.equal(unit.resourceDeliveryState, null)
   assert.equal(unit.work, null)
   assert.deepEqual(unit.path, [entryCell])
-  assert.deepEqual(calls, [
-    ['clearVillagerAutonomy', 'villager-1'],
-    ['updateTopbar'],
-  ])
+  assert.deepEqual(calls, [['clearVillagerAutonomy', 'villager-1'], ['updateTopbar']])
 })
 
 test('manual building goto clears every resource assignment type', () => {
@@ -4639,7 +4685,10 @@ test('felled tree wood gathering waits for the axe animation release frame', () 
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.chopwood)
 
-  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 9]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'releaseFrame'),
+    [['releaseFrame', 9]]
+  )
   assert.equal(tree.quantity, 5)
 
   frameCallbacks[0]()
@@ -4648,7 +4697,10 @@ test('felled tree wood gathering waits for the axe animation release frame', () 
   frameCallbacks[0]()
   assert.deepEqual(unit.inventory.resources, { wood: 2 })
   assert.equal(tree.quantity, 3)
-  assert.deepEqual(calls.filter(([type]) => type === 'feedback'), [['feedback', 'villager-1', 2]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'feedback'),
+    [['feedback', 'villager-1', 2]]
+  )
 })
 
 test('hero chopping wood rewinds the work swing after the impact frame', () => {
@@ -4806,7 +4858,10 @@ test('hero custom tool work waits for the animation release frame before recover
   unit.sprite.currentFrame = 0
   unit.sprite.onLoop()
   assert.deepEqual(reverseCalls, [])
-  assert.deepEqual(calls.filter(([type]) => type === 'getAction'), [['getAction', constants.ACTION_TYPES.chopwood]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'getAction'),
+    [['getAction', constants.ACTION_TYPES.chopwood]]
+  )
 })
 
 test('hero building health bar refreshes while construction progresses', () => {
@@ -4929,15 +4984,19 @@ test('building work waits for the hammer animation release frame', () => {
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.build)
 
-  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 8]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'releaseFrame'),
+    [['releaseFrame', 8]]
+  )
   assert.equal(building.hitPoints, 1)
 
   buildTick()
 
   assert.equal(building.hitPoints, 2)
-  assert.deepEqual(calls.filter(([type]) => type === 'hitPointGain'), [
-    ['hitPointGain', constants.FAMILY_TYPES.building, 1],
-  ])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'hitPointGain'),
+    [['hitPointGain', constants.FAMILY_TYPES.building, 1]]
+  )
 })
 
 test('a farmer can return to the same farm after an interrupted food job', () => {
@@ -5175,8 +5234,9 @@ test('exploration skips water and coast cells', () => {
   assert.deepEqual(calls, [['sendToEvt', landCell, null, { forceRepath: true, preserveAutonomy: true }]])
 })
 
-test('completed autonomy exploration pauses instead of recursively resuming autonomy', () => {
+test('completed autonomy exploration resumes after a scheduled pause without recursion', () => {
   const calls = []
+  let resume
   const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
     '../../constants': constants,
     '../../lib': {
@@ -5192,6 +5252,14 @@ test('completed autonomy exploration pauses instead of recursively resuming auto
     '../../lib/units/unitControl': { isHeroControlled: () => false },
   })
   const unit = {
+    context: {
+      scheduler: {
+        addOneShot(callback) {
+          resume = callback
+          return 1
+        },
+      },
+    },
     action: null,
     autonomousJob: 'wood',
     dest: { i: 1, j: 1 },
@@ -5212,6 +5280,9 @@ test('completed autonomy exploration pauses instead of recursively resuming auto
   assert.equal(unit.dest, null)
   assert.deepEqual(unit.path, [])
   assert.equal(unit.inactif, true)
+  assert.equal(typeof resume, 'function')
+  resume()
+  assert.deepEqual(calls.at(-1), ['resumeVillagerAutonomy'])
 })
 
 test('runaway units use the shared reachable flee cell selection', () => {
@@ -5701,14 +5772,20 @@ test('mining waits for the pickaxe animation release frame', () => {
 
   new UnitActions(unit).getAction(constants.ACTION_TYPES.minestone)
 
-  assert.deepEqual(calls.filter(([type]) => type === 'releaseFrame'), [['releaseFrame', 9]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'releaseFrame'),
+    [['releaseFrame', 9]]
+  )
   assert.equal(rock.quantity, 20)
 
   mineTick()
 
   assert.deepEqual(unit.inventory.resources, { stone: 1 })
   assert.equal(rock.quantity, 19)
-  assert.deepEqual(calls.filter(([type]) => type === 'feedback'), [['feedback', 'villager-1', 1]])
+  assert.deepEqual(
+    calls.filter(([type]) => type === 'feedback'),
+    [['feedback', 'villager-1', 1]]
+  )
 })
 
 test('depleted berrybushes stay on the map as empty bushes', () => {
@@ -6137,4 +6214,72 @@ test('berry orders stay quiet when the depleted bush is outside the camera', () 
 
   assert.equal(started, false)
   assert.deepEqual(messages, [])
+})
+
+test('melee arrival cannot fall back to the legacy cell contact or numeric range', () => {
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': { instanceContactInstance: () => true, instancesDistance: () => 0 },
+  })
+  const unit = { type: 'Fantassin', range: 99, meleeReachable: false }
+  const target = { family: constants.FAMILY_TYPES.unit, i: 1, j: 0 }
+  const movement = new UnitMovement(unit)
+  assert.equal(movement.isUnitAtDest(constants.ACTION_TYPES.attack, target), false)
+  unit.meleeReachable = true
+  assert.equal(movement.isUnitAtDest(constants.ACTION_TYPES.attack, target), true)
+})
+
+test('exploration tries another batch after twelve inaccessible destinations', () => {
+  const grid = Array.from({ length: 7 }, (_, i) => Array.from({ length: 7 }, (_, j) => ({ i, j, solid: false })))
+  const attempts = []
+  let destination
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': {
+      getInstancePath: (_unit, i, j) => {
+        attempts.push(`${i}:${j}`)
+        return attempts.length <= 12 ? [] : [grid[i][j]]
+      },
+    },
+  })
+  const unit = {
+    i: 3,
+    j: 3,
+    context: { map: { grid } },
+    owner: { views: { isViewed: () => false } },
+    sendToEvt: target => {
+      destination = target
+    },
+    stop: () => {
+      throw new Error('recursive stop')
+    },
+  }
+  const movement = new UnitMovement(unit)
+  assert.equal(movement.explore(), false)
+  assert.equal(attempts.length, 12)
+  assert.equal(movement.explore(), true)
+  assert.ok(destination)
+  assert.equal(new Set(attempts).size, 13)
+})
+
+test('exploration expands beyond fifty cells when the nearby area is already known', () => {
+  const grid = Array.from({ length: 65 }, (_, i) => [{ i, j: 0, solid: false }])
+  let destination
+  const { UnitMovement } = loadModule('app/classes/unit/movement/UnitMovement.ts', {
+    '../../constants': constants,
+    '../../lib': { getInstancePath: (_unit, i, j) => [grid[i][j]] },
+  })
+  const unit = {
+    i: 0,
+    j: 0,
+    context: { map: { grid } },
+    owner: { views: { isViewed: i => i < 60 } },
+    sendToEvt: target => {
+      destination = target
+    },
+  }
+  const movement = new UnitMovement(unit)
+  assert.equal(movement.explore(), false)
+  assert.equal(movement.explore(), true)
+  assert.ok(destination.i >= 60)
 })

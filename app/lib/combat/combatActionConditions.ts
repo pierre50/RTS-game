@@ -1,35 +1,14 @@
-import {
-  ACTION_TYPES,
-  BUILDING_TYPES,
-  FAMILY_TYPES,
-  FORAGE_RESOURCE_TYPES,
-  MINING_RESOURCE_CONFIG,
-  RESOURCE_TYPES,
-  UNIT_TYPES,
-} from '../constants'
-import { getEntityWeaponPower } from '../equipment/equipmentStats'
-import { isWildHorse } from '../horses/horseTaming'
-import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
-import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
-import { isBanditOwner, isBanditUnitType } from './bandits'
-import { isFriendlyTarget } from './combatRelations'
 import type { ActionProps, CombatEntity } from '../../types/combat'
 import type { BuildingEntity, UnitEntity } from '../../types/entities'
-import type { Condition, ConfigValue } from '../../types/config'
-
-type MiningActionConfig = {
-  action: string
-}
-
-function getMiningActionEntries(): Array<[string, MiningActionConfig]> {
-  const config = MINING_RESOURCE_CONFIG ?? {
-    [RESOURCE_TYPES.stone]: { action: ACTION_TYPES.minestone },
-    [RESOURCE_TYPES.gold]: { action: ACTION_TYPES.minegold },
-  }
-  return Object.entries(config)
-    .filter(([resourceType, entry]) => Boolean(resourceType && entry?.action))
-    .map(([resourceType, entry]) => [resourceType, { action: entry.action }])
-}
+import { shouldAttackBuildingForInteriorAccess } from '../buildings/interiorAccess'
+import { BUILDING_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../constants'
+import { getEntityWeaponPower } from '../equipment/equipmentStats'
+import { unitHasDeliverableResourcesForBuilding } from '../resources/resourceDelivery'
+import { isBanditOwner, isBanditUnitType } from './bandits'
+import { isFriendlyTarget } from './combatRelations'
+import { getResourceActionConditions } from './resourceActionConditions'
+export { isValidCondition } from './configConditions'
+export { isWheatMature } from './resourceActionConditions'
 
 function canAttack(source?: CombatEntity | null): boolean {
   return getEntityWeaponPower(source as Parameters<typeof getEntityWeaponPower>[0] | null | undefined) > 0
@@ -51,86 +30,6 @@ function canConvert(source?: CombatEntity | null, target?: CombatEntity | null):
   return !!hasMonotheism && (target.family === FAMILY_TYPES.building || target.type === UNIT_TYPES.priest)
 }
 
-function isVillagerOrHero(source?: CombatEntity | null): boolean {
-  return source?.type === UNIT_TYPES.villager || source?.type === UNIT_TYPES.hero
-}
-
-export function isWheatMature(target?: CombatEntity | null): boolean {
-  if (!target || target.type !== RESOURCE_TYPES.wheat) return false
-  const sprite = target.sprite as { currentFrame?: number; textures?: unknown[] } | null | undefined
-  if (
-    !sprite ||
-    typeof sprite.currentFrame !== 'number' ||
-    !Array.isArray(sprite.textures) ||
-    !sprite.textures.length
-  ) {
-    return false
-  }
-  return sprite.currentFrame >= sprite.textures.length - 1
-}
-
-function isDepletedBerrybush(target?: CombatEntity | null): boolean {
-  return Boolean(
-    target?.type === RESOURCE_TYPES.berrybush &&
-      (target.quantity ?? 0) <= 0 &&
-      (target.hitPoints ?? 0) > 0 &&
-      !target.isDead
-  )
-}
-
-function isForageResource(target?: CombatEntity | null): boolean {
-  const type = target?.type
-  return type ? FORAGE_RESOURCE_TYPES.has(type) : false
-}
-
-function ownerHasTechnology(source: CombatEntity, technology: string): boolean {
-  return Boolean(source.owner?.technologies?.includes(technology))
-}
-
-const arraysEqual = (a: readonly ConfigValue[], b: readonly ConfigValue[]): boolean => {
-  if (a.length !== b.length) return false
-  const sortedA = a.slice().sort()
-  const sortedB = b.slice().sort()
-  return sortedA.every((val, index) => val === sortedB[index])
-}
-
-export const isValidCondition = (condition: Condition | null | undefined, values: object): boolean => {
-  if (!condition) return true
-
-  const { op, key, value } = condition
-  const expectedValue = (values as Record<string, ConfigValue>)[key]
-
-  if (expectedValue === undefined) {
-    if (key === 'discoveredEquipment') return false
-    throw new Error(`Key not found in values: ${key}`)
-  }
-
-  switch (op) {
-    case '=':
-    case '!=': {
-      const result =
-        Array.isArray(value) && Array.isArray(expectedValue)
-          ? arraysEqual(value, expectedValue)
-          : value === expectedValue
-      return op === '!=' ? !result : result
-    }
-    case '<':
-      return Number(expectedValue) < Number(value)
-    case '<=':
-      return Number(expectedValue) <= Number(value)
-    case '>=':
-      return Number(expectedValue) >= Number(value)
-    case '>':
-      return Number(expectedValue) > Number(value)
-    case 'includes':
-      return Array.isArray(expectedValue) && expectedValue.includes(value)
-    case 'notincludes':
-      return Array.isArray(expectedValue) && !expectedValue.includes(value)
-    default:
-      throw new Error(`Invalid condition operation provided: ${op}`)
-  }
-}
-
 export const getActionCondition = (
   source: CombatEntity,
   target: CombatEntity,
@@ -140,57 +39,9 @@ export const getActionCondition = (
   if (!action) return false
 
   const conditions: Record<string, (props?: ActionProps) => boolean> = {
-    takemeat: () =>
-      Boolean(
-        isVillagerOrHero(source) &&
-          target.family === FAMILY_TYPES.animal &&
-          (target.quantity ?? 0) > 0 &&
-          target.isDead &&
-          !target.isDestroyed
-      ),
-    hunt: () =>
-      isVillagerOrHero(source) &&
-      (source.type === UNIT_TYPES.hero || ownerHasTechnology(source, 'BowCrafting')) &&
-      target.family === FAMILY_TYPES.animal &&
-      (target.quantity ?? 0) > 0 &&
-      (target.hitPoints ?? 0) > 0 &&
-      !target.isDead,
-    captureHorse: () =>
-      source.type === UNIT_TYPES.villager &&
-      target.family === FAMILY_TYPES.animal &&
-      target.type === 'Horse' &&
-      isWildHorse(target as { type: string; tamingStatus?: unknown }) &&
-      (target.hitPoints ?? 0) > 0 &&
-      !target.isDead &&
-      !target.isDestroyed &&
-      !(target as { isLassoed?: boolean }).isLassoed,
-    chopwood: () =>
-      isVillagerOrHero(source) &&
-      ((target.type === RESOURCE_TYPES.tree && (target.quantity ?? 0) > 0 && !target.isDead) ||
-        isDepletedBerrybush(target)),
-    farm: () =>
-      isVillagerOrHero(source) &&
-      ownerHasTechnology(source, 'Farming') &&
-      target.type === RESOURCE_TYPES.wheat &&
-      isWheatMature(target) &&
-      (target.quantity ?? 0) > 0 &&
-      (source.type === UNIT_TYPES.hero || !target.isUsedBy || target.isUsedBy === source) &&
-      !target.isDead,
-    forageberry: () =>
-      isVillagerOrHero(source) && isForageResource(target) && (target.quantity ?? 0) > 0 && !target.isDead,
-    ...Object.fromEntries(
-      getMiningActionEntries().map(([resourceType, config]) => [
-        config.action,
-        () =>
-          isVillagerOrHero(source) &&
-          ownerHasTechnology(source, 'Pickaxe') &&
-          target.type === resourceType &&
-          (target.quantity ?? 0) > 0 &&
-          !target.isDead,
-      ])
-    ),
+    ...getResourceActionConditions(source, target),
     build: () =>
-      isVillagerOrHero(source) &&
+      (source.type === UNIT_TYPES.villager || source.type === UNIT_TYPES.hero) &&
       target.owner?.label === source.owner?.label &&
       target.family === FAMILY_TYPES.building &&
       (target.hitPoints ?? 0) > 0 &&

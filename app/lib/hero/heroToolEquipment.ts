@@ -8,13 +8,12 @@ import type { HeroEquippedItem } from '../../types/heroTools'
 
 export type { HeroEquippedItem } from '../../types/heroTools'
 
-export const HERO_TOOL_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow', 'lasso']
+export const HERO_TOOL_ORDER: HeroEquippedItem[] = ['interact', 'sword', 'bow']
 
 const EQUIPPED_ITEM_WORK: Record<HeroEquippedItem, string> = {
   interact: WORK_TYPES.attacker,
   sword: 'heroSword',
   bow: WORK_TYPES.hunter,
-  lasso: WORK_TYPES.attacker,
 }
 
 // Mirrors the base equipment attached to each work above (see VILLAGER_WORK_EQUIPMENT
@@ -29,15 +28,10 @@ function isEquipmentKey(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.length > 0
 }
 
-export function getEquippedItemWeapon(
-  tool: HeroEquippedItem,
-  age = 0,
-  hero?: UnitEntity | null
-): string | undefined {
+export function getEquippedItemWeapon(tool: HeroEquippedItem, age = 0, hero?: UnitEntity | null): string | undefined {
   void age
   if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
   if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
-  if (tool === 'lasso') return hero?.inventory?.activeWeapons?.lasso
   return EQUIPPED_ITEM_WEAPON[tool]
 }
 
@@ -57,8 +51,23 @@ export function getHeroToolEquipment(hero: UnitEntity, tool: HeroEquippedItem): 
   if (tool === 'bow') {
     return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(isEquipmentKey)
   }
-  if (tool === 'lasso') return [activeWeapons.lasso].filter(isEquipmentKey)
   return []
+}
+
+export function getHeroPowerChargeToolForEquippedItem(
+  hero: UnitEntity,
+  tool: HeroEquippedItem | null | undefined
+): 'bow' | 'catchingPole' | 'sword' | null {
+  if (tool === 'bow') return 'bow'
+  if (tool !== 'sword') return null
+  return hero.inventory?.activeWeapons?.melee === 'catchingPole' ? 'catchingPole' : 'sword'
+}
+
+export function isHeroCatchingPoleEquipped(
+  hero: UnitEntity | null | undefined,
+  tool: HeroEquippedItem | null
+): boolean {
+  return Boolean(hero && getHeroPowerChargeToolForEquippedItem(hero, tool) === 'catchingPole')
 }
 
 function applyEquippedItemAppearance(hero: UnitEntity, tool: HeroEquippedItem): void {

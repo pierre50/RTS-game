@@ -1,4 +1,5 @@
-import { AnimatedSprite, Assets, Graphics, Rectangle, Sprite, Texture } from 'pixi.js'
+import { AnimatedSprite, Assets, Graphics, Rectangle, Sprite, Texture, type Filter } from 'pixi.js'
+import { ColorOverlayFilter, OutlineFilter } from 'pixi-filters'
 import { FADE_DURATION_MS, LABEL_TYPES } from '../../constants'
 import {
   bindAnimatedSpriteToTicker,
@@ -6,6 +7,7 @@ import {
   changeSpriteColorDirectly,
   getRallyPointFrames,
   getEntityMapPoint,
+  getHexColor,
   getTextureByFrame,
   getTextureSheet,
   getEntityMapSpace,
@@ -24,13 +26,24 @@ const SHADOW_MASK_ALPHA = 1
 const SHADOW_OFFSET_Y = 0
 const SPRITE_SHADOW_SCALE_X = 1.02
 const SPRITE_SHADOW_SCALE_Y = -0.5
-const CONSTRUCTION_GHOST_ALPHA = 0.28
+const CONSTRUCTION_GHOST_ALPHA = 0.42
+const CONSTRUCTION_GHOST_COLOR_ALPHA = 0.58
+const CONSTRUCTION_BORDER_ALPHA = 0.82
+const CONSTRUCTION_BORDER_COLOR = 0xffd25a
+const CONSTRUCTION_BORDER_WIDTH = 3
 const shadowTextureFrameCache = new Map<string, Texture>()
 
 type ConstructionGhostSprite = Sprite & {
+  constructionGhostBaseFilters?: readonly Filter[] | null
   constructionGhostColor?: string
+  constructionGhostFilter?: ColorOverlayFilter
   constructionGhostSourceTexture?: Texture
   constructionGhostTexture?: Texture
+}
+
+function getConstructionGhostTint(color: string): number {
+  const hex = getHexColor(color)
+  return Number.parseInt(hex.replace('#', ''), 16) || 0xffffff
 }
 
 function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: number; height: number } {
@@ -45,9 +58,37 @@ function getSpriteParentBounds(sprite: Sprite): { x: number; y: number; width: n
   }
 }
 
+function syncBuildingConstructionBorder(building: BuildingControllerHost, texture: Texture): void {
+  let border = building.constructionGhostBorder as Sprite | null | undefined
+  if (!border) {
+    border = new Sprite(texture)
+    border.label = 'construction-ghost-border'
+    border.eventMode = 'none'
+    border.roundPixels = building.sprite.roundPixels
+    border.filters = [
+      new OutlineFilter({
+        alpha: CONSTRUCTION_BORDER_ALPHA,
+        color: CONSTRUCTION_BORDER_COLOR,
+        knockout: true,
+        quality: 0.18,
+        thickness: CONSTRUCTION_BORDER_WIDTH,
+      }),
+    ]
+    building.constructionGhostBorder = border
+    building.addChild(border)
+  }
+
+  border.texture = texture
+  border.anchor.set(building.sprite.anchor.x, building.sprite.anchor.y)
+  border.position.copyFrom(building.sprite.position)
+  border.scale.copyFrom(building.sprite.scale)
+  border.visible = building.sprite.visible
+}
+
 export function applyBuildingConstructionGhost(building: BuildingControllerHost): void {
   const sprite = building.sprite as ConstructionGhostSprite
   const ownerColor = building.owner.color ?? ''
+  const ghostTint = getConstructionGhostTint(ownerColor)
   const sourceTexture =
     sprite.texture === sprite.constructionGhostTexture && sprite.constructionGhostSourceTexture
       ? sprite.constructionGhostSourceTexture
@@ -70,8 +111,21 @@ export function applyBuildingConstructionGhost(building: BuildingControllerHost)
     sprite.texture = sprite.constructionGhostSourceTexture
   }
 
+  if (sprite.constructionGhostBaseFilters === undefined) {
+    sprite.constructionGhostBaseFilters = sprite.filters ?? null
+  }
+  if (!sprite.constructionGhostFilter) {
+    sprite.constructionGhostFilter = new ColorOverlayFilter({
+      alpha: CONSTRUCTION_GHOST_COLOR_ALPHA,
+      color: ghostTint,
+    })
+  }
+  sprite.constructionGhostFilter.color = ghostTint
+  sprite.constructionGhostFilter.alpha = CONSTRUCTION_GHOST_COLOR_ALPHA
+  sprite.filters = [...(sprite.constructionGhostBaseFilters ?? []), sprite.constructionGhostFilter]
   sprite.alpha = CONSTRUCTION_GHOST_ALPHA
   sprite.tint = 0xffffff
+  syncBuildingConstructionBorder(building, sourceTexture)
 }
 
 export function syncBuildingConstructionReveal(building: BuildingControllerHost, percentage: number): void {
@@ -103,7 +157,8 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
 
   const reveal = building.constructionRevealSprite
   const mask = building.constructionRevealMask
-  reveal.texture = building.sprite.texture
+  reveal.texture =
+    (building.sprite as ConstructionGhostSprite).constructionGhostSourceTexture ?? building.sprite.texture
   reveal.anchor.set(building.sprite.anchor.x, building.sprite.anchor.y)
   reveal.position.copyFrom(building.sprite.position)
   reveal.scale.copyFrom(building.sprite.scale)
@@ -120,6 +175,9 @@ export function syncBuildingConstructionReveal(building: BuildingControllerHost,
 }
 
 export function clearBuildingConstructionReveal(building: BuildingControllerHost): void {
+  building.constructionGhostBorder?.parent?.removeChild(building.constructionGhostBorder)
+  building.constructionGhostBorder?.destroy({ children: true })
+  building.constructionGhostBorder = null
   building.constructionRevealSprite?.parent?.removeChild(building.constructionRevealSprite)
   building.constructionRevealSprite?.destroy({ children: true, texture: false })
   building.constructionRevealSprite = null
@@ -129,6 +187,12 @@ export function clearBuildingConstructionReveal(building: BuildingControllerHost
   building.sprite.mask = null
   building.sprite.alpha = 1
   building.sprite.tint = 0xffffff
+  const sprite = building.sprite as ConstructionGhostSprite
+  if (sprite.constructionGhostBaseFilters !== undefined) {
+    sprite.filters = sprite.constructionGhostBaseFilters ? [...sprite.constructionGhostBaseFilters] : null
+    delete sprite.constructionGhostBaseFilters
+  }
+  delete sprite.constructionGhostFilter
 }
 
 function fadeInBuildingShadow(building: BuildingControllerHost): void {

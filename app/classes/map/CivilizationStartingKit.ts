@@ -52,7 +52,12 @@ export function applyCivilizationLevelStartingKit(
     const [minSpace, maxSpace] = placementSpaceFor(type)
     const size = placementSizeFor(type)
     for (const spaceMultiplier of [1, 2, 3, 4]) {
-      const position = getPositionInGridAroundInstance(townCenter, map.grid, [minSpace, maxSpace * spaceMultiplier], size)
+      const position = getPositionInGridAroundInstance(
+        townCenter,
+        map.grid,
+        [minSpace, maxSpace * spaceMultiplier],
+        size
+      )
       if (position && canPlaceBuildingAt(map.grid, position.i, position.j, placementConfig)) {
         player.createBuilding({ i: position.i, j: position.j, type, isBuilt: true })
         markBuilt(type)
@@ -75,7 +80,7 @@ export function applyCivilizationLevelStartingKit(
 
   const houseConfig = player.config.buildings[BUILDING_TYPES.house]
   const houseCapacity =
-    getBuildingShelterCapacity({ type: BUILDING_TYPES.house, shelterCapacity: houseConfig?.shelterCapacity }) ||
+    getBuildingShelterCapacity({ type: BUILDING_TYPES.house, shelterCapacity: houseConfig?.shelterCapacity ?? 0 }) ||
     Number(houseConfig?.increasePopulation) ||
     0
   if (houseCapacity > 0) {
@@ -93,6 +98,20 @@ export function applyCivilizationLevelStartingKit(
     }
   }
 
+  placeStartingWalls(map, player, level, townCenter, markBuilt)
+
+  player.applyEligibleTechnologies?.()
+  applyStartingResourceBonus(player, level)
+  placeStartingMilitaryUnits(map, player, townCenter, unitTargets)
+}
+
+function placeStartingWalls(
+  map: MapGenerationMap,
+  player: PlayerLike,
+  level: number,
+  townCenter: BuildingEntity,
+  markBuilt: (type: string) => void
+): void {
   if (level >= 2) {
     const wallConfig = player.config.buildings[BUILDING_TYPES.smallWall]
     if (wallConfig) {
@@ -106,9 +125,9 @@ export function applyCivilizationLevelStartingKit(
       }
     }
   }
+}
 
-  player.applyEligibleTechnologies?.()
-
+function applyStartingResourceBonus(player: PlayerLike, level: number): void {
   const resourceBonus = CIVILIZATION_LEVEL_RESOURCE_BONUS[level]
   if (resourceBonus) {
     player.wood += resourceBonus.wood ?? 0
@@ -118,7 +137,14 @@ export function applyCivilizationLevelStartingKit(
     player.copper += resourceBonus.copper ?? 0
     player.iron += resourceBonus.iron ?? 0
   }
+}
 
+function placeStartingMilitaryUnits(
+  map: MapGenerationMap,
+  player: PlayerLike,
+  townCenter: BuildingEntity,
+  unitTargets: Array<[string, number]>
+): void {
   for (const [type, count] of unitTargets) {
     if (!type || !count || !player.config.units[type]) continue
     for (let n = 0; n < count; n++) {

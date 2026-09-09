@@ -30,7 +30,7 @@ export function getCapturableHorses(economy: AIEconomyHorseCaptureContext): AIEn
     .filter((animal: AIEntityLike) => isWildHorse(animal))
     .filter((animal: AIEntityLike) => economy.isLocationSafe(animal))
     .filter(animal => !(animal as { companionOwner?: AIEntityLike | null }).companionOwner)
-    .filter(animal => !(animal as { isLassoed?: boolean }).isLassoed)
+    .filter(animal => !(animal as { isCatchingPoleCaught?: boolean }).isCatchingPoleCaught)
 }
 
 export function assignHorseCaptures(economy: AIEconomyHorseCaptureContext, availableVillagers: AIEntityLike[]): number {

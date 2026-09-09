@@ -1,0 +1,272 @@
+[
+  {
+    "environment": "Temperate",
+    "size": 24,
+    "seed": 0,
+    "hash": "47ba517d52ba065a81fb8a40ff15da91215fcfb26924b335c7f203d2bf96d749"
+  },
+  {
+    "environment": "Temperate",
+    "size": 24,
+    "seed": 17,
+    "hash": "b577ada2f5d2a99c6bb00ac37a29a48a538cb96cc6f786cf61b9892f604fa808"
+  },
+  {
+    "environment": "Temperate",
+    "size": 24,
+    "seed": 98765,
+    "hash": "d556d7507cb96ceeec2929f1581a52d3f379277b22277be7e5d3623f042fdeee"
+  },
+  {
+    "environment": "Temperate",
+    "size": 64,
+    "seed": 0,
+    "hash": "d703890e52076d1034b146000e6a70f2280c9d6d917fb8e24a286e7441bf44ee"
+  },
+  {
+    "environment": "Temperate",
+    "size": 64,
+    "seed": 17,
+    "hash": "1ede4121f89ea180dc1eeb6bbf3d68dd7ac71ffe13a83c049ce1e76502e25cc9"
+  },
+  {
+    "environment": "Temperate",
+    "size": 64,
+    "seed": 98765,
+    "hash": "5ddb67a818ff3502d5cde49f5d4da396ccf71da215a41bc7f2df36f0d3173643"
+  },
+  {
+    "environment": "Temperate",
+    "size": 145,
+    "seed": 0,
+    "hash": "5765d5911332738ef3be41b68461d92667c50f2f59871d8b108a53c462e6a89c"
+  },
+  {
+    "environment": "Temperate",
+    "size": 145,
+    "seed": 17,
+    "hash": "e17fd86bead2df3ba49a16cbb64d9f79844fa85952f032c27c48f7135cd7a620"
+  },
+  {
+    "environment": "Temperate",
+    "size": 145,
+    "seed": 98765,
+    "hash": "261f0269ff03f3016766fc83cd4bca39da79c210d4fa5f412c5d28126db81f2c"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 24,
+    "seed": 0,
+    "hash": "0fd455ee7076d197642421d799544c18ed36252c3935cff3e9a51452f1f86fd0"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 24,
+    "seed": 17,
+    "hash": "71edae04502feb7a5a43c784026fe796383b8cb85aabe569f5694ddb0f42f383"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 24,
+    "seed": 98765,
+    "hash": "8566e8b17dfa064906a7a5148d3dfa04c246cb8254f94056443a23a27c250c35"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 64,
+    "seed": 0,
+    "hash": "e88a4ce388d9f3b8d9534b91c0d60963c76d33b18c6e96d41119a5313ae33822"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 64,
+    "seed": 17,
+    "hash": "e4a06144a1f59431d81960d52f348a735e30bf00f6f7b40531a5e8c4a3346bc7"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 64,
+    "seed": 98765,
+    "hash": "230fdbfd5d1b15208e29233a0e203cf3c78dedb498a2dc697273934afb8f40b4"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 145,
+    "seed": 0,
+    "hash": "7fb2d806b3ea6835d6906f340fd771ad905eda7665f1e80c1d9fc93139ef908e"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 145,
+    "seed": 17,
+    "hash": "c59c941681861000e048f222553591d424420e9111c28cfc3b79140ce9e3d310"
+  },
+  {
+    "environment": "BlackForest",
+    "size": 145,
+    "seed": 98765,
+    "hash": "befa8180cf35df187fc205a7650e1122f0e6a1f395edece7b79f75b37da2435c"
+  },
+  {
+    "environment": "Jungle",
+    "size": 24,
+    "seed": 0,
+    "hash": "de46fba67dfcdefd71e725cca60d70f0a4e0d5a765df3935ae0055bb3197c0d8"
+  },
+  {
+    "environment": "Jungle",
+    "size": 24,
+    "seed": 17,
+    "hash": "3001eb0f3ea5910d76e2587c91c57743d994d623173bb547ca9da02c4f25a118"
+  },
+  {
+    "environment": "Jungle",
+    "size": 24,
+    "seed": 98765,
+    "hash": "5b233923f8efd96de6ebb79da5b0bf33b805038b27837734299d8456e3f01a86"
+  },
+  {
+    "environment": "Jungle",
+    "size": 64,
+    "seed": 0,
+    "hash": "45555ccba40d47a75cf415d6098c1232c5a92395e8bcd63f11c020d9dcc9cb7a"
+  },
+  {
+    "environment": "Jungle",
+    "size": 64,
+    "seed": 17,
+    "hash": "378ed1e6e5cda8fc4ea4455dc73557f7cb319ca168254828fe7bb5363967302e"
+  },
+  {
+    "environment": "Jungle",
+    "size": 64,
+    "seed": 98765,
+    "hash": "2f145ed0ce99e85e64ea9eda7b0358cc30b62ee87a0c68023aa0316f40389ec3"
+  },
+  {
+    "environment": "Jungle",
+    "size": 145,
+    "seed": 0,
+    "hash": "d0070c9e7b8df693f14ae70636da77c875ea96f8d1e29d20a11893f99c071dee"
+  },
+  {
+    "environment": "Jungle",
+    "size": 145,
+    "seed": 17,
+    "hash": "303e8050c5e210a0d242b31246f189b9dd7e5edcb11cadc57bde5362115ec057"
+  },
+  {
+    "environment": "Jungle",
+    "size": 145,
+    "seed": 98765,
+    "hash": "8c68d438bf1e19031a8c28ef4dfb1b03b4fbfe1725edfc598edfafafd188f045"
+  },
+  {
+    "environment": "Desert",
+    "size": 24,
+    "seed": 0,
+    "hash": "737f1fa9e9639909d9d55cb2d93d63d8119a38c6a1aec29d09092dc20ef20a5b"
+  },
+  {
+    "environment": "Desert",
+    "size": 24,
+    "seed": 17,
+    "hash": "5f5a0053335ab345981b052aa62dab40693a2c1631ac17d469753d522f07a3c1"
+  },
+  {
+    "environment": "Desert",
+    "size": 24,
+    "seed": 98765,
+    "hash": "330c7204033cf49f846df7b84c0ddc8f9d202b393daf331cf7e57e0e624f7767"
+  },
+  {
+    "environment": "Desert",
+    "size": 64,
+    "seed": 0,
+    "hash": "16b5b0ac45af03da7feb8be343a364ae68ce8f216f02e0fe9407e609fccb8d9d"
+  },
+  {
+    "environment": "Desert",
+    "size": 64,
+    "seed": 17,
+    "hash": "a5a6fa6bbe18e18819bc2258b9b1bfacf2dfc5eb1456848ab2c585f019cf2445"
+  },
+  {
+    "environment": "Desert",
+    "size": 64,
+    "seed": 98765,
+    "hash": "8a0b8248c5c67756a3eb582a990fcdfcf413aeda210ab25323e9d352240dccf3"
+  },
+  {
+    "environment": "Desert",
+    "size": 145,
+    "seed": 0,
+    "hash": "589e0e63d6b75f71e3a92dfd926085b990cd08f56e869f44d6a1da8ebe9cbc85"
+  },
+  {
+    "environment": "Desert",
+    "size": 145,
+    "seed": 17,
+    "hash": "ce7a90b8fb9dff2f788be0f1c4e6260e2aebd9610bd3074d59d9df486a3e1917"
+  },
+  {
+    "environment": "Desert",
+    "size": 145,
+    "seed": 98765,
+    "hash": "ef93e49552ab0d745e0fbcbaf16bff1af95d6f790ff39ed13c457df394685377"
+  },
+  {
+    "environment": "Steppe",
+    "size": 24,
+    "seed": 0,
+    "hash": "5d1f015393c25807c60e6a1ee6fe432ce2c72361fb16b09f440e1b611ea76b4f"
+  },
+  {
+    "environment": "Steppe",
+    "size": 24,
+    "seed": 17,
+    "hash": "dd8ec7239aa62cc61470caae98130b4c1cbef0359dd82c1c5df1f1c96abaf724"
+  },
+  {
+    "environment": "Steppe",
+    "size": 24,
+    "seed": 98765,
+    "hash": "9ad3afadaa0ffdf6fb5d64330d82846c48400733e917ad2f28e7b84b36631d29"
+  },
+  {
+    "environment": "Steppe",
+    "size": 64,
+    "seed": 0,
+    "hash": "9c2db08b686790b81d0807d58b72cefcbd3be1cc6f3de86eae6517a43d46d031"
+  },
+  {
+    "environment": "Steppe",
+    "size": 64,
+    "seed": 17,
+    "hash": "3ec777fc543fad3f6d05d344dd97f957370df97a87c2907df32f0b52bea2a1c6"
+  },
+  {
+    "environment": "Steppe",
+    "size": 64,
+    "seed": 98765,
+    "hash": "8543fe471acdd0ca87055c897942caa278321659d194269cd1382fa8f372e392"
+  },
+  {
+    "environment": "Steppe",
+    "size": 145,
+    "seed": 0,
+    "hash": "f76799d96577e50fd3a91e5412dc9b3b28d92a815717f27e57f1a4d97a2709cc"
+  },
+  {
+    "environment": "Steppe",
+    "size": 145,
+    "seed": 17,
+    "hash": "afd97169e9dc81edc8e40dd0828b8ba6394ed170919fa8b17de9f964cc95145f"
+  },
+  {
+    "environment": "Steppe",
+    "size": 145,
+    "seed": 98765,
+    "hash": "cc9b08f71d63869c11484de456d37fb41054dcf230232f417c1d116b18296f0f"
+  }
+]

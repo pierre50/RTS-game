@@ -1,6 +1,6 @@
 import type { UnitEntity } from '../../types/entities'
 import type { Point } from '../../types/grid'
-import { isHeroToolAvailable, type HeroEquippedItem } from './heroToolEquipment'
+import { getHeroPowerChargeToolForEquippedItem, isHeroToolAvailable, type HeroEquippedItem } from './heroToolEquipment'
 import { getHeroAimDegree } from './heroTargeting'
 import { performContextActionAt } from './heroContextActions'
 import { playEmptyHandWhiff, triggerInteractMeleeAt } from './heroMeleeTools'
@@ -12,6 +12,8 @@ export {
   applyToolAppearance,
   EQUIPPED_ITEM_WEAPON,
   getEquippedItemWeapon,
+  getHeroPowerChargeToolForEquippedItem,
+  isHeroCatchingPoleEquipped,
   isHeroToolAvailable,
   type HeroEquippedItem,
   HERO_TOOL_ORDER,
@@ -27,7 +29,7 @@ export {
 export { findFacingEntity, getHeroAimDegree, isMountedAttackAimBlocked } from './heroTargeting'
 export {
   aimHeroPowerChargeAt,
-  cancelHeroLasso,
+  cancelHeroCatchingPole,
   cancelHeroPowerCharge,
   isHeroPowerChargeActiveForTool,
   releaseHeroPowerCharge,
@@ -38,8 +40,9 @@ export function triggerToolAttackAt(hero: UnitEntity, tool: HeroEquippedItem | n
   if (!tool || hero.actionLocked) return false
   if (!isHeroToolAvailable(hero, tool)) return false
   hero.degree = getHeroAimDegree(hero, destination)
-  if (tool === 'bow' || tool === 'lasso' || tool === 'sword') {
-    const triggered = beginHeroPowerChargeAt(hero, destination, null, tool)
+  const powerChargeTool = getHeroPowerChargeToolForEquippedItem(hero, tool)
+  if (powerChargeTool) {
+    const triggered = beginHeroPowerChargeAt(hero, destination, null, powerChargeTool)
     if (!triggered) return false
     hero.followAssistIntent = null
     return true

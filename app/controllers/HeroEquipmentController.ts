@@ -1,9 +1,10 @@
 import {
   applyToolAppearance,
   cancelHeroDefense,
-  cancelHeroLasso,
+  cancelHeroCatchingPole,
   cancelHeroPowerCharge,
   HERO_TOOL_ORDER,
+  isHeroCatchingPoleEquipped,
   isHeroPowerChargeActiveForTool,
   isHeroToolAvailable,
   type HeroEquippedItem,
@@ -44,7 +45,7 @@ export class HeroEquipmentController {
     const unit = this.host.heroUnit
     if (item && unit && !isHeroToolAvailable(unit, item)) return
     if (unit?.heroDefenseActive) cancelHeroDefense(unit)
-    if (unit && item !== 'lasso') cancelHeroLasso(unit)
+    if (unit && !isHeroCatchingPoleEquipped(unit, item)) cancelHeroCatchingPole(unit)
     if (unit && !isHeroPowerChargeActiveForTool(unit, item)) {
       cancelHeroPowerCharge(unit)
       this.host.mouseHeld = false

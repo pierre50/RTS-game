@@ -1,4 +1,5 @@
 import type { Container, ContainerChild } from 'pixi.js'
+import { detachStableInteriorHorse } from './horses/stableHorses'
 import { BUCKET_SIZE } from '../constants'
 import { cartesianToIsometric, getGroundReliefLevel, getInstanceZIndex } from './maths'
 import type { GameContextLike } from '../types/context'
@@ -314,6 +315,7 @@ export function moveEntityToMapSpace(
 ): void {
   const display = entity as DisplayEntity
   const previousSpace = getEntityMapSpace(entity, map)
+  if (previousSpace?.id !== space.id) detachStableInteriorHorse(entity, map)
   const previousCell = entity.currentCell ?? previousSpace?.grid[entity.i]?.[entity.j] ?? map.grid[entity.i]?.[entity.j]
   const oldI = entity.i
   const oldJ = entity.j

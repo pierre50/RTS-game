@@ -70,7 +70,11 @@ function fixture(saved = null) {
       region: { x: 1, y: 2 },
       blueprint: {
         ...base(),
-        resources: [{ i: 2, j: 10, type: 'Tree', textureName: 'tree:7' }],
+        // j=2 is the west edge facing this region; j=10 is beyond the visible strip.
+        resources: [
+          { i: 2, j: 2, type: 'Tree', textureName: 'tree:7' },
+          { i: 2, j: 10, type: 'Tree', textureName: 'tree:far' },
+        ],
       },
     },
   ]
@@ -94,6 +98,10 @@ test('border scenery keeps the playable grid intact and copies actual neighborin
   assert.ok(terrain.children.length > 0 && terrain.children.length < 21 * 21)
   const tree = map.children.find(c => c.texture?.name === 'tree:7')
   assert.ok(tree)
+  assert.equal(
+    map.children.some(c => c.texture?.name === 'tree:far'),
+    false
+  )
   assert.equal(tree.x, 416)
   assert.equal(tree.eventMode, 'none')
   assert.equal(tree.visible, false)

@@ -11,6 +11,8 @@ export const BANDIT_OWNER_NAME = 'Bandits'
 export const FACTION_RAID_FIRST_DAY = 3
 export const FACTION_RAID_INTERVAL_DAYS = 3
 export const FACTION_RAID_MIN_HATE = -10
+export const FACTION_RAID_START_HOUR = 9
+export const FACTION_RAID_END_HOUR = 17
 export const BANDIT_RAID_FIRST_DAY = 4
 export const BANDIT_RAID_INTERVAL_DAYS = 4
 export const RAID_APPROACH_RANGE = 2.2
@@ -82,6 +84,11 @@ export function roundTributeCost(cost: ResourceAmount): ResourceAmount {
     rounded[resource] = roundTributeValue(value)
   }
   return rounded
+}
+
+export function isFactionRaidHourAllowed(hour: number, minute = 0): boolean {
+  const time = hour + minute / 60
+  return time >= FACTION_RAID_START_HOUR && time < FACTION_RAID_END_HOUR
 }
 
 export function getRaidUnitTypes(count: number, kind: TributeRaidKind, playerAge: number): string[] {

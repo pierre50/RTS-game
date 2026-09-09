@@ -321,102 +321,36 @@ function updateUnitTexture(sheet: string, instance: UnitTextureInstance): void {
     instance.sprite.onFrameChange = null
   }
   if (!sheets[sheet]) {
-    const fallbackSpriteScale = instance.spriteScale ?? 1
-    let mirrored = false
-    if (sheet === SHEET_TYPES.corpse && instance.dyingSheet) {
-      const directionCount = instance.sheetDirectionCounts?.[SHEET_TYPES.dying] ?? null
-      const directionOrderOverride = instance.sheetDirectionOrders?.[SHEET_TYPES.dying] ?? null
-      const fallback = getSpriteFrameSelection(
-        instance.dyingSheet.textures,
-        instance.degree,
-        directionCount,
-        directionOrderOverride
-      )
-      const corpseTexture = fallback.textures[fallback.textures.length - 1]
-      if (corpseTexture) {
-        instance.currentSheet = sheet
-        instance.sprite.textures = [corpseTexture]
-        instance.sprite.currentFrame = 0
-        instance.sprite.animationSpeed = 0
-        instance.sprite.stop()
-        instance.sprite.scale.x = fallback.mirrored ? -fallbackSpriteScale : fallbackSpriteScale
-        instance.sprite.scale.y = fallbackSpriteScale
-        const defaultAnchor = getDefaultAnchor(corpseTexture)
-        if (defaultAnchor) {
-          instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-        }
-        return
-      }
-    }
-    if (instance.walkingSheet) {
-      const fallback = getWalkingFallbackTexture(instance)
-      if (fallback) {
-        instance.sprite.textures = [fallback.texture]
-        mirrored = fallback.mirrored
-      }
-    } else {
-      instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
-      mirrored = instance.sprite.scale.x < 0
-    }
-    instance.currentSheet = SHEET_TYPES.walking
-    instance.sprite.stop()
-    instance.sprite.scale.x = mirrored ? -fallbackSpriteScale : fallbackSpriteScale
-    instance.sprite.scale.y = fallbackSpriteScale
-    const currentTexture = instance.sprite.textures[instance.sprite.currentFrame]
-    const defaultAnchor = getDefaultAnchor(currentTexture)
-    if (defaultAnchor) {
-      instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
-    }
+    applyMissingUnitSheet(sheet, instance)
     return
   }
-  const mountedActionSheet =
-    instance.mountedOnHorse &&
-    instance.actionSheet &&
-    [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
-      ? instance.actionSheet
-      : null
-  const selectedSheet = (mountedActionSheet ?? sheets[sheet]) as SheetLike
+  const { mountedActionSheet, selectedSheet } = selectUnitSheet(sheet, instance, sheets)
+  const sameSheet = instance.currentSheet === sheet
   const goto = instance.currentSheet === sheet && instance.sprite.currentFrame
   instance.currentSheet = sheet
-  const directionCount =
-    mountedActionSheet && sheet !== SHEET_TYPES.action
-      ? (instance.sheetDirectionCounts?.[SHEET_TYPES.action] ?? instance.sheetDirectionCounts?.[sheet] ?? null)
-      : (instance.sheetDirectionCounts?.[sheet] ?? null)
-  const directionOrderOverride =
-    mountedActionSheet && sheet !== SHEET_TYPES.action
-      ? (instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null)
-      : (instance.sheetDirectionOrders?.[sheet] ?? null)
-  const { textures: selectedTextures, mirrored } = getSpriteFrameSelection(
-    selectedSheet.textures,
-    instance.degree,
-    directionCount,
-    directionOrderOverride
+  const { textures: selectedTextures, mirrored } = selectUnitDirectionFrames(
+    sheet,
+    instance,
+    mountedActionSheet,
+    selectedSheet
   )
   const configuredActionFrameSequence = sheet === SHEET_TYPES.action ? getConfiguredActionFrameSequence(instance) : null
   const textures = applyActionFrameSequence(selectedTextures, configuredActionFrameSequence)
   const spriteScale = instance.spriteScale ?? 1
   instance.sprite.scale.x = mirrored ? -spriteScale : spriteScale
   instance.sprite.scale.y = spriteScale
-  instance.sprite.textures = textures
+  // Reassigning Pixi textures resets the animation clock, even for identical frames.
+  const sameTextures =
+    sameSheet &&
+    instance.sprite.textures.length === textures.length &&
+    textures.every((texture, index) => texture === instance.sprite.textures[index])
+  if (!sameTextures) instance.sprite.textures = textures
   const defaultAnchor = getDefaultAnchor(instance.sprite.textures[0])
   if (defaultAnchor) {
     instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
   }
   instance.sprite.animationSpeed = getUnitSpritesheetAnimationSpeed(selectedSheet, sheet)
-  // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
-  // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
-  // (e.g. wildlife idle animations) is real art and should play normally.
-  if (mountedActionSheet && sheet !== SHEET_TYPES.action) {
-    instance.sprite.textures = [instance.sprite.textures[0]]
-    instance.sprite.stop()
-    return
-  }
-  if (sheet === SHEET_TYPES.standing && selectedSheet === instance.walkingSheet) {
-    instance.sprite.textures = [instance.sprite.textures[0]]
-    instance.sprite.stop()
-    return
-  }
-  goto && goto < instance.sprite.textures.length ? instance.sprite.gotoAndPlay(goto) : instance.sprite.play()
+  playSelectedUnitSheet(sheet, instance, selectedSheet, mountedActionSheet, goto, sameTextures)
 }
 
 function displayObjectCanUpdateAnimation(displayObject?: DisplayObjectLike | null): boolean {
@@ -458,4 +392,114 @@ export function bindAnimatedSpriteToTicker<TSprite extends AnimatedSpriteLike | 
   sprite._usesAppTicker = true
   ticker.add(tick)
   return sprite
+}
+
+function applyMissingUnitSheet(sheet: string, instance: UnitTextureInstance): void {
+  const fallbackSpriteScale = instance.spriteScale ?? 1
+  let mirrored = false
+  if (sheet === SHEET_TYPES.corpse && applyMissingCorpseSheet(sheet, instance, fallbackSpriteScale)) return
+  if (instance.walkingSheet) {
+    const fallback = getWalkingFallbackTexture(instance)
+    if (fallback) {
+      instance.sprite.textures = [fallback.texture]
+      mirrored = fallback.mirrored
+    }
+  } else {
+    instance.sprite.textures = [instance.sprite.textures[instance.sprite.currentFrame]]
+    mirrored = instance.sprite.scale.x < 0
+  }
+  instance.currentSheet = SHEET_TYPES.walking
+  instance.sprite.stop()
+  instance.sprite.scale.x = mirrored ? -fallbackSpriteScale : fallbackSpriteScale
+  instance.sprite.scale.y = fallbackSpriteScale
+  const currentTexture = instance.sprite.textures[instance.sprite.currentFrame]
+  const defaultAnchor = getDefaultAnchor(currentTexture)
+  if (defaultAnchor) {
+    instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+  }
+  return
+}
+
+function applyMissingCorpseSheet(sheet: string, instance: UnitTextureInstance, fallbackSpriteScale: number): boolean {
+  if (!instance.dyingSheet) return false
+
+  const directionCount = instance.sheetDirectionCounts?.[SHEET_TYPES.dying] ?? null
+  const directionOrderOverride = instance.sheetDirectionOrders?.[SHEET_TYPES.dying] ?? null
+  const fallback = getSpriteFrameSelection(
+    instance.dyingSheet.textures,
+    instance.degree,
+    directionCount,
+    directionOrderOverride
+  )
+  const corpseTexture = fallback.textures[fallback.textures.length - 1]
+  if (corpseTexture) {
+    instance.currentSheet = sheet
+    instance.sprite.textures = [corpseTexture]
+    instance.sprite.currentFrame = 0
+    instance.sprite.animationSpeed = 0
+    instance.sprite.stop()
+    instance.sprite.scale.x = fallback.mirrored ? -fallbackSpriteScale : fallbackSpriteScale
+    instance.sprite.scale.y = fallbackSpriteScale
+    const defaultAnchor = getDefaultAnchor(corpseTexture)
+    if (defaultAnchor) {
+      instance.sprite.anchor.set(defaultAnchor.x, defaultAnchor.y)
+    }
+    return true
+  }
+
+  return false
+}
+
+function selectUnitSheet(sheet: string, instance: UnitTextureInstance, sheets: MutableSheetObject) {
+  const mountedActionSheet =
+    instance.mountedOnHorse &&
+    instance.actionSheet &&
+    [SHEET_TYPES.standing, SHEET_TYPES.walking, SHEET_TYPES.action].includes(sheet)
+      ? instance.actionSheet
+      : null
+  const selectedSheet = (mountedActionSheet ?? sheets[sheet]) as SheetLike
+
+  return { mountedActionSheet, selectedSheet }
+}
+
+function selectUnitDirectionFrames(
+  sheet: string,
+  instance: UnitTextureInstance,
+  mountedActionSheet: SheetLike | null,
+  selectedSheet: SheetLike
+) {
+  const directionCount =
+    mountedActionSheet && sheet !== SHEET_TYPES.action
+      ? (instance.sheetDirectionCounts?.[SHEET_TYPES.action] ?? instance.sheetDirectionCounts?.[sheet] ?? null)
+      : (instance.sheetDirectionCounts?.[sheet] ?? null)
+  const directionOrderOverride =
+    mountedActionSheet && sheet !== SHEET_TYPES.action
+      ? (instance.sheetDirectionOrders?.[SHEET_TYPES.action] ?? instance.sheetDirectionOrders?.[sheet] ?? null)
+      : (instance.sheetDirectionOrders?.[sheet] ?? null)
+  return getSpriteFrameSelection(selectedSheet.textures, instance.degree, directionCount, directionOrderOverride)
+}
+
+function playSelectedUnitSheet(
+  sheet: string,
+  instance: UnitTextureInstance,
+  selectedSheet: SheetLike,
+  mountedActionSheet: SheetLike | null,
+  goto: number | false,
+  sameTextures: boolean
+): void {
+  // Humanoid units alias standingSheet to the same walkingSheet asset (no separate idle art),
+  // so freeze on frame 0 to avoid playing the walk cycle in place. A distinct standing sheet
+  // (e.g. wildlife idle animations) is real art and should play normally.
+  if (mountedActionSheet && sheet !== SHEET_TYPES.action) {
+    instance.sprite.textures = [instance.sprite.textures[0]]
+    instance.sprite.stop()
+    return
+  }
+  if (sheet === SHEET_TYPES.standing && selectedSheet === instance.walkingSheet) {
+    instance.sprite.textures = [instance.sprite.textures[0]]
+    instance.sprite.stop()
+    return
+  }
+  if (!sameTextures && goto && goto < instance.sprite.textures.length) instance.sprite.gotoAndPlay(goto)
+  else instance.sprite.play()
 }

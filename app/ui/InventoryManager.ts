@@ -2,7 +2,7 @@ import { Modal } from '../lib'
 import { getIconPath } from '../lib/graphics/assets'
 import { formatEquipmentLootLabel } from '../lib/equipment/equipmentLoot'
 import {
-  HERO_ARROW_CRAFT_RECIPES,
+  HERO_CRAFT_RECIPES,
   canCraftHeroRecipe,
   craftHeroRecipe,
   getMissingCraftResources,
@@ -42,8 +42,9 @@ const TOOL_LABEL_KEYS: Record<HeroEquippedItem, string> = {
   interact: 'heroToolInteract',
   sword: 'heroToolSword',
   bow: 'heroToolBow',
-  lasso: 'heroToolLasso',
 }
+const FIRST_TECHNOLOGY_OBJECTIVES = ['Farming', 'BowCrafting', 'Village']
+const AGE_TECHNOLOGY_OBJECTIVES = ['ToolAge']
 
 export class InventoryManager {
   menu: MenuHost
@@ -354,6 +355,76 @@ export class InventoryManager {
     return element
   }
 
+  createTechnologyObjectiveItem(button: MenuButtonSpec): HTMLDivElement {
+    const item = document.createElement('div')
+    const acquired = button.acquired?.() ?? false
+    const disabled = button.disabled?.() ?? false
+    item.className = 'technology-objective-row'
+    item.classList.toggle('is-acquired', acquired)
+    item.classList.toggle('is-locked', !acquired && disabled)
+    item.id = button.id ? `inventory-tech-${button.id}` : ''
+
+    const label = document.createElement('span')
+    label.className = 'technology-objective-label'
+    const tooltip = typeof button.tooltip === 'function' ? button.tooltip() : button.tooltip
+    label.textContent = tooltip?.title || button.id || ''
+
+    const status = document.createElement('span')
+    status.className = 'technology-objective-status'
+    status.textContent = acquired ? t('technologyObjectiveDone') : t('technologyObjectiveTodo')
+
+    item.append(label, status)
+    if (button.tooltip) this.menu.menuTooltip.bind(item, button.tooltip)
+    return item
+  }
+
+  createTechnologySection(
+    titleKey: string,
+    buttons: MenuButtonSpec[],
+    className = '',
+    contentClassName = 'technology-menu-list'
+  ): HTMLDivElement | null {
+    if (!buttons.length) return null
+    const section = document.createElement('div')
+    section.className = `technology-menu-section ${className}`.trim()
+
+    const title = document.createElement('div')
+    title.className = 'technology-menu-section-title'
+    title.textContent = t(titleKey)
+
+    const content = document.createElement('div')
+    content.className = contentClassName
+    section.append(title, content)
+    return section
+  }
+
+  appendTechnologyButton(
+    section: HTMLDivElement,
+    selection: RuntimeEntity,
+    button: MenuButtonSpec,
+    usedKeys: Set<string>
+  ): void {
+    const grid = section.querySelector('.technology-menu-grid')
+    if (!(grid instanceof HTMLElement)) return
+    const hotkey = button.disabled?.() ? null : this.menu.assignActionHotkey(button.id || '', usedKeys)
+    const element = this.createTechnologyButton(selection, button, hotkey)
+    grid.appendChild(element)
+    if (hotkey && typeof button.onClick === 'function') {
+      this.menu.setActionHotkey(hotkey, () => {
+        if (button.disabled?.()) return
+        this.menu.playUiClick()
+        button.onClick!(selection, null)
+        this.renderTechnologies()
+      })
+    }
+  }
+
+  appendTechnologyObjective(section: HTMLDivElement, button: MenuButtonSpec): void {
+    const list = section.querySelector('.technology-menu-list')
+    if (!(list instanceof HTMLElement)) return
+    list.appendChild(this.createTechnologyObjectiveItem(button))
+  }
+
   renderTechnologies(): void {
     const selection = this.menu.context.controls.heroUnit || this.menu.selection
     this.technologiesPanel.textContent = ''
@@ -361,21 +432,49 @@ export class InventoryManager {
     if (!selection) return
 
     const usedKeys = new Set<string>(getReservedGameplayHotkeys())
-    this.getTechnologyButtons()
-      .filter(button => !button.hide || !button.hide())
-      .forEach(button => {
-        const hotkey = button.disabled?.() ? null : this.menu.assignActionHotkey(button.id || '', usedKeys)
-        const element = this.createTechnologyButton(selection, button, hotkey)
-        this.technologiesPanel.appendChild(element)
-        if (hotkey && typeof button.onClick === 'function') {
-          this.menu.setActionHotkey(hotkey, () => {
-            if (button.disabled?.()) return
-            this.menu.playUiClick()
-            button.onClick!(selection, null)
-            this.renderTechnologies()
-          })
+    const buttons = this.getTechnologyButtons().filter(button => !button.hide || !button.hide())
+    const buttonsById = new Map(buttons.map(button => [button.id || '', button]))
+    const objectiveButtons = FIRST_TECHNOLOGY_OBJECTIVES.map(id => buttonsById.get(id)).filter(
+      (button): button is MenuButtonSpec => Boolean(button)
+    )
+    const ageButtons = AGE_TECHNOLOGY_OBJECTIVES.map(id => buttonsById.get(id)).filter(
+      (button): button is MenuButtonSpec => Boolean(button)
+    )
+    const highlightedIds = new Set([...FIRST_TECHNOLOGY_OBJECTIVES, ...AGE_TECHNOLOGY_OBJECTIVES])
+    const remainingButtons = buttons.filter(button => !highlightedIds.has(button.id || ''))
+    const sections = [
+      {
+        element: this.createTechnologySection('technologySectionFirstObjectives', objectiveButtons),
+        buttons: objectiveButtons,
+      },
+      {
+        element: this.createTechnologySection(
+          'technologySectionAgeAdvance',
+          ageButtons,
+          'technology-menu-section-age',
+          'technology-menu-grid'
+        ),
+        buttons: ageButtons,
+        action: 'button',
+      },
+      {
+        element: this.createTechnologySection('technologySectionOther', remainingButtons),
+        buttons: remainingButtons,
+      },
+    ].filter((section): section is { element: HTMLDivElement; buttons: MenuButtonSpec[]; action?: 'button' } =>
+      Boolean(section.element)
+    )
+
+    for (const { element: section, buttons: sectionButtons, action } of sections) {
+      this.technologiesPanel.appendChild(section)
+      for (const button of sectionButtons) {
+        if (action === 'button') {
+          this.appendTechnologyButton(section, selection, button, usedKeys)
+        } else {
+          this.appendTechnologyObjective(section, button)
         }
-      })
+      }
+    }
   }
 
   formatResourceAmount(cost: ResourceAmount): string {
@@ -465,7 +564,7 @@ export class InventoryManager {
   renderCraft(): void {
     this.craftPanel.textContent = ''
     this.menu.clearActionHotkeys()
-    for (const recipe of HERO_ARROW_CRAFT_RECIPES) {
+    for (const recipe of HERO_CRAFT_RECIPES) {
       this.craftPanel.appendChild(this.createCraftButton(recipe))
     }
   }

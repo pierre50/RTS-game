@@ -1,3 +1,4 @@
+import { definedProperties } from '../lib/definedProperties'
 import { filterObject, getCellMapPoint, getEntityMapSpace, getGaiaAnimals } from '../lib'
 import { summarizeVillagerAssignments } from '../lib/units/villagerAssignments'
 import type { ResourceAmount } from '../types/common'
@@ -191,9 +192,10 @@ function resourceData(resource: SerializableEntity): SaveEntityState {
       'size',
       'hitPoints',
     ]),
-    textureName: (resource.textureName || '').split('.')[0],
+    textureName: (resource.textureName || '').split('.')[0] ?? '',
   }
-  if (resource.sprite?.currentFrame != null) data.currentFrame = resource.sprite.currentFrame
+  if (!('deferredSpriteBounds' in resource && resource.deferredSpriteBounds) && resource.sprite?.currentFrame != null)
+    data.currentFrame = resource.sprite.currentFrame
   if (resource.berrybushFullTextureName != null) data.berrybushFullTextureName = resource.berrybushFullTextureName
   return data
 }
@@ -318,7 +320,7 @@ function unitData(unit: SerializableEntity): SaveEntityState {
 }
 
 function buildingData(building: SerializableEntity): SaveEntityState {
-  return {
+  return definedProperties({
     ...filterObject(building, [
       'label',
       'i',
@@ -344,13 +346,14 @@ function buildingData(building: SerializableEntity): SaveEntityState {
       'inventory',
       'marketStock',
       'indestructible',
-    ]),
+    ] as const),
+    inventory: building.inventory ? definedProperties(building.inventory) : undefined,
     isUsedBy: typeof building.isUsedBy === 'string' ? building.isUsedBy : building.isUsedBy?.label,
-  }
+  })
 }
 
 function playerData(player: SerializablePlayer) {
-  const data: SavePlayerState = {
+  const data: SavePlayerState = definedProperties({
     ...filterObject(player, [
       'label',
       'age',
@@ -368,6 +371,7 @@ function playerData(player: SerializablePlayer) {
       'populationMax',
       'technologies',
       'discoveredEquipment',
+      'discoveredResources',
       'researchTechnology',
       'researchLoading',
       'cellViewed',
@@ -387,7 +391,7 @@ function playerData(player: SerializablePlayer) {
     selectedUnitLabel: !player.isPlayed ? player.selectedUnit?.label : undefined,
     selectedBuildingLabel: !player.isPlayed ? player.selectedBuilding?.label : undefined,
     selectedOtherLabel: !player.isPlayed ? player.selectedOther?.label : undefined,
-  }
+  })
 
   if (player.type === 'AI' || player.type === 'Bandits') {
     const savedAt = player.getNow?.() ?? 0

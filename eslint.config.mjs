@@ -20,11 +20,12 @@ export default [
     ignores: ['build/**', 'dist/**', 'node_modules/**'],
   },
   {
-    files: ['app/**/*.ts'],
+    files: ['app/**/*.ts', 'engine/**/*.ts'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       parser: tsParser,
+      parserOptions: { project: './tsconfig.json', tsconfigRootDir: import.meta.dirname },
       globals: browserGlobals,
     },
     plugins: {
@@ -33,6 +34,8 @@ export default [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': process.env.HEALTH_EXTENDED_LINT ? 'error' : 'off',
+      '@typescript-eslint/no-misused-promises': process.env.HEALTH_EXTENDED_LINT ? 'error' : 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-empty-function': 'off',
@@ -41,7 +44,7 @@ export default [
     },
   },
   {
-    files: ['main.js'],
+    files: ['main.js', 'preload.js', 'tools/**/*.cjs', 'tests/**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
@@ -52,6 +55,14 @@ export default [
         require: 'readonly',
       },
     },
-    rules: {},
+    rules: {
+      'constructor-super': 'error',
+      'no-unreachable': 'error',
+      'no-dupe-args': 'error',
+      'no-dupe-keys': 'error',
+      'no-constant-condition': ['error', { checkLoops: false }],
+      'no-unsafe-finally': 'error',
+      'valid-typeof': 'error',
+    },
   },
 ]

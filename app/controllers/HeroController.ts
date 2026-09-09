@@ -4,7 +4,7 @@ import { SHEET_TYPES } from '../constants'
 import {
   cancelHeroActiveToolAction,
   cancelHeroPowerCharge,
-  cancelHeroLasso,
+  cancelHeroCatchingPole,
   cancelHeroDefense,
   getHeroAimDegree,
   type HeroEquippedItem,
@@ -52,7 +52,6 @@ const HERO_TOOL_ACTIONS: Partial<Record<ControlBindingAction, number>> = {
   heroTool1: 0,
   heroTool2: 1,
   heroTool3: 2,
-  heroTool4: 3,
 }
 
 export type InteractInputOwner = 'mouse' | 'movement' | null
@@ -434,7 +433,7 @@ export class HeroController {
     this.interactInputOwner = null
     this.cancelMountTransition()
     if (this.heroUnit) cancelHeroPowerCharge(this.heroUnit)
-    if (this.heroUnit) cancelHeroLasso(this.heroUnit)
+    if (this.heroUnit) cancelHeroCatchingPole(this.heroUnit)
     if (this.heroUnit) cancelHeroDefense(this.heroUnit)
     if (this.commCharging) this.cancelCommCharge()
     if (this.pendingGoToNpcs) this.cancelGoToPicking()

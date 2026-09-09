@@ -59,6 +59,7 @@ const constants = {
     builder: 'builder',
     farmer: 'farmer',
     goldminer: 'goldminer',
+    horseCapture: 'horseCapture',
     hunter: 'hunter',
     stoneminer: 'stoneminer',
     woodcutter: 'woodcutter',
@@ -174,6 +175,9 @@ test('villager and hero work tools follow civilization metal age', () => {
   const builderFront = layers.find(
     layer => layer.workTypes?.includes(constants.WORK_TYPES.builder) && layer.zIndex === 12
   )
+  const farmerFront = layers.find(
+    layer => layer.workTypes?.includes(constants.WORK_TYPES.farmer) && layer.zIndex === 12
+  )
 
   assert.equal(woodcutterFront?.walkingSheet, 'equipments/axe_ceramic/front/walking')
   assert.equal(woodcutterFront?.appearanceVariantKey, 'gender')
@@ -185,11 +189,34 @@ test('villager and hero work tools follow civilization metal age', () => {
   assert.equal(builderFront?.ageSheetOverrides?.['1']?.actionSheet, 'equipments/hammer_copper/front/action')
   assert.equal(builderFront?.ageSheetOverrides?.['2']?.actionSheet, 'equipments/hammer_bronze/front/action')
   assert.equal(builderFront?.ageSheetOverrides?.['3']?.actionSheet, 'equipments/hammer_iron/front/action')
+  assert.equal(farmerFront?.minAge, 1)
 
+  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 0), [])
+  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.farmer, 1), ['scythe_copper'])
+  assert.deepEqual(dynamicEquipmentForWork(constants.WORK_TYPES.horseCapture, 0), ['longstick'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 0), ['sword_ceramic'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 1), ['sword_copper'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 2), ['sword_bronze'])
   assert.deepEqual(dynamicEquipmentForWork('heroSword', 3), ['sword_iron'])
+})
+
+test('catchingPole inventory equipment renders through the longstick visual layers', () => {
+  const { dynamicEquipmentLayersForEquipment, dynamicEquipmentVisualKey } = loadModule('app/lib/lpc/equipment.ts', {
+    '../../constants': constants,
+  })
+
+  const layers = dynamicEquipmentLayersForEquipment(['catchingPole'])
+
+  assert.equal(dynamicEquipmentVisualKey('catchingPole'), 'longstick')
+  assert.equal(layers.length, 2)
+  assert.deepEqual(
+    layers.map(layer => layer.equipmentKey),
+    ['longstick', 'longstick']
+  )
+  assert.deepEqual(
+    layers.map(layer => layer.walkingSheet),
+    ['equipments/longstick/back/walking', 'equipments/longstick/front/walking']
+  )
 })
 
 test('hero baked appearance includes inventory equipped layers', () => {
@@ -230,6 +257,7 @@ test('hero baked appearance includes inventory equipped layers', () => {
         ranged: 'bow',
       },
     },
+    context: { controls: { equippedTool: 'sword' } },
     label: 'hero',
     i: 1,
     j: 1,
@@ -259,11 +287,23 @@ test('hero baked appearance includes inventory equipped layers', () => {
     hero.appearance.layers.some(layer => layer.equipmentKey === 'round_shield_ceramic_slash'),
     false
   )
+
+  hero.work = 'heroSword'
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  hero.context.controls.equippedTool = 'sword'
+  assert.equal(applyBakedLpcUnitAssets(hero), true)
+  assert.ok(hero.appearance.layers.some(layer => layer.equipmentKey === 'catchingPole'))
 })
 
-test('runtime equipment preload collection deduplicates used equipment atlases', () => {
+test('runtime equipment preload collection deduplicates used equipment atlases', async () => {
+  const loaded = []
   const cachedAliases = new Set(['units/infantry/hellas/male/walking'])
-  const { collectBakedLpcRuntimeEquipmentAssets } = loadModule('app/lib/lpc/baked.ts', {
+  const { preloadBakedLpcUnitsForPlayers } = loadModule('app/lib/lpc/baked.ts', {
+    './bakedAliasCache': {
+      isAssetCached: alias => cachedAliases.has(alias),
+      loadBakedUnitVariant: async () => {},
+      registerDynamicEquipmentAliases: () => {},
+    },
     './appearance': { hashLpcAppearanceSeed: () => 0 },
     './heroAppearance': heroAppearanceMock,
     './equipment': {
@@ -285,7 +325,14 @@ test('runtime equipment preload collection deduplicates used equipment atlases',
     '../chief': { isChiefUnit: () => false },
     '../units/unitExperience': { getUnitEquipmentTier: () => 0 },
     '../../constants': constants,
-    'pixi.js': { Assets: { cache: { has: alias => cachedAliases.has(alias) }, load: async () => {} } },
+    'pixi.js': {
+      Assets: {
+        cache: { has: alias => cachedAliases.has(alias) },
+        load: async assets => {
+          loaded.push(...assets)
+        },
+      },
+    },
   })
   const unit = {
     type: 'Fantassin',
@@ -295,7 +342,11 @@ test('runtime equipment preload collection deduplicates used equipment atlases',
     j: 1,
   }
 
-  assert.deepEqual(collectBakedLpcRuntimeEquipmentAssets([{ units: [unit] }]), [
+  await preloadBakedLpcUnitsForPlayers([{ ...unit.owner, units: [unit] }], undefined, {
+    preloadEquipment: false,
+    preloadRuntimeEquipment: true,
+  })
+  assert.deepEqual(loaded, [
     { alias: 'equipments/weapon/sword', src: 'sword_ceramic.json' },
     { alias: 'equipments/helmet_pointed_ceramic', src: 'helmet_pointed_ceramic.json' },
   ])

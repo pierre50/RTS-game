@@ -13,7 +13,8 @@ function loadModule(relativePath, mocks) {
     presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
   })
   const module = { exports: {} }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports
 }
@@ -198,6 +199,32 @@ test('a walking animal blocked by another animal pauses its animation', () => {
   assert.equal(animal.sprite.stopCalls, 1)
 })
 
+test('an animal keeps the current cell destination instead of restarting its walk', () => {
+  const { movement, animal, grid, calls } = createMovement({
+    setDest(dest) {
+      this.dest = dest
+      this.realDest = { i: dest.i, j: dest.j }
+      calls.push(['setDest', dest.i, dest.j])
+    },
+    setPath(path, sheet) {
+      this.path = path
+      this.movementSheet = sheet
+      calls.push(['setPath', sheet])
+    },
+    stopInterval: () => calls.push(['stopInterval']),
+  })
+  const target = grid[8][8]
+
+  movement.sendTo(target, null)
+  movement.sendTo(target, null)
+
+  assert.deepEqual(
+    calls.filter(call => call[0] === 'setPath'),
+    [['setPath', 'walkingSheet']]
+  )
+  assert.equal(calls.filter(call => call[0] === 'stopInterval').length, 1)
+})
+
 test('an animal repaths instead of stepping onto a water cell', () => {
   const { movement, animal, grid, calls } = createMovement()
   const nextCell = grid[5][6]
@@ -337,4 +364,24 @@ test('a dead animal ignores late movement updates instead of leaving dying anima
 
   assert.deepEqual(calls, [])
   assert.equal(animal.currentSheet, 'dyingSheet')
+})
+
+test('path movement restores locomotion after an action even without a direction change', () => {
+  const { movement, animal, grid, calls } = createMovement(
+    {
+      currentSheet: 'actionSheet',
+      movementSheet: 'runningSheet',
+      setTextures(sheet) {
+        this.currentSheet = sheet
+        calls.push(['setTextures', sheet])
+      },
+    },
+    { instancesDistance: () => 10 }
+  )
+  animal.path = [grid[6][6]]
+  animal.dest = grid[8][8]
+  movement.moveToPath()
+  movement.moveToPath()
+  assert.equal(animal.currentSheet, 'runningSheet')
+  assert.deepEqual(calls, [['setTextures', 'runningSheet']])
 })

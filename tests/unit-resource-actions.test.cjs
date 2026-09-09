@@ -5,6 +5,9 @@ const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 function loadUnitResourceActions() {
   return loadTsModule('app/classes/unit/UnitResourceActions.ts', {
     mocks: {
+      '../../lib/actions/contactActions': { canReachActionTarget: () => true, isActionTouchingTarget: () => true, getActionContactTool: () => undefined },
+      '../../lib/contact/contactGeometry': { getContactAimDegree: () => 0 },
+      '../../lib/contact/contactDebug': { showContactDebug: () => {} },
       '../../constants': {
         LOADING_TYPES: {
           berry: 'berry',

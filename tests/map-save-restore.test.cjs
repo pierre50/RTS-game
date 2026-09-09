@@ -1,35 +1,18 @@
 const assert = require('node:assert/strict')
-const fs = require('node:fs')
-const path = require('node:path')
 const test = require('node:test')
-const babel = require('@babel/core')
+const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
 function loadMapSaveRestore() {
-  const filename = path.join(__dirname, '../app/classes/map/MapSaveRestore.ts')
-  const source = fs.readFileSync(filename, 'utf8')
-  const { code } = babel.transformSync(source, {
-    filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
-  })
-  const module = { exports: {} }
-  const mockRequire = id => {
-    if (id === '../../constants') {
-      return {
-        FAMILY_TYPES: { building: 'building', unit: 'unit' },
-        PLAYER_TYPES: { ai: 'AI' },
-      }
-    }
-    if (id === '../../lib/playerState') return { isAIControlledPlayer: () => false }
-    if (id === '../../lib/resources/playerResourceTotals') {
-      return {
+  return loadTsModule('app/classes/map/MapSaveRestore.ts', {
+    mocks: {
+      '../../constants': { FAMILY_TYPES: { building: 'building', unit: 'unit' }, PLAYER_TYPES: { ai: 'AI' } },
+      '../../lib/playerState': { isAIControlledPlayer: () => false },
+      '../../lib/resources/playerResourceTotals': {
         expandLegacyFoodAmount: resources => resources,
         syncPlayerResourceFieldsFromChests: () => {},
-      }
-    }
-    return require(id)
-  }
-  new Function('module', 'exports', 'require', code)(module, module.exports, mockRequire)
-  return module.exports
+      },
+    },
+  })
 }
 
 const { restorePlayerEntitiesFromSave } = loadMapSaveRestore()

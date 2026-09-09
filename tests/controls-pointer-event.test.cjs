@@ -4,7 +4,7 @@ const path = require('node:path')
 const test = require('node:test')
 const babel = require('@babel/core')
 
-function loadControls() {
+function loadControls(mockOverrides = {}) {
   const mocks = {
     'pixi.js': {
       Container: class {
@@ -166,6 +166,7 @@ function loadControls() {
       TOUCH_DRAG_THRESHOLD: 10,
     },
   }
+  Object.assign(mocks, mockOverrides)
   const localRequire = request => {
     if (request === '../controllers/TouchInputController') {
       return loadTsFile(path.join(__dirname, '../app/controllers/TouchInputController.ts'))
@@ -176,6 +177,8 @@ function loadControls() {
     if (request === '../controllers/HeroInteractionController') {
       return loadTsFile(path.join(__dirname, '../app/controllers/HeroInteractionController.ts'))
     }
+    if (['./ControlsGeometry', './ControlsFrame'].includes(request))
+      return loadTsFile(path.join(__dirname, '../app/classes', request.slice(2) + '.ts'))
     if (request === './ControlsKeyboard') {
       return loadTsFile(path.join(__dirname, '../app/classes/ControlsKeyboard.ts'))
     }
@@ -212,7 +215,7 @@ class MockElement {
   }
 }
 
-function createControls() {
+function createControls(mockOverrides = {}) {
   const previousDocument = global.document
   const previousElement = global.Element
   const previousWindow = global.window
@@ -227,7 +230,7 @@ function createControls() {
     removeEventListener() {},
   }
 
-  const Controls = loadControls()
+  const Controls = loadControls(mockOverrides)
   const gamebox = new MockElement({ inGame: true })
   const controls = new Controls({
     app: {
@@ -762,4 +765,165 @@ test('hero entity interaction on self does not open info modal', () => {
   } finally {
     restore()
   }
+})
+
+test('screen and local coordinates round-trip with zoom, camera offset and CSS scaling', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  controls.context.gamebox.getBoundingClientRect = () => ({ left: 25, top: 40, width: 400, height: 200 })
+  controls.context.app.screen = { width: 800, height: 600 }
+  controls.getViewportMetrics = () => ({ zoom: 2, offsetX: -120, offsetY: 60 })
+  const screen = controls.localToScreen(80, 45)
+  assert.deepEqual(screen, { x: 45, y: 90 })
+  assert.deepEqual(controls.screenToLocal(screen.x, screen.y), { x: 80, y: 45 })
+  controls.context.map.x = 10
+  controls.context.map.y = 20
+  controls.mouse.x = screen.x
+  controls.mouse.y = screen.y
+  assert.deepEqual(controls.getMapPointUnderCursor(), { x: 70, y: 25 })
+})
+
+test('cursor picking uses the active interior grid and translates its local origin', t => {
+  const { controls, restore } = createControls({
+    '../lib/mapSpaces': {
+      getActiveInteractionSpace: context => context.testSpace,
+      getEntityMapPoint: instance => ({ x: instance.x, y: instance.y }),
+      getSpaceLocalPointFromMapPoint: (space, point) => ({ x: point.x - space.x, y: point.y - space.y }),
+    },
+  })
+  t.after(restore)
+  const space = { x: 100, y: 200, size: 4, grid: createGrid(4) }
+  controls.context.testSpace = space
+  controls.context.map.x = 10
+  controls.context.map.y = 20
+  const cell = space.grid[2][2]
+  controls.mouse.x = cell.x + space.x + 10
+  controls.mouse.y = cell.y + space.y + 20
+  assert.deepEqual(controls.getWorldPointUnderCursor(), { x: cell.x, y: cell.y })
+  assert.equal(controls.getCellUnderCursor(), cell)
+})
+
+test('cursor picking tolerates sparse grids and falls back to a boundary cell outside the map', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  controls.context.map.size = 4
+  controls.context.map.grid = []
+  controls.mouse.x = 0
+  controls.mouse.y = 0
+  assert.equal(controls.getCellUnderCursor(), null)
+  const grid = createGrid(4)
+  grid[1] = undefined
+  grid[2][3] = undefined
+  controls.context.map.grid = grid
+  controls.mouse.x = grid[2][2].x
+  controls.mouse.y = grid[2][2].y
+  assert.equal(controls.getCellUnderCursor(), grid[2][2])
+  controls.mouse.x = 0
+  controls.mouse.y = 10000
+  assert.equal(controls.getCellUnderCursor(), grid[4][4])
+})
+
+test('camera initialization prioritizes the hero, then a building, a unit and map center', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  const centers = []
+  controls.cameraController.set = (x, y) => centers.push([x, y])
+  controls.heroController.initFromPlayerStart = () => true
+  controls.init()
+  assert.deepEqual(centers, [])
+  controls.heroController.initFromPlayerStart = () => false
+  controls.context.player.buildings = [{ x: 10, y: 20 }]
+  controls.context.player.units = [{ x: 30, y: 40 }]
+  controls.init()
+  controls.context.player.buildings = Array(1)
+  controls.init()
+  controls.context.player.units = Array(1)
+  controls.init()
+  assert.deepEqual(centers, [
+    [10, 20],
+    [30, 40],
+    [5, 5],
+  ])
+  controls.heroController.heroUnit = null
+  assert.equal(controls.getHeroCameraCenter(), null)
+})
+
+test('free camera limits camera speed without limiting accelerated hero movement', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  controls.heroController.active = true
+  controls.freeCameraActive = true
+  const pans = []
+  const centers = []
+  controls.panCameraWithArrowKeys = scale => pans.push(scale)
+  controls.cameraController.set = (...args) => centers.push(args)
+  controls.onTick({ elapsedMS: 1000, deltaMS: (1000 / 60) * 8, deltaTime: 8 })
+  assert.deepEqual(pans, [3])
+  assert.deepEqual(centers, [])
+  assert.equal(controls.heroController.lastUpdateFrameScale, 8)
+  controls.onTick({ deltaTime: 2 })
+  assert.deepEqual(pans, [3, 2])
+  assert.equal(controls.heroController.lastUpdateFrameScale, 2)
+})
+
+test('inactive hero updates camera and health visuals but disabled input stops frame processing', t => {
+  const cursor = []
+  const { controls, restore } = createControls({
+    '../lib/hero/heroCursor': { setHeroGameCursorEnabled: enabled => cursor.push(enabled) },
+  })
+  t.after(restore)
+  const calls = []
+  controls.cameraController.updateMouseMove = scale => calls.push(['mouse', scale])
+  controls.panCameraWithArrowKeys = scale => calls.push(['pan', scale])
+  controls.heroController.updateCriticalHealthEffects = (ms, active) => calls.push(['health', ms, active])
+  controls.heroController.updateOcclusionFade = (ms, active) => calls.push(['fade', ms, active])
+  controls.onTick({ deltaTime: 1 })
+  assert.deepEqual(
+    calls.map(c => c[0]),
+    ['health', 'fade', 'mouse', 'pan']
+  )
+  assert.equal(calls[2][1], 1)
+  calls.length = 0
+  controls.runtimeInputEnabled = false
+  controls.onTick({ deltaTime: 1 })
+  assert.deepEqual(calls, [])
+  assert.equal(cursor.at(-1), false)
+})
+
+test('rally previews refresh while the hero camera moves', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  controls.heroController.active = true
+  controls.heroController.heroUnit = { x: 50, y: 60 }
+  controls.rallyPointController.active = true
+  const calls = []
+  controls.rallyPointController.handleMouseMove = () => calls.push('rally')
+  controls.cameraController.set = (...args) => calls.push(args)
+  controls.onTick({ deltaTime: 1 })
+  assert.deepEqual(calls, [[50, 60, false, false], 'rally'])
+})
+
+test('audibility requires the camera and either player ownership, visibility or a revealed map', t => {
+  const { controls, restore } = createControls()
+  t.after(restore)
+  let inCamera = false
+  controls.cameraController.instanceInCamera = () => inCamera
+  const entity = { x: 1, y: 2, visible: true }
+  assert.equal(controls.instanceIsAudible(entity), false)
+  inCamera = true
+  assert.equal(controls.instanceIsAudible(entity), true)
+  entity.visible = false
+  assert.equal(controls.instanceIsAudible(entity), false)
+  entity.owner = { isPlayed: true }
+  assert.equal(controls.instanceIsAudible(entity), true)
+  entity.owner = { owner: { isPlayed: true } }
+  assert.equal(controls.instanceIsAudible(entity), true)
+  entity.owner = { visible: true }
+  assert.equal(controls.instanceIsAudible(entity), true)
+  entity.owner = {}
+  entity.target = { visible: true }
+  assert.equal(controls.instanceIsAudible(entity), true)
+  entity.target = null
+  controls.context.map.revealEverything = true
+  assert.equal(controls.instanceIsAudible(entity), true)
 })

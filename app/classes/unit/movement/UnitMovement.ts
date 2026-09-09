@@ -1,3 +1,5 @@
+import { getVillagerExplorationSearch } from '../../../lib/units/autonomy/villagerExploration'
+import { canReachActionTarget, usesUnitContactAction } from '../../../lib/actions/contactActions'
 import { ACTION_TYPES, FAMILY_TYPES, UNIT_TYPES } from '../../../constants'
 import { findReachableFleeCell, getInstancePath, instanceContactInstance, instancesDistance } from '../../../lib'
 import { isHeroActionInRange } from '../../../lib/hero/heroActionRange'
@@ -142,24 +144,20 @@ export class UnitMovement {
   isUnitAtDest(action: string | null | undefined, dest: RuntimeEntity | RuntimeCell | null | undefined): boolean {
     const unit = this.unit
     if (!dest) return false
+    if (isRuntimeEntity(dest) && usesUnitContactAction(unit, action)) {
+      return canReachActionTarget(unit, dest, action)
+    }
     if (!action && isUnitOnActionArrivalCell(unit, dest, action)) return true
     if (!action) return false
     if (action === ACTION_TYPES.train) return isUnitOnActionArrivalCell(unit, dest, action)
     if (isUnitOnActionArrivalCell(unit, dest, action)) return true
     if (isRuntimeEntity(dest) && isHeroActionInRange(unit, action, dest)) return true
-    const usesActionRange =
-      action === ACTION_TYPES.attack ||
-      action === ACTION_TYPES.convert ||
-      action === ACTION_TYPES.heal ||
-      (unit.type === UNIT_TYPES.villager && (action === ACTION_TYPES.hunt || action === ACTION_TYPES.captureHorse))
-    const effectiveRange =
-      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse
-        ? CAPTURE_HORSE_TRIGGER_RANGE
-        : unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
-          ? getUnitCombatRange(unit)
-          : action === ACTION_TYPES.attack
-            ? getUnitCombatRange(unit)
-            : undefined
+    return this.isUnitInActionRange(action, dest)
+  }
+
+  private isUnitInActionRange(action: string, dest: RuntimeEntity | RuntimeCell): boolean {
+    const unit = this.unit
+    const { usesActionRange, effectiveRange } = this.actionRange(action)
     const distance = instancesDistance(unit, dest)
     debugHuntRangeCheck(unit, action, dest, effectiveRange, distance)
     if (unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse) {
@@ -173,6 +171,24 @@ export class UnitMovement {
       return true
     }
     return instanceContactInstance(unit, dest)
+  }
+
+  private actionRange(action: string): { usesActionRange: boolean; effectiveRange: number | undefined } {
+    const unit = this.unit
+    const usesActionRange =
+      action === ACTION_TYPES.attack ||
+      action === ACTION_TYPES.convert ||
+      action === ACTION_TYPES.heal ||
+      (unit.type === UNIT_TYPES.villager && (action === ACTION_TYPES.hunt || action === ACTION_TYPES.captureHorse))
+    const effectiveRange =
+      unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.captureHorse
+        ? CAPTURE_HORSE_TRIGGER_RANGE
+        : unit.type === UNIT_TYPES.villager && action === ACTION_TYPES.hunt
+          ? getUnitCombatRange(unit)
+          : action === ACTION_TYPES.attack
+            ? getUnitCombatRange(unit)
+            : undefined
+    return { usesActionRange, effectiveRange }
   }
 
   destHasMoved(): boolean {
@@ -244,7 +260,9 @@ export class UnitMovement {
     const candidates: { cell: RuntimeCell; score: number; dist: number }[] = []
     const passageLookup = createReservedPassageCellLookup(unit.context)
 
-    for (let r = 1; r <= 50; r++) {
+    const maxRadius = grid.length + Math.max(0, ...grid.map(row => row.length))
+    const search = getVillagerExplorationSearch(unit, grid, maxRadius)
+    for (let r = 1; r <= search.radius; r++) {
       for (let dx = -r; dx <= r; dx++) {
         const x = unit.i + dx
         const row = grid[x]
@@ -252,16 +270,18 @@ export class UnitMovement {
         const dyMax = r - Math.abs(dx)
         for (const dy of dyMax === 0 ? [0] : [-dyMax, dyMax]) {
           const cell = row[unit.j + dy]
-          if (cell && !views.isViewed(cell.i, cell.j) && canUnitWaitOnCell(unit, cell, { passageLookup })) {
-            let unseenNeighbors = 0
-            for (let ni = cell.i - 1; ni <= cell.i + 1; ni++) {
-              for (let nj = cell.j - 1; nj <= cell.j + 1; nj++) {
-                const neighbor = grid[ni]?.[nj]
-                if (neighbor && !views.isViewed(ni, nj) && canUnitWaitOnCell(unit, neighbor, { passageLookup })) {
-                  unseenNeighbors++
-                }
-              }
-            }
+          if (
+            cell &&
+            search.canTry(cell.i, cell.j) &&
+            !views.isViewed(cell.i, cell.j) &&
+            canUnitWaitOnCell(unit, cell, { passageLookup })
+          ) {
+            const unseenNeighbors = countExplorationNeighbors(
+              cell,
+              grid,
+              neighbor =>
+                !views.isViewed(neighbor.i, neighbor.j) && canUnitWaitOnCell(unit, neighbor, { passageLookup })
+            )
             const score = unseenNeighbors * 3 - r
             candidates.push({ cell, score, dist: r })
           }
@@ -273,6 +293,7 @@ export class UnitMovement {
 
     for (const { cell } of candidates.slice(0, 12)) {
       const path = getInstancePath(unit, cell.i, cell.j, map)
+      search.remember(cell.i, cell.j)
       if (path.length) {
         unit.exploringForAutonomy = true
         unit.sendToEvt?.(cell, null, { forceRepath: true, preserveAutonomy: true })
@@ -280,8 +301,10 @@ export class UnitMovement {
       }
     }
 
+    search.expand()
     unit.exploringForAutonomy = false
-    unit.stop?.()
+    unit.stopInterval?.()
+    unit.sprite?.stop()
     return false
   }
 
@@ -312,4 +335,19 @@ export class UnitMovement {
     }
     unit.stop?.()
   }
+}
+
+function countExplorationNeighbors(
+  cell: RuntimeCell,
+  grid: RuntimeCell[][],
+  isAvailable: (cell: RuntimeCell) => boolean
+): number {
+  let count = 0
+  for (let i = cell.i - 1; i <= cell.i + 1; i++) {
+    for (let j = cell.j - 1; j <= cell.j + 1; j++) {
+      const neighbor = grid[i]?.[j]
+      if (neighbor && isAvailable(neighbor)) count++
+    }
+  }
+  return count
 }

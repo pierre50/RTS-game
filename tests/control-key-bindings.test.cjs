@@ -46,11 +46,11 @@ test('hero equipped item slots follow the physical digit row across keyboard lay
   const { settings, restore } = loadSettings()
   try {
     assert.equal(settings.getKeyBindings().heroTool1, 'Digit1')
-    assert.equal(settings.getKeyBindings().heroTool4, 'Digit4')
+    assert.equal(settings.getKeyBindings().heroTool3, 'Digit3')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit1', key: '&' }), 'heroTool1')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit1', key: '1' }), 'heroTool1')
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Numpad1', key: '1' }), 'heroTool1')
-    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit4', key: "'" }), 'heroTool4')
+    assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit3', key: '"' }), 'heroTool3')
 
     settings.setKeyBindingFromKeyboardEvent('heroTool1', { code: 'Digit1', key: '1' })
     assert.equal(settings.getControlActionForKeyboardEvent({ code: 'Digit1', key: '&' }), 'heroTool1')

@@ -77,6 +77,24 @@ test('inventory containers notify the destination when equipment enters it', () 
   assert.deepEqual(received, ['bow'])
 })
 
+test('inventory containers notify the destination when resources enter it', () => {
+  const { createInventoryContainer, moveInventoryResource } = loadInventoryContainers()
+  const hero = {}
+  const chest = { inventory: { resources: { wheat: 3 } } }
+  const received = []
+  const heroContainer = createInventoryContainer(hero, {
+    id: 'hero',
+    labelKey: 'inventoryBag',
+    onReceiveResource: (resource, amount) => received.push([resource, amount]),
+  })
+  const chestContainer = createInventoryContainer(chest, { id: 'chest', labelKey: 'inventoryChest' })
+
+  assert.equal(moveInventoryResource(chestContainer, heroContainer, 'wheat', 2), 2)
+
+  assert.deepEqual(hero.inventory.resources, { wheat: 2 })
+  assert.deepEqual(received, [['wheat', 2]])
+})
+
 test('inventory containers default resource moves still move the whole stack', () => {
   const { createInventoryContainer, moveInventoryResource } = loadInventoryContainers()
   const hero = { inventory: { resources: { wood: 12 } } }

@@ -1,0 +1,141 @@
+import { AGE_UP_ENABLED, BUILDING_TYPES, DAILY_CONSUMPTION_PER_VILLAGER, VILLAGER_ARRIVAL_CONFIG } from '../constants'
+import { getPlayerResourceTotals, hasPlayerResourceChests } from '../lib/resources/playerResourceTotals'
+import type { AIStrategy } from './AIStrategy'
+import { resourceEntries } from './AIStrategyResources'
+import { AGE_UP_COSTS } from './config'
+import type { AIBuildingLike, AIEntityLike, AIResourceAmount } from './types'
+
+function getExpectedVillagerArrivalWave(population: number): number {
+  if (population <= 0) return 0
+  return Math.min(
+    Math.max(1, Math.floor(population * VILLAGER_ARRIVAL_CONFIG.growthRate)),
+    VILLAGER_ARRIVAL_CONFIG.maxArrivalsPerDay
+  )
+}
+
+function livingBuildings(buildings: AIBuildingLike[] = [], type: string): AIBuildingLike[] {
+  return buildings.filter(building => building.type === type && !building.isDead && !building.isDestroyed)
+}
+
+export function getCurrentResources(strategy: AIStrategy): AIResourceAmount {
+  const resources = hasPlayerResourceChests(strategy.ai) ? getPlayerResourceTotals(strategy.ai) : strategy.ai
+  return {
+    food: resources.food ?? 0,
+    gold: resources.gold ?? 0,
+    stone: resources.stone ?? 0,
+    wood: resources.wood ?? 0,
+  }
+}
+
+export function getVillagerGrowthFoodReserve(strategy: AIStrategy): number {
+  const dailyFood = DAILY_CONSUMPTION_PER_VILLAGER.food ?? 0
+  if (dailyFood <= 0 || strategy.ai.population <= 0) return 0
+  const expectedArrivals = Math.min(
+    getExpectedVillagerArrivalWave(strategy.ai.population),
+    Math.max(0, strategy.ai.populationMax - strategy.ai.population)
+  )
+  return (
+    dailyFood * strategy.ai.population * VILLAGER_ARRIVAL_CONFIG.currentPopulationReserveDays +
+    dailyFood * expectedArrivals * VILLAGER_ARRIVAL_CONFIG.newVillagerReserveDays
+  )
+}
+
+export function addBuildingReserve(
+  strategy: AIStrategy,
+  demand: AIResourceAmount,
+  buildingType: string,
+  count: number = 1
+): void {
+  const cost = strategy.ai.config.buildings[buildingType]?.cost ?? {}
+  for (const [resource, amount] of resourceEntries(cost)) {
+    demand[resource] = (demand[resource] ?? 0) + amount * count
+  }
+}
+
+export function getEconomicDemand(strategy: AIStrategy): AIResourceAmount {
+  const { ai } = strategy
+  const demand: Record<keyof AIResourceAmount, number> = { food: 0, wood: 0, gold: 0, stone: 0 }
+  const resources = strategy.getCurrentResources()
+  const growthReserveFood = strategy.getVillagerGrowthFoodReserve()
+  if (growthReserveFood > 0) demand.food += Math.max(0, growthReserveFood - (resources.food ?? 0))
+
+  const nextAgeKey = ai.age + 1
+  const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[nextAgeKey]
+  if (AGE_UP_ENABLED && nextAgeCost) {
+    const maxVillagers = Math.floor(strategy.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
+    const shouldReserveAgeUp = ai.population >= Math.floor(maxVillagers * 0.7)
+    for (const [resource, amount] of resourceEntries(nextAgeCost)) {
+      demand[resource] += shouldReserveAgeUp ? amount : Math.max(0, amount - (resources[resource] ?? 0))
+    }
+  }
+
+  const expectedArrivals = getExpectedVillagerArrivalWave(ai.population)
+  if (ai.population + expectedArrivals + 2 > ai.populationMax) {
+    strategy.addBuildingReserve(demand, BUILDING_TYPES.house)
+  }
+  if (!livingBuildings(ai.buildings, BUILDING_TYPES.storagePit).length) {
+    strategy.addBuildingReserve(demand, BUILDING_TYPES.storagePit)
+  }
+  if (!livingBuildings(ai.buildings, BUILDING_TYPES.granary).length) {
+    strategy.addBuildingReserve(demand, BUILDING_TYPES.granary)
+  }
+
+  const currentBarracks = livingBuildings(ai.buildings, BUILDING_TYPES.barracks).length
+  const desiredBarracks = strategy.getDesiredBarracksCount()
+  if (ai.phase !== 'economy' && currentBarracks < desiredBarracks) {
+    strategy.addBuildingReserve(demand, BUILDING_TYPES.barracks, desiredBarracks - currentBarracks)
+  }
+  if (!livingBuildings(ai.buildings, BUILDING_TYPES.market).length) {
+    strategy.addBuildingReserve(demand, BUILDING_TYPES.market)
+  }
+
+  return demand
+}
+
+export function getAgeUpReserve(strategy: AIStrategy): AIResourceAmount {
+  if (!AGE_UP_ENABLED) return {}
+  const { ai } = strategy
+  const nextAgeCost = (AGE_UP_COSTS as Record<number, AIResourceAmount>)[ai.age + 1]
+  if (!nextAgeCost) return {}
+
+  const maxVillagers = Math.floor(strategy.maxVillagerPerAge[ai.age] * (ai.difficultyConfig.popCapMultiplier ?? 1))
+  return ai.population >= Math.floor(maxVillagers * 0.7) ? nextAgeCost : {}
+}
+
+export function canSpendWithReserve(
+  strategy: AIStrategy,
+  cost: AIResourceAmount,
+  reserve: AIResourceAmount = {}
+): boolean {
+  const { ai } = strategy
+  const resources = hasPlayerResourceChests(ai) ? getPlayerResourceTotals(ai) : ai
+  return resourceEntries(cost).every(
+    ([resource, amount]) => (resources[resource] ?? 0) - amount >= (reserve[resource] || 0)
+  )
+}
+
+export function getViableBerryBushCount(strategy: AIStrategy): number {
+  const { ai } = strategy
+  const dropSites = ai.buildings.filter(
+    (building: AIBuildingLike) =>
+      [BUILDING_TYPES.townCenter, BUILDING_TYPES.granary].includes(building.type) &&
+      building.isBuilt &&
+      !building.isDead &&
+      !building.isDestroyed
+  )
+  const homeAnchor = ai.getHomeAnchor()
+  const MAX_BERRY_DROP_DIST = 14
+  const MAX_BERRY_HOME_DIST = 30
+
+  return [...ai.foundedBerrybushs].filter((bush: AIEntityLike) => {
+    if (!bush || bush.isDead || bush.isDestroyed || (bush.quantity || 0) <= 0) return false
+    if (dropSites.length > 0) {
+      const nearDropSite = dropSites.some(
+        (site: AIBuildingLike) => Math.abs(bush.i - site.i) + Math.abs(bush.j - site.j) <= MAX_BERRY_DROP_DIST
+      )
+      if (!nearDropSite) return false
+    }
+    if (!homeAnchor) return true
+    return Math.abs(bush.i - homeAnchor.i) + Math.abs(bush.j - homeAnchor.j) <= MAX_BERRY_HOME_DIST
+  }).length
+}

@@ -53,8 +53,8 @@ function loadCrafting() {
 }
 
 test('hero arrow craft recipes spend hero bag resources and add arrows to the hero bag', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_copper')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = { type: 'Hero', inventory: { resources: { wood: 8, feather: 3, copper: 3 } } }
 
@@ -65,8 +65,8 @@ test('hero arrow craft recipes spend hero bag resources and add arrows to the he
 })
 
 test('hero craft refuses missing resources without changing inventory or resources', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, canCraftHeroRecipe, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'arrow_iron')
+  const { HERO_CRAFT_RECIPES, canCraftHeroRecipe, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'arrow_iron')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = {
     type: 'Hero',
@@ -82,8 +82,8 @@ test('hero craft refuses missing resources without changing inventory or resourc
 })
 
 test('hero chest craft can spend chest resources and adds a placeable chest to the bag', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'chest')
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'chest')
   const player = { label: 'p1', wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, buildings: [] }
   player.buildings = [{ owner: player, type: 'Chest', inventory: { resources: { wood: 12 } } }]
   const hero = { owner: player, type: 'Hero' }
@@ -94,8 +94,8 @@ test('hero chest craft can spend chest resources and adds a placeable chest to t
 })
 
 test('hero campfire craft spends resources and adds a placeable campfire to the bag', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'campfire')
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'campfire')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = { type: 'Hero', inventory: { resources: { wood: 8, stone: 2 } } }
 
@@ -105,8 +105,8 @@ test('hero campfire craft spends resources and adds a placeable campfire to the 
 })
 
 test('hero trap craft requires plant fiber', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'trap')
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe, getMissingCraftResources } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'trap')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = { type: 'Hero', inventory: { resources: { wood: 5, fiber: 1 }, equipment: [] } }
 
@@ -120,8 +120,8 @@ test('hero trap craft requires plant fiber', () => {
 })
 
 test('hero bow craft spends wood and sinew and adds a bow to the bag', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
-  const recipe = HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'bow')
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'bow')
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, sinew: 0 }
   const hero = { type: 'Hero', inventory: { resources: { wood: 5, sinew: 2 } } }
 
@@ -131,8 +131,20 @@ test('hero bow craft spends wood and sinew and adds a bow to the bag', () => {
   assert.deepEqual(hero.discoveredItems, ['bow'])
 })
 
+test('hero catching pole craft spends wood and fiber and adds a catching pole to the bag', () => {
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const recipe = HERO_CRAFT_RECIPES.find(item => item.id === 'catchingPole')
+  const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0, fiber: 0 }
+  const hero = { type: 'Hero', inventory: { resources: { wood: 4, fiber: 2 } } }
+
+  assert.equal(craftHeroRecipe(player, hero, recipe), true)
+  assert.deepEqual(hero.inventory.resources, {})
+  assert.deepEqual(hero.inventory.equipment, ['catchingPole'])
+  assert.deepEqual(hero.discoveredItems, ['catchingPole'])
+})
+
 test('hero plant crafts spend gathered herbs and add survival items to the bag', () => {
-  const { HERO_ARROW_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
+  const { HERO_CRAFT_RECIPES, craftHeroRecipe } = loadCrafting()
   const player = { wood: 0, food: 0, stone: 0, gold: 0, copper: 0, iron: 0 }
   const hero = {
     type: 'Hero',
@@ -146,7 +158,7 @@ test('hero plant crafts spend gathered herbs and add survival items to the bag',
     craftHeroRecipe(
       player,
       hero,
-      HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'healing_poultice')
+      HERO_CRAFT_RECIPES.find(item => item.id === 'healing_poultice')
     ),
     true
   )
@@ -154,7 +166,7 @@ test('hero plant crafts spend gathered herbs and add survival items to the bag',
     craftHeroRecipe(
       player,
       hero,
-      HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'poison_vial')
+      HERO_CRAFT_RECIPES.find(item => item.id === 'poison_vial')
     ),
     true
   )
@@ -162,7 +174,7 @@ test('hero plant crafts spend gathered herbs and add survival items to the bag',
     craftHeroRecipe(
       player,
       hero,
-      HERO_ARROW_CRAFT_RECIPES.find(item => item.id === 'fiber_bandage')
+      HERO_CRAFT_RECIPES.find(item => item.id === 'fiber_bandage')
     ),
     true
   )
@@ -229,4 +241,36 @@ test('getting any bow discovers bow crafting and unlocks the bow technology once
   assert.deepEqual(player.discoveredEquipment, ['bow'])
   assert.deepEqual(player.technologies, ['BowCrafting'])
   assert.deepEqual(messages, [['technologyBowCraftingUnlocked', 'success']])
+})
+
+test('getting wheat discovers farming and unlocks the farming technology once', () => {
+  const { discoverHeroResource } = loadModule('app/lib/equipment/equipmentDiscoveries.ts', {
+    '../lang': { t: key => key },
+  })
+  const messages = []
+  const player = {
+    discoveredResources: [],
+    isPlayed: true,
+    technologies: [],
+    techs: { Farming: { key: 'technologies' } },
+    unlockTechnology(type) {
+      this.technologies.push(type)
+      return true
+    },
+    context: {
+      menu: {
+        showMessage: (message, type) => messages.push([message, type]),
+        updateActionTarget: () => {},
+        updateTopbar: () => {},
+      },
+    },
+  }
+  const hero = { owner: player }
+
+  assert.deepEqual(discoverHeroResource(hero, 'wheat', 1), ['Farming'])
+  assert.deepEqual(discoverHeroResource(hero, 'wheat', 1), [])
+  assert.deepEqual(discoverHeroResource(hero, 'wood', 1), [])
+  assert.deepEqual(player.discoveredResources, ['wheat'])
+  assert.deepEqual(player.technologies, ['Farming'])
+  assert.deepEqual(messages, [['technologyFarmingUnlocked', 'success']])
 })

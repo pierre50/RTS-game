@@ -5,7 +5,7 @@ import {
   createReservedPassageCellLookup,
 } from '../buildings/passageCells'
 import { getInstanceClosestFreeCellPath } from '../grid/movement'
-import { logGoldMinerFlow } from './villagerJobDiagnostics'
+import { logGoldMinerFlow } from './autonomy/villagerJobDiagnostics'
 import type { RuntimeEntity, UnitEntity, VillagerAutonomyJob } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
 
@@ -109,6 +109,12 @@ export function targetWorkerLoad(unit: UnitEntity, target: RuntimeEntity, work: 
     if (sameTarget(worker.dest as RuntimeEntity | null | undefined, target)) load++
   }
   return load
+}
+
+export function isVillagerWorkTargetRejected(unit: UnitEntity, target: RuntimeEntity): boolean {
+  if (unit.type !== UNIT_TYPES.villager) return false
+  const job = unit.autonomousJob ?? getAutonomyJobForWork(unit.work)
+  return Boolean(job && isRejectedTarget(unit, job, target))
 }
 
 function isRejectedTarget(unit: UnitEntity, job: VillagerAutonomyJob, target: RuntimeEntity): boolean {
@@ -240,7 +246,7 @@ export function tryVillagerJobCandidates(
         pathLength: candidate.pathLength,
         target: candidate.target.label,
       })
-      clearVillagerAutonomyTargetRejections(unit, job)
+      // Keep other failures until their TTL expires, even after accepting a new target.
       return true
     }
     logGoldMinerFlow(unit, 'autonomy.candidate-command-refused', {

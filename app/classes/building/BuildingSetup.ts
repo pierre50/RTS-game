@@ -124,6 +124,7 @@ export function attachInitialBuildingVisuals(building: Building): void {
   building.bindSpriteInteractions()
   attachEntityShadowsToMapSpace(building.context.map, building)
   building.addChild(building.sprite)
+  if (!building.isBuilt) applyBuildingConstructionGhost(building)
   building.buildingTrainingPreview = new BuildingTrainingPreview(building)
   building.buildingTrainingPreview.update()
   if (building.shouldKeepHealthBarVisible()) building.drawHealthBar()

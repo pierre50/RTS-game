@@ -8,6 +8,7 @@ import {
   playAudibleSoundCue,
   updateInstanceVisibility,
 } from '../../lib'
+import { detachStableInteriorHorse } from '../../lib/horses/stableHorses'
 import { getEntityCell, getEntitySpaceMapLike } from '../../lib/mapSpaces'
 import { runAfterDeathFlash } from '../../lib/entities/deathFlash'
 import { clearEntityVisualFeedback } from '../../lib/entities/entityVisualFeedback'
@@ -124,6 +125,7 @@ export class AnimalLifecycle {
     }
     this.settleCorpseCell()
     animal.isDead = true
+    detachStableInteriorHorse(animal, animal.context.map)
     animal.zIndex--
     animal.path = []
     animal.action = null

@@ -1,46 +1,43 @@
 import { Assets } from 'pixi.js'
-import {
-  canAfford,
-  drawInstanceBlinkingSelection,
-  payCost,
-  uuidv4,
-  getHexColor,
-  getActionCondition,
-  canUpdateMinimap,
-  canPlaceBuildingAt,
-  playSoundCue,
-  updateInstanceVisibility,
-  isBuildingLimitReached,
-  getBuildingFootprintCells,
-  hasBuildingPlacementClearance,
-} from '../../lib'
-import { createReservedPassageCellLookup } from '../../lib/buildings/passageCells'
-import { expandLegacyFoodAmount } from '../../lib/resources/playerResourceTotals'
-import { addEntityToMapSpaceContainer, getMapSpace } from '../../lib/mapSpaces'
-import { NEUTRAL_RESOURCE_QUANTITY_RANGES, rollResourceQuantity } from '../map/resources/ResourceQuantityRanges'
-import { Building } from '../building/Building'
-import type { BuildingOptions } from '../building/Building'
-import { Resource } from '../Resource'
-import { Unit } from '../unit/Unit'
-import type { UnitSpawnOptions } from '../unit/Unit'
+import { getRandomUnitName } from '../../config/name'
+import { createPlayerData } from '../../config/playerConfig'
 import {
   ACTION_TYPES,
-  BUILDING_TYPES,
+  FADE_DURATION_MS,
   FAMILY_TYPES,
   PLAYER_TYPES,
   POPULATION_MAX,
-  RESOURCE_NAMES,
-  RESOURCE_TYPES,
   SOUND_CUES,
   UNIT_TYPES,
-  FADE_DURATION_MS,
 } from '../../constants'
-import { createPlayerData } from '../../config/playerConfig'
-import { getRandomUnitName } from '../../config/name'
+import {
+  canUpdateMinimap,
+  drawInstanceBlinkingSelection,
+  getActionCondition,
+  getHexColor,
+  playSoundCue,
+  updateInstanceVisibility,
+  uuidv4,
+} from '../../lib'
 import { playUiSound } from '../../lib/audio/uiSound'
-import { fadeIn } from '../../lib/entities/entityFade'
-import { VisionGrid } from '../../services/VisionGrid'
 import { updateWallAndNeighbours } from '../../lib/buildings/walls'
+import { definedProperties } from '../../lib/definedProperties'
+import { fadeIn } from '../../lib/entities/entityFade'
+import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
+import { addEntityToMapSpaceContainer } from '../../lib/mapSpaces'
+import { VisionGrid } from '../../services/VisionGrid'
+import type { ConfigOperation, TechnologyConfig } from '../../types/config'
+import type { GameContextLike } from '../../types/context'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { RuntimeMap } from '../../types/map'
+import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
+import type { SerializedVisionGrid } from '../../types/vision'
+import type { BuildingOptions } from '../building/Building'
+import { Building } from '../building/Building'
+import type { UnitSpawnOptions } from '../unit/Unit'
+import { Unit } from '../unit/Unit'
+import { buyPlayerBuilding, plantPlayerWheatField } from './PlayerBuildingPlacement'
+import { initializePlayerRelations, initializePlayerResources } from './PlayerInitialization'
 import {
   applyEligibleTechnologies,
   buyTechnology,
@@ -52,24 +49,13 @@ import {
   startResearchInterval,
   stopResearchInterval,
   unlockTechnology,
+  unlockVillagerPopulationMilestoneTechnologies,
   updatePlayerConfig,
 } from './PlayerTechnologies'
-import type { GameContextLike } from '../../types/context'
-import type { ConfigOperation, TechnologyConfig } from '../../types/config'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { RuntimeCell, RuntimeMap } from '../../types/map'
-import type { PlayerConfigLike, PlayerLike, VisionGridLike } from '../../types/player'
-import type { SerializedVisionGrid } from '../../types/vision'
-import type { HeroAppearanceConfig } from '../../lib/lpc/heroAppearance'
 
-const DEBUG_STARTING_TECHNOLOGIES = ['Pickaxe', 'Farming', 'HorseTaming']
+const DEBUG_STARTING_TECHNOLOGIES = ['Pickaxe', 'HorseTaming']
 
 type QueuedTechnology = { type: string; config: TechnologyConfig }
-type PlayerResourceMemory = {
-  foundedWheats?: Set<RuntimeEntity>
-  foundedResources?: Record<string, Set<RuntimeEntity>>
-}
-
 export type PlayerOptions = Omit<Partial<PlayerLike>, 'team' | 'views'> & {
   difficulty?: string
   isHuman?: boolean
@@ -110,6 +96,7 @@ export class Player implements PlayerLike {
   population: number
   technologies: string[]
   discoveredEquipment: string[]
+  discoveredResources: string[]
   researchTechnology: QueuedTechnology | null
   researchLoading: number | null
   researchIntervalId: number | null
@@ -117,7 +104,7 @@ export class Player implements PlayerLike {
   age: number
   lastUnderAttackAlertAt: number
   team!: number | null
-  diplomacy!: PlayerLike['diplomacy']
+  diplomacy!: Exclude<PlayerLike['diplomacy'], undefined>
   factionId!: string | null
   populationMax!: number
   colorHex: string
@@ -141,26 +128,14 @@ export class Player implements PlayerLike {
     this.label = uuidv4()
     this.parent = map
 
-    const res = map.startingResources
-    for (const resource of RESOURCE_NAMES) {
-      this[resource] = res[resource] ?? 0
-    }
-    const splitFood = expandLegacyFoodAmount(res)
-    this.berry = splitFood.berry ?? 0
-    this.meat = splitFood.meat ?? 0
-    this.wheat = splitFood.wheat ?? 0
-    this.herb = res.herb ?? 0
-    this.toxicHerb = res.toxicHerb ?? 0
-    this.fiber = res.fiber ?? 0
-    this.feather = res.feather ?? 0
-    this.leather = res.leather ?? 0
-    this.sinew = res.sinew ?? 0
+    initializePlayerResources(this, map.startingResources)
     this.corpses = []
     this.units = []
     this.buildings = []
     this.population = 0
     this.technologies = []
     this.discoveredEquipment = []
+    this.discoveredResources = []
     this.researchTechnology = null
     this.researchLoading = null
     this.researchIntervalId = null
@@ -169,11 +144,8 @@ export class Player implements PlayerLike {
     this.lastUnderAttackAlertAt = 0
     Object.assign(this, options)
     this.discoveredEquipment = this.discoveredEquipment || []
-    const rawTeam = options.team
-    this.team = rawTeam == null || rawTeam === '' ? null : Number(rawTeam)
-    if (!Number.isFinite(this.team)) this.team = null
-    this.diplomacy = options.diplomacy === 'neutral' ? 'neutral' : null
-    this.factionId = typeof options.factionId === 'string' ? options.factionId : null
+    this.discoveredResources = this.discoveredResources || []
+    initializePlayerRelations(this, options)
 
     this.populationMax = this.populationMax || (map.instantMode ? POPULATION_MAX : 0)
 
@@ -232,8 +204,7 @@ export class Player implements PlayerLike {
       let hasSentWorker = false
       let hasSentOther = false
 
-      for (let i = 0; i < this.selectedUnits.length; i++) {
-        const unit = this.selectedUnits[i]
+      for (const unit of this.selectedUnits) {
         if (unit.type === UNIT_TYPES.villager) {
           if (getActionCondition(unit, building, ACTION_TYPES.build)) {
             hasSentWorker = true
@@ -296,6 +267,14 @@ export class Player implements PlayerLike {
     return applyEligibleTechnologies(this)
   }
 
+  unlockVillagerPopulationMilestoneTechnologies() {
+    return unlockVillagerPopulationMilestoneTechnologies(this)
+  }
+
+  get villagerPopulation() {
+    return this.units.filter(unit => unit.type === UNIT_TYPES.villager && !unit.isDead && !unit.isDestroyed).length
+  }
+
   onAgeChange() {
     onAgeChange(this)
   }
@@ -338,8 +317,8 @@ export class Player implements PlayerLike {
     const {
       context: { menu },
     } = this
-    for (let i = 0; i < this.selectedUnits.length; i++) {
-      this.selectedUnits[i].unselect?.()
+    for (const unit of this.selectedUnits) {
+      unit.unselect?.()
     }
     this.selectedUnit = null
     this.selectedUnits = []
@@ -367,90 +346,11 @@ export class Player implements PlayerLike {
   }
 
   plantWheatField(i: number, j: number, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
-    const {
-      context: { menu, map },
-    } = this
-    const space = getMapSpace(map, options.spaceId)
-    const grid = space?.grid ?? map.grid
-    const config = this.config.buildings[BUILDING_TYPES.farm]
-    const placementConfig = { ...config, type: BUILDING_TYPES.farm }
-    const passageLookup = createReservedPassageCellLookup(this.context)
-    const placementOptions = {
-      canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
-    }
-    if (
-      (options.alreadyPaid || canAfford(this, config.cost)) &&
-      this.isBuildingEligible(BUILDING_TYPES.farm) &&
-      canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
-      hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
-    ) {
-      const planted: RuntimeEntity[] = []
-      if (!options.alreadyPaid) payCost(this, config.cost)
-      const size = typeof config.size === 'number' ? config.size : 4
-      for (const cell of getBuildingFootprintCells(i, j, grid, size)) {
-        const quantity = rollResourceQuantity(
-          () => map.random(),
-          NEUTRAL_RESOURCE_QUANTITY_RANGES[RESOURCE_TYPES.wheat]
-        )
-        const wheat = new Resource(
-          {
-            i: cell.i,
-            j: cell.j,
-            spaceId: cell.spaceId,
-            type: RESOURCE_TYPES.wheat,
-            quantity,
-            totalQuantity: quantity,
-          },
-          this.context
-        )
-        addEntityToMapSpaceContainer(map, wheat)
-        cell.updateVisible()
-        fadeIn(wheat, FADE_DURATION_MS)
-        map.resources.add(wheat)
-        planted.push(wheat)
-      }
-      const memory = this as PlayerResourceMemory
-      planted.forEach(wheat => memory.foundedWheats?.add(wheat))
-      planted.forEach(wheat => memory.foundedResources?.[RESOURCE_TYPES.wheat]?.add(wheat))
-      this.isPlayed && menu.updateTopbar()
-      if (menu.isMiniMapActive?.() !== false) menu.updateResourcesMiniMap?.()
-      return true
-    }
-    return false
+    return plantPlayerWheatField(this, i, j, options)
   }
 
   buyBuilding(i: number, j: number, type: string, options: { alreadyPaid?: boolean; spaceId?: string } = {}) {
-    if (type === BUILDING_TYPES.farm) return this.plantWheatField(i, j, options)
-    const {
-      context: { menu, map },
-    } = this
-    const space = getMapSpace(map, options.spaceId)
-    const grid = space?.grid ?? map.grid
-    const config = this.config.buildings[type]
-    const placementConfig = { ...config, type }
-    const passageLookup = createReservedPassageCellLookup(this.context)
-    const placementOptions = {
-      canUseCell: (cell: RuntimeCell) => !passageLookup.has(cell),
-    }
-    if (
-      (options.alreadyPaid || canAfford(this, config.cost)) &&
-      this.isBuildingEligible(type) &&
-      !isBuildingLimitReached(this, type) &&
-      canPlaceBuildingAt(grid, i, j, placementConfig, placementOptions) &&
-      hasBuildingPlacementClearance(grid, i, j, placementConfig, placementOptions)
-    ) {
-      this.spawnBuilding({
-        i,
-        j,
-        spaceId: space?.id,
-        type,
-        isBuilt: map.instantMode || config.instantPlacement === true,
-      })
-      if (!options.alreadyPaid) payCost(this, config.cost)
-      this.isPlayed && menu.updateTopbar()
-      return true
-    }
-    return false
+    return buyPlayerBuilding(this, i, j, type, options)
   }
 
   createUnit(options: UnitSpawnOptions, creationOptions: { preserveType?: boolean } = {}) {
@@ -461,14 +361,14 @@ export class Player implements PlayerLike {
       options.name || (isHeroUnit ? this.name : getRandomUnitName(this.civ, unitGender, () => context.map.random()))
     const type = isHeroUnit ? UNIT_TYPES.hero : options.type
     let unit = new Unit(
-      {
+      definedProperties({
         ...options,
         type,
         name,
         controlMode: isHeroUnit ? 'hero' : options.controlMode,
         isChief: options.isChief ?? isHeroUnit,
         owner: this,
-      },
+      }),
       context
     )
     addEntityToMapSpaceContainer(context.map, unit)
@@ -479,6 +379,7 @@ export class Player implements PlayerLike {
       updateInstanceVisibility(unit)
       fadeIn(unit, FADE_DURATION_MS)
     }
+    if (unit.type === UNIT_TYPES.villager) this.unlockVillagerPopulationMilestoneTechnologies()
     return unit
   }
 

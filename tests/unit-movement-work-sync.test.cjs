@@ -45,6 +45,31 @@ function loadUnitMovement(calls) {
   const mocks = {}
   const localRequire = request => {
     request = request.replace(/^\.\.\/\.\.\/\.\.\//, '../../')
+    if (request === '../../lib/units/autonomy/villagerExploration')
+      return requireFromTsFile(
+        path.join(__dirname, '../app/lib/units/autonomy/villagerExploration.ts'),
+        filename,
+        mocks
+      )
+    if (request === '../../lib/units/villagerAutonomyTargeting')
+      return { isVillagerWorkTargetRejected: () => false, markVillagerAutonomyTargetRejected: () => {} }
+    if (request === '../../lib/actions/contactActions')
+      return {
+        usesUnitContactAction: (unit, action) => action === 'attack' && !unit.projectile,
+        isActionTouchingTarget: () => true,
+        canReachActionTarget: (unit, _target, action) => (action === 'attack' ? (unit.meleeReachable ?? false) : true),
+        getActionContactTool: () => undefined,
+      }
+    if (request === '../../lib/contact/contactGeometry')
+      return { canReachContact: unit => unit.meleeReachable ?? false, getContactAimDegree: () => 0 }
+    if (request === '../../lib/combat/unitMelee')
+      return {
+        usesMeleeAttack: unit => !unit.projectile,
+        getUnitMeleeWeapon: unit => unit.equipment?.[0],
+      }
+    if (request === '../../lib/contact/contactDebug') return { showContactDebug: () => {} }
+    if (request === './UnitContactApproach') return { tryStartUnitContactApproach: () => false }
+
     if (request === '../../constants') return constants
     if (request === '../../lib') {
       return {
@@ -102,7 +127,8 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/buildings/interiors') {
       return {
         getBuildingEntryCell: building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
-        getBuildingInteriorEntryCell: building => building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
+        getBuildingInteriorEntryCell: building =>
+          building.context?.map?.grid?.[building.i + 1]?.[building.j + 2] ?? null,
         isBuildingInteriorSupported: building => Boolean(building?.isBuilt && building.type === 'Barracks'),
       }
     }
@@ -122,7 +148,10 @@ function loadUnitMovement(calls) {
     if (request === '../../lib/units/unitWalkingAnimation') return { applyUnitWalkingAnimationSpeed: () => {} }
     if (request === '../../services/rest/UnitSleepVisuals') return { keepSleepingOutsideVisual: () => {} }
     if (request === '../../lib/equipment/equipmentStats') return { getUnitCombatRange: () => 4 }
-    if (request === '../../classes/unit/UnitResourceDeliveryCommands' || request === '../UnitResourceDeliveryCommands') {
+    if (
+      request === '../../classes/unit/UnitResourceDeliveryCommands' ||
+      request === '../UnitResourceDeliveryCommands'
+    ) {
       return {
         applyWorkForAction: (unit, work, action) => {
           calls.push(['applyWorkForAction', work, action])
@@ -139,6 +168,9 @@ function loadUnitMovement(calls) {
           unit.action = action
         },
       }
+    }
+    if (/^\.\/UnitDirectMovement(?:Step|Commit|Diagnostics)$/.test(request)) {
+      return loadTsFile(path.join(__dirname, '../app/classes/unit/movement', request.slice(2) + '.ts'))
     }
     if (request === './movement/UnitDirectMovement' || request === './UnitDirectMovement') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitDirectMovement.ts'))
@@ -176,6 +208,9 @@ function loadUnitMovement(calls) {
     }
     if (request === './movement/UnitAffectNewDest' || request === './UnitAffectNewDest') {
       return loadTsFile(path.join(__dirname, '../app/classes/unit/movement/UnitAffectNewDest.ts'))
+    }
+    if (request.endsWith('/units/villagerAutonomyTargeting')) {
+      return requireFromTsFile(path.join(__dirname, '../app/lib/units/villagerAutonomyTargeting.ts'), filename, mocks)
     }
     return requireFromTsFile(request, filename, mocks)
   }
@@ -267,5 +302,8 @@ test('training movement routes a unit to the building entry cell before starting
 
   assert.equal(unit.dest, building)
   assert.equal(unit.action, constants.ACTION_TYPES.train)
-  assert.deepEqual(calls.find(call => call[0] === 'setPath'), ['setPath', path])
+  assert.deepEqual(
+    calls.find(call => call[0] === 'setPath'),
+    ['setPath', path]
+  )
 })

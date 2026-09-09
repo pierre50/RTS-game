@@ -172,3 +172,16 @@ test('attack action frame sequence follows equipped tool instead of work', () =>
   applyUnitActionFrameSequence(bandit, 'attacker', 'attack')
   assert.deepEqual(bandit.actionFrameSequence, axeSequence)
 })
+
+test('clearing work and action removes the previous custom animation sequence', () => {
+  const cacheGets = []
+  const { applyUnitActionFrameSequence, applyUnitWorkAssets } = loadUnitWorkAppearance(cacheGets)
+  const unit = { type: 'Villager', work: 'builder', action: 'build' }
+  applyUnitActionFrameSequence(unit, 'builder', 'build')
+  assert.ok(unit.actionFrameSequence.length > 0)
+  applyUnitWorkAssets(unit, undefined)
+  assert.equal(unit.actionFrameSequence, null)
+  assert.deepEqual(cacheGets, [])
+  applyUnitActionFrameSequence(unit, null, null)
+  assert.equal(unit.actionFrameSequence, null)
+})

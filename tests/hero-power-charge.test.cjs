@@ -49,6 +49,11 @@ function loadHeroTools(overrides = {}) {
   }
   const combatMock = { getActionCondition: () => false, getHitPointsWithDamage: () => 0 }
   const mocks = {
+    './actions/contactActions': {
+      canReachActionTarget: (hero, target, action) =>
+        mocks['./hero/heroActionRange'].isHeroInteractionTargetReachable(hero, action, target) ||
+        Boolean(hero.isUnitAtDest?.(action, target)),
+    },
     'pixi.js': { Assets: { cache: { get: id => ({ id, textures: [], data: {} }) } }, Graphics },
     '../constants': {
       ACTION_TYPES: {
@@ -91,7 +96,7 @@ function loadHeroTools(overrides = {}) {
       },
       SOUND_CUES: {
         hero: { meleeWhiff: 'meleeWhiff' },
-        projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'] },
+        projectile: { arrowLaunch: ['archer-attack', 'archer-attack-2'], arrowShot: 'arrow-shot' },
         unit: { swordAttack: ['sword-attack', 'sword-attack-2'] },
       },
       UNIT_TYPES: { bowman: 'Bowman', hero: 'Hero', villager: 'Villager' },
@@ -188,7 +193,7 @@ function loadHeroTools(overrides = {}) {
     './grid/queries': { getClosestInstanceWithPath: () => null },
     './graphics': {
       BOW_SHOOT_RELEASE_FRAME: 8,
-      LASSO_SHOOT_RELEASE_FRAME: 5,
+      CATCHING_POLE_SHOOT_RELEASE_FRAME: 5,
       SLASH_IMPACT_FRAME: 5,
       onSpriteLoopAtFrame: (sprite, frame, cb) => {
         sprite.onFrameChange = currentFrame => {
@@ -259,28 +264,35 @@ function loadHeroTools(overrides = {}) {
     './combat/combatFeedback': { showDamageFeedback: () => {}, showParryFeedback: () => {} },
     './debug': { debugLog: () => {} },
     './hero/heroToolEquipment': {
-      HERO_EQUIPPED_ITEM_ORDER: ['interact', 'sword', 'bow', 'lasso'],
-      HERO_TOOL_ORDER: ['interact', 'sword', 'bow', 'lasso'],
+      HERO_EQUIPPED_ITEM_ORDER: ['interact', 'sword', 'bow'],
+      HERO_TOOL_ORDER: ['interact', 'sword', 'bow'],
       EQUIPPED_ITEM_WEAPON: { sword: 'sword_ceramic', bow: 'bow' },
       getEquippedItemWeapon: (tool, _age = 0, hero) => {
         if (tool === 'sword') return hero?.inventory?.activeWeapons?.melee
         if (tool === 'bow') return hero?.inventory?.activeWeapons?.ranged
-        if (tool === 'lasso') return hero?.inventory?.activeWeapons?.lasso
         return { sword: 'sword_ceramic', bow: 'bow' }[tool]
       },
+      getHeroPowerChargeToolForEquippedItem: (hero, tool) => {
+        if (tool === 'bow') return 'bow'
+        if (tool !== 'sword') return null
+        return hero?.inventory?.activeWeapons?.melee === 'catchingPole' ? 'catchingPole' : 'sword'
+      },
+      isHeroCatchingPoleEquipped: (hero, tool) =>
+        mocks['./hero/heroToolEquipment'].getHeroPowerChargeToolForEquippedItem(hero, tool) === 'catchingPole',
       isHeroToolAvailable: (hero, tool) => {
         if (!tool || tool === 'interact') return true
         return Boolean(mocks['./hero/heroToolEquipment'].getEquippedItemWeapon(tool, hero?.owner?.age ?? 0, hero))
       },
       getHeroToolEquipment: (hero, tool) => {
         const activeWeapons = hero.inventory?.activeWeapons ?? {}
-        if (tool === 'sword') return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(Boolean)
-        if (tool === 'bow') return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(Boolean)
-        if (tool === 'lasso') return [activeWeapons.lasso].filter(Boolean)
+        if (tool === 'sword')
+          return [activeWeapons.melee, hero.inventory?.equipped?.offhand, activeWeapons.offhand].filter(Boolean)
+        if (tool === 'bow')
+          return [activeWeapons.ranged, activeWeapons.quiver, hero.inventory?.equipped?.arrow].filter(Boolean)
         return mocks['./equipment/equipmentStats'].getUnitWorkEquipment('attacker')
       },
       applyEquippedItemAppearance: (hero, tool) => {
-        const work = { interact: 'attacker', sword: 'heroSword', bow: 'hunter', lasso: 'attacker' }[tool]
+        const work = { interact: 'attacker', sword: 'heroSword', bow: 'hunter' }[tool]
         hero.work = work
       },
       applyToolAppearance: (hero, tool) => mocks['./hero/heroToolEquipment'].applyEquippedItemAppearance(hero, tool),
@@ -353,10 +365,10 @@ function loadHeroTools(overrides = {}) {
       XP_KILL_BONUS: 0,
     },
     '../classes/Projectile': { Projectile },
-    '../classes/HeroLassoThrow': {
-      HeroLassoThrow: class HeroLassoThrow {
-        constructor(hero, destination) {
-          Object.assign(this, { hero, destination, type: 'HeroLassoThrow' })
+    '../classes/HeroCatchingPoleThrow': {
+      HeroCatchingPoleThrow: class HeroCatchingPoleThrow {
+        constructor(hero, destination, context, options = {}) {
+          Object.assign(this, { context, hero, destination, options, type: 'HeroCatchingPoleThrow' })
         }
       },
     },
@@ -407,7 +419,10 @@ function loadHeroTools(overrides = {}) {
     const tsSource = fs.readFileSync(tsFilename, 'utf8')
     const { code: tsCode } = babel.transformSync(tsSource, {
       filename: tsFilename,
-      presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+        '@babel/preset-typescript',
+      ],
     })
     const tsModule = { exports: {} }
     new Function('module', 'exports', 'require', tsCode)(tsModule, tsModule.exports, localRequire)
@@ -489,9 +504,23 @@ function makeSprite() {
 
 function makeHero() {
   const projectiles = []
+  let nextTaskId = 1
+  const scheduled = new Map()
   const hero = {
     actionLocked: false,
-    context: { map: { addChild: projectile => projectiles.push(projectile) } },
+    context: {
+      scheduler: {
+        add(callback, frameMs, taskName) {
+          const id = nextTaskId++
+          scheduled.set(id, { callback, frameMs, taskName })
+          return id
+        },
+        remove(id) {
+          scheduled.delete(id)
+        },
+      },
+      map: { addChild: projectile => projectiles.push(projectile) },
+    },
     currentSheet: 'standingSheet',
     degree: 0,
     height: 0,
@@ -500,7 +529,6 @@ function makeHero() {
       activeWeapons: {
         melee: 'sword_ceramic',
         ranged: 'bow',
-        lasso: 'lasso',
       },
       equipped: { arrow: 'arrow_ceramic' },
       equippedCounts: { arrow: 1 },
@@ -531,7 +559,7 @@ function makeHero() {
     },
     syncShadow() {},
   }
-  return { hero, projectiles }
+  return { hero, projectiles, scheduled }
 }
 
 function playImpactFrame(hero, frame = 5) {
@@ -646,6 +674,33 @@ test('bow charge plays the action animation once while power keeps charging', ()
     assert.equal(hero.sprite.loop, false)
     assert.equal(hero.sprite.playing, false)
     assert.equal(hero.sprite.currentFrame, 8)
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('catchingPole charge holds near the start of the throw animation', () => {
+  const { triggerToolAttackAt, updateHeroPowerCharge } = loadHeroTools()
+  const { hero } = makeHero()
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 10, y: 20 }), true)
+    assert.equal(hero.sprite.loop, false)
+
+    hero.sprite.playing = false
+    hero.sprite.currentFrame = 1
+    hero.sprite.onFrameChange(1)
+    now += 100
+    updateHeroPowerCharge(hero)
+
+    assert.equal(hero.heroPowerChargeVisualLocked, true)
+    assert.equal(hero.sprite.currentFrame, 1)
+    assert.equal(hero.sprite.playing, false)
+    assert.ok(hero.drawRatios.at(-1) < 1)
   } finally {
     global.performance = originalPerformance
   }
@@ -1160,7 +1215,7 @@ test('bow release consumes equipped arrows until the slot is empty', () => {
   }
 })
 
-test('lasso charge releases a drawn lasso instead of an arrow', () => {
+test('catchingPole charge releases a drawn catchingPole instead of an arrow', () => {
   const soundCues = []
   const { aimHeroPowerChargeAt, releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools({
     './audio/sound': {
@@ -1169,12 +1224,13 @@ test('lasso charge releases a drawn lasso instead of an arrow', () => {
     },
   })
   const { hero, projectiles } = makeHero()
+  hero.inventory.activeWeapons.melee = 'catchingPole'
   let now = 1000
   const originalPerformance = global.performance
   global.performance = { now: () => now }
 
   try {
-    assert.equal(triggerToolAttackAt(hero, 'lasso', { x: 120, y: 0 }), true)
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 120, y: 0 }), true)
     aimHeroPowerChargeAt(hero, { x: 180, y: 0 })
     now += 700
     assert.equal(releaseHeroPowerCharge(hero, now), true)
@@ -1182,10 +1238,58 @@ test('lasso charge releases a drawn lasso instead of an arrow', () => {
     hero.sprite.onFrameChange?.(8)
 
     assert.equal(projectiles.length, 1)
-    assert.equal(projectiles[0].type, 'HeroLassoThrow')
+    assert.equal(projectiles[0].type, 'HeroCatchingPoleThrow')
     assert.deepEqual(projectiles[0].destination, { x: 180, y: 0 })
     assert.equal(projectiles[0].maxDistance, undefined)
-    assert.deepEqual(soundCues, [['archer-attack', 'archer-attack-2']])
+    assert.equal(hero.sprite.currentFrame, 5)
+    assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.actionLocked, true)
+    assert.equal(typeof projectiles[0].options.onThrowResolved, 'function')
+    assert.deepEqual(soundCues, ['arrow-shot'])
+  } finally {
+    global.performance = originalPerformance
+  }
+})
+
+test('catchingPole throw holds frame 5 until the rope resolves, then rewinds 54321', () => {
+  const { releaseHeroPowerCharge, triggerToolAttackAt } = loadHeroTools()
+  const { hero, projectiles, scheduled } = makeHero()
+  hero.inventory.activeWeapons.melee = 'catchingPole'
+  let now = 1000
+  const originalPerformance = global.performance
+  global.performance = { now: () => now }
+
+  try {
+    assert.equal(triggerToolAttackAt(hero, 'sword', { x: 120, y: 0 }), true)
+    now += 700
+    assert.equal(releaseHeroPowerCharge(hero, now), true)
+    hero.sprite.currentFrame = 5
+    hero.sprite.onFrameChange?.(5)
+
+    assert.equal(projectiles.length, 1)
+    assert.equal(hero.sprite.currentFrame, 5)
+    assert.equal(hero.sprite.playing, false)
+    assert.equal(hero.actionLocked, true)
+
+    projectiles[0].options.onThrowResolved()
+    const recoveryTask = [...scheduled.values()].find(task => task.taskName === 'hero.catchingPoleThrowRecovery')
+    assert.equal(hero.sprite.currentFrame, 5)
+    assert.ok(recoveryTask)
+
+    recoveryTask.callback()
+    assert.equal(hero.sprite.currentFrame, 4)
+    assert.equal(hero.actionLocked, true)
+
+    recoveryTask.callback()
+    assert.equal(hero.sprite.currentFrame, 3)
+
+    recoveryTask.callback()
+    assert.equal(hero.sprite.currentFrame, 2)
+
+    recoveryTask.callback()
+    assert.equal(hero.sprite.currentFrame, 1)
+    assert.equal(hero.actionLocked, false)
+    assert.equal(hero.currentSheet, 'standingSheet')
   } finally {
     global.performance = originalPerformance
   }
@@ -1389,7 +1493,10 @@ test('free-hand interact plays an empty swing when no target is aimed', () => {
 test('sword whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const tools = loadHeroTools({
-    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
+    './audio/sound': {
+      playAudibleSoundCue: (_instance, cue) => soundCues.push(cue),
+      playSoundCue: cue => soundCues.push(cue),
+    },
   })
   const { triggerToolAttackAt } = tools
   const { hero } = makeHero()
@@ -1407,7 +1514,10 @@ test('sword whiffs use the generic melee whiff sound', () => {
 test('axe whiffs use the generic melee whiff sound', () => {
   const soundCues = []
   const { triggerToolAttackAt } = loadHeroTools({
-    './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: cue => soundCues.push(cue) },
+    './audio/sound': {
+      playAudibleSoundCue: (_instance, cue) => soundCues.push(cue),
+      playSoundCue: cue => soundCues.push(cue),
+    },
   })
   const { hero } = makeHero()
   Object.assign(hero, {
@@ -1548,7 +1658,9 @@ for (const family of ['building', 'animal']) {
         getActionCondition: (_hero, target, action) => target === enemy && action === 'attack',
         getHitPointsWithDamage: (_hero, target) => Math.max(0, target.hitPoints - 2),
       },
-      './combat/combatFeedback': { showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]) },
+      './combat/combatFeedback': {
+        showDamageFeedback: (target, amount) => damageFeedback.push([target.label, amount]),
+      },
       './grid/visibility': { findInstancesInSight: (_hero, predicate) => [enemy].filter(predicate) },
       './audio/sound': { playAudibleSoundCue: (_instance, cue) => soundCues.push(cue), playSoundCue: () => {} },
     })

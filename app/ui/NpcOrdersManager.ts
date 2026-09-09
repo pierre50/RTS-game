@@ -14,7 +14,8 @@ import { refreshUnitEquipmentStats } from '../lib/equipment/equipmentStats'
 import { ensureAndRefreshBakedLpcUnitAssets } from '../lib/lpc'
 import { SOUND_CUES, UNIT_TYPES } from '../constants'
 import { createInventoryContainer } from '../lib/inventory/inventoryContainers'
-import { discoverHeroEquipment } from '../lib/equipment/equipmentDiscoveries'
+import { discoverHeroEquipment, discoverHeroResource } from '../lib/equipment/equipmentDiscoveries'
+import { canOwnerMineIron } from '../lib/resources/ironMining'
 import { isVillagerSleepTime, shouldVillagerRestBeforeBed } from '../lib/units/villagerSchedule'
 import {
   keepNpcHere,
@@ -403,6 +404,9 @@ export class NpcOrdersManager {
 
   private canShowVillagerJobOrder(job: VillagerAutonomyJob): boolean {
     if (!this.hasVillager() || this.hasNightWorkBlock()) return false
+    if (job === 'iron' && !this.npcs.some(npc => npc.type === UNIT_TYPES.villager && canOwnerMineIron(npc.owner))) {
+      return false
+    }
     const needsKnownTarget = job === 'construction' || job === 'horseCapture'
     return (
       !needsKnownTarget || this.npcs.some(npc => npc.type === UNIT_TYPES.villager && hasVillagerAutonomyTarget(npc, job))
@@ -451,6 +455,7 @@ export class NpcOrdersManager {
       id: hero.label,
       labelKey: 'inventoryYourBag',
       onReceiveEquipment: equipment => discoverHeroEquipment(hero, equipment),
+      onReceiveResource: (resource, amount) => discoverHeroResource(hero, resource, amount),
     })
     this.transferPanel = new InventoryTransferPanel({
       context: this.menu.context,

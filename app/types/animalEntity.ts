@@ -13,8 +13,8 @@ export interface AnimalEntity extends EnergyEntity {
   horseColor?: string
   tamingStatus?: HorseTamingStatus
   companionOwner?: UnitEntity | null
-  isLassoed?: boolean
-  lassoOwner?: UnitEntity | null
+  isCatchingPoleCaught?: boolean
+  catchingPoleOwner?: UnitEntity | null
   companionHitCount?: number
   trapPrey?: boolean
   standingSheet?: SpritesheetLike | null

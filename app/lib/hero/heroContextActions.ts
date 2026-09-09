@@ -1,3 +1,5 @@
+import { canReachActionTarget } from '../actions/contactActions'
+import { getContactAimDegree } from '../contact/contactGeometry'
 import { Assets } from 'pixi.js'
 import {
   ACTION_TYPES,
@@ -9,15 +11,15 @@ import {
   WORK_TYPES,
 } from '../constants'
 import { getActionVisualSheetKey } from '../units/actionVisualSheet'
-import { isHeroInteractionTargetReachable } from './heroActionRange'
 import { getActionCondition, isWheatMature } from '../combat'
 import { findInstancesInSight } from '../grid/visibility'
 import { t } from '../lang'
+import { showIronMiningBlockedMessage } from '../resources/ironMining'
 import { hasEnergyForAction } from '../units/unitEnergy'
 import { applyWorkForAction } from '../../classes/unit/UnitResourceDeliveryCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { HeroContextAction } from '../../types/heroTools'
-import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTargets, getHeroAimDegree } from './heroTargeting'
+import { CLICK_TARGET_SEARCH_RANGE, getDirectionalTargets } from './heroTargeting'
 
 type ToolActionResult = 'triggered' | 'blocked' | 'miss'
 
@@ -67,7 +69,7 @@ function runHeroAction(hero: UnitEntity, target: RuntimeEntity, action: string):
   hero.followAssistIntent = null
   hero.setDest?.(target)
   hero.action = action
-  hero.degree = getHeroAimDegree(hero, target)
+  hero.degree = getContactAimDegree(hero, target)
   hero.getAction?.(action)
 }
 
@@ -105,6 +107,7 @@ function resolveHeroGatherAction(
     ) {
       hero.context?.menu?.showMessage(t('wheatNotReady'), 'warning')
     }
+    showIronMiningBlockedMessage(hero, target)
     return null
   }
   return () => runHeroGatherAction(hero, target, action, work)
@@ -196,7 +199,7 @@ function isContextActionTargetReachable(
 ): boolean {
   const action = getContextActionForTarget(contextAction, target)
   if (!action) return false
-  return isHeroInteractionTargetReachable(hero, action, target) || Boolean(hero.isUnitAtDest?.(action, target))
+  return canReachActionTarget(hero, target, action)
 }
 
 function blockContextActionWhileMounted(hero: UnitEntity): boolean {

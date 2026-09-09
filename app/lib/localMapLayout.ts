@@ -1,4 +1,4 @@
-import { CELL_HEIGHT, CELL_WIDTH } from '../constants'
+import { CELL_HEIGHT, CELL_WIDTH } from '../constants/gridGeometry'
 
 export type LocalMapLayout = { columns: number; rows: number }
 

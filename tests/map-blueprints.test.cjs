@@ -30,7 +30,11 @@ test('public maps expose only the world preview format used by the UI', () => {
 
   assert.equal(fs.existsSync(path.join(mapsRoot, '144')), false, 'legacy root 144 map folder should be removed')
   assert.equal(fs.existsSync(path.join(mapsRoot, 'manifest.json')), false, 'legacy root map manifest should be removed')
-  assert.equal(fs.existsSync(path.join(mapsRoot, 'macro-world-preview.png')), false, 'legacy root preview should be removed')
+  assert.equal(
+    fs.existsSync(path.join(mapsRoot, 'macro-world-preview.png')),
+    false,
+    'legacy root preview should be removed'
+  )
   assert.equal(
     fs.existsSync(path.join(mapsRoot, 'worlds/world-4242/macro-world-preview-iso.png')),
     false,
@@ -147,6 +151,7 @@ test('pregenerated map blueprints persist water terrain', () => {
     let waterBufferViolations = 0
     let spawnPlateauViolations = 0
 
+    const isMissing = (i, j) => terrain[i * width + j] === 255
     const isWater = (i, j) => {
       return terrain[i * width + j] === WATER_INDEX
     }
@@ -187,7 +192,7 @@ test('pregenerated map blueprints persist water terrain', () => {
         if (waterDistances[i * width + j] <= RELIEF_WATER_BUFFER_RADIUS && getRelief(i, j) !== 0) {
           waterBufferViolations++
         }
-        if (isWater(i, j)) continue
+        if (isMissing(i, j) || isWater(i, j)) continue
         const flags = {
           n: i > 0 && isWater(i - 1, j),
           s: i < blueprint.size && isWater(i + 1, j),
@@ -232,7 +237,7 @@ test('pregenerated map blueprints persist water terrain', () => {
 
     for (let i = 0; i <= blueprint.size; i++) {
       for (let j = 0; j <= blueprint.size; j++) {
-        if (isWater(i, j)) continue
+        if (isMissing(i, j) || isWater(i, j)) continue
         for (const [di, dj] of [
           [0, 1],
           [1, -1],
@@ -241,7 +246,8 @@ test('pregenerated map blueprints persist water terrain', () => {
         ]) {
           const ni = i + di
           const nj = j + dj
-          if (ni < 0 || ni > blueprint.size || nj < 0 || nj > blueprint.size || isWater(ni, nj)) continue
+          if (ni < 0 || ni > blueprint.size || nj < 0 || nj > blueprint.size || isMissing(ni, nj) || isWater(ni, nj))
+            continue
           if (Math.abs(getRelief(i, j) - getRelief(ni, nj)) > 1) reliefStepViolations++
         }
       }

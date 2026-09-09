@@ -76,11 +76,13 @@ const EQUIPMENT_BASE_GOLD_VALUES: Record<string, number> = {
   upward_horns_ceramic: 260,
   sack_cloth_hood_leather: 180,
   cane: 120,
+  longstick: 80,
+  catchingPole: 80,
 }
 
 const EQUIPMENT_RESALE_PERCENT = 35
 
-const MARKET_BLOCKED_EQUIPMENT = new Set(['quiver'])
+const MARKET_BLOCKED_EQUIPMENT = new Set(['quiver', 'longstick'])
 const MARKET_BLOCKED_PREFIXES = ['axe_', 'pickaxe_', 'hammer_', 'scythe_']
 
 function getMarketEquipmentOfferCount(equipment: string): number {

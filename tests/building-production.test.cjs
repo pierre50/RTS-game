@@ -15,6 +15,9 @@ function loadModule(relativePath, mocks) {
   const module = { exports: {} }
   const localRequire = request => {
     if (Object.hasOwn(mocks, request)) return mocks[request]
+    if (request === './BuildingTrainingProgress') {
+      return loadModule('app/classes/building/BuildingTrainingProgress.ts', mocks)
+    }
     if (request === './BuildingTraineeTraining') {
       return loadModule('app/classes/building/BuildingTraineeTraining.ts', mocks)
     }
@@ -2188,7 +2191,7 @@ test('arrived villager is consumed and trained unit reuses the same population s
   )
 })
 
-test('villagers cannot be bought from building production anymore', () => {
+test('villagers and unknown unit types cannot charge resources or enter production', () => {
   const calls = []
   const building = {
     isBuilt: true,
@@ -2235,6 +2238,8 @@ test('villagers cannot be bought from building production anymore', () => {
   const production = new BuildingProduction(building)
 
   assert.equal(production.buyUnit('Villager'), false)
+  assert.equal(production.buyUnit('Unknown'), false)
+  assert.equal(production.buyUnit('Unknown', true, true), false)
   assert.deepEqual(building.queue, [])
   assert.deepEqual(calls, [])
 })

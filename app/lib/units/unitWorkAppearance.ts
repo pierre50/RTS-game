@@ -15,7 +15,7 @@ export function applyUnitActionFrameSequence(
   work: string | null | undefined,
   action?: string | null
 ): void {
-  unit.actionFrameSequence = getConfiguredActionFrameSequence({ ...unit, work, action })
+  unit.actionFrameSequence = getConfiguredActionFrameSequence({ ...unit, work: work ?? null, action: action ?? null })
 }
 
 export function getUnitWorkActionSheet(unit: UnitEntity, work: string | null | undefined, action?: string | null) {
@@ -27,7 +27,11 @@ export function getUnitWorkActionSheet(unit: UnitEntity, work: string | null | u
   return assetId ? Assets.cache.get(assetId) : undefined
 }
 
-export function applyUnitWorkAssets(unit: UnitEntity, work: string | null | undefined, options: WorkAssetOptions = {}): void {
+export function applyUnitWorkAssets(
+  unit: UnitEntity,
+  work: string | null | undefined,
+  options: WorkAssetOptions = {}
+): void {
   applyUnitActionFrameSequence(unit, work, options.action)
   if (!work) return
   const workAssets = unit.allAssets?.[work]

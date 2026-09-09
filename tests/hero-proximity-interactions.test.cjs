@@ -2,7 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadHeroProximityInteractions() {
+function loadHeroProximityInteractions(overrides = {}) {
   return loadTsModule('app/lib/hero/heroProximityInteractions.ts', {
     mocks: {
       '../../constants': {
@@ -15,8 +15,13 @@ function loadHeroProximityInteractions() {
           townCenter: 'TownCenter',
           trap: 'Trap',
         },
+        HORSE_TAMING_STATUS: { tamed: 'tamed', wild: 'wild' },
         SHEET_TYPES: { corpse: 'corpseSheet' },
         UNIT_TYPES: { villager: 'Villager' },
+      },
+      '../constants': {
+        BUILDING_TYPES: { stable: 'Stable' },
+        HORSE_TAMING_STATUS: { tamed: 'tamed', wild: 'wild' },
       },
       '../chief': {
         heroCanCommand: hero => Boolean(hero?.isChief),
@@ -33,6 +38,9 @@ function loadHeroProximityInteractions() {
       },
       '../horses/horseTaming': {
         isTamedHorse: horse => horse?.type === 'Horse' && horse?.tamingStatus === 'tamed',
+      },
+      '../horses/stableHorseInteraction': {
+        isStoredForeignStableHorse: () => false,
       },
       '../mapSpaces': {
         getEntitySpaceMapLike: entity => entity?.context?.map ?? null,
@@ -59,6 +67,7 @@ function loadHeroProximityInteractions() {
       './heroActionRange': {
         isHeroInteractionTargetReachable: (_hero, _action, target) => target?.reachable !== false,
       },
+      ...overrides,
     },
   })
 }
@@ -351,11 +360,25 @@ test('hero proximity interaction resolves a nearby tamed horse as mount', () => 
 })
 
 test('hero proximity interaction labels a foreign stable horse as theft', () => {
-  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions({
+    '../horses/stableHorseInteraction': {
+      isStoredForeignStableHorse: (_hero, horse) => horse.label === 'foreign-stable-horse',
+    },
+  })
   const spaceId = 'interior:foreign-stable'
   const hero = makeHero({ owner: { label: 'player' }, y: 100 })
   hero.context.map.spaces = new Map([
-    [spaceId, { building: { owner: { label: 'neutral-ai' }, type: 'Stable' }, kind: 'interior' }],
+    [
+      spaceId,
+      {
+        building: {
+          owner: { label: 'neutral-ai' },
+          stableHorses: [{ horseColor: 'black', tamingStatus: 'tamed' }],
+          type: 'Stable',
+        },
+        kind: 'interior',
+      },
+    ],
   ])
   const horse = {
     family: 'animal',
@@ -368,12 +391,37 @@ test('hero proximity interaction labels a foreign stable horse as theft', () => 
     type: 'Horse',
     x: 104,
     y: 100,
+    label: 'foreign-stable-horse',
   }
   hero.context.map.grid[6][8].has = horse
 
   assert.deepEqual(resolveHeroProximityInteraction({ hero }), {
     action: 'mount',
     labelKey: 'heroInteractionSteal',
+    target: horse,
+  })
+})
+
+test('hero proximity interaction labels an outdoor foreign tamed horse as mount', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const hero = makeHero({ owner: { label: 'player' }, y: 100 })
+  const horse = {
+    family: 'animal',
+    i: 6,
+    isDead: false,
+    isDestroyed: false,
+    j: 8,
+    owner: { label: 'neutral-ai' },
+    tamingStatus: 'tamed',
+    type: 'Horse',
+    x: 104,
+    y: 100,
+  }
+  hero.context.map.grid[6][8].has = horse
+
+  assert.deepEqual(resolveHeroProximityInteraction({ hero }), {
+    action: 'mount',
+    labelKey: 'heroInteractionMount',
     target: horse,
   })
 })

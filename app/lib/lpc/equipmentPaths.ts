@@ -35,6 +35,7 @@ function equipmentFamilyPath(equipment: DynamicEquipmentKey): string {
   if (equipment.startsWith('pickaxe_')) return 'tool/pickaxe'
   if (equipment.startsWith('hammer_')) return 'tool/hammer'
   if (equipment.startsWith('scythe_')) return 'tool/scythe'
+  if (equipment === 'longstick') return 'weapon/longstick'
   if (equipment === 'bow' || equipment === 'bow_great' || equipment === 'bow_recurve') return 'weapon/bow'
   if (equipment.startsWith('arrow_')) return 'weapon/arrow'
   if (equipment === 'halberd') return 'weapon/halberd'

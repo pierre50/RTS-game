@@ -32,6 +32,7 @@ export function cancelBuildingTechnology(building: BuildingControllerHost): bool
 
 export function upgradeBuilding(building: BuildingControllerHost, type: string): void {
   const data = building.owner.config.buildings[type]
+  if (!data) throw new Error(`Unknown building technology target: ${type}`)
   const nextTotalHitPoints = Number(data.totalHitPoints) || building.totalHitPoints
   building.type = type
   building.hitPoints = nextTotalHitPoints - (building.totalHitPoints - building.hitPoints)
@@ -48,11 +49,7 @@ export function upgradeBuilding(building: BuildingControllerHost, type: string):
   building.updateShadow()
 }
 
-export function buyBuildingTechnology(
-  building: BuildingControllerHost,
-  type: string,
-  alreadyPaid?: boolean
-): boolean {
+export function buyBuildingTechnology(building: BuildingControllerHost, type: string, alreadyPaid?: boolean): boolean {
   const {
     context: { menu },
   } = building

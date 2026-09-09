@@ -1,5 +1,5 @@
 import { renderEquipmentAvatar } from '../../lib/avatar'
-import { isDynamicEquipmentKey } from '../../lib/lpc/equipment'
+import { dynamicEquipmentVisualKey } from '../../lib/lpc/equipment'
 import { loadDynamicEquipmentAssetQueued } from '../../lib/lpc/lazyEquipmentAssets'
 import type { Application } from 'pixi.js'
 
@@ -15,9 +15,10 @@ export function renderEquipmentAvatarLazy(
   performanceMonitor?: EquipmentAvatarPerformanceMonitor | null
 ): boolean {
   if (renderEquipmentAvatar(app, equipment, canvas)) return true
-  if (!isDynamicEquipmentKey(equipment)) return false
+  const visualEquipment = dynamicEquipmentVisualKey(equipment)
+  if (!visualEquipment) return false
 
-  void loadDynamicEquipmentAssetQueued(equipment, {
+  void loadDynamicEquipmentAssetQueued(visualEquipment, {
     metricName: 'lazyEquipmentAvatar.loadAsset',
     performanceMonitor,
   })

@@ -351,7 +351,8 @@
       },
       "path": "144/world-4242-r0-0-temperate.map",
       "seed": 675777642,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r0-0-temperate.scenery.json"
     },
     {
       "id": "world-4242-r1-0-black-forest",
@@ -389,7 +390,8 @@
       },
       "path": "144/world-4242-r1-0-black-forest.map",
       "seed": 1213662491,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r1-0-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r2-0-black-forest",
@@ -429,7 +431,8 @@
       },
       "path": "144/world-4242-r2-0-black-forest.map",
       "seed": 815378270,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r2-0-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r3-0-black-forest",
@@ -448,7 +451,8 @@
       },
       "path": "144/world-4242-r3-0-black-forest.map",
       "seed": 1463687706,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r3-0-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r4-0-black-forest",
@@ -487,7 +491,8 @@
       },
       "path": "144/world-4242-r4-0-black-forest.map",
       "seed": 1880172478,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r4-0-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r0-1-temperate",
@@ -526,7 +531,8 @@
       },
       "path": "144/world-4242-r0-1-temperate.map",
       "seed": 10675297,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r0-1-temperate.scenery.json"
     },
     {
       "id": "world-4242-r1-1-black-forest",
@@ -567,7 +573,8 @@
       },
       "path": "144/world-4242-r1-1-black-forest.map",
       "seed": 1801430097,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r1-1-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r2-1-black-forest",
@@ -607,7 +614,8 @@
       },
       "path": "144/world-4242-r2-1-black-forest.map",
       "seed": 1077309608,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r2-1-black-forest.scenery.json"
     },
     {
       "id": "world-4242-r3-1-steppe",
@@ -646,7 +654,8 @@
       },
       "path": "144/world-4242-r3-1-steppe.map",
       "seed": 1996533365,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r3-1-steppe.scenery.json"
     },
     {
       "id": "world-4242-r4-1-steppe",
@@ -665,7 +674,8 @@
       },
       "path": "144/world-4242-r4-1-steppe.map",
       "seed": 790398406,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r4-1-steppe.scenery.json"
     },
     {
       "id": "world-4242-r0-2-temperate",
@@ -705,7 +715,8 @@
       },
       "path": "144/world-4242-r0-2-temperate.map",
       "seed": 1830203380,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r0-2-temperate.scenery.json"
     },
     {
       "id": "world-4242-r1-2-temperate",
@@ -747,7 +758,8 @@
       },
       "path": "144/world-4242-r1-2-temperate.map",
       "seed": 1161214826,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r1-2-temperate.scenery.json"
     },
     {
       "id": "world-4242-r2-2-temperate",
@@ -768,7 +780,8 @@
       },
       "path": "144/world-4242-r2-2-temperate.map",
       "seed": 1790410826,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r2-2-temperate.scenery.json"
     },
     {
       "id": "world-4242-r3-2-steppe",
@@ -811,7 +824,8 @@
       },
       "path": "144/world-4242-r3-2-steppe.map",
       "seed": 378872143,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r3-2-steppe.scenery.json"
     },
     {
       "id": "world-4242-r4-2-steppe",
@@ -851,7 +865,8 @@
       },
       "path": "144/world-4242-r4-2-steppe.map",
       "seed": 279367369,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r4-2-steppe.scenery.json"
     },
     {
       "id": "world-4242-r0-3-temperate",
@@ -870,7 +885,8 @@
       },
       "path": "144/world-4242-r0-3-temperate.map",
       "seed": 1775284666,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r0-3-temperate.scenery.json"
     },
     {
       "id": "world-4242-r1-3-desert",
@@ -889,7 +905,8 @@
       },
       "path": "144/world-4242-r1-3-desert.map",
       "seed": 1167073846,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r1-3-desert.scenery.json"
     },
     {
       "id": "world-4242-r2-3-desert",
@@ -931,7 +948,8 @@
       },
       "path": "144/world-4242-r2-3-desert.map",
       "seed": 884735450,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r2-3-desert.scenery.json"
     },
     {
       "id": "world-4242-r3-3-desert",
@@ -951,7 +969,8 @@
       },
       "path": "144/world-4242-r3-3-desert.map",
       "seed": 337754344,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r3-3-desert.scenery.json"
     },
     {
       "id": "world-4242-r4-3-steppe",
@@ -990,7 +1009,8 @@
       },
       "path": "144/world-4242-r4-3-steppe.map",
       "seed": 309299946,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r4-3-steppe.scenery.json"
     },
     {
       "id": "world-4242-r0-4-desert",
@@ -1009,7 +1029,8 @@
       },
       "path": "144/world-4242-r0-4-desert.map",
       "seed": 1357730547,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r0-4-desert.scenery.json"
     },
     {
       "id": "world-4242-r1-4-desert",
@@ -1047,7 +1068,8 @@
       },
       "path": "144/world-4242-r1-4-desert.map",
       "seed": 1424790105,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r1-4-desert.scenery.json"
     },
     {
       "id": "world-4242-r2-4-desert",
@@ -1085,7 +1107,8 @@
       },
       "path": "144/world-4242-r2-4-desert.map",
       "seed": 1051346913,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r2-4-desert.scenery.json"
     },
     {
       "id": "world-4242-r3-4-desert",
@@ -1125,7 +1148,8 @@
       },
       "path": "144/world-4242-r3-4-desert.map",
       "seed": 1357600297,
-      "spawns": 1
+      "spawns": 1,
+      "sceneryPath": "144/world-4242-r3-4-desert.scenery.json"
     },
     {
       "id": "world-4242-r4-4-desert",
@@ -1143,7 +1167,8 @@
       },
       "path": "144/world-4242-r4-4-desert.map",
       "seed": 1615311606,
-      "spawns": 0
+      "spawns": 0,
+      "sceneryPath": "144/world-4242-r4-4-desert.scenery.json"
     }
   ]
 }

@@ -247,7 +247,10 @@ function showFloatingText(target: RuntimeEntity, options: FloatingTextOptions): 
   text.zIndex = 100
   const targetContainer = target as unknown as Container
   const textParent = detached ? targetContainer.parent : targetContainer
-  if (!textParent || textParent.destroyed) return
+  if (!textParent || textParent.destroyed) {
+    text.destroy({ children: true })
+    return
+  }
   textParent.addChild(text)
 
   let step = 0

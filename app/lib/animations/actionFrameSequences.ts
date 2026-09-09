@@ -67,7 +67,7 @@ function getHeroActiveWeaponEquipment(context: ActionFrameSequenceContext): stri
       (item): item is string => typeof item === 'string' && item.length > 0
     )
   }
-  return [activeWeapons.lasso].filter((item): item is string => typeof item === 'string' && item.length > 0)
+  return []
 }
 
 function getContextActionEquipment(context: ActionFrameSequenceContext): string[] {

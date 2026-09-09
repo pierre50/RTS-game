@@ -19,7 +19,7 @@ export const WILDGRASS_RESOURCE_TYPES = new Set<string>([
 
 export const FORAGE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.berrybush, ...WILDGRASS_RESOURCE_TYPES])
 
-export const PASSABLE_RESOURCE_TYPES = new Set<string>(WILDGRASS_RESOURCE_TYPES)
+export const PASSABLE_RESOURCE_TYPES = new Set<string>([RESOURCE_TYPES.wheat, ...WILDGRASS_RESOURCE_TYPES])
 
 export const RESOURCE_NAMES = ['wood', 'food', 'stone', 'gold', 'copper', 'iron'] as const
 

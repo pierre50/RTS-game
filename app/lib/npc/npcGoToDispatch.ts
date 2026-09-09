@@ -1,18 +1,16 @@
-import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, TYPE_ACTION, UNIT_TYPES } from '../constants'
+import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
+import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
+import type { Point } from '../../types/grid'
+import type { RuntimeCell } from '../../types/map'
 import { applyDiplomaticAggression } from '../combat/diplomaticAggression'
+import { ACTION_TYPES, FAMILY_TYPES, LABEL_TYPES, TYPE_ACTION, UNIT_TYPES } from '../constants'
+import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
+import type { SelectableInstance } from '../graphics/selection'
 import { drawCellBlinkingSelection, drawInstanceBlinkingSelection } from '../graphics/selection'
-import { findInstancesInSight } from '../grid/visibility'
 import { getFreeLandCellAroundInstance } from '../grid/movement'
 import { getMapSpace } from '../mapSpaces'
-import { clearUnitOverheadIndicator, setUnitOverheadIndicator } from '../entities/overheadIndicator'
-import { delayUnitRestAfterActivity, isSleepTime } from '../../services/rest/UnitRestRules'
-import type { SelectableInstance } from '../graphics/selection'
-import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { RuntimeCell } from '../../types/map'
-import type { Point } from '../../types/grid'
-
-const CLICK_TARGET_SEARCH_RANGE = 15
-const CLICK_TARGET_TOLERANCE_PX = 60
+import { resolveClickTarget } from './npcTargetResolution'
+export { resolveHoverTarget } from './npcTargetResolution'
 
 const RESOURCE_SEND_TO_BY_ACTION: Partial<Record<string, (npc: UnitEntity, target: RuntimeEntity) => void>> = {
   [ACTION_TYPES.chopwood]: (npc, target) => npc.sendToTree?.(target),
@@ -125,60 +123,10 @@ export function startFollowingHero(target: UnitEntity): void {
   target.stop?.()
 }
 
-function findNearestInteractable(
-  hero: UnitEntity,
-  worldPoint: Point,
-  cell: RuntimeCell | null,
-  matches: (target: RuntimeEntity) => boolean
-): RuntimeEntity | null {
-  if (cell?.has && matches(cell.has)) return cell.has
-  const candidates = findInstancesInSight<UnitEntity, RuntimeEntity>(hero, matches, CLICK_TARGET_SEARCH_RANGE)
-  let closest: RuntimeEntity | null = null
-  let closestDist = CLICK_TARGET_TOLERANCE_PX
-  for (const candidate of candidates) {
-    const dist = Math.hypot(candidate.x - worldPoint.x, candidate.y - worldPoint.y)
-    if (dist < closestDist) {
-      closest = candidate
-      closestDist = dist
-    }
-  }
-  return closest
-}
-
-function isEnemyTarget(hero: UnitEntity, target: RuntimeEntity): boolean {
-  return Boolean(target.owner && hero.owner?.isEnemy?.(target.owner))
-}
-
 function hasSameOwner(source: UnitEntity, target: RuntimeEntity): boolean {
   return Boolean(
     target.owner === source.owner ||
       (target.owner?.label && source.owner?.label && target.owner.label === source.owner.label)
-  )
-}
-
-function isClickDispatchable(hero: UnitEntity, target: RuntimeEntity): boolean {
-  if (target.family === FAMILY_TYPES.resource || target.family === FAMILY_TYPES.building) return true
-  if (target.family === FAMILY_TYPES.animal) return true
-  return target.family === FAMILY_TYPES.unit && isEnemyTarget(hero, target) && !target.isDead
-}
-
-function resolveClickTarget(hero: UnitEntity, worldPoint: Point, cell: RuntimeCell): RuntimeEntity | null {
-  return findNearestInteractable(hero, worldPoint, cell, target => isClickDispatchable(hero, target))
-}
-
-export function resolveHoverTarget(
-  hero: UnitEntity,
-  worldPoint: Point,
-  cell: RuntimeCell | null
-): RuntimeEntity | null {
-  return findNearestInteractable(
-    hero,
-    worldPoint,
-    cell,
-    target =>
-      isClickDispatchable(hero, target) ||
-      target.family === FAMILY_TYPES.animal ||
-      (target.family === FAMILY_TYPES.unit && target.owner !== hero.owner && !target.isDead)
   )
 }
 

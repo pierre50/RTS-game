@@ -1,3 +1,5 @@
+import { showContactDebug } from '../../lib/contact/contactDebug'
+import { isContactTouching, getContactAimDegree } from '../../lib/contact/contactGeometry'
 import { ACTION_TYPES, FAMILY_TYPES, SHEET_TYPES } from '../../constants'
 import {
   applyCombatHit,
@@ -223,6 +225,7 @@ export class AnimalCombat {
         }
         runAttackLoopOnFrame(animal, {
           releaseFrame: getAnimalAttackImpactFrame(animal),
+          trackTargetOnRelease: false,
           prepareAttackSheet: () => {
             animal.setTextures(SHEET_TYPES.action)
             animal.sprite.gotoAndPlay(0)
@@ -234,9 +237,8 @@ export class AnimalCombat {
           onAttackPrepared: target => prepareAutomaticParry?.(target),
           syncMovingTargetDirection: () => {
             const target = animal.dest && 'hitPoints' in animal.dest ? animal.dest : null
-            if (!target || !animal.destHasMoved()) return
-            animal.degree = getInstanceDegree(animal, target.x, target.y)
-            animal.setTextures(SHEET_TYPES.action)
+            if (!target) return
+            animal.degree = getContactAimDegree(animal, target)
           },
           onOutOfRange: target => {
             if (!target) return
@@ -252,6 +254,8 @@ export class AnimalCombat {
             animal.affectNewDest()
           },
           onReadyToAttack: target => {
+            showContactDebug(animal, [target])
+            if (!isContactTouching(animal, target)) return
             animal.sounds &&
               animal.sounds.hit &&
               animal.context.controls.instanceIsAudible(animal) &&

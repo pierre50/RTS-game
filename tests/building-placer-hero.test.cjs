@@ -86,7 +86,8 @@ function loadBuildingPlacer() {
     },
     '../lib/lang': { t: value => value },
   }
-  const localRequire = request => (Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks))
+  const localRequire = request =>
+    Object.hasOwn(mocks, request) ? mocks[request] : requireFromTsFile(request, filename, mocks)
   new Function('module', 'exports', 'require', code)(module, module.exports, localRequire)
   return module.exports.BuildingPlacer
 }
@@ -211,4 +212,41 @@ test('farm placement creates a 4x4 neutral wheat field instead of a building', (
     created.map(resource => resource.type),
     Array.from({ length: 16 }, () => 'Wheat')
   )
+})
+
+test('wall placement does not collide with a hero at the same coordinates in another space', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const grid = createGrid(5)
+  const controls = {
+    context: { map: { grid, revealEverything: true } },
+    isHeroControlActive: () => true,
+    heroUnit: { i: 2, j: 2, spaceId: 'interior:house' },
+  }
+  const placer = new BuildingPlacer(controls)
+  const owner = { views: { isViewed: () => true } }
+  assert.equal(placer.canWallUseCell(grid[2][2], owner), true)
+  grid[2][2].spaceId = 'interior:house'
+  assert.equal(placer.canWallUseCell(grid[2][2], owner), false)
+  controls.heroUnit.isDead = true
+  assert.equal(placer.canWallUseCell(grid[2][2], owner), true)
+})
+
+test('missing pointer cells reject construction without throwing', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const placer = new BuildingPlacer({ context: { map: { grid: [] } }, mouseBuilding: { type: 'House' } })
+  assert.equal(placer.canPlaceMouseBuilding(null), false)
+  assert.equal(placer.canPlaceMouseBuilding(undefined), false)
+})
+
+test('interior construction exploration follows local visibility', () => {
+  const BuildingPlacer = loadBuildingPlacer()
+  const placer = new BuildingPlacer({ context: { map: { grid: [] } } })
+  const cell = { i: 0, j: 0, spaceId: 'interior:house', visible: true }
+  const owner = { views: { isViewed: () => false } }
+  assert.equal(placer.isExploredForPlacement(cell, owner), true)
+  cell.visible = false
+  assert.equal(placer.isExploredForPlacement(cell, owner), false)
+  delete cell.spaceId
+  cell.visible = true
+  assert.equal(placer.isExploredForPlacement(cell, owner), false)
 })

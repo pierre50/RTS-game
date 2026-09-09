@@ -332,3 +332,23 @@ test('clearing attack recovery removes the pending scheduler task', () => {
     ['remove', 24],
   ])
 })
+
+test('melee can lock its direction during windup while ranged attacks keep tracking', () => {
+  const { runAttackLoopOnFrame } = loadCombatAttackLoop()
+  for (const trackTargetOnRelease of [false, true]) {
+    const { attacker } = makeAttackLoopSubject()
+    let facingUpdates = 0
+    runAttackLoopOnFrame(attacker, {
+      releaseFrame: 5,
+      trackTargetOnRelease,
+      syncMovingTargetDirection: () => facingUpdates++,
+      prepareAttackSheet: () => {},
+      onOutOfRange: () => {},
+      onTargetUnavailable: () => {},
+      onReadyToAttack: () => {},
+    })
+    assert.equal(facingUpdates, 1)
+    attacker.sprite.onFrameChange()
+    assert.equal(facingUpdates, trackTargetOnRelease ? 2 : 1)
+  }
+})

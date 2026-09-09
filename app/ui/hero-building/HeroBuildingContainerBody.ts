@@ -1,5 +1,5 @@
 import { BUILDING_TYPES } from '../../constants'
-import { discoverHeroEquipment } from '../../lib/equipment/equipmentDiscoveries'
+import { discoverHeroEquipment, discoverHeroResource } from '../../lib/equipment/equipmentDiscoveries'
 import { createInventoryContainer, type InventoryContainer } from '../../lib/inventory/inventoryContainers'
 import { applyTheftConsequences, THEFT_SUBJECT_TYPES } from '../../lib/theft/theft'
 import { InventoryTransferPanel } from '../inventory/InventoryTransferPanel'
@@ -29,6 +29,7 @@ export function createHeroBuildingContainerBody(
     id: hero.label,
     labelKey: 'inventoryYourBag',
     onReceiveEquipment: equipment => discoverHeroEquipment(hero, equipment),
+    onReceiveResource: (resource, amount) => discoverHeroResource(hero, resource, amount),
   })
 
   return new InventoryTransferPanel({

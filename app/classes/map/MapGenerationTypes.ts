@@ -1,3 +1,4 @@
+import type { PreparedTerrainCell } from './generation/PreparedMapContent'
 import type { ContainerChild } from 'pixi.js'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
 import type { EnvironmentTerrainParams, FAMILY_TYPES } from '../../constants'
@@ -137,6 +138,9 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
+  terrainAppearance?: PreparedTerrainCell[]
+  animals?: Array<{ i: number; j: number; type: string }>
+
   visualNeighbors?: Array<{ region: { x: number; y: number }; blueprint: MapBlueprint }>
   preserveLegacyGrid?: boolean
   localGridLayout?: LocalMapLayout

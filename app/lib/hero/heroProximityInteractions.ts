@@ -8,7 +8,8 @@ import { heroCanCommand } from '../chief'
 import { getCellsInCellRadius } from '../grid/cells'
 import { instanceIsInActiveOrTeamSight } from '../grid/visibility'
 import { isTamedHorse } from '../horses/horseTaming'
-import { getEntitySpaceMapLike, getMapSpace } from '../mapSpaces'
+import { isStoredForeignStableHorse } from '../horses/stableHorseInteraction'
+import { getEntitySpaceMapLike } from '../mapSpaces'
 import { pickForeignNpcChatterLine, pickNpcChatterLine, pickNpcRestingChatterLine } from '../npc/npcChatter'
 import { isTalkableNpc } from '../npc/npcInteraction'
 import { shouldVillagerRestBeforeBed } from '../units/villagerSchedule'
@@ -69,33 +70,10 @@ function getEntityDistance(hero: UnitEntity, target: RuntimeEntity): number {
   return Math.hypot((target.x ?? 0) - hero.x, (target.y ?? 0) - hero.y)
 }
 
-function resolveFacingOpenableEntity(
-  hero: UnitEntity,
-  openEntityTarget?: RuntimeEntity | null
-): RuntimeEntity | null {
+function resolveFacingOpenableEntity(hero: UnitEntity, openEntityTarget?: RuntimeEntity | null): RuntimeEntity | null {
   if (!isOpenableEntity(openEntityTarget)) return null
   if (!isHeroInteractionTargetReachable(hero, null, openEntityTarget)) return null
   return openEntityTarget
-}
-
-function getStableInteriorHorseOwner(hero: UnitEntity, horse: RuntimeEntity) {
-  const map = hero.context?.map
-  const space = map && horse.spaceId ? getMapSpace(map, horse.spaceId) : null
-  const interiorSpace = space as (typeof space & { building?: BuildingEntity | null }) | null
-  return interiorSpace?.kind === 'interior' && interiorSpace.building?.type === BUILDING_TYPES.stable
-    ? (interiorSpace.building.owner ?? null)
-    : null
-}
-
-function getHorseTheftOwner(hero: UnitEntity, horse: RuntimeEntity) {
-  return getStableInteriorHorseOwner(hero, horse) ?? horse.owner ?? null
-}
-
-function isHorseTheftInteraction(hero: UnitEntity, horse: RuntimeEntity): boolean {
-  const heroOwner = hero.owner
-  const horseOwner = getHorseTheftOwner(hero, horse)
-  if (!heroOwner?.label || !horseOwner?.label) return false
-  return heroOwner.label !== horseOwner.label
 }
 
 function isMountableTamedHorse(
@@ -225,11 +203,8 @@ export function resolveHeroNpcProximityInteraction(
 // Only call this at actual interaction-execution time, never from the per-frame proximity-prompt
 // resolver above — it has a side effect (waking the unit).
 export function wakeOwnSleepingNpcForCommunication(hero: UnitEntity, target: UnitEntity): void {
-  if (
-    target.shelterState?.reason !== 'sleep' ||
-    target.sleepVisualState !== 'sleeping' ||
-    target.owner !== hero.owner
-  ) return
+  if (target.shelterState?.reason !== 'sleep' || target.sleepVisualState !== 'sleeping' || target.owner !== hero.owner)
+    return
   target.context?.unitRest?.wakeSleepingUnitForOrder(target)
 }
 
@@ -265,7 +240,7 @@ export function resolveHeroProximityInteraction({
   if (mountableHorse) {
     return {
       action: 'mount',
-      labelKey: isHorseTheftInteraction(hero, mountableHorse) ? 'heroInteractionSteal' : 'heroInteractionMount',
+      labelKey: isStoredForeignStableHorse(hero, mountableHorse) ? 'heroInteractionSteal' : 'heroInteractionMount',
       target: mountableHorse,
     }
   }

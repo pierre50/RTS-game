@@ -14,6 +14,7 @@ export type InventoryContainer = {
   canAcceptEquipment?: (equipment: string) => boolean
   canAcceptResource?: (resource: keyof ResourceAmount, amount: number) => boolean
   onReceiveEquipment?: (equipment: string) => void
+  onReceiveResource?: (resource: keyof ResourceAmount, amount: number) => void
 }
 
 function ensureInventoryStorage(target: { inventory?: InventoryStorage | null }): InventoryStorage {
@@ -65,5 +66,6 @@ export function moveInventoryResource(
   if ((sourceResources[resource] ?? 0) <= 0) delete sourceResources[resource]
   destination.inventory.resources = destination.inventory.resources ?? {}
   destination.inventory.resources[resource] = (destination.inventory.resources[resource] ?? 0) + amount
+  destination.onReceiveResource?.(resource, amount)
   return amount
 }

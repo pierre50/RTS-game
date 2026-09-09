@@ -6,6 +6,7 @@ import { recolorCanvasByPalette, recolorCanvasPixels, SOURCE_COLORS } from './gr
 import { getTexture, type TextureRef } from './graphics/textures'
 import { getBakedUnitStandingSheetAlias } from './lpc/baked'
 import { getAppearanceAgeSheetOverride } from './lpc/appearanceLayers'
+import { dynamicEquipmentVisualKey } from './lpc/equipment'
 import { getUnitEquipmentTier } from './units/unitExperience'
 import type { Application, Sprite } from 'pixi.js'
 import type { UnitAppearanceLayerConfig } from '../types/config'
@@ -75,7 +76,12 @@ function findOpaqueSquare(pixels: Uint8ClampedArray, width: number, height: numb
   const centerY = minY + boxHeight / 2
   const side = Math.max(boxWidth, boxHeight) * (1 + BBOX_PADDING_RATIO * 2)
 
-  return new Rectangle(Math.round(centerX - side / 2), Math.round(centerY - side / 2), Math.round(side), Math.round(side))
+  return new Rectangle(
+    Math.round(centerX - side / 2),
+    Math.round(centerY - side / 2),
+    Math.round(side),
+    Math.round(side)
+  )
 }
 
 // `extract.canvas`/`extract.pixels` ignore the `frame` option when the
@@ -108,7 +114,10 @@ function extractSquareAvatar(
   square.x = Math.max(0, Math.min(square.x, texture.width - square.width))
   square.y = Math.max(0, Math.min(square.y, texture.height - square.height))
 
-  const cropTexture = subTexture(texture, new Rectangle(texture.frame.x + square.x, texture.frame.y + square.y, square.width, square.height))
+  const cropTexture = subTexture(
+    texture,
+    new Rectangle(texture.frame.x + square.x, texture.frame.y + square.y, square.width, square.height)
+  )
   const extracted = app.renderer.extract.canvas(cropTexture)
 
   const ctx = canvas.getContext('2d')
@@ -149,7 +158,8 @@ function extractSquareCanvasAvatar(
   const scanWidth = source.width
   const clampedScanHeight = Math.max(1, Math.min(source.height, scanHeight))
   const imageData = sourceCtx.getImageData(0, 0, scanWidth, clampedScanHeight)
-  const square = findOpaqueSquare(imageData.data, scanWidth, clampedScanHeight) ?? new Rectangle(0, 0, scanWidth, clampedScanHeight)
+  const square =
+    findOpaqueSquare(imageData.data, scanWidth, clampedScanHeight) ?? new Rectangle(0, 0, scanWidth, clampedScanHeight)
   square.width = Math.min(square.width, source.width, source.height)
   square.height = square.width
   square.x = Math.max(0, Math.min(square.x, source.width - square.width))
@@ -190,7 +200,9 @@ function getPortraitLayerTexture(unit: PortraitSource, layer: UnitAppearanceLaye
   if (!baseSheetId) return null
 
   const playerColorVariant = unit.owner?.color ? layer.playerColorVariants?.[unit.owner.color] : undefined
-  const appearanceVariant = layer.appearanceVariantKey ? unit.appearanceVariants?.[layer.appearanceVariantKey] : undefined
+  const appearanceVariant = layer.appearanceVariantKey
+    ? unit.appearanceVariants?.[layer.appearanceVariantKey]
+    : undefined
   const variantSheetId =
     appearanceVariant && `${baseSheetId}/${appearanceVariant}${playerColorVariant ? `/${playerColorVariant}` : ''}`
   const basePlayerColorSheetId = playerColorVariant ? `${baseSheetId}/${playerColorVariant}` : baseSheetId
@@ -212,7 +224,9 @@ function renderLayeredUnitHeadAvatar(
 ): boolean {
   const layers = unit.appearance?.layers
     ?.map((layer, index) => ({ layer, index, texture: getPortraitLayerTexture(unit, layer) }))
-    .filter((entry): entry is { layer: UnitAppearanceLayerConfig; index: number; texture: Texture } => Boolean(entry.texture))
+    .filter((entry): entry is { layer: UnitAppearanceLayerConfig; index: number; texture: Texture } =>
+      Boolean(entry.texture)
+    )
     .sort((a, b) => a.layer.zIndex - b.layer.zIndex || a.index - b.index)
 
   if (!layers?.length) return false
@@ -365,7 +379,11 @@ function getResourcePortraitTexture(resource: ResourcePortraitSource): Texture |
 // Renders a resource's current appearance into `canvas` — trees/stone/gold
 // are static single textures (or a plain looping animation with no direction
 // split), no team color involved, so this just reads the live sprite texture.
-export function renderResourceAvatar(app: Application, resource: ResourcePortraitSource, canvas: HTMLCanvasElement): boolean {
+export function renderResourceAvatar(
+  app: Application,
+  resource: ResourcePortraitSource,
+  canvas: HTMLCanvasElement
+): boolean {
   const texture = getResourcePortraitTexture(resource)
   if (!texture?.width || !texture.height) return false
 
@@ -420,12 +438,15 @@ function drawCachedEquipmentAvatar(source: HTMLCanvasElement, canvas: HTMLCanvas
 // across both, e.g. a halberd's shaft going behind the arm), then crops
 // tightly to whatever's actually drawn.
 export function renderEquipmentAvatar(app: Application, equipment: string, canvas: HTMLCanvasElement): boolean {
+  const visualEquipment = dynamicEquipmentVisualKey(equipment)
+  if (!visualEquipment) return false
+
   const cacheKey = `${equipment}:${canvas.width}x${canvas.height}`
   const cached = equipmentAvatarCache.get(cacheKey)
   if (cached) return drawCachedEquipmentAvatar(cached, canvas)
 
   for (const sheet of EQUIPMENT_SHEETS) {
-    const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(equipment, layer, sheet)).filter(
+    const layerTextures = EQUIPMENT_LAYERS.map(layer => getEquipmentLayerTexture(visualEquipment, layer, sheet)).filter(
       (texture): texture is Texture => Boolean(texture)
     )
     if (!layerTextures.length) continue

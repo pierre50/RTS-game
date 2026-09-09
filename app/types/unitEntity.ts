@@ -160,7 +160,11 @@ export interface EnergyEntity extends RuntimeEntityBase {
   lastCombatRecoveryMoveAt?: number | null
   actionLocked?: boolean
   stop?: () => void
-  sendTo?: (target: RuntimeEntity | RuntimeCell, action?: string, options?: { forceRepath?: boolean }) => void
+  sendTo?: (
+    target: RuntimeEntity | RuntimeCell,
+    action?: string,
+    options?: { forceRepath?: boolean; allowPassageStop?: boolean }
+  ) => void
   sendToEvt?: (dest: RuntimeEntity | RuntimeCell | null, action?: string | null, options?: UnitSendToOptions) => void
   startInterval?: (callback: () => void, time: number, immediate?: boolean, name?: string) => void
   stopInterval?: () => void
@@ -240,13 +244,13 @@ export interface UnitEntity extends EnergyEntity {
   heroPowerChargeRatio?: number
   heroPowerChargeDestination?: Point | null
   heroPowerChargeTarget?: RuntimeEntity | null
-  heroPowerChargeTool?: 'bow' | 'lasso' | 'sword'
+  heroPowerChargeTool?: 'bow' | 'catchingPole' | 'sword'
   heroPowerReleaseQueued?: boolean
   heroPowerReleasePower?: number
   heroPowerChargeFacingDegree?: number | null
   heroPowerChargeVisualLocked?: boolean
   heroPowerChargeLastEnergyAt?: number
-  heroLasso?: { clearLasso: (options?: { releaseHorse?: boolean }) => void } | null
+  heroCatchingPoleThrow?: { clearCatchingPoleThrow: (options?: { releaseHorse?: boolean }) => void } | null
   heroDefenseStart?: number | null
   heroDefenseLastEnergyAt?: number
   heroDefenseActive?: boolean

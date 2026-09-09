@@ -33,7 +33,7 @@ function loadHeroInventoryAction() {
           item.startsWith('arrow_')
             ? 'gear'
             : null,
-        getWeaponSlot: item => (['sword_ceramic', 'bow', 'lasso'].includes(item) ? 'weapon' : null),
+        getWeaponSlot: item => (['sword_ceramic', 'bow', 'catchingPole'].includes(item) ? 'weapon' : null),
       }
     }
     if (request === '../../lib/lpc/equipment') {
@@ -114,7 +114,7 @@ test('hero inventory dev command fills the hero bag with assignable equipment on
     'shoulder_legion_ceramic',
     'leg_armor_ceramic',
     'round_shield_ceramic_slash',
-    'lasso',
+    'catchingPole',
     'healing_poultice',
     'poison_vial',
     'fiber_bandage',

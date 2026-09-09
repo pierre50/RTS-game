@@ -1,57 +1,27 @@
+import { CELL_HEIGHT, CELL_WIDTH, FAMILY_TYPES } from '../../constants'
 import {
-  throttle,
-  throttleByKey,
   canvasDrawDiamond,
   canvasDrawRectangle,
   canvasDrawStrokeRectangle,
   playerCanSeeInstance,
+  throttle,
+  throttleByKey,
 } from '../../lib'
 import { renderUnitHeadAvatar } from '../../lib/avatar'
-import { getActiveMapSpace, getEntitySpaceId } from '../../lib/mapSpaces'
-import { getLocalMapBounds } from '../../lib/localMapLayout'
-import { CELL_WIDTH, CELL_HEIGHT, FAMILY_TYPES } from '../../constants'
+import { getEntitySpaceId } from '../../lib/mapSpaces'
 import type { MinimapHostLike } from '../../types/context'
-import type { PlayerLike } from '../../types/player'
 import type { ResourceEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
-import type { RuntimeCell, RuntimeMapSpace } from '../../types/map'
-import type { LocalMapLayout } from '../../lib/localMapLayout'
-
-type MinimapBounds = {
-  maxI: number
-  maxJ: number
-  minI: number
-  minJ: number
-}
-
-type MinimapTransform = {
-  canvasHeight: number
-  canvasWidth: number
-  factor: number
-  inputFactor: number
-  layout: 'iso-diamond' | 'world-rectangle'
-  worldBounds?: ReturnType<typeof getLocalMapBounds>
-  layoutKey: string
-  offsetX: number
-  offsetY: number
-  originX: number
-  originY: number
-  size: number
-  translate: number
-}
+import type { RuntimeCell } from '../../types/map'
+import type { PlayerLike } from '../../types/player'
+import { getMinimapElement, MINIMAP_RESOLUTION_SCALE, MinimapGeometry, type MinimapTransform } from './MinimapGeometry'
 
 // Canvases default to the HTML intrinsic 300x150 raster; the world->pixel math below
 // (miniMapAlpha, the /234 reference in getMinimapFactor) is tuned to fill that box
 // edge-to-edge. MINIMAP_RESOLUTION_SCALE renders at a multiple of that same reference
 // size so the diamond still fills the canvas exactly, just at a crisper resolution
 // once CSS stretches it to the (now larger) on-screen minimap box.
-const MINIMAP_BASE_WIDTH = 300
-const MINIMAP_BASE_HEIGHT = 150
-const MINIMAP_SQUARE_BASE_SIZE = 300
-const MINIMAP_RESOLUTION_SCALE = 4
-const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X = 12
-const MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y = 14
+
 const MINIMAP_UNIT_AVATAR_SOURCE_SIZE = 32
-const MINIMAP_UNIT_AVATAR_DISPLAY_SIZE = 6 * MINIMAP_RESOLUTION_SCALE
 
 function terrainColor(value: string | number | undefined): string {
   return typeof value === 'string' ? value : ''
@@ -65,33 +35,8 @@ function isMinimapUnitMarker(instance: RuntimeEntity | null | undefined): boolea
   return Boolean(instance && instance.family !== FAMILY_TYPES.animal)
 }
 
-function getMinimapElement(menu: MinimapHostLike): HTMLDivElement {
-  const element = menu.minimapMap
-  if (!element) throw new Error('Minimap host is missing a minimap element')
-  return element
-}
-
-function getMinimapDrawPosition(instance: RuntimeEntity): { x: number; y: number } | null {
-  const pixiInstance = instance as RuntimeEntity & {
-    destroyed?: boolean
-    position?: { x?: number; y?: number } | null
-  }
-  if (instance.isDead || instance.isDestroyed || pixiInstance.destroyed || !pixiInstance.position) return null
-
-  let x: number | undefined
-  let y: number | undefined
-  try {
-    x = pixiInstance.position.x
-    y = pixiInstance.position.y
-  } catch {
-    return null
-  }
-
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
-  return { x: x as number, y: y as number }
-}
-
 export class MinimapManager {
+  private readonly geometry: MinimapGeometry
   menu: MinimapHostLike
   miniMapAlpha: number
   updatePlayerMiniMap: (owner: PlayerLike) => void
@@ -105,6 +50,7 @@ export class MinimapManager {
   constructor(menu: MinimapHostLike) {
     this.menu = menu
     this.miniMapAlpha = 1.284 * MINIMAP_RESOLUTION_SCALE
+    this.geometry = new MinimapGeometry(menu, () => this.miniMapAlpha)
     this.active = false
     this.initialized = false
     this.layoutKey = null
@@ -163,150 +109,14 @@ export class MinimapManager {
     this.updateCameraMiniMapEvt()
   }
 
-  private getMinimapSpace(): RuntimeMapSpace {
-    return getActiveMapSpace(this.menu.context.map)!
-  }
-
-  private getMinimapLayoutKey(): string {
-    return this.getMinimapTransform().layoutKey
-  }
-
-  private getMinimapGrid(): RuntimeCell[][] {
-    return this.getMinimapSpace().grid
-  }
-
-  private getMinimapSize(): number {
-    return this.getMinimapSpace().size
-  }
-
-  private shouldUseSquareGridLayout(): boolean {
-    return Boolean(this.getMinimapLocalLayout())
-  }
-
-  private getMinimapLocalLayout(): LocalMapLayout | undefined {
-    const space = this.getMinimapSpace()
-    return space.kind === 'interior'
-      ? space.localGridLayout
-      : (space.localGridLayout ?? this.menu.context.map.localGridLayout)
-  }
-
-  private getLocalVisualCropPx(transform: MinimapTransform): { x: number; y: number } {
-    if (transform.layout !== 'world-rectangle') return { x: 0, y: 0 }
-    const styles = typeof getComputedStyle === 'function' ? getComputedStyle(getMinimapElement(this.menu)) : null
-    const cropX = Number.parseFloat(styles?.getPropertyValue('--minimap-local-edge-crop-x') ?? '')
-    const cropY = Number.parseFloat(styles?.getPropertyValue('--minimap-local-edge-crop-y') ?? '')
-    if (Number.isFinite(cropX) || Number.isFinite(cropY)) {
-      return {
-        x: Number.isFinite(cropX) ? Math.max(0, cropX) : MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X,
-        y: Number.isFinite(cropY) ? Math.max(0, cropY) : MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y,
-      }
-    }
-    const value =
-      typeof getComputedStyle === 'function'
-        ? getComputedStyle(getMinimapElement(this.menu)).getPropertyValue('--minimap-local-edge-crop')
-        : ''
-    const crop = Number.parseFloat(value)
-    return Number.isFinite(crop)
-      ? { x: Math.max(0, crop), y: Math.max(0, crop) }
-      : { x: MINIMAP_LOCAL_EDGE_CROP_FALLBACK_X, y: MINIMAP_LOCAL_EDGE_CROP_FALLBACK_Y }
-  }
-
   private shouldDrawTerrainCell(cell: RuntimeCell): boolean {
-    const space = this.getMinimapSpace()
+    const space = this.geometry.getMinimapSpace()
     if (space.kind !== 'interior') return true
     return !cell.terrainHidden && cell.category !== 'Water'
   }
 
-  private getMinimapBounds(): MinimapBounds {
-    const space = this.getMinimapSpace()
-    return { minI: 0, minJ: 0, maxI: space.size, maxJ: space.size }
-  }
-
-  private getMinimapTransform(): MinimapTransform {
-    const space = this.getMinimapSpace()
-    const bounds = this.getMinimapBounds()
-    const size = Math.max(1, bounds.maxI - bounds.minI, bounds.maxJ - bounds.minJ)
-    const layout = this.shouldUseSquareGridLayout() ? 'world-rectangle' : 'iso-diamond'
-    const canvasWidth =
-      layout === 'world-rectangle'
-        ? MINIMAP_SQUARE_BASE_SIZE * MINIMAP_RESOLUTION_SCALE
-        : MINIMAP_BASE_WIDTH * MINIMAP_RESOLUTION_SCALE
-    const canvasHeight =
-      layout === 'world-rectangle'
-        ? MINIMAP_SQUARE_BASE_SIZE * MINIMAP_RESOLUTION_SCALE
-        : MINIMAP_BASE_HEIGHT * MINIMAP_RESOLUTION_SCALE
-    const inputFactor = ((CELL_WIDTH / 2 + (size * CELL_WIDTH) / 2) / 234) * 2
-    const factor = inputFactor / this.miniMapAlpha
-    const translate = (CELL_WIDTH / 2 + (size * CELL_WIDTH) / 2) / 2 / factor
-    const offsetX = ((bounds.minI - bounds.minJ) * CELL_WIDTH) / 2
-    const offsetY = ((bounds.minI + bounds.minJ) * CELL_HEIGHT) / 2
-    const origin = space.origin ?? { x: 0, y: 0 }
-    const padding = 6 * MINIMAP_RESOLUTION_SCALE
-
-    const localLayout = this.getMinimapLocalLayout()
-    if (localLayout) {
-      const worldBounds = getLocalMapBounds(localLayout)
-      const worldWidth = worldBounds.right - worldBounds.left
-      const worldHeight = worldBounds.bottom - worldBounds.top
-      const worldFactor = Math.max(worldWidth, worldHeight, 1) / (canvasWidth - padding * 2)
-      const insetX = (canvasWidth - worldWidth / worldFactor) / 2
-      const insetY = (canvasHeight - worldHeight / worldFactor) / 2
-      return {
-        canvasHeight,
-        canvasWidth,
-        factor: worldFactor,
-        inputFactor: worldFactor,
-        layout: 'world-rectangle',
-        layoutKey: `${space.id}:world-rectangle:${localLayout.columns}:${localLayout.rows}:${origin.x}:${origin.y}`,
-        offsetX: worldBounds.left - insetX * worldFactor,
-        offsetY: worldBounds.top - insetY * worldFactor,
-        originX: origin.x,
-        originY: origin.y,
-        size,
-        translate: 0,
-        worldBounds,
-      }
-    }
-
-    return {
-      canvasHeight,
-      canvasWidth,
-      factor,
-      inputFactor,
-      layout,
-      layoutKey: `${space.id}:${layout}:${size}:${bounds.minI}:${bounds.minJ}:${bounds.maxI}:${bounds.maxJ}`,
-      offsetX,
-      offsetY,
-      originX: origin.x,
-      originY: origin.y,
-      size,
-      translate,
-    }
-  }
-
-  private toMinimapX(x: number, transform: MinimapTransform): number {
-    return (x - transform.offsetX) / transform.factor + transform.translate
-  }
-
-  private toMinimapY(y: number, transform: MinimapTransform): number {
-    return (y - transform.offsetY) / transform.factor
-  }
-
-  private cellToMinimapPoint(cell: RuntimeCell, transform: MinimapTransform): { x: number; y: number } {
-    return { x: this.toMinimapX(cell.x, transform), y: this.toMinimapY(cell.y, transform) }
-  }
-
-  private instanceToMinimapPoint(
-    instance: RuntimeEntity,
-    transform: MinimapTransform
-  ): { x: number; y: number } | null {
-    const position = getMinimapDrawPosition(instance)
-    if (!position) return null
-    return { x: this.toMinimapX(position.x, transform), y: this.toMinimapY(position.y, transform) }
-  }
-
   private drawTerrainCell(context: CanvasRenderingContext2D, cell: RuntimeCell, transform: MinimapTransform): void {
-    const point = this.cellToMinimapPoint(cell, transform)
+    const point = this.geometry.cellToMinimapPoint(cell, transform)
     canvasDrawDiamond(
       context,
       point.x,
@@ -319,22 +129,6 @@ export class MinimapManager {
 
   private clearCanvas(context: CanvasRenderingContext2D, canvas: HTMLCanvasElement, transform: MinimapTransform): void {
     context.clearRect(-transform.translate, 0, canvas.width, canvas.height)
-  }
-
-  private getMarkerSquareSize(transform: MinimapTransform): number {
-    const baseSize = 2 * MINIMAP_RESOLUTION_SCALE
-    if (this.getMinimapSpace().kind !== 'interior') return baseSize
-    const visibleCellHeight = CELL_HEIGHT / transform.factor
-    return Math.max(baseSize, Math.min(visibleCellHeight * 0.45, 10 * MINIMAP_RESOLUTION_SCALE))
-  }
-
-  private getBuildingMarkerSize(size: number, squareSize: number): number {
-    if (this.getMinimapSpace().kind !== 'interior') return squareSize + size * MINIMAP_RESOLUTION_SCALE
-    return squareSize + size * squareSize * 0.35
-  }
-
-  private getUnitAvatarSize(squareSize: number): number {
-    return Math.max(squareSize, MINIMAP_UNIT_AVATAR_DISPLAY_SIZE)
   }
 
   private getUnitAvatar(unit: RuntimeEntity): HTMLCanvasElement | null {
@@ -365,19 +159,19 @@ export class MinimapManager {
       return
     }
 
-    const size = this.getUnitAvatarSize(squareSize)
+    const size = this.geometry.getUnitAvatarSize(squareSize)
     context.imageSmoothingEnabled = false
     context.drawImage(avatar, x - size / 2, y - size / 2, size, size)
   }
 
   private withMinimapViewSpace<T>(player: PlayerLike | null | undefined, callback: () => T): T {
-    const space = this.getMinimapSpace()
+    const space = this.geometry.getMinimapSpace()
     return player?.views?.withSpace?.(space.id, callback) ?? callback()
   }
 
   private isInMinimapSpace(instance: RuntimeEntity | null | undefined): instance is RuntimeEntity {
     if (!instance) return false
-    return getEntitySpaceId(instance) === this.getMinimapSpace().id
+    return getEntitySpaceId(instance) === this.geometry.getMinimapSpace().id
   }
 
   private clearPlayerLayers(): void {
@@ -387,12 +181,11 @@ export class MinimapManager {
   }
 
   getMinimapFactor(): number {
-    return this.getMinimapTransform().inputFactor
+    return this.geometry.getMinimapFactor()
   }
 
   getMinimapParams(): { factor: number; translate: number } {
-    const transform = this.getMinimapTransform()
-    return { factor: transform.factor, translate: transform.translate }
+    return this.geometry.getMinimapParams()
   }
 
   getMinimapWorldPoint(
@@ -403,39 +196,17 @@ export class MinimapManager {
     x: number
     y: number
   } {
-    const transform = this.getMinimapTransform()
-    if (transform.layout === 'world-rectangle') {
-      const bounds = transform.worldBounds!
-      const crop = this.getLocalVisualCropPx(transform)
-      const x =
-        ((clientX - rect.left + crop.x) / Math.max(1, rect.width + crop.x * 2)) *
-          transform.canvasWidth *
-          transform.factor +
-        transform.offsetX
-      const y =
-        ((clientY - rect.top + crop.y) / Math.max(1, rect.height + crop.y * 2)) *
-          transform.canvasHeight *
-          transform.factor +
-        transform.offsetY
-      return {
-        x: Math.min(Math.max(x, bounds.left), bounds.right) + transform.originX,
-        y: Math.min(Math.max(y, bounds.top), bounds.bottom) + transform.originY,
-      }
-    }
-    return {
-      x: (clientX - rect.left - rect.width / 2) * transform.inputFactor + transform.offsetX + transform.originX,
-      y: (clientY - rect.top - 3) * transform.inputFactor + transform.offsetY + transform.originY,
-    }
+    return this.geometry.getMinimapWorldPoint(clientX, clientY, rect)
   }
 
   initMiniMap(): void {
     if (!this.canDraw()) return
-    const nextLayoutKey = this.getMinimapLayoutKey()
+    const nextLayoutKey = this.geometry.getMinimapLayoutKey()
     if (this.initialized && this.layoutKey === nextLayoutKey) return
     if (this.initialized && this.layoutKey !== nextLayoutKey) this.clearPlayerLayers()
 
     const { menu } = this
-    const transform = this.getMinimapTransform()
+    const transform = this.geometry.getMinimapTransform()
     const size = transform.size
     const { factor, translate } = transform
 
@@ -471,11 +242,11 @@ export class MinimapManager {
     if (!this.canDraw()) return
     this.initMiniMap()
     const { menu } = this
-    const grid = this.getMinimapGrid()
-    const size = this.getMinimapSize()
+    const grid = this.geometry.getMinimapGrid()
+    const size = this.geometry.getMinimapSize()
     const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
-    const transform = this.getMinimapTransform()
+    const transform = this.geometry.getMinimapTransform()
 
     this.clearCanvas(context, canvas, transform)
     for (let i = 0; i <= size; i++) {
@@ -493,11 +264,11 @@ export class MinimapManager {
     this.initMiniMap()
     const { menu } = this
     const { player } = menu.context
-    const grid = this.getMinimapGrid()
-    const size = this.getMinimapSize()
+    const grid = this.geometry.getMinimapGrid()
+    const size = this.geometry.getMinimapSize()
     const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
-    const transform = this.getMinimapTransform()
+    const transform = this.geometry.getMinimapTransform()
 
     this.clearCanvas(context, canvas, transform)
     if (!player?.views) return
@@ -519,8 +290,8 @@ export class MinimapManager {
     const { menu } = this
     const canvas = menu.terrainMinimap!
     const context = canvas.getContext('2d')!
-    const transform = this.getMinimapTransform()
-    const cell = this.getMinimapGrid()[i]?.[j]
+    const transform = this.geometry.getMinimapTransform()
+    const cell = this.geometry.getMinimapGrid()[i]?.[j]
     if (!cell) return
     if (!this.shouldDrawTerrainCell(cell)) return
 
@@ -539,9 +310,9 @@ export class MinimapManager {
     if (!map.showResources) return
 
     const context = menu.resourcesMinimap!.getContext('2d')!
-    const transform = this.getMinimapTransform()
-    const squareSize = this.getMarkerSquareSize(transform)
-    const position = this.instanceToMinimapPoint(resource, transform)
+    const transform = this.geometry.getMinimapTransform()
+    const squareSize = this.geometry.getMarkerSquareSize(transform)
+    const position = this.geometry.instanceToMinimapPoint(resource, transform)
     if (!position) return
 
     canvasDrawRectangle(
@@ -561,8 +332,8 @@ export class MinimapManager {
     const { map, player } = menu.context
     const canvas = menu.resourcesMinimap!
     const context = canvas.getContext('2d')!
-    const transform = this.getMinimapTransform()
-    const squareSize = this.getMarkerSquareSize(transform)
+    const transform = this.geometry.getMinimapTransform()
+    const squareSize = this.geometry.getMarkerSquareSize(transform)
 
     this.clearCanvas(context, canvas, transform)
     if (!map.showResources) return
@@ -574,7 +345,7 @@ export class MinimapManager {
         (this.withMinimapViewSpace(player, () => Boolean(player?.views?.isViewed(resource.i, resource.j))) ||
           map.revealEverything)
       ) {
-        const position = this.instanceToMinimapPoint(resource, transform)
+        const position = this.geometry.instanceToMinimapPoint(resource, transform)
         if (!position) return
 
         canvasDrawRectangle(
@@ -596,15 +367,15 @@ export class MinimapManager {
     const { controls } = menu.context
     const canvas = menu.cameraMinimap!
     const context = canvas.getContext('2d')!
-    const transform = this.getMinimapTransform()
+    const transform = this.geometry.getMinimapTransform()
     const { factor } = transform
     const { visibleLeft, visibleTop, visibleWidth, visibleHeight } = controls.getViewportMetrics()
 
     this.clearCanvas(context, canvas, transform)
     canvasDrawStrokeRectangle(
       context,
-      this.toMinimapX(visibleLeft - transform.originX, transform),
-      this.toMinimapY(visibleTop - transform.originY, transform),
+      this.geometry.toMinimapX(visibleLeft - transform.originX, transform),
+      this.geometry.toMinimapY(visibleTop - transform.originY, transform),
       visibleWidth / factor,
       visibleHeight / factor,
       'white'
@@ -618,9 +389,9 @@ export class MinimapManager {
 
     const { menu } = this
     const { map, player } = menu.context
-    const transform = this.getMinimapTransform()
+    const transform = this.geometry.getMinimapTransform()
     const { translate } = transform
-    const squareSize = this.getMarkerSquareSize(transform)
+    const squareSize = this.geometry.getMarkerSquareSize(transform)
     const color = owner.colorHex
     const id = `minimap-${owner.label}`
     const shouldDrawOwner = map.revealEverything || owner.label === player?.label
@@ -653,10 +424,10 @@ export class MinimapManager {
     owner.buildings.forEach(building => {
       if (!this.isInMinimapSpace(building)) return
       if (!isVisible(building)) return
-      const position = this.instanceToMinimapPoint(building, transform)
+      const position = this.geometry.instanceToMinimapPoint(building, transform)
       if (!position) return
       const { size = 0, selected } = building
-      const finalSize = this.getBuildingMarkerSize(size, squareSize)
+      const finalSize = this.geometry.getBuildingMarkerSize(size, squareSize)
       canvasDrawRectangle(
         context,
         position.x - finalSize / 2,
@@ -672,7 +443,7 @@ export class MinimapManager {
       if (!isMinimapUnitMarker(unit)) return
       if (!this.isInMinimapSpace(unit)) return
       if (!isVisible(unit)) return
-      const position = this.instanceToMinimapPoint(unit, transform)
+      const position = this.geometry.instanceToMinimapPoint(unit, transform)
       if (!position) return
       const { selected } = unit
       this.drawUnitAvatarMarker(context, unit, position.x, position.y, squareSize, selected ? 'white' : color)

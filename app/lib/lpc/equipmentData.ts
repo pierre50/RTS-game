@@ -33,6 +33,7 @@ export type DynamicEquipmentKey =
   | 'scythe_ceramic'
   | 'scythe_bronze'
   | 'scythe_iron'
+  | 'longstick'
   | 'bow'
   | 'bow_great'
   | 'bow_recurve'
@@ -117,6 +118,7 @@ export type EquipmentOptions = Pick<
   | 'hideForActions'
   | 'hideOnOrAfterFrame'
   | 'actionFrameSequence'
+  | 'minAge'
   | 'minLevel'
   | 'maxLevel'
   | 'mountedCut'
@@ -389,6 +391,7 @@ export const MOUNTED_UNCUT_EQUIPMENT_KEYS = new Set<DynamicEquipmentKey>([
   'scythe_ceramic',
   'scythe_bronze',
   'scythe_iron',
+  'longstick',
   'bow',
   'bow_great',
   'bow_recurve',
@@ -489,6 +492,7 @@ export const DYNAMIC_EQUIPMENT_KEYS = [
   'scythe_ceramic',
   'scythe_bronze',
   'scythe_iron',
+  'longstick',
   'bow',
   'bow_great',
   'bow_recurve',
@@ -694,6 +698,7 @@ export const VILLAGER_WORK_EQUIPMENT: readonly {
   workType: string
   equipment: DynamicEquipmentKey
   ageEquipment?: AgeEquipmentOverrides
+  minAge?: number
   options?: EquipmentOptions
 }[] = [
   {
@@ -725,6 +730,11 @@ export const VILLAGER_WORK_EQUIPMENT: readonly {
     workType: WORK_TYPES.farmer,
     equipment: 'scythe_ceramic',
     ageEquipment: metalAgeEquipment('scythe_copper', 'scythe_bronze', 'scythe_iron'),
+    minAge: 1,
+  },
+  {
+    workType: WORK_TYPES.horseCapture,
+    equipment: 'longstick',
   },
   {
     workType: WORK_TYPES.hunter,

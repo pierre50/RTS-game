@@ -85,6 +85,34 @@ export function handleUnitIsAttacked(unit: UnitStateHost, instance: RuntimeEntit
 export function stopUnit(unit: UnitStateHost): void {
   if (unit.isDead || unit.isDestroyed) return
   const heroControlled = isHeroControlled(unit)
+  if (!heroControlled && unit.exploringForAutonomy && !unit.action) {
+    unit.affectNewDest?.()
+    return
+  }
+  repairStoppedUnitCell(unit, heroControlled)
+  if (!heroControlled && resumeVillagerAutonomy?.(unit)) return
+  if (
+    !heroControlled &&
+    !unit.action &&
+    !unitHasActivePassageStopIntent(unit, unit.currentCell) &&
+    routeUnitAwayFromPassageCell(unit, unit.currentCell)
+  ) {
+    return
+  }
+
+  resetStoppedUnitState(unit)
+  placeStoppedUnit(unit, heroControlled)
+  unit.path = []
+  unit.stopInterval()
+  if (unit.shelterState?.status === 'outside') {
+    keepSleepingOutsideVisual(unit)
+    unit.actionLocked = true
+    return
+  }
+  unit.setTextures(SHEET_TYPES.standing)
+}
+
+function repairStoppedUnitCell(unit: UnitStateHost, heroControlled: boolean): void {
   const currentCellOccupant = unit.currentCell.has
   const currentCellHasBlockingOccupant = Boolean(
     !heroControlled &&
@@ -101,16 +129,9 @@ export function stopUnit(unit: UnitStateHost): void {
     unit.currentCell.place(unit)
     unit.currentCell.solid = true
   }
-  if (!heroControlled && resumeVillagerAutonomy?.(unit)) return
-  if (
-    !heroControlled &&
-    !unit.action &&
-    !unitHasActivePassageStopIntent(unit, unit.currentCell) &&
-    routeUnitAwayFromPassageCell(unit, unit.currentCell)
-  ) {
-    return
-  }
+}
 
+function resetStoppedUnitState(unit: UnitStateHost): void {
   clearCombatAttackRecovery(unit)
   unit.handleChangeDest()
   unit.actionLocked = false
@@ -126,6 +147,9 @@ export function stopUnit(unit: UnitStateHost): void {
   for (const sprite of unit.appearanceLayerSprites.values()) {
     sprite.loop = unit.loop ?? true
   }
+}
+
+function placeStoppedUnit(unit: UnitStateHost, heroControlled: boolean): void {
   if (heroControlled) {
     if (unit.currentCell.has === unit) {
       unit.currentCell.has = null
@@ -139,12 +163,4 @@ export function stopUnit(unit: UnitStateHost): void {
     unit.currentCell.place(unit)
     unit.currentCell.solid = true
   }
-  unit.path = []
-  unit.stopInterval()
-  if (unit.shelterState?.status === 'outside') {
-    keepSleepingOutsideVisual(unit)
-    unit.actionLocked = true
-    return
-  }
-  unit.setTextures(SHEET_TYPES.standing)
 }

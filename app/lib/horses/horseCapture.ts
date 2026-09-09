@@ -2,13 +2,23 @@ import { BUILDING_TYPES, STEP_TIME } from '../constants'
 import { canStoreStableHorse, storeStableHorse } from './stableHorses'
 import { instancesDistance } from '../maths'
 import { instanceContactInstance } from '../grid/movement'
+import { getBuildingInteriorEntryCell } from '../buildings/interiors'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { GameContextLike, SchedulerTaskId } from '../../types/context'
+import type { RuntimeCell } from '../../types/map'
 
 export const HORSE_CAPTURE_STABLE_MAX_DISTANCE = 7
 export const HORSE_CAPTURE_STABLE_TIMEOUT_MS = 12000
 
-type LassoedHorseForCapture = AnimalEntity
+type CaughtHorseForCapture = AnimalEntity
+
+function getStableHorseStorageCell(gameContext: GameContextLike, stable: BuildingEntity): RuntimeCell | null {
+  return getBuildingInteriorEntryCell(stable, gameContext.map?.grid)
+}
+
+function isHorseOnStorageCell(horse: CaughtHorseForCapture, cell: RuntimeCell): boolean {
+  return horse.i === cell.i && horse.j === cell.j
+}
 
 export function getNearestAvailableStableForUnit(
   unit: UnitEntity,
@@ -51,7 +61,7 @@ function routeCapturedHorseToStable({
   onFailure,
 }: {
   gameContext: GameContextLike
-  horse: LassoedHorseForCapture
+  horse: CaughtHorseForCapture
   stable: BuildingEntity
   timeoutMs?: number
   forceRepath?: boolean
@@ -86,7 +96,11 @@ function routeCapturedHorseToStable({
       onFailure?.()
       return
     }
-    if (instanceContactInstance(horse, stable)) {
+    const storageCell = getStableHorseStorageCell(gameContext, stable)
+    const isAtStoragePoint = storageCell
+      ? isHorseOnStorageCell(horse, storageCell)
+      : instanceContactInstance(horse, stable)
+    if (isAtStoragePoint) {
       if (storeStableHorse(stable, horse)) {
         horse.clear?.()
         clear()
@@ -102,7 +116,7 @@ function routeCapturedHorseToStable({
       onFailure?.()
       return
     }
-    horse.sendTo?.(stable, undefined, { forceRepath })
+    horse.sendTo?.(storageCell ?? stable, undefined, { allowPassageStop: Boolean(storageCell), forceRepath })
   }
 
   taskId = scheduler.add(tick, STEP_TIME, taskName)
@@ -113,17 +127,13 @@ function routeCapturedHorseToStable({
 type OwnerStableRoutingContext = {
   gameContext: GameContextLike
   owner: UnitEntity
-  horse: LassoedHorseForCapture
+  horse: CaughtHorseForCapture
   timeoutMs?: number
   ownerContactTimeoutMs?: number | null
   forceRepath?: boolean
   maxDistance?: number | null
   taskName?: string
-  canStartRouting?: (
-    owner: UnitEntity,
-    horse: LassoedHorseForCapture,
-    stable: BuildingEntity
-  ) => boolean
+  canStartRouting?: (owner: UnitEntity, horse: CaughtHorseForCapture, stable: BuildingEntity) => boolean
   isRouteValid?: () => boolean
   onRouteStart?: (stable: BuildingEntity) => void
   onHorseRouteStart?: (stable: BuildingEntity) => void

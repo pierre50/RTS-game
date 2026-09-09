@@ -1,3 +1,4 @@
+import type { ContactProfileOverride } from '../lib/contact/contactTypes'
 import type { AnimatedSprite, Container, DestroyOptions, Sprite } from 'pixi.js'
 import type { GameContextLike } from './context'
 import type { GridPosition, Point } from './grid'
@@ -31,6 +32,7 @@ export interface EntityInterfaceLike {
 }
 
 export interface RuntimeEntityBase extends GridPosition, Point {
+  contact?: ContactProfileOverride
   label: string
   spaceId?: string
   family: string
@@ -92,6 +94,7 @@ export interface RuntimeEntityBase extends GridPosition, Point {
   isAttacked?: (attacker: RuntimeEntity, hitDirection?: Point) => void
   detect?: (instance: RuntimeEntity) => void
   stopAttackInterval?: () => void
+  interval?: number | null
   stopInterval?: () => void
   stopTimeout?: () => void
   destroy?: (options?: DestroyOptions) => void

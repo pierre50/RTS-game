@@ -49,7 +49,10 @@ function loadTsModule(relativePath, { baseDir = path.join(__dirname, '..', '..')
   const source = fs.readFileSync(filename, 'utf8')
   const { code } = babel.transformSync(source, {
     filename,
-    presets: [['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }], '@babel/preset-typescript'],
+    presets: [
+      ['@babel/preset-env', { targets: { node: 'current' }, modules: 'commonjs' }],
+      ['@babel/preset-typescript', { allowDeclareFields: true }],
+    ],
   })
   const module = { exports: {} }
   moduleCache.set(filename, module)

@@ -1,6 +1,12 @@
 import { BUILDING_TYPES } from '../constants'
 import { HORSE_TAMING_STATUS, tameHorse, type HorseTamingStatus } from './horseTaming'
-import type { AnimalEntity, BuildingEntity } from '../../types/entities'
+import {
+  getStableInteriorHorseIndex,
+  getStableInteriorHorseLabel,
+  isStableInteriorSpace,
+} from './stableInteriorHorseIdentity'
+import type { RuntimeMap } from '../../types/map'
+import type { AnimalEntity, BuildingEntity, RuntimeEntity } from '../../types/entities'
 
 export const STABLE_HORSE_CAPACITY = 5
 
@@ -63,7 +69,7 @@ export function consumeStableHorse(building: BuildingEntity): StableHorse | null
   return horse
 }
 
-export function consumeStableHorseAt(building: BuildingEntity, index: number): StableHorse | null {
+function consumeStableHorseAt(building: BuildingEntity, index: number): StableHorse | null {
   if (!isStable(building)) return null
   const horses = getStableHorses(building)
   if (!Number.isInteger(index) || index < 0 || index >= horses.length) return null
@@ -97,4 +103,32 @@ export function returnStableHorse(building: BuildingEntity, horse: StableHorse |
   building.stableHorses = getStableHorses(building).slice(0, STABLE_HORSE_CAPACITY)
   building.horseAmount = building.stableHorses.length
   syncStableInteriorHorses(building)
+}
+
+let detachedHorseId = 0
+
+// Detach the physical horse before synchronizing the remaining stock. It may
+// still be inside (mounted, dying, or about to cross the exit).
+export function detachStableInteriorHorse(horse: RuntimeEntity, map: RuntimeMap): StableHorse | null {
+  const space = map.spaces?.get(horse.spaceId ?? '')
+  const index = getStableInteriorHorseIndex(horse)
+  if (horse.type !== 'Horse' || !isStableInteriorSpace(space) || index === null) return null
+  const horses = getStableHorses(space.building)
+  if (index >= horses.length) return null
+  const [record] = horses.splice(index, 1)
+  horse.label = `${horse.label}:detached:${++detachedHorseId}`
+  reindexRemainingHorses(horse, map, index, space.id)
+  space.building.horseAmount = horses.length
+  syncStableInteriorHorses(space.building)
+  return record ?? null
+}
+
+function reindexRemainingHorses(horse: RuntimeEntity, map: RuntimeMap, index: number, spaceId: string): void {
+  for (const other of map.gaia?.animals ?? []) {
+    if (other === horse || other.isDestroyed || other.type !== 'Horse' || other.spaceId !== horse.spaceId) continue
+    const otherIndex = getStableInteriorHorseIndex(other)
+    if (otherIndex !== null && otherIndex > index) {
+      other.label = getStableInteriorHorseLabel(horse.spaceId ?? spaceId, otherIndex - 1)
+    }
+  }
 }
