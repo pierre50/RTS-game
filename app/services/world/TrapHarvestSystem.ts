@@ -74,7 +74,6 @@ function removeTrapBuilding(building: RuntimeTrapBuilding, cell: RuntimeCell): v
     cell.updateVisible()
   }
   canUpdateTrapMinimap(building, menu, player)
-  building.clear?.()
 }
 
 function canUpdateTrapMinimap(
@@ -113,15 +112,20 @@ export function recoverTrapBuilding(hero: GameContextLike['controls']['heroUnit'
   if (!hero || !isTrap(building)) return false
   const cell = getTrapCell(building)
   if (!isTrapCell(building, cell)) return false
-  playAudibleSoundCue(building, SOUND_CUES.building.trapRecover, { profile: 'surface' })
-  addHeroInventoryItem(hero, 'trap')
+  // Consume the world entity before any effects can re-enter recovery. Only its
+  // visual cleanup is delayed, so saving or interrupting the fade cannot duplicate it.
+  building.isDead = true
+  if (!addHeroInventoryItem(hero, 'trap')) {
+    building.isDead = false
+    return false
+  }
   const containedAnimalType = building.containedAnimalType
   building.containedAnimalType = null
+  removeTrapBuilding(building, cell)
+  spawnContainedAnimal(building, cell, containedAnimalType)
+  playAudibleSoundCue(building, SOUND_CUES.building.trapRecover, { profile: 'surface' })
   clearEntityOverheadIndicator(building, { fade: false })
-  fadeOut(building, FADE_DURATION_MS, () => {
-    removeTrapBuilding(building, cell)
-    spawnContainedAnimal(building, cell, containedAnimalType)
-  })
+  fadeOut(building, FADE_DURATION_MS, () => building.clear?.())
   return true
 }
 

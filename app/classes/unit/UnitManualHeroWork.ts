@@ -4,6 +4,7 @@ import { logHeroSlashFrame, playReverseSlashRecovery } from '../../lib/entities/
 import { hasConfiguredActionFrameSequence } from '../../lib/animations/actionFrameSequences'
 import type { RuntimeEntity, UnitEntity } from '../../types/entities'
 import type { RuntimeCell } from '../../types/map'
+import { canHeroStrikeLockedMine } from '../../lib/resources/ironMining'
 
 type ManualHeroWorkContext = {
   action: string | null
@@ -49,7 +50,14 @@ function resumeManualHeroWorkAction(
     return
   }
   if (unit.action !== actionAtRelease || unit.dest !== destAtRelease) return
-  if (!unit.getActionCondition?.(destAtRelease, actionAtRelease)) {
+  if (
+    !unit.getActionCondition?.(destAtRelease, actionAtRelease) &&
+    !canHeroStrikeLockedMine(
+      unit,
+      destAtRelease && 'type' in destAtRelease ? (destAtRelease as RuntimeEntity) : null,
+      actionAtRelease
+    )
+  ) {
     unit.affectNewDest?.()
     return
   }
@@ -108,11 +116,9 @@ export function finishManualHeroWorkSwing(
   }
 ): void {
   const targetReleaseFrame = Math.max(releaseFrame, animationReleaseFrame)
-  const hasCustomActionFrameSequence = hasConfiguredActionFrameSequence(
-    unit,
-    unit.actionFrameSequence,
-    { preferExplicit: true }
-  )
+  const hasCustomActionFrameSequence = hasConfiguredActionFrameSequence(unit, unit.actionFrameSequence, {
+    preferExplicit: true,
+  })
   const shouldSkipReverseRecovery = hasCustomActionFrameSequence && animationReleaseFrame >= releaseFrame
   const sprite = unit.sprite
   const currentFrame = Math.floor(sprite?.currentFrame ?? releaseFrame)
@@ -130,9 +136,7 @@ export function finishManualHeroWorkSwing(
       if (isManualHeroActionReleased(unit)) stopManualHeroActionAfterLoop(unit)
     }
     sprite.onLoop = finishAtVisualRelease
-    onSpriteLoopAtFrame(sprite, targetReleaseFrame, () =>
-      finishAtVisualRelease()
-    )
+    onSpriteLoopAtFrame(sprite, targetReleaseFrame, () => finishAtVisualRelease())
     return
   }
   if (shouldSkipReverseRecovery) {

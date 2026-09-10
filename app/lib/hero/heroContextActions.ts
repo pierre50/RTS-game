@@ -14,7 +14,7 @@ import { getActionVisualSheetKey } from '../units/actionVisualSheet'
 import { getActionCondition, isWheatMature } from '../combat'
 import { findInstancesInSight } from '../grid/visibility'
 import { t } from '../lang'
-import { showIronMiningBlockedMessage } from '../resources/ironMining'
+import { canHeroStrikeLockedMine, showIronMiningBlockedMessage } from '../resources/ironMining'
 import { hasEnergyForAction } from '../units/unitEnergy'
 import { applyWorkForAction } from '../../classes/unit/UnitResourceDeliveryCommands'
 import type { BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
@@ -98,7 +98,7 @@ function resolveHeroGatherAction(
   action: string,
   work: string
 ): (() => void) | null {
-  if (!getActionCondition(hero, target, action)) {
+  if (!getActionCondition(hero, target, action) && !canHeroStrikeLockedMine(hero, target, action)) {
     if (
       action === ACTION_TYPES.farm &&
       resourceKind(target) === 'Wheat' &&

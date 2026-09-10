@@ -1,4 +1,4 @@
-import { ACTION_TYPES, BUILDING_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
+import { ACTION_TYPES, BUILDING_TYPES, FAMILY_TYPES, SHEET_TYPES, UNIT_TYPES } from '../../constants'
 import type { NpcOrdersOpenOptions } from '../../types/context'
 import type { AnimalEntity, BuildingEntity, RuntimeEntity, UnitEntity } from '../../types/entities'
 import { canUnitEnterBuildingInterior } from '../buildings/interiorAccess'
@@ -61,7 +61,7 @@ export type HeroProximityInteractionOptions = {
 const MOUNTABLE_HORSE_CELL_RADIUS = 2
 
 function isOpenableEntity(target: RuntimeEntity | null | undefined): target is RuntimeEntity {
-  if (!target || target.isDestroyed) return false
+  if (!target || target.isDestroyed || target.family === FAMILY_TYPES.resource) return false
   const openable = target as RuntimeEntity & { openable?: boolean; interactionAction?: HeroProximityInteractionAction }
   if (openable.openable || openable.interactionAction === 'open') return true
   return Boolean(target.isDead || (target as UnitEntity).currentSheet === SHEET_TYPES.corpse)

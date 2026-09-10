@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
-const { restoreUnitSleepHealth, updateUnitSleepHealth, restoreOfflineUnitSleepHealth } = loadTsModule(
+const { updateUnitSleepHealth, restoreOfflineUnitSleepHealth } = loadTsModule(
   'app/lib/units/unitSleepHealth.ts'
 )
 const { getVillagerSchedule } = loadTsModule('app/lib/units/villagerSchedule.ts')
@@ -25,7 +25,8 @@ test('sleep restores health progressively inside and outside and stops on waking
     unit.sleepVisualState = 'wakingUp'
     updateUnitSleepHealth(unit, 60000)
     assert.equal(unit.hitPoints, 32.5)
-    restoreUnitSleepHealth(unit, 8 * 60000)
+    unit.sleepVisualState = 'sleeping'
+    updateUnitSleepHealth(unit, 8 * 60000)
     assert.equal(unit.hitPoints, 100)
   }
 })
@@ -45,7 +46,7 @@ test('sleep healing excludes dead units, heroes, travel and waiting before bedti
     assert.equal(unit.hitPoints, 20)
   }
   const unit = sleeper({ hitPoints: 0 })
-  restoreUnitSleepHealth(unit, 60000)
+  updateUnitSleepHealth(unit, 60000)
   assert.equal(unit.hitPoints, 0)
 })
 

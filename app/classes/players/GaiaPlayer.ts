@@ -9,8 +9,8 @@ import type { GameContextLike } from '../../types/context'
 import type { AnimalEntity } from '../../types/entities'
 import type { PlayerLike } from '../../types/player'
 
-export const NEUTRAL_PLAYER_LABEL = 'neutral'
-export const NEUTRAL_PLAYER_NAME = 'Neutral'
+const NEUTRAL_PLAYER_LABEL = 'neutral'
+const NEUTRAL_PLAYER_NAME = 'Neutral'
 
 export class Gaia extends Player {
   animals: AnimalEntity[]

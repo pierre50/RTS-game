@@ -23,6 +23,8 @@ test('inventory containers move equipment between reusable inventories', () => {
 
   assert.deepEqual(hero.inventory.equipment, ['chest'])
   assert.deepEqual(chest.inventory.equipment, ['trap'])
+  for (let i = 0; i < 20; i++) assert.equal(moveInventoryEquipment(heroContainer, chestContainer, 'trap'), false)
+  assert.deepEqual(chest.inventory.equipment, ['trap'])
 })
 
 test('inventory containers move resources between reusable inventories', () => {
@@ -36,6 +38,9 @@ test('inventory containers move resources between reusable inventories', () => {
 
   assert.deepEqual(hero.inventory.resources, { wood: 7 })
   assert.deepEqual(chest.inventory.resources, { wheat: 3, wood: 5 })
+  assert.equal(moveInventoryResource(heroContainer, chestContainer, 'wood'), 7)
+  for (let i = 0; i < 20; i++) assert.equal(moveInventoryResource(heroContainer, chestContainer, 'wood'), 0)
+  assert.deepEqual(chest.inventory.resources, { wheat: 3, wood: 12 })
 })
 
 test('inventory containers respect destination acceptance rules', () => {

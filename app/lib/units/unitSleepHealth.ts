@@ -13,7 +13,7 @@ type SleepHealthUnit = Pick<
 >
 
 /** Eight game hours of sleep restore one full health bar. Never revive a dead unit. */
-export function restoreUnitSleepHealth(unit: SleepHealthUnit, elapsedMs: number): void {
+function restoreUnitSleepHealth(unit: SleepHealthUnit, elapsedMs: number): void {
   if (unit.type === UNIT_TYPES.hero || unit.controlMode === 'hero' || unit.isDead || unit.isDestroyed) return
   const total = unit.totalHitPoints ?? 0
   const current = unit.hitPoints ?? total

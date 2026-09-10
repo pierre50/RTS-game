@@ -63,3 +63,11 @@ export function getInstanceScreenBounds(instance: BoundsSource): Bounds | undefi
     height: sprite.height,
   }
 }
+
+// Approximate ground shadows for every sprite with half its height plus a small margin.
+// Extending only the lower edge delays culling when an entity exits through the top.
+export function getInstanceCameraBounds(instance: BoundsSource): Bounds | undefined {
+  const bounds = getInstanceScreenBounds(instance)
+  if (bounds) bounds.height += bounds.height * 0.5 + 16
+  return bounds
+}

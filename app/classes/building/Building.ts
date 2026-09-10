@@ -1,3 +1,4 @@
+import type { CaveDefinition } from '../../types/cave'
 import { getBuildingAge, getBuildingConfigForAge } from '../../lib/buildings/buildingAge'
 import type { AnimatedSprite, Graphics, Sprite, Texture } from 'pixi.js'
 import { FAMILY_TYPES } from '../../constants'
@@ -53,7 +54,7 @@ type BuildingSprite = Sprite | AnimatedSprite
 type BuildingSounds = UnitSounds & { burning?: CommandSound; collapse?: CommandSound }
 
 export type BuildingOptions = Omit<Partial<BuildingConfig>, 'trainingQueue'> & {
-  cave?: import('../../types/cave').CaveDefinition
+  cave?: CaveDefinition
   buildingAge?: number
   assetAge?: number
   trainingQueue?: SavedTrainingEntry[]
@@ -129,7 +130,7 @@ export class Building extends Instance implements BuildingEntity {
   flameSoundStopped?: boolean
   increasePopulation?: number
   shelterCapacity?: number
-  cave?: import('../../types/cave').CaveDefinition
+  cave?: CaveDefinition
   indestructible?: boolean
   containedAnimalType?: string | null
   inventory?: {

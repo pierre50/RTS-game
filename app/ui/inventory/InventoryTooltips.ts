@@ -34,7 +34,7 @@ function getResourceDescription(resource: keyof ResourceAmount): string {
   return t(`resourceDescription_${resource}`)
 }
 
-export function createResourceTooltip(
+function createResourceTooltip(
   resource: keyof ResourceAmount,
   amount = 1,
   mode: ResourceTooltipMode = 'inventory'
@@ -74,7 +74,7 @@ export function createResourceRowInfo(
   }
 }
 
-export function createEquipmentTooltip(
+function createEquipmentTooltip(
   equipment: string,
   count = 1,
   mode: EquipmentTooltipMode = 'inventory'

@@ -31,13 +31,16 @@ function loadHeroBuildingMenuManager({ reachable = true } = {}) {
     },
     '../lib/hero/heroCampfireSleep': {
       canHeroSleepAtFireCamp: hero => hero?.canSleepAtCampfire !== false,
+      getHostileInHeroSight: hero => hero?.hostile,
+      getHeroCampfireSleepBlockedReason: hero =>
+        hero?.sleepBlockedReason ?? (hero?.canSleepAtCampfire === false ? 'heroCampfireSleepBlockedDescription' : null),
       sleepHeroAtFireCamp: (hero, building) => {
         campfireSleepCalls.push({ hero, building })
         return hero?.canSleepAtCampfire !== false
       },
     },
     '../lib/lang': {
-      t: key => key,
+      t: (key, params) => params ? `${key}:${params.target}:${params.owner}` : key,
     },
     '../lib/audio/uiSound': {
       playUiSound: () => {},
@@ -374,6 +377,26 @@ test('hero building menu disables campfire sleep while blocked', () => {
     const button = manager.body.children[0]
     assert.equal(button.id, 'hero-heroCampfireSleep')
     assert.equal(button.disabled, true)
+  } finally {
+    restoreDocument()
+  }
+})
+
+test('campfire tooltip reports the actual reason sleep is unavailable', () => {
+  const { manager, restoreDocument } = createManager()
+  try {
+    const hero = { canSleepAtCampfire: false, sleepBlockedReason: 'heroCampfireSleepTooFar' }
+    manager.menu.context.controls.heroUnit = hero
+    const button = manager.getCampfireSleepButton({ type: 'FireCamp', isBuilt: true })
+    assert.equal(button.tooltip().description, 'heroCampfireSleepTooFar')
+    hero.sleepBlockedReason = 'heroCampfireSleepNotBuilt'
+    assert.equal(button.tooltip().description, 'heroCampfireSleepNotBuilt')
+    hero.sleepBlockedReason = null
+    assert.equal(button.tooltip().description, 'heroCampfireSleepBlockedDescription')
+    hero.hostile = { type: 'Cave', owner: { name: 'Neutral' } }
+    assert.equal(button.tooltip().description, 'heroCampfireSleepBlockedBy:Cave:Neutral')
+    hero.canSleepAtCampfire = true
+    assert.equal(button.tooltip().description, 'heroCampfireSleepDescription')
   } finally {
     restoreDocument()
   }

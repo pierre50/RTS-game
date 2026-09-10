@@ -1,3 +1,4 @@
+import type { PlacedCave } from '../../types/cave'
 import type { PreparedTerrainCell } from './generation/PreparedMapContent'
 import type { ContainerChild } from 'pixi.js'
 import type { LocalMapLayout } from '../../lib/localMapLayout'
@@ -137,7 +138,7 @@ export type MapSettlement = {
 }
 
 export type MapBlueprint = {
-  caves?: import('../../types/cave').PlacedCave[]
+  caves?: PlacedCave[]
   terrainAppearance?: PreparedTerrainCell[]
   animals?: Array<{ i: number; j: number; type: string }>
 

@@ -2,24 +2,28 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 const prepared = loadTsModule('app/classes/map/generation/PreparedMapContent.ts')
-const { changeSpriteColorDirectly } = loadTsModule('app/lib/graphics/colors.ts', {
-  mocks: { 'pixi.js': {}, 'pixi-filters': {} },
-})
 class NeutralPlayer {
   constructor(options) {
     Object.assign(this, options)
     this.buildings = []
   }
   createBuilding(options) {
-    const texture = {},
-      sprite = { texture }
-    changeSpriteColorDirectly(sprite, this.color ?? '')
-    assert.equal(sprite.texture, texture)
     this.buildings.push(options)
   }
 }
 const { placeCave } = loadTsModule('app/classes/map/generation/CaveGeneration.ts', {
-  mocks: { '../../players': { Player: NeutralPlayer }, './PreparedMapContent': prepared },
+  mocks: {
+    '../../players': {
+      ensureNeutralPlayer(context) {
+        const existing = context.players.find(player => player.diplomacy === 'neutral')
+        if (existing) return existing
+        const owner = new NeutralPlayer({ diplomacy: 'neutral', color: 'grey' })
+        context.players.push(owner)
+        return owner
+      },
+    },
+    './PreparedMapContent': prepared,
+  },
 })
 test('runtime instantiates the offline choice exactly once without randomness', () => {
   const map = {

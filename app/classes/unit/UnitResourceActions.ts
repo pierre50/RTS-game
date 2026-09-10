@@ -4,7 +4,7 @@ import { canReachActionTarget, getActionContactTool, isActionTouchingTarget } fr
 import { showContactDebug } from '../../lib/contact/contactDebug'
 import { getContactAimDegree } from '../../lib/contact/contactGeometry'
 import { spawnWorkImpactFragments } from '../../lib/entities/workImpactFragments'
-import { showIronMiningBlockedMessage } from '../../lib/resources/ironMining'
+import { canHeroStrikeLockedMine, showIronMiningBlockedMessage } from '../../lib/resources/ironMining'
 import { isHeroControlled } from '../../lib/units/unitControl'
 import { spendOrWaitForEnergy } from '../../lib/units/unitEnergy'
 import { grantUnitXp, LOADING_XP_CATEGORY } from '../../lib/units/unitExperience'
@@ -28,6 +28,7 @@ import { finishWorkSwing, getWorkAnimationReleaseFrame } from './work/UnitWorkSw
 
 export class UnitResourceActions {
   unit: UnitEntity
+  private lastLockedMine: RuntimeEntity | null = null
 
   constructor(unit: UnitEntity) {
     this.unit = unit
@@ -74,7 +75,10 @@ export class UnitResourceActions {
 
   prepareLoopingWorkAction(): boolean {
     const unit = this.unit
-    if (!unit.getActionCondition?.(unit.dest)) {
+    if (
+      !unit.getActionCondition?.(unit.dest) &&
+      !canHeroStrikeLockedMine(unit, isRuntimeEntity(unit.dest) ? unit.dest : null)
+    ) {
       unit.affectNewDest?.()
       return false
     }
@@ -89,6 +93,31 @@ export class UnitResourceActions {
   startMiningResource(action: string | null | undefined): void {
     const config = Object.values(MINING_RESOURCE_CONFIG ?? {}).find(entry => entry.action === action)
     if (!config) return
+    const unit = this.unit
+    const target = isRuntimeEntity(unit.dest) ? unit.dest : null
+    if (target && canHeroStrikeLockedMine(unit, target, action)) {
+      if (!this.prepareLoopingWorkAction()) return
+      const frame = getWorkAnimationReleaseFrame(unit, SLASH_IMPACT_FRAME)
+      this.bindWorkImpact(frame, () => {
+        if (!canHeroStrikeLockedMine(unit, target, action)) {
+          stopManualHeroAction(unit)
+          return
+        }
+        if (!this.ensureWorkContact(target)) return
+        if (!spendOrWaitForEnergy(unit, action, target)) {
+          stopManualHeroAction(unit)
+          return
+        }
+        if (this.lastLockedMine !== target) {
+          showIronMiningBlockedMessage(unit, target)
+          this.lastLockedMine = target
+        }
+        this.playSound(this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre))
+        finishWorkSwing(unit, frame, frame)
+      })
+      return
+    }
+    this.lastLockedMine = null
     this.startGathering(config.loadingType, this.getWorkSound(config.sound, SOUND_CUES.villager.mineOre), {
       dieOnEmpty: Boolean(config.dieOnEmpty),
       onImpact: target => spawnWorkImpactFragments(this.unit, target),

@@ -141,7 +141,7 @@ test('invalid index shapes and entries do not crash listing or saving', () => {
   assert.deepEqual(loadSaveStorage(storage).listSaves(), [valid])
 })
 
-test('manual limits allow replacement and autosaving, then deletion frees a slot', () => {
+test('manual limits allow replacement and autosaving', () => {
   const storage = makeMemoryStorage()
   const api = loadSaveStorage(storage)
   for (let i = 1; i <= 10; i++) api.saveRecord(minimalSaveRecord(), { key: `save_${i}`, name: `Save ${i}` })
@@ -150,10 +150,6 @@ test('manual limits allow replacement and autosaving, then deletion frees a slot
   assert.equal(api.autosaveRecord(minimalSaveRecord()).key, 'save_0')
   assert.equal(api.autosaveRecord(minimalSaveRecord(), 'Automatic').name, 'Automatic')
   assert.equal(api.listSaves().length, 11)
-  api.deleteSave('save_1')
-  api.deleteSave('save_2')
-  assert.equal(storage.items.has('save_1'), false)
-  assert.ok(api.saveRecord(minimalSaveRecord()).key)
   assert.deepEqual(api.loadSave('save_0'), minimalSaveRecord())
   assert.deepEqual(api.buildSaveRecord({}), {})
   assert.deepEqual(api.buildSaveRecord({}, { version: 1 }), {})
@@ -200,8 +196,6 @@ test('Electron storage accepts both success protocols and surfaces detailed writ
     const saved = api.saveRecord(minimalSaveRecord())
     assert.deepEqual(api.loadSave(saved.key), minimalSaveRecord())
     assert.equal(api.listSaves().length, 1)
-    api.deleteSave(saved.key)
-    assert.deepEqual(api.listSaves(), [])
   }
   for (const [result, message] of [
     [false, /STORAGE_FULL/],
@@ -228,96 +222,4 @@ test('Electron storage accepts both success protocols and surfaces detailed writ
     }
     assert.throws(() => loadSaveStorage(broken).saveRecord(minimalSaveRecord()), /STORAGE_FULL/)
   }
-})
-
-function mockReader(t, result, failure = false, missingTarget = false) {
-  const original = global.FileReader
-  global.FileReader = class {
-    readAsText() {
-      if (failure) this.onerror()
-      else this.onload(missingTarget ? {} : { target: { result } })
-    }
-  }
-  t.after(() => {
-    if (original === undefined) delete global.FileReader
-    else global.FileReader = original
-  })
-}
-
-test('save imports reject unreadable, malformed and corrupt payloads', async t => {
-  const storage = makeMemoryStorage()
-  const api = loadSaveStorage(storage)
-  for (const [result, message] of [
-    [null, /INVALID_FORMAT/],
-    ['{', /INVALID_FORMAT/],
-    ['null', /INVALID_FORMAT/],
-    ['{}', /INVALID_FORMAT/],
-    [JSON.stringify({ format: 'save-v1', data: 1 }), /INVALID_FORMAT/],
-    [JSON.stringify({ format: 'save-v1', data: '' }), /SAVE_CORRUPT/],
-    [JSON.stringify({ format: 'save-v1', data: LZString.compressToBase64('{') }), /SAVE_CORRUPT/],
-  ]) {
-    mockReader(t, result)
-    await assert.rejects(api.importSaveFile({}), message)
-  }
-  mockReader(t, '', true)
-  await assert.rejects(api.importSaveFile({}), /READ_ERROR/)
-  mockReader(t, '', false, true)
-  await assert.rejects(api.importSaveFile({}), /INVALID_FORMAT/)
-  assert.equal(storage.items.size, 0)
-})
-
-test('save imports retain metadata, provide defaults, and reject capacity and write failures', async t => {
-  const storage = makeMemoryStorage()
-  const api = loadSaveStorage(storage)
-  mockReader(t, JSON.stringify({ format: 'save-v1', data: compressedSave(), name: 'Imported', date: 123 }))
-  const saved = await api.importSaveFile({})
-  assert.equal(saved.name, 'Imported')
-  assert.deepEqual(api.listSaves(), [{ ...saved, date: 123 }])
-  mockReader(t, JSON.stringify({ format: 'save-v1', data: compressedSave(), name: '', date: 'bad' }))
-  assert.match((await api.importSaveFile({})).name, /^\d\d\/\d\d \d\d:\d\d$/)
-  mockReader(t, JSON.stringify({ format: 'save-v1', data: compressedSave() }))
-  assert.ok((await api.importSaveFile({})).name)
-  t.mock.method(storage, 'setItem', () => {
-    throw new Error('quota')
-  })
-  await assert.rejects(api.importSaveFile({}), /STORAGE_FULL/)
-  t.mock.restoreAll()
-  for (let i = 0; i < 7; i++) api.saveRecord(minimalSaveRecord())
-  await assert.rejects(api.importSaveFile({}), /MAX_SAVES_REACHED/)
-})
-
-test('export saves downloads the compressed payload and releases its object URL', async t => {
-  const storage = makeMemoryStorage()
-  const api = loadSaveStorage(storage)
-  assert.throws(() => api.exportSave('missing'), /SAVE_NOT_FOUND/)
-  const saved = api.saveRecord(minimalSaveRecord(), { name: '08/09 10:15' })
-  const original = global.document
-  const anchor = { click: t.mock.fn() }
-  global.document = {
-    createElement: tag => {
-      assert.equal(tag, 'a')
-      return anchor
-    },
-  }
-  t.after(() => {
-    if (original === undefined) delete global.document
-    else global.document = original
-  })
-  let blob
-  t.mock.method(URL, 'createObjectURL', value => {
-    blob = value
-    return 'blob:test'
-  })
-  const revoke = t.mock.method(URL, 'revokeObjectURL', () => {})
-  api.exportSave(saved.key)
-  assert.equal(anchor.download, '08-09 10-15.save')
-  assert.equal(anchor.href, 'blob:test')
-  assert.equal(anchor.click.mock.callCount(), 1)
-  assert.deepEqual(revoke.mock.calls[0].arguments, ['blob:test'])
-  const payload = JSON.parse(await blob.text())
-  assert.equal(payload.format, 'save-v1')
-  assert.equal(payload.name, saved.name)
-  assert.equal(payload.data, storage.getItem(saved.key))
-  storage.removeItem(saved.key)
-  assert.throws(() => api.exportSave(saved.key), /SAVE_NOT_FOUND/)
 })

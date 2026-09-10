@@ -12,7 +12,7 @@ const MIN_NEUTRAL_CAVE_VILLAGERS = 1
 const MAX_NEUTRAL_CAVE_VILLAGERS = 3
 
 /** Keep all floor cells connected when adding furniture, including narrow corridors. */
-export function preservesCavePaths(cells: RuntimeCell[], blocked: RuntimeCell): boolean {
+function preservesCavePaths(cells: RuntimeCell[], blocked: RuntimeCell): boolean {
   const remaining = new Map(
     cells.filter(cell => cell !== blocked && !cell.solid && !cell.has).map(cell => [`${cell.i}:${cell.j}`, cell])
   )

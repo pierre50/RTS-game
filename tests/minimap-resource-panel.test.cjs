@@ -233,7 +233,12 @@ test('outside stock includes local interior chests once, but excludes foreign an
 
 test('starting stock survives the real chest transfer and repeated region save/restores in the panel', () => {
   withFakeDocument(() => {
-    const { groupInteriorBuildings } = loadTsModule('app/serialization/InteriorBuildingSave.ts')
+    const { normalizeSavedInteriorBuildings } = loadTsModule('app/serialization/InteriorBuildingSave.ts')
+    const groupInteriorBuildings = (buildings, label) => {
+      const player = { buildings, label }
+      normalizeSavedInteriorBuildings(player)
+      return player.buildings
+    }
     const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
       mocks: {
         '../../app/lib/buildings/interiorDecorations': {

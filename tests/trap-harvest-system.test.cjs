@@ -3,10 +3,11 @@ const path = require('node:path')
 const test = require('node:test')
 const { requireFromTsFile } = require('./helpers/loadTsModule.cjs')
 
-function loadTrapHarvestSystem() {
+function loadTrapHarvestSystem({ deferFade = false } = {}) {
   const filename = path.join(__dirname, '../app/services/world/TrapHarvestSystem.ts')
   const overheadCalls = []
   const soundCalls = []
+  const pendingFades = []
   const module = requireFromTsFile(filename, filename, {
     '../constants': {
       BUILDING_TYPES: { trap: 'Trap' },
@@ -29,7 +30,10 @@ function loadTrapHarvestSystem() {
       },
     },
     '../lib/entities/entityFade': {
-      fadeOut: (_entity, _duration, onComplete) => onComplete?.(),
+      fadeOut: (_entity, _duration, onComplete) => {
+        if (deferFade) pendingFades.push(onComplete)
+        else onComplete?.()
+      },
     },
     '../lib/entities/overheadIndicator': {
       clearEntityOverheadIndicator: (entity, options) => {
@@ -42,6 +46,7 @@ function loadTrapHarvestSystem() {
   })
   module.__overheadCalls = overheadCalls
   module.__soundCalls = soundCalls
+  module.__pendingFades = pendingFades
   return module
 }
 
@@ -351,3 +356,44 @@ test('failed trap recovery does not play a sound', () => {
   assert.equal(recoverTrapBuilding(hero, trap), false)
   assert.equal(__soundCalls.length, 0)
 })
+
+for (const filled of [false, true]) {
+  test(`repeated recovery during a ${filled ? 'filled' : 'empty'} trap fade consumes it exactly once`, () => {
+    const { recoverTrapBuilding, TrapHarvestSystem, __pendingFades, __soundCalls } = loadTrapHarvestSystem({
+      deferFade: true,
+    })
+    const { context, hero, trap } = createContext()
+    if (filled) trap.containedAnimalType = 'Fox'
+    const otherHero = { inventory: { equipment: [] } }
+    const cell = context.map.grid[trap.i][trap.j]
+
+    assert.equal(recoverTrapBuilding(hero, trap), true)
+    for (let i = 0; i < 20; i++) {
+      assert.equal(recoverTrapBuilding(hero, trap), false)
+      assert.equal(recoverTrapBuilding(otherHero, trap), false)
+    }
+    assert.deepEqual(hero.inventory.equipment, ['trap'])
+    assert.deepEqual(otherHero.inventory.equipment, [])
+    assert.equal(__soundCalls.length, 1)
+    assert.equal(__pendingFades.length, 1)
+    assert.equal(trap.isDead, true)
+    assert.equal(trap.isDestroyed, false)
+    // Save sources must already reflect the completed transfer while the visual remains.
+    assert.equal(trap.owner.buildings.includes(trap), false)
+    assert.equal(trap.removedFromBucket, true)
+    assert.notEqual(cell.has, trap)
+    assert.equal(context.map.gaia.animals.length, filled ? 1 : 0)
+    new TrapHarvestSystem(context).fillTraps()
+    assert.equal(trap.containedAnimalType, null)
+
+    const replacement = cell.has ?? { type: 'replacement' }
+    cell.has = replacement
+    cell.solid = true
+    __pendingFades[0]()
+    assert.equal(trap.isDestroyed, true)
+    assert.equal(cell.has, replacement)
+    assert.equal(cell.solid, true)
+    assert.equal(context.map.gaia.animals.length, filled ? 1 : 0)
+    assert.equal(recoverTrapBuilding(hero, trap), false)
+  })
+}

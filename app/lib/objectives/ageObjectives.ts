@@ -2,7 +2,6 @@ import { AGE_UP_ENABLED, UNIT_TYPES, BUILDING_TYPES } from '../../constants'
 import { t } from '../lang'
 import type { GameContextLike } from '../../types/context'
 import type { PlayerLike } from '../../types/player'
-import type { TooltipContent } from '../../types/ui'
 
 export const AGE_OBJECTIVES = {
   buildTownCenter: 'buildTownCenter',
@@ -197,11 +196,4 @@ export function completeAgeObjective(player: PlayerLike | null | undefined, id: 
 
 export function isAgeObjectiveComplete(player: PlayerLike, id: AgeObjectiveId): boolean {
   return Boolean(player.completedObjectives?.includes(id))
-}
-
-export function getAgeObjectiveTooltip(objective: AgeObjectiveDefinition): TooltipContent {
-  return {
-    title: t(objective.labelKey),
-    description: t(objective.descriptionKey),
-  }
 }

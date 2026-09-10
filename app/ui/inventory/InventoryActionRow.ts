@@ -28,7 +28,7 @@ export type InventoryActionRowParts = {
   icon: HTMLSpanElement
 }
 
-export function appendInventoryQuantityBadge(host: HTMLElement, quantity: number): void {
+function appendInventoryQuantityBadge(host: HTMLElement, quantity: number): void {
   const safeQuantity = Math.max(0, Math.floor(quantity))
   if (safeQuantity <= 1) return
   host.classList.add('inventory-quantity-host')

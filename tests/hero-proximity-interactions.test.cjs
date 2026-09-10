@@ -7,6 +7,7 @@ function loadHeroProximityInteractions(overrides = {}) {
     mocks: {
       '../../constants': {
         ACTION_TYPES: { attack: 'attack' },
+        FAMILY_TYPES: { resource: 'resource' },
         BUILDING_TYPES: {
           chest: 'Chest',
           fireCamp: 'FireCamp',
@@ -20,6 +21,7 @@ function loadHeroProximityInteractions(overrides = {}) {
         UNIT_TYPES: { villager: 'Villager' },
       },
       '../constants': {
+        PLAYER_TYPES: { gaia: 'Gaia', ai: 'AI', bandits: 'Bandits' },
         BUILDING_TYPES: { stable: 'Stable' },
         HORSE_TAMING_STATUS: { tamed: 'tamed', wild: 'wild' },
       },
@@ -471,6 +473,22 @@ test('mounted hero ignores a tamed horse inside a stable interior', () => {
   hero.context.map.grid[6][8].has = horse
 
   assert.equal(resolveHeroProximityInteraction({ hero }), null)
+})
+
+test('hero proximity interaction never offers to open resources during depletion', () => {
+  const { resolveHeroProximityInteraction } = loadHeroProximityInteractions()
+  const hero = makeHero()
+
+  for (const type of ['MedicinalHerb', 'Berrybush', 'Wheat', 'Tree']) {
+    const resource = { family: 'resource', type, isDead: false, isDestroyed: false, x: 100, y: 248 }
+    assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), null)
+
+    resource.isDead = true
+    assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), null)
+
+    resource.isDestroyed = true
+    assert.equal(resolveHeroProximityInteraction({ hero, openEntityTarget: resource }), null)
+  }
 })
 
 test('hero proximity interaction resolves a facing openable corpse as open', () => {

@@ -2,13 +2,18 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-function loadUnitResourceActions() {
+function loadUnitResourceActions(overrides = {}) {
   return loadTsModule('app/classes/unit/UnitResourceActions.ts', {
     mocks: {
-      '../../lib/actions/contactActions': { canReachActionTarget: () => true, isActionTouchingTarget: () => true, getActionContactTool: () => undefined },
+      '../../lib/actions/contactActions': {
+        canReachActionTarget: () => true,
+        isActionTouchingTarget: () => true,
+        getActionContactTool: () => undefined,
+      },
       '../../lib/contact/contactGeometry': { getContactAimDegree: () => 0 },
       '../../lib/contact/contactDebug': { showContactDebug: () => {} },
       '../../constants': {
+        UNIT_TYPES: { hero: 'Hero' },
         LOADING_TYPES: {
           berry: 'berry',
           fiber: 'fiber',
@@ -81,6 +86,7 @@ function loadUnitResourceActions() {
         restartManualHeroActionAnimation: () => {},
         stopManualHeroAction: () => {},
       },
+      ...overrides,
     },
   }).UnitResourceActions
 }
@@ -150,3 +156,83 @@ test('villagers keep gathering when a delivery batch has no dropoff target', () 
   assert.equal(sendVillagerToDeliveryIfFull(unit, 'wood', 9), false)
   assert.deepEqual(calls, [])
 })
+
+for (const [type, age, action] of [
+  ['Copper', 0, 'minecopper'],
+  ['Iron', 1, 'mineiron'],
+]) {
+  test(`locked ${type} swings without resources, XP or depletion and warns only once`, () => {
+    const constants = loadTsModule('app/lib/constants.ts')
+    const { onSpriteLoopAtFrame, SLASH_IMPACT_FRAME } = loadTsModule('app/lib/graphics.ts', {
+      mocks: Object.fromEntries(
+        ['assets', 'colors', 'canvas', 'selection', 'textures'].map(name => [`./graphics/${name}`, {}])
+      ),
+    })
+    let swings = 0
+    let sounds = 0
+    const messages = []
+    const target = { type, quantity: 10, hitPoints: 20 }
+    const UnitResourceActions = loadUnitResourceActions({
+      '../../constants': constants,
+      '../../lib': {
+        SLASH_IMPACT_FRAME,
+        onSpriteLoopAtFrame,
+        playAudibleSoundCue: () => {
+          sounds++
+        },
+        showResourceGainFeedback: () => assert.fail('no resource feedback'),
+      },
+      '../../lib/units/unitControl': { isHeroControlled: unit => unit.controlMode === 'hero' },
+      '../../lib/units/unitExperience': { grantUnitXp: () => assert.fail('no XP') },
+      './UnitManualHeroWork': {
+        restartManualHeroActionAnimation: () => {
+          swings++
+        },
+        lockManualHeroAction: () => {},
+        finishManualHeroWorkSwing: () => {},
+        stopManualHeroAction: () => {},
+      },
+    })
+    const unit = {
+      type: 'Hero',
+      controlMode: 'hero',
+      owner: { age, isPlayed: true },
+      dest: target,
+      action,
+      sprite: {},
+      inventory: { resources: {} },
+      context: { menu: { showMessage: (...args) => messages.push(args) } },
+      getActionCondition: () => false,
+      affectNewDest: () => assert.fail('the swing should be allowed'),
+    }
+    const actions = new UnitResourceActions(unit)
+    const expectedWarning = [[type === 'Copper' ? 'Requis : Âge de Bronze' : 'Requis : Âge de Fer', 'warning']]
+    for (let i = 0; i < 3; i++) {
+      actions.startMiningResource(action)
+      assert.equal(typeof unit.sprite.onFrameChange, 'function')
+      for (let frame = 0; frame < SLASH_IMPACT_FRAME; frame++) {
+        unit.sprite.onFrameChange(frame)
+        assert.deepEqual(messages, i === 0 ? [] : expectedWarning, 'no warning before the first impact')
+      }
+      // Also cover a render tick skipping the exact impact frame.
+      unit.sprite.onFrameChange(SLASH_IMPACT_FRAME + (i === 1 ? 1 : 0))
+      assert.deepEqual(messages, expectedWarning, 'the first impact warns, subsequent impacts do not repeat it')
+      unit.sprite.onFrameChange(SLASH_IMPACT_FRAME + 2)
+      assert.deepEqual(messages, expectedWarning)
+    }
+    assert.equal(swings, 3)
+    assert.equal(sounds, 3)
+    assert.deepEqual(messages, expectedWarning)
+    assert.equal(constants.RESOURCE_TYPES[type.toLowerCase()], type)
+    assert.deepEqual(unit.inventory.resources, {})
+    assert.equal(target.quantity, 10)
+    assert.equal(target.hitPoints, 20)
+    let gathering = false
+    actions.startGathering = () => {
+      gathering = true
+    }
+    unit.owner.age++
+    actions.startMiningResource(action)
+    assert.equal(gathering, true, 'reaching the required age restores normal gathering')
+  })
+}

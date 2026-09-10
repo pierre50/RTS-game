@@ -2,9 +2,14 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 const { loadTsModule } = require('./helpers/loadTsModule.cjs')
 
-const { groupInteriorBuildings, normalizeSavedInteriorBuildings } = loadTsModule(
+const { normalizeSavedInteriorBuildings } = loadTsModule(
   'app/serialization/InteriorBuildingSave.ts'
 )
+function groupInteriorBuildings(buildings, label) {
+  const player = { buildings, label }
+  normalizeSavedInteriorBuildings(player)
+  return player.buildings
+}
 const { ensureInteriorDefaultBuildings } = loadTsModule('engine/services/BuildingInteriorSpaceDecorations.ts', {
   mocks: {
     '../../app/lib/buildings/interiorDecorations': {},

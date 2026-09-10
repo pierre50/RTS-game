@@ -1,3 +1,4 @@
+import type { CaveDefinition } from './cave'
 import type { Container } from 'pixi.js'
 import type { ConfigValue } from './config'
 import type { ResourceAmount } from './common'
@@ -56,7 +57,7 @@ export interface BuildingEntity extends RuntimeEntityBase {
   shelterCapacity?: number
   populationCapacityApplied?: boolean
   constructionTime?: number
-  cave?: import('./cave').CaveDefinition
+  cave?: CaveDefinition
   indestructible?: boolean
   containedAnimalType?: string | null
   inventory?: {

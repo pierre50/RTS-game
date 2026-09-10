@@ -29,6 +29,10 @@ function loadPauseMenu() {
 function makeFakeButton() {
   const listeners = new Map()
   return {
+    children: [],
+    attributes: {},
+    appendChild(child) { this.children.push(child); return child },
+    setAttribute(name, value) { this.attributes[name] = value },
     type: '',
     className: '',
     innerText: '',
@@ -48,7 +52,7 @@ function makeFakeButton() {
 test('pause menu open button clears click focus before opening', () => {
   const previousDocument = global.document
   const fakeButton = makeFakeButton()
-  global.document = { createElement: () => fakeButton }
+  global.document = { createElement: tag => tag === 'button' ? fakeButton : makeFakeButton() }
 
   try {
     const PauseMenu = loadPauseMenu()
@@ -60,6 +64,8 @@ test('pause menu open button clears click focus before opening', () => {
     }
 
     const button = pauseMenu.createOpenButton()
+    assert.equal(button.attributes['aria-label'], 'menuBtn')
+    assert.equal(button.children[0].children.length, 3)
     button.dispatch('click')
 
     assert.equal(openCalls, 1)

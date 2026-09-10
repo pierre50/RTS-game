@@ -2,7 +2,12 @@ import { updateHeroBuildingProgress } from './hero-building/HeroBuildingProgress
 import { BUILDING_TYPES, FAMILY_TYPES, SOUND_CUES } from '../constants'
 import { renderBuildingAvatar } from '../lib/avatar'
 import { isHeroInteractionTargetReachable } from '../lib/hero/heroActionRange'
-import { canHeroSleepAtFireCamp, sleepHeroAtFireCamp } from '../lib/hero/heroCampfireSleep'
+import {
+  canHeroSleepAtFireCamp,
+  getHeroCampfireSleepBlockedReason,
+  getHostileInHeroSight,
+  sleepHeroAtFireCamp,
+} from '../lib/hero/heroCampfireSleep'
 import { t } from '../lib/lang'
 import { playAudibleSoundCue } from '../lib/audio/sound'
 import { playUiSound } from '../lib/audio/uiSound'
@@ -209,12 +214,20 @@ export class HeroBuildingMenuManager {
     return {
       id: 'heroCampfireSleep',
       disabled: () => !canHeroSleepAtFireCamp(this.menu.context.controls.heroUnit, building),
-      tooltip: () => ({
-        title: t('heroCampfireSleep'),
-        description: canHeroSleepAtFireCamp(this.menu.context.controls.heroUnit, building)
-          ? t('heroCampfireSleepDescription')
-          : t('heroCampfireSleepBlockedDescription'),
-      }),
+      tooltip: () => {
+        const hero = this.menu.context.controls.heroUnit
+        const reason = getHeroCampfireSleepBlockedReason(hero, building)
+        const hostile = hero && reason === 'heroCampfireSleepBlockedDescription' ? getHostileInHeroSight(hero) : null
+        return {
+          title: t('heroCampfireSleep'),
+          description: hostile
+            ? t('heroCampfireSleepBlockedBy', {
+                target: t(hostile.type ?? hostile.label),
+                owner: hostile.owner?.name ?? hostile.owner?.label ?? '',
+              })
+            : t(reason ?? 'heroCampfireSleepDescription'),
+        }
+      },
       onClick: () => {
         if (sleepHeroAtFireCamp(this.menu.context.controls.heroUnit, building)) this.close()
       },

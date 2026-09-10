@@ -147,6 +147,10 @@ test('classic group gathering selects another accessible resource and excludes t
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
       '../../../lib/units/villagerAutonomyTargeting': targeting,
+      './playerTargetKnowledge': {
+        playerSeesTarget: () => true,
+        observeTarget() {},
+      },
       '../../../lib/units/unitControl': { isHeroControlled: () => false },
       './UnitMovementHelpers': { isRuntimeEntity: value => Boolean(value?.family) },
       '../../../lib': {
@@ -217,6 +221,10 @@ test('without another reachable resource, classic gathering stops instead of ret
   const { affectNewDest } = loadTsModule('app/classes/unit/movement/UnitAffectNewDest.ts', {
     mocks: {
       '../../../lib/units/villagerAutonomyTargeting': targeting,
+      './playerTargetKnowledge': {
+        playerSeesTarget: () => true,
+        observeTarget() {},
+      },
       '../../../lib/units/unitControl': { isHeroControlled: () => false },
       './UnitMovementHelpers': { isRuntimeEntity: value => Boolean(value?.family) },
       '../../../lib': {

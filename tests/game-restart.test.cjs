@@ -28,6 +28,7 @@ function loadGame({ blueprintFailureReason = null, loadPregeneratedInteriorBluep
   }
 
   const mocks = {
+    '../../classes/players/GaiaPlayer': { ensureNeutralPlayer() {} },
     'pixi.js': { Container },
     '@pixi/sound': { sound: { stopAll() {} } },
     '../lib/lang': { t: key => key },

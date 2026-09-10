@@ -6,7 +6,7 @@ import type { GridPosition, Point } from '../../types/grid'
 import { getEntityMapSpace, sameMapSpace } from '../mapSpaces'
 import { getInsightDetectionRange } from '../units/insightDetection'
 import { getBuildingFootprintCells } from './cells'
-import { getInstanceScreenBounds, getRenderablePosition, getVisibilityRuntimeMap } from './screenBounds'
+import { getInstanceCameraBounds, getRenderablePosition, getVisibilityRuntimeMap } from './screenBounds'
 export { getInstanceScreenBounds } from './screenBounds'
 
 type PlayerVisibility = {
@@ -113,7 +113,7 @@ function instanceShouldRender(instance?: RenderableInstance | null): boolean {
   if (!sameMapSpace(instance, { spaceId: map.activeSpaceId ?? null })) return false
   if (!getRenderablePosition(instance)) return false
   if (instance.family === FAMILY_TYPES.resource && !map.showResources) return false
-  if (!controls.instanceInCamera(instance, getInstanceScreenBounds(instance))) return false
+  if (!controls.instanceInCamera(instance, getInstanceCameraBounds(instance))) return false
   if (getEntityMapSpace({ spaceId: instance.spaceId ?? null }, runtimeMap)?.kind === 'interior') return true
   return instancePassesFog(instance)
 }

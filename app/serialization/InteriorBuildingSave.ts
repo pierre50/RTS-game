@@ -19,7 +19,7 @@ export function interiorSaveSpaceId(
 }
 
 /** Also migrates old default decorations whose space id was omitted from the save. */
-export function groupInteriorBuildings(buildings: SaveEntityState[], owner: string): SaveEntityState[] {
+function groupInteriorBuildings(buildings: SaveEntityState[], owner: string): SaveEntityState[] {
   const records = buildings.map(building => ({
     ...building,
     ...(building.interiorBuildings ? { interiorBuildings: [...building.interiorBuildings] } : {}),

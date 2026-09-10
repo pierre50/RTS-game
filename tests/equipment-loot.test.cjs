@@ -199,6 +199,8 @@ test('unit corpse loot transfers pocket resources to hero inventory', () => {
   assert.equal(pickupCorpseResource(corpse, hero, 'stone'), 3)
   assert.deepEqual(corpse.inventory.resources, { wood: 3 })
   assert.deepEqual(hero.inventory.resources, { stone: 9 })
+  for (let i = 0; i < 20; i++) assert.equal(pickupCorpseResource(corpse, hero, 'stone'), 0)
+  assert.deepEqual(hero.inventory.resources, { stone: 9 })
 })
 
 test('hero equips found bag items into gear and weapon slots with replacement swaps', () => {

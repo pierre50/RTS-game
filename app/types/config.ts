@@ -112,7 +112,7 @@ export type EquipmentStats = {
   pierceArmor?: number
 }
 
-export type BuildingAgeStats = { cost?: ResourceAmount; totalHitPoints?: number }
+type BuildingAgeStats = { cost?: ResourceAmount; totalHitPoints?: number }
 
 export interface BuildingConfig extends EntityConfig {
   ageStats?: Record<string, BuildingAgeStats>

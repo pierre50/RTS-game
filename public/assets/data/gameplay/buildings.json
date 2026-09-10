@@ -501,6 +501,7 @@
     "sight": 9,
     "totalHitPoints": 180,
     "constructionTime": 0,
+    "instantPlacement": true,
     "cost": {},
     "sounds": {
       "burning": [

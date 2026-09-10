@@ -77,6 +77,9 @@ test('hero arrow craft recipes spend hero bag resources and add arrows to the he
   assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copper: 1 })
   assert.equal(hero.inventory.equipment.length, 20)
   assert(hero.inventory.equipment.every(item => item === 'arrow_copper'))
+  for (let i = 0; i < 20; i++) assert.equal(craftHeroRecipe(player, hero, recipe), false)
+  assert.equal(hero.inventory.equipment.length, 20)
+  assert.deepEqual(hero.inventory.resources, { wood: 3, feather: 1, copper: 1 })
 })
 
 test('hero craft refuses missing resources without changing inventory or resources', () => {

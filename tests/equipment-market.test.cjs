@@ -93,6 +93,21 @@ test('market equipment purchase spends hero gold and adds the item', () => {
   assert.equal(hero.inventory.resources.gold, 315)
 })
 
+test('repeated market purchases and sales cannot exceed the available stock or inventory', () => {
+  const { buyMarketEquipment, sellHeroEquipment } = loadEquipmentMarket()
+  const hero = { owner: { age: 2 }, inventory: { equipment: [], resources: { gold: 500 } } }
+  const stock = ['sword_ceramic']
+  assert.equal(buyMarketEquipment(hero, 'sword_ceramic', 1, stock), 1)
+  for (let i = 0; i < 20; i++) assert.equal(buyMarketEquipment(hero, 'sword_ceramic', 1, stock), 0)
+  assert.deepEqual(hero.inventory.equipment, ['sword_ceramic'])
+  assert.equal(hero.inventory.resources.gold, 315)
+  assert.equal(sellHeroEquipment(hero, 'sword_ceramic'), 1)
+  const gold = hero.inventory.resources.gold
+  for (let i = 0; i < 20; i++) assert.equal(sellHeroEquipment(hero, 'sword_ceramic'), 0)
+  assert.deepEqual(hero.inventory.equipment, [])
+  assert.equal(hero.inventory.resources.gold, gold)
+})
+
 test('market equipment catalog follows market civilization and age without tools or quivers', () => {
   const { getMarketEquipmentOffers } = loadEquipmentMarket()
 
